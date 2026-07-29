@@ -1,0 +1,298 @@
+# Relay — Tutorial Plan
+
+**Version:** 1.0
+**Companion documents:** 01–06 (vision through ADR deep dives)
+**What this plans:** a written tutorial series, *Building Relay*, that guides a developer
+from initial idea to a deployed, monitored, multi-tenant chat infrastructure platform —
+with the documents already written (vision, personas, journey map, SRS, SAD, ADRs) as
+first-class chapters, not appendices.
+
+---
+
+## 1. Premise and positioning
+
+### 1.1 What this tutorial is
+
+Most tutorials teach a technology ("Learn WebSockets") or reproduce a toy ("Build a chat
+app in an hour"). This one teaches something rarer: **how a production-shaped system is
+actually brought into existence** — the specification work before the code, the
+architectural decisions with their rejected alternatives, the correctness machinery
+(ordering, idempotency, tenant isolation) that separates infrastructure from demos, and
+the deployment and operations work that most tutorials wave away in a final paragraph.
+
+The one-sentence pitch: *Build a real-time chat platform company from an empty directory —
+specs, code, deployment, and monitoring included.*
+
+### 1.2 Who it serves
+
+**Primary reader:** a mid-level full-stack developer (2–5 years) who can build CRUD apps
+comfortably and wants to cross into systems territory — the reader is, deliberately,
+**Mai from the personas document**. She is both the tutorial's audience and the product's
+user, which gives the series an unusual coherence: the reader builds the platform she
+would want to integrate.
+
+**Secondary readers:** engineers preparing for system design interviews (the ADR chapters
+map directly to interview questions); developers evaluating build-vs-buy for chat who want
+to understand what "build" really costs.
+
+**Assumed knowledge:** TypeScript, basic SQL, Docker exists, Git. **Not assumed:**
+distributed systems, Kubernetes, ClickHouse, message queues, WebSocket internals — these
+are what the tutorial teaches.
+
+### 1.3 What makes it different (the differentiators to protect)
+
+1. **Specs first, honestly.** Parts 0 explains *why* the vision/SRS/SAD exist and has the
+   reader produce them — most tutorials start at `npm init` and never explain where
+   requirements come from.
+2. **Decisions with rejected alternatives.** Every architectural choice is taught through
+   its ADR: the options, the analysis, the reversal trigger. The reader learns to *decide*,
+   not to copy.
+3. **The journeys as tests.** Tuan's tunnel scenario and Priya's dispute become literal
+   executable test suites the reader writes and passes. Requirements → journeys → tests is
+   the pedagogical spine.
+4. **It doesn't stop at "works on my machine."** Three full parts on deployment,
+   operations, and monitoring — the material that is hardest to find in tutorial form.
+
+---
+
+## 2. Format and delivery decisions
+
+| Decision | Choice | Rationale |
+|---|---|---|
+| Medium | Written chapters (Markdown), one repo | Text is searchable, diffable, versionable; video can be layered on later per-part |
+| Home | Public GitHub monorepo: `tutorial/` (chapters) + `relay/` (code) side by side | The tutorial and code cannot drift if they live and CI together (§6) |
+| Chapter unit | Ends in a **runnable, tested state** — no chapter ends mid-feature | The reader can stop anywhere and have something that works; this is the single most important format rule |
+| Code progression | Git tag per chapter (`part2-ch3`), `diff` links between tags in every chapter | "What changed in this chapter" is a link, not a claim |
+| Voice | First person plural, present tense ("we now have a problem: two gateways…") | Decisions feel lived-in, not handed down |
+| Chapter length | 2,000–4,000 words + code; 60–120 min reader time | Longer chapters split; a chapter is a sitting |
+| Recurring boxes | `WHY` (links to ADR/requirement), `TRAP` (the bug you'd write naively), `CHECKPOINT` (verify before continuing), `SKIP AHEAD` (what to `git checkout` if stuck) | Consistent scaffolding lowers reading cost |
+
+---
+
+## 3. The arc — nine parts
+
+The parts map onto the SRS phases where code is involved, bracketed by specification work
+before and operations after. Estimated sizes assume the format rules above.
+
+```
+Part 0   The idea and the paper          5 chapters   (docs 01–06 as curriculum)
+Part 1   Foundations                     4 chapters   (repo, tooling, protocol, compose)
+Part 2   The core loop                   8 chapters   (SRS Phase 1 — the hardest part)
+Part 3   Becoming a platform             7 chapters   (SRS Phase 2)
+Part 4   The second data path            6 chapters   (SRS Phase 3 — ClickHouse)
+Part 5   Developer experience            6 chapters   (SRS Phase 4 — SDK, emoji, dashboard)
+Part 6   Shipping it                     5 chapters   (containers, k8s, CI/CD)
+Part 7   Running it                      6 chapters   (observability, load, chaos, incidents)
+Part 8   The retrospective               2 chapters   (what we'd change; where to go next)
+                                        ─────────────
+                                        49 chapters
+```
+
+### Part 0 — The idea and the paper (5 chapters)
+
+The existing documents become the curriculum. The reader doesn't just receive them — each
+chapter shows the *derivation*: how the chat-app idea became an infrastructure product, how
+personas generate requirements, how a journey becomes a test plan.
+
+| Ch | Title | Reader produces | Source doc |
+|---|---|---|---|
+| 0.1 | From app to infrastructure — finding the real product | A positioning statement; non-goals list | 01 |
+| 0.2 | Four people who will judge us | Persona set incl. the invisible end user | 02 |
+| 0.3 | Journeys — where products die | Journey maps; the ★ moments | 03 |
+| 0.4 | Requirements you can test | An SRS slice with IDs, priorities, verification methods | 04 |
+| 0.5 | Deciding out loud — the SAD and the ADR habit | Drivers table; two ADRs written from scratch | 05, 06 |
+
+**Design note:** Part 0 is the part most readers will want to skip, and the part that most
+distinguishes the series. Mitigation: keep it to five tight chapters, seed each with a
+"this paragraph becomes a test in Part 2" forward reference, and make skipping *safe* — a
+one-page "the decisions, if you skipped the reasoning" summary opens Part 1.
+
+### Part 1 — Foundations (4 chapters)
+
+| Ch | Title | Built | Teaches |
+|---|---|---|---|
+| 1.1 | The monorepo and the toolchain | pnpm workspace, TS config, lint, test runner | Workspace discipline; why one repo (ADR-01) |
+| 1.2 | One command, whole world | docker-compose: postgres, redis, nats, clickhouse | NFR-MNT-03 as a day-one requirement, not an afterthought |
+| 1.3 | The protocol package | `@relay/protocol`: frame types, error codes, zod schemas | Contract-first; the shared-types payoff of ADR-01 |
+| 1.4 | Walking skeleton | Empty API + gateway services, health checks, request IDs, structured logs | Deploy the skeleton before the muscles; observability from line one |
+
+### Part 2 — The core loop (8 chapters) ★ the heart
+
+SRS Phase 1. The ordering/idempotency/resume machinery — where the tutorial earns its
+premise. Every chapter here pairs a capability with the failure it prevents.
+
+| Ch | Title | Built | The failure it prevents |
+|---|---|---|---|
+| 2.1 | Schema with a spine | Migrations: users, channels, members, messages; repository layer with mandatory `environment_id` | Cross-tenant leaks (D4) designed out, not tested out |
+| 2.2 | The write path | POST message: channel row lock, sequence assignment (ADR-03) | Interleaved ordering under concurrency — demonstrated with a failing naive version first |
+| 2.3 | Send it twice | Idempotency keys, partial unique index (DR-03) | Tuan's duplicate "B2, north ramp" |
+| 2.4 | History that pages | Cursor pagination on `(channel_id, seq)` | Offset pagination's drift under live inserts — shown, then fixed |
+| 2.5 | The socket | Gateway: WS termination, JWT verify, connection registry | — |
+| 2.6 | Two servers, one conversation | Redis fan-out (ADR-07); the lossy-fabric argument | The sticky-session trap |
+| 2.7 | The tunnel | Resume protocol: cursors, backfill, subscribe-before-backfill buffer | The duplicate/gap race in §5.2 of the SAD — the tutorial's flagship bug |
+| 2.8 | **Milestone: the Tuan test** | An integration suite scripting journey 4 end-to-end: kill the socket mid-send, reconnect, assert exactly-once + order | This chapter *is* the SRS Phase 1 exit criterion |
+
+### Part 3 — Becoming a platform (7 chapters)
+
+SRS Phase 2. The chapters that turn "a chat backend" into "infrastructure someone else can
+build on."
+
+| Ch | Title | Built |
+|---|---|---|
+| 3.1 | Tenants all the way down | Orgs, apps, environments; OAuth signup; auto-created dev environment (FR-TEN-02) |
+| 3.2 | Keys and tokens — two credentials, one mistake | API keys (prefix, hash, rotation); user JWTs; the dev-token endpoint (FR-AUT-09); error messages that name the wrong-credential mistake |
+| 3.3 | The outbox | Transactional outbox + relay (ADR-06); the dual-write problem demonstrated with a crash-in-the-gap test |
+| 3.4 | JetStream and the first consumer | NATS setup; subjects; durable pull consumers |
+| 3.5 | Webhooks that survive the customer | Dispatcher: HMAC signing, retry tiers, DLQ, auto-disable (FR-WHK) |
+| 3.6 | Limits and quotas | Redis token buckets; standard headers; spending caps (FR-RTL) |
+| 3.7 | **Milestone: the isolation gauntlet** | The cross-tenant attack suite (NFR-SEC-09) run against every endpoint; the second-external-developer test |
+
+### Part 4 — The second data path (6 chapters)
+
+SRS Phase 3. The ClickHouse material — likely the strongest search-traffic magnet, since
+"ClickHouse for SaaS analytics" is underserved territory.
+
+| Ch | Title | Built |
+|---|---|---|
+| 4.1 | Why your database can't count | The OLTP/OLAP argument (CON-01) made concrete: run the metering query against Postgres under write load, watch it hurt |
+| 4.2 | ClickHouse from zero | Schema: MergeTree, partitions, ORDER BY, TTL (DR-07/09); ingester with batching |
+| 4.3 | Metering you can bill on | Daily rollup MVs (DR-10); the reconciliation job (FR-ANL-06) |
+| 4.4 | The request log | api_requests table; dashboard query surface (FR-ANL-07) |
+| 4.5 | Moderation and the paper trail | Tombstone reads, edit history, audit log, compliance erasure (FR-MOD) — Priya's chapter |
+| 4.6 | **Milestone: the Priya test** | Journey 3 scripted: locate → reconstruct (edit history proves the case) → act → audit |
+
+### Part 5 — Developer experience (6 chapters)
+
+SRS Phase 4 — where the reader experiences the product from Mai's side of the counter.
+
+| Ch | Title | Built |
+|---|---|---|
+| 5.1 | The SDK — transport and state, no UI | Reconnect w/ jittered backoff, offline queue, message states (FR-SDK) |
+| 5.2 | The dashboard and the live wire | Next.js dashboard; SSE service (ADR-09); the first-message live view (FR-DSH-02) |
+| 5.3 | Emoji and packs | Shortcode grammar, packs CRUD, install; resolution map + version cache (ADR-11/12) |
+| 5.4 | The reference client | A plain chat app built *only* on the public SDK — dogfooding chapter |
+| 5.5 | Docs as product | OpenAPI generation; the quickstart; error-code pages; CI that *executes* the quickstart (NFR-USE-03) |
+| 5.6 | **Milestone: the ten-minute test** | A stranger (or the reader's stopwatch) goes signup → first message; measure against NFR-USE-01 |
+
+### Part 6 — Shipping it (5 chapters)
+
+| Ch | Title | Built |
+|---|---|---|
+| 6.1 | Containers done plainly | Dockerfiles (multi-stage, distroless), image discipline |
+| 6.2 | Kubernetes without the priesthood | Manifests for all services; the two StatefulSets; secrets handling |
+| 6.3 | The gateway drains | Graceful shutdown, `server.shutdown` frames, rolling deploys (NFR-REL-03) — deploy during a live conversation and watch nothing break |
+| 6.4 | CI/CD | Pipeline: lint → test → isolation gauntlet → build → chapter-checkpoint verification (§6) → deploy |
+| 6.5 | **Milestone: production** | Deploy to a real cluster (k3s on a VPS keeps cost honest); TLS; the app is on the internet |
+
+### Part 7 — Running it (6 chapters)
+
+The rarest tutorial material, and the part that makes the series title honest.
+
+| Ch | Title | Built / done |
+|---|---|---|
+| 7.1 | Traces through the whole body | OpenTelemetry across services and *through JetStream headers*; one trace from REST ingress to webhook delivery (NFR-OBS-02) |
+| 7.2 | Metrics and the four alerts | Prometheus + Grafana; dashboards per service; NFR-OBS-04's alert set. Opens with the series' most-asked `WHY` box: *"Don't we already have ClickHouse?"* — product analytics vs. operational observability, and why the observer must not share fate with the observed (SAD §8) |
+| 7.3 | The load test | k6 scenarios mapped to SAD S1–S4; find the real gateway connection ceiling — **resolving risk R2 on camera** |
+| 7.4 | Breaking it on purpose | Chaos drills from the failure matrix: kill Redis, kill NATS, kill a gateway mid-conversation; verify each blast radius claim |
+| 7.5 | The reconnection storm | Simulate the car-park scenario at fleet scale; watch jitter save you; remove jitter and watch it not |
+| 7.6 | On-call for one | Runbooks per alert; the incident-communication template; status page |
+
+### Part 8 — The retrospective (2 chapters)
+
+| Ch | Title | Content |
+|---|---|---|
+| 8.1 | The bill | Honest accounting: LOC, months, infra cost/month — the build-vs-buy numbers David wanted, now measured, not estimated |
+| 8.2 | Where the walls are | Revisit every ADR trigger and risk; what fires first at 10× scale; extension ideas (search, threads, native SDKs) as reader exercises |
+
+---
+
+## 4. Pedagogical spine — three rules that govern every chapter
+
+**Rule 1: failure before machinery.** Never introduce correctness machinery abstractly.
+Chapter 2.2 first builds the naive version and demonstrates interleaved ordering with a
+concurrency test; *then* introduces the row lock. 2.3 duplicates a message before fixing
+it. 3.3 crashes the process in the dual-write gap before building the outbox. The reader
+must *see the bug the design prevents* — it is the difference between knowing a pattern's
+name and knowing its necessity.
+
+**Rule 2: the journeys are the milestones.** Parts 2, 4, and 5 each terminate in an
+executable journey (Tuan, Priya, Mai). These aren't metaphors — they are the integration
+suites, and they are the SRS phase exit criteria. A reader who passes the Tuan test has
+built Phase 1, definitionally.
+
+**Rule 3: every chapter cites its paperwork.** Each `WHY` box links the code being written
+to its requirement ID and ADR. This is what makes Part 0 retroactively valuable even to
+readers who skipped it — the paperwork keeps showing up as the *reason* for the code.
+
+---
+
+## 5. Sequencing and effort
+
+Recommended production order is **not** reader order in one respect: write chapter 2.8
+(the Tuan test) *immediately after* 2.7's code exists but draft its test suite *before*
+Part 2's chapters — test-first at the part level. The milestone tests define done-ness for
+everything before them.
+
+| Stage | Output | Estimate (part-time, ~10 h/wk) |
+|---|---|---|
+| A | Part 0 (docs exist — this is editing into chapters) + Part 1 | 3 weeks |
+| B | Part 2 code + chapters | 6–8 weeks |
+| C | Part 3 | 5–6 weeks |
+| D | Part 4 | 4–5 weeks |
+| E | Part 5 | 5–6 weeks |
+| F | Parts 6–7 | 5–6 weeks |
+| G | Part 8 + full-series edit pass | 2 weeks |
+| | **Total** | **~7–9 months part-time** |
+
+The estimate is deliberately unflattering. If it motivates scope cuts, cut whole *parts*
+from the tutorial's v1 (ship Parts 0–2 as "Season 1"), never chapters from within a part —
+a part that doesn't reach its milestone journey is unfinished by Rule 2.
+
+**Publish incrementally.** Parts 0–2 are a complete, satisfying unit (spec → working
+resumable chat with the Tuan test passing) and should ship as soon as they exist. Feedback
+on Part 2 will improve Parts 3–7 more than any amount of solitary polish.
+
+---
+
+## 6. Keeping the tutorial honest — the sync problem
+
+Tutorial rot — prose that no longer matches code — is the death of every long series. The
+defenses, in priority order:
+
+1. **Chapter checkpoints in CI.** Every chapter's `CHECKPOINT` block is a script
+   (`tutorial/checkpoints/part2-ch3.sh`) run against that chapter's git tag on every push
+   to the tag's lineage. If chapter 2.3's checkpoint fails, the build fails. This is the
+   same discipline as NFR-USE-03 (the quickstart runs in CI) applied to the whole series —
+   the tutorial eats the product's dogfood.
+2. **Code samples are extracted, not pasted.** Chapters embed code by reference
+   (file + line-range markers resolved at build time from the chapter's tag), never by
+   copy. A rendered chapter with a stale extraction marker fails the docs build.
+3. **One direction of authority.** The repo at tag N is the truth; prose describes it.
+   When a later part forces a change to earlier code (it will), the rule is: rebase the
+   tag lineage, re-run all checkpoints, and add a `REVISED` note to affected chapters —
+   never let prose and code disagree silently.
+
+---
+
+## 7. Risks specific to the tutorial
+
+| # | Risk | Mitigation |
+|---|---|---|
+| T1 | **Scope gravity** — the product grows features the tutorial doesn't need | The SRS is frozen as the tutorial's contract; new ideas go to Part 8's exercises |
+| T2 | **Part 0 bounce** — readers skip the paper and miss the spine | Forward references, the skip-safe summary, and Rule 3's constant back-linking |
+| T3 | **Currency decay** — library/K8s/ClickHouse versions drift over months of writing | Pin everything in 1.1; one dedicated version-bump pass in stage G; checkpoints catch breakage |
+| T4 | **The lonely middle** — Parts 3–4 lack Part 2's drama | Each chapter keeps Rule 1's failure-first structure; the isolation gauntlet and "watch Postgres hurt" demos carry the drama |
+| T5 | **Estimate optimism** — 49 chapters is a book | It *is* a book; the incremental-publish strategy (§5) is the honest response, and Season 1 (Parts 0–2, 17 chapters) is a complete artifact on its own |
+
+---
+
+## 8. Immediate next actions
+
+1. **Write the Tuan test suite specification** (the Part 2 milestone) — it defines Part 2's
+   done-ness and forces the WebSocket protocol details that the API spec document still
+   owes us. This finally makes the API spec the critical path twice over.
+2. **Scaffold the monorepo** exactly as chapter 1.1 will describe it — building it *is*
+   drafting the chapter.
+3. **Draft chapter 2.7 ("The tunnel") early**, out of order — it is the series' flagship
+   chapter; if its bug-then-fix structure works on a test reader, the format is validated;
+   if not, better to learn before 46 other chapters exist.

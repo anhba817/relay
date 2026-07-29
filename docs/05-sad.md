@@ -1,9 +1,9 @@
 # Relay — Software Architecture Document
 
-**Version:** 1.0 (draft)  
-**Status:** For review  
-**Companion documents:** `01-product-vision.md` · `02-personas.md` · `03-journey-map.md` · `04-srs.md`  
-**Structure:** views-based (C4-influenced), with Architecture Decision Records  
+**Version:** 1.0 (draft)
+**Status:** For review
+**Companion documents:** `01-product-vision.md` · `02-personas.md` · `03-journey-map.md` · `04-srs.md`
+**Structure:** views-based (C4-influenced), with Architecture Decision Records
 
 ---
 
@@ -552,6 +552,26 @@ attempt — is one trace (NFR-OBS-02, -06). `X-Request-Id` = trace ID, so a cust
 ticket carries its own trace handle. Structured logs with `environment_id` on every line;
 Prometheus metrics per NFR-OBS-03; the four golden alerts of NFR-OBS-04.
 
+**Two metrics systems, on purpose.** ClickHouse (FR-ANL) and Prometheus (NFR-OBS) both
+hold "metrics," and the duplication is deliberate. ClickHouse is the *product's*
+analytics: per-tenant business events answering questions customers ask — usage, metering,
+request logs, delivery percentiles in *their* dashboard. Prometheus is *operational*
+observability: pre-aggregated time series about the system itself, answering questions the
+operator asks and feeding the alerts that page someone. They cannot be consolidated,
+because the observer must not share fate with the observed: ClickHouse outage is a row in
+the failure matrix above, and the entire analytical path is *designed to be droppable*
+(D5) — alerting cannot live on a component whose failure the architecture is built to
+tolerate. Prometheus's pull model scrapes `/metrics` directly from each service, touching
+none of the data infrastructure, so it keeps working precisely when the event pipeline
+does not. (This is ADR-09's observer-isolation argument applied one level up.) Secondary
+reasons: the data shapes differ (aggregated series + PromQL alert expressions vs. raw
+high-cardinality events), and the Kubernetes deployment (§7) makes Prometheus the ambient
+standard — every StatefulSet ships an exporter. Where one measurement serves both
+audiences (delivery latency: operator alerts *and* FR-ANL-10's customer percentiles), it
+is recorded twice, once per store — correct, not wasteful. A single ClickHouse-backed
+observability stack is a defensible design elsewhere (SigNoz et al.); it loses *here* on
+the fate-sharing argument specifically.
+
 **Backpressure, end to end.** Client → gateway: per-connection send window (unacked frames
 cap). Gateway → API: bounded internal HTTP pool; on saturation, reject sends with a
 retryable error rather than queueing unboundedly. Outbox → JetStream: relay lag alarmed.
@@ -657,11 +677,9 @@ name beats three without.
 
 One language across services, SDK, and dashboard; the SDK (FR-SDK-01) must be JS anyway,
 and sharing protocol types between server and SDK eliminates an entire class of drift bugs.
-Node's event-loop model suits I/O-bound gateway work.  
-**Trade-off accepted:** CPU-bound
+Node's event-loop model suits I/O-bound gateway work. **Trade-off accepted:** CPU-bound
 work (HMAC signing at volume) needs care; NFR-SCL-01's 10k connections/instance must be
-validated early (→ R2).  
-**Rejected:** Go (better gateway fit, but splits the codebase into
+validated early (→ R2). **Rejected:** Go (better gateway fit, but splits the codebase into
 two languages for a solo builder); a polyglot showcase (violates D8 — depth over surface).
 
 ### ADR-02 — Queue: NATS JetStream over Kafka
@@ -670,9 +688,8 @@ two languages for a solo builder); a polyglot showcase (violates D8 — depth ov
 JetStream provides durable streams, consumer groups, redelivery, and DLQ-adjacent patterns
 at a fraction of Kafka's operational mass, and doubles as the transport the SSE service
 subscribes to. Volume ceiling (ASM-04, NFR-SCL-05: 10k events/s) is comfortably within
-JetStream's envelope.  
-**Trade-off:** weaker ecosystem for exactly-once sinks; mitigated
-because the only strict consumer (metering) reconciles daily against Postgres (FR-ANL-06).  
+JetStream's envelope. **Trade-off:** weaker ecosystem for exactly-once sinks; mitigated
+because the only strict consumer (metering) reconciles daily against Postgres (FR-ANL-06).
 **Rejected:** Kafka (operational overkill at this scale; the reconciliation job is needed
 regardless); Redis Streams (couples the durability spine to the ephemeral-state store —
 one Redis incident would then have two blast radii).
@@ -684,8 +701,7 @@ Per-channel sequences, assigned by incrementing `channels.last_sequence` under
 `SELECT … FOR UPDATE` in the message-insert transaction. Contention is scoped to a single
 channel — and serialising a channel's writes *is the requirement* (FR-MSG-03), so the lock
 is not a cost, it is the mechanism. Resume cursors are per-channel maps `{channel_id: seq}`,
-capped in practice by FR-RTM-04's truncation.  
-**Rejected:** per-tenant sequence (single
+capped in practice by FR-RTM-04's truncation. **Rejected:** per-tenant sequence (single
 hot row per tenant — a real bottleneck for zero benefit at v1 scale); Postgres sequences
 per channel (unbounded object count, non-transactional gaps break dedup reasoning);
 Snowflake-style IDs (globally unique but not gap-free per channel, which complicates the
@@ -696,11 +712,9 @@ client's "did I miss something?" logic).
 
 All invariants — sequence assignment, idempotency, tenant scoping, tombstone semantics —
 live in one codebase behind one repository layer. The gateway calls internal HTTP for
-writes *and* backfill reads.  
-**Trade-off:** one extra intra-cluster hop on the send path
+writes *and* backfill reads. **Trade-off:** one extra intra-cluster hop on the send path
 (~1–2 ms) and on resume; accepted against the alternative of duplicating isolation logic in
-two services and testing it twice.  
-**Revisit:** if backfill volume ever dominates API-service
+two services and testing it twice. **Revisit:** if backfill volume ever dominates API-service
 load, grant the gateway a read-only replica path — reads don't threaten invariants.
 
 ### ADR-05 — Sends travel through the WebSocket, writes through the API
@@ -708,7 +722,7 @@ load, grant the gateway a read-only replica path — reads don't threaten invari
 
 Clients send over the socket they already hold (lower latency, and the SDK's offline queue
 flushes through one channel), but the gateway forwards to the API service rather than
-writing. REST send (FR-MSG-13) uses the identical API path — one write path, two entrances.  
+writing. REST send (FR-MSG-13) uses the identical API path — one write path, two entrances.
 **Rejected:** REST-only sends (breaks the offline-flush ordering story and doubles
 connection overhead on mobile); gateway-direct DB writes (violates ADR-04).
 
@@ -717,8 +731,8 @@ connection overhead on mobile); gateway-direct DB writes (violates ADR-04).
 
 State change and its event commit atomically; a relay (polling, `FOR UPDATE SKIP LOCKED`,
 batch-publish, mark published) drains to JetStream. At-least-once by design — consumers
-dedupe on event `id` (EIR-WHK-04 pushes the same discipline to customers).  
-**Rejected:** publish-after-commit (drops events on crash in the gap; metering drift would violate
+dedupe on event `id` (EIR-WHK-04 pushes the same discipline to customers). **Rejected:**
+publish-after-commit (drops events on crash in the gap; metering drift would violate
 FR-ANL-06 undetectably); CDC/Debezium (operational mass, D8); publish-before-commit
 (phantom events, worse).
 
@@ -729,8 +743,7 @@ Live fan-out uses fire-and-forget Redis pub/sub. A dropped pub/sub frame is *not
 message: durability lives in Postgres, and the client's cursor + sequence-gap detection
 recovers anything missed (the SDK refetches on gap). This is the architectural payoff of
 ADR-03 — once ordering and resume are correct, the fan-out fabric is allowed to be lossy,
-and therefore simple and fast.  
-**Rejected:** JetStream for live fan-out (durable, but
+and therefore simple and fast. **Rejected:** JetStream for live fan-out (durable, but
 per-channel consumer management for ephemeral delivery is heavy machinery to avoid a
 problem the cursor already solves); gateway-to-gateway mesh (O(n²) connections, discovery
 complexity).
@@ -741,8 +754,7 @@ complexity).
 One node with backups meets 10k inserts/s and the 2 s/90-day query bound with margin. The
 analytical store's unavailability is survivable by design (24 h stream buffer), so HA here
 buys little. Partitioning and ORDER BY are already cluster-shaped; moving to a replicated
-setup is a data migration, not a redesign.  
-**Rejected:** ClickHouse Cloud from day one
+setup is a data migration, not a redesign. **Rejected:** ClickHouse Cloud from day one
 (cost + a cloud dependency against NFR-MNT-06); reusing Postgres for analytics (CON-01
 exists precisely to forbid this).
 
@@ -751,9 +763,8 @@ exists precisely to forbid this).
 
 The dashboard's live stream (FR-DSH-02) is one-directional; SSE gives it with plain HTTP,
 automatic reconnection, and zero protocol design. Keeps the real WebSocket gateway
-dedicated to end-user traffic with its own scaling signal.  
-**Rejected:** sharing the gateway (couples dashboard load to end-user delivery paths —
-the one thing that must not
+dedicated to end-user traffic with its own scaling signal. **Rejected:** sharing the
+gateway (couples dashboard load to end-user delivery paths — the one thing that must not
 degrade); polling (2 s latency bound of FR-DSH-02 makes it ugly).
 
 ### ADR-10 — Presence in Redis with TTL, no dedicated service
@@ -762,8 +773,7 @@ degrade); polling (2 s latency bound of FR-DSH-02 makes it ugly).
 Presence = connection-registry keys with a 30 s grace TTL (FR-RTM-06); transitions publish
 on the affected channels' subjects only (FR-RTM-07). Presence loss (Redis incident) is
 cosmetic and self-heals — the correct amount of durability for typing dots and green
-circles is none.  
-**Revisit trigger:** presence fan-out exceeding ~30% of gateway publish
+circles is none. **Revisit trigger:** presence fan-out exceeding ~30% of gateway publish
 volume in load tests.
 
 ### ADR-11 — Custom emoji as shortcodes in plain text, with a read-time resolution map
@@ -772,19 +782,16 @@ volume in load tests.
 Message `text` remains a plain string; custom emoji are written as `:shortcode:` and
 resolved at *read* time — history and send responses carry a sidecar map
 `{shortcode → {image_url, pack_id} | unresolved}` covering shortcodes present in the
-payload.  
-**Why:** every invariant the architecture bleeds for — byte-exact storage
+payload. **Why:** every invariant the architecture bleeds for — byte-exact storage
 (FR-EMJ-01), tombstones, edit history, idempotent retries — is defined over an opaque
 string. Structured message entities (an AST of text runs and emoji nodes, Slack-style)
 would entangle emoji lifecycle with FR-MSG semantics: what does an edit diff of an entity
 tree mean? What does a tombstone preserve? Plain text keeps the write path emoji-ignorant;
 the emoji system becomes a pure read-side concern, which is also what makes FR-EMJ-10
 trivial — deleting a pack changes future *resolutions*, never stored *messages* (Priya's
-journey 3 depends on exactly this).  
-**Trade-off:** literal `:text:` that was never an emoji
+journey 3 depends on exactly this). **Trade-off:** literal `:text:` that was never an emoji
 may resolve accidentally if a matching shortcode is later created; accepted — the client
-fallback and the shortcode grammar make collisions benign.  
-**Rejected:** entity trees
+fallback and the shortcode grammar make collisions benign. **Rejected:** entity trees
 (above); Unicode Private Use Area code points (uninspectable, breaks the "text is honest"
 property, hostile to export FR-MOD-05); server-side rendering to image URLs inside text
 (mutates content — violates FR-EMJ-01's spirit and Priya's record).
@@ -800,10 +807,9 @@ version-stamped key (`emoji:{env}:{version}`, DR-13); any pack mutation bumps
 — the same version-key pattern as CDN cache-busting. Map size is bounded by construction:
 FR-EMJ caps at 200 emoji/pack and shortcodes at 64 chars, so even a hundred packs is a
 sub-megabyte map, loadable in one round trip and memoised in-process per API instance.
-Resolution-map assembly is then a pure in-memory scan of the returned page's text.  
+Resolution-map assembly is then a pure in-memory scan of the returned page's text.
 **Trade-off:** a pack mutation cold-starts the cache for its environment once; acceptable —
-pack edits are rare, reads are constant.  
-**Rejected:** per-message resolution joins (hot
+pack edits are rare, reads are constant. **Rejected:** per-message resolution joins (hot
 path); pushing resolution to the SDK only (leaves REST-only consumers unresolved and
 duplicates logic across clients — the map costs the server almost nothing given the cache).
 

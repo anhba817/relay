@@ -1,7 +1,7 @@
 # Relay — ADR Deep Dives
 
-**Version:** 1.0  
-**Companion to:** `05-sad.md` §9  
+**Version:** 1.0
+**Companion to:** `05-sad.md` §9
 **Purpose:** The ADRs in the SAD are deliberately terse — a decision, its drivers, and its
 rejected alternatives in a paragraph. This document is the long form: for each ADR, the
 problem as it actually presents itself, the options with their real trade-offs, why the
