@@ -123,3 +123,19 @@ the local environment on 2026-07-29.
 - **Alternatives considered**: Leaving `page.tsx` untouched (theme applied but not
   observable — acceptance scenario 3.1 unverifiable); building a full landing page
   (scope creep, violates FR-003).
+- **Execution record (2026-07-29, converge T018/T019)**: the theme commit's actual
+  delta (`f11fe20`) includes three items the original enumeration omitted, all now
+  recorded as permitted:
+  - `package.json` + `pnpm-lock.yaml` — the `next-themes` dependency mandated by R5;
+    a dependency decision cannot be realized without touching the manifest.
+  - `components/theme-provider.tsx` — the next-themes wrapper, already named in
+    plan.md's Project Structure; it belongs in this list too.
+  - `app/layout.tsx` metadata (`title`/`description` → "Relay Tutorial" / series
+    description) — judged justified rather than reverted: it removes scaffold
+    branding, aligns with FR-007's purpose statement, and reverting would put
+    "Create Next App" in every browser tab of the tutorial series.
+  The authoritative permitted-file list is therefore: `components.json`,
+  `app/globals.css`, `lib/utils.ts`, `components/ui/*`, `components/theme-provider.tsx`,
+  `app/layout.tsx` (fonts, ThemeProvider, metadata), `app/page.tsx`, `package.json`,
+  `pnpm-lock.yaml`, `README.md`. Nothing else changed, verified against
+  `git show --stat f11fe20` and `a4515c8`.

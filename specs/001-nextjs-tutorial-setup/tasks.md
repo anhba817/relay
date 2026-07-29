@@ -160,3 +160,10 @@ This feature is mostly a sequential command pipeline in one directory — parall
 - FR-003 purity boundary (research R8): beyond the scaffold, only theme files, `app/layout.tsx`, `app/page.tsx`, and `README.md` may change — reject any task drift beyond this list
 - Commit discipline: scaffold commit (T003) → theme commit (T014) → README commit (T015) in `relay-tutorial`; submodule-add commit (T007) → pin-update commit (T016) in the parent
 - If `npm view next version` returns something newer than 16.2.12 at execution time, the newer version wins everywhere (spec edge case: "latest" resolves at creation time)
+
+---
+
+## Phase 7: Convergence
+
+- [x] T018 Amend the research R8 execution record in specs/001-nextjs-tutorial-setup/research.md to enumerate the theme commit's full actual file delta — add `package.json` + `pnpm-lock.yaml` (next-themes dependency mandated by R5) and `components/theme-provider.tsx` (named in plan.md's Project Structure) to the permitted-modifications list, so the FR-003 purity boundary matches reality per FR-003 (partial)
+- [x] T019 Record the `app/layout.tsx` metadata title/description change ("Relay Tutorial") as a permitted, justified modification in the same R8 execution record — or revert it to the scaffold values if the boundary should stay strict — per FR-003 (unrequested)
