@@ -120,15 +120,17 @@ appearance modes.
   at creation time.
 - **FR-003**: The generated application MUST NOT be hand-modified beyond theme
   application (FR-005), documentation (FR-007), and configuration required to run —
-  the scaffold output is the baseline the tutorial builds on.
+  the scaffold output is the baseline the tutorial builds on. The precise per-file
+  boundary of permitted changes is enumerated during planning (research.md, R8).
 - **FR-004**: The `relay` repository MUST register `relay-tutorial` as a git submodule
   at the repository-root path `relay-tutorial/`, pinned to an exact revision, so a
   fresh clone with submodule initialization reproduces the application byte-for-byte.
 - **FR-005**: The application MUST apply the Violet Bloom theme as its global visual
   theme, covering color palette, typography, and component design tokens, with both
   light-mode and dark-mode variants functional.
-- **FR-006**: The application MUST start locally with the standard install-and-run
-  commands documented in its README, rendering its home page without startup errors.
+- **FR-006**: The application MUST start locally with standard install-and-run
+  commands, rendering its home page without startup errors. (The commands themselves
+  are documented in the README per FR-007.)
 - **FR-007**: The `relay-tutorial` repository MUST include a README stating the
   repository's purpose (the application for the *Building Relay* tutorial series), its
   relationship to the `relay` repository, and how to install and run it, including the

@@ -25,7 +25,7 @@
 
 **Purpose**: Verify the environment and guard the edge cases before anything is created
 
-- [x] T001 Preflight checks from parent repo root: confirm `node --version` ≥ 22 and `pnpm --version` ≥ 10; confirm no `relay-tutorial/` directory exists at the parent root and `git ls-remote git@github.com:anhba817/relay-tutorial.git` fails (name-collision edge case — STOP if either exists); confirm `ssh -T git@github.com` authenticates as `anhba817`; re-resolve latest Next.js with `npm view next version` and note it (expected 16.2.12 per research R1 — if newer, use the newer version everywhere below and record the substitution in specs/001-nextjs-tutorial-setup/research.md)
+- [x] T001 Preflight checks from parent repo root: confirm `node --version` ≥ 22 and `pnpm --version` ≥ 10; confirm no `relay-tutorial/` directory exists at the parent root, and that `git ls-remote git@github.com:anhba817/relay-tutorial.git` either fails (repo not yet created — T005 will create it) or succeeds with zero refs (repo pre-created empty, which satisfies T005) — STOP only if the local directory exists or the remote already has refs (name-collision edge case); confirm `ssh -T git@github.com` authenticates as `anhba817`; re-resolve latest Next.js with `npm view next version` and note it (expected 16.2.12 per research R1 — if newer, use the newer version everywhere below and record the substitution in specs/001-nextjs-tutorial-setup/research.md)
 
 ---
 
