@@ -1,0 +1,113 @@
+# Research: Next.js Tutorial Repository Setup
+
+**Feature**: `specs/001-nextjs-tutorial-setup` · **Date**: 2026-07-29
+
+All values below were verified live against the npm registry, the tweakcn registry, and
+the local environment on 2026-07-29.
+
+## R1 — Latest stable Next.js version
+
+- **Decision**: Next.js **16.2.12**, scaffolded with `create-next-app` 16.2.12.
+- **Rationale**: `npm view next version` and `npm view create-next-app version` both
+  return 16.2.12 on the creation date. FR-002 requires the latest stable at creation
+  time; the spec's edge-case rule pins whatever is installed as the baseline (tutorial
+  plan risk T3: pin everything early).
+- **Alternatives considered**: Pinning to the 15.x LTS line — rejected; the spec
+  explicitly mandates latest.
+
+## R2 — Scaffolding command and options
+
+- **Decision**: Generate with the official CLI, non-interactive:
+  `pnpm create next-app@16.2.12 relay-tutorial --ts --eslint --tailwind --app --no-src-dir --turbopack --import-alias "@/*" --use-pnpm`
+- **Rationale**: Explicit flags make the scaffold reproducible (no prompt drift).
+  TypeScript aligns with the project constitution's single-language principle (ADR-01);
+  Tailwind CSS is required by the Violet Bloom theme's token system; App Router and
+  Turbopack are the CLI defaults for v16. No `src/` directory matches shadcn/ui
+  documentation defaults, keeping the tutorial app aligned with upstream docs.
+- **Alternatives considered**: Interactive prompts (non-reproducible, rejected); Biome
+  instead of ESLint (v16 offers it, but ESLint remains the documented default and the
+  spec accepts CLI defaults).
+
+## R3 — Package manager
+
+- **Decision**: **pnpm 10** (available locally: 10.33.0), selected via `--use-pnpm`.
+- **Rationale**: The tutorial plan (docs/07, chapter 1.1) standardizes on pnpm for all
+  tutorial tooling; using it from the first commit keeps the series consistent.
+- **Alternatives considered**: npm (default, but inconsistent with the tutorial plan);
+  bun (not installed, adds toolchain novelty against constitution Principle VII).
+
+## R4 — Violet Bloom theme source and application
+
+- **Decision**: Violet Bloom is the tweakcn community theme, distributed as a shadcn
+  registry style item. Apply via the shadcn CLI (latest: 4.16.0):
+  1. `pnpm dlx shadcn@latest init` (base setup: components.json, cn utility, token wiring)
+  2. `pnpm dlx shadcn@latest add https://tweakcn.com/r/themes/violet-bloom.json`
+  3. Wire the theme's fonts through `next/font/google`: **Plus Jakarta Sans** (sans),
+     **Lora** (serif), **IBM Plex Mono** (mono), exposed as the CSS variables the theme
+     expects.
+  4. Add one visible shadcn component (Button) on the home page as living proof the
+     token pipeline works end-to-end.
+- **Rationale**: The registry URL was verified live (HTTP 200); the item declares
+  `cssVars` for `theme`, `light`, **and `dark`** — satisfying FR-005's dual-mode
+  requirement. The shadcn CLI merges these variables into `globals.css`
+  deterministically; hand-copying CSS would drift from the published theme.
+- **Alternatives considered**: Manually pasting theme CSS from tweakcn's UI (not
+  reproducible, no provenance); building a custom violet palette (violates the spec —
+  "Violet Bloom" is a specific named theme).
+
+## R5 — Dark mode strategy
+
+- **Decision**: `next-themes` with `attribute="class"`, `defaultTheme="system"`,
+  `enableSystem`, wrapped around the root layout.
+- **Rationale**: The theme's dark variables are class-scoped (`.dark`), the shadcn
+  standard. `next-themes` is the shadcn-documented mechanism; `defaultTheme="system"`
+  satisfies the spec's edge case (no explicit preference → sensible default, fully
+  themed either way).
+- **Alternatives considered**: `prefers-color-scheme` media query only (no future
+  toggle path, diverges from shadcn conventions); no dark mode (fails FR-005).
+
+## R6 — Repository hosting and creation
+
+- **Decision**: Create `relay-tutorial` as a **public** repository under
+  **`anhba817`** (same owner as the parent `relay` repo), remote
+  `git@github.com:anhba817/relay-tutorial.git`.
+- **Rationale**: Matches the spec assumption and the tutorial plan's public-home
+  commitment. Verified: the machine's SSH identity authenticates to GitHub as
+  `anhba817`, so pushes and submodule clones over SSH will work.
+- **Known constraint (implement-time user step)**: the authenticated `gh` CLI accounts
+  are `dongfueled` and `dong_opd` — neither can create a repository in the `anhba817`
+  namespace via API. Implementation must pause for ONE user action, either:
+  - `! gh auth login` to add the `anhba817` account (then `gh repo create` proceeds), or
+  - creating the empty repo at github.com/new (name `relay-tutorial`, public, **no**
+    auto-initialized files).
+  Everything after the empty repo exists (push, submodule registration) is automated
+  over SSH.
+- **Alternatives considered**: Creating under `dongfueled` (contradicts the spec
+  assumption and splits ownership from the parent repo); asking the user to do the
+  whole setup manually (unnecessary — only creation needs them).
+
+## R7 — Submodule registration
+
+- **Decision**: `git submodule add git@github.com:anhba817/relay-tutorial.git relay-tutorial`
+  from the `relay` repo root, committing `.gitmodules` plus the gitlink so the parent
+  pins an exact revision (FR-004, SC-004).
+- **Rationale**: SSH URL matches the parent remote's protocol and the verified SSH
+  identity. Root-level path per spec assumption.
+- **Alternatives considered**: HTTPS submodule URL (would break the contributor's
+  SSH-based push flow); git subtree (no revision pinning semantics, fails SC-004).
+
+## R8 — Scaffold purity vs. theme visibility (FR-003 boundary)
+
+- **Decision**: Permitted modifications to the generated scaffold are exactly: theme
+  files from the shadcn CLI (`components.json`, `globals.css`, `lib/utils.ts`,
+  `components/ui/*`), font + ThemeProvider wiring in `app/layout.tsx`, a minimal
+  restyle of `app/page.tsx` to consume theme tokens (with one Button), and `README.md`.
+  Nothing else changes.
+- **Rationale**: FR-003 allows changes for "theme application, documentation, and
+  configuration required to run". The default scaffold page hardcodes neutral colors
+  that would mask the theme, failing SC-002's "no page falls back to default framework
+  styling"; a token-consuming home page is the minimum change that makes FR-005
+  verifiable.
+- **Alternatives considered**: Leaving `page.tsx` untouched (theme applied but not
+  observable — acceptance scenario 3.1 unverifiable); building a full landing page
+  (scope creep, violates FR-003).
