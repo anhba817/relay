@@ -1,8 +1,8 @@
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-`specs/005-tutorial-chapter-02/plan.md` (feature: Tutorial Chapter 0.2 — Four People
-Who Will Judge Us — spec, research, data model, contracts, and quickstart live
+`specs/006-tutorial-chapter-03/plan.md` (feature: Tutorial Chapter 0.3 — Journeys,
+Where Products Die — spec, research, data model, contracts, and quickstart live
 alongside it).
 Project principles: `.specify/memory/constitution.md`.
 <!-- SPECKIT END -->
