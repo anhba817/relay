@@ -79,13 +79,13 @@ Part 0   The idea and the paper          5 chapters   (docs 01–06 as curriculu
 Part 1   Foundations                     4 chapters   (repo, tooling, protocol, compose)
 Part 2   The core loop                   8 chapters   (SRS Phase 1 — the hardest part)
 Part 3   Becoming a platform             7 chapters   (SRS Phase 2)
-Part 4   The second data path            6 chapters   (SRS Phase 3 — ClickHouse)
+Part 4   The second data path            8 chapters   (SRS Phase 3 — ClickHouse + hosted media)
 Part 5   Developer experience            6 chapters   (SRS Phase 4 — SDK, emoji, dashboard)
 Part 6   Shipping it                     5 chapters   (containers, k8s, CI/CD)
 Part 7   Running it                      6 chapters   (observability, load, chaos, incidents)
 Part 8   The retrospective               2 chapters   (what we'd change; where to go next)
                                         ─────────────
-                                        49 chapters
+                                        51 chapters
 ```
 
 ### Part 0 — The idea and the paper (5 chapters)
@@ -158,8 +158,10 @@ SRS Phase 3. The ClickHouse material — likely the strongest search-traffic mag
 | 4.2 | ClickHouse from zero | Schema: MergeTree, partitions, ORDER BY, TTL (DR-07/09); ingester with batching |
 | 4.3 | Metering you can bill on | Daily rollup MVs (DR-10); the reconciliation job (FR-ANL-06) |
 | 4.4 | The request log | api_requests table; dashboard query surface (FR-ANL-07) |
-| 4.5 | Moderation and the paper trail | Tombstone reads, edit history, audit log, compliance erasure (FR-MOD) — Priya's chapter |
-| 4.6 | **Milestone: the Priya test** | Journey 3 scripted: locate → reconstruct (edit history proves the case) → act → audit |
+| 4.5 | Media without touching it | Presigned direct-to-storage uploads (ADR-13); MinIO; signed delivery URLs following channel membership; storage metering into ClickHouse (FR-MED-12) |
+| 4.6 | The scan pipeline | Media worker: ClamAV, probe, thumbnails; `pending → ready` gating bytes, never messages (ADR-14); the `media.updated` fan-out |
+| 4.7 | Moderation and the paper trail | Tombstone reads, edit history, audit log, compliance erasure — now including media objects (FR-MOD, FR-MED-10) — Priya's chapter |
+| 4.8 | **Milestone: the Priya test** | Journey 3 scripted: locate → reconstruct (edit history proves the case; a rejected upload renders as rejected, not broken) → act → audit |
 
 ### Part 5 — Developer experience (6 chapters)
 
@@ -167,7 +169,7 @@ SRS Phase 4 — where the reader experiences the product from Mai's side of the 
 
 | Ch | Title | Built |
 |---|---|---|
-| 5.1 | The SDK — transport and state, no UI | Reconnect w/ jittered backoff, offline queue, message states (FR-SDK) |
+| 5.1 | The SDK — transport and state, no UI | Reconnect w/ jittered backoff, offline queue, message states; media upload helpers with progress and attachment-state handling (FR-SDK, FR-MED-14) |
 | 5.2 | The dashboard and the live wire | Next.js dashboard; SSE service (ADR-09); the first-message live view (FR-DSH-02) |
 | 5.3 | Emoji and packs | Shortcode grammar, packs CRUD, install; resolution map + version cache (ADR-11/12) |
 | 5.4 | The reference client | A plain chat app built *only* on the public SDK — dogfooding chapter |
@@ -238,11 +240,11 @@ everything before them.
 | A | Part 0 (docs exist — this is editing into chapters) + Part 1 | 3 weeks |
 | B | Part 2 code + chapters | 6–8 weeks |
 | C | Part 3 | 5–6 weeks |
-| D | Part 4 | 4–5 weeks |
+| D | Part 4 | 6–7 weeks |
 | E | Part 5 | 5–6 weeks |
 | F | Parts 6–7 | 5–6 weeks |
 | G | Part 8 + full-series edit pass | 2 weeks |
-| | **Total** | **~7–9 months part-time** |
+| | **Total** | **~8–10 months part-time** |
 
 The estimate is deliberately unflattering. If it motivates scope cuts, cut whole *parts*
 from the tutorial's v1 (ship Parts 0–2 as "Season 1"), never chapters from within a part —

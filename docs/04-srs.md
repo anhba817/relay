@@ -42,15 +42,18 @@ guarantees, webhooks, and usage analytics. It does not supply a user-facing chat
 Multi-tenant organisation and application management · API key lifecycle · delegated
 end-user authentication · channels and membership · message send, edit, delete, and history
 · real-time delivery over WebSocket · presence and typing indicators · Unicode emoji and
-customer-defined emoji packs that end users browse and install · webhook dispatch with
+customer-defined emoji packs that end users browse and install · hosted media attachments
+(image, audio, video) with direct-to-storage upload, scanning, and signed delivery ·
+webhook dispatch with
 retry · per-tenant rate limiting and quotas · usage metering · a developer dashboard ·
 a JavaScript client SDK.
 
 **Out of scope for v1**
 
-End-to-end encryption · voice and video · native iOS and Android SDKs · a hosted end-user
-chat application · identity provision (customers own their user directory) · message search
-· threads and reactions · file storage beyond image attachments · on-premise deployment.
+End-to-end encryption · voice and video *calls* · native iOS and Android SDKs · a hosted
+end-user chat application · identity provision (customers own their user directory) ·
+message search · threads and reactions · media transcoding beyond thumbnail/poster
+generation · on-premise deployment.
 
 ### 1.3 Definitions
 
@@ -70,6 +73,9 @@ chat application · identity provision (customers own their user directory) · m
 | **Emoji pack** | A named, environment-scoped collection of custom emoji defined by the customer, browsable and installable by end users. |
 | **Shortcode** | The textual identifier of a custom emoji, written `:name:` inside message text, unique within an environment. |
 | **Resolution map** | A sidecar object returned with messages, mapping each shortcode present in the returned text to its image URL and pack. |
+| **Media object** | A file (image, audio, or video) uploaded to Relay-managed object storage, owned by a tenant, with a lifecycle of `pending → ready | rejected`. |
+| **Upload slot** | A short-lived presigned URL authorising one direct client upload to object storage, issued against declared size and MIME type. |
+| **Signed delivery URL** | A time-limited URL granting read access to a media object, issued only to callers whose channel membership permits reading the referencing message. |
 | **Delivery event** | An analytical record of a message send, connection, API call, or webhook attempt. |
 
 ### 1.4 Requirement conventions
@@ -167,6 +173,7 @@ and React Native 0.72+.
 | ASM-03 | End-user clients tolerate eventual delivery over WebSocket with reconnection backfill | Guaranteed synchronous delivery would require a different transport |
 | ASM-04 | Message volume per tenant remains below 10 million per day in v1 | Sharding strategy would require redesign |
 | ASM-05 | Customers accept server-side plaintext message storage | Non-negotiable for moderation and history; excludes E2E-required segments |
+| ASM-06 | An S3-compatible object store with presigned URL support is available in every deployment target | Media (§4.14) would require a proxied upload path through Relay compute, invalidating NFR-PRF-08's design premise |
 
 ---
 
@@ -310,7 +317,7 @@ and React Native 0.72+.
 | FR-MSG-08 | Deleting a message shall replace its content with a tombstone retaining sequence number, author, timestamps, and deletion metadata. Hard deletion shall occur only via the compliance deletion endpoint. | P2 | T |
 | FR-MSG-09 | The system shall support retrieving channel history in both directions from a cursor, with a maximum page size of 200. | P1 | T |
 | FR-MSG-10 | History responses shall include tombstones so that clients can render deletions without gaps in ordering. | P2 | T |
-| FR-MSG-11 | The system shall support attaching up to 10 image references per message, supplied as URLs. Relay shall not host file storage in v1. | P2 | T |
+| FR-MSG-11 | The system shall support up to 10 attachments per message. An attachment is either a reference to a Relay-hosted media object (`media_id`, see §4.14) or an external URL with a declared kind (`image`, `audio`, `video`). | P2 | T |
 | FR-MSG-12 | The system shall record and expose per-user read state as the highest sequence number read in a channel. | P2 | T |
 | FR-MSG-13 | The system shall support sending a message on behalf of any user via API key, for backend-originated messages. | P2 | T |
 | FR-MSG-14 | Threads, reactions, and full-text search shall not be implemented in v1. Emoji *reactions* remain excluded; emoji within message content is specified in §4.13. | P5 | I |
@@ -478,6 +485,52 @@ end users browse and install — a feature, Phase 3+).
 > (3) FR-EMJ-10 exists for Priya: a dispute record must render as it was written, even if
 > the pack was deleted since (journey 3, stage 3).
 
+### 4.14 Hosted media — `FR-MED`
+
+Relay hosts media attachments: image, audio, and video. The design principle, defended in
+SAD ADR-13: **bytes never transit Relay's compute** — clients upload directly to object
+storage via presigned URLs and download via signed URLs; Relay's services handle only
+metadata, authorisation, and the scan pipeline.
+
+**Upload**
+
+| ID | Requirement | Pri | Ver |
+|---|---|---|---|
+| FR-MED-01 | The system shall issue an upload slot on request (user token or API key), given a declared filename, MIME type, and byte size. The slot shall contain a presigned URL valid for 15 minutes and a `media_id` in state `pending`. | P3 | T |
+| FR-MED-02 | Upload slots shall be refused when: the MIME type is outside the allowed set (image/jpeg, png, gif, webp; audio/mpeg, mp4, ogg, wav; video/mp4, webm); the declared size exceeds the per-kind cap (image 10 MB, audio 25 MB, video 100 MB); or the environment's storage quota would be exceeded. Each refusal shall use a distinct error code. | P3 | T |
+| FR-MED-03 | The system shall verify actual object size and content type after upload; objects that contradict their declaration shall be `rejected` and deleted. | P3 | T |
+| FR-MED-04 | Every uploaded object shall be virus-scanned and content-probed (dimensions for images; duration for audio/video) asynchronously before transitioning `pending → ready`. Objects failing the scan shall transition to `rejected` and be deleted, retaining only the audit record. | P3 | T |
+| FR-MED-05 | The system shall generate a thumbnail for images and a poster frame for videos during processing, stored as derived objects sharing the parent's lifecycle. | P4 | T |
+
+**Attachment and delivery**
+
+| ID | Requirement | Pri | Ver |
+|---|---|---|---|
+| FR-MED-06 | A message may attach a `media_id` in state `pending` or `ready`, provided the media object belongs to the same environment and (for user tokens) was uploaded by the sending user. Attaching another tenant's or user's media shall fail. | P3 | T |
+| FR-MED-07 | Real-time and history delivery shall include each attachment's state. A `media.updated` event shall be delivered on the referencing channels when a pending attachment becomes `ready` or `rejected`, so clients can replace placeholders without polling. | P3 | T |
+| FR-MED-08 | Media objects shall be readable only via signed delivery URLs with a validity of 1 hour, issued only to callers authorised to read the referencing message (channel membership or API key). Object storage shall not be publicly readable. | P3 | T |
+| FR-MED-09 | A `rejected` attachment shall render as an explicit rejection marker in history — never as a broken link — preserving the record that *something* was sent (Priya's reconstruction must distinguish "rejected upload" from "deleted message"). | P3 | T |
+
+**Lifecycle, quota, and compliance**
+
+| ID | Requirement | Pri | Ver |
+|---|---|---|---|
+| FR-MED-10 | Deleting a message (tombstone) shall unlink its attachments; unreferenced media objects shall be hard-deleted by a scheduled job after 24 hours. Compliance erasure (FR-MOD-04) shall delete a user's media objects and derived objects within the same 30-day bound. | P3 | T |
+| FR-MED-11 | Environment retention policy (FR-MOD-06) shall apply to media: expired messages delete their objects with them. | P3 | T |
+| FR-MED-12 | The system shall meter stored media bytes per tenant per day and count uploads by kind, included in quota enforcement (FR-RTL-05) and visible in the dashboard alongside other usage (FR-DSH-04/05). | P3 | T |
+| FR-MED-13 | Media upload/processing events (`media.uploaded`, `media.ready`, `media.rejected`) shall be available as webhook event types (extending FR-WHK-02). | P4 | T |
+| FR-MED-14 | The SDK shall provide upload helpers (slot request, direct PUT, progress, retry) and attachment-state handling; the reference client shall demonstrate image and audio send/receive. | P4 | T |
+
+> **Design notes.**
+> (1) FR-MED-06 permits attaching `pending` media so a photo can be *sent* the moment
+> upload completes, with recipients seeing a placeholder until the scan clears — matching
+> user expectations set by consumer messengers. The scan is a delivery gate for *bytes*,
+> never for the *message*.
+> (2) FR-MED-08 makes authorisation follow the message, not the file: media access control
+> inherits channel membership rather than inventing a parallel ACL system.
+> (3) This section reverses Appendix B's original exclusion; the reversal rationale is
+> recorded there.
+
 ---
 
 ## 5. Non-functional requirements
@@ -493,6 +546,8 @@ end users browse and install — a feature, Phase 3+).
 | NFR-PRF-05 | Reconnection with backfill of 100 messages | p95 < 2 s | A |
 | NFR-PRF-06 | Analytical query over 90 days, single tenant | p95 < 2 s | A |
 | NFR-PRF-07 | Dashboard initial paint | p95 < 2 s | A |
+| NFR-PRF-08 | Upload-slot issuance and signed-URL generation (metadata only — bytes go direct to storage) | p95 < 100 ms | A |
+| NFR-PRF-09 | Scan-pipeline latency, upload complete → `ready`, images ≤ 10 MB | p95 < 10 s | A |
 
 ### 5.2 Scalability — `NFR-SCL`
 
@@ -579,6 +634,7 @@ criteria for journey Stages 2–4.
 Organisation ──1:N── Application ──1:2── Environment ──1:N── ApiKey
                                              │
                                              ├──1:N── User ──N:M── EmojiPack (installs)
+                                             ├──1:N── MediaObject ──1:N── DerivedObject
                                              ├──1:N── Channel ──1:N── Member ──N:1── User
                                              │            └──1:N── Message ──1:N── MessageEdit
                                              ├──1:N── EmojiPack ──1:N── Emoji
@@ -598,6 +654,7 @@ Organisation ──1:N── Application ──1:2── Environment ──1:N�
 | `EmojiPack` | `environment_id`, `external_id`, `name`, `description`, `cover_url`, `visibility`, `emoji_version` |
 | `Emoji` | `pack_id`, `shortcode`, `image_url`, `tags`, `deleted_at` |
 | `UserEmojiPack` | `user_id`, `pack_id`, `installed_at` |
+| `MediaObject` | `environment_id`, `uploader_user_id`, `kind`, `mime`, `declared_bytes`, `actual_bytes`, `status` (pending/ready/rejected), `object_key`, `probe` (dims/duration), `created_at`, `deleted_at` |
 
 **Integrity requirements**
 
@@ -611,6 +668,8 @@ Organisation ──1:N── Application ──1:2── Environment ──1:N�
 | DR-06 | Deleted messages shall retain their row; only `text` and `attachments` shall be cleared. |
 | DR-12 | Shortcodes shall be unique per environment across packs, enforced by a unique index on active emoji, satisfying FR-EMJ-04. Deleted emoji release their shortcode. |
 | DR-13 | `EmojiPack.emoji_version` shall increment monotonically on any mutation of the pack or its emoji, providing a cache-invalidation token for resolution maps (see SAD ADR-12). |
+| DR-15 | Object keys shall be `{environment_id}/{media_id}` — tenant-prefixed so bucket-level lifecycle rules and tenant export/erasure operate on prefixes, and unguessable because `media_id` is a UUID. |
+| DR-16 | `messages.attachments` entries referencing hosted media shall store `media_id` only, never object keys or URLs — signed URLs are minted at read time and must never be persisted. |
 
 ### 6.2 Analytical events (ClickHouse)
 
@@ -621,6 +680,7 @@ Organisation ──1:N── Application ──1:2── Environment ──1:N�
 | `api_requests` | Request log, error analytics | `environment_id`, `ts`, `request_id`, `endpoint`, `method`, `status`, `latency_ms` |
 | `webhook_deliveries` | Delivery reliability | `environment_id`, `endpoint_id`, `event_type`, `ts`, `attempt`, `status`, `latency_ms` |
 | `emoji_events` | Emoji usage analytics (FR-EMJ-11) | `environment_id`, `ts`, `kind` (unicode/custom), `identifier` (code point or shortcode), `pack_id` |
+| `media_events` | Storage metering, scan-pipeline health (FR-MED-12) | `environment_id`, `ts`, `event` (uploaded/ready/rejected/deleted), `kind`, `bytes`, `processing_ms` |
 
 | ID | Requirement |
 |---|---|
@@ -630,6 +690,7 @@ Organisation ──1:N── Application ──1:2── Environment ──1:N�
 | DR-10 | Materialised views shall maintain daily per-tenant rollups for metering, so billing never scans raw events. |
 | DR-11 | Inserts shall be batched or use asynchronous insert mode; single-row synchronous inserts are prohibited. |
 | DR-14 | `emoji_events` shall follow the same partitioning, ordering, and 90-day raw retention as other event tables, with a daily per-tenant top-emoji rollup maintained by materialised view. |
+| DR-17 | Stored-bytes-per-tenant shall be maintained as a daily rollup summing `media_events` deltas (uploaded/deleted), reconciled weekly against an object-storage inventory listing — the media analogue of FR-ANL-06. |
 
 ---
 
@@ -641,8 +702,8 @@ Organisation ──1:N── Application ──1:2── Environment ──1:N�
 |---|---|
 | **Mai** — integrating developer | EIR-API-04/06 · FR-AUT-03/09 · FR-DSH-01/02/03 · FR-SDK-01→10 · FR-EMJ-08/13 · NFR-USE-01→06 |
 | **David** — engineering lead | FR-RTL-05/06/07 · FR-ANL-05/06/09 · FR-MOD-05 · NFR-REL-01 · NFR-SEC-* · NFR-OBS-05 |
-| **Priya** — support and operations | FR-MSG-07/08/10 · FR-MOD-01→04 · FR-USR-06 · FR-EMJ-10 |
-| **Tuan** — end user | FR-MSG-02/03/04/06 · FR-RTM-03/04 · FR-SDK-04/05/06/07 · FR-EMJ-01/06/07 · NFR-PRF-01 · NFR-REL-02/04 |
+| **Priya** — support and operations | FR-MSG-07/08/10 · FR-MOD-01→04 · FR-USR-06 · FR-EMJ-10 · FR-MED-04/09 |
+| **Tuan** — end user | FR-MSG-02/03/04/06 · FR-RTM-03/04 · FR-SDK-04/05/06/07 · FR-EMJ-01/06/07 · FR-MED-01/07/14 · NFR-PRF-01 · NFR-REL-02/04 |
 
 ### 7.2 Requirements by journey stage
 
@@ -662,8 +723,8 @@ Organisation ──1:N── Application ──1:2── Environment ──1:N�
 |---|---|---|
 | **1 — Core loop** | FR-USR, FR-CHN, FR-MSG, FR-RTM, FR-EMJ-01/02 (P1) | Two clients exchange messages through the public API, surviving a forced disconnect with correct ordering and no duplicates |
 | **2 — Platform** | FR-TEN, FR-AUT, FR-WHK, FR-RTL (P2) | An external developer integrates using only public documentation, with no assistance |
-| **3 — Analytics** | FR-ANL, FR-MOD, FR-DSH, FR-EMJ-03→10 (P3) | Metered usage reconciles against operational counts within 0.1% for 7 consecutive days |
-| **4 — Experience** | FR-SDK, remaining FR-DSH, FR-EMJ-11→13, NFR-USE (P4) | Median time to first message under 10 minutes across 10 observed first-time integrations |
+| **3 — Analytics & media** | FR-ANL, FR-MOD, FR-DSH, FR-EMJ-03→10, FR-MED-01→12 (P3) | Metered usage reconciles against operational counts within 0.1% for 7 consecutive days; an image survives upload → scan → send → signed delivery → erasure |
+| **4 — Experience** | FR-SDK, remaining FR-DSH, FR-EMJ-11→13, FR-MED-13/14, NFR-USE (P4) | Median time to first message under 10 minutes across 10 observed first-time integrations |
 
 ---
 
@@ -674,15 +735,18 @@ Organisation ──1:N── Application ──1:2── Environment ──1:N�
 | Group | P1 | P2 | P3 | P4 | P5 | Total |
 |---|---|---|---|---|---|---|
 | External interfaces | 10 | 7 | 0 | 2 | 0 | 19 |
-| Functional | 29 | 42 | 32 | 16 | 2 | 121 |
-| Non-functional | 12 | 20 | 15 | 4 | 0 | 51 |
-| Data | 6 | 5 | 3 | 0 | 0 | 14 |
-| **Total** | **57** | **74** | **50** | **22** | **2** | **205** |
+| Functional | 29 | 42 | 43 | 19 | 2 | 135 |
+| Non-functional | 12 | 20 | 17 | 4 | 0 | 53 |
+| Data | 6 | 5 | 6 | 0 | 0 | 17 |
+| **Total** | **57** | **74** | **66** | **25** | **2** | **224** |
 
 Phase 1 delivers 57 requirements. That is the realistic first milestone; everything beyond
 it is sequenced, not simultaneous. Note that only two emoji requirements (Unicode
 correctness) sit in Phase 1 — the pack system is deliberately deferred to Phase 3, where
-its browse/install surface and usage analytics arrive together.
+its browse/install surface and usage analytics arrive together. Hosted media (§4.14) also
+lands in Phase 3: it depends on tenancy and quotas (Phase 2) and shares Phase 3's queue
+and metering machinery, and it has visibly grown that phase — Phase 3 is now the second
+largest and should be watched for schedule risk.
 
 ### Appendix B — Deliberately excluded, with reasons
 
@@ -692,8 +756,8 @@ its browse/install surface and usage analytics arrive together.
 | Message search | Requires a third datastore; the operational store cannot serve it and the analytical store holds no text (DR-08) |
 | Threads and reactions | Multiplies the data model and client state for a feature the wedge market has not requested |
 | Native mobile SDKs | One well-made JavaScript SDK usable from React Native satisfies ASM and reaches the target market |
-| Voice and video | Different transport, different economics, different competitive set |
-| Hosted file storage | Introduces storage cost, virus scanning, and CDN concerns disproportionate to v1 |
+| Voice and video *calls* | Different transport, different economics, different competitive set. Media *files* are in scope as of v1.2 — see below |
+| ~~Hosted file storage~~ **Reversed in v1.2** | Original reason: storage cost, virus scanning, and CDN concerns disproportionate to v1. Reversal rationale: presigned direct-to-storage upload keeps bytes off Relay compute (answering the infrastructure cost); scanning is an async queue consumer on existing machinery; storage is metered and billed per tenant from day one (answering the cost-growth risk); and media proved to be a wedge-market requirement, not a luxury (a driver's photo of a damaged parcel *is* the message). See §4.14 and SAD ADR-13/14. |
 
 ### Appendix C — Open questions
 
@@ -712,3 +776,4 @@ its browse/install surface and usage analytics arrive together.
 |---|---|---|---|
 | 1.0 | 2026-07-26 | — | Initial draft |
 | 1.1 | 2026-07-26 | — | Added §4.13 FR-EMJ (Unicode emoji + custom emoji packs); DR-12/13/14; traceability, phase, and count updates |
+| 1.2 | 2026-07-30 | — | **Reversed the hosted-file-storage exclusion.** Added §4.14 FR-MED (hosted media: image/audio/video); revised FR-MSG-11; NFR-PRF-08/09; ASM-06; DR-15/16/17; Appendix B reversal record; counts to 224 |

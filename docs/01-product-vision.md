@@ -109,6 +109,19 @@ Slack-style application rather than infrastructure.
 Channels with membership, persistent history with cursor pagination, real-time delivery
 over WebSocket, presence and typing indicators, message edit and delete with tombstones.
 
+**Hosted media**
+Image, audio, and video attachments, uploaded directly from end-user clients to Relay's
+object storage via presigned URLs — bytes never transit Relay's compute. Every upload is
+virus-scanned and probed before it becomes deliverable; access to media follows channel
+membership via time-limited signed URLs; storage is metered per tenant and erased with the
+messages that reference it.
+
+> This is a deliberate reversal of an earlier exclusion. The original judgement — that
+> hosted storage's cost, scanning, and CDN concerns were disproportionate — is answered by
+> the presigned-upload design (bytes bypass Relay's services), by scanning as an async
+> queue consumer, and by media being a customer-visible differentiator in the wedge market:
+> a driver's voice note or a damaged-parcel photo *is* the message.
+
 **Platform layer** — the part that makes it infrastructure rather than an app
 Organisations with separate development and production environments; API key issuance,
 scoping, and rotation; delegated user tokens signed by the customer's backend; per-tenant
@@ -135,7 +148,9 @@ product that Relay is choosing not to be.
 - **No end-to-end encryption** in v1. It is incompatible with server-side moderation and
   search, and the target market is not asking for it yet.
 - **Not an identity provider.** Customers own their user directory.
-- **No voice or video.** A different transport problem with different economics.
+- **No voice or video *calls*.** Real-time A/V is a different transport problem with
+  different economics. Media *files* — image, audio, and video attachments — are supported
+  and hosted (see §5); the line is drawn at streams, not bytes.
 - **No AI copilot features** beyond optional content classification. The temptation is
   strong and the focus cost is high.
 - **No native mobile SDKs in v1.** One well-made JavaScript SDK, usable from browsers,
@@ -193,13 +208,14 @@ persistence. Success: two browser tabs exchange messages through the public API.
 **Phase 2 — Platform surface.** API keys and environments, delegated user tokens, rate
 limiting, idempotency, webhooks with retry and DLQ.
 
-**Phase 3 — Analytics.** Event pipeline into ClickHouse, metering, developer dashboard,
-request log viewer.
+**Phase 3 — Analytics and media.** Event pipeline into ClickHouse, metering, developer
+dashboard, request log viewer. Hosted media: presigned uploads, scan pipeline, signed
+delivery, storage metering.
 
 **Phase 4 — Developer experience.** JavaScript SDK, OpenAPI spec, docs site, reference
 client application.
 
-**Later, if ever.** Moderation hooks, file attachments, message search, native SDKs,
+**Later, if ever.** Moderation hooks, message search, native SDKs,
 threads and reactions.
 
 ---
@@ -212,4 +228,5 @@ threads and reactions.
 | Chat scope creep — threads, reactions, read receipts, search | Non-goals in §6 are treated as commitments, not suggestions |
 | Real-time delivery is genuinely hard to get right | Fan-out via a pub/sub fabric from the start; correctness of ordering and reconnection is the primary engineering focus |
 | Metering drift between events and invoices | Single source of truth in ClickHouse; reconciliation job comparing operational counts against event counts |
+| Hosted media cost grows faster than revenue | Storage metered and billed per tenant from day one; per-file size caps; retention deletes objects with messages |
 | Analytics pipeline outage affecting messaging | Paths are independent by design; queue absorbs backlog, delivery is unaffected |

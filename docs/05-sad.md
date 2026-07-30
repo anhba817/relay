@@ -126,6 +126,8 @@ flowchart TB
     ingester["Analytics ingester [3]<br/>batch insert to ClickHouse"]
     whd["Webhook dispatcher [2]<br/>retry, DLQ, HMAC signing"]
     sse["Dashboard live-stream [2]<br/>SSE relay"]
+    mediaw["Media worker [3]<br/>scan, probe, thumbnail<br/>(ADR-14)"]
+    obj[("Object storage<br/>S3-compatible — media bytes<br/>(ADR-13)")]
     dashapp["Dashboard app [2,3]<br/>Next.js — public API + SSE"]
     cust["Customer HTTPS endpoints"]
 
@@ -134,11 +136,15 @@ flowchart TB
     gw -- "internal HTTP:<br/>writes + backfill (ADR-04/05)" --> api
     api -- "reads / writes + outbox" --> pg
     api -- "publish fan-out" --> redis
+    api -. "presigned upload/download<br/>URLs (metadata only)" .-> obj
     gw <-- "subscribe chan:{id} ·<br/>conn registry, presence" --> redis
     pg -- "outbox relay (ADR-06)" --> nats
     nats --> ingester
     nats --> whd
     nats --> sse
+    nats -- "media.uploaded" --> mediaw
+    mediaw -- "scan/probe bytes,<br/>write derived objects" --> obj
+    mediaw -- "status transitions via<br/>internal API (ADR-04)" --> api
     ingester --> ch
     whd --> cust
     sse --> dashapp
@@ -175,6 +181,16 @@ attempts. Records every attempt as an analytical event (FR-WHK-06).
 Consumes everything, buffers, batch-inserts to ClickHouse every 2 s or 10k rows (DR-11).
 Deliberately dumb: no transformation beyond shaping, no business logic. If ClickHouse is
 down it stops consuming and the stream absorbs the backlog (NFR-REL-05, 24 h retention).
+
+**Media worker** `[Phase 3]`
+Consumes `media.uploaded` events. Fetches the object, verifies size/type against the
+declaration (FR-MED-03), virus-scans (ClamAV sidecar), probes dimensions/duration,
+generates thumbnails and poster frames (FR-MED-05), writes derived objects, then
+transitions `pending → ready | rejected` via an internal API endpoint — never touching
+Postgres directly, per ADR-04. The only Relay component that ever reads media bytes, and
+it does so off the request path entirely (→ ADR-14). Scales on JetStream consumer lag;
+CPU-bound (scanning, image ops), so it is the one service where ADR-01's worker-thread
+posture matters from day one.
 
 **Dashboard live-stream service** `[Phase 2]`
 Thin SSE bridge: subscribes to a tenant's events on the queue, relays to the dashboard
@@ -411,6 +427,24 @@ CREATE TABLE user_emoji_packs (
     installed_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     PRIMARY KEY (user_id, pack_id)                          -- FR-EMJ-07
 );
+
+CREATE TABLE media_objects (
+    id               UUID PRIMARY KEY,                      -- doubles as object key suffix (DR-15)
+    environment_id   UUID NOT NULL REFERENCES environments(id),
+    uploader_user_id UUID REFERENCES users(id),
+    kind             TEXT NOT NULL CHECK (kind IN ('image','audio','video')),
+    mime             TEXT NOT NULL,
+    declared_bytes   BIGINT NOT NULL,
+    actual_bytes     BIGINT,
+    status           TEXT NOT NULL DEFAULT 'pending'
+                     CHECK (status IN ('pending','ready','rejected')),
+    probe            JSONB,                                 -- dims / duration
+    created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
+    deleted_at       TIMESTAMPTZ
+);
+CREATE INDEX media_unreferenced
+    ON media_objects (created_at)
+    WHERE status = 'pending';                               -- the 24 h reaper's scan (FR-MED-10)
 ```
 
 **Hot-path indexes:** `messages (channel_id, sequence DESC)` serves history pagination
@@ -496,6 +530,7 @@ flowchart TB
             gws["gateway-svc ×3<br/>HPA: connection count"]
             whds["webhook ×2"]
             ings["ingester ×2"]
+            mws["media-worker ×2<br/>HPA: consumer lag<br/>+ ClamAV sidecar"]
             sses["sse-svc ×2"]
             dashs["dashboard ×2"]
         end
@@ -509,6 +544,7 @@ flowchart TB
     subgraph managed [External / managed]
         pgm[("PostgreSQL<br/>primary + replica, PITR")]
         chm[("ClickHouse<br/>single node v1 — ADR-08")]
+        objm[("Object storage<br/>S3-compatible — ADR-13")]
     end
 
     ing -- "api.relay.dev" --> apis
@@ -517,16 +553,19 @@ flowchart TB
     ing -- "dashboard.relay.dev/events" --> sses
     apis --> pgm
     apis --> rediss
+    apis -. "presigned URLs" .-> objm
     gws --> rediss
     pgm -- outbox relay --> natss
     natss --> whds
     natss --> ings
     natss --> sses
+    natss --> mws
+    mws --> objm
     ings --> chm
 ```
 
 Local development (NFR-MNT-03): `docker-compose up` — every service plus postgres, nats,
-redis, and clickhouse, with a seeded demo tenant.
+redis, clickhouse, and MinIO standing in for object storage, with a seeded demo tenant.
 
 **Gateway drain on deploy (NFR-REL-03):** on SIGTERM the gateway stops accepting
 connections, sends a `server.shutdown` frame with a jittered reconnect hint, waits up to
@@ -586,6 +625,7 @@ which is the design (D5), bounded by 24 h retention (NFR-REL-08).
 | Redis lost | Presence + fan-out pause | Gateways buffer briefly, reconnect clients; Postgres unaffected |
 | JetStream lost | Webhooks, analytics, live dashboard pause | Outbox accumulates in Postgres; relay drains on recovery — *this is why the outbox is in Postgres, not fire-and-forget* |
 | ClickHouse lost | Dashboards stale | Ingester pauses; stream absorbs 24 h (NFR-REL-05) |
+| Object storage lost | Media uploads/downloads fail; text messaging unaffected | Upload slots return a specific error; attachments render as temporarily unavailable; no Relay-side state to recover — storage provider's durability is the recovery |
 | Postgres lost | Full write outage | The one honest SPOF: managed HA + PITR (NFR-REL-06/07); reads could survive on replica but v1 does not attempt write continuity |
 
 **Scaling behaviour by scenario.** The failure matrix answers "what breaks?"; this answers
@@ -647,6 +687,16 @@ environment), and noisy-neighbour pressure, which quotas (FR-RTL) contain. The w
 is *skew*: one tenant at 50% of traffic is fine for the shared-schema model until their
 retention deletes (R6) or exports bully the shared tables.
 
+*S8 — media-heavy tenants (photo/voice-note dominant traffic).* The design's payoff
+scenario: bytes flow client → object storage and storage → client directly (ADR-13), so
+media volume stresses Relay only at three metadata points — slot issuance and signed-URL
+minting on the API service (a hash + HMAC, thousands/s per instance), scan throughput on
+the media worker (CPU-bound; scales horizontally on consumer lag, and a backlog degrades
+only time-to-`ready`, never message delivery per FR-MED design note 1), and the storage
+bill (metered per tenant, FR-MED-12, with DR-17's inventory reconciliation as the
+tripwire). Object-storage bandwidth itself is the provider's scaling problem — which is
+precisely why ADR-13 buys it rather than builds it.
+
 **Saturation summary:**
 
 | Component | Scales on | Regime | Real ceiling |
@@ -657,6 +707,8 @@ retention deletes (R6) or exports bully the shared tables.
 | Redis | pub/sub throughput | vertical; shard by subject if ever | far beyond v1 scale |
 | Webhook dispatcher | stream depth | horizontal | customer endpoint slowness (isolated, not fixed) |
 | Analytics ingester | consumer lag | horizontal + larger batches | ClickHouse insert rate (huge) |
+| Media worker | consumer lag | horizontal | scan CPU; backlog degrades time-to-ready only (S8) |
+| Object storage | — | provider's problem (ADR-13) | the invoice, not the throughput |
 | SSE / dashboard | sessions | horizontal | none relevant |
 
 The design converts every scaling problem into either "add stateless instances" (cheap,
@@ -813,6 +865,42 @@ pack edits are rare, reads are constant. **Rejected:** per-message resolution jo
 path); pushing resolution to the SDK only (leaves REST-only consumers unresolved and
 duplicates logic across clients — the map costs the server almost nothing given the cache).
 
+### ADR-13 — Media bytes never transit Relay compute: presigned direct-to-storage
+**Status:** accepted · reverses the v1.0 file-storage exclusion · **Drivers:** D5, D8, NFR-PRF-08
+
+Uploads: the API service validates declaration and quota, records a `pending` row, and
+returns a presigned PUT URL; the client uploads straight to S3-compatible storage.
+Downloads: signed GET URLs minted at read time, authorised by channel membership
+(FR-MED-08), never persisted (DR-16). Relay's services handle metadata only — the original
+exclusion's cost argument (bandwidth, CDN, storage ops) is answered by not building any of
+it: object storage's durability, bandwidth, and lifecycle rules are bought, not rebuilt.
+Tenant-prefixed keys (DR-15) make erasure and export prefix operations. **Trade-off:**
+presigned-URL auth is coarser than per-request auth (a leaked signed URL is valid until
+expiry — bounded at 1 h, unguessable, and never stored); upload success is observed
+asynchronously (the confirm/scan event), not synchronously. **Rejected:** proxied uploads
+through the API service (every media byte on Relay's network path — the exact cost the
+exclusion feared, now voluntary); public-read bucket with obscure keys (violates
+FR-MED-08; membership changes must revoke access, and time-limited URLs are the mechanism).
+
+### ADR-14 — Async scan pipeline gates bytes, never messages
+**Status:** accepted · **Drivers:** D5, D6, journey 4 · implements FR-MED-04/06/07
+
+A message may reference `pending` media and ship immediately; recipients render a
+placeholder; the media worker's `pending → ready` transition fans out `media.updated` on
+the referencing channels. The scan gates *byte delivery* (no signed URL until `ready`),
+never *message delivery*. **Why:** the alternative — scan-before-send — puts a 2–10 s
+CPU-bound pipeline inside the send path, violating the latency budget (NFR-PRF-01) and
+coupling message availability to scanner availability, exactly the coupling D5 exists to
+forbid. The state machine mirrors the message state machine the SDK already implements
+(`sending/sent/failed` ↔ `pending/ready/rejected`) — one mental model, twice applied.
+Rejection is a first-class terminal state rendered explicitly (FR-MED-09): Priya must
+distinguish "the upload was rejected" from "the message was deleted." **Trade-off:** a
+recipient can see a placeholder for a file that is subsequently rejected — accepted, since
+consumer messengers set exactly this expectation. **Rejected:** synchronous scanning
+(above); no scanning (hosting unscanned user uploads is a liability no metering revenue
+covers); scan-on-first-download (moves the latency to the recipient's tap and re-scans
+per CDN miss).
+
 ---
 
 ## 10. Risks and technical debt register
@@ -826,7 +914,8 @@ duplicates logic across clients — the map costs the server almost nothing give
 | R5 | **At-least-once everywhere requires consumer discipline** | A future consumer forgets to dedupe → double webhooks / double metering | Consumer template with dedup built in; reconciliation job (FR-ANL-06) as the tripwire |
 | R6 | **Retention deletion vs. partitioning** — per-environment retention (FR-MOD-06) doesn't align with monthly partitions | Bulk deletes on mixed partitions | v1: row deletes off-peak per environment; debt noted — env-major partitioning if tenants grow large |
 | R7 | **Single-language monoculture** (ADR-01) | CPU-bound hot spots have no escape hatch in-language | Isolate HMAC/crypto behind an interface; a Rust/Go sidecar is a contained swap if profiling demands it |
-| R8 | **Customer-hosted emoji images** — Relay serves URLs it does not control (FR-EMJ design note 1) | Broken/slow images degrade perceived quality; malicious URL swaps after moderation review alter a record's *appearance* (though never its text) | Document CDN/caching responsibility; resolution map is versioned so Priya's tooling can pin the resolution seen at review time; revisit trigger: hosted emoji storage if customer demand justifies the file-storage exclusion falling |
+| R8 | **Customer-hosted emoji images** — Relay serves URLs it does not control (FR-EMJ design note 1) | Broken/slow images degrade perceived quality; malicious URL swaps after moderation review alter a record's *appearance* (though never its text) | Document CDN/caching responsibility; resolution map is versioned so Priya's tooling can pin the resolution seen at review time; revisit trigger: emoji images may now optionally use hosted media (ADR-13), which removes this class entirely for customers who opt in |
+| R9 | **Hosted media liability surface** — Relay now stores user-uploaded bytes: illegal content, scanner misses, storage-cost runaway | Legal exposure; cost growth decoupled from message volume | Mandatory scan gate (ADR-14) with audit trail; per-kind size caps + per-tenant storage quotas and spend caps (FR-MED-02, FR-RTL-06); DR-17 inventory reconciliation catches metering drift; abuse-report takedown path rides the existing moderation API (FR-MOD-02 + FR-MED-10's unlink-and-reap) |
 
 ---
 

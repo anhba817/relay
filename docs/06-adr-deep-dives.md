@@ -751,7 +751,130 @@ then per-pack cache sharding, resolved lazily by the shortcodes actually present
 
 ---
 
-## Reading the twelve together
+## ADR-13 — Media bytes never transit Relay compute
+
+### Problem
+
+Hosted media reverses a founding exclusion (SRS Appendix B). The exclusion's reasons were
+real: storage cost, bandwidth, virus scanning, CDN, and erasure semantics. Reversing it
+responsibly means the design must *answer* each reason, not outvote them. The central
+question: does Relay proxy uploads and downloads, or broker access to storage it never
+touches?
+
+### Options
+
+1. **Presigned direct-to-storage** — API issues upload/download URLs; bytes flow
+   client ↔ object storage.
+2. **Proxied uploads/downloads** through the API (or a dedicated media API) service.
+3. **Public-read bucket** with unguessable keys; uploads presigned.
+
+### Analysis
+
+Option 2 puts every media byte on Relay's network path: a 100 MB video upload occupies a
+Node request slot for its duration, upload bandwidth becomes an API-service scaling
+dimension, and download traffic — the multiplied side, since one upload is read by every
+channel member — turns Relay into a CDN it would then need to actually build. This is
+*precisely* the cost basket the original exclusion priced as disproportionate; choosing it
+voluntarily would make the reversal indefensible. Option 1 dissolves the basket: object
+storage's durability, bandwidth, multipart handling, and lifecycle rules are bought, not
+rebuilt, and Relay's involvement per media operation is one metadata row plus one HMAC —
+NFR-PRF-08's <100 ms is easy because there are no bytes.
+
+Option 3 fails on authorisation shape. FR-MED-08 requires media access to follow *channel
+membership* — a revocable, changing relation. Public-read-with-obscure-keys is
+irrevocable-by-construction: a key shared once is shared forever, and membership removal
+(FR-RTM-10's analogue for bytes) has no mechanism. Time-limited signed URLs are the
+compromise position: authorisation is evaluated at mint time against membership, and the
+leak window is bounded (1 h) rather than infinite. DR-16 (never persist signed URLs)
+exists to keep that window real.
+
+Tenant-prefixed object keys (DR-15) do quiet work: compliance erasure and tenant export
+become prefix operations against storage, aligning the bytes' lifecycle with the rows'.
+
+### Decision
+
+Option 1. MinIO in local dev; any S3-compatible store in production (ASM-06 added to the
+SRS to make the dependency explicit).
+
+### Consequences
+
+Positive: near-zero media load on Relay compute; provider-grade durability and bandwidth;
+the storage bill is the scaling ceiling (S8), not throughput. Negative: coarser auth
+granularity (bounded, above); upload completion observed asynchronously; a hard dependency
+on S3 semantics (acceptable — S3-compatibility is the closest thing object storage has to
+POSIX).
+
+### Revisit when
+
+A customer segment requires media behind their own network boundary (BYO-bucket
+federation) — an extension of this design, not a reversal.
+
+---
+
+## ADR-14 — The scan pipeline gates bytes, never messages
+
+### Problem
+
+Hosting user uploads without scanning is a liability no metering revenue covers; scanning
+takes seconds. Where do those seconds go — into the send path, the receive path, or
+neither?
+
+### Options
+
+1. **Async scan; attach-while-pending; `media.updated` fan-out on transition** (chosen).
+2. **Scan before send** — media must be `ready` before a message may reference it.
+3. **Scan on first download.**
+
+### Analysis
+
+Option 2 reads as the conservative choice and is actually the coupling the architecture
+most forbids: it inserts a CPU-bound, seconds-long, third-party-engine-dependent stage
+into the message send path. NFR-PRF-01's latency budget dies; worse, scanner *outage*
+becomes message *outage* for any media-bearing send — a new fate-sharing edge violating
+D5's spirit. And the UX it produces (spinner between "send" and "sent") contradicts the
+expectation consumer messengers have set: the photo appears immediately, sharpens later.
+
+Option 1 splits the concern cleanly along a line the system already knows how to draw:
+the *message* (text + a media reference) flows through the ordinary send path at ordinary
+speed; the *bytes* are gated — no signed URL is minted for `pending` or `rejected` media.
+Recipients render a placeholder from the attachment's state; the worker's
+`pending → ready` transition emits `media.updated` on the referencing channels through
+the same outbox → fan-out machinery every other state change uses. No new delivery
+concepts — the state machine even rhymes with the SDK's existing message states
+(`sending/sent/failed` ↔ `pending/ready/rejected`), which halves the teaching burden.
+
+Rejection as a first-class, *rendered* terminal state (FR-MED-09) is Priya's requirement:
+a dispute reconstruction must distinguish "an upload was attempted and rejected" from "a
+message was deleted" — a broken-image glyph destroys evidence that an explicit marker
+preserves.
+
+Option 3 moves the latency to the recipient's tap (the worst moment), re-scans per cache
+miss, and means unscanned bytes *rest* in storage indefinitely — the liability deferred,
+not addressed.
+
+### Decision
+
+Option 1. ClamAV as a worker sidecar; probe and thumbnail in the same pipeline pass;
+transitions via internal API per ADR-04's single-writer rule.
+
+### Consequences
+
+Positive: send latency untouched by media; scanner capacity degrades time-to-ready only;
+one delivery machinery serves messages and media transitions alike. Negative: recipients
+may see placeholders that resolve to rejection (accepted — the expectation exists);
+`pending` objects need a reaper (FR-MED-10's 24 h job); the worker is the one genuinely
+CPU-bound service in an I/O-bound fleet (its own HPA signal, and ADR-01's worker-thread
+posture from day one).
+
+### Revisit when
+
+Scan-evasion incidents or legal counsel demand synchronous review for specific tenants —
+then a per-environment `strict_media` flag flips option 2 on for those who need it,
+priced accordingly.
+
+---
+
+## Reading the fourteen together
 
 Three themes recur, and naming them is the best summary of the architecture's character:
 
