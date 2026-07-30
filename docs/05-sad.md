@@ -18,7 +18,7 @@
 7. [Deployment view](#7-deployment-view)
 8. [Cross-cutting concerns](#8-cross-cutting-concerns)
 9. [Architecture Decision Records](#9-architecture-decision-records)
-10. [Risks and technical debt register](#10-risks)
+10. [Risks and technical debt register](#10-risks-and-technical-debt-register)
 
 ---
 

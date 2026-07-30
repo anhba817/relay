@@ -22,25 +22,27 @@ requirements were found.
 Eight stages. The critical one is Stage 4: nearly all abandonment happens before the first
 message is delivered.
 
-```
-  DISCOVER → EVALUATE → SIGN UP → FIRST MESSAGE → BUILD → TEST → LAUNCH → OPERATE
-     ↑           ↑          ↑           ★             ↑        ↑        ↑        ↑
-  problem     do the     friction   THE MOMENT     the real  where   highest  where
-  becomes     docs        starts     THAT          work      trust   anxiety  churn
-  real       answer it?   here       DECIDES                 is won           happens
+```mermaid
+flowchart LR
+    d["DISCOVER<br/>problem becomes real"]
+    e["EVALUATE<br/>do the docs answer it?"]
+    s["SIGN UP<br/>friction starts here"]
+    f["★ FIRST MESSAGE<br/>THE MOMENT THAT DECIDES"]
+    b["BUILD<br/>the real work"]
+    t["TEST<br/>where trust is won"]
+    l["LAUNCH<br/>highest anxiety"]
+    o["OPERATE<br/>where churn happens"]
+    d --> e --> s --> f --> b --> t --> l --> o
 ```
 
 **Emotional arc**
 
-```
- high  │                      ╭─╮                              ╭──────
-       │                     ╱   ╲                     ╭──────╯
-  neu  │  ╭──╮        ╭─────╯     ╲          ╭────────╯
-       │ ╱    ╲      ╱             ╲        ╱          ╲      ╱
-  low  │╯      ╲____╱               ╲______╱            ╲____╱
-       └────────────────────────────────────────────────────────────
-        DISC   EVAL  SIGNUP  FIRST   BUILD   TEST   LAUNCH  OPERATE
-                             MSG
+```mermaid
+xychart-beta
+    title "Emotional arc (low → high)"
+    x-axis ["DISC", "EVAL", "SIGNUP", "FIRST MSG", "BUILD", "TEST", "LAUNCH", "OPERATE"]
+    y-axis "emotion" 0 --> 10
+    line [5, 2, 6, 9, 3, 6, 3, 8]
 ```
 
 ---
@@ -297,12 +299,15 @@ journey is a direct measure of the completeness of `FR-MOD` and the message hist
 address. A customer files a complaint about abusive messages in the same week. Both land in
 Priya's queue on a Tuesday morning.
 
-```
-  TICKET → LOCATE → RECONSTRUCT → JUDGE → ACT → RECORD
-    ↑         ↑          ↑           ↑      ↑       ↑
-  context   the      the stage    human   the    the part
-  arrives   first    that fails   work   power   audits
-            wall     silently            step    care about
+```mermaid
+flowchart LR
+    t["TICKET<br/>context arrives"]
+    lo["LOCATE<br/>the first wall"]
+    r["RECONSTRUCT<br/>the stage that fails silently"]
+    j["JUDGE<br/>human work"]
+    a["ACT<br/>the power step"]
+    re["RECORD<br/>the part audits care about"]
+    t --> lo --> r --> j --> a --> re
 ```
 
 ### Stage 1 — Ticket arrives
@@ -416,11 +421,15 @@ trust — and with it, the customer's product reviews.
 **Scenario:** Tuan is driving into an underground car park. The dispatcher has just asked
 which entrance he's at. He types "B2, north ramp" and hits send as the signal dies.
 
-```
-  TYPE → SEND → LOSE SIGNAL → RECONNECT → CONFIRM → MOVE ON
-                     ★
-            the moment the platform
-            was actually built for
+```mermaid
+flowchart LR
+    ty["TYPE"]
+    se["SEND"]
+    ls["★ LOSE SIGNAL<br/>the moment the platform<br/>was actually built for"]
+    rc["RECONNECT"]
+    co["CONFIRM"]
+    mo["MOVE ON"]
+    ty --> se --> ls --> rc --> co --> mo
 ```
 
 ### Stage 1 — Type and send

@@ -105,29 +105,28 @@ identifiers are never reused after removal.
 Relay is a new, self-contained system with no predecessor. It sits between a customer's
 application backend and their end-user clients.
 
-```
-  Customer's end-user clients (web / mobile)
-        │  user token (JWT)                   ▲
-        │  WebSocket + REST                   │  real-time events
-        ▼                                     │
-  ┌───────────────────────────────────────────────────┐
-  │                     RELAY                         │
-  │  ┌────────────┐  ┌──────────────┐  ┌───────────┐  │
-  │  │ REST API   │  │  WebSocket   │  │  Webhook  │  │
-  │  │            │  │   gateway    │  │ dispatcher│  │
-  │  └─────┬──────┘  └──────┬───────┘  └─────┬─────┘  │
-  │        └────────┬───────┘                │        │
-  │           ┌─────▼─────┐            ┌─────▼─────┐  │
-  │           │ PostgreSQL│            │   Queue   │  │
-  │           │  (OLTP)   │            └─────┬─────┘  │
-  │           └───────────┘            ┌─────▼─────┐  │
-  │                                    │ClickHouse │  │
-  │                                    │  (OLAP)   │  │
-  │                                    └───────────┘  │
-  └───────────────┬───────────────────────────┬───────┘
-                  │ API key (REST)            │ signed webhooks
-                  ▼                           ▼
-        Customer's application backend
+```mermaid
+flowchart TB
+    clients["Customer's end-user clients (web / mobile)"]
+    backend["Customer's application backend"]
+
+    subgraph relay [RELAY]
+        rest["REST API"]
+        gw["WebSocket gateway"]
+        whd["Webhook dispatcher"]
+        pg[("PostgreSQL<br/>(OLTP)")]
+        q[["Queue"]]
+        ch[("ClickHouse<br/>(OLAP)")]
+        rest --> pg
+        gw --> pg
+        q --> whd
+        q --> ch
+    end
+
+    clients -- "user token (JWT)<br/>WebSocket + REST" --> relay
+    relay -- "real-time events" --> clients
+    backend -- "API key (REST)" --> relay
+    relay -- "signed webhooks" --> backend
 ```
 
 The customer's backend is the trust anchor: it authenticates its own users and mints user
@@ -324,12 +323,14 @@ and React Native 0.72+.
 
 **Message state machine (client-observable)**
 
-```
-   [composing] ──send()──► [sending] ──ack──────────► [sent] ──edit──► [edited]
-                              │                          │
-                              ├─timeout / 5xx──► [failed]├─delete──► [deleted]
-                              │                    │
-                              └────retry with same idempotency key
+```mermaid
+stateDiagram-v2
+    composing --> sending: send()
+    sending --> sent: ack
+    sending --> failed: timeout / 5xx
+    failed --> sending: retry with same idempotency key
+    sent --> edited: edit
+    sent --> deleted: delete
 ```
 
 The SDK shall surface `sending`, `sent`, and `failed` distinctly (see FR-SDK-05) so that
@@ -630,16 +631,25 @@ criteria for journey Stages 2–4.
 
 ### 6.1 Operational entities (PostgreSQL)
 
-```
-Organisation ──1:N── Application ──1:2── Environment ──1:N── ApiKey
-                                             │
-                                             ├──1:N── User ──N:M── EmojiPack (installs)
-                                             ├──1:N── MediaObject ──1:N── DerivedObject
-                                             ├──1:N── Channel ──1:N── Member ──N:1── User
-                                             │            └──1:N── Message ──1:N── MessageEdit
-                                             ├──1:N── EmojiPack ──1:N── Emoji
-                                             ├──1:N── WebhookEndpoint ──1:N── WebhookDelivery
-                                             └──1:N── AuditLogEntry
+```mermaid
+erDiagram
+    Organisation ||--o{ Application : "1:N"
+    Application ||--|{ Environment : "1:2 (dev/prod)"
+    Environment ||--o{ ApiKey : "1:N"
+    Environment ||--o{ User : "1:N"
+    Environment ||--o{ MediaObject : "1:N"
+    Environment ||--o{ Channel : "1:N"
+    Environment ||--o{ EmojiPack : "1:N"
+    Environment ||--o{ WebhookEndpoint : "1:N"
+    Environment ||--o{ AuditLogEntry : "1:N"
+    User }o--o{ EmojiPack : "installs (N:M)"
+    MediaObject ||--o{ DerivedObject : "1:N"
+    Channel ||--o{ Member : "1:N"
+    Member }o--|| User : "N:1"
+    Channel ||--o{ Message : "1:N"
+    Message ||--o{ MessageEdit : "1:N"
+    EmojiPack ||--o{ Emoji : "1:N"
+    WebhookEndpoint ||--o{ WebhookDelivery : "1:N"
 ```
 
 **Key attributes**
