@@ -1,0 +1,18 @@
+-----
+FR-MSG-04 · The system shall accept a client-supplied idempotency key on
+send. A repeated key within 24 hours shall return the original message
+with 201-equivalent semantics and shall not create a duplicate.
+Priority: P1 · Verification: T
+-----
+-----
+FR-TEN-05 · No API operation shall return, modify, or reveal the
+existence of data belonging to another tenant, under any input.
+Priority: P1 · Verification: T, A
+-----
+-----
+FR-MED-09 · A rejected attachment shall render as an explicit rejection
+marker in history — never as a broken link — preserving the record that
+something was sent (Priya's reconstruction must distinguish "rejected
+upload" from "deleted message").
+Priority: P3 · Verification: T
+-----

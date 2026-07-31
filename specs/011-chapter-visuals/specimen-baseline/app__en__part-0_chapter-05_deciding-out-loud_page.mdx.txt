@@ -1,0 +1,40 @@
+-----
+D1 · No acknowledged message may be lost
+Source: FR-MSG-05/06, NFR-REL-02
+Consequence: Ack only after durable commit; ordering and persistence
+in one transactional store
+
+D8 · One engineer must be able to run and reason about it
+Source: Portfolio reality; NFR-MNT-03
+Consequence: Few services with sharp boundaries, not many with fuzzy
+ones; boring technology
+-----
+-----
+ADR-03 · Ordering: per-channel sequence via last_sequence row lock
+Status: accepted · resolves SRS Open Question 1 · Drivers: D1, D3
+
+Per-channel sequences, assigned by incrementing channels.last_sequence
+under SELECT … FOR UPDATE in the message-insert transaction. Contention
+is scoped to a single channel — and serialising a channel's writes is
+the requirement (FR-MSG-03), so the lock is not a cost, it is the
+mechanism. Rejected: per-tenant sequence (single hot row per tenant — a
+real bottleneck for zero benefit at v1 scale); Postgres sequences per
+channel (unbounded object count, non-transactional gaps break dedup
+reasoning); Snowflake-style IDs (globally unique but not gap-free per
+channel, which complicates the client's "did I miss something?" logic).
+-----
+-----
+ADR-13 · Media bytes never transit Relay compute:
+presigned direct-to-storage
+Status: accepted · reverses the v1.0 file-storage exclusion
+Drivers: D5, D8, NFR-PRF-08
+
+Uploads: the API service validates declaration and quota, records a
+pending row, and returns a presigned PUT URL; the client uploads
+straight to S3-compatible storage. Downloads: signed GET URLs minted at
+read time, authorised by channel membership (FR-MED-08), never
+persisted (DR-16). Relay's services handle metadata only — the original
+exclusion's cost argument (bandwidth, CDN, storage ops) is answered by
+not building any of it: object storage's durability, bandwidth, and
+lifecycle rules are bought, not rebuilt.
+-----

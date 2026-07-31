@@ -66,6 +66,7 @@ are what the tutorial teaches.
 | Voice | First person plural, present tense ("we now have a problem: two gateways…") | Decisions feel lived-in, not handed down |
 | Chapter length | 2,000–4,000 words + code; 60–120 min reader time | Longer chapters split; a chapter is a sitting |
 | Recurring boxes | `WHY` (links to ADR/requirement), `TRAP` (the bug you'd write naively), `CHECKPOINT` (verify before continuing), `SKIP AHEAD` (what to `git checkout` if stuck) | Consistent scaffolding lowers reading cost |
+| Visual elements | 2–4 captioned, theme-legible diagrams per chapter via the series `Figure` component, placed at key-concept moments (≥1 per chapter half); counted separately from specimen fences, which remain verbatim-quote territory; Vietnamese editions translate narrative labels while requirement/driver/ADR identifiers stay English | Concepts made visible break long prose runs; the specimen/diagram split keeps quote fidelity checkable |
 
 ---
 
