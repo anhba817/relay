@@ -1,3 +1,6 @@
 [submodule "relay-tutorial"]
 	path = relay-tutorial
 	url = git@github.com:anhba817/relay-tutorial.git
+[submodule "relay-platform"]
+	path = relay-platform
+	url = git@github.com:anhba817/relay-platform.git

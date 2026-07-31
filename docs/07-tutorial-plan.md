@@ -67,6 +67,7 @@ are what the tutorial teaches.
 | Chapter length | 2,000–4,000 words + code; 60–120 min reader time | Longer chapters split; a chapter is a sitting |
 | Recurring boxes | `WHY` (links to ADR/requirement), `TRAP` (the bug you'd write naively), `CHECKPOINT` (verify before continuing), `SKIP AHEAD` (what to `git checkout` if stuck) | Consistent scaffolding lowers reading cost |
 | Visual elements | 2–4 captioned, theme-legible diagrams per chapter via the series `Figure` component, placed at key-concept moments (≥1 per chapter half); counted separately from specimen fences, which remain verbatim-quote territory; Vietnamese editions translate narrative labels while requirement/driver/ADR identifiers stay English | Concepts made visible break long prose runs; the specimen/diagram split keeps quote fidelity checkable |
+| Code-chapter battery | For code chapters (Part 1 onward): the 2,000–4,000 word bound counts prose OUTSIDE code fences ("+ code" is additive, not counted); code fences are uncapped but counted; `TRAP` is a counted box class (≥1 per code chapter); file-content fences must match the chapter's tagged repository state byte-for-byte; specimen verbatim rules unchanged for quoted document content; Vietnamese editions keep all code fences byte-identical to English | Code volume must not corrupt the prose measure; the fence-equals-repo rule is how "the tutorial and code cannot drift" (§6) becomes checkable |
 
 ---
 

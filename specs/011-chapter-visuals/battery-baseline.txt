@@ -7,4 +7,4 @@ app/(vi)/vi/part-0/chapter-01/from-app-to-infrastructure/page.mdx 4682 2 1 2 1 0
 app/(vi)/vi/part-0/chapter-02/four-people-who-will-judge-us/page.mdx 4035 2 1 1 1 0 2
 app/(vi)/vi/part-0/chapter-03/journeys-where-products-die/page.mdx 3961 2 1 1 1 0 3
 app/(vi)/vi/part-0/chapter-04/requirements-you-can-test/page.mdx 3347 2 1 1 1 6 2
-app/(vi)/vi/part-0/chapter-05/deciding-out-loud/page.mdx 5525 2 1 1 1 6 2
+app/(vi)/vi/part-0/chapter-05/deciding-out-loud/page.mdx 5560 2 1 1 1 6 2
