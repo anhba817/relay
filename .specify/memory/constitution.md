@@ -1,26 +1,29 @@
 <!--
 Sync Impact Report
 ==================
-Version change: (template) → 1.0.0
-Rationale: Initial ratification. Principles derived from docs/01-product-vision.md (§3
-Product principles, §7 Architecture rationale), docs/04-srs.md (constraints CON-01..06,
-NFR-SEC, NFR-MNT, NFR-USE), and docs/05-sad.md (drivers D1–D8, ADR-01..12).
+Version change: 1.0.0 → 1.1.0
+Rationale: MINOR — Technology & Platform Constraints materially expanded to bind the
+application-stack decisions accepted as SAD ADR-15 (NestJS for the API service only;
+the gateway stays frameworkless), ADR-16 (Drizzle inside the repository layer;
+migrations remain versioned, forward-only, hand-reviewed SQL), and ADR-17 (Turborepo
+as task runner over the unchanged pnpm workspace). Folded-in PATCH corrections:
+requirement count 205 → 224 (SRS v1.2 reversed the hosted-media exclusion and added
+FR-MED), and the legacy `docker-compose up` spelling → the `docker compose` plugin
+form taught in chapter 1.2. The initial-ratification report (which derived principles
+from docs 01, 04, and 05 at ADR-01..12) lives in git history; the derivation now
+spans ADR-01..17.
 
-Modified principles: n/a (initial adoption — all placeholders filled)
-Added sections:
-  - Core Principles (7 principles)
-  - Technology & Platform Constraints
-  - Development Workflow & Quality Gates
-  - Governance
+Modified principles: none. Principles I–VII are unchanged: Principle I's
+repository-layer clause already accommodates ADR-16 (Drizzle lives inside that
+layer), Principle VII's one-language rule already accommodates ADR-15 (NestJS is
+TypeScript/Node), and ADR-17 changes how tasks run, not what the stack is.
+Added sections: none
 Removed sections: none
 
 Templates reviewed:
-  - ✅ .specify/templates/plan-template.md — Constitution Check section is generic and
-    derives gates from this file at plan time; no edit required.
-  - ✅ .specify/templates/spec-template.md — no constitution-specific references; aligned.
-  - ✅ .specify/templates/tasks-template.md — no constitution-specific references; task
-    categories accommodate testing/observability work required here.
-  - ✅ .specify/templates/checklist-template.md — no constitution-specific references.
+  - ✅ .specify/templates/plan-template.md — Constitution Check derives gates from
+    this file at plan time; no edit required.
+  - ✅ spec/tasks/checklist templates — no references to the amended lines.
 
 Follow-up TODOs: none.
 -->
@@ -152,7 +155,7 @@ Every behavior traces to a requirement; every requirement states how it is verif
   on write endpoints. Secrets, tokens, and message content never appear in logs.
 
 **Rationale:** The SRS is the reference for implementation, test design, and
-acceptance. Traceability is what keeps 205 requirements coherent across four phases.
+acceptance. Traceability is what keeps 224 requirements coherent across four phases.
 
 ### VII. Boring by Design — Scope Is a Commitment
 
@@ -181,8 +184,14 @@ One named, bounded, monitored scaling wall beats three without names.
 
 The stack is chosen; deviations require a superseding ADR.
 
-- **Runtime:** TypeScript/Node.js for all services (ADR-01). **Operational store:**
-  PostgreSQL 15+. **Analytical store:** ClickHouse 24+ (single node in v1, cluster-shaped
+- **Runtime:** TypeScript/Node.js for all services (ADR-01). **API service
+  framework:** NestJS, scoped to the API service alone — the gateway stays
+  frameworkless and workers stay plain consumers (ADR-15). **API data access:**
+  Drizzle, confined to the repository layer of Principle I; migrations remain
+  versioned, forward-only, hand-reviewed SQL (ADR-16). **Build orchestration:**
+  Turborepo as the task runner over the pnpm workspace — every target stays an
+  ordinary package script, so the workspace degrades to `pnpm -r` without it
+  (ADR-17). **Operational store:** PostgreSQL 15+. **Analytical store:** ClickHouse 24+ (single node in v1, cluster-shaped
   schema — ADR-08). **Ephemeral state & fan-out:** Redis. **Durable event spine:** NATS
   JetStream (ADR-02). **Dashboard:** Next.js.
 - The public REST API is versioned in the URL path (`/v1/...`); breaking changes require
@@ -194,7 +203,7 @@ The stack is chosen; deviations require a superseding ADR.
 - List endpoints use opaque cursor pagination; offset pagination is not offered.
 - Deploys to any Kubernetes-conformant environment; no dependency on a single cloud
   provider's proprietary services. The full stack MUST start locally with a single
-  command (`docker-compose up`), including a seeded demo tenant.
+  command (`docker compose up`), including a seeded demo tenant.
 
 ## Development Workflow & Quality Gates
 
@@ -237,4 +246,4 @@ verifies the principles most exposed by the change (isolation for data-access ch
 durability for write-path changes, path separation for analytics changes). The
 automated gates in Principle VI are enforced in CI and are not waivable by review.
 
-**Version**: 1.0.0 | **Ratified**: 2026-07-29 | **Last Amended**: 2026-07-29
+**Version**: 1.1.0 | **Ratified**: 2026-07-29 | **Last Amended**: 2026-08-01

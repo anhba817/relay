@@ -1,6 +1,6 @@
 # Relay — Tutorial Plan
 
-**Version:** 1.0
+**Version:** 1.1
 **Companion documents:** 01–06 (vision through ADR deep dives)
 **What this plans:** a written tutorial series, *Building Relay*, that guides a developer
 from initial idea to a deployed, monitored, multi-tenant chat infrastructure platform —
@@ -67,7 +67,7 @@ are what the tutorial teaches.
 | Chapter length | 2,000–4,000 words + code; 60–120 min reader time | Longer chapters split; a chapter is a sitting |
 | Recurring boxes | `WHY` (links to ADR/requirement), `TRAP` (the bug you'd write naively), `CHECKPOINT` (verify before continuing), `SKIP AHEAD` (what to `git checkout` if stuck) | Consistent scaffolding lowers reading cost |
 | Visual elements | 2–4 captioned, theme-legible diagrams per chapter via the series `Figure` component, placed at key-concept moments (≥1 per chapter half); counted separately from specimen fences, which remain verbatim-quote territory; Vietnamese editions translate narrative labels while requirement/driver/ADR identifiers stay English | Concepts made visible break long prose runs; the specimen/diagram split keeps quote fidelity checkable |
-| Code-chapter battery | For code chapters (Part 1 onward): the 2,000–4,000 word bound counts prose OUTSIDE code fences ("+ code" is additive, not counted); code fences are uncapped but counted; `TRAP` is a counted box class (≥1 per code chapter); file-content fences must match the chapter's tagged repository state byte-for-byte; specimen verbatim rules unchanged for quoted document content; Vietnamese editions keep all code fences byte-identical to English | Code volume must not corrupt the prose measure; the fence-equals-repo rule is how "the tutorial and code cannot drift" (§6) becomes checkable |
+| Code-chapter battery | For code chapters (Part 1 onward): the 2,000–4,000 word bound counts prose OUTSIDE code fences ("+ code" is additive, not counted); code fences are uncapped but counted; `TRAP` is a counted box class (≥1 per code chapter); file-content fences must match the chapter's tagged repository state byte-for-byte; a chapter amends an earlier chapter's fenced file only via a full-context **diff fence** whose pre-image equals the fence published at the predecessor tag and whose post-image equals the file at this chapter's tag; specimen verbatim rules unchanged for quoted document content; Vietnamese editions keep all code fences byte-identical to English | Code volume must not corrupt the prose measure; the fence-equals-repo rule is how "the tutorial and code cannot drift" (§6) becomes checkable, and the diff-fence rule extends that check to files a later chapter must touch |
 
 ---
 
@@ -113,10 +113,10 @@ one-page "the decisions, if you skipped the reasoning" summary opens Part 1.
 
 | Ch | Title | Built | Teaches |
 |---|---|---|---|
-| 1.1 | The monorepo and the toolchain | pnpm workspace, TS config, lint, test runner | Workspace discipline; why one repo (ADR-01) |
+| 1.1 | The monorepo and the toolchain | pnpm workspace + Turborepo task graph (ADR-17), TS config, lint, test runner | Workspace discipline; why one repo (ADR-01); a gate that caches |
 | 1.2 | One command, whole world | docker-compose: postgres, redis, nats, clickhouse | NFR-MNT-03 as a day-one requirement, not an afterthought |
 | 1.3 | The protocol package | `@relay/protocol`: frame types, error codes, zod schemas | Contract-first; the shared-types payoff of ADR-01 |
-| 1.4 | Walking skeleton | Empty API + gateway services, health checks, request IDs, structured logs | Deploy the skeleton before the muscles; observability from line one |
+| 1.4 | Walking skeleton | Empty API service (a NestJS application — ADR-15) + frameworkless gateway, health checks, request IDs, structured logs | Deploy the skeleton before the muscles; observability from line one; the framework serves the API and stops at the gateway's door |
 
 ### Part 2 — The core loop (8 chapters) ★ the heart
 
@@ -125,7 +125,7 @@ premise. Every chapter here pairs a capability with the failure it prevents.
 
 | Ch | Title | Built | The failure it prevents |
 |---|---|---|---|
-| 2.1 | Schema with a spine | Migrations: users, channels, members, messages; repository layer with mandatory `environment_id` | Cross-tenant leaks (D4) designed out, not tested out |
+| 2.1 | Schema with a spine | Migrations: users, channels, members, messages; repository layer (Drizzle — ADR-16) with mandatory `environment_id` | Cross-tenant leaks (D4) designed out, not tested out |
 | 2.2 | The write path | POST message: channel row lock, sequence assignment (ADR-03) | Interleaved ordering under concurrency — demonstrated with a failing naive version first |
 | 2.3 | Send it twice | Idempotency keys, partial unique index (DR-03) | Tuan's duplicate "B2, north ramp" |
 | 2.4 | History that pages | Cursor pagination on `(channel_id, seq)` | Offset pagination's drift under live inserts — shown, then fixed |
@@ -149,7 +149,7 @@ build on."
 | 3.6 | Limits and quotas | Redis token buckets; standard headers; spending caps (FR-RTL) |
 | 3.7 | **Milestone: the isolation gauntlet** | The cross-tenant attack suite (NFR-SEC-09) run against every endpoint; the second-external-developer test |
 
-### Part 4 — The second data path (6 chapters)
+### Part 4 — The second data path (8 chapters)
 
 SRS Phase 3. The ClickHouse material — likely the strongest search-traffic magnet, since
 "ClickHouse for SaaS analytics" is underserved territory.
@@ -286,7 +286,7 @@ defenses, in priority order:
 | T2 | **Part 0 bounce** — readers skip the paper and miss the spine | Forward references, the skip-safe summary, and Rule 3's constant back-linking |
 | T3 | **Currency decay** — library/K8s/ClickHouse versions drift over months of writing | Pin everything in 1.1; one dedicated version-bump pass in stage G; checkpoints catch breakage |
 | T4 | **The lonely middle** — Parts 3–4 lack Part 2's drama | Each chapter keeps Rule 1's failure-first structure; the isolation gauntlet and "watch Postgres hurt" demos carry the drama |
-| T5 | **Estimate optimism** — 49 chapters is a book | It *is* a book; the incremental-publish strategy (§5) is the honest response, and Season 1 (Parts 0–2, 17 chapters) is a complete artifact on its own |
+| T5 | **Estimate optimism** — 51 chapters is a book | It *is* a book; the incremental-publish strategy (§5) is the honest response, and Season 1 (Parts 0–2, 17 chapters) is a complete artifact on its own |
 
 ---
 
