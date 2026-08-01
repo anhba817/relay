@@ -6,6 +6,7 @@ app/(en)/part-0/chapter-05/deciding-out-loud/page.mdx 3222 2 1 1 1 0 6 2
 app/(en)/part-1/chapter-01/the-monorepo-and-the-toolchain/page.mdx 2135 2 1 1 1 1 26 3
 app/(en)/part-1/chapter-02/one-command-whole-world/page.mdx 2276 2 1 1 1 1 18 3
 app/(en)/part-1/chapter-03/the-protocol-package/page.mdx 2042 2 1 1 1 1 18 3
+app/(en)/part-1/chapter-04/walking-skeleton/page.mdx 2037 2 1 1 1 1 28 3
 app/(vi)/vi/part-0/chapter-01/from-app-to-infrastructure/page.mdx 4681 2 1 2 1 0 0 3
 app/(vi)/vi/part-0/chapter-02/four-people-who-will-judge-us/page.mdx 4036 2 1 1 1 0 0 2
 app/(vi)/vi/part-0/chapter-03/journeys-where-products-die/page.mdx 3960 2 1 1 1 0 0 3
@@ -14,3 +15,4 @@ app/(vi)/vi/part-0/chapter-05/deciding-out-loud/page.mdx 5292 2 1 1 1 0 6 2
 app/(vi)/vi/part-1/chapter-01/the-monorepo-and-the-toolchain/page.mdx 2873 2 1 1 1 1 26 3
 app/(vi)/vi/part-1/chapter-02/one-command-whole-world/page.mdx 3006 2 1 1 1 1 18 3
 app/(vi)/vi/part-1/chapter-03/the-protocol-package/page.mdx 2659 2 1 1 1 1 18 3
+app/(vi)/vi/part-1/chapter-04/walking-skeleton/page.mdx 2643 2 1 1 1 1 28 3
