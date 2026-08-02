@@ -1,0 +1,7 @@
+drafts/part-2/chapter-02-the-write-path/page.mdx 3070 3 1 1 1 1 30 3
+drafts/part-2/chapter-03-send-it-twice/page.mdx 2032 2 1 1 1 1 8 3
+drafts/part-2/chapter-04-history-that-pages/page.mdx 2027 2 1 1 1 1 8 2
+drafts/part-2/chapter-05-the-socket/page.mdx 2093 2 1 1 1 1 10 3
+drafts/part-2/chapter-06-two-servers-one-conversation/page.mdx 2075 2 1 1 1 1 6 3
+drafts/part-2/chapter-07-the-tunnel/page.mdx 2181 2 1 1 1 1 8 3
+drafts/part-2/chapter-08-milestone-the-tuan-test/page.mdx 2130 2 1 1 1 1 8 3
