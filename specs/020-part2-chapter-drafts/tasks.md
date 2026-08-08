@@ -5,6 +5,16 @@
 **Prerequisites**: plan.md, spec.md, research.md, data-model.md, contracts/part2-drafts-contract.md, quickstart.md
 
 **Tests**: Not requested as separate tasks — verification is the contract
+
+> **Post-feature note (2026-08-04).** `relay-tutorial/drafts/part-2/` no longer
+> exists. All seven chapters were published, at which point the drafts became
+> byte-identical duplicates that nothing tracked and nothing checked, and the
+> directory was removed. The per-chapter metadata its `DRAFT-HEADER` blocks
+> carried now lives in `chapter-notes.md` beside this file. References to the
+> draft paths below are left as written: they record what this feature actually
+> did, and research R1's reasoning about keeping drafts outside `app/` only
+> makes sense in those terms.
+
 battery (C1 draft battery, C2 headers/TBVs, C3 frozen surfaces, C4 source
 fidelity, C5 arc continuity, C6 marquee moments, C7 stack fidelity).
 

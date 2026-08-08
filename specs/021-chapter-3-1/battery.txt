@@ -1,0 +1,4 @@
+# Measured on the published page. Columns:
+# path words Why Skip Fwd Chk Trap tickLines Figures
+# tickLines = changed lines inside diff fences.
+app/(en)/part-3/chapter-01/tenants-all-the-way-down/page.mdx 3155 2 1 1 1 1 298 3

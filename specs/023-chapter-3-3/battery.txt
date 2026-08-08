@@ -1,0 +1,45 @@
+# Chapter battery — measured on the published page (T041)
+# relay-tutorial/app/(en)/part-3/chapter-03/the-outbox/page.mdx
+# Canonical words = prose only: fences stripped, plus lines starting
+# `import `, `<`, `/` or `export const`.
+
+chapter  words  WHY  TRAP  SKIP  FWD  FIG  CHK  verdict
+3.3      3018   2    1     1     1    3    1    PASS
+
+thresholds  2000-4000  >=2  >=1  ==1  >=1  2-4  ==1
+
+SKIP AHEAD names `part3-ch3`  ✓
+Figures: figTheGap (sequence), figOutbox (sequence), figTwoGuarantees
+(flowchart). All three render as SVG in the built site — verified in headless
+chromium: 3 mermaid SVGs, zero "Syntax error" text, zero page errors. The
+reading shell renders too (the check T037 gained after Part 3's missing layout).
+
+## For comparison, the chapters before it
+
+3.2   3385   2   2   1   1   3   1
+3.1   3190   2   1   1   2   3   1
+2.8   2871   2   1   1   1   3   1
+2.7   3402   3   2   1   2   4   1
+
+## Fences: 19, against a budget of 12-15
+
+R11 budgeted seven amendments plus new files, and T032 enumerated fifteen. The
+actual count is **nineteen**, and the four extra are worth naming because
+budget-versus-actual is the point of having budgeted at all:
+
+  +2  messages.service.ts, internal.controller.ts
+      The event envelope carries the sender's EXTERNAL id, and threading it from
+      the caller beat looking it up inside the write transaction — a query every
+      message would pay forever. R11 did not foresee the event needing it.
+
+  +1  services/gateway/package.json
+      A build-order dependency the gateway's 3.2 socket suite always needed and
+      never declared. Exposed by this chapter, fixed forward.
+
+  +1  services/api/src/tenancy/signup.itest.ts
+      3.1's global organisation count, fragile under concurrency, removed.
+      Exposed by this chapter's crash tests, fixed forward.
+
+Two of the four are fix-forwards to earlier chapters rather than this chapter's
+own work. The budget was right about the shape of the change and wrong about how
+much of Part 3's past this chapter would end up touching.

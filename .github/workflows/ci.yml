@@ -1,0 +1,122 @@
+# CI for Building Relay (feature 024).
+#
+# This runs from the PARENT repository, because that is the only place where all
+# three trees exist at once: the tutorial's fence check replays chapters onto
+# relay-platform, and neither submodule can verify that alone.
+#
+# Every command below is one a maintainer runs locally, verbatim. That is the
+# point rather than a nicety: a green CI run has to mean what a green local run
+# means, and a workflow that "helpfully" runs something slightly different is a
+# workflow that goes green while the repository is broken.
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  platform:
+    name: relay-platform — gates, lanes, coverage
+    runs-on: ubuntu-latest
+
+    # The integration lane and the coverage run both need real stores. Same
+    # images as compose.yaml, so a lane that passes here passes there.
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: relay
+          POSTGRES_PASSWORD: relay
+          POSTGRES_DB: relay
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U relay -d relay"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+      redis:
+        image: redis:8-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+      nats:
+        image: nats:2.12-alpine
+        ports: ["4222:4222", "8222:8222"]
+        options: >-
+          --health-cmd "wget -q -O - http://localhost:8222/healthz"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+
+    env:
+      DATABASE_URL: postgres://relay:relay@localhost:5432/relay
+      RELAY_REDIS_URL: redis://localhost:6379
+      RELAY_NATS_URL: nats://localhost:4222
+      # The outbox relay stays off in the test lane, for the reason chapter 3.3
+      # found the hard way: a background daemon draining the table two suites
+      # are asserting on is a race between test files, not a property.
+      RELAY_OUTBOX_RELAY: "off"
+
+    defaults:
+      run:
+        working-directory: relay-platform
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: relay-platform/pnpm-lock.yaml
+
+      - run: pnpm install --frozen-lockfile
+
+      # The Docker-free gate, exactly as chapter 1.1 defined it.
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+
+      # Migrations before the integration lane: the suites expect the schema the
+      # migration runner produces, not the one drizzle-kit imagines.
+      - run: pnpm build
+      - run: node services/api/dist/db/migrate.js
+
+      - run: pnpm test:integration
+
+      # Constitution VI's measurable half. Runs both lanes again under
+      # instrumentation, which is slower and is the only honest way to measure
+      # code that integration tests reach.
+      - run: pnpm coverage
+
+  tutorial:
+    name: relay-tutorial — build, docs drift, fence chain
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: relay-tutorial/pnpm-lock.yaml
+
+      - run: pnpm install --frozen-lockfile
+        working-directory: relay-tutorial
+
+      - run: pnpm lint
+        working-directory: relay-tutorial
+      - run: pnpm build
+        working-directory: relay-tutorial
+
+      # The two checks that keep the series honest: prose mirrors its sources,
+      # and every fenced file replays onto the canonical repository byte for
+      # byte. The fence check needs relay-platform, which is why this job
+      # checks out submodules too.
+      - run: pnpm check:docs
+        working-directory: relay-tutorial
+      - run: pnpm check:fences
+        working-directory: relay-tutorial

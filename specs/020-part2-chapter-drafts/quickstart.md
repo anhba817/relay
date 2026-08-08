@@ -1,25 +1,33 @@
 # Quickstart — validating the Part 2 drafts
 
+> **Post-feature note.** The `drafts/part-2/` directory this guide walked over was
+> retired after all seven chapters were published; the per-chapter metadata its
+> headers carried now lives in `chapter-notes.md`. The steps below have been
+> repointed at the published pages, which have identical bodies (verified: the
+> word counts match the old battery rows row for row). Steps that only made
+> sense for unpublished drafts — V2's `«TBV»` extraction, V3's "page count
+> unchanged" — are marked as historical.
+
 Prerequisites: relay-tutorial checked out at the feature's final state.
 No Docker, no platform work — this feature runs nothing but the site's
 own toolchain.
 
 ## V1 — The seven drafts exist, format-true (C1)
 
-Run the draft battery script over `drafts/part-2/*/page.mdx`
+Run the draft battery script over `app/(en)/part-2/chapter-0*/*/page.mdx`
 (header-stripped word counts + box/figure formula); compare against
 `specs/020-part2-chapter-drafts/draft-battery.txt` — 7 rows, every word
 count in 2,000–4,000, every box/figure minimum met, each SkipAhead naming
 its own `part2-chN`.
 
-## V2 — Headers and TBVs (C2)
+## V2 — Headers and TBVs (C2) — HISTORICAL, drafts retired
 
 For each draft: header present with all six keys; extract the body's
 `«TBV: …»` markers and diff against the header's `tbv` list (must be
 identical); spot-check `fences`/`amendments` lists against the fences the
 body actually shows.
 
-## V3 — Frozen surfaces (C3)
+## V3 — Frozen surfaces (C3) — HISTORICAL, the chapters are published now
 
 ```bash
 git -C relay-platform status --porcelain          # empty (for this feature)

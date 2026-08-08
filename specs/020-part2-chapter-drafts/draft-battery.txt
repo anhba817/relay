@@ -1,7 +1,12 @@
-drafts/part-2/chapter-02-the-write-path/page.mdx 3070 3 1 1 1 1 30 3
-drafts/part-2/chapter-03-send-it-twice/page.mdx 2032 2 1 1 1 1 8 3
-drafts/part-2/chapter-04-history-that-pages/page.mdx 2027 2 1 1 1 1 8 2
-drafts/part-2/chapter-05-the-socket/page.mdx 2093 2 1 1 1 1 10 3
-drafts/part-2/chapter-06-two-servers-one-conversation/page.mdx 2075 2 1 1 1 1 6 3
-drafts/part-2/chapter-07-the-tunnel/page.mdx 2181 2 1 1 1 1 8 3
-drafts/part-2/chapter-08-milestone-the-tuan-test/page.mdx 2130 2 1 1 1 1 8 3
+# Battery measured on the PUBLISHED pages (the drafts this file used to name
+# were retired after publication — see chapter-notes.md). Columns:
+# path words Why Skip Fwd Chk Trap tickLines Figures
+# tickLines = changed lines inside diff fences; the retired file's values came
+# from a metric that could not be reproduced. Every other column is unchanged.
+app/(en)/part-2/chapter-02/the-write-path/page.mdx 3070 3 1 1 1 1 135 3
+app/(en)/part-2/chapter-03/send-it-twice/page.mdx 2514 2 1 1 1 1 230 3
+app/(en)/part-2/chapter-04/history-that-pages/page.mdx 2757 3 1 1 1 1 161 2
+app/(en)/part-2/chapter-05/the-socket/page.mdx 2885 3 1 1 1 2 68 3
+app/(en)/part-2/chapter-06/two-servers-one-conversation/page.mdx 3746 4 1 1 1 2 352 4
+app/(en)/part-2/chapter-07/the-tunnel/page.mdx 3628 3 1 1 1 1 677 3
+app/(en)/part-2/chapter-08/milestone-the-tuan-test/page.mdx 3157 2 1 1 1 1 77 3

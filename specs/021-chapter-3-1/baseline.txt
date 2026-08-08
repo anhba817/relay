@@ -1,0 +1,15 @@
+# Baseline before feature 021 (chapter 3.1) — captured 2026-08-04, T001
+# relay-platform, Docker-free lane: pnpm lint && pnpm typecheck && pnpm test
+lint            clean
+typecheck       clean (9 packages)
+unit @relay/config        6
+unit @relay/service-kit   3
+unit @relay/protocol     26
+unit @relay/api           6
+unit @relay/gateway      33
+unit TOTAL               74
+# integration lanes (compose stores), pnpm test:integration
+itest @relay/api         36  (7 files)
+itest @relay/gateway      8  (2 files)
+itest @relay/e2e          8  (1 file)
+itest TOTAL              52  (10 files)

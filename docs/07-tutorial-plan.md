@@ -67,7 +67,7 @@ are what the tutorial teaches.
 | Chapter length | 2,000–4,000 words + code; 60–120 min reader time | Longer chapters split; a chapter is a sitting |
 | Recurring boxes | `WHY` (links to ADR/requirement), `TRAP` (the bug you'd write naively), `CHECKPOINT` (verify before continuing), `SKIP AHEAD` (what to `git checkout` if stuck) | Consistent scaffolding lowers reading cost |
 | Visual elements | 2–4 captioned, theme-legible diagrams per chapter via the series `Figure` component, placed at key-concept moments (≥1 per chapter half); counted separately from specimen fences, which remain verbatim-quote territory; Vietnamese editions translate narrative labels while requirement/driver/ADR identifiers stay English | Concepts made visible break long prose runs; the specimen/diagram split keeps quote fidelity checkable |
-| Code-chapter battery | For code chapters (Part 1 onward): the 2,000–4,000 word bound counts prose OUTSIDE code fences ("+ code" is additive, not counted); code fences are uncapped but counted; `TRAP` is a counted box class (≥1 per code chapter); file-content fences must match the chapter's tagged repository state byte-for-byte; a chapter amends an earlier chapter's fenced file only via a full-context **diff fence** whose pre-image equals the fence published at the predecessor tag and whose post-image equals the file at this chapter's tag; specimen verbatim rules unchanged for quoted document content; Vietnamese editions keep all code fences byte-identical to English | Code volume must not corrupt the prose measure; the fence-equals-repo rule is how "the tutorial and code cannot drift" (§6) becomes checkable, and the diff-fence rule extends that check to files a later chapter must touch |
+| Code-chapter battery | For code chapters (Part 1 onward): the 2,000–4,000 word bound counts prose OUTSIDE code fences ("+ code" is additive, not counted); code fences are uncapped but counted; `TRAP` is a counted box class (≥1 per code chapter); file-content fences must match the chapter's tagged repository state byte-for-byte; a chapter amends an earlier chapter's fenced file only via a **hunked diff fence** (`@@` headers, three lines of context) whose hunks, applied to the state the predecessor chapters leave behind, reproduce the file at this chapter's tag exactly — each hunk's pre-image matching that state in exactly one place, since an ambiguous hunk proves nothing; full-file diffs were used through chapter 2.6 and stay as published, but new amendments are hunked, because an amendment should show what changed, not restate the file; specimen verbatim rules unchanged for quoted document content; Vietnamese editions keep all code fences byte-identical to English | Code volume must not corrupt the prose measure; the fence-equals-repo rule is how "the tutorial and code cannot drift" (§6) becomes checkable, and the diff-fence rule extends that check to files a later chapter must touch |
 
 ---
 
@@ -275,6 +275,27 @@ defenses, in priority order:
    When a later part forces a change to earlier code (it will), the rule is: rebase the
    tag lineage, re-run all checkpoints, and add a `REVISED` note to affected chapters —
    never let prose and code disagree silently.
+
+**Status of these defenses (as of 2026-08-08).** Defense 2 exists in a stronger form
+than planned: fences are byte-verified against the repo by `pnpm check:fences`, which
+replays every published chapter (95 files, 18 chapters) rather than resolving line-range
+markers at build time. Defense 1 does **not** exist — there is no CI anywhere in the three
+repositories, so chapter checkpoints, the quickstart's NFR-USE-03 run, and the
+constitution's 100% branch-coverage bar for isolation code (Principle VI, NFR-MNT-02) are
+all verified by hand or not at all. Chapter 3.1 deferred the coverage measurement; chapter
+3.2 deferred it a second time by explicit decision, and 3.3 a third — each recorded in
+its own feature rather than allowed to lapse quietly.
+
+**Closed by feature 024 (2026-08-08), with one clause still open.** Defense 1 now exists:
+`.github/workflows/ci.yml` in the parent repository runs both lanes against real stores,
+the coverage run, the site build, and the docs and fence checks. Coverage is measurable
+for the first time, and the answer is mixed — Principle VI's 70% clause is **met**
+(86.55% statements, 78.07% branches across both lanes), while its 100%-branch clause for
+ordering, idempotency and tenant isolation is **not**: `repository.ts` measures 85.91%.
+That figure is pinned as a ratchet so it cannot slide, and closing it belongs to the next
+chapter that touches the repository layer. The clause requiring each chapter's quickstart
+to run unmodified in CI stays partial until the chapter tags exist. See
+`specs/024-coverage-and-ci/notes.md`.
 
 ---
 

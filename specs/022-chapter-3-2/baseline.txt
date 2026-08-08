@@ -1,0 +1,32 @@
+# Chapter 3.2 — pre-change baseline (T001)
+# Measured 2026-08-08 at the part3-ch1 state, before any 3.2 edit.
+# Stores: RELAY_POSTGRES_PORT=15432 RELAY_REDIS_PORT=16379
+
+## Docker-free gate
+pnpm lint       exit 0
+pnpm typecheck  exit 0
+
+## Unit lane — `pnpm test`   TOTAL 86
+@relay/service-kit    3   src/index.test.ts 3
+@relay/config         6   src/infra.test.ts 3, src/index.test.ts 3
+@relay/protocol      26   src/codes.test.ts 4, src/frames.test.ts 22
+@relay/api           18   src/messages/cursor.test.ts 3, src/tenancy/oauth.test.ts 12, src/main.test.ts 3
+@relay/gateway       33   src/resume.test.ts 12, src/main.test.ts 2, src/session.test.ts 19
+
+## Integration lane — `pnpm test:integration`   TOTAL 60
+@relay/api           44   db/repository.itest.ts 6, messages/idempotency.itest.ts 5,
+                          messages/history.itest.ts 5, messages/messages.itest.ts 4,
+                          internal/internal.itest.ts 5, db/history-drift.itest.ts 2,
+                          tenancy/signup.itest.ts 8, internal/backfill.itest.ts 9
+@relay/gateway        8   src/fanout.itest.ts 5, src/resume.itest.ts 3
+@relay/e2e            8   src/tuan.itest.ts 8
+
+## Expected note
+`fanout.itest.ts` prints one `fanout.invalid_payload` error line by design — the
+case that proves a malformed payload is dropped rather than delivered. Not a
+failure.
+
+## What T021 and T025 compare against
+Both lanes must still total at least these counts, with every listed suite
+present and its assertions unchanged in substance (spec FR-020). This chapter
+adds files; it must not shrink or weaken any row above.
