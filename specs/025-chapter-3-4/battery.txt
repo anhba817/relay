@@ -1,0 +1,82 @@
+# Chapter battery — measured on the published pages (T041)
+# relay-tutorial/app/(en)/part-3/chapter-04/jetstream-and-the-first-consumer/page.mdx
+# relay-tutorial/app/(vi)/vi/part-3/chapter-04/jetstream-and-the-first-consumer/page.mdx
+#
+# Measured 2026-08-10 during reconstruction. The battery is a property of the
+# shipped page, so unlike baseline.txt nothing here needed recovering — the
+# pages survived intact and were re-measured directly.
+#
+# Canonical words = prose only: fences stripped, plus lines starting
+# `import `, `<`, `/` or `export const`.
+
+chapter  words  WHY  TRAP  SKIP  FWD  FIG  CHK  verdict
+3.4 (en) 3575   2    1     1     2    3    1    PASS
+3.4 (vi) 3535   2    1     1     2    3    1    PASS
+
+thresholds  2000-4000  >=2  >=1  ==1  >=1  2-4  ==1
+
+SKIP AHEAD names `part3-ch4`  ✓
+Locale parity: 17 titled fences in each, identical box counts, and every fenced
+file appears in both. The first Part 3 chapter to ship its translation with the
+English rather than after it.
+
+Figures: figTheOtherGap (sequence — the window between doing the work and
+admitting it), figOutcomes (flowchart TB — terminate / retry / acknowledge),
+figWhereItRuns (flowchart LR — the consumer inside the api, and what that costs
+3.5). Three in each locale. All render as SVG in the built site — verified in
+headless chromium on 2026-08-10: 3 mermaid SVGs per locale, zero "Syntax error"
+text, zero page errors, reading shell present in both.
+
+## For comparison, the chapters before it
+
+3.3   3018   2   1   1   1   3   1
+3.2   3385   2   2   1   1   3   1
+3.1   3190   2   1   1   2   3   1
+2.8   2871   2   1   1   1   3   1
+2.7   3402   3   2   1   2   4   1
+
+The longest chapter in Part 3, by 190 words over 3.2. The extra length is the
+stream-settings audit — five settings, each with a reason — which is prose that
+could not be compressed without becoming the list of defaults the chapter exists
+to argue against.
+
+## Fences: 17, against a budget of 15-18
+
+R12 budgeted nine amendments plus whole-file fences for the new module, the
+migration and the two scripts. The actual count is **seventeen**, inside the
+budget — the first Part 3 chapter to land there. 3.3 budgeted 12-15 and shipped
+19; the difference is that this chapter fixes forward into no earlier chapter and
+touches no service beyond the api.
+
+  9 amendments (hunked diffs)
+      services/api/src/outbox/jetstream.publisher.ts   every setting a decision
+      packages/protocol/src/internal.ts                the grammar moves here
+      services/api/src/outbox/event.ts                 the grammar's old home
+      services/api/src/db/schema.ts                    consumed_events
+      services/api/src/db/repository.ts                claimEvent, timesHandled
+      services/api/src/main.ts                         start/stop the consumer
+      services/api/src/app.module.ts                   the consumer module
+      turbo.json                                       two env vars
+      packages/e2e/src/harness.ts                      forward them to the child
+
+  8 whole files
+      services/api/migrations/0005_consumed_events.sql
+      services/api/src/consumer/handler.ts
+      services/api/src/consumer/runtime.ts
+      services/api/src/consumer/recorder.ts
+      services/api/src/consumer/consumer.module.ts
+      services/api/src/consumer/consumer.itest.ts
+      scripts/consumer-walk.mjs
+      scripts/stream-info.mjs
+
+## Two files the chapter asserts and does not fence — a defect
+
+  packages/protocol/src/internal.test.ts    "Five unit cases ... hold the grammar"
+  services/api/src/consumer/runtime.test.ts "two are pure and live in the unit lane"
+
+Both exist in the repository and neither is fenced, so the fence chain cannot
+replay them. The chapter's own checkpoint promises 133 unit tests, which is only
+reachable if both files exist — so the prose asserts an artifact the fences do
+not carry. Recorded here and in chapter-notes.md finding 1; spec FR-025 was added
+in reconstruction to name the rule this breaks. Fixing it is a fence-only
+amendment to a published chapter, in both locales.

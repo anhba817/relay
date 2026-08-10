@@ -1,0 +1,63 @@
+# Chapter 3.4 — pre-change baseline (T001)
+#
+# RECONSTRUCTED 2026-08-10. The baseline captured before implementation was lost
+# with the machine. These numbers are not estimates: they are chapter 3.3's
+# recorded closing counts (specs/023-chapter-3-3/chapter-notes.md) cross-checked
+# against a measurement taken on 2026-08-10 by subtracting this chapter's own new
+# tests from the current totals. Both routes agree exactly.
+#
+# EXIT CODES, not just counts. Chapter 3.2 shipped two failures past a grep over
+# a build log; both were caught only when $? was read.
+
+## Stores
+RELAY_POSTGRES_PORT=15432 RELAY_REDIS_PORT=16379 RELAY_NATS_PORT=14222
+# Both Redis knobs are required for the integration lane. RELAY_REDIS_URL is read
+# by the gateway's production code; RELAY_REDIS_PORT is read by its integration
+# tests, which build their own URL. Setting only the first produces seven
+# timeouts that look like a broken fan-out fabric and are not.
+
+## Docker-free gate
+pnpm lint       exit 0
+pnpm typecheck  exit 0
+pnpm build      exit 0
+
+## Unit lane — `pnpm test`   TOTAL 120   exit 0
+@relay/service-kit     3
+@relay/config          6
+@relay/protocol       26
+@relay/api            51
+@relay/gateway        34
+
+## Integration lane — `pnpm test:integration`   TOTAL 87   exit 0
+@relay/api            66
+@relay/gateway        13
+@relay/e2e             8
+
+## Coverage — available for the first time (feature 024)
+pnpm coverage   exit 0
+Workspace: 86.55% statements, 78.07% branches   (as recorded by feature 024)
+Per-file ratchets in force: repository.ts branches >= 85, resume.ts >= 93,
+user-token.ts >= 96. This chapter adds to repository.ts and must not break it.
+
+## Broker
+nats:2.12-alpine with JetStream (-js -sd /data), healthy on 14222.
+Stream EVENTS exists, created by chapter 3.3 with a name, subjects `events.>`
+and file storage. Everything else is whatever NATS defaults to:
+  max_age           0      (no limit)
+  max_bytes         -1     (unbounded)
+  discard           old
+  duplicate_window  120s
+  num_replicas      1
+Consumers: 0. Nothing has ever read this stream. That is the chapter's opening.
+
+## What the chapter-end comparison asserts
+Both lanes must total at least these counts with exit code 0, every listed suite
+present, and assertions unchanged in substance (spec FR-020, SC-011). Coverage
+must still exit 0 with every 024 ratchet intact. This chapter adds files; it must
+not shrink or weaken any row above.
+
+## Measured chapter-end (2026-08-10)
+Unit         133   exit 0     (+13: protocol +5, api +8)
+Integration   97   exit 0     (+10: api +10)
+Coverage           exit 0     88.22% statements, 79.01% branches
+                              repository.ts branches 85.91% -> 86.30%
