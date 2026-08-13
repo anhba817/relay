@@ -138,8 +138,8 @@ Paths are written from the repository root across three trees: `relay-platform/`
 
 ### The artifacts a reader runs
 
-- [ ] T058 [P] [US2] Write `relay-platform/scripts/hostile-endpoint.mjs` — fails, hangs or succeeds on command — the same artifact the integration suite drives, so neither it nor the tests can rot alone
-- [ ] T059 [P] [US2] Write `relay-platform/scripts/webhook-walk.mjs`, including `--print-signing-material` so a reader can verify a signature by hand in another language (quickstart V5)
+- [X] T058 [P] [US2] Write `relay-platform/scripts/hostile-endpoint.mjs` — fails, hangs or succeeds on command — the same artifact the integration suite drives, so neither it nor the tests can rot alone
+- [X] T059 [P] [US2] Write `relay-platform/scripts/webhook-walk.mjs`, including `--print-signing-material` so a reader can verify a signature by hand in another language (quickstart V5)
 
 ### Measurement and regression
 
@@ -308,6 +308,30 @@ the instrument was fine and the code was not.*
   second required splitting `ackWaitMs` per consumer — a single knob shortened
   the DELIVER consumer too, and under the coverage lane's slower clock the
   broker redelivered attempts that were still in flight.
+
+**T058/T059 — what the walk found.** The walk against `--mode=fail` stopped dead
+after one attempt, and the fault was in the platform, not the script. The delivery
+relay deduplicated its publishes on `row.id`, which is the SAME for all seven
+attempts, so JetStream collapsed every retry into the first attempt's message. The
+publish reported success, no message reached the dispatcher, and the row kept the
+`dispatched_at` its claim had set — which only an outcome report clears, and no
+outcome was ever coming. **Every failing webhook was retried exactly zero times**
+and the whole of FR-WHK-03's schedule was unreachable.
+
+Nothing caught it. `deliveries.itest.ts` drives `drainDueDeliveries` directly, with
+no broker in the path; the dispatcher's suite used a fresh delivery for every case,
+so the same delivery had never been published twice in any test. The key is now
+`{delivery_id}:{attempt}` — a republished attempt is still recognisably the same
+work, a NEW attempt is allowed to say it is new — and the dispatcher suite has the
+regression test, verified to fail against the old key.
+
+Two smaller things fell out of the same run. `--print-signing-material` was signing
+the payload object as the script had built it, while the platform signs what comes
+back out of `jsonb`, and PostgreSQL does not preserve key order — so the printed
+signature was for a rendering that never went on the wire. And `deliver.ts`'s
+`skipped` branch turned out to be covered only by accident, by leftover deliveries
+other suites had left pointing at endpoints they had deleted, which made a ratchet
+pinned on it move on its own. Both now have deliberate coverage.
 
 **T045's ordering.** Post, then report, then acknowledge. Claiming before posting
 turns the terminal hop at-most-once and loses webhooks silently — the failure

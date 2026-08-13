@@ -113,14 +113,33 @@ A suite that still passes with a mechanism removed is a suite that holds nothing
 node scripts/hostile-endpoint.mjs --mode=fail      # always 500
 node scripts/hostile-endpoint.mjs --mode=hang      # accepts, never responds
 node scripts/hostile-endpoint.mjs --mode=ok        # 200
+node scripts/hostile-endpoint.mjs --mode=flaky     # 503, 503, then 200
 
 node scripts/webhook-walk.mjs
+node scripts/webhook-walk.mjs --fast-forward       # against --mode=fail
 ```
 
 Expected: against `--mode=ok`, one signed request whose signature the walk verifies
-in front of the reader. Against `--mode=fail`, six attempts on the widening
-schedule and then a dead letter. Against `--mode=hang`, the attempt abandoned on
-the timeout while a second, healthy endpoint keeps receiving.
+in front of the reader. Against `--mode=fail --fast-forward`, **seven** attempts on
+the widening schedule and then a dead letter (FR-WHK-03 went from six to seven when
+the tier list was settled; the schedule is `now → 1s → 5s → 30s → 300s → 1800s →
+7200s`). Against `--mode=hang`, the attempt abandoned on the timeout while a second,
+healthy endpoint keeps receiving.
+
+`--fast-forward` rewrites `next_attempt_at` between attempts. It moves the clock,
+not the logic — every attempt still goes through the relay, the broker and the
+dispatcher exactly as it does in production. Without it the reader waits two hours
+to see the seventh attempt.
+
+**This walk earned its keep on the first run.** Against `--mode=fail` it stopped
+dead after one attempt, and the cause was in the platform rather than the script:
+the relay deduplicated its publishes on the delivery id, which is the same for
+every attempt, so JetStream collapsed every retry into the first attempt's message
+and the row was left `pending` with a `dispatched_at` nothing would ever clear.
+No test caught it — they drive `drainDueDeliveries` directly, and the dispatcher's
+suite used a fresh delivery every time, so nothing had ever published the same
+delivery twice. The key is now `{delivery_id}:{attempt}` and the dispatcher suite
+has the regression test.
 
 The hostile endpoint is the same artifact the integration suite drives. One
 artifact, run by a reader and by the tests, so neither can rot alone — 3.3 and 3.4
@@ -129,15 +148,36 @@ each made the same argument for their walk scripts.
 ## V5 — Verify a signature the way a customer would
 
 ```bash
-node scripts/webhook-walk.mjs --print-signing-material
+node scripts/hostile-endpoint.mjs --secret=hunter2                # verifies each arrival
+node scripts/webhook-walk.mjs --secret=hunter2 --print-signing-material
 ```
 
 Then verify it by hand, in a different language or with a shell one-liner, using
-only the documented recipe. **If it can only be verified with the platform's own
-code, the contract is not a contract.**
+only the documented recipe — the walk prints an `openssl` invocation that uses none
+of our code. **If it can only be verified with the platform's own code, the contract
+is not a contract.** The endpoint verifies too, in about fifteen lines whose entire
+dependency list is `node:crypto`: that is the customer's side, written without
+looking at ours.
 
 Then repeat with the body re-serialised, and watch it fail. That failure is the
-chapter's most useful paragraph.
+chapter's most useful paragraph:
+
+```bash
+node scripts/hostile-endpoint.mjs --secret=hunter2 --reserialize
+# MARKER signature n=1 FAILED (body re-serialised)
+```
+
+Note what `--reserialize` actually does: it sorts the top-level keys. A plain
+`JSON.stringify(JSON.parse(body))` in the same runtime hands back the bytes it was
+given, which is exactly why this bug survives every test written in the service's
+own language and then appears the day a customer verifies in Go, or a proxy
+normalises the JSON, or somebody spreads the object into a new one to add a field.
+
+The walk itself made this mistake and had to be corrected: `--print-signing-material`
+originally signed the payload object as the script had built it, while the platform
+signs what comes back out of `jsonb` — and PostgreSQL does not preserve key order.
+The printed signature was for a rendering that never went on the wire. It now reads
+the same `deliveryMaterial` the dispatcher reads.
 
 ## V6 — The dispatcher is genuinely separable
 
