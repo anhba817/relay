@@ -1,0 +1,69 @@
+# Chapter 3.5 — pre-change baseline (T001, T002)
+# Measured 2026-08-10 at the part3-ch4 state, before any 3.5 edit.
+#
+# EXIT CODES, not just counts. Chapter 3.2 shipped two failures past a grep over
+# a build log; both were caught only when $? was read.
+
+## Provenance (T001)
+relay-platform  ae04058  "feat: JetStream and the first consumer - chapter 3.4"  tag: part3-ch4
+relay-tutorial  2e5f3e3  "feat: JetStream and the first consumer - chapter 3.4"
+parent          6bc7fd0  "docs: spec artifacts for 025-chapter-3-4; ping submodule version at chapter 3.4"
+Both submodule pins match their submodule HEADs. Working trees clean apart from
+this feature's own artifacts. Tags now exist through part3-ch4, which retires the
+standing debt chapter 3.4's notes recorded.
+
+## Stores
+RELAY_POSTGRES_PORT=15432 RELAY_REDIS_PORT=16379 RELAY_NATS_PORT=14222
+# Both Redis knobs are required for the integration lane. RELAY_REDIS_URL is read
+# by the gateway's production code; RELAY_REDIS_PORT by its integration tests,
+# which build their own URL. Setting only the first produces seven timeouts that
+# look like a broken fan-out fabric and are not.
+
+## Docker-free gate
+pnpm lint       exit 0
+pnpm typecheck  exit 0
+pnpm build      exit 0   (FULL TURBO — cached)
+
+## Unit lane — `pnpm test`   TOTAL 133   exit 0
+@relay/service-kit     3
+@relay/config          6
+@relay/protocol       31
+@relay/api            59
+@relay/gateway        34
+
+## Integration lane — `pnpm test:integration`   TOTAL 97   exit 0
+@relay/api            76
+@relay/gateway        13
+@relay/e2e             8
+turbo: 6 successful, 6 total
+
+## Coverage — `pnpm coverage`   exit 0
+Statements   88.22%  (809/917)
+Branches     79.01%  (369/467)
+Functions    89.35%  (193/216)
+Lines        89.67%  (756/843)
+
+services/api/src/consumer      93.50 stmt / 86.11 branch / 93.33 func / 94.36 line
+services/api/src/db/repository.ts
+                               96.18 stmt / 86.30 branch / 100.00 func / 98.33 line
+
+### Per-file ratchets in force (feature 024)
+services/api/src/db/repository.ts    branches >= 85   functions 100  lines 98   statements 95
+services/gateway/src/resume.ts       branches >= 93   functions 100  lines 100  statements 100
+services/api/src/auth/user-token.ts  branches >= 96   functions 100  lines 100  statements 96
+
+repository.ts sits 1.30 points above its ratchet and THIS CHAPTER ADDS TO IT
+(scoped endpoint and dead-letter operations, T018 and T031). Expect to raise the
+ratchet with this chapter's work rather than discover it broken at the end.
+
+## Site baseline (T004)
+pnpm lint          exit 0
+pnpm build         exit 0
+pnpm check:docs    exit 0   all mirrored docs match their sources
+pnpm check:fences  exit 0   121 fenced files replay across 21 chapters (21 translated)
+
+## What the chapter-end comparison asserts
+Both lanes must total at least these counts with exit code 0, every listed suite
+present, and assertions unchanged in substance (spec FR-027, SC-012). Coverage must
+still exit 0 with every ratchet intact — including the new service, which must be
+added to the instrument rather than left outside it (research R12).
