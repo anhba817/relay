@@ -160,12 +160,12 @@ Paths are written from the repository root across three trees: `relay-platform/`
 **Independent Test**: A reader at `part3-ch4` can follow the chapter to a signed delivery at an endpoint of their own, and verify the signature by hand using only the chapter.
 
 - [X] T065 [US1] Capture every transcript the chapter will quote into `specs/026-chapter-3-5/captured-output.md` — R1's measurement, the invariant run, all three hostile-endpoint modes, the by-hand verification, the dispatcher-stopped demonstration, and the coverage summary (spec FR-031)
-- [ ] T066 [US1] Write the English chapter at `relay-tutorial/app/(en)/part-3/chapter-05/…/page.mdx`: 3.4's pattern applied to an HTTP effect and shown to fail; the guarantee chosen and the identifier handed over; the signature and its verification; the schedule; the dead letter (spec FR-002, FR-003, FR-004, FR-005, FR-006)
-- [ ] T067 [US1] Add the section to `relay-tutorial/app/(en)/part-3/chapter-05/…/page.mdx` explaining why the dispatcher is a separate service when the relay and recorder were not, and what it costs (spec FR-007)
-- [ ] T068 [US1] Add the section to `relay-tutorial/app/(en)/part-3/chapter-05/…/page.mdx` that names the dual write as a recurring pattern rather than solving it a third time in silence — R1's measurement, why the obvious retry mechanism was disqualified, and that the dual write is the standing cost of every hop between systems that cannot share a transaction (research R1)
-- [ ] T069 [P] [US1] Write the figures in `relay-tutorial/app/(en)/part-3/chapter-05/…/figures.ts` — the pattern breaking, the schedule as a due-time column, and where the dispatcher sits
-- [ ] T070 [US1] Measure the battery on the published page and record it in `specs/026-chapter-3-5/battery.txt`, confirming the SKIP AHEAD names `part3-ch5` and counting the fences against R11's revised 25–29 budget
-- [ ] T071 [US1] Traceability: every `FR-*`/`NFR-*`/`ADR-*` cited exists in a source document, every table and column named exists in `relay-platform/services/api/src/db/schema.ts` (spec SC-013)
+- [X] T066 [US1] Write the English chapter at `relay-tutorial/app/(en)/part-3/chapter-05/…/page.mdx`: 3.4's pattern applied to an HTTP effect and shown to fail; the guarantee chosen and the identifier handed over; the signature and its verification; the schedule; the dead letter (spec FR-002, FR-003, FR-004, FR-005, FR-006)
+- [X] T067 [US1] Add the section to `relay-tutorial/app/(en)/part-3/chapter-05/…/page.mdx` explaining why the dispatcher is a separate service when the relay and recorder were not, and what it costs (spec FR-007)
+- [X] T068 [US1] Add the section to `relay-tutorial/app/(en)/part-3/chapter-05/…/page.mdx` that names the dual write as a recurring pattern rather than solving it a third time in silence — R1's measurement, why the obvious retry mechanism was disqualified, and that the dual write is the standing cost of every hop between systems that cannot share a transaction (research R1)
+- [X] T069 [P] [US1] Write the figures in `relay-tutorial/app/(en)/part-3/chapter-05/…/figures.ts` — the pattern breaking, the schedule as a due-time column, and where the dispatcher sits
+- [X] T070 [US1] Measure the battery on the published page and record it in `specs/026-chapter-3-5/battery.txt`, confirming the SKIP AHEAD names `part3-ch5` and counting the fences against R11's revised 25–29 budget
+- [X] T071 [US1] Traceability: every `FR-*`/`NFR-*`/`ADR-*` cited exists in a source document, every table and column named exists in `relay-platform/services/api/src/db/schema.ts` (spec SC-013)
 
 **Checkpoint**: the chapter says only what the code does.
 

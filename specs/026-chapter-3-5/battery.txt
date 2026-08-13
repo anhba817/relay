@@ -1,0 +1,54 @@
+# Chapter 3.5 — the battery, measured on the published page (T070, T071)
+# Measured 2026-08-13 against app/(en)/part-3/chapter-05/webhooks-that-survive-the-customer/page.mdx
+
+## Size
+lines                 6848
+words                 37946
+reader minutes        100 (lib/tutorial.ts estimate, unchanged)
+
+## Fences
+chain fences          39   <- R11's revised budget: 37-41
+excerpt fences        8   (prose illustrations; not part of the chain)
+untitled fences       9   (console/text transcripts)
+
+check:fences          exit 0 — 145 fenced files replay onto relay-platform across 22 chapters
+check:docs            exit 0
+pnpm lint             exit 0
+pnpm build            exit 0 — /part-3/chapter-05/webhooks-that-survive-the-customer prerendered
+
+## Structure
+figures               3   (the pattern breaking · the schedule as a column · where it runs)
+<Why>                 4
+<Trap>                8
+<SkipAhead>           1
+<Checkpoint>          1
+SKIP AHEAD names part3-ch5   yes
+
+## On the fence count
+R11 budgeted 22-26, then 25-29 after R1's re-plan, then 37-41 once test files and
+containerisation were counted. The page lands at 39 — inside the revised budget,
+and only because the budget was revised twice for reasons that were written down
+each time. The first two numbers were wrong because they omitted test files
+(seven) and container files (four), which is exactly the omission FR-029 was
+added to prevent.
+
+Four files this chapter changed are deliberately NOT fenced here, because the
+chapter does not teach them and fencing them would show a reader code it never
+discusses: pnpm-lock.yaml, the drizzle migration snapshot and journal, and the
+dispatcher's two tsconfig files. The fence chain does not require them; only
+files with an existing chain must be amended, and none of these has one.
+
+## Traceability (T071, spec SC-013)
+Every FR-*/NFR-*/ADR-* cited on the page resolves to docs/:
+  ADR-04 ADR-15 ADR-16
+  FR-TEN-05 FR-WHK-01 FR-WHK-02 FR-WHK-03 FR-WHK-04 FR-WHK-05 FR-WHK-06
+  FR-WHK-07 FR-WHK-08
+  NFR-MNT-02 NFR-OBS-01 NFR-SEC-02 NFR-SEC-06 NFR-SEC-07
+None missing.
+
+Every table and column the prose names exists in services/api/src/db/schema.ts:
+  webhook_endpoints · webhook_deliveries · webhook_dead_letters
+  next_attempt_at · dispatched_at · consumed_events (3.4's, referenced)
+
+FR-WHK-06 and FR-WHK-07 are cited only to say they are DEFERRED, which is the
+one honest way to cite a requirement a chapter does not implement.
