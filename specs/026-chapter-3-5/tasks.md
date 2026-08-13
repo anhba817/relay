@@ -145,9 +145,9 @@ Paths are written from the repository root across three trees: `relay-platform/`
 
 - [X] T060 [US2] Add the dispatcher's surface to `relay-platform/vitest.coverage.config.mts` and a dispatcher job to `.github/workflows/ci.yml` — a deployable outside the instrument leaves every ratchet green while measuring the wrong scope (research R12, Principle VI)
 - [X] T061 [US2] Raise the `repository.ts` branch ratchet in `relay-platform/vitest.coverage.config.mts` to the level this chapter's work achieves — it sits at 86.30% against a ratchet of 85 and this chapter adds four operations to that file
-- [ ] T062 [US2] Run the sabotage check per `specs/026-chapter-3-5/quickstart.md` V3 — five mutations, including dropping the `next_attempt_at <= now()` predicate, which must fail invariants 9 and 10. Restore each file and verify byte-identical
-- [ ] T063 [US2] Run both lanes and confirm every pre-existing suite passes unchanged in substance, recording the chapter-end counts in `specs/026-chapter-3-5/baseline.txt` (spec FR-027, SC-012)
-- [ ] T064 [US2] Run `pnpm coverage` with the stores up, confirm exit 0 and that the dispatcher's files appear, recording the summary in `specs/026-chapter-3-5/captured-output.md` (quickstart V7)
+- [X] T062 [US2] Run the sabotage check per `specs/026-chapter-3-5/quickstart.md` V3 — five mutations, including dropping the `next_attempt_at <= now()` predicate, which must fail invariants 9 and 10. Restore each file and verify byte-identical
+- [X] T063 [US2] Run both lanes and confirm every pre-existing suite passes unchanged in substance, recording the chapter-end counts in `specs/026-chapter-3-5/baseline.txt` (spec FR-027, SC-012)
+- [X] T064 [US2] Run `pnpm coverage` with the stores up, confirm exit 0 and that the dispatcher's files appear, recording the summary in `specs/026-chapter-3-5/captured-output.md` (quickstart V7)
 
 **Checkpoint**: the code is provable, measured, separable, and its tests hold something.
 
@@ -159,7 +159,7 @@ Paths are written from the repository root across three trees: `relay-platform/`
 
 **Independent Test**: A reader at `part3-ch4` can follow the chapter to a signed delivery at an endpoint of their own, and verify the signature by hand using only the chapter.
 
-- [ ] T065 [US1] Capture every transcript the chapter will quote into `specs/026-chapter-3-5/captured-output.md` — R1's measurement, the invariant run, all three hostile-endpoint modes, the by-hand verification, the dispatcher-stopped demonstration, and the coverage summary (spec FR-031)
+- [X] T065 [US1] Capture every transcript the chapter will quote into `specs/026-chapter-3-5/captured-output.md` — R1's measurement, the invariant run, all three hostile-endpoint modes, the by-hand verification, the dispatcher-stopped demonstration, and the coverage summary (spec FR-031)
 - [ ] T066 [US1] Write the English chapter at `relay-tutorial/app/(en)/part-3/chapter-05/…/page.mdx`: 3.4's pattern applied to an HTTP effect and shown to fail; the guarantee chosen and the identifier handed over; the signature and its verification; the schedule; the dead letter (spec FR-002, FR-003, FR-004, FR-005, FR-006)
 - [ ] T067 [US1] Add the section to `relay-tutorial/app/(en)/part-3/chapter-05/…/page.mdx` explaining why the dispatcher is a separate service when the relay and recorder were not, and what it costs (spec FR-007)
 - [ ] T068 [US1] Add the section to `relay-tutorial/app/(en)/part-3/chapter-05/…/page.mdx` that names the dual write as a recurring pattern rather than solving it a third time in silence — R1's measurement, why the obvious retry mechanism was disqualified, and that the dual write is the standing cost of every hop between systems that cannot share a transaction (research R1)

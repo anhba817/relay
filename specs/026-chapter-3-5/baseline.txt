@@ -67,3 +67,70 @@ Both lanes must total at least these counts with exit code 0, every listed suite
 present, and assertions unchanged in substance (spec FR-027, SC-012). Coverage must
 still exit 0 with every ratchet intact — including the new service, which must be
 added to the instrument rather than left outside it (research R12).
+
+# ===========================================================================
+# CHAPTER-END MEASUREMENT (T062, T063, T064) — 2026-08-13
+# ===========================================================================
+
+## Gates
+pnpm lint             exit 0
+pnpm typecheck        exit 0
+pnpm build            exit 0   9/9 turbo tasks
+pnpm test             exit 0   156 unit   (config 6, service-kit 3, protocol 31,
+                                           api 74, dispatcher 8, gateway 34)
+pnpm test:integration exit 0   149 integration (api 111, dispatcher 16,
+                                                gateway 13, e2e 9)
+pnpm coverage         exit 0   296 tests, every ratchet intact
+
+## Lanes, against the baseline above
+unit          133 -> 156   (+23)
+integration    97 -> 149   (+52)
+Every pre-existing suite present and passing; no assertion weakened. The api's
+integration count includes the eleven webhook-delivery tests written when the
+coverage instrument showed the new operations were untested.
+
+## Coverage
+                    85.14 stmt / 77.16 branch / 85.57 func / 87.09 line
+services/api/src/db/repository.ts    97.28 / 89.51 / 100.00 / 98.99
+services/dispatcher/src/expand.ts    92.30 / 92.30 / 100.00 / 100.00
+services/dispatcher/src/deliver.ts  100.00 / 90.90 / 100.00 / 100.00
+
+The workspace percentages are LOWER than the baseline's 96/86 because that figure
+was the api package alone; this one includes a whole new service and the gateway.
+The per-file numbers are the comparable ones, and repository.ts went up.
+
+### Per-file ratchets now in force
+services/api/src/db/repository.ts    branches >= 89   functions 100  lines 98   statements 97
+services/dispatcher/src/expand.ts    branches >= 92   functions 100  lines 100  statements 92
+services/dispatcher/src/deliver.ts   branches >= 90   functions 100  lines 100  statements 100
+services/gateway/src/resume.ts       branches >= 93   functions 100  lines 100  statements 100
+services/api/src/auth/user-token.ts  branches >= 96   functions 100  lines 100  statements 96
+
+The baseline predicted "expect to raise the ratchet rather than discover it broken
+at the end." It was discovered BROKEN — 86.30 fell to 78.22 — because
+`deliveryMaterial` and `pendingDeliveryDepth` were reached only by the dispatcher,
+whose suite runs the api as a child process whose coverage is not attributable. The
+tests were written and the ratchet then raised. It was not lowered.
+
+## Sabotage (T062, quickstart V3) — five mutations, all caught
+M1  sign the re-serialised body, send the raw one   -> 1 failed  (invariants 4, 5)
+M2  log the delivery-material response              -> 1 failed  (invariant 15)
+M3  expand the event without claiming it            -> 2 failed  (invariant 8)
+M4  drop `next_attempt_at <= now()` from the relay  -> 2 failed  (invariant 10)
+M5  report the outcome before posting               -> 2 failed  (at-least-once)
+
+Both mutated files verified byte-identical afterwards by md5sum.
+
+TWO CORRECTIONS TO V3'S EXPECTATIONS, recorded because the table was wrong:
+
+- M4 was expected to fail "invariants 9 and 10". It fails invariant 10 only.
+  Invariant 9's tests are about claim EXCLUSIVITY — that a claimed delivery is not
+  claimed twice — which does not depend on the dueness predicate. The table
+  conflated two properties that happen to live in the same query.
+
+- M1 would have PASSED before this run. The signature unit tests prove
+  `signDelivery` is correct; nothing proved that `deliverOnce` calls it over the
+  right bytes and puts the result on the wire, which is precisely where the
+  re-serialisation trap lives. An integration test now verifies the signature
+  against the raw body as received, using `node:crypto` and the documented recipe
+  and nothing from the signing path. The mutation fails against it.
