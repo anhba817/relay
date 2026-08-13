@@ -177,10 +177,10 @@ Paths are written from the repository root across three trees: `relay-platform/`
 
 **Independent Test**: Both locale paths return 200 with the reading shell and every figure rendered; the fence chain replays every published chapter.
 
-- [ ] T072 [US3] Translate the chapter to `relay-tutorial/app/(vi)/vi/part-3/chapter-05/…/page.mdx` and `figures.ts`, fences mirrored byte for byte (spec FR-001)
-- [ ] T073 [US3] Amend `relay-tutorial/lib/tutorial.ts`: 3.5 published, `translatedIn: ["vi"]`, with `readerProduces` in both languages
-- [ ] T074 [US3] Verify publication of `/part-3/chapter-05/…` and `/vi/part-3/chapter-05/…`: both 200, figures rendering as SVG in a headless browser, the reading shell present — a page that loads is not a page that is laid out (spec SC-014, quickstart V9)
-- [ ] T075 [US3] Run `pnpm check:fences` in `relay-tutorial/` and confirm every fenced file replays — **including every file this chapter's prose asserts**, the rule chapter 3.4 broke (spec FR-029)
+- [X] T072 [US3] Translate the chapter to `relay-tutorial/app/(vi)/vi/part-3/chapter-05/…/page.mdx` and `figures.ts`, fences mirrored byte for byte (spec FR-001)
+- [X] T073 [US3] Amend `relay-tutorial/lib/tutorial.ts`: 3.5 published, `translatedIn: ["vi"]`, with `readerProduces` in both languages
+- [X] T074 [US3] Verify publication of `/part-3/chapter-05/…` and `/vi/part-3/chapter-05/…`: both 200, figures rendering as SVG in a headless browser, the reading shell present — a page that loads is not a page that is laid out (spec SC-014, quickstart V9)
+- [X] T075 [US3] Run `pnpm check:fences` in `relay-tutorial/` and confirm every fenced file replays — **including every file this chapter's prose asserts**, the rule chapter 3.4 broke (spec FR-029)
 
 ---
 
