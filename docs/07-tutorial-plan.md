@@ -145,9 +145,23 @@ build on."
 | 3.2 | Keys and tokens — two credentials, one mistake | API keys (prefix, hash, rotation); user JWTs; the dev-token endpoint (FR-AUT-09); error messages that name the wrong-credential mistake |
 | 3.3 | The outbox | Transactional outbox + relay (ADR-06); the dual-write problem demonstrated with a crash-in-the-gap test |
 | 3.4 | JetStream and the first consumer | NATS setup; subjects; durable pull consumers |
-| 3.5 | Webhooks that survive the customer | Dispatcher: HMAC signing, retry tiers, DLQ, auto-disable (FR-WHK) |
-| 3.6 | Limits and quotas | Redis token buckets; standard headers; spending caps (FR-RTL) |
-| 3.7 | **Milestone: the isolation gauntlet** | The cross-tenant attack suite (NFR-SEC-09) run against every endpoint; the second-external-developer test |
+| 3.5 | Webhooks that survive the customer | Dispatcher service: envelope-encrypted signing secrets, HMAC-SHA256, a due-time retry schedule, dead letters (FR-WHK-01…05, FR-WHK-08) |
+| 3.6 | When to stop trying | The attempt log and auto-disable (FR-WHK-06, FR-WHK-07); the evidence a customer is owed when their endpoint is switched off |
+| 3.7 | Limits and quotas | Redis token buckets; standard headers; spending caps (FR-RTL) |
+| 3.8 | **Milestone: the isolation gauntlet** | The cross-tenant attack suite (NFR-SEC-09) run against every endpoint; the second-external-developer test |
+
+**3.5 was narrowed while it was being written, and 3.6 is where the remainder
+went.** The original entry promised auto-disable in the same chapter as the
+dispatcher. Two things made that the wrong shape. The chapter was already the
+largest in the series — 39 fenced files against a budget first estimated at 22 —
+and auto-disable turned out to depend on the attempt log to be defensible at all:
+switching off a paying customer's endpoint is a decision that has to be explained
+afterwards, and FR-WHK-06's log is the explanation. Shipping the mechanism without
+the evidence would mean disabling endpoints and being unable to say why.
+
+So 3.5 builds the delivery path and states plainly that it never gives up on an
+endpoint, only on a delivery; 3.6 adds the record and the policy together. Part 3
+gains a chapter and everything after it shifts by one.
 
 ### Part 4 — The second data path (8 chapters)
 

@@ -218,3 +218,29 @@ nothing had ever published the same delivery twice. The key is now
 `{delivery_id}:{attempt}` — a republished attempt is still recognisably the same
 work, a new attempt is allowed to say it is new — and the regression test is verified
 to fail against the old key.
+
+---
+
+## Credential scan (T078, spec SC-011)
+
+Scanned this file and both published chapter pages for leaked material:
+
+```text
+rk_ credentials          3 occurrences, all synthetic test fixtures
+                         (rk_svc_credentials_itest_0123456789abcdef01234,
+                          rk_svc_walk_0123456789abcdef0123456789abcd,
+                          rk_svc_dispatcher_itest_0123456789abcdef)
+43-char signing secrets  1 occurrence — whsec_test_2f4b8c1e… , a fixture in
+                         signature.test.ts, not a minted secret
+RELAY_WEBHOOK_SECRET_KEY value   0 occurrences
+minted secrets from real runs    0 occurrences
+```
+
+The only long hex string in this file is an HMAC **output** — a signature, not a
+key, computed over a throwaway development secret. `hunter2` appears five times in
+each locale and is a value the reader is told to invent.
+
+**This scan covers the captured transcript. Invariant 15 covers the running
+service's log output.** Neither substitutes for the other: a secret can reach a
+reader through a document nobody re-read, or through a log line somebody widened
+"just for debugging", and the two are caught by different means.

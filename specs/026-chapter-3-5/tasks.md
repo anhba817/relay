@@ -186,11 +186,11 @@ Paths are written from the repository root across three trees: `relay-platform/`
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T076 Amend `docs/07-tutorial-plan.md` to record the narrowed scope, the follow-on chapter, and the renumbering of Part 3's remaining chapters (spec FR-033)
-- [ ] T077 [P] Run quickstart V1–V9 end to end from `specs/026-chapter-3-5/quickstart.md`, reading exit codes rather than grepping output
-- [ ] T078 [P] Scan `specs/026-chapter-3-5/captured-output.md` for leaked credentials — **including signing secrets**, new this chapter and the most likely to be quoted innocently in a transcript showing a delivery; this scan covers the captured transcript while invariant 15 covers the running service's log output, and neither substitutes for the other (spec SC-011)
-- [ ] T079 Write `specs/026-chapter-3-5/chapter-notes.md` from what happened rather than what was planned, including the budget-versus-actual fence count and what R1's measurement changed
-- [ ] T080 Fix forward any defect this chapter exposes in an earlier chapter, in every locale that chapter has, and record it in `specs/026-chapter-3-5/chapter-notes.md` (spec FR-032)
+- [X] T076 Amend `docs/07-tutorial-plan.md` to record the narrowed scope, the follow-on chapter, and the renumbering of Part 3's remaining chapters (spec FR-033)
+- [X] T077 [P] Run quickstart V1–V9 end to end from `specs/026-chapter-3-5/quickstart.md`, reading exit codes rather than grepping output
+- [X] T078 [P] Scan `specs/026-chapter-3-5/captured-output.md` for leaked credentials — **including signing secrets**, new this chapter and the most likely to be quoted innocently in a transcript showing a delivery; this scan covers the captured transcript while invariant 15 covers the running service's log output, and neither substitutes for the other (spec SC-011)
+- [X] T079 Write `specs/026-chapter-3-5/chapter-notes.md` from what happened rather than what was planned, including the budget-versus-actual fence count and what R1's measurement changed
+- [X] T080 Fix forward any defect this chapter exposes in an earlier chapter, in every locale that chapter has, and record it in `specs/026-chapter-3-5/chapter-notes.md` (spec FR-032)
 
 ---
 
