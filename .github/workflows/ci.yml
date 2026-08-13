@@ -53,6 +53,26 @@ jobs:
       # found the hard way: a background daemon draining the table two suites
       # are asserting on is a race between test files, not a property.
       RELAY_OUTBOX_RELAY: "off"
+      # Chapter 3.5's two loops, off for the same reason as 3.3's.
+      RELAY_EVENT_CONSUMER: "off"
+      RELAY_DELIVERY_RELAY: "off"
+      # The dispatcher authenticates to the api with this, and the api decrypts
+      # webhook signing secrets with the other. Throwaway CI values, in the file
+      # rather than in secrets on purpose: they guard nothing here, and a build
+      # that cannot be reproduced from what is committed is worse than a key
+      # everyone can read. Production supplies both from its own store.
+      #
+      # A REAL KEY, not an empty string. `""` is falsy, so it would have taken
+      # the development fallback inside `encryptionKey()` — CI would exercise
+      # the branch that never ships and leave the configured one unmeasured.
+      RELAY_INTERNAL_CREDENTIAL: rk_svc_ci_0123456789abcdef0123456789abcdef
+      RELAY_WEBHOOK_SECRET_KEY: "BpDal75yBZp7Fc2GtGS3D1vh7qOKgCWJkF6/d0XWxBU="
+
+      # NOTE: no per-service CI job. Every command in this workflow already runs
+      # at the workspace root — `pnpm lint`, `pnpm typecheck`, `pnpm test`,
+      # `pnpm build`, `pnpm test:integration`, `pnpm coverage` — so a new package
+      # is covered the moment it exists. Adding a `dispatcher` job would have
+      # been ceremony that runs the same commands twice.
 
     defaults:
       run:

@@ -128,13 +128,13 @@ Paths are written from the repository root across three trees: `relay-platform/`
 - [X] T048 [US2] Write invariant 11 in `relay-platform/services/dispatcher/src/dispatcher.itest.ts` — **the invariant that decided the design**: a pending retry survives a restart of **both** the dispatcher and the api, because the schedule is a row held by neither (spec FR-023, SC-005)
 - [X] T049 [US2] Write invariant 12 in `relay-platform/services/api/src/webhooks/deliveries.itest.ts`: an exhausted delivery is dead-lettered, retrievable, and replayable with its original event id so a deduplicating customer is unharmed, driven against the hostile endpoint (FR-WHK-04, spec FR-024, SC-006)
 - [X] T050 [US2] Implement dead-letter recording and replay in `relay-platform/services/api/src/db/repository.ts` and `relay-platform/services/api/src/internal/dispatch.controller.ts`, using current endpoint configuration on replay (data-model)
-- [ ] T051 [US2] Write invariant 15 in `relay-platform/services/dispatcher/src/dispatcher.itest.ts`: no dispatcher log line contains a signing secret or a tenant's message body, at any level **including the error paths**, which is where a secret gets printed by accident (spec FR-025, SC-011, NFR-SEC-06 — the invariant chapter 3.4 carried and this chapter must not drop while handling a decryptable credential)
-- [ ] T052 [US2] Write invariant 16 in `relay-platform/services/dispatcher/src/dispatcher.itest.ts`: a delivered body is chapter 3.3's envelope and carries the event `id` a recipient deduplicates on — the field every claim about at-least-once rests on (spec FR-018)
-- [ ] T053 [US2] Write invariant 14 in `relay-platform/packages/e2e/src/webhooks.itest.ts`: with the dispatcher stopped, messages are delivered to end users normally and the backlog drains on its return (spec FR-016, SC-009)
-- [ ] T054 [US2] Write `relay-platform/services/api/Dockerfile` and `relay-platform/services/gateway/Dockerfile` — **the repository's first containers**, decided by the author on 2026-08-10 rather than leaving the dispatcher as the only containerised service. Multi-stage, pnpm workspace-aware, running the same `dist/` entry point the host runs
-- [ ] T055 [US2] Write `relay-platform/services/dispatcher/Dockerfile` in the same shape as the two above
-- [ ] T056 [P] [US2] Write `relay-platform/.dockerignore` covering `node_modules/`, `.git/`, `dist/`, `coverage/`, `*.log`, `.env*` — without it every build context is the whole workspace including every `node_modules`
-- [ ] T057 [US2] Add **all three services** to `relay-platform/compose.yaml` — api, gateway and dispatcher, each building from its Dockerfile — plus the dispatcher's tasks and env in `relay-platform/turbo.json`. Until now compose ran only the four stores
+- [X] T051 [US2] Write invariant 15 in `relay-platform/services/dispatcher/src/dispatcher.itest.ts`: no dispatcher log line contains a signing secret or a tenant's message body, at any level **including the error paths**, which is where a secret gets printed by accident (spec FR-025, SC-011, NFR-SEC-06 — the invariant chapter 3.4 carried and this chapter must not drop while handling a decryptable credential)
+- [X] T052 [US2] Write invariant 16 in `relay-platform/services/dispatcher/src/dispatcher.itest.ts`: a delivered body is chapter 3.3's envelope and carries the event `id` a recipient deduplicates on — the field every claim about at-least-once rests on (spec FR-018)
+- [X] T053 [US2] Write invariant 14 in `relay-platform/packages/e2e/src/webhooks.itest.ts`: with the dispatcher stopped, messages are delivered to end users normally and the backlog drains on its return (spec FR-016, SC-009)
+- [X] T054 [US2] Write `relay-platform/services/api/Dockerfile` and `relay-platform/services/gateway/Dockerfile` — **the repository's first containers**, decided by the author on 2026-08-10 rather than leaving the dispatcher as the only containerised service. Multi-stage, pnpm workspace-aware, running the same `dist/` entry point the host runs
+- [X] T055 [US2] Write `relay-platform/services/dispatcher/Dockerfile` in the same shape as the two above
+- [X] T056 [P] [US2] Write `relay-platform/.dockerignore` covering `node_modules/`, `.git/`, `dist/`, `coverage/`, `*.log`, `.env*` — without it every build context is the whole workspace including every `node_modules`
+- [X] T057 [US2] Add **all three services** to `relay-platform/compose.yaml` — api, gateway and dispatcher, each building from its Dockerfile — plus the dispatcher's tasks and env in `relay-platform/turbo.json`. Until now compose ran only the four stores
 
 ### The artifacts a reader runs
 
@@ -143,8 +143,8 @@ Paths are written from the repository root across three trees: `relay-platform/`
 
 ### Measurement and regression
 
-- [ ] T060 [US2] Add the dispatcher's surface to `relay-platform/vitest.coverage.config.mts` and a dispatcher job to `.github/workflows/ci.yml` — a deployable outside the instrument leaves every ratchet green while measuring the wrong scope (research R12, Principle VI)
-- [ ] T061 [US2] Raise the `repository.ts` branch ratchet in `relay-platform/vitest.coverage.config.mts` to the level this chapter's work achieves — it sits at 86.30% against a ratchet of 85 and this chapter adds four operations to that file
+- [X] T060 [US2] Add the dispatcher's surface to `relay-platform/vitest.coverage.config.mts` and a dispatcher job to `.github/workflows/ci.yml` — a deployable outside the instrument leaves every ratchet green while measuring the wrong scope (research R12, Principle VI)
+- [X] T061 [US2] Raise the `repository.ts` branch ratchet in `relay-platform/vitest.coverage.config.mts` to the level this chapter's work achieves — it sits at 86.30% against a ratchet of 85 and this chapter adds four operations to that file
 - [ ] T062 [US2] Run the sabotage check per `specs/026-chapter-3-5/quickstart.md` V3 — five mutations, including dropping the `next_attempt_at <= now()` predicate, which must fail invariants 9 and 10. Restore each file and verify byte-identical
 - [ ] T063 [US2] Run both lanes and confirm every pre-existing suite passes unchanged in substance, recording the chapter-end counts in `specs/026-chapter-3-5/baseline.txt` (spec FR-027, SC-012)
 - [ ] T064 [US2] Run `pnpm coverage` with the stores up, confirm exit 0 and that the dispatcher's files appear, recording the summary in `specs/026-chapter-3-5/captured-output.md` (quickstart V7)
@@ -277,6 +277,37 @@ measurement found.
 **T060/T061.** A new deployable outside the coverage instrument leaves every
 existing ratchet green while measuring the wrong scope. And `repository.ts` has 1.3
 points of margin before this chapter adds four operations to it.
+
+*Done, and both halves of that prediction were wrong in the same direction —
+the instrument was fine and the code was not.*
+
+- **No config change was needed for inclusion, and no CI job either.** The
+  coverage globs are `services/*/src/**`, so the dispatcher was measured the
+  moment it existed; every CI command already runs at the workspace root, so a
+  `dispatcher` job would have run the same commands twice. Running the
+  instrument was the whole task — reading it, not extending it.
+- **What running it found:** `expand.ts` at **0%**. The dispatcher's own suite
+  reached expansion by calling `expandEventToDeliveries` against the database
+  directly, so the consumer that decodes an event, asks the api to expand it and
+  decides ack-or-terminate had never once executed under test. Four tests now
+  drive it through the broker; the file is at 92%.
+- **`repository.ts` went DOWN, not up** — 86.30% → **78.22%** branches, failing
+  all four thresholds. `deliveryMaterial` and `pendingDeliveryDepth` were called
+  only by the dispatcher, whose suite runs the api as a CHILD PROCESS whose
+  coverage is not attributable. The one function in the platform that returns a
+  customer's signing secret in plaintext was, by the only measure the
+  constitution names, untested. Eleven tests later: **97.28 / 89.51 / 100 /
+  98.99**, and the ratchet was raised to 89 branches / 97 statements rather than
+  lowered to meet the code.
+- **Two assertions were found to be vacuous while proving this.** The
+  security test in `credentials.itest.ts` read `RELAY_INTERNAL_CREDENTIAL` and
+  returned early when unset — and CI never set it, so the check standing between
+  a platform credential and a public route did nothing on every build. And the
+  dispatcher's "terminated, not retried" assertion could not fail, because
+  `ack_wait` was 30 s and the test waited 2. Both are now unskippable, and the
+  second required splitting `ackWaitMs` per consumer — a single knob shortened
+  the DELIVER consumer too, and under the coverage lane's slower clock the
+  broker redelivered attempts that were still in flight.
 
 **T045's ordering.** Post, then report, then acknowledge. Claiming before posting
 turns the terminal hop at-most-once and loses webhooks silently — the failure
