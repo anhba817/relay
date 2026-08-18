@@ -147,8 +147,9 @@ build on."
 | 3.4 | JetStream and the first consumer | NATS setup; subjects; durable pull consumers |
 | 3.5 | Webhooks that survive the customer | Dispatcher service: envelope-encrypted signing secrets, HMAC-SHA256, a due-time retry schedule, dead letters (FR-WHK-01…05, FR-WHK-08) |
 | 3.6 | When to stop trying | The attempt log and auto-disable (FR-WHK-06, FR-WHK-07, both half-delivered — see below); the synthetic test event (FR-WHK-09); the evidence a customer is owed when their endpoint is switched off |
-| 3.7 | Limits and quotas | Redis token buckets; standard headers; spending caps (FR-RTL) |
-| 3.8 | **Milestone: the isolation gauntlet** | The cross-tenant attack suite (NFR-SEC-09) run against every endpoint; the second-external-developer test |
+| 3.7 | Commit and publish are two instants | The resume duplicate: a message committed before a backfill and announced after it, delivered twice; the high-water mark given a lifetime past the buffering window |
+| 3.8 | Limits and quotas | Redis token buckets; standard headers; spending caps (FR-RTL) |
+| 3.9 | **Milestone: the isolation gauntlet** | The cross-tenant attack suite (NFR-SEC-09) run against every endpoint; the second-external-developer test |
 
 **3.5 was narrowed while it was being written, and 3.6 is where the remainder
 went.** The original entry promised auto-disable in the same chapter as the
@@ -179,6 +180,33 @@ paragraph that introduces each:
 **FR-WHK-09 moved forward into 3.6** rather than waiting. It closes the
 disable-repair-re-enable loop the other two requirements open: without it a
 customer re-enables on hope and the first real event is the experiment.
+
+**Part 3 gains a second chapter, and this one is a bug.** 3.7 exists because
+chapter 2.7 — the chapter this plan calls "the tutorial's flagship bug" — did not
+close the race it is named for. A client that reconnects can be shown the same
+message twice, and FR-RTM-03's "no gap and no double" is false about one run in
+six of the journey that asserts it.
+
+The cause is the seam Part 3 has already taught three times: a message is durable
+and a message is announced at two different instants, and the gateway publishes to
+the fabric *after* the api has committed. A backfill query landing in that gap
+returns a message the fabric has not yet delivered, and chapter 2.7's dedup window
+closes when the connection goes live — a moment before the fabric catches up.
+
+It is placed here, rather than in 7.5 where reconnection at scale lives, for two
+reasons. The lesson belongs beside 3.3's outbox, 3.5's post-then-report and 3.6's
+publish-after-commit: four instances of one seam, four different correct answers,
+and the fan-out path is the one built before the reader had the concept. And it is
+a live correctness defect that flakes the integration lane, which is exactly the
+condition that let three other real defects hide during chapter 3.6's work.
+
+Quotas becomes 3.8 and the gauntlet 3.9. **The renumbering has a trap in it that
+has already been sprung once**: `services/api/src/db/schema.ts` says "chapter
+3.7's cross-tenant gauntlet", written when the gauntlet was 3.7, and 3.6's
+insertion never carried it. That comment is byte-fenced into published chapter
+3.5, so the mechanism guaranteeing the book matches the code is the same mechanism
+that makes the stale reference awkward to fix. 3.7 fixes it, and stops source
+comments citing numbers that can move.
 
 **Two chapters exceed the 2,000-4,000 word bound in the table above** — 3.5 at
 4,996 words of prose outside fences and 3.6 at 5,346. Nothing enforces that
