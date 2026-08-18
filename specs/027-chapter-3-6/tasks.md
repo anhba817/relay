@@ -32,12 +32,12 @@ Platform paths are relative to `relay-platform/`, tutorial paths to
 **Blocks every user story.** The columns and the stream grammar are read by all
 three pieces.
 
-- [ ] T004 Write `relay-platform/services/api/migrations/0007_webhook_attempts.sql` by hand — four columns on `webhook_endpoints` and the `webhook_disable_notifications` table per `data-model.md` — forward-only, no destructive statement (ADR-16)
-- [ ] T005 Review `0007_webhook_attempts.sql` before running it and record the disposition in a header comment: nullability, the absence of a default that would backfill a failure run onto healthy endpoints, and the index list (chapter 2.1's rule, after a generated migration was applied unread)
-- [ ] T006 Amend `relay-platform/services/api/src/db/schema.ts`: `failureRunStartedAt`, `failureRunAttempts`, `disabledAt`, `disabledReason` on `webhookEndpoints`, and the `webhookDisableNotifications` table with its `environment_id` index
-- [ ] T007 [P] Amend `relay-platform/packages/protocol/src/internal.ts` with the analytics subject grammar — `ANALYTICS_STREAM`, `ALL_ANALYTICS_SUBJECT`, `analyticsSubjectFor(domain, action, environmentId)` — beside the two grammars already there (research R4)
-- [ ] T008 [P] Extend `relay-platform/packages/protocol/src/internal.test.ts` with cases for `analyticsSubjectFor`, including that it refuses an environment id that is not a UUID
-- [ ] T009 Amend `relay-platform/services/api/src/outbox/jetstream.publisher.ts` with `ensureAnalyticsStream` — `analytics.>`, 7-day `max_age`, `discard: old` — reusing the `ensure` parameter chapter 3.5 added rather than adding a second mechanism
+- [X] T004 Write `relay-platform/services/api/migrations/0007_webhook_attempts.sql` by hand — four columns on `webhook_endpoints` and the `webhook_disable_notifications` table per `data-model.md` — forward-only, no destructive statement (ADR-16)
+- [X] T005 Review `0007_webhook_attempts.sql` before running it and record the disposition in a header comment: nullability, the absence of a default that would backfill a failure run onto healthy endpoints, and the index list (chapter 2.1's rule, after a generated migration was applied unread)
+- [X] T006 Amend `relay-platform/services/api/src/db/schema.ts`: `failureRunStartedAt`, `failureRunAttempts`, `disabledAt`, `disabledReason` on `webhookEndpoints`, and the `webhookDisableNotifications` table with its `environment_id` index
+- [X] T007 [P] Amend `relay-platform/packages/protocol/src/internal.ts` with the analytics subject grammar — `ANALYTICS_STREAM`, `ALL_ANALYTICS_SUBJECT`, `analyticsSubjectFor(domain, action, environmentId)` — beside the two grammars already there (research R4)
+- [X] T008 [P] Extend `relay-platform/packages/protocol/src/internal.test.ts` with cases for `analyticsSubjectFor`, including that it refuses an environment id that is not a UUID
+- [X] T009 Amend `relay-platform/services/api/src/outbox/jetstream.publisher.ts` with `ensureAnalyticsStream` — `analytics.>`, 7-day `max_age`, `discard: old` — reusing the `ensure` parameter chapter 3.5 added rather than adding a second mechanism
 
 **Checkpoint**: migrations apply, `pnpm typecheck` exits 0, no behaviour has changed yet.
 
