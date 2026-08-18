@@ -70,8 +70,16 @@ and the choice is a scope decision rather than an implementation one:
   * amend the bound in docs/07, which is the option that should be hardest,
     because a rule rewritten to fit the work it failed to bound is not a rule.
 
-Recorded here rather than decided here. What the chapter should NOT do is ship
-over the bound with nobody having noticed, which is the state 3.5 is in.
+DECIDED: the 5,346 words are ACCEPTED and the chapter ships as written.
+
+Not trimmed and not split. The bound is a guide to keep a chapter a sitting, and
+this chapter carries two half-delivered requirements that both have to be
+explained in the paragraph that introduces them — the explanation is the reason
+the chapter exists. The measurement stands recorded so the next chapter starts
+from a real number rather than an assumed one.
+
+What the chapter should NOT have done is ship over the bound with nobody having
+noticed, which is the state 3.5 is in.
 
 
 CREDENTIAL SCAN (T062)

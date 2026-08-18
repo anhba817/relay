@@ -180,10 +180,13 @@ paragraph that introduces each:
 disable-repair-re-enable loop the other two requirements open: without it a
 customer re-enables on hope and the first real event is the experiment.
 
-**Two chapters now exceed the 2,000-4,000 word bound in the table above** — 3.5
-at 4,996 words of prose outside fences and 3.6 at 5,346. Nothing enforces that
-bound, which is why neither was caught at the time. Recorded here, where the rule
-lives, rather than in the chapter notes where only the author would find it.
+**Two chapters exceed the 2,000-4,000 word bound in the table above** — 3.5 at
+4,996 words of prose outside fences and 3.6 at 5,346. Nothing enforces that
+bound, which is why neither was caught at the time. Both are accepted as they
+shipped: the bound is a guide to keep a chapter a sitting, and these two carry
+requirements that are half-delivered on purpose and have to say so where they are
+introduced. Recorded here, where the rule lives, so the next chapter measures
+against a real number.
 
 ### Part 4 — The second data path (8 chapters)
 
