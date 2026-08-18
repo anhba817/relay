@@ -1,7 +1,7 @@
 # Implementation Plan: Tutorial Chapter 3.6 — "When to stop trying"
 
 **Feature**: `specs/027-chapter-3-6` | **Spec**: [spec.md](./spec.md)
-**Created**: 2026-08-18 | **Status**: Ready for `/speckit-tasks`
+**Created**: 2026-08-18 | **Status**: Ready for `/speckit-implement` (tasks generated, four analysis passes applied)
 
 ## Summary
 

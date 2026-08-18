@@ -49,8 +49,8 @@ otherwise would make this checklist useless.**
    render) describe the tutorial's own quality bar rather than something a customer
    experiences. They are kept because this feature's deliverable *is* a published
    chapter — constitution VI makes test-verification a delivery condition, and
-   FR-029's fence rule was added precisely because an earlier chapter shipped
-   without it.
+   chapter 3.5's FR-029 — carried here as **FR-020** — was added
+   precisely because an earlier chapter shipped test files unfenced.
 
 **Deliberate partial delivery, stated in the spec rather than discovered later.**
 FR-WHK-06 is half-met (attempts are published, not queryable) and FR-WHK-07 is
@@ -61,6 +61,15 @@ these two requirements — the difference is that 3.5 deferred them entirely, an
 this chapter delivers the halves that do not need infrastructure the series has
 not built yet.
 
-**Ready for `/speckit-plan`.** The two decisions that would otherwise have blocked
-planning — where the attempt log lives, and what "notified by email" means with no
-email — were settled before the spec was written, not left as markers.
+**Validated.** The two decisions that would otherwise have blocked planning —
+where the attempt log lives, and what "notified by email" means with no email —
+were settled before the spec was written, not left as markers.
+
+**Revisited 2026-08-18, after four `/speckit-analyze` passes.** The spec changed
+under this checklist three times: FR-001 became best-effort emission, SC-001 and
+User Story 1 stopped promising a query surface this chapter does not build, and
+FR-007 gained its two numbers. Every item above was re-evaluated against the
+current text and still holds, including both recorded exceptions. The passes also
+found two errors *in this file* — a requirement id belonging to another feature,
+and a readiness line four steps out of date — which is the argument for reopening
+a validation artifact when the thing it validates moves.
