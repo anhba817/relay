@@ -1,0 +1,112 @@
+Chapter 3.6 — battery
+=====================
+
+Measured on the published pages, not estimated.
+
+                                english      vietnamese
+  page lines                    5431         5395
+  titled fences                 22           22
+  of which real files           21           21
+  prose words (approx)          5349         6665
+
+FENCE BUDGET: research R10 estimated 18-22, counting test files and script
+amendments — the categories chapter 3.5's first two budgets left out. Shipped
+21, inside the budget and near the top of it.
+
+The 21 are: the migration; schema.ts; the protocol grammar and its tests; the
+publisher's ensure; analytics.ts and its unit test; dispatch.controller.ts and
+internal.module.ts; disable.ts and its unit test; repository.ts; delivery-relay.ts;
+webhooks.service.ts and webhooks.controller.ts; attempts.itest.ts;
+deliveries.itest.ts; test-event.itest.ts; vitest.coverage.config.mts;
+stream-info.mjs; webhook-walk.mjs.
+
+R10 said that if the count approached 22 the thing to check was whether the test
+event had grown past the modest widening it was accepted as. It did not: FR-WHK-09
+cost one repository operation, one service method, one route and one suite. What
+pushed the count to 21 was the two SCRIPTS — both amended because the quickstart
+already invoked behaviour neither had.
+
+One fence is not a file and is excluded above: the `(excerpt)` quoting chapter
+3.5's outcome schema, which the chain checker skips by design.
+
+SKIP AHEAD names `part3-ch6`: yes
+
+Three figures per locale, all rendering as SVG in a headless browser
+(flowchart-v2, gantt, flowchart-v2). Verified with `google-chrome --headless
+--dump-dom` rather than by grepping the served HTML, because chapter 3.5 shipped
+three blank diagrams past a passing build and a 200.
+
+
+WORD COUNT — OVER THE BOUND, AND SAYING SO
+------------------------------------------
+
+`docs/07-tutorial-plan.md` line 67 sets a chapter at 2,000-4,000 words of prose
+OUTSIDE code fences, on the grounds that "a chapter is a sitting" and longer
+chapters should split. Measured the same way across Part 3:
+
+  3.1  tenants-all-the-way-down              3243   inside
+  3.2  keys-and-tokens                       3385   inside
+  3.3  the-outbox                            3018   inside
+  3.4  jetstream-and-the-first-consumer      3506   inside
+  3.5  webhooks-that-survive-the-customer    4996   OVER by ~1000
+  3.6  when-to-stop-trying                   5346   OVER by ~1350
+
+(Prose lines only: fence bodies, import lines and JSX tag lines excluded.)
+
+This chapter is 34% over the bound and chapter 3.5 was 25% over. Neither is
+caught by any gate — `check:docs` passes, and the bound is stated in the plan
+rather than enforced by a script. 3.5's own battery recorded a raw word count of
+37,946 that includes fence bodies, which is a different measure and does not
+answer the question the bound asks.
+
+NOT SILENTLY ACCEPTED, and not unilaterally fixed either. Three honest options,
+and the choice is a scope decision rather than an implementation one:
+
+  * trim ~1,350 words. The candidates are the two longest Trap boxes and the
+    sabotage section, which could state the findings without re-deriving them;
+  * split the chapter at "Now the decision", which is a real seam — everything
+    before it is the attempt record and everything after is auto-disable, and the
+    chapter argues they are separable in exactly that place;
+  * amend the bound in docs/07, which is the option that should be hardest,
+    because a rule rewritten to fit the work it failed to bound is not a rule.
+
+Recorded here rather than decided here. What the chapter should NOT do is ship
+over the bound with nobody having noticed, which is the state 3.5 is in.
+
+
+CREDENTIAL SCAN (T062)
+----------------------
+
+Nine patterns, run over 13 files: this feature's specs and contracts, and both
+published pages. The patterns are recorded rather than the conclusion, because
+"we scanned and it was clean" is not a claim anybody can check.
+
+  api key prefix                    rk_(dev|live|svc)_[A-Za-z0-9_-]{8,}
+  webhook signing secret            whsec_[A-Za-z0-9_-]{8,}
+  hex 32+ (hmac / encryption key)   \b[0-9a-f]{32,}\b
+  base64 32-byte key                \b[A-Za-z0-9+/]{43}=\b
+  RELAY_WEBHOOK_SECRET_KEY value    assignment followed by 20+ base64 chars
+  RELAY_INTERNAL_CREDENTIAL value   assignment followed by rk_ and 10+ chars
+  bearer token                      Bearer\s+[A-Za-z0-9._-]{20,}
+  private key block                 BEGIN (RSA |EC )?PRIVATE KEY
+  aws access key                    AKIA[0-9A-Z]{16}
+
+Known-fixture values are filtered: `hunter2`, `0123456789abcdef`, `deadbeef`,
+`xxx`, `example`, `placeholder`.
+
+TWO HITS, both examined and both benign:
+
+  * `whsec_do_not_publish_this`, four times in the published pages. It is the
+    fake secret inside `analytics.test.ts`, attached to an attempt record by a
+    test whose entire purpose is to assert that it does NOT reach the stream. A
+    scanner finding it is the scanner working; a chapter that removed it would be
+    deleting the evidence.
+  * three 32-character hex strings in `captured-output.md`. They are the md5sums
+    the sabotage battery prints to prove each mutated file was restored
+    byte-identical.
+
+No signing secret, no encryption key, no internal credential, and no bearer token
+appears in any transcript or on either page. The one real secret this chapter
+handles — a customer's webhook signing secret — is decrypted only inside the
+dispatch material response, and the attempt record's allow-list is what keeps it
+off the analytics stream.

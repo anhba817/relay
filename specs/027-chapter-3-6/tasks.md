@@ -128,34 +128,34 @@ recorded and marked synthetic, then re-enable and confirm the run is cleared.
 
 ## Phase 7: The chapter, in English
 
-- [ ] T048 Write the English chapter at `relay-tutorial/app/(en)/part-3/chapter-06/when-to-stop-trying/page.mdx`: the record before the decision, why that order, and the two halves this chapter does not deliver (FR-001…FR-012, FR-005, SC-007)
-- [ ] T049 Add the section to `page.mdx` that shows R1's measurement and what it changed — the attempt timeline, why an outcome-only check never fires for a quiet endpoint, and why the answer was a sweep in an existing loop rather than a new one (research R1)
-- [ ] T050 Add the section to `page.mdx` that states the analytics trade in the same paragraph that introduces the attempt record: at-most-once, published after the commit, because a metering pipeline must not be able to stop a customer's webhooks (research R5, constitution III)
-- [ ] T051 [P] Write `relay-tutorial/app/(en)/part-3/chapter-06/when-to-stop-trying/figures.ts` — the failure run as a state machine, the two triggers against the attempt timeline, and where the attempt event goes
-- [ ] T052 Generate every fence from the real files rather than typing them, and confirm `pnpm check:fences` replays the chain onto `relay-platform` (FR-020)
-- [ ] T053 Measure the battery on the published page and record it in `specs/027-chapter-3-6/battery.txt`, counting fences against research R10's 18–22 budget and confirming the SKIP AHEAD names `part3-ch6`
-- [ ] T054 Traceability: confirm every `FR-*`/`NFR-*`/`ADR-*` the chapter cites resolves in `docs/`, and every table and column it names exists in `relay-platform/services/api/src/db/schema.ts`
+- [X] T048 Write the English chapter at `relay-tutorial/app/(en)/part-3/chapter-06/when-to-stop-trying/page.mdx`: the record before the decision, why that order, and the two halves this chapter does not deliver (FR-001…FR-012, FR-005, SC-007)
+- [X] T049 Add the section to `page.mdx` that shows R1's measurement and what it changed — the attempt timeline, why an outcome-only check never fires for a quiet endpoint, and why the answer was a sweep in an existing loop rather than a new one (research R1)
+- [X] T050 Add the section to `page.mdx` that states the analytics trade in the same paragraph that introduces the attempt record: at-most-once, published after the commit, because a metering pipeline must not be able to stop a customer's webhooks (research R5, constitution III)
+- [X] T051 [P] Write `relay-tutorial/app/(en)/part-3/chapter-06/when-to-stop-trying/figures.ts` — the failure run as a state machine, the two triggers against the attempt timeline, and where the attempt event goes
+- [X] T052 Generate every fence from the real files rather than typing them, and confirm `pnpm check:fences` replays the chain onto `relay-platform` (FR-020)
+- [X] T053 Measure the battery on the published page and record it in `specs/027-chapter-3-6/battery.txt`, counting fences against research R10's 18–22 budget and confirming the SKIP AHEAD names `part3-ch6`
+- [X] T054 Traceability: confirm every `FR-*`/`NFR-*`/`ADR-*` the chapter cites resolves in `docs/`, and every table and column it names exists in `relay-platform/services/api/src/db/schema.ts`
 
 ---
 
 ## Phase 8: Publication in both locales
 
-- [ ] T055 Translate the chapter to `relay-tutorial/app/(vi)/vi/part-3/chapter-06/when-to-stop-trying/page.mdx`, splitting prose from fences mechanically before translating anything and leaving every fence byte-identical (FR-019, translate-mdx §2.4)
-- [ ] T056 [P] Translate `relay-tutorial/app/(vi)/vi/part-3/chapter-06/when-to-stop-trying/figures.ts` — mermaid labels only; participants, identifiers, table and column names stay English
-- [ ] T057 Amend `relay-tutorial/lib/tutorial.ts`: 3.6 published, `translatedIn: ["vi"]`, with `readerProduces` in both languages describing what the chapter builds rather than what FR-WHK-06 and FR-WHK-07 promise in full
-- [ ] T058 Verify publication of both routes: 200, the reading shell present, and the figures rendering as **SVG in a headless browser** (SC-010) — a page that returns 200 is not a page that is laid out, and 3.5 shipped three blank diagrams past a passing build (quickstart V10)
-- [ ] T059 Run `pnpm check:fences` and confirm the Vietnamese fences mirror the English byte for byte and the locale count has risen
+- [X] T055 Translate the chapter to `relay-tutorial/app/(vi)/vi/part-3/chapter-06/when-to-stop-trying/page.mdx`, splitting prose from fences mechanically before translating anything and leaving every fence byte-identical (FR-019, translate-mdx §2.4)
+- [X] T056 [P] Translate `relay-tutorial/app/(vi)/vi/part-3/chapter-06/when-to-stop-trying/figures.ts` — mermaid labels only; participants, identifiers, table and column names stay English
+- [X] T057 Amend `relay-tutorial/lib/tutorial.ts`: 3.6 published, `translatedIn: ["vi"]`, with `readerProduces` in both languages describing what the chapter builds rather than what FR-WHK-06 and FR-WHK-07 promise in full
+- [X] T058 Verify publication of both routes: 200, the reading shell present, and the figures rendering as **SVG in a headless browser** (SC-010) — a page that returns 200 is not a page that is laid out, and 3.5 shipped three blank diagrams past a passing build (quickstart V10)
+- [X] T059 Run `pnpm check:fences` and confirm the Vietnamese fences mirror the English byte for byte and the locale count has risen
 
 ---
 
 ## Phase 9: Close-out
 
-- [ ] T060 Amend `docs/07-tutorial-plan.md` if this chapter's scope moved, and confirm the Part 3 numbering it already carries still matches `relay-tutorial/lib/tutorial.ts`
-- [ ] T061 Run quickstart V1–V10 end to end from `specs/027-chapter-3-6/quickstart.md`, reading exit codes rather than grepping output
-- [ ] T062 Scan `specs/027-chapter-3-6/captured-output.md` and both published pages for leaked credentials — signing secrets, the encryption key, and internal credentials — recording the patterns searched rather than the conclusion alone
-- [ ] T063 Write `specs/027-chapter-3-6/chapter-notes.md` from what happened rather than what was planned, including the budget-versus-actual fence count and what R1's measurement changed
-- [ ] T064 Fix forward any defect this chapter exposes in an earlier chapter, in every locale that chapter has, and record it in `specs/027-chapter-3-6/chapter-notes.md`
-- [ ] T065 Tag `relay-platform` as `part3-ch6` at the chapter-end commit, because the chapter's SKIP AHEAD tells readers that tag exists — 3.5 published that claim before the tag was created
+- [X] T060 Amend `docs/07-tutorial-plan.md` if this chapter's scope moved, and confirm the Part 3 numbering it already carries still matches `relay-tutorial/lib/tutorial.ts`
+- [X] T061 Run quickstart V1–V10 end to end from `specs/027-chapter-3-6/quickstart.md`, reading exit codes rather than grepping output
+- [X] T062 Scan `specs/027-chapter-3-6/captured-output.md` and both published pages for leaked credentials — signing secrets, the encryption key, and internal credentials — recording the patterns searched rather than the conclusion alone
+- [X] T063 Write `specs/027-chapter-3-6/chapter-notes.md` from what happened rather than what was planned, including the budget-versus-actual fence count and what R1's measurement changed
+- [X] T064 Fix forward any defect this chapter exposes in an earlier chapter, in every locale that chapter has, and record it in `specs/027-chapter-3-6/chapter-notes.md`
+- [X] T065 Tag `relay-platform` as `part3-ch6` at the chapter-end commit, because the chapter's SKIP AHEAD tells readers that tag exists — 3.5 published that claim before the tag was created
 
 ---
 

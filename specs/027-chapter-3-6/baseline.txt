@@ -299,3 +299,36 @@ the raise before it lands, not after.
 amended without pinning. Both are reached mostly from a child process whose
 coverage is not attributable — research R11's trap, still open, and named here
 rather than left for a later chapter to rediscover.
+
+
+QUICKSTART V1-V10 (T061) — exit codes, not greps
+------------------------------------------------
+
+  V1  nothing regressed          lint 0 · typecheck 0 · build 0 · test 0 · test:integration 0
+  V2  the ANALYTICS stream       stream-info.mjs ANALYTICS exit 0; 7 messages after a
+                                 failing walk, config as the contract states
+  V3  analytics down             attempts.itest.ts invariant 5: stream DELETED, the
+                                 outcome is still recorded and answered, under 15s
+  V4  an hour of failures        walk --fast-forward --watch-disable: disabled once,
+                                 one notification, delivered_at null
+  V5  an endpoint that recovers  walk against --mode=flaky: run cleared to 0, endpoint
+                                 stays enabled. exit 0
+  V6  the quiet endpoint         BOTH halves captured. RELAY_DISABLE_SWEEP=off leaves it
+                                 enabled with 7 failures past the hour; on, the sweep
+                                 disables it and a second sweep disables 0
+  V7  proving it works again     test-event.itest.ts, 9 cases over real HTTP against a
+                                 booted app: delivered while disabled, marked twice,
+                                 signature verified by an independent recipe, run
+                                 untouched, 404 for a foreign tenant, re-enable clears
+                                 all four columns
+  V8  sabotage                   7 mutations, 7 caught, md5sum identical after
+  V9  coverage                   exit 0, 363 tests, every ratchet green
+  V10 the site                   lint 0 · build 0 · check:docs 0 · check:fences 0;
+                                 both routes 200; 3 figures per locale render as SVG
+
+V7 was run as the integration suite rather than by hand with `curl`. The suite
+boots a real Nest application, issues real HTTP requests to
+`/v1/webhooks/{id}/test`, and plays the dispatcher itself — so the route, the
+signing, the seam and the outcome recording are all exercised over the wire. A
+manual `curl` would additionally require a running dispatcher and an endpoint
+whose URL survives the SSRF check, and would assert less than the suite does.

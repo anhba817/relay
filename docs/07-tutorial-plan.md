@@ -146,7 +146,7 @@ build on."
 | 3.3 | The outbox | Transactional outbox + relay (ADR-06); the dual-write problem demonstrated with a crash-in-the-gap test |
 | 3.4 | JetStream and the first consumer | NATS setup; subjects; durable pull consumers |
 | 3.5 | Webhooks that survive the customer | Dispatcher service: envelope-encrypted signing secrets, HMAC-SHA256, a due-time retry schedule, dead letters (FR-WHK-01…05, FR-WHK-08) |
-| 3.6 | When to stop trying | The attempt log and auto-disable (FR-WHK-06, FR-WHK-07); the evidence a customer is owed when their endpoint is switched off |
+| 3.6 | When to stop trying | The attempt log and auto-disable (FR-WHK-06, FR-WHK-07, both half-delivered — see below); the synthetic test event (FR-WHK-09); the evidence a customer is owed when their endpoint is switched off |
 | 3.7 | Limits and quotas | Redis token buckets; standard headers; spending caps (FR-RTL) |
 | 3.8 | **Milestone: the isolation gauntlet** | The cross-tenant attack suite (NFR-SEC-09) run against every endpoint; the second-external-developer test |
 
@@ -162,6 +162,28 @@ the evidence would mean disabling endpoints and being unable to say why.
 So 3.5 builds the delivery path and states plainly that it never gives up on an
 endpoint, only on a delivery; 3.6 adds the record and the policy together. Part 3
 gains a chapter and everything after it shifts by one.
+
+**What 3.6 actually shipped, which is less than that row promises.** Both
+requirements are half-delivered on purpose and the chapter says so in the
+paragraph that introduces each:
+
+- **FR-WHK-06** — attempts are PUBLISHED to a new `ANALYTICS` stream and are not
+  queryable. Part 4's ingester consumes that stream into ClickHouse and is what
+  finishes the requirement. The publish is also at-most-once by design, so
+  "every attempt" is approximate: constitution III forbids letting an analytics
+  backlog affect webhook dispatch, and independence was chosen over completeness.
+- **FR-WHK-07** — the disablement writes a notification row whose `delivered_at`
+  is null and stays null. This platform has no email transport; 3.7 needs the
+  same one for quota warnings and builds it there.
+
+**FR-WHK-09 moved forward into 3.6** rather than waiting. It closes the
+disable-repair-re-enable loop the other two requirements open: without it a
+customer re-enables on hope and the first real event is the experiment.
+
+**Two chapters now exceed the 2,000-4,000 word bound in the table above** — 3.5
+at 4,996 words of prose outside fences and 3.6 at 5,346. Nothing enforces that
+bound, which is why neither was caught at the time. Recorded here, where the rule
+lives, rather than in the chapter notes where only the author would find it.
 
 ### Part 4 — The second data path (8 chapters)
 
