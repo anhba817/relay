@@ -264,3 +264,38 @@ Six lane runs in total: three before the fixes and three after.
 
 api, dispatcher and gateway pass 3 of 3 after the fixes. The remaining failure is
 flake 4, which no change in this chapter touches.
+
+
+CHAPTER END — the numbers this chapter finished on
+--------------------------------------------------
+
+  lint · typecheck · build            exit 0
+  unit                                184   (config 6 · service-kit 3 · protocol 37 ·
+                                             api 96 · dispatcher 8 · gateway 34)
+  integration                         188   (api 150 · dispatcher 16 · gateway 13 · e2e 9)
+  coverage                            363 passed, every ratchet green
+  sabotage                            7 mutations, 7 caught, files byte-identical after
+
+Against the baseline: unit 156 -> 184, integration 149 -> 188. Every
+pre-existing suite passes with its assertions unchanged in substance; the
+three amended for the flakes are recorded in T002a and T002d above.
+
+  file                                          stmts   branch  funcs  lines
+  db/repository.ts                              97.09   90.41  100.0  99.19
+  webhooks/disable.ts                          100.00  100.00  100.0 100.00
+  webhooks/analytics.ts                        100.00  100.00  100.0 100.00
+  webhooks/delivery-relay.ts                    69.04   69.23   70.0  71.05
+  internal/dispatch.controller.ts               50.00   63.63   60.0  59.09
+  webhooks/webhooks.service.ts                  91.07   84.61  100.0  91.83
+
+  All files                                     87.46   80.83   87.91  89.46
+
+`repository.ts` is at 97.09 / 90.41 against a ratchet raised to 97 / 90 — a
+tenth of a point of headroom on branches, tighter than the half point this
+chapter started with. The next chapter to touch that file should expect to earn
+the raise before it lands, not after.
+
+`delivery-relay.ts` and `dispatch.controller.ts` are the two files this chapter
+amended without pinning. Both are reached mostly from a child process whose
+coverage is not attributable — research R11's trap, still open, and named here
+rather than left for a later chapter to rediscover.

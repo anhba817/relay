@@ -117,12 +117,12 @@ recorded and marked synthetic, then re-enable and confirm the run is cleared.
 
 ## Phase 6: Verification
 
-- [ ] T042 Run the sabotage battery per `specs/027-chapter-3-6/quickstart.md` V8 — seven mutations, each reverted and the file verified byte-identical by `md5sum`, recording which test failed for each (SC-009)
-- [ ] T043 Run the fourth sabotage against a **stopped broker**, because publishing inside the transaction keeps passing while the broker is healthy — the mutation proves nothing otherwise (quickstart V8)
-- [ ] T044 Run both lanes and confirm every pre-existing suite passes unchanged in substance, recording the chapter-end counts in `specs/027-chapter-3-6/baseline.txt` (FR-018, SC-008)
-- [ ] T045 Run `pnpm coverage`, confirm exit 0 with every ratchet intact, and record the four figures and the per-file numbers in `specs/027-chapter-3-6/captured-output.md`
-- [ ] T046 Run quickstart V6 in both halves — sweep off, then sweep on — and capture both, because the first is what an outcome-only check ships and the second means nothing without it
-- [ ] T047 Capture every transcript the chapter will quote into `specs/027-chapter-3-6/captured-output.md`: R1's timeline, the attempt event, the analytics-down demonstration, the disablement, the quiet-endpoint pair, the test event, and the coverage summary (FR-021)
+- [X] T042 Run the sabotage battery per `specs/027-chapter-3-6/quickstart.md` V8 — seven mutations, each reverted and the file verified byte-identical by `md5sum`, recording which test failed for each (SC-009)
+- [X] T043 Run the fourth sabotage against a **stopped broker**, because publishing inside the transaction keeps passing while the broker is healthy — the mutation proves nothing otherwise (quickstart V8)
+- [X] T044 Run both lanes and confirm every pre-existing suite passes unchanged in substance, recording the chapter-end counts in `specs/027-chapter-3-6/baseline.txt` (FR-018, SC-008)
+- [X] T045 Run `pnpm coverage`, confirm exit 0 with every ratchet intact, and record the four figures and the per-file numbers in `specs/027-chapter-3-6/captured-output.md`
+- [X] T046 Run quickstart V6 in both halves — sweep off, then sweep on — and capture both, because the first is what an outcome-only check ships and the second means nothing without it
+- [X] T047 Capture every transcript the chapter will quote into `specs/027-chapter-3-6/captured-output.md`: R1's timeline, the attempt event, the analytics-down demonstration, the disablement, the quiet-endpoint pair, the test event, and the coverage summary (FR-021)
 
 ---
 
