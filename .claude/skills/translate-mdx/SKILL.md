@@ -50,12 +50,8 @@ than the word lists:
 - **Numbers, identifiers and measurements are never paraphrased.** "86.30% to
   78.22%" stays exactly that.
 
-**Code fences are byte-identical, including comments.** This overrides §4's
-"translate human comments inside code blocks" for this repository: the fence
-chain checker (`pnpm check:fences`) enforces that each Vietnamese fence matches
-the English fence with the same title byte for byte, so a translated comment
-fails the build. Translate mermaid *labels* in `figures.ts` and the prose around
-fences; leave everything inside a fence alone.
+**Code fences are byte-identical, including comments** — see §2.4, which is the
+authority on this. Nothing in this section overrides it.
 
 ## 2. Syntax & MDX Structure Rules (STRICT)
 
@@ -70,9 +66,24 @@ fences; leave everything inside a fence alone.
 3. **Markdown Syntax:**
    * Preserve all `#`, `##`, `###`, `**bold**`, `*italic*`, `>`, `-`, `1.` lists, horizontal rules `---`, and blockquotes.
    * Keep inline code blocks (e.g., `` `messages` ``, `` `boolean` ``) unchanged unless translating a concept inside code font is explicitly needed (rare).
-4. **Code Blocks (` ```js ... ``` `):**
-   * **DO NOT** translate code syntax, function names, variable names, or keywords.
-   * Only translate human comments inside code blocks (e.g., `// Handle reconnection` -> `// Xử lý kết nối lại`).
+4. **Code Blocks (` ```js ... ``` `) — BYTE-IDENTICAL, COMMENTS INCLUDED:**
+   * **DO NOT** translate anything inside a fence. Not code, not identifiers, and
+     **not comments**. Copy the fence across unchanged, byte for byte.
+   * This is not a stylistic preference. A titled fence is a claim that the file
+     in the repository looks exactly like this, and `pnpm check:fences` verifies
+     it: each Vietnamese fence must match the English fence carrying the same
+     title byte for byte, and every fence must still replay onto the platform
+     repository. A translated comment fails the build.
+   * The reason the rule reads this way round: the alternative is a Vietnamese
+     reader copying a fence into their editor and getting a file that no longer
+     matches the chapter they are following.
+   * **What DOES get translated near code:** the prose around the fence, the
+     fence's surrounding explanation, and mermaid *labels* in a chapter's
+     colocated `figures.ts` (participants, identifiers, table and column names
+     stay English there too).
+   * If a comment inside a fence genuinely needs to reach a Vietnamese reader,
+     the fix is to say it in the prose beside the fence — never to edit the
+     fence.
 
 ---
 
@@ -81,6 +92,18 @@ fences; leave everything inside a fence alone.
 When given an input MDX file path:
 
 1. Read the input MDX content carefully.
-2. Translate the prose text line by line / section by section, infusing the storytelling narrative flow.
-3. Verify that all JSX components, props, code blocks, and markdown symbols are 100% syntactically intact.
-4. Write or output the translated content into the designated destination while maintaining the exact file extension (`.mdx`).
+2. **Split prose from fences before translating anything.** The reliable method is
+   mechanical: walk the file, treat every line beginning ``` as a fence
+   boundary, and collect the segments. Translate the prose segments; copy the
+   fence segments across untouched. Translating in a single pass over the whole
+   file is how a fence gets edited by accident.
+3. Translate the prose segment by segment, infusing the storytelling narrative flow.
+4. Verify that all JSX components, props and markdown symbols are 100%
+   syntactically intact, and that **every fence is byte-identical to its English
+   counterpart** (§2.4) — not merely valid, identical. Diff the fence segments
+   against the source if there is any doubt.
+5. Write the translated content to the destination, keeping the `.mdx` extension.
+6. **Run the repository's own check** where one exists. In this project that is
+   `pnpm check:fences` from `relay-tutorial/`, which reports the mirrored-fence
+   result explicitly ("22 translated, fences mirrored"). A translation is not
+   finished until it passes.
