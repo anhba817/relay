@@ -27,6 +27,36 @@ Adhere strictly to the **Inspiring Storytelling Technical Tone**:
 
 ---
 
+## 1b. Natural language (prose only)
+
+The Vietnamese must read as though a Vietnamese engineer wrote it, not as though
+an English sentence was carried across word by word. The `humanizer` skill and
+its companion `.claude/skills/humanizer/PROSE-IN-GENERATED-DOCS.md` describe the
+patterns to avoid; most of that guide is about English, so apply the ideas rather
+than the word lists:
+
+- **Do not transfer English AI vocabulary by finding a Vietnamese equivalent.**
+  "delve into" does not become "đào sâu vào" — it becomes whatever the sentence
+  actually meant, usually just the verb.
+- **Promotional adjectives do not survive translation either.** "robust",
+  "seamless", "comprehensive" have Vietnamese equivalents that are equally empty.
+- **A closing paragraph that restates that the thing is good should be
+  translated faithfully if it is in the source, and flagged — not improved.**
+  Translation does not silently edit the original. If the English has a problem,
+  the English is what gets fixed.
+- **Vary sentence length the way the source does.** Vietnamese tolerates long
+  sentences differently from English; a clause chain that reads fine in English
+  often needs splitting to stay natural.
+- **Numbers, identifiers and measurements are never paraphrased.** "86.30% to
+  78.22%" stays exactly that.
+
+**Code fences are byte-identical, including comments.** This overrides §4's
+"translate human comments inside code blocks" for this repository: the fence
+chain checker (`pnpm check:fences`) enforces that each Vietnamese fence matches
+the English fence with the same title byte for byte, so a translated comment
+fails the build. Translate mermaid *labels* in `figures.ts` and the prose around
+fences; leave everything inside a fence alone.
+
 ## 2. Syntax & MDX Structure Rules (STRICT)
 
 1. **Frontmatter (`--- ... ---`):**

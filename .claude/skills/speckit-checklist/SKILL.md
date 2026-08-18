@@ -40,6 +40,39 @@ $ARGUMENTS
 
 You **MUST** consider the user input before proceeding (if not empty).
 
+## Writing Style (prose only)
+
+Every document this skill writes is read by a person. Before writing prose, apply
+`.claude/skills/humanizer/PROSE-IN-GENERATED-DOCS.md` — the scoped companion to
+the `humanizer` skill. Load the full `humanizer` skill when doing a dedicated
+editing pass; for generation, the companion is enough.
+
+**Prose only.** Never restyle code fences, transcripts, command output,
+identifiers (`FR-001`, `T042`, `ADR-15`), file paths, data tables, or quoted
+source text. If a rewrite would change what a checker or a reader-following-along
+compares against, do not make it.
+
+**Normative text — requirements, acceptance scenarios, success criteria,
+checklist items, task lines — takes the clarity rules only**: cut filler, cut
+hedging, cut promotional adjectives, one term per concept. Do not add voice,
+opinions, humour, or first person to text that has to be testable.
+
+**Narrative text — rationale, assumptions, notes, findings — takes the full
+guide**, within this project's documented voice (`docs/07-tutorial-plan.md`).
+
+The four that show up most in generated documents:
+
+- a closing paragraph that restates that the thing is good — delete it
+- `-ing` tails that analyse nothing: "…, ensuring correctness", "…, highlighting
+  the tradeoff"
+- promotional adjectives: robust, seamless, comprehensive, powerful, elegant
+- "It's worth noting that", "It is important to understand that", "In order to"
+
+Say the number instead of the adjective: "branches fell from 86.30% to 78.22%",
+not "coverage regressed noticeably". And record what actually happened, including
+the parts that went badly — a document that only reports the plan working is one
+nobody trusts.
+
 ## Pre-Execution Checks
 
 **Check for extension hooks (before checklist generation)**:
