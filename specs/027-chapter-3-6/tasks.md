@@ -102,14 +102,14 @@ second healthy endpoint in the same environment still receiving.
 **Independent test**: disable an endpoint, send a test event, see it delivered and
 recorded and marked synthetic, then re-enable and confirm the run is cleared.
 
-- [ ] T034 [US3] Add `sendTestEvent(endpointId)` to `relay-platform/services/api/src/webhooks/webhooks.service.ts` — one endpoint, one attempt, no retry schedule, delivered even when disabled (FR-013, research R8)
-- [ ] T035 [US3] Build the synthetic envelope in `webhooks.service.ts` with `type: "webhook.test"` and `test: true`, signed by the same path a real event takes so a success proves something about real deliveries (FR-014, FR-015)
-- [ ] T036 [US3] Make the test event's outcome bypass the failure run entirely in `relay-platform/services/api/src/db/repository.ts`, so a failed test cannot push an endpoint toward disablement and a successful one cannot mask a real outage (contract invariant 13)
-- [ ] T037 [US3] Add `POST /v1/webhook-endpoints/{id}/test` to `relay-platform/services/api/src/webhooks/webhooks.controller.ts` returning `delivered`, `status`, `latency_ms`, `error` and `event_id`, with a non-2xx from the customer reported as `delivered: false` rather than as an HTTP error (FR-016)
-- [ ] T038 [US3] Amend the enable route in `webhooks.controller.ts` to clear all four columns in one transaction, so the hour is measured from the next failure (FR-017)
-- [ ] T039 [P] [US3] Write `relay-platform/services/api/src/webhooks/test-event.itest.ts`: delivered to one endpoint only, delivered while disabled, marked twice, signature verified by an independent recipe, and the run untouched by its outcome (SC-005). Include an endpoint whose URL no longer resolves: `delivered: false` with an error, not a 5xx from our own API
-- [ ] T040 [US3] Add the re-enable case to `test-event.itest.ts` — all four columns null afterwards, and a subsequent failure starting a fresh run rather than resuming the old one
-- [ ] T041 [US3] Add the foreign-tenant case to `test-event.itest.ts`: a test against an endpoint in another environment answers 404, the same answer a missing endpoint gets
+- [X] T034 [US3] Add `sendTestEvent(endpointId)` to `relay-platform/services/api/src/webhooks/webhooks.service.ts` — one endpoint, one attempt, no retry schedule, delivered even when disabled (FR-013, research R8)
+- [X] T035 [US3] Build the synthetic envelope in `webhooks.service.ts` with `type: "webhook.test"` and `test: true`, signed by the same path a real event takes so a success proves something about real deliveries (FR-014, FR-015)
+- [X] T036 [US3] Make the test event's outcome bypass the failure run entirely in `relay-platform/services/api/src/db/repository.ts`, so a failed test cannot push an endpoint toward disablement and a successful one cannot mask a real outage (contract invariant 13)
+- [X] T037 [US3] Add `POST /v1/webhook-endpoints/{id}/test` to `relay-platform/services/api/src/webhooks/webhooks.controller.ts` returning `delivered`, `status`, `latency_ms`, `error` and `event_id`, with a non-2xx from the customer reported as `delivered: false` rather than as an HTTP error (FR-016)
+- [X] T038 [US3] Amend the enable route in `webhooks.controller.ts` to clear all four columns in one transaction, so the hour is measured from the next failure (FR-017)
+- [X] T039 [P] [US3] Write `relay-platform/services/api/src/webhooks/test-event.itest.ts`: delivered to one endpoint only, delivered while disabled, marked twice, signature verified by an independent recipe, and the run untouched by its outcome (SC-005). Include an endpoint whose URL no longer resolves: `delivered: false` with an error, not a 5xx from our own API
+- [X] T040 [US3] Add the re-enable case to `test-event.itest.ts` — all four columns null afterwards, and a subsequent failure starting a fresh run rather than resuming the old one
+- [X] T041 [US3] Add the foreign-tenant case to `test-event.itest.ts`: a test against an endpoint in another environment answers 404, the same answer a missing endpoint gets
 
 **Checkpoint**: the disable → repair → re-enable loop closes without a person editing the database.
 

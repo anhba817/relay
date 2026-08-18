@@ -20,13 +20,13 @@ scoped and authenticated as an application principal.
 `disabled_at` null with `enabled` false means the customer disabled it themselves.
 Both set means the platform did (FR-009).
 
-## `POST /v1/webhook-endpoints/{id}/enable` — amended
+## `POST /v1/webhooks/{id}/enable` — amended
 
 Already exists. Now also clears `failure_run_started_at`,
 `failure_run_attempts`, `disabled_at` and `disabled_reason`, in one transaction
 (FR-017). The hour is measured from the next failure, not the old run.
 
-## `POST /v1/webhook-endpoints/{id}/test` — new
+## `POST /v1/webhooks/{id}/test` — new
 
 Sends a synthetic event to this endpoint and reports what it answered.
 
@@ -95,3 +95,32 @@ yours".
 Invariant 12 exists because of research R1: an outcome-only check never fires for
 a low-traffic endpoint, whose next attempt after 35m36s falls at 2h35m36s and may
 never come at all.
+
+
+---
+
+## Corrections made while building this
+
+**The route prefix.** This document said `/v1/webhook-endpoints/{id}/…` in two
+places. Chapter 3.5's management surface is mounted at `/v1/webhooks`, and a
+chapter that documented a path the platform does not serve would have been found
+by the first reader to run `curl`.
+
+**`deliveryMaterial` had to learn about test events.** Invariant 9 says a disabled
+endpoint receives no attempts, and it was enforced where the dispatcher asks for
+the material to make one. FR-013 says a test event reaches a disabled endpoint.
+Those two meet in exactly one predicate, and the first run of
+`test-event.itest.ts` failed there — the route created the delivery, and the
+material request answered 404.
+
+`synthetic` is the discriminator, which is what that column is for. A
+soft-deleted endpoint is still refused: deleted means gone from the customer's own
+API, and delivering to one would be the platform reaching a url the customer
+believes it has forgotten.
+
+**The timeout answer.** The contract describes what a test returns when the
+endpoint answers or fails to. It did not say what happens when NOTHING makes the
+attempt — no dispatcher running. The route waits ten seconds and then answers
+`200` with `delivered: false` and an error naming the platform rather than the
+customer. A 5xx would have been easier and would have told a customer their
+endpoint was broken when the platform simply had not looked.
