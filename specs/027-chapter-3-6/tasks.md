@@ -59,7 +59,7 @@ that a timeout is recorded with no status rather than omitted.
 - [ ] T014 [US1] Write `relay-platform/services/api/src/webhooks/attempts.itest.ts` — one event per recorded outcome against a real broker, all four identifiers present, and the subject's environment matching the payload's (FR-002, SC-001, contract invariants 1, 2, 3)
 - [ ] T015 [US1] Add the case to `attempts.itest.ts` that matters most: with the `ANALYTICS` stream absent or the broker unreachable, the outcome is still recorded and the response to the dispatcher is unchanged (contract invariant 5, quickstart V3)
 - [ ] T016 [US1] Add a second-environment case to `attempts.itest.ts` confirming no attempt event crosses a tenant boundary (FR-018)
-- [ ] T017 [US1] Parameterise `relay-platform/scripts/stream-info.mjs` to take a stream name, defaulting to `EVENTS` — quickstart V2 inspects `ANALYTICS` and the script currently hardcodes `"EVENTS"`, so the step would report on the wrong stream and pass
+- [ ] T017 [P] [US1] Parameterise `relay-platform/scripts/stream-info.mjs` to take a stream name, defaulting to `EVENTS` — quickstart V2 inspects `ANALYTICS` and the script currently hardcodes `"EVENTS"`, so the step would report on the wrong stream and pass
 - [ ] T018 [US1] Run `pnpm coverage` and confirm `analytics.ts` is measured and every ratchet still passes — checked here rather than at the end, because 3.5 deferred it and found four thresholds red with the chapter otherwise finished (research R11)
 
 **Checkpoint**: attempts are published and the delivery path is provably independent of them.
@@ -83,7 +83,7 @@ second healthy endpoint in the same environment still receiving.
 - [ ] T024 [US2] Resolve the organisation at write time in `relay-platform/services/api/src/db/repository.ts` through `environments.application_id → applications.organisation_id`, and store it on the notification rather than joining for it later (data-model.md)
 - [ ] T025 [US2] Write `sweepDisabledEndpoints` in `relay-platform/services/api/src/db/repository.ts` — one statement finding endpoints whose run has outrun the hour, disabling and notifying them by the same path T022 uses
 - [ ] T026 [US2] Amend `relay-platform/services/api/src/webhooks/delivery-relay.ts` to call the sweep from the loop it already runs, behind `RELAY_DISABLE_SWEEP` (default on), with one log line reporting how many endpoints it disabled (research R1)
-- [ ] T027 [US2] Add `--watch-disable` to `relay-platform/scripts/webhook-walk.mjs` — poll the endpoint row and print the failure run growing and the disablement when it lands. Quickstart V4 already invokes this flag; without it the chapter's headline demonstration cannot be run
+- [ ] T027 [P] [US2] Add `--watch-disable` to `relay-platform/scripts/webhook-walk.mjs` — poll the endpoint row and print the failure run growing and the disablement when it lands. Quickstart V4 already invokes this flag; without it the chapter's headline demonstration cannot be run
 - [ ] T028 [US2] Expose `disabled_at`, `disabled_reason`, `failure_run_started_at` and `failure_run_attempts` on the endpoint representation in `relay-platform/services/api/src/webhooks/webhooks.controller.ts` so a customer can tell a platform disablement from their own (FR-009)
 - [ ] T029 [US2] Extend `relay-platform/services/api/src/webhooks/deliveries.itest.ts` with the run lifecycle: opens on failure, grows, clears on success, and an endpoint succeeding once an hour is never disabled (SC-003, contract invariants 6, 7)
 - [ ] T030 [US2] Add the disablement cases to `deliveries.itest.ts`: exactly one notification, no second disable on further failures, no deliveries created for a disabled endpoint, and pending deliveries for it not attempted (FR-010, SC-002, contract invariants 8, 9, 11). Include the concurrent case: two overlapping outcome reports against one endpoint produce one disablement and one notification, which is what `FOR UPDATE` and the `enabled = true` predicate are for
@@ -186,8 +186,8 @@ otherwise done.
 ### Parallel opportunities
 
 - **Phase 2**: T007 and T008 (protocol) run alongside T004–T006 (schema) — different packages
-- **Phase 3**: T013 is independent of T014–T016; the unit test needs no broker
-- **Phase 4**: T019 and T020 are pure and independent of everything else in the phase
+- **Phase 3**: T013 is independent of T014–T016; the unit test needs no broker. T017 touches only a script and is independent of everything in the phase
+- **Phase 4**: T019 and T020 are pure and independent of everything else in the phase; T027 touches only a script
 - **Phase 5**: T039 can be written while T034–T038 are in progress
 - **Phase 7**: T051 (figures) is independent of the prose tasks
 - **Phase 8**: T056 (figures) is independent of T055 (page)

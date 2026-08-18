@@ -3,6 +3,11 @@
 What the api publishes after every webhook delivery attempt, and what Part 4's
 ingester will consume.
 
+**Two words, one thing.** The *attempt record* is the fact — what happened on one
+try. The *attempt event* is the message that carries it onto the stream. The
+record is what a reader eventually wants; the event is how it travels. Where this
+document says event it means the wire message, and nowhere else.
+
 ## Subject
 
 ```text
@@ -66,6 +71,22 @@ This is the trade constitution III asks for in as many words: a backlogged
 analytical pipeline must not affect webhook dispatch. The cost is a gap in a
 dashboard; the alternative cost is a customer's webhooks stopping because a
 metering pipeline is unwell.
+
+## Not queryable in this chapter
+
+**Nothing reads this stream yet.** The api publishes; no consumer exists, no
+ClickHouse table exists, and there is no endpoint a customer can call to ask what
+happened to their event. Attempts are emitted and retained for seven days, and
+that is the whole of it.
+
+**Part 4's analytics ingester is what finishes FR-WHK-06.** It consumes
+`analytics.>`, batch-inserts to ClickHouse, and gives the records the query
+surface and the 30-day retention the requirement asks for. Until then, an operator
+who needs an attempt history reads it off the stream directly.
+
+This is stated here, and not only in the chapter, because a contract that
+described the payload without saying nobody can read it would be describing a
+feature that does not exist yet (FR-005).
 
 Consumers must therefore treat attempt counts as approximate. `webhook_deliveries.
 attempt` remains the operational truth for "how many times has this been tried".

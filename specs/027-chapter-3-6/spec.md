@@ -21,10 +21,17 @@ the deferral and its reason are recorded in `specs/026-chapter-3-5/chapter-notes
 
 ### User Story 1 - Every attempt leaves a record (Priority: P1)
 
-A customer integration engineer whose webhooks "stopped working" opens the
-platform and asks what actually happened to a given event. They see each attempt:
-when it was made, what the endpoint answered, how long it took, and what went
-wrong when nothing answered at all.
+A customer integration engineer's webhooks "stopped working". Somewhere in the
+platform there is now a complete account of what happened to each event: when
+every attempt was made, what the endpoint answered, how long it took, and what
+went wrong when nothing answered at all.
+
+**They cannot read it yet, and that is the shape of this chapter.** The account is
+emitted onto the analytical stream; the surface a customer reads it through is
+Part 4's ingester. What this story delivers is that the evidence exists and is
+complete — because the two stories after it spend that evidence, and a platform
+that disables a paying customer's endpoint without it is one that cannot explain
+itself afterwards.
 
 **Why this priority**: It is the evidence every other story depends on. Disabling
 an endpoint, explaining the disablement, and reasoning about a flaky customer are
@@ -32,8 +39,9 @@ all impossible without a per-attempt record, which is exactly why auto-disable w
 deferred out of 3.5 rather than shipped without it.
 
 **Independent test**: Drive an endpoint through a mix of success, failure and
-timeout; confirm one record per attempt carrying timestamp, status, latency and
-error, and that a timeout is recorded with no status rather than being omitted.
+timeout; consume the analytical stream and confirm one record per attempt carrying
+timestamp, status, latency and error, and that a timeout is recorded with no
+status rather than being omitted.
 
 **Acceptance scenarios**:
 
@@ -42,10 +50,12 @@ error, and that a timeout is recorded with no status rather than being omitted.
 2. **Given** an endpoint that never answers, **when** the attempt times out,
    **then** a record exists with no status, a latency equal to the timeout, and an
    error naming the failure.
-3. **Given** a delivery that exhausts its schedule, **when** its attempts are
-   listed, **then** all seven appear in order with their individual outcomes.
-4. **Given** two environments, **when** either lists attempts, **then** it sees
-   only its own (constitution I).
+3. **Given** a delivery that exhausts its schedule, **when** the analytical stream
+   is consumed, **then** all seven attempts are present with their individual
+   outcomes and attempt numbers.
+4. **Given** two environments, **when** the stream is consumed, **then** every
+   attempt carries the environment it belongs to, on the subject and in the
+   payload, and no attempt from one appears under the other (constitution I).
 
 ### User Story 2 - An endpoint that has been failing for an hour is switched off (Priority: P2)
 
@@ -128,7 +138,8 @@ confirm delivery resumes with a cleared failure streak.
   path is unavailable, and MUST NOT be retried at the cost of the delivery path
   (see FR-003 and FR-005). No other loss is acceptable.
 - **FR-002**: An attempt record MUST identify the delivery, the endpoint, the event
-  and the attempt number, so a customer can follow one event across its schedule.
+  and the attempt number, so one event can be followed across its schedule by
+  whoever is consuming the stream.
 - **FR-003**: Attempt records MUST be emitted on the analytical path as the SAD
   describes, published asynchronously to the durable queue, and MUST NOT be written
   synchronously on the delivery path.
