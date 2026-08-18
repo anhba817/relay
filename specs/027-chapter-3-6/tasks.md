@@ -21,9 +21,9 @@ Platform paths are relative to `relay-platform/`, tutorial paths to
 
 ## Phase 1: Setup
 
-- [ ] T001 Record provenance in `specs/027-chapter-3-6/baseline.txt`: the submodule commits and tags this chapter starts from, confirming `relay-platform` is at `part3-ch5` and both pins match their HEADs
-- [ ] T002 Record the pre-change baseline in `specs/027-chapter-3-6/baseline.txt` — unit and integration counts per package, the four coverage figures, every per-file ratchet in force, and the exit code of each gate rather than a grep over its output
-- [ ] T003 [P] Record the site baseline in `specs/027-chapter-3-6/baseline.txt`: `pnpm lint`, `pnpm build`, `pnpm check:docs` and `pnpm check:fences` in `relay-tutorial/`, with the fence count and locale count the chain reports
+- [X] T001 Record provenance in `specs/027-chapter-3-6/baseline.txt`: the submodule commits and tags this chapter starts from, confirming `relay-platform` is at `part3-ch5` and both pins match their HEADs
+- [X] T002 Record the pre-change baseline in `specs/027-chapter-3-6/baseline.txt` — unit and integration counts per package, the four coverage figures, every per-file ratchet in force, and the exit code of each gate rather than a grep over its output
+- [X] T003 [P] Record the site baseline in `specs/027-chapter-3-6/baseline.txt`: `pnpm lint`, `pnpm build`, `pnpm check:docs` and `pnpm check:fences` in `relay-tutorial/`, with the fence count and locale count the chain reports
 
 ---
 

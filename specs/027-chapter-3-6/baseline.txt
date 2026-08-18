@@ -1,0 +1,266 @@
+Chapter 3.6 — baseline
+======================
+
+Measured before anything changed, so the chapter-end numbers have something to be
+compared against. Exit codes, not greps over output (chapter 3.2 shipped two
+failures past a grep on a build log).
+
+Date: 2026-08-18
+
+
+T001 — provenance
+-----------------
+
+relay-platform   2e4e9c4  tag part3-ch5           working tree clean
+relay-tutorial   cf0ba76  "feat: Update chapter 3.4 with natural language"
+
+Both submodules sit at their own HEADs. The PARENT repository's pin for
+relay-tutorial is stale — `git status` in the parent reports ` M relay-tutorial`
+because the submodule has moved on since the pin was recorded. That is the
+tutorial's own committed prose editing pass, not a dirty tree, and the pin is
+updated when this chapter commits.
+
+relay-platform is at part3-ch5 as the plan requires, and `git describe
+--tags --exact-match HEAD` resolves, so the tag is on the commit rather than
+merely near it.
+
+
+T002 — platform baseline
+------------------------
+
+Stores: docker compose postgres redis nats, ports 15432 / 16379 / 14222, all
+reported healthy by `--wait`.
+
+  lint                                  exit 0
+  typecheck                             exit 0
+  build                                 exit 0
+  migrate                               exit 0   "migrations: nothing to apply"
+
+unit lane                               exit 0   156 tests
+  @relay/config                                    6   (2 files)
+  @relay/protocol                                 31   (3 files)
+  @relay/service-kit                               3   (1 file)
+  @relay/api                                      74  (10 files)
+  @relay/gateway                                  34   (3 files)
+  @relay/dispatcher                                8   (1 file)
+
+integration lane                        exit 1   149 tests, 147 passed
+  @relay/api                                     111  (13 files)   all passed
+  @relay/gateway                                  13   (3 files)   all passed
+  @relay/e2e                                       9   (2 files)   all passed
+  @relay/dispatcher                               16   (1 file)    2 FAILED
+
+The test counts match chapter 3.5's closing numbers exactly. The exit code does
+not, and the next section is why.
+
+
+T002a — the baseline was already red, and not because of this chapter
+--------------------------------------------------------------------
+
+`pnpm test:integration` fails intermittently at part3-ch5. Recorded here in full
+because a chapter that measures against a flaky baseline cannot tell its own
+breakage from noise, and every later verification task in this chapter runs this
+lane.
+
+  run 1   dispatcher   1 failed  "invariants 4 and 5: the signature ON THE WIRE
+                                  verifies"            NatsError: consumer not found
+  run 2   dispatcher   passed 16/16 when run ALONE     exit 0
+  run 3   dispatcher   2 failed  "invariant 10: a FAILED delivery is retried"
+                                                       NatsError: consumer deleted
+                                 "invariants 4 and 5 …"
+                                                       NatsError: consumer not found
+
+Two of three full-lane runs failed; the suite passed every time it ran by itself.
+That shape — fails in company, passes alone — is a cross-suite race, so the
+question was which suite.
+
+ROOT CAUSE. Chapter 3.4's `services/api/src/consumer/consumer.itest.ts` cleans up
+after itself by deleting every durable consumer on the `EVENTS` stream whose name
+starts with `itest-`. Chapter 3.5's dispatcher suite names its own expand consumer
+`itest-expand-<run>`, on that same stream. Turborepo runs the two packages'
+integration lanes concurrently, so one suite's teardown deletes the other's live
+consumer part-way through.
+
+PROVED, not inferred. A decoy consumer named `itest-expand-PROBE0001` was created
+on EVENTS by hand, the api consumer suite was run on its own, and the decoy was
+gone afterwards:
+
+  BEFORE: consumer itest-expand-PROBE0001 exists=true
+  api consumer suite exit=0
+  AFTER:  consumer itest-expand-PROBE0001 exists=false
+
+The suite deleted a consumer it did not create. `consumer deleted` is the error
+when the sweep lands during a fetch; `consumer not found` is what the next test
+gets.
+
+Why the coverage lane never showed it: `vitest.coverage.config.mts` sets
+`fileParallelism: false`, so those two suites never overlap there. Only the
+Turborepo lane runs them at once.
+
+FIXED FORWARD, ahead of its task (T064), because every verification task in this
+chapter depends on this lane being readable. The sweep now uses a prefix that
+names this suite — `itest-consumer` — instead of every suite. The durables stay
+unique per run; the sweep still covers the whole suite namespace so a run that
+crashed before its own teardown is tidied up by the next one.
+
+The file is fenced by chapter 3.4, and the amendment went to
+`relay-tutorial/fences/post-series.md` rather than into a chapter. 3.4 is about
+the claim ledger and 3.6 does not mention the consumer suite at all; putting it
+in either would make that chapter show a reader code it never discusses.
+
+Worth saying plainly: the file already contained the rule that would have
+prevented this. Its comment on `spawnedDurables` explains that a prefix sweep
+would delete a reader's walk running alongside it, and records what it spawned
+instead. That reasoning was applied to the walk's durables and not to the suite's
+own names.
+
+
+T002b — standing debt, measured and NOT fixed
+---------------------------------------------
+
+The broker had accumulated consumers that no suite cleans up:
+
+  ACCOUNT           streams 2      consumers 114
+  EVENTS            msgs 1391      consumers 24
+  DELIVERIES        msgs 2084      consumers 90
+
+  every leftover:   inactive_threshold=undefined   (so the server never reaps them)
+  each itest-deliver-*: num_pending between 71 and 1991
+
+Chapter 3.5's dispatcher suite names per-run durables on both streams and deletes
+neither at teardown, so every run of that lane leaves two more behind forever.
+Chapter 3.4's suite has a teardown for exactly this reason — its comment records
+finding twelve leftovers the first time `stream-info.mjs` looked. The dispatcher
+suite never got one.
+
+Not fixed here. It costs server bookkeeping and lane time rather than
+correctness, and unlike the race above it does not make a result unreadable.
+Recorded with the numbers so the next chapter to touch that suite has them.
+
+The two Redis knobs are still two knobs: `RELAY_REDIS_URL` for production code,
+`RELAY_REDIS_PORT` for the integration tests. Chapters 3.4 and 3.5 both recorded
+it. It cost nothing this time, because the quickstart now names both.
+
+One self-inflicted hour, recorded because the next person will do it too:
+`RELAY_WEBHOOK_SECRET_KEY` is base64, not hex. A 64-character hex string decodes
+to 48 bytes and every webhook suite fails with "must decode to 32 bytes, got 48".
+CI's value is a 44-character base64 string.
+
+
+T003 — site baseline
+--------------------
+
+  lint                                  exit 0
+  build                                 exit 0
+  check:docs                            exit 0
+  check:fences                          exit 0
+
+  fence chain   145 fenced files across 22 chapters
+                22 translated, fences mirrored, 1 retired,
+                plus post-series amendments
+
+After this chapter's post-series amendment the chain still replays: 145 files, 22
+chapters, unchanged counts — an amendment to an already-fenced path adds a fence
+to that path's chain rather than a new path to the total.
+
+
+T002c — coverage baseline
+-------------------------
+
+  pnpm coverage                         exit 0   296 tests, 37 files
+
+  All files            85.14 stmts   77.16 branch   85.57 funcs   87.09 lines
+
+Per-file ratchets in force, measured against the threshold each is pinned at:
+
+  file                                    stmts   branch  funcs  lines   ratchet
+  services/api/src/db/repository.ts       97.28   89.51   100    98.99   97/89/100/98
+  services/dispatcher/src/expand.ts       92.3    92.3    100    100     92/92/100/100
+  services/dispatcher/src/deliver.ts     100      90.9    100    100     100/90/100/100
+  services/gateway/src/resume.ts         100      93.75   100    100     100/93/100/100
+  services/api/src/auth/user-token.ts     96      96      100    100     96/96/100/100
+
+Global floors: 70 on all four (constitution VI, first clause).
+
+`repository.ts` is at 89.51 branches against a ratchet of 89 — research R11's
+number, confirmed rather than assumed. Half a point of headroom, and this chapter
+adds five operations to that file. T018 and T033 check it as each operation lands
+instead of at the end, which is the ordering chapter 3.5 arrived at by getting it
+wrong.
+
+Uncovered lines named, so a later run can tell a new gap from an inherited one:
+repository.ts 123 and 1529, deliver.ts 101, expand.ts 24, resume.ts 131,
+user-token.ts 104.
+
+
+T002d — the lane was flaky FOUR different ways, not one
+------------------------------------------------------
+
+The three-run check after the first fix found more. Recorded in the order they
+were diagnosed, with what was done about each.
+
+FLAKE 1 — cross-suite consumer deletion. Diagnosed and fixed above (T002a).
+  after the fix: no `NatsError` in six further lane runs.
+
+FLAKE 2 — the dispatcher's expand consumer eats another suite's events.
+  Symptom: "JSON that is not an envelope is terminated too, not retried" timed
+  out at 60s. No broker error — just slow.
+  Cause: the dispatcher's expand consumer filters `events.>`, every environment,
+  as it must in production. Run concurrently with the api's consumer suite, it
+  also picks up that suite's events and garbage, spending an HTTP round trip per
+  foreign message before reaching the one the test published. The same
+  interference can fail the assertion in the opposite direction: the test counts
+  `expand.unparseable` log lines and holds them stable, and a foreign garbage
+  message increments that count.
+  Fixed by SERIALISING the lane — `turbo run test:integration --concurrency=1`.
+  Not by narrowing the consumer: the wildcard is correct in production, and the
+  suites each assume exclusive use of a shared broker. `vitest.coverage.config.mts`
+  already sets `fileParallelism: false` for the same reason, so this is the
+  precedent the repo had already set, applied to the other lane.
+  Cost: the lane runs sequentially — about 9 minutes rather than about 3.
+
+FLAKE 3 — a security assertion that was near-vacuous, and occasionally false.
+  Symptom: `expected '{"time":"2026-08-18T14:06:31.178Z","l…' not to contain 'I'`.
+  A one-character needle.
+  Cause: `credentials.itest.ts` derived the secret with
+  `key.credential.split("_").at(-1)`. A credential is
+  `rk_dev_<32 hex>_<32 bytes base64url>`, and BASE64URL'S ALPHABET CONTAINS `_`.
+  `api-key.ts` carries a paragraph explaining precisely this — "splitting on the
+  last underscore would corrupt any secret containing one" — and records that
+  data-model.md said to do it until the first mint that produced a secret with an
+  underscore said otherwise. The test then did it anyway.
+  The visible half: a mint ending `…_I` reduced the assertion to "no log line
+  contains the letter I", and the error body for a misused key says "this route
+  expects an API key".
+  The invisible half is worse and was true on most runs: whenever the secret
+  contained an underscore, the assertion checked only the fragment after the LAST
+  one. A log line leaking the first thirty characters of a signing secret would
+  have passed. The one test standing between a credential and a log file was
+  weaker than it looked, most of the time.
+  Fixed: it parses with `parseApiKeyCredential`, the same function production
+  uses, and asserts the secret is longer than 20 characters so the needle can
+  never degenerate again. The foreign key's secret is now checked too, which it
+  never was.
+
+FLAKE 4 — a real duplicate on the resume boundary. NOT FIXED, and out of scope.
+  Symptom: `expected [ 1, 2, 3, 4, 4 ] to deeply equal [ 1, 2, 3, 4 ]` in
+  `packages/e2e/src/tuan.itest.ts`, journey 4. One occurrence in six lane runs.
+  What it means: a client's timeline contains sequence 4 TWICE. The resume
+  backfill delivered it and the live flush delivered it again. That is the exact
+  property the next test in the same file asserts — "resumes with no gap and no
+  double (FR-RTM-03, SAD §5.2)" — so this is not a loose assertion. The live
+  fabric is permitted to be lossy (constitution IV); it is not permitted to
+  duplicate across the resume seam, because that seam is where the platform
+  promises exactly one.
+  Left alone deliberately. The code is the gateway's resume path, chapter 2.7's
+  subject, and a fix belongs in a chapter that can explain it. Recorded with the
+  reproduction rate so it is a known defect rather than folklore about a flaky
+  e2e suite.
+
+Six lane runs in total: three before the fixes and three after.
+
+  before   run 1  FAIL (flake 1)   run 2  FAIL (flake 1, twice)   run 3  FAIL (flake 3)
+  after    run 1  PASS             run 2  FAIL (flake 4)          run 3  PASS
+
+api, dispatcher and gateway pass 3 of 3 after the fixes. The remaining failure is
+flake 4, which no change in this chapter touches.
