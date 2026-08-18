@@ -41,6 +41,11 @@ codes, not output — chapter 3.2 shipped two failures past a grep over a build 
 node scripts/stream-info.mjs ANALYTICS
 ```
 
+The stream name is an argument as of this chapter. `stream-info.mjs` had `"EVENTS"`
+hardcoded in three places, so this step would have printed the EVENTS stream's
+configuration and passed — every field it shows exists on both streams. A
+validation step that cannot fail is worse than no step.
+
 Expected: the stream exists with `analytics.>`, a seven-day `max_age` and
 `discard: old`, and its message count rises as deliveries are attempted.
 
@@ -74,7 +79,14 @@ Exactly one notification row, `delivered_at` null.
 
 `--fast-forward` moves the clock, not the logic. Without it this takes an hour and
 five minutes of real time, which is the honest cost of the requirement and the
-reason the flag exists.
+reason the flag exists. `--watch-disable` does the same for the hour: it ages
+`failure_run_started_at` by 64 minutes rather than waiting.
+
+**What to read in the output**, and it is the point of the whole chapter: after
+attempt 7 the delivery is `dead`, the run holds seven failures, and the endpoint is
+still `enabled`. The schedule is exhausted, so no further outcome will ever be
+reported — an outcome-only check would never fire again. The sweep is what disables
+it, and running the sweep twice disables it once.
 
 ## V5 — An endpoint that recovers is never switched off
 
@@ -115,7 +127,7 @@ by the test's outcome. Then re-enable and confirm all four columns are null.
 
 ## V8 — The sabotage check
 
-Five mutations, each reverted afterwards and the file verified byte-identical:
+Seven mutations, each reverted afterwards and the file verified byte-identical:
 
 | Mutation | Must fail |
 |---|---|
@@ -124,6 +136,15 @@ Five mutations, each reverted afterwards and the file verified byte-identical:
 | let a test event's outcome update the failure run | invariant 13 |
 | publish the attempt event inside the outcome transaction | invariant 5 — a stalled stream now blocks a delivery |
 | remove the sweep, keeping the on-outcome check | invariant 12, via V6's quiet endpoint |
+| deduplicate the attempt publish on the delivery id alone | one event per delivery instead of one per attempt |
+| drop `SELECT … FOR UPDATE` from the endpoint read | the concurrent case in `deliveries.itest.ts` — two notifications |
+
+The last two were added during implementation. The sixth is chapter 3.5's own bug
+aimed at the new code: `row.id` is stable across all seven attempts, and using it
+as the broker's deduplication key is exactly what collapsed every retry into the
+first attempt's message last chapter. The seventh is the only mutation that
+requires concurrency to catch, which is why the test for it reports two outcomes
+with `Promise.all` rather than in sequence.
 
 A suite that still passes with a mechanism removed is a suite that holds nothing.
 
