@@ -41,9 +41,17 @@ codes, not output — chapter 3.2 shipped two failures past a grep over a build 
 node scripts/stream-info.mjs ANALYTICS
 ```
 
-Expected: the stream exists with `analytics.>`, and its message count rises as
-deliveries are attempted. The attempt payload carries identifiers, a status, a
-latency and an outcome — and no payload, secret or signature.
+Expected: the stream exists with `analytics.>`, a seven-day `max_age` and
+`discard: old`, and its message count rises as deliveries are attempted.
+
+**That is all this command can tell you, and the distinction matters.**
+`stream-info.mjs` prints a stream's configuration and its counters — it never
+prints a message body. The payload properties (identifiers, status, latency and
+outcome present; no event payload, secret or signature anywhere) are proven by
+`services/api/src/webhooks/attempts.itest.ts`, which consumes the stream and
+reads the events. A step that claimed to show the payload while running a command
+that cannot would be the kind of validation that passes without checking
+anything.
 
 ## V3 — A backlogged analytics path does not stop a delivery
 
