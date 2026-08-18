@@ -1,22 +1,23 @@
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-`specs/027-chapter-3-6/plan.md` (feature: Tutorial Chapter 3.6 — "When to stop
-trying": the attempt log and auto-disable, the two requirements deliberately
-deferred out of chapter 3.5. Attempts are PUBLISHED to a new ANALYTICS stream,
-not stored and not queryable — Part 4's ingester makes them queryable, and the
-publish is at-most-once on purpose so a backlogged analytics path cannot stall
-webhook dispatch (constitution III). Auto-disable reads two operational columns
-on `webhook_endpoints`, never the stream. Research R1 measured that an
-outcome-only check never fires for a low-traffic endpoint — one failing delivery
-attempts at +35m36s then not again until +2h35m36s, and never at all if it
-dead-letters with no further events — so there are TWO triggers: on a recorded
-outcome, and a sweep riding the delivery relay's existing loop. The notification
-is RECORDED, not sent; this platform has no email transport and chapter 3.7
-needs one for quotas too, so `delivered_at` exists in order to be null. A
-synthetic test event (FR-WHK-09) closes the disable-repair-re-enable loop; its
-outcome never touches the failure run. No new dependency, no new service, no new
-loop. Fence budget 18-22, and `repository.ts` has half a point of ratchet
-headroom before this chapter adds five operations to it).
-Project principles: `.specify/memory/constitution.md`.
+`specs/028-chapter-3-7/plan.md` (feature: Tutorial Chapter 3.7 — "Commit and
+publish are two instants": the resume duplicate chapter 2.7 did not close. A
+message is durable at one instant and announced at another — the gateway commits
+through the api, then publishes to Redis — and a resuming client whose backfill
+lands between them is delivered the same message twice, once from the backfill and
+once from the fabric after the dedup window has shut. The fix keeps the backfill's
+high-water mark on the Connection instead of discarding it at `phase = "live"`,
+and consults it in `deliver()`. RESEARCH R3 OVERTURNED THE SPEC: the mark must
+NEVER be retired, because two gateway instances can publish out of order and a
+higher sequence arriving first would retire the mark before the delayed lower one
+lands; no retirement is needed because the mark set is already capped at 200 by
+`MAX_RESUME_CHANNELS`. The failure mode of this change is a GAP, which is worse
+than the duplicate it replaces (constitution II), so a degraded resume retains
+nothing. The existing `resume.itest.ts` covers three of four quadrants and the
+missing one IS the bug — one number apart from a test already there, which is why
+the deterministic test needs no api and no timing luck. No migration, no column,
+no new dependency, no api change. Part 3 renumbers: quotas 3.8, gauntlet 3.9, and
+three source comments citing chapter numbers are rewritten to stop citing numbers
+that move — one of them has been stale since 3.6's insertion).
 <!-- SPECKIT END -->
