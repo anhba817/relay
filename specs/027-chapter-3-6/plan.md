@@ -97,13 +97,20 @@ relay-platform/
 │       │   └── jetstream.publisher.ts   # AMEND: ensure the ANALYTICS stream
 │       └── webhooks/
 │           ├── analytics.ts             # NEW: the attempt event publisher
+│           ├── analytics.test.ts        # NEW: payload shape, no secrets
 │           ├── disable.ts               # NEW: the policy, pure and testable
 │           ├── disable.test.ts          # NEW
 │           ├── attempts.itest.ts        # NEW
 │           ├── test-event.itest.ts      # NEW
+│           ├── deliveries.itest.ts      # AMEND: run lifecycle, disable, sweep
 │           ├── delivery-relay.ts        # AMEND: the sweep rides the loop
 │           ├── webhooks.controller.ts   # AMEND: test event, re-enable
 │           └── webhooks.service.ts      # AMEND: test-event orchestration
+├── packages/protocol/src/
+│   └── internal.test.ts                 # AMEND: analyticsSubjectFor cases
+├── scripts/
+│   ├── stream-info.mjs                  # AMEND: take a stream name
+│   └── webhook-walk.mjs                 # AMEND: --watch-disable
 └── vitest.coverage.config.mts           # AMEND: ratchets (R11)
 
 relay-tutorial/
@@ -185,4 +192,5 @@ they are judgement calls a reviewer should be able to challenge:
 | Decision | Why it is not simpler | What was rejected |
 |---|---|---|
 | Two disable triggers instead of one | R1 measured that an outcome-only check never fires for a low-traffic endpoint: the next attempt after 35m36s is at 2h35m36s, and if the delivery dead-letters with no further events the endpoint is never disabled at all | A dedicated scheduler or cron (a third loop, constitution VII); lazy evaluation at read time (an effect that only happens when somebody looks is not an effect) |
+| Idempotency logic added to a file below NFR-MNT-02's bar | Constitution VI requires 100% branch coverage for idempotency logic. The at-most-once disable is idempotency logic and lands in `repository.ts`, whose ratchet is 89. **This extends a deviation feature 024 accepted and recorded, rather than creating one** — the ratchet exists because a threshold nothing can pass teaches everyone to ignore CI. The disable path itself is small and mostly pure, so `disable.ts` carries its own 100%-branch pin and only the database-facing half sits under the inherited number | Pinning `repository.ts` at 100 now (nothing would pass, and the file is 1500 lines of inherited surface); leaving the disable path unpinned (the new idempotency logic would be the least measured code in the chapter) |
 | A new `ANALYTICS` stream rather than reusing `EVENTS` | Different volume, different retention, and Part 4's ingester should consume attempts without also consuming every message event | Reusing `EVENTS` (couples retention policies); routing through the `outbox` table (puts analytical volume through the operational store, couples the two paths constitution III separates) |

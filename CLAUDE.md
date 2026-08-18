@@ -16,7 +16,7 @@ is RECORDED, not sent; this platform has no email transport and chapter 3.7
 needs one for quotas too, so `delivered_at` exists in order to be null. A
 synthetic test event (FR-WHK-09) closes the disable-repair-re-enable loop; its
 outcome never touches the failure run. No new dependency, no new service, no new
-loop. Fence budget 15-19, and `repository.ts` has half a point of ratchet
+loop. Fence budget 18-22, and `repository.ts` has half a point of ratchet
 headroom before this chapter adds five operations to it).
 Project principles: `.specify/memory/constitution.md`.
 <!-- SPECKIT END -->

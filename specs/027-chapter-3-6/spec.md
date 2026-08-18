@@ -122,9 +122,11 @@ confirm delivery resumes with a cleared failure streak.
 
 **The attempt record (FR-WHK-06)**
 
-- **FR-001**: Every delivery attempt MUST be recorded with the time it was made,
+- **FR-001**: Every delivery attempt MUST be emitted with the time it was made,
   the response status when there was one, the latency, and the error when there was
-  no response.
+  no response. Emission is best effort: a record MAY be lost when the analytical
+  path is unavailable, and MUST NOT be retried at the cost of the delivery path
+  (see FR-003 and FR-005). No other loss is acceptable.
 - **FR-002**: An attempt record MUST identify the delivery, the endpoint, the event
   and the attempt number, so a customer can follow one event across its schedule.
 - **FR-003**: Attempt records MUST be emitted on the analytical path as the SAD
@@ -141,9 +143,11 @@ confirm delivery resumes with a cleared failure streak.
 - **FR-006**: The platform MUST track, per endpoint, the start of the current
   unbroken run of failures, and MUST clear it on any successful delivery.
 - **FR-007**: An endpoint MUST be disabled automatically when its unbroken failure
-  run has lasted longer than one hour AND has contained at least a configured
-  minimum number of attempts, so that a single failure followed by a long retry
-  gap cannot trigger a disablement on its own.
+  run has lasted longer than **one hour** AND has contained at least **five**
+  attempts, so that a single failure followed by a long retry gap cannot trigger a
+  disablement on its own. Both are fixed values, not configuration: an operator who
+  can lower the floor to one has an operator who can disable a customer's endpoint
+  on a single bad response.
 - **FR-008**: Disabling MUST happen at most once per run of failures: an endpoint
   already disabled MUST NOT be disabled again, and MUST NOT produce a second
   notification.
@@ -199,8 +203,10 @@ confirm delivery resumes with a cleared failure streak.
 
 ### Measurable Outcomes
 
-- **SC-001**: For any event a customer names, they can be shown every attempt made
-  on their behalf, with outcome and duration, without the platform consulting logs.
+- **SC-001**: For any event a customer names, every attempt made on their behalf
+  has been emitted with its outcome and duration, and can be read off the
+  analytical stream without the platform consulting logs. **Being shown it —
+  a query surface a customer can use — is Part 4's ingester, not this chapter.**
 - **SC-002**: An endpoint failing continuously for more than an hour is switched off
   without anybody intervening, and exactly once.
 - **SC-003**: An endpoint that fails intermittently but succeeds at least once an

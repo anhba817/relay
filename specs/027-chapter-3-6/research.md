@@ -271,13 +271,22 @@ start.
 
 Nine amendments. **New files:** the migration, an `analytics.ts` publisher module,
 and a `disable.ts` policy module — three. **Test files:** `disable.test.ts` (the
-policy arithmetic), `attempts.itest.ts`, `test-event.itest.ts`, and amendments to
-`deliveries.itest.ts` and `dispatcher.itest.ts` — five.
+policy arithmetic), `analytics.test.ts`, `attempts.itest.ts`, `test-event.itest.ts`,
+and amendments to `deliveries.itest.ts` and `internal.test.ts` — six. **Scripts:**
+amendments to `stream-info.mjs` (it hardcodes `EVENTS`) and `webhook-walk.mjs`
+(`--watch-disable`) — two, and both exist because the quickstart already invokes
+behaviour neither script has.
 
-**Budget: 15–19.** Roughly half of 3.5, and the reason is that 3.5 built a service
-and this chapter adds columns to one. If implementation approaches 19, the signal
-to check is whether the test event (FR-WHK-09) has grown past the modest widening
-it was accepted as.
+*This count was wrong on the first pass and is corrected here rather than
+silently: it named an amendment to `dispatcher.itest.ts` that nothing in the plan
+touches, and omitted `analytics.test.ts`, `internal.test.ts` and both scripts. Net
+three files more than estimated, which is the same failure mode as chapter 3.5's
+first two budgets — a whole category left uncounted.*
+
+**Budget: 18–22**, revised upward from 15–19 by the recount. Still about half of
+3.5's 39, and the reason is that 3.5 built a service while this chapter adds
+columns to one. If implementation approaches 22, the signal to check is whether the
+test event (FR-WHK-09) has grown past the modest widening it was accepted as.
 
 ---
 
