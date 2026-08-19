@@ -101,7 +101,9 @@ connection lives.
 That argument is the reason suppression is safe and it is also the thing most
 worth attacking: it is the only place this chapter could turn a duplicate into a
 gap, which is a worse failure. Constitution II is why the quickstart spends two
-scenarios and a sabotage mutation on it.
+scenarios (V3, V4) and two sabotage mutations on it — suppressing on every channel,
+and retaining the marks through a degraded resume. The other three mutations fail
+as duplicates; these two fail as loss.
 
 ---
 
