@@ -102,8 +102,17 @@ new container. See the size finding above and research R10.
 | **VI. Requirement-driven, test-verified** | Every FR maps to a test below. NFR-MNT-02's sabotage discipline applies, and SC-007 names the mutation that matters: making the auth limiter fail open, because R3's decision has no code of its own. | Pass |
 | **VII. Boring by design** | Two new dependencies and a new container, all three needing justification. `ioredis` is already in the workspace. `nodemailer` avoids hand-rolled SMTP. Mailpit exists only in `compose.yaml`, never in a deployment, and is the only way to assert on what an email contains. | Pass with the justifications recorded in research R9 |
 
-**No gate fails.** The one constitution violation found is pre-existing, is in the
-platform rather than in this plan, and is closed by this chapter's FR-003 and R5.
+**One gate fails, and it is recorded rather than argued away.** The Quality Gates
+require that deploys cause at most one client reconnection cycle, and a connect limit of
+60 per environment per minute refuses the surplus of a fleet-wide reconnect. The gate has
+no implementation to conflict with — close code 4009 is declared and emitted by nothing —
+so FR-045 states the requirement for the chapter that builds a drain, and the conflict
+sits in Complexity Tracking as this document's own Quality Gates prescribe. **This was
+found on the twelfth analysis pass, by reading the constitution's non-principle sections
+for the first time.**
+
+The other constitution violation found is pre-existing, is in the platform rather than in
+this plan, and is closed by this chapter's FR-003 and R5.
 
 ## Project Structure
 
@@ -112,8 +121,8 @@ platform rather than in this plan, and is closed by this chapter's FR-003 and R5
 ```text
 specs/029-chapter-3-8/
 ├── plan.md              # This file
-├── spec.md              # 44 FR, 4 user stories, 14 SC
-├── research.md          # Phase 0 — R1…R22 (R11 and R14 rewritten after later passes)
+├── spec.md              # 46 FR, 4 user stories, 14 SC
+├── research.md          # Phase 0 — R1…R24 (R11 and R14 rewritten after later passes)
 ├── data-model.md        # Phase 1
 ├── quickstart.md        # Phase 1 — V0…V11
 ├── contracts/
@@ -277,6 +286,8 @@ made with the word count in hand instead of predicted now.
 | FR-030…FR-032 | research R16 | `pnpm check:fences`; T061a-c handle the post-series exception |
 | FR-042 | research R20 | T012a — `lint` refuses `ioredis` outside `services/api/src/limits/**` |
 | FR-043 | research R20 | T012b, T031b — a destroy hook in the api, a `close()` in the gateway; SC-013 is that both lanes terminate |
+| FR-044 | research R24 | T012c — the compose `api` service reaching Redis and Mailpit by container name |
+| FR-045 | research R23 | **Not satisfied here.** Recorded in Complexity Tracking above and left to the chapter that builds a drain |
 | FR-033…FR-035 | the renumbering note in research | done during `/speckit-specify`; verified at close-out |
 
 ## Constitution re-check, after Phase 1
@@ -309,4 +320,5 @@ the phase order keeps it available.
 | `nodemailer`, first new runtime dependency since 3.4 | SMTP by hand is not this chapter's subject and getting it wrong is invisible until an email is silently malformed | Hand-rolled SMTP adds a protocol implementation to a chapter about limits |
 | `ioredis` added to the api | The counters live in Redis and the api is where REST requests arrive | Proxying counter operations through the gateway would couple two services for no reason and put the api's rate limiting behind the gateway's availability |
 | Two limiter call sites rather than one | R2: the tenant limiter needs the principal and the auth limiter must work when there is none. The chain positions are forced | One middleware doing both would have to run before authentication and then guess the tenant, which is the header a caller could forge — the mistake chapter 3.2 removed |
-| ~40 fences against a 2,000–4,000 word bound, 33 of them before the transport | The scope carries two mechanisms by decision | Recorded in research R10 with a recommendation to split, and the phase order keeps the split available rather than settling it now |
+| ~40 fences against a 2,000–4,000 word bound, 33 of them before the transport | The scope carries two mechanisms by decision |
+| **A connect limit of 60/min/environment against the Quality Gates' "deploys cause … at most one client reconnection cycle"** | A deploy reconnects every client at once; an environment with more than sixty cannot reconnect inside one window, so the surplus is refused and returns — a second cycle. **The gate has no implementation to conflict with**: close code 4009 is declared and emitted by nothing, so there is no drain. FR-045 records the requirement for whichever chapter builds one | Raising the limit until it cannot bite — unbounded, and a limit chosen so it never refuses is not a limit. Building the drain here — larger than the limiter itself. Shipping a drain-grace *reader* for a flag nothing writes — the fifth instance of declaring a mechanism and not enforcing it, in the chapter about that habit | Recorded in research R10 with a recommendation to split, and the phase order keeps the split available rather than settling it now |

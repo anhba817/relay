@@ -1,6 +1,6 @@
 # Research — chapter 3.8, "Limits you can see coming"
 
-Phase 0. Twenty-two items. R3 is the chapter's central decision and the spec
+Phase 0. Twenty-four items. R3 is the chapter's central decision and the spec
 deliberately left it open. R5 found a **second unenforced contract** the chapter
 has to close whether it wants to or not. R10 quantifies the size risk the spec
 flagged and the answer is not the one the scope decision assumed. **R11 was added
@@ -1061,6 +1061,81 @@ achieves — a threshold tuned down to pass measures nothing"* — with the curr
 noted in prose: 86.55% statements, 78.07% branches "at the time of writing". Ten new
 files will move both. Chapter 3.7's quickstart inherited a nine-minute lane estimate from
 3.6 the same way, and it was wrong by a factor of three by the time anyone read it.
+
+---
+
+---
+
+## R23 — The connect limit and a constitution gate nothing yet keeps
+
+**Found by reading the constitution's Quality Gates**, which eleven earlier analysis
+passes never opened — they had all read the seven principles and stopped there.
+
+> *Each service is independently deployable; deploys cause no message loss and **at
+> most one client reconnection cycle**.*
+
+R4 sets connection establishment at **60 per minute per environment**. A gateway deploy
+makes every connected client reconnect at once. An environment with more than sixty
+connected clients cannot reconnect them inside one window, so the surplus is refused
+with `Retry-After` and comes back later — a second reconnection cycle, for exactly the
+event the gate names.
+
+**And the gate has no implementation.** `CLOSE_CODES[4009]` reads "server shutdown
+(drain)" and **nothing emits it**: the only occurrences in the platform are the constant
+itself and the test asserting the map has four entries. There is no drain. So the
+conflict is not between a limit and working code — it is between a limit and a promise
+nothing yet keeps.
+
+**That makes 4009 the fourth piece of vocabulary declared in chapter 1.3 and never
+wired**, beside `rate_limited`, close code 4008 and the error envelope's `request_id`.
+Three of the four are in one file. This chapter enforces one, closes one, and can now
+say precisely why the other two wait: 4008 needs a quota, and 4009 needs a drain.
+
+**Decision: record the conflict, do not paper over it, and do not build the drain.**
+
+The constitution's own Quality Gates prescribe the handling — *"violations are recorded
+and justified in the plan's Complexity Tracking table or the design is simplified"* —
+and Governance requires that a conflict be *"resolved explicitly by amendment rather
+than ignored"*. So it goes in Complexity Tracking with the justification, and a
+requirement states that whichever chapter builds the drain must ensure the connect
+limiter is not the reason a platform-initiated reconnect is refused.
+
+**Why not fix it here.** The clean mechanism is a drain-grace marker: the draining
+instance writes a short-lived flag to the shared store and the limiter skips counting
+while it exists. Redis is already there and the gateway already has a client, so the
+reading side is one check. But the **writing** side belongs to a drain that does not
+exist, and shipping a reader for a flag nothing writes would be the fifth instance of
+the habit this chapter is about — declaring a mechanism and not enforcing it, in the
+chapter that names the habit.
+
+**Why not just raise the number.** It is unbounded: the limit would have to exceed the
+largest number of connections any one environment can hold, which is a number nobody
+has. A limit chosen so it can never bite is not a limit, and R4's reasoning for sixty —
+"a client reconnecting hard, not a client working" — stays correct for every case except
+the one the platform itself causes.
+
+---
+
+## R24 — `docker compose up` would start an api whose limiter enforces nothing
+
+**Constitution, Technology & Platform Constraints:** *"The full stack MUST start locally
+with a single command (`docker compose up`), including a seeded demo tenant."*
+
+The compose `api` service passes `DATABASE_URL` and `RELAY_NATS_URL` with **container**
+hostnames and declares `depends_on` for postgres and nats. It has no Redis, because until
+this chapter the api did not need one. With the limiter added, `RELAY_REDIS_URL` falls
+through to its default of `redis://localhost:6379` — which inside that container is not
+the Redis service.
+
+**The failure mode is the quiet one.** Not a crash: FR-010 makes the tenant limiter fail
+open when the store is unreachable, so a composed stack would serve every request
+unlimited while reporting `X-RateLimit-Limit` and no counts. The chapter's own degraded
+behaviour, permanently, because of a missing line in a YAML file.
+
+**Correcting my own finding**: the report that raised this also said the **gateway**
+service had the same gap. It does not — `gateway` already carries
+`RELAY_REDIS_URL: redis://redis:6379` and `depends_on: redis`, from chapter 2.6's
+fan-out. Only the api needs the wiring, plus `RELAY_SMTP_URL` for the mailer.
 
 ---
 

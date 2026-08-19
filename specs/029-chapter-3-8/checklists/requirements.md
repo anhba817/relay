@@ -443,6 +443,48 @@ three times — read the spec against itself, read the source of every constrain
 operation, read the conventions the code enforces on itself — and then ran out. This pass
 had no fourth question and found only accretion, which is the signal to stop.
 
+### The twelfth pass: the constitution had a half nobody had read
+
+Eleven passes checked this feature against the constitution's **seven principles**. None
+opened the eighty lines after them — Technology & Platform Constraints, Development
+Workflow & Quality Gates, Governance. Reading them produced the first genuine conflict in
+twelve passes and a gap in the one command the constitution insists must work.
+
+**P1 — the connect limit contradicts a deployment gate.** *"Deploys cause no message loss
+and at most one client reconnection cycle."* A connect limit of 60/min/environment
+refuses the surplus when a deploy reconnects every client at once, and refused clients
+come back — a second cycle.
+
+**And the gate has no implementation.** `CLOSE_CODES[4009]` reads "server shutdown
+(drain)" and nothing emits it. So the conflict is with a promise nothing yet keeps, which
+makes **4009 the fourth code declared in chapter 1.3 and never wired**, beside
+`rate_limited`, 4008 and `request_id`. Three of the four are in one file. This chapter
+enforces one, closes one, and can now say exactly what the other two wait for: 4008 needs
+a quota, 4009 needs a drain.
+
+Handled the way the constitution prescribes for itself — recorded in the plan's
+Complexity Tracking table with its justification, and FR-045 states the requirement for
+whichever chapter builds a drain. Not papered over, and not fixed by shipping a
+drain-grace *reader* for a flag nothing writes, which would be the fifth instance of the
+habit this chapter is about.
+
+**P2 — `docker compose up` would have started a limiter that enforces nothing.** The
+compose `api` service has no Redis, because until now the api needed none. With
+`RELAY_REDIS_URL` falling through to `localhost`, and FR-010 failing open by design, the
+composed stack would serve everything unlimited **while reporting a limit**. Not a crash;
+the chapter's own degraded mode, permanently.
+
+**I got half of P2 wrong when I reported it** and corrected it before acting: the report
+claimed the `gateway` service had the same gap. It does not — chapter 2.6 gave it
+`RELAY_REDIS_URL` and `depends_on: redis` for fan-out. Checked the file rather than
+assuming symmetry, which is the habit the two earlier retractions bought.
+
+**On having recommended stopping.** The eleventh pass ended with "the artifacts are now
+wrong about nothing I can find". That conclusion rested on having read the constitution's
+principles eleven times and its gates never. The lesson is the one passes 6 and 7 taught
+about source files, applied to a document: **I had been reasoning about the constitution
+from the part of it I had read.**
+
 ### One requirement carries a claim that may be wrong, on purpose
 
 The Assumptions say this renumbering should be cheap because chapter 3.7 removed

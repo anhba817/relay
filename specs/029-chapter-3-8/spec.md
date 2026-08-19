@@ -282,6 +282,16 @@ names a chapter that has not happened yet.
   environment, so an unrestricted client would let any handler read or write another
   tenant's counter — which constitution I forbids as a correctness property, not a
   convention (research R20).
+- **FR-044**: A composed stack started with `docker compose up` MUST reach the counter
+  store and the mail service by their container names. A limiter that cannot reach its
+  store fails open (FR-010), so a missing address does not fail loudly — it enforces
+  nothing while reporting a limit (research R24).
+- **FR-045**: The connect limit MUST NOT be the reason a client reconnecting after a
+  platform-initiated drain is refused. **This chapter does not satisfy this**: the drain
+  does not exist — close code 4009 is declared and emitted by nothing — so the
+  requirement is recorded for the chapter that builds it, and the conflict with the
+  constitution's "at most one client reconnection cycle" gate is recorded in the plan's
+  Complexity Tracking table as that document's Quality Gates prescribe (research R23).
 - **FR-043**: Every counter-store client MUST be closed on shutdown, through the
   lifecycle mechanism its service already uses. A client that holds the event loop open
   turns a passing integration suite into a lane that never returns (research R20).
@@ -310,8 +320,10 @@ names a chapter that has not happened yet.
   suite can hold its own: the lane runs test files in parallel against one shared
   bucket, so a test that needs a small threshold needs a private key rather than a
   small number (research R21).
-- **FR-013**: Degradation of the limiter MUST be observable in logs, and the log
-  line MUST NOT carry a credential or a key (NFR-SEC-06).
+- **FR-013**: Degradation of the limiter MUST be observable in logs. The line MUST
+  carry the request id and, where the limiter was tenant-scoped, the environment — the
+  constitution's observability gate asks for request id, tenant id and correlation id —
+  and MUST NOT carry a credential or a key (NFR-SEC-06).
 - **FR-014**: While the limiter is degraded, a response MUST NOT carry an
   `X-RateLimit-Remaining` value that implies counting took place. A client MUST be
   able to distinguish "you have N left" from "we are not counting right now", and
@@ -493,6 +505,10 @@ names a chapter that has not happened yet.
 - **FR-RTM-09** — the five-concurrent-connection cap, which needs a connection
   registry.
 - **Presence** (FR-RTM-06), which shares that registry.
+- **A drain, and therefore the drain-grace exemption FR-045 describes.** Close code
+  4009 has been declared since chapter 1.3 and nothing emits it; building a drain to
+  make a limiter polite about it would be a larger change than the limiter. Recorded,
+  with the constitution conflict it leaves open, rather than half-built.
 - **Shedding a handshake flood before the authentication lookup.** After FR-039 the
   api refuses past the threshold instead of never, but it still performs a lookup per
   bad handshake. Doing better needs a per-IP check inside the gateway with its own

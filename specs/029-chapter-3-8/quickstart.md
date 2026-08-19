@@ -5,7 +5,13 @@ number, the number comes from `contracts/limits.md`.
 
 Prerequisites: `docker compose up -d --wait` from `relay-platform` — now five
 services, Mailpit included, and it has a healthcheck so `--wait` means ready for it
-too rather than merely running. `. env.sh` for the non-default ports the lane uses.
+too rather than merely running.
+
+**And with `--profile services`, the composed api must reach Redis and Mailpit by
+container name.** The constitution requires the full stack to start with one command.
+Because the tenant limiter fails open (FR-010), a composed api that cannot find Redis
+does not crash — it serves everything unlimited while reporting a limit. Check it
+deliberately rather than assuming a healthy container means a working limiter. `. env.sh` for the non-default ports the lane uses.
 
 **Estimated wall clock: about 25 minutes.** No step runs the lane repeatedly —
 this chapter has no intermittent defect whose rate needs measuring, which is the
@@ -197,7 +203,10 @@ Three things to check that are easy to get wrong:
   chapter 1.3. This is the first code that emits it.
 - Close code `4008` is **still** unused. It reads "quota exhausted" and there is no
   quota yet. Using it because it was there would collapse the distinction the
-  chapter is built on. Confirm nothing sends it.
+  chapter is built on. Confirm nothing sends it. **So is 4009** — "server shutdown
+  (drain)", declared in chapter 1.3 and emitted by nothing, which is why the connect
+  limit's conflict with the constitution's reconnection gate is recorded rather than
+  fixed (FR-045).
 - Every `error` frame carries a `request_id`. The gateway minted no ids before this
   chapter, so this is a new field with a new source rather than a rename.
 
