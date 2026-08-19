@@ -216,8 +216,18 @@ limits everything else.
 |---|---|
 | REST requests | 600 |
 | Message sends | 600 |
-| Connection establishment | 60 |
+| Connection establishment | 3,000 |
 | Failed authentication | 10 per source IP |
+
+Each number rests on something stated rather than on judgement: sends are 1% of the
+platform's 1,000/s aggregate capacity; establishment is sized so a gateway instance's full
+complement of connections can re-establish inside one window, which is what makes a deploy
+one reconnection cycle rather than two; the request limit has no independent anchor and is
+matched to the send limit so one operation cannot straddle two ceilings.
+
+**The connect limit is not there to shape your capacity.** It exists to stop a client
+reconnecting in a tight loop, which does thousands a minute. A fleet of your users
+reconnecting after a deploy will not reach it.
 
 Overridable per environment for the first three. The auth threshold is
 configuration, not per-environment policy, for the reason above.

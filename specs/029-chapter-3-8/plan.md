@@ -122,7 +122,7 @@ this plan, and is closed by this chapter's FR-003 and R5.
 specs/029-chapter-3-8/
 ├── plan.md              # This file
 ├── spec.md              # 48 FR, 4 user stories, 14 SC
-├── research.md          # Phase 0 — R1…R25 (R11 and R14 rewritten after later passes)
+├── research.md          # Phase 0 — R1…R26 (R4, R11 and R14 superseded or rewritten by later passes)
 ├── data-model.md        # Phase 1
 ├── quickstart.md        # Phase 1 — V0…V11
 ├── contracts/
@@ -288,7 +288,8 @@ made with the word count in hand instead of predicted now.
 | FR-042 | research R20 | T012a — `lint` refuses `ioredis` outside `services/api/src/limits/**` |
 | FR-043 | research R20 | T012b, T031b — a destroy hook in the api, a `close()` in the gateway; SC-013 is that both lanes terminate |
 | FR-044 | research R24 | T012c — the compose `api` service reaching Redis and Mailpit by container name |
-| FR-045 | research R23 | **Not satisfied here.** Recorded in Complexity Tracking above and left to the chapter that builds a drain |
+| FR-045 | research R23, R26 | **Partly satisfied.** R26's 3,000/min holds NFR-REL-03 for a single-instance environment; the unconditional form waits on a drain |
+| FR-005, FR-007 | research R26 | All four defaults re-derived against NFR-SCL and NFR-PRF after the connect number was found to make NFR-SCL-01 unreachable |
 | FR-033…FR-035 | the renumbering note in research | done during `/speckit-specify`; verified at close-out |
 
 ## Constitution re-check, after Phase 1
@@ -322,4 +323,4 @@ the phase order keeps it available.
 | `ioredis` added to the api | The counters live in Redis and the api is where REST requests arrive | Proxying counter operations through the gateway would couple two services for no reason and put the api's rate limiting behind the gateway's availability |
 | Two limiter call sites rather than one | R2: the tenant limiter needs the principal and the auth limiter must work when there is none. The chain positions are forced | One middleware doing both would have to run before authentication and then guess the tenant, which is the header a caller could forge — the mistake chapter 3.2 removed |
 | ~40 fences against a 2,000–4,000 word bound, 33 of them before the transport | The scope carries two mechanisms by decision |
-| **A connect limit of 60/min/environment against the Quality Gates' "deploys cause … at most one client reconnection cycle"** | A deploy reconnects every client at once; an environment with more than sixty cannot reconnect inside one window, so the surplus is refused and returns — a second cycle. **The gate has no implementation to conflict with**: close code 4009 is declared and emitted by nothing, so there is no drain. FR-045 records the requirement for whichever chapter builds one | Raising the limit until it cannot bite — unbounded, and a limit chosen so it never refuses is not a limit. Building the drain here — larger than the limiter itself. Shipping a drain-grace *reader* for a flag nothing writes — the fifth instance of declaring a mechanism and not enforcing it, in the chapter about that habit | Recorded in research R10 with a recommendation to split, and the phase order keeps the split available rather than settling it now |
+| **A residual conflict with NFR-REL-03** (and the Quality Gates that restate it): deploys must cause at most one client reconnection cycle | R26 raised the connect default from 60/min to **3,000/min**, sized from NFR-SCL-01's 10,000 connections per gateway instance, so the requirement holds for any environment that fits on one instance. **It is not unconditional** — an environment spanning several instances can exceed it. The complete answer is a drain-grace exemption, and there is no drain: close code 4009 is declared and emitted by nothing. FR-045 records it for whichever chapter builds one | Raising the limit until it cannot bite at any size — unbounded, and a limit chosen so it never refuses is not a limit. Building the drain here — larger than the limiter itself. Shipping a drain-grace *reader* for a flag nothing writes — the fifth instance of declaring a mechanism and not enforcing it, in the chapter about that habit | Recorded in research R10 with a recommendation to split, and the phase order keeps the split available rather than settling it now |

@@ -121,8 +121,14 @@ Constraints: each column, when present, must be non-negative.
 |---|---|
 | `rest` | 600 |
 | `send` | 600 |
-| `connect` | 60 |
+| `connect` | 3,000 |
 | failed authentication (per IP, not per environment) | 10 |
+
+Each number names what it rests on in research R26: the send limit is 1% of
+NFR-SCL-03's stated 1,000/s aggregate; the connect limit is NFR-SCL-01's 10,000
+connections per instance divided by FR-RTM-09's five per user, re-established inside one
+window for NFR-REL-03; the REST limit has **no anchor** and is matched to the send limit
+so one operation cannot straddle two ceilings.
 
 The auth threshold is **not** a column. It is not per environment — the caller has
 not proved which environment they are — so it is configuration, not policy, read

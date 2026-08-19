@@ -1,6 +1,6 @@
 # Research — chapter 3.8, "Limits you can see coming"
 
-Phase 0. Twenty-five items. R3 is the chapter's central decision and the spec
+Phase 0. Twenty-six items. R3 is the chapter's central decision and the spec
 deliberately left it open. R5 found a **second unenforced contract** the chapter
 has to close whether it wants to or not. R10 quantifies the size risk the spec
 flagged and the answer is not the one the scope decision assumed. **R11 was added
@@ -1074,11 +1074,22 @@ passes never opened — they had all read the seven principles and stopped there
 > *Each service is independently deployable; deploys cause no message loss and **at
 > most one client reconnection cycle**.*
 
-R4 sets connection establishment at **60 per minute per environment**. A gateway deploy
+R4 set connection establishment at **60 per minute per environment**. A gateway deploy
 makes every connected client reconnect at once. An environment with more than sixty
 connected clients cannot reconnect them inside one window, so the surplus is refused
 with `Retry-After` and comes back later — a second reconnection cycle, for exactly the
 event the gate names.
+
+**The gate has a requirement id**, which this section originally failed to cite:
+**NFR-REL-03**, P2, verified by Analysis — *"Deployments shall cause no message loss and
+no more than a single client reconnection cycle."* The constitution's Quality Gates
+restate it. A conflict recorded against a numbered requirement is worth more than one
+recorded against a document.
+
+**R26 has since raised the default to 3,000/min**, which makes the gate hold for any
+environment that fits on one gateway instance. It does not make it unconditional — an
+environment spanning several instances can still exceed it — so FR-045 stands, and the
+drain-grace exemption remains what would make the promise hold at any size.
 
 **And the gate has no implementation.** `CLOSE_CODES[4009]` reads "server shutdown
 (drain)" and **nothing emits it**: the only occurrences in the platform are the constant
@@ -1208,6 +1219,96 @@ missing page cost something real.
 **A fifth thing declared and not enforced**, alongside `rate_limited`, 4008,
 `request_id` and 4009 — except this one is a promise in the constitution rather than a
 constant in `codes.ts`.
+
+---
+
+---
+
+## R26 — The four defaults, re-derived against the SRS's own numbers
+
+**R4 chose all four from judgement and checked none of them against a document stating
+this platform's scale.** The fourteenth analysis pass read the SRS's NFR tables for the
+first time and found that the connect number makes a P1 requirement unreachable. Since
+one was wrong for that reason, all four are re-derived here rather than the broken one
+patched.
+
+R4's reasoning for connect was *"sixty establishments a minute per environment is a
+client reconnecting hard, not a client working"*. True of a client. The limit is per
+**environment**, and an environment is a tenant.
+
+### Message sends — 600/min, and now with an anchor
+
+NFR-SCL-03 puts platform capacity at **1,000 messages per second** aggregate, which is
+60,000 a minute. 600/min per environment is **1% of that**, so a hundred environments at
+their ceiling saturate the platform and the hundred-and-first is what the limit protects.
+
+Unchanged in value, changed in status: it was a round number that felt generous and is
+now a stated fraction of a stated capacity.
+
+### REST requests — 600/min, with the overlap named
+
+No SRS number caps a tenant's request rate directly. NFR-PRF-02's p95 under 150 ms is a
+latency target, not a throughput bound. The number stays equal to the send limit, because
+a REST send consumes both budgets (FR-036) and two different ceilings on one operation
+would mean a client hitting one while the other says it has room.
+
+Honest status: this is the one default with no anchor. Recorded as such rather than
+dressed up.
+
+### Connection establishment — 60/min → **3,000/min**
+
+The old number is wrong against two P1 requirements and the arithmetic is not close.
+
+NFR-SCL-01: **10,000 concurrent connections per gateway instance**. FR-RTM-09: **five per
+user**. So one instance holds 2,000 users' worth. At 60 establishments a minute, filling a
+single instance from cold takes **167 minutes**, and an environment of 5,000 users at five
+connections each — 25,000 sockets — takes over six hours.
+
+NFR-REL-03 (P2, and the constitution's Quality Gates say the same): *"Deployments shall
+cause no message loss and no more than a single client reconnection cycle."* Every client
+reconnects at once after a deploy; 60/min refuses all but the first sixty, and the rest
+come back — a second cycle, for the event the requirement names.
+
+**3,000/min** lets an instance's full complement re-establish inside a minute with
+headroom, so a deploy stays one cycle for any environment that fits on one instance, and a
+cold start reaches NFR-SCL-01's number in minutes rather than hours.
+
+**And it is still a limit.** Its job is to stop a runaway client reconnecting in a tight
+loop — that client does thousands a minute and is refused well before a legitimate fleet
+is. The limit protects the platform from a broken client, not a tenant from its own users,
+and R4 had those two jobs confused.
+
+**FR-045's drain-grace exemption is still wanted**, because an environment spanning more
+than one instance can still exceed 3,000, and the exemption is what makes the requirement
+hold at any size rather than at one instance's worth.
+
+### Failed authentication — 10/min per source IP, kept, with its cost stated
+
+Nothing in NFR-SCL or NFR-PRF bears on it; FR-AUT-12 gives no number. It stays a security
+judgement, and ten wrong credentials a minute from one address is still not a human
+mistyping.
+
+**The cost it carries, which R4 did not name: shared egress.** An office behind one NAT is
+one source address, so ten failed logins a minute is a whole building's budget. A customer
+whose staff share an IP will hit it, and the refusal is deliberately indistinguishable
+from a wrong credential (FR-028), so they will experience it as "the login is broken".
+Kept anyway — the alternative is a threshold high enough to be worthless against the
+attack it exists for — and named so the chapter says it rather than a support ticket
+discovering it.
+
+### The table, with what each number rests on
+
+| Operation | Default | Anchor |
+|---|---|---|
+| REST requests | 600/min | none — matched to the send limit so one operation cannot straddle two ceilings |
+| Message sends | 600/min | 1% of NFR-SCL-03's 1,000/s aggregate |
+| Connection establishment | **3,000/min** | NFR-SCL-01's 10,000 per instance ÷ FR-RTM-09's 5 per user, re-established inside one window for NFR-REL-03 |
+| Failed authentication | 10/min per IP | judgement; no requirement gives a number. Cost: shared-NAT tenants share the budget |
+
+**What this episode is really about.** Three of the four numbers were defensible and one
+was not, and nothing in the process distinguished them, because all four were produced the
+same way — by reasoning about a client. The fix is not the new number; it is that each
+number now names what it rests on, including the one that rests on nothing.
 
 ---
 

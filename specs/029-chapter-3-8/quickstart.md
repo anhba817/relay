@@ -184,7 +184,11 @@ line per request otherwise, which is how one outage becomes two.
 
 ## V7 — The gateway's two limits
 
-**Establishment.** Open connections past the connect allowance for one environment.
+**Establishment.** Open connections past the connect allowance for one environment. The
+default is **3,000/min**, re-derived in R26 from NFR-SCL-01's ten thousand connections per
+gateway instance — the original 60/min made that P1 number take 167 minutes to reach. Set
+the environment's `connect_limit_per_minute` low for this step rather than opening three
+thousand sockets.
 
 Expected: an HTTP `429` with `Retry-After` **during the upgrade** — no WebSocket is
 created — and every already-open socket unaffected.

@@ -237,7 +237,9 @@ names a chapter that has not happened yet.
   dev and production environments with separate keys and separate quotas", and a shared
   policy would leave load testing changing production's ceiling (research R25).
 - **FR-007**: Limits MUST be configurable per environment, with a documented
-  default that applies when nothing is configured.
+  default that applies when nothing is configured. Each default MUST name what it rests
+  on — a requirement, a stated capacity, or nothing — because the first four were chosen
+  by judgement and one of them made a P1 requirement unreachable (research R26).
 - **FR-008**: The limit MUST count a unit named in the chapter's own prose, and a
   test MUST assert the count against that unit. Where one request carries more than
   one message, whichever of the two is counted, the test MUST distinguish it from
@@ -303,9 +305,13 @@ names a chapter that has not happened yet.
 - **FR-045**: The connect limit MUST NOT be the reason a client reconnecting after a
   platform-initiated drain is refused. **This chapter does not satisfy this**: the drain
   does not exist — close code 4009 is declared and emitted by nothing — so the
-  requirement is recorded for the chapter that builds it, and the conflict with the
-  constitution's "at most one client reconnection cycle" gate is recorded in the plan's
-  Complexity Tracking table as that document's Quality Gates prescribe (research R23).
+  requirement it serves is **NFR-REL-03** — *"Deployments shall cause no message loss and
+  no more than a single client reconnection cycle"*, P2, verified by Analysis — which the
+  constitution's Quality Gates restate. R26's default of 3,000/min makes it hold for any
+  environment that fits on one gateway instance; **it is not unconditional**, because an
+  environment spanning several instances can exceed that. The exemption is recorded for
+  the chapter that builds a drain, and the residual conflict sits in the plan's Complexity
+  Tracking table as the constitution prescribes (research R23, R26).
 - **FR-043**: Every counter-store client MUST be closed on shutdown, through the
   lifecycle mechanism its service already uses. A client that holds the event loop open
   turns a passing integration suite into a lane that never returns (research R20).
@@ -334,10 +340,12 @@ names a chapter that has not happened yet.
   suite can hold its own: the lane runs test files in parallel against one shared
   bucket, so a test that needs a small threshold needs a private key rather than a
   small number (research R21).
-- **FR-013**: Degradation of the limiter MUST be observable in logs. The line MUST
-  carry the request id and, where the limiter was tenant-scoped, the environment — the
-  constitution's observability gate asks for request id, tenant id and correlation id —
-  and MUST NOT carry a credential or a key (NFR-SEC-06).
+- **FR-013**: Degradation of the limiter MUST be observable in logs. **NFR-OBS-01**
+  requires structured JSON logs carrying request id, tenant id and correlation id, so the
+  line MUST carry the request id and, where the limiter was tenant-scoped, the
+  environment. The platform mints no correlation id today; the chapter MUST state that
+  rather than let the requirement look satisfied. The line MUST NOT carry a credential or
+  a key (NFR-SEC-06).
 - **FR-014**: While the limiter is degraded, a response MUST NOT carry an
   `X-RateLimit-Remaining` value that implies counting took place. A client MUST be
   able to distinguish "you have N left" from "we are not counting right now", and
@@ -527,6 +535,9 @@ names a chapter that has not happened yet.
   Test phase asks for. Named here because it is the natural place a drain first appears,
   and FR-045's drain-grace exemption waits on the same mechanism — the two should be
   found together.
+- **Prometheus metrics for the limiter's refusal rate.** NFR-OBS-03 asks for request
+  rate and error rate, and a limiter's refusals are the first metric an operator would
+  want. Its verification method is `D`, so no chapter owes it yet.
 - **A drain, and therefore the drain-grace exemption FR-045 describes.** Close code
   4009 has been declared since chapter 1.3 and nothing emits it; building a drain to
   make a limiter polite about it would be a larger change than the limiter. Recorded,

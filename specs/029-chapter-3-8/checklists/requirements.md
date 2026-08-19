@@ -453,7 +453,9 @@ twelve passes and a gap in the one command the constitution insists must work.
 **P1 — the connect limit contradicts a deployment gate.** *"Deploys cause no message loss
 and at most one client reconnection cycle."* A connect limit of 60/min/environment
 refuses the surplus when a deploy reconnects every client at once, and refused clients
-come back — a second cycle.
+come back — a second cycle. (**The fourteenth pass raised the default to 3,000/min** and
+found the requirement's own id, NFR-REL-03; the residual conflict is smaller and still
+recorded.)
 
 **And the gate has no implementation.** `CLOSE_CODES[4009]` reads "server shutdown
 (drain)" and nothing emits it. So the conflict is with a promise nothing yet keeps, which
@@ -521,6 +523,34 @@ about without reading: the send schema (pass 6), the gateway's api client (7), t
 constitution's gates (12), the journey map (13). Each time the artifacts were internally
 consistent and wrong about something outside them. The set of unread things is finite and
 enumerable, and it has been the whole answer since pass 6.
+
+### The fourteenth pass: three numbers were fine and one was not, for the same reason
+
+Reading the SRS's **NFR tables** — repeatedly read FR tables, never once the NFRs — found
+that R4's connect default made a P1 requirement unreachable.
+
+**R1.** NFR-SCL-01: *"10,000 concurrent WebSocket connections per gateway instance"*, and
+FR-RTM-09 allows five per user. At 60 establishments a minute, filling one instance takes
+**167 minutes**; an environment of 5,000 users at five connections each takes over six
+hours. Pass 12 had found the same default conflicting with a deployment gate and I
+recorded it as a one-off. It was the first symptom: **R4 chose all four numbers by
+reasoning about a client, and the limit is per tenant.**
+
+So all four were re-derived (R26) rather than the broken one patched. Sends are 1% of
+NFR-SCL-03's stated 1,000/s aggregate; connect became **3,000/min**, sized from
+NFR-SCL-01 ÷ FR-RTM-09; failed auth stays 10/min per IP by judgement, now with its
+shared-NAT cost named. **The REST limit has no anchor at all**, and R26 says so instead of
+inventing one.
+
+The fix is not the new number. It is that each default now states what it rests on,
+including the one that rests on nothing.
+
+**R2 and R3 — two requirements cited by paraphrase.** FR-045 quoted the constitution's
+Quality Gates and never NFR-REL-03, the numbered P2 requirement that says the same thing;
+FR-013 quoted the constitution's observability line and missed that **NFR-OBS-01** asks
+for a third field, a correlation id, which the platform does not mint. T063 checks that
+every identifier the chapter *cites* resolves. Neither of these was a citation — they were
+paraphrases of requirements that exist.
 
 ### One requirement carries a claim that may be wrong, on purpose
 
