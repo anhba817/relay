@@ -121,9 +121,11 @@ this chapter, so they land before the chapter's fences are generated.
 Baseline first, including twenty lane runs to establish the flake rate before the
 fix rather than asserting it afterwards. Then the failing test, watched to fail.
 Then the fix, watched to turn it green. Then the sabotage battery, the two lanes
-and coverage. Then the chapter in English, the figures, the battery. Then the
-Vietnamese translation and publication. Then the cross-reference sweep, the
-quickstart run and the notes.
+and coverage. **Then the renumbering** — the source-comment corrections and the
+cross-reference sweep — because the corrected files have to exist before this
+chapter's fences are generated from them. Then the chapter in English, the figures,
+the battery. Then the Vietnamese translation and publication. Then the quickstart
+run, the credential scan, the notes and the tag.
 
 Two ordering constraints worth stating now:
 

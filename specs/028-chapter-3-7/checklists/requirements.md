@@ -31,7 +31,7 @@
 
 ## Notes
 
-**Validated.** Eight passes so far — three while the spec was being written, four analysis rounds, and this re-verification. Every one found something.
+**Validated.** Nine passes so far — three while the spec was being written, four analysis rounds, and this re-verification. Every one found something.
 
 **Pass 1 — implementation detail in the requirements.** FR-001 named the field the
 mark would be stored on and FR-003 described the phase flag. Both were rewritten
@@ -157,6 +157,23 @@ enough to be worth recording rather than ticking silently:
 A quality gate nobody re-runs certifies the past. That is the same shape as the
 defect this chapter is about: chapter 2.7 proved its property once, and the proof
 stopped being true when the code around it changed.
+
+**Pass 9 — a contradiction no checker could have found.** The plan's phase preview
+listed the cross-reference sweep last; `tasks.md` runs it fourth, before the
+chapter, because the corrected source files have to exist before this chapter's
+fences are generated from them. The plan's own constraint paragraph, four lines
+below the preview, said so correctly — so the plan disagreed with itself inside one
+section, and had since the day it was written.
+
+Five passes missed it. Every checker built for this feature compares SETS —
+requirements against tasks, identifiers against references, counts against counts —
+and this was two pieces of narrative disagreeing about order. Nothing that
+enumerates ids would ever surface it.
+
+The pass also predicted residue from the previous round and found none. Rounds 2
+and 3 produced residue because they changed several files at once; rounds 4 and 5
+were narrow, and narrow remediation leaves less behind. That is a more reliable
+rule than the decay curve pass 3 got wrong.
 
 Items marked incomplete require spec updates before `/speckit-clarify` or
 `/speckit-plan`. None are.
