@@ -166,6 +166,32 @@ requirement that was satisfiable on paper and unbuildable, or buildable and wron
 The first pass's A1 and this pass's D1 and D3 are all the same shape — a spec written
 from the API's point of view, applied to a service with different capabilities.
 
+### What the THIRD pass found: the same shape, now in the tests
+
+**E1 — the auth limiter would have refused this project's own test suite.** The
+threshold is 10 failed authentications per minute per source address; the api
+integration lane asserts `401`/`403` twenty-six times from `127.0.0.1` in about 110
+seconds. And FR-028 makes the rate-limit refusal *deliberately* indistinguishable
+from a wrong-credential refusal, so the break would have arrived as a `401` carrying
+the wrong `code` and no local cause.
+
+Resolved by R15: the threshold becomes configuration with an **enforcing** default,
+and T004a measures what the lane actually produces before anything is chosen — a
+count of assertions is not a count of requests, which is the difference chapter 3.7's
+sweep fault turned on.
+
+**Three passes, one shape.** Pass 1 found a spec written from the api's point of view
+applied to a socket. Pass 2 found two more of the same. Pass 3 found the feature
+written without asking what it does to the suite that already exists. None of the
+twelve findings was a badly written sentence; every one was a requirement that was
+satisfiable on paper and either unbuildable or wrong in practice.
+
+**And the size estimate moved the wrong way.** R10 said 23 fences for the limiter
+half; remediation across three passes took it to **28**, above chapter 3.6's entire
+21, every addition a consequence of the gateway not being the api. Estimates usually
+shrink under scrutiny. This one grew, which is the strongest argument yet for T059
+splitting the transport out.
+
 ### One requirement carries a claim that may be wrong, on purpose
 
 The Assumptions say this renumbering should be cheap because chapter 3.7 removed

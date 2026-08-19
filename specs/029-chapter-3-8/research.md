@@ -1,13 +1,14 @@
 # Research — chapter 3.8, "Limits you can see coming"
 
-Phase 0. Fourteen items. R3 is the chapter's central decision and the spec
+Phase 0. Fifteen items. R3 is the chapter's central decision and the spec
 deliberately left it open. R5 found a **second unenforced contract** the chapter
 has to close whether it wants to or not. R10 quantifies the size risk the spec
 flagged and the answer is not the one the scope decision assumed. **R11 was added
 after the first `/speckit-analyze` pass** (nothing said which bucket a REST send
-decrements) and **R12, R13 and R14 after the second**, which found two
-architectural gaps: the gateway cannot read the policy, and it has no request id to
-put in the field R5 requires.
+decrements) **R12, R13 and R14 after the second**, which found two
+architectural gaps — the gateway cannot read the policy, and it has no request id to
+put in the field R5 requires — and **R15 after the third**, which found that the auth
+limiter would refuse this project's own test suite.
 
 ---
 
@@ -405,7 +406,12 @@ Fence estimate by area, counting files this chapter must show:
 | Error envelope: `frames.ts`, `protocol-error.filter.ts`, `service-kit` | 3 |
 | Integration suite for limits | 1 |
 | `package.json` (ioredis), `compose.yaml`, coverage config | 3 |
-| **Rate limiting subtotal** | **23** |
+| **Subtotal as first estimated** | **23** |
+| *Added by remediation:* `internal.ts` (limits and client address on the internal contract) | 1 |
+| *Added by remediation:* `services/gateway/src/limits.ts` + its unit test (R12: the gateway needs its own helper) | 2 |
+| *Added by remediation:* `registry.ts` (the limits on `Connection`) | 1 |
+| *Added by remediation:* the api's session controller (answering with the limits) | 1 |
+| **Rate limiting subtotal** | **28** |
 | Mailer + tests | 2 |
 | Notification relay + tests | 2 |
 | `repository.ts` claim (already counted above) | 0 |
@@ -413,15 +419,23 @@ Fence estimate by area, counting files this chapter must show:
 | Integration suite for notifications | 1 |
 | `package.json` (nodemailer) | 0 (counted) |
 | **Transport subtotal** | **7** |
-| **Total** | **~30** |
+| **Total** | **~35** |
 
 **For comparison, measured rather than remembered**: chapter 3.5 shipped 39 fences
 against a budget first estimated at 22 and ran 4,952 prose words; chapter 3.6
 shipped 21 and ran 5,273. The bound is 2,000–4,000.
 
-**Finding: 30 fences will not fit inside the word bound, and the transport is the
-separable seven.** The rate-limiting 23 is one mechanism with one argument — the
-failure directions — and it is already at 3.6's fence count. The transport's seven
+**Finding: the fences will not fit inside the word bound, and the transport is the
+separable seven.** The rate-limiting half is one mechanism with one argument — the
+failure directions.
+
+**The estimate moved, and upward.** It was 23 and 30 when first written; three
+analysis passes added five fences to the limiter half, all of them consequences of
+the gateway not being the api — its own counter helper, the limits reaching it on the
+internal contract, and the `Connection` holding them. **28 for one half is above
+chapter 3.6's entire 21.** The finding is stronger than when it was written, which is
+the opposite of how estimates usually move, and it is the number T058's gate measures
+against. The transport's seven
 carry a different argument (the outbox, a third time) and a different failure mode.
 
 **Recommendation, recorded rather than acted on:** the transport should be its own
@@ -610,6 +624,62 @@ before the lookup would need a per-IP check inside the gateway with its own stor
 and its own fallback, and that is a second limiter with a second failure direction
 in a chapter already carrying two. Named as a known gap rather than built, and it
 belongs with the connection registry work FR-RTM-09 needs.
+
+---
+
+---
+
+## R15 — The auth limiter will refuse this project's own test suite
+
+**Raised by the third analysis pass**, and it is the third appearance of one shape:
+a shared resource newly constrained, and suites that had been passing on headroom.
+
+**The numbers.** The threshold is 10 failed authentications per minute per source
+address. The api integration lane asserts `401` or `403` **26 times**, eight of them
+in `credentials.itest.ts`, and it runs in about 110 seconds. Every one of them comes
+from `127.0.0.1`, so they all share one bucket.
+
+Only 401s count — a `403 wrong_credential_type` is a valid credential of the wrong
+class, which is a successful authentication — so the true figure is lower than 26.
+It is not lower than 10 with any margin worth relying on.
+
+**The failure mode is worse than the failure.** FR-028 requires the rate-limit
+refusal to be indistinguishable from a wrong-credential refusal, so that the limiter
+cannot be used as an oracle. That is right, and it means a test expecting
+`code: "unauthorized"` receives `code: "rate_limited"` at the same status — and a
+test that authenticates *successfully* after its neighbours have failed enough times
+sees a refusal with no local cause. Chapter 3.7 spent four attempts and about four
+hours on that class of confusion.
+
+**Decision: the threshold is configuration with a default of 10, read from
+`RELAY_AUTH_FAILURES_PER_MINUTE`.**
+
+The data model already calls the auth threshold "configuration, not policy" — it is
+not per environment, because the caller has not proved which environment they are.
+This makes that sentence operational. Suites that deliberately submit bad
+credentials raise it; the limiter's own suite sets it *low* on purpose, which is the
+only way to test a threshold at all.
+
+**The default enforces, and that is not incidental.** Chapter 3.6 added
+`RELAY_DISABLE_SWEEP` with a comment worth repeating: *"DEFAULT ON. A flag whose
+default disabled a requirement would be a requirement nobody had built."* The same
+rule applies here in the other direction — the default is the enforcing value, and a
+test that wants headroom asks for it explicitly and visibly.
+
+**Measure before choosing, not after.** The first task counts the actual failed
+authentications per minute in the lane rather than reasoning from 26 assertions.
+Chapter 3.7's baseline found that a count of assertions is not a count of requests,
+and its own sweep fault turned on exactly that difference — an assertion that
+`disabled >= 1` passed while the endpoint under test was never reached.
+
+**Rejected: raising the default so the suite fits.** That is choosing a security
+threshold to suit a test, which is how a limit becomes decorative. Ten wrong
+credentials a minute from one address is not a human mistyping, and the number
+should survive the suite rather than the reverse.
+
+**Rejected: leaving it and fixing whatever breaks at T035.** It would work and it
+would produce the least useful form of the information — "some tests fail" at the
+end of the chapter, in a lane this project has spent two chapters getting green.
 
 ---
 

@@ -274,7 +274,9 @@ names a chapter that has not happened yet.
   limiter opens a brute-force window, which is a security regression rather than a
   degradation.
 - **FR-012**: Failed authentication attempts MUST be rate limited per source IP
-  address (FR-AUT-12).
+  address (FR-AUT-12). The threshold MUST be configuration with an enforcing
+  default, so a suite that deliberately submits bad credentials can raise it
+  explicitly rather than the default being chosen to suit the suite (research R15).
 - **FR-013**: Degradation of the limiter MUST be observable in logs, and the log
   line MUST NOT carry a credential or a key (NFR-SEC-06).
 - **FR-014**: While the limiter is degraded, a response MUST NOT carry an
@@ -381,6 +383,9 @@ names a chapter that has not happened yet.
 - **SC-011**: The gateway enforces a configured (non-default) connect limit with no
   database client added to it, and ten failed handshakes from ten different client
   addresses are counted as ten addresses rather than as ten failures by the gateway.
+- **SC-012**: Every pre-existing integration suite passes with the auth limiter
+  enforcing, and the number of failed authentications the lane produces per minute is
+  recorded — measured, not inferred from a count of assertions.
 
 ## Assumptions
 

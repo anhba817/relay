@@ -35,8 +35,10 @@ message send, and FR-002 describes one set of headers. Research R11 settled it:
 both are counted, the headers report whichever has fewer remaining, and the refusal
 names which limit was reached. That added FR-036 and the test in T018a.
 
-Research R10 put a number on the size risk the spec flagged: about **30 fences**,
-against 21 in chapter 3.6 which already ran 5,273 words on a 2,000–4,000 bound.
+Research R10 put a number on the size risk the spec flagged: about **35 fences**,
+**28 of them the limiter half alone**, against 21 in chapter 3.6 which already ran
+5,273 words on a 2,000–4,000 bound. The estimate started at 30 and three analysis
+passes moved it up, every addition a consequence of the gateway not being the api.
 The recommendation is that the transport's seven fences want their own chapter. The
 plan does not act on that — the scope was chosen deliberately — but it orders the
 phases so the transport is last and lifts out cleanly if the word count says so.
@@ -107,8 +109,8 @@ platform rather than in this plan, and is closed by this chapter's FR-003 and R5
 ```text
 specs/029-chapter-3-8/
 ├── plan.md              # This file
-├── spec.md              # 39 FR, 4 user stories, 11 SC
-├── research.md          # Phase 0 — R1…R14
+├── spec.md              # 39 FR, 4 user stories, 12 SC
+├── research.md          # Phase 0 — R1…R15
 ├── data-model.md        # Phase 1
 ├── quickstart.md        # Phase 1 — V0…V11
 ├── contracts/
@@ -251,7 +253,7 @@ made with the word count in hand instead of predicted now.
 | FR-008, FR-036 | research R11, added after analysis | T018a — ten messages in one request; the request limit drops by one and the send limit by ten, and the headers follow the nearer of the two |
 | FR-009 | research R2 | an internal-seam call under load, unthrottled |
 | FR-010, FR-011, FR-015 | research R3 | Redis stopped mid-run; both halves in one outage |
-| FR-012 | research R2, R4 | per-IP failures past the threshold |
+| FR-012 | research R2, R4, R15 | per-IP failures past the threshold; T004a measures what the lane already produces, T025b/c make the threshold configuration |
 | FR-013 | research R6 | one log line, no credential, rate-limited |
 | FR-016…FR-020 | research R8 | `notifications.itest.ts` against Mailpit's API |
 | FR-021 | research R9 | the received message read, not the sent one |
@@ -292,4 +294,4 @@ the phase order keeps it available.
 | `nodemailer`, first new runtime dependency since 3.4 | SMTP by hand is not this chapter's subject and getting it wrong is invisible until an email is silently malformed | Hand-rolled SMTP adds a protocol implementation to a chapter about limits |
 | `ioredis` added to the api | The counters live in Redis and the api is where REST requests arrive | Proxying counter operations through the gateway would couple two services for no reason and put the api's rate limiting behind the gateway's availability |
 | Two limiter call sites rather than one | R2: the tenant limiter needs the principal and the auth limiter must work when there is none. The chain positions are forced | One middleware doing both would have to run before authentication and then guess the tenant, which is the header a caller could forge — the mistake chapter 3.2 removed |
-| ~30 fences against a 2,000–4,000 word bound | The scope carries two mechanisms by decision | Recorded in research R10 with a recommendation to split, and the phase order keeps the split available rather than settling it now |
+| ~35 fences against a 2,000–4,000 word bound, 28 of them before the transport | The scope carries two mechanisms by decision | Recorded in research R10 with a recommendation to split, and the phase order keeps the split available rather than settling it now |

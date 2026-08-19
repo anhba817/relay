@@ -108,7 +108,14 @@ Constraints: each column, when present, must be non-negative.
 | failed authentication (per IP, not per environment) | 10 |
 
 The auth threshold is **not** a column. It is not per environment — the caller has
-not proved which environment they are — so it is configuration, not policy.
+not proved which environment they are — so it is configuration, not policy, read
+from `RELAY_AUTH_FAILURES_PER_MINUTE` with a default of 10.
+
+**The default enforces.** Chapter 3.6's `RELAY_DISABLE_SWEEP` carries the rule: a
+flag whose default disabled a requirement would be a requirement nobody had built.
+A suite that deliberately submits bad credentials raises the threshold explicitly;
+the limiter's own suite lowers it, which is the only way to test a threshold
+(research R15).
 
 ### Reaching the gateway
 
