@@ -231,8 +231,25 @@ times that a measurement spanning two different trees is not a measurement.
 
   attempt 1   7 runs    abandoned — the drain fix landed at run 7
   attempt 2  12 runs    abandoned — the consumer fix landed after run 12
-  attempt 3  survey     run to completion deliberately, see below
+  attempt 3  20 runs    SURVEY, run to completion deliberately, see below
   attempt 4  20 runs    the measurement
+
+The survey's own numbers, kept because they are the evidence that stopping at the
+first red was costing an hour per fault:
+
+  1  pass  2  pass  3  FAIL  4  FAIL  5  pass  6  pass  7  pass
+  8  pass  9  pass 10  pass 11  pass 12  pass 13  pass 14  pass
+ 15  pass 16  pass 17  pass 18  pass 19  pass 20  pass
+
+Two failures, both the signup count, both before the fix for it landed between
+runs 4 and 5. **Runs 5-20 are sixteen consecutive passes on the final tree** — not
+SC-001's twenty, and not offered as them, but the reason attempt 4 was expected to
+be clean rather than hoped to be.
+
+A caveat on what the survey could see: turbo aborts the lane on the first package
+failure, so runs 3 and 4 finished in 105s instead of 189s and never reached
+gateway, dispatcher or e2e. A survey that stops early under-samples everything
+downstream of `@relay/api`. Attempt 4 is the run that covers them.
 
 **Attempt 3 was reclassified rather than abandoned.** After the second restart it
 was clear the loop was: run, hit one latent flake, fix it, restart, lose an hour.

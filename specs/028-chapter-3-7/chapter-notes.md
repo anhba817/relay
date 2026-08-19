@@ -94,7 +94,17 @@ so.
 
 ---
 
-## Three faults found in other people's chapters
+## Five faults found in other people's chapters
+
+Four of the five are one fault wearing four costumes: **a test that calls a
+global, unscoped operation and then asserts about its own row.** Each passed
+alone. Each passed in the lane too, until a shared resource grew past the budget
+it had quietly assumed.
+
+The chapter did not go looking for them. It went looking for twenty consecutive
+lane passes, which is a different thing and turns out to be the only way to find
+this class — a fault that needs a shared resource to reach a threshold is
+invisible to any number of runs taken before it gets there.
 
 ### The sweep test that depended on a clean database (T002a)
 
@@ -125,10 +135,74 @@ already had the principle right (*assert the property, not the observer*) and th
 implementation was one call short of it. It now drains until the row settles,
 bounded at ten passes.
 
-**This forced the twenty runs to be restarted.** The fix landed at run 7 of the
-first attempt, and twenty runs measuring two different trees is not a measurement.
-The first seven were preserved and abandoned; the count in `baseline.txt` is from
-a clean start on one commit.
+**This forced the twenty runs to be restarted, and it was not the last time.**
+The fix landed at run 7 of the first attempt, and twenty runs measuring two
+different trees is not a measurement.
+
+It took four attempts in all — abandoned at 7, abandoned at 12, then a deliberate
+survey, then the measurement. By the third it was clear the loop had a shape:
+run, hit one latent fault, fix it, restart, lose an hour. Each attempt found
+exactly one fault **because it stopped at the first one.**
+
+So attempt 3 was reclassified rather than abandoned: allowed to run all twenty
+with the tree changing underneath it, which makes it worthless as SC-001 evidence
+and valuable as a survey — one pass enumerating what remained instead of one fault
+per hour. It found the fifth fault and then ran sixteen consecutive clean runs.
+
+The temptation at attempt 3 was to call these "unrelated flakes", record the run
+as passing, and move on. They *are* unrelated to the resume fix. They are not
+unrelated to whether the lane can tell anyone anything — which is the condition
+chapter 3.6 spent its whole baseline on, and the condition that let this chapter's
+own defect hide for seven chapters.
+
+### The consumer that outgrew its drain budget (T021 attempt 2, runs 11 and 12)
+
+`invariant 9: a consumer stopped for N publishes receives all N on restart` drove
+a fresh durable to the head of the stream with a fixed budget of 800 polls, then
+published three events and asserted all three came back.
+
+It called `ENV()` three times for those three publishes — and `ENV` is
+`() => randomUUID()`. Three different subjects, so no `filterSubject` could cover
+them, so the durable started at the beginning of a stream holding about thirteen
+thousand events from earlier chapters and had to drain all of them inside the 800
+before reaching its own. `expected [ …(2756) ] to include '<uuid>'`.
+
+**Not a flake — a threshold.** Ten clean runs and then two failures in a row. A
+test passing on headroom rather than on correctness fails all at once when the
+headroom goes, and only a run long enough to cross the boundary shows the
+difference between that and bad luck.
+
+Fixed by giving the three publishes one environment and filtering both runtimes
+on its subject — the pattern every other test in the file already used, and the
+reason its `runtimeFor` helper takes an `environmentId` at all.
+
+### The global count chapter 3.3 had already removed once (T021 attempt 3, runs 3 and 4)
+
+`signup.itest.ts` invariant 7 compared `count(*) FROM organisations` before and
+after a single credential-free `fetch`. In a lane running these files in parallel
+that is the claim that nobody anywhere signed up during one request. It failed
+with `expected 9918 to be 9917`.
+
+**Chapter 3.3 already fixed this assertion, in this file.** Its fix-forward
+section reads: *"Chapter 3.1's signup suite asserted that a failed provisioning
+left the global organisation count unchanged. That passed for two chapters and
+failed here with `expected 884 to be 883` … The count was never the evidence."*
+It removed the count from invariant 1 and did not look a hundred lines further
+down, where the identical assertion sat.
+
+Four chapters and nine thousand organisations later, the same sentence failed
+again.
+
+**This is the finding worth keeping out of all five.** Fixing an instance is not
+fixing a class, and the cheapest moment to grep for the other instances is while
+the first one is still on the screen. A chapter that writes "the count was never
+the evidence" and then leaves a second count in the same file has diagnosed the
+disease and treated a symptom.
+
+So this chapter grepped: every `count(*)` in every integration suite. Seven hits,
+all scoped to an environment, an endpoint or an account. The class is clean for
+counts. It is not clean for the wider disease — the sweep took a batch, the drain
+took a lock, the consumer took a stream position, and those do not share a grep.
 
 ### Six identifiers that were about to leak (T039)
 
