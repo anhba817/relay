@@ -125,7 +125,7 @@ Both are now in R1.
 **G1 and G2 — two requirements that got built and never checked.** FR-007 had tasks
 creating three nullable columns and no task asserting an override changes anything;
 FR-014 had an implementation task and no assertion. Both are the shape this project
-keeps finding at the sabotage battery, and both now have tasks (T011a, T025a).
+keeps finding at the sabotage battery, and both now have tasks (T018c, T025a).
 
 Four of the eight edge cases also had no task. Three now sit in T006a; the
 disable/re-enable/disable case went into T049.
@@ -412,6 +412,36 @@ rather than cite the gate.
 **The enforcer sweep is finished.** Both vitest configs, `check-docs-drift.sh`, and the
 ten `scripts/*.mjs` walks — none of which this chapter touches. The one that mattered was
 a single line present in one config and absent from the other.
+
+### The eleventh pass found only damage from the previous ten
+
+Nothing about the platform. Three findings, all self-inflicted by remediation.
+
+**N1 and N3 — two hand-written counts, stale for the third time each.** R10's fence
+estimate went 23 → 28 → 33 as later passes added files earlier chapters had already
+fenced; T061's "eight are worth naming" became eleven. Each went stale the same way: a
+remediation added an item *below* the sentence stating how many there were.
+
+Both are now fixed as a class rather than as instances. T058 **derives** the fence count
+from the page instead of comparing against a written total, and T061 states no number at
+all. A written total describing something a document also enumerates is a second source
+of truth — which is the fault this feature has diagnosed in five other places and had
+twice committed itself.
+
+**N2 — a task that could not pass where it sat.** T011a asserted that a lowered limit
+*refuses* a request, from Phase 2, whose checkpoint reads *"nothing has been limited
+yet"*. The refusal needs the middleware Phase 3 builds. Pass 1 had placed it beside the
+policy tasks it related to rather than after the mechanism it needed. Now T018c.
+
+**E5 was already closed and did not need remediation.** The sixth pass's rewrite of
+FR-036 covers the socket case explicitly — *"a `message.send` frame on an open socket
+decrements the send limit only"* — so the item carried on three reports as open had been
+resolved by work done for a different finding. Checked before editing rather than after.
+
+**Where eleven passes ended.** 42 findings, 2 retracted. The productive question changed
+three times — read the spec against itself, read the source of every constrained
+operation, read the conventions the code enforces on itself — and then ran out. This pass
+had no fourth question and found only accretion, which is the signal to stop.
 
 ### One requirement carries a claim that may be wrong, on purpose
 

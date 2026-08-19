@@ -429,7 +429,10 @@ Fence estimate by area, counting files this chapter must show:
 | *Added by remediation:* `services/gateway/src/limits.ts` + its unit test (R12: the gateway needs its own helper) | 2 |
 | *Added by remediation:* `registry.ts` (the limits on `Connection`) | 1 |
 | *Added by remediation:* the api's session controller (answering with the limits) | 1 |
-| **Rate limiting subtotal** | **28** |
+| *Added by remediation:* `turbo.json` and `packages/e2e/src/harness.ts` (R19: strict env mode, two allowlists) | 2 |
+| *Added by remediation:* `eslint.config.mjs` (R20: confining the second driver) | 1 |
+| *Added by remediation:* `packages/config/src/infra.ts` + `infra.test.ts` (R9: registering a fifth container) | 2 |
+| **Rate limiting subtotal** | **33** |
 | Mailer + tests | 2 |
 | Notification relay + tests | 2 |
 | `repository.ts` claim (already counted above) | 0 |
@@ -437,7 +440,7 @@ Fence estimate by area, counting files this chapter must show:
 | Integration suite for notifications | 1 |
 | `package.json` (nodemailer) | 0 (counted) |
 | **Transport subtotal** | **7** |
-| **Total** | **~35** |
+| **Total** | **~40** |
 
 **For comparison, measured rather than remembered**: chapter 3.5 shipped 39 fences
 against a budget first estimated at 22 and ran 4,952 prose words; chapter 3.6
@@ -447,13 +450,20 @@ shipped 21 and ran 5,273. The bound is 2,000–4,000.
 separable seven.** The rate-limiting half is one mechanism with one argument — the
 failure directions.
 
-**The estimate moved, and upward.** It was 23 and 30 when first written; three
-analysis passes added five fences to the limiter half, all of them consequences of
-the gateway not being the api — its own counter helper, the limits reaching it on the
-internal contract, and the `Connection` holding them. **28 for one half is above
-chapter 3.6's entire 21.** The finding is stronger than when it was written, which is
-the opposite of how estimates usually move, and it is the number T058's gate measures
-against. The transport's seven
+**The estimate moved three times, always upward.** 23 and 30 when first written; 28
+and 35 after the passes that found the gateway is not the api; **33 and 40** after the
+passes that found the platform's quiet enforcers — two env allowlists, a lint rule, and
+an infrastructure inventory. Every addition was a file some earlier chapter had already
+fenced.
+
+**33 for one half is half again as much as chapter 3.6's entire 21.**
+
+**And the number itself is the wrong kind of artifact.** It has gone stale in three
+separate analysis passes, each time because a remediation added a task below the
+sentence stating how many there were. T058's gate therefore **derives** the count from
+the published page rather than comparing against this table: a written total describing
+something the page also enumerates is a second source of truth, which is the fault this
+feature has now diagnosed in five other places. The transport's seven
 carry a different argument (the outbox, a third time) and a different failure mode.
 
 **Recommendation, recorded rather than acted on:** the transport should be its own

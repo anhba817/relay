@@ -38,10 +38,10 @@ survives is a cross-transport one: the send limit counts messages wherever they
 enter, so a client cannot lift its message budget by switching transport, and the two
 counters diverge the moment the socket is used. FR-036, FR-036a, T018a and T018b.
 
-Research R10 put a number on the size risk the spec flagged: about **35 fences**,
-**28 of them the limiter half alone**, against 21 in chapter 3.6 which already ran
-5,273 words on a 2,000–4,000 bound. The estimate started at 30 and three analysis
-passes moved it up, every addition a consequence of the gateway not being the api.
+Research R10 put a number on the size risk the spec flagged: about **40 fences**,
+**33 of them the limiter half alone**, against 21 in chapter 3.6 which already ran
+5,273 words on a 2,000–4,000 bound. The estimate started at 30 and later analysis
+passes moved it up twice, every addition a consequence of the gateway not being the api.
 The recommendation is that the transport's seven fences want their own chapter. The
 plan does not act on that — the scope was chosen deliberately — but it orders the
 phases so the transport is last and lifts out cleanly if the word count says so.
@@ -113,7 +113,7 @@ platform rather than in this plan, and is closed by this chapter's FR-003 and R5
 specs/029-chapter-3-8/
 ├── plan.md              # This file
 ├── spec.md              # 44 FR, 4 user stories, 14 SC
-├── research.md          # Phase 0 — R1…R22
+├── research.md          # Phase 0 — R1…R22 (R11 and R14 rewritten after later passes)
 ├── data-model.md        # Phase 1
 ├── quickstart.md        # Phase 1 — V0…V11
 ├── contracts/
@@ -253,7 +253,7 @@ made with the word count in hand instead of predicted now.
 | Requirement | Where it is decided | How it is verified |
 |---|---|---|
 | FR-001, FR-006 | research R1, R4 | `limits.itest.ts`; SC-003's two environments |
-| FR-007 | research R4 | T011a — an override set to 2 refuses the third request while a default environment is untouched |
+| FR-007 | research R4 | T018c — an override set to 2 refuses the third request while a default environment is untouched |
 | FR-002 | research R1, R11 | headers asserted on 200s, not only 429s |
 | FR-014 | research R6 | T025a — `Limit` present, `Remaining` and `Reset` absent, store down |
 | FR-003 | research R5 | the 429 body's four fields |
@@ -309,4 +309,4 @@ the phase order keeps it available.
 | `nodemailer`, first new runtime dependency since 3.4 | SMTP by hand is not this chapter's subject and getting it wrong is invisible until an email is silently malformed | Hand-rolled SMTP adds a protocol implementation to a chapter about limits |
 | `ioredis` added to the api | The counters live in Redis and the api is where REST requests arrive | Proxying counter operations through the gateway would couple two services for no reason and put the api's rate limiting behind the gateway's availability |
 | Two limiter call sites rather than one | R2: the tenant limiter needs the principal and the auth limiter must work when there is none. The chain positions are forced | One middleware doing both would have to run before authentication and then guess the tenant, which is the header a caller could forge — the mistake chapter 3.2 removed |
-| ~35 fences against a 2,000–4,000 word bound, 28 of them before the transport | The scope carries two mechanisms by decision | Recorded in research R10 with a recommendation to split, and the phase order keeps the split available rather than settling it now |
+| ~40 fences against a 2,000–4,000 word bound, 33 of them before the transport | The scope carries two mechanisms by decision | Recorded in research R10 with a recommendation to split, and the phase order keeps the split available rather than settling it now |

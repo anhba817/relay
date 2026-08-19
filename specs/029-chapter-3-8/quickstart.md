@@ -322,7 +322,7 @@ for a chapter.
 - 3.6's notification backlog drained, and the contents read from the receiver.
 - Every number in the chapter from a real run.
 - **The prose word count measured while the transport is still liftable.** Research
-  R10 estimates 35 fences — 28 of them the limiter half alone — against a
+  R10 estimates 40 fences — 33 of them the limiter half alone — against a
   2,000–4,000 word bound; 3.5 shipped 39 against
   an estimate of 22 and 3.6 ran 5,273 words. If the count runs over, the transport
   becomes its own chapter — which the phase order is arranged to allow, and which
