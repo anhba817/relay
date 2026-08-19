@@ -83,5 +83,24 @@ previous remediation introduced. The lesson is not that remediation is dangerous
 it is that one pass is never enough, and a clean round is evidence about the round
 rather than about the spec.
 
+**Pass 6 — the third analysis round, and the findings have shrunk to mechanics.**
+All three were residue from round 2: a fix split across two tasks so that the
+scoping was implemented in `session.ts` and unit-tested in `resume.test.ts`, which
+cannot reach it; a lifetime table still showing the unscoped derivation the prose
+below it had corrected; and a file list still saying "one pure predicate" when
+there are two.
+
+The first is the one worth naming. It is the same failure this project has hit
+twice already in a different costume — chapter 3.5's assertion that could not
+fail, chapter 3.6's mutation that could not compile, and now a test that could not
+reach the code it names. An implementer meeting it would have moved the assertion
+somewhere weaker and nobody would have noticed.
+
+Three rounds, decaying: CRITICAL (the spec mandated the rule that recreates the
+bug) → HIGH (no sabotage mutation for the central decision) → HIGH (a test aimed
+at the wrong file). Six findings, then five, then three. Convergence rather than
+churn, and the point to stop is when a pass returns only stale words in a file
+list.
+
 Items marked incomplete require spec updates before `/speckit-clarify` or
 `/speckit-plan`. None are.

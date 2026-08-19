@@ -84,11 +84,11 @@ specs/028-chapter-3-7/
 ```text
 relay-platform/
 ├── services/gateway/src/
-│   ├── resume.ts              # AMEND: one pure predicate beside `flushable`
+│   ├── resume.ts              # AMEND: two pure functions — the predicate, and the scoping
 │   ├── resume.test.ts         # AMEND: the predicate's cases
 │   ├── resume.itest.ts        # AMEND: the fourth quadrant, deterministic
 │   ├── registry.ts            # AMEND: one field on Connection
-│   ├── session.ts             # AMEND: set it on success, consult it in deliver()
+│   ├── session.ts             # AMEND: set it (scoped) on success, consult it in deliver()
 │   └── session.test.ts        # AMEND: delivery with a mark present
 ├── services/api/src/db/
 │   └── schema.ts              # AMEND: two chapter-number comments (R6)

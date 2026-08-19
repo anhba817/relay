@@ -41,7 +41,8 @@ makes the degraded path explicit rather than incidental.
 fresh connect            marks = null
 resume, degraded         marks = null        ← FR-005: told to page history,
                                                so no mark can be trusted
-resume, ok               marks = highWaterMarks(cursors, backfilled)
+resume, ok               marks = scoped(highWaterMarks(cursors, backfilled))
+                                  ← scoped to the presented cursor keys
 live delivery            marks are READ and never written
 socket closes            marks go with it
 ```
@@ -64,8 +65,9 @@ backfill returned, so on its own it bounds nothing: an api answering with channe
 nobody asked about would grow the map. That cannot happen today — the backfill
 controller keys its response off the cursors it was given — but the gateway should
 not hold a bound that lives in another service's response shape. The marks are
-therefore scoped to the presented cursor keys when they are stored, which is the
-same discipline `scopeCursors` already applies before the api is asked at all.
+therefore scoped to the presented cursor keys when they are stored, by a pure
+function in `resume.ts` beside `scopeCursors` — the same shape of filter, applied
+one step later, and in the file where a unit test can reach it.
 
 With that scoping the retained state is at most 200 integers per resumed
 connection, constant in the connection's lifetime, and the same order as the
