@@ -221,3 +221,111 @@ from the corrected files; the chain still replays.
 3.6's fourteen are not fixed here. They are inside published fences in two
 locales, and correcting them costs an amendment fenced in some later chapter that
 discusses them — the same trade this chapter's own R6 section describes.
+
+
+T021 — twenty post-fix runs, and the three attempts it took
+-----------------------------------------------------------
+
+SC-001 asks for twenty CONSECUTIVE passes. Getting them required admitting three
+times that a measurement spanning two different trees is not a measurement.
+
+  attempt 1   7 runs    abandoned — the drain fix landed at run 7
+  attempt 2  12 runs    abandoned — the consumer fix landed after run 12
+  attempt 3  survey     run to completion deliberately, see below
+  attempt 4  20 runs    the measurement
+
+**Attempt 3 was reclassified rather than abandoned.** After the second restart it
+was clear the loop was: run, hit one latent flake, fix it, restart, lose an hour.
+Each attempt was finding exactly one fault because it stopped at the first one.
+
+So attempt 3 was allowed to run all twenty with the tree changing underneath it,
+which makes it useless as SC-001 evidence and useful as a SURVEY: its job is to
+enumerate every remaining fault in one pass instead of one per hour. It is recorded
+here as a survey and is not the criterion's evidence. Attempt 4 is.
+
+This is worth writing down because the temptation at attempt 3 was to call the
+failures "unrelated flakes", record the run as passing, and move on. They are
+unrelated to the resume fix. They are not unrelated to whether the lane can tell
+anyone anything, which is the condition chapter 3.6 spent its baseline on and the
+condition that let this chapter's own defect hide for four chapters.
+
+
+T021a — every fault the runs exposed, none of them the resume duplicate
+------------------------------------------------------------------------
+
+Four faults in four suites, all the same disease: **a test that calls a global,
+unscoped operation and then asserts about its own row.** Each passed alone. Each
+passed in the lane too, until a shared resource grew past the budget it assumed.
+
+  1  deliveries.itest.ts   the SWEEP takes the 100 oldest eligible endpoints;
+     (T002a, baseline)     781 had accumulated an open failure run, so the test's
+                           own endpoint was never in the batch.
+                           FIX: an explicit limit big enough to reach it.
+
+  2  deliveries.itest.ts   drainDueDeliveries claims FOR UPDATE SKIP LOCKED. A
+     (attempt 1, run 2)    parallel suite holding the row makes one call look
+                           exactly like the relay refusing to publish a due
+                           delivery. FIX: drain until the row settles.
+
+  3  consumer.itest.ts     invariant 9 called ENV() three times and ENV mints a
+     (attempt 2, runs      fresh uuid, so no subject filter could cover its three
+      11 AND 12)           events and the durable had to drain ~13,000 older ones
+                           inside a fixed 800-poll budget.
+                           NOT A FLAKE — A THRESHOLD. Ten clean runs, then two
+                           failures in a row. `expected [ …(2756) ] to include`.
+                           FIX: one environment, both runtimes filtered to it.
+
+  4  signup.itest.ts       invariant 7 compared `count(*) FROM organisations`
+     (attempt 3, runs      before and after one fetch — a GLOBAL count, in a lane
+      3 AND 4)             
+                           where every other suite signs organisations up.
+                           `expected 9918 to be 9917`, twice in a row.
+                           FIX: assert the property where it can be attributed to
+                           this call — the route refuses, and a request refused
+                           before a handler has created nothing.
+
+The fourth is the clearest case of the disease, and it has a history.
+
+**CHAPTER 3.3 ALREADY FIXED THIS ASSERTION, IN THIS FILE.** Its fix-forward section
+says so in as many words: *"Chapter 3.1's signup suite asserted that a failed
+provisioning left the global organisation count unchanged. That passed for two
+chapters and failed here with `expected 884 to be 883` … The count was never the
+evidence."* It removed the global count from invariant 1.
+
+The identical assertion at invariant 7, about a hundred lines further down the
+same file, was not looked for. It failed here with `expected 9918 to be 9917` —
+the same sentence, four chapters and nine thousand organisations later.
+
+That is the finding worth keeping out of all four. Fixing an instance is not
+fixing a class, and the cheapest moment to grep for the other instances is while
+the first one is still on the screen. A chapter that writes "the count was never
+the evidence" and then leaves a second count in the same file has diagnosed the
+disease and treated a symptom.
+
+**None of these is the resume duplicate.** It did not reproduce in any of the
+runs, before or after the fix, for the reason T005 gives.
+
+
+T021b — grepping for the class instead of waiting for it
+---------------------------------------------------------
+
+Having written that fixing an instance is not fixing a class, the obvious thing
+was to go and look. Every `count(*)` in every integration suite:
+
+  grep -rn "count(\*)" services/*/src --include=*.itest.ts | grep -v WHERE
+
+  services/api/src/outbox/outbox.itest.ts:267      scoped to environment_id
+  services/api/src/outbox/outbox.itest.ts:274      scoped to environment_id
+  services/api/src/outbox/outbox.itest.ts:462      scoped to environment_id
+  services/api/src/webhooks/deliveries.itest.ts:1591  scoped to endpoint_id
+  services/api/src/tenancy/signup.itest.ts:192     scoped to provider_account_id
+  services/api/src/tenancy/signup.itest.ts:174     scoped to name = 'doomed org'
+  services/api/src/tenancy/signup.itest.ts:142     scoped to organisation.id
+
+Seven hits, all scoped, none of them a global count compared against itself. The
+class is clean for `count(*)` after the invariant 7 fix.
+
+It is not clean for the wider disease — a global operation with a local assertion
+is not always a count. The sweep took a batch, the drain took a lock, the consumer
+took a stream position. Those do not share a grep, which is why the survey run
+exists and why it was allowed to finish rather than being stopped at the first red.
