@@ -132,7 +132,8 @@ cites a chapter number that does not name what it claims to name.
 - A channel absent from the backfill because nothing new arrived: its mark is the
   presented cursor, not zero.
 - A client that resumes, goes live, and stays connected for hours — the retained
-  mark must not grow without bound or suppress legitimate messages forever.
+  mark must not grow without bound, and must never suppress a message the client
+  has not already been given or already claimed to hold.
 - Two connections for the same user on the same gateway instance, one resuming and
   one live.
 - A message whose sequence is below the mark because it was *edited* or
@@ -140,7 +141,11 @@ cites a chapter number that does not name what it claims to name.
 - A client presenting a cursor far above anything the channel holds. The cursor is
   client-supplied and checked only for being a non-negative integer, so the mark it
   seeds suppresses every live frame on that channel for the life of the connection
-  — where before this change it only emptied the backfill.
+  — where before this change it only emptied the backfill. This does not contradict
+  the case above: the client asserted it holds those sequences, and the backfill has
+  always taken that assertion at face value. The blast radius is one connection, it
+  is self-inflicted, and reconnecting with a correct cursor recovers it.
+  `contracts/resume.md` records why the platform does not second-guess the claim.
 
 ## Requirements *(mandatory)*
 
@@ -164,7 +169,9 @@ cites a chapter number that does not name what it claims to name.
   does today, with no suppression and no retained state.
 - **FR-007**: The retained state MUST be bounded: at most one sequence per channel
   in the resume cursor set, which the resume contract already caps at
-  `MAX_RESUME_CHANNELS`. It MUST NOT grow with the connection's lifetime.
+  `MAX_RESUME_CHANNELS`. It MUST NOT grow with the connection's lifetime. The
+  gateway MUST enforce this itself by scoping the marks to the channels it presented
+  cursors for, rather than inheriting the bound from the api's response shape.
 - **FR-007a**: A mark MUST NOT be retired while the connection lives. Observing a
   sequence above the mark MUST NOT clear it.
 

@@ -73,7 +73,7 @@ specs/028-chapter-3-7/
 ├── data-model.md
 ├── contracts/
 │   └── resume.md        # the resume contract, amended
-├── quickstart.md        # V1–V8
+├── quickstart.md        # V0–V9
 ├── checklists/
 │   └── requirements.md
 └── tasks.md             # /speckit-tasks
@@ -156,7 +156,7 @@ Two ordering constraints worth stating now:
 | FR-013 | `specs/027-chapter-3-6/baseline.txt` | the chapter's own prose |
 | FR-014 | — | `pnpm check:fences` locale count |
 | FR-015 | research R6 | `pnpm check:fences` HEAD check |
-| FR-016 | quickstart V1–V8 | captured-output.md |
+| FR-016 | quickstart V0–V9 | captured-output.md |
 | FR-017 | done during `/speckit-specify` | the plan and the registry agree |
 | FR-018 | research R6 | the cross-reference sweep at chapter end |
 | FR-019 | research R6 | the sweep, including the already-stale reference |

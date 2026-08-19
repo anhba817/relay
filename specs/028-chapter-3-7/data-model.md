@@ -54,13 +54,23 @@ instances do not coordinate. A stalled publish of sequence 4 can land after a
 prompt publish of sequence 5, so retiring on 5 would hand the duplicate window
 straight back.
 
-**Bounded without retirement.** `marks` is derived from the resume cursors, and
-those are capped at `MAX_RESUME_CHANNELS` (200) by
-`internalBackfillRequestSchema` — a larger map is refused by the api and the
-resume degrades, which sets `marks` to null. So the retained state is at most 200
-integers per resumed connection, constant in the connection's lifetime, and the
-same order as the cursor map the connection already accepted. FR-007 is satisfied
-by a cap that already existed.
+**Bounded without retirement, and bounded HERE rather than elsewhere.** `marks` is
+derived from the resume cursors, and those are capped at `MAX_RESUME_CHANNELS`
+(200) by `internalBackfillRequestSchema` — a larger map is refused by the api and
+the resume degrades, which sets `marks` to null.
+
+`highWaterMarks` seeds from the cursors and then adds a key for every channel the
+backfill returned, so on its own it bounds nothing: an api answering with channels
+nobody asked about would grow the map. That cannot happen today — the backfill
+controller keys its response off the cursors it was given — but the gateway should
+not hold a bound that lives in another service's response shape. The marks are
+therefore scoped to the presented cursor keys when they are stored, which is the
+same discipline `scopeCursors` already applies before the api is asked at all.
+
+With that scoping the retained state is at most 200 integers per resumed
+connection, constant in the connection's lifetime, and the same order as the
+cursor map the connection already accepted — and the bound is a property of this
+file rather than a promise another service keeps.
 
 ---
 

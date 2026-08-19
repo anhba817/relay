@@ -69,5 +69,19 @@ requirements mandated the behaviour the design refused to build. That is the sam
 drift chapter 3.6's analysis passes found three times — a fix applied to one
 artifact and not to its source.
 
+**Pass 5 — the second analysis round, and three of its five findings came from
+the first round's fixes.** A half-applied recommendation (the bogus-cursor case
+was documented and never tested), a new edge case that collided with one already
+there, and a sabotage gap that only opened once FR-007a made "never retire" an
+explicit requirement — an absence needs a mutation that ADDS something, and the
+battery had none. Also caught: FR-007 asserted a 200-item bound that
+`highWaterMarks` does not enforce, since it adds a key for every channel the
+backfill returns. The bound now belongs to the gateway.
+
+That is three consecutive chapters where each analysis pass finds defects the
+previous remediation introduced. The lesson is not that remediation is dangerous;
+it is that one pass is never enough, and a clean round is evidence about the round
+rather than about the spec.
+
 Items marked incomplete require spec updates before `/speckit-clarify` or
 `/speckit-plan`. None are.

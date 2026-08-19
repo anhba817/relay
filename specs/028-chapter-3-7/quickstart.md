@@ -97,7 +97,7 @@ arrived, which would have delivered the 4.
 
 ## V6 — The sabotage check
 
-Four mutations, each reverted afterwards and the file verified byte-identical:
+Five mutations, each reverted afterwards and the file verified byte-identical:
 
 | Mutation | Must fail |
 |---|---|
@@ -105,11 +105,21 @@ Four mutations, each reverted afterwards and the file verified byte-identical:
 | use `<` instead of `<=` in the predicate | the boundary case — the mark's own sequence arrives twice |
 | suppress on every channel rather than the frame's own | invariant 4 — a second channel's frame disappears |
 | retain the marks through a degraded resume | V4 — a client told to page history is also denied the frames |
+| **retire a mark when a higher sequence arrives** | V5 — the out-of-order pair, where the delayed lower sequence is delivered after all |
 
 A suite that still passes with a mechanism removed is a suite that holds nothing.
-The second mutation is the one to watch: `flushable` already uses `<=` and its
-comment says why, so an off-by-one here would be the same mistake made twice in
-one file.
+
+**The fifth is the one that matters most and the one most likely to be skipped.**
+Its mechanism is an ABSENCE — the code does not retire, and a mutation has to add
+something rather than remove it. It also passes V1: the deterministic test
+publishes a single frame, so retirement never gets the chance to fire. Only V5's
+out-of-order pair catches it, which means the fifth mutation is the only thing
+confirming V5 can do its job. This chapter's whole design turns on not retiring
+(research R3); an untested absence is a decision nobody is holding.
+
+The second mutation is the next one to watch: `flushable` already uses `<=` and
+its comment says why, so an off-by-one here would be the same mistake made twice
+in one file.
 
 ## V7 — Coverage
 

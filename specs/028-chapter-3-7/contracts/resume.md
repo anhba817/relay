@@ -59,7 +59,7 @@ clears the buffer today; it must clear the marks for the same reason.
 | 4 | The mark is per channel: a mark on one channel never suppresses a frame on another. |
 | 5 | A connection that resumed with `resume_ok: false` suppresses nothing. |
 | 6 | A connection that never resumed suppresses nothing and retains no state. |
-| 7 | The retained state is at most one integer per channel in the resume cursor set, which the resume contract already caps at `MAX_RESUME_CHANNELS`. |
+| 7 | The retained state is at most one integer per channel in the resume cursor set, which the resume contract already caps at `MAX_RESUME_CHANNELS`. The gateway scopes the marks to the cursors it presented rather than trusting the api's response to be so keyed. |
 | 8 | Two frames published out of order by different gateway instances are both handled correctly: the later-arriving lower sequence is still suppressed. |
 
 Invariant 8 is the one the spec's original design would have failed, and it is the
