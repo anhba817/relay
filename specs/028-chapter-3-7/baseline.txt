@@ -1,0 +1,168 @@
+Chapter 3.7 — baseline
+======================
+
+Measured before anything changed. Exit codes, not greps over output.
+
+Date: 2026-08-19
+
+
+T001 — provenance
+-----------------
+
+relay-platform   b2de587  tag part3-ch6           working tree clean
+relay-tutorial   9987d74  heads/main              working tree clean
+
+`git describe --tags --exact-match HEAD` resolves in relay-platform, so the tag is
+on the commit rather than near it. Both parent pins match their submodule HEADs.
+
+Ignore files verified rather than assumed: `.gitignore` and `.dockerignore` exist
+in relay-platform and cover `node_modules`, `dist`, `coverage` and `.env*`;
+`eslint.config.mjs` carries the same ignores. Nothing to create.
+
+
+T002 — platform baseline
+------------------------
+
+Stores: docker compose postgres redis nats on 15432 / 16379 / 14222, all healthy.
+
+  lint                                  exit 0
+  typecheck                             exit 0
+  build                                 exit 0
+
+unit lane                               exit 0   184 tests
+  @relay/config                                    6
+  @relay/service-kit                               3
+  @relay/protocol                                 37
+  @relay/api                                      96
+  @relay/gateway                                  34
+  @relay/dispatcher                                8
+
+integration lane                        exit 1   188 tests, 187 passed
+  @relay/api                                     150   1 FAILED  (see T002a)
+  @relay/dispatcher                               16
+  @relay/gateway                                  13
+  @relay/e2e                                       9
+
+Every count matches chapter 3.6's closing numbers. The exit code does not.
+
+
+T002a — a chapter 3.6 test that depended on a clean database
+------------------------------------------------------------
+
+  FAIL  deliveries.itest.ts > the failure run >
+        invariant 12: the SWEEP disables the quiet endpoint no outcome ever revisits
+        AssertionError: expected true to be false
+
+NOT the resume duplicate this chapter is about, and worth separating immediately:
+a lane with two intermittent failures cannot measure the rate of either.
+
+ROOT CAUSE. `sweepDisabledEndpoints` is global and takes the hundred oldest
+endpoints whose failure run has outrun the hour — `ORDER BY failure_run_started_at
+LIMIT 100`. The test ages its own endpoint by 64 minutes and calls the sweep with
+the default limit. Every earlier run of that suite leaves endpoints behind with an
+open run, and those are older, so they fill the batch and the test's own endpoint
+is never reached.
+
+MEASURED, not inferred:
+
+  endpoints with an open failure run                781
+  eligible for the sweep at that moment             >100 (drained to 0 by the run)
+
+WHICH ASSERTION CAUGHT IT is the part worth keeping. The test checks
+`disabled >= 1` first, and that PASSED — the sweep had just disabled a hundred
+endpoints belonging to nobody in particular. Only the assertion about THIS
+endpoint could tell "the sweep works" from "the sweep did something". A count is
+not a proof of effect.
+
+FIXED, ahead of T048, because T004's measurement depends on it. The five direct
+sweep calls in that suite now pass an explicit limit large enough to reach the
+endpoint under test whatever else is eligible. The file is fenced by chapter 3.6
+and the amendment went to `relay-tutorial/fences/post-series.md`: 3.6 teaches
+auto-disable, not the batch size of a test's sweep call, and 3.7 never mentions
+webhooks.
+
+Suite after the fix: 49 passed, exit 0.
+
+
+T002b — the quickstart's own time estimate was wrong by a factor of five
+------------------------------------------------------------------------
+
+V0 says a lane run takes "about nine minutes with the lane serialised, so this is
+three hours of wall clock". Measured here:
+
+  full integration lane                 104 s
+  @relay/e2e alone                        4 s
+
+So twenty runs is about 35 minutes, not three hours. The nine-minute figure came
+from chapter 3.6, when the database held 4,068 pending deliveries that the relay
+re-attempted against dead endpoints at three seconds each. That backlog was
+settled at the end of 3.6; the lane has been fast ever since and nobody remeasured.
+
+The estimate is corrected here rather than in the quickstart alone, because a
+three-hour price tag is the kind of number that gets a measurement cut.
+
+
+T003 — site baseline
+--------------------
+
+  lint                                  exit 0
+  build                                 exit 0
+  check:docs                            exit 0
+  check:fences                          exit 0
+
+  fence chain   153 fenced files across 23 chapters
+                23 translated, fences mirrored, 1 retired,
+                plus post-series amendments
+
+
+T004 — twenty pre-fix lane runs
+-------------------------------
+
+  runs                                  20
+  failures                              0
+  duration                              182-190 s each, ~62 minutes total
+
+  1  pass  2  pass  3  pass  4  pass  5  pass  6  pass  7  pass
+  8  pass  9  pass 10  pass 11  pass 12  pass 13  pass 14  pass
+ 15  pass 16  pass 17  pass 18  pass 19  pass 20  pass
+
+The resume duplicate did not reproduce once.
+
+
+T005 — what twenty clean runs mean, and what they do to SC-001
+--------------------------------------------------------------
+
+Chapter 3.6 observed one failure in six runs and this chapter's spec repeated that
+figure. Twenty runs at zero says the rate is lower than that — six runs is a thin
+sample and one failure in it supports anything from 2% to 40%.
+
+There is a better explanation than "3.6 was unlucky", and it is worth writing down
+because it is about the defect rather than the statistics. The race needs a
+backfill query to land inside the gap between an api commit and a Redis publish.
+That gap widens under load. When 3.6 measured, the lane took about nine minutes
+because the database held 4,068 pending deliveries being retried against dead
+endpoints at three seconds each — the machine was saturated and the gap was wide.
+That backlog was settled at the end of 3.6, the lane now takes 183 seconds, and the
+gap is correspondingly narrow. The defect did not get rarer; the conditions that
+exposed it went away.
+
+**SC-001 IS NOW A CRITERION THAT CANNOT FAIL.** It asks for twenty consecutive
+passes after the fix. Twenty consecutive passes happen BEFORE the fix. It can no
+longer tell a fixed platform from an unfixed one, which makes it exactly the kind
+of assertion this project keeps finding and removing — 3.5's "terminated, not
+retried" at a 30-second ack wait, 3.6's mutation that could not compile.
+
+Kept, not deleted, and demoted in writing: twenty post-fix runs still prove the fix
+introduces no REGRESSION across the whole lane, which is worth having when the
+change suppresses frames and its failure mode is a gap. What SC-001 no longer does
+is provide evidence that the duplicate is gone.
+
+**SC-002 now carries the entire proof.** The deterministic test fails every time
+against today's code and passes against the fixed code, and it does so without
+waiting for a race — which is why research R4 built it that way rather than
+relying on the journey. The defect itself is not in doubt: R1 established the
+mechanism by reading, two code paths can emit the frame and only one of them can
+be the second copy.
+
+This is the honest version of the chapter's evidence. The intermittent failure is
+how the defect was FOUND; it is not how the fix is PROVEN.
