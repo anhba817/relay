@@ -3,7 +3,7 @@
 **Feature**: `specs/028-chapter-3-7` | **Plan**: [plan.md](./plan.md) | **Spec**: [spec.md](./spec.md)
 
 **Deliverable**: a correctness fix worth four lines, a chapter that explains why
-those four lines were missing for four chapters, and a renumbering that leaves no
+those four lines were missing for seven chapters, and a renumbering that leaves no
 reference naming the wrong thing.
 
 ## Format: `[ID] [P?] [Story] Description`

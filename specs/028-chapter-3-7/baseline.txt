@@ -247,7 +247,7 @@ This is worth writing down because the temptation at attempt 3 was to call the
 failures "unrelated flakes", record the run as passing, and move on. They are
 unrelated to the resume fix. They are not unrelated to whether the lane can tell
 anyone anything, which is the condition chapter 3.6 spent its baseline on and the
-condition that let this chapter's own defect hide for four chapters.
+condition that let this chapter's own defect hide for seven chapters.
 
 
 T021a — every fault the runs exposed, none of them the resume duplicate

@@ -69,7 +69,7 @@ and asserts it does not. One number apart.
 **Why this is worth stating in the chapter.** The gap is not carelessness; it is
 what happens when a test suite is written from a model. The model had three cases
 and the suite has three tests. A matrix drawn from the two axes has four cells,
-and the empty one is where the bug lived for four chapters.
+and the empty one is where the bug lived for seven chapters.
 
 ---
 
