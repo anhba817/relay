@@ -110,7 +110,7 @@ platform rather than in this plan, and is closed by this chapter's FR-003 and R5
 specs/029-chapter-3-8/
 ├── plan.md              # This file
 ├── spec.md              # 39 FR, 4 user stories, 12 SC
-├── research.md          # Phase 0 — R1…R15
+├── research.md          # Phase 0 — R1…R16
 ├── data-model.md        # Phase 1
 ├── quickstart.md        # Phase 1 — V0…V11
 ├── contracts/
@@ -261,7 +261,7 @@ made with the word count in hand instead of predicted now.
 | FR-024 | research R8, constitution III | mail server down, everything else up |
 | FR-025 | research R9 | `compose.yaml` |
 | FR-026…FR-029 | research R3, R5, R7 | the chapter's own sections |
-| FR-030…FR-032 | — | `pnpm check:fences`, captured transcripts |
+| FR-030…FR-032 | research R16 | `pnpm check:fences`; T061a-c handle the post-series exception |
 | FR-033…FR-035 | the renumbering note in research | done during `/speckit-specify`; verified at close-out |
 
 ## Constitution re-check, after Phase 1

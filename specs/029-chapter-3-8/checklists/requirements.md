@@ -192,6 +192,35 @@ half; remediation across three passes took it to **28**, above chapter 3.6's ent
 shrink under scrutiny. This one grew, which is the strongest argument yet for T059
 splitting the transport out.
 
+### The fourth pass found a defect the third pass introduced
+
+**F1 — an instruction written from memory instead of from the script.** Pass 3 added
+T061a saying "an amendment diff's base is the chain's end state, not the latest
+tag", generalising from a debugging session during chapter 3.7. Reading
+`check-fence-chain.mjs` shows it is true of **post-series** diffs and false of
+**chapter** fences: `replay()` applies all chapter fences first and post-series
+afterwards, so for a chapter fence the chain's end state *is* `part3-ch7` — and
+`check:fences` passing is the proof. The instruction would have sent an implementer
+hunting a Part 1 base for `frames.ts` that they did not need.
+
+**F2 — and the fourth pass's own first instance was also wrong.** It reported
+`package.json` as a live collision because this chapter adds two dependencies to
+`services/api/package.json`. The post-series entry is for the **root** `package.json`.
+Same basename, different file. Corrected before remediation by checking the title
+rather than trusting the match.
+
+**The one real collision is `credentials.itest.ts`** — post-series amended by chapter
+3.6's baseline, and T025c has to raise the auth threshold in it. It goes to
+post-series rather than a chapter fence, because 3.8 teaches rate limiting and not
+credential testing (T025d).
+
+**What this says about the process.** Three of the sixteen findings across four
+passes were about the fence mechanism, and two of those three were mistakes made
+*while fixing* the first. An analysis pass can add defects as well as remove them,
+and the ones it adds arrive with the same confident tone as the ones it removes. The
+rule that came out of it is in R16: read the script, not the memory of the last time
+the script complained.
+
 ### One requirement carries a claim that may be wrong, on purpose
 
 The Assumptions say this renumbering should be cheap because chapter 3.7 removed

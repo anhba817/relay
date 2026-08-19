@@ -1,14 +1,15 @@
 # Research — chapter 3.8, "Limits you can see coming"
 
-Phase 0. Fifteen items. R3 is the chapter's central decision and the spec
+Phase 0. Sixteen items. R3 is the chapter's central decision and the spec
 deliberately left it open. R5 found a **second unenforced contract** the chapter
 has to close whether it wants to or not. R10 quantifies the size risk the spec
 flagged and the answer is not the one the scope decision assumed. **R11 was added
 after the first `/speckit-analyze` pass** (nothing said which bucket a REST send
 decrements) **R12, R13 and R14 after the second**, which found two
 architectural gaps — the gateway cannot read the policy, and it has no request id to
-put in the field R5 requires — and **R15 after the third**, which found that the auth
-limiter would refuse this project's own test suite.
+put in the field R5 requires — **R15 after the third**, which found that the auth
+limiter would refuse this project's own test suite, and **R16 after the fourth**,
+which corrected a rule the third pass had written from memory.
 
 ---
 
@@ -680,6 +681,56 @@ should survive the suite rather than the reverse.
 **Rejected: leaving it and fixing whatever breaks at T035.** It would work and it
 would produce the least useful form of the information — "some tests fail" at the
 end of the chapter, in a lane this project has spent two chapters getting green.
+
+---
+
+---
+
+## R16 — Where a chapter's fence diff starts, verified rather than remembered
+
+**This item exists because the third analysis pass wrote the rule down wrong**, and
+the fourth caught it. Recording the method as well as the answer, since the method
+is what failed.
+
+**The answer, read out of `scripts/check-fence-chain.mjs`.** `replay()` walks every
+chapter page in `part.chapter` order and applies each fence to the accumulated state
+for that file. Only after every chapter has been replayed does the script read
+`fences/post-series.md` and apply those diffs. The result is then compared to the
+file on disk.
+
+So the state a chapter-3.8 fence amends is **all chapters through 3.7** — which, for
+any file post-series does not touch, is exactly HEAD. `pnpm check:fences` passing at
+`part3-ch7` is the proof of that, not an assumption about it. `git diff
+part3-ch7..HEAD -- <file>` is the correct base.
+
+**The one exception, and it cuts both ways.** For a file post-series already amends,
+the chapter chain stops short of HEAD by that amendment. A `part3-ch7` base would
+carry a pre-image the chain rejects — and a new chapter fence would also land
+*underneath* the existing post-series diff, whose own pre-image would then no longer
+match. One change, two failures.
+
+Five files are amended today: the **root** `package.json`, `credentials.itest.ts`,
+`consumer.itest.ts`, `signup.itest.ts` and `deliveries.itest.ts`.
+
+**What the third pass got wrong, and why.** It generalised from chapter 3.7's
+`consumer.itest.ts` failure — a post-series diff regenerated from `part3-ch6..HEAD`
+when that file's chain ends in chapter 3.4 — into "an amendment diff's base is the
+chain's end state, not the latest tag". True of post-series diffs; false of chapter
+fences, where the tag *is* the chain's end state. The instruction would have sent an
+implementer looking for a Part 1 base for `frames.ts` that they did not need.
+
+It was written from memory of a debugging session rather than from the script. The
+correction was written by reading `replay()`.
+
+**And the fourth pass's own first instance was wrong too.** It reported `package.json`
+as a live collision because chapter 3.8 adds `ioredis` and `nodemailer` to
+`services/api/package.json`. The post-series entry is for the **root** `package.json`
+— turbo's `coverage` script — and the two are different files with the same basename.
+The real collision is `credentials.itest.ts`, which T025c has to touch to raise the
+auth threshold.
+
+**The rule that comes out of all three mistakes**: check the post-series title list
+before generating a fence, and match on the full path rather than the basename.
 
 ---
 
