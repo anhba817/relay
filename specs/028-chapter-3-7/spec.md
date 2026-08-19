@@ -169,9 +169,9 @@ cites a chapter number that does not name what it claims to name.
   does today, with no suppression and no retained state.
 - **FR-007**: The retained state MUST be bounded: at most one sequence per channel
   in the resume cursor set, which the resume contract already caps at
-  `MAX_RESUME_CHANNELS`. It MUST NOT grow with the connection's lifetime. The
-  gateway MUST enforce this itself by scoping the marks to the channels it presented
-  cursors for, rather than inheriting the bound from the api's response shape.
+  `MAX_RESUME_CHANNELS`. It MUST NOT grow with the connection's lifetime. The bound
+  MUST be enforced by the gateway itself rather than inherited from the shape of
+  another service's response.
 - **FR-007a**: A mark MUST NOT be retired while the connection lives. Observing a
   sequence above the mark MUST NOT clear it.
 

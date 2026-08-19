@@ -31,7 +31,7 @@
 
 ## Notes
 
-**Validated.** Three passes were needed and each found something.
+**Validated.** Eight passes so far — three while the spec was being written, four analysis rounds, and this re-verification. Every one found something.
 
 **Pass 1 — implementation detail in the requirements.** FR-001 named the field the
 mark would be stored on and FR-003 described the phase flag. Both were rewritten
@@ -55,8 +55,8 @@ added, and FR-019 deliberately covers the reference that is **already** stale fr
 the previous insertion — the gauntlet moved to 3.8 during chapter 3.6's work and
 `schema.ts` still calls it 3.7.
 
-**The judgement that was recorded rather than resolved is now resolved, against
-the spec.** The spec assumed suppression would be retired by observation — a
+**Pass 4 — the first analysis round's remediation.** The judgement that was
+recorded rather than resolved is now resolved, against the spec. The spec assumed suppression would be retired by observation — a
 sequence above the mark clears it — and asked the plan to confirm the bound.
 Research R3 found the rule unsafe: two gateway instances publish without
 coordinating, so a prompt sequence 5 can precede a stalled sequence 4, and
@@ -123,6 +123,40 @@ time. Adding one unexamined file produced a HIGH on the first look.
 
 The rule worth carrying forward: an analysis pass is only as wide as its file
 list, and a decay curve across a fixed file list is evidence about the reader.
+
+**Pass 8 — the checklist itself, which four rounds had written to and none had
+read.**
+
+Every earlier round appended a note here and none re-ran the sixteen items against
+the spec it had just changed. That made this a write-only artifact: it certified
+what it certified on the first day and kept saying so.
+
+It was wrong by then. Pass 1's note records rewriting FR-001 and FR-003 because
+they named a field and a flag — and pass 5's remediation put mechanism straight
+back into FR-007: "by scoping the marks to the channels it presented cursors for".
+Same class of defect, reintroduced by a fix, under two ticked boxes claiming no
+implementation details anywhere.
+
+FR-007 now states the WHAT — the bound is enforced by the gateway rather than
+inherited from another service's response shape — and the mechanism lives in
+`data-model.md` and T008, where it belongs.
+
+**The sixteen items, re-checked rather than inherited.** All pass. Two were close
+enough to be worth recording rather than ticking silently:
+
+- *No implementation details.* The only backticked terms left in the requirements
+  are `MAX_RESUME_CHANNELS`, `resume_ok: false` and `docs/07-tutorial-plan.md` — a
+  published cap, a wire field, and the document FR-017 exists to update. No source
+  file, function or struct field appears.
+- *Success criteria are technology-agnostic.* SC-004 names lanes, coverage and
+  ratchets, which is project vocabulary rather than user-facing outcome. Ticked
+  because in a tutorial about building the thing, the build gates ARE the
+  deliverable — the same reading every chapter in Part 3 has used. Worth flagging
+  if a later chapter wants the criteria tightened.
+
+A quality gate nobody re-runs certifies the past. That is the same shape as the
+defect this chapter is about: chapter 2.7 proved its property once, and the proof
+stopped being true when the code around it changed.
 
 Items marked incomplete require spec updates before `/speckit-clarify` or
 `/speckit-plan`. None are.
