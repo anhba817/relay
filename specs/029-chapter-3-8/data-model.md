@@ -20,6 +20,12 @@ its window and nothing accumulates.
 | `operation` | `rest`, `send`, `connect` |
 | `window` | the window's start, floored — makes the key self-expiring and the reset time computable without storing it |
 
+**One request can touch two keys.** A `POST …/messages` increments `rest` by one and
+`send` by the number of messages it carries, so the two counters answer different
+questions: how much traffic, and how many messages. The response's headers describe
+whichever has fewer remaining, because that is the one that will refuse first
+(research R11).
+
 **Not a source of truth** (constitution IV, SAD §6.3). Total loss means every
 environment starts a fresh window and nobody is refused in the meantime. That is
 the *designed* behaviour, not a tolerated one — see FR-010.
@@ -151,4 +157,8 @@ a test, not a defensive `if` that silently marks the row.
   limiting connection *establishment* needs a counter, not a registry.
 - **No stored reset timestamp.** It is derivable from the window in the key, and
   storing a value two instances could disagree about is how `Retry-After` becomes
-  wrong.
+  wrong. This is also what closes the clock-skew edge case by construction rather
+  than by two processes agreeing.
+- **No record of which limit a response reported.** Recomputed per request from two
+  integers already in hand. Storing it would be a third piece of state to keep
+  consistent with the two it derives from.

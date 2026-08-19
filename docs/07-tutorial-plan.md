@@ -148,7 +148,7 @@ build on."
 | 3.5 | Webhooks that survive the customer | Dispatcher service: envelope-encrypted signing secrets, HMAC-SHA256, a due-time retry schedule, dead letters (FR-WHK-01…05, FR-WHK-08) |
 | 3.6 | When to stop trying | The attempt log and auto-disable (FR-WHK-06, FR-WHK-07, both half-delivered — see below); the synthetic test event (FR-WHK-09); the evidence a customer is owed when their endpoint is switched off |
 | 3.7 | Commit and publish are two instants | The resume duplicate: a message committed before a backfill and announced after it, delivered twice; the high-water mark given a lifetime past the buffering window |
-| 3.8 | Limits you can see coming | Per-environment token buckets (FR-RTL-01…04); the three headers on every response, not only the refusal; failed-auth limiting per IP (FR-AUT-12); the email transport 3.6 was owed (FR-WHK-07) |
+| 3.8 | Limits you can see coming | Per-environment fixed-window counters in Redis (FR-RTL-01…04); the three headers on every response, not only the refusal; failed-auth limiting per IP (FR-AUT-12); the email transport 3.6 was owed (FR-WHK-07) |
 | 3.9 | Quotas and what they cost | Monthly usage quotas, hard and soft spending caps, the 50/80/100% email (FR-RTL-05…08) |
 | 3.10 | **Milestone: the isolation gauntlet** | The cross-tenant attack suite (NFR-SEC-09) run against every endpoint; the second-external-developer test |
 

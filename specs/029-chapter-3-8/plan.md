@@ -29,6 +29,12 @@ exists to mint one". It never did. That makes three pieces of vocabulary declare
 and unenforced — `rate_limited`, close code 4008, and the fourth field — and the
 chapter has to close the third one because FR-003 requires it in the 429 body.
 
+**A third finding came from `/speckit-analyze` rather than from planning.** Nothing
+said which bucket a `POST /messages` decrements — it is both a REST request and a
+message send, and FR-002 describes one set of headers. Research R11 settled it:
+both are counted, the headers report whichever has fewer remaining, and the refusal
+names which limit was reached. That added FR-036 and the test in T018a.
+
 Research R10 put a number on the size risk the spec flagged: about **30 fences**,
 against 21 in chapter 3.6 which already ran 5,273 words on a 2,000–4,000 bound.
 The recommendation is that the transport's seven fences want their own chapter. The
@@ -44,10 +50,14 @@ ADR-01).
 dependency and **new to the api**; `nodemailer` for SMTP, the first new runtime
 dependency since chapter 3.4's `nats` client; `ws` in the gateway, unchanged.
 
-**Storage**: Redis for the counters (`rl:{env}:{bucket}`, the key shape SAD §6.3
-specifies), fixed window with the TTL doing the cleanup. Postgres for the limit
-policy, because a policy is not ephemeral and losing it must not grant unlimited
-traffic. One migration, `0008`, adding a nullable per-environment override.
+**Storage**: Redis for the counters, fixed window with the TTL doing the cleanup.
+The key is `rl:{environment_id}:{operation}:{window}` — SAD §6.3 specifies
+`rl:{env}:{bucket}`, and this **extends** that shape rather than matching it: the
+operation and the window go in the key so one `INCR` reaches the right counter and
+the key expires itself. Same prefix, same store, same ephemerality. Postgres for
+the limit policy, because a policy is not ephemeral and losing it must not grant
+unlimited traffic. One migration, `0008`, adding a nullable per-environment
+override.
 
 **Testing**: Vitest, two lanes. Unit for the bucket arithmetic and the fallback
 counter, which are pure. Integration against the compose stores for the middleware,
@@ -97,8 +107,8 @@ platform rather than in this plan, and is closed by this chapter's FR-003 and R5
 ```text
 specs/029-chapter-3-8/
 ├── plan.md              # This file
-├── spec.md              # 35 FR, 4 user stories, 10 SC
-├── research.md          # Phase 0 — R1…R10
+├── spec.md              # 36 FR, 4 user stories, 10 SC
+├── research.md          # Phase 0 — R1…R11
 ├── data-model.md        # Phase 1
 ├── quickstart.md        # Phase 1 — V0…V11
 ├── contracts/
@@ -219,11 +229,13 @@ made with the word count in hand instead of predicted now.
 
 | Requirement | Where it is decided | How it is verified |
 |---|---|---|
-| FR-001, FR-006, FR-007 | research R1, R4 | `limits.itest.ts`; SC-003's two environments |
-| FR-002, FR-014 | research R1, R6 | headers asserted on 200s, not only 429s |
+| FR-001, FR-006 | research R1, R4 | `limits.itest.ts`; SC-003's two environments |
+| FR-007 | research R4 | T011a — an override set to 2 refuses the third request while a default environment is untouched |
+| FR-002 | research R1, R11 | headers asserted on 200s, not only 429s |
+| FR-014 | research R6 | T025a — `Limit` present, `Remaining` and `Reset` absent, store down |
 | FR-003 | research R5 | the 429 body's four fields |
 | FR-004, FR-005 | research R7 | `session.test.ts`; the pre-handshake 429 |
-| FR-008 | spec, rewritten at validation | a test that distinguishes counting requests from counting messages |
+| FR-008, FR-036 | research R11, added after analysis | T018a — ten messages in one request; the request limit drops by one and the send limit by ten, and the headers follow the nearer of the two |
 | FR-009 | research R2 | an internal-seam call under load, unthrottled |
 | FR-010, FR-011, FR-015 | research R3 | Redis stopped mid-run; both halves in one outage |
 | FR-012 | research R2, R4 | per-IP failures past the threshold |

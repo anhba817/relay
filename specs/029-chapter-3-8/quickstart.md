@@ -1,16 +1,16 @@
 # Quickstart — chapter 3.8
 
-Eleven checks. Read exit codes, not output. Where a step asserts a number, the
-number comes from `contracts/limits.md`.
+Twelve checks, V0 through V11. Read exit codes, not output. Where a step asserts a
+number, the number comes from `contracts/limits.md`.
 
 Prerequisites: `docker compose up -d --wait` from `relay-platform` — now five
 services, Mailpit included. `. env.sh` for the non-default ports the lane uses.
 
-**Estimated wall clock: about 25 minutes**, of which V8's twenty lane runs are
-none — this chapter has no intermittent defect to measure, so there are none.
-Chapter 3.7's quickstart claimed three hours for a step that took one, and the
-figure came from a chapter earlier still. Any number here that was not measured is
-marked as an estimate.
+**Estimated wall clock: about 25 minutes.** No step runs the lane repeatedly —
+this chapter has no intermittent defect whose rate needs measuring, which is the
+only thing that justified chapter 3.7's twenty runs. Twenty-five minutes is a
+guess and is labelled as one — 3.7's quickstart claimed three hours for a step that
+took one, and that figure had been carried unmeasured from a chapter earlier still.
 
 ---
 
@@ -51,6 +51,14 @@ Send again and `Remaining` is 598. **This is the requirement most likely to be
 built as an afterthought**, because a limiter that only speaks when it refuses
 passes any test written from the 429.
 
+**Which limit are those headers describing?** A `POST …/messages` decrements both
+the request and the send limit, and the headers report whichever has fewer
+remaining (research R11). Send ten messages in one request and check: the request
+limit drops by one, the send limit by ten, and the headers follow the send limit
+from then on. A limiter that counts requests and one that counts messages are
+indistinguishable on single-message traffic, so this is the only shape that tells
+them apart.
+
 ---
 
 ## V2 — The refusal, and that honouring it is sufficient
@@ -58,7 +66,9 @@ passes any test written from the 429.
 Drive one environment past its allowance, then read the refusal and obey it.
 
 Expected: `429`, `Retry-After: N`, `X-RateLimit-Remaining: 0`, and a body with
-**four** fields — `code`, `message`, `docs_url`, `request_id`.
+**four** fields — `code`, `message`, `docs_url`, `request_id`. The `message` names
+*which* limit was reached: "too many requests" and "too many messages" are
+different problems, one saying batch and the other saying slow down.
 
 Then wait N seconds and send again: it succeeds.
 

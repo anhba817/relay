@@ -15,8 +15,8 @@ nothing closes with it. Twenty-two chapters have shipped past two constants that
 describe a mechanism nobody built.
 
 This chapter builds it, for the half of FR-RTL that does not need a metering
-pipeline: per-environment token buckets on REST requests, message sends and
-connection establishment, with the three standard headers on **every** response
+pipeline: per-environment fixed-window counters on REST requests, message sends
+and connection establishment, with the three standard headers on **every** response
 rather than only on the rejection.
 
 **The chapter's argument is what happens when the limiter breaks.** Rate limits
@@ -218,7 +218,10 @@ names a chapter that has not happened yet.
   requests, message sends and connection establishment (FR-RTL-01).
 - **FR-002**: Every response subject to a limit MUST carry
   `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`, on
-  successful responses as well as refusals (FR-RTL-02).
+  successful responses as well as refusals (FR-RTL-02). Where a request is counted
+  against more than one limit, the headers MUST describe the limit with the fewest
+  remaining — the only one a client can schedule against — and `Reset` MUST be that
+  same limit's (research R11).
 - **FR-003**: A refused REST request MUST return `429` with a `Retry-After` header
   and an error body carrying `code`, `message`, `docs_url` and `request_id`
   (FR-RTL-03, constitution V).
@@ -236,9 +239,16 @@ names a chapter that has not happened yet.
   one message, whichever of the two is counted, the test MUST distinguish it from
   the other — a limiter that counts requests and a limiter that counts messages
   behave identically on single-message traffic, so single-message traffic cannot
-  verify either.
+  verify either. With FR-036 in force the distinguishing case is concrete: ten
+  messages in one request decrement the request limit by one and the send limit by
+  ten.
 - **FR-009**: Calls arriving over the internal service seam MUST NOT be subject to
   customer rate limits.
+- **FR-036**: A message sent over the REST path MUST be counted against both the
+  request limit and the send limit, and a refusal MUST name which of the two was
+  reached. A limit a client can lift by moving the same traffic to the socket is not
+  a limit; a refusal that does not say whether to batch or to slow down is not
+  actionable (research R11).
 
 #### Failure behaviour
 
@@ -421,8 +431,10 @@ names a chapter that has not happened yet.
 - **Rate limiting by API key rather than by environment.** The SRS says per-tenant
   and the environment is the tenant boundary this platform enforces (constitution
   I). Per-key limits are a finer cut nobody has asked for.
-- **A distributed algorithm with stronger guarantees than a token bucket.** The
-  SAD already names the mechanism and the key shape.
+- **A limiter that smooths instantaneous rate.** A fixed window allows up to
+  twice the limit across a boundary and the chapter states the number rather than
+  claiming otherwise. Sliding windows and leaky buckets buy that smoothing with an
+  `X-RateLimit-Reset` that cannot be computed honestly (research R1).
 
 ## Dependencies
 

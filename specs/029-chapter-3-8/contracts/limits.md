@@ -16,6 +16,20 @@ limiter something a client can schedule against rather than discover.
 | `X-RateLimit-Remaining` | how many are left, after counting this request |
 | `X-RateLimit-Reset` | unix seconds at which the window ends and the allowance returns |
 
+### When a request is counted twice
+
+A `POST /v1/channels/{id}/messages` is both a REST request and a message send, and
+it decrements **both** limits. The headers describe **whichever has fewer
+remaining**, and `Reset` is that same limit's; a tie reports the request limit.
+
+That is the only value a client can plan against. A client with 400 request-slots
+and 12 send-slots left needs to hear 12 — reporting 400 would be a header that
+lies by omission.
+
+Both are counted rather than one, because a limit a client can lift by moving the
+same traffic to the socket is not a limit. A message costs the same downstream
+whichever door it came through.
+
 `Remaining` decreases monotonically within one window. It does not go negative:
 requests beyond the allowance are refused, and the refusal reports `0`.
 
@@ -52,7 +66,13 @@ content-type: application/json
 
 `Retry-After` is seconds, and honouring it is sufficient — a request issued after
 that interval succeeds (FR-003, and the scenario in `quickstart.md` V2 proves the
-sufficiency rather than assuming it).
+sufficiency rather than assuming it). It is the reset of the limit that actually
+refused, which for a REST send may be either of the two.
+
+**The message names which limit was reached.** "Too many requests" and "too many
+messages" are different problems: one says batch, the other says slow down. The
+`code` stays `rate_limited` — it is the protocol constant — and the message carries
+the distinction. Neither names a credential (NFR-SEC-06).
 
 **`request_id` in the body is new.** The envelope has carried `code`, `message` and
 `docs_url` since chapter 1.3, above a comment saying the fourth field would arrive
@@ -60,9 +80,6 @@ sufficiency rather than assuming it).
 four fields; this chapter adds the fourth **to every error response**, not only to
 this one, because a four-field envelope on one status and three on the others is
 worse than either consistent answer.
-
-**The message never names a credential** (NFR-SEC-06). It names the environment's
-condition, not who asked.
 
 ---
 
@@ -164,6 +181,11 @@ one boundary — 1,200 requests in the two minutes spanning a window edge. State
 because a limiter documented as stricter than it is will be planned against
 incorrectly. The limit bounds sustained load; it does not smooth instantaneous
 rate.
+
+**A REST send decrements both the request and the send limit**, so 600 single-message
+requests exhaust both at once, while 60 requests of ten messages each exhaust the
+send limit with 540 request-slots still unused. The headers report whichever is
+closer.
 
 ---
 

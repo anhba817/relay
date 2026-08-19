@@ -1,9 +1,11 @@
 # Research — chapter 3.8, "Limits you can see coming"
 
-Phase 0. Ten items. R3 is the chapter's central decision and the spec deliberately
-left it open. R5 found a **second unenforced contract** the chapter has to close
-whether it wants to or not. R10 quantifies the size risk the spec flagged and the
-answer is not the one the scope decision assumed.
+Phase 0. Eleven items. R3 is the chapter's central decision and the spec
+deliberately left it open. R5 found a **second unenforced contract** the chapter
+has to close whether it wants to or not. R10 quantifies the size risk the spec
+flagged and the answer is not the one the scope decision assumed. **R11 was added
+after `/speckit-analyze`**, which found that nothing said which bucket a REST send
+decrements.
 
 ---
 
@@ -51,6 +53,20 @@ member per request) — rejected: it stores one entry per request in a store the
 says holds ephemeral state only, and it makes memory proportional to traffic.
 GCRA / leaky bucket via Lua — rejected for the `Reset` reason above, and because a
 Lua script is a second language in the request path (constitution VII).
+
+**Does contradicting the SAD need an ADR?** Chapter 3.2's research answered the
+same question about ADR-05 and the answer here is the same in form: no. This is a
+service-local algorithm choice inside a component the SAD already places, not a new
+architectural boundary — the store, the key prefix and the ephemerality are all
+unchanged, and constitution VII asks for an ADR when a *decision* changes, not when
+an implementation reads a document's own inconsistency in the direction its TTL
+column points. If a reviewer wants it recorded architecturally, the right form is a
+sentence in SAD §6.3 replacing "Token buckets" with "Fixed-window counters",
+because that row currently names two algorithms at once.
+
+**Reversal condition** — the thing R1 was missing and constitution VII asks for:
+revisit if a customer needs the boundary burst smoothed, or if `X-RateLimit-Reset`
+stops being a required header. Either removes the reason fixed window won.
 
 ---
 
@@ -416,6 +432,52 @@ Phase order is doing the hedging so nobody has to decide twice.
 
 **If both halves ship together**, the chapter will be over the bound and the
 battery must say so with the number, as 3.6's did.
+
+---
+
+## R11 — Which bucket a REST send decrements
+
+**Raised by analysis, not by the plan.** Three buckets are defined — `rest`,
+`send`, `connect` — and a `POST /v1/channels/{id}/messages` is both a REST request
+and a message send. Nothing said whether it decrements one, the other, or both,
+and FR-002 describes **one** set of headers. A client reading `Remaining: 599`
+could not tell which allowance it had just read.
+
+**Decision: both are decremented, and the headers report whichever has fewer
+remaining.** Ties report `rest`.
+
+**Why both.** The alternative — `send` counts socket frames only, `rest` counts
+HTTP — is tidier and lets a customer double their send rate by using both
+transports at once. The limit exists to bound sustained load on the platform, and
+a bound a client can lift by opening a socket is not a bound. A message costs the
+same downstream whichever door it came through.
+
+**Why the nearest limit.** The headers can only describe one bucket, so they must
+describe the one that will refuse first — that is the only value a client can
+schedule against. `X-RateLimit-Reset` is that same bucket's reset, and a refusal's
+`Retry-After` comes from the bucket that actually refused. Reporting the *higher*
+remaining would be a header that lies by omission: a client with `Remaining: 400`
+on `rest` and `12` on `send` needs to hear 12.
+
+**The refusal names which limit was hit** in its `message`, because "too many
+requests" and "too many messages" are different things for a client to fix — one
+means batch, the other means slow down. The code stays `rate_limited` (the
+protocol constant); the message carries the distinction, and neither names a
+credential (NFR-SEC-06).
+
+**This is what FR-008 was rewritten to catch.** A limiter counting requests and one
+counting messages are indistinguishable on single-message traffic. With both
+buckets live, a batch of ten messages in one request decrements `rest` by 1 and
+`send` by 10 — and a test that sends batches is the only thing that can tell the
+implementation got it right.
+
+**Alternatives considered.** One bucket for everything — rejected: it cannot
+express "few large batches" and "many small requests" as different loads, which is
+the distinction the two numbers exist for. Reporting all three buckets in
+repeated headers — rejected: `X-RateLimit-*` has no established multi-value
+convention and a client parsing the first occurrence would read an arbitrary one.
+
+---
 
 ---
 

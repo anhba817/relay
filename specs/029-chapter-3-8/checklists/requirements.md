@@ -41,8 +41,11 @@ The item exists to catch a spec that over-constrains the solution — one that p
 a technology the requirement did not ask for. Everything named here is **already
 decided in a document this spec is downstream of**:
 
-- `rl:{env}:{bucket}` token buckets in Redis are specified in SAD §6.3's key table
-  against FR-RTL-01. The spec cites that choice; it does not make it.
+- Redis as the counter store and the `rl:` key prefix are specified in SAD §6.3's
+  key table against FR-RTL-01. The spec cites that choice; it does not make it.
+  (The SAD's row also says "Token buckets", which research R1 later found
+  contradicts the same row's TTL column — see R1 for why the chapter builds a fixed
+  window and why that is not an ADR.)
 - `X-RateLimit-Limit`, `-Remaining`, `-Reset`, `429` and `Retry-After` are the
   literal text of FR-RTL-02 and FR-RTL-03. Paraphrasing them would lose the
   requirement.
@@ -93,6 +96,39 @@ wrong to answer.
 - **Whether the mail transport is a section or a split.** Recorded as a size risk
   in Assumptions. Three of the last four Part 3 chapters exceeded the word bound;
   the plan should estimate the fence budget before the prose is written.
+
+### What `/speckit-analyze` found that this checklist did not
+
+Recorded because a validation pass that only reports itself passing is one nobody
+trusts. Four findings, and the first two are the ones this checklist should have
+caught.
+
+**A1 — the biggest, and it was a hole rather than a wording problem.** Three
+buckets were defined (`rest`, `send`, `connect`) and a `POST …/messages` is both a
+REST request and a message send. Nothing said whether it decrements one, the other,
+or both — and FR-002 describes **one** set of headers, so a client reading
+`Remaining: 599` could not tell which allowance it had read. The "requirements are
+testable and unambiguous" item was marked pass over it. Resolved by research R11 and
+FR-036: both are counted, the headers report whichever has fewer remaining, and the
+refusal names which limit was reached.
+
+**C1 — the spec said "token buckets" and research had chosen a fixed window.** Two
+of the four places carrying the stale word were *published* artifacts, the tutorial
+plan's table row and the site registry in both locales. This is the failure chapter
+3.7 spent itself on: a document promising something the code does not do.
+
+**C3 — the fixed-window decision contradicted a mechanism the SAD names, with no
+reversal condition and no answer to whether it needed an ADR.** Chapter 3.2's
+research had set the precedent of addressing that question explicitly; R1 did not.
+Both are now in R1.
+
+**G1 and G2 — two requirements that got built and never checked.** FR-007 had tasks
+creating three nullable columns and no task asserting an override changes anything;
+FR-014 had an implementation task and no assertion. Both are the shape this project
+keeps finding at the sabotage battery, and both now have tasks (T011a, T025a).
+
+Four of the eight edge cases also had no task. Three now sit in T006a; the
+disable/re-enable/disable case went into T049.
 
 ### One requirement carries a claim that may be wrong, on purpose
 
