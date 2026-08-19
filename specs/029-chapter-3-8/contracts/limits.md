@@ -18,17 +18,26 @@ limiter something a client can schedule against rather than discover.
 
 ### When a request is counted twice
 
-A `POST /v1/channels/{id}/messages` is both a REST request and a message send, and
-it decrements **both** limits. The headers describe **whichever has fewer
+**The send limit counts messages wherever they enter.** One message per operation on
+both transports — there is no batch send.
+
+| Operation | request limit | send limit |
+|---|---|---|
+| `POST …/messages` | −1 | −1 |
+| a `message.send` frame on an open socket | — | −1 |
+| any other REST call | −1 | — |
+
+A REST send therefore decrements **both**. The headers describe **whichever has fewer
 remaining**, and `Reset` is that same limit's; a tie reports the request limit.
 
-That is the only value a client can plan against. A client with 400 request-slots
-and 12 send-slots left needs to hear 12 — reporting 400 would be a header that
-lies by omission.
+That is the only value a client can plan against. A client with 400 request-slots and
+12 send-slots left needs to hear 12 — reporting 400 would be a header that lies by
+omission. The two diverge as soon as a client uses the socket, which is when the rule
+starts doing work.
 
-Both are counted rather than one, because a limit a client can lift by moving the
-same traffic to the socket is not a limit. A message costs the same downstream
-whichever door it came through.
+One budget covers both doors because a limit a client can lift by moving the same
+traffic to the socket is not a limit. A message costs the same downstream whichever
+door it came through.
 
 `Remaining` decreases monotonically within one window. It does not go negative:
 requests beyond the allowance are refused, and the refusal reports `0`.
@@ -204,10 +213,14 @@ because a limiter documented as stricter than it is will be planned against
 incorrectly. The limit bounds sustained load; it does not smooth instantaneous
 rate.
 
-**A REST send decrements both the request and the send limit**, so 600 single-message
-requests exhaust both at once, while 60 requests of ten messages each exhaust the
-send limit with 540 request-slots still unused. The headers report whichever is
-closer.
+**A REST send decrements both the request and the send limit**, so 600 REST sends
+exhaust both at once. Mix the transports and they diverge: 300 REST sends and 300
+socket frames leave the send limit spent with 300 request-slots unused, and the
+headers report whichever is closer.
+
+A socket send is counted by the gateway against the same shared counter the api uses,
+which is why the counter lives in Redis rather than in either process — two services
+increment one bucket and neither can see the other's memory.
 
 ---
 

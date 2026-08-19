@@ -21,10 +21,15 @@ its window and nothing accumulates.
 | `window` | the window's start, floored — makes the key self-expiring and the reset time computable without storing it |
 
 **One request can touch two keys.** A `POST …/messages` increments `rest` by one and
-`send` by the number of messages it carries, so the two counters answer different
-questions: how much traffic, and how many messages. The response's headers describe
-whichever has fewer remaining, because that is the one that will refuse first
+`send` by one; a socket `message.send` frame increments `send` only. So `rest` counts
+HTTP requests and `send` counts messages **wherever they enter**, and the response's
+headers describe whichever has fewer remaining — the one that will refuse first
 (research R11).
+
+**`send` is written by two services.** The api increments it for REST sends, the
+gateway for socket frames, against the same `rl:{env}:send:{window}` key. That is why
+the counter is in Redis rather than in either process: neither service can see the
+other's memory, and one budget has to cover both doors.
 
 **Not a source of truth** (constitution IV, SAD §6.3). Total loss means every
 environment starts a fresh window and nobody is refused in the meantime. That is

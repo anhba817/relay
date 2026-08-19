@@ -247,6 +247,42 @@ They did not run out; they moved outward, and the last one came from the edge of
 the chapter touches rather than its centre. Stopping here is a judgement about cost —
 96 tasks are waiting — and not a claim that the artifacts are clean.
 
+### The sixth pass found the worst defect of all six, and it was self-inflicted
+
+**H1 — R11 invented a capability and built four documents on it.** Pass 1 found a
+real ambiguity: which bucket does a REST send decrement? The answer R11 gave justified
+two buckets on the grounds that they count different things, with the worked example
+*"a batch of ten messages in one request decrements `rest` by 1 and `send` by 10"*.
+
+`sendMessageBodySchema` is a `strictObject` with one `text` field. `messageSendSchema`
+on the socket is the same. **There is no batch send on either transport.** So both
+counters moved by one together, both defaults were 600, they would have exhausted in
+the same instant, and the header rule chose between two identical numbers.
+
+It propagated into FR-008's "distinguishing test" (unwritable), FR-036, SC-002, the
+contract's worked example, the quickstart's V1 and T018a — a requirement, a contract,
+a verification step and a task, all resting on a request nobody can make.
+
+**The answer that survives.** The send limit counts messages *wherever they enter*: a
+REST send decrements both budgets, a socket frame decrements only `send`. That keeps
+R11's one real insight — a limit a client can lift by switching transport is not a
+limit — and drops the fiction. The two counters now genuinely diverge, so the header
+rule has work to do, and the distinguishing test is buildable: five REST sends plus
+five socket frames leave `send` at 10 and `rest` at 5.
+
+It also made the design better in a way the first version missed. A socket send is
+counted by the **gateway**, against the same key the api uses, because the gateway's
+internal call is exempt from customer limits (FR-009). Two services incrementing one
+bucket is precisely why that counter belongs in Redis and not in either process — a
+justification the first answer never needed to make.
+
+**The lesson, and it is the lesson of all six passes.** Every pass that opened a
+source file none of its predecessors had read found something. The spec, plan,
+research, contract and quickstart were all written by a process that had never opened
+`messages.schema.ts` — the schema for the operation the send limit limits. Reasoning
+about a platform from its documents produces text that is internally consistent and
+externally false, and the reviews that only read documents cannot tell the difference.
+
 ### One requirement carries a claim that may be wrong, on purpose
 
 The Assumptions say this renumbering should be cheap because chapter 3.7 removed

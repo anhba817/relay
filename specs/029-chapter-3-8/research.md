@@ -473,51 +473,82 @@ battery must say so with the number, as 3.6's did.
 
 ---
 
-## R11 — Which bucket a REST send decrements
+## R11 — Which bucket a send decrements
 
-**Raised by analysis, not by the plan.** Three buckets are defined — `rest`,
-`send`, `connect` — and a `POST /v1/channels/{id}/messages` is both a REST request
-and a message send. Nothing said whether it decrements one, the other, or both,
-and FR-002 describes **one** set of headers. A client reading `Remaining: 599`
-could not tell which allowance it had just read.
+**Raised by the first analysis pass, and rewritten after the sixth found its first
+answer was built on a capability the platform does not have.** Both versions are kept
+below, because the mistake is more instructive than the fix.
 
-**Decision: both are decremented, and the headers report whichever has fewer
-remaining.** Ties report `rest`.
+**The question.** Three buckets are defined — `rest`, `send`, `connect`. A
+`POST /v1/channels/{id}/messages` is both a REST request and a message send. Which
+does it decrement, and FR-002 describes one set of headers, so which does it report?
 
-**Why both.** The alternative — `send` counts socket frames only, `rest` counts
-HTTP — is tidier and lets a customer double their send rate by using both
-transports at once. The limit exists to bound sustained load on the platform, and
-a bound a client can lift by opening a socket is not a bound. A message costs the
-same downstream whichever door it came through.
+### What the first answer said, and why it was wrong
 
-**Why the nearest limit.** The headers can only describe one bucket, so they must
-describe the one that will refuse first — that is the only value a client can
-schedule against. `X-RateLimit-Reset` is that same bucket's reset, and a refusal's
-`Retry-After` comes from the bucket that actually refused. Reporting the *higher*
-remaining would be a header that lies by omission: a client with `Remaining: 400`
-on `rest` and `12` on `send` needs to hear 12.
+It said both are decremented, headers report whichever has fewer remaining, and
+justified the two buckets as answering "different questions: how much traffic, and
+how many messages" — with the worked example that *"a batch of ten messages in one
+request decrements `rest` by 1 and `send` by 10"*.
 
-**The refusal names which limit was hit** in its `message`, because "too many
-requests" and "too many messages" are different things for a client to fix — one
-means batch, the other means slow down. The code stays `rate_limited` (the
-protocol constant); the message carries the distinction, and neither names a
-credential (NFR-SEC-06).
+**There is no batch send.** `sendMessageBodySchema` is a `strictObject` with a single
+`text` field, and `messageSendSchema` on the socket is the same: one operation, one
+message, both transports. That request cannot be made.
 
-**This is what FR-008 was rewritten to catch.** A limiter counting requests and one
-counting messages are indistinguishable on single-message traffic. With both
-buckets live, a batch of ten messages in one request decrements `rest` by 1 and
-`send` by 10 — and a test that sends batches is the only thing that can tell the
-implementation got it right.
+So on the REST path both counters moved by exactly one, both defaults were 600, and
+they would have exhausted in the same instant. The `send` bucket contributed nothing,
+the header rule chose between two identical numbers, and FR-008's "distinguishing
+test" was unwritable.
 
-**Alternatives considered.** One bucket for everything — rejected: it cannot
-express "few large batches" and "many small requests" as different loads, which is
-the distinction the two numbers exist for. Reporting all three buckets in
-repeated headers — rejected: `X-RateLimit-*` has no established multi-value
-convention and a client parsing the first occurrence would read an arbitrary one.
+**Read the schema, not the plan.** The rationale was reasoned out of the
+documents — every one of which was written by the same process that had never opened
+`messages.schema.ts`.
 
----
+### The answer that survives contact with the code
 
----
+**`send` counts messages wherever they enter. `rest` counts HTTP requests.**
+
+| Operation | `rest` | `send` |
+|---|---|---|
+| `POST …/messages` | +1 | +1 |
+| a `message.send` frame on an open socket | — | +1 |
+| any other REST call | +1 | — |
+
+**What this keeps from the first answer.** Its one real insight: a limit a client can
+lift by moving the same traffic to the socket is not a limit. A message costs the same
+downstream whichever door it came through, so one budget covers both doors.
+
+**What it drops.** The fiction that a request can carry many messages.
+
+**The two counters now genuinely differ**, so "the headers report whichever has fewer
+remaining" is a rule with work to do rather than a tie-break between equal numbers. A
+client sending over both transports spends `send` twice as fast as `rest`.
+
+**And the distinguishing test exists.** Five sends over REST and five frames over the
+socket leave `send` at 10 and `rest` at 5. That is what FR-008 asks for, and it is
+buildable.
+
+### Which service counts what, and why the counter is in Redis
+
+The gateway does not send through the public REST route; it calls
+`api.sendMessage(...)` over the internal seam, which FR-009 exempts from customer
+limits. So a socket send is counted **by the gateway**, against the same
+`rl:{env}:send:{window}` key the api uses for REST sends.
+
+**That shared key is why the counter lives in Redis rather than in either process.**
+Two services increment one bucket, and neither can see the other's memory. The
+exemption stays coherent: the gateway's internal call is not counted a second time as
+REST traffic, because the gateway already counted the send.
+
+**The refusal names which limit was reached** in its `message` — "too many requests"
+and "too many messages" are different problems, and on the socket only the second can
+happen. The `code` stays `rate_limited`; neither message names a credential
+(NFR-SEC-06).
+
+**Alternatives considered.** `send` covering the socket only and `rest` covering
+HTTP — rejected for the transport-hopping reason above, which is the part of the
+first answer that was right. One bucket for everything — rejected: it cannot express
+"a client hammering history reads" and "a client flooding messages" as different
+loads, which is the distinction the two numbers exist for.
 
 ## R12 — How the gateway learns a limit it cannot read
 

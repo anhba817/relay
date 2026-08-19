@@ -29,11 +29,14 @@ exists to mint one". It never did. That makes three pieces of vocabulary declare
 and unenforced — `rate_limited`, close code 4008, and the fourth field — and the
 chapter has to close the third one because FR-003 requires it in the 429 body.
 
-**A third finding came from `/speckit-analyze` rather than from planning.** Nothing
-said which bucket a `POST /messages` decrements — it is both a REST request and a
-message send, and FR-002 describes one set of headers. Research R11 settled it:
-both are counted, the headers report whichever has fewer remaining, and the refusal
-names which limit was reached. That added FR-036 and the test in T018a.
+**A third finding came from `/speckit-analyze` rather than from planning, and its
+first answer was wrong.** Nothing said which bucket a `POST /messages` decrements.
+R11's first answer justified two buckets with a batch send — ten messages in one
+request — and **there is no batch send**: both `sendMessageBodySchema` and
+`messageSendSchema` carry a single `text`. The sixth pass caught it. The answer that
+survives is a cross-transport one: the send limit counts messages wherever they
+enter, so a client cannot lift its message budget by switching transport, and the two
+counters diverge the moment the socket is used. FR-036, FR-036a, T018a and T018b.
 
 Research R10 put a number on the size risk the spec flagged: about **35 fences**,
 **28 of them the limiter half alone**, against 21 in chapter 3.6 which already ran
@@ -250,7 +253,7 @@ made with the word count in hand instead of predicted now.
 | FR-037 | research R12 | T034a — a configured connect limit enforced with no db client, and a mid-connection change that does not apply until reconnect |
 | FR-038 | research R13 | T031c; every `error` frame carries an id |
 | FR-039 | research R14 | T030b — ten client addresses counted as ten, not as one gateway |
-| FR-008, FR-036 | research R11, added after analysis | T018a — ten messages in one request; the request limit drops by one and the send limit by ten, and the headers follow the nearer of the two |
+| FR-008, FR-036, FR-036a | research R11, rewritten after the sixth pass | T018a — five REST sends plus five socket frames leave send at 10 and rest at 5; T018b — a socket send counted once, by the gateway, against the shared key |
 | FR-009 | research R2 | an internal-seam call under load, unthrottled |
 | FR-010, FR-011, FR-015 | research R3 | Redis stopped mid-run; both halves in one outage |
 | FR-012 | research R2, R4, R15 | per-IP failures past the threshold; T004a measures what the lane already produces, T025b/c make the threshold configuration |

@@ -52,13 +52,16 @@ Send again and `Remaining` is 598. **This is the requirement most likely to be
 built as an afterthought**, because a limiter that only speaks when it refuses
 passes any test written from the 429.
 
-**Which limit are those headers describing?** A `POST …/messages` decrements both
-the request and the send limit, and the headers report whichever has fewer
-remaining (research R11). Send ten messages in one request and check: the request
-limit drops by one, the send limit by ten, and the headers follow the send limit
-from then on. A limiter that counts requests and one that counts messages are
-indistinguishable on single-message traffic, so this is the only shape that tells
-them apart.
+**Which limit are those headers describing?** A `POST …/messages` decrements both the
+request and the send limit; a socket `message.send` frame decrements the send limit
+only. The headers report whichever has fewer remaining (research R11).
+
+**Mix the transports — that is the only shape that tells the two apart.** Five sends
+over REST and five frames over the socket leave the send limit at 10 and the request
+limit at 5, and the headers follow the send limit from then on. On one transport alone
+the two counters move together and a limiter counting requests is indistinguishable
+from one counting messages. There is no batch send on either transport: one operation,
+one message.
 
 ---
 

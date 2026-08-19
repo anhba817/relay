@@ -238,17 +238,22 @@ names a chapter that has not happened yet.
   test MUST assert the count against that unit. Where one request carries more than
   one message, whichever of the two is counted, the test MUST distinguish it from
   the other — a limiter that counts requests and a limiter that counts messages
-  behave identically on single-message traffic, so single-message traffic cannot
-  verify either. With FR-036 in force the distinguishing case is concrete: ten
-  messages in one request decrement the request limit by one and the send limit by
-  ten.
+  behave identically on one transport alone, so traffic on one transport cannot
+  verify either. With FR-036 in force the distinguishing case is concrete: five sends
+  over REST and five frames over the socket leave the send limit at ten and the
+  request limit at five.
 - **FR-009**: Calls arriving over the internal service seam MUST NOT be subject to
   customer rate limits.
-- **FR-036**: A message sent over the REST path MUST be counted against both the
-  request limit and the send limit, and a refusal MUST name which of the two was
-  reached. A limit a client can lift by moving the same traffic to the socket is not
-  a limit; a refusal that does not say whether to batch or to slow down is not
-  actionable (research R11).
+- **FR-036**: The send limit MUST count messages wherever they enter — a REST send
+  decrements both the request limit and the send limit; a `message.send` frame on an
+  open socket decrements the send limit only. A refusal MUST name which limit was
+  reached. **A limit a client can lift by moving the same traffic to the other
+  transport is not a limit**, and a refusal that does not say which budget is gone is
+  not actionable (research R11).
+- **FR-036a**: A socket send MUST be counted by the gateway against the same shared
+  counter the api uses for REST sends. The internal-seam exemption (FR-009) MUST NOT
+  cause a socket send to be counted twice, nor to escape counting altogether
+  (research R11).
 - **FR-037**: The gateway MUST enforce the environment's configured connect and send
   limits without reading the database. It has no database client and MUST NOT gain
   one; the limits MUST reach it on the internal authentication response it already
@@ -359,8 +364,9 @@ names a chapter that has not happened yet.
 - **SC-002**: Every successful response to a limited operation carries all three
   headers, and `Remaining` decreases monotonically across a run inside one window.
   Where a request is counted against two limits, the headers describe the one with
-  fewer remaining, demonstrated with a batch rather than with single-message
-  traffic.
+  fewer remaining, demonstrated with traffic across both transports rather than on
+  one alone — on one transport the two counters move together and the rule cannot be
+  seen to work.
 - **SC-003**: Two environments of one application are driven independently: one at
   its limit, the other unaffected.
 - **SC-004**: With the bucket store stopped mid-run, customer traffic continues to
