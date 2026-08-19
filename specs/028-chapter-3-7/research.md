@@ -19,7 +19,7 @@ backfill emits each message in its page once, so one copy came from each.
 send path, `session.ts`:
 
 ```text
-committed = await api.send(...)      // the api commits; the seq now exists in Postgres
+committed = await api.sendMessage(...)   // the api commits; the seq now exists in Postgres
 …
 await fanout?.publish({ … })         // only now does Redis hear about it
 ```

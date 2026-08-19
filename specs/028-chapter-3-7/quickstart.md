@@ -25,17 +25,36 @@ string decodes to 48 bytes and every webhook suite fails.
 for i in $(seq 1 20); do pnpm test:integration >/dev/null 2>&1; echo "$i $?"; done
 ```
 
-Expected: at least one failure in `packages/e2e/src/tuan.itest.ts`, journey 4,
-with `expected [ 1, 2, 3, 4, 4 ] to deeply equal [ 1, 2, 3, 4 ]`.
+Expected when this was written: at least one failure in
+`packages/e2e/src/tuan.itest.ts`, journey 4, with
+`expected [ 1, 2, 3, 4, 4 ] to deeply equal [ 1, 2, 3, 4 ]`.
+
+**MEASURED: zero failures in twenty runs.** The instruction below said to say so if
+that happened, so: it happened. Chapter 3.6 observed one failure in six runs and
+this chapter's spec repeated the figure; six runs is a thin sample and one failure
+in it supports anything from 2% to 40%.
+
+The better explanation is about the defect rather than the statistics. The race
+needs a backfill query to land inside the gap between an api commit and a Redis
+publish, and that gap widens under load. When 3.6 measured, the lane took nine
+minutes because the database held 4,068 pending webhook deliveries being retried
+against dead endpoints at three seconds each. That backlog was cleared at the end
+of 3.6. The defect did not get rarer; the conditions that exposed it went away.
+
+**This makes SC-001 a criterion that cannot fail** — twenty consecutive passes
+happen before the fix. Kept as a no-regression check and demoted in writing; V1
+carries the proof. See `baseline.txt` T005.
 
 **Run this first and record the count.** SC-001 asks for twenty consecutive passes
 after the fix, and that number says nothing without knowing what twenty runs
-looked like before it. Chapter 3.6 observed one failure in six runs; if twenty
-pre-fix runs produce none, say so — it means the rate is lower than measured and
-the deterministic test below is carrying the entire proof.
+looked like before it.
 
-Each run takes about nine minutes with the lane serialised, so this is three hours
-of wall clock. It is the only honest way to state a rate.
+A run takes about three minutes with the lane serialised, so twenty is roughly an
+hour. **The nine-minute figure this step first carried was wrong by a factor of
+three**: it came from chapter 3.6, when the pending-delivery backlog was
+saturating the machine, and nobody remeasured after clearing it. A three-hour
+price tag is the kind of number that gets a measurement cut, and cutting this one
+would have hidden everything above.
 
 ## V1 — The deterministic failure
 
@@ -43,12 +62,18 @@ of wall clock. It is the only honest way to state a rate.
 pnpm --filter @relay/gateway test:integration src/resume.itest.ts
 ```
 
-Expected **before the fix**: the new fourth-quadrant test fails, every time. It
-publishes a frame the backfill already delivered, after the resume has completed,
-and the client receives it twice.
+Expected **before the fix**: two of the three new tests fail, every time — the
+fourth-quadrant test and the out-of-order one. Both publish a frame the backfill
+already delivered, after the resume has completed, and the client receives it
+twice: `expected [ 42, 42 ] to deeply equal [ 42 ]`, in four seconds.
 
-Expected **after the fix**: it passes, and so do the three that were already
-there.
+The third new test — the degraded resume — PASSES before the fix, and that is
+correct rather than a defect in it. Nothing suppresses anything yet, so of course
+the frame arrives. It guards the direction this change could break, and a test
+that only starts working after the change cannot do that.
+
+Expected **after the fix**: six passed, the three chapter 2.7 wrote and the three
+added here.
 
 **Watch it fail before you make it pass.** A regression test that has never been
 seen to fail is a regression test nobody has checked — chapter 3.5 shipped an
@@ -88,12 +113,20 @@ received.
 
 ## V5 — Out-of-order publication
 
-Publish sequence 5 and then sequence 4, both at or below the mark, after a resume
-has completed.
+After a resume that set the mark to 42, publish sequence 43 — **above** the mark —
+and only then the delayed 42.
 
-Expected: neither is delivered. This is the case that made the spec's original
-design unsafe — it assumed the mark could be retired once a higher sequence
-arrived, which would have delivered the 4.
+Expected: `[42, 43]`. The 43 is delivered because it is above the mark; the 42 is
+suppressed because the backfill already sent it. This is the case that made the
+spec's original design unsafe: a rule retiring the mark on the higher sequence
+would have nothing left when the delayed lower one lands, and would deliver the 42
+a second time.
+
+**This step first described the wrong scenario and the fifth sabotage mutation is
+what caught it.** It said to publish 5 then 4 with both at or below the mark and
+expect neither delivered — under which retirement never fires, so the test passed
+against code that retired. The frame above the mark is not decoration; it is the
+only thing that arms the mechanism under test. See `captured-output.md`.
 
 ## V6 — The sabotage check
 
@@ -133,9 +166,19 @@ in one file.
 pnpm coverage
 ```
 
-Expected: exit 0, every ratchet intact. `resume.ts` is a pure module and the new
-predicate is pure; it should reach 100% branches without effort, and if it does
-not, the missing branch is a case the tests have not thought of.
+Expected: exit 0, every ratchet intact, and `services/gateway/src/resume.ts`
+RAISED from its old pin of 93 — a ratchet left at its previous number is a ratchet
+that has stopped ratcheting.
+
+**Not to 100, and the reason is in the file rather than in the tests.** This step
+first expected 100% branches on the grounds that `resume.ts` is pure and the new
+predicate is pure. It reaches 95. The branch it cannot cover is `if (timer)` in
+`withDeadline`: the promise settles before the `finally` can observe the handle,
+so the false arm is unreachable without deleting a defensive check that costs
+nothing. Pinned at 95 with that named in a comment beside the number, so the next
+person to read it does not go looking for a missing test.
+
+Functions, lines and statements are pinned at 100.
 
 ## V8 — The site
 

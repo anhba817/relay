@@ -36,8 +36,13 @@ One fence is not a file and is excluded from the count of nine: the `(excerpt)`
 showing the gateway's two `await`s, which the chain checker skips by design. It
 is the only fence in the chapter that is not byte-generated from the repository,
 and it is an excerpt because the two statements it puts next to each other are
-sixty lines apart in the real file — which is most of why nobody saw them as two
-instants.
+twenty lines apart in the real file (`session.ts:404` and `:424`), separated by
+the ack and nineteen lines of comment about ordering — which is most of why
+nobody saw them as two instants.
+
+It also carried a method name that does not exist: `api.send` where the real call
+is `api.sendMessage`. Caught while checking the twenty-line claim, which is an
+argument for checking claims that sound like decoration.
 
 SCHEMA.TS AND WEBHOOK-WALK.MJS ARE THE REASON FOR T035. Both chains end in
 chapter 3.6, so their HEAD check fails the moment this chapter's commit lands
