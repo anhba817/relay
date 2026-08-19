@@ -85,6 +85,21 @@ for them to understand.
   at-most-once fabric behaving as designed, and the client's own sequence handling
   is what resolves it. This chapter fixes duplication against the backfill, not
   fabric ordering in general.
+- **Protection from a client that misreports its own cursor.** The cursor is
+  supplied by the client and validated only as a non-negative integer, and the mark
+  is seeded from it for any channel the backfill did not cover. A client presenting
+  `cursor=<channel>:999999999` therefore suppresses every live frame on that
+  channel for the life of the connection.
+
+  That is a widening: before this chapter a nonsense cursor only emptied the
+  backfill, and live frames still arrived. It is left as it is on purpose. The
+  client has asserted it already holds those sequences, the backfill has always
+  taken that assertion at face value, and a platform that second-guessed it would
+  need to know the channel's head sequence on a path that deliberately does not
+  query for it. The blast radius is one connection and it is self-inflicted; no
+  other client, tenant or channel is affected. A client that resumes with a bad
+  cursor recovers by reconnecting with a correct one.
+
 - **Deduplication of anything but `message.created`.** Later frame types that
   carry an original sequence — an edit, a tombstone — are not covered by a
   sequence floor and must not be, since their sequence is deliberately old. The

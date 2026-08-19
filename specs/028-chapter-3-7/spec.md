@@ -137,6 +137,10 @@ cites a chapter number that does not name what it claims to name.
   one live.
 - A message whose sequence is below the mark because it was *edited* or
   tombstoned rather than created (a later chapter's frame types).
+- A client presenting a cursor far above anything the channel holds. The cursor is
+  client-supplied and checked only for being a non-negative integer, so the mark it
+  seeds suppresses every live frame on that channel for the life of the connection
+  — where before this change it only emptied the backfill.
 
 ## Requirements *(mandatory)*
 
@@ -158,9 +162,20 @@ cites a chapter number that does not name what it claims to name.
   backfill would suppress messages the client never received.
 - **FR-006**: A fresh connection presenting no cursor MUST behave exactly as it
   does today, with no suppression and no retained state.
-- **FR-007**: The retained state MUST be bounded — it MUST NOT grow with the
-  connection's lifetime, and it MUST stop suppressing once the connection has
-  observed a sequence above the mark on that channel.
+- **FR-007**: The retained state MUST be bounded: at most one sequence per channel
+  in the resume cursor set, which the resume contract already caps at
+  `MAX_RESUME_CHANNELS`. It MUST NOT grow with the connection's lifetime.
+- **FR-007a**: A mark MUST NOT be retired while the connection lives. Observing a
+  sequence above the mark MUST NOT clear it.
+
+  This replaces an earlier version of FR-007 that required the opposite.
+  Retirement on observation looks like the natural way to bound the state, and it
+  reintroduces the defect: sequences commit in order under a channel row lock, but
+  they are published by whichever gateway instance handled each send, and those do
+  not coordinate. A prompt publish of sequence 5 can precede a stalled publish of
+  sequence 4, and a rule that retired the mark on 5 would then deliver the 4.
+  Research R3 has the timeline; FR-007's bound is what makes retirement
+  unnecessary.
 - **FR-008**: Delivery MUST remain correct when the platform is running more than
   one gateway instance: the mark belongs to a connection, not to an instance.
 
@@ -239,10 +254,16 @@ cites a chapter number that does not name what it claims to name.
 - **The mark is retained on the connection, not in Redis.** It describes what one
   socket has been shown, it dies with that socket, and putting it in shared state
   would make it a source of truth, which constitution IV forbids for Redis.
-- **The suppression is bounded by observation, not by a timer.** Once a connection
-  sees a sequence above the mark on a channel, the window that produced the
-  duplicate has closed for that channel and the mark can be retired. A timer would
-  be a guess about the length of the publish gap.
+- **The suppression is bounded by the cursor cap, and the mark is never retired.**
+  This spec first assumed the opposite — that a mark could be dropped once a higher
+  sequence arrived — and asked the plan to confirm the bound. Research R3 found the
+  assumption unsafe and unnecessary: unsafe because two gateway instances publish
+  without coordinating, so a higher sequence can arrive before a delayed lower one;
+  unnecessary because the mark set is already capped at 200 by
+  `MAX_RESUME_CHANNELS`, which the api enforces. Recorded as a correction rather
+  than edited away, because the reasoning that made retirement look right is the
+  same reasoning that made the original defect look closed.
+
 - **Chapter 2.7 is not rewritten.** It shows the state of the platform at its own
   time, which is the fence chain's premise. This chapter amends the code and
   explains the amendment; the earlier chapter stays as published.

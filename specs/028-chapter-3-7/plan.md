@@ -40,7 +40,9 @@ mark set is already capped at 200 by the resume contract.
 **Unknowns**: none. The one the spec flagged — whether the retained state is
 bounded without a retirement rule — is answered by R3: it is, by the
 `MAX_RESUME_CHANNELS` cap the resume contract already enforces, and the retirement
-rule the spec proposed is unsafe.
+rule the spec proposed is unsafe. The spec has since been corrected: FR-007 states
+the bound and FR-007a forbids retirement outright, so the requirement and the
+design no longer disagree.
 
 ## Constitution Check
 
@@ -91,7 +93,7 @@ relay-platform/
 ├── services/api/src/db/
 │   └── schema.ts              # AMEND: two chapter-number comments (R6)
 ├── scripts/webhook-walk.mjs   # AMEND: one chapter-number comment (R6)
-└── vitest.coverage.config.mts # AMEND: pin the predicate, if it is not already covered
+└── vitest.coverage.config.mts # AMEND: raise resume.ts's branch pin (already at 93)
 
 relay-tutorial/
 ├── app/(en)/part-3/chapter-07/commit-and-publish-are-two-instants/{page.mdx,figures.ts}
@@ -145,6 +147,7 @@ Two ordering constraints worth stating now:
 | FR-005 | contracts/resume.md § degraded | `resume.itest.ts` — a degraded resume retains nothing |
 | FR-006 | data-model.md — null for a fresh connect | `session.test.ts` — no cursor, no suppression |
 | FR-007 | research R3 — the `MAX_RESUME_CHANNELS` cap | `resume.test.ts` — the mark set never exceeds the cursor set |
+| FR-007a | research R3 — out-of-order publication | `resume.itest.ts` — sequence 5 then sequence 4, both suppressed |
 | FR-008 | research R3 — the mark is per connection | `resume.itest.ts` — publish as another instance |
 | FR-009 | the chapter's own prose | battery check at chapter end |
 | FR-010 | quickstart V2 | captured-output.md |

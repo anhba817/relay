@@ -55,12 +55,19 @@ added, and FR-019 deliberately covers the reference that is **already** stale fr
 the previous insertion — the gauntlet moved to 3.8 during chapter 3.6's work and
 `schema.ts` still calls it 3.7.
 
-**One judgement recorded rather than resolved.** The spec assumes the suppression
-is retired by observation (a sequence above the mark) rather than by a timer. A
-timer would be a guess about the length of the publish gap; observation is exact
-but keeps a small amount of state on a quiet channel for as long as the channel is
-quiet. FR-007 bounds it; the plan should confirm the bound is genuinely constant
-before implementation.
+**The judgement that was recorded rather than resolved is now resolved, against
+the spec.** The spec assumed suppression would be retired by observation — a
+sequence above the mark clears it — and asked the plan to confirm the bound.
+Research R3 found the rule unsafe: two gateway instances publish without
+coordinating, so a prompt sequence 5 can precede a stalled sequence 4, and
+retiring on the 5 delivers the 4. FR-007 now states the real bound (the
+`MAX_RESUME_CHANNELS` cap) and FR-007a forbids retirement outright.
+
+Caught by `/speckit-analyze`, not by the plan. The plan and the data model were
+both corrected when R3 landed; the spec was not, so for one commit the
+requirements mandated the behaviour the design refused to build. That is the same
+drift chapter 3.6's analysis passes found three times — a fix applied to one
+artifact and not to its source.
 
 Items marked incomplete require spec updates before `/speckit-clarify` or
 `/speckit-plan`. None are.
