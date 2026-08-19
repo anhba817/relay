@@ -111,6 +111,11 @@ through the production environment of the **same** application.
 
 Expected: the second request succeeds with a full allowance.
 
+**Then give the two environments different configured limits** and confirm each is
+enforced at its own number. Independent counters are half of what the journey map asks
+for; the other half is *"separate keys and separate quotas"*, which means the dev
+environment's ceiling is Mai's to raise without moving production's.
+
 FR-RTL-04 exists because load-testing a dev environment must not throttle
 production. A single shared counter would be a cross-tenant fault of a new kind —
 one tenant's traffic refusing another's — which constitution I forbids as

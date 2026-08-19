@@ -121,8 +121,8 @@ this plan, and is closed by this chapter's FR-003 and R5.
 ```text
 specs/029-chapter-3-8/
 ├── plan.md              # This file
-├── spec.md              # 46 FR, 4 user stories, 14 SC
-├── research.md          # Phase 0 — R1…R24 (R11 and R14 rewritten after later passes)
+├── spec.md              # 48 FR, 4 user stories, 14 SC
+├── research.md          # Phase 0 — R1…R25 (R11 and R14 rewritten after later passes)
 ├── data-model.md        # Phase 1
 ├── quickstart.md        # Phase 1 — V0…V11
 ├── contracts/
@@ -261,7 +261,8 @@ made with the word count in hand instead of predicted now.
 
 | Requirement | Where it is decided | How it is verified |
 |---|---|---|
-| FR-001, FR-006 | research R1, R4 | `limits.itest.ts`; SC-003's two environments |
+| FR-001, FR-006 | research R1, R4, R25 | `limits.itest.ts`; SC-003's two environments, each at a **different configured limit** (T017a) |
+| FR-046, FR-047 | research R25 | T056b, T056c — the dev-load-testing sentence, and the placeholder `docs_url` recorded rather than implied |
 | FR-007 | research R4 | T018c — an override set to 2 refuses the third request while a default environment is untouched |
 | FR-002 | research R1, R11 | headers asserted on 200s, not only 429s |
 | FR-014 | research R6 | T025a — `Limit` present, `Remaining` and `Reset` absent, store down |

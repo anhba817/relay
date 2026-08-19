@@ -1,6 +1,6 @@
 # Research — chapter 3.8, "Limits you can see coming"
 
-Phase 0. Twenty-four items. R3 is the chapter's central decision and the spec
+Phase 0. Twenty-five items. R3 is the chapter's central decision and the spec
 deliberately left it open. R5 found a **second unenforced contract** the chapter
 has to close whether it wants to or not. R10 quantifies the size risk the spec
 flagged and the answer is not the one the scope decision assumed. **R11 was added
@@ -1136,6 +1136,78 @@ behaviour, permanently, because of a missing line in a YAML file.
 service had the same gap. It does not — `gateway` already carries
 `RELAY_REDIS_URL: redis://redis:6379` and `depends_on: redis`, from chapter 2.6's
 fan-out. Only the api needs the wiring, plus `RELAY_SMTP_URL` for the mailer.
+
+---
+
+---
+
+## R25 — The journey map's Test phase is this chapter, and it asks for two things the spec did not
+
+**Thirteen analysis passes never opened `docs/03-journey-map.md`**, which the SRS cites
+as the source of FR-RTL-06's reasoning and which `check:docs` mirrors. Its Test phase is
+four lines describing this chapter's user doing this chapter's thing:
+
+> **Doing:** Simulating network drops, testing reconnection and message ordering, load
+> testing, **verifying rate limit behaviour**, checking webhook retries
+> **Touchpoints:** Dev environment, **rate limit headers**, status page, docs on failure
+> modes
+
+Two of its four pain points and two of its four opportunities are this chapter's subject.
+
+### The pain the chapter fixes, quoted
+
+> *Rate limits that return `429` with no headers indicating remaining quota or reset
+> time.*
+
+That is FR-002, written from the other side. The chapter delivers it. Worth quoting in
+the prose, because a requirement with a persona behind it reads differently from a
+requirement with a number behind it.
+
+### The one the spec understated
+
+> *Shared dev and production quotas, so load testing risks her live environment.*
+> *Fully isolated dev and production environments with separate keys and **separate
+> quotas**.*
+
+FR-006 and SC-003 cover the **counters** being independent — one environment at its limit
+does not refuse another. The journey map asks for something stronger: **separate
+policy**. Mai's need is to configure her dev environment differently and hammer it,
+without production's limit moving.
+
+The policy is already three nullable columns per environment, so the capability exists.
+What was missing is a test that two environments of one application can carry **different
+configured limits**, each enforced at its own number. T018c tested one override against
+one default, which does not distinguish "the override applies" from "the override applies
+everywhere".
+
+### What a dev environment is for, and what that means for the default
+
+Mai's Test-phase activity is *load testing*. R4 set 600/min on the reasoning that 10/s is
+"generous for the integration this platform is sold for" — true for an integration, and
+false for the one user the journey map says will drive a limit deliberately.
+
+That is not a reason to raise the default. It is a reason for the chapter to say plainly
+that a dev environment's limit is meant to be raised for load testing, and that this is
+what FR-007's configurability exists for. A developer who hits 429 while load-testing and
+cannot find out that the number is hers to change will conclude the platform is the
+problem.
+
+### The error page that does not exist, recorded rather than fixed
+
+Constitution V: *"every error code has a reachable documentation page"*. This chapter
+ships `rate_limited` as the first code a developer will receive routinely and want to look
+up, and its `docs_url` points at `https://relay.example/docs/errors/rate_limited`.
+
+**The placeholder stays.** It has been a placeholder since chapter 1.4, both
+`ProtocolErrorFilter` and `service-kit` say so in comments, and a docs site is not this
+chapter's to build. What changes is that the gap is now recorded: the journey map asks
+for *"a documented failure-modes page: what happens on disconnect, on duplicate send, on
+webhook timeout, on quota exhaustion"*, and this chapter is the one that makes the
+missing page cost something real.
+
+**A fifth thing declared and not enforced**, alongside `rate_limited`, 4008,
+`request_id` and 4009 — except this one is a promise in the constitution rather than a
+constant in `codes.ts`.
 
 ---
 

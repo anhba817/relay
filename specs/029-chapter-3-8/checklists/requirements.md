@@ -485,6 +485,43 @@ principles eleven times and its gates never. The lesson is the one passes 6 and 
 about source files, applied to a document: **I had been reasoning about the constitution
 from the part of it I had read.**
 
+### The thirteenth pass: the persona document had this chapter's user in it
+
+`docs/03-journey-map.md` is cited by the SRS as the source of FR-RTL-06's reasoning and is
+one of six documents `check:docs` mirrors. Thirteen passes never opened it. Its **Test
+phase** is four lines describing this chapter's user doing this chapter's thing — *"load
+testing, verifying rate limit behaviour"*, touchpoint *"rate limit headers"* — and two of
+its four pain points are this chapter's subject.
+
+**Q2 — the spec understated FR-RTL-04.** The journey map asks for *"fully isolated dev and
+production environments with separate keys and **separate quotas**"*, against the pain
+*"shared dev and production quotas, so load testing risks her live environment"*. FR-006
+and SC-003 covered independent **counters**; the policy is three nullable columns per
+environment and nothing tested that two environments could carry **different configured
+limits**. The capability existed; the requirement stopped one step short of what the
+persona needs, which is to raise her dev ceiling without moving production's. T017a.
+
+**Q3 — and the default was reasoned about the wrong user.** R4 justified 600/min as
+"generous for the integration this platform is sold for". The journey map says the one
+user who will drive a limit deliberately is a developer load-testing a dev environment.
+Not a reason to raise the default — a reason for the chapter to say the number is hers
+(FR-046).
+
+**Q1 — the error page that does not exist, and stays that way.** Constitution V requires
+every error code have a reachable documentation page. This chapter ships `rate_limited` as
+the first code a developer receives routinely and looks up, pointing at a placeholder
+`docs_url` that has been a placeholder since chapter 1.4. **The placeholder is kept by
+decision** — a docs site is not this chapter's to build — and FR-047 records the gap so
+the URL does not imply otherwise. A fifth thing declared and not enforced, except this one
+is a promise in the constitution rather than a constant in `codes.ts`.
+
+**What thirteen passes have established about where findings live.** Four times now the
+productive move has been to open a document or file that every previous pass had reasoned
+about without reading: the send schema (pass 6), the gateway's api client (7), the
+constitution's gates (12), the journey map (13). Each time the artifacts were internally
+consistent and wrong about something outside them. The set of unread things is finite and
+enumerable, and it has been the whole answer since pass 6.
+
 ### One requirement carries a claim that may be wrong, on purpose
 
 The Assumptions say this renumbering should be cheap because chapter 3.7 removed

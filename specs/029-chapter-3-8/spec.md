@@ -231,7 +231,11 @@ names a chapter that has not happened yet.
   socket is accepted, and MUST NOT affect connections already open.
 - **FR-006**: Counters MUST be independent per environment, so that a development
   environment driven to its limit leaves the production environment of the same
-  application unaffected (FR-RTL-04).
+  application unaffected (FR-RTL-04). **Policy MUST be independent too**: two
+  environments of one application MUST be able to carry different configured limits,
+  each enforced at its own number. The journey map's Test phase asks for "fully isolated
+  dev and production environments with separate keys and separate quotas", and a shared
+  policy would leave load testing changing production's ceiling (research R25).
 - **FR-007**: Limits MUST be configurable per environment, with a documented
   default that applies when nothing is configured.
 - **FR-008**: The limit MUST count a unit named in the chapter's own prose, and a
@@ -286,6 +290,16 @@ names a chapter that has not happened yet.
   store and the mail service by their container names. A limiter that cannot reach its
   store fails open (FR-010), so a missing address does not fail loudly — it enforces
   nothing while reporting a limit (research R24).
+- **FR-046**: The chapter MUST state that a development environment's limits are meant
+  to be raised for load testing, and that FR-007's configurability is what that is for.
+  The journey map's Test phase has the developer load-testing deliberately; a developer
+  who hits `429` while doing it and cannot discover the number is hers to change will
+  conclude the platform is the problem (research R25).
+- **FR-047**: The chapter MUST record that `docs_url` remains a placeholder. This is the
+  first error code a developer will receive routinely and want to look up, constitution V
+  requires every error code have a reachable page, and none exists. The placeholder is
+  kept — a docs site is not this chapter's to build — and the gap is stated rather than
+  implied (research R25).
 - **FR-045**: The connect limit MUST NOT be the reason a client reconnecting after a
   platform-initiated drain is refused. **This chapter does not satisfy this**: the drain
   does not exist — close code 4009 is declared and emitted by nothing — so the
@@ -410,7 +424,9 @@ names a chapter that has not happened yet.
   one alone — on one transport the two counters move together and the rule cannot be
   seen to work.
 - **SC-003**: Two environments of one application are driven independently: one at
-  its limit, the other unaffected.
+  its limit, the other unaffected — and each carries a **different configured limit**,
+  enforced at its own number. Counters alone would pass the first half and leave the
+  second untested.
 - **SC-004**: With the bucket store stopped mid-run, customer traffic continues to
   be served and failed authentication is still refused past the threshold. Both
   halves demonstrated in the same outage.
@@ -505,6 +521,12 @@ names a chapter that has not happened yet.
 - **FR-RTM-09** — the five-concurrent-connection cap, which needs a connection
   registry.
 - **Presence** (FR-RTM-06), which shares that registry.
+- **The documented failure-modes page** the journey map asks for, and the docs site it
+  would live on. `docs_url` stays a placeholder; FR-047 records the gap.
+- **A chaos endpoint in dev that forcibly disconnects a client**, which the journey map's
+  Test phase asks for. Named here because it is the natural place a drain first appears,
+  and FR-045's drain-grace exemption waits on the same mechanism — the two should be
+  found together.
 - **A drain, and therefore the drain-grace exemption FR-045 describes.** Close code
   4009 has been declared since chapter 1.3 and nothing emits it; building a drain to
   make a limiter polite about it would be a larger change than the limiter. Recorded,
