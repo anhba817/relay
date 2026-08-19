@@ -135,6 +135,53 @@ the defect.
 
 ---
 
+## T022 — both lanes and the coverage gate, at chapter end
+
+```console
+$ pnpm test && pnpm test:integration && pnpm coverage
+ Tests  198 passed (198)
+ Tests  191 passed (191)
+ Tests  380 passed (380)
+```
+
+The three numbers the chapter's CHECKPOINT quotes, from this run.
+
+Coverage for the file the chapter adds to:
+
+```console
+File             | % Stmts | % Branch | % Funcs | % Lines |
+-----------------|---------|----------|---------|---------|
+ resume.ts       |     100 |       95 |     100 |     100 |
+ registry.ts     |   85.71 |      100 |   83.33 |   83.33 |
+ session.ts      |   90.62 |    79.16 |   91.66 |   91.12 |
+```
+
+`resume.ts` is where the chapter's two new functions live and it is pinned at 95
+branches, raised from 93. The five points it does not have are one branch:
+`if (timer)` in `withDeadline`, whose false arm cannot be reached because the
+promise settles before the `finally` can observe the handle.
+
+## T021 — twenty consecutive lane runs after the fix
+
+```console
+$ for i in $(seq 1 20); do pnpm test:integration; echo "$i $?"; done
+1 0   2 0   3 0   4 0   5 0   6 0   7 0   8 0   9 0  10 0
+11 0  12 0  13 0  14 0  15 0  16 0  17 0  18 0  19 0  20 0
+
+failures: 0 of 20        187-191 s each, tree 6f8a7b6 throughout
+```
+
+Read this for what it is. **Twenty consecutive passes also happened before the
+fix**, so this is a no-regression result across the whole lane — which matters,
+because the change suppresses frames and its failure mode is a gap — and not
+evidence that the duplicate is gone. That evidence is the deterministic test
+above.
+
+It took four attempts to get twenty runs on one tree, and the four faults found
+along the way are in `baseline.txt` T021a.
+
+---
+
 ## T047 — the credential scan
 
 Six files scanned: `captured-output.md`, `baseline.txt`, `battery.txt`, both

@@ -61,9 +61,9 @@ resume has completed; the client receives it once.
 
 - [X] T019 Run the sabotage battery per `specs/028-chapter-3-7/quickstart.md` V6 — five mutations, each reverted and the file verified byte-identical by `md5sum`, recording which test failed for each. The fifth ADDS retirement rather than removing a mechanism, and it is the only check that V5 can catch a regression in this chapter's central decision (SC-005, FR-007a)
 - [X] T020 **Commit before running the battery.** Its revert step is `git checkout --`, which silently discarded an uncommitted correction during chapter 3.6 and failed the byte-identical check against the previous run's hashes
-- [ ] T021 Run `pnpm test:integration` twenty consecutive times and record every exit code in `specs/028-chapter-3-7/baseline.txt` beside T004's pre-fix count (SC-001)
-- [ ] T022 Run both lanes and coverage, confirm every pre-existing suite passes unchanged in substance, and record the chapter-end counts (SC-003, SC-004)
-- [ ] T023 Capture every transcript the chapter will quote into `specs/028-chapter-3-7/captured-output.md`: T007's failure, the passing deterministic test, the e2e assertion text from chapter 3.6's baseline, the battery, and the coverage summary (FR-010, FR-016)
+- [X] T021 Run `pnpm test:integration` twenty consecutive times and record every exit code in `specs/028-chapter-3-7/baseline.txt` beside T004's pre-fix count (SC-001)
+- [X] T022 Run both lanes and coverage, confirm every pre-existing suite passes unchanged in substance, and record the chapter-end counts (SC-003, SC-004)
+- [X] T023 Capture every transcript the chapter will quote into `specs/028-chapter-3-7/captured-output.md`: T007's failure, the passing deterministic test, the e2e assertion text from chapter 3.6's baseline, the battery, and the coverage summary (FR-010, FR-016)
 
 **Checkpoint**: the fix is proven twice — once deterministically, once by rate.
 
@@ -125,10 +125,10 @@ timeline from a real run, and names the case chapter 2.7's own reasoning omits.
 
 ## Phase 7: Close-out
 
-- [ ] T046 Run quickstart V0–V9 end to end from `specs/028-chapter-3-7/quickstart.md`, reading exit codes rather than grepping output
+- [X] T046 Run quickstart V0–V9 end to end from `specs/028-chapter-3-7/quickstart.md`, reading exit codes rather than grepping output
 - [X] T047 Scan `specs/028-chapter-3-7/captured-output.md` and both published pages for leaked credentials, recording the patterns searched rather than the conclusion alone
-- [ ] T048 Write `specs/028-chapter-3-7/chapter-notes.md` from what happened rather than what was planned, including the pre-fix and post-fix flake counts and anything the battery contradicted
-- [ ] T049 Fix forward any defect this chapter exposes in an earlier chapter, in every locale that chapter has, and record it in `specs/028-chapter-3-7/chapter-notes.md`
+- [X] T048 Write `specs/028-chapter-3-7/chapter-notes.md` from what happened rather than what was planned, including the pre-fix and post-fix flake counts and anything the battery contradicted
+- [X] T049 Fix forward any defect this chapter exposes in an earlier chapter, in every locale that chapter has, and record it in `specs/028-chapter-3-7/chapter-notes.md`
 - [X] T050 Amend `docs/07-tutorial-plan.md` if this chapter's scope moved, and confirm the Part 3 numbering it carries still matches `relay-tutorial/lib/tutorial.ts`
 - [ ] T051 Tag `relay-platform` as `part3-ch7` at the chapter-end commit, because the chapter's SKIP AHEAD tells readers that tag exists — 3.5 published that claim before the tag was created
 

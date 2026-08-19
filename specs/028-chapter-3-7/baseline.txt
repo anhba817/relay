@@ -346,3 +346,101 @@ It is not clean for the wider disease — a global operation with a local assert
 is not always a count. The sweep took a batch, the drain took a lock, the consumer
 took a stream position. Those do not share a grep, which is why the survey run
 exists and why it was allowed to finish rather than being stopped at the first red.
+
+
+T021c — attempt 4, the measurement
+-----------------------------------
+
+Tree: 6f8a7b6, unchanged for all twenty runs.
+
+  runs                                  20
+  failures                               0
+  duration                              187-191 s each, ~63 minutes total
+
+  1  pass  2  pass  3  pass  4  pass  5  pass  6  pass  7  pass
+  8  pass  9  pass 10  pass 11  pass 12  pass 13  pass 14  pass
+ 15  pass 16  pass 17  pass 18  pass 19  pass 20  pass
+
+SC-001 met. And worth restating so the number is not read for more than it says:
+**twenty consecutive passes happened BEFORE the fix as well** (T004). This run
+shows the change causes no regression across the whole lane, which matters because
+the change suppresses frames and its failure mode is a gap. It is not evidence
+that the duplicate is gone. SC-002's deterministic test is.
+
+What the twenty runs DID prove, which nobody set out to measure: the lane is
+stable at all. Four faults were found and fixed to get here, and the run before
+this one could not have said the same.
+
+
+T022 — the numbers this chapter finished on
+--------------------------------------------
+
+  lint · typecheck · build              exit 0
+
+  unit lane                             exit 0   198 tests
+    @relay/config                                  6
+    @relay/service-kit                             3
+    @relay/protocol                               37
+    @relay/api                                    96
+    @relay/gateway                                48   (was 34)
+    @relay/dispatcher                              8
+
+  integration lane                      exit 0   191 tests
+    @relay/api                                   150
+    @relay/dispatcher                             16
+    @relay/gateway                                16   (was 13)
+    @relay/e2e                                     9
+
+  coverage                              exit 0   380 tests, every ratchet met
+
+Gateway unit rose 34 -> 48: seven for `suppressed`, four for `scopeMarks`, three
+for the wiring in `session.test.ts`. Gateway integration rose 13 -> 16: the three
+new quadrant tests. Nothing else moved, which is the point — no pre-existing
+suite changed in substance.
+
+  services/gateway/src/resume.ts     100 stmts · 95 branches · 100 funcs · 100 lines
+
+95 branches is the ratchet raised from 93 at T018, and it stops short of 100 for a
+reason named in a comment beside the number: `if (timer)` in `withDeadline` has an
+unreachable false arm, because the promise settles before the `finally` can see
+the handle. Pinning 100 would pin a number the file cannot reach without deleting
+a defensive check that costs nothing.
+
+
+T046 — the quickstart, run end to end
+--------------------------------------
+
+  V0  twenty pre-fix lane runs                0 failures   (T004)
+  V1  the deterministic test                  6 passed
+  V2  transcripts captured                    captured-output.md
+  V3  nothing lost — gateway both lanes       48 unit, 16 integration
+  V4  degraded resume retains nothing         in the suite, passes
+  V5  out-of-order publication                in the suite, passes
+  V6  the sabotage battery                    5 mutations, all caught
+  V7  coverage                                exit 0, resume.ts 95 branches
+  V8  the site                                lint · build · check:docs ·
+                                              check:fences all exit 0
+  V9  the cross-reference sweep               0 forward refs in live source;
+                                              quotas 3.8 and gauntlet 3.9 agree
+                                              across docs, registry and pages
+
+FOUR OF THE TEN STEPS CARRIED CLAIMS THE WORK DISPROVED, and all four are
+corrected in the quickstart itself rather than only here:
+
+  V0  "at least one failure" and "three hours of wall clock" — zero failures,
+      and one hour. The nine-minute-per-run figure was chapter 3.6's, measured
+      when the delivery backlog was saturating the machine.
+  V1  "the new fourth-quadrant test fails" — TWO of the three new tests fail; the
+      third passes before the fix, correctly, because it guards the direction the
+      change could break.
+  V5  the scenario as written could not arm the mechanism it tested. Publishing
+      5 then 4 with both at or below the mark never fires a retirement rule. The
+      fifth sabotage mutation is what caught it.
+  V7  "should reach 100% branches without effort" — 95, and the missing branch is
+      unreachable rather than untested.
+  V9  "no source comment cites a chapter number at all" — unachievable and wrong.
+      A comment naming the chapter that added a field stays true for ever. The
+      check is about FORWARD references.
+
+A verification document that is never run against the thing it verifies is a
+second specification, not a check.
