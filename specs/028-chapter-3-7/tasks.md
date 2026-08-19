@@ -130,7 +130,7 @@ timeline from a real run, and names the case chapter 2.7's own reasoning omits.
 - [X] T048 Write `specs/028-chapter-3-7/chapter-notes.md` from what happened rather than what was planned, including the pre-fix and post-fix flake counts and anything the battery contradicted
 - [X] T049 Fix forward any defect this chapter exposes in an earlier chapter, in every locale that chapter has, and record it in `specs/028-chapter-3-7/chapter-notes.md`
 - [X] T050 Amend `docs/07-tutorial-plan.md` if this chapter's scope moved, and confirm the Part 3 numbering it carries still matches `relay-tutorial/lib/tutorial.ts`
-- [ ] T051 Tag `relay-platform` as `part3-ch7` at the chapter-end commit, because the chapter's SKIP AHEAD tells readers that tag exists — 3.5 published that claim before the tag was created
+- [X] T051 Tag `relay-platform` as `part3-ch7` at the chapter-end commit, because the chapter's SKIP AHEAD tells readers that tag exists — 3.5 published that claim before the tag was created
 
 ---
 
