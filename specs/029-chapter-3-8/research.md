@@ -1,6 +1,6 @@
 # Research — chapter 3.8, "Limits you can see coming"
 
-Phase 0. Nineteen items. R3 is the chapter's central decision and the spec
+Phase 0. Twenty items. R3 is the chapter's central decision and the spec
 deliberately left it open. R5 found a **second unenforced contract** the chapter
 has to close whether it wants to or not. R10 quantifies the size risk the spec
 flagged and the answer is not the one the scope decision assumed. **R11 was added
@@ -921,6 +921,73 @@ five, most recently 3.5 — so both are amendments this chapter carries.
 nothing fails loudly when they are forgotten. Neither is a gate. That is a defect in
 the harness rather than in this chapter, and it is named here rather than fixed
 because a chapter about rate limits is not where a test-infrastructure gate belongs.
+
+---
+
+---
+
+## R20 — Two boundaries the platform enforces on itself, and a second store that steps outside both
+
+**The ninth pass found nothing wrong with the documents.** It found two mechanisms the
+*code* uses to enforce its own rules, neither mentioned in any spec, and a new component
+that sidesteps both.
+
+### The driver boundary is a lint rule, and it names only one driver
+
+`eslint.config.mjs` restricts `pg` and `drizzle-orm` for every `**/*.ts` except
+`services/api/src/db/**`, above a comment that states the principle rather than the
+mechanism:
+
+> *Isolation lives in data access, not in handlers (constitution I): only the
+> repository layer may touch the driver.*
+
+This chapter gives the api a **second per-tenant datastore**. The counters are keyed
+`rl:{environment_id}:…`, and with `ioredis` unrestricted any controller can import a
+client and read or write any environment's counter — the exact access the existing rule
+exists to prevent, against a key that is per-tenant by construction.
+
+**Decision: extend the rule to `ioredis`, ignored under `services/api/src/limits/**`.**
+One entry in the same array, and it makes `store.ts` the Redis analogue of the
+repository layer. Constitution I is non-negotiable and says isolation lives in data
+access; a boundary enforced for one store and not the other is a boundary that holds
+until the next chapter forgets.
+
+**Why this was invisible for eight passes.** The rule is not a requirement, a test or a
+gate anybody runs deliberately — it is four lines in a config file, and it works so
+quietly that nothing in the spec knew it existed.
+
+### Every long-lived resource is closed through `OnModuleDestroy`
+
+Three api modules implement it — the outbox relay, the delivery relay, the event
+consumer — `main.ts` enables shutdown hooks with a comment saying why, and every api
+integration suite ends `await app.close()`.
+
+An `ioredis` client holds the event loop open. Without a destroy hook the api's
+integration suites will **hang after their assertions pass**, which is the worst
+available failure shape: the tests are green and the lane never returns. This project
+has spent three chapters clearing a lane; adding a resource that never closes would
+undo that quietly.
+
+**Decision: the Redis client gets a destroy hook in the shape `OutboxRelayService`
+already uses.**
+
+### And the gateway needs its own client, not fanout's
+
+`Fanout` is a closed interface — `onDelivery`, `publish`, `subscribe`, `unsubscribe`,
+`close` — and does not expose the two clients it holds. Even if it did, one of them is a
+**subscriber**, and a Redis connection in subscribe mode cannot run `INCR`. The
+gateway's limiter therefore opens its own client with its own `close()`, called by the
+session server.
+
+`createFanout` is also optional in the session server (`fanout?`), so a limiter riding
+its lifecycle would vanish in the configurations that have no fabric — which is every
+chapter-2.5 test.
+
+**The pattern worth naming.** Both of these are *self-enforcing conventions*: a lint
+rule and an interface. Neither appears in a requirement, and a component can be built
+correctly against every document in this feature while violating both. The place to look
+for the next one is the project's other quiet enforcers — the coverage ratchets,
+`check:docs`, and whatever `scripts/` the lane runs.
 
 ---
 

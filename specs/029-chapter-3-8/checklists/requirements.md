@@ -348,6 +348,39 @@ because they were reasoned from surrounding code rather than read. This one was 
 three-line probe task, run and then reverted. The difference between K1 and those two
 is about four minutes of work.
 
+### The ninth pass: the first genuine constitution finding, and it was in a config file
+
+Nothing was wrong with the documents. What the pass found was two mechanisms the **code**
+uses to enforce its own rules, neither mentioned in any spec, and a new component that
+sidesteps both.
+
+**L1 — the driver boundary is four lines of eslint config.** `pg` and `drizzle-orm` are
+restricted everywhere except `services/api/src/db/**`, above a comment citing the
+principle: *"Isolation lives in data access, not in handlers (constitution I)."* This
+chapter gives the api a second per-tenant store keyed `rl:{environment_id}:…`, and left
+`ioredis` unrestricted — so any controller could have read or written any environment's
+counter. **Constitution I is non-negotiable**, and this is the first finding in nine
+passes that engages it directly. FR-042 and T012a.
+
+**L2 — every long-lived resource closes through `OnModuleDestroy`.** Three api modules
+implement it and every api suite ends `await app.close()`. An `ioredis` client holds the
+event loop open, so without a hook the suites would hang **after their assertions
+pass** — green tests, and a lane that never returns, in a project that spent three
+chapters clearing one. FR-043 and T012b.
+
+**L3 — and the gateway cannot borrow fanout's clients.** `Fanout` is a closed interface
+exposing neither; one of the two is a subscriber and a connection in subscribe mode
+cannot run `INCR`; and `fanout` is optional in the session server, so a limiter riding
+its lifecycle would vanish in every chapter-2.5 configuration. Its own client, its own
+`close()`.
+
+**What this changes about where to look.** The first eight passes found things by reading
+source files. This one found things by reading **self-enforcing conventions** — a lint
+rule and an interface — that no requirement mentions and that a component can violate
+while satisfying every document in the feature. The remaining quiet enforcers are the
+coverage ratchets, `check:docs`, and whatever `scripts/` the lane runs. None has been read
+for what it would demand of a new component.
+
 ### One requirement carries a claim that may be wrong, on purpose
 
 The Assumptions say this renumbering should be cheap because chapter 3.7 removed

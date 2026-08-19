@@ -31,6 +31,12 @@ gateway for socket frames, against the same `rl:{env}:send:{window}` key. That i
 the counter is in Redis rather than in either process: neither service can see the
 other's memory, and one budget has to cover both doors.
 
+**Reached through one module per service.** `services/api/src/limits/store.ts` in the
+api, `services/gateway/src/limits.ts` in the gateway, and `lint` refuses an `ioredis`
+import anywhere else — the same confinement the database driver already has, for the
+same stated reason: the key is per-tenant, so an unrestricted client is a cross-tenant
+read (constitution I, research R20).
+
 **Not a source of truth** (constitution IV, SAD §6.3). Total loss means every
 environment starts a fresh window and nobody is refused in the meantime. That is
 the *designed* behaviour, not a tolerated one — see FR-010.

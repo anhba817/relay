@@ -277,6 +277,14 @@ names a chapter that has not happened yet.
   counter family and threshold as failed authentication. It has no tenant to key on,
   and an unlimited account-creation route is not acceptable in a platform that limits
   everything else (research R17).
+- **FR-042**: Access to the counter store MUST be confined to one module per service,
+  enforced the way the database driver already is. The counters are keyed per
+  environment, so an unrestricted client would let any handler read or write another
+  tenant's counter — which constitution I forbids as a correctness property, not a
+  convention (research R20).
+- **FR-043**: Every counter-store client MUST be closed on shutdown, through the
+  lifecycle mechanism its service already uses. A client that holds the event loop open
+  turns a passing integration suite into a lane that never returns (research R20).
 - **FR-039**: A failed authentication arriving through the gateway MUST be counted
   against **the client's** source address, not the gateway's. The gateway MUST
   forward that address on the internal authentication call, and the api MUST count
@@ -414,6 +422,9 @@ names a chapter that has not happened yet.
 - **SC-012**: Every pre-existing integration suite passes with the auth limiter
   enforcing, and the number of failed authentications the lane produces per minute is
   recorded — measured, not inferred from a count of assertions.
+- **SC-013**: Both lanes **terminate**. Adding a counter-store client to two services
+  must not leave a process alive after its assertions finish, and `lint` refuses an
+  import of that client from outside its one permitted module.
 
 ## Assumptions
 

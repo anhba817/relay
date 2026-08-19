@@ -94,7 +94,7 @@ new container. See the size finding above and research R10.
 
 | Principle | Bearing on this chapter | Verdict |
 |---|---|---|
-| **I. Tenant isolation is correctness** | Counters are keyed by environment and FR-006 requires two environments of one application to be independent. A shared counter would be a cross-tenant leak of a new kind: one tenant's traffic refusing another's. | Pass — tested by SC-003 |
+| **I. Tenant isolation is correctness** | Counters are keyed by environment and FR-006 requires two environments of one application to be independent. A shared counter would be a cross-tenant leak of a new kind: one tenant's traffic refusing another's. **And the ninth pass found the principle reaches further than the spec had noticed**: the api already confines its database driver to one module by lint rule, citing this principle, and a second per-tenant store needs the same confinement (FR-042, research R20). | Pass after FR-042 — tested by SC-003 and `lint` |
 | **II. No acknowledged message lost** | A `429` is a refusal, not a loss: nothing was acknowledged. The limiter must refuse *before* the write, never after — a request that committed and then returned 429 would be exactly the violation. | Pass — ordering is the requirement |
 | **III. Two data paths, never crossed** | The notification transport is a third path and must fail alone (FR-024). The argument is the same one 3.6 made for analytics: not less important, just not coupled. | Pass — research R8 |
 | **IV. Single writer, single source of truth** | The counter is in Redis and is deliberately not authoritative — which is *why* it fails open. The policy is in Postgres, which is. | Pass, and this principle is what decides R1 and R3 |
@@ -112,8 +112,8 @@ platform rather than in this plan, and is closed by this chapter's FR-003 and R5
 ```text
 specs/029-chapter-3-8/
 ├── plan.md              # This file
-├── spec.md              # 42 FR, 4 user stories, 12 SC
-├── research.md          # Phase 0 — R1…R19
+├── spec.md              # 44 FR, 4 user stories, 13 SC
+├── research.md          # Phase 0 — R1…R20
 ├── data-model.md        # Phase 1
 ├── quickstart.md        # Phase 1 — V0…V11
 ├── contracts/
@@ -275,6 +275,8 @@ made with the word count in hand instead of predicted now.
 | FR-025 | research R9, R19 | `compose.yaml`; T041d/T041e — the coordinates declared in `turbo.json` and forwarded by the harness, because strict env mode drops what is not named |
 | FR-026…FR-029 | research R3, R5, R7 | the chapter's own sections |
 | FR-030…FR-032 | research R16 | `pnpm check:fences`; T061a-c handle the post-series exception |
+| FR-042 | research R20 | T012a — `lint` refuses `ioredis` outside `services/api/src/limits/**` |
+| FR-043 | research R20 | T012b, T031b — a destroy hook in the api, a `close()` in the gateway; SC-013 is that both lanes terminate |
 | FR-033…FR-035 | the renumbering note in research | done during `/speckit-specify`; verified at close-out |
 
 ## Constitution re-check, after Phase 1

@@ -212,6 +212,15 @@ pnpm test && pnpm test:integration && pnpm coverage
 Expected: exit 0, every pre-existing suite passing unchanged in substance, every
 ratchet intact and the new files' ratchets set.
 
+**And both lanes must TERMINATE.** Two services gain a Redis client, and an `ioredis`
+client holds the event loop open. Three api modules already close their long-lived
+resources through `OnModuleDestroy`; the gateway's fanout has an explicit `close()`. A
+suite whose assertions pass and whose process never exits is the worst shape available —
+green tests, and a lane that hangs (SC-013, research R20).
+
+`pnpm lint` also refuses an `ioredis` import from outside the one module permitted to
+hold one, the way it already refuses `pg` outside `services/api/src/db` (FR-042).
+
 **The direction that matters here is the opposite of chapter 3.7's.** That chapter
 suppressed frames, so its risk was a gap. This one refuses requests, so its risk is
 refusing something it should have served — and the two limiters have different
