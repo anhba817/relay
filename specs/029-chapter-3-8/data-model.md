@@ -53,6 +53,12 @@ behaviour. Sharing a prefix would invite sharing a code path.
 **Cardinality is attacker-controlled**, which is why the in-process fallback that
 mirrors this key is capped. See below.
 
+**The prefix is overridable, and that is a test-isolation requirement rather than a
+convenience.** The integration lane runs files in parallel and every suite that asserts
+a `401` increments `rlauth:127.0.0.1:{window}`. A suite needing a small threshold needs
+its own key; the same pattern `attempts.itest.ts` uses for its durable name, and for the
+same stated reason (research R21).
+
 **`source_ip` is the CLIENT's address, not the caller's.** A handshake authenticated
 through the gateway arrives at the api from the gateway, so counting the caller
 would put every customer's failures in one bucket and let one attacker exhaust a

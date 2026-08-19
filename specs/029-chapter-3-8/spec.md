@@ -306,7 +306,10 @@ names a chapter that has not happened yet.
   explicitly rather than the default being chosen to suit the suite (research R15).
   The variable MUST be declared everywhere the lane filters environment — Turborepo
   runs in strict mode, so an undeclared variable reaches a child as `undefined` and
-  the default silently wins (research R19).
+  the default silently wins (research R19). The counter's key MUST be overridable so a
+  suite can hold its own: the lane runs test files in parallel against one shared
+  bucket, so a test that needs a small threshold needs a private key rather than a
+  small number (research R21).
 - **FR-013**: Degradation of the limiter MUST be observable in logs, and the log
   line MUST NOT carry a credential or a key (NFR-SEC-06).
 - **FR-014**: While the limiter is degraded, a response MUST NOT carry an
@@ -422,6 +425,9 @@ names a chapter that has not happened yet.
 - **SC-012**: Every pre-existing integration suite passes with the auth limiter
   enforcing, and the number of failed authentications the lane produces per minute is
   recorded — measured, not inferred from a count of assertions.
+- **SC-014**: The limiter's own integration test passes regardless of how many other
+  suites in the lane submitted bad credentials first, verified by running the lane with
+  file parallelism on — which is how it runs.
 - **SC-013**: Both lanes **terminate**. Adding a counter-store client to two services
   must not leave a process alive after its assertions finish, and `lint` refuses an
   import of that client from outside its one permitted module.

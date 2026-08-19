@@ -112,8 +112,8 @@ platform rather than in this plan, and is closed by this chapter's FR-003 and R5
 ```text
 specs/029-chapter-3-8/
 ├── plan.md              # This file
-├── spec.md              # 44 FR, 4 user stories, 13 SC
-├── research.md          # Phase 0 — R1…R20
+├── spec.md              # 44 FR, 4 user stories, 14 SC
+├── research.md          # Phase 0 — R1…R22
 ├── data-model.md        # Phase 1
 ├── quickstart.md        # Phase 1 — V0…V11
 ├── contracts/
@@ -266,7 +266,7 @@ made with the word count in hand instead of predicted now.
 | FR-040 | research R18 | T027a — the `429` thrown from the guard, not the middleware that never throws |
 | FR-041 | research R17 | T027b — signup per source IP |
 | FR-010, FR-011, FR-015 | research R3 | Redis stopped mid-run; both halves in one outage |
-| FR-012 | research R2, R4, R15 | per-IP failures past the threshold; T004a measures what the lane already produces, T025b/c make the threshold configuration |
+| FR-012 | research R2, R4, R15, R21 | per-IP failures past the threshold; T004a measures the whole lane, T025b/c make the threshold configuration, T025f gives the limiter's own test a private key because the lane runs files in parallel against one bucket |
 | FR-013 | research R6 | one log line, no credential, rate-limited |
 | FR-016…FR-020 | research R8 | `notifications.itest.ts` against Mailpit's API |
 | FR-021 | research R9 | the received message read, not the sent one |

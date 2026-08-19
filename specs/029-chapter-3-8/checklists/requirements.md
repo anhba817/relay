@@ -381,6 +381,38 @@ while satisfying every document in the feature. The remaining quiet enforcers ar
 coverage ratchets, `check:docs`, and whatever `scripts/` the lane runs. None has been read
 for what it would demand of a new component.
 
+### The tenth pass: the fifth instance of one shape, and a gate I over-cited
+
+**M1 — two vitest configs disagree, and the difference was the finding.** The coverage
+config sets `fileParallelism: false` above a comment naming the incident it came from;
+`services/api/vitest.integration.config.mts` sets only `include`, so **the lane runs
+files in parallel**. Every suite asserting a `401` increments one
+`rlauth:127.0.0.1:{window}` bucket, concurrently, from different workers.
+
+Raising a threshold survives that — a high ceiling never refuses however polluted the
+count. **Lowering one does not**, and R15's plan lowered it in `limits.itest.ts`, which
+would have compared a count filled by other workers against a deliberately small number
+and refused requests that had nothing to do with it. Intermittently, depending on which
+worker ran first.
+
+**This chapter would have created the fifth instance of a shape it already knows.**
+Chapter 3.7's baseline found four — a sweep with a batch limit, a drain holding a lock, a
+consumer draining a growing stream on a fixed budget, a global `count(*)` compared against
+itself — all tests asserting a local fact about a global operation. The fifth would have
+been in the test for the very mechanism this chapter is about. The fix is a private key
+rather than a private threshold, and it is already in the codebase twice: `attempts.itest.ts`
+carries `const SUITE = "itest-attempts"` for the same reason.
+
+**M3 — and a note about this feature's own reporting.** `pnpm check:docs` globs
+`0[1-6]-*.md`. This chapter edits `docs/07-tutorial-plan.md`, which is not in the mirror
+set. Ten consecutive reports cited that gate passing as evidence; it was never a false
+claim, and it was thinner than repeating it implied. T069a now says to read the plan
+rather than cite the gate.
+
+**The enforcer sweep is finished.** Both vitest configs, `check-docs-drift.sh`, and the
+ten `scripts/*.mjs` walks — none of which this chapter touches. The one that mattered was
+a single line present in one config and absent from the other.
+
 ### One requirement carries a claim that may be wrong, on purpose
 
 The Assumptions say this renumbering should be cheap because chapter 3.7 removed

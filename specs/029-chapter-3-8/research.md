@@ -1,6 +1,6 @@
 # Research — chapter 3.8, "Limits you can see coming"
 
-Phase 0. Twenty items. R3 is the chapter's central decision and the spec
+Phase 0. Twenty-two items. R3 is the chapter's central decision and the spec
 deliberately left it open. R5 found a **second unenforced contract** the chapter
 has to close whether it wants to or not. R10 quantifies the size risk the spec
 flagged and the answer is not the one the scope decision assumed. **R11 was added
@@ -988,6 +988,69 @@ rule and an interface. Neither appears in a requirement, and a component can be 
 correctly against every document in this feature while violating both. The place to look
 for the next one is the project's other quiet enforcers — the coverage ratchets,
 `check:docs`, and whatever `scripts/` the lane runs.
+
+---
+
+---
+
+## R21 — The per-IP counter is a shared resource, and this chapter would create the fifth
+instance of a shape it already knows
+
+**Two vitest configs disagree, and the difference is the finding.**
+`vitest.coverage.config.mts` sets `fileParallelism: false` above a comment naming the
+incident: *"Suites in one process would share a database in ways their authors did not
+design for — 3.3's outbox suite learned that the hard way."*
+`services/api/vitest.integration.config.mts` sets only `include`, so **the integration
+lane runs files in parallel.**
+
+Every api integration suite that asserts a `401` increments one bucket:
+`rlauth:127.0.0.1:{window}`. They do it concurrently, from different workers, against
+a counter in shared Redis.
+
+**Raising the threshold works. Lowering it does not.** A suite with a high ceiling never
+refuses, however polluted the count — so R15's plan for `credentials.itest.ts` holds.
+But the same plan lowers the threshold in `limits.itest.ts`, which would then compare a
+count filled by every other worker against a deliberately small number and refuse
+requests that had nothing to do with it. Intermittently, depending on which workers ran
+first.
+
+**This is the fifth instance of one shape.** Chapter 3.7's baseline found four: a sweep
+with a batch limit, a drain holding a lock, a consumer draining a growing stream on a
+fixed budget, and a global `count(*)` compared against itself. All four were tests
+asserting a local fact about a global operation. This chapter would have added a fifth,
+by design, in the test for the very mechanism the chapter is about.
+
+**Decision: the limiter's test gets a distinct KEY, not a distinct threshold.**
+
+The auth bucket takes a key prefix, defaulted to the real one and overridable, and
+`limits.itest.ts` sets its own. That is the fix already in this codebase twice —
+`attempts.itest.ts` carries `const SUITE = "itest-attempts"` above a comment explaining
+that a durable is a position in a shared stream, and chapter 3.7 gave `consumer.itest.ts`
+the same treatment. There is a pattern to copy rather than a design to invent.
+
+**And the threshold raise still has to be lane-wide.** T004a measures the whole lane's
+failed authentications per minute, not one suite's, because the bucket does not care
+which file produced the request.
+
+---
+
+## R22 — Two gates that say less than they appear to
+
+Recorded because this feature's own reports cited one of them as evidence nine times.
+
+**`pnpm check:docs` mirrors `docs/01` through `docs/06` only.** The script globs
+`0[1-6]-*.md`. This chapter edited `docs/07-tutorial-plan.md` — twice, for the
+renumbering and the split narrative — and that document is **not** in the mirror set. So
+`check-docs-drift: all mirrored docs match their sources` is true and says nothing about
+the file this chapter actually changed. It was never a wrong claim; it was thinner
+evidence than repeating it implied.
+
+**The coverage comment records achieved numbers that nobody updates.** The thresholds are
+70% across the board — *"Set to what the constitution says, not to what the code
+achieves — a threshold tuned down to pass measures nothing"* — with the current figures
+noted in prose: 86.55% statements, 78.07% branches "at the time of writing". Ten new
+files will move both. Chapter 3.7's quickstart inherited a nine-minute lane estimate from
+3.6 the same way, and it was wrong by a factor of three by the time anyone read it.
 
 ---
 
