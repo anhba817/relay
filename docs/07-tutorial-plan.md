@@ -148,8 +148,9 @@ build on."
 | 3.5 | Webhooks that survive the customer | Dispatcher service: envelope-encrypted signing secrets, HMAC-SHA256, a due-time retry schedule, dead letters (FR-WHK-01…05, FR-WHK-08) |
 | 3.6 | When to stop trying | The attempt log and auto-disable (FR-WHK-06, FR-WHK-07, both half-delivered — see below); the synthetic test event (FR-WHK-09); the evidence a customer is owed when their endpoint is switched off |
 | 3.7 | Commit and publish are two instants | The resume duplicate: a message committed before a backfill and announced after it, delivered twice; the high-water mark given a lifetime past the buffering window |
-| 3.8 | Limits and quotas | Redis token buckets; standard headers; spending caps (FR-RTL) |
-| 3.9 | **Milestone: the isolation gauntlet** | The cross-tenant attack suite (NFR-SEC-09) run against every endpoint; the second-external-developer test |
+| 3.8 | Limits you can see coming | Per-environment token buckets (FR-RTL-01…04); the three headers on every response, not only the refusal; failed-auth limiting per IP (FR-AUT-12); the email transport 3.6 was owed (FR-WHK-07) |
+| 3.9 | Quotas and what they cost | Monthly usage quotas, hard and soft spending caps, the 50/80/100% email (FR-RTL-05…08) |
+| 3.10 | **Milestone: the isolation gauntlet** | The cross-tenant attack suite (NFR-SEC-09) run against every endpoint; the second-external-developer test |
 
 **3.5 was narrowed while it was being written, and 3.6 is where the remainder
 went.** The original entry promised auto-disable in the same chapter as the
@@ -208,13 +209,48 @@ and the fan-out path is the one built before the reader had the concept. And it 
 a live correctness defect that flakes the integration lane, which is exactly the
 condition that let three other real defects hide during chapter 3.6's work.
 
-Quotas becomes 3.8 and the gauntlet 3.9. **The renumbering has a trap in it that
-has already been sprung once**: `services/api/src/db/schema.ts` says "chapter
+3.7's insertion moved quotas to 3.8 and the gauntlet to 3.9 — both have since
+moved again, see below. **That renumbering had a trap in it that had already been
+sprung once**: `services/api/src/db/schema.ts` says "chapter
 3.7's cross-tenant gauntlet", written when the gauntlet was 3.7, and 3.6's
 insertion never carried it. That comment is byte-fenced into published chapter
 3.5, so the mechanism guaranteeing the book matches the code is the same mechanism
 that makes the stale reference awkward to fix. 3.7 fixes it, and stops source
 comments citing numbers that can move.
+
+**Part 3 gains a third chapter, and this one is a split rather than a bug.** The
+original 3.8 promised "Limits and quotas" in one sitting. FR-RTL reads as one
+family of eight requirements and divides cleanly on **where the count lives**.
+
+A rate limit is ephemeral. It counts a window, it may be lost, and SAD §6.3 is
+explicit that nothing in Redis is a source of truth — so Redis is the right store
+and *failing open* is the right default: a cache outage is not a reason to refuse
+a paying customer's traffic. A quota is money. It must be durable, and the ADR-06
+deep dive states that billing accuracy cannot rest on any pipeline's promises. One
+chapter teaching both would teach one storage decision as though it covered two
+opposite cases.
+
+Quotas also have a dependency the plan had not accounted for. FR-RTL-05 meters
+messages sent, unique active users and connection-minutes — which is FR-ANL-05,
+arriving in **Part 4** with the analytical store. Building monthly counters in 3.8
+would mean building them in Postgres now and again in ClickHouse later, or once in
+the wrong place.
+
+So 3.8 takes FR-RTL-01…04 and 3.9 takes FR-RTL-05…08; the gauntlet becomes 3.10.
+3.8 also picks up two things left lying around: FR-AUT-12's per-IP limiting on
+failed authentication, which is the same mechanism at a different scope and the one
+bucket that must *not* fail open, and the **email transport chapter 3.6 deferred**.
+FR-WHK-07 requires an organisation be told when its endpoint is switched off; 3.6
+writes the notification row and leaves `delivered_at` null above a comment saying
+whichever chapter builds a transport will set it. Deferring that a second time
+would mean a third chapter explaining the null column.
+
+**This renumbering should be cheap, and 3.8 is testing whether it is.** Chapter 3.7
+drove forward chapter references in live source to zero and replaced them with
+subjects rather than ordinals. If that worked, moving quotas and the gauntlet costs
+prose, this table and the registry — and no fence amendment. 3.8's success criteria
+check it rather than assume it, because a rule adopted one chapter ago to make this
+cheap should be made to prove it.
 
 **Two chapters exceed the 2,000-4,000 word bound in the table above** — 3.5 at
 4,996 words of prose outside fences and 3.6 at 5,346. Nothing enforces that
