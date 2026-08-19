@@ -112,8 +112,8 @@ platform rather than in this plan, and is closed by this chapter's FR-003 and R5
 ```text
 specs/029-chapter-3-8/
 ├── plan.md              # This file
-├── spec.md              # 39 FR, 4 user stories, 12 SC
-├── research.md          # Phase 0 — R1…R16
+├── spec.md              # 42 FR, 4 user stories, 12 SC
+├── research.md          # Phase 0 — R1…R18
 ├── data-model.md        # Phase 1
 ├── quickstart.md        # Phase 1 — V0…V11
 ├── contracts/
@@ -173,7 +173,15 @@ authentication response it already makes and are cached on the `Connection` for 
 lifetime (research R12). It also has no request id to put in the field R5 requires,
 so it mints one (research R13). Neither was visible until the second analysis pass,
 and both are properties of the gateway's deliberate poverty rather than oversights
-in it. The split inside `limits/` follows chapter 3.7's division and for the
+in it.
+
+**And the exemption cannot key off the principal.** The gateway forwards the **end
+user's** token on all three of its api calls, so they resolve to `kind: "user"` with
+the client's environment — indistinguishable from customer REST traffic. Only the
+dispatcher carries the platform credential. The rule that actually holds is *count each
+operation once, at the door it entered* (research R17), and the refusal for an
+over-threshold authentication is thrown by `CredentialGuard` rather than by a
+middleware that never throws (research R18). The split inside `limits/` follows chapter 3.7's division and for the
 same reason: `bucket.ts` and `fallback.ts` are pure and unit-testable with no
 store, no socket and no clock; `store.ts` and the middleware hold the I/O.
 
@@ -254,7 +262,9 @@ made with the word count in hand instead of predicted now.
 | FR-038 | research R13 | T031c; every `error` frame carries an id |
 | FR-039 | research R14 | T030b — ten client addresses counted as ten, not as one gateway |
 | FR-008, FR-036, FR-036a | research R11, rewritten after the sixth pass | T018a — five REST sends plus five socket frames leave send at 10 and rest at 5; T018b — a socket send counted once, by the gateway, against the shared key |
-| FR-009 | research R2 | an internal-seam call under load, unthrottled |
+| FR-009 | research R17 | T016a the dispatcher, T016b **the gateway** (user-authenticated, so a principal-based exemption misses it), T016c `/healthz` |
+| FR-040 | research R18 | T027a — the `429` thrown from the guard, not the middleware that never throws |
+| FR-041 | research R17 | T027b — signup per source IP |
 | FR-010, FR-011, FR-015 | research R3 | Redis stopped mid-run; both halves in one outage |
 | FR-012 | research R2, R4, R15 | per-IP failures past the threshold; T004a measures what the lane already produces, T025b/c make the threshold configuration |
 | FR-013 | research R6 | one log line, no credential, rate-limited |

@@ -1,6 +1,6 @@
 # Research — chapter 3.8, "Limits you can see coming"
 
-Phase 0. Sixteen items. R3 is the chapter's central decision and the spec
+Phase 0. Eighteen items. R3 is the chapter's central decision and the spec
 deliberately left it open. R5 found a **second unenforced contract** the chapter
 has to close whether it wants to or not. R10 quantifies the size risk the spec
 flagged and the answer is not the one the scope decision assumed. **R11 was added
@@ -661,11 +661,11 @@ answers "should this call be throttled as traffic"; the counting answers "whose
 failure was this". A gateway-originated call is exempt from the first and must
 supply an answer to the second.
 
-**This makes FR-009 and FR-012 interact**, which is worth a section in the chapter:
-the same request is simultaneously trusted (do not throttle it) and untrusted (do
-not believe it is the origin). The address is forwarded on the internal contract
-rather than read from a header a caller could set, because chapter 3.2 removed
-exactly that pattern — a header the caller asserts is a header the caller can forge.
+**The interesting part survives the correction**, and it is worth a section in the
+chapter: the api must believe the gateway about *who failed* while believing nothing
+about the credential that failed. The address is forwarded on the internal contract
+rather than read from a header a caller could set, because chapter 3.2 removed exactly
+that pattern — a header the caller asserts is a header the caller can forge.
 
 **What this does not fix.** The api still does an authentication lookup per bad
 handshake; the limiter now refuses after the threshold instead of never. Shedding
@@ -779,6 +779,88 @@ auth threshold.
 
 **The rule that comes out of all three mistakes**: check the post-series title list
 before generating a fence, and match on the full path rather than the basename.
+
+---
+
+---
+
+## R17 — Which routes the limiter applies to: limit once, at the door it entered
+
+**The seventh pass produced three findings that are one decision.** FR-009 said
+"calls arriving over the internal service seam MUST NOT be subject to customer rate
+limits", which assumed the seam is recognisable. Reading `api-client.ts` and the
+internal controllers shows it is not: the **gateway forwards the end user's own
+token** on all three of its calls, and `/internal/session`, `/internal/backfill` and
+`/internal/messages` are all `@Accepts("user")`. Only the dispatcher presents the
+platform credential.
+
+So a gateway call resolves to `kind: "user"` with the client's `environmentId` and is
+indistinguishable from customer REST traffic by principal.
+
+**Decision: four route classes, and the rule is "count each operation once, at the
+door it entered".**
+
+| Class | Example | Limited by |
+|---|---|---|
+| Public customer | `/v1/channels/…/messages` | `rest`, plus `send` for a message |
+| Gateway plumbing (`@Accepts("user")` under `/internal`) | `/internal/session`, `/internal/backfill`, `/internal/messages` | **nothing at the api** — the gateway limited it at the socket |
+| Dispatcher (`@Accepts("platform")`) | `/internal/dispatch/*` | nothing |
+| Pre-credential | `/healthz`, signup | health never; signup per source IP |
+
+**Why the gateway's plumbing is not counted at the api.** The gateway already counted
+the operation: a handshake against `connect`, a frame against `send`. Counting it again
+as `rest` would charge the socket twice and make it the *expensive* transport while the
+contract advertises the two as equal — and it would mean a reconnect storm silently
+eating a customer's REST budget, which FR-005 describes nowhere.
+
+**This retires the phrase "internal seam" as the exemption's basis.** The seam is not
+what matters; the door is. Two of the three internal routes are user-authenticated and
+would have been limited by any rule that keyed off the principal. The rule that
+actually holds is the chapter's own theme said once more: one mechanism, several doors,
+and each operation belongs to exactly one of them.
+
+**Health is never limited.** Docker's healthcheck polls it every five seconds and
+`docker compose up -d --wait` depends on the answer. A limiter that can refuse
+`/healthz` can stop a deployment.
+
+**Signup is limited per source IP**, reusing the `rlauth:` key family rather than
+adding a mechanism. It has no tenant to key on — that is the point of it — and an
+unlimited account-creation route in a chapter about limits is a gap a reader notices.
+The threshold is the same configuration the auth limiter reads.
+
+---
+
+## R18 — Where the auth refusal is thrown, given a middleware that never throws
+
+**`AuthenticateMiddleware` never refuses, and says so with its reason.** Its comment:
+*"It NEVER throws. A request that presents nothing simply has no principal, and
+pre-credential routes (signup, health) are reached that way on purpose."* The 401
+comes from `CredentialGuard`, which is applied per-controller with `@UseGuards`.
+
+FR-011 requires the auth limiter to refuse past the threshold, and T027 named the
+middleware as the place. It cannot be.
+
+**Decision: the middleware counts and marks; `CredentialGuard` throws.**
+
+The middleware is where the failure is observable — credential present, principal
+null — so counting stays there. When the count is past the threshold it sets a flag on
+the request and calls `next()` as it always has. `CredentialGuard` reads the flag and
+throws a `429` instead of its `401`.
+
+**Three things this gets for free.** The middleware's invariant survives verbatim, so
+pre-credential routes still reach their handlers. The guard already owns the 401 that
+FR-028 wants the rate-limit refusal indistinguishable from, so both come out of one
+place. And the guard already throws the object form — `code: "wrong_credential_type"`
+on its 403 — so a `429` can carry `rate_limited` the same way, which is what FR-003
+needs.
+
+**What it does not cover, by design.** A route with no guard cannot refuse this way.
+That is signup and health, and R17 handles both: health is never limited, signup is
+limited per IP by its own check.
+
+**Rejected: a second middleware after `AuthenticateMiddleware` that may throw.** It
+works, and it puts the 429 somewhere the 401 is not, which is how two refusals that
+must look alike drift apart.
 
 ---
 

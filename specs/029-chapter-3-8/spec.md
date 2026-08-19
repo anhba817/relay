@@ -242,8 +242,13 @@ names a chapter that has not happened yet.
   verify either. With FR-036 in force the distinguishing case is concrete: five sends
   over REST and five frames over the socket leave the send limit at ten and the
   request limit at five.
-- **FR-009**: Calls arriving over the internal service seam MUST NOT be subject to
-  customer rate limits.
+- **FR-009**: Each operation MUST be counted exactly once, at the door it entered.
+  Public customer routes are counted at the api. The gateway's own calls to the api —
+  `/internal/session`, `/internal/backfill`, `/internal/messages`, all of which
+  forward the **end user's** token and are therefore indistinguishable from customer
+  traffic by principal — MUST NOT be counted again as requests, because the gateway
+  already counted the handshake or the frame. Dispatcher routes MUST NOT be counted at
+  all. `/healthz` MUST NEVER be limited (research R17).
 - **FR-036**: The send limit MUST count messages wherever they enter — a REST send
   decrements both the request limit and the send limit; a `message.send` frame on an
   open socket decrements the send limit only. A refusal MUST name which limit was
@@ -263,6 +268,15 @@ names a chapter that has not happened yet.
 - **FR-038**: Every `error` frame MUST carry a `request_id`, minted by the gateway
   per answered frame, or the connection's own id where no frame was being answered.
   The field MUST NOT be optional on the frame schema (research R13).
+- **FR-040**: The refusal for an over-threshold authentication MUST be thrown where
+  the `401` is thrown, not from `AuthenticateMiddleware`. That middleware never throws
+  by documented design — pre-credential routes reach their handlers by having no
+  principal — so it MUST count and mark, and `CredentialGuard` MUST raise the `429`
+  (research R18).
+- **FR-041**: Account creation MUST be rate limited per source IP, reusing the same
+  counter family and threshold as failed authentication. It has no tenant to key on,
+  and an unlimited account-creation route is not acceptable in a platform that limits
+  everything else (research R17).
 - **FR-039**: A failed authentication arriving through the gateway MUST be counted
   against **the client's** source address, not the gateway's. The gateway MUST
   forward that address on the internal authentication call, and the api MUST count

@@ -23,9 +23,17 @@ both transports — there is no batch send.
 
 | Operation | request limit | send limit |
 |---|---|---|
-| `POST …/messages` | −1 | −1 |
+| `POST /v1/channels/…/messages` | −1 | −1 |
 | a `message.send` frame on an open socket | — | −1 |
-| any other REST call | −1 | — |
+| any other public REST call | −1 | — |
+| the handshake itself | — | — (it decrements the connect limit) |
+
+**Each operation is counted once, at the door it entered.** The gateway reaches the
+api over `/internal/*` routes that forward your own token, so they look like customer
+traffic and are deliberately **not** counted again as requests — the gateway already
+counted the handshake against the connect limit and the frame against the send limit.
+Without that rule a socket send would cost two slots and a reconnect storm would eat
+the request budget.
 
 A REST send therefore decrements **both**. The headers describe **whichever has fewer
 remaining**, and `Reset` is that same limit's; a tie reports the request limit.
@@ -181,12 +189,24 @@ small multiple rather than infinity.
 
 ## What is never limited
 
-Calls arriving over the internal service seam — dispatcher-to-api,
-gateway-to-api — carry a service credential and are exempt (FR-009).
+**`/healthz`.** Docker polls it every five seconds and `docker compose up -d --wait`
+depends on the answer. A limiter that can refuse a health check can stop a deployment.
 
-Not a convenience. A limiter that throttles the dispatcher turns one busy
-customer's webhook backlog into a stall for every customer, which is the failure
-FR-WHK-05 forbids and which chapter 3.5's retry schedule was built to avoid.
+**The dispatcher's routes.** They carry the platform credential and reach every
+environment. A limiter that throttles the dispatcher turns one busy customer's webhook
+backlog into a stall for every customer, which is the failure FR-WHK-05 forbids and
+which chapter 3.5's retry schedule was built to avoid.
+
+**The gateway's routes**, as requests. Not because they are trusted — they forward
+your token and are user-authenticated — but because the operation behind them was
+already counted at the socket. See the table above.
+
+## What is limited without a tenant
+
+**Failed authentication**, per source IP. **Account creation**, per source IP, on the
+same counter family and threshold: signup has no tenant to key on, which is the point
+of it, and an unlimited account-creation route is not acceptable in a platform that
+limits everything else.
 
 ---
 

@@ -283,6 +283,44 @@ research, contract and quickstart were all written by a process that had never o
 about a platform from its documents produces text that is internally consistent and
 externally false, and the reviews that only read documents cannot tell the difference.
 
+### The seventh pass, and the rule that finally predicted its own findings
+
+The sixth pass ended with an instruction: *read the source of every operation the spec
+constrains*, and named three unread files. Reading them produced three findings in the
+places predicted — the first time in seven passes a prediction held.
+
+**I1 — `AuthenticateMiddleware` never throws, and T027 asked it to.** Its comment says
+so with its reason: *"pre-credential routes (signup, health) are reached that way on
+purpose."* R18 moves the refusal to `CredentialGuard`, which already owns the `401` that
+FR-028 wants the `429` indistinguishable from, and already throws the object form that
+carries a `code`. The invariant survives verbatim.
+
+**J1 — FR-009 exempted something it could not recognise.** The gateway forwards the
+**end user's** token on all three of its api calls; `/internal/session`,
+`/internal/backfill` and `/internal/messages` are `@Accepts("user")`. Only the
+dispatcher carries the platform credential. So a principal-based exemption would have
+refused the gateway, a socket send would have cost two slots, and a reconnect storm
+would have eaten a customer's request budget — none of it described anywhere. R17
+replaces "the internal seam is exempt" with *count each operation once, at the door it
+entered*, which is the chapter's own theme rather than a special case.
+
+**I3 — and the routes with no tenant.** `/healthz` must never be limited, because
+Docker polls it and `up -d --wait` depends on the answer. Signup is limited per source
+IP on the same counter family as failed authentication: no tenant to key on, and an
+unlimited account-creation route is not acceptable in a platform that limits everything
+else.
+
+**One finding was retracted.** The seventh pass had claimed the gateway presents the
+platform credential and receives a hard-coded `service: "dispatcher"`. It does not. That
+claim was made by reasoning about `authenticate.middleware.ts` without opening
+`api-client.ts`, which is the same error as R11's batch send one pass earlier.
+
+**The rule, stated as narrowly as it deserves.** Findings live wherever the spec
+constrains an operation whose source nobody opened, and that set is enumerable — it is
+the list of files the tasks touch. The corollary cost one false finding to learn: do not
+report a finding about code you have not opened, even when the surrounding code seems to
+imply it.
+
 ### One requirement carries a claim that may be wrong, on purpose
 
 The Assumptions say this renumbering should be cheap because chapter 3.7 removed

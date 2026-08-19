@@ -112,16 +112,24 @@ correctness, not as courtesy.
 
 ---
 
-## V5 — The internal seam is never limited
+## V5 — Each operation is counted once, at the door it entered
 
-Drive an environment to its REST limit, then have the dispatcher report a delivery
-outcome over the internal route.
+Drive an environment to its REST limit, then:
 
-Expected: the internal call succeeds.
+1. have the dispatcher report a delivery outcome over `/internal/dispatch/*` →
+   **succeeds**;
+2. open a socket and send a frame → **both succeed**;
+3. `curl /healthz` → **answers**.
 
-A limiter that throttles the dispatcher turns one busy customer's webhook backlog
-into a stall for every customer — the failure FR-WHK-05 forbids and chapter 3.5's
-retry schedule was built to avoid.
+Step 2 is the one that matters and the one an exemption written from the documents
+misses. The gateway forwards the **end user's** token on `/internal/session`,
+`/internal/backfill` and `/internal/messages`, so its calls resolve to `kind: "user"`
+with the client's environment — a rule that exempted only the platform principal would
+refuse them, and a socket send would cost two slots while the contract advertises one.
+
+Step 1: throttling the dispatcher turns one busy customer's webhook backlog into a
+stall for every customer, the failure FR-WHK-05 forbids. Step 3: Docker polls health
+every five seconds and `up -d --wait` depends on the answer.
 
 ---
 
@@ -137,6 +145,9 @@ With Redis down, in this order:
    present; `Remaining` and `Reset` **absent** (not `-1`).
 2. Submit failed authentication attempts past the threshold from one address →
    **still refused**.
+2a. Confirm the refusal comes from `CredentialGuard` and not from
+   `AuthenticateMiddleware` — the middleware never throws, by documented design, so
+   pre-credential routes still reach their handlers while over the threshold.
 2b. Submit failed handshakes from ten different client addresses through the
    gateway → counted as **ten addresses**, not as ten failures by the gateway. The
    api sees the gateway's address unless the client's is forwarded, and one shared
