@@ -186,3 +186,31 @@ SC-001 could not fail.
   guarantee has not kept it.
 - Move fan-out publication into the api. It would make the announcement
   transactional and reintroduce the dual write chapter 3.3 spent itself removing.
+
+---
+
+## Every requirement checked against the code, not against the tasks
+
+A task marked `[X]` is a claim that something was done. This is the claim checked
+against the file.
+
+| | Where it lives | Verified by |
+|---|---|---|
+| FR-001, FR-003 | `session.ts:105` — `if (suppressed(connection.marks, message)) continue;` inside `deliver()` | the call is on the live path, after the flush |
+| FR-002 | the same predicate returns false above the mark | `session.test.ts`, "a frame above the mark … IS delivered" |
+| FR-004 | `suppressed` indexes `marks[frame.channel]` | `resume.test.ts`, "keeps channels apart" |
+| FR-005 | `session.ts:282` — `connection.marks = null` inside `degrade` | and structurally: every `degrade` returns before line 360 |
+| FR-006 | `session.ts:175` — `marks: null` at creation | `session.test.ts`, "a connection that never resumed suppresses nothing" |
+| FR-007 | `session.ts:360` — `scopeMarks(marks, cursors)` | `resume.test.ts`, "never exceeds the cursor set" |
+| FR-007a | **nothing** | see below |
+
+**FR-007a is verified by exhaustion, which is the only way to verify an absence.**
+`session.ts` refers to `.marks` exactly three times — one read at 105 and two
+writes at 282 and 360 — plus the `marks: null` in the connection literal at 175.
+None of the four retires anything, and there is no fifth. The requirement is a
+prohibition, so no line of code satisfies it; what satisfies it is that the set of
+lines touching the field is small enough to enumerate.
+
+That is also why the fifth sabotage mutation matters more than the other four. It
+is the only one that has to ADD code rather than remove it, because it attacks a
+decision whose implementation is nothing at all.
