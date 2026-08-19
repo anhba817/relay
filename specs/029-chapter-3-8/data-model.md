@@ -171,6 +171,18 @@ a test, not a defensive `if` that silently marks the row.
 
 ---
 
+## Infrastructure inventory
+
+Mailpit joins `INFRA_SERVICES` in `@relay/config` — the constant that names the
+local infrastructure so nothing has to parse YAML — and gets a healthcheck in the
+shape the other four stores use.
+
+It adds **no** entry to `DURABLE_VOLUMES`. It holds messages in memory, and the
+reason is the one the Redis entry already records: a store that is not a source of
+truth does not need a volume, and giving it one invites somebody to depend on it.
+
+---
+
 ## What is deliberately absent
 
 - **No quota counters.** FR-RTL-05's units are messages sent, unique active users

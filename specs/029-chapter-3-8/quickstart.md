@@ -4,7 +4,8 @@ Twelve checks, V0 through V11. Read exit codes, not output. Where a step asserts
 number, the number comes from `contracts/limits.md`.
 
 Prerequisites: `docker compose up -d --wait` from `relay-platform` — now five
-services, Mailpit included. `. env.sh` for the non-default ports the lane uses.
+services, Mailpit included, and it has a healthcheck so `--wait` means ready for it
+too rather than merely running. `. env.sh` for the non-default ports the lane uses.
 
 **Estimated wall clock: about 25 minutes.** No step runs the lane repeatedly —
 this chapter has no intermittent defect whose rate needs measuring, which is the

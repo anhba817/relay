@@ -221,6 +221,32 @@ and the ones it adds arrive with the same confident tone as the ones it removes.
 rule that came out of it is in R16: read the script, not the memory of the last time
 the script complained.
 
+### The fifth pass, which found something no earlier pass could have
+
+**G1 and G2 — a fifth container, unregistered and unwatched.** `@relay/config`
+exports `INFRA_SERVICES` above a comment saying it *names* the local infrastructure
+so the workspace need not parse YAML. T041 added Mailpit to `compose.yaml` and
+nothing added it to the list, so the constant would have become false. It would also
+have had no healthcheck, and `infra.test.ts`'s own comment states the cost: *"if a
+healthcheck disappears … `docker compose up -d --wait` would silently stop meaning
+ready."* V9 reads Mailpit's API immediately after `--wait`.
+
+**The gate could not have caught either.** `infra.test.ts` asserts that compose
+declares every `INFRA_SERVICES` entry — one direction only. A container present in
+compose and absent from the list is invisible to it. The reverse assertion is added
+with the service (T041c), so the next chapter to add a store is caught by a test
+rather than by a fifth analysis pass.
+
+**Where this came from matters more than what it was.** It is in a file — 
+`packages/config/src/infra.test.ts` — that none of the four earlier passes had
+opened. Passes 1 to 3 read the spec against itself, pass 4 read the previous pass's
+remediation, and this one read a package the chapter touches only sideways.
+
+**On when to stop.** Five passes produced 20 findings at a flat rate: 7, 5, 4, 4, 4.
+They did not run out; they moved outward, and the last one came from the edge of what
+the chapter touches rather than its centre. Stopping here is a judgement about cost —
+96 tasks are waiting — and not a claim that the artifacts are clean.
+
 ### One requirement carries a claim that may be wrong, on purpose
 
 The Assumptions say this renumbering should be cheap because chapter 3.7 removed

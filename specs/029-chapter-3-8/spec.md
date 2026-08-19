@@ -304,7 +304,10 @@ names a chapter that has not happened yet.
 - **FR-024**: Failure of the mail path MUST NOT affect message delivery, API
   availability or webhook dispatch.
 - **FR-025**: Local development MUST be able to receive and inspect these emails
-  without an external account or outbound internet access.
+  without an external account or outbound internet access. The mail service MUST be
+  registered in the workspace's infrastructure inventory and MUST carry a
+  healthcheck, so that `docker compose up -d --wait` means ready for it as it does
+  for the other four stores.
 
 #### The chapter
 

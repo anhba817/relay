@@ -350,6 +350,23 @@ surprise.
 `15432`/`16379`/`14222` convention every other store in `compose.yaml` follows, so
 the lane cannot collide with a container a developer is already running.
 
+**A fifth container has to be registered, not just declared.** `@relay/config`
+exports `INFRA_SERVICES` above a comment saying it *names* the local infrastructure
+so the workspace need not parse YAML, and `infra.test.ts` pins it to `compose.yaml`.
+Mailpit joins the list, gets a healthcheck in the shape the other four use, and adds
+no entry to `DURABLE_VOLUMES` — it holds messages in memory, which is the same
+reasoning the Redis entry already records.
+
+**The healthcheck is not decoration.** `infra.test.ts`'s comment states the cost:
+*"if a healthcheck disappears … `docker compose up -d --wait` would silently stop
+meaning ready."* Without one, `--wait` waits for *running* and the quickstart's V9
+can read Mailpit's API before it serves.
+
+**The gate could not have caught either.** `infra.test.ts` asserts that compose
+declares every `INFRA_SERVICES` entry — one direction. A container in compose and
+missing from the list is invisible to it, which is exactly how this went unnoticed
+until the fifth analysis pass. The reverse assertion is added with the service.
+
 Mailpit because it is one container, needs no account, holds messages in memory,
 and exposes both SMTP and an HTTP API — so a test can assert on what was
 *received* rather than on what the sender believed it sent. That distinction is
