@@ -1,6 +1,6 @@
 # Research — chapter 3.8, "Limits you can see coming"
 
-Phase 0. Eighteen items. R3 is the chapter's central decision and the spec
+Phase 0. Nineteen items. R3 is the chapter's central decision and the spec
 deliberately left it open. R5 found a **second unenforced contract** the chapter
 has to close whether it wants to or not. R10 quantifies the size risk the spec
 flagged and the answer is not the one the scope decision assumed. **R11 was added
@@ -774,7 +774,7 @@ correction was written by reading `replay()`.
 as a live collision because chapter 3.8 adds `ioredis` and `nodemailer` to
 `services/api/package.json`. The post-series entry is for the **root** `package.json`
 — turbo's `coverage` script — and the two are different files with the same basename.
-The real collision is `credentials.itest.ts`, which T025c has to touch to raise the
+The real collision is `credentials.itest.ts`, which T025d has to touch to raise the
 auth threshold.
 
 **The rule that comes out of all three mistakes**: check the post-series title list
@@ -861,6 +861,66 @@ limited per IP by its own check.
 **Rejected: a second middleware after `AuthenticateMiddleware` that may throw.** It
 works, and it puts the 429 somewhere the 401 is not, which is how two refusals that
 must look alike drift apart.
+
+---
+
+---
+
+## R19 — Strict env mode, and why R15's escape hatch would not have worked
+
+**Verified by experiment rather than by reading Turborepo's documentation.** A probe
+task was added declaring only `RELAY_NATS_URL`, run with that and an undeclared
+variable both set, then reverted:
+
+```text
+@relay/api:probe:env: DECLARED   RELAY_NATS_URL:   nats://declared
+@relay/api:probe:env: UNDECLARED RELAY_PROBE_VAR:  (undefined)
+```
+
+`turbo.json` resolves to `envMode: strict` and declares thirteen variables on
+`test:integration`. **Anything not on that list reaches a task as `undefined`.**
+
+**This defeats two of this chapter's decisions silently.** R15 designed the auth
+threshold as configuration with an enforcing default precisely so a suite could raise
+it. Under strict mode the child reads `undefined`, falls through to 10, and the suite
+breaks exactly as R15 predicted — while appearing to have been fixed. Mailpit's
+coordinates fail the same way, so the mailer would reach for `localhost:1025` when the
+container is on `11025`.
+
+**A missing variable is not an error.** It is `undefined`, and every read of it has a
+`??` behind it. That is what makes this worth a research item rather than a line in a
+task: the failure mode is a default quietly winning.
+
+**The same hazard has a second home, and this project has already been bitten by
+it.** `packages/e2e/src/harness.ts` forwards an explicit allowlist to the api children
+it spawns, above a comment that names the incident:
+
+> *Store coordinates are FORWARDED, never invented … That is precisely how this suite
+> first failed: turbo runs tasks in strict env mode, the port variable was filtered
+> out, and the harness confidently passed `localhost:5432` to an api that would have
+> found the right store on its own.*
+
+Nine variables are forwarded by name, each with the chapter that added it. This
+chapter adds to both lists.
+
+**The variables, named to the project's convention.** Full URLs with a service-side
+default, because the harness comment is explicit that a harness composing its own URL
+from a port becomes a second source of truth:
+
+| Variable | Default in the service | Set by the lane |
+|---|---|---|
+| `RELAY_AUTH_FAILURES_PER_MINUTE` | 10 | raised by suites that submit bad credentials |
+| `RELAY_SMTP_URL` | `smtp://localhost:1025` | `smtp://localhost:11025` |
+| `RELAY_MAILPIT_URL` | `http://localhost:8025` | `http://localhost:18025` |
+
+**Both files are fenced in earlier chapters** — `turbo.json` in five, `harness.ts` in
+five, most recently 3.5 — so both are amendments this chapter carries.
+
+**The rule for the next chapter that adds a variable**: `turbo.json`'s `env` list and
+`harness.ts`'s `forwarded(...)` are two allowlists somebody has to remember, and
+nothing fails loudly when they are forgotten. Neither is a gate. That is a defect in
+the harness rather than in this chapter, and it is named here rather than fixed
+because a chapter about rate limits is not where a test-infrastructure gate belongs.
 
 ---
 

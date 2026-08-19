@@ -296,6 +296,9 @@ names a chapter that has not happened yet.
   address (FR-AUT-12). The threshold MUST be configuration with an enforcing
   default, so a suite that deliberately submits bad credentials can raise it
   explicitly rather than the default being chosen to suit the suite (research R15).
+  The variable MUST be declared everywhere the lane filters environment — Turborepo
+  runs in strict mode, so an undeclared variable reaches a child as `undefined` and
+  the default silently wins (research R19).
 - **FR-013**: Degradation of the limiter MUST be observable in logs, and the log
   line MUST NOT carry a credential or a key (NFR-SEC-06).
 - **FR-014**: While the limiter is degraded, a response MUST NOT carry an
@@ -326,7 +329,9 @@ names a chapter that has not happened yet.
   without an external account or outbound internet access. The mail service MUST be
   registered in the workspace's infrastructure inventory and MUST carry a
   healthcheck, so that `docker compose up -d --wait` means ready for it as it does
-  for the other four stores.
+  for the other four stores. Its coordinates MUST reach the lane's child processes,
+  which under strict environment mode means declaring them rather than assuming they
+  are inherited (research R19).
 
 #### The chapter
 

@@ -210,9 +210,9 @@ Same basename, different file. Corrected before remediation by checking the titl
 rather than trusting the match.
 
 **The one real collision is `credentials.itest.ts`** — post-series amended by chapter
-3.6's baseline, and T025c has to raise the auth threshold in it. It goes to
+3.6's baseline, and T025d has to raise the auth threshold in it. It goes to
 post-series rather than a chapter fence, because 3.8 teaches rate limiting and not
-credential testing (T025d).
+credential testing (T025e).
 
 **What this says about the process.** Three of the sixteen findings across four
 passes were about the fence mechanism, and two of those three were mistakes made
@@ -320,6 +320,33 @@ constrains an operation whose source nobody opened, and that set is enumerable �
 the list of files the tasks touch. The corollary cost one false finding to learn: do not
 report a finding about code you have not opened, even when the surrounding code seems to
 imply it.
+
+### The eighth pass: an escape hatch that would not have opened
+
+**K1 — Turborepo runs in strict env mode, and this chapter's new variables would have
+arrived as `undefined`.** Confirmed by probe rather than by reading documentation: a
+task declaring only `RELAY_NATS_URL`, run with that and an undeclared variable set,
+printed `nats://declared` and `(undefined)`. R15's whole design — an enforcing default
+with a test-visible override — depends on the override reaching the child. It would
+not have. T025d would have raised a threshold nothing read, and the suite would have
+broken exactly as R15 predicted while appearing to have been fixed.
+
+**K2 — and the same hazard has a second home this project has already been bitten
+by.** `packages/e2e/src/harness.ts` forwards an explicit allowlist, above a comment
+naming the incident: *"turbo runs tasks in strict env mode, the port variable was
+filtered out, and the harness confidently passed `localhost:5432` to an api that would
+have found the right store on its own."* Nine variables, each tagged with the chapter
+that added it. This chapter adds three.
+
+**Neither list is a gate.** Nothing fails loudly when somebody forgets to extend them;
+a missing variable is `undefined` and the `??` behind it wins. R19 names that as a
+defect in the test harness rather than in this chapter, and declines to fix it here —
+a chapter about rate limits is not where a test-infrastructure gate belongs.
+
+**The method mattered more than the finding.** Two earlier findings were retracted
+because they were reasoned from surrounding code rather than read. This one was a
+three-line probe task, run and then reverted. The difference between K1 and those two
+is about four minutes of work.
 
 ### One requirement carries a claim that may be wrong, on purpose
 

@@ -226,7 +226,7 @@ not thought of.
 Drive an endpoint to automatic disablement, then:
 
 ```bash
-curl -s http://localhost:${RELAY_MAILPIT_HTTP_PORT:-18025}/api/v1/messages | python3 -m json.tool
+curl -s "${RELAY_MAILPIT_URL:-http://localhost:18025}/api/v1/messages" | python3 -m json.tool
 ```
 
 Expected, read from the message Mailpit **received** rather than from what the
