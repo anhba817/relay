@@ -107,8 +107,8 @@ platform rather than in this plan, and is closed by this chapter's FR-003 and R5
 ```text
 specs/029-chapter-3-8/
 ├── plan.md              # This file
-├── spec.md              # 36 FR, 4 user stories, 10 SC
-├── research.md          # Phase 0 — R1…R11
+├── spec.md              # 39 FR, 4 user stories, 11 SC
+├── research.md          # Phase 0 — R1…R14
 ├── data-model.md        # Phase 1
 ├── quickstart.md        # Phase 1 — V0…V11
 ├── contracts/
@@ -158,9 +158,17 @@ relay-tutorial/
 
 **Structure decision**: the limiter is a directory inside the api rather than a
 package, because nothing else consumes it — the gateway limits its own two things
-against the same Redis with its own small helper, and inventing a shared package
-for two call sites is the kind of abstraction constitution VII asks to be
-justified. The split inside `limits/` follows chapter 3.7's division and for the
+against the same Redis with its own small helper (`services/gateway/src/limits.ts`),
+and inventing a shared package for two call sites is the kind of abstraction
+constitution VII asks to be justified.
+
+**The gateway's half has a constraint the api's does not**: it has no database
+client and must not gain one, so the limits it enforces ride the internal
+authentication response it already makes and are cached on the `Connection` for its
+lifetime (research R12). It also has no request id to put in the field R5 requires,
+so it mints one (research R13). Neither was visible until the second analysis pass,
+and both are properties of the gateway's deliberate poverty rather than oversights
+in it. The split inside `limits/` follows chapter 3.7's division and for the
 same reason: `bucket.ts` and `fallback.ts` are pure and unit-testable with no
 store, no socket and no clock; `store.ts` and the middleware hold the I/O.
 
@@ -185,7 +193,9 @@ before the task shapes.
 4. **The failure directions.** Fail open for tenants, in-process fallback for auth,
    the degraded header shape from R6, one rate-limited log line. This is the
    chapter's argument and it comes after the mechanism exists to degrade.
-5. **The gateway's two limits.** `429` before the handshake, `rate_limited` on an
+5. **The gateway's two limits.** First the three things it needs and does not have:
+   the limits on the authentication response, its own counter helper, and a request
+   id for its error frames. Then `429` before the handshake, `rate_limited` on an
    open connection, and close code 4008 left deliberately unused for chapter 3.9.
 6. **The notification transport.** Last, and separable. The outbox a third time
    over a table that already has `delivered_at`: claim, send, mark. Mailpit in
@@ -235,6 +245,9 @@ made with the word count in hand instead of predicted now.
 | FR-014 | research R6 | T025a — `Limit` present, `Remaining` and `Reset` absent, store down |
 | FR-003 | research R5 | the 429 body's four fields |
 | FR-004, FR-005 | research R7 | `session.test.ts`; the pre-handshake 429 |
+| FR-037 | research R12 | T034a — a configured connect limit enforced with no db client, and a mid-connection change that does not apply until reconnect |
+| FR-038 | research R13 | T031c; every `error` frame carries an id |
+| FR-039 | research R14 | T030b — ten client addresses counted as ten, not as one gateway |
 | FR-008, FR-036 | research R11, added after analysis | T018a — ten messages in one request; the request limit drops by one and the send limit by ten, and the headers follow the nearer of the two |
 | FR-009 | research R2 | an internal-seam call under load, unthrottled |
 | FR-010, FR-011, FR-015 | research R3 | Redis stopped mid-run; both halves in one outage |

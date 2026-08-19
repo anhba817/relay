@@ -128,6 +128,13 @@ An `error` frame, and the connection **stays open**:
 `rate_limited` has been in `packages/protocol/src/codes.ts` since chapter 1.3 with
 nothing emitting it. This is the first thing that does.
 
+**`request_id` on a frame is new too**, and the gateway had none to give — it minted
+no ids at all. It now mints one per answered frame, and uses the connection's own id
+for a frame nobody asked for. The field is required rather than optional: an optional
+fourth field would be the fourth thing this chapter's own subject warns about
+(research R13). The only asymmetry with REST is that a frame has no headers, so there
+is no `X-Request-Id` duplicate — the id is in the payload either way.
+
 **The connection is not closed.** Closing it would make the client reconnect, which
 costs a handshake and consumes the establishment allowance — a limiter that
 punishes the limited into hitting a second limit.
@@ -145,6 +152,16 @@ environment they are, which is the point.
 - The refusal carries no information about whether the credential was right.
   "Rate limited" and "wrong credential" must be indistinguishable to the caller, or
   the limiter becomes an oracle.
+
+**Whose address is counted.** The client's. A handshake authenticated through the
+gateway reaches the api from the gateway, and counting the caller would put every
+customer's failures in one bucket — ten failures from ten customers would look like
+ten failures from one address, and one attacker would exhaust a threshold that then
+refuses everybody. The gateway forwards the client address on the internal call.
+
+Being exempt from customer rate limits (FR-009) does not exempt a call from saying
+whose failure it carried. The same request is trusted enough not to be throttled and
+not trusted to be the origin.
 
 **During a counter outage this limiter does not fail open.** It falls back to an
 in-process count with the same threshold, so the guarantee weakens from N per
@@ -175,6 +192,11 @@ FR-WHK-05 forbids and which chapter 3.5's retry schedule was built to avoid.
 
 Overridable per environment for the first three. The auth threshold is
 configuration, not per-environment policy, for the reason above.
+
+**A socket's limits are fixed when it connects.** The gateway has no database and
+receives the two socket limits on the authentication response it makes at the
+handshake, so an override changed while a connection is open applies to that
+connection at its next reconnect, not immediately.
 
 **The window is fixed, not sliding**, so up to twice the limit is possible across
 one boundary — 1,200 requests in the two minutes spanning a window edge. Stated

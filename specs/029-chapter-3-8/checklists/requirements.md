@@ -130,6 +130,42 @@ keeps finding at the sabotage battery, and both now have tasks (T011a, T025a).
 Four of the eight edge cases also had no task. Three now sit in T006a; the
 disable/re-enable/disable case went into T049.
 
+### What the SECOND analyse pass found, which was worse
+
+Three findings, two of them architectural, and both architectural ones came from
+the same place: **the gateway's deliberate poverty.**
+
+**D1 — the gateway cannot read the limit policy.** It lives in three Postgres
+columns and `services/gateway/src/registry.ts` states the gateway's position as a
+design statement: *"no pg, no drizzle-orm, no repository import."* FR-007 required
+per-environment configurability and carved out no exception for the socket, so one
+of the three limits was specified as configurable and had no way to be. Resolved by
+R12: the limits ride the authentication response the gateway already requests, and
+sit on the `Connection` beside chapter 3.7's `marks`. The accepted cost — a limit
+changed mid-connection does not apply until reconnect — is now a stated property
+with a test.
+
+**D2 — research R5 asserted something false about the platform.** It said "a gateway
+exists, it mints request ids" as the argument for requiring `request_id` everywhere.
+The gateway mints none: zero occurrences, and its `sendError` builds three fields.
+The requirement would have surfaced as a compile error in T022 with no value
+available to supply — which is exactly when a chapter takes the expedient answer and
+makes the field optional. R13 rejects that explicitly, because an optional fourth
+field would be the fourth instance of the habit this chapter is *about*.
+
+**D3 — the api counts the wrong IP.** FR-AUT-12 limits failed authentication per
+source address, and a handshake authenticated through the gateway arrives from the
+gateway. Every customer's failures shared one counter, so one attacker would exhaust
+a threshold that then refused everybody. This was not a wording problem; it was a
+security requirement that did not do what it said. R14 forwards the client address on
+the internal contract, and names the interaction it creates: the same call is trusted
+enough not to be throttled and not trusted to be the origin.
+
+**What both passes have in common.** Neither found a bad sentence. Both found a
+requirement that was satisfiable on paper and unbuildable, or buildable and wrong.
+The first pass's A1 and this pass's D1 and D3 are all the same shape — a spec written
+from the API's point of view, applied to a service with different capabilities.
+
 ### One requirement carries a claim that may be wrong, on purpose
 
 The Assumptions say this renumbering should be cheap because chapter 3.7 removed

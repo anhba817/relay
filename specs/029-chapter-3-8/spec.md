@@ -249,6 +249,20 @@ names a chapter that has not happened yet.
   reached. A limit a client can lift by moving the same traffic to the socket is not
   a limit; a refusal that does not say whether to batch or to slow down is not
   actionable (research R11).
+- **FR-037**: The gateway MUST enforce the environment's configured connect and send
+  limits without reading the database. It has no database client and MUST NOT gain
+  one; the limits MUST reach it on the internal authentication response it already
+  makes, and MUST be retained for the life of the connection. A limit changed while
+  a socket is open MUST NOT be expected to apply until that socket reconnects, and
+  the chapter MUST state this (research R12).
+- **FR-038**: Every `error` frame MUST carry a `request_id`, minted by the gateway
+  per answered frame, or the connection's own id where no frame was being answered.
+  The field MUST NOT be optional on the frame schema (research R13).
+- **FR-039**: A failed authentication arriving through the gateway MUST be counted
+  against **the client's** source address, not the gateway's. The gateway MUST
+  forward that address on the internal authentication call, and the api MUST count
+  against it. Exemption from customer rate limits (FR-009) MUST NOT exempt a call
+  from identifying whose failure it carried (research R14).
 
 #### Failure behaviour
 
@@ -339,6 +353,9 @@ names a chapter that has not happened yet.
   asserted from a unit test alone.
 - **SC-002**: Every successful response to a limited operation carries all three
   headers, and `Remaining` decreases monotonically across a run inside one window.
+  Where a request is counted against two limits, the headers describe the one with
+  fewer remaining, demonstrated with a batch rather than with single-message
+  traffic.
 - **SC-003**: Two environments of one application are driven independently: one at
   its limit, the other unaffected.
 - **SC-004**: With the bucket store stopped mid-run, customer traffic continues to
@@ -361,6 +378,9 @@ names a chapter that has not happened yet.
 - **SC-010**: The chapter's prose is inside the 2,000–4,000 word bound, or the
   overrun is recorded with the reason — three of the last four Part 3 chapters
   have exceeded it and two were not noticed at the time.
+- **SC-011**: The gateway enforces a configured (non-default) connect limit with no
+  database client added to it, and ten failed handshakes from ten different client
+  addresses are counted as ten addresses rather than as ten failures by the gateway.
 
 ## Assumptions
 
@@ -423,6 +443,12 @@ names a chapter that has not happened yet.
 - **FR-RTM-09** — the five-concurrent-connection cap, which needs a connection
   registry.
 - **Presence** (FR-RTM-06), which shares that registry.
+- **Shedding a handshake flood before the authentication lookup.** After FR-039 the
+  api refuses past the threshold instead of never, but it still performs a lookup per
+  bad handshake. Doing better needs a per-IP check inside the gateway with its own
+  store and its own failure direction — a third limiter in a chapter already carrying
+  two. Named in research R14 and left for the connection-registry work FR-RTM-09
+  needs.
 - **Any change to the analytical path.** Chapter 3.6's attempt records stay as
   they are; this chapter reads no analytics and writes none.
 - **A dashboard view of remaining allowance.** Constitution V requires usage be

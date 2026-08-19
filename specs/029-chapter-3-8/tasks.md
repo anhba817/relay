@@ -12,6 +12,11 @@ owed — which turns out to be the outbox pattern for the third time.
 - **[US1] [US2] [US3] [US4]** — the user story from spec.md this task serves
 - Setup, Foundational, Verification, Publication and Close-out tasks carry no
   story label
+- **A lettered id** (`T031a`) is a task inserted by an `/speckit-analyze` pass,
+  numbered against the task it belongs beside. It may run *before* its base task
+  where it is a prerequisite — `T031a` through `T031c` all precede `T031`. The
+  letters ascend in execution order; the base number only says which task they
+  cluster with
 
 ## Path Conventions
 
@@ -76,7 +81,8 @@ Platform paths are relative to `relay-platform/`, tutorial paths to
 - [ ] T019 [US1] Add `request_id` to the error frame in `packages/protocol/src/frames.ts` and delete the comment promising it "joins in Part 2, when a gateway exists to mint one" — a gateway exists and has since Part 2 (research R5)
 - [ ] T020 [US1] Add `request_id` to `services/api/src/protocol-error.filter.ts`, threading the id the `RequestContextMiddleware` already mints for `X-Request-Id`
 - [ ] T021 [P] [US1] Add `request_id` to the 404 shape in `packages/service-kit/src/index.ts`
-- [ ] T022 [US1] Fix every construction site the `strictObject` change breaks. The compiler finds them, which is what `strictObject` is for; record how many there were in `specs/029-chapter-3-8/baseline.txt`
+- [ ] T022 [US1] Fix every construction site the `strictObject` change breaks. The compiler finds them, which is what `strictObject` is for; record how many there were in `specs/029-chapter-3-8/baseline.txt`. **`services/gateway/src/session.ts`'s `sendError` is one of them and has no id to supply** — T031b is where it gets one, so either order this after T031c or land the two together
+
 - [ ] T023 [US1] Assert the fourth field on a 404, a 401 and the 429 in `services/api/src/limits/limits.itest.ts` (quickstart V3) — **everywhere, not only on the rate-limit error**. Four fields on one status and three on the others is worse than either consistent answer
 
 **Checkpoint**: constitution V's error envelope is four fields for the first time since chapter 1.3.
@@ -97,6 +103,8 @@ Platform paths are relative to `relay-platform/`, tutorial paths to
 - [ ] T028 [US2] Assert in `services/api/src/limits/limits.itest.ts` that the refusal is indistinguishable from a wrong-credential refusal to the caller (contract). A limiter that answers differently for a valid credential it refused is an oracle
 - [ ] T029 [US2] Add the rate-limited degradation log line in `services/api/src/limits/rate-limit.middleware.ts` (FR-013), carrying no credential. **Rate-limited at the logger**: a Redis outage under load emits one line per request otherwise, which is how one outage becomes two
 - [ ] T030 [US2] Assert in `services/api/src/limits/limits.itest.ts` that counting resumes with no operator action once the store returns (FR-015)
+- [ ] T030a [US2] Add the client address to the internal authentication request in `packages/protocol/src/internal.ts`, forward it from `services/gateway/src/session.ts`, and count against it in `services/api/src/auth/authenticate.middleware.ts` (FR-039, research R14). **The api currently sees the gateway's address**, so every customer's failed handshakes share one counter and one attacker exhausts a threshold that then refuses everybody
+- [ ] T030b [US2] Assert in `services/api/src/limits/limits.itest.ts` that ten failed handshakes from ten client addresses count as ten addresses, not as ten failures by the gateway (SC-011). Exemption from customer limits (FR-009) must not exempt a call from saying whose failure it carried — the same request is trusted enough not to be throttled and not trusted to be the origin
 
 **Checkpoint**: the chapter's argument is code, and both directions are demonstrated in one outage.
 
@@ -104,10 +112,15 @@ Platform paths are relative to `relay-platform/`, tutorial paths to
 
 ## Phase 6: User Story 1 — the gateway's two limits
 
+- [ ] T031a [US1] Carry the environment's connect and send limits on the internal authentication response — `packages/protocol/src/internal.ts` and the api's session controller — and cache them on `Connection` in `services/gateway/src/registry.ts`, beside the `marks` chapter 3.7 put there (FR-037, research R12). **The gateway has no database client and must not gain one**; `registry.ts` says so as a design statement
+- [ ] T031b [P] [US1] Write `services/gateway/src/limits.ts` and `services/gateway/src/limits.test.ts` — the gateway's own small counter helper over the `ioredis` client it already has for fan-out. Pure arithmetic reused from the api's shape, unit-tested with no socket and no store, and pinned in `relay-platform/vitest.coverage.config.mts`
+- [ ] T031c [US1] Add `request_id` to `sendError` in `services/gateway/src/session.ts` (FR-038, research R13): minted per answered frame, the connection's own id where no frame was being answered. **The gateway mints no ids today** — `sendError` builds three fields and `newRequestId` is already exported by `@relay/service-kit`
 - [ ] T031 [US1] Refuse an over-limit handshake with an HTTP `429` and `Retry-After` **during the upgrade** in `services/gateway/src/session.ts`, before `wss.handleUpgrade` — deliberately unlike the 4001 path, which completes the handshake by design because a close code is what EIR-WS-05 wants for a bad token (research R7)
 - [ ] T032 [US1] Add the test to `services/gateway/src/session.test.ts` that already-open sockets are unaffected by an establishment refusal (FR-005)
 - [ ] T033 [US1] Emit an `error` frame carrying `rate_limited` for an over-limit frame in `services/gateway/src/session.ts`, and **keep the connection open** (FR-004). Closing it would make the client reconnect, which costs a handshake and consumes the establishment allowance — a limiter that punishes the limited into hitting a second limit
 - [ ] T034 [US1] Assert in `services/gateway/src/session.test.ts` that **close code 4008 is still emitted by nothing** (quickstart V7). It reads "quota exhausted", there is no quota yet, and using it because it was there would collapse the distinction the chapter is built on
+
+- [ ] T034a [US1] Assert in `services/gateway/src/session.test.ts` that a **configured** (non-default) connect limit is enforced on the socket (SC-011, FR-037), and that a limit changed while a socket is open does not apply to that socket until it reconnects — the consequence R12 accepted, asserted so it is a property rather than a surprise
 
 **Checkpoint**: `rate_limited` is emitted for the first time since chapter 1.3 declared it, and 4008 still is not.
 
@@ -136,7 +149,7 @@ Platform paths are relative to `relay-platform/`, tutorial paths to
 
 **Independent test**: quickstart V9 — drive an endpoint to disablement, read the message Mailpit received, confirm no secret and `delivered_at` set only after acceptance.
 
-- [ ] T041 Add Mailpit to `relay-platform/compose.yaml` and `nodemailer` to `services/api/package.json`, with the constitution VII justification from research R9 written where a reader will find it
+- [ ] T041 Add Mailpit to `relay-platform/compose.yaml` and `nodemailer` to `services/api/package.json`, with the constitution VII justification from research R9 written where a reader will find it. **Off-default ports** — `18025` HTTP and `11025` SMTP — matching the `15432`/`16379`/`14222` convention every other store follows, so the lane cannot collide with a developer's own containers
 - [ ] T042 [P] [US3] Write `services/api/src/notifications/mailer.test.ts`: the message body's contents, and **that it carries no signing secret, API key or credential** (FR-021)
 - [ ] T043 [US3] Write `services/api/src/notifications/mailer.ts` to pass T042
 - [ ] T044 [US3] Add the claim query to `services/api/src/db/repository.ts`: `delivered_at IS NULL`, oldest first, `FOR UPDATE SKIP LOCKED`, **taking an explicit limit**. Chapter 3.7's baseline found four suites broken by tests asserting local facts about global operations, and this is another global operation
@@ -166,6 +179,7 @@ Mostly done during `/speckit-specify`. This phase verifies rather than performs.
 
 - [ ] T055 [P] Write `relay-tutorial/app/(en)/part-3/chapter-08/limits-you-can-see-coming/figures.ts` — the two failure directions, the middleware chain's two limiter positions, and the fixed window's boundary burst
 - [ ] T056 Write the limiter sections of `relay-tutorial/app/(en)/part-3/chapter-08/limits-you-can-see-coming/page.mdx`: the vocabulary declared in 1.3 and never enforced, the headers-on-success requirement (FR-027), the two failure directions and why they differ (FR-026), and why 4008 stays unused
+- [ ] T056a Add the section to `relay-tutorial/app/(en)/part-3/chapter-08/limits-you-can-see-coming/page.mdx` on the two things the gateway cannot do: it has no database, so its limits ride the authentication response and are fixed for the life of a socket (R12); and it is trusted not to be throttled while not being trusted to be the origin of a failed login (R14). One request, two opposite kinds of trust
 - [ ] T057 Add the section on what this chapter does not deliver and why to `relay-tutorial/app/(en)/part-3/chapter-08/limits-you-can-see-coming/page.mdx` (FR-029) — quotas need metering that arrives with Part 4, and naming the dependency is the difference between a scope decision and a silent gap
 - [ ] T058 **THE SIZE GATE. Measure the prose word count and fence count of the limiter sections alone**, and record both in `specs/029-chapter-3-8/battery.txt` against research R10's estimate of 23 fences for this half and the 2,000–4,000 bound
 - [ ] T059 **Decide, with the number in hand, whether the transport is sections of this chapter or a chapter of its own.** R10 recommends the split; the scope decision said one chapter. If the limiter half alone is already near the bound, the transport's prose becomes chapter 3.9 and quotas move to 3.10 — the code from Phase 8 ships either way, because it closes FR-WHK-07 regardless of which chapter explains it. Record the decision and the number that drove it

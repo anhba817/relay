@@ -1,11 +1,13 @@
 # Research — chapter 3.8, "Limits you can see coming"
 
-Phase 0. Eleven items. R3 is the chapter's central decision and the spec
+Phase 0. Fourteen items. R3 is the chapter's central decision and the spec
 deliberately left it open. R5 found a **second unenforced contract** the chapter
 has to close whether it wants to or not. R10 quantifies the size risk the spec
 flagged and the answer is not the one the scope decision assumed. **R11 was added
-after `/speckit-analyze`**, which found that nothing said which bucket a REST send
-decrements.
+after the first `/speckit-analyze` pass** (nothing said which bucket a REST send
+decrements) and **R12, R13 and R14 after the second**, which found two
+architectural gaps: the gateway cannot read the policy, and it has no request id to
+put in the field R5 requires.
 
 ---
 
@@ -342,6 +344,10 @@ surprise.
 
 **Decision: Mailpit in `compose.yaml`, and `nodemailer` for SMTP.**
 
+**Ports are off-default** — `18025` for HTTP and `11025` for SMTP — matching the
+`15432`/`16379`/`14222` convention every other store in `compose.yaml` follows, so
+the lane cannot collide with a container a developer is already running.
+
 Mailpit because it is one container, needs no account, holds messages in memory,
 and exposes both SMTP and an HTTP API — so a test can assert on what was
 *received* rather than on what the sender believed it sent. That distinction is
@@ -476,6 +482,134 @@ express "few large batches" and "many small requests" as different loads, which 
 the distinction the two numbers exist for. Reporting all three buckets in
 repeated headers — rejected: `X-RateLimit-*` has no established multi-value
 convention and a client parsing the first occurrence would read an arbitrary one.
+
+---
+
+---
+
+## R12 — How the gateway learns a limit it cannot read
+
+**Raised by the second analysis pass.** The policy is three columns on
+`environments` in Postgres. The gateway has no Postgres — `registry.ts` says so as
+a design statement: *"Note what else is absent: no pg, no drizzle-orm, no
+repository import."* Its dependencies are `@relay/protocol`,
+`@relay/service-kit`, `ioredis`, `jose` and `ws`. So it cannot read
+`connect_limit_per_minute` or `send_limit_per_minute`, and FR-007 carves out no
+exception for the socket.
+
+**Decision: the api's session response carries them, and the gateway caches them on
+the `Connection`.**
+
+The gateway already makes exactly one api call at the upgrade —
+`authenticate(api, token)` — and it already returns more than a yes: identity *and*
+memberships. Adding the environment's two limits is one more field on a round trip
+that is happening anyway. No new call, no new dependency, and the api stays the only
+service that reads Postgres.
+
+**This is the same move chapter 3.2 made on the same call.** Its comment records it:
+*"the api verifies, and answers with the identity AND the memberships. This is the
+same one call the connect path already made — it just asks a better question than
+'what may this user hear'."* Asking it for the limits as well is that sentence a
+second time.
+
+**Where the limit lives once the socket is open.** On the `Connection`, beside the
+`marks` chapter 3.7 put there, and for the same reason: it describes one socket and
+dies with it. The alternative is a policy read per frame, which puts Postgres on the
+hot path of the thing the limit exists to protect.
+
+**The consequence, stated rather than discovered.** A limit changed while a socket
+is open does not apply to that socket until it reconnects. A long-lived connection
+can outlive a policy change by hours. That is the cost of not reading Postgres per
+frame and it is the right trade — but it is a real property and the chapter says it
+rather than letting a reader assume otherwise.
+
+**Rejected: giving the gateway a database client.** It would make the limit
+configurable on the socket immediately and it would spend an architectural property
+three chapters have protected to buy it. Constitution VII asks new dependencies to
+justify themselves against the "deliberately not a separate service" reasoning, and
+"so a rate limit can be reconfigured without a reconnect" does not clear that bar.
+
+**Rejected: defaults only on the socket, narrowing FR-007.** Defensible, and it
+makes the requirement smaller rather than the design better. It also produces the
+worst outcome if nobody notices — a spec claiming per-environment configurability
+while one of the three limits quietly ignores it.
+
+---
+
+## R13 — Does a socket error frame have a `request_id`?
+
+**R5 asserted that a gateway exists and mints request ids. It does not.** There is
+no `newRequestId`, no `requestId` and no `request_id` anywhere in the gateway. Its
+`sendError` builds `{ code, message, docs_url }` and has nothing to add. Making the
+field required on `errorFrameSchema` — a `strictObject` — breaks every call site
+with no value available.
+
+**Decision: the field is required, and the gateway mints one.**
+
+Per inbound frame it answers, for a frame that was answering something; the
+connection's own id for a frame nobody asked for. `@relay/service-kit` already
+exports `newRequestId` and the gateway already imports that package, so this is an
+import and a field.
+
+**Why not make it optional on the frame.** That is the tempting answer — a
+server-initiated frame is not a response to a request, so constitution V's "every
+error response carries the request_id" arguably does not reach it. It is rejected
+because **an optional field is the exact pattern this chapter exists to talk
+about.** `rate_limited` was declared and never emitted. Close code 4008 was declared
+and never sent. `request_id` was promised for Part 2 and never added. Closing the
+third by declaring it optional would be the fourth instance of the same habit, in
+the chapter that names the habit.
+
+**What the id is for, which decides the shape.** A developer quoting an id in a
+support ticket needs it to find one server-side log line. On REST that is one
+request. On a socket, the useful unit is the frame that failed — a client whose
+tenth `message.send` was refused needs to point at that refusal, not at the
+connection. So: an id per answered frame, and the connection's id when there was no
+frame to answer.
+
+**The asymmetry this leaves**, named because it will look like an oversight: the
+REST envelope's `request_id` also appears in the `X-Request-Id` header, and the
+socket's does not, because a frame has no headers. The id is in the payload in both
+cases; only the duplicate is missing.
+
+---
+
+## R14 — The handshake limit runs after an api round trip, and the api counts the wrong IP
+
+**Two findings, one cause.** The gateway's upgrade handler authenticates before it
+can key a bucket, because the environment comes from the token. So the connect limit
+caps *sockets*, not *authenticate calls* — a flood of garbage tokens gets one api
+call each, at whatever rate the attacker can open TCP connections.
+
+FR-AUT-12 is supposed to cover that: failed authentication limited per source IP.
+**It does not, and the reason is worse than the ordering.** The api counts against
+the IP it sees, and for a socket handshake that is *the gateway's* IP. Every client
+in the fleet shares one counter, so ten failed handshakes from ten customers look
+like ten failures from one address — and a single attacker exhausts a threshold that
+then refuses everybody.
+
+**Decision: the gateway forwards the client's address on the internal
+authentication call, and the api counts against that.**
+
+The internal seam is exempt from *customer rate limits* (FR-009) and must not be
+exempt from *counting the end client's failures* — those are two different things
+that a single "is this the internal seam" check would conflate. The exemption
+answers "should this call be throttled as traffic"; the counting answers "whose
+failure was this". A gateway-originated call is exempt from the first and must
+supply an answer to the second.
+
+**This makes FR-009 and FR-012 interact**, which is worth a section in the chapter:
+the same request is simultaneously trusted (do not throttle it) and untrusted (do
+not believe it is the origin). The address is forwarded on the internal contract
+rather than read from a header a caller could set, because chapter 3.2 removed
+exactly that pattern — a header the caller asserts is a header the caller can forge.
+
+**What this does not fix.** The api still does an authentication lookup per bad
+handshake; the limiter now refuses after the threshold instead of never. Shedding
+before the lookup would need a per-IP check inside the gateway with its own store
+and its own fallback, and that is a second limiter with a second failure direction
+in a chapter already carrying two. Named as a known gap rather than built, and it
+belongs with the connection registry work FR-RTM-09 needs.
 
 ---
 

@@ -42,6 +42,14 @@ behaviour. Sharing a prefix would invite sharing a code path.
 **Cardinality is attacker-controlled**, which is why the in-process fallback that
 mirrors this key is capped. See below.
 
+**`source_ip` is the CLIENT's address, not the caller's.** A handshake authenticated
+through the gateway arrives at the api from the gateway, so counting the caller
+would put every customer's failures in one bucket and let one attacker exhaust a
+threshold that then refuses everybody. The gateway forwards the client address on the
+internal call and the api counts against that (research R14, FR-039). It is a field
+on the internal contract rather than a header, because a header the caller asserts is
+a header the caller can forge — the pattern chapter 3.2 removed.
+
 ---
 
 ## In-process — the fallback counter
@@ -101,6 +109,18 @@ Constraints: each column, when present, must be non-negative.
 
 The auth threshold is **not** a column. It is not per environment — the caller has
 not proved which environment they are — so it is configuration, not policy.
+
+### Reaching the gateway
+
+The gateway has no database client and must not gain one. `connect_limit_per_minute`
+and `send_limit_per_minute` travel on the **internal authentication response** it
+already requests at the upgrade, and are held on the `Connection` for its lifetime —
+beside the `marks` chapter 3.7 put there, and dying with the socket for the same
+reason (research R12).
+
+The consequence is a real property: a limit changed while a socket is open does not
+reach that socket until it reconnects. The alternative is a Postgres read per frame,
+on the hot path of the thing the limit protects.
 
 ---
 

@@ -133,6 +133,10 @@ With Redis down, in this order:
    present; `Remaining` and `Reset` **absent** (not `-1`).
 2. Submit failed authentication attempts past the threshold from one address →
    **still refused**.
+2b. Submit failed handshakes from ten different client addresses through the
+   gateway → counted as **ten addresses**, not as ten failures by the gateway. The
+   api sees the gateway's address unless the client's is forwarded, and one shared
+   counter means one attacker refuses everybody (FR-039).
 3. Check the logs → one line naming the degradation, carrying no credential, and
    **rate-limited** rather than one line per request.
 
@@ -164,13 +168,23 @@ created — and every already-open socket unaffected.
 Expected: an `error` frame carrying `rate_limited`, and the **connection stays
 open**.
 
-Two things to check that are easy to get wrong:
+**A configured limit, not the default.** Set the environment's
+`connect_limit_per_minute` to 2 and confirm the socket honours it. The gateway has
+no database — the limits arrive on the authentication response it already makes —
+so this is the step that proves FR-037 rather than assuming the default path works.
+Then change the limit while a connection is open and confirm it does **not** apply
+until that connection reconnects: the property research R12 accepted, checked so it
+is a documented consequence rather than a surprise.
+
+Three things to check that are easy to get wrong:
 
 - `rate_limited` has existed unused in `packages/protocol/src/codes.ts` since
   chapter 1.3. This is the first code that emits it.
 - Close code `4008` is **still** unused. It reads "quota exhausted" and there is no
   quota yet. Using it because it was there would collapse the distinction the
   chapter is built on. Confirm nothing sends it.
+- Every `error` frame carries a `request_id`. The gateway minted no ids before this
+  chapter, so this is a new field with a new source rather than a rename.
 
 ---
 
@@ -197,7 +211,7 @@ not thought of.
 Drive an endpoint to automatic disablement, then:
 
 ```bash
-curl -s http://localhost:8025/api/v1/messages | python3 -m json.tool
+curl -s http://localhost:${RELAY_MAILPIT_HTTP_PORT:-18025}/api/v1/messages | python3 -m json.tool
 ```
 
 Expected, read from the message Mailpit **received** rather than from what the
