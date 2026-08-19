@@ -107,13 +107,30 @@ below the cursor the client had before it disconnected. Sequences are monotonic
 per channel and never reused. So suppression at or below the mark is correct
 forever, not just during a window.
 
-**Why it is bounded without retirement.** The mark set is derived from the resume
-cursors, and those are already capped: `internalBackfillRequestSchema` refuses more
-than `MAX_RESUME_CHANNELS` (200) and the api enforces it, so a larger cursor map
-degrades the resume rather than growing the map. The retained state is therefore
-at most 200 integers per resumed connection — the same order as the cursor map the
-connection already accepted, and constant in the connection's lifetime. FR-007 is
-satisfied by the cap that already exists.
+**Why it is bounded without retirement.** The mark set starts from the resume
+cursors, and those are capped: `internalBackfillRequestSchema` refuses more than
+`MAX_RESUME_CHANNELS` (200) and the api enforces it, so a larger cursor map
+degrades the resume rather than growing the map.
+
+**That is not sufficient on its own, and the first version of this section said it
+was.** `highWaterMarks` seeds from the cursors and then adds a key for every
+channel the backfill returned, so the mark set is bounded by the cursor cap only
+because the api happens to key its response off the cursors it was given. That is
+true today — the backfill controller builds its response from the request — but it
+is another service's response shape holding a bound this service claims. The marks
+are therefore scoped to the presented cursor keys before they are stored, by a
+pure function in `resume.ts` beside `scopeCursors`: the same filter, one step
+later, in the file where a unit test can reach it.
+
+With that scoping the retained state is at most 200 integers per resumed
+connection — the same order as the cursor map the connection already accepted,
+constant in the connection's lifetime, and bounded by this file rather than by a
+promise made elsewhere.
+
+**This section produced two requirements.** FR-007 is the bound just stated.
+FR-007a is the prohibition this section opens with — the mark must not be retired
+while the connection lives. The spec originally required the opposite, and
+correcting that is what this research was for.
 
 **Cost per frame.** One dictionary lookup and one integer comparison, on a path
 that already serialises a frame to JSON and writes it to a socket.
@@ -164,9 +181,13 @@ without it.
 orchestration in `session.ts` "where the socket is". That division is worth
 keeping, so the change splits the same way:
 
-- **`resume.ts`** gains one pure predicate — given the marks and a frame, is this
-  a duplicate? It is unit-testable with no socket, no broker and no clock, next to
-  `flushable`, which is the function it generalises.
+- **`resume.ts`** gains two pure functions. The predicate — given the marks and a
+  frame, is this a duplicate? — which sits next to `flushable`, the function it
+  generalises. And the scoping that drops any channel the presented cursors did not
+  name, which sits next to `scopeCursors`, the filter it echoes. Both are
+  unit-testable with no socket, no broker and no clock, and both are here rather
+  than in `session.ts` for that reason: a filter written inline in the
+  orchestration could not be reached by a test in `resume.test.ts`.
 - **`registry.ts`** gains one field on `Connection`: the marks a resumed connection
   retains, null for a fresh connect and null after a degraded resume.
 - **`session.ts`** does two things: sets the field when a resume succeeds, and

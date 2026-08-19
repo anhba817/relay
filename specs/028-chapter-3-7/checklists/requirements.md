@@ -102,5 +102,27 @@ at the wrong file). Six findings, then five, then three. Convergence rather than
 churn, and the point to stop is when a pass returns only stale words in a file
 list.
 
+**Pass 7 — and the decay curve was measuring the wrong thing.**
+
+Three passes reported shrinking findings, and the conclusion drawn from that was
+convergence. The fourth pass opened `research.md` — never examined by any earlier
+pass, because the coverage map was built from spec, plan and tasks, the three
+artifacts the analysis names — and found a HIGH immediately: R3 still argued the
+bound that pass 2 had proven insufficient, in the section this whole chapter
+pivots on. It also still said `resume.ts` gains one pure function when it gains
+two, and it never mentioned FR-007a, the requirement its own reasoning produced.
+
+So the findings were not shrinking because the feature was converging. They were
+shrinking because the same three files were being re-read more carefully each
+time. Adding one unexamined file produced a HIGH on the first look.
+
+  pass 1   6 findings   CRITICAL   spec, plan, tasks
+  pass 2   5 findings   HIGH       + quickstart, contract
+  pass 3   3 findings   HIGH       + data-model
+  pass 4   3 findings   HIGH       + research
+
+The rule worth carrying forward: an analysis pass is only as wide as its file
+list, and a decay curve across a fixed file list is evidence about the reader.
+
 Items marked incomplete require spec updates before `/speckit-clarify` or
 `/speckit-plan`. None are.
