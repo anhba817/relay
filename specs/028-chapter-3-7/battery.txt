@@ -1,0 +1,94 @@
+Chapter 3.7 — battery
+=====================
+
+Measured on the published pages, not estimated. Written at T038 with English
+only and amended at T040 once the translation existed.
+
+                                english      vietnamese
+  page lines                    874          873
+  titled fences                 10           10
+  of which real files            9            9
+  prose words                   2244         2798
+
+Method, stated because the number is compared against a bound: prose words are
+words on lines OUTSIDE fence bodies, excluding import/export lines and bare JSX
+tag lines. Re-measuring the six earlier Part 3 chapters with the same script
+reproduces their recorded counts 30-70 words low across the board (3.6: 5273
+here against 5346 recorded), so the measure is consistent with itself and with
+what previous batteries reported to within about 1%.
+
+
+FENCE BUDGET
+------------
+
+The plan set no fence budget — 3.5 and 3.6 both had one because both were
+building subsystems and the count was the thing at risk. Shipped 9, and every
+one is a diff rather than a whole file, because this chapter changes existing
+code and adds none.
+
+The 9 are: `resume.itest.ts` (the fourth-quadrant test and two more);
+`resume.ts` (`suppressed`, `scopeMarks`); `registry.ts` (the `marks` field);
+`session.ts` (three call sites and the rewritten comment); `schema.ts` and
+`webhook-walk.mjs` (the chapter-number comments); `resume.test.ts` and
+`session.test.ts` (the unit tests); `vitest.coverage.config.mts` (the ratchet).
+
+One fence is not a file and is excluded from the count of nine: the `(excerpt)`
+showing the gateway's two `await`s, which the chain checker skips by design. It
+is the only fence in the chapter that is not byte-generated from the repository,
+and it is an excerpt because the two statements it puts next to each other are
+sixty lines apart in the real file — which is most of why nobody saw them as two
+instants.
+
+SCHEMA.TS AND WEBHOOK-WALK.MJS ARE THE REASON FOR T035. Both chains end in
+chapter 3.6, so their HEAD check fails the moment this chapter's commit lands
+and stays failing until some chapter shows the amendment. They are fenced here
+rather than in `fences/post-series.md` because this chapter has a section about
+exactly why those comments were fragile — the rule being that a published
+chapter may only carry a fence for a change it discusses.
+
+
+WORD COUNT — INSIDE THE BOUND, FOR THE FIRST TIME IN THREE CHAPTERS
+--------------------------------------------------------------------
+
+`docs/07-tutorial-plan.md` line 67 sets a chapter at 2,000-4,000 words of prose
+outside code fences. Part 3 measured the same way:
+
+  3.1  tenants-all-the-way-down              3214   inside
+  3.2  keys-and-tokens                       3355   inside
+  3.3  the-outbox                            2988   inside
+  3.4  jetstream-and-the-first-consumer      3512   inside
+  3.5  webhooks-that-survive-the-customer    4952   OVER by ~950
+  3.6  when-to-stop-trying                   5273   OVER by ~1270
+  3.7  commit-and-publish-are-two-instants   2244   inside
+
+2,244 sits 244 words above the floor rather than comfortably in the middle, and
+that is worth naming rather than celebrating. The chapter is short because the
+change is four lines of logic; the length is a property of the subject, not of
+restraint learned from 3.5 and 3.6. A chapter about one predicate does not need
+five thousand words, and the two that did need them were about subsystems.
+
+The bound is still unenforced. `check:docs` passes at 2,244 and passed at 5,273.
+
+
+SKIP AHEAD names `part3-ch7`: yes (line 45)
+
+Three figures: the two instants on a timeline (sequenceDiagram), the four
+quadrants (flowchart-v2), and where the mark lives (flowchart-v2).
+
+VERIFIED AS LAID-OUT SVG, not as a 200. `google-chrome --headless --dump-dom`
+against a served build, both locales:
+
+  route                                        svg   roledescriptions
+  /part-3/chapter-07/...                         9   sequence, flowchart-v2 x2
+  /vi/part-3/chapter-07/...                      9   sequence, flowchart-v2 x2
+
+Nine `<svg>` per page because the reading shell contributes six of its own. Each
+of the three diagram SVGs was then checked for a real viewBox and for text
+nodes — `-50 -10 1453.5 791` with 23 text nodes for the English timeline,
+`-50 -10 1370 795` with 23 for the Vietnamese one, whose first label reads
+"gateway của Tuấn (đang resume)". Chapter 3.5 shipped three blank diagrams past a
+passing build and a 200, which is why this is measured rather than assumed.
+
+The prose difference between locales — 2,244 against 2,798 — is the usual
+expansion; 3.6 ran 5,349 against 6,665. Vietnamese needs more words for the same
+sentence and neither number is compared against the other.

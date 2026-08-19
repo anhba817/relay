@@ -166,3 +166,58 @@ be the second copy.
 
 This is the honest version of the chapter's evidence. The intermittent failure is
 how the defect was FOUND; it is not how the fix is PROVEN.
+
+
+T028 — the V9 cross-reference sweep
+------------------------------------
+
+  grep -rn "chapter 3\.[6-9]|Chapter 3\.[6-9]" docs/ relay-tutorial/app/ \
+       relay-platform/services relay-platform/scripts
+
+165 hits. Every one checked rather than counted, and they sort into four groups:
+
+  backward references in live source     ~60   "chapter 3.6, FR-007"   correct
+  published fences in 3.5 and 3.6        ~90   the code as those chapters left it
+  build output under dist/               ~20   not source, not git-tracked
+  forward references in live source        0
+
+FORWARD REFERENCES IN LIVE SOURCE: ZERO. That is the check that matters, and it
+is not the check V9 was written to make. V9 said "no source comment cites a
+chapter number at all", which fails against sixty comments that are correct —
+"the failure run (chapter 3.6, FR-006)" is still true and will be true in Part 7.
+The quickstart has been corrected to ask what it meant: no live file under
+`services/*/src` or `scripts/` may name a chapter that has not happened yet.
+
+Prose numbering agrees across `docs/07-tutorial-plan.md`, `lib/tutorial.ts` and
+both locales: quotas 3.8, gauntlet 3.9. The Vietnamese twins carry it too —
+`part-0/chapter-04` line 217 says "chương 3.9" and `part-3/chapter-06` lines 2629
+and 5391 say "chương 3.8".
+
+The two hits that still read "chapter 3.7's cross-tenant gauntlet" are inside
+chapters 3.5's and 3.6's published fences, in both locales. They stay. A fence is
+a record of what the file said at that chapter, and this chapter's own diff shows
+the line being corrected — which is the mechanism working, not a leak.
+
+
+T039 — traceability, and six identifiers that were about to leak
+-----------------------------------------------------------------
+
+The published page cites three requirement identifiers in prose and in fenced
+comments: FR-RTM-03 (`docs/04-srs.md:345`), FR-WHK-01 (line 358) and FR-WHK-07
+(line 364). All three resolve. Constitution II is cited twice and resolves.
+
+WHAT THE CHECK CAUGHT. Six comments this chapter added to gateway source cited
+FR-001, FR-002, FR-003, FR-005, FR-006 and FR-007 — identifiers from
+`specs/028-chapter-3-7/spec.md`, which no reader of the published book can look
+up. They were about to be fenced into the chapter verbatim. Chapter 3.6 shipped
+fourteen of these, which is why T039 exists at all and why it runs before the
+translation rather than after it.
+
+Rewritten to cite FR-RTM-03 where a docs requirement covers the same property and
+to say the thing plainly where none does. `resume.ts`, `resume.test.ts`,
+`session.ts` and `session.test.ts`, commit ff72819. The fences were regenerated
+from the corrected files; the chain still replays.
+
+3.6's fourteen are not fixed here. They are inside published fences in two
+locales, and correcting them costs an amendment fenced in some later chapter that
+discusses them — the same trade this chapter's own R6 section describes.

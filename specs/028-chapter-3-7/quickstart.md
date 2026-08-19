@@ -104,10 +104,16 @@ Five mutations, each reverted afterwards and the file verified byte-identical:
 | never set the marks after a successful resume | V1's deterministic test |
 | use `<` instead of `<=` in the predicate | the boundary case — the mark's own sequence arrives twice |
 | suppress on every channel rather than the frame's own | invariant 4 — a second channel's frame disappears |
-| retain the marks through a degraded resume | V4 — a client told to page history is also denied the frames |
+| ignore the cursors when scoping the marks | the bound FR-007 claims — `scopeMarks` keeps a channel nobody asked about |
 | **retire a mark when a higher sequence arrives** | V5 — the out-of-order pair, where the delayed lower sequence is delivered after all |
 
 A suite that still passes with a mechanism removed is a suite that holds nothing.
+
+**The fourth replaced a mutation that could not fail.** V6 first listed "retain the
+marks through a degraded resume". Every degrade path returns before the marks are
+ever assigned, so the clear inside `degrade` changes nothing and removing it breaks
+nothing: FR-005 holds because the marks are only set on the success path. The clear
+stays as a guard; the mutation had to go.
 
 **The fifth is the one that matters most and the one most likely to be skipped.**
 Its mechanism is an ABSENCE — the code does not retire, and a mutation has to add
@@ -150,10 +156,21 @@ a passing build.
 grep -rn "chapter 3\.[6-9]\|Chapter 3\.[6-9]" docs/ relay-tutorial/app/ relay-platform/services relay-platform/scripts
 ```
 
-Expected: every hit names what it claims to name. Quotas is 3.8, the gauntlet is
-3.9, and no source comment cites a chapter number at all — including
-`services/api/src/db/schema.ts:375`, which has said "chapter 3.7's cross-tenant
-gauntlet" since before chapter 3.6 moved the gauntlet to 3.8.
+Expected: every hit names what it claims to name. Quotas is 3.8 and the gauntlet
+is 3.9 in `docs/`, in the site registry and in prose in both locales.
+
+**The rule is about FORWARD references, not about chapter numbers.** An earlier
+draft of this step expected "no source comment cites a chapter number at all",
+which is both unachievable and wrong: a comment saying a field arrived in chapter
+3.6 stays true for ever, because chapters do not renumber backwards. What goes
+stale is a comment naming a chapter that has not happened yet, and the check is
+therefore that no live source file under `services/*/src` or `scripts/` contains
+`chapter 3.8` or `chapter 3.9`. Build output under `dist/` is not source and is
+not git-tracked; it carries whatever the last build compiled.
+
+The one this chapter exists to catch is `services/api/src/db/schema.ts:375`,
+which said "chapter 3.7's cross-tenant gauntlet" and had been wrong since chapter
+3.6 moved the gauntlet to 3.8.
 
 ## Definition of done
 

@@ -174,8 +174,8 @@ paragraph that introduces each:
   "every attempt" is approximate: constitution III forbids letting an analytics
   backlog affect webhook dispatch, and independence was chosen over completeness.
 - **FR-WHK-07** — the disablement writes a notification row whose `delivered_at`
-  is null and stays null. This platform has no email transport; 3.7 needs the
-  same one for quota warnings and builds it there.
+  is null and stays null. This platform has no email transport; the quotas
+  chapter needs the same one for warnings and builds it there.
 
 **FR-WHK-09 moved forward into 3.6** rather than waiting. It closes the
 disable-repair-re-enable loop the other two requirements open: without it a
@@ -184,8 +184,16 @@ customer re-enables on hope and the first real event is the experiment.
 **Part 3 gains a second chapter, and this one is a bug.** 3.7 exists because
 chapter 2.7 — the chapter this plan calls "the tutorial's flagship bug" — did not
 close the race it is named for. A client that reconnects can be shown the same
-message twice, and FR-RTM-03's "no gap and no double" is false about one run in
-six of the journey that asserts it.
+message twice, and FR-RTM-03's "no gap and no double" is false.
+
+**The "one run in six" this entry first carried did not survive measurement.**
+3.6 saw one e2e failure in six runs; 3.7 ran the lane twenty times before changing
+anything and saw none. The defect did not get rarer — the race needs a backfill
+query to land inside the commit-to-publish gap, that gap widens under load, and
+the four thousand pending webhook deliveries that made 3.6's lane take nine
+minutes were cleared at the end of 3.6. The lane now takes three. What proves the
+fix is a deterministic test, not a flake rate; the flake is only how the defect
+was found.
 
 The cause is the seam Part 3 has already taught three times: a message is durable
 and a message is announced at two different instants, and the gateway publishes to
@@ -215,6 +223,11 @@ shipped: the bound is a guide to keep a chapter a sitting, and these two carry
 requirements that are half-delivered on purpose and have to say so where they are
 introduced. Recorded here, where the rule lives, so the next chapter measures
 against a real number.
+
+**3.7 came in at 2,244**, the first Part 3 chapter inside the bound in three. It
+is not restraint learned from the two above it: the chapter is short because the
+change is four lines of logic. A chapter's length follows its subject, and the
+two that ran long were building subsystems.
 
 ### Part 4 — The second data path (8 chapters)
 

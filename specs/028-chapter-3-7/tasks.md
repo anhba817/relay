@@ -51,7 +51,7 @@ resume has completed; the client receives it once.
 - [X] T015 [P] [US1] Extend `relay-platform/services/gateway/src/session.test.ts`: a live frame at or below the mark is not sent, one above it is, and a connection that never resumed suppresses nothing (FR-003, FR-006)
 - [X] T016 [US1] Add the out-of-order case to `resume.itest.ts` — publish sequence 5 then sequence 4, both at or below the mark, after the resume — which is the case that made the spec's original retirement rule unsafe (FR-007a, FR-008, contract invariant 8, research R3, quickstart V5)
 - [X] T017 [US1] Add the degraded-resume case to `resume.itest.ts`: force a degrade, publish a low sequence, and confirm it arrives (FR-005, quickstart V4)
-- [ ] T018 [US1] Run `pnpm coverage` and **raise** `services/gateway/src/resume.ts`'s branch pin in `relay-platform/vitest.coverage.config.mts` to what the work achieves — it is already pinned at 93, and a ratchet left at its old number is a ratchet that has stopped ratcheting. Checked here rather than at the end, because 3.5 deferred it and found four thresholds red with the chapter otherwise finished
+- [X] T018 [US1] Run `pnpm coverage` and **raise** `services/gateway/src/resume.ts`'s branch pin in `relay-platform/vitest.coverage.config.mts` to what the work achieves — it is already pinned at 93, and a ratchet left at its old number is a ratchet that has stopped ratcheting. Checked here rather than at the end, because 3.5 deferred it and found four thresholds red with the chapter otherwise finished
 
 **Checkpoint**: the duplicate is gone, deterministically, and nothing is lost.
 
@@ -59,8 +59,8 @@ resume has completed; the client receives it once.
 
 ## Phase 3: Verification
 
-- [ ] T019 Run the sabotage battery per `specs/028-chapter-3-7/quickstart.md` V6 — five mutations, each reverted and the file verified byte-identical by `md5sum`, recording which test failed for each. The fifth ADDS retirement rather than removing a mechanism, and it is the only check that V5 can catch a regression in this chapter's central decision (SC-005, FR-007a)
-- [ ] T020 **Commit before running the battery.** Its revert step is `git checkout --`, which silently discarded an uncommitted correction during chapter 3.6 and failed the byte-identical check against the previous run's hashes
+- [X] T019 Run the sabotage battery per `specs/028-chapter-3-7/quickstart.md` V6 — five mutations, each reverted and the file verified byte-identical by `md5sum`, recording which test failed for each. The fifth ADDS retirement rather than removing a mechanism, and it is the only check that V5 can catch a regression in this chapter's central decision (SC-005, FR-007a)
+- [X] T020 **Commit before running the battery.** Its revert step is `git checkout --`, which silently discarded an uncommitted correction during chapter 3.6 and failed the byte-identical check against the previous run's hashes
 - [ ] T021 Run `pnpm test:integration` twenty consecutive times and record every exit code in `specs/028-chapter-3-7/baseline.txt` beside T004's pre-fix count (SC-001)
 - [ ] T022 Run both lanes and coverage, confirm every pre-existing suite passes unchanged in substance, and record the chapter-end counts (SC-003, SC-004)
 - [ ] T023 Capture every transcript the chapter will quote into `specs/028-chapter-3-7/captured-output.md`: T007's failure, the passing deterministic test, the e2e assertion text from chapter 3.6's baseline, the battery, and the coverage summary (FR-010, FR-016)
@@ -80,11 +80,11 @@ name what it claims to name.
 fenced in this chapter, so they have to exist before the chapter's fences are
 generated. Everything else in this phase could run at any point.
 
-- [ ] T024 [US3] Rewrite the three chapter-number comments to name the subject rather than the ordinal — `relay-platform/services/api/src/db/schema.ts` lines 375 and 596, and `relay-platform/scripts/webhook-walk.mjs` line 453 (FR-019, research R6)
-- [ ] T025 [US3] Confirm the `schema.ts:375` correction fixes a reference that was **already stale** — it says "chapter 3.7's cross-tenant gauntlet" and the gauntlet became 3.8 when chapter 3.6 was inserted — and record that in `specs/028-chapter-3-7/chapter-notes.md`
-- [ ] T026 [P] [US3] Sweep prose cross-references in published pages that name a moved chapter, in every locale — `relay-tutorial/app/(en)/part-0/chapter-04/**/page.mdx`, `relay-tutorial/app/(en)/part-3/chapter-05/**/page.mdx`, `relay-tutorial/app/(en)/part-3/chapter-06/**/page.mdx` and their `app/(vi)/vi/…` twins. Prose only — the same sentences inside fenced source belong to T024 (FR-018)
-- [ ] T027 [US3] Confirm `docs/07-tutorial-plan.md` and `relay-tutorial/lib/tutorial.ts` agree with each other and with the published pages: quotas 3.8, gauntlet 3.9 (FR-017, already done during `/speckit-specify`)
-- [ ] T028 [US3] Run quickstart V9's sweep across `docs/`, both locales' pages, and the platform's source, and confirm every hit names what it claims to name (SC-007)
+- [X] T024 [US3] Rewrite the three chapter-number comments to name the subject rather than the ordinal — `relay-platform/services/api/src/db/schema.ts` lines 375 and 596, and `relay-platform/scripts/webhook-walk.mjs` line 453 (FR-019, research R6)
+- [X] T025 [US3] Confirm the `schema.ts:375` correction fixes a reference that was **already stale** — it says "chapter 3.7's cross-tenant gauntlet" and the gauntlet became 3.8 when chapter 3.6 was inserted — and record that in `specs/028-chapter-3-7/chapter-notes.md`
+- [X] T026 [P] [US3] Sweep prose cross-references in published pages that name a moved chapter, in every locale — `relay-tutorial/app/(en)/part-0/chapter-04/**/page.mdx`, `relay-tutorial/app/(en)/part-3/chapter-05/**/page.mdx`, `relay-tutorial/app/(en)/part-3/chapter-06/**/page.mdx` and their `app/(vi)/vi/…` twins. Prose only — the same sentences inside fenced source belong to T024 (FR-018)
+- [X] T027 [US3] Confirm `docs/07-tutorial-plan.md` and `relay-tutorial/lib/tutorial.ts` agree with each other and with the published pages: quotas 3.8, gauntlet 3.9 (FR-017, already done during `/speckit-specify`)
+- [X] T028 [US3] Run quickstart V9's sweep across `docs/`, both locales' pages, and the platform's source, and confirm every hit names what it claims to name (SC-007)
 
 **Checkpoint**: the renumbering is complete and the source stops citing ordinals.
 
@@ -98,38 +98,38 @@ what the proof did not cover, and why.
 **Independent test**: the chapter states the two instants, shows the failing
 timeline from a real run, and names the case chapter 2.7's own reasoning omits.
 
-- [ ] T029 [US2] Write the English chapter at `relay-tutorial/app/(en)/part-3/chapter-07/commit-and-publish-are-two-instants/page.mdx`: the two instants, the gateway's send path, and where the dedup window closes (FR-009)
-- [ ] T030 [US2] Add the section to `relay-tutorial/app/(en)/part-3/chapter-07/commit-and-publish-are-two-instants/page.mdx` that quotes chapter 2.7's own reasoning — "in the backfill, in the buffer, or both" — and shows the fourth case it does not enumerate, without rewriting or blaming that chapter (FR-011, SC-008)
-- [ ] T031 [US2] Add the quadrant table to `relay-tutorial/app/(en)/part-3/chapter-07/commit-and-publish-are-two-instants/page.mdx`: when published against sequence versus mark, three tests and one empty cell, one number apart (research R2)
-- [ ] T032 [US2] Add the section to `relay-tutorial/app/(en)/part-3/chapter-07/commit-and-publish-are-two-instants/page.mdx` connecting the seam to 3.3's outbox, 3.5's post-then-report and 3.6's publish-after-commit — four instances, four different correct answers (FR-012)
-- [ ] T033 [US2] Add the section to `relay-tutorial/app/(en)/part-3/chapter-07/commit-and-publish-are-two-instants/page.mdx` on how it was found: an intermittent failure in a lane already red for three unrelated reasons, and what that cost (FR-013)
-- [ ] T034 [US2] Add the section to `relay-tutorial/app/(en)/part-3/chapter-07/commit-and-publish-are-two-instants/page.mdx` on the retirement rule the spec proposed and research overturned, including the out-of-order publication that makes it unsafe (research R3)
-- [ ] T035 [US2] Add the section on chapter numbers inside fenced source code to `relay-tutorial/app/(en)/part-3/chapter-07/commit-and-publish-are-two-instants/page.mdx` — why a comment citing an ordinal goes stale on every insertion, and why the mechanism guaranteeing the book matches the code is the same one that makes the correction cost a fence. **Without this section the corrected files cannot be fenced here** (research R6, FR-020)
-- [ ] T036 [P] [US2] Write `relay-tutorial/app/(en)/part-3/chapter-07/commit-and-publish-are-two-instants/figures.ts` — the two instants on a timeline, the four quadrants, and where the mark now lives
-- [ ] T037 [US2] Generate every fence from the real files rather than typing them — **including diff fences for `relay-platform/services/api/src/db/schema.ts` and `relay-platform/scripts/webhook-walk.mjs`**, whose chains end in chapter 3.6 and whose HEAD check fails until this chapter amends them — and confirm `pnpm check:fences` replays the chain onto `relay-platform` (FR-015, FR-020)
-- [ ] T038 [US2] Measure the battery on the published page and record it in `specs/028-chapter-3-7/battery.txt`, with the prose word count against the 2,000–4,000 bound and the SKIP AHEAD naming `part3-ch7`
-- [ ] T039 [US2] Traceability: confirm every `FR-*`/`NFR-*`/`ADR-*` the chapter cites resolves in `docs/` or the constitution — chapter 3.6 leaked fourteen feature-local identifiers a reader cannot look up
+- [X] T029 [US2] Write the English chapter at `relay-tutorial/app/(en)/part-3/chapter-07/commit-and-publish-are-two-instants/page.mdx`: the two instants, the gateway's send path, and where the dedup window closes (FR-009)
+- [X] T030 [US2] Add the section to `relay-tutorial/app/(en)/part-3/chapter-07/commit-and-publish-are-two-instants/page.mdx` that quotes chapter 2.7's own reasoning — "in the backfill, in the buffer, or both" — and shows the fourth case it does not enumerate, without rewriting or blaming that chapter (FR-011, SC-008)
+- [X] T031 [US2] Add the quadrant table to `relay-tutorial/app/(en)/part-3/chapter-07/commit-and-publish-are-two-instants/page.mdx`: when published against sequence versus mark, three tests and one empty cell, one number apart (research R2)
+- [X] T032 [US2] Add the section to `relay-tutorial/app/(en)/part-3/chapter-07/commit-and-publish-are-two-instants/page.mdx` connecting the seam to 3.3's outbox, 3.5's post-then-report and 3.6's publish-after-commit — four instances, four different correct answers (FR-012)
+- [X] T033 [US2] Add the section to `relay-tutorial/app/(en)/part-3/chapter-07/commit-and-publish-are-two-instants/page.mdx` on how it was found: an intermittent failure in a lane already red for three unrelated reasons, and what that cost (FR-013)
+- [X] T034 [US2] Add the section to `relay-tutorial/app/(en)/part-3/chapter-07/commit-and-publish-are-two-instants/page.mdx` on the retirement rule the spec proposed and research overturned, including the out-of-order publication that makes it unsafe (research R3)
+- [X] T035 [US2] Add the section on chapter numbers inside fenced source code to `relay-tutorial/app/(en)/part-3/chapter-07/commit-and-publish-are-two-instants/page.mdx` — why a comment citing an ordinal goes stale on every insertion, and why the mechanism guaranteeing the book matches the code is the same one that makes the correction cost a fence. **Without this section the corrected files cannot be fenced here** (research R6, FR-020)
+- [X] T036 [P] [US2] Write `relay-tutorial/app/(en)/part-3/chapter-07/commit-and-publish-are-two-instants/figures.ts` — the two instants on a timeline, the four quadrants, and where the mark now lives
+- [X] T037 [US2] Generate every fence from the real files rather than typing them — **including diff fences for `relay-platform/services/api/src/db/schema.ts` and `relay-platform/scripts/webhook-walk.mjs`**, whose chains end in chapter 3.6 and whose HEAD check fails until this chapter amends them — and confirm `pnpm check:fences` replays the chain onto `relay-platform` (FR-015, FR-020)
+- [X] T038 [US2] Measure the battery on the published page and record it in `specs/028-chapter-3-7/battery.txt`, with the prose word count against the 2,000–4,000 bound and the SKIP AHEAD naming `part3-ch7`
+- [X] T039 [US2] Traceability: confirm every `FR-*`/`NFR-*`/`ADR-*` the chapter cites resolves in `docs/` or the constitution — chapter 3.6 leaked fourteen feature-local identifiers a reader cannot look up
 
 ---
 
 ## Phase 6: Publication in both locales
 
-- [ ] T040 Translate the chapter to `relay-tutorial/app/(vi)/vi/part-3/chapter-07/commit-and-publish-are-two-instants/page.mdx`, splitting prose from fences mechanically before translating anything and leaving every fence byte-identical (FR-014, translate-mdx §2.4)
-- [ ] T041 [P] Translate `relay-tutorial/app/(vi)/vi/part-3/chapter-07/commit-and-publish-are-two-instants/figures.ts` — mermaid labels only; identifiers, field names and file paths stay English
-- [ ] T042 Verify the translated page's JSX box tags balance in both locales before building — chapter 3.6's translation dropped a `<Why>` opening tag and the build error named a line 200 lines away
-- [ ] T043 Set 3.7 published in `relay-tutorial/lib/tutorial.ts` with `translatedIn: ["vi"]`
-- [ ] T044 Verify publication of both routes: 200, the reading shell present, and the figures rendering as **SVG in a headless browser** (SC-006) — a page that returns 200 is not a page that is laid out, and 3.5 shipped three blank diagrams past a passing build
-- [ ] T045 Run `pnpm check:fences` and confirm the Vietnamese fences mirror the English byte for byte and the locale count has risen
+- [X] T040 Translate the chapter to `relay-tutorial/app/(vi)/vi/part-3/chapter-07/commit-and-publish-are-two-instants/page.mdx`, splitting prose from fences mechanically before translating anything and leaving every fence byte-identical (FR-014, translate-mdx §2.4)
+- [X] T041 [P] Translate `relay-tutorial/app/(vi)/vi/part-3/chapter-07/commit-and-publish-are-two-instants/figures.ts` — mermaid labels only; identifiers, field names and file paths stay English
+- [X] T042 Verify the translated page's JSX box tags balance in both locales before building — chapter 3.6's translation dropped a `<Why>` opening tag and the build error named a line 200 lines away
+- [X] T043 Set 3.7 published in `relay-tutorial/lib/tutorial.ts` with `translatedIn: ["vi"]`
+- [X] T044 Verify publication of both routes: 200, the reading shell present, and the figures rendering as **SVG in a headless browser** (SC-006) — a page that returns 200 is not a page that is laid out, and 3.5 shipped three blank diagrams past a passing build
+- [X] T045 Run `pnpm check:fences` and confirm the Vietnamese fences mirror the English byte for byte and the locale count has risen
 
 ---
 
 ## Phase 7: Close-out
 
 - [ ] T046 Run quickstart V0–V9 end to end from `specs/028-chapter-3-7/quickstart.md`, reading exit codes rather than grepping output
-- [ ] T047 Scan `specs/028-chapter-3-7/captured-output.md` and both published pages for leaked credentials, recording the patterns searched rather than the conclusion alone
+- [X] T047 Scan `specs/028-chapter-3-7/captured-output.md` and both published pages for leaked credentials, recording the patterns searched rather than the conclusion alone
 - [ ] T048 Write `specs/028-chapter-3-7/chapter-notes.md` from what happened rather than what was planned, including the pre-fix and post-fix flake counts and anything the battery contradicted
 - [ ] T049 Fix forward any defect this chapter exposes in an earlier chapter, in every locale that chapter has, and record it in `specs/028-chapter-3-7/chapter-notes.md`
-- [ ] T050 Amend `docs/07-tutorial-plan.md` if this chapter's scope moved, and confirm the Part 3 numbering it carries still matches `relay-tutorial/lib/tutorial.ts`
+- [X] T050 Amend `docs/07-tutorial-plan.md` if this chapter's scope moved, and confirm the Part 3 numbering it carries still matches `relay-tutorial/lib/tutorial.ts`
 - [ ] T051 Tag `relay-platform` as `part3-ch7` at the chapter-end commit, because the chapter's SKIP AHEAD tells readers that tag exists — 3.5 published that claim before the tag was created
 
 ---
