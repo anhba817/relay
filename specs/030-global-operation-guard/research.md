@@ -381,3 +381,39 @@ What is worth keeping is not the audit result. It is that a document can be writ
 correctly against a guide nobody read, and still fail the one rule that guide calls
 a defect — because that rule is the one a careful writer would not think to apply
 to themselves.
+
+
+## R18 — Cutting a filler clause found a wrong number inside it
+
+J7 was the smallest finding of the second pass: a superficial `-ing` tail on T022,
+", making all five cross-environment functions consistent in requiring one". The
+guide asks for such a clause to say what happens or be cut.
+
+Counting before cutting found that **five is four**:
+
+```
+drainOutbox                limit=yes   default=-
+drainDisableNotifications  limit=yes   default=-
+drainDueDeliveries         limit=yes   default=-
+sweepDisabledEndpoints     limit=yes   default=100   ← the one losing it
+expandEventToDeliveries    limit=NO
+replayDeadLetter           limit=NO
+pendingDeliveryDepth       limit=NO
+outboxDepth                limit=NO
+```
+
+Four take a batch size. Two return a global count and have nothing to bound. Two
+cross environments but take an id, so they are bounded by construction — a category
+none of the documents had, which is why the arithmetic never added up. FR-012b
+records it, and SC-006 now says four.
+
+The claim appeared in three places and had survived the first analysis pass, which
+quoted it while reporting a *different* problem with the same requirement (M1, the
+depth functions). A count carried in prose is a second source of truth, and this one
+was wrong in every copy.
+
+**Why the small finding was the productive one.** The filler clause was doing
+exactly what filler does: it read as a summary, so nobody checked it. Cutting it
+required knowing what it summarised, and knowing that required counting. Three
+documents asserted five; the compiler would have caught nothing, because the
+sentence was prose.

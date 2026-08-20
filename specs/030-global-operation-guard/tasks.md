@@ -109,7 +109,7 @@ Platform paths are relative to `relay-platform/`, tutorial paths to
 
 **Independent test**: quickstart V7 — add a global-admin import to any non-exempt `*.itest.ts` and run lint.
 
-- [ ] T022 [P] [US3] Remove the default from `sweepDisabledEndpoints(db, limit = 100)` in `services/api/src/db/repository.ts`, making all five cross-environment functions consistent in requiring one
+- [ ] T022 [P] [US3] Remove the default from `sweepDisabledEndpoints(db, limit = 100)` in `services/api/src/db/repository.ts`. It is the last of the **four** batch-taking functions to carry one — `drainOutbox`, `drainDueDeliveries` and `drainDisableNotifications` already require it
 - [ ] T022a [US3] **Record in `services/api/src/db/repository.ts`, beside the signature, that this would not have prevented instance 6** (research R8). `sweepDisabledEndpoints(db, 10_000)` is worse, not better. The required argument is a prompt to think about whose rows are in scope; the trigger is the control. A comment claiming otherwise would be a comment that teaches the wrong lesson
 - [ ] T023 [US3] Fix every caller the removed default breaks. The compiler finds them; record how many there were in `specs/030-global-operation-guard/baseline.txt`
 - [ ] T024 [US3] Add the `no-restricted-imports` entry to `relay-platform/eslint.config.mjs` using `importNames` for the six global-admin functions — `drainOutbox`, `drainDueDeliveries`, `drainDisableNotifications`, `sweepDisabledEndpoints`, `outboxDepth`, `pendingDeliveryDepth` — restricted in `*.itest.ts`, alongside the existing `pg`, `drizzle-orm` and `ioredis` entries whose comment states the principle

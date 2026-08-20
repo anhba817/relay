@@ -143,8 +143,8 @@ to any `*.itest.ts` not on the exemption list and run lint. It must fail.
 1. **Given** the restriction in place, **When** a new integration test imports a
    global admin function, **Then** lint fails and the message says which scoped
    function to use instead.
-2. **Given** the five global functions, **When** any caller omits the batch size,
-   **Then** the compiler rejects it.
+2. **Given** the four batch-taking functions, **When** any caller omits the batch
+   size, **Then** the compiler rejects it.
 3. **Given** a suite that legitimately drives a global function, **When** lint
    runs, **Then** it passes because the file is named on an exemption list a
    reader can audit.
@@ -225,6 +225,10 @@ to any `*.itest.ts` not on the exemption list and run lint. It must fail.
   They are therefore restricted from tests by FR-013 rather than fixed by FR-012 —
   a global `count(*)` compared against itself is instance 4, twice in one file,
   four chapters apart.
+- **FR-012b**: `expandEventToDeliveries` and `replayDeadLetter` cross environments
+  but take an id, so they are bounded by construction and need neither a batch size
+  nor a restriction. Recorded so the count of cross-environment functions adds up:
+  **four** take a batch, two return a count, two take an id.
 - **FR-013**: Importing a global admin function into a `*.itest.ts` MUST fail
   lint, unless the file appears on an exemption list.
 - **FR-014**: The lint message MUST name the scoped alternative rather than only
@@ -301,8 +305,10 @@ to any `*.itest.ts` not on the exemption list and run lint. It must fail.
   seconds against the chapter 3.9 baseline of 3m15s.
 - **SC-005**: Every suite that performs a global operation on purpose still
   passes, and each exemption is discoverable by reading the file that uses it.
-- **SC-006**: All five cross-environment functions require a batch size; none
-  carries a default.
+- **SC-006**: All **four** batch-taking functions require a batch size and none
+  carries a default. The other four cross-environment functions are accounted for
+  rather than changed: two return a global count and have nothing to bound, and two
+  are already bounded by an id argument.
 - **SC-007**: Adding a global admin import to a new integration test fails lint,
   and the message tells the author what to use instead.
 - **SC-008** *(lagging — verifiable only after the next chapter ships)*: the
