@@ -145,3 +145,23 @@ is what you do when you have guessed at a schema; reading `pg_constraint` first 
 cheaper than a failure and produces the same knowledge. The five constraint
 definitions are now comments beside the inserts they govern, which is where the
 next person editing them will look.
+
+## T023 — callers broken by removing sweepDisabledEndpoints's default
+
+One, in production code: `services/api/src/webhooks/delivery-relay.ts:169`,
+`sweepDisabledEndpoints(db)` -> `sweepDisabledEndpoints(db, 100)`. The four call
+sites in `deliveries.itest.ts` already passed `10_000` — chapter 3.7's fix for
+instance 1 — so the compiler found exactly one.
+
+## V7 — the lint rule fires
+
+    services/api/src/messages/history.itest.ts
+      1:10  error  'outboxDepth' import from '../db/repository' is restricted. …
+    ✖ 1 problem (1 error, 0 warnings)
+
+    services/api/src/db/repository.itest.ts
+      6:41  error  'outboxDepth' import from './repository' is restricted. …
+    ✖ 1 problem (1 error, 0 warnings)
+
+Two spellings, two entries. The same import added to `outbox/outbox.itest.ts`,
+which is on the ignores list, exits 0.
