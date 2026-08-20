@@ -299,6 +299,43 @@ is not restraint learned from the two above it: the chapter is short because the
 change is four lines of logic. A chapter's length follows its subject, and the
 two that ran long were building subsystems.
 
+### Work that publishes no chapter
+
+Not everything the repository needs is something a chapter teaches. Tooling, CI,
+a dependency the series does not explain — those changes land in
+`relay-tutorial/fences/post-series.md`, applied after the last chapter and checked
+exactly as strictly, so the chain stays byte-exact and no chapter is made to show
+a reader code it never discusses.
+
+One entry is large enough to name here, because it is a class of defect rather
+than a fix.
+
+**Feature 030 — the fault that only shows up in company.** Seven times across
+Parts 2 and 3, a test asserted a local fact about a global operation: a sweep
+whose batch never reached its own endpoint, a drain holding a lock, a consumer on
+a fixed budget against a growing stream, a `count(*)` compared against itself
+twice in the same file four chapters apart, a drain at a default batch size of
+fifty, and — in chapter 3.9 — a global *mutation* that disabled a neighbouring
+suite's fixture.
+
+Every one passed alone and failed beside a neighbour, which is why each read as a
+flake and why the class kept coming back. The sixth was written by someone who had
+recorded the other five and cited them in a chapter.
+
+The remedy is not another rule. Three rules failed their own authors during 3.8
+alone. It is to make the fault **fail in isolation**: plant rows a global
+operation would take, fail the lane when something takes them, require a batch
+size at every cross-environment call, and refuse the import inside a test file.
+The specification is `specs/030-global-operation-guard/`.
+
+It teaches no chapter, and that is a deliberate call rather than an oversight. The
+material is genuinely interesting — a fault invisible by construction is good
+writing — but the series' rule is that a chapter may only fence a change it
+discusses, and inventing a chapter to justify test infrastructure is the tail
+wagging the dog. If a later chapter wants the story, the six post-series entries
+and this feature's research are where it is kept.
+
+
 ### Part 4 — The second data path (8 chapters)
 
 SRS Phase 3. The ClickHouse material — likely the strongest search-traffic magnet, since
