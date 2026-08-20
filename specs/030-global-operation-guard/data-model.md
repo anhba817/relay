@@ -179,8 +179,12 @@ runs every `*.itest.ts` in one process with no `setupFiles` and no `globalSetup`
 it would have met the trigger with no way to answer it and failed all six exempt
 suites.
 
-## Verdict
+## Refusal
 
 Not a stored entity. The guard's output is a Postgres error raised in the
 offending transaction, and its shape is a contract — see
 [contracts/guard.md](./contracts/guard.md).
+
+*This section was headed **Verdict** until the seventh analysis pass — the name the
+checksum design gave to "whether the sentinel changed during a run". Nothing
+returns a verdict now, because a non-exempt statement never completes.*

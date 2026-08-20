@@ -99,7 +99,7 @@ freshly migrated database. It must fail.
 A developer writes a test that performs a global mutation. Today the damage
 surfaces as an unrelated suite failing, and the person who has to diagnose it is
 not the person who caused it. With this story, the run that contains the mutation
-reports it, and a diagnosis mode names the test.
+fails **in that test**, with its own stack, and names the row it took.
 
 **Why this priority**: it covers instance 6 — the one this project caused rather
 than inherited — and it is the only remedy that catches a global mutation reached
@@ -117,11 +117,14 @@ sentinel row it took.
 
 1. **Given** the bait planted, **When** a test mutates bait, **Then** the run
    fails and the message names the table and the row.
-2. **Given** a suite that performs a global operation on purpose — the outbox and
-   delivery relays — **When** the lane runs, **Then** it passes, because that
-   suite carries an explicit and visible exemption rather than a silent one.
-3. **Given** a lane run where something took the bait, **When** the developer
-   re-runs in diagnosis mode, **Then** the offending test is named.
+2. **Given** any of the **six** suites that perform a global operation on purpose
+   (research R5), **When** the lane runs, **Then** it passes, because each carries
+   an exemption visible in the file that uses it rather than a silent one.
+3. **Given** a test that mutates bait while sixteen other files run in parallel,
+   **When** the run reports, **Then** it names **that** test and no bystander —
+   on the run that contains the fault, with no second run and no serial mode.
+   *An earlier version of this criterion required a "diagnosis mode", which
+   belonged to the checksum design and is why FR-008 is marked superseded.*
 
 ---
 

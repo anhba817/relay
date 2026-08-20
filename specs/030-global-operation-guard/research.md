@@ -742,3 +742,77 @@ One thing pass five got wrong in its own favour: it reproduced the plan template
 Complexity Tracking instruction as a blockquote and smoothed it — an added article,
 a dropped bold, an added period. The prose guide names that exactly: a quote that
 has been smoothed is a misquote. Now byte-identical.
+
+
+---
+
+# Findings from the seventh analysis pass, and the sweep that followed it
+
+Pass six closed by claiming no obvious target remained. That claim was wrong, and
+wrong in a way worth recording: pass six swept Edge Cases and Key Entities, and
+the conclusion drawn was "the narrative sections are done". **Acceptance scenarios
+are neither narrative nor requirements**, so they fell in the same gap that had
+hidden the other two for six passes.
+
+## R34 — The third pass-zero section asserting the superseded design
+
+US2's acceptance scenario 3 required a mode the feature deliberately does not have:
+
+> **Given** a lane run where something took the bait, **When** the developer
+> re-runs in **diagnosis mode**, **Then** the offending test is named.
+
+FR-008 is marked *superseded by research R6* for exactly that reason — the trigger
+names the test in its own stack, on the run that contains the fault. So US2 could
+not have been signed off against its own spec.
+
+And the fix for it was itself incomplete. Rewriting the scenario left the story's
+own **description** four lines above still saying *"the run that contains the
+mutation reports it, and a diagnosis mode names the test"*. The mechanical sweep
+caught that; a seventh targeted pass would not have.
+
+## R35 — Two documents, two vocabularies for one sequence
+
+`plan.md` numbered the work Phase A to E; `tasks.md` numbers it 1 to 8. Nothing
+mapped them, and the plan's letters had **no counterpart for tasks' Phase 7**,
+verification — twenty consecutive lane runs, the SC-004 measurement, quickstart V0
+to V11. Two phase vocabularies for one sequence is one too many; until the plan is
+renumbered a paragraph carries the mapping and names the phase the letters skipped.
+
+Also in the plan: **Phase D still stated research R3's two failures as fact**, six
+passes after they became hypotheses and one pass after `tasks.md` was corrected to
+say so. A remediation that changes one document and leaves another asserting the
+opposite is worse than the original error, because it looks settled.
+
+## R36 — What a mechanical sweep found that seven targeted passes did not
+
+Instead of an eighth targeted pass, every document was grepped for the vocabulary
+the design abandoned — `diagnosis mode`, `checksum`, `run-scoped`, `verdict`,
+`serial`, `SET relay.allow_global`, `shared sentinel`, `setup hook` — and for every
+count that has been wrong once: `seven instances`, `seven files`, `five global`,
+`five cross-environment`, plus the two paths that moved.
+
+**80 hits across 8 documents. Three were real:**
+
+| | |
+|---|---|
+| `spec.md` US2's story description | still promised a diagnosis mode — R34 |
+| `plan.md`, twice | *"the seven recorded instances"*, where the battery is six. Pass four corrected this in `tasks.md` and never looked at `plan.md` |
+| `data-model.md` | its entity section was still headed **Verdict**, the checksum's name for it, while `spec.md`'s Key Entities had been renamed **Refusal** in pass six |
+
+The other 77 are `research.md`'s chronology — which must contain the old words,
+because it records what was believed and when — and explanatory notes of the form
+*"an earlier version said X"*. Those are not drift; they are the audit trail.
+
+**The lesson is about method, not about any of the three.** Seven passes each
+picked a target and swept it: the runtime, the loading order, the packaging, the
+cross-document claims, the predecessor's assertions, the narrative sections, the
+acceptance scenarios. Every pass found something, and every pass left a surface
+unswept, because a target is a guess about where the problem is. A grep for
+abandoned vocabulary needs no guess. It found in one command what the sixth and
+seventh passes each found one instance of, and it will keep working when nobody
+remembers which mechanism was replaced.
+
+Two of the three had already been fixed **elsewhere** — pass four in `tasks.md`,
+pass six in `spec.md` — and survived in a second document. That is the strongest
+argument for the sweep: a remediation is not done when the file you were reading
+is correct.

@@ -41,7 +41,7 @@ and the sentinel rows exist only in test databases and are created by the lane,
 never by a product migration.
 
 **Testing**: the api and dispatcher integration lanes. This feature's own
-verification is the seven recorded instances, reintroduced one at a time and
+verification is the six recorded instances, reintroduced one at a time and
 required to fail.
 
 **Target Platform**: developer machines and CI, on Linux.
@@ -153,24 +153,36 @@ fault.
 
 The three defences are independent and land in order of how much they catch.
 
-**Phase A — the trigger (spec US2).** Highest value: it catches the writer shape,
+These letters are the plan's; `tasks.md` numbers the same work 1 to 8. The map:
+**A → Phase 3**, **B → 4**, **C → 5**, **D → 6**, **E → 8**, plus tasks' **Phase 1
+(setup and baseline)** and **Phase 2 (the sentinel)** ahead of them all and
+**Phase 7 (verification)** between D and E. Two vocabularies for one sequence is
+one too many, and until the plan is renumbered this paragraph is the mapping.
+
+**Phase A — the trigger (spec US2)** *(tasks Phase 3)*. Highest value: it catches the writer shape,
 attributes exactly, and needs no bait. Verified by reintroducing instance 6. Its
 three hard parts are all harness mechanics rather than SQL: the exemption must ride
 every pooled connection (R10), every lane must be able to answer it (R11), and the
 seeder must be able to plant without handing its exemption to a test (R12).
 
-**Phase B — the bait (spec US1).** Makes a fresh database adversarial for the
+**Phase B — the bait (spec US1)** *(tasks Phase 4)*. Makes a fresh database adversarial for the
 reader shape. Depends on nothing in Phase A, but is cheaper to keep durable once
 the trigger exists (research R2, R6). Verified by reintroducing instances 1–5.
 
-**Phase C — the call site (spec US3).** The required limit and the lint rule.
+**Phase C — the call site (spec US3)** *(tasks Phase 5)*. The required limit and the lint rule.
 Cheapest, least complete, and the only one that acts before the code runs.
 
-**Phase D — fix what this exposes.** Two tests broke under measurement
-(research R3) and more will break once planting is per-file. Each fix records
+**Phase D — fix what this exposes** *(tasks Phase 6)*. Research R3's two failures
+are **hypotheses, not findings**: it measured them under a one-shot shared
+sentinel, no trigger, and addressable bait, all three since replaced by R12, R6
+and R4. T028 produces the real list before anything is fixed, and each fix records
 which of the two shapes it was.
 
-**Phase E — the plumbing.** Fences to `post-series.md`, the plan document already
+**Verification** *(tasks Phase 7)*, which the letters above skipped: both lanes,
+twenty consecutive integration runs for SC-003, the wall-clock measurement SC-004
+compares against, quickstart V0 to V11, and the captured transcripts.
+
+**Phase E — the plumbing** *(tasks Phase 8)*. Fences to `post-series.md`, the plan document already
 records the work, and the seven reintroductions run as a battery with each file
 verified byte-identical afterwards.
 
@@ -261,6 +273,6 @@ reading — the first being that this table said "violated" for four passes:
   Named in `data-model.md`.
 - **Exemption is coarse.** An exempt file is exempt for its whole run, so a
   reader-shape fault inside one of the six exempt suites is still invisible to the
-  trigger — and four of the seven recorded instances were in files that would now
+  trigger — and four of the six recorded instances were in files that would now
   be exempt. Those are caught by the bait instead, which is why Phase B is not
   optional and why the composition table in `contracts/guard.md` exists.
