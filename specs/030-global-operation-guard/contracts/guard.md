@@ -35,28 +35,53 @@ depends on what the test was trying to do, and a guess printed as advice is wors
 than silence. That guidance belongs in the lint message, where the call site is
 known.
 
-**Where it surfaces.** In the test that performed the mutation, with that test's
-own stack. This is the property the whole design turns on: the exception is raised
-in the culprit's transaction, so parallel file execution needs no serial diagnosis
+**Where it surfaces.** In the **statement's own transaction**. For a statement
+issued by a test, that is the test, with its own stack — the property the whole
+design turns on, and the reason parallel file execution needs no serial diagnosis
 mode and no bystander is ever blamed.
+
+**For a statement issued by a background relay, it is a log line.** Both
+`delivery-relay.ts` and `notification-relay.ts` catch their own errors and log
+`*_drain_failed`, so a refusal raised inside one produces a log entry and a green
+lane. A relay is the largest global operation in the system, which makes this the
+guard's sharpest limitation rather than a footnote (research R13).
+
+Today no suite is exposed to it: every file that spawns an api child sets all four
+relay flags off. That is a convention repeated in seven files, so the setup hook
+checks it — a non-exempt file with a relay enabled fails at startup rather than
+running unguarded (FR-025).
 
 ## 2. The exemption
 
+A **connection option**, carried by every connection a pool opens:
+
 ```
-SET relay.allow_global = 'on'
+DATABASE_URL=…?options=-c%20relay.allow_global%3Don
 ```
 
-**Who may set it.** The lane's setup hook, and only when the file under test
-appears on the exempt list. No test sets it directly — a test that could exempt
+**Not a statement.** `SET relay.allow_global = 'on'` through a pool sets it on
+whichever connection the pool hands out. Measured across five checkouts from a
+pool of three: `["on", null, null, "on", null]` (research R10). An earlier draft of
+this contract specified the statement, and it would have produced an exempt suite
+that failed two times in five.
+
+**Who sets it.** The lane's setup hook, by rewriting `process.env.DATABASE_URL`
+for its own worker before the suite calls `createPool()`, and only when the file
+under test appears on the exempt list. No test sets it — a test that could exempt
 itself is not guarded.
 
-**Scope.** The session. Each test file runs in its own worker with its own
-connections, so exemption does not leak between files.
+**Scope.** The worker, and therefore the file. Each test file runs in its own
+worker, so exemption cannot leak between files.
 
-**Default.** Refusal. `current_setting('relay.allow_global', true)` returns null
-in a session that never set it, and null is not `'on'`.
+**The seeder is the one exception, and it is bounded.** Planting deletes sentinel
+rows, which the trigger forbids, so the seeder uses a dedicated `pg.Client` with
+the option set and closes it before the first test. That connection never enters
+the suite's pool (FR-024).
 
-**Reversal.** Nothing un-exempts a session mid-run. A file is exempt or it is not,
+**Default.** Refusal. `current_setting('relay.allow_global', true)` returns null in
+a connection that never carried the option, and null is not `'on'`.
+
+**Reversal.** Nothing un-exempts a worker mid-run. A file is exempt or it is not,
 decided once, from a list.
 
 ## 3. The lint refusal
@@ -98,11 +123,15 @@ five.
 The three defences overlap on purpose, and the overlap is not redundancy — each
 catches something the others cannot:
 
-| | writer via named import | writer via raw SQL | writer via helper | reader shape |
-|---|---|---|---|---|
-| **trigger** | ✅ | ✅ | ✅ | — |
-| **bait** | — | — | — | ✅ |
-| **lint** | ✅ | — | — | partial (the `*Depth` names) |
+| | writer via named import | writer via raw SQL | writer via helper | writer via a background relay | reader shape |
+|---|---|---|---|---|---|
+| **trigger** | ✅ | ✅ | ✅ | logged, not failed | — |
+| **bait** | — | — | — | — | ✅ |
+| **lint** | ✅ | — | — | — | partial (the `*Depth` names) |
+| **relay-flag check** | — | — | — | ✅ at startup | — |
+
+The fourth column is the one an earlier draft of this table did not have, and the
+row that answers it is four lines of setup code rather than anything clever.
 
 The trigger is the control. The lint rule is the prompt that arrives earliest. The
 bait is the only one of the three that addresses the reader shape at all, and it

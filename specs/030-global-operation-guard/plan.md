@@ -26,9 +26,15 @@ or wrapped import can see (research R6).
 **Language/Version**: TypeScript on Node.js, as constitution VII requires. The
 guard's logic is PL/pgSQL because it has to run inside the offending transaction.
 
-**Primary Dependencies**: vitest (the lane's `setupFiles` and `globalSetup`
-hooks), `pg` for the setup hook's DDL, eslint's `no-restricted-imports`. Nothing
+**Primary Dependencies**: vitest (`setupFiles` and `globalSetup`, in **five**
+configs — api, dispatcher, gateway, e2e and coverage), `pg` for the setup hook's
+DDL and its dedicated seeding client, eslint's `no-restricted-imports`. Nothing
 new is added to any package manifest.
+
+**How the exemption travels**: as a connection option in `DATABASE_URL`, rewritten
+by the setup hook for its own worker. Not as a `SET` statement — a pool rotates
+connections and a statement lands on one of them, measured at two of five
+(research R10). This needs no change to `createPool()`.
 
 **Storage**: the compose PostgreSQL the integration lane already uses. The trigger
 and the sentinel rows exist only in test databases and are created by the lane,
@@ -50,7 +56,9 @@ chapter 3.9's measured 3m15s. Per-file planting costs roughly 600 inserts.
 code may carry test logic. Fences go to `post-series.md`.
 
 **Scale/Scope**: 16 api integration files plus the dispatcher's, of which six
-legitimately drive global operations and need exemptions (research R5).
+legitimately drive global operations and need exemptions (research R5). Five vitest
+configs share the database; the trigger is database state and outlives any one of
+them, so all five carry exemption handling and only two carry bait (research R11).
 
 ## Constitution Check
 
@@ -99,6 +107,11 @@ relay-platform/
 ├── services/api/src/db/repository.ts          # sweepDisabledEndpoints loses its default
 ├── services/dispatcher/
 │   └── vitest.integration.config.mts          # same two hooks
+├── services/gateway/
+│   └── vitest.integration.config.mts          # exemption handling only, no bait
+├── packages/e2e/
+│   └── vitest.integration.config.mts          # exemption handling only, no bait
+├── vitest.coverage.config.mts                 # exemption handling + the src/testing exclusion
 └── eslint.config.mjs                          # the global-admin import restriction
 
 relay-tutorial/
@@ -110,12 +123,24 @@ lane's infrastructure is not part of the service and putting it under `src/db/`
 would put test logic next to the repository it polices. It is excluded from
 coverage for the same reason `main.ts` and `*.module.ts` are.
 
+**Five configs, not two.** The first draft of this tree named the api's and the
+dispatcher's. The trigger is database state: whichever lane installs it leaves it
+for every other lane pointed at that database, and three more share it. The
+coverage lane is the sharp one — it runs every `*.itest.ts` in one process with no
+hooks at all, so it would have met the trigger and failed all six exempt suites
+(research R11). The gateway and e2e lanes get exemption handling and no bait,
+because bait changes a suite's workload and neither of them holds a reader-shape
+fault.
+
 ## Phasing
 
 The three defences are independent and land in order of how much they catch.
 
 **Phase A — the trigger (spec US2).** Highest value: it catches the writer shape,
-attributes exactly, and needs no bait. Verified by reintroducing instance 6.
+attributes exactly, and needs no bait. Verified by reintroducing instance 6. Its
+three hard parts are all harness mechanics rather than SQL: the exemption must ride
+every pooled connection (R10), every lane must be able to answer it (R11), and the
+seeder must be able to plant without handing its exemption to a test (R12).
 
 **Phase B — the bait (spec US1).** Makes a fresh database adversarial for the
 reader shape. Depends on nothing in Phase A, but is cheaper to keep durable once
@@ -140,11 +165,17 @@ verified byte-identical afterwards.
 | **A trigger in the database**, which principle IV's single-writer discipline makes worth stating | It is a refusal, not a write, and it exists only in test databases. | Nothing else observes a raw `UPDATE`. The mitigation is structural: the trigger is created by the lane's setup, so no product migration can carry it into production. |
 
 Constitution VII's own escape clause asks for "a superseding ADR with profiling
-evidence" for a second language. The evidence is in research R6 — the measured
-demonstration that the TypeScript alternative cannot attribute. Whether ~20 lines
-of PL/pgSQL in test infrastructure rises to an ADR is a judgement for
-`/speckit-tasks`; the recommendation is a note in `docs/06-adr-deep-dives.md`
-rather than a numbered ADR, since it binds no product decision.
+evidence" for a second language. The evidence is research R6 and R10 together — a
+measured demonstration that the TypeScript alternative cannot attribute at all, and
+that the naive version of the SQL one is non-deterministic.
+
+**The call is made here rather than deferred**: a note in
+`docs/06-adr-deep-dives.md`, not a numbered ADR. An ADR records a decision that
+binds the product; this binds a test lane, and ADRs are immutable once accepted, so
+minting one for infrastructure that a later chapter may replace would be the more
+expensive mistake. The task that writes the note therefore sits in the foundational
+phase, before any PL/pgSQL is written — an earlier draft had it in close-out, which
+would have decided a constitution question after the code that depends on it.
 
 
 ## Constitution Re-check (post-design)

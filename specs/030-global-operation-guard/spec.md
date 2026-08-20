@@ -67,9 +67,15 @@ on the result. Today it passes on a machine where the database is nearly empty
 and fails weeks later in somebody else's pull request. With this story, it fails
 the first time they run their own suite, on a freshly migrated database.
 
-**Why this priority**: it covers four of the six recorded instances, it needs no
-new judgement from the test author, and it is the foundation the second story
-watches — the planted rows are what a global operation takes.
+**Why this priority**: it covers four of the six recorded instances and needs no
+new judgement from the test author.
+
+**Note on build order**: these priorities describe user value. `tasks.md` builds
+the guard (US2) *first*, because research found the guard needs the sentinel's
+rows rather than the bait's sizes, and that the guard makes the bait durable
+rather than the other way round. The MVP in build terms is US2; the MVP in value
+terms is this story. Both readings are correct and they disagree — see
+`tasks.md`'s Notes.
 
 **Independent Test**: seed the bait, reintroduce instance 5 (`drainOnce()` at the
 default batch size) into `dispatcher.itest.ts`, and run that file alone against a
@@ -97,7 +103,11 @@ reports it, and a diagnosis mode names the test.
 
 **Why this priority**: it covers instance 6 — the one this project caused rather
 than inherited — and it is the only remedy that catches a global mutation reached
-through raw SQL or an indirect call. It depends on Story 1's bait existing.
+through raw SQL or an indirect call.
+
+**It does not depend on Story 1**, which an earlier draft of this spec asserted.
+The trigger needs the sentinel rows that the foundational phase provides, not the
+bait's sizes. That is why it is built first despite being P2.
 
 **Independent Test**: reintroduce instance 6 (`sweepDisabledEndpoints(db)` in
 `notifications.itest.ts`) and run that file alone. The run must fail and report
@@ -191,26 +201,58 @@ to any `*.itest.ts` not on the exemption list and run lint. It must fail.
 - **FR-006**: The lane MUST fail when the sentinel environment's rows are
   modified during a run.
 - **FR-007**: The failure message MUST name the table and the row that changed.
-- **FR-008**: A diagnosis mode MUST attribute the mutation to a specific test.
+- **FR-008** *(superseded by research R6)*: the refusal MUST identify the
+  offending test with no separate diagnosis mode and no serial run. The trigger
+  raises inside the statement's own transaction, so attribution is a property
+  rather than a mode. The original wording — "a diagnosis mode MUST attribute the
+  mutation to a specific test" — belonged to the checksum design.
 - **FR-009**: Suites that perform global operations deliberately MUST be able to
   exempt themselves, and each exemption MUST be visible in the file that uses it
   and carry the reason.
 - **FR-010**: The guard MUST NOT report a mutation that did not happen. A clean
   lane run reports nothing.
-- **FR-011**: Re-planting after a taken bait MUST occur after the verdict is
-  recorded.
+- **FR-011** *(superseded by research R6)*: the guard MUST **prevent** the
+  mutation rather than detect it afterwards. Nothing is re-planted after a verdict
+  because a non-exempt statement never completes. The original wording assumed a
+  check that ran after the damage.
 
 **The call site**
 
-- **FR-012**: Every function that reads or writes across environments MUST
-  require an explicit batch size. `sweepDisabledEndpoints` is the last one
-  carrying a default and MUST lose it.
+- **FR-012**: Every function that returns or mutates **rows** across
+  environments MUST require an explicit batch size. `sweepDisabledEndpoints` is
+  the last one carrying a default and MUST lose it.
+- **FR-012a**: `outboxDepth` and `pendingDeliveryDepth` return a **count** across
+  every environment and take no batch size, because a count has nothing to bound.
+  They are therefore restricted from tests by FR-013 rather than fixed by FR-012 —
+  a global `count(*)` compared against itself is instance 4, twice in one file,
+  four chapters apart.
 - **FR-013**: Importing a global admin function into a `*.itest.ts` MUST fail
   lint, unless the file appears on an exemption list.
 - **FR-014**: The lint message MUST name the scoped alternative rather than only
   refusing.
 - **FR-015**: The exemption list MUST be a list of paths a reader can audit, not
   a pattern that silently absorbs new files.
+
+**What the harness makes true, rather than the design**
+
+- **FR-020**: The exemption MUST hold for **every** connection a pool opens.
+  Issuing it as a statement through a pool sets it on whichever connection the
+  pool happens to hand out — measured at two of five (research R10).
+- **FR-021**: Every lane that touches the database MUST be able to answer the
+  trigger. The trigger belongs to the database and outlives any one lane; five
+  configs share that database and only two were given a hook (research R11).
+- **FR-022**: Bait MUST be planted only in the lanes where reader-shape faults
+  live. Planting it elsewhere changes a suite's workload for no return, which is
+  the fault research R4 measured.
+- **FR-023**: Each test file MUST have its **own** sentinel. Files execute in
+  parallel, so a shared sentinel means one file's planting deletes rows another
+  file is mid-test against (research R12).
+- **FR-024**: Planting MUST use a connection that never enters the suite's pool.
+  The seeder needs the exemption to plant; a test that inherited that connection
+  would be unguarded (research R12).
+- **FR-025**: A **non-exempt** file MUST fail at startup if it has a relay
+  enabled. A relay catches and logs its own errors, so a refusal raised inside one
+  is a log line and a green lane (research R13).
 
 **Fixing what this exposes**
 
@@ -274,11 +316,16 @@ to any `*.itest.ts` not on the exemption list and run lint. It must fail.
   environments deliberately, and all six findings are real production-shaped
   problems that per-suite isolation would hide rather than fix. Per-suite
   databases are explicitly out of scope.
-- **The guard's always-on check is run-scoped.** Attributing a mutation to a
-  specific test requires serial file execution, which the coverage lane already
-  configures. The always-on check therefore reports that the lane took the bait;
-  naming the test is a second, deliberate run. This is a consequence of the
-  parallelism the lane already has, not a limitation being introduced.
+- **~~The guard's always-on check is run-scoped.~~** *Withdrawn.* This assumption
+  said attribution needed serial file execution. Research R6 replaced the checksum
+  with a trigger, which raises inside the offending transaction and therefore
+  attributes under parallelism with no serial mode. The assumption was correct
+  about the mechanism it was written for and is now about nothing.
+
+  What replaced it is narrower and measured: attribution holds for a **statement
+  in a test**. A refusal raised inside a background relay is caught and logged by
+  that relay, so it is a log line rather than a failure (research R13). FR-025
+  closes that by refusing to start a non-exempt file with a relay enabled.
 - **This teaches no chapter.** It is test infrastructure, and the series' rule is
   that a chapter may only fence a change it discusses. If a later chapter wants
   the story, the material is in `research.md` and the six post-series entries.
@@ -287,4 +334,10 @@ to any `*.itest.ts` not on the exemption list and run lint. It must fail.
   derived from the constants rather than written as literals.
 - **Existing suites will break when the bait lands.** That is the feature
   working. The count of suites that break is a finding to record, not a problem
-  to route around.
+  to route around. Measured once already: two of 177 on a fresh database with a
+  one-shot seeder (research R3).
+- **The trigger outlives the lane that installed it.** It is database state, so
+  the first lane to run leaves it behind for every other lane pointed at that
+  database — including a developer's next `pnpm coverage`. Uniform exemption
+  handling across all five configs is what makes that safe rather than surprising
+  (FR-021, research R11).

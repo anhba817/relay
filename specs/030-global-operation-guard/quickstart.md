@@ -52,14 +52,24 @@ ERROR:  global-operation guard: this statement modified sentinel row
         which belongs to no test
 ```
 
-Then the same statement in an exempt session:
+Then the same statement in an exempt connection:
 
 ```bash
-psql "$DATABASE_URL_FRESH" -c \
-  "SET relay.allow_global='on'; UPDATE webhook_endpoints SET enabled=false WHERE id='…0005'"
+psql "$DATABASE_URL_FRESH?options=-c%20relay.allow_global%3Don" -c \
+  "UPDATE webhook_endpoints SET enabled=false WHERE id='…0005'"
 ```
 
 Expected: `UPDATE 1`. Both halves verified during research (R6).
+
+**And the half R6 did not check** — that the exemption survives a connection pool:
+
+```bash
+node -e '…open five checkouts from a pool of three, read current_setting…'
+```
+
+Expected: `["on","on","on","on","on"]`. A `SET` issued through `pool.query()`
+instead returns `["on",null,null,"on",null]`, which is the measurement that
+replaced the mechanism (research R10). Run this before trusting V5.
 
 ## V3 — Instance 6 fails alone
 
@@ -108,6 +118,17 @@ pnpm --filter @relay/dispatcher test:integration
 Expected: green. Each exemption is discoverable by reading
 `services/api/src/testing/exempt.ts`, which carries the reason beside the path.
 
+**Then the lane an earlier draft forgot**, which shares the database and had no
+hook at all:
+
+```bash
+pnpm coverage
+```
+
+Expected: green. The trigger is database state, so the coverage lane meets it
+whether or not it installed it — and it runs all six exempt suites in one process
+(research R11).
+
 ## V6 — The bait survives a lane run
 
 Research R2 measured three of the four baits eaten in a single pass. With
@@ -115,7 +136,7 @@ per-file planting:
 
 ```bash
 DATABASE_URL=…/relay_fresh pnpm --filter @relay/api test:integration
-psql "$DATABASE_URL_FRESH" -f specs/030-global-operation-guard/../../scratchpad/bait-count.sql
+psql "$DATABASE_URL_FRESH" -f specs/030-global-operation-guard/bait-count.sql
 ```
 
 Expected: every bait present and at its planted size at the end of the run, and

@@ -7,24 +7,41 @@ concern the plan records.
 
 ---
 
-## The sentinel environment
+## The sentinel environment — one per test file
 
-One environment, fixed and recognisable, owned by the lane rather than by any
-test. Its identifiers are literal UUIDs rather than generated ones so that a
-failure message can be matched against this document by eye.
+**Not one shared sentinel.** An earlier draft had a single fixed environment, and
+research R12 found that incompatible with the per-file planting research R2
+requires: files execute in parallel, so one file's `beforeAll` deletes and
+re-inserts rows another file is mid-test against.
 
-| Row | Identifier | Purpose |
-|---|---|---|
-| organisation | `…0001` | the notification path resolves recipients from here |
-| human | `…0002` | **no email address** — see below |
-| membership | (`…0001`, `…0002`) | makes the organisation resolvable and unaddressable |
-| application | `…0003` | the environment needs a parent |
-| environment | `…0004` | the value the trigger matches on |
-| webhook endpoint | `…0005` | bait for the sweep |
+Each file gets its own, derived from the file's path so it is stable across runs
+and unique across files:
 
-All six use the reserved prefix `00000000-0000-4000-8000-0000000000NN` and the
-name `__sentinel__`, so a developer reading a failure knows immediately that the
-rows are not theirs.
+| Row | Purpose |
+|---|---|
+| organisation | the notification path resolves recipients from here |
+| human | **no email address** — see below |
+| membership | makes the organisation resolvable and unaddressable |
+| application | the environment needs a parent |
+| environment | the id the trigger tests for membership |
+| webhook endpoint | bait for the sweep |
+
+Every row carries the name `__sentinel__:<file>`, so a developer reading a failure
+knows immediately both that the rows are not theirs and which file owns them.
+
+### The registry the trigger needs
+
+With one sentinel the trigger could compare against a literal uuid. With one per
+file it cannot, so a small table holds the ids:
+
+```
+__sentinel_environments (environment_id uuid primary key, owner text not null)
+```
+
+The trigger tests membership in it. That is one extra lookup per guarded row,
+against a table holding as many rows as there are test files — seventeen today.
+`owner` is the file path, and it is what lets the refusal say whose rows were
+taken.
 
 **The human has no email address, and that is load-bearing.** Research R4 found
 that 200 addressable bait notifications turned one suite's drain into 200 SMTP
@@ -55,10 +72,16 @@ Planted **per file**, in a `beforeAll`, because research R2 measured three of th
 four baits eaten in a single lane run — a one-shot `globalSetup` seeder protects
 whichever suite runs first and nothing after it.
 
-Planting is idempotent by deleting the sentinel's rows and re-inserting them,
-rather than by `ON CONFLICT`. The sentinel is identifiable by `environment_id`,
-so the delete is exact, and the seeder cannot itself become the accumulation it
-exists to simulate (spec FR-003).
+Planting is idempotent by deleting this file's sentinel rows and re-inserting
+them, rather than by `ON CONFLICT`. The environment id makes the delete exact, and
+the seeder cannot itself become the accumulation it exists to simulate (FR-003).
+
+**The seeder gets its own connection, and that is not a detail.** Deleting a
+sentinel row is exactly what the trigger forbids, so the seeder needs the
+exemption — and a connection carrying the exemption must never reach a test, or
+that test runs unguarded. So planting uses a dedicated `pg.Client`, created by the
+setup hook with the exemption in its options and closed before the suite's first
+test. It never enters the suite's pool (FR-024, research R12).
 
 ## The guard
 
@@ -79,15 +102,26 @@ mechanism only, which is a stated gap rather than an oversight.
 
 ### Exemption
 
-A session-level setting, not a row and not a flag in code:
+A **connection option**, not a statement:
 
 ```
-SET relay.allow_global = 'on'
+DATABASE_URL=…?options=-c%20relay.allow_global%3Don
 ```
 
-Set by the lane's setup hook when the file under test appears on the exempt list,
-and never otherwise. `current_setting('relay.allow_global', true)` returns null
-in a session that has not set it, so the default is refusal.
+Set by the lane's setup hook — which rewrites `process.env.DATABASE_URL` for its
+own worker before the suite calls `createPool()` — when the file under test
+appears on the exempt list, and never otherwise.
+
+**Not `SET relay.allow_global = 'on'` through the pool**, which is what an earlier
+draft specified. A pool rotates connections, so a statement lands on one of them.
+Measured across five checkouts from a pool of three: `["on", null, null, "on",
+null]`. An exempt suite would have failed intermittently, in a way indistinguishable
+from the flakiness this feature exists to remove (research R10).
+
+The connection string carries it rather than the pool's config object because that
+needs no change to `createPool()` — a product function every service calls.
+`current_setting('relay.allow_global', true)` returns null in a connection that
+never had the option, so the default is refusal.
 
 ## The exempt list
 
@@ -109,6 +143,24 @@ The six that need it, measured rather than guessed (research R5):
 An exempt file is not excused from correctness. It is excused from the trigger,
 and it still has to bound its own batches — which is what instances 1, 2, 3 and 5
 failed to do while being, in this sense, legitimate.
+
+### Which lanes carry which mechanism
+
+The trigger is database state and outlives the lane that installed it, so every
+lane pointed at that database meets it. Bait is not, and should not spread
+(research R11):
+
+| Lane | Exemption handling | Bait |
+|---|---|---|
+| api integration | yes | yes |
+| dispatcher integration | yes | yes |
+| gateway integration | yes | no |
+| e2e | yes | no |
+| **coverage** | **yes** | no |
+
+The coverage lane is the one an earlier draft missed. It runs every `*.itest.ts`
+in one process with no `setupFiles` and no `globalSetup`, so it would have met the
+trigger with no way to answer it and failed all six exempt suites.
 
 ## Verdict
 

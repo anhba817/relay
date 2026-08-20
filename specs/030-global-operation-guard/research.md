@@ -175,3 +175,128 @@ the same block can name the global admin functions without banning the repositor
 module wholesale. It catches the import line — where the decision is actually
 made — and misses indirect calls and raw SQL, which is why it is the third
 defence and not the first.
+
+
+---
+
+# Findings from the first analysis pass
+
+R1 to R9 were written before `tasks.md` existed. The pass that followed it opened
+the test harness's runtime mechanics — pooling, parallelism, and the other lanes
+sharing the database — which none of R1 to R9 had looked at. It found three
+CRITICAL problems in the design R6 declared solved.
+
+## R10 — The trigger works in one session and not in a pool
+
+R6 verified the trigger in `psql`: one connection, one session, one `SET`. That is
+the one condition the test lane never provides.
+
+`createPool()` returns a bare `pg.Pool`, and a pool rotates connections. Measured
+across five checkouts from a pool of three:
+
+```
+plain pool, after one SET on one connection: [null,null,null,null,null]
+plain pool, after SET via pool.query:        ["on",null,null,"on",null]
+connection-string options, every conn:       ["on","on","on","on","on"]
+config-object options, every conn:           ["on","on","on","on","on"]
+```
+
+The second line is the bug. `SET relay.allow_global = 'on'` issued through
+`pool.query()` lands on whichever connection the pool hands out, so two of five
+checkouts carried the exemption and three did not. An exempt suite would fail
+intermittently, in a way that looks exactly like the flakiness this feature exists
+to remove.
+
+**Decision**: set it as a connection option, so every connection the pool opens
+carries it. `options` is honoured both in the connection string and in the config
+object; the connection string wins because it needs **no product change** — the
+setup hook rewrites `process.env.DATABASE_URL` for its own worker before the suite
+calls `createPool()`, and `createPool()` reads that variable.
+
+**Alternative rejected**: adding an `options` parameter to `createPool()`. It is a
+small passthrough rather than test logic, so it would not violate the
+no-test-logic-in-product rule — but it changes a function every service calls in
+order to serve a lane, and the environment variable already carries the address.
+
+## R11 — The trigger is database state; the exemption is process state
+
+They have different lifetimes, and the mismatch is the second CRITICAL.
+
+The trigger, once installed, belongs to the database. Every lane pointed at that
+database meets it. The exemption is supplied by a vitest hook, and only two lanes
+were given one: the api's and the dispatcher's integration configs.
+
+The lanes that share the database and were not given the hook:
+
+| Lane | Config | Touches the database |
+|---|---|---|
+| coverage | `vitest.coverage.config.mts` | **every `*.itest.ts` in one process**, no `setupFiles`, no `globalSetup` |
+| gateway integration | `services/gateway/vitest.integration.config.mts` | `session.itest.ts`, `limits.itest.ts` |
+| e2e | `packages/e2e/vitest.integration.config.mts` | `harness.ts`, `webhooks.itest.ts` |
+
+The coverage lane is the sharp one: it runs the six exempt suites with no way to
+exempt them, so `pnpm coverage` would fail for the right reason and the wrong
+cause.
+
+**Decision**: separate the two concerns the design had fused.
+
+- **Exemption handling goes to every lane** that touches the database — five
+  configs, not two. Uniform, so no lane meets a trigger it cannot answer.
+- **Bait goes only to the api and dispatcher lanes**, where the reader-shape
+  faults live. Planting it in the gateway and e2e lanes would change their
+  workload for no return, which is R4's lesson.
+
+The gateway and e2e suites would pass today without any exemption, because none of
+them performs a global operation. That is luck rather than design, and luck is
+what this feature is about.
+
+## R12 — The seeder has to do the thing the guard forbids
+
+Planting was specified as "delete the sentinel's rows, then re-insert". `DELETE` on
+a guarded table for a sentinel row fires the trigger. So the seeder needs the
+exemption — and if it takes it on a connection the suite's pool later hands to a
+test, the test inherits it and the guard is off for that test. Circular.
+
+Two changes resolve it, and the second also fixes a race the design had not seen.
+
+**The seeder gets its own connection.** A dedicated `pg.Client` created by the
+setup hook with the exemption in its options, used to plant, then closed. It never
+enters the suite's pool, so nothing a test does can inherit it.
+
+**The sentinel becomes per file, not shared.** Files run in parallel — no
+integration config overrides `fileParallelism` — so a shared sentinel meant file
+A's `beforeAll` deleting and re-inserting rows while file B was mid-test relying on
+them. R2's per-file planting requirement and a shared sentinel are incompatible,
+and the plan had both.
+
+Per-file sentinels also change the trigger's shape: its `WHEN` clause can no longer
+compare against one literal uuid. A small registry table — `__sentinel_environments`
+— holds the ids, and the trigger tests membership. One extra lookup per guarded row,
+against a table with as many rows as there are test files.
+
+## R13 — A relay swallows the refusal, so the guard is silent where the stakes are highest
+
+`contracts/guard.md` claims the refusal "surfaces in the test that performed the
+mutation". That holds for a test. It does not hold for a relay:
+
+```
+services/api/src/webhooks/delivery-relay.ts:197   logger.log("error", "deliveries.drain_failed", …)
+services/api/src/notifications/notification-relay.ts:148  logger.log("error", "notifications.drain_failed", …)
+```
+
+Both catch and log. A relay is the main global operation in the system, so a
+trigger firing inside one produces a log line in a background loop and a green
+lane.
+
+Today every suite that spawns an api child sets all four relay flags off —
+verified in `harness.ts` and `dispatcher.itest.ts`. So the exposure is nil and the
+mitigation is a convention repeated in seven files rather than a property.
+
+**Decision**: two changes, neither of which tries to make a relay throw.
+
+- The contract's claim is narrowed to say what is true: the refusal surfaces in the
+  statement's own transaction, which for a test is that test and for a background
+  loop is a log line.
+- The setup hook asserts that a **non-exempt** file has the relay flags off, and
+  fails at startup if not. That turns "we happen to switch them off" into
+  something checked, and it is four lines.
