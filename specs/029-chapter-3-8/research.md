@@ -1,6 +1,6 @@
 # Research — chapter 3.8, "Limits you can see coming"
 
-Phase 0. Thirty items. R3 is the chapter's central decision and the spec
+Phase 0. Thirty-three items (R31 to R33 added during implementation). R3 is the chapter's central decision and the spec
 deliberately left it open. R5 found a **second unenforced contract** the chapter
 has to close whether it wants to or not. R10 quantifies the size risk the spec
 flagged and the answer is not the one the scope decision assumed. **R11 was added
@@ -1462,6 +1462,111 @@ with its cost known is worth more than one closed by whoever happened to be edit
 **Where the question would be cheapest to answer**: the chapter that adds a fourth policy
 dimension for some other reason. Quotas (3.9) adds per-environment monthly limits and does
 not need routes either, so it is probably not that one.
+
+---
+
+---
+
+## R31 — There is already a column for this, and it is not this chapter's
+
+**Found during implementation, at T010.** `environments` has carried
+`quota_config jsonb NOT NULL DEFAULT '{}'` since `0000_core_tables.sql` — chapter
+2.1. It is named in **SRS §6.1's Environment entity** and in **SAD §338's schema**.
+
+**Nothing reads it or writes it.** Zero references in application code, in either
+service, in seventeen chapters.
+
+So it is the **sixth** thing declared and never enforced, beside `rate_limited`,
+close code 4008, the error envelope's `request_id`, close code 4009, and the
+documentation page every `docs_url` points at. The chapter's opening argument was
+already that this platform has a habit; the habit has a column now.
+
+**And a reader will expect this chapter's policy to live in it.**
+
+**Decision: three nullable columns, not the jsonb blob, and the reason is the
+chapter's own organising distinction.**
+
+The column is called `quota_config`. This chapter builds **rate limits**, and the
+whole feature exists because limits and quotas are different things that look like
+one: a rate limit is ephemeral, per-window, countable in a store that may lose it;
+a quota is money, must be durable, and must reconcile. Chapter 3.9 builds quotas.
+Putting rate-limit policy in a field named for quotas would collapse the
+distinction in the schema while the prose spends a chapter drawing it.
+
+**What that costs, stated rather than skipped.** A jsonb column has room for
+shapes three integer columns do not — including a per-route limit, which is
+exactly what SRS Appendix C question 5 asks for and what R30 records this policy as
+unable to express. Using `quota_config` would have unforeclosed that question. It
+would also have bought it with an unshaped blob, no `CHECK` constraints, and
+"absent" and "zero" indistinguishable without a convention nobody has written.
+
+**What this chapter owes 3.9.** The column stays empty and stays named for quotas.
+When 3.9 fills it, the two mechanisms will sit side by side in one table —
+integers for the ephemeral thing, a document for the durable one — and that is a
+better illustration of the distinction than either alone.
+
+**A smaller observation worth carrying.** Seventeen analysis passes did not find
+this, and the reason is the same one they kept finding elsewhere: nobody had read
+`schema.ts`'s `environments` table. The implementation found it in the first
+minute of needing to add a column to that table.
+
+---
+
+---
+
+## R32 — `req.url` is `/`, and the request log has said so since chapter 2.2
+
+**Found by probe while wiring the limiter**, which reads the path to decide which
+routes it counts and was counting nothing.
+
+Express rewrites `req.url` relative to the mount point. A Nest middleware applied
+through `.forRoutes("{*path}")` is mounted at the match, so inside it `req.url` is
+**`/`** for every request. The full path is `req.originalUrl`.
+
+```text
+PROBE url= /  originalUrl= /v1/channels/bf3e4947-…/messages
+```
+
+**`RequestContextMiddleware` reads `req.url`.** It is applied in the same
+`.apply(...)` chain, so every structured request line this api has emitted since
+chapter 2.2 recorded `path: "/"`. NFR-OBS-06 asks for one line per request an
+operator can grep, and a line whose path is always `/` is one they cannot. Fixed
+in the same commit as the limiter, because the limiter is what exposed it.
+
+**Why no test caught it.** Nothing asserts on the request log's contents. The line
+exists, carries a request id, and is emitted once per request — which is what the
+chapter that built it verified. The field it got wrong is the one nobody checked.
+
+---
+
+## R33 — Two mistakes worth keeping, from wiring the store
+
+**The migration was applied by hand and the lane went red.** `psql < 0008` put the
+columns in the database and nothing in `schema_migrations`, so the four suites
+that run `migrate()` themselves tried again and failed on `column
+"rest_limit_per_minute" of relation "environments" already exists`. Four suites
+failed to load, and the cause was in the operator, not the code.
+
+Undone by dropping the columns and letting the runner apply them through the
+ledger. **The rule the chapter should state: a migration is applied by the runner
+or it is not applied.** A hand-run migration is invisible to the thing whose job
+is knowing what has run.
+
+And the new suite had to call `migrate(pool)` like every other suite that needs a
+schema newer than whatever the database happens to be at — otherwise it passes on
+a machine where somebody already ran it and fails on a fresh one.
+
+**The counter store rejected its own first command.** `lazyConnect: true` with
+`enableOfflineQueue: false` means a command issued before the connection is
+established is refused immediately — so the first request an api instance ever
+serves reported no count, degraded, and looked exactly like a Redis outage. The
+suite caught it as `expected null to be '599'` on the first test with three
+passing after it, which is the signature of a warm-up problem rather than a logic
+one.
+
+The offline queue is back on, and failing fast on a store that is genuinely down
+is `maxRetriesPerRequest: 0` plus a one-second `connectTimeout` instead. Both
+properties were wanted; only one of them had been thought about.
 
 ---
 
