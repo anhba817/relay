@@ -1684,6 +1684,74 @@ rules of its kind.
 
 ---
 
+## R37 — The gateway's counter needed a decision, not a boolean
+
+R20 settled that the gateway gets its own Redis client. What it did not settle was
+what `spend` hands back. The first version returned `true` or `false`, which is
+enough for the frame refusal — an `error` frame has nowhere to put a number — and
+not nearly enough for the handshake one. An over-limit upgrade is refused with an
+HTTP 429, and a 429 without `Retry-After` is a refusal that tells the client
+nothing except to guess.
+
+So `spend` returns a `Decision`: over, limit, remaining, reset, retry-after. Two
+of the five fields are the same number in different units, which looks redundant
+until you write the response — `X-RateLimit-Reset` is an absolute unix second and
+`Retry-After` is a duration, and computing one from the other at each call site is
+how they drift apart.
+
+`retryAfterSeconds` has a floor of 1. A millisecond before the boundary the honest
+answer rounds to zero, and a client that obeys `Retry-After: 0` retries into the
+same refusal.
+
+## R38 — A grep-based test that can only pass is not a test
+
+T034 asks for proof that close code 4008 is emitted by nothing. That is a claim
+about ABSENCE, and no input can demonstrate it: there is no frame you can send to
+observe a code that is never sent. The only honest check is to read the source and
+look for the emission.
+
+Which is fine, except a regex aimed at a code nobody sends passes whether or not
+the regex is correct. `/close\(\s*400[89]/` with a typo in it would report the
+same clean result as one without. So the test runs the SAME pattern against the
+codes the gateway does emit — 4001 and 4002 — and requires a match. The negative
+assertion is only worth something once the positive one has shown the pattern can
+fire.
+
+The same shape covers 4009, "server shutdown (drain)", declared in chapter 1.3 and
+emitted by nothing for the reason FR-045 records.
+
+## R39 — A malformed frame costs nothing, and that is a decision
+
+The send limit is spent in `handle` AFTER the frame has parsed and been narrowed
+to `message.send`. An `invalid_frame` or an `unknown_frame_type` therefore spends
+nothing.
+
+That is the right reading of FR-002 — the budget is denominated in MESSAGES, and a
+frame that is not a message send is not one — but it leaves a gap worth naming: a
+client can flood a socket with malformed JSON and pay no rate-limit cost. Nothing
+in this chapter closes it. The bound that does exist is the establishment limit,
+which caps how many sockets an environment can open per minute, and `ws`'s own
+`maxPayload`.
+
+A per-connection frame limit would close it properly and is a different limit with
+a different unit, which is why it is not being smuggled in here. Recorded so the
+chapter can say it rather than have a reader find it.
+
+## R40 — Adding one required field to the session response broke seven fixtures
+
+`internalSessionResponseSchema` gained `limits`, and the compiler found six stubs
+in `resume.itest.ts` and one in `session.test.ts` that construct a session
+response by hand. Seven sites, all mechanical, all found before a test ran — the
+same dividend T019's `strictObject` change paid, from the same property.
+
+Worth contrasting with the failure mode of the alternative. Had `limits` been
+optional with a default, nothing would have broken and every one of those seven
+stubs would have silently exercised the default path — including the two tests
+whose entire subject is a CONFIGURED limit. The compile errors were the cheapest
+part of this task.
+
+---
+
 ## What this chapter does NOT do
 
 - Quotas, spending caps, threshold emails, quota degradation — chapter 3.9, and the
