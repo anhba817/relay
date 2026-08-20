@@ -328,6 +328,32 @@ operation would take, fail the lane when something takes them, require a batch
 size at every cross-environment call, and refuse the import inside a test file.
 The specification is `specs/030-global-operation-guard/`.
 
+**One decision inside it is worth recording here rather than as an ADR.** The
+guard is written in PL/pgSQL — about twenty lines — because it has to raise inside
+the transaction that performed the mutation, and that is the property which makes
+attribution exact under parallel test execution. A check written in TypeScript
+cannot do it: legitimate global sweeps run on every lane pass, so a before/after
+comparison either fires constantly or blames a bystander. That was measured, not
+assumed, along with the fact that the naive SQL version is non-deterministic —
+`SET relay.allow_global = 'on'` issued through a connection pool landed on two of
+five checkouts.
+
+Constitution VII says *"Introducing a second language requires a superseding ADR
+with profiling evidence"*, and there is no ADR here, because there is nothing for
+one to supersede. VII's clause reads *"One language (TypeScript/Node.js) across
+services, SDK, and dashboard"* — its subject is the language services are
+implemented in, and its stated harm is drift between server and SDK. This is
+neither a service nor shipped; it exists in test databases, created by the lane.
+The repository already holds nine hand-reviewed `.sql` migrations that the
+constitution endorses by name.
+
+The honest wrinkle: those nine are *declarative* SQL and this one is *procedural*.
+A `RAISE EXCEPTION` inside a `plpgsql` function is closer to program logic than an
+`ALTER TABLE` is. That difference is real; it is not the difference VII legislates.
+An earlier draft of the plan recorded it as a violation and then declined to write
+the ADR the clause requires, and four analysis passes re-affirmed that without
+testing it against the sentence it cited.
+
 It teaches no chapter, and that is a deliberate call rather than an oversight. The
 material is genuinely interesting — a fault invisible by construction is good
 writing — but the series' rule is that a chapter may only fence a change it
