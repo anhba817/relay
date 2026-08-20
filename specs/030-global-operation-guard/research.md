@@ -300,3 +300,84 @@ mitigation is a convention repeated in seven files rather than a property.
 - The setup hook asserts that a **non-exempt** file has the relay flags off, and
   fails at startup if not. That turns "we happen to switch them off" into
   something checked, and it is four lines.
+
+
+---
+
+# Findings from the second analysis pass
+
+The first pass read the harness's *runtime*. This one read the harness's *loading
+order*, the workspace layout, and — for the first time in this session — the prose
+guide every skill invocation had been instructing us to apply.
+
+## R14 — Where the exemption is written decides whether it works
+
+`setupFiles` gives the test path at **top level**, not only inside a hook, and the
+setup file's top-level code runs before the test file is imported. Measured with a
+probe:
+
+```
+PROBE toplevel testPath  = …/src/__probe/probe.itest.ts
+PROBE order so far       = setup-toplevel;testfile-module;
+PROBE env visible at test-file module scope = yes
+```
+
+That is good news for the per-file sentinel — the path is available where it is
+needed — and it comes with a constraint the plan had not stated. **Four suites
+create their database pool at module scope**:
+
+```
+services/api/src/db/history-drift.itest.ts
+services/api/src/db/repository.itest.ts
+services/api/src/messages/history.itest.ts
+services/api/src/messages/idempotency.itest.ts
+```
+
+An exemption written in `beforeAll` arrives after their pool already exists. None
+of the six exempt suites is written that way today, so nothing is broken — the same
+kind of luck this feature exists to remove. FR-026 states it; the exemption is
+applied at module scope and bait planting stays in `beforeAll`, where async
+database work belongs.
+
+## R15 — No suite wipes a table, which removes a whole class of worry
+
+Searched every `*.itest.ts` for `TRUNCATE` and for broad `DELETE FROM` against the
+guarded tables. **Zero hits.** Had one existed, it would have taken every sentinel's
+bait on every run and made the guard useless without anybody writing a fault.
+
+Worth recording as a negative result: it is the kind of thing that would have been
+expensive to discover during implementation and cost one grep to rule out.
+
+## R16 — The harness outgrew the service it was going to live in
+
+`services/api/src/testing/` was the plan's home for it. Then the exemption had to
+reach every lane, and five configs across four packages ended up importing it —
+including the gateway's, which would have meant one service's test lane reaching
+into another service's `src/`.
+
+It moves to `packages/test-harness/`. `packages/*` is already a workspace glob, and
+`config`, `protocol`, `service-kit` and `e2e` establish that shared code lives
+there. The package declares its own `pg` — only `services/api` does today — and it
+plants through raw SQL, so it imports nothing from any service.
+
+## R17 — The prose guide had never been opened
+
+Every `/speckit-*` invocation in this session began by instructing us to apply
+`.claude/skills/humanizer/PROSE-IN-GENERATED-DOCS.md` before writing prose. It was
+read for the first time during this pass, after roughly fourteen thousand words of
+specification had been written against it from memory.
+
+Audited afterwards, the documents come out clean on its ranked list: **zero** hits
+across all seven files for its twenty-two promotional and AI-vocabulary terms, one
+superficial `-ing` tail, and no generic positive conclusions. The four
+negative-parallelism hits are all real contrasts.
+
+The exception is the one the guide classes as a *defect* rather than a style
+choice. In normative text it asks for one term per concept, and the requirement
+block used three for the planted rows — `bait` twice, `planted rows` once,
+`sentinel environment's rows` once. Now `bait`, five times, everywhere.
+
+What is worth keeping is not the audit result. It is that a document can be written
+correctly against a guide nobody read, and still fail the one rule that guide calls
+a defect — because that rule is the one a careful writer would not think to apply
+to themselves.

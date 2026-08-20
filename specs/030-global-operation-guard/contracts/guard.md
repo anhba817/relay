@@ -65,10 +65,14 @@ pool of three: `["on", null, null, "on", null]` (research R10). An earlier draft
 this contract specified the statement, and it would have produced an exempt suite
 that failed two times in five.
 
-**Who sets it.** The lane's setup hook, by rewriting `process.env.DATABASE_URL`
-for its own worker before the suite calls `createPool()`, and only when the file
-under test appears on the exempt list. No test sets it — a test that could exempt
-itself is not guarded.
+**Who sets it.** The lane's setup file, by rewriting `process.env.DATABASE_URL`
+for its own worker, and only when the file under test appears on the exempt list.
+No test sets it — a test that could exempt itself is not guarded.
+
+**When.** At the setup file's **module scope**, not in a hook. Top-level setup code
+runs before the test file is imported; four suites create their pool at module
+scope, so an exemption written in `beforeAll` would arrive too late for them
+(FR-026).
 
 **Scope.** The worker, and therefore the file. Each test file runs in its own
 worker, so exemption cannot leak between files.
@@ -107,7 +111,7 @@ rule knows the call site, so it can be specific.
 drainOutbox reads across every environment. A test that needs its own rows
 drained should bound the batch and assert on its own row, not on the count —
 see specs/030-global-operation-guard/data-model.md. Files that legitimately
-drive a global drain are listed in services/api/src/testing/exempt.ts.
+drive a global drain are listed in packages/test-harness/src/exempt.ts.
 ```
 
 **What it does not catch**, stated so nobody trusts it further than it goes:

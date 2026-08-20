@@ -108,9 +108,19 @@ A **connection option**, not a statement:
 DATABASE_URL=…?options=-c%20relay.allow_global%3Don
 ```
 
-Set by the lane's setup hook — which rewrites `process.env.DATABASE_URL` for its
-own worker before the suite calls `createPool()` — when the file under test
-appears on the exempt list, and never otherwise.
+Set by the lane's setup file, which rewrites `process.env.DATABASE_URL` for its own
+worker when the file under test appears on the exempt list, and never otherwise.
+
+**At the setup file's module scope, never in a hook**, and that is measured rather
+than preferred. A setup file's top-level code runs before the test file is
+imported — `setup-toplevel; testfile-module;` — and four suites create their pool
+at module scope: `db/history-drift.itest.ts`, `db/repository.itest.ts`,
+`messages/history.itest.ts`, `messages/idempotency.itest.ts`. An exemption written
+in `beforeAll` would arrive after their pool already exists. None of the six exempt
+suites is written that way today, so nothing is broken by it — which is the same
+kind of luck the whole feature is about (FR-026).
+
+Bait planting stays in `beforeAll`, because it is asynchronous database work.
 
 **Not `SET relay.allow_global = 'on'` through the pool**, which is what an earlier
 draft specified. A pool rotates connections, so a statement lands on one of them.

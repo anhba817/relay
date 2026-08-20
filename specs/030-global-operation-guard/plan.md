@@ -96,14 +96,16 @@ specs/030-global-operation-guard/
 
 ```text
 relay-platform/
+├── packages/test-harness/                     # NEW — shared, because five configs use it
+│   ├── package.json                           # declares its own `pg`
+│   └── src/
+│       ├── sentinel.ts                        # the bait: what it is, how it is planted
+│       ├── sentinel.sql                       # the trigger and its exemption function
+│       ├── global-setup.ts                    # creates the trigger once per lane
+│       ├── setup.ts                            # sets exemption at module scope; plants in beforeAll
+│       └── exempt.ts                            # the auditable list of exempt files
 ├── services/api/
-│   ├── vitest.integration.config.mts        # gains globalSetup + setupFiles
-│   └── src/testing/                          # NEW — the lane's own infrastructure
-│       ├── sentinel.ts                       # the bait: what it is, how it is planted
-│       ├── sentinel.sql                      # the trigger and its exemption function
-│       ├── global-setup.ts                   # creates the trigger once per lane
-│       ├── setup.ts                           # plants the bait per file; sets exemption
-│       └── exempt.ts                          # the auditable list of exempt files
+│   └── vitest.integration.config.mts          # gains globalSetup + setupFiles
 ├── services/api/src/db/repository.ts          # sweepDisabledEndpoints loses its default
 ├── services/dispatcher/
 │   └── vitest.integration.config.mts          # same two hooks
@@ -111,17 +113,30 @@ relay-platform/
 │   └── vitest.integration.config.mts          # exemption handling only, no bait
 ├── packages/e2e/
 │   └── vitest.integration.config.mts          # exemption handling only, no bait
-├── vitest.coverage.config.mts                 # exemption handling + the src/testing exclusion
+├── vitest.coverage.config.mts                 # exemption handling + the harness exclusion
 └── eslint.config.mjs                          # the global-admin import restriction
 
 relay-tutorial/
 └── fences/post-series.md                      # every fence this feature produces
 ```
 
-**Structure Decision**: a new `services/api/src/testing/` directory, because the
-lane's infrastructure is not part of the service and putting it under `src/db/`
-would put test logic next to the repository it polices. It is excluded from
-coverage for the same reason `main.ts` and `*.module.ts` are.
+**Structure Decision**: a new **package**, `packages/test-harness/`, not a
+directory inside a service.
+
+The first draft put it in `services/api/src/testing/`. Once the exemption had to
+reach every lane, five configs across four packages import it — and a gateway test
+lane reaching into another service's `src/` is a worse precedent than a shared
+package, even in test code. `packages/` is where this repository already keeps
+shared things: `config`, `protocol`, `service-kit`, `e2e`.
+
+It declares its own `pg`, which only `services/api` does today. That is what a
+package is for. And it plants through raw SQL rather than the api's repository, so
+it imports nothing from any service — the schema knowledge it carries, which tables
+hold `environment_id`, is written down in `data-model.md` either way.
+
+Excluded from coverage for the same reason `main.ts` and `*.module.ts` are:
+counting how much of the lane's own scaffolding a test touched is not what
+"business logic" means.
 
 **Five configs, not two.** The first draft of this tree named the api's and the
 dispatcher's. The trigger is database state: whichever lane installs it leaves it
@@ -173,7 +188,7 @@ that the naive version of the SQL one is non-deterministic.
 `docs/06-adr-deep-dives.md`, not a numbered ADR. An ADR records a decision that
 binds the product; this binds a test lane, and ADRs are immutable once accepted, so
 minting one for infrastructure that a later chapter may replace would be the more
-expensive mistake. The task that writes the note is **T005a**, in the foundational
+expensive mistake. The task that writes the note is **T005b**, in the foundational
 phase, before any PL/pgSQL is written — an earlier draft had it at T044 in
 close-out, which would have decided a constitution question after the code that
 depends on it.

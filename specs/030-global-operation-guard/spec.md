@@ -110,14 +110,13 @@ The trigger needs the sentinel rows that the foundational phase provides, not th
 bait's sizes. That is why it is built first despite being P2.
 
 **Independent Test**: reintroduce instance 6 (`sweepDisabledEndpoints(db)` in
-`notifications.itest.ts`) and run that file alone. The run must fail and report
-that the sentinel environment was mutated.
+`notifications.itest.ts`) and run that file alone. The run must fail and name the
+sentinel row it took.
 
 **Acceptance Scenarios**:
 
-1. **Given** the bait planted, **When** a test mutates rows belonging to the
-   sentinel environment, **Then** the run fails and the message names the table
-   and the row.
+1. **Given** the bait planted, **When** a test mutates bait, **Then** the run
+   fails and the message names the table and the row.
 2. **Given** a suite that performs a global operation on purpose — the outbox and
    delivery relays — **When** the lane runs, **Then** it passes, because that
    suite carries an explicit and visible exemption rather than a silent one.
@@ -182,15 +181,15 @@ to any `*.itest.ts` not on the exemption list and run lint. It must fail.
 
 **The bait**
 
-- **FR-001**: The integration lane MUST plant, before any test runs, a set of
-  rows belonging to one sentinel environment that every global operation in the
-  codebase would act on.
-- **FR-002**: The planted rows MUST include at minimum: a webhook endpoint with
-  an open failure run older than the disablement cutoff; enough due deliveries to
-  exceed the largest default batch size in the codebase; enough unpublished
-  outbox rows to do the same; and undelivered disablement notifications.
+- **FR-001**: The integration lane MUST plant bait — rows belonging to a sentinel
+   environment that every global operation in the codebase would act on — before
+   any test in a file runs.
+- **FR-002**: The bait MUST include at minimum: a webhook endpoint with an open
+   failure run older than the disablement cutoff; enough due deliveries to exceed
+   the largest default batch size in the codebase; enough unpublished outbox rows
+   to do the same; and undelivered disablement notifications.
 - **FR-003**: Planting MUST be idempotent — a second lane run against the same
-  database leaves the bait the same size, not twice the size.
+   database leaves the bait the same size, not twice the size.
 - **FR-004**: Planting MUST happen automatically as part of running the lane, on
   a freshly migrated database, with no separate command to remember.
 - **FR-005**: The sentinel environment MUST be identifiable by name, so a
@@ -198,8 +197,8 @@ to any `*.itest.ts` not on the exemption list and run lint. It must fail.
 
 **The guard**
 
-- **FR-006**: The lane MUST fail when the sentinel environment's rows are
-  modified during a run.
+- **FR-006**: The lane MUST fail when bait is modified during a run, whichever
+  file's sentinel owns it.
 - **FR-007**: The failure message MUST name the table and the row that changed.
 - **FR-008** *(superseded by research R6)*: the refusal MUST identify the
   offending test with no separate diagnosis mode and no serial run. The trigger
@@ -250,6 +249,9 @@ to any `*.itest.ts` not on the exemption list and run lint. It must fail.
 - **FR-024**: Planting MUST use a connection that never enters the suite's pool.
   The seeder needs the exemption to plant; a test that inherited that connection
   would be unguarded (research R12).
+- **FR-026**: The exemption MUST be applied before a suite's first line of module
+  scope runs. A setup file's top-level code runs before the test file is imported;
+  a hook does not, and four suites create their database pool at module scope.
 - **FR-025**: A **non-exempt** file MUST fail at startup if it has a relay
   enabled. A relay catches and logs its own errors, so a refusal raised inside one
   is a log line and a green lane (research R13).

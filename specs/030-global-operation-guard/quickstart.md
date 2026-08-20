@@ -116,7 +116,7 @@ pnpm --filter @relay/dispatcher test:integration
 ```
 
 Expected: green. Each exemption is discoverable by reading
-`services/api/src/testing/exempt.ts`, which carries the reason beside the path.
+`packages/test-harness/src/exempt.ts`, which carries the reason beside the path.
 
 **Then the lane an earlier draft forgot**, which shares the database and had no
 hook at all:
@@ -136,13 +136,25 @@ per-file planting:
 
 ```bash
 DATABASE_URL=…/relay_fresh pnpm --filter @relay/api test:integration
-psql "$DATABASE_URL_FRESH" -f specs/030-global-operation-guard/bait-count.sql
+psql "$DATABASE_URL_FRESH" -tAc "
+SELECT s.owner,
+       count(*) FILTER (WHERE d.state = 'pending')            AS due_deliveries,
+       count(*) FILTER (WHERE n.delivered_at IS NULL)         AS undelivered,
+       count(DISTINCT e.id)                                   AS endpoints
+  FROM __sentinel_environments s
+  LEFT JOIN webhook_deliveries d              ON d.environment_id = s.environment_id
+  LEFT JOIN webhook_disable_notifications n   ON n.environment_id = s.environment_id
+  LEFT JOIN webhook_endpoints e               ON e.environment_id = s.environment_id
+ GROUP BY s.owner ORDER BY s.owner"
 ```
 
-Expected: every bait present and at its planted size at the end of the run, and
-the sentinel environment holding exactly one endpoint. A count larger than the
-planted size means planting is not idempotent (FR-003) — the seeder becoming the
-accumulation it exists to simulate.
+Expected: **one row per test file**, each showing its bait at the planted size and
+exactly one endpoint. `__sentinel_environments` itself holds one row per file, not
+one per run. A count larger than the planted size means planting is not idempotent
+(FR-003) — the seeder becoming the accumulation it exists to simulate.
+
+The query is inlined rather than kept in a file, because an earlier draft of this
+step pointed at `bait-count.sql`, which nothing created.
 
 ## V7 — The call site refuses
 
@@ -166,7 +178,7 @@ pnpm coverage
 ```
 
 Expected: unit 242, integration 223 or more, coverage no lower than 89.50%
-statements and 82.73% branches. `services/api/src/testing/**` is excluded from
+statements and 82.73% branches. `packages/test-harness/src/**` is excluded from
 coverage, for the reason `main.ts` and `*.module.ts` are.
 
 ## V9 — Twenty runs, zero false positives
