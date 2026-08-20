@@ -148,3 +148,24 @@ Both lanes and coverage now pass, and the one failure found was diagnosed to a
 mechanism rather than retried until it went away. That distinction is the whole
 point of doing this before the chapter starts: from here, anything that goes red
 is this chapter's to explain.
+
+
+T022 — what the `strictObject` change broke
+--------------------------------------------
+
+Making `request_id` required on `errorFrameSchema` broke **two** construction
+sites, and they were found by two different mechanisms:
+
+  services/gateway/src/session.ts    `sendError`        the compiler
+  packages/protocol/src/frames.test.ts  the fixture     the test run
+
+Research R13 predicted the first and named it as the reason the field could not
+simply be added: the gateway minted no ids at all, so there was nothing to put
+there. It now mints one per answered frame, and callers pass the id of the frame
+they are answering.
+
+TWO IS FEWER THAN EXPECTED, and the reason is worth noting. The error frame is
+constructed in exactly one place in the gateway and nowhere else in the platform —
+the REST envelope is built by `ProtocolErrorFilter` and `service-kit` separately,
+and neither uses the frame schema. A shape shared by two surfaces turned out to
+have three builders and one type.
