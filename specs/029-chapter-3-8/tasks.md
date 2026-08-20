@@ -241,7 +241,7 @@ Mostly done during `/speckit-specify`. This phase verifies rather than performs.
 - [X] T072 Write `specs/029-chapter-3-8/chapter-notes.md` from what happened rather than what was planned, including T058's numbers, T059's decision, and anything the battery contradicted
 - [X] T073 Fix forward any defect this chapter exposes in an earlier chapter, in every locale that chapter has, and record it in `specs/029-chapter-3-8/chapter-notes.md`
 - [X] T074 Amend `docs/07-tutorial-plan.md` if T059 moved this chapter's scope, and confirm the Part 3 numbering it carries still matches `relay-tutorial/lib/tutorial.ts`. **Check the summary block twelve lines above the table, not only the table** — it said "Part 3: 7 chapters" and "51 chapters" through three insertions, two of them this feature's, because every one of them edited the rows and not the count (research R29). Verify by counting rows, not by reading the summary
-- [ ] T075 Tag `relay-platform` as `part3-ch8` at the chapter-end commit, because the chapter's SKIP AHEAD tells readers that tag exists — 3.5 published that claim before the tag was created
+- [X] T075 Tag `relay-platform` as `part3-ch8` at the chapter-end commit, because the chapter's SKIP AHEAD tells readers that tag exists — 3.5 published that claim before the tag was created — tagged `part3-ch8` AND `part3-ch9` at the same commit, because the split moved prose rather than code
 
 ---
 
