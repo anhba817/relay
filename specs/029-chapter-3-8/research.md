@@ -1752,6 +1752,83 @@ part of this task.
 
 ---
 
+## R41 — The transcript found a bug the tests did not
+
+T040 asks for the 429 to be captured rather than described. The first capture
+printed this:
+
+```
+HTTP 429
+x-ratelimit-limit: 3
+retry-after: 22
+{"code":"rate_limited","message":"too many messages for this environment; …"}
+```
+
+`Limit: 3` above "too many messages", on an environment whose send limit is 2.
+Two numbers describing two different budgets in one refusal.
+
+The mechanism: the headers describe whichever decision has the fewest remaining,
+and `remaining` floors at zero. With `rest: 3` and `send: 2`, the third send
+leaves rest at 3 of 3 — spent, not over — and send at 3 of 2, which is over.
+Both report zero remaining, the tie goes to the first, and the first is `rest`.
+So the body named the budget that refused and the headers named the other one.
+
+A client cannot act on that. It reads `Limit: 3`, paces itself at three a minute,
+and is refused at two.
+
+The fix is one line: a refusal describes the budget that refused, and "fewest
+remaining" governs only a response that is being served. Eighteen tests covered
+this middleware and none of them caught it, because every one of them either had
+a single operation in play or set the two limits far enough apart that the tie
+never happened.
+
+WHAT IS WORTH KEEPING is not the bug, which is small. It is that eighteen
+integration tests, seventeen analysis passes and a sabotage battery all missed
+something that was obvious the moment a human-readable response was printed
+whole. The tests each asserted one field. Nobody had looked at the response.
+
+## R42 — The battery found the test that was doing the work, and it was not the one named for it
+
+Mutation 2 shares one counter across every environment — a cross-tenant fault of
+exactly the kind constitution I exists to prevent. Three tests failed. The test
+called *"an override applies to ONE environment, not to every environment"* was
+not among them.
+
+It seeds two environments, gives one a low limit, and checks the low one is
+refused first. With a shared counter it still is: the environment with the lower
+limit still hits its number first, whoever is spending. The test asserts a
+consequence that survives the fault it is named after.
+
+T017a caught it — the extension added at the eighth analysis pass, on the
+grounds that "separate keys and separate quotas" is two claims and the suite
+checked one. It gives the two environments *different* configured limits and
+checks each is enforced at its own number, which a shared counter cannot fake.
+
+Two lessons, and the second is the useful one. First: a test named after a
+property is not evidence the property is tested. Second: the analysis pass that
+added T017a did so on a reading of the journey map, with no mutation to point
+at — and the mutation ran a chapter later and proved it was the only test doing
+the work. Which is an argument for the analysis passes, not just for the battery.
+
+## R43 — Mutation 5 mapped the exemptions by breaking one of them
+
+Removing the path-prefix exemption failed one api test and two gateway tests,
+and left the dispatcher's test passing. That is not a gap in the battery; it is
+the battery drawing the map.
+
+The dispatcher is exempt TWICE — by path, and by having no environment to key
+on, because a platform credential belongs to a deployment rather than a tenant.
+Remove one and the other holds.
+
+The gateway is exempt ONCE. It forwards the end user's token, so its internal
+calls resolve to `kind: "user"` and are indistinguishable from customer traffic
+at the principal. The path prefix is the whole of it. T016 said the exemption
+"cannot key off the principal"; the mutation is what turns that sentence into a
+demonstrated fact, and two of the three failures land in the gateway's suite one
+service away from the mutated line.
+
+---
+
 ## What this chapter does NOT do
 
 - Quotas, spending caps, threshold emails, quota degradation — chapter 3.9, and the

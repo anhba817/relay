@@ -151,10 +151,10 @@ Platform paths are relative to `relay-platform/`, tutorial paths to
 
 - [X] T035 Run both lanes and coverage; confirm every pre-existing suite passes unchanged in substance and record the counts (SC-006). **Update the achieved figures in `relay-platform/vitest.coverage.config.mts`'s threshold comment** — it records "86.55% statements, 78.07% branches at the time of writing" and ten new files will move both. Chapter 3.7's quickstart inherited a nine-minute lane estimate from 3.6 the same way and it was wrong by a factor of three (research R22). `bucket.ts` and `fallback.ts` are pure and should reach 100% branches — if they do not, the missing branch is a case the tests have not thought of
 - [X] T036 Raise the per-file ratchets in `relay-platform/vitest.coverage.config.mts` for every new file to what the work achieves. A ratchet left at its default is a ratchet that has not started
-- [ ] T037 **Commit before running the battery.** Its revert step is `git checkout --`, which silently discarded an uncommitted correction during chapter 3.6 and failed the byte-identical check against the previous run's hashes
-- [ ] T038 Run the sabotage battery per quickstart V10 — five mutations, each reverted and the file verified byte-identical by `md5sum`, recording which test failed for each (SC-007)
-- [ ] T039 **The third mutation is the one that matters**: make the auth limiter fail open. Research R3's decision is a prohibition with no line of code behind it, and chapter 3.7 shipped its central decision untested until a mutation said so — and found that its own out-of-order test had never exercised the mechanism it was named for
-- [ ] T040 Capture the limiter transcripts into `specs/029-chapter-3-8/captured-output.md`: T013's failure before the fix, the headers on a 200, the 429 with its four-field body, the V6 outage in both directions, and the battery
+- [X] T037 **Commit before running the battery.** Its revert step is `git checkout --`, which silently discarded an uncommitted correction during chapter 3.6 and failed the byte-identical check against the previous run's hashes
+- [X] T038 Run the sabotage battery per quickstart V10 — five mutations, each reverted and the file verified byte-identical by `md5sum`, recording which test failed for each (SC-007)
+- [X] T039 **The third mutation is the one that matters**: make the auth limiter fail open. Research R3's decision is a prohibition with no line of code behind it, and chapter 3.7 shipped its central decision untested until a mutation said so — and found that its own out-of-order test had never exercised the mechanism it was named for
+- [X] T040 Capture the limiter transcripts into `specs/029-chapter-3-8/captured-output.md`: T013's failure before the fix, the headers on a 200, the 429 with its four-field body, the V6 outage in both directions, and the battery
 
 **Checkpoint**: the limiter half is finished, verified and independently publishable.
 
