@@ -1,6 +1,6 @@
 # Research — chapter 3.8, "Limits you can see coming"
 
-Phase 0. Thirty-three items (R31 to R33 added during implementation). R3 is the chapter's central decision and the spec
+Phase 0. Thirty-five items (R31 to R35 added during implementation). R3 is the chapter's central decision and the spec
 deliberately left it open. R5 found a **second unenforced contract** the chapter
 has to close whether it wants to or not. R10 quantifies the size risk the spec
 flagged and the answer is not the one the scope decision assumed. **R11 was added
@@ -1567,6 +1567,62 @@ one.
 The offline queue is back on, and failing fast on a store that is genuinely down
 is `maxRetriesPerRequest: 0` plus a one-second `connectTimeout` instead. Both
 properties were wanted; only one of them had been thought about.
+
+---
+
+---
+
+## R34 — Failing open is not free if it fails slowly
+
+**The degraded-path test timed out rather than asserting anything.** With the
+store pointed at a dead port, every command waited out its one-second connect
+timeout before giving up — two calls per request, four requests, and vitest's
+five-second budget gone before the fourth response arrived.
+
+**That is worse than a slow test.** The tenant limiter fails open so a cache
+outage does not refuse paid traffic. An outage that instead adds a second or two
+to every request has refused it in a slower way, and NFR-PRF-02 asks for a REST
+p95 under 150 ms. R3 argued that "a limiter that waits is worse than one that does
+not count" and then shipped one that waits.
+
+**A known-down store is no longer retried on the request path.** The first failure
+opens a five-second window; while it is open every call answers `null`
+immediately, which is the signal both callers already handle. One probe per window
+notices the store coming back.
+
+**What the test caught that reasoning had not.** The failure direction was right
+in the first draft — tenant served, auth refused — and the latency was wrong. Both
+are properties of the same decision, and only one of them had been thought about.
+
+---
+
+## R35 — `request_id` made four tenant-isolation tests fail, and they were right to
+
+Adding the fourth field to the error envelope broke four assertions of the form:
+
+```ts
+expect(await foreignAnswer.json()).toEqual(await absentAnswer.json());
+```
+
+That comparison is not incidental. It is how chapters 3.1, 3.2, 3.5 and 3.6 prove
+a **tenant-isolation** property: a resource belonging to another environment must
+be indistinguishable from one that does not exist, or the 404 becomes an oracle
+for what other tenants own. Constitution I makes that correctness rather than
+courtesy.
+
+`request_id` is unique per request by design, so two error bodies can never again
+be equal whole.
+
+**The fix keeps the property and drops the one field that cannot carry it.** The
+id reveals nothing about the resource — it is fresh for every request, including
+two requests for the same thing — so it is precisely the field the comparison must
+exclude. Everything discriminating still has to match exactly.
+
+**Four suites, and none of them is this chapter's.** `credentials.itest.ts`,
+`messages.itest.ts` (twice), `test-event.itest.ts` and `attempts.itest.ts`. The
+helper carries the reasoning in each, because the next person to add a field to
+that envelope will hit this again and the useful thing to know is which fields may
+be dropped from a comparison and why.
 
 ---
 

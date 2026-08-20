@@ -169,3 +169,34 @@ constructed in exactly one place in the gateway and nowhere else in the platform
 the REST envelope is built by `ProtocolErrorFilter` and `service-kit` separately,
 and neither uses the frame schema. A shape shared by two surfaces turned out to
 have three builders and one type.
+
+
+Mid-implementation: `check:fences` is RED, and that is the expected state
+--------------------------------------------------------------------------
+
+After Phase 5 the chain reports 20 HEAD failures, one per file this chapter has
+changed and not yet fenced. The chapter's own fences are generated at T061, in
+Phase 10, so the chain cannot be green before then.
+
+Recorded because a red gate is worth being able to tell apart from a broken one.
+The 20 are exactly the files the phases so far have touched:
+
+  compose.yaml                          eslint.config.mjs
+  packages/protocol/src/frames.ts       packages/protocol/src/frames.test.ts
+  packages/service-kit/src/index.ts     services/api/package.json
+  services/api/src/app.module.ts        services/api/src/auth/auth.module.ts
+  services/api/src/auth/authenticate.middleware.ts
+  services/api/src/auth/credential.guard.ts
+  services/api/src/auth/principal.ts    services/api/src/db/repository.ts
+  services/api/src/db/schema.ts         services/api/src/protocol-error.filter.ts
+  services/api/src/request-context.middleware.ts
+  services/gateway/src/session.ts
+  services/api/src/auth/credentials.itest.ts
+  services/api/src/messages/messages.itest.ts
+  services/api/src/webhooks/attempts.itest.ts
+  services/api/src/webhooks/test-event.itest.ts
+
+The last four are R35's fix-forward and belong in `post-series.md` rather than a
+chapter fence: they are `request_id` fallout in four earlier chapters' suites, and
+3.8 teaches rate limiting rather than how those suites compare error bodies.
+Deferred to T061c with the rest of the post-series work.
