@@ -158,9 +158,10 @@ lane pointed at that database meets it. Bait is not, and should not spread
 | e2e | yes | no |
 | **coverage** | **yes** | no |
 
-The coverage lane is the one an earlier draft missed. It runs every `*.itest.ts`
-in one process with no `setupFiles` and no `globalSetup`, so it would have met the
-trigger with no way to answer it and failed all six exempt suites.
+The coverage lane is the one an earlier draft missed. `vitest.coverage.config.mts`
+runs every `*.itest.ts` in one process with no `setupFiles` and no `globalSetup`, so
+it would have met the trigger with no way to answer it and failed all six exempt
+suites.
 
 ## Verdict
 

@@ -173,9 +173,10 @@ that the naive version of the SQL one is non-deterministic.
 `docs/06-adr-deep-dives.md`, not a numbered ADR. An ADR records a decision that
 binds the product; this binds a test lane, and ADRs are immutable once accepted, so
 minting one for infrastructure that a later chapter may replace would be the more
-expensive mistake. The task that writes the note therefore sits in the foundational
-phase, before any PL/pgSQL is written — an earlier draft had it in close-out, which
-would have decided a constitution question after the code that depends on it.
+expensive mistake. The task that writes the note is **T005a**, in the foundational
+phase, before any PL/pgSQL is written — an earlier draft had it at T044 in
+close-out, which would have decided a constitution question after the code that
+depends on it.
 
 
 ## Constitution Re-check (post-design)
