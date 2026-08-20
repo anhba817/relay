@@ -1,6 +1,6 @@
 # Research — chapter 3.8, "Limits you can see coming"
 
-Phase 0. Thirty-five items (R31 to R35 added during implementation). R3 is the chapter's central decision and the spec
+Phase 0. Thirty-six items (R31 to R36 added during implementation). R3 is the chapter's central decision and the spec
 deliberately left it open. R5 found a **second unenforced contract** the chapter
 has to close whether it wants to or not. R10 quantifies the size risk the spec
 flagged and the answer is not the one the scope decision assumed. **R11 was added
@@ -1623,6 +1623,38 @@ exclude. Everything discriminating still has to match exactly.
 helper carries the reasoning in each, because the next person to add a field to
 that envelope will hit this again and the useful thing to know is which fields may
 be dropped from a comparison and why.
+
+---
+
+---
+
+## R36 — R15 was right, and it took two suites rather than one
+
+R15 predicted the auth limiter would refuse this project's own tests, and named
+`credentials.itest.ts` as the suite that submits bad credentials on purpose. It
+did, and raising the threshold there fixed it.
+
+**Then the signup limiter broke a second suite that R15 had not named.** FR-041
+limits account creation per source address, `signup.itest.ts` drives those routes
+repeatedly from one loopback address, and two of its tests started failing the
+moment the limiter existed.
+
+**The pattern generalises and the fix does too.** Any suite that deliberately
+exercises a limited route shares one address with every other suite in the lane
+and needs headroom asked for **explicitly and visibly**. Both suites now raise the
+threshold in `beforeAll` with a comment saying why, rather than the default being
+chosen to suit the tests — chapter 3.6's `RELAY_DISABLE_SWEEP` states the rule.
+
+**Raising, never lowering.** R21's distinction earned itself twice here: a high
+ceiling never refuses however polluted the shared count, so raising survives a
+parallel lane. A suite needing a LOW threshold needs a private key, which is what
+`limits.itest.ts` uses.
+
+**What this says about adding a limiter to a mature codebase.** Every route a
+limiter touches has a suite that exercises it, and that suite was written when the
+route could not refuse. Two suites here; a chapter that limited more surface would
+find more. The cost is not the limiter — it is that the tests around it encoded an
+assumption nobody wrote down.
 
 ---
 
