@@ -309,7 +309,13 @@ names a chapter that has not happened yet.
   first error code a developer will receive routinely and want to look up, constitution V
   requires every error code have a reachable page, and none exists. The placeholder is
   kept — a docs site is not this chapter's to build — and the gap is stated rather than
-  implied (research R25).
+  implied (research R25). The chapter MUST also state what makes it expensive: **SRS §7.3
+  exits Phase 2 on "an external developer integrates using only public documentation"**,
+  and this chapter completes that phase's requirement set (research R28).
+- **FR-049**: The chapter MUST record that it completes SRS Phase 2's requirement set —
+  §7.3 lists Phase 2 as FR-TEN, FR-AUT, FR-WHK and FR-RTL at P2, and FR-RTL-01…04 is the
+  last of the four groups. The tutorial plan names 2.8 as the Phase 1 exit criterion and
+  had no equivalent for Phase 2; 3.10 runs the exit test (research R28).
 - **FR-045**: The connect limit MUST NOT be the reason a client reconnecting after a
   platform-initiated drain is refused. **This chapter does not satisfy this**: the drain
   does not exist — close code 4009 is declared and emitted by nothing — so the

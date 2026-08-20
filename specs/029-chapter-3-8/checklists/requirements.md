@@ -580,6 +580,38 @@ amendments recorded in Appendix D — now 1.3. And the mirror had to be re-synce
 `docs/04-srs.md` is one of six documents `check:docs` compares; amending the source alone
 would have broken a gate that had passed for fifteen passes.
 
+### The sixteenth pass: a stale count this feature walked past twice
+
+**T1 — the tutorial plan's summary said Part 3 was 7 chapters and the series 51.** It is
+10 and 54. Three insertions moved it — 3.6, 3.7, and this feature's quotas split — and
+each edited the chapter *table* twelve lines below while leaving the summary alone. **Two
+of the three were this feature's own commits.**
+
+It is the exact class the eleventh pass diagnosed and fixed twice: a hand-written total
+describing something the same document enumerates. R10's fence estimate was made to derive
+itself and T061's count was deleted — while this one sat above a table the same commits
+were editing. `check:docs` does not cover `07-tutorial-plan.md` either (R22), so nothing
+caught it for three chapters.
+
+Corrected and then **verified by counting rows** rather than by re-reading the summary:
+all nine part counts and the total now agree.
+
+**T2 — this chapter completes SRS Phase 2, and nothing said so.** §7.3 lists Phase 2 as
+FR-TEN, FR-AUT, FR-WHK and FR-RTL at P2; the other three groups landed in 3.1, 3.2 and
+3.5, so FR-RTL-01…04 is the last of them. The plan already had the convention — 2.8's row
+reads *"This chapter **is** the SRS Phase 1 exit criterion"* — and no row named Phase 2's.
+Both now do: 3.8 completes the set, 3.10 runs the test.
+
+**T3 — and the two collide.** Phase 2 exits on *"an external developer integrates using
+only public documentation, with no assistance"*. This chapter ships `rate_limited` as the
+first error code an integrating developer will receive and look up, pointing at a
+`docs_url` that resolves to nothing. FR-047 already recorded the placeholder; §7.3 is what
+makes it expensive rather than untidy — **the phase whose exit criterion is public
+documentation is completed by a chapter that documents an error code nowhere.**
+
+Recorded, not solved. A docs site is not a chapter of this series and half of one would be
+Part 3's fifth unfinished mechanism.
+
 ### One requirement carries a claim that may be wrong, on purpose
 
 The Assumptions say this renumbering should be cheap because chapter 3.7 removed

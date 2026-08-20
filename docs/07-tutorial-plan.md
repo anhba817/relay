@@ -80,14 +80,14 @@ before and operations after. Estimated sizes assume the format rules above.
 Part 0   The idea and the paper          5 chapters   (docs 01–06 as curriculum)
 Part 1   Foundations                     4 chapters   (repo, tooling, protocol, compose)
 Part 2   The core loop                   8 chapters   (SRS Phase 1 — the hardest part)
-Part 3   Becoming a platform             7 chapters   (SRS Phase 2)
+Part 3   Becoming a platform            10 chapters   (SRS Phase 2)
 Part 4   The second data path            8 chapters   (SRS Phase 3 — ClickHouse + hosted media)
 Part 5   Developer experience            6 chapters   (SRS Phase 4 — SDK, emoji, dashboard)
 Part 6   Shipping it                     5 chapters   (containers, k8s, CI/CD)
 Part 7   Running it                      6 chapters   (observability, load, chaos, incidents)
 Part 8   The retrospective               2 chapters   (what we'd change; where to go next)
                                         ─────────────
-                                        51 chapters
+                                        54 chapters
 ```
 
 ### Part 0 — The idea and the paper (5 chapters)
@@ -148,9 +148,9 @@ build on."
 | 3.5 | Webhooks that survive the customer | Dispatcher service: envelope-encrypted signing secrets, HMAC-SHA256, a due-time retry schedule, dead letters (FR-WHK-01…05, FR-WHK-08) |
 | 3.6 | When to stop trying | The attempt log and auto-disable (FR-WHK-06, FR-WHK-07, both half-delivered — see below); the synthetic test event (FR-WHK-09); the evidence a customer is owed when their endpoint is switched off |
 | 3.7 | Commit and publish are two instants | The resume duplicate: a message committed before a backfill and announced after it, delivered twice; the high-water mark given a lifetime past the buffering window |
-| 3.8 | Limits you can see coming | Per-environment fixed-window counters in Redis (FR-RTL-01…04); the three headers on every response, not only the refusal; failed-auth limiting per IP (FR-AUT-12); the email transport 3.6 was owed (FR-WHK-07) |
+| 3.8 | Limits you can see coming | Per-environment fixed-window counters in Redis (FR-RTL-01…04); the three headers on every response, not only the refusal; failed-auth limiting per IP (FR-AUT-12); the email transport 3.6 was owed (FR-WHK-07). **This chapter completes SRS Phase 2's requirement set** — §7.3 lists it as FR-TEN, FR-AUT, FR-WHK and FR-RTL at P2, and FR-RTL-01…04 is the last of the four |
 | 3.9 | Quotas and what they cost | Monthly usage quotas, hard and soft spending caps, the 50/80/100% email (FR-RTL-05…08) |
-| 3.10 | **Milestone: the isolation gauntlet** | The cross-tenant attack suite (NFR-SEC-09) run against every endpoint; the second-external-developer test |
+| 3.10 | **Milestone: the isolation gauntlet** | The cross-tenant attack suite (NFR-SEC-09) run against every endpoint; the second-external-developer test. This chapter *is* the SRS Phase 2 exit criterion — *"an external developer integrates using only public documentation, with no assistance"* |
 
 **3.5 was narrowed while it was being written, and 3.6 is where the remainder
 went.** The original entry promised auto-disable in the same chapter as the
@@ -251,6 +251,21 @@ subjects rather than ordinals. If that worked, moving quotas and the gauntlet co
 prose, this table and the registry — and no fence amendment. 3.8's success criteria
 check it rather than assume it, because a rule adopted one chapter ago to make this
 cheap should be made to prove it.
+
+**Phase 2 closes across 3.8 and 3.10, and its exit criterion is a problem the series
+has been accumulating.** SRS §7.3 exits Phase 2 on *"an external developer integrates
+using only public documentation, with no assistance"*. 3.8 finishes the requirement set;
+3.10 runs the test.
+
+The awkward part is that 3.8 ships `rate_limited` as the first error code an integrating
+developer will actually receive and look up, and its `docs_url` resolves to nothing — a
+placeholder every chapter since 1.4 has carried, in a filter whose own comment admits it.
+Constitution V requires every error code to have a reachable page. **The phase whose exit
+criterion is public documentation is completed by a chapter that documents an error code
+nowhere**, and the milestone that tests it is two chapters later.
+
+Recorded here rather than solved: a docs site is not a chapter of this series, and
+pretending otherwise would put a fifth half-built thing in Part 3.
 
 **Two chapters exceed the 2,000-4,000 word bound in the table above** — 3.5 at
 4,996 words of prose outside fences and 3.6 at 5,346. Nothing enforces that

@@ -1,6 +1,6 @@
 # Research — chapter 3.8, "Limits you can see coming"
 
-Phase 0. Twenty-seven items. R3 is the chapter's central decision and the spec
+Phase 0. Twenty-nine items. R3 is the chapter's central decision and the spec
 deliberately left it open. R5 found a **second unenforced contract** the chapter
 has to close whether it wants to or not. R10 quantifies the size risk the spec
 flagged and the answer is not the one the scope decision assumed. **R11 was added
@@ -1364,6 +1364,60 @@ without its version being updated.
 compares them. Amending the source without syncing would have broken a gate that had
 passed for fifteen passes — which R22 already noted says less than it appears, since it
 covers `01`–`06` and not the tutorial plan.
+
+---
+
+---
+
+## R28 — This chapter closes SRS Phase 2, and the phase exits on documentation it lacks
+
+**Read at the sixteenth analysis pass, from SRS §7.3** — the phase summary the
+constitution's Phase discipline clause points at, and which no earlier pass had opened.
+
+| Phase | Requirement groups | Exit criterion |
+|---|---|---|
+| **2 — Platform** | FR-TEN, FR-AUT, FR-WHK, **FR-RTL (P2)** | *An external developer integrates using only public documentation, with no assistance* |
+
+FR-RTL-01…04 are the P2 subset and they are this chapter's whole rate-limiting scope. The
+other three groups landed in 3.1, 3.2 and 3.5. **So chapter 3.8 completes Phase 2's
+requirement set**, and nothing in the plan or the spec said so.
+
+The tutorial plan already has the convention: 2.8's row reads *"This chapter **is** the
+SRS Phase 1 exit criterion."* Both rows now carry the equivalent — 3.8 completes the set,
+3.10 runs the test, because its "second-external-developer test" *is* the exit criterion
+in the plan's own words.
+
+**And the two facts collide.** The phase exits on *public documentation*, and this chapter
+ships `rate_limited` as the first error code an integrating developer will receive and
+look up. Its `docs_url` resolves to nothing. Constitution V requires every error code have
+a reachable page; FR-047 already records the placeholder; §7.3 is what makes the
+placeholder expensive rather than untidy.
+
+Recorded rather than solved. A docs site is not a chapter of this series, and building
+half of one here would be the fifth unfinished mechanism in Part 3.
+
+---
+
+## R29 — A stale count in the document this feature edited twice
+
+`docs/07-tutorial-plan.md`'s summary block said **Part 3: 7 chapters** and **51
+chapters** in total. Part 3 has ten and the series has fifty-four.
+
+Three insertions moved it — 3.6 during 3.5's own work, 3.7, and this feature's quotas
+split — and each updated the chapter *table* twelve lines below while leaving the summary
+untouched. **Two of the three were this feature's.**
+
+**It is the class R11 diagnosed and the feature had already fixed twice in its own
+artifacts**: a hand-written total describing something the same document enumerates. R10's
+fence estimate and T061's amendment count both went stale the same way and were fixed by
+deriving the first and deleting the second — while this one sat twelve lines above a table
+edited in the same commits.
+
+`check:docs` does not cover it either. R22 recorded that the gate mirrors `01`–`06`, and
+`07-tutorial-plan.md` is the document this chapter renumbers.
+
+**Verified after correcting**: all nine part counts and the total now agree with the
+tables, checked by counting the rows rather than by reading the summary.
 
 ---
 
