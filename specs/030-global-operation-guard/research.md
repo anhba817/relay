@@ -120,7 +120,7 @@ Verified against the real schema. The properties this buys:
   under parallel execution, with no serial diagnosis mode.
 - **It catches raw SQL.** A lint rule and a wrapped import both miss a global
   `UPDATE` written by hand; the database does not.
-- **Exemption is per session**, set by the lane's setup hook from an auditable
+- **Exemption is per session**, set by the lane's setup file from an auditable
   list of files.
 - **It makes the bait durable.** A non-exempt suite cannot eat what it cannot
   modify, which softens R2: re-planting is only needed after an exempt suite runs.
@@ -133,7 +133,7 @@ Relay ships a trigger whose only purpose is to break its own test suite.
 FR-011 keep their meaning; the mechanism named in its assumptions is wrong and is
 superseded here.
 
-**Alternatives rejected.** Wrapping the repository's exports in the setup hook
+**Alternatives rejected.** Wrapping the repository's exports in the setup file
 (catches indirect calls, misses raw SQL, and generic path resolution across test
 files is awkward). Making the product functions refuse to run under a test flag
 (puts test logic in shipped code — constitution VII). Per-suite databases
@@ -210,7 +210,7 @@ to remove.
 **Decision**: set it as a connection option, so every connection the pool opens
 carries it. `options` is honoured both in the connection string and in the config
 object; the connection string wins because it needs **no product change** — the
-setup hook rewrites `process.env.DATABASE_URL` for its own worker before the suite
+setup file rewrites `process.env.DATABASE_URL` for its own worker before the suite
 calls `createPool()`, and `createPool()` reads that variable.
 
 **Alternative rejected**: adding an `options` parameter to `createPool()`. It is a
@@ -260,7 +260,7 @@ test, the test inherits it and the guard is off for that test. Circular.
 Two changes resolve it, and the second also fixes a race the design had not seen.
 
 **The seeder gets its own connection.** A dedicated `pg.Client` created by the
-setup hook with the exemption in its options, used to plant, then closed. It never
+setup file with the exemption in its options, used to plant, then closed. It never
 enters the suite's pool, so nothing a test does can inherit it.
 
 **The sentinel becomes per file, not shared.** Files run in parallel — no
@@ -297,7 +297,7 @@ mitigation is a convention repeated in seven files rather than a property.
 - The contract's claim is narrowed to say what is true: the refusal surfaces in the
   statement's own transaction, which for a test is that test and for a background
   loop is a log line.
-- The setup hook asserts that a **non-exempt** file has the relay flags off, and
+- The setup file asserts that a **non-exempt** file has the relay flags off, and
   fails at startup if not. That turns "we happen to switch them off" into
   something checked, and it is four lines.
 
@@ -417,3 +417,83 @@ exactly what filler does: it read as a summary, so nobody checked it. Cutting it
 required knowing what it summarised, and knowing that required counting. Three
 documents asserted five; the compiler would have caught nothing, because the
 sentence was prose.
+
+
+---
+
+# Findings from the third analysis pass
+
+The first pass read the runtime, the second the loading order. This one read what
+the repository requires of a *package*, and re-read the one document whose job is
+to say the spec is ready.
+
+## R19 — Growing a package grew four obligations nobody listed
+
+`packages/test-harness/` was decided in R16 on the strength of one argument — five
+configs across four packages import it. What a package needs *here* was never
+enumerated, and three of the four gaps block a gate:
+
+| Needs | Why | Consequence if missed |
+|---|---|---|
+| `packages/test-harness/**` in the `pg` ignores list | the harness imports `pg`, which `eslint.config.mjs` restricts to five paths | `pnpm lint` fails on the first run after the package exists |
+| a `typecheck` script | `turbo run typecheck` runs per package and **skips** one without the script | the one package built to catch mistakes is never typechecked |
+| `tsconfig.json` | `packages/config` and `packages/service-kit` both have one | no typechecking even with the script |
+| **no** `test` script | `vitest run` with zero test files exits 1 | `pnpm test` breaks |
+
+`@relay/e2e` is the existing package with exactly this pair — `typecheck` and no
+`test` — and is the shape to copy.
+
+The lint one is worth separating from the rest. `eslint.config.mjs` carries **two**
+restriction rules with **two** ignores lists: one for the driver (`pg`,
+`drizzle-orm`, `ioredis`) and one this feature adds for the global admin functions.
+A task existed for the second and none for the first, which is the kind of near-miss
+that reads as covered.
+
+## R20 — Referencing the harness by path avoids five manifest edits
+
+By package name would mean adding `@relay/test-harness` to `devDependencies` in the
+api, gateway, dispatcher and e2e packages plus the repository root — which has no
+workspace dependencies at all today.
+
+By path costs nothing. `setupFiles` and `globalSetup` take paths, and `pg` still
+resolves from the harness's own `node_modules`, because Node resolves from the
+importing file's location rather than from whichever config loaded it.
+
+## R21 — The checklist had been passing itself for four rounds
+
+`checklists/requirements.md` was written against a 19-requirement spec and never
+touched again. The spec has since gained nine requirements, superseded two,
+withdrawn an assumption and replaced its central mechanism.
+
+Its Notes described the checksum design in the present tense, and closed with:
+
+> If the plan finds a sound way to attribute under parallelism, that assumption
+> should be revisited rather than inherited.
+
+The plan found one. Nobody revisited.
+
+Two things worth keeping. The first is that this is the feature's own subject
+matter arriving in the file meant to prevent it: **a check that passes because
+nobody re-ran it.** Instance 6 was a test that passed alone; R6 was a design that
+worked in one session; this was a validation that passed against a document it had
+stopped describing.
+
+The second is smaller and more useful. The stale paragraph was not wrong when
+written and did not become wrong by neglect — it became wrong because *the thing it
+asked for happened*. A document that names its own condition for revision has done
+more than most, and it still needs someone to come back.
+
+## R22 — The highest-stakes claim checked out
+
+`services/api/src/limits/store.ts` says the `rl:` prefix is "the prefix the SAD's
+cache-keys table names". That sentence is fenced byte-exact into published chapter
+3.8, so a wrong one would be wrong in the book.
+
+`docs/05-sad.md:524`:
+
+```
+| `rl:{env}:{bucket}` | Token buckets (FR-RTL-01) | window |
+```
+
+True. Recorded because a pass that only lists what it broke gives no sense of what
+it checked — and this was the thing most expensive to have got wrong.

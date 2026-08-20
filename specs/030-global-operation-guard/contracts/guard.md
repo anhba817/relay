@@ -47,7 +47,7 @@ lane. A relay is the largest global operation in the system, which makes this th
 guard's sharpest limitation rather than a footnote (research R13).
 
 Today no suite is exposed to it: every file that spawns an api child sets all four
-relay flags off. That is a convention repeated in seven files, so the setup hook
+relay flags off. That is a convention repeated in seven files, so the setup file
 checks it — a non-exempt file with a relay enabled fails at startup rather than
 running unguarded (FR-025).
 

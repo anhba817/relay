@@ -27,12 +27,12 @@ or wrapped import can see (research R6).
 guard's logic is PL/pgSQL because it has to run inside the offending transaction.
 
 **Primary Dependencies**: vitest (`setupFiles` and `globalSetup`, in **five**
-configs — api, dispatcher, gateway, e2e and coverage), `pg` for the setup hook's
+configs — api, dispatcher, gateway, e2e and coverage), `pg` for the setup file's
 DDL and its dedicated seeding client, eslint's `no-restricted-imports`. Nothing
 new is added to any package manifest.
 
 **How the exemption travels**: as a connection option in `DATABASE_URL`, rewritten
-by the setup hook for its own worker. Not as a `SET` statement — a pool rotates
+by the setup file for its own worker. Not as a `SET` statement — a pool rotates
 connections and a statement lands on one of them, measured at two of five
 (research R10). This needs no change to `createPool()`.
 
@@ -188,7 +188,7 @@ that the naive version of the SQL one is non-deterministic.
 `docs/06-adr-deep-dives.md`, not a numbered ADR. An ADR records a decision that
 binds the product; this binds a test lane, and ADRs are immutable once accepted, so
 minting one for infrastructure that a later chapter may replace would be the more
-expensive mistake. The task that writes the note is **T005b**, in the foundational
+expensive mistake. The task that writes the note is **T005e**, in the foundational
 phase, before any PL/pgSQL is written — an earlier draft had it at T044 in
 close-out, which would have decided a constitution question after the code that
 depends on it.

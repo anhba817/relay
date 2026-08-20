@@ -80,7 +80,7 @@ the seeder cannot itself become the accumulation it exists to simulate (FR-003).
 sentinel row is exactly what the trigger forbids, so the seeder needs the
 exemption — and a connection carrying the exemption must never reach a test, or
 that test runs unguarded. So planting uses a dedicated `pg.Client`, created by the
-setup hook with the exemption in its options and closed before the suite's first
+setup file with the exemption in its options and closed before the suite's first
 test. It never enters the suite's pool (FR-024, research R12).
 
 ## The guard
