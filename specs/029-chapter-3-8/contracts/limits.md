@@ -91,6 +91,12 @@ messages" are different problems: one says batch, the other says slow down. The
 `code` stays `rate_limited` — it is the protocol constant — and the message carries
 the distinction. Neither names a credential (NFR-SEC-06).
 
+The five fields are **top-level**, not nested under an `error` key. EIR-API-04's example
+showed them nested until this chapter checked what the platform actually sends; the SRS is
+amended to 1.3 and the flat shape is the documented one. The same fields travel on the
+socket inside a frame's `payload`, so the two surfaces differ only in the transport
+wrapper.
+
 **`request_id` in the body is new.** The envelope has carried `code`, `message` and
 `docs_url` since chapter 1.3, above a comment saying the fourth field would arrive
 "in Part 2, when a gateway exists to mint one". It did not. Constitution V requires

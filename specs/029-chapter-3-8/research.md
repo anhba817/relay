@@ -1,6 +1,6 @@
 # Research — chapter 3.8, "Limits you can see coming"
 
-Phase 0. Twenty-six items. R3 is the chapter's central decision and the spec
+Phase 0. Twenty-seven items. R3 is the chapter's central decision and the spec
 deliberately left it open. R5 found a **second unenforced contract** the chapter
 has to close whether it wants to or not. R10 quantifies the size risk the spec
 flagged and the answer is not the one the scope decision assumed. **R11 was added
@@ -1309,6 +1309,61 @@ discovering it.
 was not, and nothing in the process distinguished them, because all four were produced the
 same way — by reasoning about a client. The fix is not the new number; it is that each
 number now names what it rests on, including the one that rests on nothing.
+
+---
+
+---
+
+## R27 — The error envelope's shape, and an SRS amendment
+
+**The fifteenth analysis pass read §3 of the SRS** — the External Interface
+Requirements — which fourteen earlier passes had skipped while reading §4's FR tables and
+§5's NFR tables repeatedly. EIR-API-04 is P1, verified by Test, and its worked example
+nested the error body's fields under an `error` key:
+
+```json
+{ "error": { "code": …, "message": …, "field": …, "docs_url": …, "request_id": … } }
+```
+
+`ProtocolErrorFilter` emits them **flat**, and has since the walking skeleton.
+`service-kit`'s 404 does the same. The document and the code had disagreed about the
+shape of every error response the platform sends, for fourteen chapters, and nothing had
+resolved it either way.
+
+**This chapter is the one that would have made it worse.** R5 adds `request_id` to that
+envelope — a fourth field into a shape already structurally wrong — and the contract
+document publishes the flat form as canonical.
+
+**Decision: amend the SRS. `docs/04-srs.md` is now at 1.3.**
+
+Three routes were available and the constitution's Governance names the third:
+*"where it conflicts with the SRS or SAD, the conflict MUST be resolved explicitly by
+amendment rather than ignored."*
+
+| Route | Why not |
+|---|---|
+| Wrap the REST body to match the document | A breaking change to every error response, and CON-05 requires a new URL version for breaking changes. Far larger than a rate-limiting chapter should spend |
+| Record the divergence, as FR-047 does for `docs_url` | Cheap and honest, and leaves a P1 requirement unmet with no plan to meet it |
+| **Amend the document** | Taken |
+
+**Why flat is the better shape anyway**, rather than merely the one that shipped. The
+same five fields travel on the WebSocket surface inside a frame's `payload` (EIR-WS-02),
+and `ProtocolErrorFilter`'s own comment gives the reason — *"one error shape, one home …
+so the REST surface and the WebSocket surface cannot drift apart"*. Nesting the REST body
+under `error` would make the two differ in **two** ways: the transport wrapper, which is
+unavoidable, and the field container, which is not.
+
+**What the amendment changed**: EIR-API-04's text now requires the five fields top-level
+and makes `request_id` required rather than merely present in an example; the example
+lost its wrapper; Appendix D records revision 1.3 with the reason; the version line moved
+from 1.0 to 1.3, which is its own small finding — the document had been amended twice
+without its version being updated.
+
+**The mirror was re-synced.** `docs/04-srs.md` is one of six documents
+`relay-tutorial/scripts/sync-docs.sh` copies into `content/docs/`, and `check:docs`
+compares them. Amending the source without syncing would have broken a gate that had
+passed for fifteen passes — which R22 already noted says less than it appears, since it
+covers `01`–`06` and not the tutorial plan.
 
 ---
 

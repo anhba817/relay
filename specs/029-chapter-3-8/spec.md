@@ -222,9 +222,12 @@ names a chapter that has not happened yet.
   against more than one limit, the headers MUST describe the limit with the fewest
   remaining — the only one a client can schedule against — and `Reset` MUST be that
   same limit's (research R11).
-- **FR-003**: A refused REST request MUST return `429` with a `Retry-After` header
-  and an error body carrying `code`, `message`, `docs_url` and `request_id`
-  (FR-RTL-03, constitution V).
+- **FR-003**: A refused REST request MUST return `429` — one of the statuses
+  **EIR-API-03** enumerates — with a `Retry-After` header and an error body carrying
+  `code`, `message`, `docs_url` and `request_id`, **top-level rather than nested**
+  (FR-RTL-03, **EIR-API-04**, constitution V). EIR-API-04's example nested them under an
+  `error` key until this chapter found the platform had never done so; `docs/04-srs.md`
+  is amended to 1.3 and the flat shape is now the documented one (research R27).
 - **FR-004**: A refused WebSocket frame MUST produce an `error` frame carrying the
   `rate_limited` code, and MUST NOT close the connection.
 - **FR-005**: A refused connection establishment MUST be rejected before the
@@ -297,6 +300,11 @@ names a chapter that has not happened yet.
   The journey map's Test phase has the developer load-testing deliberately; a developer
   who hits `429` while doing it and cannot discover the number is hers to change will
   conclude the platform is the problem (research R25).
+- **FR-048**: The chapter MUST record that this feature **amended the SRS**. EIR-API-04
+  documented a nested error body the platform has never emitted; rather than break every
+  error response — which CON-05 would make a versioning event — the document was brought
+  to the code, as the constitution's Governance section requires a conflict with the SRS
+  to be resolved by explicit amendment rather than ignored (research R27).
 - **FR-047**: The chapter MUST record that `docs_url` remains a placeholder. This is the
   first error code a developer will receive routinely and want to look up, constitution V
   requires every error code have a reachable page, and none exists. The placeholder is

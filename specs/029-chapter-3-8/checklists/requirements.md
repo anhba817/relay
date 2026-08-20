@@ -552,6 +552,34 @@ for a third field, a correlation id, which the platform does not mint. T063 chec
 every identifier the chapter *cites* resolves. Neither of these was a citation — they were
 paraphrases of requirements that exist.
 
+### The fifteenth pass: the error envelope had the wrong shape in the document
+
+Reading the SRS's **§3, External Interface Requirements** — skipped by fourteen passes
+that read §4 and §5 repeatedly — found EIR-API-04's worked example nesting the error
+body's fields under an `error` key. `ProtocolErrorFilter` has emitted them flat since the
+walking skeleton, and `service-kit`'s 404 does the same. A P1 requirement verified by
+Test, disagreeing with the code for fourteen chapters, and nothing had resolved it.
+
+**This chapter would have made it worse**, adding `request_id` as a fourth field to a
+shape already structurally wrong and publishing the flat form in a contract document.
+
+**Resolved by amending the SRS to 1.3**, which is the route the constitution's Governance
+names: *"where it conflicts with the SRS or SAD, the conflict MUST be resolved explicitly
+by amendment rather than ignored."* Wrapping the body would have been a breaking change,
+and CON-05 makes breaking changes a URL-versioning event — far outside a rate-limiting
+chapter.
+
+Flat is also the better shape rather than merely the shipped one. The same five fields
+travel on the socket inside a frame's `payload`, and the filter's own comment gives the
+reason: *"one error shape, one home … so the REST surface and the WebSocket surface
+cannot drift apart."* Nesting the REST body would make them differ in two ways instead of
+one.
+
+**Two smaller things fell out.** The SRS's version line still read 1.0 after two prior
+amendments recorded in Appendix D — now 1.3. And the mirror had to be re-synced, because
+`docs/04-srs.md` is one of six documents `check:docs` compares; amending the source alone
+would have broken a gate that had passed for fifteen passes.
+
 ### One requirement carries a claim that may be wrong, on purpose
 
 The Assumptions say this renumbering should be cheap because chapter 3.7 removed

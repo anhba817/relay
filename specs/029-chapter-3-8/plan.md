@@ -102,6 +102,14 @@ new container. See the size finding above and research R10.
 | **VI. Requirement-driven, test-verified** | Every FR maps to a test below. NFR-MNT-02's sabotage discipline applies, and SC-007 names the mutation that matters: making the auth limiter fail open, because R3's decision has no code of its own. | Pass |
 | **VII. Boring by design** | Two new dependencies and a new container, all three needing justification. `ioredis` is already in the workspace. `nodemailer` avoids hand-rolled SMTP. Mailpit exists only in `compose.yaml`, never in a deployment, and is the only way to assert on what an email contains. | Pass with the justifications recorded in research R9 |
 
+**This feature amends a source document.** EIR-API-04 (P1, verified by Test) documented a
+nested error body that the platform has never emitted. Wrapping every error response is a
+breaking change and CON-05 makes breaking changes a URL-versioning event, so the document
+was brought to the code: `docs/04-srs.md` is at revision 1.3, and the constitution's
+Governance section is what permits this — a conflict with the SRS *"MUST be resolved
+explicitly by amendment rather than ignored"*. Recorded here because a plan that changes
+a requirement and does not say so is worse than one that leaves the requirement unmet.
+
 **One gate fails, and it is recorded rather than argued away.** The Quality Gates
 require that deploys cause at most one client reconnection cycle, and a connect limit of
 60 per environment per minute refuses the surplus of a fleet-wide reconnect. The gate has
@@ -121,8 +129,8 @@ this plan, and is closed by this chapter's FR-003 and R5.
 ```text
 specs/029-chapter-3-8/
 ├── plan.md              # This file
-├── spec.md              # 48 FR, 4 user stories, 14 SC
-├── research.md          # Phase 0 — R1…R26 (R4, R11 and R14 superseded or rewritten by later passes)
+├── spec.md              # 50 FR, 4 user stories, 14 SC
+├── research.md          # Phase 0 — R1…R27 (R4, R11 and R14 superseded or rewritten by later passes)
 ├── data-model.md        # Phase 1
 ├── quickstart.md        # Phase 1 — V0…V11
 ├── contracts/
@@ -266,7 +274,7 @@ made with the word count in hand instead of predicted now.
 | FR-007 | research R4 | T018c — an override set to 2 refuses the third request while a default environment is untouched |
 | FR-002 | research R1, R11 | headers asserted on 200s, not only 429s |
 | FR-014 | research R6 | T025a — `Limit` present, `Remaining` and `Reset` absent, store down |
-| FR-003 | research R5 | the 429 body's four fields |
+| FR-003, FR-048 | research R5, R27 | the 429 body's four fields, **top-level** (T022a); EIR-API-04 amended to match, SRS 1.3 |
 | FR-004, FR-005 | research R7 | `session.test.ts`; the pre-handshake 429 |
 | FR-037 | research R12 | T034a — a configured connect limit enforced with no db client, and a mid-connection change that does not apply until reconnect |
 | FR-038 | research R13 | T031c; every `error` frame carries an id |
