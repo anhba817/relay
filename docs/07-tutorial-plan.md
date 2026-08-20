@@ -339,12 +339,16 @@ size at every cross-environment call, and refuse the import inside a test file.
 The specification is `specs/030-global-operation-guard/`.
 
 **What it does not reach, recorded because a defence trusted past its range is
-worse than none.** The seeder plants rows in a database, so a reader riding the
-JetStream stream or waiting on end-to-end dispatcher latency is outside it — bait
-for a reader that performs work *is* that work, and two hundred planted deliveries
+worse than none.** The seeder plants rows in a database, and the rule
+that emerged from measuring it three times is that **bait may be claimable only
+where draining it is database work**. A sweep and a publish qualify. A delivery
+that costs an api round-trip and an HTTP send does not — two hundred planted ones
 failed ten of the dispatcher suite's sixteen tests with the fault they were meant
-to catch already fixed. Those two shapes are covered by the required batch size and
-the lint rule instead. The lint rule in turn sees an import and not a helper and
+to catch already fixed. Nor does a notification that costs a recipient lookup: 3,400
+of them at 1.4ms each timed out a test with a five-second budget, on the first run
+of the twenty-run battery and after three full lanes had passed. Those drains, and
+anything riding the broker rather than the database, are covered by the required
+batch size and the lint rule instead. The lint rule in turn sees an import and not a helper and
 not raw SQL; the trigger sees both.
 
 **One decision inside it is worth recording here rather than as an ADR.** The

@@ -90,21 +90,29 @@ Revert with `git checkout --` and confirm the file is byte-identical by `md5sum`
 **Commit before every reintroduction, not just before the battery**: chapter 3.9
 lost a fix to exactly this revert step, in the chapter that warned about it.
 
-## V4 — Instances 1 to 5 fail alone
+## V4 — Instances 1, 4 and 5 fail alone
 
 Each is a reader-shape fault, so each needs the bait rather than the trigger.
 Reintroduce one at a time, run only its own file on a fresh database, and expect a
 failure:
 
-| # | File | Reintroduce |
-|---|---|---|
-| 1 | `deliveries.itest.ts` | drop the `10_000` from the sweep call |
-| 2 | `deliveries.itest.ts` | restore the drain that held a lock |
-| 3 | `consumer.itest.ts` | restore the fixed catch-up budget |
-| 4 | `signup.itest.ts` | restore `count(*) FROM organisations` before and after |
-| 5 | `dispatcher.itest.ts` | drop the `batchSize: 10_000` |
+| # | File | Reintroduce | Expect |
+|---|---|---|---|
+| 1 | `deliveries.itest.ts` | drop the `10_000` from the sweep call | invariant 12 fails |
+| 2 | `deliveries.itest.ts` | restore the drain that held a lock | **passes — see below** |
+| 3 | `consumer.itest.ts` | restore the fixed catch-up budget | **passes — see below** |
+| 4 | `signup.itest.ts` | restore `count(*) FROM organisations` before and after | invariant 7 fails |
+| 5 | `dispatcher.itest.ts` | drop the `batchSize: 10_000` | 10 of 16 fail |
 
-Expected: five failures, five reverts, five byte-identical files.
+Expected: three failures, five reverts, five byte-identical files.
+
+**Two of the five cannot fail alone, and the reasons are different.** Instance 2's
+content is *this suite leaves leftovers that starve a later one* — a cause whose
+only symptom appears in another file has no alone-failure to produce, and the bait
+makes it permanent, so instance 5's reintroduction is the observable form of the
+same fault. Instance 3 rides the JetStream stream rather than the database, which
+the seeder does not reach; the lint rule is its mechanism instead. SC-001 was
+amended from six instances to four (research R43).
 
 ## V5 — A legitimate global operation still passes
 
@@ -115,6 +123,7 @@ existed.
 ```bash
 pnpm --filter @relay/api test:integration src/outbox src/webhooks
 pnpm --filter @relay/dispatcher test:integration
+pnpm --filter @relay/test-harness test:integration   # the guard's own eight tests
 ```
 
 Expected: green. Each exemption is discoverable by reading
@@ -151,7 +160,9 @@ SELECT s.owner,
 ```
 
 Expected: **one row per test file**, each showing its bait at the planted size and
-exactly one endpoint. `__sentinel_environments` itself holds one row per file, not
+`BAIT_ROWS` endpoints. An earlier draft of this step said "exactly one endpoint",
+which is what the spec described and what let instance 1's reintroduction pass —
+one older eligible endpoint does not fill a batch of a hundred (research R42). `__sentinel_environments` itself holds one row per file, not
 one per run. A count larger than the planted size means planting is not idempotent
 (FR-003) — the seeder becoming the accumulation it exists to simulate.
 
@@ -179,8 +190,12 @@ pnpm turbo run test:integration --concurrency=1 --force
 pnpm coverage
 ```
 
-Expected: unit 242, integration 223 or more, coverage no lower than 89.50%
-statements and 82.73% branches. `packages/test-harness/src/**` is excluded from
+Expected: unit 306, integration 231 or more, coverage no lower than **89.08%
+statements and 82.35% branches** — measured on this tree, not quoted from chapter
+3.8, whose 89.50/82.73 predates a correctness fix that removed a caller
+(`baseline.txt`, T002). Every per-file ratchet passes, including the
+`repository.ts` functions ratchet, which had been red since before this feature
+started (research R48). `packages/test-harness/src/**` is excluded from
 coverage, for the reason `main.ts` and `*.module.ts` are.
 
 ## V9 — Twenty runs, zero false positives
@@ -197,7 +212,10 @@ twenty consecutive clean runs and found four faults doing it.
 ## V10 — The lane is no slower
 
 Compare against V0's recorded time. Expected: under 10 seconds of growth
-(SC-004). Per-file planting is roughly 600 inserts times seventeen files.
+(SC-004). Measured: **3m10.218s against a 3m13.852s baseline**, carrying eight
+more tests — negative growth, paid for by the dispatcher lane no longer planting
+bait and by nine api suites no longer running four background relays each. Per-file
+planting is roughly 800 inserts times seventeen files.
 
 ## V11 — The paperwork
 

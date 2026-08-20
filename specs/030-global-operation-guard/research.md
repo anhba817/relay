@@ -1245,3 +1245,47 @@ it.
 repository.ts  97.27 | 90.90 | 100 | 99.24
 Test Files  53 passed (53)      Tests  472 passed (472)
 ```
+
+## R49 — The same law, a third time, found by run 1 of twenty
+
+The twenty-run battery was restarted on a frozen tree and failed on run 1:
+
+```
+FAIL src/notifications/notifications.itest.ts >
+     sends twice for an endpoint disabled, re-enabled and disabled again
+Error: Test timed out in 5000ms.
+```
+
+`drainDisableNotifications` claims on `delivered_at IS NULL` and then does per-row
+work: look up the organisation's recipients, decide, mark. The sentinel's
+organisation has no addressable member — T008's design, which removed the 200 SMTP
+sends R4 measured — so every bait row takes the cheapest branch available. Cheapest
+is about 1.4 milliseconds, and seventeen files' worth of bait is 3,400 rows, which
+is a little under five seconds. Vitest's default test budget is five seconds.
+
+It is exactly the "passes on headroom" signature: the same lane had run green
+several times before, including a full `pnpm test:integration` twenty minutes
+earlier. Nothing about the tree changed between the green run and the red one.
+
+**Decision**: plant these rows with `delivered_at` set. They stay in the table for
+anything that counts rows and leave every claim window.
+
+That is the third measurement of one law, so it is worth stating as a law rather
+than as three incidents:
+
+> **Bait may be claimable only where draining it is database work.**
+
+The endpoints (a sweep: one statement) and the outbox rows (a publish to whatever
+publisher the test supplies) qualify, and both stay claimable — instances 1 and 7
+were caught by exactly those two. The deliveries (an api round-trip and an HTTP
+send per row) and these notifications (a recipient lookup and a mark per row) do
+I/O, and both are now out of reach of a claim.
+
+The cost is stated rather than hidden: two of the four global drains have no bait,
+so their reader shape is caught by the required batch size and the lint rule and
+not by the seeder.
+
+**What the battery is for.** This is the fault the twenty runs exist to catch, and
+it was caught on the first one — after three separate full-lane runs had passed.
+Chapter 3.7 spent four hours on its twenty and found four faults; this one found a
+fault the moment it was pointed at a tree nobody was editing.
