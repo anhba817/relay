@@ -1166,3 +1166,82 @@ The environments were incidental to what the test is about — two runtimes shar
 one durable, each message handled once — so one environment and a filter on both
 runtimes leaves the subject intact. Eight instances now, in six files, across
 chapters 3.3 to 3.9.
+
+## R47 — Three attempts at delivery bait, and the one that works gives something up
+
+R44 removed bait from the dispatcher lane. That was not enough, because bait is
+database state and the coverage lane shares the database: `pnpm coverage` runs
+every `*.itest.ts` in one process against whatever the api lane last planted, and
+the dispatcher suite failed there for the same reason it had failed in its own
+lane.
+
+Three shapes measured, each on a freshly migrated database:
+
+| bait deliveries | dispatcher lane | duration |
+|---|---|---|
+| 200 due, on the enabled endpoint | 10 of 16 failed | 155.7s |
+| 200 due, on a **disabled** endpoint | 2 of 16 failed | 71.9s |
+| 200 **not due**, on a disabled endpoint | 16 passed | 73.6s |
+
+The middle row is the interesting one. `deliveryMaterial` returns null for a
+disabled endpoint, so the dispatcher logs `delivery.skipped` and acks without
+signing or sending — and it still cost eight seconds for two hundred rows, because
+the api round-trip per job *is* the forty milliseconds. Only the first two tests
+failed; after that the bait was consumed. A warm-up cost is still a cost.
+
+**Decision**: `next_attempt_at` an hour in the future. The rows stay in the table
+for anything that counts them, and no drain claims them. The endpoint stays
+disabled anyway, so that if one ever does come due through a path not anticipated
+here, a skip is the cheapest thing it can cost.
+
+What this gives up, plainly: the due-delivery drain has no bait, so its reader
+shape is not caught by the seeder. It is covered by the required batch size and
+by the lint rule. This is the third boundary of the same kind — instance 3's
+stream, instance 5's broker latency, and now the drain's own work — and they share
+a cause: **bait for a reader that performs work IS that work.**
+
+## R48 — The ratchet was already failing, and the baseline said otherwise
+
+`pnpm coverage` ended:
+
+```
+ERROR: Coverage for functions (98.7%) does not meet
+       "services/api/src/db/repository.ts" threshold (100%)
+```
+
+The natural suspect was T022, which removed `sweepDisabledEndpoints`'s default
+parameter. Measured both ways, with the harness's own tests excluded so the two
+runs are comparable:
+
+```
+limit = 100   repository.ts  97.27 | 90.44 | 98.7 | 99.24
+limit: number repository.ts  97.27 | 90.39 | 98.7 | 99.24
+```
+
+Identical. The relay flags were the second suspect — the coverage lane now runs
+with all four off — and turning them back on produced 98.7 as well.
+
+The uncovered function is `drainDisableNotifications`'s `onError` default,
+`= () => {}`. At the pre-feature commit the only caller in the tree already passed
+a handler:
+
+```
+$ git grep -n "drainDisableNotifications(" fb97056 -- 'services/**/*.ts'
+notification-relay.ts:122:    return drainDisableNotifications(db, batchSize, deliver, (row, error) => {
+```
+
+So it was uncovered then too, and `baseline.txt`'s "every per-file ratchet still
+passes" was a sentence about ratchets nobody had run. That is this feature's own
+recurring failure — a summary that reads as a measurement — recorded here rather
+than quietly corrected.
+
+**Decision**: remove the default and require the handler, for the same reason
+T022 required the batch size and a sharper one. A default `onError` discards a
+row's failure with no log line, which is the swallowed-refusal shape R13 and R39
+are both about, in the file that holds the platform's admin surface. Nothing used
+it.
+
+```
+repository.ts  97.27 | 90.90 | 100 | 99.24
+Test Files  53 passed (53)      Tests  472 passed (472)
+```

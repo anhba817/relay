@@ -146,7 +146,7 @@ Platform paths are relative to `relay-platform/`, tutorial paths to
 
 ## Phase 7: Verification
 
-- [ ] T033 Run both lanes and coverage; confirm every pre-existing suite passes and record the counts. Coverage must not fall below 89.50% statements and 82.73% branches
+- [X] T033 Run both lanes and coverage; confirm every pre-existing suite passes and record the counts. Coverage must not fall below 89.50% statements and 82.73% branches
 - [ ] T034 **Twenty consecutive integration runs, zero false positives** (quickstart V9, SC-003). This is the step most likely to be skipped for costing twenty times three minutes, and the step that says the guard does not cry wolf. Chapter 3.7 spent four attempts and about four hours getting twenty clean runs, and found four faults doing it
 - [ ] T035 Measure the lane's wall-clock time against **T002's** baseline — same machine, same test count — and record it in `specs/030-global-operation-guard/baseline.txt`, confirming growth under 10 seconds (SC-004). Record the number, not the verdict
 - [ ] T036 Run quickstart V0 to V11 end to end, reading exit codes rather than output
@@ -157,14 +157,14 @@ Platform paths are relative to `relay-platform/`, tutorial paths to
 
 ## Phase 8: Close-out
 
-- [ ] T039 Generate the fences from the real files and put **every one of them in `relay-tutorial/fences/post-series.md`** — none in a chapter, because this work teaches none (FR-018). Extend existing sections rather than adding second ones for files already amended there
-- [ ] T039a **Check `post-series.md`'s title list before generating, not after, and match on the full path.** This feature touches `services/api/src/db/repository.ts`, `eslint.config.mjs` and both vitest configs; `dispatcher.itest.ts`, `deliveries.itest.ts`, `signup.itest.ts` and `credentials.itest.ts` are already amended there, and a second section under an existing diff breaks its pre-image
-- [ ] T040 Confirm `docs/07-tutorial-plan.md`'s "Work that publishes no chapter" section still describes what shipped, and correct the instance count if Phase 6 found more
-- [ ] T041 Run `pnpm check:fences`, `pnpm check:docs`, `pnpm lint` and `pnpm build` in `relay-tutorial/`, reading exit codes
-- [ ] T042 Traceability: confirm every `FR-*`/`NFR-*`/`ADR-*` this feature's **source comments** cite resolves in `docs/` or the constitution. Chapter 3.8 leaked 59 feature-local `FR-0xx` ids into comments written by someone who had just fixed that same leak — so the FR-001…FR-019 in this feature's spec must not appear in a single line of code
-- [ ] T043 Write `specs/030-global-operation-guard/chapter-notes.md` from what happened rather than what was planned, including the parts that went badly
-- [ ] T043a **Record in `specs/030-global-operation-guard/chapter-notes.md` whether the design survived.** Research replaced the spec's checksum with a trigger before a line was written; the notes should say whether the trigger survived contact with the lane, and what it cost that the plan did not predict
-- [ ] T044 **Confirm T005e's note still describes what shipped**, in both places T005f put it. The decision itself moved to the setup phase, because an ADR is immutable once accepted and a constitution question settled after the code is settled too late. This task only checks the note against the delivered design
+- [X] T039 Generate the fences from the real files and put **every one of them in `relay-tutorial/fences/post-series.md`** — none in a chapter, because this work teaches none (FR-018). Extend existing sections rather than adding second ones for files already amended there
+- [X] T039a **Check `post-series.md`'s title list before generating, not after, and match on the full path.** This feature touches `services/api/src/db/repository.ts`, `eslint.config.mjs` and both vitest configs; `dispatcher.itest.ts`, `deliveries.itest.ts`, `signup.itest.ts` and `credentials.itest.ts` are already amended there, and a second section under an existing diff breaks its pre-image
+- [X] T040 Confirm `docs/07-tutorial-plan.md`'s "Work that publishes no chapter" section still describes what shipped, and correct the instance count if Phase 6 found more
+- [X] T041 Run `pnpm check:fences`, `pnpm check:docs`, `pnpm lint` and `pnpm build` in `relay-tutorial/`, reading exit codes
+- [X] T042 Traceability: confirm every `FR-*`/`NFR-*`/`ADR-*` this feature's **source comments** cite resolves in `docs/` or the constitution. Chapter 3.8 leaked 59 feature-local `FR-0xx` ids into comments written by someone who had just fixed that same leak — so the FR-001…FR-019 in this feature's spec must not appear in a single line of code
+- [X] T043 Write `specs/030-global-operation-guard/chapter-notes.md` from what happened rather than what was planned, including the parts that went badly
+- [X] T043a **Record in `specs/030-global-operation-guard/chapter-notes.md` whether the design survived.** Research replaced the spec's checksum with a trigger before a line was written; the notes should say whether the trigger survived contact with the lane, and what it cost that the plan did not predict
+- [X] T044 **Confirm T005e's note still describes what shipped**, in both places T005f put it. The decision itself moved to the setup phase, because an ADR is immutable once accepted and a constitution question settled after the code is settled too late. This task only checks the note against the delivered design
 - [ ] T045 Tag `relay-platform` at the close-out commit. **Not a `part3-chN` tag** — this publishes no chapter, so the tag names the feature
 
 ---

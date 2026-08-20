@@ -310,7 +310,7 @@ a reader code it never discusses.
 One entry is large enough to name here, because it is a class of defect rather
 than a fix.
 
-**Feature 030 — the fault that only shows up in company.** Seven times across
+**Feature 030 — the fault that only shows up in company.** Eleven times across
 Parts 2 and 3, a test asserted a local fact about a global operation: a sweep
 whose batch never reached its own endpoint, a drain holding a lock, a consumer on
 a fixed budget against a growing stream, a `count(*)` compared against itself
@@ -322,11 +322,30 @@ Every one passed alone and failed beside a neighbour, which is why each read as 
 flake and why the class kept coming back. The sixth was written by someone who had
 recorded the other five and cited them in a chapter.
 
+**Seven of those eleven were known when the feature was specified. Four were found
+by the feature itself**, on its first run against a clean database and before any
+deliberate reintroduction: two drive loops in `outbox.itest.ts` that bounded the
+driving in units of batches while the work was bounded by the whole table, a
+deduplication assertion in the same file that quietly claimed no row anywhere in
+the outbox is ever published twice by anyone, and — forty lines from the test
+chapter 3.7 had already fixed — two consumer runtimes constructed with no subject
+filter. That last one is why the task list now says to grep for the class while
+the first instance is still on screen.
+
 The remedy is not another rule. Three rules failed their own authors during 3.8
 alone. It is to make the fault **fail in isolation**: plant rows a global
 operation would take, fail the lane when something takes them, require a batch
 size at every cross-environment call, and refuse the import inside a test file.
 The specification is `specs/030-global-operation-guard/`.
+
+**What it does not reach, recorded because a defence trusted past its range is
+worse than none.** The seeder plants rows in a database, so a reader riding the
+JetStream stream or waiting on end-to-end dispatcher latency is outside it — bait
+for a reader that performs work *is* that work, and two hundred planted deliveries
+failed ten of the dispatcher suite's sixteen tests with the fault they were meant
+to catch already fixed. Those two shapes are covered by the required batch size and
+the lint rule instead. The lint rule in turn sees an import and not a helper and
+not raw SQL; the trigger sees both.
 
 **One decision inside it is worth recording here rather than as an ADR.** The
 guard is written in PL/pgSQL — about twenty lines — because it has to raise inside
@@ -358,7 +377,7 @@ It teaches no chapter, and that is a deliberate call rather than an oversight. T
 material is genuinely interesting — a fault invisible by construction is good
 writing — but the series' rule is that a chapter may only fence a change it
 discusses, and inventing a chapter to justify test infrastructure is the tail
-wagging the dog. If a later chapter wants the story, the six post-series entries
+wagging the dog. If a later chapter wants the story, the twelve post-series entries
 and this feature's research are where it is kept.
 
 

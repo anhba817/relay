@@ -50,8 +50,15 @@ because the global sweep was reaching into a neighbouring suite's fixture. That 
 the right change and it left a global function with one fewer caller.
 
 So a correctness fix lowered a coverage figure. The floor in `quickstart.md` and
-T033 is corrected to these numbers; every per-file ratchet still passes, which is
-what the ratchets are for.
+T033 is corrected to these numbers.
+
+**"EVERY PER-FILE RATCHET STILL PASSES" WAS WRONG, and this paragraph used to say
+it.** It was inferred from the overall figures rather than read off the run. One
+ratchet was already red — `repository.ts` measured 98.7% functions against a
+threshold of 100 — and it had been red before this feature began, because
+`drainDisableNotifications`'s `onError` default has never had a caller that omits
+it. Found during T033 and recorded in research R48; the correction is to require
+the handler.
 
   20 ratchet entries in force, of which 14 are per-file:
     repository.ts · expand.ts · deliver.ts · resume.ts · user-token.ts
@@ -165,3 +172,73 @@ instance 1 — so the compiler found exactly one.
 
 Two spellings, two entries. The same import added to `outbox/outbox.itest.ts`,
 which is on the ignores list, exits 0.
+
+================================================================================
+T033 — THE POST-CHANGE MEASUREMENT
+================================================================================
+
+  unit lane          11 tasks, 306 tests passed              3.781s
+  integration lane   10 tasks, 231 tests passed           3m10.218s
+  coverage lane      53 files, 472 tests passed           4m 5.770s
+
+  api 177 · dispatcher 16 · gateway 21 · e2e 9 · test-harness 8  = 231
+
+  coverage   89.08 statements | 82.35 branches | 89.25 functions | 90.58 lines
+  repository.ts   97.27 | 90.90 | 100 | 99.24     (ratchet: 97 | 90 | 100 | 99)
+
+Against T002's baseline of 3m13.852s at 223 tests: **3m10.218s at 231 tests**, a
+lane that is 3.6 seconds FASTER carrying 8 more tests. SC-004 asked for growth
+under 10 seconds and the growth is negative. Two things paid for the bait: the
+dispatcher lane no longer plants any (research R44), and the api lane's relays are
+off, so nine suites stopped running four background loops each (research R39).
+
+Coverage moved 82.39 -> 82.35 branches and 89.03 -> 89.25 functions. The functions
+figure rose because `drainDisableNotifications`'s unused `onError` default is gone;
+that is also what returned `repository.ts` to the 100 its ratchet has demanded
+since chapter 3.5, and had not met since before this feature began (research R48).
+
+T039 — POST-SERIES AMENDMENTS
+--------------------------------------------------------------------------------
+
+Nine fenced files, five new sections plus one subsection appended to the existing
+`consumer.itest.ts` entry:
+
+  services/api/src/db/repository.ts
+  services/api/src/webhooks/delivery-relay.ts
+  eslint.config.mjs
+  services/api/vitest.integration.config.mts
+  services/gateway/vitest.integration.config.mts
+  packages/e2e/vitest.integration.config.mts
+  vitest.coverage.config.mts
+  services/api/src/outbox/outbox.itest.ts
+  services/api/src/consumer/consumer.itest.ts        (### Three)
+
+`services/dispatcher/vitest.integration.config.mts` changed and needs no amendment:
+no chapter fences it. `packages/test-harness/**` is new and unfenced, because
+post-series entries are diffs against a chapter's state and a new file has none.
+
+    check-fence-chain: 165 fenced files replay onto relay-platform across
+    26 chapters (26 translated, fences mirrored, 1 retired, plus post-series
+    amendments)
+
+T042 — TRACEABILITY
+--------------------------------------------------------------------------------
+
+Searched for `FR-0\d\d[a-c]?`, `NFR-[A-Z]+-\d+` and `ADR-\d+` in every line this
+feature added, across `packages/test-harness/**`, the five vitest configs,
+`eslint.config.mjs`, `repository.ts`, `delivery-relay.ts`, `outbox.itest.ts` and
+`consumer.itest.ts`.
+
+**Fourteen feature-local ids had leaked into source comments** — FR-002, FR-003,
+FR-009, FR-012a, FR-012b, FR-015, FR-020, FR-022 (x5), FR-023, FR-024 (x4),
+FR-025, FR-026 — written by someone who had just read the task warning that
+chapter 3.8 did exactly this. All replaced with what they meant, or with
+`feature 030`. `FR-WHK-07` stays: it resolves in `docs/04-srs.md`.
+
+Not fixed, and named rather than left silent: `repository.ts` carries about
+twenty-two bare `FR-0xx` citations from EARLIER features' specs — FR-006, FR-007,
+FR-008, FR-009, FR-011, FR-013, FR-014, FR-015, FR-016, FR-017 — and none of them
+resolves anywhere in `docs/`. The SRS numbers requirements `FR-XXX-NN` with a
+three-letter domain. `vitest.coverage.config.mts:187` has one more. That is the
+same leak at four times the size, it predates this feature, and fixing it would
+rewrite prose inside regions five chapters fence.
