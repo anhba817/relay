@@ -318,13 +318,23 @@ to any `*.itest.ts` not on the exemption list and run lint. It must fail.
 
 ### Measurable Outcomes
 
-- **SC-001**: All six recorded instances, reintroduced one at a time, fail with
-  **no second suite present** and on a freshly migrated database. Today all six
-  pass under those conditions.
+- **SC-001**: Instances 1, 4, 5 and 6, reintroduced one at a time, fail with **no
+  second suite present** and on a freshly migrated database. Today all four pass
+  under those conditions.
+  - **Instance 2 is excluded, not missed.** Its content is *this suite leaves
+    leftovers that starve a later one*; a cause whose only symptom appears in
+    another file has no alone-failure to produce. The bait makes the leftovers
+    permanent, so the same fault is observable as instance 5's reintroduction.
+  - **Instance 3 is excluded with a different mechanism named.** Its shared
+    growing resource is the JetStream stream, which the database seeder does not
+    reach; seeding it would put a NATS connection in every suite's `beforeAll`.
+    An unfiltered consumer runtime in a test is a lint target instead (FR-012c).
+  - An earlier draft of this criterion said "all six", which was a count of the
+    recorded instances rather than a claim anybody had checked (research R43).
 - **SC-002**: The interval between writing a global-operation fault and being
   told about it drops from *a later run of a different suite* to *the same run*.
-  Measured by SC-001's six reintroductions: today zero of six report on the run
-  that contains them; the target is six of six.
+  Measured by SC-001's four reintroductions: today zero of four report on the run
+  that contains them; the target is four of four.
 - **SC-003**: Twenty consecutive lane runs produce zero false positives.
 - **SC-004**: The integration lane's wall-clock time grows by less than 10 seconds
   against **a baseline measured on this feature's own first task**, not against a

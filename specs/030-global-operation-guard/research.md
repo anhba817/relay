@@ -816,3 +816,272 @@ Two of the three had already been fixed **elsewhere** — pass four in `tasks.md
 pass six in `spec.md` — and survived in a second document. That is the strongest
 argument for the sweep: a remediation is not done when the file you were reading
 is correct.
+
+
+---
+
+# Findings from implementation
+
+## R37 — A trigger's WHEN condition may not contain a subquery
+
+The design said the trigger fires `WHEN (OLD.environment_id IN (SELECT
+environment_id FROM __sentinel_environments))`. Postgres rejects that at
+`CREATE TRIGGER`:
+
+```
+ERROR:  cannot use subquery in trigger WHEN condition
+```
+
+Every document describing the per-file sentinel — data-model, the contract, the
+tasks — assumed the registry could be consulted from the `WHEN` clause. None of the
+eight analysis passes caught it, because none of them tried to create the trigger.
+
+Two ways out, and the difference matters for SC-004. Dropping `WHEN` entirely means
+the function body runs for **every** UPDATE and DELETE on five tables across the
+whole lane. Keeping `WHEN` and putting the lookup behind a `STABLE` function keeps
+the cheap path cheap: a subquery is forbidden, a function call is not.
+
+```sql
+CREATE OR REPLACE FUNCTION __is_sentinel(env uuid) RETURNS boolean
+LANGUAGE sql STABLE AS $$
+  SELECT EXISTS (SELECT 1 FROM __sentinel_environments WHERE environment_id = env)
+$$;
+```
+
+Verified end to end against a fresh database, with the trigger installed and one
+sentinel registered:
+
+```
+NON-EXEMPT refused: global-operation guard: this statement modified sentinel row
+                    public.webhook_endpoints (id a1ec0d8b-…) …
+bystander insert:   allowed
+EXEMPT allowed:     1 row(s)
+```
+
+The exempt connection carried `options=-c relay.allow_global=on`, which is the
+mechanism R10 measured and the reason it is a connection option rather than a
+statement.
+
+
+---
+
+# Findings from implementation
+
+The eight analysis passes read the documents. These came from running the thing.
+
+## R38 — The exemption did not permit the write, it discarded it
+
+`sentinel.sql` answered an exempt connection with `RETURN OLD`. On a `BEFORE
+DELETE` trigger that is correct and the only option. On a `BEFORE UPDATE` trigger
+it does not mean "allow the update" — it means "perform the update, writing these
+values", and those values are the row as it was. The write happens, one row is
+reported modified, and nothing changes.
+
+R37's verification is what makes this worth writing down. It ended:
+
+```
+EXEMPT allowed:     1 row(s)
+```
+
+That line is true and proves nothing. `rowCount` was 1 because a row *was*
+written — the old one. The measurement asked whether the statement was refused,
+and the statement was not refused, so it passed.
+
+What surfaced it was the api lane, in the file with the most reason to notice:
+
+```
+FAIL src/webhooks/deliveries.itest.ts > logs nothing when there is nothing to disable
+AssertionError: expected 17 to be +0
+```
+
+Seventeen is the number of files in the lane, each having planted one sentinel
+endpoint with an open failure run past the cutoff. The relay swept, disabled
+none of them because the trigger reverted every disable, and found all seventeen
+again on the next pass. An endless supply of eligible work, and no error anywhere.
+
+**Decision**: return `OLD` on `DELETE` and `NEW` otherwise, and add
+`packages/test-harness/src/guard.itest.ts` — the guard's own lane, six tests. The
+one that matters reads the row back after an exempt update:
+
+```
+✓ a connection without the exemption > cannot update a sentinel row …
+✓ a connection without the exemption > cannot delete one either
+✓ a connection without the exemption > may still write rows that belong to no sentinel
+× a connection carrying the exemption > UPDATES THE ROW, and the new value is what the next reader sees
+```
+
+With the bug restored, that is the only one of the six that fails. Every
+refusal-side test passes, which is why no amount of testing the refusal would have
+found it: the guard was wrong on the path where it was supposed to do nothing.
+
+## R39 — R13 measured the wrong nine files
+
+R13 concluded the relay exposure was "nil" because "every suite that spawns an api
+child sets all four relay flags off", and named four files. That is accurate about
+child processes. It does not cover the suites that boot the app **in process**:
+
+```
+$ grep -l "AppModule" services/api/src/**/*.itest.ts | wc -l
+9
+$ grep -l "RELAY_OUTBOX_RELAY" $(grep -l "AppModule" services/api/src/**/*.itest.ts)
+(nothing)
+```
+
+Nine suites import `AppModule`, and each relay defaults to on when its flag is
+unset — `process.env.RELAY_OUTBOX_RELAY ?? "on"`. So nine of the seventeen files
+in the lane were running four background loops that sweep the whole database,
+while the other suites' fixtures sat in it. A relay catches and logs its own
+errors, so the guard's refusal inside one of them is a log line and a green lane —
+the hole R13 identified, in nine more places than R13 counted.
+
+**Decision**: set the four flags off in the lane's config rather than in nine
+files, so a quiet database is a property of the lane. FR-025's startup check stays,
+now as the thing that catches a lane whose config drifts rather than the thing
+carrying the whole guarantee.
+
+## R40 — The bait found instance 7 before any deliberate fault was reintroduced
+
+Against the bait and the fixed trigger, the api lane fails two tests, both in
+`outbox.itest.ts`, both scoped correctly and both wrong anyway:
+
+```
+FAIL invariant 7: the relay publishes pending rows, marks them, and does not republish
+AssertionError: expected 4 to be +0     (unpublishedFor(db, env.id).length)
+
+FAIL invariant 8: two concurrent relays publish every row exactly once
+AssertionError: expected 24 to be +0    (outboxDepthFor(db, env.id))
+```
+
+Every read in both is filtered to `env.id`. The fault is not in the assertion, it
+is in the loop above it: `drainUntilClear(relay, db, environmentId, passes = 20)`
+gives a **global, oldest-first** relay a fixed budget of twenty passes and then
+asserts a local fact. Twenty passes of the default batch move 2,000 rows; the
+backlog is 3,400. Invariant 8 uses `batchSize: 7`, so its budget is 140 rows.
+
+This is the reader shape in the form the spec did not anticipate: not "the
+assertion reads globally" but "the drive loop is bounded in units of batches while
+the work is bounded in units of the whole table". It is also a real
+production-shaped problem — a tenant's events wait behind every older tenant's —
+which is the argument for a shared database restated by the thing it was arguing
+about.
+
+R3 hypothesised invariant 7 would fail and could not reproduce it. It reproduces
+now, deterministically, because the bait is re-planted per file instead of once.
+
+## R41 — A file-wide exemption could not catch the fault the feature was built for
+
+T017 says: reintroduce instance 6 into `notifications.itest.ts`, run that file
+alone against a fresh database, confirm the refusal appears in its own stack.
+Reintroduced, it passed:
+
+```
+Test Files  1 passed (1)
+      Tests  9 passed (9)
+```
+
+`notifications/notifications.itest.ts` is on the exemption list, because it drives
+the notification relay. It is on that list *because of instance 6* — an ordinary
+lane run disabled `deliveries.itest.ts`'s fixture, and exempting the file was how
+the lane went green. So the guard had excused the exact file the guard was built
+for, and nothing in eight analysis passes noticed, because the list and the
+instance were written down in different documents.
+
+The distinction the design was missing: **instance 6 is global over
+`webhook_endpoints`; the notification relay is global over
+`webhook_disable_notifications`.** Different tables, one boolean.
+
+**Decision**: `relay.allow_global` carries a comma-separated list of table names
+(`all` only for the planting connection), each exempt entry names its tables, and
+the trigger checks `TG_TABLE_NAME = ANY (string_to_array(allowed, ','))`. The same
+reasoning that made this a list of paths rather than a pattern makes each path a
+list of tables rather than a blanket.
+
+Reintroduced under the per-table exemption, in one run of one file on a fresh
+database:
+
+```
+× sends what the organisation needs, and Mailpit confirms the contents  363ms
+… 9 of 9
+Caused by: error: global-operation guard: this statement modified sentinel row
+public.webhook_endpoints (id 6ba2cc2e-…), which belongs to no test — the bait
+planted by services/api/src/notifications/notifications.itest.ts
+```
+
+Reverted with `git checkout --`; `md5sum` matches the committed file.
+
+Two tests in `guard.itest.ts` hold the property: a connection exempt for
+`webhook_disable_notifications` writes that table and is refused on
+`webhook_endpoints`.
+
+## R42 — One bait endpoint cannot fill a batch of a hundred
+
+Instance 1 is `sweepDisabledEndpoints` at the product's own limit: the sweep takes
+the hundred oldest eligible endpoints, older ones fill the batch, and the test's
+own endpoint is never reached. Reintroduced and run alone on a freshly migrated
+database:
+
+```
+Test Files  1 passed (1)
+      Tests  49 passed (49)
+```
+
+The bait planted **one** endpoint with an open failure run. One older endpoint does
+not fill a batch of a hundred. The other three baits were sized at `BAIT_ROWS`
+(200, twice `MAX_PRODUCT_BATCH`) and the endpoint was not, because the spec
+described it in the singular — "a sentinel environment holding an endpoint with an
+open failure run" — and nothing checked the singular against the arithmetic.
+
+**Decision**: plant `BAIT_ROWS` endpoints, the first keeping `s.endpointId` so the
+deliveries and notifications still hang off a stable, nameable row, each stamped
+`now() - interval '4 hours' - (i * interval '1 second')` so they sort ahead of
+anything a test mints. Re-run:
+
+```
+Test Files  1 failed (1)
+      Tests  1 failed | 48 passed (49)
+FAIL invariant 12: the SWEEP disables the quiet endpoint no outcome ever revisits
+AssertionError: expected true to be false
+```
+
+One test, the right one, and the other 48 unaffected. T019's idempotency assertion
+said "each sentinel holds exactly one endpoint" and is now wrong; it was a
+restatement of the design, not a measurement of it.
+
+## R43 — Four of the six, and the two the seeder cannot reach
+
+SC-001 promises all six recorded instances fail alone on a fresh database. Measured,
+one reintroduction at a time, each reverted and `md5sum`-checked:
+
+| # | file | alone, fresh db | what failed |
+|---|------|-----------------|-------------|
+| 1 | `deliveries.itest.ts` | **fails** | `invariant 12` — `expected true to be false` |
+| 2 | `deliveries.itest.ts` | passes | see below |
+| 3 | `consumer.itest.ts` | passes | see below |
+| 4 | `signup.itest.ts` | **fails** | `invariant 7` — the global `count(*)` moved |
+| 5 | `dispatcher.itest.ts` | **fails** | 10 tests, `expected 0 to be greater than 0` |
+| 6 | `notifications.itest.ts` | **fails** | 9 tests, the guard's refusal (R41) |
+
+Instance 5's message is the one chapter 3.8's baseline recorded, character for
+character, which is the strongest evidence that the bait reproduces the original
+conditions rather than merely breaking something.
+
+**Instance 2 cannot fail alone, by construction.** Its content is *this suite leaves
+leftovers that starve a later one* — the fix was cleanup, and the victim is
+instance 5's site. A cause whose only symptom appears in another file has no
+alone-failure to produce. What the bait changes is that the victim now fails alone:
+the leftovers are permanent and planted, so instance 5's reintroduction is the
+observable form of the same fault. SC-001's "all six" is wrong about this one, and
+the criterion is amended rather than the result reported as five.
+
+**Instance 3 is out of the seeder's reach.** Its shared growing resource is the
+JetStream stream, not the database — a consumer with no subject filter replays
+every event earlier chapters left behind, on a fixed budget of polls. Unfiltered
+and run alone on a fresh database it passes, because a fresh CI stream is small.
+Seeding it would mean a NATS connection inside `plant()`, which every suite's
+`beforeAll` would then depend on — including the several that never touch NATS.
+
+**Decision**: do not seed the stream. The mechanism for instance 3 is the lint rule
+(US3), extended to the consumer: a runtime constructed in a test without a subject
+filter is the call site to object to, and unlike the bait the linter can see it
+before anything runs. Recorded in `eslint.config.mjs` beside the rule, and in
+`contracts/guard.md` under what the seeder does not cover.

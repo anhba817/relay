@@ -117,3 +117,31 @@ Verified: creates, migrates, reports 0 environments, prints its URL.
 
 It fails with a sentence rather than a stack trace when the api has not been built,
 because the migration runner it calls is build output.
+
+--------------------------------------------------------------------------------
+T009b — THE PLANTING DID NOT FAIL, BECAUSE THE CONSTRAINTS WERE READ FIRST
+--------------------------------------------------------------------------------
+
+T009b says to watch the planting fail once before trusting it, because research
+hit `webhook_endpoints_disabled_check` while re-planting an endpoint by hand.
+
+It did not fail. The four check constraints were read off the live schema before a
+single `INSERT` was written:
+
+  environments_kind_check              kind IN ('development','production')
+  humans_provider_check                provider IN ('github','google')
+  memberships_role_check               role IN ('owner','admin','member')
+  webhook_endpoints_disabled_check     (disabled_at IS NULL) = (disabled_reason IS NULL)
+  webhook_endpoints_failure_run_check  (failure_run_started_at IS NULL) = (failure_run_attempts IS NULL)
+
+First run against a fresh database:
+
+  {"endpoints":1,"due":200,"unpublished":200,"undelivered":200,"unaddressable":1}
+
+Re-planted: due deliveries still 200, not 400. Idempotent (FR-003).
+
+The task's instinct was right and its remedy was one step too late. "Watch it fail"
+is what you do when you have guessed at a schema; reading `pg_constraint` first is
+cheaper than a failure and produces the same knowledge. The five constraint
+definitions are now comments beside the inserts they govern, which is where the
+next person editing them will look.
