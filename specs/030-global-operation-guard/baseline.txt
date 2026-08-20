@@ -242,3 +242,33 @@ resolves anywhere in `docs/`. The SRS numbers requirements `FR-XXX-NN` with a
 three-letter domain. `vitest.coverage.config.mts:187` has one more. That is the
 same leak at four times the size, it predates this feature, and fixing it would
 rewrite prose inside regions five chapters fence.
+
+T034 — TWENTY RUNS, INTERRUPTED AT SIX (resume point)
+--------------------------------------------------------------------------------
+
+Stopped by request part-way; to be re-run from scratch, not continued — twenty
+CONSECUTIVE runs is the claim, and six plus fourteen tomorrow is not that.
+
+  relay-platform frozen at faa97cc
+  run  1  exit=0  187s  failing-files=0
+  run  2  exit=0  187s  failing-files=0
+  run  3  exit=0  187s  failing-files=0
+  run  4  exit=0  186s  failing-files=0
+  run  5  exit=0  186s  failing-files=0
+  run  6  exit=0  188s  failing-files=0
+
+Six green, 186-188s each — flat to within two seconds, so the lane does not slow
+as the database ages across runs. That flatness is worth as much as the green.
+
+The EARLIER attempt at this step failed on run 1 and is the reason the tree moved:
+`notifications.itest.ts` timed out at 5,000ms because 3,400 bait notification rows
+cost about 1.4ms each to drain (research R49). Three full lanes had passed on that
+same tree beforehand.
+
+To resume:
+
+  bash <scratchpad>/030/twenty.sh          # wipes and re-runs all twenty
+  # or, from the repository:
+  for i in $(seq 1 20); do pnpm test:integration || break; done
+
+Then T036 (quickstart V0-V11), the remaining transcripts in T037, and T045's tag.

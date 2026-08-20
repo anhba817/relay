@@ -154,3 +154,36 @@ chapter 3.5 and had not met since before this feature began: the uncovered
 function was `drainDisableNotifications`'s `onError` default, which no caller has
 ever used (research R48).
 
+## Credential scan (T038)
+
+Patterns searched across `captured-output.md`, `chapter-notes.md`, `research.md`,
+`baseline.txt`, `quickstart.md` and `relay-tutorial/fences/post-series.md`. The
+patterns are recorded rather than the verdict, because a verdict cannot be
+re-checked and a pattern can.
+
+```text
+rk_svc_[A-Za-z0-9_]{8,}              internal service credential
+rk_(live|test)_[A-Za-z0-9]{8,}       tenant api key
+whsec_[A-Za-z0-9+/=]{16,}            webhook signing secret
+RELAY_INTERNAL_CREDENTIAL=\S+        the env var carrying a value
+RELAY_WEBHOOK_SECRET_KEY=\S+         the encryption key carrying a value
+[A-Za-z0-9+/]{40,}={0,2}             any base64-shaped blob, 40 chars or longer
+-----BEGIN [A-Z ]*PRIVATE KEY        pem private key
+postgres://[^:]+:[^@]+@              a database url carrying a password
+Bearer [A-Za-z0-9._-]{20,}           a bearer token
+eyJ[A-Za-z0-9_-]{10,}                a jwt
+```
+
+No hits, except the base64 pattern matching six long file paths under
+`services/api/src/notifications/`.
+
+Two further searches for the literal values this session's environment actually
+held — the compose stack's `RELAY_WEBHOOK_SECRET_KEY` and its
+`RELAY_INTERNAL_CREDENTIAL` — across every `.md`, `.mdx` and `.txt` in the
+repository. No hits.
+
+The sentinel's own literals, `sentinel-not-a-secret-<uuid>` and
+`sentinel-not-a-ciphertext`, appear only in `packages/test-harness/src/sentinel.ts`.
+That file is not fenced by any chapter and not amended in `post-series.md`, so it
+is not published; the strings also say what they are, which is the point of
+choosing them.

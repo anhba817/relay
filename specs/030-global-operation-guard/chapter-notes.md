@@ -55,10 +55,26 @@ the dispatcher suite's sixteen tests; on a disabled endpoint, two; not due at al
 none. The dispatcher waits eight seconds for its own row to come out of a shared
 FIFO broker, and two hundred jobs ahead of it is eight seconds (R44, R47).
 
+It happened a third time, and the third time turned three incidents into a rule.
+`drainDisableNotifications` claims on `delivered_at IS NULL` and then looks up an
+organisation's recipients per row; the sentinel's organisation has no addressable
+member, so each bait row took the cheapest branch there is, and 3,400 cheapest
+branches is a little under five seconds against a test with vitest's five-second
+default. Run 1 of the twenty-run battery caught it, after three full lanes had
+passed on the same tree (R49).
+
+> **Bait may be claimable only where draining it is database work.**
+
+A sweep and a publish qualify, and the two instances the seeder actually caught —
+1 and 7 — were caught by exactly those two baits. A delivery costs an api
+round-trip and an HTTP send; a notification costs a recipient lookup and a mark.
+Both now sit in the table as rows a global count would see, and outside every
+claim window.
+
 The consequence is a boundary the spec did not have: the seeder seeds a database,
-so the two faults that ride a broker are outside it. SC-001 was amended from six
-instances to four, with the two exclusions named and a different mechanism given
-for each.
+so the two faults that ride a broker are outside it, and so are the two drains that
+do I/O per row. SC-001 was amended from six instances to four, with the two
+exclusions named and a different mechanism given for each.
 
 **A defence's cost lands on somebody else's lane.** The trigger is database state,
 so every lane pointed at that database meets it whether or not it installed it —

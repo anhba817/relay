@@ -329,6 +329,11 @@ to any `*.itest.ts` not on the exemption list and run lint. It must fail.
     growing resource is the JetStream stream, which the database seeder does not
     reach; seeding it would put a NATS connection in every suite's `beforeAll`.
     An unfiltered consumer runtime in a test is a lint target instead (FR-012c).
+  - **And a boundary that emerged from three measurements**, not from the design:
+    bait may be claimable only where draining it is database work. The due-delivery
+    drain and the notification drain both do I/O per row, so their bait sits
+    outside every claim window and their reader shape is covered by the required
+    batch size and the lint rule (research R44, R47, R49).
   - An earlier draft of this criterion said "all six", which was a count of the
     recorded instances rather than a claim anybody had checked (research R43).
 - **SC-002**: The interval between writing a global-operation fault and being
