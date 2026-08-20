@@ -22,9 +22,12 @@ is fatal, because R5 measured that legitimate global sweeps happen on EVERY lane
 six suites drive them on purpose — so a checksum fires constantly or blames bystanders.
 A PL/pgSQL trigger raises INSIDE THE OFFENDING TRANSACTION instead, verified against
 the real schema: exact attribution under parallel file execution, no serial diagnosis
-mode, and it catches raw SQL that no lint rule or wrapped import can see. That is a
-second language against constitution VII and is recorded in Complexity Tracking with
-the measured evidence VII's escape clause asks for. Exemption is a session GUC
+mode, and it catches raw SQL that no lint rule or wrapped import can see. Whether that is a
+second language under constitution VII was asked and closed: VII legislates the
+language SERVICES are implemented in, and nine `.sql` files already exist with the
+constitution's own endorsement, so there is no violation and no ADR — the plan's
+first four analysis passes wrongly recorded one and declined the ADR the clause
+requires, which is itself the finding. Exemption is a session GUC
 (`SET relay.allow_global = 'on'`) set only by the lane's setup hook from an AUDITABLE
 LIST OF PATHS, never a pattern — a pattern silently absorbs the next file, which is the
 failure mode this whole feature is about. R1 IS THE COUNTERINTUITIVE ONE: the developer

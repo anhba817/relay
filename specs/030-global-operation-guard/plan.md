@@ -49,8 +49,10 @@ required to fail.
 **Project Type**: test infrastructure for an existing monorepo. It publishes no
 chapter.
 
-**Performance Goals**: the integration lane grows by less than 10 seconds against
-chapter 3.9's measured 3m15s. Per-file planting costs roughly 600 inserts.
+**Performance Goals**: the integration lane grows by less than 10 seconds against a
+baseline T002 measures. Chapter 3.9's recorded `3m15s` is indicative only — it was
+taken at 213 integration tests and the chapter finished on 223. Per-file planting
+costs roughly 600 inserts.
 
 **Constraints**: the shared database stays (chapter 2.1's decision). No product
 code may carry test logic. Fences go to `post-series.md`.
@@ -72,9 +74,9 @@ them, so all five carry exemption handling and only two carry bait (research R11
 | **IV — Single writer** | **Respected, with care** | The trigger is not a second writer; it refuses writes. It must exist only in test databases, or the api service would ship a trigger that rejects its own legitimate sweeps. Enforced by creating it from the lane's setup, not from `migrations/`. |
 | **V — API-first** | Not engaged | No public surface changes. |
 | **VI — Test-verified delivery** | **This is the principle** | Constitution VI requires 100% branch coverage of tenant isolation and a cross-tenant suite that gates the build. A suite whose tests silently depend on being alone is not the verification it claims to be. |
-| **VII — Boring by design** | **Justified below** | Adds PL/pgSQL — a second language — to a repository committed to one. See Complexity Tracking. |
+| **VII — Boring by design** | **Asked and closed — not a violation** | The guard's logic is PL/pgSQL. VII's one-language rule reads *"One language (TypeScript/Node.js) across services, SDK, and dashboard"* — service implementation languages — and this is neither a service nor shipped. See "Two questions the gate asked" below. |
 
-**Gate result: PASS**, with one violation recorded and justified.
+**Gate result: PASS**, with no violations. Two decisions were examined against principles VII and IV and both are compliant; the reasoning is kept because the questions are worth asking, not because the answers were close.
 
 ## Project Structure
 
@@ -174,34 +176,68 @@ verified byte-identical afterwards.
 
 ## Complexity Tracking
 
-| Violation | Why needed | Simpler alternative rejected because |
-|---|---|---|
-| **PL/pgSQL — a second language**, against constitution VII's one-language rule | The guard must raise inside the transaction that performed the mutation. That is the property that makes attribution exact under parallel file execution, and no TypeScript running in the test process has it. | A before/after checksum in TypeScript was the spec's assumption and cannot attribute: legitimate global sweeps run on every lane pass, so it fires constantly or blames the wrong test (R5, R6). Wrapping the repository's exports catches indirect calls but misses raw SQL. Putting the check in product code violates the stronger rule that shipped code carries no test logic. |
-| **A trigger in the database**, which principle IV's single-writer discipline makes worth stating | It is a refusal, not a write, and it exists only in test databases. | Nothing else observes a raw `UPDATE`. The mitigation is structural: the trigger is created by the lane's setup, so no product migration can carry it into production. |
+> Fill ONLY if the Constitution Check has violations that must be justified.
 
-Constitution VII's own escape clause asks for "a superseding ADR with profiling
-evidence" for a second language. The evidence is research R6 and R10 together — a
-measured demonstration that the TypeScript alternative cannot attribute at all, and
-that the naive version of the SQL one is non-deterministic.
+**None.** Two decisions looked like violations at gate time and neither is; the
+reasoning is below rather than deleted, because the questions are worth a reader's
+time even though the answers are no.
 
-**The call is made here rather than deferred**: a note, not a numbered ADR. An ADR
-records a decision that binds the product; this binds a test lane, and ADRs are
-immutable once accepted, so minting one for infrastructure a later chapter may
-replace would be the more expensive mistake.
+## Two questions the gate asked
 
-**Where the note goes changed too.** An earlier draft of this paragraph said
-`docs/06-adr-deep-dives.md`, asserted without opening the file. That document is
-eighteen sections, every one `## ADR-nn — …` on a fixed six-part shape, companion
-to `docs/05-sad.md` §9 where `ADR-01`…`ADR-18` live, and it closes with a heading
-that counts them: "Reading the eighteen together". It has no room for a note that
-is not an ADR. The note goes instead to `docs/07-tutorial-plan.md`'s "Work that
-publishes no chapter" section, which already records this feature, and to the
-header of `sentinel.sql`, where a reader meets the second language.
+### Is PL/pgSQL a second language under principle VII?
 
-The task that writes it is **T005e**, in the setup phase, before any PL/pgSQL is
-written — an earlier draft had it at T044 in close-out, which would have decided a
-constitution question after the code that depends on it.
+**No**, and an earlier draft of this plan said yes for four analysis passes without
+re-deriving it.
 
+VII's clause is *"One language (TypeScript/Node.js) across services, SDK, and
+dashboard; shared protocol types between server and SDK eliminate drift bugs
+(ADR-01). Introducing a second language requires a superseding ADR with profiling
+evidence."* The subject is the language services are **implemented** in — the thing
+that creates drift between server and SDK. The guard is neither a service nor
+shipped: it exists in test databases, created by the lane.
+
+The repository already holds **nine `.sql` files**, and the constitution endorses
+them in its own words: migrations are *"versioned, forward-only, hand-reviewed
+SQL"*. SQL is not a second language here; it is the language the database speaks and
+has spoken since chapter 2.1.
+
+**The honest distinction, and why the question came up at all**: those nine files
+are *declarative* SQL and this one is *procedural*. A `RAISE EXCEPTION` inside a
+`plpgsql` function is closer to program logic than an `ALTER TABLE` is. That is a
+real difference and it is why the gate stopped here. It is not the difference VII
+legislates.
+
+**What the earlier draft got wrong is instructive.** It wrote "Violated, justified"
+in Complexity Tracking and then declined to write the ADR — and VII's escape clause
+*is* the ADR, not a justification table. Four passes re-affirmed "one violation,
+justified" without noticing that the remedy on offer had been refused. A
+constitutional judgement inherited is a constitutional judgement unmade.
+
+So there is no ADR, because there is nothing for an ADR to supersede. The reasoning
+is still written down, at **T005e** and **T005f**: in
+`docs/07-tutorial-plan.md`'s "Work that publishes no chapter" section, and in the
+header of `sentinel.sql` where a reader meets the procedural SQL. Research R6 and
+R10 hold the measurements — that the TypeScript alternative cannot attribute at all,
+and that the naive SQL one is non-deterministic.
+
+**Where the note goes was also asserted without checking.** An earlier draft said
+`docs/06-adr-deep-dives.md`. That document is eighteen sections, every one
+`## ADR-nn — …` on a fixed six-part shape, companion to `docs/05-sad.md` §9 where
+`ADR-01`…`ADR-18` live, closing with a heading that counts them: "Reading the
+eighteen together". It has no room for a note that is not an ADR.
+
+### Is a trigger a second writer under principle IV?
+
+**No.** It refuses writes rather than making them, and it exists only in test
+databases. The mitigation is structural rather than promised: it is created by the
+lane's setup, never by `services/api/migrations/`, so no product migration can
+carry it into production. T013b asserts that.
+
+Why the guard has to be in the database at all: nothing else observes a raw
+`UPDATE`. A checksum in TypeScript cannot attribute under parallel file execution
+(R5, R6), wrapping the repository's exports misses raw SQL, and putting the check
+in product code would break the stronger rule that shipped code carries no test
+logic.
 
 ## Constitution Re-check (post-design)
 
@@ -212,12 +248,12 @@ Re-evaluated against the finished design rather than the intended one.
 | **I — Tenant isolation** | **Reinforced, more than expected** | The trigger enforces the `environment_id` boundary *at the database*, which is where principle I says isolation belongs. It is closer to that principle than the checksum would have been. |
 | **IV — Single writer** | **Held, and the mitigation is now structural** | `data-model.md` places the trigger's creation in the lane's setup and names the guarded tables. No product migration can carry it to production, so the api service remains the only writer and gains no shipped trigger. |
 | **VI — Test-verified delivery** | **Held** | The seven reintroductions in `quickstart.md` V3 and V4 are the verification, and each is required to fail *alone*. |
-| **VII — Boring by design** | **Violated, justified, and now cheaper than at gate time** | Still a second language. The design settled on roughly twenty lines of PL/pgSQL in one file, created by test infrastructure, touching no shipped path. VII's escape clause asks for profiling evidence; research R6 is a measured demonstration that the TypeScript alternative cannot attribute at all, which is stronger than a performance argument. |
+| **VII — Boring by design** | **Not a violation, and the claim that it was is itself the finding** | Roughly twenty lines of PL/pgSQL in one file, created by test infrastructure, touching no shipped path. VII legislates the language services are implemented in; nine `.sql` files already exist with the constitution's endorsement. The gate's first four passes recorded "violated, justified" and declined the ADR the clause requires — see "Two questions the gate asked". |
 
 **Result: PASS.** One violation, unchanged in kind and reduced in size.
 
-Two things the design phase made worse rather than better, recorded because a
-plan that only reports improvements is not worth reading:
+Three things recorded because a plan that only reports improvements is not worth
+reading — the first being that this table said "violated" for four passes:
 
 - **The outbox has no `environment_id`**, so its bait is protected by the reader
   mechanism only and the trigger cannot guard it. Platform bookkeeping is

@@ -584,3 +584,86 @@ present tense"*.
 
 Recorded because the expectation going in was a dangling reference, and a pass that
 lists only what it broke gives no sense of what it checked.
+
+
+---
+
+# Findings from the fifth analysis pass
+
+Pass four ended by saying the cheapest remaining pass would aim at cross-document
+assertions rather than at the design. It did: 72 backticked paths, five numeric
+claims about chapter 3.9, and three constitution quotations, checked mechanically.
+Two problems, and the first is the largest of the five passes.
+
+## R27 — Four passes inherited a constitutional judgement nobody re-derived
+
+The plan's Complexity Tracking said, from pass zero: **"PL/pgSQL — a second
+language, against constitution VII's one-language rule"**, and then, two paragraphs
+later, that the decision would be recorded as *a note, not a numbered ADR*.
+
+Constitution VII, line 167:
+
+> Introducing a second language **requires** a superseding ADR with profiling
+> evidence.
+
+So the plan declared a MUST violated and declined the one remedy that MUST names.
+A justification table is not the escape clause; the ADR **is** the escape clause.
+Passes one through four each re-read the Constitution Check, each wrote "one
+violation, recorded and justified", and none tested the justification against the
+sentence it cited.
+
+**The resolution is that there was never a violation.** VII's clause reads *"One
+language (TypeScript/Node.js) across services, SDK, and dashboard; shared protocol
+types between server and SDK eliminate drift bugs (ADR-01)"* — its subject is the
+language services are **implemented** in, and its stated harm is drift between
+server and SDK. The guard is neither a service nor shipped. And the repository
+already holds **nine `.sql` files** that the constitution endorses in its own words:
+migrations are *"versioned, forward-only, hand-reviewed SQL"*.
+
+The honest wrinkle, which is why the gate stopped here in the first place: those
+nine are *declarative* SQL and this one is *procedural*. A `RAISE EXCEPTION` inside
+a `plpgsql` function is closer to program logic than an `ALTER TABLE` is. That
+difference is real; it is not the difference VII legislates.
+
+**What makes this the sharpest instance of the pattern.** Four wrong counts were
+found across passes two to four, each a number in prose that read as a summary and
+so never got checked. This is the same failure applied to a judgement instead of a
+number — and a judgement carries further, because it decided that a constitutional
+remedy would be skipped. Complexity Tracking is now empty, which is what the
+template asks for when the gate finds nothing, and the reasoning lives in a section
+that does not pretend to be justifying a violation.
+
+## R28 — A baseline measured at a different size
+
+SC-004 promised the integration lane would grow by less than ten seconds "against
+the chapter 3.9 baseline of 3m15s". That figure exists in exactly one place —
+`specs/029-chapter-3-8/captured-output.md:321`:
+
+```
+integration lane    9 tasks, 213 tests passed        3m15s
+```
+
+**213 tests.** Chapter 3.9 finished on 223 (029's `battery.txt`, V8), and that run
+was never timed. So the ten-second budget was being measured against a lane ten
+tests smaller, and part of it was already spent before this feature added anything.
+
+T002 always re-measured the baseline, which made the literal redundant and the two
+statements contradictory. SC-004 now measures against T002's number; the `3m15s`
+mentions say what they are.
+
+Not a wrong number this time — a right number transplanted from a context where it
+meant something else. Same family as R18 and R24, different mechanism.
+
+## R29 — What the sweep confirmed
+
+Recorded because five passes of findings give no sense of what held up.
+
+| Assertion | Verdict |
+|---|---|
+| 72 distinct backticked paths across seven documents | all resolve |
+| Constitution VII, *"a superseding ADR with profiling evidence"* | verbatim, line 167 |
+| Constitution VI on 100% branch coverage and the cross-tenant gate | accurate, lines 149 and 151 |
+| Coverage floor 89.50% / 82.73% | recorded in 029's `captured-output.md` and `chapter-notes.md` |
+| Unit 242 / integration 223 | recorded in 029's `battery.txt` |
+| `outboxDepth` and `pendingDeliveryDepth` cross every environment | true — both `count(*)`, no `environment_id` filter |
+| api lane = 177 on a fresh database | matches 029's final run |

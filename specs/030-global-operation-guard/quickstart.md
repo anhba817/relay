@@ -20,8 +20,10 @@ pnpm build
 pnpm turbo run test:integration --concurrency=1
 ```
 
-Expected: green, 223 tests. Record the wall-clock time; SC-004 measures against
-it. Chapter 3.9 finished at 3m15s.
+Expected: green, 223 tests. **Record the wall-clock time — this run is the baseline
+SC-004 measures against.** Chapter 3.9's `3m15s` is indicative only: it was
+measured at 213 integration tests, and the chapter finished on 223 without the
+final run being timed.
 
 ## V1 — The fresh database currently proves nothing
 

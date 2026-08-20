@@ -301,8 +301,12 @@ to any `*.itest.ts` not on the exemption list and run lint. It must fail.
   Measured by SC-001's six reintroductions: today zero of six report on the run
   that contains them; the target is six of six.
 - **SC-003**: Twenty consecutive lane runs produce zero false positives.
-- **SC-004**: The integration lane's wall-clock time grows by less than 10
-  seconds against the chapter 3.9 baseline of 3m15s.
+- **SC-004**: The integration lane's wall-clock time grows by less than 10 seconds
+  against **a baseline measured on this feature's own first task**, not against a
+  literal. The only figure chapter 3.9 recorded is `3m15s` at **213** integration
+  tests; the chapter finished on 223 and that run was never timed, so comparing a
+  future 223-plus lane against it would spend part of the budget on ten tests that
+  already existed.
 - **SC-005**: Every suite that performs a global operation on purpose still
   passes, and each exemption is discoverable by reading the file that uses it.
 - **SC-006**: All **four** batch-taking functions require a batch size and none
