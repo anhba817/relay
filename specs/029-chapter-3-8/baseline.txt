@@ -200,3 +200,102 @@ The last four are R35's fix-forward and belong in `post-series.md` rather than a
 chapter fence: they are `request_id` fallout in four earlier chapters' suites, and
 3.8 teaches rate limiting rather than how those suites compare error bodies.
 Deferred to T061c with the rest of the post-series work.
+
+--------------------------------------------------------------------------------
+T004a — FAILED AUTHENTICATIONS THE INTEGRATION LANE ALREADY PRODUCES
+--------------------------------------------------------------------------------
+
+MEASURED, not inferred. The api integration suites assert `401` or `403` 26
+times, and that number turns out to have almost nothing to do with this. A 403
+for a credential belonging to another environment RESOLVES its principal — it
+fails authorisation, not authentication — and `AuthenticateMiddleware` counts
+only the case where a Bearer credential is present and resolves to nothing. A
+count of assertions is not a count of requests.
+
+The instrument: a unique key prefix, and Redis polled once a second for the whole
+lane. Polling matters because a bucket lives sixty seconds and the lane runs
+three minutes, so a scan afterwards reads an almost-empty database — the first
+attempt found 2 and reported it, which was wrong by a factor of twenty.
+
+The first POLLER was also wrong, and in a way worth writing down: it ran one
+`docker compose exec` per key, so a nominal five-second cycle took far longer
+than five seconds and missed buckets that live for sixty. A measurement
+instrument slower than the thing it measures reports zeros and looks calm.
+
+Highest value seen per bucket, over one full green lane:
+
+  rlauth:::1:<w>                                  8    default prefix, ::1
+  rlauth:::1:<w>:signup                          13    default prefix, ::1
+  rlauth:::ffff:127.0.0.1:<w>                     2    default prefix, IPv4-mapped
+  rlauth-itest-<t>:::1:<w>                        4    credentials.itest.ts
+  rlauth-signup-<t>:::1:<w>:signup                3    signup.itest.ts
+  rlauth-fleet-<t>:198.51.100.0..9:<w>       1 each    the ten-addresses test
+
+  15 buckets, 40 failed authentications in total.
+
+AGAINST THE PROPOSED THRESHOLD OF 10 PER MINUTE PER ADDRESS, one bucket reaches
+8 and one reaches 13. The lane is green, and the reason it is green is worth more
+than the numbers.
+
+`credentials.itest.ts` and `signup.itest.ts` both raise
+`RELAY_AUTH_FAILURES_PER_MINUTE` to 10000 and NEITHER sets a key prefix. Vitest
+gives each file its own worker, so the raised threshold is private to that
+process — but the Redis bucket is not. Those two suites push a SHARED bucket to 8
+and 13 while being personally immune to it, and any suite running in the same
+minute, from the same address, at the default threshold would be refused by
+traffic it did not generate.
+
+Today nothing is, and only by accident: the polluting suites reach the api
+in-process over `::1`, while the suites that spawn a child reach it over
+`::ffff:127.0.0.1`, which is a different bucket. Two address formats are the
+whole of the isolation.
+
+FIXED, because it is two lines and the alternative is a lane whose isolation
+depends on two address formats nobody chose. Both suites now set their own key
+prefix beside the threshold they were already raising. Re-measured over another
+full green lane:
+
+  rlauth:::1:<w>                                  1    (was 8, and 13 for signup)
+  rlauth:::ffff:127.0.0.1:<w>                     2    unchanged
+  rlauth-credentials-<t>:::1:<w>                  7    now its own bucket
+  rlauth-signup-<t>:::1:<w>:signup               13    now its own bucket
+  rlauth-itest-<t>, rlauth-fleet-<t>, …    4, 1×10    unchanged
+
+  16 buckets, 40 failed authentications — the same forty requests, and the
+  default bucket now peaks at 2 against a threshold of 10.
+
+The count of failed authentications did not change, which is the point: nothing
+about the lane's traffic moved. What moved is which bucket it lands in, and
+whether a suite that raises its own ceiling can quietly spend somebody else's.
+
+THE RULE THIS SETTLES, for the suites that come after: raising the threshold and
+taking your own prefix are two different protections and a suite that needs one
+usually needs both. Raising it protects the suite from the lane. Taking a prefix
+protects the lane from the suite.
+
+--------------------------------------------------------------------------------
+T054 — WHAT THE RENUMBERING COST
+--------------------------------------------------------------------------------
+
+ZERO fence amendments. Part 3 renumbered again this chapter — quotas to 3.9, the
+gauntlet to 3.10 — and not one published page needed a fence changed to absorb it.
+
+Chapter 3.7's own renumbering needed two post-series amendments and a section of
+prose explaining a comment that had already been stale for a chapter. It
+responded by making a rule: cite what a thing IS, never where it will be. One
+chapter later the same operation is prose-only, which is the first evidence the
+rule paid for itself.
+
+It was not free of work, only free of amendments. The sweep found two forward
+references in live source, both introduced by THIS chapter:
+
+  services/api/src/db/schema.ts        "quotas are chapter 3.9"
+  services/gateway/src/session.test.ts "there is no quota yet — that is 3.9"
+
+Both are exactly the shape the rule forbids, written by someone who had read the
+rule, in the chapter that cites it. Both now say "a later chapter". The rule
+works; remembering it unprompted does not, which is why the sweep is a task.
+
+(A third hit came from the replacement comment quoting the forbidden string in
+order to explain it. Reworded, because a gate that its own documentation trips is
+a gate somebody will start ignoring.)
