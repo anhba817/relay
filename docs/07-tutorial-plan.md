@@ -148,9 +148,10 @@ build on."
 | 3.5 | Webhooks that survive the customer | Dispatcher service: envelope-encrypted signing secrets, HMAC-SHA256, a due-time retry schedule, dead letters (FR-WHK-01…05, FR-WHK-08) |
 | 3.6 | When to stop trying | The attempt log and auto-disable (FR-WHK-06, FR-WHK-07, both half-delivered — see below); the synthetic test event (FR-WHK-09); the evidence a customer is owed when their endpoint is switched off |
 | 3.7 | Commit and publish are two instants | The resume duplicate: a message committed before a backfill and announced after it, delivered twice; the high-water mark given a lifetime past the buffering window |
-| 3.8 | Limits you can see coming | Per-environment fixed-window counters in Redis (FR-RTL-01…04); the three headers on every response, not only the refusal; failed-auth limiting per IP (FR-AUT-12); the email transport 3.6 was owed (FR-WHK-07). **This chapter completes SRS Phase 2's requirement set** — §7.3 lists it as FR-TEN, FR-AUT, FR-WHK and FR-RTL at P2, and FR-RTL-01…04 is the last of the four |
-| 3.9 | Quotas and what they cost | Monthly usage quotas, hard and soft spending caps, the 50/80/100% email (FR-RTL-05…08) |
-| 3.10 | **Milestone: the isolation gauntlet** | The cross-tenant attack suite (NFR-SEC-09) run against every endpoint; the second-external-developer test. This chapter *is* the SRS Phase 2 exit criterion — *"an external developer integrates using only public documentation, with no assistance"* |
+| 3.8 | Limits you can see coming | Per-environment fixed-window counters in Redis (FR-RTL-01…04); the three headers on every response, not only the refusal; failed-auth limiting per IP (FR-AUT-12), which fails **closed** while the tenant limiter fails open. **This chapter completes SRS Phase 2's requirement set** — §7.3 lists it as FR-TEN, FR-AUT, FR-WHK and FR-RTL at P2, and FR-RTL-01…04 is the last of the four |
+| 3.9 | The email nobody was sending | The transport 3.6 was owed (FR-WHK-07): the outbox pattern a third time, over `webhook_disable_notifications` — no migration, because `delivered_at` was already there and already null. Mailpit in compose, and tests that read what was **received** |
+| 3.10 | Quotas and what they cost | Monthly usage quotas, hard and soft spending caps, the 50/80/100% email (FR-RTL-05…08) |
+| 3.11 | **Milestone: the isolation gauntlet** | The cross-tenant attack suite (NFR-SEC-09) run against every endpoint; the second-external-developer test. This chapter *is* the SRS Phase 2 exit criterion — *"an external developer integrates using only public documentation, with no assistance"* |
 
 **3.5 was narrowed while it was being written, and 3.6 is where the remainder
 went.** The original entry promised auto-disable in the same chapter as the
@@ -210,7 +211,7 @@ a live correctness defect that flakes the integration lane, which is exactly the
 condition that let three other real defects hide during chapter 3.6's work.
 
 3.7's insertion moved quotas to 3.8 and the gauntlet to 3.9 — both have since
-moved again, see below. **That renumbering had a trap in it that had already been
+moved twice more, see below. **That renumbering had a trap in it that had already been
 sprung once**: `services/api/src/db/schema.ts` says "chapter
 3.7's cross-tenant gauntlet", written when the gauntlet was 3.7, and 3.6's
 insertion never carried it. That comment is byte-fenced into published chapter
@@ -236,14 +237,32 @@ arriving in **Part 4** with the analytical store. Building monthly counters in 3
 would mean building them in Postgres now and again in ClickHouse later, or once in
 the wrong place.
 
-So 3.8 takes FR-RTL-01…04 and 3.9 takes FR-RTL-05…08; the gauntlet becomes 3.10.
-3.8 also picks up two things left lying around: FR-AUT-12's per-IP limiting on
-failed authentication, which is the same mechanism at a different scope and the one
-bucket that must *not* fail open, and the **email transport chapter 3.6 deferred**.
-FR-WHK-07 requires an organisation be told when its endpoint is switched off; 3.6
-writes the notification row and leaves `delivered_at` null above a comment saying
-whichever chapter builds a transport will set it. Deferring that a second time
-would mean a third chapter explaining the null column.
+So 3.8 takes FR-RTL-01…04 and quotas take FR-RTL-05…08. 3.8 also picks up two
+things left lying around: FR-AUT-12's per-IP limiting on failed authentication,
+which is the same mechanism at a different scope and the one bucket that must
+*not* fail open, and the **email transport chapter 3.6 deferred**. FR-WHK-07
+requires an organisation be told when its endpoint is switched off; 3.6 writes the
+notification row and leaves `delivered_at` null above a comment saying whichever
+chapter builds a transport will set it. Deferring that a second time would mean a
+third chapter explaining the null column.
+
+**And then 3.8 split again while it was being written, on a measurement.** Its
+size gate counts fences and prose on the finished page rather than against an
+estimate, and the limiter half alone came to 4,700 words against the 2,000-4,000
+bound — with the transport's sections unwritten. Adding them would have reached
+roughly 6,300, past 3.6's 5,346 and past anything the series has published.
+
+So the transport's *prose* became **3.9**, quotas moved to **3.10** and the
+gauntlet to **3.11**. The transport's *code* shipped under `part3-ch8` regardless,
+because it closes FR-WHK-07 whichever chapter explains it — and 3.9 was written in
+the same cycle rather than deferred, so every fence lands with the chapter that
+teaches it instead of accumulating in `post-series.md`.
+
+This is the third size-driven split in Part 3, after 3.5→3.6 and the original
+3.8. The difference is that this one was decided by counting the page. 3.5 shipped
+39 fences against an estimate of 22 and 3.6 ran 5,346 words, both discovered
+afterwards; the phase order for 3.8 put the separable half **last** specifically so
+the decision could be made with a number.
 
 **This renumbering should be cheap, and 3.8 is testing whether it is.** Chapter 3.7
 drove forward chapter references in live source to zero and replaced them with
@@ -252,17 +271,17 @@ prose, this table and the registry — and no fence amendment. 3.8's success cri
 check it rather than assume it, because a rule adopted one chapter ago to make this
 cheap should be made to prove it.
 
-**Phase 2 closes across 3.8 and 3.10, and its exit criterion is a problem the series
+**Phase 2 closes across 3.8 and 3.11, and its exit criterion is a problem the series
 has been accumulating.** SRS §7.3 exits Phase 2 on *"an external developer integrates
 using only public documentation, with no assistance"*. 3.8 finishes the requirement set;
-3.10 runs the test.
+the gauntlet runs the test.
 
 The awkward part is that 3.8 ships `rate_limited` as the first error code an integrating
 developer will actually receive and look up, and its `docs_url` resolves to nothing — a
 placeholder every chapter since 1.4 has carried, in a filter whose own comment admits it.
 Constitution V requires every error code to have a reachable page. **The phase whose exit
 criterion is public documentation is completed by a chapter that documents an error code
-nowhere**, and the milestone that tests it is two chapters later.
+nowhere**, and the milestone that tests it is three chapters later.
 
 Recorded here rather than solved: a docs site is not a chapter of this series, and
 pretending otherwise would put a fifth half-built thing in Part 3.

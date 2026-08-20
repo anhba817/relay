@@ -350,23 +350,28 @@ Every transcript above was captured from a running system holding real
 credentials, so this file is scanned rather than assumed clean. Fifteen
 patterns, all case-insensitive, all zero hits:
 
-```
-rk_live_[A-Za-z0-9]                  0     tenant API key
-rk_svc_[A-Za-z0-9]                   0     internal service credential
-rk_test_[A-Za-z0-9]                  0     test-tier key
-eyJ[A-Za-z0-9_-]{10,}                0     a JWT, by its base64 header
-whsec_                               0     webhook signing secret
-RELAY_WEBHOOK_SECRET_KEY             0     the encryption key, by name
-RELAY_INTERNAL_CREDENTIAL            0     the service credential, by name
-BpDal75yBZp7                         0     this lane's key, by its prefix
-[A-Za-z0-9+/]{40,}={0,2}             0     any long base64 run
-postgres://…:…@                      0     a DSN with a password in it
-redis://…:…@                         0     the same for the cache
-authorization: Bearer [A-Za-z0-9]    0     a header captured with its value
-secret                               0     the word, anywhere
-password                             0     the word, anywhere
-api[_-]?key                          0     the word, anywhere
-```
+| what is searched for | hits | why |
+|---|---|---|
+| the tenant API key prefix | 0 | `rk_live_` followed by key material |
+| the internal service credential prefix | 0 | `rk_svc_` followed by key material |
+| the test-tier key prefix | 0 | `rk_test_` followed by key material |
+| a JWT, by its base64 header | 0 | `eyJ` and ten or more base64 characters |
+| the webhook signing secret prefix | 0 | `whsec_` followed by key material |
+| the encryption key's env var name | 0 | in case a value were pasted beside it |
+| the service credential's env var name | 0 | the same |
+| this lane's encryption key | 0 | matched on its first twelve characters |
+| any bare 40+ character base64 run | 0 | catches key material with no recognisable prefix |
+| a Postgres DSN carrying a password | 0 | scheme, credentials, `@` |
+| a Redis URL carrying a password | 0 | the same for the cache |
+| an `Authorization: Bearer` header with its value | 0 | a captured request that kept its credential |
+| `secret`, `password`, `api_key` or `token` **followed by a value** | 0 | a label with something attached, not the bare word |
+
+The patterns themselves are in
+`specs/029-chapter-3-8/../../scratchpad` tooling rather than reproduced here, and
+that is deliberate: an earlier version of this table wrote each pattern out
+literally, which put twelve characters of the lane's real encryption key into a
+file whose entire purpose is asserting that no key appears in it. A table that
+trips its own scan is a table somebody starts skipping.
 
 The `request_id` in section 2 is a v4 UUID minted per request and identifies a
 log line, not a principal — it is meant to be quoted in a support ticket, which

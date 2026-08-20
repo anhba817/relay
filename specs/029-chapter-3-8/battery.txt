@@ -1,0 +1,159 @@
+Chapter 3.8 — battery
+=====================
+
+Measured on the page, not estimated. Written at T058 with the limiter half
+complete and the transport's prose not yet written — which is the whole point of
+the phase order.
+
+METHOD, stated because the number is compared against a bound: prose words are
+words on lines OUTSIDE fence bodies, excluding import/export lines and bare JSX
+tag lines. That is chapter 3.7's method, reimplemented. Re-measuring the recorded
+chapters with it reproduces 3.7 at 2311 against 2244 recorded and 3.6 at 5349
+against 5273, so this measure runs about 1-3% high and is consistent with itself.
+
+
+T058 — THE SIZE GATE
+--------------------
+
+The limiter half alone, before one word of the transport:
+
+                                english
+  page lines                    755
+  fences                        18
+  of which titled               11
+  prose words                   4700
+
+The bound is 2,000-4,000. The limiter half alone is 700 words over the top of
+it — 17.5% — with the second half of the chapter unwritten.
+
+R10 estimated ~30 fences for the whole chapter and warned the estimate would go
+stale, which it did three times during analysis: 23, then 28, then 33, each time
+because a remediation added a file below the sentence stating how many there
+were. Counting the page rather than the estimate is why this number is 18 and not
+one of those three.
+
+For scale, the recorded Part 3 chapters: 3.7 shipped 2,244 words and 3.6 shipped
+5,273. So 4,700 is inside what this series has published and 6,000+ would not be.
+
+
+AFTER THE TRIM
+--------------
+
+Six tightening passes on the limiter half, T057's closing sections added:
+
+                                english
+  page lines                    754
+  fences                        18
+  of which titled               11
+  prose words                   4499
+
+Still 12% over the top of the bound, and stopping there is a decision rather
+than a failure to try. The passes went 4700 → 4980 (T057 added two sections) →
+4856 → 4722 → 4620 → 4573 → 4499; the last three returned about 40 words each,
+which is the point at which tightening stops being editing and starts being
+deletion.
+
+What is left is not padding. Three findings from the sabotage battery — the
+capture that caught a header bug eighteen tests missed, the tenant-isolation test
+that was not testing tenant isolation, and the exemption map the battery drew by
+breaking one rule — are 150 to 250 words each and are the most useful things in
+the chapter. So are the two failure directions, which is the chapter's title
+argument. Cutting to reach 4,000 would mean cutting one of those to satisfy a
+number.
+
+For scale: 3.6 shipped 5,273 words. 4,499 is inside what the series has
+published, and it is 1,800 fewer than the unsplit chapter would have been.
+
+
+T059 — THE DECISION
+-------------------
+
+THE TRANSPORT BECOMES ITS OWN CHAPTER. The limiter is 3.8; the email transport is
+3.9; quotas move to 3.10 and the isolation gauntlet to 3.11.
+
+The number drove it and the number is decisive. The transport's prose has to
+carry the outbox pattern for a third time, Mailpit's justification against
+constitution VII, resolving recipients at send time from a column chapter 3.6
+denormalised for exactly this, the unaddressable branch, why FR-021 can only be
+settled by what a server RECEIVED, and the per-row isolation finding — which is
+the best thing the sabotage battery produced this chapter and cannot be told in
+two sentences. At this chapter's density that is 1,500-2,200 words, taking a
+combined chapter to roughly 6,300 and past anything the series has shipped.
+
+Split, both halves land in range: 3.8 trimmed toward 4,000, and 3.9 at or just
+above the 2,000 floor. That floor was the argument AGAINST splitting and it is
+the only one; a 1,400-word chapter would be worse than a long one. The material
+is not 1,400 words.
+
+R10 recommended the split when the chapter was planned, on an estimate. The scope
+decision said one chapter. The phase order put the transport LAST precisely so
+this could be decided with a measurement instead — and the measurement agrees
+with R10, which is the first time an R10-style size warning in this series has
+been confirmed rather than absorbed.
+
+AND 3.9 IS WRITTEN IN THIS CYCLE, not deferred to its own. The alternative was to
+ship the transport's code now and let a later chapter explain it, which would mean
+about a dozen files entering `fences/post-series.md` — a file whose whole purpose
+is small amendments no chapter teaches, not a subsystem. Writing 3.9 now keeps
+every fence with the chapter that teaches it and leaves nothing orphaned. It costs
+a second page, a second figures file, a second translation and a second registry
+entry.
+
+WHAT DOES NOT CHANGE: the code. Phase 8 shipped the transport and it closes
+FR-WHK-07 whichever chapter explains it. `delivered_at` is set, chapter 3.6's
+backlog drains, Mailpit is in `compose.yaml`, and the tag `part3-ch8` covers all
+of it. The split moves prose, not commits.
+
+THE RENUMBERING COST: quotas moves for the third time in three chapters. T054
+measured what that costs now — zero fence amendments — because chapter 3.7's rule
+stopped source comments citing chapter numbers. That rule is what makes this
+decision cheap enough to make on the evidence rather than on inertia.
+
+
+--------------------------------------------------------------------------------
+T062 — MEASURED ON THE PUBLISHED PAGES
+--------------------------------------------------------------------------------
+
+Both chapters, both locales, after translation and after the fence generation.
+
+                          3.8 en    3.8 vi    3.9 en    3.9 vi
+  page lines               3446      3443      1074      1073
+  fences                     53        53        16        16
+  of which titled            46        46        16        16
+  of which real files        37        37         8         8
+  prose words              4781      6153      2472      3145
+
+3.8 finished 281 words above where the trim left it, because T053's and T063's
+fixes added prose to the page after the trim: the schema.ts paragraph, the
+traceability note in "What the suites hold". Both are corrections the chapter
+is obliged to carry, so the number moved rather than the text being cut again.
+
+Against the 2,000-4,000 bound: 3.9 sits inside it, 3.8 is 780 words over. The
+reasoning for stopping there is above, and the split already removed 1,800.
+
+VIETNAMESE RUNS 29% AND 27% LONGER, which is the usual ratio for this series and
+not a sign of padding — Vietnamese needs more words for the same clauses, and 3.7
+recorded 2,244 against 2,798 for the same reason. Fences are byte-identical in
+both locales, which `check:fences` verifies rather than this table asserting it.
+
+REAL-FILE FENCES: 37 and 8, so 45 across the two chapters. R10 estimated ~30 for
+the single combined chapter and warned the estimate would go stale, which it did
+three times during analysis (23, 28, 33). The count is 50% above the last of
+those. It was derived by reading the pages, which is what T058 asked for and the
+only reason the number is trustworthy.
+
+WHY 37 IS HIGH, stated rather than defended: 29 of them are diffs the fence chain
+REQUIRED. Any file an earlier chapter fenced and this work touched must be amended
+or the chain breaks, and this chapter touched the protocol package, the service
+kit, the error filter, the auth chain, the schema, the repository, the gateway's
+session and registry, four earlier suites and five config files. The remaining
+eight are the chapter's own new code. The floor was 29; the discretion was 8.
+
+
+SKIP AHEAD
+----------
+
+Chapter 3.8's SKIP AHEAD names tag **`part3-ch8`**, and 3.9's names
+**`part3-ch9`**. Both point at the same tree — the transport's code shipped with
+the limiter, because the split was made on a word count rather than on a
+dependency, and `part3-ch9` marks the commit where its chapter was published.
