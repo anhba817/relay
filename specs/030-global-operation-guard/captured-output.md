@@ -154,6 +154,13 @@ chapter 3.5 and had not met since before this feature began: the uncovered
 function was `drainDisableNotifications`'s `onError` default, which no caller has
 ever used (research R48).
 
+## Still to capture
+
+Three transcripts are not here yet, because the runs that produce them were stopped
+part-way: the twenty-run battery's tally (V9), the guard lane's own eight tests as
+a block (V2), and the quickstart's V0-V11 exit codes (T036). The battery's partial
+result — six green at 186-188s — is in `baseline.txt` under T034.
+
 ## Credential scan (T038)
 
 Patterns searched across `captured-output.md`, `chapter-notes.md`, `research.md`,
