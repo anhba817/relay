@@ -1085,3 +1085,84 @@ Seeding it would mean a NATS connection inside `plant()`, which every suite's
 filter is the call site to object to, and unlike the bait the linter can see it
 before anything runs. Recorded in `eslint.config.mjs` beside the rule, and in
 `contracts/guard.md` under what the seeder does not cover.
+
+## R44 — Bait in the dispatcher lane fails the suite either way
+
+T016b sent bait to the api and dispatcher lanes, because instance 5 lives in
+`dispatcher.itest.ts`. Measured on a freshly migrated database with nothing else
+running:
+
+```
+with bait     Tests  10 failed | 6 passed (16)   Duration 155.74s
+without bait  Tests  16 passed (16)              Duration  73.70s
+```
+
+Instance 5's fix — `batchSize: 10_000` — is in place in both runs. So the bait
+fails the suite whether or not the fault is present, and an instrument that always
+reads "broken" carries no information.
+
+The cause is not the batch. `deliverEvent` publishes everything due to the stream
+and then waits eight seconds for the **dispatcher process** to deliver its own row;
+the dispatcher consumes a shared FIFO stream, so 200 bait jobs sit ahead of it,
+each costing an api `material()` call and a delivery attempt. Two hundred rows at
+roughly forty milliseconds is the eight seconds exactly.
+
+Nothing cheaper works. `https://sentinel.invalid` resolves in about 1ms after the
+first attempt, so the URL is not the cost; a disabled bait endpoint would still
+cost the api round-trip per job, because the skip decision is made after the
+claim. And the bait cannot be made unclaimable without ceasing to be bait — the
+drain's claim predicate is exactly its eligibility predicate.
+
+**Decision**: bait in the **api lane only**. The dispatcher lane keeps exemption
+handling — the trigger is database state and outlives whichever lane installed it.
+Instance 5's protection becomes the required batch size (`drainDueDeliveries` takes
+no default) plus a reintroduction verified by hand and recorded, rather than a
+standing property. That is weaker, and saying so is the point.
+
+This is the same boundary as instance 3: the seeder seeds a database, and both of
+these faults ride a broker.
+
+## R45 — Bait has to look like the work it stands in for
+
+With `outbox.itest.ts`'s drive loop fixed, invariant 7 failed differently:
+
+```
+AssertionError: expected 5 to be 204
+```
+
+The relay publishes `payload.id` as the deduplication key, and the test asserts the
+ids it sent are distinct. The bait's outbox rows carried `'{}'`, so two hundred
+messages published with `id: undefined` collapsed to one entry in a `Set` and a
+correct assertion failed. Fixed by giving each bait row
+`jsonb_build_object('id', gen_random_uuid())`.
+
+Worth noting what this was not: the assertion was right, the scoping was right, and
+the loop was right by then. The bait was wrong, in a way that only surfaced after
+two other things were fixed.
+
+## R46 — Instance 8, in the file that already had instance 3 fixed
+
+T032 says grep for the class while the first instance is on screen, and it found
+one in `consumer.itest.ts` — forty lines from the test chapter 3.7 fixed:
+
+```
+services/api/src/consumer/consumer.itest.ts:361
+    const a = runtimeFor(db, durable, async (e) => void byA.push(e.id));
+    const b = runtimeFor(db, durable, async (e) => void byB.push(e.id));
+    for (let i = 0; i < 400; i++) { … }
+```
+
+`runtimeFor`'s fifth parameter is the environment filter and it is optional, so
+both runtimes start at the head of the whole stream. The test publishes three
+events to three different environments — `ENV()` called three times, which is the
+same detail that made instance 3 unfilterable — and then polls 400 times.
+
+It has never failed. That is the property of this class rather than a defence of
+it: a fixed budget against a growing shared resource passes until the resource
+outgrows the budget. Chapter 3.7 fixed the test above this one and did not look
+down.
+
+The environments were incidental to what the test is about — two runtimes sharing
+one durable, each message handled once — so one environment and a filter on both
+runtimes leaves the subject intact. Eight instances now, in six files, across
+chapters 3.3 to 3.9.
