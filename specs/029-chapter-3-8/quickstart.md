@@ -302,9 +302,13 @@ shipped its central decision — never retire the mark — with no test behind i
 a mutation said so, and its own out-of-order test turned out to have never
 exercised the mechanism it was named for.
 
-**Commit before running the battery.** Its revert step is `git checkout --`, which
-silently discarded an uncommitted fix during chapter 3.6 and failed the
-byte-identical check against the previous run's hashes.
+**Commit before EVERY mutation, not just before the battery.** Its revert step is
+`git checkout --`, which silently discarded an uncommitted fix during chapter 3.6
+and failed the byte-identical check against the previous run's hashes — and then
+did it again in chapter 3.8, to a fix written in the middle of the battery in
+response to a mutation that had just passed. "Commit before the battery" is
+satisfiable once and the battery is a loop; the clause that survives contact is
+the one above (research R45).
 
 ---
 

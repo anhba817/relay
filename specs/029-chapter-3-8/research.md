@@ -1829,6 +1829,62 @@ service away from the mutated line.
 
 ---
 
+## R44 — The mutation that could not fail, and the bug behind it
+
+Quickstart V10's fourth mutation is "mark `delivered_at` before the send
+returns", and it must fail FR-018's test. It passed.
+
+The claim, the sends and the mark were one transaction, following chapter 3.3's
+outbox shape. A send that threw escaped the transaction callback; Postgres rolled
+the transaction back; the `finally` block's `UPDATE` went with it. Marking before
+the send and marking after it were indistinguishable, because neither mark
+survived a failure. The comment above the `finally` — inherited from 3.3, which
+says "rows 1..N really did reach the broker and must not be sent a second time" —
+described a guarantee the rollback was quietly removing.
+
+Chasing that found something worse than the mutation was aiming at. Rows are
+claimed oldest-first. A row that ALWAYS throws — an address a mail server refuses
+outright, which is an ordinary thing for an address to be — is always claimed
+first, always aborts the batch, and permanently blocks every notification behind
+it. One bad recipient stops the queue for ever.
+
+Per-row isolation fixes both: a row that throws is reported through an `onError`
+callback and not marked, the rows behind it still go, and nothing rolls back — so
+the ordering becomes observable and the mutation fails as it should.
+
+WORTH SAYING ABOUT THE PATTERN. This is a deliberate departure from `drainOutbox`
+rather than an inconsistency, and the difference is in the dependency. A broker is
+up or down: a publish failing means the next one will too, so aborting the batch
+loses nothing. A mail server is up for most addresses and down for one. Copying
+the shape without re-deriving it for the new dependency is how this got written
+in the first place — the outbox pattern is right, and "the same pattern" is not
+the same as "the same code".
+
+Whether `drainOutbox` has the equivalent problem is a real question and NOT one
+this chapter answers. Its failure mode is milder — a broker outage is all-or-
+nothing, so head-of-line blocking needs a single permanently-unpublishable row,
+which JetStream makes unlikely — but "unlikely" is not "impossible" and the file
+now has a neighbour that reads differently for a reason a reader can see.
+
+## R45 — `git checkout --` did it again, in the chapter that warned about it
+
+T037 exists because chapter 3.6's battery reverted an uncommitted fix and then
+failed its own byte-identical check. The task says so in bold, the quickstart
+says so in bold, and the capture file says so.
+
+It happened anyway. The per-row isolation fix was written, verified against nine
+passing tests, and then destroyed by the revert step of the very mutation it was
+written to make fail — because it had not been committed, and `git checkout --`
+does not distinguish a mutation from a correction.
+
+The instruction was not wrong and was not forgotten. What made it fail is that
+the battery is not one commit-then-run: it is a loop, and the fix arrived in the
+MIDDLE of it, at a point where "commit before running the battery" had already
+been satisfied once. The rule needs a second clause — commit before EVERY
+mutation, not before the battery — and this is the evidence for it.
+
+---
+
 ## What this chapter does NOT do
 
 - Quotas, spending caps, threshold emails, quota degradation — chapter 3.9, and the

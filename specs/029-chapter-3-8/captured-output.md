@@ -177,8 +177,8 @@ Two failure directions, one outage, one process. That is the chapter.
 
 ## 4. The sabotage battery (V10)
 
-Four of five. The fifth — marking `delivered_at` before the send returns — has
-no target until the email transport exists, and is captured with phase 8.
+All five. The fifth ran after phase 8, since it has no target until the email
+transport exists.
 
 Each mutation was applied to the real file, the suite run, the file reverted
 with `git checkout --`, and the revert verified by `md5sum`.
@@ -271,6 +271,46 @@ prefix is the only thing standing between an environment at its REST limit and a
 socket that stops working for a budget it never spends. Two of the three tests
 that failed are in the gateway's own suite, one service away from the mutated
 line — which is what a cross-service exemption looks like when it breaks.
+
+### Mutation 4 — mark `delivered_at` before the send returns
+
+`repository.ts`: push the row id onto the delivered list, then attempt the send.
+
+```
+× sets delivered_at only AFTER the send returns (FR-018)
+× does not take anything else down with it when the mail server is gone (FR-024)
+
+Tests  2 failed | 7 passed (9)
+revert byte-identical: 91cb999aafc30316de6e2e1113aa03c5
+```
+
+**This mutation passed the first time it was run, and the reason is the best
+thing the battery produced this chapter.**
+
+The batch was one transaction. A send that threw escaped the transaction
+callback, Postgres rolled the whole thing back, and the `finally` block's
+`UPDATE … SET delivered_at = now()` went with it. Marking before the send and
+marking after it therefore produced *identical* observable behaviour — the
+ordering the mutation attacks was not an ordering the system had.
+
+Following that through found a real fault, and a worse one than the mutation was
+looking for. Rows are claimed oldest-first. A row that always throws — one
+address a mail server refuses — is therefore always claimed first, always aborts
+the batch, and every notification behind it is never delivered. Permanent
+head-of-line blocking of the entire queue, from one bad recipient.
+
+The fix is per-row isolation: a row that throws is reported and not marked, and
+the batch keeps going. That is a deliberate departure from the event relay one
+screen up, which does let a failing publish abort its batch — because a broker
+is up or down, and one refused email address is neither.
+
+The mutation fails now. There is also a test named after the head-of-line case,
+which is the failure nobody was looking for.
+
+**And the revert step bit.** `git checkout --` discarded the uncommitted per-row
+fix, exactly as T037 warns it did in chapter 3.6 — in the chapter that wrote the
+warning down, to the person who wrote it. The fix was reapplied, committed, and
+only then was the mutation re-run.
 
 ---
 
