@@ -667,3 +667,78 @@ Recorded because five passes of findings give no sense of what held up.
 | Unit 242 / integration 223 | recorded in 029's `battery.txt` |
 | `outboxDepth` and `pendingDeliveryDepth` cross every environment | true — both `count(*)`, no `environment_id` filter |
 | api lane = 177 on a fresh database | matches 029's final run |
+
+
+---
+
+# Findings from the sixth analysis pass
+
+Pass five ended by saying a sixth should aim at whatever pass five asserted
+without re-deriving. It did, and pass five's claims held — the interesting
+findings came from the last two sections of `spec.md` that no pass had opened.
+
+## R30 — `spec.md` was refuting itself in three places
+
+Every pass read the requirement block, the tasks and the cross-document claims.
+None read the narrative sections sitting between them, and both were written in
+pass zero.
+
+**Edge case 1** required the design that the Assumptions section, eighty lines
+below, strikes through as withdrawn:
+
+> The always-on check **must** therefore be scoped to the run rather than to the
+> test, with per-test attribution available in a mode where file execution is
+> serial.
+
+**Edge case 4** restated FR-011 — *"Re-planting **must** happen after the verdict"*
+— which the same document marks *superseded by research R6*.
+
+**Key Entities** said *"Sentinel environment: **one** named environment"*, which
+FR-023 has contradicted since the third pass, and listed a **Verdict** entity that
+exists only in the checksum design.
+
+Both sections are phrased normatively. Somebody implementing from Edge Cases and
+Key Entities rather than from the FR block would have built the mechanism research
+R6 replaced — and would have been reading the spec correctly.
+
+**Why five passes missed it.** Each pass had a target: the runtime, the loading
+order, the packaging, the cross-document assertions, its own predecessor. Prose
+that was neither a requirement nor a claim about another file fell between every
+one of those targets. The checklist failed the same way in pass three, and the
+lesson did not generalise, because the fix was "re-validate the checklist" rather
+than "re-read what pass zero wrote".
+
+## R31 — The sixth wrong count, and the first that predates the rule
+
+Edge case 2 said *"The outbox relay, the delivery relay and the notification relay
+suites"* — **three**. R5 measured **six**, and four other documents say six.
+
+R24 set the rule after the fourth: every count is measured in the commit that
+states it, or it is a guess wearing a number's clothes. This one was written before
+the rule existed, which is the only reason it survived — and the reason to sweep
+for the rest rather than wait for the seventh.
+
+## R32 — Two tasks were justified by a measurement whose conditions are gone
+
+T029 and T030 named specific tests to fix, citing R3. R3 measured them under a
+one-shot **shared** sentinel, **no trigger**, and **addressable** bait
+notifications. All three have since been replaced by R12, R6 and R4 — and T030's
+own expected fix, T008's unaddressable sentinel, removes the cause R3 measured.
+
+T028 exists to produce the real list "before fixing any of them", so T029 and T030
+were prejudging it. Both are now hypotheses for T028 to confirm or discard, with
+discarding an acceptable outcome that has to be stated rather than quietly skipped.
+
+## R33 — What pass five asserted, re-derived
+
+| Pass-5 claim | Verdict |
+|---|---|
+| "nine `.sql` files" underpinning the constitution VII reading | **All nine are migrations**, under `services/api/migrations/` — exactly what the constitution endorses as "versioned, forward-only, hand-reviewed SQL". The argument is stronger than it was stated |
+| The constitution says nothing about new packages | Confirmed — only *"New services require justification"* |
+| `3m15s` was recorded against 213 tests | Confirmed, `029/captured-output.md:321` |
+| The superseded checksum is gone from data-model and the contract | Confirmed |
+
+One thing pass five got wrong in its own favour: it reproduced the plan template's
+Complexity Tracking instruction as a blockquote and smoothed it — an added article,
+a dropped bold, an added period. The prose guide names that exactly: a quote that
+has been smoothed is a misquote. Now byte-identical.

@@ -153,21 +153,34 @@ to any `*.itest.ts` not on the exemption list and run lint. It must fail.
 
 ### Edge Cases
 
-- **A test blames itself for somebody else's mutation.** Integration files run in
-  parallel, so a before/after comparison inside one test can observe a global
-  mutation performed by another file. The always-on check must therefore be
-  scoped to the run rather than to the test, with per-test attribution available
-  in a mode where file execution is serial.
-- **A legitimate global operation.** The outbox relay, the delivery relay and the
-  notification relay suites all drive global drains deliberately. Each needs an
-  exemption that is visible at the call site, not a blanket disable.
+- **A refusal raised inside a background relay.** The guard raises in the
+  offending statement's own transaction, so a test that performs a global mutation
+  fails with its own stack even under parallel file execution — no bystander is
+  blamed and no serial mode is needed. A **relay** is different: both
+  `delivery-relay.ts` and `notification-relay.ts` catch their own errors and log
+  `*_drain_failed`, so a refusal inside one is a log line and a green lane
+  (research R13). FR-025 closes it by refusing to start a non-exempt file that has
+  a relay enabled.
+
+  *An earlier version of this bullet required a run-scoped check with serial
+  attribution. That was the checksum design, withdrawn in the Assumptions section
+  below — and left asserted here for five analysis passes.*
+- **A legitimate global operation.** **Six** suites drive global drains or sweeps
+  deliberately, measured in research R5 rather than guessed: `outbox.itest.ts`,
+  `deliveries.itest.ts`, `test-event.itest.ts`, `attempts.itest.ts`,
+  `notifications.itest.ts` and `dispatcher.itest.ts`. Each needs an exemption
+  visible in the file that uses it, not a blanket disable.
 - **Tests that assert on global depth.** `outboxDepth` and `pendingDeliveryDepth`
   return counts across every environment. Any test comparing them to an absolute
   number is a reader-shape fault and will start failing — correctly. Those
   assertions have to become relative to a baseline the test takes itself.
-- **The bait gets consumed.** A global operation that takes the bait leaves the
-  sentinel in a changed state for every test after it. Re-planting must happen
-  after the verdict, never before it.
+- **The bait gets consumed by a suite allowed to.** A non-exempt statement never
+  completes, so it cannot eat bait — that is the trigger preventing rather than
+  detecting, and it is why FR-011's "re-plant after the verdict" is marked
+  superseded. The six **exempt** suites can and do consume it: research R2
+  measured three of the four baits gone after one lane pass. Per-file planting is
+  what restores it, so every file starts with its own bait present regardless of
+  what ran before.
 - **A developer runs one test by name.** The bait must be planted for a filtered
   run too, or the guarantee holds only for whole-file runs.
 - **A fresh clone.** The bait must be planted by the lane itself, not by a
@@ -277,15 +290,24 @@ to any `*.itest.ts` not on the exemption list and run lint. It must fail.
 
 ### Key Entities
 
-- **Sentinel environment**: one named environment whose rows exist only to be
-  taken. Owned by the lane, never by a test.
+- **Sentinel environment**: **one per test file**, derived from that file's path so
+  it is stable across runs and unique across files. Its rows exist only to be
+  taken. Owned by the lane, never by a test. *An earlier version of this entry
+  said "one named environment", which FR-023 has contradicted since the third
+  analysis pass.*
+- **Sentinel registry**: the table the trigger tests membership in, holding one
+  row per test file with the owning file's path. With one shared sentinel the
+  trigger could compare against a literal id; with one per file it cannot.
 - **Bait**: the planted rows — an endpoint eligible for disablement, due
-  deliveries, unpublished outbox rows, undelivered notifications. Chosen so that
-  every global operation in the codebase touches at least one of them.
-- **Verdict**: whether the sentinel changed during a run, and if so, which table
-  and row.
-- **Exemption**: a named file permitted to perform global operations, with the
-  reason recorded beside the name.
+  deliveries, unpublished outbox rows, undelivered notifications. Sized from the
+  exported batch constants so a raised default raises the bait with it, and chosen
+  so that every global operation in the codebase touches at least one of them.
+- **Refusal**: the error the trigger raises in the offending statement's own
+  transaction, naming the table and the row. *This replaces a **Verdict** entity —
+  whether the sentinel changed during a run — which belonged to the checksum
+  design and has no counterpart now that the guard prevents rather than detects.*
+- **Exemption**: a connection option carried by every connection a pool opens, set
+  only for files on an auditable list, with the reason recorded beside the path.
 
 ---
 

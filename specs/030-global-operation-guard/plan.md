@@ -176,7 +176,7 @@ verified byte-identical afterwards.
 
 ## Complexity Tracking
 
-> Fill ONLY if the Constitution Check has violations that must be justified.
+> **Fill ONLY if Constitution Check has violations that must be justified**
 
 **None.** Two decisions looked like violations at gate time and neither is; the
 reasoning is below rather than deleted, because the questions are worth a reader's
