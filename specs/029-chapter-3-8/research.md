@@ -1,6 +1,6 @@
 # Research — chapter 3.8, "Limits you can see coming"
 
-Phase 0. Twenty-nine items. R3 is the chapter's central decision and the spec
+Phase 0. Thirty items. R3 is the chapter's central decision and the spec
 deliberately left it open. R5 found a **second unenforced contract** the chapter
 has to close whether it wants to or not. R10 quantifies the size risk the spec
 flagged and the answer is not the one the scope decision assumed. **R11 was added
@@ -1418,6 +1418,50 @@ edited in the same commits.
 
 **Verified after correcting**: all nine part counts and the total now agree with the
 tables, checked by counting the rows rather than by reading the summary.
+
+---
+
+---
+
+## R30 — An open question this chapter cannot answer, and the reason is its own policy shape
+
+**SRS Appendix C, question 5** — read at the seventeenth analysis pass, having never been
+opened:
+
+> *Should the dev-mode token endpoint (FR-AUT-09) be rate limited more aggressively to
+> prevent production misuse?* — **Blocks:** FR-AUT-09/12 — **Owner:** Security
+
+It blocks **FR-AUT-12**, which is one of this chapter's requirements.
+
+**What the endpoint is.** `POST /auth/dev-token` mints a user token from an API key, in
+the development environment only, so a developer reaches a first authenticated message
+before implementing token signing (FR-AUT-09, P2). The risk the question names is somebody
+shipping it — using the convenience endpoint as the production token path.
+
+**What this chapter changes.** Before it, that route had no limit of any kind. After it,
+the route carries its environment's REST limit like every other public route. So the
+baseline moved and the question is now answerable for the first time.
+
+**And the chapter still cannot answer it, because of a decision it made elsewhere.** The
+question asks for *more aggressive* — a tighter ceiling on one route than on the rest of
+the environment. The policy is three nullable columns on `environments`
+(`rest_limit_per_minute`, `send_limit_per_minute`, `connect_limit_per_minute`). That
+shape has a slot for an environment and no slot for a route. **A per-route ceiling is not
+expressible**, and nothing noticed while the shape was being chosen.
+
+**The shape was still right.** FR-RTL-04's isolation is per environment, the policy has one
+row per environment with no history, and a separate table would have been a join on every
+request (data-model). Per-route limits would need a fourth dimension — a table keyed by
+environment and route, or a column per route, and the second does not scale past two.
+
+**Decision: record the question, do not answer it, and name what answering would cost.**
+It belongs to Security by the SRS's own assignment, and this chapter's contribution is to
+have moved the baseline and priced the remaining work. An open question carried forward
+with its cost known is worth more than one closed by whoever happened to be editing.
+
+**Where the question would be cheapest to answer**: the chapter that adds a fourth policy
+dimension for some other reason. Quotas (3.9) adds per-environment monthly limits and does
+not need routes either, so it is probably not that one.
 
 ---
 

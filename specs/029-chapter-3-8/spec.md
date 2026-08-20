@@ -312,6 +312,12 @@ names a chapter that has not happened yet.
   implied (research R25). The chapter MUST also state what makes it expensive: **SRS §7.3
   exits Phase 2 on "an external developer integrates using only public documentation"**,
   and this chapter completes that phase's requirement set (research R28).
+- **FR-050**: The chapter MUST record SRS Appendix C question 5 — *"Should the dev-mode
+  token endpoint (FR-AUT-09) be rate limited more aggressively to prevent production
+  misuse?"*, which the SRS lists as blocking FR-AUT-12 — as **still open**, together with
+  what this chapter changed and what answering it would cost. The route gains its
+  environment's REST limit where it previously had none, and a *tighter* per-route ceiling
+  is not expressible in a policy keyed only by environment (research R30).
 - **FR-049**: The chapter MUST record that it completes SRS Phase 2's requirement set —
   §7.3 lists Phase 2 as FR-TEN, FR-AUT, FR-WHK and FR-RTL at P2, and FR-RTL-01…04 is the
   last of the four groups. The tutorial plan names 2.8 as the Phase 1 exit criterion and

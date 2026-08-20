@@ -109,6 +109,12 @@ the documented default at read time. A zero would mean "refuse everything", whic
 must stay expressible — an environment can be turned off deliberately — so the
 absent state and the refuse-everything state cannot share a representation.
 
+**A slot for an environment, and none for a route.** SRS Appendix C question 5 asks
+whether the dev-token endpoint should be limited *more aggressively* than the rest of its
+environment, and this shape cannot say so — a per-route ceiling needs a fourth dimension.
+The shape is still right for the reason below; the consequence is recorded because it
+forecloses an open question the SRS lists as blocking FR-AUT-12 (research R30).
+
 **On `environments` rather than in a table of its own.** FR-RTL-04's independence
 is per environment; the policy has exactly one row per environment, no history and
 no versioning. A separate table would be a join for a value read on every request.

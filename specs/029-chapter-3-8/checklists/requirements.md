@@ -612,6 +612,29 @@ documentation is completed by a chapter that documents an error code nowhere.**
 Recorded, not solved. A docs site is not a chapter of this series and half of one would be
 Part 3's fifth unfinished mechanism.
 
+### The seventeenth pass: an open question the chapter's own design forecloses
+
+**SRS Appendix C question 5**, never opened before: *"Should the dev-mode token endpoint
+(FR-AUT-09) be rate limited more aggressively to prevent production misuse?"* — **Blocks
+FR-AUT-12**, which is one of this chapter's requirements.
+
+The interesting half is not the question. It is that **this chapter cannot answer it, for
+a reason nobody noticed while choosing the design.** The policy is three nullable columns
+on `environments`, so it has a slot for an environment and none for a route. "More
+aggressive on one route" is unrepresentable.
+
+The shape is still right — FR-RTL-04's isolation is per environment, one row per
+environment, and a separate table would be a join on every request. What was missing is
+that the choice foreclosed an open question the SRS lists as blocked on this requirement.
+
+What the chapter *does* change: the route had no limit at all and now carries its
+environment's REST limit. So the baseline moved and the remaining work is priced — a
+fourth policy dimension — which is more than the question had before. Recorded and left
+to Security, which the SRS names as its owner.
+
+**Appendices B and C otherwise clear.** The exclusions bear on nothing here; the other
+five open questions block FR-MSG, FR-RTM, FR-ANL and FR-EMJ.
+
 ### One requirement carries a claim that may be wrong, on purpose
 
 The Assumptions say this renumbering should be cheap because chapter 3.7 removed
