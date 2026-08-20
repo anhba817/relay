@@ -1,0 +1,150 @@
+Chapter 3.8 — baseline
+======================
+
+Measured before anything changed. Exit codes, not greps over output.
+
+Date: 2026-08-20
+
+
+T001 — provenance
+-----------------
+
+relay-platform   6f8a7b6  tag part3-ch7           working tree clean
+relay-tutorial   6369aee  heads/main              working tree clean
+
+`git describe --tags --exact-match HEAD` resolves in relay-platform, so the tag is
+on the commit rather than near it. Both parent pins match their submodule HEADs.
+
+Ignore files verified rather than assumed: `.gitignore` and `.dockerignore` exist
+in relay-platform and cover `node_modules`, `dist` and `coverage`;
+`eslint.config.mjs` carries the same ignores. Nothing to create.
+
+**This chapter will add one to `eslint.config.mjs`** — not an ignore, a
+`no-restricted-imports` entry for `ioredis` (T012a, research R20). Recorded here
+because step 4 of the implement flow asks about that file and the answer is "it
+exists and this chapter amends it for a different reason".
+
+
+T002 — platform baseline
+------------------------
+
+Stores: docker compose postgres redis nats clickhouse on 15432 / 16379 / 14222 /
+8123, all healthy.
+
+  lint                                  exit 0
+  typecheck                             exit 0
+  build                                 exit 0
+
+unit lane                               exit 0   198 tests
+  @relay/config                                    6
+  @relay/service-kit                               3
+  @relay/protocol                                 37
+  @relay/api                                      96
+  @relay/gateway                                  48
+  @relay/dispatcher                                8
+
+coverage                                exit 1   380 tests, 378 passed
+  services/dispatcher/src/dispatcher.itest.ts    2 FAILED  (see T002a)
+
+Seven per-file ratchets in force. Every count matches chapter 3.7's closing
+numbers. The coverage exit code does not.
+
+
+T002a — a global drain, through a door chapter 3.7 did not check
+-----------------------------------------------------------------
+
+  FAIL  dispatcher.itest.ts > the dispatcher >
+        invariant 7: delivers an event the endpoint subscribes to
+        AssertionError: expected 0 to be greater than 0
+
+  FAIL  dispatcher.itest.ts > the dispatcher >
+        JSON that is not an envelope is terminated too, not retried
+        Error: Test timed out in 60000ms
+
+NOT this chapter's work, and separated before starting — T005's rule, and chapter
+3.7's four-hour lesson about a lane that cannot report its own faults.
+
+MEASURED, not inferred:
+
+  dispatcher suite alone                          16 passed, exit 0
+  integration lane, three runs                    3 clean, 188-190 s each
+  coverage lane, run 1                            2 failed
+  coverage lane, run 2                            380 passed
+  due deliveries after a coverage run             0 (drained by the run itself)
+  pending deliveries after a coverage run         98
+
+ROOT CAUSE. The suite's `publishDue()` helper builds a delivery relay and calls
+`drainOnce()` with **no batch size**, so it takes `BATCH_SIZE = 50` — the fifty
+oldest due deliveries in the platform, `ORDER BY next_attempt_at`, oldest first.
+This suite's own delivery is the newest. Every earlier suite in the run leaves due
+deliveries behind, and once more than fifty accumulate the batch fills before
+reaching the one under test. `pollUntil` then times out at eight seconds and the
+endpoint has received nothing.
+
+WHY ONLY THE COVERAGE LANE. `vitest.coverage.config.mts` sets
+`fileParallelism: false` — every suite in one process against one database — so
+the dispatcher suite runs after everything else has filled the queue. The
+integration lane runs packages separately and its dispatcher suite starts clean.
+Three integration runs found nothing; one coverage run in two did.
+
+WHY IT READS AS A FLAKE AND IS NOT. The failing run **drains the backlog itself**,
+so the next run passes. One-in-two today, and it returns whenever the backlog
+rebuilds past fifty.
+
+THE SIXTH INSTANCE OF ONE SHAPE. Chapter 3.7's baseline found four tests asserting
+a local fact about a global operation, and fixed `drainDueDeliveries` in
+`deliveries.itest.ts` twice — an explicit limit for the sweep, and a settle loop
+for the drain. It never looked at `dispatcher.itest.ts`, which reaches the same
+global drain through a different door. Analysis pass 10 found a fifth instance in
+this chapter's own plan. This is the sixth.
+
+FIXED, ahead of any chapter work: `publishDue()` now passes `batchSize: 10_000`.
+
+  coverage after the fix                          380 passed, exit 0
+
+HONEST LIMIT ON THAT EVIDENCE. One passing run does not prove a fix for an
+intermittent failure. The confidence comes from the mechanism — a global
+oldest-first batch of fifty against a newest-row assertion — not from the run. A
+deterministic reproduction would mean seeding fifty-one due deliveries older than
+the test's own, and it was not built.
+
+
+T003 — site baseline
+--------------------
+
+  lint                                  exit 0
+  build                                 exit 0
+  check:docs                            exit 0
+  check:fences                          exit 0   (after the amendment below)
+
+  fence chain   153 fenced files across 24 chapters
+                24 translated, fences mirrored, 1 retired,
+                plus post-series amendments
+
+`check:fences` failed first, because T002a's fix changed a file chapter 3.5
+fenced. The amendment went to `relay-tutorial/fences/post-series.md`: 3.5 teaches
+the dispatcher, not the batch size of a test helper's drain call, and 3.8 never
+mentions webhook delivery. Its chain ends in 3.5 and it carried no prior
+post-series entry, so `part3-ch7..HEAD` was the correct base — the exception
+research R16 names did not apply.
+
+
+T004 — three integration lane runs
+-----------------------------------
+
+  1  pass  188s
+  2  pass  190s
+  3  pass  189s
+
+Zero failures. The class this chapter was watching for — a test asserting a local
+fact about a global operation, which 3.7 found four times — did turn up, but in
+the coverage lane rather than this one. See T002a.
+
+
+T005 — the lane is green for a known reason
+--------------------------------------------
+
+Both lanes and coverage now pass, and the one failure found was diagnosed to a
+mechanism rather than retried until it went away. That distinction is the whole
+point of doing this before the chapter starts: from here, anything that goes red
+is this chapter's to explain.

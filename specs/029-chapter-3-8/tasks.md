@@ -27,12 +27,12 @@ Platform paths are relative to `relay-platform/`, tutorial paths to
 
 ## Phase 1: Setup & baseline
 
-- [ ] T001 Record provenance in `specs/029-chapter-3-8/baseline.txt`: the submodule commits and tags this chapter starts from, confirming `relay-platform` is at `part3-ch7` and both parent pins match their submodule HEADs
-- [ ] T002 Record the pre-change platform baseline in `specs/029-chapter-3-8/baseline.txt` — unit and integration counts per package, the coverage figures, every per-file ratchet in force, and the exit code of each gate rather than a grep over its output. Chapter 3.7 finished on 198 unit, 191 integration, 380 coverage
-- [ ] T003 [P] Record the site baseline in `specs/029-chapter-3-8/baseline.txt`: `pnpm lint`, `pnpm build`, `pnpm check:docs` and `pnpm check:fences` in `relay-tutorial/`, with the fence and locale counts the chain reports
-- [ ] T004 **Run the integration lane three times and record every failure** in `specs/029-chapter-3-8/baseline.txt`. Chapter 3.7 found one pre-existing failure at its baseline and four more during twenty runs, every one a test asserting a local fact about a global operation. This chapter adds a shared counter and a shared mail server, so the class is live before a line is written
+- [X] T001 Record provenance in `specs/029-chapter-3-8/baseline.txt`: the submodule commits and tags this chapter starts from, confirming `relay-platform` is at `part3-ch7` and both parent pins match their submodule HEADs
+- [X] T002 Record the pre-change platform baseline in `specs/029-chapter-3-8/baseline.txt` — unit and integration counts per package, the coverage figures, every per-file ratchet in force, and the exit code of each gate rather than a grep over its output. Chapter 3.7 finished on 198 unit, 191 integration, 380 coverage
+- [X] T003 [P] Record the site baseline in `specs/029-chapter-3-8/baseline.txt`: `pnpm lint`, `pnpm build`, `pnpm check:docs` and `pnpm check:fences` in `relay-tutorial/`, with the fence and locale counts the chain reports
+- [X] T004 **Run the integration lane three times and record every failure** in `specs/029-chapter-3-8/baseline.txt`. Chapter 3.7 found one pre-existing failure at its baseline and four more during twenty runs, every one a test asserting a local fact about a global operation. This chapter adds a shared counter and a shared mail server, so the class is live before a line is written
 - [ ] T004a **Count the failed authentications the lane already produces**, per minute and in total, **across the whole lane rather than per suite** — the integration lane runs files in parallel and the bucket does not care which file produced the request. Record it in `specs/029-chapter-3-8/baseline.txt` beside the threshold this chapter proposes (10/min/IP). The api integration suites assert `401` or `403` 26 times from `127.0.0.1` in about 110 seconds; only the 401s count, so **measure rather than infer — a count of assertions is not a count of requests**, which is the difference chapter 3.7's sweep fault turned on (SC-012, research R15)
-- [ ] T005 Separate any failure T004 finds from this chapter's work before starting, and fix it forward with its own commit. A lane with two intermittent failures cannot measure either
+- [X] T005 Separate any failure T004 finds from this chapter's work before starting, and fix it forward with its own commit. A lane with two intermittent failures cannot measure either
 
 **Checkpoint**: the starting numbers exist, and the lane is green for a known reason rather than an assumed one.
 
