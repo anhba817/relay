@@ -184,14 +184,23 @@ evidence" for a second language. The evidence is research R6 and R10 together �
 measured demonstration that the TypeScript alternative cannot attribute at all, and
 that the naive version of the SQL one is non-deterministic.
 
-**The call is made here rather than deferred**: a note in
-`docs/06-adr-deep-dives.md`, not a numbered ADR. An ADR records a decision that
-binds the product; this binds a test lane, and ADRs are immutable once accepted, so
-minting one for infrastructure that a later chapter may replace would be the more
-expensive mistake. The task that writes the note is **T005e**, in the foundational
-phase, before any PL/pgSQL is written — an earlier draft had it at T044 in
-close-out, which would have decided a constitution question after the code that
-depends on it.
+**The call is made here rather than deferred**: a note, not a numbered ADR. An ADR
+records a decision that binds the product; this binds a test lane, and ADRs are
+immutable once accepted, so minting one for infrastructure a later chapter may
+replace would be the more expensive mistake.
+
+**Where the note goes changed too.** An earlier draft of this paragraph said
+`docs/06-adr-deep-dives.md`, asserted without opening the file. That document is
+eighteen sections, every one `## ADR-nn — …` on a fixed six-part shape, companion
+to `docs/05-sad.md` §9 where `ADR-01`…`ADR-18` live, and it closes with a heading
+that counts them: "Reading the eighteen together". It has no room for a note that
+is not an ADR. The note goes instead to `docs/07-tutorial-plan.md`'s "Work that
+publishes no chapter" section, which already records this feature, and to the
+header of `sentinel.sql`, where a reader meets the second language.
+
+The task that writes it is **T005e**, in the setup phase, before any PL/pgSQL is
+written — an earlier draft had it at T044 in close-out, which would have decided a
+constitution question after the code that depends on it.
 
 
 ## Constitution Re-check (post-design)

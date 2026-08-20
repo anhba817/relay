@@ -290,7 +290,7 @@ lane.
 
 Today every suite that spawns an api child sets all four relay flags off —
 verified in `harness.ts` and `dispatcher.itest.ts`. So the exposure is nil and the
-mitigation is a convention repeated in seven files rather than a property.
+mitigation is a convention repeated in four files rather than a property — `harness.ts`, `dispatcher.itest.ts`, `gateway/limits.itest.ts` and `gateway/session.itest.ts`.
 
 **Decision**: two changes, neither of which tries to make a relay throw.
 
@@ -497,3 +497,90 @@ cache-keys table names". That sentence is fenced byte-exact into published chapt
 
 True. Recorded because a pass that only lists what it broke gives no sense of what
 it checked — and this was the thing most expensive to have got wrong.
+
+
+---
+
+# Findings from the fourth analysis pass
+
+Three passes had read the runtime, the loading order and the packaging. This one
+read the documents the artifacts *assert things about* — and every finding is the
+same species: a claim made about a file nobody had opened.
+
+## R23 — `docs/06-adr-deep-dives.md` has no room for a note
+
+The plan's Complexity Tracking said the second-language decision would be recorded
+as "a note in `docs/06-adr-deep-dives.md`, not a numbered ADR". Nobody opened the
+file.
+
+It is eighteen sections, every one `## ADR-nn — …`, each following a fixed shape:
+Problem → Options → Analysis → Decision → Consequences → Revisit when. Its header
+declares it "Companion to `05-sad.md` §9", where `### ADR-01` through `### ADR-18`
+live. It closes with a heading that counts them:
+
+```
+## Reading the eighteen together
+```
+
+A note that is not an ADR would be the only section of its kind, and would sit
+outside a count baked into a heading. Minting ADR-19 instead would mean editing the
+SAD, the deep dives, and that heading — which is exactly the cost the plan had
+already declined to pay.
+
+The note goes to `docs/07-tutorial-plan.md`'s "Work that publishes no chapter"
+section, which already records this feature, and to the header of `sentinel.sql`,
+where a reader meets the PL/pgSQL. Neither pretends to be an ADR.
+
+## R24 — Two more numbers were wrong, in the way the last one was
+
+R18 recorded a filler clause hiding a wrong count. Two more:
+
+**"Seven recorded instances"** in the task list's own deliverable line, and in a
+phase checkpoint. The spec is right — six in the table, plus a seventh *precursor*
+from chapter 3.3 described in prose and explicitly not one of the six — and the
+battery is six: quickstart V3 covers instance 6, V4 covers 1 through 5. FR-017 and
+SC-001 both say six. `tasks.md` promised seven reintroductions and contained six.
+
+**"A convention repeated in seven files."** Measured: **four**.
+
+```
+packages/e2e/src/harness.ts
+services/dispatcher/src/dispatcher.itest.ts
+services/gateway/src/limits.itest.ts
+services/gateway/src/session.itest.ts
+```
+
+Nine files mention the relay flags; three are the modules that *read* them and one
+— `outbox.itest.ts` — only names one in a comment. Setters: four.
+
+Three counts wrong across four passes, each in prose, none catchable by a
+compiler. The pattern is not carelessness about arithmetic; it is that a number in
+a sentence reads as a summary of something already checked, so it never gets
+checked. **Every count in these documents is now either measured in the same
+commit that states it, or it is a guess wearing a number's clothes.**
+
+## R25 — The trigger needs its table, and nothing guaranteed one
+
+`globalSetup` runs before every suite. Six suites call `migrate(pool)` in their own
+`beforeAll` — that is, *after* it. So on an unmigrated database,
+`CREATE TRIGGER … ON webhook_endpoints` hits a table that does not exist and the
+lane dies before a single test.
+
+The documented paths are safe: CI runs `node services/api/dist/db/migrate.js`
+before `pnpm test:integration`, and `fresh-db.sh` migrates. What is exposed is a
+developer who creates a database and runs the lane directly — which works today,
+because the suites that need a schema build it themselves.
+
+`global-setup.ts` calls `migrate()` first. It is idempotent, keyed on
+`schema_migrations`, and it turns the lane from something that assumes a migrated
+database into something that guarantees one.
+
+## R26 — The reference that checked out
+
+The prose guide says the house voice is documented at `docs/07-tutorial-plan.md`,
+"Voice". Three passes had cited that guide without following the pointer, and it
+resolves: line 66, a table row rather than a heading — *"First person plural,
+present tense"*.
+
+Recorded because the expectation going in was a dangling reference, and a pass that
+lists only what it broke gives no sense of what it checked.

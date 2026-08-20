@@ -90,8 +90,14 @@ fired only when the row belongs to the sentinel:
 
 | Object | Kind | Responsibility |
 |---|---|---|
-| `__sentinel_guard()` | PL/pgSQL function | raise unless the session is exempt |
-| `__sentinel_guard_<table>` | row trigger | one per guarded table, `WHEN (OLD.environment_id = …0004)` |
+| `__sentinel_guard()` | PL/pgSQL function | raise unless the connection is exempt |
+| `__sentinel_guard_<table>` | row trigger | one per guarded table, firing when the row's environment is in `__sentinel_environments` |
+
+**Installation migrates first.** A trigger needs its table, and `globalSetup` runs
+before every suite — including the six that call `migrate(pool)` in their own
+`beforeAll`. On an unmigrated database the install would fail before a test ran.
+`migrate()` is idempotent, so calling it from `global-setup.ts` costs nothing and
+removes the lane's dependency on somebody else having migrated first.
 
 Guarded tables — those where a global operation can reach across tenants:
 `webhook_endpoints`, `webhook_deliveries`, `webhook_disable_notifications`,
