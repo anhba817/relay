@@ -1885,6 +1885,40 @@ mutation, not before the battery — and this is the evidence for it.
 
 ---
 
+## R46 — The sixth instance of the fault, and the first this chapter caused
+
+Chapter 3.7's baseline found four suites broken by tests asserting local facts
+about global operations. This chapter's baseline found a fifth, in
+`dispatcher.itest.ts`. All five were pre-existing.
+
+The sixth was mine. `notifications.itest.ts` drove the real disablement path by
+calling `sweepDisabledEndpoints(db)` — chosen deliberately, on the reasoning that
+the row under test should be the row the product writes rather than one the test
+invented. That reasoning was right and the function was wrong: the sweep is
+GLOBAL. It disables the hundred oldest eligible endpoints belonging to anybody,
+and run from a new suite it reached into `deliveries.itest.ts`'s fixture and
+disabled the endpoint whose entire test is that *the sweep* disables it.
+
+That suite then failed beside mine and passed alone — the signature this project
+has now seen six times.
+
+THE FIX IS NOT A BIGGER LIMIT. `deliveries.itest.ts` already passes `10_000` for
+exactly this reason, and a comment above it explains why. The problem is not that
+the batch filled; it is that a second caller performed a global mutation. So the
+new suite stopped doing that: `recordAttemptOutcome` reaches the same
+`disableEndpoint` through the on-outcome door, scoped to one delivery, and writes
+the same notification row.
+
+WHAT IS WORTH KEEPING. Every previous instance was found by inheriting somebody
+else's suite. This one was written from scratch, by someone who had read the
+other five, recorded them, and cited them in a chapter — and still reached for a
+global function because it was the most honest-looking way to drive the real
+path. "Use the real product code" and "do not perform global mutations from a
+test" are both good rules, and the second one loses to the first unless you check
+what the real product code's scope is.
+
+---
+
 ## What this chapter does NOT do
 
 - Quotas, spending caps, threshold emails, quota degradation — chapter 3.9, and the

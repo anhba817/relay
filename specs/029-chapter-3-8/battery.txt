@@ -157,3 +157,30 @@ Chapter 3.8's SKIP AHEAD names tag **`part3-ch8`**, and 3.9's names
 **`part3-ch9`**. Both point at the same tree — the transport's code shipped with
 the limiter, because the split was made on a word count rather than on a
 dependency, and `part3-ch9` marks the commit where its chapter was published.
+
+
+--------------------------------------------------------------------------------
+T070 — QUICKSTART V0-V11, END TO END
+--------------------------------------------------------------------------------
+
+Exit codes, not greps over output.
+
+  V0   stores up            postgres redis nats clickhouse mailpit all healthy
+  V1-7 limiter + socket     api limits 18 passed · gateway integration 21 passed
+  V8   nothing was lost     unit 242 passed (10 tasks) · integration 223 passed
+  V9   the transport        notifications 9 passed
+  V10  sabotage             5 mutations, each reverted byte-identical (§4)
+  V11  cross-reference      0 forward references in live source
+
+  site  check:fences        165 files, 26 chapters, 26 translated, mirrored
+  site  check:docs          all mirrored docs match
+  site  lint                exit 0
+  site  build               exit 0, four new routes prerendered
+
+V8 FAILED THE FIRST TIME IT WAS RUN HERE, and the failure was this chapter's own:
+`notifications.itest.ts` drove disablement through `sweepDisabledEndpoints`,
+which is global, and disabled the endpoint `deliveries.itest.ts` exists to watch
+the sweep disable. That suite failed beside the new one and passed alone — the
+sixth instance of this project's recurring fault and the first one this chapter
+caused rather than inherited. Research R46. Fixed by driving the same
+`disableEndpoint` through `recordAttemptOutcome`, which is scoped to one delivery.
