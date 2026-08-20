@@ -1,45 +1,43 @@
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-`specs/029-chapter-3-8/plan.md` (feature: Tutorial Chapter 3.8 — "Limits you can
-see coming": per-environment FIXED-WINDOW counters in Redis (`rl:{env}:{op}:{window}`,
-INCR + EXPIRE, no Lua) on REST requests, message sends and connection
-establishment, with `X-RateLimit-Limit/-Remaining/-Reset` on 2xx AS WELL AS 429 —
-that is FR-RTL-02 and the requirement an afterthought passes. Fixed window, not a
-token bucket, because `Reset` must name one moment and a refilling bucket's honest
-answer is a curve; the cost is up to 2x the limit across a window boundary and the
-chapter states it. Policy lives in Postgres as three NULLABLE columns on
-`environments` (null = use default; null is NOT zero, because refuse-everything
-must stay expressible). Defaults 600/600/60 per minute, 10 failed auths per IP.
-THE CHAPTER'S ARGUMENT IS THE FAILURE DIRECTION: the tenant limiter FAILS OPEN
-(Redis is not a source of truth, SAD §6.3 — a cache outage must not refuse paid
-traffic) and the auth limiter MUST NOT (failing open there is a hole, not a
-degradation). Research R3 settled the third answer: an in-process fallback counter,
-same threshold, so the guarantee weakens from N/window/fleet to N/window/instance —
-bounded, capped, and it STOPS ADMITTING new keys rather than evicting, because
-eviction is what an attacker drives. Two middleware positions, forced: the tenant
-limiter after `AuthenticateMiddleware` (needs the principal), the auth counter
-inside it (must work when there is none). RESEARCH R5 FOUND A SECOND UNENFORCED
-CONTRACT: constitution V's error envelope has been THREE fields since chapter 1.3,
-above a comment promising `request_id` "joins in Part 2, when a gateway exists to
-mint one" — it never did. Added to EVERY error response, not just the 429
-(`frames.ts`, `protocol-error.filter.ts`, `service-kit`). So `rate_limited`, close
-code 4008 and `request_id` are all vocabulary declared and never wired; this
-chapter enforces two and explains why 4008 STAYS UNUSED (it means quota exhausted;
-quota is 3.9). WS handshake refusal is an HTTP 429 BEFORE the handshake (Retry-After
-has nowhere to live on a close frame) — deliberately unlike 4001, which completes
-the handshake by design. A limited frame gets an `error` frame and the connection
-STAYS OPEN. The internal service seam is exempt (FR-009): throttling the dispatcher
-stalls every customer. Second half: the EMAIL TRANSPORT chapter 3.6 deferred, which
-is the OUTBOX A THIRD TIME over `webhook_disable_notifications` — it already has
-`delivered_at`, so claim/send/mark needs no migration and no new column, and 3.6's
-backlog drains as ordinary undelivered work. Mailpit in `compose.yaml` + nodemailer;
-tests read what was RECEIVED, because FR-021 forbids a secret in an email and only
-the received message can prove it. `humans.email` is NULLABLE so the unaddressable
-recipient is a real branch. RESEARCH R10 IS A WARNING: ~30 fences against a
-2,000-4,000 word bound (3.5 shipped 39 on an estimate of 22; 3.6 ran 5,273 words).
-The transport is the separable 7 and the phase order puts it LAST so it can lift
-into its own chapter with the word count in hand. Part 3 renumbered again: quotas
-3.9, gauntlet 3.10 — and it cost ZERO fence amendments, which is the first evidence
-3.7's stop-citing-movable-numbers rule paid for itself).
+`specs/030-global-operation-guard/plan.md` (feature: "The fault that only shows up
+in company" — test infrastructure, NOT a tutorial chapter, so every fence it
+produces goes to `relay-tutorial/fences/post-series.md` and `docs/07-tutorial-plan.md`
+records it under "Work that publishes no chapter". SEVEN times a test has asserted a
+local fact about a GLOBAL operation and every one passed alone: a sweep whose batch
+never reached its own endpoint, a drain holding a lock, a consumer on a fixed budget
+against a growing stream, a `count(*)` compared against itself TWICE in the same file
+four chapters apart, a drain at a default batch of fifty, and — in chapter 3.9 — a
+global MUTATION that disabled a neighbouring suite's fixture. The sixth was written by
+someone who had recorded the other five and cited them in a chapter, which is why the
+remedy is not an eighth rule: THE FAULT IS INVISIBLE IN ISOLATION, and the fix is to
+make it fail alone. TWO SHAPES needing different remedies: READER (a test asserts on a
+global batch or count another suite's rows fill) and WRITER (a test performs a global
+mutation and damages a neighbour). The reader remedy does nothing for the writer shape
+— instance 6 passed no limit and got 100; passing 10,000 would have been WORSE.
+RESEARCH CHANGED THE CENTRAL MECHANISM (R6): the spec assumed a before/after checksum
+of sentinel rows and conceded attribution would need serial execution. That concession
+is fatal, because R5 measured that legitimate global sweeps happen on EVERY lane run —
+six suites drive them on purpose — so a checksum fires constantly or blames bystanders.
+A PL/pgSQL trigger raises INSIDE THE OFFENDING TRANSACTION instead, verified against
+the real schema: exact attribution under parallel file execution, no serial diagnosis
+mode, and it catches raw SQL that no lint rule or wrapped import can see. That is a
+second language against constitution VII and is recorded in Complexity Tracking with
+the measured evidence VII's escape clause asks for. Exemption is a session GUC
+(`SET relay.allow_global = 'on'`) set only by the lane's setup hook from an AUDITABLE
+LIST OF PATHS, never a pattern — a pattern silently absorbs the next file, which is the
+failure mode this whole feature is about. R1 IS THE COUNTERINTUITIVE ONE: the developer
+machine that shipped 3.9 already holds 8,364 due deliveries and 17,542 environments, so
+it supplies the adversarial condition by accident and the lane passes on both fresh and
+polluted. A FRESH database is the EASY condition — which is what CI and a new clone run
+— so the bait exists to make fresh behave like aged. R2: three of the four baits were
+eaten in a single lane pass, so planting must be PER FILE, not a one-shot globalSetup.
+R4: 200 addressable bait notifications turned one suite's drain into 200 SMTP sends and
+a 10-second timeout, so the sentinel organisation has NO addressable member and each
+bait row costs one log line. Bait sizes derive from the exported batch constants
+(max is 100, in `outbox/relay.ts` and `sweepDisabledEndpoints`), never literals.
+`sweepDisabledEndpoints(db, limit = 100)` is the last default and loses it — but R8
+says plainly that removing it would NOT have prevented instance 6: the required
+argument is a prompt to think, the trigger is the control.)
 <!-- SPECKIT END -->
