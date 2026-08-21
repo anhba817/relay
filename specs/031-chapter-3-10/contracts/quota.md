@@ -15,7 +15,10 @@ quota — the quota will still be exceeded in sixty seconds and in an hour.
 `402` is the status whose meaning is "this is a commercial condition, not a timing
 one", and it carries no header that suggests waiting.
 
-**Body**, the same four fields chapter 3.8's refusal carries:
+**Body** — **the envelope is `ProtocolErrorFilter`'s, not this contract's.** Four
+fields, built across chapters 1.4, 2.2, 3.2 and 3.8, and `docs_url` is **derived
+from the code** rather than supplied: `` `https://relay.example/docs/errors/${code}` ``.
+The example below is what the filter will emit, not a second specification of it:
 
 ```json
 {
@@ -37,6 +40,14 @@ message, but a header a client will sleep on is wrong when the wait is three wee
 **Distinguishable from `rate_limited` by code, not by status alone** (FR-008). A
 client switching on `code` gets the right answer; a client switching on status
 gets the right answer too, because the statuses differ.
+
+**THE THROWER MUST NAME THE CODE.** `ProtocolErrorFilter` falls back to a code by
+status for 400, 401, 403 and 404, and **everything else becomes
+`internal_error`** — so a `402` thrown without `{ code: "quota_exceeded" }` in its
+response object emits a body that calls itself an internal error while carrying a
+`402`. That is the same lie chapter 2.2 fixed for 400 and chapter 3.2 for 403, and
+the mechanism 3.2 added — a thrower naming its own code — is what this depends on.
+The test asserts the emitted `code`, not only the status.
 
 **What is not refused**: history reads, connection establishment, backfill,
 webhook delivery of already accepted messages. The refusal is raised in

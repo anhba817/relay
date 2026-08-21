@@ -162,7 +162,10 @@ the mail server, then drive it across again and confirm nothing new arrives.
   configured, and MUST refuse everything.
 - **FR-007**: When usage is at or above a hard cap, message sends MUST be refused.
 - **FR-008**: A quota refusal MUST carry an error code distinct from the rate-limit
-  refusal, and a message naming the quota, the period, and the figure.
+  refusal, and a message naming the quota, the period, and the figure. The code MUST
+  be **named by the thrower** rather than left to be inferred from the status: the
+  error envelope infers a code for four statuses and calls everything else an
+  internal error, which a refusal that is not an internal error must not become.
 - **FR-009**: When usage is at or above a hard cap, message history reads MUST
   succeed.
 - **FR-010**: When usage is at or above a hard cap, existing connections MUST stay

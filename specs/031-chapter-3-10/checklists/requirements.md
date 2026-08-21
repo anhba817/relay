@@ -79,6 +79,33 @@ belongs to T028, which is where the crossing write is introduced.
 
 The counts moved: 75 tasks to 78, 22 requirements to 23.
 
+## Second analysis pass, 2026-08-21
+
+Seven findings, three HIGH, no CRITICAL, no constitution violation. All seven
+applied.
+
+**Pass 1 read the documents against each other and found thirteen things. This
+pass read them against the code and found seven, and every HIGH was a claim the
+plan made confidently about architecture nobody had opened.**
+
+- **H1** — the plan costed "two controller mappings". This service has none:
+  `ProtocolErrorFilter` is `@Catch()`-all and globally registered, and both send
+  routes converge on one `messages.send`. The refusal is one throw.
+- **H2** — extending `environmentLimits` would have made every WebSocket connect
+  pay for a usage join, because `internal/session.controller.ts:67` uses it to hand
+  the gateway its limits. Removing the extension made the design smaller: the caps
+  are read once, inside the transaction that enforces them.
+- **H3** — an unnamed `402` emits `code: "internal_error"`. The envelope infers a
+  code for four statuses and calls everything else internal. Nothing said the
+  thrower must name its code.
+
+Two of the three made the plan simpler rather than larger, which is the argument
+for running this pass before implementation rather than discovering it there.
+
+The counts moved: 78 tasks to 79, and one task (T013a) inverted — it used to say
+"rename it", it now says "leave it alone and confirm both call sites are
+untouched".
+
 **SC-009 cannot be evaluated until the chapter is written.** It is the size gate,
 and chapter 3.8 established that it is counted on the finished page rather than
 estimated — three of Part 3's four splits were discovered mid-chapter.

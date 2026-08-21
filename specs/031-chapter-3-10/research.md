@@ -79,29 +79,58 @@ usage increment commit together, which is what bounds the overshoot the spec's
 edge case admits to. Constitution IV: the single writer for a message is also the
 single writer for the count of messages.
 
-The consequence, stated because it is a cost: the refusal is raised in the
-repository layer, and each controller maps it to its own transport's shape. Two
-mappings rather than one middleware.
+**An earlier draft of this section claimed a cost that does not exist**: "the
+refusal is raised in the repository layer, and each controller maps it to its own
+transport's shape — two mappings rather than one middleware". Neither half is
+true, and both were assumed rather than checked.
+
+The two routes converge before they reach the repository. `internal.controller.ts`
+calls `this.messages.send`; `messages.service.ts:43` calls `this.repo.sendMessage`.
+One service method, not two paths.
+
+And nothing maps errors per controller. `ProtocolErrorFilter` is `@Catch()`-all and
+registered globally through `APP_FILTER` in `app.module.ts`, and chapter 3.2
+already established how a thrower names its own code: throw an `HttpException`
+whose response object carries `code`, and the filter emits the four-field envelope
+with `docs_url` derived from that code. Two hand-written envelopes would be exactly
+the drift EIR-API-04 and that filter exist to prevent.
+
+**So the refusal is one throw**, from the service boundary, and the transport shape
+is somebody else's already-solved problem.
 
 **Alternatives considered**: a second middleware covering `/internal` would put
 the check outside the transaction, making the overshoot unbounded under
 concurrency instead of bounded by it, and would still miss any future caller of
 `sendMessage`.
 
-## R4 — The caps ride a query the request already makes
+## R4 — The caps are read once, inside the transaction, and nowhere else
 
-`environmentLimits(db, environmentId)` already reads the environment row on every
-`/v1` request, for chapter 3.8's policy. The quota caps belong on the same row —
-the shape 3.8 chose, nullable columns where null means "no override" — and the
-usage row joins to it by `(environment_id, period)`.
+The first version of this section proposed extending
+`environmentLimits(db, environmentId)` — the per-request policy read chapter 3.8
+added — to return the quota caps and current usage as well, so that "the request
+path gains no query".
 
-**Decision**: one query returning limits, caps and current usage. FR-020 is then
-satisfied by construction rather than by care: the send path gains no query, only
-columns and a join on two primary keys.
+**It was solving a problem the design does not have, and it would have created
+one.** Two things it missed:
 
-The send path proper still needs the numbers inside the transaction, so the
-transaction reads the usage row it is about to update — one indexed row, taken
-`FOR UPDATE` alongside the channel row `sendMessage` already locks.
+- **`environmentLimits` has a second caller.** `internal/session.controller.ts:67`
+  uses it to hand the gateway its connect and send limits on every WebSocket
+  connect — the gateway has no database and must not gain one (chapter 3.8's R12).
+  Extending the function makes every connect pay for a usage join it never reads,
+  and renaming it edits a response shape that is a contract with another service.
+- **The middleware read would be advisory anyway.** Enforcement happens inside the
+  send transaction (R3), where the row is taken `FOR UPDATE` to bound the overshoot
+  (R8). A cap read in middleware and re-read in the transaction is the same data
+  fetched twice, and only the second one decides anything.
+
+**Decision**: `environmentLimits` is untouched, and the caps and usage are read
+exactly once — in `sendMessage`'s transaction, one indexed row taken `FOR UPDATE`
+alongside the channel row it already locks.
+
+FR-020 is satisfied on its own terms rather than by the trick: it forbids a query
+that **scans the message table**, and this adds two index lookups inside a
+transaction that was already open. It does add a query, and saying otherwise was
+the error pass 1 caught in T018.
 
 ## R5 — There is no sweep, and that is the interesting result
 
@@ -189,9 +218,15 @@ that are easy to get wrong:
 
 ## R10 — The error code and the documentation that is not there
 
-Chapter 3.8 shipped `rate_limited` with
-`docs_url: "https://relay.example/docs/errors/rate_limited"`, which resolves to
-nothing. This chapter adds a second code with the same problem.
+Chapter 3.8 shipped `rate_limited` with a `docs_url` that resolves to nothing, and
+this chapter adds a second code with the same problem.
+
+**The debt is older than 3.8 and already recorded in the code.**
+`protocol-error.filter.ts` derives every `docs_url` from the code —
+`` `https://relay.example/docs/errors/${code}` `` — and its header comment has said
+since chapter 1.4: *"The docs_url host is a placeholder until the docs site exists
+(constitution V's reachable-page promise)."* 3.8 inherited it; it did not create
+it, and an earlier draft of this section said otherwise.
 
 **Decision**: add the code, keep the `docs_url` shape consistent with 3.8, and do
 not fix the underlying gap here. Chapter 3.12 is the Phase 2 exit criterion — *an

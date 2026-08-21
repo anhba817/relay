@@ -20,8 +20,14 @@ The shape research settled on:
   `messages` has no `environment_id` and no index on `created_at` (research R1).
 - **Enforced in `Repository.sendMessage`, not in middleware.** Chapter 3.8's
   limiter never sees `/internal/messages`, which is how a WebSocket send arrives.
-  `sendMessage` is the one point both routes pass through, and it already owns the
-  write transaction, so the check and the increment commit together (R3).
+  Both routes converge on one service method — `internal.controller.ts` calls
+  `messages.send`, which calls `repo.sendMessage` — and it already owns the write
+  transaction, so the check and the increment commit together (R3).
+- **The refusal is one throw, not a per-controller mapping.**
+  `ProtocolErrorFilter` is `@Catch()`-all and globally registered, and chapter 3.2
+  established how a thrower names its own code. Caps and usage are read once,
+  inside that transaction; `environmentLimits` is left alone, because its second
+  caller is the WebSocket session path and it must not grow a join (R4).
 - **No periodic sweep.** Usage rises only on a send, and the send transaction knows
   the value before and after — so it knows which thresholds it crossed and writes
   the notification rows itself. Feature 030's guard is never engaged and no file
@@ -52,10 +58,10 @@ refusal and the relay; Mailpit reads for what an admin actually received.
 
 **Project Type**: web service — an existing multi-service TypeScript monorepo.
 
-**Performance Goals**: no additional query on the request path (FR-020). The
-per-request policy read that chapter 3.8 added gains three columns and a join on
-two primary keys; the send transaction gains one indexed row read taken
-`FOR UPDATE` alongside the channel row it already locks.
+**Performance Goals**: no query on the send path that **scans** the message table
+(FR-020). It does gain one query — the usage row read taken `FOR UPDATE` alongside
+the channel row `sendMessage` already locks — and that is two index lookups inside
+an open transaction. Chapter 3.8's per-request policy read is untouched.
 
 **Constraints**: usage figures must be identical across a counter-store flush
 (FR-002). Sends refused while history reads and open connections are untouched
@@ -152,7 +158,7 @@ sequence with two numbering schemes is a trap for whoever reads them in order.
 | 1 | Baseline: record the lane's current timings and coverage before anything changes | — |
 | 2 | Foundational: the migration, the schema, the period function, the threshold arithmetic | FR-001, FR-003, FR-005, FR-006 |
 | 3 | **US1** — the roll-up written in the send transaction, and the flush test | FR-001, FR-002, FR-004, FR-020 |
-| 4 | **US2** — the cap, the refusal, the two controller mappings, the degradation tests | FR-007 to FR-013a |
+| 4 | **US2** — the cap, the named refusal thrown at the service boundary, the degradation tests | FR-007 to FR-013a |
 | 5 | **US3** — thresholds, the fourth table, the relay, the Mailpit reads | FR-014 to FR-019 |
 | 6 | Verification: twenty lane runs, coverage, the guard prediction, the transcripts | SC-001 to SC-008 |
 | 7 | The chapter in English, and the size count | SC-009, FR-022 |
@@ -171,4 +177,4 @@ subject.
 |---|---|---|
 | A third and fourth table (`usage_active_users`, `quota_notifications`) | Distinct-user counting cannot be an increment (R2); the notification needs a claim predicate that survives a crash | HyperLogLog in Redis loses the month on a flush, which FR-002 forbids. Reusing `webhook_disable_notifications` is impossible — `endpoint_id` is `NOT NULL` |
 | `FOR UPDATE` on the usage row inside the send transaction | Bounds the cap overshoot to one message rather than to concurrency (R8) | Without it the check is advisory. The cost is that sends to one environment serialise on one row, and Phase 6 measures that rather than assuming it is acceptable |
-| The refusal raised in the repository layer, mapped in two controllers | `sendMessage` is the only point both send routes pass through (R3) | A second middleware over `/internal` would move the check outside the transaction and still miss any future caller |
+| The refusal raised in the repository layer and thrown as a named `HttpException` at the service boundary | `sendMessage` is the only point both send routes pass through (R3), and `ProtocolErrorFilter` already turns a named code into the four-field envelope | A second middleware over `/internal` would move the check outside the transaction and still miss any future caller. **An earlier draft of this row said "mapped in two controllers"** — there are no per-controller mappings in this service, and adding two would be the drift EIR-API-04 forbids |
