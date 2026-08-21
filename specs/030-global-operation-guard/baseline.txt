@@ -243,37 +243,47 @@ three-letter domain. `vitest.coverage.config.mts:187` has one more. That is the
 same leak at four times the size, it predates this feature, and fixing it would
 rewrite prose inside regions five chapters fence.
 
-T034 — TWENTY RUNS, INTERRUPTED AT SIX (resume point)
+T034 — TWENTY RUNS, ZERO FALSE POSITIVES (SC-003)
 --------------------------------------------------------------------------------
 
-Stopped by request part-way; to be re-run from scratch, not continued — twenty
-CONSECUTIVE runs is the claim, and six plus fourteen tomorrow is not that.
+  relay-platform frozen at d3002fa
 
-  relay-platform frozen at faa97cc
-  run  1  exit=0  187s  failing-files=0
-  run  2  exit=0  187s  failing-files=0
-  run  3  exit=0  187s  failing-files=0
-  run  4  exit=0  186s  failing-files=0
-  run  5  exit=0  186s  failing-files=0
-  run  6  exit=0  188s  failing-files=0
+  run  1  exit=0  190s      run 11  exit=0  186s
+  run  2  exit=0  186s      run 12  exit=0  186s
+  run  3  exit=0  187s      run 13  exit=0  186s
+  run  4  exit=0  187s      run 14  exit=0  186s
+  run  5  exit=0  183s      run 15  exit=0  187s
+  run  6  exit=0  187s      run 16  exit=0  184s
+  run  7  exit=0  186s      run 17  exit=0  184s
+  run  8  exit=0  186s      run 18  exit=0  187s
+  run  9  exit=0  186s      run 19  exit=0  186s
+  run 10  exit=0  187s      run 20  exit=0  184s
 
-Six green, 186-188s each — flat to within two seconds, so the lane does not slow
-as the database ages across runs. That flatness is worth as much as the green.
+  20 green, 0 red.  min 183s, max 190s, mean 186.05s, 62.0 minutes total.
+  Every run: 8 + 177 + 16 + 21 + 9 = 231 tests.
 
-The EARLIER attempt at this step failed on run 1 and is the reason the tree moved:
-`notifications.itest.ts` timed out at 5,000ms because 3,400 bait notification rows
-cost about 1.4ms each to drain (research R49). Three full lanes had passed on that
-same tree beforehand.
+**THE FLATNESS IS THE OTHER HALF OF THE RESULT.** Twenty runs against a database
+that is never reset, spread over seven seconds of range and with no upward drift.
+An earlier shape of the bait did drift, and that is what runs 4 and 9 of the two
+previous attempts were telling us.
 
-To resume:
+IT TOOK FOUR ATTEMPTS, AND EACH RED RUN WAS A REAL DEFECT
+--------------------------------------------------------------------------------
 
-  bash <scratchpad>/030/twenty.sh          # wipes and re-runs all twenty
-  # or, from the repository:
-  for i in $(seq 1 20); do pnpm test:integration || break; done
+  attempt 1   stopped at 6 green   (tree was being edited underneath it)
+  attempt 2   red on run  1        research R49 — planted notification rows were
+                                   claimable, 3,400 of them at 1.4ms
+  attempt 3   red on run  4        research R51 — 200 sweep-bait endpoints per file
+                                   meant 3,799 sweep-WRITTEN notifications for a
+                                   different suite's drain
+  attempt 4   red on run  9        research R52 — the one drain-driving suite in the
+                                   lane running on vitest's 5,000ms default
+  attempt 5   20 green
 
-Then T036 (quickstart V0-V11), the remaining transcripts in T037, and T045's tag.
+Not one of the four was a false positive from the guard, which is what SC-003 asks
+about. Three were the harness's own cost landing somewhere it had not been
+measured; the fourth was a budget that had been under its own measured cost since
+chapter 3.8.
 
-**Restarted at d5ab5cb**, which is faa97cc plus research R50's fix — the harness had
-been the only task in the repository that required `DATABASE_URL`, so a plain
-`pnpm test:integration` from a clean shell failed on the one package this feature
-added. Six green runs do not carry across a tree change, so the count begins again.
+Chapter 3.7 spent four attempts and about four hours on its twenty and found four
+faults. This one spent five attempts and found three.
