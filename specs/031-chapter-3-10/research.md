@@ -276,7 +276,7 @@ services/api/src/db/repository.ts             15
 services/api/src/db/schema.ts                 10
 services/api/src/app.module.ts                 8
 services/api/src/messages/messages.service.ts  7
-relay-platform/vitest.coverage.config.mts      5
+vitest.coverage.config.mts                     5
 services/api/vitest.integration.config.mts     2
 ```
 
