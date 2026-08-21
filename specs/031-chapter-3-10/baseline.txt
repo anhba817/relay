@@ -265,3 +265,52 @@ PHASE 4 — US2, AND WHAT THE GUARD SAID
   produces three refusals and the integration lane produces nine**, because they
   run different suites against the same database. A lane's exit code says nothing
   about either number.
+
+PHASE 5 — US3, THE SEAM
+--------------------------------------------------------------------------------
+
+  integration lane  exit=0  191s
+      @relay/api             200      (+6 from Phase 4, +23 from the baseline)
+      @relay/gateway          21
+      @relay/dispatcher       16
+      @relay/e2e              10
+      @relay/test-harness      8
+      TOTAL                  255      (from 231 at T002)
+
+  GUARD REFUSALS DURING THE RUN: 3, all `webhook_endpoints`, all
+  `guard.itest.ts`'s own. **NONE NAMES A QUOTA TABLE.** Research R5 predicted this
+  design engages the guard nowhere, and after three phases of writing to
+  `usage_periods`, `usage_active_users` and `quota_notifications` it still does.
+
+  Down from 9 in Phase 4, because the six residual `dispatcher.itest.ts` refusals
+  need a sentinel endpoint that is still enabled, and by now the sweeps have
+  disabled them for good. The number moves with the database's history, not with
+  the tree — which is the reason T034 runs against a freshly migrated one.
+
+T028a — THE CONSTRAINT IS WHAT MAKES IT AT-MOST-ONCE
+--------------------------------------------------------------------------------
+
+  Two identical crossings inserted directly, bypassing the code path entirely:
+
+      NOTICE:  refused by quota_notifications_once_per_threshold
+      NOTICE:  rows for that threshold: 1
+
+  FR-015 is a schema property, not a promise the writing code makes. A concurrent
+  double-crossing resolves to one row rather than two emails, and it would do so
+  even if `recordCrossings` were wrong.
+
+TWO TEST EXPECTATIONS I GOT WRONG, AND WHAT THEY WERE
+--------------------------------------------------------------------------------
+
+  Both in the Mailpit tests, both mine rather than the code's:
+
+  1. **"Two crossings on the way"** for a cap of 4 over four sends. It is three:
+     80% of 4 is 3.2, so no message lands on 80 and the fourth clears 80 and 100
+     in one step. The test's own NAME said three emails while its assertion said
+     two.
+  2. **Sorting subjects as strings** puts "100%" before "50%". The assertion now
+     extracts the percentages and compares them as numbers, which is what it
+     meant all along.
+
+  Neither was a defect in the implementation, and both are the kind of thing that
+  would have passed unnoticed had the numbers been rounder.
