@@ -1423,3 +1423,59 @@ CONTEXT:  PL/pgSQL function __sentinel_guard() line 41 at RAISE
 No import to lint and no test to attribute to — exactly the case R6 argued only a
 database-side check can see. The cleanup succeeded once reissued through a
 connection carrying `options=-c relay.allow_global=all`.
+
+## R52 — The only drain-driving suite on vitest's default budget
+
+Run 9 of twenty, after eight green:
+
+```
+FAIL src/notifications/notifications.itest.ts >
+     does not let ONE undeliverable row block every row behind it
+Error: Test timed out in 5000ms.
+```
+
+A **different** test from run 4's, in the same file, at the same 5,000ms. The
+backlog theory does not explain this one — the database held 58 undelivered
+notifications at the time and none of them belonged to a sentinel, so R51's fix was
+holding.
+
+What the file actually is:
+
+| suite | explicit test timeouts |
+|---|---|
+| `deliveries.itest.ts` | 60_000, 120_000, 180_000 |
+| `test-event.itest.ts` | 60_000, 90_000 |
+| `attempts.itest.ts` | 30_000, 60_000 |
+| `outbox.itest.ts` | 30_000, 60_000 |
+| **`notifications.itest.ts`** | **none — only its `beforeAll` declares one** |
+
+All nine of its tests drive a global relay drain and then wait on a real SMTP
+round-trip to Mailpit, and all nine ran on the 5,000ms default. Their measured
+cost, with the lane running seventeen files in parallel:
+
+```
+✓ sends what the organisation needs, and Mailpit confirms the contents   653ms
+✓ sets delivered_at only AFTER the send returns                         1953ms
+✓ does not send a delivered row twice                                   1957ms
+✓ sends twice for an endpoint disabled, re-enabled and disabled again    1446ms
+✓ handles an organisation nobody can be written to                       861ms
+✓ sends to EVERY member with an address, one message each               1014ms
+✓ does not take anything else down with it when the mail server is gone   482ms
+```
+
+Half a second to two seconds, against a budget of five. That is not a margin, and
+two different tests have now used it up on two different runs.
+
+**Decision**: 30 seconds on every test in the file — the budget its siblings have
+always declared, not a concession extracted by a red run.
+
+**This is not a twelfth instance of the recurring fault**, and it is worth being
+precise about the difference rather than adding it to a count. The class is a test
+asserting a local fact about a *global operation*; this is a test whose *wall-clock
+budget* was set below its own measured cost. The shared growing resource is the
+machine, not the table.
+
+Feature 030 exposed it rather than caused it. The seeder makes the lane busier and
+thinned an excursion headroom that was always this thin — which is also why the
+file passed for four chapters and fails now. `notifications.itest.ts` is fenced by
+no chapter, so there is no post-series amendment for it.
