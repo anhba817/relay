@@ -70,7 +70,7 @@ Platform paths are relative to `relay-platform/`, tutorial paths to
 - [ ] T016 [US1] Write `services/api/src/quotas/quotas.itest.ts`: N messages from M distinct users produce exactly N and M; a second environment of the same application reports zero; a previous month's row stays readable after the boundary
 - [ ] T016a [US1] **Add the flush test to `services/api/src/quotas/quotas.itest.ts`** (SC-001, FR-002): read the figures, `FLUSHALL` the counter store, read again, assert identical. This is the test that separates a quota from chapter 3.8's limiter, and it is the reason the roll-up exists
 - [ ] T016b [US1] **Confirm the flush test can fail.** Point `usageFor` in `services/api/src/db/repository.ts` at the counter store instead of the roll-up, watch it go red, and revert byte-identical by `md5sum`. A test whose failure has never been seen is a test nobody has checked
-- [ ] T017 [US1] **Commit `relay-platform` before T016b's mutation, not just before the phase.** Chapter 3.9 lost a fix to exactly this revert step, in the chapter that warned about it twice in bold
+- [ ] T017 [US1] **Commit `relay-platform` before T016b's mutation of `services/api/src/db/repository.ts`, not just before the phase.** Chapter 3.9 lost a fix to exactly this revert step, in the chapter that warned about it twice in bold
 - [ ] T018 [US1] Measure the send path against T002's figure and record it in `baseline.txt`: the request path must gain no query (FR-020, SC-006). Record the number, not the verdict
 
 **Checkpoint**: usage is counted and survives a flush. Ships alone as observability with nothing enforced.
@@ -84,18 +84,18 @@ Platform paths are relative to `relay-platform/`, tutorial paths to
 **Independent test**: quickstart V3 and V4 — one refused send and one successful history read against the same environment in the same test, plus a WebSocket send refused with the socket intact.
 
 - [ ] T019 [US2] Write `services/api/src/quotas/quota.error.ts`: the error the repository raises, carrying dimension, usage, quota and period. **Not an HTTP concern** — the repository layer does not know what status a caller will map it to
-- [ ] T020 [US2] Add the cap check to `Repository.sendMessage`, before the message insert, reading the usage row **`FOR UPDATE` alongside the channel row the transaction already locks** (research R8)
+- [ ] T020 [US2] Add the cap check to `Repository.sendMessage` in `services/api/src/db/repository.ts`, before the message insert, reading the usage row **`FOR UPDATE` alongside the channel row the transaction already locks** (research R8)
 - [ ] T020a [US2] **Record beside the lock in `services/api/src/db/repository.ts` what it buys and what it costs.** It bounds the overshoot to one message — the one that crosses — rather than to concurrency. The cost is that sends to one environment serialise on one row, and T033 measures that rather than assuming it is acceptable
 - [ ] T021 [US2] Map the error in `services/api/src/messages/` to `402` with the body `contracts/quota.md` §1 specifies
 - [ ] T021a [US2] Map the same error in `services/api/src/internal/internal.controller.ts`, the route the gateway posts a WebSocket send to. **Two mappings, and this is the second** — research R3 records why there is no single middleware that could have done both
-- [ ] T021b [US2] **Record in both controllers why the status is `402` and not `429`.** A client that retries after `Retry-After` is correct for a rate limit and wrong for a quota, which will still be exceeded in an hour. No `Retry-After` header; the resume date is in the message
+- [ ] T021b [US2] **Record in `services/api/src/messages/` and `services/api/src/internal/internal.controller.ts` why the status is `402` and not `429`.** A client that retries after `Retry-After` is correct for a rate limit and wrong for a quota, which will still be exceeded in an hour. No `Retry-After` header; the resume date is in the message
 - [ ] T022 [US2] Write the degradation tests in `services/api/src/quotas/quotas.itest.ts`: with usage above the cap, a send is refused **and** a history read succeeds, in the same test against the same environment (SC-002)
-- [ ] T022a [US2] Assert the refusal body names the dimension, the usage, the quota and the resume date, **by reading the whole body rather than asserting on its fields**. Chapter 3.8's header bug was found by printing a response and not by any of the eighteen tests asserting on its parts
-- [ ] T023 [US2] Test that a cap of zero refuses everything and that a null cap refuses nothing (FR-006)
-- [ ] T024 [US2] Test that raising the cap above usage restores sending on the next request, with no restart and nothing to clear (SC-007, FR-012)
-- [ ] T025 [US2] Test that a cap lowered below current usage takes effect immediately, and that the 100% crossing is recorded if it has not been this period
+- [ ] T022a [US2] In `services/api/src/quotas/quotas.itest.ts`, assert the refusal body names the dimension, the usage, the quota and the resume date, **by reading the whole body rather than asserting on its fields**. Chapter 3.8's header bug was found by printing a response and not by any of the eighteen tests asserting on its parts
+- [ ] T023 [US2] In `services/api/src/quotas/quotas.itest.ts`, test that a cap of zero refuses everything and that a null cap refuses nothing (FR-006)
+- [ ] T024 [US2] In `services/api/src/quotas/quotas.itest.ts`, test that raising the cap above usage restores sending on the next request, with no restart and nothing to clear (SC-007, FR-012)
+- [ ] T025 [US2] In `services/api/src/quotas/quotas.itest.ts`, test that a cap lowered below current usage takes effect immediately, and that the 100% crossing is recorded if it has not been this period
 - [ ] T026 [US2] Write the gateway-side test in `services/gateway/src/` or `packages/e2e/`: a WebSocket send refused by the cap, **and the socket still open and still receiving sixty seconds later** (SC-003, FR-010)
-- [ ] T027 [US2] Test that webhook delivery continues for messages accepted before the cap was reached (FR-011, constitution II)
+- [ ] T027 [US2] In `services/api/src/quotas/quotas.itest.ts`, test that webhook delivery continues for messages accepted before the cap was reached (FR-011, constitution II)
 
 **Checkpoint**: the cap refuses sends through both doors and nothing else changes.
 
@@ -109,17 +109,17 @@ Platform paths are relative to `relay-platform/`, tutorial paths to
 
 **Independent test**: quickstart V5 and V6.
 
-- [ ] T028 [US3] Write the threshold-crossing insert into `Repository.sendMessage`'s transaction: for each threshold `thresholdsCrossed` returns, one row in `quota_notifications`. **In the same transaction as the message** — the crossing and the thing that caused it commit together or neither does
-- [ ] T028a [US3] **Confirm the unique constraint is what makes it at-most-once**, not the code path. Write a test that inserts the same crossing twice and asserts one row (FR-015)
+- [ ] T028 [US3] Write the threshold-crossing insert into `Repository.sendMessage`'s transaction in `services/api/src/db/repository.ts`: for each threshold `thresholdsCrossed` returns, one row in `quota_notifications`. **In the same transaction as the message** — the crossing and the thing that caused it commit together or neither does
+- [ ] T028a [US3] **Confirm the unique constraint is what makes it at-most-once**, not the code path. Write a test in `services/api/src/quotas/quotas.itest.ts` that inserts the same crossing twice and asserts one row (FR-015)
 - [ ] T029 [US3] Write `services/api/src/quotas/quota-relay.ts` on chapter 3.9's shape: claim rows with `delivered_at IS NULL`, deliver, mark. **Per-row error handling with a required `onError`** — feature 030's R48 removed the default from `drainDisableNotifications` for a reason, and the fourth relay should not reintroduce it
-- [ ] T029a [US3] **Give the drain a required batch size.** All four batch-taking functions require one as of feature 030; a fifth that carries a default would undo that
-- [ ] T030 [US3] Write the email body in `services/api/src/quotas/` per `contracts/quota.md` §2: application and environment kind named as a human would name them, the percentage, the usage, the quota, the period as a month, and what happens next
-- [ ] T030a [US3] **At 100% of a soft threshold with no hard cap, the email must say nothing was refused.** An email that threatens a suspension which will not happen is worse than no email
+- [ ] T029a [US3] **Give the drain in `services/api/src/db/repository.ts` a required batch size.** All four batch-taking functions require one as of feature 030; a fifth that carries a default would undo that
+- [ ] T030 [US3] Write the email body in `services/api/src/quotas/quota-email.ts` per `contracts/quota.md` §2: application and environment kind named as a human would name them, the percentage, the usage, the quota, the period as a month, and what happens next
+- [ ] T030a [US3] **At 100% of a soft threshold with no hard cap, `services/api/src/quotas/quota-email.ts` must say nothing was refused.** An email that threatens a suspension which will not happen is worse than no email
 - [ ] T031 [US3] Wire `services/api/src/quotas/quotas.module.ts` and its relay flag, following `RELAY_NOTIFICATION_RELAY`'s shape — and **add the flag to the four lane configs' `env` blocks**, which feature 030's R39 set to `off` for exactly this class of background loop
-- [ ] T032 [US3] Write the Mailpit tests: crossing 50/80/100 produces exactly three emails per quota per period, **read out of Mailpit rather than asserted on a send call** (SC-004)
-- [ ] T032a [US3] Test that re-crossing an already notified threshold produces no further email (SC-005), and that a new period resets them (FR-017)
-- [ ] T032b [US3] Test the unaddressable organisation: crossing recorded, cap enforced, failure logged rather than swallowed (FR-018). Chapter 3.9 built this branch; this confirms the fourth table uses it rather than reinventing it
-- [ ] T032c [US3] **Assert the email carries no secret, key, credential or message text**, by reading what Mailpit received. The same test shape chapter 3.9 established, and the reason it exists
+- [ ] T032 [US3] Write the Mailpit tests in `services/api/src/quotas/quotas.itest.ts`: crossing 50/80/100 produces exactly three emails per quota per period, **read out of Mailpit rather than asserted on a send call** (SC-004)
+- [ ] T032a [US3] In `services/api/src/quotas/quotas.itest.ts`, test that re-crossing an already notified threshold produces no further email (SC-005), and that a new period resets them (FR-017)
+- [ ] T032b [US3] In `services/api/src/quotas/quotas.itest.ts`, test the unaddressable organisation: crossing recorded, cap enforced, failure logged rather than swallowed (FR-018). Chapter 3.9 built this branch; this confirms the fourth table uses it rather than reinventing it
+- [ ] T032c [US3] In `services/api/src/quotas/quotas.itest.ts`, **assert the email carries no secret, key, credential or message text**, by reading what Mailpit received. The same test shape chapter 3.9 established, and the reason it exists
 
 **Checkpoint**: three emails, once each, and none of them carrying anything they should not.
 
@@ -127,11 +127,11 @@ Platform paths are relative to `relay-platform/`, tutorial paths to
 
 ## Phase 6: Verification
 
-- [ ] T033 **Measure what the `FOR UPDATE` cost** (T020a): concurrent sends to one environment, before and after, recorded in `baseline.txt` as a number. If serialising on one row is too expensive the design changes here, not after the chapter ships
+- [ ] T033 **Measure what the `FOR UPDATE` in `services/api/src/db/repository.ts` cost** (T020a): concurrent sends to one environment, before and after, recorded in `baseline.txt` as a number. If serialising on one row is too expensive the design changes here, not after the chapter ships
 - [ ] T034 **Run the whole lane against a baited database and confirm the guard stays silent** (quickstart V8, SC-008). Research R5 predicts this design engages feature 030's trigger nowhere. **This task exists to find out the prediction is wrong**, and a refusal here names the table and the row
 - [ ] T034a **Confirm no file was added to `packages/test-harness/src/exempt.ts` or to `relay-platform/eslint.config.mjs`'s ignores.** If one was, R5 is wrong and the reason belongs in `research.md` before the chapter describes the design
 - [ ] T035 Run both lanes and coverage; confirm every pre-existing suite passes and record the counts. Coverage must not fall below **89.08% statements and 82.35% branches**, and every per-file ratchet must stay green — `repository.ts` is at 100% functions and this chapter adds branches to it
-- [ ] T036 **Twenty consecutive integration runs, zero false positives.** Feature 030's battery took five attempts and three red runs were real defects; budget for that rather than treating a red run as noise
+- [ ] T036 **Twenty consecutive integration runs of `pnpm test:integration`, zero false positives**, recorded in `specs/031-chapter-3-10/baseline.txt`. Feature 030's battery took five attempts and three red runs were real defects; budget for that rather than treating a red run as noise
 - [ ] T037 Run quickstart V0 to V12 end to end, reading exit codes rather than output
 - [ ] T038 Capture the transcripts into `specs/031-chapter-3-10/captured-output.md`: the refusal body in full, the three emails as Mailpit received them, the flush test's two identical readings, and the twenty-run result
 - [ ] T039 Scan `captured-output.md` for leaked credentials, **recording the patterns searched rather than only the verdict**
