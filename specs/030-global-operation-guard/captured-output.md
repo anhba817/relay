@@ -154,12 +154,73 @@ chapter 3.5 and had not met since before this feature began: the uncovered
 function was `drainDisableNotifications`'s `onError` default, which no caller has
 ever used (research R48).
 
-## Still to capture
+## The guard's own lane, in full (V2)
 
-Three transcripts are not here yet, because the runs that produce them were stopped
-part-way: the twenty-run battery's tally (V9), the guard lane's own eight tests as
-a block (V2), and the quickstart's V0-V11 exit codes (T036). The battery's partial
-result — six green at 186-188s — is in `baseline.txt` under T034.
+```text
+✓ a connection without the exemption > cannot update a sentinel row, and the message names the row 3ms
+ ✓ a connection without the exemption > cannot delete one either 1ms
+ ✓ a connection without the exemption > is refused by the statement, so the row is unchanged 1ms
+ ✓ a connection without the exemption > may still write rows that belong to no sentinel 37ms
+ ✓ a connection carrying the exemption > UPDATES THE ROW, and the new value is what the next reader sees 1ms
+ ✓ a connection carrying the exemption > deletes the row, and it stays deleted 8ms
+ ✓ an exemption that names one table > may write the table it names 4ms
+ ✓ an exemption that names one table > is refused on a table it does not name 1ms
+      Tests  8 passed (8)
+```
+
+Four refusals and four paths where the guard must do nothing. Both of the
+implementation bugs this feature hit lived in the second group — an exemption that
+reverted the write it permitted, and an exemption that covered a table it had no
+business covering.
+
+## Twenty runs, zero false positives (V9, SC-003)
+
+```text
+run  1  exit=0  190s      run 11  exit=0  186s
+run  2  exit=0  186s      run 12  exit=0  186s
+run  3  exit=0  187s      run 13  exit=0  186s
+run  4  exit=0  187s      run 14  exit=0  186s
+run  5  exit=0  183s      run 15  exit=0  187s
+run  6  exit=0  187s      run 16  exit=0  184s
+run  7  exit=0  186s      run 17  exit=0  184s
+run  8  exit=0  186s      run 18  exit=0  187s
+run  9  exit=0  186s      run 19  exit=0  186s
+run 10  exit=0  187s      run 20  exit=0  184s
+
+20 green, 0 red.  min 183s, max 190s, mean 186.05s, 62.0 minutes.
+Every run: 8 + 177 + 16 + 21 + 9 = 231 tests.
+```
+
+Range of seven seconds across twenty runs against a database that is never reset,
+with no upward drift. The flatness is the second half of the result: an earlier
+shape of the bait did drift, and that is what the red runs of the three previous
+attempts were saying.
+
+It took five attempts, and the three red runs were research R49, R51 and R52 — the
+harness's own cost landing in a suite where nobody had measured it, twice, and a
+test budget that had been below its own measured cost since chapter 3.8. **None was
+a false positive from the guard**, which is what SC-003 asks about.
+
+## Quickstart V0 to V11 (T036)
+
+Exit codes, not output.
+
+```text
+V2   pnpm --filter @relay/test-harness test:integration      exit=0   8 tests
+V5   api  src/outbox src/webhooks                            exit=0
+     dispatcher                                              exit=0
+V6   sentinels 21, bait endpoints 239   — api lane —         exit=0
+     sentinels 21, bait endpoints 239   (identical)
+V7   pnpm lint                                               exit=0
+V8   pnpm turbo run test --force                             exit=0   251 tests
+     pnpm coverage                                           exit=0   473 tests
+       All files      89.08 | 82.35 | 89.25 | 90.58
+       repository.ts  97.27 | 90.90 |  100  | 99.24
+```
+
+V6 is the idempotency check and it is the one worth reading twice: the same 21
+sentinels and the same 239 bait endpoints before and after a full lane run. A count
+that grew would mean the seeder had become the accumulation it exists to simulate.
 
 ## Credential scan (T038)
 

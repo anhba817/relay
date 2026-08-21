@@ -149,8 +149,8 @@ Platform paths are relative to `relay-platform/`, tutorial paths to
 - [X] T033 Run both lanes and coverage; confirm every pre-existing suite passes and record the counts. Coverage must not fall below 89.50% statements and 82.73% branches
 - [X] T034 **Twenty consecutive integration runs, zero false positives** — **20 green, 0 red, 183-190s, mean 186.05s.** Five attempts; the three red runs were research R49, R51 and R52, none of them a false positive from the guard
 - [X] T035 Measure the lane's wall-clock time against **T002's** baseline — same machine, same test count — and record it in `specs/030-global-operation-guard/baseline.txt`, confirming growth under 10 seconds (SC-004). Record the number, not the verdict
-- [ ] T036 Run quickstart V0 to V11 end to end, reading exit codes rather than output
-- [~] T037 Capture the transcripts into `specs/030-global-operation-guard/captured-output.md`: the trigger's refusal and the exempt session's success, one reintroduction failing alone, the fresh-database baseline from T004, and the twenty-run result. **Capture rather than describe** — chapter 3.8's header bug was found by printing a whole response and not by any of the eighteen tests asserting on its fields
+- [X] T036 Run quickstart V0 to V11 end to end, reading exit codes rather than output
+- [X] T037 Capture the transcripts into `specs/030-global-operation-guard/captured-output.md`: the trigger's refusal and the exempt session's success, one reintroduction failing alone, the fresh-database baseline from T004, and the twenty-run result. **Capture rather than describe** — chapter 3.8's header bug was found by printing a whole response and not by any of the eighteen tests asserting on its fields
 - [X] T038 Scan `captured-output.md` for leaked credentials, recording the patterns searched rather than only the verdict. The sentinel's signing secret is a literal in `sentinel.ts` and must not reach a transcript
 
 ---

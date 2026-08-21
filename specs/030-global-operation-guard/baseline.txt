@@ -177,9 +177,18 @@ which is on the ignores list, exits 0.
 T033 — THE POST-CHANGE MEASUREMENT
 ================================================================================
 
-  unit lane          11 tasks, 306 tests passed              3.781s
+  unit lane          11 tasks, 251 tests passed              3.781s
   integration lane   10 tasks, 231 tests passed           3m10.218s
-  coverage lane      53 files, 472 tests passed           4m 5.770s
+  coverage lane      53 files, 473 tests passed           4m 5.770s
+
+  unit, per package: api 123 · gateway 64 · protocol 37 · test-harness 9
+                     dispatcher 8 · config 7 · service-kit 3        = 251
+
+  **306 IS WHAT THIS LINE SAID FIRST**, and it was a bad grep rather than a
+  measurement — the pattern matched integration lines too. T002 recorded 242 across
+  10 tasks; the harness adds 9 in an eleventh, and 242 + 9 = 251. Counted per
+  package above so the arithmetic is checkable, which is the whole lesson of R48
+  applied to the line right under it.
 
   api 177 · dispatcher 16 · gateway 21 · e2e 9 · test-harness 8  = 231
 

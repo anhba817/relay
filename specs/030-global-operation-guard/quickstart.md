@@ -190,7 +190,7 @@ pnpm turbo run test:integration --concurrency=1 --force
 pnpm coverage
 ```
 
-Expected: unit 306, integration 231 or more, coverage no lower than **89.08%
+Expected: unit 251, integration 231 or more, coverage no lower than **89.08%
 statements and 82.35% branches** — measured on this tree, not quoted from chapter
 3.8, whose 89.50/82.73 predates a correctness fix that removed a caller
 (`baseline.txt`, T002). Every per-file ratchet passes, including the
