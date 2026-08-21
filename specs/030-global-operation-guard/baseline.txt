@@ -244,13 +244,27 @@ FR-025, FR-026 — written by someone who had just read the task warning that
 chapter 3.8 did exactly this. All replaced with what they meant, or with
 `feature 030`. `FR-WHK-07` stays: it resolves in `docs/04-srs.md`.
 
-Not fixed, and named rather than left silent: `repository.ts` carries about
-twenty-two bare `FR-0xx` citations from EARLIER features' specs — FR-006, FR-007,
-FR-008, FR-009, FR-011, FR-013, FR-014, FR-015, FR-016, FR-017 — and none of them
-resolves anywhere in `docs/`. The SRS numbers requirements `FR-XXX-NN` with a
-three-letter domain. `vitest.coverage.config.mts:187` has one more. That is the
-same leak at four times the size, it predates this feature, and fixing it would
-rewrite prose inside regions five chapters fence.
+Not fixed, and named rather than left silent — **with the number counted rather
+than eyeballed, because the first version of this paragraph said "about twenty-two
+in `repository.ts`" and that was a glance, not a count.** Measured across
+`services/*/src`, `packages/*/src` and the root configs, excluding `dist`:
+
+    60 occurrences, 14 files, 14 distinct ids
+    FR-001 FR-004 FR-006 FR-007 FR-008 FR-009 FR-011
+    FR-012 FR-013 FR-014 FR-015 FR-016 FR-017 FR-018
+
+    webhooks.service.ts        analytics.test.ts     disable.test.ts
+    disable.ts                 webhooks.controller.ts attempts.itest.ts
+    analytics.ts               test-event.itest.ts   publisher.test.ts
+    schema.ts                  deliveries.itest.ts   repository.ts
+    signup.itest.ts            vitest.coverage.config.mts
+
+**Not one of the fourteen resolves** in `docs/` or the constitution. The SRS numbers
+requirements `FR-XXX-NN` with a three-letter domain, so these are feature-local ids
+from earlier specs, leaked into comments exactly as this feature's own fourteen
+were. It predates feature 030 and fixing it would rewrite prose inside regions that
+seven chapters fence, so it is left for whoever picks it up — with the search that
+finds it recorded above.
 
 T034 — TWENTY RUNS, ZERO FALSE POSITIVES (SC-003)
 --------------------------------------------------------------------------------
