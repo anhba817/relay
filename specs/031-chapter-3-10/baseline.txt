@@ -314,3 +314,124 @@ TWO TEST EXPECTATIONS I GOT WRONG, AND WHAT THEY WERE
 
   Neither was a defect in the implementation, and both are the kind of thing that
   would have passed unnoticed had the numbers been rounder.
+
+T033 — WHAT THE QUOTA PATH COSTS, AND THREE WRONG ANSWERS FIRST
+--------------------------------------------------------------------------------
+
+  THE RESULT. Same environment, same channels, same user, quota toggled between
+  two identical loops, with the send path instrumented:
+
+    32-way concurrent, one channel per sender
+      unconfigured           1.77ms per send    assertWithinQuota = 1.246ms
+      configured             2.33ms per send    assertWithinQuota = 1.586ms
+      back to unconfigured   1.77ms per send    assertWithinQuota = 1.121ms
+
+      configured vs unconfigured: +0.56ms per send
+      after reverting the config: -0.00ms
+
+  Configuring a quota costs about half a millisecond per send. The ~1.2ms
+  `assertWithinQuota` spends is the joined read, and US1 needs it whether or not
+  a cap exists.
+
+  THE CROSSING BLOCK COSTS 0.000ms, because `thresholdsCrossed` is pure
+  arithmetic on two numbers the transaction already holds and answers "nothing"
+  for almost every send. It was not always: the first version looked the
+  organisation up and counted the period's users BEFORE consulting the
+  arithmetic, which put two queries on every send by an environment that merely
+  HAS a quota. Reordered so the free question is asked first.
+
+  THREE WRONG ANSWERS BEFORE THAT ONE, and they are the point of writing this up.
+
+  An uncontrolled benchmark — one environment per case, run in sequence —
+  reported 273%, then 341%, then 303%, then 411%. Each time the number stayed
+  large, and each time a different cause was inferred and acted on:
+
+    1. "The `FOR UPDATE` is serialising the environment."  Removed it. No change.
+    2. "The organisation lookup and the user count are on every send."  Deferred
+       them behind the arithmetic. No change. (A real improvement, kept.)
+    3. "Two round-trips hold a pooled connection above the pool size."  Folded
+       them into one joined read. No change. (Also a real improvement, kept.)
+
+  The cause was the benchmark. Each case built its own environment and ran in a
+  fixed slot, so the measurement carried warm-up and table growth. Toggling the
+  quota on ONE environment and instrumenting the phases produced 0.56ms, and the
+  three "fixes" had been changes made to a number that was never real.
+
+  Two of the three are better code and stay. The lesson is the ordering: this
+  project's whole subject is not reasoning where a measurement is cheap, and the
+  measurement here was cheap the entire time.
+
+  AND THE LOCK CANNOT COME BACK, for a reason that has nothing to do with speed.
+  Once the caps and the usage are one joined read, Postgres refuses to lock it:
+
+      ERROR:  FOR UPDATE cannot be applied to the nullable side of an outer join
+
+  So the overshoot is bounded by the number of sends in flight rather than by
+  one, which is what `spec.md`'s edge case asked for in the first place — "the
+  overshoot is bounded by concurrency, not unbounded, and this is stated rather
+  than defended against". Research R8 defended against it; T033 was scheduled to
+  find out whether that was worth it, and the honest answer is that the question
+  was moot by the time it could be asked cleanly.
+
+T034 / T034a — THE GUARD'S PREDICTION, ON A FRESHLY BAITED DATABASE
+--------------------------------------------------------------------------------
+
+  pnpm test:integration against a database created and migrated for the run:
+
+      exit=0        255 tests
+      guard refusals during the run: 15
+
+      15  sentinel row public.webhook_endpoints
+      ---
+      10  planted by services/dispatcher/src/dispatcher.itest.ts
+       3  planted by packages/test-harness/src/guard.itest.ts
+       2  planted by __shared__/sweep-bait
+
+  **NOT ONE NAMES `usage_periods`, `usage_active_users` OR `quota_notifications`.**
+  Research R5 predicted that a design whose usage only rises on a send needs no
+  global operation, and after three phases of writing to three new tables it still
+  needs none. T034 existed to find out the prediction was wrong; it is not.
+
+  T034a: `packages/test-harness/src/exempt.ts` and `eslint.config.mjs` are
+  byte-identical to `feature-030-global-operation-guard`. No file joined either
+  list.
+
+  Higher than the 3 a used database gives, and the reason is worth keeping: a
+  fresh database has every sentinel endpoint still ENABLED, so the first sweep of
+  the run meets them. On an aged one they were disabled long ago and the sweep
+  finds nothing. The count moves with the database's history, which is why this
+  task specifies a fresh one.
+
+T035 / T035a — COVERAGE, AND TWO GAPS THE FIRST RUN FOUND
+--------------------------------------------------------------------------------
+
+  First run:   88.81 | 82.32 | 88.02 | 90.27      BELOW T035's floor
+  After:       89.51 | 82.73 | 88.94 | 90.92      exit=0, every ratchet green
+  Baseline:    89.08 | 82.35 | 89.25 | 90.58
+
+  The lane's own global threshold is 70%, so the first run exited 0 while sitting
+  under the floor this task set. A gate that passes is not the same as a number
+  that holds, which is the whole reason T035 names figures rather than an exit
+  code.
+
+  Two gaps, both mine:
+
+  1. **`period.ts` at 50% functions.** `currentPeriod()` was written "so callers
+     that already hold an instant do not have to invent one" and nothing ever
+     called it. Deleted. An unused export is precisely what feature 030's R48
+     found as `repository.ts`'s last uncovered function.
+  2. **`quota-relay.ts` at 56.66% statements, 62.5% functions.** `start`, `stop`
+     and the `run` loop — the part of every relay in this codebase that no test
+     enters. Chapters 3.3, 3.5 and 3.9 all have the hole, and
+     `notification-relay.ts` sits at 58.06% because of it. Four lines of test
+     closed it here: **96.66 statements, 100 functions.** The fourth relay does
+     not repeat the gap the first three have.
+
+  T035a's mechanism, checked before the coverage run rather than after:
+  `repository.ts` gained two exported functions, `usageFor` and
+  `drainQuotaNotifications`. Both are exercised, and the file's **100% functions**
+  ratchet holds.
+
+  The overall statements and branches now read 89.51 and 82.73 — the figures
+  chapter 3.8 recorded and feature 030's baseline corrected downward as
+  unreachable. They are reachable; two test gaps were holding them down.
