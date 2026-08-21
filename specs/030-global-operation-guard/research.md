@@ -1339,3 +1339,87 @@ Error: connect ECONNREFUSED 127.0.0.1:15432
 ```
 
 An address it could only have got from the fallback.
+
+## R51 — The bait's bill arrived in a different suite
+
+Run 4 of twenty, having passed runs 1 to 3 on the same tree:
+
+```
+FAIL src/notifications/notifications.itest.ts >
+     sends twice for an endpoint disabled, re-enabled and disabled again
+Error: Test timed out in 5000ms.
+```
+
+The same test R49 fixed, and R49's fix was not wrong — it was incomplete. The
+planted notification rows were `delivered_at`-set and out of every claim window, as
+intended. The rows the drain was working through had been written by the product:
+
+```
+select e.enabled, n.delivered_at is null, count(*)
+  from webhook_disable_notifications n
+  join __sentinel_environments s using (environment_id)
+  join webhook_endpoints e on e.id = n.endpoint_id
+ group by 1,2;
+
+ f | f | 4000     <- planted, delivered, inert
+ f | t | 3799     <- written by the sweep, undelivered, work
+```
+
+Every file planted `BAIT_ROWS` endpoints with an open failure run.
+`deliveries.itest.ts` sweeps globally with a limit of 10,000, disables all of them,
+and **each disablement writes a notification row**. Nineteen files' worth is 3,799
+rows, and `notifications.itest.ts`'s first global drain has to work through them at
+about 1.3ms each. Five seconds is vitest's default budget. Runs 1 to 3 passed
+because the total sat just under it.
+
+So R49's law needs its second clause:
+
+> Bait may be claimable only where draining it is database work — **and draining
+> it must not create work for a different reader.**
+
+**The design error underneath.** Sweep bait is a GLOBAL property and the trigger's
+attribution is a PER-FILE one, and `plant()` served both with the same rows. To
+defeat `sweepDisabledEndpoints`'s batch you need more than `MAX_PRODUCT_BATCH`
+eligible endpoints *in the database*; it does not matter who planted them. To have
+a refusal name a file you need one guarded row per file. Planting 200 per file
+satisfied both and bought nineteen times what the first needs.
+
+**Decision**: split them. Each file plants one endpoint — the trigger's target.
+`plantReaderBait()` maintains a single shared sentinel holding `BAIT_ROWS`, and
+every file calls it, because any file may be the one running alone. It is
+idempotent **by UPDATE rather than by delete-and-reinsert**: a sweep disables these
+by design, so they have to go back, and re-creating them would delete rows another
+file may be mid-sweep against (research R12). It also clears the notifications the
+last sweep wrote, which is the whole point.
+
+Measured after a full lane, from a cleaned database:
+
+```
+bait endpoints                     239
+undelivered sentinel notifications   0      (was 3,799)
+undelivered total                   48      (real product rows)
+Tests  8 + 177 + 21 + 16 + 9 = 231 passed
+```
+
+And the mechanism still works — instance 1 reintroduced, run alone on a freshly
+migrated database:
+
+```
+FAIL invariant 12: the SWEEP disables the quiet endpoint no outcome ever revisits
+AssertionError: expected true to be false
+Tests  1 failed | 48 passed (49)
+```
+
+**An unplanned proof, from trying to clean up by hand.** A `DELETE` issued straight
+from `psql` to tidy the debris was refused:
+
+```
+ERROR:  global-operation guard: this statement modified sentinel row
+        public.webhook_disable_notifications (id 7ab2b88c-…), which belongs to no
+        test — the bait planted by packages/test-harness/src/guard.itest.ts
+CONTEXT:  PL/pgSQL function __sentinel_guard() line 41 at RAISE
+```
+
+No import to lint and no test to attribute to — exactly the case R6 argued only a
+database-side check can see. The cleanup succeeded once reissued through a
+connection carrying `options=-c relay.allow_global=all`.
