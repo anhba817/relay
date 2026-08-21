@@ -188,7 +188,7 @@ T041b's list is **seven files and 53 fences**, not six and 47.
 - [X] T047 Traceability: confirm every `FR-*`, `NFR-*` and `ADR-*` this chapter's **source comments** cite resolves in `docs/` or the constitution. **Feature 030 leaked fourteen feature-local ids into source and found sixty more from earlier chapters that resolve nowhere** — the SRS numbers requirements `FR-XXX-NN`, so a bare `FR-0xx` in a comment is the leak
 - [X] T048 Write `specs/031-chapter-3-10/chapter-notes.md` from what happened rather than what was planned, including the parts that went badly
 - [X] T048a **Record in `specs/031-chapter-3-10/chapter-notes.md` whether R5's no-sweep prediction survived**, and whether the `FOR UPDATE` cost T033 measured changed the design
-- [ ] T049 Tag `relay-platform` `part3-ch10` at the close-out commit
+- [X] T049 Tag `relay-platform` `part3-ch10` at the close-out commit
 
 ---
 
