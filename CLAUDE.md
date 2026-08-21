@@ -1,46 +1,60 @@
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-`specs/030-global-operation-guard/plan.md` (feature: "The fault that only shows up
-in company" — test infrastructure, NOT a tutorial chapter, so every fence it
-produces goes to `relay-tutorial/fences/post-series.md` and `docs/07-tutorial-plan.md`
-records it under "Work that publishes no chapter". SEVEN times a test has asserted a
-local fact about a GLOBAL operation and every one passed alone: a sweep whose batch
-never reached its own endpoint, a drain holding a lock, a consumer on a fixed budget
-against a growing stream, a `count(*)` compared against itself TWICE in the same file
-four chapters apart, a drain at a default batch of fifty, and — in chapter 3.9 — a
-global MUTATION that disabled a neighbouring suite's fixture. The sixth was written by
-someone who had recorded the other five and cited them in a chapter, which is why the
-remedy is not an eighth rule: THE FAULT IS INVISIBLE IN ISOLATION, and the fix is to
-make it fail alone. TWO SHAPES needing different remedies: READER (a test asserts on a
-global batch or count another suite's rows fill) and WRITER (a test performs a global
-mutation and damages a neighbour). The reader remedy does nothing for the writer shape
-— instance 6 passed no limit and got 100; passing 10,000 would have been WORSE.
-RESEARCH CHANGED THE CENTRAL MECHANISM (R6): the spec assumed a before/after checksum
-of sentinel rows and conceded attribution would need serial execution. That concession
-is fatal, because R5 measured that legitimate global sweeps happen on EVERY lane run —
-six suites drive them on purpose — so a checksum fires constantly or blames bystanders.
-A PL/pgSQL trigger raises INSIDE THE OFFENDING TRANSACTION instead, verified against
-the real schema: exact attribution under parallel file execution, no serial diagnosis
-mode, and it catches raw SQL that no lint rule or wrapped import can see. Whether that is a
-second language under constitution VII was asked and closed: VII legislates the
-language SERVICES are implemented in, and nine `.sql` files already exist with the
-constitution's own endorsement, so there is no violation and no ADR — the plan's
-first four analysis passes wrongly recorded one and declined the ADR the clause
-requires, which is itself the finding. Exemption is a session GUC
-(`SET relay.allow_global = 'on'`) set only by the lane's setup hook from an AUDITABLE
-LIST OF PATHS, never a pattern — a pattern silently absorbs the next file, which is the
-failure mode this whole feature is about. R1 IS THE COUNTERINTUITIVE ONE: the developer
-machine that shipped 3.9 already holds 8,364 due deliveries and 17,542 environments, so
-it supplies the adversarial condition by accident and the lane passes on both fresh and
-polluted. A FRESH database is the EASY condition — which is what CI and a new clone run
-— so the bait exists to make fresh behave like aged. R2: three of the four baits were
-eaten in a single lane pass, so planting must be PER FILE, not a one-shot globalSetup.
-R4: 200 addressable bait notifications turned one suite's drain into 200 SMTP sends and
-a 10-second timeout, so the sentinel organisation has NO addressable member and each
-bait row costs one log line. Bait sizes derive from the exported batch constants
-(max is 100, in `outbox/relay.ts` and `sweepDisabledEndpoints`), never literals.
-`sweepDisabledEndpoints(db, limit = 100)` is the last default and loses it — but R8
-says plainly that removing it would NOT have prevented instance 6: the required
-argument is a prompt to think, the trigger is the control.)
+`specs/031-chapter-3-10/plan.md` (chapter 3.10, "Quotas and what they cost" —
+FR-RTL-05 to FR-RTL-08, a PUBLISHED chapter, so its fences belong in the chapter
+that teaches them and NOT in `fences/post-series.md`).
+
+THE CHAPTER'S SPINE: a rate limit is about THIS SECOND and forgets; a quota is
+about THIS MONTH and must not. Chapter 3.8 built the limiter; this is the other
+half of FR-RTL and the two are different problems wearing the same word.
+
+SCOPE, decided before a word was written: messages sent and distinct active users.
+CONNECTION-MINUTES IS CHAPTER 3.11 — scheduled with a number, not deferred to a
+promise, and the isolation gauntlet moved to 3.12 to make room. Messages and users
+are already rows (`messages.user_id` has been in `0000_core_tables.sql` since Part
+2); a connection-minute is a duration nothing records, and the service that would
+record it is the gateway, WHICH OWNS NO TABLES. THE CAP IS DENOMINATED IN METERED
+UNITS, NOT MONEY: no price, unit cost or currency appears in the SRS or SAD, and
+inventing a pricing primitive is scope constitution VII would ask to justify.
+
+FOUR MEASURED DECISIONS, all in `research.md`:
+(R1) Usage is a ROLL-UP, not derived on read. `select count(*), count(distinct
+user_id)` scoped to one environment measures 1.189ms today — and `messages` carries
+NO `environment_id` (it hangs off `channels`) and NO index on `created_at`, so the
+work is proportional to the tenant's LIFETIME traffic. That is this project's
+eleven-times-recorded fault written into the product instead of into a test.
+(R3) Enforced in `Repository.sendMessage`, NOT in middleware. `operationsFor`
+returns [] for anything outside `/v1`, so chapter 3.8's limiter NEVER SEES
+`/internal/messages` — the route a WebSocket send arrives on. `sendMessage` is the
+one point both doors pass through and it already owns the write transaction, so the
+check and the increment commit together. Cost: the refusal is raised in the
+repository layer and mapped in two controllers.
+(R5) THERE IS NO SWEEP, and that is the interesting result. Usage rises only on a
+send, and the send transaction knows the value before and after — so it knows which
+thresholds it crossed and writes the notification rows itself. Feature 030's guard
+is engaged NOWHERE and no file joins its exemption list. The first chapter written
+after that feature turns out not to need a global operation, which is the outcome
+its SC-008 hoped for and could not measure. V8 of the quickstart exists to find out
+this prediction is wrong.
+(R2) The distinct-user count CANNOT be an increment — it needs to know whether this
+user already sent this period. A membership row per user per period, `ON CONFLICT
+DO NOTHING`, bounded by the tenant's user count rather than their traffic.
+HyperLogLog in Redis is refused by FR-002: a flush would erase the month.
+
+THE OUTBOX PATTERN A FOURTH TIME (R6), in `quota_notifications` —
+`webhook_disable_notifications` cannot be reused because `endpoint_id` is NOT NULL.
+Four concrete tables that look alike is a pattern; one abstract table serving four
+purposes is a framework. Say the number out loud in the chapter.
+
+The refusal is `402`, NOT `429` (contracts/quota.md): a client that retries after
+`Retry-After` is right for a rate limit and wrong for a quota, which will still be
+exceeded in an hour. No `Retry-After` header — the resume date is in the message.
+Its `docs_url` resolves to nothing, exactly as `rate_limited`'s does; inherited
+deliberately, recorded in R10, and chapter 3.12's problem.
+
+PHASE ORDER PUTS THE NOTIFICATION STORY LAST because it is the seam. Estimate is
+3,000-3,600 prose words against a 2,000-4,000 gate COUNTED ON THE FINISHED PAGE —
+three of Part 3's four splits were discovered mid-chapter and this sequencing is
+what catches the fourth.
 <!-- SPECKIT END -->
