@@ -151,7 +151,8 @@ build on."
 | 3.8 | Limits you can see coming | Per-environment fixed-window counters in Redis (FR-RTL-01…04); the three headers on every response, not only the refusal; failed-auth limiting per IP (FR-AUT-12), which fails **closed** while the tenant limiter fails open. **This chapter completes SRS Phase 2's requirement set** — §7.3 lists it as FR-TEN, FR-AUT, FR-WHK and FR-RTL at P2, and FR-RTL-01…04 is the last of the four |
 | 3.9 | The email nobody was sending | The transport 3.6 was owed (FR-WHK-07): the outbox pattern a third time, over `webhook_disable_notifications` — no migration, because `delivered_at` was already there and already null. Mailpit in compose, and tests that read what was **received** |
 | 3.10 | Quotas and what they cost | Monthly usage quotas, hard and soft spending caps, the 50/80/100% email (FR-RTL-05…08) |
-| 3.11 | **Milestone: the isolation gauntlet** | The cross-tenant attack suite (NFR-SEC-09) run against every endpoint; the second-external-developer test. This chapter *is* the SRS Phase 2 exit criterion — *"an external developer integrates using only public documentation, with no assistance"* |
+| 3.11 | Counting a connection | Connection-minutes (the third dimension of FR-RTL-05): periodic accounting in the gateway, which owns no tables; the crash that must not bill twice; metering a duration rather than an event |
+| 3.12 | **Milestone: the isolation gauntlet** | The cross-tenant attack suite (NFR-SEC-09) run against every endpoint; the second-external-developer test. This chapter *is* the SRS Phase 2 exit criterion — *"an external developer integrates using only public documentation, with no assistance"* |
 
 **3.5 was narrowed while it was being written, and 3.6 is where the remainder
 went.** The original entry promised auto-disable in the same chapter as the
@@ -253,10 +254,26 @@ bound — with the transport's sections unwritten. Adding them would have reache
 roughly 6,300, past 3.6's 5,346 and past anything the series has published.
 
 So the transport's *prose* became **3.9**, quotas moved to **3.10** and the
-gauntlet to **3.11**. The transport's *code* shipped under `part3-ch8` regardless,
+gauntlet to **3.11** — where it stayed until the split below moved it again, to
+**3.12**. The transport's *code* shipped under `part3-ch8` regardless,
 because it closes FR-WHK-07 whichever chapter explains it — and 3.9 was written in
 the same cycle rather than deferred, so every fence lands with the chapter that
 teaches it instead of accumulating in `post-series.md`.
+
+**3.10 is the fourth, and this one was decided before a word was written.** FR-RTL-05
+names three metered dimensions — messages sent, unique active users, and
+connection-minutes — and the first two are not like the third. Messages and users
+are already rows: `messages.user_id` has been in `0000_core_tables.sql` since Part
+2, so counting them is an aggregation question. A connection-minute is a duration,
+nothing records it today, and the service that would have to record it is the
+gateway, **which owns no tables**. That is a different subject with a different
+lesson, and putting both in one chapter would have produced a chapter about
+counting that quietly turns into a chapter about who is allowed to write.
+
+So connection-minutes is **3.11** and the gauntlet moves to **3.12**. The
+deferral has a chapter number rather than a promise, which is the difference
+between scheduling work and dropping it — three of the four splits in this part
+were discovered mid-chapter, and this one was not.
 
 This is the third size-driven split in Part 3, after 3.5→3.6 and the original
 3.8. The difference is that this one was decided by counting the page. 3.5 shipped
@@ -271,10 +288,10 @@ prose, this table and the registry — and no fence amendment. 3.8's success cri
 check it rather than assume it, because a rule adopted one chapter ago to make this
 cheap should be made to prove it.
 
-**Phase 2 closes across 3.8 and 3.11, and its exit criterion is a problem the series
+**Phase 2 closes across 3.8 and 3.12, and its exit criterion is a problem the series
 has been accumulating.** SRS §7.3 exits Phase 2 on *"an external developer integrates
 using only public documentation, with no assistance"*. 3.8 finishes the requirement set;
-the gauntlet runs the test.
+the gauntlet, now 3.12, runs the test.
 
 The awkward part is that 3.8 ships `rate_limited` as the first error code an integrating
 developer will actually receive and look up, and its `docs_url` resolves to nothing — a
