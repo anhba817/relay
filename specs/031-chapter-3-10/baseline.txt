@@ -1,0 +1,183 @@
+Chapter 3.10 — baseline
+================================================================================
+
+T001 — PROVENANCE
+--------------------------------------------------------------------------------
+
+  parent repo      6344b1c  docs: fence titles carry no relay-platform prefix (Q1)
+  relay-platform   d3002fa  fix: notifications.itest.ts declares the budget its 
+  relay-tutorial   24a72f4  docs: chapter 3.11 is connection-minutes, gauntlet m
+
+  platform tags at HEAD: feature-030-global-operation-guard 
+  This chapter starts from feature-030-global-operation-guard plus its
+  documentation commits. Chapter 3.9 shipped at part3-ch9.
+
+  submodule pins match HEADs:
+     d3002fa16dd041b06a2de7d1a5517c3570c66113 relay-platform (feature-030-global-operation-guard)
+     24a72f49d3bbccac5f37ec8792a877bdd5793198 relay-tutorial (heads/main)
+
+T003 — SITE BASELINE
+--------------------------------------------------------------------------------
+
+  check:fences   exit=0  check-fence-chain: 165 fenced files replay onto relay-platform across 26 chapters (26 translated, fe
+  check:docs     exit=0  check-docs-drift: all mirrored docs match their sources
+  lint           exit=0  
+  build          exit=0  ƒ  (Dynamic)  server-rendered on demand
+
+T004a — THE QUERY THE CHAPTER ARGUES AGAINST, RE-MEASURED
+--------------------------------------------------------------------------------
+
+  table sizes: messages 198690 | channels 10217 | environments 26331
+  busiest environment: 36c3dc58-c9d8-4600-854b-9c996cc87e71 (507 messages)
+
+  ONE ENVIRONMENT — the shape a send-path check would take:
+
+                                                                                   QUERY PLAN                                                                               
+    ------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+     Aggregate  (cost=433.88..433.89 rows=1 width=16) (actual time=0.211..0.211 rows=1.00 loops=1)
+       Buffers: shared hit=38
+       ->  Sort  (cost=433.58..433.68 rows=40 width=16) (actual time=0.188..0.197 rows=507.00 loops=1)
+             Sort Key: m.user_id
+             Sort Method: quicksort  Memory: 25kB
+             Buffers: shared hit=38
+             ->  Nested Loop  (cost=9.17..432.51 rows=40 width=16) (actual time=0.036..0.150 rows=507.00 loops=1)
+                   Buffers: shared hit=35
+                   ->  Bitmap Heap Scan on channels c  (cost=4.30..11.70 rows=2 width=16) (actual time=0.022..0.023 rows=5.00 loops=1)
+                         Recheck Cond: (environment_id = '36c3dc58-c9d8-4600-854b-9c996cc87e71'::uuid)
+                         Heap Blocks: exact=2
+                         Buffers: shared hit=4
+                         ->  Bitmap Index Scan on channels_environment_id_external_id_unique  (cost=0.00..4.30 rows=2 width=0) (actual time=0.012..0.013 rows=5.00 loops=1)
+                               Index Cond: (environment_id = '36c3dc58-c9d8-4600-854b-9c996cc87e71'::uuid)
+                               Index Searches: 1
+                               Buffers: shared hit=2
+                   ->  Bitmap Heap Scan on messages m  (cost=4.87..209.83 rows=58 width=32) (actual time=0.008..0.022 rows=101.40 loops=5)
+                         Recheck Cond: (c.id = channel_id)
+                         Filter: (created_at >= date_trunc('month'::text, (now() AT TIME ZONE 'utc'::text)))
+                         Heap Blocks: exact=11
+                         Buffers: shared hit=31
+                         ->  Bitmap Index Scan on messages_channel_id_sequence_unique  (cost=0.00..4.85 rows=58 width=0) (actual time=0.006..0.006 rows=101.40 loops=5)
+                               Index Cond: (channel_id = c.id)
+                               Index Searches: 5
+                               Buffers: shared hit=20
+     Planning:
+       Buffers: shared hit=255
+     Planning Time: 0.743 ms
+     Execution Time: 0.266 ms
+    (29 rows)
+    
+
+  EVERY ENVIRONMENT — the shape a monthly report would take:
+
+                   ->  Seq Scan on messages m  (cost=0.00..6837.46 rows=201253 width=32) (actual time=0.010..29.124 rows=198690.00 loops=1)
+     Planning Time: 0.761 ms
+     Execution Time: 92.517 ms
+
+  READ THE PLAN, NOT THE CLOCK.
+
+    ->  Bitmap Heap Scan on messages m
+          Recheck Cond: (c.id = channel_id)
+          Filter: (created_at >= date_trunc('month'::text, ...))
+
+  The month predicate is a **Filter**, not an Index Cond. Every message the
+  environment has ever sent is read off the heap and then discarded if it is not
+  this month's. 507 rows today, and the number only goes up — there is no index on
+  `messages.created_at`, and `messages` carries no `environment_id` at all.
+
+  THE TIMING MOVED AND THE ARGUMENT DID NOT. Research R1 recorded 1.189ms with
+  3.035ms of planning; this run measures **0.266ms with 0.743ms of planning**. The
+  difference is a cold cache versus a warm one — R1's was the first execution of a
+  query the planner had never seen. Neither number is wrong and neither is the
+  point: at 507 messages both are fast, and the chapter's case is the `Filter`
+  line, which does not depend on a clock.
+
+  The chapter quotes the plan. If it quotes a duration it says which cache state
+  produced it, because an unqualified 1.189ms invites a reader to check it, get
+  0.266ms, and conclude the argument was inflated.
+
+T004 / T005 — THREE LANE RUNS, AND WHAT THE THIRD FOUND
+--------------------------------------------------------------------------------
+
+  run 1  exit=0  187s  failing-files=0
+  run 2  exit=0  183s  failing-files=0
+  run 3  exit=1  115s  failing-files=1
+
+  FAIL src/webhooks/deliveries.itest.ts >
+       counts what is pending and stops counting it once it is delivered
+  AssertionError: expected 22741 to be 22742
+
+  **INSTANCE 12, AND IT IS THE BASELINE'S, NOT THIS CHAPTER'S.** The test read the
+  global `pendingDeliveryDepth`, delivered one row, and asserted the count fell by
+  exactly one. Its own comment defended the shape:
+
+      // GLOBAL, and asserted as a delta for that reason — this is the number an
+      // operator watches, so it counts every tenant's backlog, and another suite
+      // seeding rows beside this one must not be able to break it.
+
+  A delta is two reads with a gap. Another suite delivering one of its own rows in
+  that gap moves the second read by one more, which is what 22741-against-22742
+  is. Seeding was defended against; delivering was not.
+
+  That makes three of the twelve occurrences whose defence was a comment saying
+  why this one was fine. Feature 030's spec opens on the same observation — the
+  sixth instance was written by someone who had recorded the other five.
+
+  Fixed forward in its own commit, ahead of any chapter work: the global function
+  keeps a caller and is asked only what cannot race (there is a backlog); the
+  delta is asserted against this environment's own rows.
+
+  Twenty runs of feature 030's battery passed with this in the tree, and three
+  runs here found it. Nothing about the fault is rare — the lane had simply not
+  been run with two suites landing in the same gap.
+
+T002 — THE PRE-CHANGE PLATFORM BASELINE
+--------------------------------------------------------------------------------
+
+
+  unit lane        exit=0    5.932s
+      @relay/api               123
+      @relay/gateway            64
+      @relay/protocol           37
+      @relay/test-harness        9
+      @relay/dispatcher          8
+      @relay/config              7
+      @relay/service-kit         3
+      TOTAL                    251
+
+  integration lane exit=0  189s
+      @relay/api               177
+      @relay/gateway            21
+      @relay/dispatcher         16
+      @relay/e2e                 9
+      @relay/test-harness        8
+      TOTAL                    231
+
+  coverage lane    exit=0  247s
+      Test Files  54 passed (54)
+      Tests      473 passed (473)
+      All files          89.08 | 82.35 | 89.25 | 90.58
+      repository.ts      97.27 | 90.90 |  100  | 99.24   (ratchet 97 | 90 | 100 | 99)
+
+  Identical to feature 030's close-out on every figure. SC-006 compares against
+  these, and T035's floor is 89.08 statements and 82.35 branches.
+
+  THE GUARD FIRED THREE TIMES DURING THE COVERAGE RUN, AND ALL THREE ARE CORRECT.
+  Counted by diffing the Postgres log across the run:
+
+      the bait planted by packages/test-harness/src/guard.itest.ts
+      the bait planted by packages/test-harness/src/guard.itest.ts
+      the bait planted by packages/test-harness/src/guard.itest.ts#narrow
+
+  Those are the guard's own refusal tests, which exist to produce exactly this.
+
+  The log held **276 refusals in total**, which looked alarming until they were
+  attributed: 136 from `guard.itest.ts` (deliberate), 123 naming
+  `dispatcher.itest.ts`'s bait, 17 with no owner. The 123 and the 17 are residue
+  from feature 030's own development, when the bait design changed three times —
+  stale sentinel endpoints left enabled by a superseded shape, swept once, refused,
+  and then disabled for good. Re-running the dispatcher lane produces **zero** new
+  refusals, and the coverage lane produces only the three above.
+
+  Recorded because the count is the interesting part: **a database log is the only
+  place a swallowed refusal shows up**, which is the hazard research R13 named and
+  chapter 3.10's design avoids by performing no global operation at all. Anyone
+  auditing that claim should diff this count, not read the lane's exit code.

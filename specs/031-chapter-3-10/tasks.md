@@ -25,12 +25,12 @@ Platform paths are relative to `relay-platform/`, tutorial paths to
 
 ## Phase 1: Setup & baseline
 
-- [ ] T001 Record provenance in `specs/031-chapter-3-10/baseline.txt`: the submodule commits this chapter starts from, and confirmation that `relay-platform` is at `feature-030-global-operation-guard` with both parent pins matching their submodule HEADs
-- [ ] T002 Record the pre-change platform baseline in `specs/031-chapter-3-10/baseline.txt` — unit and integration counts per package, coverage, every per-file ratchet in force, and the exit code of each gate rather than a grep over its output. Feature 030 finished on **251 unit, 231 integration, 473 coverage at 89.08 / 82.35 / 89.25 / 90.58**, integration wall-clock 3m10.218s
-- [ ] T003 [P] Record the site baseline in `specs/031-chapter-3-10/baseline.txt`: `pnpm lint`, `pnpm build`, `pnpm check:docs` and `pnpm check:fences` in `relay-tutorial/`, with the fence and locale counts the chain reports (165 files, 26 chapters at the last measurement)
-- [ ] T004 **Run the integration lane three times and record every failure.** Feature 030's battery needed five attempts and three of the red runs were real defects, so a lane that is green three times is the precondition for measuring anything this chapter changes
-- [ ] T004a **Re-measure the derive-on-read query the chapter will argue against** and record the `EXPLAIN (ANALYZE)` output in `baseline.txt`. Research R1 measured 1.189ms for one environment and 79.807ms for a whole-table sweep against 198,690 messages; the chapter quotes these numbers, so they must be this machine's rather than yesterday's
-- [ ] T005 Fix forward, with its own commit, anything T004 finds that is not this chapter's work. A lane with a pre-existing intermittent failure cannot measure a new one
+- [X] T001 Record provenance in `specs/031-chapter-3-10/baseline.txt`: the submodule commits this chapter starts from, and confirmation that `relay-platform` is at `feature-030-global-operation-guard` with both parent pins matching their submodule HEADs
+- [X] T002 Record the pre-change platform baseline in `specs/031-chapter-3-10/baseline.txt` — unit and integration counts per package, coverage, every per-file ratchet in force, and the exit code of each gate rather than a grep over its output. Feature 030 finished on **251 unit, 231 integration, 473 coverage at 89.08 / 82.35 / 89.25 / 90.58**, integration wall-clock 3m10.218s
+- [X] T003 [P] Record the site baseline in `specs/031-chapter-3-10/baseline.txt`: `pnpm lint`, `pnpm build`, `pnpm check:docs` and `pnpm check:fences` in `relay-tutorial/`, with the fence and locale counts the chain reports (165 files, 26 chapters at the last measurement)
+- [X] T004 **Run the integration lane three times and record every failure.** Feature 030's battery needed five attempts and three of the red runs were real defects, so a lane that is green three times is the precondition for measuring anything this chapter changes
+- [X] T004a **Re-measure the derive-on-read query the chapter will argue against** and record the `EXPLAIN (ANALYZE)` output in `baseline.txt`. Research R1 measured 1.189ms for one environment and 79.807ms for a whole-table sweep against 198,690 messages; the chapter quotes these numbers, so they must be this machine's rather than yesterday's
+- [X] T005 Fix forward, with its own commit, anything T004 finds that is not this chapter's work. A lane with a pre-existing intermittent failure cannot measure a new one
 
 **Checkpoint**: the starting numbers exist and the lane is green for a known reason.
 
