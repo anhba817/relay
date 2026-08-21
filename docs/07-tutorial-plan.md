@@ -150,7 +150,7 @@ build on."
 | 3.7 | Commit and publish are two instants | The resume duplicate: a message committed before a backfill and announced after it, delivered twice; the high-water mark given a lifetime past the buffering window |
 | 3.8 | Limits you can see coming | Per-environment fixed-window counters in Redis (FR-RTL-01…04); the three headers on every response, not only the refusal; failed-auth limiting per IP (FR-AUT-12), which fails **closed** while the tenant limiter fails open. **This chapter completes SRS Phase 2's requirement set** — §7.3 lists it as FR-TEN, FR-AUT, FR-WHK and FR-RTL at P2, and FR-RTL-01…04 is the last of the four |
 | 3.9 | The email nobody was sending | The transport 3.6 was owed (FR-WHK-07): the outbox pattern a third time, over `webhook_disable_notifications` — no migration, because `delivered_at` was already there and already null. Mailpit in compose, and tests that read what was **received** |
-| 3.10 | Quotas and what they cost | Monthly usage quotas, hard and soft spending caps, the 50/80/100% email (FR-RTL-05…08) |
+| 3.10 | Quotas and what they cost | Monthly usage quotas for messages and distinct active users, a hard cap that refuses sends with `402` and a soft threshold that only alerts, the 50/80/100% email (FR-RTL-05…08). The caps live in `environments.quota_config` — the jsonb column 2.1 declared and 3.8 refused in print. **The outbox pattern a fourth time**, and the first chapter in the series that needed no global operation at all: usage rises only on a send, so the send knows what it crossed |
 | 3.11 | Counting a connection | Connection-minutes (the third dimension of FR-RTL-05): periodic accounting in the gateway, which owns no tables; the crash that must not bill twice; metering a duration rather than an event |
 | 3.12 | **Milestone: the isolation gauntlet** | The cross-tenant attack suite (NFR-SEC-09) run against every endpoint; the second-external-developer test. This chapter *is* the SRS Phase 2 exit criterion — *"an external developer integrates using only public documentation, with no assistance"* |
 
@@ -259,6 +259,24 @@ gauntlet to **3.11** — where it stayed until the split below moved it again, t
 because it closes FR-WHK-07 whichever chapter explains it — and 3.9 was written in
 the same cycle rather than deferred, so every fence lands with the chapter that
 teaches it instead of accumulating in `post-series.md`.
+
+**What 3.10 turned out to be, against what the plan said.** The estimate was
+3,000 to 3,600 prose words; the page counts **2,548** with 31 fences, so the
+estimate ran 18% high — the fourth Part 3 chapter where the number on the page and
+the number in the plan disagreed. The first draft came in at 2,053 and was thin in
+a way the count could not see: it was missing the flush test, which is the
+chapter's whole spine, and the reason a distinct-user count cannot be an
+increment. The gate measures length, not whether the length is spent on the right
+thing.
+
+Two of the chapter's decisions were not in the plan. The caps went into
+`environments.quota_config` rather than into four new columns, because chapter 3.8
+had reserved that column for quotas **in published prose** and three analysis
+passes had not read the artifacts against the published series. And the
+`FOR UPDATE` the plan specified for bounding cap overshoot turned out to be
+impossible once the caps and the usage became one joined read — Postgres will not
+lock the nullable side of an outer join — which is the bound the specification had
+asked for in the first place.
 
 **3.10 is the fourth, and this one was decided before a word was written.** FR-RTL-05
 names three metered dimensions — messages sent, unique active users, and

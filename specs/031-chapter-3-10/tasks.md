@@ -175,19 +175,19 @@ T041b's list is **seven files and 53 fences**, not six and 47.
 
 - [X] T041b **Generate every fence from the real files rather than typing them**, and confirm `pnpm check:fences` replays the chain onto `relay-platform`. **Six files this chapter modifies are already fenced and carry 47 fences between them** — `services/api/src/db/repository.ts` (15), `services/api/src/db/schema.ts` (10), `services/api/src/app.module.ts` (8), `services/api/src/messages/messages.service.ts` (7), `vitest.coverage.config.mts` (5) and `services/api/vitest.integration.config.mts` (2). **Those are the chain's own titles — platform paths, no `relay-platform/` prefix.** An earlier draft prefixed the coverage config's, which would have opened a new path in the chain rather than amending the existing one, the failure feature 030's T039a named. The chain compares byte for byte, so a modified fenced file with no new fence diverges the replay. Chapter 3.8 carried this as T061; **an earlier draft of this task list had no equivalent, and T045 would have failed after the chapter was written and translated**
 - [X] T041c **Route each fence to the right home before generating any of them.** A chapter may only fence a change it discusses (chapter 3.8's T025e). The four product files — `repository.ts`, `schema.ts`, `app.module.ts`, `messages.service.ts` — are this chapter's subject and fence in the chapter. **The two vitest configs are not**: adding a relay flag to a lane is hygiene 3.10 never explains, so those go to `relay-tutorial/fences/post-series.md` as extensions of the sections feature 030 already opened there. `services/dispatcher/vitest.integration.config.mts` is fenced by nothing and needs neither
-- [ ] T042 Mark 3.10 `published` in `relay-tutorial/lib/tutorial.ts`
-- [ ] T043 Translate to `relay-tutorial/app/(vi)/vi/part-3/chapter-10/quotas-and-what-they-cost/`, with **every fence byte-identical to its English counterpart, comments included** — a translated comment fails `check:fences`
-- [ ] T044 Translate the mermaid labels in `figures.ts`; participants, identifiers, table and column names stay English
-- [ ] T045 Run `pnpm check:fences`, `pnpm check:docs`, `pnpm lint` and `pnpm build` in `relay-tutorial/`, reading exit codes
+- [X] T042 Mark 3.10 `published` in `relay-tutorial/lib/tutorial.ts`
+- [X] T043 Translate to `relay-tutorial/app/(vi)/vi/part-3/chapter-10/quotas-and-what-they-cost/`, with **every fence byte-identical to its English counterpart, comments included** — a translated comment fails `check:fences`
+- [X] T044 Translate the mermaid labels in `figures.ts`; participants, identifiers, table and column names stay English
+- [X] T045 Run `pnpm check:fences`, `pnpm check:docs`, `pnpm lint` and `pnpm build` in `relay-tutorial/`, reading exit codes
 
 ---
 
 ## Phase 9: Close-out
 
-- [ ] T046 Confirm `docs/07-tutorial-plan.md`'s Part 3 table still describes what shipped, including the FR-RTL-05 split across 3.10 and 3.11
-- [ ] T047 Traceability: confirm every `FR-*`, `NFR-*` and `ADR-*` this chapter's **source comments** cite resolves in `docs/` or the constitution. **Feature 030 leaked fourteen feature-local ids into source and found sixty more from earlier chapters that resolve nowhere** — the SRS numbers requirements `FR-XXX-NN`, so a bare `FR-0xx` in a comment is the leak
-- [ ] T048 Write `specs/031-chapter-3-10/chapter-notes.md` from what happened rather than what was planned, including the parts that went badly
-- [ ] T048a **Record in `specs/031-chapter-3-10/chapter-notes.md` whether R5's no-sweep prediction survived**, and whether the `FOR UPDATE` cost T033 measured changed the design
+- [X] T046 Confirm `docs/07-tutorial-plan.md`'s Part 3 table still describes what shipped, including the FR-RTL-05 split across 3.10 and 3.11
+- [X] T047 Traceability: confirm every `FR-*`, `NFR-*` and `ADR-*` this chapter's **source comments** cite resolves in `docs/` or the constitution. **Feature 030 leaked fourteen feature-local ids into source and found sixty more from earlier chapters that resolve nowhere** — the SRS numbers requirements `FR-XXX-NN`, so a bare `FR-0xx` in a comment is the leak
+- [X] T048 Write `specs/031-chapter-3-10/chapter-notes.md` from what happened rather than what was planned, including the parts that went badly
+- [X] T048a **Record in `specs/031-chapter-3-10/chapter-notes.md` whether R5's no-sweep prediction survived**, and whether the `FOR UPDATE` cost T033 measured changed the design
 - [ ] T049 Tag `relay-platform` `part3-ch10` at the close-out commit
 
 ---
