@@ -1289,3 +1289,53 @@ not by the seeder.
 it was caught on the first one — after three separate full-lane runs had passed.
 Chapter 3.7 spent four hours on its twenty and found four faults; this one found a
 fault the moment it was pointed at a tree nobody was editing.
+
+## R50 — The harness was the only task in the repository that required `DATABASE_URL`
+
+Reported from a plain `pnpm test:integration` on a clean shell:
+
+```
+@relay/test-harness:test:integration: No test files found, exiting with code 1
+@relay/test-harness:test:integration: Error: the global-operation guard needs
+    DATABASE_URL — the integration lane cannot install it against a database it
+    cannot name
+  ❯ Object.globalSetup [as setup] src/global-setup.ts:27:11
+```
+
+The message was written to be helpful and the check was wrong. Every other package
+in the workspace falls back:
+
+```ts
+services/api/src/db/client.ts:13
+export const DEFAULT_DATABASE_URL = "postgres://relay:relay@localhost:15432/relay";
+export function createPool(): pg.Pool {
+  return new pg.Pool({ connectionString: process.env.DATABASE_URL ?? DEFAULT_DATABASE_URL });
+}
+```
+
+So `pnpm test:integration` has always worked from a shell with nothing exported,
+against the compose stack. The harness made itself the single exception, and
+because `globalSetup` runs before collection, vitest also reported "No test files
+found" — two confusing lines for one cause.
+
+Every measurement in this feature was taken in a shell that had sourced the
+environment, which is precisely why it went unnoticed: **the condition the check
+broke is the one the author never ran in.** That is the feature's own subject
+pointed at the feature. Instance 6 passed alone; R6 worked in one session; this
+worked in one shell.
+
+**Decision**: `packages/test-harness/src/db-url.ts` exports the same fallback, and
+the three entry points — `global-setup.ts`, `setup.ts` and `guard.itest.ts` — go
+through it. The literal is duplicated rather than imported, because a workspace
+package importing service source is the wrong direction, and `db-url.test.ts` reads
+`client.ts` and fails if the two disagree. Same shape as `bait-size.test.ts` and
+`lists-agree.test.ts`: a duplicated constant is fine, an unwatched one is not.
+
+With the stack deliberately down and nothing exported, the harness lane now fails
+the way any lane does:
+
+```
+Error: connect ECONNREFUSED 127.0.0.1:15432
+```
+
+An address it could only have got from the fallback.
