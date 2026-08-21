@@ -172,6 +172,10 @@ the mail server, then drive it across again and confirm nothing new arrives.
 - **FR-012**: A suspended environment MUST resume sending, with no restart or
   manual step, when the cap is raised above usage or the period rolls over.
 - **FR-013**: A soft threshold MUST alert without refusing anything.
+- **FR-013a**: When a soft threshold and a hard cap are configured at the same
+  value, the crossing record MUST be written before the refusal is raised, so the
+  email survives the send that did not. The Edge Cases section promised this order
+  was defined; this is where it is defined.
 - **FR-014**: The system MUST email organisation admins when usage first reaches
   50%, 80% and 100% of a configured quota.
 - **FR-015**: Each threshold MUST produce at most one email per quota per
@@ -219,13 +223,21 @@ the mail server, then drive it across again and confirm nothing new arrives.
   asserting on a send call.
 - **SC-005**: Re-crossing an already notified threshold produces zero further
   emails.
-- **SC-006**: The message send path executes no additional table scan when quota
-  enforcement is active, measured against chapter 3.8's recorded send latency.
+- **SC-006**: The message send path executes no additional **table scan** when quota
+  enforcement is active — shown by `EXPLAIN (ANALYZE, BUFFERS)` for the send
+  transaction before and after, with the added usage read appearing as index
+  lookups rather than a scan. It does add a query, and FR-020 permits that; what
+  neither permits is work proportional to the tenant's traffic.
+  - An earlier draft measured this "against chapter 3.8's recorded send latency".
+    **Chapter 3.8 recorded no send latency** — `specs/029-chapter-3-8/baseline.txt`
+    holds none — and a clock cannot show a scan in any case. Corrected to the
+    instrument that can.
 - **SC-007**: Raising a cap above current usage restores sending within one
   request, with no process restart.
-- **SC-008**: The integration lane stays green across twenty consecutive runs,
-  and no new file needs adding to feature 030's exemption list except ones whose
-  subject is a global quota sweep.
+- **SC-008**: The integration lane stays green across twenty consecutive runs, and
+  **no new file is added to feature 030's exemption list**. An earlier draft made an
+  exception for files whose subject is a global quota sweep; the design has no sweep
+  (plan research R5), so the exception described nothing and hid the stronger claim.
 - **SC-009**: The chapter's published page measures between 2,000 and 4,000 prose
   words, counted on the finished page rather than estimated.
 

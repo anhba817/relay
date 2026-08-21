@@ -40,7 +40,7 @@ engine inside the repository layer (ADR-16), `pg` for the driver, Nodemailer
 through chapter 3.9's mailer, Mailpit in compose as the test mail server. Nothing
 new.
 
-**Storage**: PostgreSQL. Three schema changes — quota columns on `environments`
+**Storage**: PostgreSQL. Four schema changes — quota columns on `environments`
 beside chapter 3.8's limit columns, a `usage_periods` roll-up table, a
 `usage_active_users` membership table, and a `quota_notifications` outbox table.
 
@@ -144,17 +144,22 @@ Part 3's four splits were discovered mid-chapter; 3.8 established that the phase
 with the clearest seam goes last, so the size decision can be made against a
 counted page rather than an estimate (R12).
 
+**Numbered as `tasks.md` numbers them**, because two documents describing one
+sequence with two numbering schemes is a trap for whoever reads them in order.
+
 | Phase | Content | Maps to |
 |---|---|---|
-| 0 | Baseline: record the lane's current timings and coverage before anything changes | — |
-| 1 | The migration, the schema, and the period function | FR-001, FR-003, FR-005, FR-006 |
-| 2 | **US1** — the roll-up written in the send transaction, and the flush test | FR-001, FR-002, FR-004, FR-020 |
-| 3 | **US2** — the cap, the refusal, the two controller mappings, the degradation tests | FR-007 to FR-013 |
-| 4 | **US3** — thresholds, the fourth table, the relay, the Mailpit reads | FR-014 to FR-019 |
-| 5 | The chapter: prose, figures, fences, the Vietnamese mirror | SC-009 |
-| 6 | Verification: the size count, twenty lane runs, coverage, the guard prediction | SC-001 to SC-008 |
+| 1 | Baseline: record the lane's current timings and coverage before anything changes | — |
+| 2 | Foundational: the migration, the schema, the period function, the threshold arithmetic | FR-001, FR-003, FR-005, FR-006 |
+| 3 | **US1** — the roll-up written in the send transaction, and the flush test | FR-001, FR-002, FR-004, FR-020 |
+| 4 | **US2** — the cap, the refusal, the two controller mappings, the degradation tests | FR-007 to FR-013a |
+| 5 | **US3** — thresholds, the fourth table, the relay, the Mailpit reads | FR-014 to FR-019 |
+| 6 | Verification: twenty lane runs, coverage, the guard prediction, the transcripts | SC-001 to SC-008 |
+| 7 | The chapter in English, and the size count | SC-009, FR-022 |
+| 8 | Publication in both locales | — |
+| 9 | Close-out: the plan table, traceability, the notes, the tag | — |
 
-Phase 4 is the seam. If Phase 5's count comes in over 4,000 words, the
+Phase 5 is the seam. If Phase 7's count comes in over 4,000 words, the
 notification story is what moves — it is the one with its own table, its own
 relay and its own test surface, and it is the third time this series has taught
 the outbox pattern, so a reader who stops before it has still learned the chapter's

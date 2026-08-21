@@ -71,7 +71,7 @@ Platform paths are relative to `relay-platform/`, tutorial paths to
 - [ ] T016a [US1] **Add the flush test to `services/api/src/quotas/quotas.itest.ts`** (SC-001, FR-002): read the figures, `FLUSHALL` the counter store, read again, assert identical. This is the test that separates a quota from chapter 3.8's limiter, and it is the reason the roll-up exists
 - [ ] T016b [US1] **Confirm the flush test can fail.** Point `usageFor` in `services/api/src/db/repository.ts` at the counter store instead of the roll-up, watch it go red, and revert byte-identical by `md5sum`. A test whose failure has never been seen is a test nobody has checked
 - [ ] T017 [US1] **Commit `relay-platform` before T016b's mutation of `services/api/src/db/repository.ts`, not just before the phase.** Chapter 3.9 lost a fix to exactly this revert step, in the chapter that warned about it twice in bold
-- [ ] T018 [US1] Measure the send path against T002's figure and record it in `baseline.txt`: the request path must gain no query (FR-020, SC-006). Record the number, not the verdict
+- [ ] T018 [US1] **Prove the send path gains no SCANNING query** (FR-020, SC-006) by capturing `EXPLAIN (ANALYZE, BUFFERS)` for the send transaction into `specs/031-chapter-3-10/baseline.txt`, before and after. **It does gain a query** — the usage row read taken `FOR UPDATE` — and FR-020 permits that; what it forbids is a query proportional to the tenant's traffic. An earlier draft of this task said "must gain no query", which is stronger than the requirement and false of the design it was verifying. Record the plans, not the verdict
 
 **Checkpoint**: usage is counted and survives a flush. Ships alone as observability with nothing enforced.
 
@@ -92,9 +92,10 @@ Platform paths are relative to `relay-platform/`, tutorial paths to
 - [ ] T022 [US2] Write the degradation tests in `services/api/src/quotas/quotas.itest.ts`: with usage above the cap, a send is refused **and** a history read succeeds, in the same test against the same environment (SC-002)
 - [ ] T022a [US2] In `services/api/src/quotas/quotas.itest.ts`, assert the refusal body names the dimension, the usage, the quota and the resume date, **by reading the whole body rather than asserting on its fields**. Chapter 3.8's header bug was found by printing a response and not by any of the eighteen tests asserting on its parts
 - [ ] T023 [US2] In `services/api/src/quotas/quotas.itest.ts`, test that a cap of zero refuses everything and that a null cap refuses nothing (FR-006)
+- [ ] T023a [US2] In `services/api/src/quotas/quotas.itest.ts`, test that **a soft threshold refuses nothing** (FR-013): usage at 100% of a soft threshold with no hard cap configured, and the next send succeeds. The email is T030a's subject; this is the half that says the tenant is still serving traffic
 - [ ] T024 [US2] In `services/api/src/quotas/quotas.itest.ts`, test that raising the cap above usage restores sending on the next request, with no restart and nothing to clear (SC-007, FR-012)
 - [ ] T025 [US2] In `services/api/src/quotas/quotas.itest.ts`, test that a cap lowered below current usage takes effect immediately, and that the 100% crossing is recorded if it has not been this period
-- [ ] T026 [US2] Write the gateway-side test in `services/gateway/src/` or `packages/e2e/`: a WebSocket send refused by the cap, **and the socket still open and still receiving sixty seconds later** (SC-003, FR-010)
+- [ ] T026 [US2] Write the gateway-side test in `packages/e2e/src/` — **that lane, because the test needs a live api child to do the refusing**, which the gateway's own lane does not spawn: a WebSocket send refused by the cap, **and the socket still open and still receiving sixty seconds later** (SC-003, FR-010)
 - [ ] T027 [US2] In `services/api/src/quotas/quotas.itest.ts`, test that webhook delivery continues for messages accepted before the cap was reached (FR-011, constitution II)
 
 **Checkpoint**: the cap refuses sends through both doors and nothing else changes.
@@ -109,16 +110,17 @@ Platform paths are relative to `relay-platform/`, tutorial paths to
 
 **Independent test**: quickstart V5 and V6.
 
-- [ ] T028 [US3] Write the threshold-crossing insert into `Repository.sendMessage`'s transaction in `services/api/src/db/repository.ts`: for each threshold `thresholdsCrossed` returns, one row in `quota_notifications`. **In the same transaction as the message** — the crossing and the thing that caused it commit together or neither does
+- [ ] T028 [US3] Write the threshold-crossing insert into `Repository.sendMessage`'s transaction in `services/api/src/db/repository.ts`: for each threshold `thresholdsCrossed` returns, one row in `quota_notifications`. **In the same transaction as the message** — the crossing and the thing that caused it commit together or neither does. **Inserted AHEAD of the cap check T020 added** (FR-013a): with a soft threshold and a hard cap at the same value, the email must survive the send that did not, so the crossing row is written first and the refusal is raised after. The spec's Edge Cases promised this order was defined; this task is where it is obeyed. **The ordering belongs to this task, not to T020** — US2 ships without US3, and until this phase there is no crossing row for the refusal to be ordered against
 - [ ] T028a [US3] **Confirm the unique constraint is what makes it at-most-once**, not the code path. Write a test in `services/api/src/quotas/quotas.itest.ts` that inserts the same crossing twice and asserts one row (FR-015)
 - [ ] T029 [US3] Write `services/api/src/quotas/quota-relay.ts` on chapter 3.9's shape: claim rows with `delivered_at IS NULL`, deliver, mark. **Per-row error handling with a required `onError`** — feature 030's R48 removed the default from `drainDisableNotifications` for a reason, and the fourth relay should not reintroduce it
 - [ ] T029a [US3] **Give the drain in `services/api/src/db/repository.ts` a required batch size.** All four batch-taking functions require one as of feature 030; a fifth that carries a default would undo that
 - [ ] T030 [US3] Write the email body in `services/api/src/quotas/quota-email.ts` per `contracts/quota.md` §2: application and environment kind named as a human would name them, the percentage, the usage, the quota, the period as a month, and what happens next
 - [ ] T030a [US3] **At 100% of a soft threshold with no hard cap, `services/api/src/quotas/quota-email.ts` must say nothing was refused.** An email that threatens a suspension which will not happen is worse than no email
-- [ ] T031 [US3] Wire `services/api/src/quotas/quotas.module.ts` and its relay flag, following `RELAY_NOTIFICATION_RELAY`'s shape — and **add the flag to the four lane configs' `env` blocks**, which feature 030's R39 set to `off` for exactly this class of background loop
-- [ ] T032 [US3] Write the Mailpit tests in `services/api/src/quotas/quotas.itest.ts`: crossing 50/80/100 produces exactly three emails per quota per period, **read out of Mailpit rather than asserted on a send call** (SC-004)
+- [ ] T031 [US3] Wire `services/api/src/quotas/quotas.module.ts` and its relay flag, following `RELAY_NOTIFICATION_RELAY`'s shape — and **add the flag to the three lane configs that carry the other relay flags** — `services/api/vitest.integration.config.mts`, `services/dispatcher/vitest.integration.config.mts` and `vitest.coverage.config.mts` — which feature 030's R39 set to `off` for exactly this class of background loop. Three, counted: the gateway and e2e configs got exemption handling and no flag block
+- [ ] T032 [US3] Write the Mailpit tests in `services/api/src/quotas/quotas.itest.ts`: crossing 50/80/100 produces exactly three emails per quota per period, **read out of Mailpit rather than asserted on a send call** (SC-004). **Include the jump** — one send taking usage from 40% to 100% produces all three, which T008 covers as arithmetic and nothing yet covers as email (FR-016)
 - [ ] T032a [US3] In `services/api/src/quotas/quotas.itest.ts`, test that re-crossing an already notified threshold produces no further email (SC-005), and that a new period resets them (FR-017)
 - [ ] T032b [US3] In `services/api/src/quotas/quotas.itest.ts`, test the unaddressable organisation: crossing recorded, cap enforced, failure logged rather than swallowed (FR-018). Chapter 3.9 built this branch; this confirms the fourth table uses it rather than reinventing it
+- [ ] T032d [US3] In `services/api/src/quotas/quotas.itest.ts`, **test that the mail server being gone cannot fail a send** (FR-019): point the mailer at a port with nothing behind it, cross a threshold, and assert the send succeeded, the crossing row exists, and the row is still claimable. Writing a row is not sending one, and this is the requirement that says so out loud — chapter 3.9 met the same hazard from the other side, where a drain's failure became a lane's failure
 - [ ] T032c [US3] In `services/api/src/quotas/quotas.itest.ts`, **assert the email carries no secret, key, credential or message text**, by reading what Mailpit received. The same test shape chapter 3.9 established, and the reason it exists
 
 **Checkpoint**: three emails, once each, and none of them carrying anything they should not.
@@ -129,7 +131,7 @@ Platform paths are relative to `relay-platform/`, tutorial paths to
 
 - [ ] T033 **Measure what the `FOR UPDATE` in `services/api/src/db/repository.ts` cost** (T020a): concurrent sends to one environment, before and after, recorded in `baseline.txt` as a number. If serialising on one row is too expensive the design changes here, not after the chapter ships
 - [ ] T034 **Run the whole lane against a baited database and confirm the guard stays silent** (quickstart V8, SC-008). Research R5 predicts this design engages feature 030's trigger nowhere. **This task exists to find out the prediction is wrong**, and a refusal here names the table and the row
-- [ ] T034a **Confirm no file was added to `packages/test-harness/src/exempt.ts` or to `relay-platform/eslint.config.mjs`'s ignores.** If one was, R5 is wrong and the reason belongs in `research.md` before the chapter describes the design
+- [ ] T034a **Confirm no file was added to `packages/test-harness/src/exempt.ts` or to `relay-platform/eslint.config.mjs`'s ignores** (FR-021, SC-008). If one was, R5 is wrong and the reason belongs in `research.md` before the chapter describes the design
 - [ ] T035 Run both lanes and coverage; confirm every pre-existing suite passes and record the counts. Coverage must not fall below **89.08% statements and 82.35% branches**, and every per-file ratchet must stay green — `repository.ts` is at 100% functions and this chapter adds branches to it
 - [ ] T036 **Twenty consecutive integration runs of `pnpm test:integration`, zero false positives**, recorded in `specs/031-chapter-3-10/baseline.txt`. Feature 030's battery took five attempts and three red runs were real defects; budget for that rather than treating a red run as noise
 - [ ] T037 Run quickstart V0 to V12 end to end, reading exit codes rather than output
@@ -145,6 +147,7 @@ Platform paths are relative to `relay-platform/`, tutorial paths to
 - [ ] T040b **Say in `page.mdx` that the outbox pattern is appearing for the fourth time**, and why four concrete tables beat one generic one (research R6). A reader who has seen it three times deserves to be told it is deliberate
 - [ ] T040c **Tell the story in `page.mdx` of the sweep that was not needed** (research R5). The obvious design is a periodic job; the send transaction already knows what crossed. This is the chapter's best paragraph and it is easy to leave out, because nothing went wrong
 - [ ] T040d Use `<Figure code={...} />` — the prop is `code`, not `chart` — and give `<ChapterFooter />` its `id`. Both were found in chapter 3.8 only because a headless browser rendered the page
+- [ ] T040e **Say in `page.mdx` what a cap is denominated in, and introduce no price** (FR-022). Messages and active users, not money: no price, unit cost or currency appears in `docs/04-srs.md` or `docs/05-sad.md`, and FR-RTL-06's design note calls it a purchasing requirement whose harm is unbounded exposure. A reader who assumes the cap is in currency will look for a pricing model that does not exist
 - [ ] T041 **Count the finished page's prose words** (SC-009), excluding fences, front matter and figure captions. Record the number in `baseline.txt`
 - [ ] T041a **If the count exceeds 4,000, split at Phase 5's seam** and renumber: the notification story becomes its own chapter, connection-minutes moves from 3.11 to 3.12, and the gauntlet to 3.13. Update `docs/07-tutorial-plan.md` and `relay-tutorial/lib/tutorial.ts` together. Three of Part 3's four splits were discovered mid-chapter; this is the instrument that catches the fourth before it publishes
 
@@ -197,6 +200,9 @@ percentage of a cap.
   FR-020 then has to be walked back.
 - **T028a before T032.** Prove the unique constraint is what makes the email
   at-most-once before writing tests that would pass for the wrong reason.
+- **T028 inserts ahead of T020, not after it.** The crossing write goes in above the cap check inside
+  the same transaction (FR-013a). This is an edit to code Phase 4 already shipped, which is why it is
+  a US3 task rather than a US2 one — US2 is complete and correct without it.
 - **T034 before T040.** Discover whether the no-sweep prediction holds before
   writing the paragraph that claims it does.
 

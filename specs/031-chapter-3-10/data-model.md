@@ -15,6 +15,12 @@ history, and a separate table would be a join for a value read on every request.
 | `active_user_quota` | `integer` | yes | Hard cap on distinct senders this period. |
 | `active_user_quota_soft` | `integer` | yes | Soft threshold for the same. |
 
+**`message_quota` IS the hard cap.** The spec says "hard cap" and "soft threshold";
+the columns say `message_quota` and `message_quota_soft`. Two names for one thing,
+and the reason is that "quota" is the feature's name in prose and the cap's name in
+the schema. Named here once so a reader does not go looking for a separate
+`message_cap` column that does not exist.
+
 **Null is not zero**, the rule chapter 3.8's columns established. Null means no
 cap; zero means refuse everything, and an environment can be switched off
 deliberately, so the two cannot share a representation (FR-006).

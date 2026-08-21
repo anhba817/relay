@@ -54,6 +54,31 @@ removing them would remove the constraint rather than the detail:
   against a measurement this project already holds, which is what makes it
   checkable.
 
+## Analysis pass, 2026-08-21
+
+Thirteen findings, no CRITICAL, no constitution violation. All thirteen applied.
+
+Three were worth the pass on their own:
+
+- **F1** — T018 said "the request path must gain no query", which is stronger than
+  FR-020 and false of the design it verified. The send transaction *does* gain a
+  query; what FR-020 forbids is one that scans. A task that fails against its own
+  plan is a task that gets argued with at implementation time instead of read.
+- **C1** — SC-006 measured "no additional table scan" against "chapter 3.8's
+  recorded send latency". Chapter 3.8 records no send latency, and a clock cannot
+  show a scan. Two errors in one clause, both from reusing a sentence rather than
+  checking it.
+- **G1** — FR-019, the email must not be able to fail a send, had no task. It is
+  satisfied structurally by writing a row instead of sending one, which is exactly
+  the kind of "obviously fine" that goes unverified until it is not.
+
+And one the pass created and then caught: fixing U1 introduced FR-013a, whose
+ordering constraint was first hung on T020 — a US2 task — which would have made
+US2 depend on US3 and broken the independence the phase structure exists for. It
+belongs to T028, which is where the crossing write is introduced.
+
+The counts moved: 75 tasks to 78, 22 requirements to 23.
+
 **SC-009 cannot be evaluated until the chapter is written.** It is the size gate,
 and chapter 3.8 established that it is counted on the finished page rather than
 estimated — three of Part 3's four splits were discovered mid-chapter.
