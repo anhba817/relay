@@ -272,3 +272,8 @@ To resume:
   for i in $(seq 1 20); do pnpm test:integration || break; done
 
 Then T036 (quickstart V0-V11), the remaining transcripts in T037, and T045's tag.
+
+**Restarted at d5ab5cb**, which is faa97cc plus research R50's fix — the harness had
+been the only task in the repository that required `DATABASE_URL`, so a plain
+`pnpm test:integration` from a clean shell failed on the one package this feature
+added. Six green runs do not carry across a tree change, so the count begins again.
