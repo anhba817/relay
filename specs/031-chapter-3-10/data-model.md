@@ -44,7 +44,17 @@ a lookup is the whole key rather than a predicate over a range, and a month
 boundary is a different row rather than a different filter (R7).
 
 `bigint` rather than `integer` because this is a cumulative count on the hot path
-and an overflow would be a wrong bill.
+and an overflow would be a wrong bill — declared
+`bigint("messages_sent", { mode: "number" })`, the mode the project's two existing
+bigints use (`channels.last_sequence`, `messages.sequence`). Drizzle requires one.
+
+**`date` WOULD BE THIS PROJECT'S FIRST.** `schema.ts` declares 28 `timestamp(`,
+12 `integer(`, 2 `bigint(` and no `date(` at all, so drizzle's mode for it —
+string or `Date` — is unsettled here. That matters more than it looks: `period` is
+a **primary key component** on this table and on `usage_active_users`, so a
+writer and a reader disagreeing about the mode is a row that cannot be found
+rather than a compile error. T011a chooses it and round-trips it before anything
+depends on it.
 
 The previous month's row is never deleted, which is all FR-003's "remains
 readable" requires.

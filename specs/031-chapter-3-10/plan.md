@@ -162,7 +162,7 @@ sequence with two numbering schemes is a trap for whoever reads them in order.
 | 5 | **US3** — thresholds, the fourth table, the relay, the Mailpit reads | FR-014 to FR-019 |
 | 6 | Verification: twenty lane runs, coverage, the guard prediction, the transcripts | SC-001 to SC-008 |
 | 7 | The chapter in English, and the size count | SC-009, FR-022 |
-| 8 | Publication in both locales | — |
+| 8 | Publication: the fences, their routing, and both locales | — |
 | 9 | Close-out: the plan table, traceability, the notes, the tag | — |
 
 Phase 5 is the seam. If Phase 7's count comes in over 4,000 words, the

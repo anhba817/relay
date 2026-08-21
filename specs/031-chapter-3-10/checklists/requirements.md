@@ -106,6 +106,43 @@ The counts moved: 78 tasks to 79, and one task (T013a) inverted — it used to s
 "rename it", it now says "leave it alone and confirm both call sites are
 untouched".
 
+## Third analysis pass, 2026-08-21
+
+Five findings, one HIGH, no CRITICAL, no constitution violation. All five applied,
+plus a missing task the pass turned up on the way.
+
+**Each pass read a different surface, and each found things the one before could
+not have.** Pass 1 read the documents against each other: thirteen findings, mostly
+drift. Pass 2 read them against the code: seven, three HIGH, every HIGH a confident
+claim about architecture nobody had opened. Pass 3 read them against the **build
+gates**:
+
+- **P1** — no task wrote the chapter's fences. Six modified files are already
+  fenced and carry 47 fences between them; `check-fence-chain` compares byte for
+  byte, so the replay would have diverged. T045 scheduled the check and nothing
+  scheduled the work. Chapter 3.8 carried this as T061. **This is the most
+  expensive finding of the three passes in wall-clock terms** — it surfaces after
+  the chapter is written and translated, with the Vietnamese mirror to redo.
+- **P2** — the fences do not all go to the same place. A chapter may only fence a
+  change it discusses, so the two vitest configs extend `post-series.md` rather
+  than entering the chapter.
+- **P3** — `period` as a `date` would be the project's first, in a schema of 28
+  timestamps and no dates, and it is a primary key component on two tables. A
+  drizzle mode mismatch there is a row that cannot be found, not a compile error.
+
+And the one found on the way: **`app.module.ts` had to change to register
+`QuotasModule`, and no task said so.** The relay would have been written,
+unit-tested, and never started.
+
+The counts moved: 79 tasks to 84.
+
+**Where the remaining risk is.** Not in a fourth pass — the three surfaces a
+document can be read against are now read. What is left is behavioural, and the
+tasks schedule it: T033 measures the `FOR UPDATE` cost, T034 tests whether R5's
+no-sweep prediction holds, T041 counts the page. Feature 030 needed five attempts
+at its twenty-run battery and three of the red runs were real defects; none of them
+was findable by reading.
+
 **SC-009 cannot be evaluated until the chapter is written.** It is the size gate,
 and chapter 3.8 established that it is counted on the finished page rather than
 estimated — three of Part 3's four splits were discovered mid-chapter.

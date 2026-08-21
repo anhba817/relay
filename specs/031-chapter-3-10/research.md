@@ -191,6 +191,30 @@ the month boundary is a different key rather than a different filter.
 FR-003's "previous month remains readable" then costs nothing: the old row is
 still there.
 
+## R7a — `date` has no precedent in this schema, and it is a key
+
+R7 chose to store the period rather than compute it. What it did not check is that
+`date` is a type this project has never used:
+
+```
+$ grep -oE 'timestamp\(|date\(|integer\(|bigint\(' services/api/src/db/schema.ts | sort | uniq -c
+     28 timestamp(
+     12 integer(
+      2 bigint(
+```
+
+None. And `period` is not an ordinary column — it is half the primary key of
+`usage_periods` and a third of `usage_active_users`'s. Drizzle's `date` takes a
+mode, string or `Date`, and a writer and a reader that disagree produce a lookup
+that finds nothing rather than a type error. That is the failure shape this
+project keeps meeting: correct in one place, silently different in another.
+
+**Decision**: choose the mode explicitly, and prove the round-trip — insert with
+the period the TypeScript function returns, look the row up by that same value,
+get the row back — before the roll-up depends on it (T011a). `bigint` needs the
+same treatment and already has an answer: both existing bigints declare
+`{ mode: "number" }`.
+
 ## R8 — Overshoot is bounded, and the bound is stated
 
 Two concurrent sends can both read usage below the cap and both commit. With the
@@ -241,6 +265,36 @@ Nothing in this design performs a global mutation, so nothing should trip featur
 have predicted it. The quickstart includes a step that runs the new suites against
 a database with bait planted and asserts a green lane, which is a cheap way to
 discover that some helper does sweep after all.
+
+## R11a — The publication gate needs its own tasks, not just its own check
+
+Six files this chapter modifies are already fenced, and they carry 47 fences
+between them:
+
+```
+services/api/src/db/repository.ts             15
+services/api/src/db/schema.ts                 10
+services/api/src/app.module.ts                 8
+services/api/src/messages/messages.service.ts  7
+relay-platform/vitest.coverage.config.mts      5
+services/api/vitest.integration.config.mts     2
+```
+
+`check-fence-chain` replays every chapter's fences onto `relay-platform` and
+compares byte for byte, so a modified fenced file with no new fence diverges the
+replay. An earlier draft of the task list scheduled the check (T045) and none of
+the work that satisfies it — which would have surfaced after the chapter was
+written and translated, with the Vietnamese mirror to redo.
+
+**And the fences do not all go to the same place.** A chapter may only fence a
+change it discusses (chapter 3.8's T025e). The four product files are this
+chapter's subject. The two vitest configs are not — adding a relay flag to a lane
+is hygiene 3.10 never explains — so those extend the `post-series.md` sections
+feature 030 already opened.
+
+`app.module.ts` is on that list for a second reason: **nothing had said the module
+needed registering.** The relay would have been written, unit-tested and never
+started.
 
 ## R12 — Size
 

@@ -242,7 +242,11 @@ the mail server, then drive it across again and confirm nothing new arrives.
   exception for files whose subject is a global quota sweep; the design has no sweep
   (plan research R5), so the exception described nothing and hid the stronger claim.
 - **SC-009**: The chapter's published page measures between 2,000 and 4,000 prose
-  words, counted on the finished page rather than estimated.
+  words, **and its fence count is derived by reading the page**, both counted on
+  the finished page rather than estimated. Chapter 3.8's fence count went stale
+  three times across its analysis passes — 23, then 28, then 33 — and chapter 3.5
+  shipped 39 against an estimate of 22, so a written total is a second source of
+  truth rather than a measurement.
 
 ## Assumptions
 
