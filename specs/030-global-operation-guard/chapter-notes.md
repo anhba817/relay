@@ -126,6 +126,34 @@ The `git checkout --` hazard chapter 3.9 recorded did not recur, because T017a's
 rule — commit before every reintroduction, not just before the battery — was
 followed. Five reintroductions, five reverts, five matching `md5sum`s.
 
+## The twenty runs
+
+Five attempts, three of them stopped by a real defect:
+
+| attempt | outcome |
+|---|---|
+| 1 | stopped at 6 green — the tree was still being edited underneath it |
+| 2 | red on run 1 — R49, planted notification rows were claimable |
+| 3 | red on run 4 — R51, sweep bait manufactured 3,799 rows of work for another suite |
+| 4 | red on run 9 — R52, the one drain-driving suite on vitest's 5,000ms default |
+| 5 | **20 green, 0 red**, 183-190s, mean 186.05s |
+
+Not one red run was a false positive from the guard, which is the thing SC-003
+actually asks. Three were the harness's own cost landing somewhere nobody had
+measured it; the fourth was a budget that had been under its own measured cost
+since chapter 3.8.
+
+Two of those three are the same finding at different removes, and stating the law
+once is better than stating three incidents:
+
+> Bait may be claimable only where draining it is database work, and draining it
+> must not create work for a different reader.
+
+The second clause was the expensive one. The sweep bait is cheap to drain — one
+statement — but every endpoint it disables **writes** a disablement notification,
+and those are what a different suite's drain then has to work through. A defence's
+cost does not always land where the defence is.
+
 ## The number that is not in yet
 
 SC-008 — that the count of instances does not increase in the chapter that follows

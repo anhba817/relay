@@ -165,7 +165,7 @@ Platform paths are relative to `relay-platform/`, tutorial paths to
 - [X] T043 Write `specs/030-global-operation-guard/chapter-notes.md` from what happened rather than what was planned, including the parts that went badly
 - [X] T043a **Record in `specs/030-global-operation-guard/chapter-notes.md` whether the design survived.** Research replaced the spec's checksum with a trigger before a line was written; the notes should say whether the trigger survived contact with the lane, and what it cost that the plan did not predict
 - [X] T044 **Confirm T005e's note still describes what shipped**, in both places T005f put it. The decision itself moved to the setup phase, because an ADR is immutable once accepted and a constitution question settled after the code is settled too late. This task only checks the note against the delivered design
-- [ ] T045 Tag `relay-platform` at the close-out commit. **Not a `part3-chN` tag** — this publishes no chapter, so the tag names the feature
+- [X] T045 Tag `relay-platform` at the close-out commit. **Not a `part3-chN` tag** — this publishes no chapter, so the tag names the feature
 
 ---
 
