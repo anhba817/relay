@@ -181,3 +181,53 @@ T002 — THE PRE-CHANGE PLATFORM BASELINE
   place a swallowed refusal shows up**, which is the hazard research R13 named and
   chapter 3.10's design avoids by performing no global operation at all. Anyone
   auditing that claim should diff this count, not read the lane's exit code.
+
+T016b — THE FLUSH TEST CAN FAIL
+--------------------------------------------------------------------------------
+
+  Built chapter 3.8's way for one run — the count's home moved to Redis, written
+  by `sendMessage` and read by `usageFor` — and the lane said:
+
+      × reports identical figures across a FLUSHALL      102ms
+      Tests  1 failed | 6 passed (7)
+
+  ONE test failed and the other six did not, which is the signature worth having:
+  the flush test is the only one that distinguishes the two designs. Every other
+  assertion in the file passes under both, because both count correctly until
+  something clears the store.
+
+  Reverted with `git checkout --`; `md5sum` matches the committed file
+  (9430c7389d86f56384d6577bc346b5bb). Committed before the mutation, per T017.
+
+T018 — WHAT THE SEND PATH GAINED
+--------------------------------------------------------------------------------
+
+  FR-020 forbids a query that SCANS the message table. The transaction does gain
+  two statements, and neither scans anything:
+
+    1. the roll-up increment
+       Insert on usage_periods
+         Conflict Resolution: UPDATE
+         Conflict Arbiter Indexes: usage_periods_pkey
+         Buffers: shared hit=25
+       Execution Time: 0.357 ms
+
+    2. the distinct-user membership
+       Insert on usage_active_users
+         Conflict Resolution: NOTHING
+         Buffers: shared hit=60
+       Trigger for constraint usage_active_users_environment_id_fkey: time=0.687
+       Trigger for constraint usage_active_users_user_id_fkey:        time=0.311
+       Execution Time: 1.304 ms
+
+  No `Seq Scan` in either plan. The primary key is the arbiter index, which is
+  what storing the period rather than computing it buys.
+
+  THE HONEST LINE IS THE SECOND STATEMENT'S. Two foreign-key constraint triggers
+  cost 0.998ms of its 1.304ms — more than the insert itself. That is the price of
+  the membership row being a real row with real references, and it is paid on
+  every ATTRIBUTED send. An unattributed send skips it entirely.
+
+  Compare against the query this design refused: 0.266ms warm for one environment
+  of 507 messages, growing with the tenant's lifetime traffic. The two new
+  statements are flat.
