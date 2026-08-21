@@ -498,3 +498,59 @@ T040 / T041 / T041b / T041c — THE CHAPTER, AND THE SIZE GATE
   title, or no title at all for command output.
 
   GATES: check:fences, check:docs, lint, build — all exit 0.
+
+T036 — TWENTY CONSECUTIVE INTEGRATION RUNS (SC-008)
+--------------------------------------------------------------------------------
+
+  relay-platform frozen at b21a87c
+
+  run  1  exit=0  188s      run 11  exit=0  187s
+  run  2  exit=0  188s      run 12  exit=0  187s
+  run  3  exit=0  187s      run 13  exit=0  187s
+  run  4  exit=0  189s      run 14  exit=0  188s
+  run  5  exit=0  188s      run 15  exit=0  188s
+  run  6  exit=0  187s      run 16  exit=0  189s
+  run  7  exit=0  187s      run 17  exit=0  186s
+  run  8  exit=0  187s      run 18  exit=0  187s
+  run  9  exit=0  189s      run 19  exit=0  187s
+  run 10  exit=0  190s      run 20  exit=0  187s
+
+  20 green, 0 red.  min 186s, max 190s, mean 187.65s, 62.5 minutes.
+  **256 tests in every one of the twenty runs.** Not a count that averaged 256 —
+  the same number twenty times.
+
+  FOUR SECONDS OF SPREAD, and that is the second half of the result. The database
+  is never reset between runs, so by run 20 it holds twenty lanes' worth of usage
+  rows, membership rows and quota notifications. If anything this chapter added
+  accumulated cost — the roll-up growing, the membership table filling, the
+  notification backlog building — it would show here as drift. There is none.
+
+  Against the 231 tests and 3m10.218s this chapter started from: 256 tests in
+  187.65s. Twenty-five more tests, and faster.
+
+  IT TOOK THREE ATTEMPTS AND BOTH FAILURES WERE MINE
+  --------------------------------------------------------------------------------
+
+    attempt 1   stopped at 12 green   the traceability pass changed source the
+                                      lane rebuilds from, mid-battery
+    attempt 2   red on run 4          `pnpm turbo run test --force` in a
+                                      neighbouring shell; `nest build` rewrote
+                                      `dist/` while the dispatcher lane's
+                                      globalSetup was importing from it
+    attempt 3   20 green
+
+  Neither red run was a defect in the tree, and neither was a false positive from
+  the guard. Both were interference, and the second happened while verifying a
+  number for the chapter notes that was already correct.
+
+  **`failing-files=0` beside `exit=1` is the signature.** A real failure names a
+  test; interference kills the lane before a test runs. Attempt 2's run 4 read:
+
+      run  4  exit=1  108s  failing-files=0
+      Serialized Error: { code: 'ERR_LOAD_URL' }
+      Tasks:    8 successful, 10 total
+
+  Feature 030's battery took five attempts and every one of its three red runs was
+  a real defect. This one took three and neither red run was. The difference is
+  worth naming: that feature was measuring a mechanism it had just built, and this
+  one was measuring a machine somebody kept touching.

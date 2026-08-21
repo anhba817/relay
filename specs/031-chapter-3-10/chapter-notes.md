@@ -137,6 +137,17 @@ correct.
 Worth noting for whoever runs the next one: `failing-files=0` beside `exit=1` is
 the signature of interference rather than of a defect. A real failure names a test.
 
+The third attempt went **20 for 20**, 186 to 190 seconds, mean 187.65, and 256
+tests in every single run — not an average of 256, the same number twenty times.
+Four seconds of spread across a database that is never reset and by run 20 held
+twenty lanes' worth of usage rows, membership rows and quota notifications. If
+anything this chapter added accumulated cost, that is where it would have shown.
+
+Feature 030's battery took five attempts and all three of its red runs were real
+defects. This one took three and neither red run was. That feature was measuring a
+mechanism it had just built; this one was measuring a machine somebody kept
+touching.
+
 ## Two test expectations I got wrong
 
 Both in the Mailpit tests, both arithmetic rather than code. A cap of 4 over four
