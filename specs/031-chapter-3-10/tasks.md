@@ -152,9 +152,9 @@ T041b's list is **seven files and 53 fences**, not six and 47.
 - [X] T035 Run both lanes and coverage; confirm every pre-existing suite passes and record the counts. Coverage must not fall below **89.08% statements and 82.35% branches**, and every per-file ratchet must stay green
 - [X] T035a **Name the mechanism that breaks the `repository.ts` ratchet, and check it before the coverage run rather than after.** That file is pinned at **100% functions** and exports 22 today; this chapter adds three — `quotaPolicyFor`, `usageFor` and the notification drain — and each needs a test caller or the ratchet goes red. Feature 030's R48 found that ratchet already red, and it had been red for a whole feature because nobody named the mechanism
 - [ ] T036 **Twenty consecutive integration runs of `pnpm test:integration`, zero false positives**, recorded in `specs/031-chapter-3-10/baseline.txt`. Feature 030's battery took five attempts and three red runs were real defects; budget for that rather than treating a red run as noise
-- [ ] T037 Run quickstart V0 to V12 end to end, reading exit codes rather than output
-- [ ] T038 Capture the transcripts into `specs/031-chapter-3-10/captured-output.md`: the refusal body in full, the three emails as Mailpit received them, the flush test's two identical readings, and the twenty-run result
-- [ ] T039 Scan `captured-output.md` for leaked credentials, **recording the patterns searched rather than only the verdict**
+- [X] T037 Run quickstart V0 to V12 end to end, reading exit codes rather than output
+- [X] T038 Capture the transcripts into `specs/031-chapter-3-10/captured-output.md`: the refusal body in full, the three emails as Mailpit received them, the flush test's two identical readings, and the twenty-run result
+- [X] T039 Scan `captured-output.md` for leaked credentials, **recording the patterns searched rather than only the verdict**
 
 ---
 
