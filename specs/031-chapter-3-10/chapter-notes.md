@@ -109,10 +109,33 @@ the substitution produced a line the tag had, the line was not mine.
 A blunt search-and-replace across a file with eighteen chapters of history in it
 is not a safe operation, and it took a second pass to notice.
 
-**The battery was started on a tree that was still moving.** Twelve runs in, the
-traceability pass changed source that the lane rebuilds from. Feature 030 made
-exactly this mistake on its first attempt and recorded it; the record did not stop
-it happening again. Restarted on a frozen tree.
+**The battery was invalidated twice, both times by me.**
+
+The first attempt got twelve runs in before the traceability pass changed source
+that the lane rebuilds from. Feature 030 made exactly this mistake on its own
+first attempt and wrote it down; the record did not stop it happening again.
+
+The second attempt got four runs in, and run 4 failed like this:
+
+```
+@relay/dispatcher:test:integration:  const { migrate } = (await import(MIGRATE))
+Serialized Error: { code: 'ERR_LOAD_URL' }
+Tasks:    8 successful, 10 total
+```
+
+No test failed — `failing-files=0` — because nothing got as far as a test. I had
+run `pnpm turbo run test --force` in the same minute to verify a number for these
+notes, that triggered `nest build`, and `nest build` deletes and rewrites `dist/`.
+The dispatcher lane's `globalSetup` imports `services/api/dist/db/migrate.js`, and
+it vanished mid-import.
+
+**A twenty-run battery is not safe against a concurrent build, and the machine
+running it has to be left alone.** Two invalidations for two different kinds of
+interference, and the second one was while checking a number that was already
+correct.
+
+Worth noting for whoever runs the next one: `failing-files=0` beside `exit=1` is
+the signature of interference rather than of a defect. A real failure names a test.
 
 ## Two test expectations I got wrong
 
