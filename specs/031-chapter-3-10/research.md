@@ -191,6 +191,84 @@ the month boundary is a different key rather than a different filter.
 FR-003's "previous month remains readable" then costs nothing: the old row is
 still there.
 
+## R4a — The column was already there, and chapter 3.8 said so in print
+
+Three analysis passes read these documents against each other, against the code,
+and against the build gates. None read them against **the published series**, and
+that is where this was:
+
+```
+app/(en)/part-3/chapter-08/limits-you-can-see-coming/page.mdx:254
+  `environments` already had a column that looked right for this, and it was
+  deliberately not used:
+
+      quotaConfig: jsonb("quota_config").notNull().default({}),
+
+  Declared in 2.1, named in SRS §6.1, empty for seventeen chapters — and named
+  for **quotas**. […] Putting one into a field named for the other would collapse
+  in the schema exactly what this chapter spends its length drawing.
+```
+
+And in `schema.ts`, byte-exact into that published page:
+
+```
+// DECLARED IN 2.1 AND STILL EMPTY. […] the column is named for
+// quotas, quotas are a later chapter
+```
+
+This is that chapter. The plan added four typed columns beside it and left it
+empty for an eighteenth, which would have made a published chapter's stated
+expectation come to nothing without a word.
+
+**Decision**: use `quota_config`. Shape:
+
+```json
+{ "messages":     { "hard": 10000, "soft": 8000 },
+  "active_users": { "hard": null,  "soft": 500  } }
+```
+
+**What it buys.** Chapter 3.11 adds connection-minutes and FR-MED-12 later adds
+media bytes; a new dimension is a new key rather than a table migration, which is
+what `data-model.md` asked for and typed columns could not give.
+
+**What it costs — measured, and less than expected.** The framing when this
+decision was put was "no CHECK constraints possible, absent-versus-zero by
+convention only". Both halves turned out to be wrong:
+
+```
+--- refuses a negative ---     ERROR: violates check constraint "environments_quota_config_shape"
+--- refuses a non-number ---   ERROR: violates check constraint "environments_quota_config_shape"
+--- refuses a non-object ---   ERROR: violates check constraint "environments_quota_config_shape"
+--- accepts the real shape --- UPDATE 1
+--- null / zero / absent ---   hard='10000' | explicit_null=t | absent=t   then  zero_reads='0'
+```
+
+`#>> '{messages,hard}'` returns SQL NULL for an absent key and for a JSON null
+alike, and the string `'0'` for zero — so the null-is-not-zero rule chapter 3.8
+needed nullable columns for survives intact, and non-negativity is enforced by the
+schema rather than by the code.
+
+**The real cost is one line.** The CHECK **enumerates** the two dimensions, so a
+third one costs a constraint change to keep the guarantee. A constraint that
+validated any dimension needs `jsonb_each`, and:
+
+```
+ERROR:  cannot use subquery in check constraint
+```
+
+which is feature 030's R37 met from the other side — there it was a trigger's
+`WHEN` clause. The way around it is a PL/pgSQL validator, and a procedural
+function in a **product** migration is a constitution VII argument this chapter has
+not earned. Feature 030's guard is exempt precisely because it is never a
+migration, and its own file says so.
+
+**The second cost is a parser.** A jsonb column arrives as `unknown`, so
+`quotas/config.ts` holds a zod schema and `capsFor()`. It **fails closed**: an
+unparseable config yields no caps and an error to log, because a typo in an
+operator's configuration should not suspend a tenant. `.strict()` on the shape
+means a dimension nobody implemented is a parse failure rather than a cap the
+operator believes in and the system silently ignores.
+
 ## R7a — `date` has no precedent in this schema, and it is a key
 
 R7 chose to store the period rather than compute it. What it did not check is that

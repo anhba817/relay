@@ -46,9 +46,11 @@ engine inside the repository layer (ADR-16), `pg` for the driver, Nodemailer
 through chapter 3.9's mailer, Mailpit in compose as the test mail server. Nothing
 new.
 
-**Storage**: PostgreSQL. Four schema changes — quota columns on `environments`
-beside chapter 3.8's limit columns, a `usage_periods` roll-up table, a
-`usage_active_users` membership table, and a `quota_notifications` outbox table.
+**Storage**: PostgreSQL. Three new tables — `usage_periods`,
+`usage_active_users`, `quota_notifications` — and **no new policy column**: the
+caps go in `environments.quota_config`, the jsonb column chapter 2.1 declared and
+chapter 3.8 refused in print because "the column is named for quotas, quotas are a
+later chapter" (research R4a). The migration adds one CHECK constraint to it.
 
 **Testing**: Vitest. Unit tests for the threshold arithmetic and the period
 function; integration tests against the compose Postgres for the roll-up, the
@@ -156,7 +158,7 @@ sequence with two numbering schemes is a trap for whoever reads them in order.
 | Phase | Content | Maps to |
 |---|---|---|
 | 1 | Baseline: record the lane's current timings and coverage before anything changes | — |
-| 2 | Foundational: the migration, the schema, the period function, the threshold arithmetic | FR-001, FR-003, FR-005, FR-006 |
+| 2 | Foundational: the migration, the schema, the period function, the threshold arithmetic, the config parser | FR-001, FR-003, FR-005, FR-006 |
 | 3 | **US1** — the roll-up written in the send transaction, and the flush test | FR-001, FR-002, FR-004, FR-020 |
 | 4 | **US2** — the cap, the named refusal thrown at the service boundary, the degradation tests | FR-007 to FR-013a |
 | 5 | **US3** — thresholds, the fourth table, the relay, the Mailpit reads | FR-014 to FR-019 |

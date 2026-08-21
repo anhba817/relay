@@ -2,33 +2,42 @@
 
 Four schema changes in one migration, `0009_quotas.sql`.
 
-## Quota policy — columns on `environments`
+## Quota policy — `environments.quota_config`
 
-Beside chapter 3.8's three limit columns, and for the same reasons: FR-RTL-04's
-independence is per environment, there is exactly one row per environment with no
-history, and a separate table would be a join for a value read on every request.
+**No new column.** `quota_config` (jsonb, `NOT NULL DEFAULT '{}'`) has been on
+`environments` since `0000_core_tables.sql`, named in SRS §6.1, and read by
+nothing for eighteen chapters. Chapter 3.8 was offered it for rate-limit policy
+and refused it in published prose — *"the column is named for quotas, quotas are
+a later chapter"*. This is that chapter (research R4a).
 
-| Column | Type | Null | Meaning |
-|---|---|---|---|
-| `message_quota` | `integer` | yes | Hard cap on messages this period. Null: unlimited. |
-| `message_quota_soft` | `integer` | yes | Soft threshold. Alerts, refuses nothing. |
-| `active_user_quota` | `integer` | yes | Hard cap on distinct senders this period. |
-| `active_user_quota_soft` | `integer` | yes | Soft threshold for the same. |
+```json
+{ "messages":     { "hard": 10000, "soft": 8000 },
+  "active_users": { "hard": null,  "soft": 500  } }
+```
 
-**`message_quota` IS the hard cap.** The spec says "hard cap" and "soft threshold";
-the columns say `message_quota` and `message_quota_soft`. Two names for one thing,
-and the reason is that "quota" is the feature's name in prose and the cap's name in
-the schema. Named here once so a reader does not go looking for a separate
-`message_cap` column that does not exist.
+| Path | Meaning |
+|---|---|
+| `{dimension}.hard` | Hard cap. Absent or null: no cap. Zero: refuse everything. |
+| `{dimension}.soft` | Soft threshold. Alerts, refuses nothing. |
 
-**Null is not zero**, the rule chapter 3.8's columns established. Null means no
-cap; zero means refuse everything, and an environment can be switched off
-deliberately, so the two cannot share a representation (FR-006).
+**Absent, null and zero stay three different things**, which is the rule chapter
+3.8 needed nullable columns for. `#>> '{messages,hard}'` returns SQL NULL for an
+absent key and for a JSON null alike, and the string `'0'` for zero — so "no cap"
+and "refuse everything" cannot be confused (FR-006).
 
-Constraints: each column `IS NULL OR >= 0`. A soft threshold above its hard cap is
-permitted and means the soft alert never fires before the hard one — a
-configuration the operator can express, not an error the schema should invent an
-opinion about.
+**One CHECK constraint**, `environments_quota_config_shape`, refuses a negative, a
+non-number, and a dimension that is not an object. It **enumerates** the two
+dimensions: a third costs one line, because a constraint that validated any
+dimension would need `jsonb_each` and `cannot use subquery in check constraint`.
+That is feature 030's R37 from the other side.
+
+**One parser**, `quotas/config.ts`, because jsonb arrives as `unknown`. It fails
+closed — an unparseable config means no caps and an error to log, since a typo
+should not suspend a tenant — and it is `.strict()`, so a dimension nobody
+implemented is a parse failure rather than a cap silently ignored.
+
+**What this buys**: chapter 3.11's connection-minutes and FR-MED-12's media bytes
+are new keys, not new migrations.
 
 ## `usage_periods` — the roll-up
 

@@ -40,21 +40,29 @@ Platform paths are relative to `relay-platform/`, tutorial paths to
 
 **Blocking.** US1, US2 and US3 all depend on these. Pure functions and schema only; nothing observable yet.
 
-- [ ] T006 [P] Write `services/api/src/quotas/period.test.ts` first: the calendar month in UTC, the boundary at midnight on the first, a timestamp inside the month mapping to the month's first day, and **a timestamp in a non-UTC local zone still mapping by UTC**. The last one is the test that catches a `date_trunc` without `at time zone`
-- [ ] T007 [P] Implement `services/api/src/quotas/period.ts`: one exported function turning an instant into a period `date`. **One definition, imported by everything** — the migration's default, the repository's predicate and the relay's read all name this rather than repeating `date_trunc`
-- [ ] T008 [P] Write `services/api/src/quotas/policy.test.ts` first: which thresholds an increase crosses. `40% -> 100%` crosses all three; `49% -> 51%` crosses one; `81% -> 82%` crosses none; a decrease crosses nothing; a quota of zero is 100% at usage zero
-- [ ] T008a [P] **Include the case where the quota is null** in `services/api/src/quotas/policy.test.ts`. Unlimited crosses no threshold at any usage, and the function must say so rather than dividing by null — the branch that would otherwise appear as a crash in production and as full coverage in the ratchet
-- [ ] T009 [P] Implement `services/api/src/quotas/policy.ts`: `thresholdsCrossed(before, after, quota)` returning the ascending list. Pure, no database, no clock
-- [ ] T010 Write `services/api/migrations/0009_quotas.sql` per `data-model.md`: four nullable quota columns on `environments`, `usage_periods`, `usage_active_users`, `quota_notifications`
-- [ ] T010a **Record in the migration why null is not zero**, the rule chapter 3.8's `0008_limit_policy.sql` established for the same reason on the same table. Null is no cap; zero refuses everything; an environment can be switched off deliberately, so they cannot share a representation (FR-006)
-- [ ] T010b **Make `quota_notifications`'s unique constraint carry FR-015** in `services/api/migrations/0009_quotas.sql`, `(environment_id, period, dimension, threshold)`, and say so in the migration. At-most-one-email-per-threshold is then a schema property rather than a promise the writing code makes, and a concurrent double-crossing resolves to one row instead of two emails
-- [ ] T010c **Record in `services/api/migrations/0009_quotas.sql` that `usage_periods.messages_sent` is `bigint` and why.** A cumulative count on the hot path, where an overflow is a wrong bill rather than a wrapped counter
-- [ ] T011 Add the four columns and three tables to `services/api/src/db/schema.ts`, with the check constraints the migration declares
-- [ ] T011a **Choose drizzle's mode for `period` and prove it round-trips before anything depends on it.** This would be the project's **first `date` column** — the schema declares 28 `timestamp(`, 12 `integer(`, 2 `bigint(` and zero `date(` — and `period` is a **primary key component** on two tables, so a mode mismatch between writer and reader is a silent key miss rather than a type error. Write the round-trip into `services/api/src/quotas/period.test.ts` or a schema test: insert with the period the TS function returns, look the row up by that same value, get the row back
-- [ ] T011b **Declare `messages_sent` as `bigint("messages_sent", { mode: "number" })`**, the mode the project's two existing bigints use — `channels.last_sequence` and `messages.sequence`. Drizzle requires a mode; `data-model.md` said `bigint` without one
-- [ ] T012 Run the migration against a fresh database and confirm it is idempotent on a second run, keyed on `schema_migrations` like the eight before it
+- [X] T006 [P] Write `services/api/src/quotas/period.test.ts` first: the calendar month in UTC, the boundary at midnight on the first, a timestamp inside the month mapping to the month's first day, and **a timestamp in a non-UTC local zone still mapping by UTC**. The last one is the test that catches a `date_trunc` without `at time zone`
+- [X] T007 [P] Implement `services/api/src/quotas/period.ts`: one exported function turning an instant into a period `date`. **One definition, imported by everything** — the migration's default, the repository's predicate and the relay's read all name this rather than repeating `date_trunc`
+- [X] T008 [P] Write `services/api/src/quotas/policy.test.ts` first: which thresholds an increase crosses. `40% -> 100%` crosses all three; `49% -> 51%` crosses one; `81% -> 82%` crosses none; a decrease crosses nothing; a quota of zero is 100% at usage zero
+- [X] T008a [P] **Include the case where the quota is null** in `services/api/src/quotas/policy.test.ts`. Unlimited crosses no threshold at any usage, and the function must say so rather than dividing by null — the branch that would otherwise appear as a crash in production and as full coverage in the ratchet
+- [X] T009 [P] Implement `services/api/src/quotas/policy.ts`: `thresholdsCrossed(before, after, quota)` returning the ascending list. Pure, no database, no clock
+- [X] T010 Write `services/api/migrations/0009_quotas.sql` per `data-model.md`: **one CHECK constraint on the `environments.quota_config` column chapter 2.1 already declared** — not four new columns — plus `usage_periods`, `usage_active_users` and `quota_notifications`
+- [X] T010a **Record in the migration why null is not zero**, the rule chapter 3.8's `0008_limit_policy.sql` established for the same reason on the same table. Null is no cap; zero refuses everything; an environment can be switched off deliberately, so they cannot share a representation (FR-006)
+- [X] T010b **Make `quota_notifications`'s unique constraint carry FR-015** in `services/api/migrations/0009_quotas.sql`, `(environment_id, period, dimension, threshold)`, and say so in the migration. At-most-one-email-per-threshold is then a schema property rather than a promise the writing code makes, and a concurrent double-crossing resolves to one row instead of two emails
+- [X] T010c **Record in `services/api/migrations/0009_quotas.sql` that `usage_periods.messages_sent` is `bigint` and why.** A cumulative count on the hot path, where an overflow is a wrong bill rather than a wrapped counter
+- [X] T011 Add the three tables to `services/api/src/db/schema.ts` with the check constraints the migration declares. `quotaConfig` is already there and needs no change
+- [X] T011c **Write `services/api/src/quotas/config.ts`** — a zod schema and `capsFor()`, because a jsonb column arrives as `unknown` and something has to turn it into numbers. **Fails closed**: an unparseable config yields no caps and an error to log, since an operator's typo must not suspend a tenant. `.strict()`, so a dimension nobody implemented is a parse failure rather than a cap silently ignored
+- [X] T011a **Choose drizzle's mode for `period` and prove it round-trips before anything depends on it.** This would be the project's **first `date` column** — the schema declares 28 `timestamp(`, 12 `integer(`, 2 `bigint(` and zero `date(` — and `period` is a **primary key component** on two tables, so a mode mismatch between writer and reader is a silent key miss rather than a type error. Write the round-trip into `services/api/src/quotas/period.test.ts` or a schema test: insert with the period the TS function returns, look the row up by that same value, get the row back
+- [X] T011b **Declare `messages_sent` as `bigint("messages_sent", { mode: "number" })`**, the mode the project's two existing bigints use — `channels.last_sequence` and `messages.sequence`. Drizzle requires a mode; `data-model.md` said `bigint` without one
+- [X] T012 Run the migration against a fresh database and confirm it is idempotent on a second run, keyed on `schema_migrations` like the eight before it
 
 **Checkpoint**: the arithmetic is tested and the tables exist. Nothing counts yet.
+
+**What Phase 2 changed about the design.** The plan added four typed quota columns
+to `environments`. Chapter 3.8 had already refused that column's job in published
+prose, reserving `quota_config` for this chapter, and three analysis passes missed
+it because none read the artifacts against the published series. The caps now live
+in the jsonb column 2.1 left empty (research R4a), which costs a parser and buys
+chapter 3.11 a dimension without a migration.
 
 ---
 
