@@ -231,3 +231,37 @@ T018 — WHAT THE SEND PATH GAINED
   Compare against the query this design refused: 0.266ms warm for one environment
   of 507 messages, growing with the tenant's lifetime traffic. The two new
   statements are flat.
+
+PHASE 4 — US2, AND WHAT THE GUARD SAID
+--------------------------------------------------------------------------------
+
+  integration lane  exit=0  191s
+      @relay/api             194      (+17)
+      @relay/e2e              10      (+1)
+      @relay/dispatcher       16
+      @relay/gateway          21
+      @relay/test-harness      8
+      TOTAL                  249      (from 231)
+
+  GUARD REFUSALS DURING THE RUN: 9, and every one of them is on
+  `webhook_endpoints`:
+
+      3  packages/test-harness/src/guard.itest.ts   (its own refusal tests)
+      5  services/dispatcher/src/dispatcher.itest.ts (bait)
+      1  __shared__/sweep-bait
+
+  **NOT ONE NAMES A QUOTA TABLE**, which is what research R5 predicted and T034
+  will confirm formally: `usage_periods`, `usage_active_users` and
+  `quota_notifications` are written only for the environment doing the sending, so
+  nothing in this design performs a cross-environment mutation.
+
+  The other six are feature 030's residue and are NOT this chapter's: a suite
+  exempt for `webhook_deliveries` but not for `webhook_endpoints` drives a
+  delivery relay that disables a sentinel endpoint, the guard refuses, and the
+  relay logs and continues — research R13's swallowed refusal, live. Chapter 3.10
+  touches no webhook table, so it neither caused this nor can fix it here.
+
+  Worth writing down for the shape rather than the count: **the coverage lane
+  produces three refusals and the integration lane produces nine**, because they
+  run different suites against the same database. A lane's exit code says nothing
+  about either number.
