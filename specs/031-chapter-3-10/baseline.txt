@@ -435,3 +435,66 @@ T035 / T035a — COVERAGE, AND TWO GAPS THE FIRST RUN FOUND
   The overall statements and branches now read 89.51 and 82.73 — the figures
   chapter 3.8 recorded and feature 030's baseline corrected downward as
   unreachable. They are reachable; two test gaps were holding them down.
+
+T040 / T041 / T041b / T041c — THE CHAPTER, AND THE SIZE GATE
+--------------------------------------------------------------------------------
+
+  PROSE WORDS: 2,548        gate: 2,000 to 4,000 (SC-009)     PASS
+  FENCES:      31           counted by reading the page, not estimated
+
+  Comparable: chapter 3.9 at 2,472 words. The plan estimated 3,000 to 3,600 for
+  this one, so the estimate was 18% high — recorded because a written estimate
+  that goes unchecked is the thing SC-009 exists to replace, and this is the
+  fourth Part 3 chapter where the number on the page differed from the number in
+  the plan.
+
+  THE FIRST DRAFT CAME IN AT 2,053 AND WAS TOO THIN, in a way the count could not
+  see. Two things the chapter is actually about were missing: the FLUSH TEST,
+  which is its entire spine — a quota that a cache flush can erase is not a quota
+  — and the reason a DISTINCT-USER COUNT CANNOT BE AN INCREMENT, which is the one
+  genuinely interesting piece of arithmetic in the feature. Both are now sections.
+  The gate measures length; it does not measure whether the length is spent on
+  the right thing.
+
+  FENCE ROUTING (T041c). Ten fenced files changed, and they did not all go to the
+  same place:
+
+    IN THE CHAPTER — five diffs, because the chapter teaches them:
+      services/api/src/db/schema.ts
+      services/api/src/db/repository.ts
+      services/api/src/messages/messages.service.ts
+      services/api/src/app.module.ts
+      services/api/src/main.ts
+
+    IN THE CHAPTER — eight whole files, all new:
+      services/api/migrations/0009_quotas.sql
+      services/api/src/quotas/{period,policy,config,quota.error,quota-email,
+                               quota-relay,quotas.module}.ts
+
+    POST-SERIES — five, because the chapter explains none of them:
+      turbo.json                                   RELAY_QUOTA_RELAY declared
+      services/api/vitest.integration.config.mts   the flag
+      relay-platform/vitest.coverage.config.mts    the flag
+      packages/e2e/src/harness.ts                  setQuota, for a lane that may not import pg
+      services/api/src/webhooks/deliveries.itest.ts instance 12, found at this chapter's baseline
+
+  T041b's task text said seven files and 53 fences. It is ten files: `turbo.json`,
+  `main.ts` and `app.module.ts` were not on the list, and `harness.ts` joined
+  during Phase 4. The list was written from the plan rather than from
+  `check:fences`, which is the only thing that knows.
+
+  THE CHAIN AFTER: 173 fenced files replay onto relay-platform across 27 chapters,
+  from 165 across 26.
+
+  THREE FENCE TITLES WERE WRONG AT FIRST. An illustrative fence — a query, a JSON
+  shape, terminal output — is not a file, and the checker treats every `title=` as
+  one unless it contains `(excerpt)`:
+
+      the query this chapter argues against does not exist in relay-platform
+      EXPLAIN (ANALYZE, BUFFERS), 198,690 messages does not exist in relay-platform
+      environments.quota_config does not exist in relay-platform
+
+  Fixed by following the convention the series already had: `(excerpt)` in the
+  title, or no title at all for command output.
+
+  GATES: check:fences, check:docs, lint, build — all exit 0.
