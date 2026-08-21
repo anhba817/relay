@@ -31,16 +31,36 @@ the minutes it occupied (SC-001). Two connections across the same minute record
 two (SC-002). This is the step that proves the figure exists before anything is
 enforced on it.
 
-## V2 — The gateway reports, and holds nothing
+## V2 — The gateway reports, and holds almost nothing
 
 ```bash
 pnpm --filter @relay/gateway test:integration src/meter
 ```
 
 Expected: green. Read the test that forces every report to fail and confirm it
-asserts **no queue** — the gateway drops what it cannot deliver and the next
-report repairs it (research R3). A test that asserts a buffer length here means
-the delta protocol crept back in.
+asserts **no queue for open connections** — the gateway drops what it cannot
+deliver and the next report repairs it (research R3). A buffer of open-connection
+reports means the delta protocol crept back in.
+
+**One exception, and it is bounded.** A closed connection has no next report, so
+its final total is retained until a report carrying it is accepted (R19, FR-029).
+Confirm the retention is capped and that a discard at the cap is logged and
+counted rather than silent.
+
+## V2a — The socket that lives and dies between two reports
+
+```bash
+pnpm --filter @relay/api test:integration src/quotas/connections
+```
+
+Expected: a connection opened and closed inside one reporting interval records
+**one** connection-minute, not zero (SC-021, FR-005). Then the churn case: a
+thousand five-second sockets are not free.
+
+This step exists because the design's first draft counted them as zero — the
+`close` handler removes a connection from the registry before the meter that
+walks the registry can see it, so the unit chosen to charge reconnect churn
+charged nothing (R19).
 
 ## V3 — Replay, loss, and reordering
 
@@ -126,7 +146,7 @@ it. That is a result, not a failure.
 ## V8 — Nothing got slower at the door
 
 ```bash
-pnpm --filter @relay/api test:integration src/internal/session.perf
+pnpm --filter @relay/api test:integration src/internal/session.perf.itest.ts
 ```
 
 Expected: the added connect-time read appears as index lookups on two primary
@@ -174,7 +194,7 @@ pnpm lint
 ```
 
 Expected: every count at or above V0's, coverage at or above its ratchet, and
-the fence chain byte-exact. Twelve files this chapter touches carry 62 fences
+the fence chain byte-exact. Thirteen files this chapter touches carry 66 fences
 between them (research R16); a chain failure here is the cheapest place to find
 that a diff hunk was written against the wrong pre-image.
 
@@ -224,5 +244,8 @@ grep -n "connection_minutes" services/api/migrations/0010_*.sql \
 
 Count the places the third dimension actually had to be named, and write the
 number into `chapter-notes.md` beside chapter 3.10's written prediction of "a new
-key plus a one-line constraint change" (SC-013, FR-024). Research R15 expects
-six places. A higher number is the result.
+key plus a one-line constraint change" (SC-013, FR-024).
+
+**Count first, then compare.** R15 predicts six. Reading the prediction before
+counting is how a measurement turns into a confirmation, which is the failure
+FR-024 was written to avoid.

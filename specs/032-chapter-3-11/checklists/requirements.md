@@ -95,3 +95,59 @@ state, not as gaps.
 **SC-015 cannot be evaluated until the chapter is written.** It is the size gate,
 counted on the finished page. Three of Part 3's four splits were discovered
 mid-chapter; chapter 3.10's estimate ran 18% high against the page it produced.
+
+
+## First analysis pass, 2026-08-22
+
+Nineteen findings — one CRITICAL, six HIGH, nine MEDIUM, three LOW — no
+constitution violation. All nineteen applied.
+
+**This pass read the documents against each other AND against the published
+series, which is the surface chapter 3.10 discovered last.** That ordering was
+deliberate and it paid: two of the nineteen are shipped chapters asserting facts
+this one falsifies, and one of them names a file that appeared in none of my
+inventories.
+
+**C1 was a correctness gap, not a wording one, and it is the reason to run this
+pass at all.** `session.ts` removes a connection from the registry on the line
+after its `close` handler opens, and the meter walks the registry — so a socket
+that opened and closed between two reports was counted **zero**. FR-002 says a
+five-second socket costs one minute. Worse, it failed at the one thing R2 chose
+the bucket model *for*: the comparison table there argues the model charges
+reconnect churn where summing seconds does not, and under a registry-only meter a
+thousand five-second sockets would have cost nothing. Fixing it forced R3 to be
+narrowed in print — "reports carry totals so nothing is queued" is true of open
+connections and false of closed ones, because a closed connection has no next
+report to repair a lost one.
+
+**Three HIGH findings were one file nobody had opened.** `quotas/quota.error.ts`
+holds a two-way ternary — `dimension === "messages" ? "message" : "active user"` —
+so a connection-minutes breach would have rendered "monthly **active user** quota
+exhausted", and `Dimension` is `keyof QuotaConfig`, so it widens on its own and
+the compiler catches nothing. The same file says "sends resume on" twice, and what
+resumes for this dimension is connecting. And `contracts/metering.md` had
+paraphrased the message format from memory rather than quoting it. Chapter 3.10's
+second pass found this class and called it "a claim the plan made confidently
+about architecture nobody had opened"; the difference is that this pass opened it.
+
+**H1 is the expensive one.** Chapter 3.8 fenced
+`services/api/src/limits/rate-limit.middleware.ts` with a comment saying the
+gateway "forwards the END USER's token on all three of its api calls" and that
+"Only the dispatcher carries the platform credential". This chapter adds a fourth
+call and a second holder. The middleware's behaviour is unaffected —
+`operationsFor` returns `[]` for anything outside `/v1/` — but the sentence stops
+being true, and the file was in neither the plan's structure tree nor R16's fence
+table. Twelve files at 62 fences became thirteen at 66.
+
+**Two findings were my own numbers being wrong**, which is worth recording
+because this series claims to say the number instead of the adjective. The plan
+called `usage_connections` "a fifth usage table" when it is the fourth, and three
+of the phase-to-requirement mappings pointed at phases that do not contain the
+work.
+
+**One finding was a task that pre-answered its own measurement.** T066 said "count
+the six places", which is the prediction FR-024 asks to be tested, not the result.
+
+The counts moved: 28 requirements to 29, 20 success criteria to 21, 95 tasks to
+103, and research grew R19 and R20 — the close path, and the unseen-connection
+decision the specification had asked the plan to make and the plan had not made.

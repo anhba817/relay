@@ -42,6 +42,18 @@ settled:
 - **Still no sweep.** Usage rises only on a report, and the report transaction
   knows the figure before and after, so it writes its own crossings. Second
   chapter running to reach that result by that argument (R5).
+- **The close path is metered too, and that narrows R3.** `session.ts` removes a
+  connection from the registry in its `close` handler, and the meter walks the
+  registry — so the design as first planned counted a socket that opened and
+  closed between two reports as **zero**, which FR-002 forbids and which would have
+  made reconnect churn free, the one thing the bucket model was chosen to charge.
+  The close handler hands its final totals to the meter. Retention then applies to
+  closed connections and not to open ones, because a closed connection has no next
+  report to repair a lost one (R19).
+- **A report naming an unseen connection is accepted as that connection's
+  first.** The api is never told when a connection opens, so "unknown" and "first"
+  are the same state; what is refused is a report naming a connection whose row
+  already carries a different environment (R20).
 
 And one finding that is about the chapter before this one: **chapter 3.10 added
 three environment-scoped tables and extended feature 030's guard to none of
@@ -92,8 +104,10 @@ refuse a connect, or fail a send (FR-012). Reported figures must survive a flush
 of the per-minute counter store (FR-026).
 
 **Scale/Scope**: One migration, one new internal route, one new gateway module,
-six places where a third dimension has to be named (R15), and twelve existing
-files carrying 62 fences between them (R16).
+six places where a third dimension has to be named (R15), and **thirteen** existing
+files carrying **66** fences between them (R16) — twelve, at 62, until the first
+analysis pass found `rate-limit.middleware.ts` asserting in a published chapter
+that the gateway makes three api calls and carries no platform credential.
 
 ## Constitution Check
 
@@ -157,7 +171,13 @@ relay-platform/
 │       │                                     # organisationOf extracted
 │       ├── internal/
 │       │   ├── usage.controller.ts           # NEW — POST /internal/usage/connections
+│       │   ├── internal.module.ts            # where the new controller registers
 │       │   └── session.controller.ts         # the cap check at the door
+│       ├── limits/
+│       │   └── rate-limit.middleware.ts      # a comment that says the gateway
+│       │                                     # makes three calls and holds no
+│       │                                     # platform credential. Both stop
+│       │                                     # being true (R16)
 │       └── quotas/
 │           ├── period.ts                     # minuteOf, beside periodOf
 │           ├── config.ts                     # the third key
@@ -209,12 +229,12 @@ with two numbering schemes is a trap for whoever reads them in order.
 |---|---|---|
 | 1 | Baseline: the lane's current counts, timings and coverage, before anything changes | — |
 | 2 | Foundational: the migration, the schema, `minuteOf`, the third key in three enumerations, the protocol schemas | FR-001, FR-002, FR-003, FR-013, FR-014 |
-| 3 | The credential: one per service, the gateway's compose and turbo entries, `service` stops being a constant | FR-011, FR-004 |
-| 4 | **US1** — the meter, the report route, the credit, the flush test | FR-001 to FR-005, FR-009, FR-010, FR-026 |
-| 5 | **US2** — replay, loss, reordering, the kill, the shutdown flush, the isolation of a failed report | FR-006 to FR-008, FR-012 |
+| 3 | The credential: one per service, the gateway's compose and turbo entries, `service` stops being a constant | FR-011 |
+| 4 | **US1** — the meter, the close path, the report route, the credit, the flush test | FR-001 to FR-005, FR-009, FR-010, FR-026, FR-004 |
+| 5 | **US2** — replay, loss, reordering, the kill, the shutdown flush, the isolation of a failed report | FR-006 to FR-008, FR-012, FR-029 |
 | 6 | **US3** — the cap at the door, the fourth outcome, the raw 402, the degradation tests, the overshoot bound | FR-015 to FR-020, FR-025 |
 | 7 | **US4** — the third dimension's crossings and emails | FR-021 to FR-023 |
-| 8 | Verification: the guard prediction, the connect-path measurement, twenty lane runs, the six-place count | SC-005, SC-009 to SC-014, FR-024 |
+| 8 | Verification: the guard prediction, the connect-path measurement, twenty lane runs, the dimension-cost count | SC-012, SC-013, SC-014, FR-024, FR-027 |
 | 9 | The chapter in English, and the size count | SC-015, FR-019, FR-028 |
 | 10 | Publication: the fences, their routing, and both locales | — |
 | 11 | Close-out: the plan table, traceability, the notes, the tag | — |
@@ -236,8 +256,9 @@ mean writing the meter's tests twice.
 
 | Thing | Why it is here | Cheaper alternative rejected because |
 |---|---|---|
-| `usage_connections`, a fifth usage table | A repeated report has to credit nothing, and knowing that requires remembering what was already credited (FR-006) | Remembering minutes instead of connections is 43.2M rows a month at a thousand concurrent sockets (R4). Trusting the caller not to retry is not a mechanism |
+| `usage_connections`, a fourth usage table | A repeated report has to credit nothing, and knowing that requires remembering what was already credited (FR-006) | Remembering minutes instead of connections is 43.2M rows a month at a thousand concurrent sockets (R4). Trusting the caller not to retry is not a mechanism |
 | A second credential variable | `PlatformPrincipal.service` is documented as "which internal service presented it" and is a hardcoded `"dispatcher"`; a second caller makes the field wrong (R1a). One secret shared between them also lets the more exposed service set the blast radius for both | A caller-asserted service header is the pattern chapter 3.2 spent itself removing, and "only for logs" is the sentence it survives under |
+| Retaining a closed connection's final total until a report is accepted | A closed connection has no next report to repair a lost one, so R3's "totals repair themselves" reasoning stops applying exactly there (R19) | Reporting synchronously from the `close` handler puts an HTTP call in the one place already documented as "the last place that should throw", and turns a mass disconnect into a burst of requests. Dropping the total instead makes reconnect churn free, which is what R2 chose the bucket model to prevent |
 | A second timer in the gateway | Billing cadence and liveness cadence are different requirements; the heartbeat's 30s comes from EIR-WS-04's death detection (R10) | Reusing the heartbeat makes one number answer to two requirements, and the next change to either argues with the other |
 | A fourth `Authentication` outcome | A 402 currently becomes `ApiError` → `unavailable` → close 1011, which tells the client we are broken and that retrying will help. Both wrong (R6) | Mapping 402 to `refused` closes 4001, "your credential is bad", which is also wrong and is the answer a client will act on by re-authenticating for ever |
 | `recordCrossings` and `organisationOf` extracted from `Repository` | The report route is platform-credentialled and `Repository` is environment-scoped by construction; the notification machinery is behind scoping the route cannot satisfy (R8) | Copying the crossing logic into the platform path is a fifth place that has to agree about thresholds. `usageFor` already sets the precedent for a standalone admin-surface function |

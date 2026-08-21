@@ -69,10 +69,14 @@ CREATE TABLE usage_connections (
   PRIMARY KEY (connection_id, period),
   CONSTRAINT usage_connections_minutes_non_negative CHECK (minutes >= 0)
 );
-
-CREATE INDEX usage_connections_by_environment
-  ON usage_connections (environment_id, period);
 ```
+
+**No secondary index, and that is a decision.** A first draft added
+`(environment_id, period)`, and the first analysis pass asked what reads it.
+Nothing does: the credit path looks a row up by primary key, and the figure an
+operator reads comes from `usage_periods`, not from summing here. The one job that
+would have used it is pruning a finished period, and R9 declines that. An index
+for work the design refused is a write cost with no reader.
 
 **One row per connection per period, and that is the whole idempotency
 mechanism.** A report says a connection has occupied N minute-buckets in a

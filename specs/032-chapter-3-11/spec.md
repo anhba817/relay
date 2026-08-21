@@ -215,12 +215,15 @@ arrives.
   connection. One hundred concurrent connections open for one minute MUST count
   one hundred.
 - **FR-003**: The definition of which minute an instant belongs to MUST live in
-  one place, be usable from tests without waiting in real time, and match the
-  existing definition of which month an instant belongs to.
+  one place **per service**, be usable from tests without waiting in real time,
+  and match the existing definition of which month an instant belongs to. Where
+  two services cannot share the definition, a test MUST assert that both
+  implementations agree on the same instants.
 - **FR-004**: The service that observes connections MUST NOT gain database
   access. Recording MUST be performed by the service that owns the tables.
-- **FR-005**: Minutes MUST be reported while a connection is open, not only when
-  it closes.
+- **FR-005**: Minutes MUST be reported while a connection is open, and again when
+  it closes. A connection whose whole life falls between two reports MUST still be
+  counted.
 - **FR-006**: A report delivered more than once MUST credit its minutes exactly
   once.
 - **FR-007**: The loss of a single report MUST NOT permanently under-count a
@@ -280,6 +283,10 @@ arrives.
 - **FR-028**: The chapter MUST answer the question `docs/04-srs.md` records as
   open — whether connection-minute metering needs per-second precision — and MUST
   state the rounding rule and who it charges.
+- **FR-029**: A closed connection's final figure MUST be retried until a report
+  carrying it is accepted, because no later report will carry it. The retained
+  set MUST be bounded, and discarding an entry because the bound was reached MUST
+  be logged and counted rather than silent.
 
 ### Key Entities
 
@@ -352,6 +359,9 @@ arrives.
   forced to error.
 - **SC-020**: A soft threshold configured with no hard cap sends its email and
   refuses no connect, verified by a successful connect after the email arrives.
+- **SC-021**: A connection opened and closed entirely between two reports is
+  counted — one socket living five seconds inside a sixty-second interval records
+  one connection-minute, not zero.
 
 ## Assumptions
 

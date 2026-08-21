@@ -33,13 +33,19 @@ connection that was open when the month turned over.
 Response:
 
 ```json
-{ "credited": 4, "refused": 0 }
+{ "credited": 4 }
 ```
 
 `credited` is the sum of the deltas actually applied, so a replay answers
 `{"credited": 0}` and a caller can see that its retry changed nothing.
 
-**Authorisation**: `@Accepts("platform")` and nothing else. An `application`
+One field, because there is nothing else the caller can act on. An earlier draft
+carried a `refused` count beside it, which described nothing: the only refusal in
+this design is the 409 below, and it rejects the whole request rather than an
+entry within it.
+
+**Authorisation**: `@Accepts("platform")` and nothing else — the gateway's own
+credential, from `RELAY_INTERNAL_CREDENTIAL_GATEWAY`, not the dispatcher's. An `application`
 credential is scoped to one environment by construction and a report names
 environments in its body; a route that accepted one would either be useless or
 would have to ignore the scope, and ignoring a tenant scope is the shape a
@@ -78,11 +84,31 @@ Content-Type: application/json
 ```json
 {
   "code": "quota_exceeded",
-  "message": "connection-minutes quota exceeded for 2026-08: 50000 of 50000 used; resumes 2026-09-01",
+  "message": "monthly connection-minute quota exhausted: 50000 of 50000 for 2026-08-01; connections resume on 2026-09-01",
   "docs_url": "https://relay.example/docs/errors/quota_exceeded",
   "request_id": "req_…"
 }
 ```
+
+**That is chapter 3.10's format, extended, not a new one.** `publicMessage()` in
+`quotas/quota.error.ts` already produces
+
+```
+monthly {noun} quota exhausted: {usage} of {quota} for {period}; sends resume on {date}
+```
+
+and an earlier draft of this contract paraphrased it from memory as "quota
+exceeded … used; resumes" — different verb, different order, different resume
+clause. Two changes are needed to the real one and both are this chapter's:
+
+1. **The noun is a two-way ternary today** —
+   `dimension === "messages" ? "message" : "active user"` — so a third dimension
+   renders "monthly **active user** quota exhausted" for a connection-minutes
+   breach. `Dimension` is `keyof QuotaConfig`, so it widens on its own when the
+   config key lands: the compiler catches nothing and the wrong word ships.
+2. **"sends resume on" is wrong for this dimension.** What resumes is connecting.
+   The resumed operation has to follow the dimension, in `publicMessage()` and in
+   `resumesOn()`'s own doc comment, which also says "sends".
 
 The code is **named by the thrower**, not inferred from the status:
 `ProtocolErrorFilter` infers a code for four statuses and calls everything else
@@ -171,7 +197,9 @@ Written as a contract because the alternative is that it becomes folklore.
 | Reports arrive out of order | none — a lower total credits nothing and lowers nothing |
 | The api is unreachable for an hour | none, for connections still open when it returns |
 | The gateway is stopped gracefully | none — a final report is flushed on shutdown |
-| **The gateway is killed** | **up to one reporting interval per open connection is never counted** |
+| A connection closes between two reports | none — the close hands its final total to the meter, which is retained until a report carrying it is accepted (R19) |
+| **A closed connection's total is discarded at the retention cap** | **that connection's minutes since its last accepted report are never counted** — logged and counted, never silent (FR-029) |
+| **The gateway is killed** | **up to one reporting interval per open connection is never counted**, plus anything retained for connections that had already closed |
 | Clock skew between instances | a bucket may land in the wrong minute, or at a boundary in the wrong period; bounded by the skew |
 
 The last two are under-counts, and that is the direction chosen deliberately.

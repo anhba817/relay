@@ -58,9 +58,9 @@ line that says which service asked for a write becomes the one field in the
 principal that cannot be trusted.
 
 **Decision.** One credential per service. `RELAY_INTERNAL_CREDENTIAL` keeps its
-name and its meaning (the dispatcher's), and the gateway gets its own. The
-compare becomes a walk over a small map of `{ env var → service name }`,
-returning the service whose secret matched.
+name and its meaning (the dispatcher's), and the gateway gets
+`RELAY_INTERNAL_CREDENTIAL_GATEWAY`. The compare becomes a walk over a small map
+of `{ env var → service name }`, returning the service whose secret matched.
 
 **What it buys beyond honest logs.** A gateway compromise no longer yields the
 dispatcher's reach. The two services have different exposure — the gateway
@@ -412,6 +412,17 @@ between them in the English chapters:
 | `services/api/src/internal/session.controller.ts` | 2 |
 | `services/api/src/quotas/config.ts` | 1 |
 | `services/api/src/quotas/policy.ts` | 1 |
+| `services/api/src/limits/rate-limit.middleware.ts` | 4 |
+
+**And that last row was missing from the first draft of this table**, which is
+the finding the first analysis pass earned its keep with. Chapter 3.8 fenced that
+file with a comment that says the gateway "forwards the END USER's token on **all
+three** of its api calls" and that "**Only the dispatcher** carries the platform
+credential". This chapter adds a fourth call and a second credential holder, so a
+published chapter asserts a fact this one falsifies. Nothing about the middleware's
+*behaviour* changes — `operationsFor` returns `[]` for anything outside `/v1/`, so
+the report route was never counted — but the comment stops being true, and the
+chain will not let it stay.
 
 The chain applies **hunked diffs**, so the cost is one diff fence per changed
 region rather than a restatement of each file — `check-fence-chain.mjs` requires
@@ -455,8 +466,9 @@ into chapter 3.8:
 > functions would be an abstraction constitution VII asks to be justified, and
 > this one could not be.
 
-**Decision.** Duplicate `periodOf` and `minuteOf` into the gateway's meter, with
-the same argument, and pin them together with a **drift test**: a unit test in
+**Decision.** Duplicate `periodOf` and `minuteOf` into the gateway's meter — in
+`meter.ts`, beside the bucket arithmetic that uses them — with the same argument,
+and pin them together with a **drift test**: a unit test in
 each package that asserts both implementations agree on the same set of
 instants, including a month boundary and a leap-day boundary. Feature 030's R50
 established the shape — a drift test is what makes a deliberate duplication
@@ -472,3 +484,76 @@ disagrees puts a tenant's minutes in a month nobody reads — chapter 3.10's
 `period.ts` says exactly this about `date_trunc` without a timezone. So the drift
 test is not decoration here; it is the only thing standing between two copies of
 a calendar.
+
+
+---
+
+## R19 — The close path, and the hole it opens in R3
+
+**Found by the first analysis pass, and it is a correctness gap rather than a
+wording one.** `services/gateway/src/session.ts` removes a connection from the
+registry in its `close` handler, on the line after the handler opens:
+
+```
+    socket.on("close", (code) => {
+      registry.remove(connection.id);
+```
+
+The meter walks the registry. So a socket that opens and closes between two
+reports is gone before anything can report it, and it is counted **zero**. FR-002
+says a five-second socket costs one minute and the specification's US1 scenario 5
+says a socket living inside one interval has been counted; the design as planned
+satisfied neither.
+
+Worse, it fails at the one thing R2 chose the bucket model *for*. The comparison
+table there says the per-connection bucket model charges reconnect churn where
+summing seconds does not — and under a registry-only meter, churn is free. A
+thousand five-second sockets would have cost nothing.
+
+**Decision.** The close handler hands the connection's final per-period totals to
+the meter, which includes them in the next report. Not a synchronous HTTP call
+from a close handler: that handler is already documented as "the last place that
+should throw", and a mass disconnect would turn one event into a burst of
+requests.
+
+**And this is where R3's claim needs narrowing, said plainly rather than left to
+be discovered.** R3 says reports carry totals so nothing has to be queued — a lost
+report is repaired by the next one. That reasoning holds for a connection that is
+still open and **fails for one that has closed**, because there is no next report
+to carry the total. So:
+
+- open connections: no retention, exactly as R3 says
+- closed connections: retained until a report carrying them is **accepted**
+
+The retained set is bounded by closes since the last accepted report, capped, and
+a discard at the cap is logged and counted (FR-029). A cap that drops entries
+under-counts, which is the same direction as the crash loss in R10 and the
+opposite of billing for a socket nobody holds.
+
+**What it costs the chapter.** One more row in the loss table, one honest
+paragraph narrowing a decision made two sections earlier, and the admission that
+the design's cleanest claim — "the gateway holds no queue" — is true of most of it
+and not all of it.
+
+---
+
+## R20 — A report naming a connection the api has never seen
+
+The specification listed this as a decision the plan must make and state, and the
+first draft of the plan did not make it. It is made here.
+
+**Decision.** Accepted, as that connection's first report. The api is never told
+when a connection opens — the first it hears of any connection is a report — so
+"unknown" and "first" are the same state and there is nothing to distinguish them
+with.
+
+**Why not refuse it.** A refusal would need the api to know the set of live
+connections, which means the gateway announcing every connect: one extra internal
+call on the hot path of the thing chapter 3.2 spent its research budget keeping to
+one round trip, to buy a check against a caller that already holds a platform
+credential.
+
+**What still gets refused**, and it is the one that matters: a report naming a
+connection whose accounting row already carries a *different* environment. That is
+the 409 in `contracts/metering.md` §1, and it is a constitution I refusal rather
+than a data-quality one.

@@ -32,7 +32,7 @@ Platform paths are relative to `relay-platform/`, tutorial paths to
 - [ ] T004 **Run the integration lane three times and record every failure.** A lane with a pre-existing intermittent failure cannot measure a new one, and chapter 3.10 found instance 12 of this project's recurring fault at exactly this step
 - [ ] T004a **Measure the connect path before it changes.** Record `POST /internal/session` latency at 1-, 8- and 32-way concurrency, and the `EXPLAIN (ANALYZE, BUFFERS)` for what it reads today, into `baseline.txt`. SC-012 compares against this. Chapter 3.10's T033 chased three wrong causes across an uncontrolled benchmark reporting 273% to 411% before instrumentation showed 0.56ms — the instrument goes in first
 - [ ] T005 Fix forward, with its own commit, anything T004 finds that is not this chapter's work
-- [ ] T006 [P] **Verify research R16's fence count rather than trusting it.** Re-count the titled fences for each of the twelve files in the plan's structure tree and record the table in `baseline.txt`. Chapter 3.8's fence count went stale three times across its analysis passes
+- [ ] T006 [P] **Verify research R16's fence count rather than trusting it.** Re-count the titled fences for each of the **thirteen** files in the plan's structure tree — the first analysis pass found a thirteenth, `services/api/src/limits/rate-limit.middleware.ts`, whose chapter 3.8 comment says the gateway makes three api calls and that only the dispatcher carries a platform credential and record the table in `baseline.txt`. Chapter 3.8's fence count went stale three times across its analysis passes
 
 **Checkpoint**: the starting numbers exist, the lane is green for a known reason, and the connect path has a measured "before".
 
@@ -47,10 +47,11 @@ Platform paths are relative to `relay-platform/`, tutorial paths to
 - [ ] T010a **Integration test the recreated constraints in `services/api/src/quotas/config.itest.ts`**: a `connection_minutes` cap is accepted, a negative one is refused, a non-object is refused, and a `connection_minutes` notification row is accepted while an unknown dimension is still refused. The constraint is the guarantee; a migration that silently dropped a clause looks identical from TypeScript
 - [ ] T011 Add `connection_minutes` to `quotaConfigSchema` in `services/api/src/quotas/config.ts`, and a test that an unknown dimension is still a parse failure — the schema is `.strict()` and that is the property being preserved, not the key being added (FR-013)
 - [ ] T011a [P] **Test that `capsFor` still fails closed** for a `connection_minutes` config that the CHECK would accept but the parser rejects. A quota that cannot be read must refuse nothing rather than everything, and adding a dimension is where that inverts by accident
-- [ ] T012 [P] Add `connection_minutes` to the `Dimension` union in `services/api/src/quotas/quota.error.ts` and to `publicMessage()`, naming the dimension in the customer's words rather than the column's (FR-016)
+- [ ] T012 [P] Fix `publicMessage()` in `services/api/src/quotas/quota.error.ts`. **There is no union to edit** — `Dimension` is `keyof QuotaConfig`, so it widens the moment T011 lands. What needs editing is the two-way ternary `dimension === "messages" ? "message" : "active user"`, which renders a connection-minutes breach as "monthly **active user** quota exhausted". The compiler catches nothing and the wrong word ships (FR-016)
+- [ ] T012a [P] In the same file, make the resumed operation follow the dimension. `publicMessage()` ends "sends resume on …" and `resumesOn()`'s doc comment says "The date sends resume" — for connection-minutes what resumes is **connecting**. Unit test one message per dimension, asserting the noun and the verb, against `contracts/metering.md` §2
 - [ ] T013 Add the report request and response schemas to `packages/protocol/src/internal.ts` per `contracts/metering.md` §1, with `.strictObject()` and a `period` refinement that rejects anything but the first of a month, plus tests in `internal.test.ts`
 - [ ] T014 [P] Write the credit arithmetic as a pure function — `creditFor(reported, credited): number` returning `max(0, reported − credited)` — in `services/api/src/quotas/credit.ts` with unit tests for the replay, the reorder and the first report (FR-006, FR-007)
-- [ ] T015 Write the bucket arithmetic as a pure function in `services/gateway/src/meter.ts`: given an opened-at instant and a now, return the per-period bucket totals. Unit tested on a driven clock in `meter.test.ts`, including the 00:00:59-to-00:01:01 case that costs two and the five-second case that costs one (FR-002, FR-009)
+- [ ] T015 Write **the pure half** of `services/gateway/src/meter.ts`: the gateway's own `periodOf` and `minuteOf` (R18 duplicates them because the gateway cannot import from the api), and the bucket arithmetic over them — given an opened-at instant and a now, return the per-period bucket totals. No timer and no transport; T023 adds those to the same file. Unit tested on a driven clock in `meter.test.ts`, including the 00:00:59-to-00:01:01 case that costs two and the five-second case that costs one (FR-002, FR-009)
 - [ ] T015a **The drift test R18 requires**, in both packages: the gateway's duplicated `periodOf`/`minuteOf` and the api's agree on the same set of instants, including a month boundary and a leap day. `limits.ts` duplicated the api's window arithmetic with an argument; this duplicates a calendar, and a calendar that disagrees puts a tenant's minutes in a month nobody reads
 
 **Checkpoint**: the unit can be computed and stored, and nothing yet computes it.
@@ -78,17 +79,20 @@ be accepted, so a credential the gateway does not hold blocks all of them.
 
 **Goal**: connection-minutes recorded per environment per period, by the api, from a claim the gateway makes.
 
-**Independent test**: hold a connection open across three minute boundaries on a driven clock and read the figure; hold two and confirm it doubles; flush Redis and confirm nothing moves.
+**Independent test**: hold a connection open across three minute boundaries on a driven clock and read the figure; hold two and confirm it doubles; open and close one inside a single interval and confirm it still counts; flush Redis and confirm nothing moves.
 
 - [ ] T022 [US1] Add what a connection remembers about time to `Connection` in `services/gateway/src/registry.ts` — the instant it opened, and the totals last reported — beside `marks` and `sendLimit`, which are there for the same reason: it describes one socket and dies with it
-- [ ] T023 [US1] Build the meter in `services/gateway/src/meter.ts`: a second `setInterval`, default 60 s, injectable the way `pingIntervalMs` already is, walking the registry and posting one report for every connection it holds (R10, FR-005)
+- [ ] T023 [US1] Build **the timer half** of `services/gateway/src/meter.ts` on top of T015: a second `setInterval`, default 60 s, injectable the way `pingIntervalMs` already is, walking the registry and posting one report for every connection it holds (R10, FR-005)
+- [ ] T023a [US1] **Meter the close path, which the registry cannot.** `session.ts` calls `registry.remove(connection.id)` on the line after its `close` handler opens, so a socket that opens and closes between two reports is gone before the meter sees it and is counted **zero** — FR-002 forbids that, and it would make reconnect churn free, which is the one thing R2 chose the bucket model to charge. The close handler hands the connection's final per-period totals to the meter (R19, FR-005). **Not a synchronous report from the handler**: that handler is documented as "the last place that should throw", and a mass disconnect would become a burst of HTTP requests
+- [ ] T023b [US1] Retain a closed connection's total until a report carrying it is **accepted**, bounded, with a discard at the cap logged and counted rather than dropped silently (FR-029). This is the one place R3's "totals repair themselves, so nothing is queued" stops applying — a closed connection has no next report — and the code comment says so rather than leaving the exception to be inferred
 - [ ] T024 [US1] Wire the meter into `attachSessions` in `services/gateway/src/session.ts` and clear its timer in `sessions.close()` beside the heartbeat's
 - [ ] T025 [US1] Write `creditConnectionMinutes(db, entries)` in `services/api/src/db/repository.ts` as a **standalone exported function** taking explicit ids, next to `usageFor` and for the reason `usageFor` gives: the caller is the platform, not a tenant (R8)
 - [ ] T026 [US1] Inside that function: `SELECT … FOR UPDATE` on the accounting row by primary key, credit the delta to `usage_periods`, upsert the accounting row to the new total, one transaction. Chapter 3.10 wanted this lock and could not have it — `FOR UPDATE cannot be applied to the nullable side of an outer join` — and here it is a single table by primary key
 - [ ] T027 [US1] Create `services/api/src/internal/usage.controller.ts`: `POST /internal/usage/connections`, `@Accepts("platform")` and nothing else, body validated by the protocol schema through `ZodValidationPipe`. A separate controller from the `@Accepts("user")` internal routes, following `dispatch.controller.ts` — mixing credential classes in one controller makes the class decorator stop answering "who may call this"
-- [ ] T028 [US1] Register the controller in `services/api/src/app.module.ts`. Chapter 3.10's third analysis pass found a module that was written, unit-tested and never started because no task said to register it
+- [ ] T028 [US1] Register the controller in `services/api/src/internal/internal.module.ts`, where `SessionController` and `DispatchController` already are. **Not `app.module.ts`** — it carries `controllers: [HealthController]` and already imports `InternalModule`, so a task pointing there would have found nothing to do and concluded the work was done. Chapter 3.10's third analysis pass found a module that was written, unit-tested and never started because no task said to register it
 - [ ] T029 [US1] Extend `usageFor` with `connectionMinutes` and `connectionMinuteQuota` per `contracts/metering.md` §4, reading the roll-up column and not summing `usage_connections`
 - [ ] T030 [P] [US1] Integration tests in `services/api/src/quotas/connections.itest.ts`: one connection across three boundaries records the minutes it occupied, two concurrent connections double the figure for a shared minute, and an environment with no prior `usage_periods` row gets one (SC-001, SC-002, FR-001)
+- [ ] T030a [P] [US1] **Integration test the socket that lives and dies between two reports**: opened and closed inside one interval, it records one connection-minute rather than zero (SC-021, FR-005, US1 scenario 5). Then the churn case the unit exists for — a thousand five-second sockets are not free
 - [ ] T031 [P] [US1] **The flush test.** `FLUSHALL` against Redis, then read the figure and compare numerically to before (SC-016, FR-026). This is the property that separates a quota from chapter 3.8's limiter, and chapter 3.10's first draft shipped without its equivalent
 - [ ] T032 [P] [US1] Integration test for the period boundary: a connection driven across midnight on the first places its minutes in both periods and the two sum to its total (SC-011, FR-009)
 - [ ] T033 [P] [US1] **Integration test that the accounting state is bounded by connections, not minutes**: ten connections driven through one minute and ten driven through sixty produce the same row count in `usage_connections` (SC-017, FR-010). The naive implementation passes every other test in this phase and this one fails at 43.2 million rows a month
@@ -109,11 +113,12 @@ be accepted, so a credential the gateway does not hold blocks all of them.
 - [ ] T036 [P] [US2] Integration test: a discarded report followed by the next one lands on the figure neither loss nor duplication would have produced (SC-004, FR-007)
 - [ ] T037 [P] [US2] Integration test: a report carrying a lower total credits zero and lowers nothing (FR-007, spec Edge Cases)
 - [ ] T038 [US2] Refuse a report whose `connection_id` was first seen for a different environment with `409 connection_environment_conflict` per `contracts/metering.md` §1, and test it. A connection does not move tenants, and reconciling one that appears to would be inventing a fact (constitution I)
-- [ ] T039 [US2] Decide and implement what a report naming an unseen connection does — accept it as that connection's first report — and write the decision into the controller's comment. The specification listed this as a decision the plan must make and state; this is where it gets stated in code
+- [ ] T039 [US2] Implement R20's decision — a report naming an unseen connection is accepted as that connection's first, because the api is never told when a connection opens, so "unknown" and "first" are the same state — and write the reasoning into the controller's comment. The specification asked for this decision in the plan; the first analysis pass found the plan had not made it, and R20 now does
 - [ ] T040 [US2] Flush a final report from `sessions.close()` so a graceful shutdown loses nothing, and wire it to the `server.on("close")` path `main.ts` already has (R11, FR-008)
 - [ ] T041 [US2] Integration test the crash in `services/gateway/src/meter.itest.ts`: kill the process with a connection open, confirm the figure advanced by no more than one interval, then **read it again ten intervals later and confirm it is identical** (SC-005, FR-008). The second read is the assertion — the first shows the loss is bounded, the second shows nothing is still billing for a socket nobody holds
 - [ ] T042 [P] [US2] Integration test that a failing report path closes no socket, refuses no connect and fails no send, with every report forced to error (SC-019, FR-012)
-- [ ] T043 [P] [US2] **Test that there is no queue.** Force every report to fail and assert the gateway holds no buffer of undelivered reports (R3). A test asserting a buffer length here means the delta protocol crept back in, and a delta protocol needs the buffer this design exists to avoid
+- [ ] T043 [P] [US2] **Test that there is no queue for open connections.** Force every report to fail and assert the gateway retains nothing for a connection that is still open — its next report carries the same total plus what accrued, so there is nothing to keep (R3). A buffer of open-connection reports means the delta protocol crept back in
+- [ ] T043a [P] [US2] **And test that there IS one for closed connections, bounded.** Force every report to fail, close a connection, then let a report succeed and confirm its minutes arrive; separately, exceed the retention cap and confirm the discard is logged and counted rather than silent (FR-029, R19). The two halves of this pair are the exception R19 narrows R3 with, and a test that only asserted "no buffer" would forbid the fix T023b makes
 
 **Checkpoint**: every failure mode in `contracts/metering.md` §5 has a test, including the one that loses minutes.
 
@@ -136,7 +141,7 @@ be accepted, so a credential the gateway does not hold blocks all of them.
 - [ ] T052 [P] [US3] Integration test the two configuration edges: a cap of zero refuses every connect, and no cap configured accepts every connect while still recording the minutes (FR-014, US3 scenarios 5 and 6)
 - [ ] T053 [P] [US3] Integration test that raising the cap above usage restores connecting on the next attempt, with no restart (SC-008, FR-020)
 - [ ] T054 [US3] Integration test that a connection open past the cap **keeps accruing**, and write the overshoot bound into the code comment that owns it: `(connections open at the crossing) × (minutes until each closes) + one reporting interval`, with the right-hand side having no numeric ceiling (FR-017, FR-019)
-- [ ] T055 [US3] Add the connect-path performance test file the verification phase measures, so Phase 8 measures a committed thing rather than an ad-hoc script
+- [ ] T055 [US3] Add `services/api/src/internal/session.perf.itest.ts`, the connect-path performance test T065 and quickstart V8 both name, so Phase 8 measures a committed thing rather than an ad-hoc script
 
 **Checkpoint**: the cap refuses the operation it meters and refuses nothing else.
 
@@ -167,7 +172,7 @@ it.
 
 - [ ] T064 **The guard's prediction.** Run the lane against a freshly baited database and record every refusal into `captured-output.md`, with the count and whether any names `usage_connections`, `usage_periods` or `quota_notifications`. Confirm `git diff --stat packages/test-harness/src/exempt.ts` is empty (SC-014, R5). If a file does need an exemption, it is named in `exempt.ts` **with the tables it needs** and in the matching lint ignores list, and the chapter says which global operation required it (FR-027). A refusal here is the interesting result, not a failure
 - [ ] T065 **Measure the connect path against T004a**, at 1-, 8- and 32-way concurrency, with `EXPLAIN (ANALYZE, BUFFERS)` for the added read. Record both in `captured-output.md`. Index lookups on two primary keys, not a scan (SC-012, FR-025). If the number is bad, instrument before changing anything — chapter 3.10 made two code changes chasing a warm-up artefact
-- [ ] T066 **Count the six places** the third dimension had to be named and write the number into `chapter-notes.md` beside chapter 3.10's written prediction of "a new key plus a one-line constraint change", quoted from `0009_quotas.sql` and `quotas/config.ts` (SC-013, FR-024). A higher number is the result
+- [ ] T066 **Count the places** the third dimension had to be named — the count is the measurement, so do not carry R15's prediction of six into the counting — and write the number into `chapter-notes.md` beside chapter 3.10's written prediction of "a new key plus a one-line constraint change", quoted from `0009_quotas.sql` and `quotas/config.ts` (SC-013, FR-024). A higher number is the result
 - [ ] T067 Run `pnpm coverage` and confirm every per-file ratchet holds. Where a ratchet moves, record the before and after figures rather than the direction
 - [ ] T068 **Twenty consecutive integration runs**, recording exit code, wall-clock and test count for each into `baseline.txt` (SC-014). `failing-files=0` beside `exit=1` is interference, not a defect — a real failure names a test. Do not edit source and do not run a concurrent `turbo run test --force` while the battery is running: chapter 3.10 invalidated two of its three attempts that way, once by editing source mid-battery and once by letting `nest build` rewrite `dist/` under a running import
 - [ ] T069 [P] **Traceability pass.** Confirm every `FR-0xx`/`SC-0xx` id in code and comments introduced by this chapter reads as a feature-local id with its spec named, and **check every altered line against `part3-ch10`** before committing. Chapter 3.10's equivalent pass rewrote six pre-existing comments belonging to chapters 3.5, 3.6 and 3.9 while fixing sixteen of its own
@@ -183,7 +188,8 @@ it.
 - [ ] T072 Write `specs/032-chapter-3-11/chapter-notes.md`: what the plan said, what shipped, and where they disagreed. Written before the page, so the page has something to be honest about
 - [ ] T073 Create `relay-tutorial/app/(en)/part-3/chapter-11/counting-a-connection/figures.ts` — the bucket diagram, the cumulative-versus-delta comparison, the loss table from `contracts/metering.md` §5, and the state transition from `data-model.md`
 - [ ] T074 Write `relay-tutorial/app/(en)/part-3/chapter-11/counting-a-connection/page.mdx`. The spine: messages and users were already rows, a connection is not, and the only process that can see one owns no tables and — until this chapter — no identity. Say out loud that reports carry totals and why that deletes the retry buffer
-- [ ] T075 The page must state the overshoot bound with its open right-hand side (FR-019), the six-place count against chapter 3.10's prediction (FR-024), and the answer to `docs/04-srs.md`'s open question 4 with the rounding rule and who it charges (FR-028)
+- [ ] T075 The page must state the overshoot bound with its open right-hand side (FR-019), the counted cost of a third dimension against chapter 3.10's written prediction (FR-024), and the answer to `docs/04-srs.md`'s open question 4 with the rounding rule and who it charges (FR-028)
+- [ ] T075a The page must also address, in one sentence, what a shipped chapter said about this. Chapter 3.2's fenced test comment reads "After chapter 3.2 neither of them holds a secret". In context it means *signing* secrets and stays defensible, but the bare sentence stops being true the moment the gateway holds `rk_svc_…`. Say which kind of secret the gateway still does not hold, rather than letting a reader who remembers 3.2 catch the chapter out
 - [ ] T076 **Count the finished page**: prose words excluding fences, front matter and figure captions, and the fence count read from the page. Expected 2,000–4,000 (SC-015). Chapter 3.10's estimate ran 18% high against the page it produced
 - [ ] T076a **If the count exceeds 4,000, split at Phase 7's seam** and renumber: the notification story and the cap become their own chapter, the isolation gauntlet moves from 3.12 to 3.13, and `docs/07-tutorial-plan.md` and `relay-tutorial/lib/tutorial.ts` are updated together. Three of Part 3's four splits were discovered mid-chapter; this is the instrument that catches the fifth
 
@@ -193,7 +199,8 @@ it.
 
 ## Phase 10: Publication in both locales
 
-- [ ] T077 **Write the chapter's fences**, routing each change to where it belongs: a file this chapter discusses gets a diff fence on the page; a change the chapter does not teach goes to `relay-tutorial/fences/post-series.md`. Twelve files carry 62 existing fences between them (T006), and the chain applies hunked diffs — each hunk's pre-image must appear in the predecessor state exactly once
+- [ ] T077 **Write the chapter's fences**, routing each change to where it belongs: a file this chapter discusses gets a diff fence on the page; a change the chapter does not teach goes to `relay-tutorial/fences/post-series.md`. Thirteen files carry 66 existing fences between them (T006), and the chain applies hunked diffs — each hunk's pre-image must appear in the predecessor state exactly once
+- [ ] T077b **Fence the comment chapter 3.8 got right and this chapter falsifies.** `services/api/src/limits/rate-limit.middleware.ts` says the gateway "forwards the END USER's token on all three of its api calls" and that "Only the dispatcher carries the platform credential". There is a fourth call and a second holder now. The middleware's *behaviour* does not change — `operationsFor` returns `[]` for anything outside `/v1/`, so the report route was never counted — so this is a comment diff, and the chapter should say that finding a shipped chapter's sentence go stale is what the fence chain is for
 - [ ] T077a **Decide `compose.yaml` and `turbo.json` routing explicitly.** The chapter does discuss the gateway's new credential, so both belong on the page rather than in `post-series.md`. Chapter 3.10 sent its `turbo.json` change to `post-series.md` because it discussed no part of it; the test is what the chapter teaches, not which file changed
 - [ ] T078 Run `pnpm check:fences` and fix every divergence. This is the cheapest place to find a hunk written against the wrong pre-image
 - [ ] T079 Write the Vietnamese mirror at `relay-tutorial/app/(vi)/vi/part-3/chapter-11/counting-a-connection/`, with every fence **byte-identical** to its English counterpart under the same title — the chain's MIRROR property
@@ -207,6 +214,7 @@ it.
 ## Phase 11: Close-out
 
 - [ ] T082 Update `docs/07-tutorial-plan.md`'s 3.11 row and its Part 3 narrative with what this chapter turned out to be against what the plan said — including the word count against the estimate, and R5a's finding about chapter 3.10's guard coverage
+- [ ] T082a [P] Revisit chapter 3.2's standing limitation. Its published prose says "**Service-to-service credentials on the internal hop.** The gateway and api still trust the network between them, exactly as chapter 2.5 recorded." One of the gateway's four calls now presents a credential of its own, so the entry is narrower than it was — narrow it in print rather than leaving a shipped chapter overstating what is still open
 - [ ] T083 [P] Record R5a as scheduled work rather than a remembered gap: the four environment-scoped tables feature 030's guard does not watch, and the `OLD.id` problem that makes the extension more than an array change. Name the feature or chapter that owns it
 - [ ] T084 [P] Update `specs/032-chapter-3-11/chapter-notes.md` with the final numbers: the twenty-run battery, the connect-path measurement, the six-place count, and every place the plan was wrong
 - [ ] T085 Mark `specs/032-chapter-3-11/checklists/requirements.md` against the finished chapter, including SC-015 which could not be evaluated until the page existed
@@ -239,7 +247,7 @@ observability and is worth having on its own. US2 needs US1 — there has to be 
 number before losing one means anything. US3 needs US1 for the same reason. US4
 needs US3, because a threshold is a percentage of a cap.
 
-**Six orderings that matter:**
+**Eight orderings that matter:**
 
 - **T004a before everything.** SC-012 compares the connect path against a
   measurement, and a measurement taken after the change is not one.
@@ -254,18 +262,25 @@ needs US3, because a threshold is a percentage of a cap.
   three tasks of new code.
 - **T064 before T074.** Discover whether the no-sweep prediction holds before
   writing the paragraph that claims it does.
+- **T023a before T030a.** The test for the socket that lives and dies between two
+  reports fails against a registry-only meter, which is the point — but it fails
+  for a reason the fix has to exist to remove, not as a discovery.
+- **T023b before T043a.** T043 asserts there is no buffer and T043a asserts there
+  is a bounded one for closed connections. Written in the other order, the first
+  looks like the whole rule and the second like a contradiction.
 
 ## Parallel opportunities
 
 - **Phase 1**: T003 and T006 alongside T001, T002 and T004a.
 - **Phase 2**: T007/T008 (the minute), T013 (the protocol) and T014 (the credit
   arithmetic) are three files with no shared state. T009's migration is
-  independent of all three.
+  independent of all three. T012 and T012a are one file and go in that order.
 - **Phase 3**: T017 alongside T018 and T019 — a test, a compose file and a turbo
   file.
-- **Phase 4**: T030 to T033 are four independent integration files once T027 and
-  T028 exist.
-- **Phase 5**: T035, T036, T037, T042 and T043 are all independent.
+- **Phase 4**: T030, T030a, T031, T032, T033 and T033a are six independent
+  integration files once T027 and T028 exist. T023a and T023b are not parallel
+  with T023 — all three are `meter.ts`.
+- **Phase 5**: T035, T036, T037 and T042 are independent. T043 and T043a are one pair in one file and go in that order.
 - **Phase 6**: T049 to T053 are independent once T044 to T048 are in.
 - **Phase 7**: T058/T059 (the copy) run alongside T060 to T063 (the Mailpit
   reads), and both need T057.
@@ -278,7 +293,13 @@ a service that owns no tables, is the chapter's subject and closes the metering
 half of FR-RTL-05. Stopping there would leave the dimension uncapped, which is a
 smaller feature and not a wrong one.
 
-**Then Phase 5**, because the failure modes are the chapter. Metering an event is
+**Then Phase 5**, because the failure modes are the chapter — and note that one
+of them moved into Phase 4 during the first analysis pass. The socket that lives
+and dies between two reports looked like a failure mode and is a *counting* bug:
+under a registry-only meter it records zero, so churn is free and the unit chosen
+to charge churn charges nothing.
+
+The rest of Phase 5 stands. Metering an event is
 a write in the transaction that caused it; metering a duration is a claim from
 another process about time that has already passed, and every way that claim can
 go wrong shows up as money. A chapter that shipped Phase 4 and not Phase 5 would
