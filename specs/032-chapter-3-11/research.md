@@ -436,3 +436,39 @@ is the fourth telling of the outbox and, for this chapter, mostly reuse — a
 reader who stops before it has the chapter's subject, which is metering a
 duration from a service that cannot write. If the count overruns, US4 moves and
 US3 moves with it.
+
+---
+
+## R18 — The minute arithmetic is duplicated, on purpose, with a precedent
+
+**The problem.** The gateway decides which minute buckets a connection has
+occupied and which period each belongs to. `periodOf` lives in
+`services/api/src/quotas/period.ts`, and the gateway cannot import from the api
+service.
+
+**The precedent, and it is exact.** `services/gateway/src/limits.ts` already
+duplicates the api's window arithmetic, and says why in a comment that is fenced
+into chapter 3.8:
+
+> Floored, so two instances agree without coordinating — the same arithmetic as
+> the api's, deliberately duplicated rather than shared: a package for two small
+> functions would be an abstraction constitution VII asks to be justified, and
+> this one could not be.
+
+**Decision.** Duplicate `periodOf` and `minuteOf` into the gateway's meter, with
+the same argument, and pin them together with a **drift test**: a unit test in
+each package that asserts both implementations agree on the same set of
+instants, including a month boundary and a leap-day boundary. Feature 030's R50
+established the shape — a drift test is what makes a deliberate duplication
+different from a copy somebody forgot about.
+
+**Alternative rejected.** A shared `@relay/usage-time` package for two functions
+of four lines each. The comment above already refused that trade once, for the
+same reason, in the same directory.
+
+**What makes this one riskier than 3.8's.** A rate-limit window that disagrees
+between two services costs one window of over- or under-service. A period that
+disagrees puts a tenant's minutes in a month nobody reads — chapter 3.10's
+`period.ts` says exactly this about `date_trunc` without a timezone. So the drift
+test is not decoration here; it is the only thing standing between two copies of
+a calendar.
