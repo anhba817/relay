@@ -151,7 +151,7 @@ build on."
 | 3.8 | Limits you can see coming | Per-environment fixed-window counters in Redis (FR-RTL-01…04); the three headers on every response, not only the refusal; failed-auth limiting per IP (FR-AUT-12), which fails **closed** while the tenant limiter fails open. **This chapter completes SRS Phase 2's requirement set** — §7.3 lists it as FR-TEN, FR-AUT, FR-WHK and FR-RTL at P2, and FR-RTL-01…04 is the last of the four |
 | 3.9 | The email nobody was sending | The transport 3.6 was owed (FR-WHK-07): the outbox pattern a third time, over `webhook_disable_notifications` — no migration, because `delivered_at` was already there and already null. Mailpit in compose, and tests that read what was **received** |
 | 3.10 | Quotas and what they cost | Monthly usage quotas for messages and distinct active users, a hard cap that refuses sends with `402` and a soft threshold that only alerts, the 50/80/100% email (FR-RTL-05…08). The caps live in `environments.quota_config` — the jsonb column 2.1 declared and 3.8 refused in print. **The outbox pattern a fourth time**, and the first chapter in the series that needed no global operation at all: usage rises only on a send, so the send knows what it crossed |
-| 3.11 | Counting a connection | Connection-minutes (the third dimension of FR-RTL-05): periodic accounting in the gateway, which owns no tables; the crash that must not bill twice; metering a duration rather than an event |
+| 3.11 | Counting a connection | Connection-minutes (the third dimension of FR-RTL-05): periodic accounting in the gateway, which owns no tables and — until this chapter — no identity either; reports that carry totals so a lost one repairs itself; the crash that under-bills by a bounded amount rather than over-billing for ever; and close code 4008, declared in 1.3 and emitted for the first time here |
 | 3.12 | **Milestone: the isolation gauntlet** | The cross-tenant attack suite (NFR-SEC-09) run against every endpoint; the second-external-developer test. This chapter *is* the SRS Phase 2 exit criterion — *"an external developer integrates using only public documentation, with no assistance"* |
 
 **3.5 was narrowed while it was being written, and 3.6 is where the remainder
@@ -277,6 +277,54 @@ passes had not read the artifacts against the published series. And the
 impossible once the caps and the usage became one joined read — Postgres will not
 lock the nullable side of an outer join — which is the bound the specification had
 asked for in the first place.
+
+**What 3.11 turned out to be, against what the plan said.** The estimate was
+3,000 to 3,600 prose words and the page counts **3,324** with 34 fences — inside
+the range, and the first Part 3 chapter where the estimate and the page agreed.
+That is not skill. It is an estimate made after four chapters of evidence about
+how long this author's chapters run, which is the only thing that has ever made
+one of these accurate.
+
+The seam held and was not needed. Phase 7 — the third dimension's crossings and
+emails — was sequenced last so it could be cut, and the count came in with room
+to spare, so it stayed.
+
+**Three of the plan's own claims were wrong, and each was corrected by a
+measurement rather than by an argument.**
+
+Research chose "a second call on the same request rather than a heavier
+`environmentLimits`", reasoning from 3.10's refusal to put a usage join in that
+function. The refusal was right — that function has a second caller on every
+`/v1` request — but two calls cost what a join would at concurrency: connect
+latency at 32-way went 15.0ms to 17.6ms across four runs clustered inside 0.7ms.
+Folding the connect path into its own read recovered 0.8ms.
+
+The plan predicted `repository.ts`'s coverage ratchet would go red, from the
+precedent of chapters 3.5 and 3.6 where that file lost 7.69 and 1.20 points.
+Branches went **up**, 90.17 to 90.57, because the mitigation the prediction
+prescribed — cover the new repository code in-process, in the phase that writes it
+— is the thing that changed the outcome.
+
+And 3.10 wrote, twice, that a third metered dimension costs "a new key plus a
+one-line constraint change". It is **seven places**, two of which it did not
+anticipate at all. The one that mattered was a two-way ternary in
+`publicMessage()`: `Dimension` is `keyof QuotaConfig`, so adding the config key
+widened the type on its own and a connection-minutes breach would have rendered
+"monthly ACTIVE USER quota exhausted" with the compiler silent.
+
+**The twenty-run battery earned its hour.** Three defects, none findable by
+reading, two of them older than this chapter: a fixed api port that produced three
+unrelated-looking assertions, an eleven-chapter-old flake in `credentials.itest.ts`
+where an api key's secret was taken as `split("_").at(-1)` — base64url includes
+the separator — and one test budget of my own. The first attempt was abandoned at
+run 7 rather than letting thirteen more runs report on code already known wrong;
+the second went 20 for 20 at 330 tests every run.
+
+**And chapter 3.10 left two tripwires, one of them unscheduled.** `session.test.ts`
+asserting that nothing emits close code 4008 was planned for and inverted.
+`config.test.ts` asserting that `connection_minutes` is rejected "until then" was
+not: seven analysis passes missed it, because the fence inventory lists
+`config.ts` and not its test. A red test found it in the second phase.
 
 **3.10 is the fourth, and this one was decided before a word was written.** FR-RTL-05
 names three metered dimensions — messages sent, unique active users, and

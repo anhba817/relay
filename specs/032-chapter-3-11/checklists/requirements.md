@@ -422,3 +422,36 @@ five stale counts, this one a wrong task reference. Six passes have produced 68
 findings and three CRITICAL, all three in the first three. The edits are now
 generating defects at a rate comparable to the ones they fix, which is the
 strongest argument available that reading has finished its job here.
+
+
+## Against the finished chapter, 2026-08-22
+
+All sixteen items still pass, and the one that could not be checked before the
+page existed now can.
+
+**SC-015, the size gate**: 3,324 prose words and 34 fences, counted on the
+finished page. Inside the 2,000–4,000 bound, and inside the 3,000–3,600 estimate —
+the first Part 3 chapter where the estimate and the page agreed.
+
+**The two scope decisions taken before writing both survived contact.** Wall-clock
+minute buckets charged per connection is what shipped, and the bucket identity did
+turn out to be what makes a repeated report free. A hard cap refusing new
+connections is what shipped, and FR-RTL-08's promise held around it.
+
+**Three items the checklist called "close to the line" are worth revisiting.**
+
+- SC-012 named `EXPLAIN (ANALYZE, BUFFERS)` as an instrument, and that was right:
+  a clock could not have shown what the assertion needed, and the latency figures
+  it sits beside turned out to be a separate finding rather than the criterion.
+- SC-018 named a lint rule, and the chapter turned out to be exactly the pressure
+  it exists to resist — the gateway is the only process that can see a connection,
+  and the shortest path from there to a recorded minute is a `pg` import.
+- FR-003's "one place per service, pinned by a drift test" was reworded during the
+  first analysis pass because R18 contradicted the original. The drift test exists
+  and both calendars agree on twelve instants written out by hand.
+
+**And the weakest part of the spec was the strongest part of the outcome.** Three
+requirements asked the chapter to *state* something rather than do it — the
+overshoot bound, the cost of a third dimension, and the answer to the SRS's open
+question. All three are on the page, and the second is the one that produced a
+number nobody expected: seven places against a written prediction of one.

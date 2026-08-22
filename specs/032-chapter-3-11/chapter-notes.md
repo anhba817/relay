@@ -76,6 +76,17 @@ nor `exempt.ts`, whose comment says the two must agree. Added, with a comment
 saying what it does not buy — this chapter's own email tests reach the drain
 indirectly, where the rule cannot see.
 
+## The page
+
+  prose words         3,324      gate 2,000–4,000, estimate 3,000–3,600
+  fences              34         25 on the page, 4 in post-series
+  boxes               4 Why, 4 Trap, 1 Checkpoint, 1 ForwardRef
+  figures             4          gate 2–4, ≥1 per half
+  mirror              68 fence delimiters each side, bodies byte-identical
+
+Inside the estimate, which is a first for this part. Phase 7 was sequenced last so
+it could be cut and did not need to be.
+
 ## The numbers
 
   unit                286 → 348
@@ -86,3 +97,37 @@ indirectly, where the rule cannot see.
   connect path        6.807 ms → ~6.4 ms at 1-way; 15.0 → 16.8 at 32-way
   dimension cost      7 places against a written prediction of 1
   fence surface       21 files, 95 chapter fences, 5 post-series entries
+  chain               177 fenced files, 28 chapters, 28 translated
+
+## What was left undone, on purpose
+
+- **The guard does not watch the four usage tables.** Recorded with the `OLD.id`
+  problem that makes the extension more than an array change, and owned by
+  whichever feature next touches `packages/test-harness/`.
+- **`limits.itest.ts` still binds a fixed port**, with the same lingering-child
+  exposure that broke `session.itest.ts`. Another chapter's fenced file, currently
+  green.
+- **`CLOSE_CODES[4009]` stays unemitted**, in the chapter that gave the gateway
+  its first shutdown path. Draining is a feature with its own semantics.
+- **`docs_url` still resolves to nothing** for `quota_exceeded`, as it has for
+  `rate_limited` since chapter 3.8. Inherited, not compounded; chapter 3.12's.
+
+## Seven analysis passes, and what they were worth
+
+  pass 1   documents + the published series    19 findings   1 CRITICAL
+  pass 2   the code                            13           1
+  pass 3   the build gates                     11           1
+  pass 4   the numbers                          9           0
+  pass 5   the governing documents              9           0
+  pass 6   task executability                   7           0
+  pass 7   the sixth pass's edits               2           0
+
+Seventy findings, three CRITICAL, all three in the first three passes. From the
+fourth onward the majority of what each pass found was what the previous passes
+had written, and the seventh found nothing else at all — which is what running out
+of reading looks like.
+
+Implementation then found seven more things reading could not have: two of chapter
+3.10's tripwires, three defects in the battery, one wrong plan decision corrected
+by a benchmark, and one comment in a shipped chapter that had quietly stopped
+being true.

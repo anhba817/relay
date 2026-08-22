@@ -623,3 +623,53 @@ match", and three lines is the usual way to get there.
 
 **Nothing outside this chapter was touched** — `git status` shows only
 `chapter-11`, `post-series.md` and `tutorial.ts`.
+
+## T083 — R5a, scheduled rather than remembered
+
+Feature 030's guard watches five tables:
+
+    webhook_endpoints, webhook_deliveries, webhook_disable_notifications,
+    channels, users
+
+Four environment-scoped tables are NOT watched, and all four arrived after the
+guard did:
+
+    usage_periods           chapter 3.10
+    usage_active_users      chapter 3.10
+    quota_notifications     chapter 3.10
+    usage_connections       chapter 3.11
+
+Chapter 3.10's SC-008 read "no new file is added to the exemption list", which
+passed and was true and was quieter than it sounded: no file needed an exemption
+partly because nothing there was being watched. This chapter's SC-014 carries the
+caveat in print.
+
+**Extending the guard is not the one-line array change it looks like.** The
+refusal message interpolates `OLD.id`:
+
+    RAISE EXCEPTION 'global-operation guard: … row %.% (id %) …',
+      TG_TABLE_SCHEMA, TG_TABLE_NAME, OLD.id, …
+
+`usage_periods`' primary key is `(environment_id, period)` and it has no `id`
+column, so adding it to the array produces a trigger that raises
+`record "old" has no field "id"` on the first legitimate write. `usage_connections`
+is the same shape.
+
+**Owner: whichever feature next touches `packages/test-harness/`.** Not this
+chapter — `sentinel.sql` is feature 030's surface, that feature publishes no
+chapter, and its fences live in `fences/post-series.md` for exactly the reason a
+published chapter should not carry a test-harness diff it does not teach. The
+work is two decisions: give the usage tables a surrogate `id`, or make the guard's
+message tolerate a table without one.
+
+**A second latent fault, found while fixing the first.** `limits.itest.ts` binds a
+fixed port (`RELAY_LIMITS_ITEST_API_PORT ?? 4124`) and has the same lingering-child
+exposure that broke `session.itest.ts` — a previous run's child still holding the
+port, and the health check answered by the wrong api. It is another chapter's
+fenced file and it is currently green, so it is recorded here rather than changed.
+
+## T085 — the checklist against the finished chapter
+
+Sixteen of sixteen still hold. The one item that could not be evaluated until the
+page existed, SC-015's size gate, is now measured: 3,324 prose words inside a
+2,000–4,000 bound, counted on the page.
