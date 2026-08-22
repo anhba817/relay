@@ -4,12 +4,25 @@
 `specs/032-chapter-3-11/` — read `chapter-notes.md` first (what the plan said
 against what shipped) and `baseline.txt` for every measurement.
 
-**NEXT IS CHAPTER 3.12, "Milestone: the isolation gauntlet"** — the cross-tenant
-attack suite against every endpoint (NFR-SEC-09), and the SRS Phase 2 exit
-criterion: *"an external developer integrates using only public documentation,
-with no assistance"*. It has no spec yet; start with `/speckit-specify`.
+**CHAPTER 3.12 IS SPECIFIED AND PLANNED, "Milestone: the isolation gauntlet"** —
+the cross-tenant attack suite against every endpoint (NFR-SEC-09), and the SRS
+Phase 2 exit criterion: *"an external developer integrates using only public
+documentation, with no assistance"*. Its record is `specs/033-chapter-3-12/` —
+read `plan.md` for the eleven phases and `research.md` for R1 to R22, eleven of
+which were measured against a running stack rather than reasoned about. Next is
+`/speckit-tasks`, then analyze passes.
 
-Three debts 3.12 inherits, all recorded rather than remembered:
+**Two things the plan found that no document contained.** There is no public
+endpoint to create a channel or add a member — `packages/e2e/src/harness.ts` has
+said since chapter 2.8 that this is "Part 3's tenancy work", and Part 3 ends at
+3.12 — so the exit criterion was unreachable for reasons unrelated to
+documentation. 3.12 builds the two endpoints it needs; the rest of FR-CHN and
+FR-USR goes to **chapter 3.13**, which means Part 3's milestone no longer sits
+last in the part. And `outbox` carries no tenant column and no foreign key, so
+constitution I's second clause is not true of it — escalated in R7 as a
+governance decision (fix the column or amend the clause), not absorbed.
+
+All three debts 3.12 inherited are in its scope, and the plan says how:
 
 1. **`docs_url` resolves to nothing** for `rate_limited` (chapter 3.8) and
    `quota_exceeded` (3.10, 3.11). 3.11 declined to add a third instance. A

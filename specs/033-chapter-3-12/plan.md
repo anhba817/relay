@@ -1,0 +1,271 @@
+# Implementation Plan: Chapter 3.12 — Milestone: the isolation gauntlet
+
+**Branch**: `033-chapter-3-12` | **Date**: 2026-08-22 | **Spec**: [spec.md](./spec.md)
+
+**Input**: Feature specification from `/specs/033-chapter-3-12/spec.md`
+
+## Summary
+
+The SRS Phase 2 exit criterion, and NFR-SEC-09's suite — cross-tenant access verified
+against every endpoint on every build. Constitution I requires that suite by name and
+the repository has nine isolation assertions across nine files instead.
+
+What research settled, and four of these came from measuring rather than reading:
+
+- **The target list is derived from the express router, not from Nest's metadata and
+  not from a list.** Both were probed against the booted application: the router gives
+  22 normalised paths with string verbs, the metadata gives 22 entries with
+  double-slash join artifacts and numeric enums off a private Nest key. The router is
+  also the right authority — the fault FR-002 describes is a route that exists and is
+  unattacked, and only the router knows what exists. The derivation asserts a non-zero
+  count and a known route, because a suite whose target list can silently empty is
+  worse than the hand-written one it replaces (R2).
+- **The oracle was already written, once, in the file that needed it.**
+  `messages.itest.ts` compares whole error bodies minus `request_id` and says why:
+  "comparing them whole is how this suite proves a foreign resource is
+  indistinguishable from an absent one". The chapter lifts that helper and applies it
+  to 22 routes. Nothing about the assertion is new; its scope is (R3).
+- **Every attack needs a twin.** Indistinguishability cannot be tested from one
+  response, so each target is paired: another tenant's id against an id that exists
+  nowhere. That forces a four-shape classification — and a fifth treatment the
+  specification did not anticipate, because `POST /auth/dev-token` takes no identifier
+  and is still tenant-scoped: the attack there is on the credential, not the id (R4).
+- **The gauntlet is not in `packages/e2e`.** The coverage config excludes it by name,
+  so a suite living there could not contribute to constitution VI's 100%-branch clause
+  on isolation code — which FR-040 requires this chapter to measure. The REST half
+  boots `AppModule` in process, the way nine api suites already do (R1).
+- **`RELAY_INTERNAL_CREDENTIAL` is not scoped to an environment, so "a foreign
+  credential" is meaningless on `/internal/*`.** The attack that means something names
+  one environment and carries an identifier from another — the shape chapter 3.11
+  already refuses with `409 connection_environment_conflict`. The chapter has to say in
+  prose that the internal credential is a tenant-*selection* authority, or a green
+  suite implies a containment the code does not have (R5).
+- **There are eleven error codes and the registry holds six.** Five live only as string
+  literals in a status-to-code ternary ladder, one only at a call site. So "document
+  every code" could not have been done from the registry: the registry becomes the set
+  by construction — five keys added, the ladder typed as `ErrorCode` — and then
+  `Object.keys` is the derivation FR-025 asks for (R8).
+- **`docs_url` is built in six places, and the awkward one is dependency-free on
+  purpose.** `packages/service-kit` declares no dependencies at all, and `serve()` has
+  exactly one caller. So the dependency inverts for free: `ServeOptions` gains a
+  required field, the compiler makes the one caller supply it, and service-kit stays
+  empty (R9).
+- **The anchor is a one-character change with a measured blast radius.** The site's
+  slugifier turns `_` into `-`, so `#quota_exceeded` could never match a heading —
+  which would have meant one transformation rule maintained in two repositories with no
+  way to test the pair. Preserving underscores instead changes exactly one anchor in the
+  whole site (`ADR-03 … last_sequence …`) and nothing links to it: zero chapter headings
+  contain an underscore, and zero links to any docs anchor exist (R10).
+- **pnpm already seals the sealed package, and the hole is a relative path.**
+  `node_modules/@relay` does not exist at the workspace root, so a package that declares
+  no `@relay/*` dependency cannot resolve one. `vitest`, `ws` and `jose` do resolve from
+  the root, so the package can still run. What no dependency list stops is
+  `../../services/api/dist/…` — and `packages/e2e/src/harness.ts` does exactly that
+  today with `createRequire`. The seal is a package manager plus a lint rule, and the
+  chapter says which half is which (R12).
+- **The guard extension is one expression, and it was measured on both shapes.**
+  3.11's R5a predicted `record "old" has no field "id"` and the probe reproduced it.
+  `coalesce(to_jsonb(OLD) ->> 'id', to_jsonb(OLD)::text)` gives an id where there is one
+  and the row's JSON where there is not, with no per-table branch (R15).
+- **`addMember` cannot serve the members endpoint as written.** It has no
+  `ON CONFLICT`, and `members`' primary key is `(channel_id, user_id)`, so a repeat
+  raises a unique violation that the filter would render as `internal_error`. Its single
+  boolean also conflates "added", "channel not yours" and "user not yours" — which is
+  the right answer for isolation and the wrong one for an endpoint that must be
+  idempotent. The endpoint needs a scoped existence check and an upsert, not a wrapper
+  (R14a).
+
+- **Constitution VI's 100% clause is 25 branch arms away, and the reporters cannot name
+  them.** `repository.ts` measures 241/266 branches — a countable distance nobody has
+  ever stated, on a file with 100% function coverage and two uncovered lines, so almost
+  all of it is unhit arms on covered lines. `json-summary` emits totals and not
+  locations, so FR-040's "name every uncovered branch" needs one more reporter. Found by
+  trying to list them and getting a file that does not contain them (R16).
+- **The coverage lane does not run from a clean shell**, measured by getting it wrong
+  first: 11 failures across 3 files, none naming the cause, because four variables live
+  only in the CI workflow. With them, 69 files and 668 tests green in 360 s. Nothing in
+  the repository says so (R22).
+
+And one finding that is about the constitution rather than the chapter:
+**`outbox` carries no tenant column and no foreign key.** Its tenant is a key inside
+`payload`, which is neither of the two things Principle I's second clause allows. The
+fix is measured at one insert site with an exact backfill, over 286,871 rows in the
+test lane. It is recorded and escalated rather than absorbed, because a migration on
+the write path of every send does not belong in a milestone chapter and an exception to
+a constitutional MUST does not belong in a test's allow-list (R7).
+
+## Technical Context
+
+**Language/Version**: TypeScript 5.x on Node.js 22 throughout (constitution VII). The
+guard's PL/pgSQL gains one expression; the argument for it not needing an ADR is
+feature 030's and unchanged.
+
+**Primary Dependencies**: NestJS 11 for the api and `@nestjs/testing` for the
+in-process boot the gauntlet needs, Drizzle inside the repository layer, `ws` for the
+socket attacks, zod through `@relay/protocol`. One new workspace package
+(`packages/outsider`) that declares none of them. Nothing added to the dependency tree.
+
+**Storage**: PostgreSQL. **No product migration.** The two endpoints wrap repository
+functions that already exist against tables chapter 2.1 created, and the unique
+constraints their idempotency needs are already there —
+`channels_environment_id_external_id_unique`, `users_environment_id_external_id_unique`,
+and `members`' composite primary key. The only SQL this chapter writes is
+`packages/test-harness/src/sentinel.sql`, which is never a migration.
+
+**Testing**: Vitest, and the placement is a decision rather than a convention.
+`services/api/src/isolation/` boots `AppModule` in process so its branches land in the
+coverage run; `services/gateway/src/isolation.itest.ts` uses the lane that spawns a
+live api child, because a socket needs a real gateway; `packages/outsider` runs in the
+integration lane over HTTP with no workspace imports at all. `packages/e2e` gains
+nothing — it is excluded from coverage by name (R1).
+
+**Target Platform**: Linux server, the same compose stack, plus the published tutorial
+site for the one requirement that is verified against a URL rather than a process.
+
+**Project Type**: Monorepo service work, a new test-only package, a new source
+document, a published tutorial chapter, and edits to the tutorial site's docs registry.
+
+**Performance Goals**: None new. The gauntlet's cost is lane time, and the budget is
+that `pnpm test:integration` stays inside the twenty-run battery's current 193 s mean
+without a new order of magnitude. 22 routes × 2 requests plus the socket set is small
+beside the 330 tests already there.
+
+**Constraints**: The chapter's published page measures 2,000–4,000 prose words, and
+this chapter carries more than any other in Part 3 — so the documentation half is
+sequenced last, to be cut with a number rather than discovered (R19). The fence chain
+is byte-exact across 177 files and 28 chapters and sees every `docs_url` that changes.
+
+**Scale/Scope**: 22 api routes, one WebSocket path, three health endpoints, 22 base
+tables, eleven error codes, two new endpoints, four newly guarded tables, three
+inherited debts, one new package, one new document.
+
+## Constitution Check
+
+*GATE: passed before Phase 0, re-checked after Phase 1 design.*
+
+| Principle | Check | Verdict |
+|---|---|---|
+| **I. Tenant isolation is a correctness property** | This chapter **is** the principle's fourth bullet — "an automated cross-tenant access test suite MUST attack every endpoint with foreign IDs on every build" — which has been unmet since the clause was written. The two new endpoints are scoped in the repository layer, not in their handlers, and `addMember`'s existing behaviour (false for a foreign channel *or* a foreign user, no error) is the oracle rather than a bug. | **Pass on the clause this chapter delivers, and one clause found failing.** The second bullet — every persisted record carries a tenant identifier directly or through one hop — is not true of `outbox`. Found by this chapter's own structural check, escalated in R7 as a governance decision rather than granted an exception |
+| **II. No acknowledged message is ever lost** | Nothing touches the write path. The clause that does apply is idempotency on write endpoints "enforced at the storage layer (unique index), not in application memory": channel creation's key is the customer's own identifier under `channels_environment_id_external_id_unique`, and membership's is `members`' composite primary key. Both predate this chapter; R14a is the finding that the current helper does not yet honour the second one. | Pass |
+| **III. Two data paths, never crossed** | Nothing analytical. No ClickHouse, no queue, no metering. | Pass |
+| **IV. Single writer, single source of truth** | The api stays the only writer. `packages/outsider` cannot import `pg` — it cannot import anything — and the gauntlet writes through the repository like every other suite. | Pass |
+| **V. API-first, developer-first** | The clause "every error code has a reachable documentation page" has been unmet since chapter 1.4 and is closed here for all eleven codes. `docs_url` stops being a placeholder. The two new endpoints are the first public surface for FR-CHN since Part 2 promised it. | **Pass, and it closes the debt three chapters recorded** |
+| **VI. Requirement-driven, test-verified** | **42 requirements, 27 measurable outcomes** — re-derive with `grep -c '^- [*][*]FR-' spec.md` and the same for `SC-`, never carried forward by hand. The 100%-branch clause for isolation code is measured against a number rather than restated (FR-040). The suite this principle names as a release gate is what the chapter builds. | Pass |
+| **VII. Boring by design — scope is a commitment** | No new service, no new language, no new dependency, no product migration. One new workspace package, which is a test package and not a service, so §4.2's "deliberately not a separate service" table does not apply. Everything larger is named and refused: the rest of FR-CHN and FR-USR go to 3.13 with a number, the outbox column goes to whoever next touches outbox writes, a human external-developer run is named as the instrument this chapter does not use. | Pass, with three refusals recorded |
+
+**One entry in Complexity Tracking**, and no ADR required. `packages/outsider` is a new
+workspace package whose whole design is a negative — it may import nothing — and a
+package that exists to be empty needs its justification written down.
+
+## Project Structure
+
+### Documentation (this feature)
+
+```text
+specs/033-chapter-3-12/
+├── plan.md              # This file
+├── research.md          # Phase 0 — R1 to R22, eleven measured against a running stack
+├── data-model.md        # Phase 1 — no product migration; the shapes the suite derives
+├── quickstart.md        # Phase 1 — V0 to V16, the reintroductions among them
+├── contracts/
+│   ├── gauntlet.md      # the derivation, the four shapes, the fifth treatment,
+│   │                    # and what the suite does not cover
+│   └── errors.md        # the eleven codes, the registry as the set, the URL rule
+├── checklists/
+│   └── requirements.md  # 16/16, with the three items read against a stated reading
+└── tasks.md             # Phase 2 — /speckit-tasks, not created here
+```
+
+### Source Code (repository root)
+
+```text
+relay-platform/
+├── eslint.config.mjs                          # the outsider's path rule
+├── vitest.coverage.config.mts                 # ratchet entries after FR-040's measurement
+├── packages/
+│   ├── outsider/                              # NEW — the sealed integration
+│   │   ├── package.json                       #   no @relay/* dependency, by design
+│   │   ├── vitest.integration.config.mts
+│   │   └── src/integrate.itest.ts             #   signup → channel → members → send → socket
+│   ├── protocol/src/codes.ts                  # eleven codes; docsUrl() beside them
+│   ├── service-kit/src/index.ts               # ServeOptions gains a required field
+│   └── test-harness/src/
+│       ├── sentinel.sql                       # four tables, to_jsonb(OLD) (POST-SERIES)
+│       └── exempt.ts                          # entries if the gauntlet needs any
+├── scripts/seed-demo-tenant.mjs               # NEW — the credential an outsider can get
+└── services/
+    ├── api/src/
+    │   ├── channels/                          # NEW — the two endpoints
+    │   │   ├── channels.controller.ts
+    │   │   ├── channels.schema.ts
+    │   │   ├── channels.service.ts
+    │   │   └── channels.itest.ts
+    │   ├── db/repository.ts                   # addMember's upsert (R14a)
+    │   ├── isolation/                         # NEW — the gauntlet, in process
+    │   │   ├── targets.ts                     #   the derivation + its non-empty assertion
+    │   │   ├── attack.ts                      #   the twin-request oracle, lifted from 2.2
+    │   │   ├── gauntlet.itest.ts              #   22 routes, four shapes, one fifth
+    │   │   └── tenant-scope.itest.ts          #   FR-TEN-06 from the live catalogue
+    │   ├── limits/limits.itest.ts             # random port (POST-SERIES)
+    │   ├── limits/rate-limit.middleware.ts    # docsUrl() ×2
+    │   ├── auth/credential.guard.ts           # registry codes ×2
+    │   ├── internal/usage.controller.ts       # registry code
+    │   ├── messages/messages.service.ts       # registry code
+    │   ├── internal/session.controller.ts     # registry code
+    │   └── protocol-error.filter.ts           # the ladder, typed as ErrorCode
+    └── gateway/src/
+        ├── isolation.itest.ts                 # NEW — the socket attacks
+        ├── main.ts                            # serve()'s new field
+        └── session.ts                         # docsUrl() ×2
+
+docs/
+├── 04-srs.md                                  # NFR-USE-05 verification note if it moves
+├── 07-tutorial-plan.md                        # the 3.13 row, and why the milestone moved
+└── 08-error-reference.md                      # NEW — eleven codes, one h2 each
+
+relay-tutorial/
+├── app/(en)/part-3/chapter-12/…/page.mdx      # NEW — the chapter
+├── app/(vi)/vi/part-3/chapter-12/…/page.mdx   # NEW — translated
+├── components/docs/doc-article.tsx            # slugifyHeading keeps underscores
+├── content/docs/08-error-reference.md          # machine-written mirror
+├── lib/docs.ts                                # a seventh registry entry
+├── lib/tutorial.ts                            # the chapter manifest entry
+├── scripts/sync-docs.sh                       # an explicit list, not 0[1-6]
+├── scripts/check-docs-drift.sh                # the same list
+└── fences/
+    ├── part3-ch12.md                          # this chapter's fences
+    └── post-series.md                         # sentinel.sql, limits.itest.ts
+```
+
+**Structure Decision**: three trees, as every Part 3 chapter has used. The two
+placements that are decisions rather than convention are `services/api/src/isolation/`
+(in process, so coverage sees it — R1) and `packages/outsider` (a package rather than a
+directory, because pnpm's package boundary is what does the sealing — R12).
+
+## Phases
+
+Eleven, and the order is load-bearing in two places: the reintroductions cannot run
+until the suite is complete, and the documentation half is last so it can be cut.
+
+| # | Phase | Delivers | Notes |
+|---|---|---|---|
+| 1 | Baseline | provenance, both lanes, coverage, site checks | The lane needs four variables only CI sets, or 11 tests fail without naming why (R22). The starting figure is `repository.ts` at 241/266 branches (R16) |
+| 2 | The target list | `targets.ts`, the classification, the non-empty assertion | First red on purpose: an unclassified route fails the suite (SC-002) |
+| 3 | The REST gauntlet | `attack.ts`, `gauntlet.itest.ts` over 22 routes | Four shapes plus the credential-scope treatment for `dev-token` (R4) |
+| 4 | The structural check | `tenant-scope.itest.ts`, the exception list | Where the `outbox` finding lands as a written entry (R7) |
+| 5 | The socket gauntlet | `services/gateway/src/isolation.itest.ts` | Inbound frame types derived from the protocol union (R6) |
+| 6 | The two endpoints | channels + members, `addMember`'s upsert | They must appear in the target list without being named there (SC-016) |
+| 7 | The reintroductions | three, run and reverted, recorded | Sensitivity, not correctness. What stayed green is part of the result (R18) |
+| 8 | The instruments | guard's four tables, the port, the `json` reporter, the coverage number | Two of the four land in post-series (R21); the reporter is what makes FR-040 nameable (R16) |
+| 9 | **The documentation half — separable** | eleven codes, the registry as the set, `docsUrl()`, the slugifier, `08-error-reference.md`, three lists | Sequenced here so the split is a measurement (R19) |
+| 10 | **The outsider — separable** | `packages/outsider`, the seed command, the lint rule, the gap list, the verdict | Needs phase 6; carries the milestone if the chapter splits |
+| 11 | Close-out | chapter prose both locales, fences, the 3.13 row, notes | The plan-table edit is FR-022, not a courtesy (R20) |
+
+Each phase commits. 3.11's traceability regex broke 36 files and cost five minutes to
+repair for exactly this reason.
+
+## Complexity Tracking
+
+| Violation | Why Needed | Simpler Alternative Rejected Because |
+|-----------|------------|-------------------------------------|
+| A new workspace package, `packages/outsider`, whose design is that it may import nothing | The Phase 2 exit criterion is about what an outsider can do with published documentation only. "No insider knowledge" has to be mechanically enforceable or it is an intention, and pnpm's package boundary is the only mechanism in this repository that enforces it — measured: `node_modules/@relay` does not exist at the workspace root, so an undeclared `@relay/*` import cannot resolve (R12) | A directory inside `packages/e2e` was rejected: e2e declares `@relay/api`, `@relay/gateway` and `@relay/protocol`, so every file in it can import all three, and the seal would be a code-review convention. A lint rule alone was rejected as the primary mechanism for the same reason — it is the second line, for relative paths, which no dependency list can stop |
