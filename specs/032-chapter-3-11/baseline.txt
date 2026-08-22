@@ -277,3 +277,36 @@ regressions, and sent two code changes chasing a warm-up artefact before the rea
 figure turned out to be 0.56 ms. This one asserts on the PLAN — index scans, no
 `Seq Scan` — because a clock cannot show a scan, which is the correction 3.10's
 first analysis pass had to make to its own criterion.
+
+## Phase 7 — the seam, and FR-RTL-05 closed
+
+Green: lint, build, integration **330** (from 324), 192s.
+
+**T056a earned its place.** The extraction of `recordCrossings` and
+`organisationOf` out of `Repository` is on `sendMessage`'s critical path, and the
+lane after it read **324, identical, zero failures** — the same number as before,
+which is what a pure refactor is supposed to look like and the only way to know
+it was one before four more tasks landed on top.
+
+**R22's lint entry is added and its limits are written into the rule itself.**
+`drainQuotaNotifications` now sits beside its three siblings in
+`eslint.config.mjs`, where chapter 3.10 should have put it. The comment says what
+it does not buy: this chapter's own email tests reach the drain through
+`createQuotaRelay`, and the rule's existing note is explicit that an indirect call
+is what it cannot see. The half that protects the chapter is the scoping.
+
+**So every assertion in the new email tests is by recipient address**, never on
+what `drainOnce()` returned. Chapter 3.10's suite establishes the address-scoping
+shape in a comment and then undercuts it one line later with
+`expect(await relay().drainOnce()).toBeGreaterThan(0)` — true whether it drained
+this test's row or a neighbour's.
+
+**The 80%-of-4 arithmetic held this time.** A cap of 4 and four minutes in one
+step crosses 50, 80 AND 100, because 80% of 4 is 3.2. Chapter 3.10 got that wrong
+twice; the note it left is why this test was written expecting three.
+
+**One lint failure:** `no-useless-escape` on backticks inside a template literal
+in `quota-email.ts`. Extracted to a `DEFAULT_STOPPAGE` constant, which reads
+better anyway.
+
+FR-RTL-05 is now closed on all three dimensions.
