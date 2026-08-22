@@ -576,3 +576,50 @@ Phase 7 stays in the chapter. The seam was there and did not need to be used.
 
 Counted on the finished page rather than estimated, which is the rule chapter 3.8
 established after 3.5 shipped 39 fences against an estimate of 22.
+
+## Phase 10 — publication
+
+  fence chain     exit=0   177 fenced files across 28 chapters, 28 translated
+  check:docs      exit=0
+  lint            exit=0
+  build           exit=0
+
+  page            3,324 prose words, 34 fences
+  mirror          68 fence delimiters each side, byte-identical bodies
+
+**Routing, decided per file rather than per directory.** Twenty-five fences on
+the page — four new files in full and twenty-one hunked diffs — and four in
+`post-series.md`: the coverage ratchets, the lint list, the `credentials.itest.ts`
+fix-forward, and `resume.itest.ts`'s `Omit`. None of those four is what the
+chapter teaches, and putting them on the page would show a reader code it never
+discusses.
+
+`compose.yaml` and `turbo.json` went on the page, against chapter 3.10's
+precedent of sending its `turbo.json` change to `post-series.md`. The test is what
+the chapter teaches, not which file changed: 3.10 discussed no part of its turbo
+entry, and this chapter's whole third section is the credential those two files
+configure.
+
+**T077b was a content task, not a chain task.** `rate-limit.middleware.ts` showed
+NO diff, because the comment saying the gateway "forwards the END USER's token on
+all three of its api calls" and that "Only the dispatcher carries the platform
+credential" was still sitting there, unedited and now false. The chain cannot
+detect a comment that stopped being true — it only checks that fences match disk.
+Corrected, then fenced.
+
+**Three chain failures, all mechanical, all mine:**
+
+  1. `main.ts`'s hand-written illustration had a lone `}` as its only context
+     line — "hunk pre-image matched 16 times (need exactly 1)". Marked
+     `(excerpt)`, which is what it always was; the generated diff below carries
+     the chain entry.
+  2. `eslint.config.mjs`'s hunk matched twice at three lines of context. Twelve.
+  3. `packages/protocol/src/internal.test.ts` diverged and was missing from the
+     routing entirely — chapter 3.6 fences it and I had not looked.
+
+The tutorial plan asks for three lines of context; two files needed more, because
+three lines around their change are not unique. The rule is really "exactly one
+match", and three lines is the usual way to get there.
+
+**Nothing outside this chapter was touched** — `git status` shows only
+`chapter-11`, `post-series.md` and `tutorial.ts`.
