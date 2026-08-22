@@ -41,24 +41,26 @@ touched, and does not become a 22nd file in R16's fence table.
 | T030, T030a, T031, T032, T033, T035, T036, T037, T051 | `services/api/src/quotas/connections.itest.ts` | the credit, its failure modes, and the degradation that involves no socket |
 | T060, T061, T062, T063 | `services/api/src/quotas/connections.itest.ts` | a new file, not 3.10's `quotas.itest.ts`, so the scoped-assertion discipline of T060a is established rather than inherited from a suite that asserts `toBeGreaterThan(0)` |
 | T033a, T033e, T033f, T039 | `services/api/src/internal/usage.itest.ts` | the route's own credential and isolation surface |
-| T010a, T011a | `services/api/src/quotas/config.itest.ts` and `config.test.ts` | the constraint against the parser |
+| T010a | `services/api/src/quotas/config.itest.ts` | the recreated CHECK, against a live database |
+| T011a | `services/api/src/quotas/config.test.ts` | `capsFor` failing closed — pure, no database |
 | T042, T043, T043a, T040b, T041 | `services/gateway/src/meter.itest.ts` | the meter's lifecycle; the last two spawn a gateway process |
 | T049a, T050, T052, T053, T054 | `services/gateway/src/session.itest.ts` | anything that needs a real socket, with an in-process gateway so the clock is injectable |
 | T017 | `services/api/src/auth/credentials.itest.ts` | extends the suite that already sets the credential |
 | T021a | `services/gateway/src/api-client.test.ts` | pure, no api needed |
-| T023b, T034, T057 | the source file each names | not tests |
+| T023b | `services/gateway/src/meter.ts` | the retention, beside the timer that reports it |
+| T057 | `services/api/src/db/repository.ts` | the crossing call, inside the report transaction |
 
 ---
 
 ## Phase 1: Setup & baseline
 
-- [ ] T001 Record provenance in `specs/032-chapter-3-11/baseline.txt`: the submodule commits this chapter starts from, confirmation that `relay-platform` is at `part3-ch10`, and that both parent pins match their submodule HEADs
-- [ ] T002 Record the pre-change platform baseline in `specs/032-chapter-3-11/baseline.txt` — unit and integration counts per package, coverage, every per-file ratchet in force, and the exit code of each gate rather than a grep over its output. Chapter 3.10 closed on **256 integration tests** across twenty runs; record what this machine measures
-- [ ] T003 [P] Record the site baseline in `specs/032-chapter-3-11/baseline.txt`: `pnpm lint`, `pnpm build`, `pnpm check:docs` and `pnpm check:fences` in `relay-tutorial/`, with the file, chapter and locale counts the chain reports
-- [ ] T004 **Run the integration lane three times and record every failure.** A lane with a pre-existing intermittent failure cannot measure a new one, and chapter 3.10 found instance 12 of this project's recurring fault at exactly this step
-- [ ] T004a **Measure the connect path before it changes.** Record `POST /internal/session` latency at 1-, 8- and 32-way concurrency, and the `EXPLAIN (ANALYZE, BUFFERS)` for what it reads today, into `baseline.txt`. SC-012 compares against this. Chapter 3.10's T033 chased three wrong causes across an uncontrolled benchmark reporting 273% to 411% before instrumentation showed 0.56ms — the instrument goes in first
-- [ ] T005 Fix forward, with its own commit, anything T004 finds that is not this chapter's work
-- [ ] T006 [P] **Verify research R16's fence count rather than trusting it.** **Generate** R16's fence table from the pages with a one-line loop over `grep -rho 'title="<path>"'`, for all **twenty-one** files including the four build-gate ones (`compose.yaml`, `turbo.json`, `vitest.coverage.config.mts`, `eslint.config.mjs`), and confirm the total is **95**. The table has been wrong in every analysis pass — 12/62, 13/66 with a row asserted rather than counted, 17/77 counting only source files — and every error came from extending a list by hand. Do not hand-edit it again and record the table in `baseline.txt`. Chapter 3.8's fence count went stale three times across its analysis passes
+- [X] T001 Record provenance in `specs/032-chapter-3-11/baseline.txt`: the submodule commits this chapter starts from, confirmation that `relay-platform` is at `part3-ch10`, and that both parent pins match their submodule HEADs
+- [X] T002 Record the pre-change platform baseline in `specs/032-chapter-3-11/baseline.txt` — unit and integration counts per package, coverage, every per-file ratchet in force, and the exit code of each gate rather than a grep over its output. Chapter 3.10 closed on **256 integration tests** across twenty runs; record what this machine measures
+- [X] T003 [P] Record the site baseline in `specs/032-chapter-3-11/baseline.txt`: `pnpm lint`, `pnpm build`, `pnpm check:docs` and `pnpm check:fences` in `relay-tutorial/`, with the file, chapter and locale counts the chain reports
+- [X] T004 **Run the integration lane three times and record every failure.** A lane with a pre-existing intermittent failure cannot measure a new one, and chapter 3.10 found instance 12 of this project's recurring fault at exactly this step
+- [X] T004a **Measure the connect path before it changes.** Record `POST /internal/session` latency at 1-, 8- and 32-way concurrency, and the `EXPLAIN (ANALYZE, BUFFERS)` for what it reads today, into `baseline.txt`. SC-012 compares against this. Chapter 3.10's T033 chased three wrong causes across an uncontrolled benchmark reporting 273% to 411% before instrumentation showed 0.56ms — the instrument goes in first
+- [X] T005 Fix forward, with its own commit, anything T004 finds that is not this chapter's work
+- [X] T006 [P] **Verify research R16's fence count rather than trusting it.** **Generate** R16's fence table from the pages with a one-line loop over `grep -rho 'title="<path>"'`, for all **twenty-one** files including the four build-gate ones (`compose.yaml`, `turbo.json`, `vitest.coverage.config.mts`, `eslint.config.mjs`), and confirm the total is **95**. The table has been wrong in every analysis pass — 12/62, 13/66 with a row asserted rather than counted, 17/77 counting only source files — and every error came from extending a list by hand. Do not hand-edit it again and record the table in `baseline.txt`. Chapter 3.8's fence count went stale three times across its analysis passes
 
 **Checkpoint**: the starting numbers exist, the lane is green for a known reason, and the connect path has a measured "before".
 
@@ -238,7 +240,7 @@ it.
 
 ## Phase 10: Publication in both locales
 
-- [ ] T077 **Write the chapter's fences**, routing each change to where it belongs: a file this chapter discusses gets a diff fence on the page; a change the chapter does not teach goes to `relay-tutorial/fences/post-series.md`. Twenty-one files carry 95 existing fences between them (T006), four of them build-gate files that also have entries in `post-series.md`, and the chain applies hunked diffs — each hunk's pre-image must appear in the predecessor state exactly once
+- [ ] T077 **Write the chapter's fences**, routing each change to where it belongs: a file this chapter discusses gets a diff fence on the page; a change the chapter does not teach goes to `relay-tutorial/fences/post-series.md`. Twenty-one files carry 95 existing fences between them (T006), with 5 further entries in `post-series.md` — the four build-gate files and `repository.ts`, and the chain applies hunked diffs — each hunk's pre-image must appear in the predecessor state exactly once
 - [ ] T077a **Decide `compose.yaml` and `turbo.json` routing explicitly.** The chapter does discuss the gateway's new credential, so both belong on the page rather than in `post-series.md`. Chapter 3.10 sent its `turbo.json` change to `post-series.md` because it discussed no part of it; the test is what the chapter teaches, not which file changed
 - [ ] T077b **Fence the comment chapter 3.8 got right and this chapter falsifies.** `services/api/src/limits/rate-limit.middleware.ts` says the gateway "forwards the END USER's token on all three of its api calls" and that "Only the dispatcher carries the platform credential". There is a fourth call and a second holder now. The middleware's *behaviour* does not change — `operationsFor` returns `[]` for anything outside `/v1/`, so the report route was never counted — so this is a comment diff, and the chapter should say that finding a shipped chapter's sentence go stale is what the fence chain is for
 - [ ] T077c **Fence the two files the second analysis pass added to the surface**: `packages/protocol/src/codes.ts`, where `quota_exceeded` joins `ERROR_CODES` and 4008 stops being decorative, and `services/gateway/src/session.test.ts`, where 3.8's absence assertion inverts. Six fences on the test file alone — the chapter should show the inversion, because a shipped test that says "quotas are a later chapter" being answered by the later chapter is the fence chain doing its job

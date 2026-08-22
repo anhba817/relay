@@ -1,0 +1,118 @@
+# Chapter 3.11 — baseline
+# Recorded 2026-08-22T01:44:10Z
+
+## T001 — provenance
+
+outer repo      5d3c3bc docs: chapter 3.11 analysis pass six — 6 of 7 applied, 1 LOW declined
+relay-platform  b21a87c docs: this chapter's comments cite ids that resolve
+                tag: part3-ch10
+relay-tutorial  92e2440 docs: 3.10 published, mirrored, fences regenerated after the traceability pass
+
+parent pins vs submodule HEADs:
+  pinned  b21a87cde9682bf4f4ad93992b7a241d64c5bff9  relay-platform
+  pinned  92e2440aa555d2a277163187cad7659599e1db0a  relay-tutorial
+  head    b21a87cde9682bf4f4ad93992b7a241d64c5bff9  relay-platform
+  head    92e2440aa555d2a277163187cad7659599e1db0a  relay-tutorial
+
+Working trees: platform 0 modified,
+               tutorial 0 modified.
+
+## Environment
+
+The host holds 127.0.0.1:5432 with a Postgres this project does not own, and an
+unrelated `lendtrust-postgres` container sits on 5433. Neither matters: this
+project's own default is **15432** (`db/client.ts:13`, `test-harness/db-url.ts:17`),
+so the stack runs on its documented ports and nothing was moved to accommodate
+the neighbours. Recorded because the previous chapter lost time to a collision
+here.
+
+  RELAY_POSTGRES_PORT=15432   redis 6379   nats 4222   mailpit 8025/1025   clickhouse 8123
+
+## T002 — the platform lanes, before anything changes
+
+Unit (`pnpm turbo run test --force`) — exit 0:
+
+  test-harness   9      config          7      service-kit    3
+  protocol      37      api           158      dispatcher     8
+  gateway       64                                    TOTAL 286
+
+Integration (`pnpm test:integration`) — exit 0:
+
+  test-harness   8      api           201      gateway       21
+  dispatcher    16      e2e            10              TOTAL 256
+
+256 matches what chapter 3.10 closed on, exactly.
+
+Coverage (`pnpm coverage`) — exit 0, 263s:
+
+  All files   89.45 statements / 82.73 branches / 88.94 functions / 90.86 lines
+
+Per-file ratchets, measured against what `vitest.coverage.config.mts` pins:
+
+  file                          measured (st/br/fn/ln)     pinned         headroom
+  repository.ts                 97.48 / 90.17 / 100 / 99.38   97/90/100/99   BRANCHES +0.17
+  user-token.ts                 96 / 96 / 100 / 100           96/…           0
+  auth-limiter.ts               100 / 87.5 / 100 / 100        …/87/…         +0.5
+  store.ts                      100 / 91.66 / 100 / 100       …/91/…         +0.66
+  deliver.ts                    100 / 90.9 / 100 / 100        …/90/…         +0.9
+  expand.ts                     92.3 / 92.3 / 100 / 100       92/92/…        +0.3
+  gateway limits.ts             100 / 90.9 / 100 / 100        …/90/…         +0.9
+  resume.ts                     100 / 95 / 100 / 100          …/95/…         0
+
+**`repository.ts` has 0.17 points of branch headroom.** R23 predicted this file
+would go red; the margin is one uncovered branch. T033b is scheduled in Phase 4
+for that reason and the number above is what it measures against.
+
+## T003 — the site, before anything changes
+
+  check:fences  exit 0   173 fenced files replay across 27 chapters
+                         (27 translated, fences mirrored, 1 retired, plus post-series)
+  check:docs    exit 0
+  lint          exit 0
+  build         exit 0
+
+## T004 — three consecutive integration runs
+
+  run 1  exit 0  190s  256 tests
+  run 2  exit 0  189s  256 tests
+  run 3  exit 0  188s  256 tests
+
+Green three times, same count, 2s of spread. T005 had nothing to fix forward.
+
+**A defect was found here, and not by any of the seven analysis passes.** The
+quickstart's V12 battery extracts the test count from the lane's output, and the
+command could not have worked: it anchored on `^\s*Tests `, and in a turbo log
+every line carries a `@relay/<pkg>:test:integration:` prefix. Measured:
+`grep -E '^\s*Tests ' itest-1.log` returns **0 lines**. It also took `tail -1`
+where a run prints **five** summary lines, one per package — and `@relay/e2e` is
+the package a `[a-z-]+` pattern silently drops, because of the digit. The first
+version of the same command, which the fourth analysis pass replaced, was wrong
+differently: it read the failure count as the total on red runs. Fixed against a
+real log and recorded in the quickstart, both wrong versions included.
+
+## T004a — the connect path, measured before it changes
+
+`POST /internal/session`, 400 calls per level after 100 warm-up calls:
+
+  | concurrency | n   | mean ms | p50    | p95    | p99    | req/s |
+  |-------------|-----|---------|--------|--------|--------|-------|
+  | 1           | 400 | 6.807   | 6.087  | 12.537 | 14.201 | 147   |
+  | 8           | 400 | 5.490   | 4.734  | 9.558  | 17.777 | 1423  |
+  | 32          | 416 | 15.001  | 13.007 | 35.939 | 53.808 | 2026  |
+
+What it reads today, `EXPLAIN (ANALYZE, BUFFERS)`:
+
+  environmentLimits     Index Scan environments_pkey                  3 buffers, 0.009 ms
+  getUserByExternalId   Index Scan users_environment_id_external_id   3 buffers, 0.009 ms
+  channelsForUser       Nested Loop over members_user_channel        19 buffers, 0.035 ms
+
+**The database is not what the connect path costs.** Three index scans totalling
+0.053 ms of execution against 6.807 ms of request. The rest is token verification
+and HTTP. That is the headroom the cap read in Phase 6 spends, and SC-012 compares
+against these numbers rather than against an impression.
+
+## T006 — the fence surface, generated rather than copied
+
+21 files, 95 fences in the English chapters, 5 further entries in `post-series.md`.
+The generated table matches R16 exactly. R16 also under-listed the post-series
+side: `repository.ts` has one too, so the count there is 5, not 4.

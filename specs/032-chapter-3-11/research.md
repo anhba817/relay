@@ -464,9 +464,10 @@ fences** between them in the English chapters:
 | `services/api/src/quotas/quota.error.ts` | 1 | |
 | `services/api/src/limits/rate-limit.middleware.ts` | 1 | |
 
-Three of the four build-gate files also carry entries in `fences/post-series.md`
-— `turbo.json` 1, `vitest.coverage.config.mts` 2, `eslint.config.mjs` 1,
-`compose.yaml` 0 — so a change to any of them has to decide which side of the
+Five entries sit in `fences/post-series.md` — `services/api/src/db/repository.ts` 1,
+`turbo.json` 1, `vitest.coverage.config.mts` 2, `eslint.config.mjs` 1,
+`compose.yaml` 0 (T006 generated this and caught `repository.ts`, which an
+earlier hand-written version of the footnote missed) — so a change to any of them has to decide which side of the
 series it belongs on before it is written. An earlier draft of this footnote gave
 two of the three and omitted `turbo.json`, which is the same undercount the table
 above it exists to stop.

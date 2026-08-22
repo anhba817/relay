@@ -247,25 +247,32 @@ against the wrong pre-image.
 for i in $(seq 1 20); do
   pnpm test:integration >"/tmp/ch311-run-$i.txt" 2>&1
   code=$?
-  line=$(grep -E '^\s*Tests ' "/tmp/ch311-run-$i.txt" | tail -1)
-  total=$(printf '%s' "$line" | grep -oE '\([0-9]+\)$' | tr -d '()')
-  failed=$(printf '%s' "$line" | grep -oE '[0-9]+ failed' | grep -oE '[0-9]+')
-  echo "$i exit=$code total=${total:-?} failed=${failed:-0}"
+  clean=$(sed -e 's/\x1b\[[0-9;]*m//g' "/tmp/ch311-run-$i.txt")
+  total=$(printf '%s' "$clean" | grep -oE ":test:integration: +Tests +[0-9]+ passed \([0-9]+\)" \
+          | grep -oE '\([0-9]+\)$' | tr -d '()' | awk '{s+=$1} END{print s+0}')
+  failed=$(printf '%s' "$clean" | grep -oE ":test:integration: +Tests +[0-9]+ failed" \
+          | grep -oE '[0-9]+' | awk '{s+=$1} END{print s+0}')
+  echo "$i exit=$code total=$total failed=$failed"
 done
 ```
 
-Expected: twenty green, `failed=0`, and the same `total` in every run (SC-014).
+Expected: twenty green, `failed=0`, and `total=256` in every run (SC-014).
 
-**Read the trailing `(N)`, not the first number on the line.** Vitest prints
-`Tests      473 passed (473)` on a green run and
-`Tests  1 failed | 6 passed (7)` on a red one, so a pattern anchored to the first
-integer after `Tests` reports **1** for the red run — the failure count, in the
-column labelled total. That is wrong only when a run fails, which is the run this
-battery exists to characterise.
+**This command was wrong twice before it was ever run, and the second version was
+written by an analysis pass that was correcting the first.** Both mistakes are
+worth keeping because they are the same mistake:
 
-Chapter 3.10 needed three attempts and invalidated two of them itself — one by editing
-source mid-battery, one by running a concurrent `pnpm turbo run test --force`
-whose `nest build` rewrote `dist/` under a running import.
+- v1 used `grep -oP 'Tests\s+\K[0-9]+'`, which takes the first integer after
+  `Tests`. Vitest prints `Tests  1 failed | 6 passed (7)` on a red run, so the
+  column labelled total would have read **1** exactly when a run failed.
+- v2 anchored on `^\s*Tests ` to read the trailing `(N)` instead. In a turbo log
+  **every line carries a `@relay/<pkg>:test:integration:` prefix**, so the anchor
+  matches nothing and every run reports `total=0`. Measured: `grep -E '^\s*Tests '`
+  returns 0 lines against a real log.
+
+And both versions took `tail -1`, when a turbo run prints **five** summary lines —
+one per package. The count has to be summed, and `@relay/e2e` is the one a
+`[a-z-]+` package pattern silently drops, because of the digit.
 
 **`failing-files=0` beside `exit=1` is the signature.** A real failure names a
 test; interference kills the lane before a test runs.
