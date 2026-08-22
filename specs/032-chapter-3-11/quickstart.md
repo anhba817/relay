@@ -79,17 +79,28 @@ Read the response bodies: the replay must answer `{"credited": 0}`. A test that
 only checks the stored figure would pass against an implementation that credits
 twice and clamps.
 
-## V4 — The crash
+## V4 — The crash, and the shutdown that is not one
 
 ```bash
 pnpm --filter @relay/gateway test:integration src/meter
 ```
 
-Expected: after the process is killed with a connection open, the figure
+Two signals, two outcomes, in one file.
+
+**SIGKILL**: after the process is killed with a connection open, the figure
 advances by no more than one reporting interval and is **identical** when read
 again ten intervals later (SC-005). The second read is the assertion that
 matters — the first only shows the loss is bounded, the second shows nothing is
 still billing for a socket nobody holds.
+
+**SIGTERM**: the same connection's minutes are recorded in full (SC-023). The
+gateway had no signal handler at all before this chapter — `serve()` returns a
+bare `node:http` Server and nothing ever called `server.close()`, so the flush
+that four documents promised had no path that runs (R11).
+
+Both need a gateway **process** to signal. The existing integration suites spawn
+the api and run the gateway in-process, so this is the one step in the chapter
+that needed new harness before it needed a test.
 
 ## V5 — The month boundary
 
@@ -107,25 +118,41 @@ pnpm --filter @relay/api test:integration src/internal
 pnpm --filter @relay/gateway test:integration src/session
 ```
 
-Expected: a new connect refused with `402` and `quota_exceeded`, a connection
-opened before the breach still open and still receiving sixty seconds later
-(SC-006), and a REST send and a history read both succeeding against the same
-environment (SC-007). Raising the cap restores connecting on the next attempt
-(SC-008).
+Expected: a new connect refused, a connection opened before the breach still open
+and still receiving sixty seconds later (SC-006), and a REST send and a history
+read both succeeding against the same environment (SC-007). Raising the cap
+restores connecting on the next attempt (SC-008).
 
-Read the refusal off the wire, not out of a log:
+**Two hops, two shapes**, and both have to be read off the wire rather than out of
+a log. The api's half:
 
 ```bash
-curl -isS -N \
-  -H "Connection: Upgrade" -H "Upgrade: websocket" \
-  -H "Sec-WebSocket-Version: 13" -H "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==" \
-  -H "Authorization: Bearer $USER_TOKEN" \
-  "http://localhost:${RELAY_GATEWAY_PORT:-4001}/" | head -20
+curl -isS -X POST "http://localhost:4000/internal/session" \
+  -H "Authorization: Bearer $USER_TOKEN" | head -12
 ```
 
-Expected: `HTTP/1.1 402 Payment Required`, four fields in the body, and **no
-`Retry-After` header**. Chapter 3.8's refusal at this same door has one; that
-difference is the contract.
+Expected: `HTTP/1.1 402 Payment Required`, four fields, and **no `Retry-After`**.
+
+The client's half, on a real socket:
+
+```bash
+node -e '
+const {WebSocket} = require("ws");
+const ws = new WebSocket(`ws://localhost:${process.env.RELAY_GATEWAY_PORT||4001}/v1/ws?token=${process.env.USER_TOKEN}`);
+ws.on("message", (d) => console.log("frame:", d.toString()));
+ws.on("close", (code, reason) => console.log("close:", code, reason.toString()));
+'
+```
+
+Expected: an `error` frame carrying `quota_exceeded`, the figures and the resume
+date, then **close code 4008**. Chapter 3.8's refusal at this same door never
+completes the handshake and carries a `Retry-After`; this one completes it and
+closes with a code and a date. That difference is the contract (SC-022, FR-030).
+
+`4008` has read "quota exhausted" in `packages/protocol/src/codes.ts` since
+chapter 1.3 with nothing emitting it, and `session.test.ts` has carried a test
+asserting that absence since chapter 3.8, whose comment says "quotas are a later
+chapter". This is the step where that stops being true.
 
 ## V7 — The guard's prediction
 

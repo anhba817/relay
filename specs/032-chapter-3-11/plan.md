@@ -39,6 +39,18 @@ settled:
   usage read to the exact path chapter 3.10's second analysis pass protected from
   one, and it means `Authentication` grows a fourth outcome — a 402 today closes
   the socket as 1011, "we are broken, retry", which is wrong twice (R6, R7).
+- **The refusal has two hops and two shapes.** The api answers `402`; the gateway
+  completes the handshake, sends an error frame with the resume date, and closes
+  with **4008** — a code `packages/protocol/src/codes.ts` has read "quota
+  exhausted" since chapter 1.3 with nothing emitting it, which EIR-WS-06 asks for
+  by name and which `session.test.ts` currently has a live test asserting the
+  absence of. An earlier draft forwarded an HTTP status onto a socket, borrowing
+  chapter 3.8's shape while discarding the `Retry-After` that was its only
+  justification (R21).
+- **The gateway had no graceful shutdown to hang the flush on.** `serve()` returns
+  a bare `node:http` Server and nothing ever calls `server.close()`; only the
+  dispatcher installs signal handlers. Four documents agreed the flush happened
+  and none of them was the thing that had to be true (R11).
 - **Still no sweep.** Usage rises only on a report, and the report transaction
   knows the figure before and after, so it writes its own crossings. Second
   chapter running to reach that result by that argument (R5).
@@ -104,10 +116,11 @@ refuse a connect, or fail a send (FR-012). Reported figures must survive a flush
 of the per-minute counter store (FR-026).
 
 **Scale/Scope**: One migration, one new internal route, one new gateway module,
-six places where a third dimension has to be named (R15), and **thirteen** existing
-files carrying **66** fences between them (R16) — twelve, at 62, until the first
-analysis pass found `rate-limit.middleware.ts` asserting in a published chapter
-that the gateway makes three api calls and carries no platform credential.
+six places where a third dimension has to be named (R15), and **seventeen** existing
+files carrying **77** fences between them (R16). That table has been wrong twice,
+both times mine: twelve files at 62 in the first draft, then thirteen at 66 with a
+fence count for `rate-limit.middleware.ts` I asserted rather than counted. The
+second pass counted every row.
 
 ## Constitution Check
 
@@ -178,6 +191,9 @@ relay-platform/
 │       │                                     # makes three calls and holds no
 │       │                                     # platform credential. Both stop
 │       │                                     # being true (R16)
+├── packages/protocol/src/
+│   └── codes.ts                              # quota_exceeded joins ERROR_CODES;
+│                                             # 4008 stops being unemitted (R21)
 │       └── quotas/
 │           ├── period.ts                     # minuteOf, beside periodOf
 │           ├── config.ts                     # the third key
@@ -188,7 +204,9 @@ relay-platform/
 │   ├── meter.test.ts                         # the arithmetic, on a driven clock
 │   ├── meter.itest.ts                        # replay, loss, and the kill
 │   ├── registry.ts                            # what a connection remembers about time
-│   ├── session.ts                            # the second timer; the 402 at the door
+│   ├── session.ts                            # the second timer; the error frame
+│   │                                          # and close 4008 at the door
+│   ├── session.test.ts                       # the 4008 absence test, inverted
 │   ├── auth.ts                               # a fourth outcome
 │   ├── api-client.ts                         # the report call, and a credential
 │   └── main.ts                               # wiring, and the shutdown flush
@@ -231,8 +249,8 @@ with two numbering schemes is a trap for whoever reads them in order.
 | 2 | Foundational: the migration, the schema, `minuteOf`, the third key in three enumerations, the protocol schemas | FR-001, FR-002, FR-003, FR-013, FR-014 |
 | 3 | The credential: one per service, the gateway's compose and turbo entries, `service` stops being a constant | FR-011 |
 | 4 | **US1** — the meter, the close path, the report route, the credit, the flush test | FR-001 to FR-005, FR-009, FR-010, FR-026, FR-004 |
-| 5 | **US2** — replay, loss, reordering, the kill, the shutdown flush, the isolation of a failed report | FR-006 to FR-008, FR-012, FR-029 |
-| 6 | **US3** — the cap at the door, the fourth outcome, the raw 402, the degradation tests, the overshoot bound | FR-015 to FR-020, FR-025 |
+| 5 | **US2** — replay, loss, reordering, the kill, the signal handler and its flush, the isolation of a failed report | FR-006 to FR-008, FR-012, FR-029, FR-031 |
+| 6 | **US3** — the cap at the door, the fourth outcome, the 402 and the 4008, the degradation tests, the overshoot bound | FR-015 to FR-020, FR-025, FR-030 |
 | 7 | **US4** — the third dimension's crossings and emails | FR-021 to FR-023 |
 | 8 | Verification: the guard prediction, the connect-path measurement, twenty lane runs, the dimension-cost count | SC-012, SC-013, SC-014, FR-024, FR-027 |
 | 9 | The chapter in English, and the size count | SC-015, FR-019, FR-028 |
@@ -259,6 +277,8 @@ mean writing the meter's tests twice.
 | `usage_connections`, a fourth usage table | A repeated report has to credit nothing, and knowing that requires remembering what was already credited (FR-006) | Remembering minutes instead of connections is 43.2M rows a month at a thousand concurrent sockets (R4). Trusting the caller not to retry is not a mechanism |
 | A second credential variable | `PlatformPrincipal.service` is documented as "which internal service presented it" and is a hardcoded `"dispatcher"`; a second caller makes the field wrong (R1a). One secret shared between them also lets the more exposed service set the blast radius for both | A caller-asserted service header is the pattern chapter 3.2 spent itself removing, and "only for logs" is the sentence it survives under |
 | Retaining a closed connection's final total until a report is accepted | A closed connection has no next report to repair a lost one, so R3's "totals repair themselves" reasoning stops applying exactly there (R19) | Reporting synchronously from the `close` handler puts an HTTP call in the one place already documented as "the last place that should throw", and turns a mass disconnect into a burst of requests. Dropping the total instead makes reconnect churn free, which is what R2 chose the bucket model to prevent |
+| A SIGINT/SIGTERM handler in the gateway, and `sessions.close()` becoming async | Nothing in the gateway calls `server.close()`, so the flush FR-008 and `contracts/metering.md` §5 promise had no path that runs. The dispatcher's `main.ts:313` is the precedent (R11) | Leaving it means the guarantee is prose. Firing the flush without awaiting it is the same non-guarantee moved one line down: the process exits first |
+| Emitting close code 4008, and inverting a test chapter 3.8 shipped | EIR-WS-06 requires a close code for quota exhaustion; 4008 has been declared and unemitted for eleven chapters; a browser cannot read a raw HTTP refusal on a failed upgrade (R21) | Forwarding the 402 onto the socket keeps a shipped test green and leaves the requirement open, in the chapter whose subject it is |
 | A second timer in the gateway | Billing cadence and liveness cadence are different requirements; the heartbeat's 30s comes from EIR-WS-04's death detection (R10) | Reusing the heartbeat makes one number answer to two requirements, and the next change to either argues with the other |
 | A fourth `Authentication` outcome | A 402 currently becomes `ApiError` → `unavailable` → close 1011, which tells the client we are broken and that retrying will help. Both wrong (R6) | Mapping 402 to `refused` closes 4001, "your credential is bad", which is also wrong and is the answer a client will act on by re-authenticating for ever |
 | `recordCrossings` and `organisationOf` extracted from `Repository` | The report route is platform-credentialled and `Repository` is environment-scoped by construction; the notification machinery is behind scoping the route cannot satisfy (R8) | Copying the crossing logic into the platform path is a fifth place that has to agree about thresholds. `usageFor` already sets the precedent for a standalone admin-surface function |

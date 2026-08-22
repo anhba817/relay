@@ -313,13 +313,42 @@ the death straddles a boundary.
 
 ---
 
-## R11 — A graceful shutdown flushes, a crash does not
+## R11 — A graceful shutdown flushes, a crash does not — and the gateway had no graceful shutdown
 
-`main.ts` already wires `server.on("close", () => { sessions.close(); … })`. A
-final report there takes the graceful case's loss to zero and leaves R10's bound
-for the case that cannot be helped. This is the difference between "we lose a
-minute per restart" and "we lose a minute per deploy times every socket", and a
-deploy is the frequent one.
+`main.ts` wires `server.on("close", () => { sessions.close(); … })`, and the
+first draft of this plan said the flush hangs off that. **The second analysis
+pass found that handler never runs.** `serve()` returns a bare `node:http`
+Server; nothing in the gateway ever calls `server.close()`, and nothing installs
+a signal handler. On `docker stop` the process takes SIGTERM, Node's default
+disposition exits, and the close handler is not reached.
+
+Every document said the flush happens — R11, FR-008, `contracts/metering.md` §5,
+and the task that wires it. All four agreed, and none of them was the thing that
+had to be true.
+
+**Decision.** Install SIGINT and SIGTERM handlers in the gateway's `main.ts`, in
+the shape the dispatcher already uses at `services/dispatcher/src/main.ts:313`:
+
+```
+  for (const signal of ["SIGINT", "SIGTERM"] as const) {
+    process.on(signal, () => {
+      void dispatcher.stop().then(() => process.exit(0));
+    });
+  }
+```
+
+`sessions.close()` is `() => void` today and becomes async, because a flush that
+is not awaited is the same non-guarantee in a new place. This is the difference
+between losing a minute per crash and losing a minute per deploy times every open
+socket, and a deploy is the frequent one.
+
+**What stays out.** `CLOSE_CODES[4009]` is `"server shutdown (drain)"`, fixed by
+SAD §7, and this chapter builds the first shutdown path the gateway has ever had
+— so the code is sitting right there. It stays unused. Draining is telling
+clients to reconnect elsewhere, which is a feature with its own semantics, and
+adding it because a shutdown handler happened to arrive would be the "reaching
+for the code because it was declared" that chapter 3.8 refused by name. R21's
+test keeps asserting nothing emits it.
 
 ---
 
@@ -395,8 +424,8 @@ what FR-024 asks for.
 
 ## R16 — The fence surface, counted before it is a problem
 
-Twelve files this chapter is likely to touch already carry **62 titled fences**
-between them in the English chapters:
+**Seventeen** files this chapter is likely to touch already carry **77 titled
+fences** between them in the English chapters:
 
 | File | Fences |
 |---|---|
@@ -404,25 +433,30 @@ between them in the English chapters:
 | `services/api/src/db/schema.ts` | 11 |
 | `packages/protocol/src/internal.ts` | 8 |
 | `services/gateway/src/session.ts` | 7 |
+| `services/gateway/src/session.test.ts` | 6 |
+| `services/api/src/internal/internal.module.ts` | 5 |
 | `services/gateway/src/main.ts` | 4 |
 | `services/gateway/src/registry.ts` | 4 |
 | `services/gateway/src/api-client.ts` | 3 |
 | `services/gateway/src/auth.ts` | 3 |
 | `services/api/src/auth/authenticate.middleware.ts` | 3 |
 | `services/api/src/internal/session.controller.ts` | 2 |
+| `packages/protocol/src/codes.ts` | 2 |
 | `services/api/src/quotas/config.ts` | 1 |
 | `services/api/src/quotas/policy.ts` | 1 |
-| `services/api/src/limits/rate-limit.middleware.ts` | 4 |
+| `services/api/src/quotas/quota.error.ts` | 1 |
+| `services/api/src/limits/rate-limit.middleware.ts` | 1 |
 
-**And that last row was missing from the first draft of this table**, which is
-the finding the first analysis pass earned its keep with. Chapter 3.8 fenced that
-file with a comment that says the gateway "forwards the END USER's token on **all
-three** of its api calls" and that "**Only the dispatcher** carries the platform
-credential". This chapter adds a fourth call and a second credential holder, so a
-published chapter asserts a fact this one falsifies. Nothing about the middleware's
-*behaviour* changes — `operationsFor` returns `[]` for anything outside `/v1/`, so
-the report route was never counted — but the comment stops being true, and the
-chain will not let it stay.
+**This table has now been wrong twice, both times by me, and both corrections
+belong here rather than in a note nobody reads.** The first draft listed twelve
+files at 62 and omitted `rate-limit.middleware.ts`, whose chapter 3.8 comment
+says the gateway makes three api calls and holds no platform credential — the
+first analysis pass found that. The fix then *asserted* four fences for it
+without counting; it has one. The second pass counted every row and added four
+more files: `session.test.ts` (R21), `codes.ts` and `quota.error.ts` (the close
+code and the refusal message), and `internal.module.ts` (where the new controller
+registers). A table of numbers assembled by memory is the thing this series says
+not to do.
 
 The chain applies **hunked diffs**, so the cost is one diff fence per changed
 region rather than a restatement of each file — `check-fence-chain.mjs` requires
@@ -557,3 +591,76 @@ credential.
 connection whose accounting row already carries a *different* environment. That is
 the 409 in `contracts/metering.md` §1, and it is a constitution I refusal rather
 than a data-quality one.
+
+---
+
+## R21 — The refusal has two hops, and the plan gave both of them the same shape
+
+**What the second analysis pass found, in four places that all point one way.**
+
+1. `packages/protocol/src/codes.ts` has held `4008: "quota exhausted"` since
+   chapter 1.3. Nothing emits it.
+2. `docs/04-srs.md:226`, EIR-WS-06: "Close codes shall be documented and
+   distinguish authentication failure, **quota exhaustion**, server shutdown, and
+   protocol violation." P2, verified by inspection.
+3. `services/gateway/src/session.test.ts:929` is a live test named "STILL emits
+   close code 4008 from nowhere", which greps `session.ts`, `limits.ts`,
+   `resume.ts` and `main.ts` for `close(400[89])` and asserts no match. Its
+   comment says why: "There is no quota yet — **quotas are a later chapter** — and
+   reaching for the code because it was declared would collapse the distinction
+   this chapter is built on: a rate limit is a smoothing instruction, a quota is a
+   commercial one, and they do not deserve the same signal."
+4. Chapter 3.8's own comment in `session.ts` explains why *its* refusal is raw
+   HTTP: "A refusal needs to say WHEN to come back. `Retry-After` is an HTTP
+   header and a close frame has nowhere to put one." And why the 4001 refusal is
+   not: it "COMPLETES the handshake in order to close it — because EIR-WS-05 asks
+   for a close code on a bad token, and a close code needs a socket to arrive on."
+
+`contracts/metering.md` §2 declined `Retry-After` in its first draft — that
+refusal is the whole point of a 402 over a 429 — and then kept the shape whose
+only stated justification was `Retry-After`. It also admitted, two paragraphs
+later, that a browser sees nothing of a raw HTTP refusal.
+
+**The mistake underneath it: one refusal was written where there are two hops.**
+
+```
+  client ──WebSocket──▶ gateway ──HTTP──▶ api
+         ◀── ? ────────         ◀── 402 ──
+```
+
+The api answers HTTP and a 402 is right there — it is chapter 3.10's refusal,
+unchanged, on a route that is already HTTP. The client speaks WebSocket, and the
+gateway's job on that hop is to translate, not to forward a status code onto a
+socket that has no place for one.
+
+**Decision.** Two shapes, one per hop.
+
+- **api → gateway**: `402` with `code: "quota_exceeded"`, exactly as chapter 3.10
+  shaped it, with no `Retry-After`.
+- **gateway → client**: complete the handshake, send an `error` frame carrying
+  `quota_exceeded` and the full message including the resume date, then
+  `close(4008)`.
+
+This is the 4001 path's shape, for the 4001 path's stated reason. It reaches a
+browser, where a raw HTTP refusal does not. It puts the resume date somewhere a
+close reason string could not hold it. And it emits, for the first time in
+eleven chapters, a code the protocol declared in 1.3 and named for exactly this.
+
+**What it costs, counted.**
+
+- `quota_exceeded` joins `ERROR_CODES` in `codes.ts`. The frame schema types
+  `code` as `z.string().min(1)`, so nothing forces this — the registry is a
+  documented convention and `codes.test.ts` enforces its uniqueness, which is why
+  chapter 3.2 put `wrong_credential_type` there rather than inventing it inline.
+- `session.test.ts:929` **inverts**: `session.ts` now emits 4008, and the test
+  becomes "emits 4008 for a quota, and still emits 4009 from nowhere". The
+  self-check that makes it honest — "a grep that can only pass is not a check" —
+  survives, because 4009 is still absent.
+- `refuseUpgrade`'s raw-HTTP path is **not** extended. It stays chapter 3.8's,
+  for chapter 3.8's refusal.
+
+**What this does not change.** The distinction `session.test.ts` was protecting
+holds and is now demonstrated rather than asserted: a rate limit refuses the
+handshake with a 429 and a `Retry-After`, a quota completes it and closes with
+4008 and a date. Two refusals at one door, and after this chapter the difference
+is visible on the wire.

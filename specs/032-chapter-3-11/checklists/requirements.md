@@ -151,3 +151,52 @@ the six places", which is the prediction FR-024 asks to be tested, not the resul
 The counts moved: 28 requirements to 29, 20 success criteria to 21, 95 tasks to
 103, and research grew R19 and R20 — the close path, and the unseen-connection
 decision the specification had asked the plan to make and the plan had not made.
+
+## Second analysis pass, 2026-08-22
+
+Thirteen findings — one CRITICAL, five HIGH, five MEDIUM, two LOW — no
+constitution violation. All thirteen applied.
+
+**Pass 1 read the documents against each other and against the published prose.
+This pass read them against the code, systematically: every file the plan claims
+to touch, opened, and every claim checked against what is in it.** The two passes
+found different classes of thing, and the second class could not have been found
+by reading.
+
+**C2 is the one worth the pass on its own, and it is a gap no test could have
+caught.** Four documents said the gateway flushes a final report on shutdown —
+R11, FR-008, `contracts/metering.md` §5, and the task that wires it. They agreed
+with each other, which is what reading them against each other proves. `serve()`
+returns a bare `node:http` Server, nothing in the gateway ever calls
+`server.close()`, and only the dispatcher installs signal handlers. On
+`docker stop` the process exits and the handler the flush was hung on never runs.
+The guarantee had no mechanism, and no test would have failed, because no test
+sends a signal.
+
+**Four findings were one decision the plan made without consulting the protocol.**
+`CLOSE_CODES` has held `4008: "quota exhausted"` since chapter 1.3 and nothing
+emits it. `docs/04-srs.md:226` — EIR-WS-06 — requires close codes to distinguish
+quota exhaustion. `session.test.ts:929` is a live test asserting nothing emits it,
+whose comment reads "quotas are a later chapter". And chapter 3.8's own comment
+says its refusal is raw HTTP *because* it needs a `Retry-After`, which this
+chapter's contract explicitly declines while keeping the shape.
+
+The plan had written one refusal where there are two hops. The api speaks HTTP and
+answers 402; the client speaks WebSocket and now gets an error frame and close
+4008. That reaches a browser, where the raw refusal the contract itself admitted
+was invisible does not.
+
+**Two findings were my own numbers, again.** R16's fence table said thirteen files
+at 66 — and the row pass 1 added for `rate-limit.middleware.ts` asserted four
+fences without counting. It has one. Counted properly, with the four files this
+pass added, it is **seventeen files and 77 fences**. A table of numbers assembled
+from memory is the thing this series says not to do, and it has now been wrong
+twice in two passes.
+
+**One finding was a test resting on infrastructure that does not exist.** T041
+verifies SC-005 by killing the gateway. Both gateway integration suites spawn *the
+api* as a child and run the gateway in-process, so there was no gateway process to
+kill. The spawn pattern to copy exists; nothing pointed it at the gateway.
+
+The counts moved: 29 requirements to 31, 21 success criteria to 23, 103 tasks to
+110, and research gained R21 while R11 was rewritten around the handler it assumed.

@@ -287,6 +287,14 @@ arrives.
   carrying it is accepted, because no later report will carry it. The retained
   set MUST be bounded, and discarding an entry because the bound was reached MUST
   be logged and counted rather than silent.
+- **FR-030**: A connection refused for quota MUST be refused in the protocol's own
+  vocabulary: the declared close code for quota exhaustion, preceded by an error
+  frame carrying the code, the figures and the resume date. EIR-WS-06 requires
+  close codes to distinguish quota exhaustion, and the code has been declared and
+  unemitted since chapter 1.3.
+- **FR-031**: The gateway MUST flush a final report on an ordinary process
+  termination signal. A shutdown path that only runs when something calls the
+  server's close method is not a shutdown path.
 
 ### Key Entities
 
@@ -362,6 +370,13 @@ arrives.
 - **SC-021**: A connection opened and closed entirely between two reports is
   counted — one socket living five seconds inside a sixty-second interval records
   one connection-minute, not zero.
+- **SC-022**: A client refused for quota receives an error frame naming the
+  dimension and the resume date, then close code 4008, read off a real socket. The
+  standing assertion that nothing emits 4008 is replaced by one that something
+  does, and the assertion that nothing emits 4009 survives unchanged.
+- **SC-023**: Sending the process a termination signal with a connection open
+  records that connection's minutes, verified by reading the figure after the
+  process has exited.
 
 ## Assumptions
 

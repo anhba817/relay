@@ -71,7 +71,18 @@ what is still owed.
 
 ---
 
-## 2. The refusal at the door
+## 2. The refusal at the door — two hops, two shapes
+
+```
+  client ──WebSocket──▶ gateway ──HTTP──▶ api
+         ◀─ 4008 ──────         ◀── 402 ──
+```
+
+An earlier draft of this contract gave both hops the same shape and forwarded an
+HTTP status onto a socket. The api speaks HTTP and the client speaks WebSocket;
+translating between them is what the gateway is for (research R21).
+
+### 2a. api → gateway
 
 When connection-minutes usage is at or above the hard cap, `POST
 /internal/session` answers:
@@ -113,34 +124,57 @@ clause. Two changes are needed to the real one and both are this chapter's:
 The code is **named by the thrower**, not inferred from the status:
 `ProtocolErrorFilter` infers a code for four statuses and calls everything else
 `internal_error`, which chapter 3.10's second analysis pass found the hard way.
+So `session.controller.ts` catches `QuotaExceededError` and rethrows it as an
+`HttpException` carrying the code, the way `messages.service.ts` already does.
 
-The gateway turns that into a refusal written by hand onto the raw upgrade
-socket, beside chapter 3.8's 429:
+**No `Retry-After`, and that is the whole difference from a rate limit.** A
+client that retries after the header is right for a rate limit and wrong for a
+quota, which will still be exceeded in an hour. The resume date is in the message.
+
+### 2b. gateway → client
+
+The handshake **completes**, an `error` frame goes out, and the socket closes
+with `4008`:
+
+```json
+{ "type": "error",
+  "payload": {
+    "code": "quota_exceeded",
+    "message": "monthly connection-minute quota exhausted: 50000 of 50000 for 2026-08-01; connections resume on 2026-09-01",
+    "docs_url": "https://relay.example/docs/errors/quota_exceeded",
+    "request_id": "req_…" } }
+```
 
 ```
-HTTP/1.1 402 Payment Required
-Content-Type: application/json
-Content-Length: …
-Connection: close
-
-{"code":"quota_exceeded","message":"…","docs_url":"…","request_id":"…"}
+close 4008 "quota exhausted"
 ```
 
-**No `Retry-After`, and that is the whole difference from 3.8's refusal at the
-same door.** A client that retries after the header is right for a rate limit
-and wrong for a quota, which will still be exceeded in an hour. The resume date
-is in the message instead.
+**This is the 4001 path's shape, for the 4001 path's reason.** Chapter 3.8's
+comment in `session.ts` says the bad-token refusal "COMPLETES the handshake in
+order to close it — because EIR-WS-05 asks for a close code on a bad token, and a
+close code needs a socket to arrive on". EIR-WS-06 asks the same of quota
+exhaustion, and `CLOSE_CODES[4008]` has read `"quota exhausted"` since chapter
+1.3 with nothing emitting it.
 
-**What a browser sees: nothing.** A browser `WebSocket` gives the page no status
-and no body from a failed upgrade — the same wall chapter 3.8 met with the 429,
-and this chapter inherits its answer rather than inventing a second one. A
-server-side client reading the raw response sees all four fields.
+It also reaches a browser. A raw HTTP response on a failed upgrade does not — the
+page gets no status and no body, which is the wall chapter 3.8 met with its 429
+and could not get around, because a `Retry-After` has nowhere else to go. A quota
+refusal has somewhere else to go.
+
+`quota_exceeded` joins `ERROR_CODES` in `packages/protocol/src/codes.ts`. The
+frame schema types `code` as `z.string().min(1)`, so nothing forces this; the
+registry is the documented vocabulary and `codes.test.ts` enforces its
+uniqueness, which is why chapter 3.2 registered `wrong_credential_type` there
+instead of writing it inline.
+
+**`refuseUpgrade` is not extended.** Its raw 429 stays chapter 3.8's, for chapter
+3.8's refusal. After this chapter the two refusals at one door are visibly
+different on the wire: a rate limit never completes the handshake and carries a
+`Retry-After`; a quota completes it and closes with a code and a date.
 
 **`docs_url` resolves to nothing**, exactly as `rate_limited`'s and
 `quota_exceeded`'s already do. Inherited deliberately; chapter 3.12's problem,
 and this chapter adds no third instance of it.
-
----
 
 ## 3. The threshold email
 
@@ -196,7 +230,8 @@ Written as a contract because the alternative is that it becomes folklore.
 | A report is delivered twice | none — the second credits zero |
 | Reports arrive out of order | none — a lower total credits nothing and lowers nothing |
 | The api is unreachable for an hour | none, for connections still open when it returns |
-| The gateway is stopped gracefully | none — a final report is flushed on shutdown |
+| The gateway is stopped gracefully **and the api answers** | none — a signal handler closes the server and awaits a final report (R11) |
+| The gateway is stopped gracefully **and the flush fails** | the same loss as a kill: there is no second attempt, because the process is leaving |
 | A connection closes between two reports | none — the close hands its final total to the meter, which is retained until a report carrying it is accepted (R19) |
 | **A closed connection's total is discarded at the retention cap** | **that connection's minutes since its last accepted report are never counted** — logged and counted, never silent (FR-029) |
 | **The gateway is killed** | **up to one reporting interval per open connection is never counted**, plus anything retained for connections that had already closed |

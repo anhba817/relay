@@ -171,11 +171,17 @@ A connection's accounting row:
       └─── gateway dies ───▶ minutes stays where it is, for ever
 ```
 
-There is no closed state and no terminal transition. A connection that ends
-cleanly simply stops being reported, and a connection whose gateway died stops
-being reported in exactly the same way. **The api cannot tell the two apart, and
-does not need to** — which is why there is no reaper, no orphan sweep, and no
-"connection still open?" question anywhere in the design.
+There is no closed state and no terminal transition **in this table**. A
+connection that ends cleanly is reported once more, with its final total, and
+then stops; a connection whose gateway died stops without that last report.
+**The api cannot tell the two apart, and does not need to** — which is why there
+is no reaper, no orphan sweep, and no "connection still open?" question anywhere
+in the design.
+
+The gateway *can* tell them apart, and that asymmetry is the whole of R19: it
+knows a socket closed, so it sends the final total and retains it until accepted;
+it does not know it is about to be killed, so it sends nothing. Both arrive here
+as the same row reaching a value and staying there.
 
 ---
 
