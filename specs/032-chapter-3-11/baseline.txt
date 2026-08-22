@@ -145,3 +145,30 @@ what `bucketsFor` exists to stop anyone doing, and it caught its author first.
 **Counts after Phase 2:** api unit 158 → 181, gateway unit 64 → 75, protocol
 37 → 45, and a new integration file at 9 (`config.itest.ts`). Lint, build and the
 harness's `no-trigger-in-migrations` gate all green.
+
+## Phase 3 — the credential
+
+Green: lint, build, typecheck, unit 333, integration **271** (from 256; +9
+`config.itest.ts`, +6 `credentials.itest.ts`), 190s.
+
+**`PLATFORM_CREDENTIAL_ENV` had no consumer outside its own file** — M16's grep,
+run and recorded rather than guessed. The export survives as the dispatcher's
+variable name and gains a sibling, `GATEWAY_CREDENTIAL_ENV`.
+
+**The env read stays at call time**, which M16 flagged as the refactor's quiet
+risk. `credentials.itest.ts` SETS both variables during the test and says so in a
+comment; a module-level map of resolved secrets would have gone green against a
+credential nobody configured.
+
+**`ApiClient` grew a method and seven stubs stopped compiling** — six inline
+literals in `resume.itest.ts` and one factory in `session.test.ts`. The six became
+one edit: `boot(api: Omit<ApiClient, "reportUsage">)`, with the method supplied
+inside. The `Omit` says which half of the client those tests speak to, which is
+more honest than six copies of a no-op.
+
+**Compose default is 38 characters**, checked, because `resolvePlatformCredential`
+refuses anything under 32 and a short default would have made the gateway
+unauthenticated in every local run while looking configured.
+
+**One lint failure**: `internalUsageReportRequestSchema` imported and unused —
+the request is validated by the api, not by the caller that builds it. Removed.
