@@ -699,26 +699,37 @@ report for the isolation file against the constitution's clause.
   would test comprehensibility and is the honest instrument for it; it is not scheduled
   here, and FR-034 requires the chapter to say so rather than let the suite stand in
   for it silently.
-- **The minimum public surface is two endpoints.** Channel creation and member
-  addition are what a first integration cannot do without, and both are backed by
-  repository functions that exist and are tested. Everything else FR-CHN and FR-USR
-  describe — listing, unread counts, profiles, bulk upsert, removal — is deferred to
-  its own chapter, because a milestone chapter that builds nine endpoints is a chapter
-  about endpoints.
-- **The deferred surface gets chapter 3.13**, "the surface a customer drives", covering
-  the rest of FR-CHN and FR-USR's public API and the key management chapter 3.2
-  deferred to "the dashboard's chapter". Part 3's milestone therefore no longer sits
-  last in the part. That is recorded as a consequence rather than hidden: the milestone
-  measures Phase 2's exit criterion, which the two endpoints make reachable, and the
-  remainder is Phase 1 requirement completion that the criterion does not depend on.
-  Three of the four splits in this part were discovered mid-chapter; this one is
-  decided before a word is written.
-- **A seeded demo tenant may be needed and does not exist.** The constitution requires
-  the full stack to start with one command "including a seeded demo tenant", and
-  nothing seeds. The sealed integration needs a credential and cannot click an OAuth
-  consent screen. Whether this chapter builds that bootstrap or documents a different
-  path is a plan decision; FR-032 requires one of the two rather than a suite that
-  quietly imports a fixture.
+- **The minimum public surface is two endpoints.** Channel creation and member addition
+  are what a first integration cannot do without. **Both are backed by repository functions
+  that exist and both need an upsert first** — an earlier draft of this assumption said
+  they existed "and are tested", which was the load-bearing half of the argument and was
+  wrong: `createChannel` is a plain INSERT that raises on a repeat, and `addMember` has no
+  `ON CONFLICT` against a composite primary key and returns one boolean for three
+  outcomes. They are tested for what they were built for, which was seeding fixtures.
+  Everything else FR-CHN and FR-USR describe — listing, unread counts, profiles, bulk
+  upsert, removal — is deferred to its own chapter, because a milestone chapter that builds
+  nine endpoints is a chapter about endpoints.
+- **The deferred surface gets chapter 3.13**, "the surface a customer drives": the rest of
+  FR-CHN and FR-USR's public API, the key management chapter 3.2 deferred to "the
+  dashboard's chapter", **FR-CHN-03's private half together with FR-CHN-05's access
+  control**, and **EIR-API-06's cursor pagination**, which FR-CHN-08's listing needs
+  anyway. The last two are not simply "the rest of FR-CHN" — FR-CHN-05 is access control
+  rather than surface, and EIR-API-06 is not an FR-CHN clause at all.
+  Part 3's milestone therefore no longer sits last in the part, recorded as a consequence
+  rather than hidden. **And the independence is partial, not clean**: the milestone measures
+  Phase 2's exit criterion, which the two endpoints make reachable — but FR-CHN-05's absence
+  is exactly why `private` is refused, so what 3.13 owes shapes what this chapter can offer.
+  Three of the four splits in this part were discovered mid-chapter; this one is decided
+  before a word is written.
+- **The platform is started by compose and seeded by a documented command.** The
+  constitution requires the full stack to start with one command "including a seeded demo
+  tenant", and nothing seeds; the sealed integration needs a credential and cannot click an
+  OAuth consent screen. So compose starts the api and gateway — they sit behind a
+  `services` profile, which is why `docker compose up` alone does not — and a documented
+  seed command creates an organisation, an application, a development environment and one
+  key, and prints it. That closes the clause's intent and not its letter, because compose
+  starts stores where the clause says the whole stack, and the chapter says so. The
+  integration itself starts nothing (FR-045).
 - **Chapter 3.13's existence does not weaken FR-023.** The 2.8 seam is reassessed here
   because this chapter changes what it depends on, not because it can be closed
   entirely.
@@ -738,9 +749,14 @@ report for the isolation file against the constitution's clause.
   repository layer with its mandatory `environment_id` is the thing being verified;
   the constitution calls this "designed out, not tested out", and this chapter is the
   test that the design held.
-- Chapter 3.2's credential model: an API key resolves to one environment, a user token
-  to one environment and one user, and the internal credential to no environment at
-  all. The three classes are the three shapes of attack.
+- Chapter 3.2's credential model, extended by 3.11 and narrowed here: an API key resolves
+  to one environment, a user token to one environment and one user, and a platform
+  credential to no environment at all. **There are two platform credentials and one
+  platform class** — 3.11 gave the dispatcher and the gateway a secret each while both
+  still resolve to `{ kind: "platform", service }` — so the attack shapes outnumber the
+  classes: a foreign key, a foreign user token, a platform request naming one environment
+  with an identifier from another, and a credential issued to a service the route does not
+  serve. The last of those is what FR-044 makes refusable.
 - Chapter 3.8's error envelope and chapter 3.10's `quota_exceeded`, whose `docs_url`
   has resolved to nothing since it shipped, and chapter 1.4's placeholder that both
   inherited.

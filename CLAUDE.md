@@ -13,7 +13,9 @@ which were measured against a running stack rather than reasoned about.
 
 **Ten analysis passes are applied — 75 findings, 6 CRITICAL** — reading, in order,
 the documents and the published series, the code, the build gates, the numbers, the
-governing documents, and task executability. The fifth found the worst of them: `POST /v1/channels` was about to
+governing documents, task executability, the sixth pass's own edits, the publication
+contract, the translation mechanics and the battery's design, and the acceptance
+scenarios and edge cases. The fifth found the worst of them: `POST /v1/channels` was about to
 accept `type: "private"` while **nothing in the platform reads `channels.type`**, so
 FR-CHN-05 is unimplemented and the endpoint would have sold a guarantee the platform does
 not keep. The documented enum is now `public` alone, and FR-CHN-03's private half goes to

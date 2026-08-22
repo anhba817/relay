@@ -577,3 +577,55 @@ What is now factually true rather than predicted: the spec's three normative kin
 mapped, every requirement has a task, a success criterion and a scenario in its own story,
 and no check this analyst knows how to run is unrun. That is a statement about methods
 tried, not about defects remaining.
+
+## Analysis pass eleven — Assumptions, Dependencies, and one open item
+
+Five findings, one HIGH, all applied. Pass ten read two of spec.md's four narrative
+sections; this read the other two, and four of the entries examined carried claims the
+chapter had already outgrown.
+
+**One framed a decided question as open.** "A seeded demo tenant may be needed and does not
+exist" ended "Whether this chapter builds that bootstrap or documents a different path is a
+plan decision" — decided in pass three, where compose starts the api and gateway behind
+their `services` profile, a documented seed command prints a credential, and T096 records
+which half of the constitution's clause that closes. A reader met the spec's account of the
+credential path and found nobody had chosen.
+
+**One undercounted a deferral.** Chapter 3.13 was described as "the rest of FR-CHN and
+FR-USR's public API"; it also owes FR-CHN-05's access control, which is not surface, and
+EIR-API-06's cursor pagination, which is not an FR-CHN clause. The entry's closing claim
+that the remainder is independent of the exit criterion is now partial rather than clean:
+FR-CHN-05's absence is exactly why `private` is refused.
+
+**One kept the reason after the reason failed.** "The minimum public surface is two
+endpoints" rested on both being "backed by repository functions that exist and are tested".
+Passes two and four found `createChannel` raises on a repeat and `addMember` has no
+`ON CONFLICT` and returns one boolean for three outcomes. The conclusion held; the argument
+for it did not, and the argument was the part doing the work.
+
+**And one described the credential model the chapter started with.** Dependencies said "the
+internal credential" resolves to no environment and "the three classes are the three shapes
+of attack". There are two platform credentials and one platform class since 3.11, and four
+attack shapes since FR-044 — a fact the spec's own edge case had already been corrected to
+state.
+
+**The fifth was mine from the previous turn**, left open and now closed: CLAUDE.md claimed
+ten passes and listed six surfaces, because the one file edited with an unasserted
+`str.replace` silently no-op'd while every other edit asserted. Fixed with an assertion.
+
+## What passes ten and eleven found together
+
+**spec.md's narrative prose is write-once in practice.** Eleven passes of corrections flowed
+into research, plan, tasks and contracts — the documents that get edited — and past the
+spec's own prose, written on day one and since read as background rather than as claims.
+
+The number, stated as what it is: of roughly eight narrative entries read closely so far,
+**six carried superseded claims**. There are 35 in total — 15 edge cases, 12 assumptions, 8
+dependencies — so under a quarter have been read at this depth and the true count is
+unknown. Recorded that way rather than as "the section is clean", because sampling eight and
+declaring thirty-five sound is the shape of claim this chapter exists to argue against.
+
+The reason ten passes missed them is mechanical: every pass asked whether the artifact set
+was internally consistent and checked the parts carrying identifiers, because identifiers
+are what a script joins on. Prose with no identifier joins to nothing, and gets read as
+context by the same eye that is looking for contradictions elsewhere.
