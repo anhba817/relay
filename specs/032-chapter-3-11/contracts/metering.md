@@ -64,6 +64,25 @@ The 409 is a tenant-isolation refusal, not a data-quality one: a connection does
 not move between tenants, and reconciling one that appears to would be inventing
 a fact.
 
+**Isolation, and why it looks different here** (constitution I, FR-TEN-05). Every
+endpoint this series has added carries a test that presents another tenant's id
+and gets nothing. This one cannot: a platform credential has no environment by
+construction, and naming environments in the body is the whole point of the route.
+So the isolation property splits in two, and both halves are testable:
+
+- **No tenant credential can reach it.** An API key or an end-user token — however
+  valid — is refused before the body is read. That is the 401 and the 403 above,
+  and it is what stops a customer from writing usage for anybody, including
+  themselves.
+- **No connection can change environment.** Once an accounting row exists, a
+  report naming a different `environment_id` for that `connection_id` is refused
+  with the 409 above rather than reconciled.
+
+What is deliberately *not* prevented is a platform caller writing usage for any
+environment. That is what a platform credential is, chapter 3.5 argued it, and the
+protection is that the credential is deployment configuration rather than tenant
+data — never provisioned, never in a table, absent by default.
+
 **Batching**: one request carries every connection the instance holds. A report
 is idempotent in whole and in part — a partially applied batch is not a state
 the caller has to reason about, because reapplying the whole batch credits only

@@ -367,7 +367,10 @@ arrives.
   nobody is looking rather than evidence that nothing happened.
 - **SC-015**: The chapter's published page measures between 2,000 and 4,000 prose
   words, and its fence count is derived by reading the page, both counted on the
-  finished page rather than estimated.
+  finished page rather than estimated. **The recurring boxes are counted with
+  them**: `docs/07-tutorial-plan.md` makes `TRAP` a counted box class with a
+  minimum of one per code chapter, and chapters 3.9 and 3.10 shipped three and
+  four of them alongside their `WHY` and `CHECKPOINT` boxes.
 
 - **SC-016**: Reported connection-minutes are numerically identical before and
   after the per-minute counter store is flushed.

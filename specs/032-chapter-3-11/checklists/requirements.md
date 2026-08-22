@@ -312,3 +312,67 @@ counter that lies about the runs that matter.
 
 Counts held: 32 requirements, 23 success criteria, 115 tasks, research R1–R23. The
 figures in `plan.md` now match `spec.md`, checked by grep rather than by reading.
+
+## Fifth analysis pass, 2026-08-22
+
+Nine findings — no CRITICAL, four HIGH, three MEDIUM, two LOW. **The seven at
+MEDIUM and above were applied; the two LOW were left at the author's direction**
+and are recorded here so they are declined rather than lost:
+
+- **P5**: constitution VII's scalability clause is satisfied and the plan does not
+  say so. The clause is about sticky routing, which this design does not need; the
+  meter's per-connection state and its closed-connection retention list die with
+  the instance, which is FR-008's stated bound. A reviewer will still ask.
+- **P9**: `docs/07-tutorial-plan.md` §2 specifies hunked diff fences with **three
+  lines of context**. T077 says hunked and does not name the width.
+
+**The surface was the two governing documents, walked clause by clause.** Four
+passes had cited `.specify/memory/constitution.md` and `docs/07-tutorial-plan.md`
+and neither had been read against the artifacts.
+
+**The constitution reserves this chapter's own word.** Principle III: "billing,
+*metering*, and dashboard analytics read only from the analytical store
+(ClickHouse), fed via a durable queue." This chapter meters into PostgreSQL, and
+the Constitution Check row — carried forward from 3.10 — asserted "quota state is
+operational, not analytical" without engaging the clause's word, which is also
+FR-ANL-05's word for these exact three dimensions. The argument exists and is now
+written: FR-RTL-05 enforces and FR-ANL-05 reports, and a connect cannot be refused
+from a store whose feed is allowed to have backlog — a cap read from an
+eventually-consistent store makes the refusal eventually correct, which for a
+commercial limit means wrong.
+
+**And the clause's reconciliation bullet has no counterpart here.** "Metered
+totals MUST reconcile against operational counts to within 0.1%" assumes two
+figures. This chapter's metered total *is* the operational count — the first in
+the project with nothing to reconcile against, which is why the loss table in
+`contracts/metering.md` §5 enumerates every failure instead of summarising them.
+
+**Two counted obligations had no task, which is the class chapter 3.10's third
+pass found in "no task wrote the chapter's fences".**
+
+- Constitution I: "An automated cross-tenant access test suite MUST attack every
+  endpoint with foreign IDs on every build. A build that fails this suite MUST NOT
+  ship." Four published endpoints carry such a test — `test-event.itest.ts:481`,
+  `backfill.itest.ts:155`, `webhooks.itest.ts:135`, `signup.itest.ts:247`. This
+  chapter adds one and nothing tested it. **And the property is different in kind
+  here**: a platform credential may legitimately name any environment, so the
+  testable halves are "no tenant credential can reach it" and "no connection can
+  change environment". Chapter 3.5 added the first platform-credentialled routes
+  and left no `dispatch.itest.ts` at all — the precedent was silence.
+- `docs/07-tutorial-plan.md` §2 makes `TRAP` a counted box class with a minimum of
+  one per code chapter. **No task wrote or counted any recurring box.** 3.10
+  shipped 5 `<Why>` / 4 `<Trap>` / 1 `<Checkpoint>`; 3.9 shipped 3 / 3 / 1 plus a
+  `<SkipAhead>`. T076 counted words and fences and stopped there.
+
+**Two more of the plan's own defects surfaced while reading it.** The Project
+Structure tree had `packages/protocol/src/codes.ts` inserted mid-way through
+`services/api/src/`, so `quotas/` appeared to hang off the protocol package — a
+malformed tree introduced by the second pass's own edit. And three annotations in
+the documentation tree were stale: research listed as "R1 to R17" at R23,
+quickstart as "V0 to V14" without V2a, the checklist as "16/16" after four pass
+sections. Same error class as the fourth pass found: a description in a second
+place while only the first place was edited.
+
+The counts moved: 115 tasks to 117, SC-015 extended to count the boxes, and the
+figure rule's "≥1 per chapter half" written into T073 with the §5 loss table
+explicitly ruled prose rather than a diagram.

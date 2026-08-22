@@ -136,7 +136,7 @@ every time by extending a list rather than counting one, and T006 now generates 
 |---|---|---|
 | **I. Tenant isolation is a correctness property** | Every accounting row carries `environment_id`, written by the first report and never updated: a later report naming a different environment for the same connection is refused with a 409 rather than reconciled. The report route accepts a platform credential only, because an `application` credential is scoped to one environment and a route that ignored that scope is the shape a cross-tenant hole takes. | Pass |
 | **II. No acknowledged message is ever lost** | Metering touches no message. A refused *connect* refuses nothing already acknowledged, and FR-017 keeps open sockets delivering past the cap. | Pass |
-| **III. Two data paths, never crossed** | Per-month usage in the operational store, which is FR-RTL-05. FR-ANL-05's per-tenant-per-day metering into the analytical store is Part 4 and this chapter writes nothing there. | Pass |
+| **III. Two data paths, never crossed** | **The clause names this chapter's own word**, so the verdict needs an argument and not an assertion: "billing, *metering*, and dashboard analytics read only from the analytical store (ClickHouse), fed via a durable queue". This chapter meters into PostgreSQL. FR-RTL-05 and FR-ANL-05 are two requirements over the same three dimensions and they need different stores — FR-ANL-05 *reports*, asynchronously, and belongs in ClickHouse in Part 4; FR-RTL-05 *enforces*, and a connect cannot be refused from a store whose feed is allowed to have backlog. A cap read from an eventually-consistent store makes the refusal eventually correct, which for a commercial limit means wrong. Nothing here writes to or reads from the analytical store. **The clause's fourth bullet has no counterpart here**: "metered totals MUST reconcile against operational counts to within 0.1%" assumes two figures, and this chapter's metered total *is* the operational count — the first in the project with nothing to reconcile against. `contracts/metering.md` §5 carries that burden instead, which is why every loss in it is enumerated rather than summarised. | Pass, with the argument stated |
 | **IV. Single writer, single source of truth** | The api remains the only writer. The gateway gains a credential, not a database client, and the 2.1 lint ban stays in force — SC-018 makes that a regression test rather than an intention. | Pass |
 | **V. API-first, developer-first** | The refusal names its own code rather than letting the envelope infer one, carries the dimension, period, figure and resume date, and deliberately omits `Retry-After` — the one header that separates it from chapter 3.8's refusal at the same door. | Pass, with an inherited debt |
 | **VI. Requirement-driven, test-verified** | **32 requirements, 23 measurable outcomes** — derived with `grep -c '^- [*][*]FR-' spec.md` and the same for `SC-`, not carried forward by hand. Every requirement mapped, re-checked after each analysis pass. Five requirements had no outcome on the specification's first pass and got one before the checklist was marked complete; four passes added seven more. This row read “28 and 20” through three passes that each added requirements — the claim stayed true and the count beside it did not, which is why it now says how to re-derive it. | Pass |
@@ -155,14 +155,14 @@ changes no behaviour.
 ```text
 specs/032-chapter-3-11/
 ├── plan.md              # This file
-├── research.md          # Phase 0 — R1 to R17, with what was read and what is owed
+├── research.md          # Phase 0 — R1 to R23, with what was read and what is owed
 ├── data-model.md        # Phase 1
-├── quickstart.md        # Phase 1 — V0 to V14
+├── quickstart.md        # Phase 1 — V0 to V14, plus V2a
 ├── contracts/
 │   └── metering.md      # Phase 1 — the report, the 402, the email, the read,
 │                        #           and what the platform admits it can lose
 ├── checklists/
-│   └── requirements.md  # From /speckit-specify, 16/16
+│   └── requirements.md  # 16/16, plus a section per analysis pass
 └── tasks.md             # Phase 2 — /speckit-tasks, not created here
 ```
 
@@ -176,7 +176,9 @@ relay-platform/
 ├── eslint.config.mjs                         # drainQuotaNotifications joins the
 │                                             # restricted family (R22)
 ├── packages/protocol/src/
-│   └── internal.ts                           # the report request/response schemas
+│   ├── internal.ts                           # the report request/response schemas
+│   └── codes.ts                              # quota_exceeded joins ERROR_CODES;
+│                                             # 4008 stops being unemitted (R21)
 ├── services/api/
 │   ├── migrations/
 │   │   └── 0010_connection_minutes.sql       # usage_connections, the column,
@@ -200,9 +202,6 @@ relay-platform/
 │       │                                     # makes three calls and holds no
 │       │                                     # platform credential. Both stop
 │       │                                     # being true (R16)
-├── packages/protocol/src/
-│   └── codes.ts                              # quota_exceeded joins ERROR_CODES;
-│                                             # 4008 stops being unemitted (R21)
 │       └── quotas/
 │           ├── period.ts                     # minuteOf, beside periodOf
 │           ├── config.ts                     # the third key
