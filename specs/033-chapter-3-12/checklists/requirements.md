@@ -464,3 +464,59 @@ The surfaces that remain genuinely unread are the translation contract's own mec
 beyond the mirror property, and the battery's statistical design. Both are cheaper to check
 while the lane is running, which is an argument for implementing rather than for another
 pass — and this time that is a reason and not a count.
+
+## Analysis pass nine — the translation contract and the battery's design
+
+Four findings, one HIGH, all applied. The two surfaces named as remaining were both worth
+reading, and they split cleanly: the translation mechanics came back with three precision
+findings and no defects; the battery's design held the only HIGH.
+
+**The twenty-run bar was the one defence in the chapter with no range written down.** SC-019
+required "green across twenty consecutive runs" as though that settled something. Twenty
+green runs give 95% confidence only against a per-run failure probability of about 14% or
+worse — `(1−p)²⁰ ≤ 0.05` needs `p ≥ 0.139` — and a 5% flake survives them unseen 36% of the
+time. Chapter 3.11's battery ran twenty green and an eleven-chapter-old flake surfaced **on
+run twenty-one**, a sentence in the notes read during planning and quoted for its three
+defects while the clause naming when the third surfaced went past.
+
+The chapter states the range of every other defence it builds — `contracts/gauntlet.md` §7
+for the suite, R23 for the lint rule, R12 for the sealed package, T041 for the guard. The
+instrument measuring all of them had none. T107a writes it down; twenty stays as the gate
+because it is the house number and 64 minutes is affordable.
+
+**And the mirror check has three invariants before it reaches a body.**
+`check-fence-chain.mjs:278` joins `${f.lang} ${f.title}` for every fence in order, compares
+the whole list, and only then compares bodies positionally. "Fence bodies byte-identical"
+was the second half: a translator writing ```typescript for ```ts, reordering two fences or
+translating a title breaks MIRROR without touching a body — on the series' largest fence
+list at 37 files. Positional matching is also why repeated titles are safe, which matters
+where an amended file carries several diff fences. The battery now records duration as well
+as count, which is how 3.11's timeout-shaped defect announced itself.
+
+**What the pass checked and found clean**, since the mechanics were the point:
+`lib/generated/` holds only prisma output; the OG route is one static series image by
+design; `lib/i18n.ts` carries shell strings and no per-chapter text; the vi route slug must
+match the en slug and T118 names it correctly. Figures are not fences, so the mirror does
+not reach them — which is what lets the plan's translate-the-labels rule work, and is now
+stated separately so "byte-identical" is not read as freezing them.
+
+## Nine passes, and the shape of the curve
+
+  pass 1   the documents + the published series   17 findings   2 CRITICAL
+  pass 2   the code                                9            2
+  pass 3   the build gates                         7            1
+  pass 4   the numbers                             9            0
+  pass 5   the governing documents                 7            1
+  pass 6   task executability                      7            0
+  pass 7   the sixth pass's edits                  5            0
+  pass 8   the publication contract                4            0
+  pass 9   translation mechanics + the battery      4            0
+
+Sixty-nine findings, six CRITICAL. Every HIGH from pass six onward came from a surface
+**outside** the artifacts — the manifest, the tutorial plan's format table, a checker's
+source, a previous chapter's notes. Re-reading the artifacts stopped paying at pass seven.
+
+No further surface is named here. Three passes have now ended with a stopping claim and two
+of those claims were wrong; the honest position is that no candidate remains that this
+analyst believes in, and the remaining risk is cheaper to find with the lane running than
+with the documents open.

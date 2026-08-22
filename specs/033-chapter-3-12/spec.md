@@ -577,8 +577,14 @@ report for the isolation file against the constitution's clause.
   (3.11 closed at 90.57%, and the difference is run-to-run drift rather than a change), and every remaining
   uncovered branch named. The pinned ratchet ends at or above where it started.
 - **SC-019**: The integration lane stays green across twenty consecutive runs, with the
-  test count reported for every run. No file is added to feature 030's exemption list
-  without the chapter naming the global operation that required it.
+  test count and the run duration reported for every run. No file is added to feature 030's
+  exemption list without the chapter naming the global operation that required it.
+  **The chapter MUST state what twenty runs establishes and what it does not.** Twenty green
+  runs give 95% confidence only against a per-run failure probability of roughly 14% or
+  worse; a 5% flake survives them unseen better than a third of the time. Chapter 3.11's
+  battery ran twenty green and an eleven-chapter-old flake surfaced on run twenty-one. A
+  green battery is evidence, not proof, and this chapter applies to its own instrument the
+  rule it applies to the guard, the lint rule and the sealed package.
 - **SC-020**: No suite in the lane binds a fixed api port, verified by reading the port
   selection of every suite that spawns one.
 - **SC-021**: The chapter states a verdict on the Phase 2 exit criterion, with what was
