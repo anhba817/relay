@@ -434,11 +434,15 @@ So the fix is not widening a range; `0[1-8]` would publish the tutorial plan. Bo
 scripts take an **explicit file list**, which is feature 030's doctrine arriving in a
 shell script: whatever silently absorbs the next case is the thing to remove.
 
-**Two things that need no work, measured.** `doc-page.tsx` renders the "referenced by"
-line under `citing.length > 0 &&`, so a document no chapter cites renders cleanly — and
-no chapter cites this one. And the Vietnamese route renders the same English markdown
-under a translated title, with a standing note that source documents are kept in
-English, so the reference needs a `titleVi` and no translation.
+**One thing that needs no work and one that changed.** `doc-page.tsx` renders the
+"referenced by" line under `citing.length > 0 &&`, so a document no chapter cites renders
+cleanly. **This one will be cited**: analysis pass eight found that `lib/tutorial.ts`
+already carries a 3.12 entry, and adding `docs/08-error-reference.md` to its `sourceDoc`
+makes the new page link back to the chapter that built it (T119a). The empty-citation path
+still renders cleanly; this document is no longer the thing testing it. And the Vietnamese
+route renders the same English markdown under a translated title, with a standing note that
+source documents are kept in English, so the reference needs a `titleVi` and no
+translation.
 
 **One thing to watch.** Three lists must now agree: the two scripts and the registry.
 A document in the registry and not the sync list renders whatever

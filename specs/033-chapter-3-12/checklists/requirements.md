@@ -407,3 +407,60 @@ instead of during planning.
 The decline is not monotonic, and the exception is the lesson: pass five found a CRITICAL
 after pass four found none, because it read a surface no earlier pass had. Pass seven read
 no new surface and its yield shows it. Analysis stops here.
+
+## Analysis pass eight — the publication contract
+
+Four findings, two HIGH, all applied. **The previous pass's conclusion that analysis was
+finished was wrong**, and the reason is worth more than the findings.
+
+**No task made a figure.** `docs/07-tutorial-plan.md` has required "2–4 captioned,
+theme-legible diagrams per chapter via the series `Figure` component, placed at key-concept
+moments (≥1 per chapter half)" since Part 0. Chapter 3.11 shipped four. This chapter had
+fourteen phases and 169 tasks, one of which counted figures, and none of which drew one —
+so SC-022 measured against a bound the chapter had no means of reaching. T111a now names
+three subjects and their halves.
+
+**And the series manifest already contained a 3.12 entry.** `lib/tutorial.ts:487` carries
+`id: "3.12"` with the correct path and title, `status: "forthcoming"`, and a
+`readerProduces` reading "The cross-tenant attack suite run against every endpoint" —
+written before the chapter acquired two public endpoints, thirteen error codes, a sealed
+integration and service-scoped platform authorization. T119 said "Add the chapter to the
+manifest in both locales": following it would have produced a duplicate id, and the
+manifest is one entry carrying both locales rather than two. `readerProducesVi` was absent
+where 3.11 has one, so the Vietnamese page would have rendered an English summary.
+
+**Why seven passes could not have found either.** Every pass from one to seven read
+something the artifacts themselves describe — their own text, the code they name, the gates
+they invoke, their arithmetic, the requirements they cite, their own ordering, their own
+edits. The publication contract lives in the tutorial plan and the series manifest, and is
+described nowhere in the artifacts. Both HIGHs came from files the chapter *writes to*
+rather than files it discusses, and no amount of re-reading the artifacts reaches them.
+
+The other two: `sourceDoc` gains `docs/08-error-reference.md`, which makes the new
+reference page link back to the chapter that built it and corrects R11's premise that no
+chapter cites it. And T107's twenty-run battery gained the stopping rule it had been
+reciting as history — abort on the first failure attributable to this chapter, fix, restart
+from one, and record the abandoned run. At roughly 193 s a run, that rule is worth thirteen
+runs.
+
+## Eight passes
+
+  pass 1   the documents + the published series   17 findings   2 CRITICAL
+  pass 2   the code                                9            2
+  pass 3   the build gates                         7            1
+  pass 4   the numbers                             9            0
+  pass 5   the governing documents                 7            1
+  pass 6   task executability                      7            0
+  pass 7   the sixth pass's edits                  5            0
+  pass 8   the publication contract                4            0
+
+Sixty-five findings, six CRITICAL. **The yield tracks whether a pass reads a new surface,
+not how many passes have run.** Pass seven read no new surface and returned five sentences
+of its own. Pass eight read one and returned a gate the chapter could not pass. Twice now
+the stopping decision has been made on pass count rather than on whether an unread surface
+remained, and twice it has been wrong — after pass four, and after pass seven.
+
+The surfaces that remain genuinely unread are the translation contract's own mechanics
+beyond the mirror property, and the battery's statistical design. Both are cheaper to check
+while the lane is running, which is an argument for implementing rather than for another
+pass — and this time that is a reason and not a count.

@@ -584,9 +584,11 @@ report for the isolation file against the constitution's clause.
 - **SC-021**: The chapter states a verdict on the Phase 2 exit criterion, with what was
   measured and what was assumed.
 - **SC-022**: The chapter's published page measures between 2,000 and 4,000 prose
-  words, with its fence count and box count derived by reading the finished page. If it
-  exceeds the bound, the overrun is stated with the number rather than left to be found
-  later.
+  words, with its fence count, box count and figure count derived by reading the finished
+  page. **Figures are 2 to 4, captioned, with at least one in each half of the chapter** —
+  the bound `docs/07-tutorial-plan.md` sets for every chapter, counted separately from
+  specimen fences. If any bound is exceeded, the overrun is stated with the number rather
+  than left to be found later.
 - **SC-023**: `check:fences` and `check:docs` both pass, with the fenced-file and
   chapter counts stated, in both locales.
 
