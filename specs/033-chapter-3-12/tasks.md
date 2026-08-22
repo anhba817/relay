@@ -6,7 +6,7 @@
 written and the repository has never had — deriving its own targets so a new endpoint
 cannot skip it, judged on indistinguishability rather than refusal, and shown to go red
 for three faults before it is trusted. Plus the two public endpoints that make the SRS
-Phase 2 exit criterion reachable at all, and reachable documentation for all eleven
+Phase 2 exit criterion reachable at all, and reachable documentation for all twelve
 error codes.
 
 ## Format: `[ID] [P?] [Story] Description`
@@ -80,7 +80,7 @@ wrong too on its first draft, mapping the outsider tasks to `T085–T093` when t
 | T076 | `services/gateway/src/limits.itest.ts` | the random port — **fenced by nothing**, so no fence entry either way (R17) |
 | T082a, T097a | `turbo.json` | env entries; strict mode filters what it does not declare |
 | T117a–T117c | published chapter pages | `REVISED` notes and illustrative JSON this chapter falsifies |
-| T080–T082 | `packages/protocol/src/codes.ts` | eleven codes and one URL function |
+| T080–T082, T030c1 | `packages/protocol/src/codes.ts` | twelve codes and one URL function |
 | T091, T092 | `packages/protocol/src/codes.test.ts` | every emitted code is registered — self-contained |
 | T091a | `relay-tutorial/scripts/` | registry ↔ reference, where the parent repo is in scope (R26) |
 | T098c | `.github/workflows/ci.yml` | the `outsider` job: compose for everything (R25) |
@@ -144,10 +144,12 @@ the gates, the battery, the counts, the three reintroductions, the two scratch p
 - [ ] T027 [US1] Wire `services/api/src/isolation/gauntlet.itest.ts` to boot `AppModule` with `Test.createTestingModule`, as ten other api suites already do, and run every derived target through the attack for its shape
 - [ ] T028 [P] [US1] Cover the two `read` targets: `GET /v1/webhooks/:id` and `GET /v1/channels/:channelId/messages` (FR-004)
 - [ ] T029 [P] [US1] Cover the `list` target: `GET /v1/webhooks` (FR-006)
-- [ ] T030 [P] [US1] Cover the public `write` targets: `POST /v1/channels/:channelId/messages`, and `POST /v1/webhooks/:id/rotate-secret`, `/enable`, `/disable`, `/test`, and `DELETE /v1/webhooks/:id` (FR-005)
+- [ ] T030 [P] [US1] Cover the seven public `write` targets: `POST /v1/channels/:channelId/messages`, **`POST /v1/webhooks`**, `POST /v1/webhooks/:id/rotate-secret`, `/enable`, `/disable`, `/test`, and `DELETE /v1/webhooks/:id`. Seven, not six — the webhook **create** route was missing from an earlier draft of this task and from `data-model.md`'s shape table, whose five rows then summed to 21 against a derived 22. T017 would have caught it as an unmatched target; the arithmetic caught it first (FR-005)
 - [ ] T030a [US1] Derive `PlatformService` from `PLATFORM_SERVICES` in `services/api/src/auth/authenticate.middleware.ts` rather than retyping the two names, so a third internal service widens the type on its own — chapter 3.11's `Dimension` lesson (FR-044, R24)
 - [ ] T030b [US1] Change `Accepts` in `services/api/src/auth/credential.guard.ts` from `...kinds: PrincipalKind[]` to `...specs: AcceptSpec[]` per `data-model.md` §8, so **`@Accepts("platform")` stops compiling**. An authorization that can be omitted is one that will be, and the platform has two internal callers with unequal exposure (FR-044)
-- [ ] T030c [US1] Make `CredentialGuard` check `principal.service` against the route's declared services, refusing with a `403` that names the class and not the credential — the rule the guard already follows for a wrong credential class (FR-044)
+- [ ] T030c [US1] Make `CredentialGuard` check `principal.service` against the route's declared services, refusing with a `403` carrying **`wrong_credential_service`** — its own code, not the status's generic `forbidden`, because the class presented was right and the service was not. That is a third mistake, distinct from lacking a permission and from presenting the wrong class, and chapter 3.2 made the same argument when it added `wrong_credential_type` rather than answering "forbidden" (FR-044, FR-046)
+- [ ] T030c1 [P] [US1] Add `wrong_credential_service` to `ERROR_CODES` in `packages/protocol/src/codes.ts` with its one-line meaning, beside `wrong_credential_type` where the reader will look for it. **The emittable set becomes twelve**, and every figure describing what ships says twelve — six documents carry that count and the reference's two-directional test is what fails if one is missed (FR-046, FR-024)
+- [ ] T030c2 [P] [US1] Test the refusal's message: it names the service and the permitted set — `"gateway" is not permitted on this route (dispatcher)` — and contains no part of the credential. A service name is a deployment label; a credential is a secret (FR-046, SC-031, NFR-SEC-06)
 - [ ] T030d [US1] Declare the services on the five platform routes: `{ platform: ["gateway"] }` on `services/api/src/internal/usage.controller.ts`, `{ platform: ["dispatcher"] }` on the four in `services/api/src/internal/dispatch.controller.ts` (FR-044)
 - [ ] T030e [P] [US1] Test both directions route by route in `services/api/src/internal/usage.itest.ts` and a dispatch suite: the gateway's credential is refused on every dispatch route, the dispatcher's on `/internal/usage/connections`. State the count of platform routes (SC-029)
 - [ ] T030f [P] [US1] Write a route declaring `@Accepts("platform")` with no service list, confirm it fails to typecheck, and remove it. The compiler is the mechanism; a test that only checks the happy path would pass with the old signature (SC-029)
@@ -272,18 +274,18 @@ the gates, the battery, the counts, the three reintroductions, the two scratch p
 
 ## Phase 9: User Story 4 — the error vocabulary and its pages (Priority: P2) — separable
 
-**Goal**: eleven codes, one registry, one URL rule, and a page that resolves.
+**Goal**: twelve codes, one registry, one URL rule, and a page that resolves.
 
 **Independent test**: enumerate every code the platform can emit and confirm each resolves to a section of the published reference; add a code with no entry and confirm the build fails.
 
-- [ ] T080 [US4] Add the five missing keys to `ERROR_CODES` in `packages/protocol/src/codes.ts`: `invalid_request`, `forbidden`, `not_found`, `internal_error`, `connection_environment_conflict`, each with its one-line meaning (FR-024, FR-026)
+- [ ] T080 [US4] Add the five missing keys to `ERROR_CODES` in `packages/protocol/src/codes.ts`: `invalid_request`, `forbidden`, `not_found`, `internal_error`, `connection_environment_conflict`, each with its one-line meaning. With `wrong_credential_service` from T030c1 the registry then holds **twelve** — the eleven the platform can emit today plus this chapter's own (FR-024, FR-026)
 - [ ] T081 [US4] Type the status ladder in `services/api/src/protocol-error.filter.ts` as `ErrorCode`, so an unregistered code stops compiling rather than reaching the wire undocumented (FR-025)
 - [ ] T082 [P] [US4] Add `docsUrl(code)` beside the registry, reading a base from `RELAY_DOCS_BASE_URL` with the published reference's URL as the default, and returning base + `#` + the code verbatim (FR-027, `contracts/errors.md` §2)
 - [ ] T082a [US4] Add `RELAY_DOCS_BASE_URL` to `turbo.json`'s `test:integration` env list, and to the `test` task's inputs if a unit test reads it. **Turbo's strict env mode filters what it does not declare**, so an undeclared variable is invisible to the task and the test silently exercises the default. Chapter 3.11 needed exactly this entry for the gateway's credential; the live proof that it matters is `RELAY_LIMITS_ITEST_API_PORT`, which is absent from that list and therefore unusable — which is why 4124 is the only port that ever runs (FR-027, R17)
 - [ ] T083 [US4] Replace all six construction sites with `docsUrl()`: `services/api/src/protocol-error.filter.ts:73`, `services/api/src/limits/rate-limit.middleware.ts:122` and `:220`, `services/gateway/src/session.ts:72` and `:103`, and — via T084 — `packages/service-kit/src/index.ts:85`. **Full paths, not basenames**: resolving `limits.itest.ts` to the wrong one of two files is what analysis pass one found in T076 (FR-027)
 - [ ] T084 [US4] Give `ServeOptions` in `packages/service-kit/src/index.ts` a required field carrying the not-found `docs_url`, and supply it from `services/gateway/src/main.ts`. **The dependency inverts rather than being added**: service-kit declares no dependencies at all and `serve()` has exactly one caller, so the compiler makes that caller supply the URL and the package stays empty (R9)
 - [ ] T085 [P] [US4] Point the call sites that name their own code at the registry rather than at a string literal: `services/api/src/auth/credential.guard.ts` ×2, `services/api/src/internal/usage.controller.ts`, `services/api/src/messages/messages.service.ts`, `services/api/src/internal/session.controller.ts`, `services/api/src/limits/rate-limit.middleware.ts` ×2, `services/gateway/src/session.ts` (FR-025, FR-026)
-- [ ] T086 [US4] Write `docs/08-error-reference.md`: one `h2` per code, the heading being the code verbatim, each with meaning, cause and remedy. A retryable condition says what makes it retryable; one that is not says so (FR-024, FR-028)
+- [ ] T086 [US4] Write `docs/08-error-reference.md`: one `h2` per code for all **twelve**, the heading being the code verbatim, each with meaning, cause and remedy. A retryable condition says what makes it retryable; one that is not says so (FR-024, FR-028)
 - [ ] T087 [US4] Add `_` to the kept character class in `slugifyHeading` in `relay-tutorial/components/docs/doc-article.tsx`, so `## quota_exceeded` anchors at `#quota_exceeded`. **Measured blast radius**: zero chapter `h2` headings contain an underscore, one docs heading does (`ADR-03 … last_sequence …`), and zero links anywhere in the site point at a `/docs/<slug>#anchor`. Without this, `docs_url` would need the same transform maintained in two repositories with no test able to see both sides (FR-027, R10)
 - [ ] T088 [P] [US4] Add the seventh `DocEntry` to `relay-tutorial/lib/docs.ts` with a `titleVi`. The Vietnamese route renders the same English source under a translated title with a standing note saying so, so no translation is owed (R11)
 - [ ] T089 [US4] Replace the `0[1-6]-*.md` glob with an explicit file list in **both** `relay-tutorial/scripts/sync-docs.sh` and `scripts/check-docs-drift.sh`. The range stops at 6 on purpose — `docs/07-tutorial-plan.md` is not a published reference — so `0[1-8]` would publish the tutorial plan. An explicit list is feature 030's doctrine in a shell script (FR-029, R11)
@@ -294,7 +296,7 @@ the gates, the battery, the counts, the three reintroductions, the two scratch p
 - [ ] T093 [US4] Fetch a live error response's `docs_url` against the built site and confirm the anchor's `id` is present in the HTML. A URL that matches a pattern is not a URL that resolves (FR-027, SC-013)
 - [ ] T094 [P] [US4] Add a twelfth registry key with no reference entry, confirm the build fails, remove it; then add an entry for a code that does not exist, confirm failure, remove it. Both directions or neither (SC-012, quickstart V10)
 
-**Checkpoint**: eleven codes in one registry, one URL function, and a `docs_url` that lands on a heading — the debt three chapters recorded, closed.
+**Checkpoint**: twelve codes in one registry, one URL function, and a `docs_url` that lands on a heading — the debt three chapters recorded, closed.
 
 ---
 
@@ -343,7 +345,7 @@ the gates, the battery, the counts, the three reintroductions, the two scratch p
 - [ ] T111 [P] Write the `TRAP` box on the empty target list — a derivation that finds nothing and passes — and the `WHY` boxes citing NFR-SEC-09, FR-TEN-05, constitution I and V
 - [ ] T112 [P] Write the section on what the suite does not cover, from `contracts/gauntlet.md` §7. A chapter that lists its defence's range is the difference between this suite and the nine assertions
 - [ ] T113 [P] Write the outbox finding into the chapter — **including the reversal**. The structural check said a constitutional clause was violated, the reasoning for the fix collapsed under a second look, and what was left was a retention problem four other requirements care about. A milestone chapter that reports only the findings that survived is reporting a tidier pass than the one that happened; the correction is the more useful half
-- [ ] T114 **Count the finished page** — prose words outside fences, fences, figures, and the recurring boxes — and record it against the 2,000–4,000 bound. Two chapters in this part exceeded it and both were discovered afterwards. **Count the fences against the surface this chapter was planned to carry**: 17 new files and 13 amended, against chapter 3.11's 21 files and 34 fences, and chapter 3.5's 39 against an estimate of 22. An amended file needs a diff fence in this chapter's prose or the chain's HEAD property fails, so the fence count is a floor under the page rather than a by-product of it (SC-022, R19)
+- [ ] T114 **Count the finished page** — prose words outside fences, fences, figures, and the recurring boxes — and record it against the 2,000–4,000 bound. Two chapters in this part exceeded it and both were discovered afterwards. **Count the fences against the surface this chapter was planned to carry**: 16 new files and 21 amended — 37 — against chapter 3.11's 21 files and 34 fences, and chapter 3.5's 39 against an estimate of 22. An amended file needs a diff fence in this chapter's prose or the chain's HEAD property fails, so the fence count is a floor under the page rather than a by-product of it (SC-022, R19)
 - [ ] T115 **Decide the split with the number, not with a feeling.** If the page is over, Phases 9 and 10 become chapter 3.13 and the milestone goes with them, because the Phase 2 exit criterion is the second half. Record the decision and the count either way (R19, SC-022)
 
 **Checkpoint**: the page exists and has been counted rather than estimated.
@@ -418,7 +420,7 @@ Phase 1 (baseline) ─┬─> Phase 2 (foundational) ─┬─> Phase 3 (US1 RES
 - **Phase 2**: T009 (fixture), T010/T010a (the oracle) and T011/T012 (the shapes) are
   three independent files. T013 is a gateway file and parallel with all of them. T014 is
   a check, not an edit.
-- **Phase 3**: T017, T018 and T019 are three assertions in one file and go in any order
+- **Phase 3**: T030c1 and T030c2 are a registry file and a test, parallel with each other and with T030d to T030f. T017, T018 and T019 are three assertions in one file and go in any order
   once T015 lands. T022 is a scratch edit to a different file and parallel with the
   attacks. T023, T024 and T026 are independent of each other; T025 is not parallel with
   them — all four are `attack.ts`. T028 to T032 are independent once T027 exists. T030a to T030d are product code in two

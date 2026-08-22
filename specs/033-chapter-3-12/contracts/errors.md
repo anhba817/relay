@@ -18,7 +18,10 @@ status ladder (protocol-error.filter.ts)    5   invalid_request unauthorized
 service-kit's 404                           1   not_found
 named at a call site (usage.controller.ts)  1   connection_environment_conflict
                                             ──
-union                                       11
+union today                                 11
+added by this chapter (R24)                  1   wrong_credential_service
+                                            ──
+ships                                       12
 ```
 
 **The registry is not the set**, and that is the finding this contract exists because of.
@@ -126,8 +129,8 @@ platform side (packages/protocol/src/codes.test.ts)
   assert every code the platform can emit is in ERROR_CODES        // self-contained
 
 tutorial side (relay-tutorial/scripts/)
-  codes   = Object.keys(ERROR_CODES)                    // eleven
-  anchors = h2 headings in docs/08-error-reference.md   // eleven
+  codes   = Object.keys(ERROR_CODES)                    // twelve
+  anchors = h2 headings in docs/08-error-reference.md   // twelve
   assert setEqual(codes, anchors)
 ```
 

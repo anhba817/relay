@@ -226,3 +226,46 @@ when it is two, and platform credentials authorized by class rather than by serv
 three: work with nowhere to run. Requirements moved 42 → 45 and outcomes 27 → 30 across the
 three, and two of the additions are product code rather than tests, which is not what an
 analysis pass is supposed to produce and is the honest result of reading the gates late.
+
+## Analysis pass four — the numbers
+
+Nine findings, no CRITICALs, eight applied. The ninth was a misleading denominator in a
+contract's closing list and was left alone.
+
+**Zero criticals is the expected shape for a fourth pass** — chapter 3.11's fourth found
+nine findings and none critical too. The first three passes find things that would break;
+the fourth finds things that would embarrass. Every one of these nine was a number written
+once and quoted afterwards without being re-derived.
+
+**The shape table did not sum to its own total.** Five rows accounted for 21 of 22 routes,
+and the missing one was `POST /v1/webhooks` — the webhook *create* route, absent from
+`data-model.md`'s `write` row and from T030's list of public writes. The derivation would
+have caught it on the first run, because T017 fails on a target matching no classification
+entry, so the mechanism worked; the arithmetic just got there first. Writes are fifteen.
+
+**The fence surface was understated by seven files.** The claim was 17 new and 13 amended.
+Re-derived from the task list after three passes had added to it: **16 new and 21 amended,
+37 total**, against chapter 3.11's 21 files and 34 fences. The original figure was computed
+once in pass one with a regex that also caught a `relay-tutorial` file, then quoted in three
+documents across two more passes. It is the input to T114's split decision, which makes it
+the wrong number to have been casual about — and correcting it strengthens R19's argument
+rather than weakening it.
+
+**One sentence contradicted itself.** R8's cost paragraph said "six call sites naming a
+code", listed eight, and the measured count is nine. All three numbers were in the same
+sentence.
+
+**And the new refusal needed a code, which moved a count through six documents.** A platform
+credential refused for its service presented the right class and the wrong service — neither
+"you lack a permission" nor "you presented the wrong kind of credential". Chapter 3.2 made
+this argument once already when it added `wrong_credential_type` rather than answering with a
+generic 403. So `wrong_credential_service` joins the registry beside it, the emittable set
+ships at **twelve** rather than eleven, and the message names the service and the permitted
+set and never the credential. Requirements moved 45 → 46 and outcomes 30 → 31.
+
+**What four passes cost and returned.** 42 findings, 5 CRITICAL, requirements 42 → 46 and
+outcomes 27 → 31. Three of the additions are product code rather than test code — the
+service-scoped authorization, its error code, and the compose-driven CI job — which is not
+what analysis passes are meant to produce. Two of the three came from reading the credential
+model and the build gates in passes two and three; had either been read during planning,
+they would have been plan decisions instead of corrections.

@@ -137,7 +137,7 @@ is what changes — never the derivation.
 pnpm test -- codes
 ```
 
-**Expect** eleven codes, eleven reference entries, set-equal in both directions.
+**Expect** twelve codes, twelve reference entries, set-equal in both directions — the eleven that exist today plus `wrong_credential_service`, which this chapter adds.
 
 **Then** add a twelfth key to the registry with no reference entry and re-run.
 

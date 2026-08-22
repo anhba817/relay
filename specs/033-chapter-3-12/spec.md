@@ -219,7 +219,8 @@ two members, send a message, and receive it on a socket for one of those members
 The chapter that claims tenant isolation is verified checks its own instruments. The
 guard that detects cross-environment mutations watches five tables and none of the four
 tenant-scoped tables chapters 3.10 and 3.11 added. The constitution asks for 100%
-branch coverage on isolation code and the file measures 90.57%. The integration lane
+branch coverage on isolation code and the file measured 90.57% when chapter 3.11 closed
+  and 90.60% on this feature's starting commit. The integration lane
 carries a fixed api port that produced three unrelated-looking failures in 3.11 and is
 green today by luck.
 
@@ -349,6 +350,12 @@ report for the isolation file against the constitution's clause.
   route declared for another. Declaring the credential class without naming a service
   MUST NOT compile: the platform has more than one internal caller, they are not equally
   exposed, and an authorization that can be omitted is one that will be.
+- **FR-046**: The refusal MUST carry its own error code rather than the generic one for
+  the status. A caller refused here presented the right credential class and the wrong
+  service, which is a different mistake from lacking a permission and from presenting the
+  wrong class — the distinction chapter 3.2 made when it added a code rather than
+  answering "forbidden". The message MUST name the service and the permitted set, and MUST
+  NOT name the credential.
 - **FR-010**: The suite MUST NOT depend on the nine existing scattered isolation
   assertions, and those assertions MUST NOT be deleted to avoid duplication: a suite
   that replaces in-process assertions with over-the-wire ones would move coverage off
@@ -544,7 +551,8 @@ report for the isolation file against the constitution's clause.
   mutation, and the refusal names the table. For the three with no `id` column, the
   refusal is produced without a PL/pgSQL error.
 - **SC-018**: The api repository layer's branch coverage is stated against
-  constitution VI's 100% clause, with the previous figure of 90.57% and every remaining
+  constitution VI's 100% clause, against 90.60% measured on this feature's starting commit
+  (3.11 closed at 90.57%, and the difference is run-to-run drift rather than a change), and every remaining
   uncovered branch named. The pinned ratchet ends at or above where it started.
 - **SC-019**: The integration lane stays green across twenty consecutive runs, with the
   test count reported for every run. No file is added to feature 030's exemption list
@@ -576,6 +584,9 @@ report for the isolation file against the constitution's clause.
   the permitted directories fails lint, demonstrated by adding such an import and
   running the gate. The count of files legitimately exempted is stated, and every one of
   them carries a reason.
+- **SC-031**: A platform credential refused for its service returns the code reserved for
+  that mistake, not the status's generic code, and the message names the service and the
+  permitted set and contains no part of the credential.
 - **SC-030**: The platform is started for the sealed integration by the documented
   command, on every build, and the package itself starts nothing — verified by reading its
   source for any process launch and by the integration failing with a clear message when

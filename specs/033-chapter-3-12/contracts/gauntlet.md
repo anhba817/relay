@@ -132,8 +132,12 @@ gateway credential    → POST /internal/dispatch/*        must be refused
 dispatcher credential → POST /internal/usage/connections must be refused
 ```
 
-Both directions, route by route. The refusal is a `403` naming the class and not the
-credential, by the rule `credential.guard.ts` already follows for a wrong credential class.
+Both directions, route by route. The refusal is a `403` carrying
+`wrong_credential_service` — its own code, not the status's generic one, because the class
+presented was right and the service was not, which is a third mistake distinct from lacking
+a permission and from presenting the wrong class (FR-046). The message names the service
+and the permitted set and never the credential, by the rule `credential.guard.ts` already
+follows.
 
 **What still protects a platform credential, after this change.** The network boundary,
 the secret's confidentiality, and now the route's declared service list. What does not:

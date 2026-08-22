@@ -320,12 +320,13 @@ because this is the chapter that looked, and owned by whichever chapter builds r
 | `packages/service-kit/src/index.ts` | `not_found` |
 | named at a call site | `connection_environment_conflict` (`usage.controller.ts`) |
 
-Union: **eleven**. The registry holds six. Five of the eleven exist only as string
+Union: **eleven** as the code stands today. The registry holds six. Five of the eleven exist only as string
 literals inside a ternary ladder, and one exists only at a call site. Nothing anywhere
 enumerates the eleven, which is why "document every error code" could not have been
 done from the registry — the spec's FR-026 exists because of this measurement.
 
-**Decision.** Make the registry the set by construction: add the five missing keys,
+**Decision.** Make the registry the set by construction — and after this chapter the set
+is **twelve**, because R24 adds `wrong_credential_service`. Add the five missing keys,
 type the filter's ladder as `ErrorCode` so the compiler refuses an unregistered code,
 and reference the registry from the call sites that name their own code. Then
 `Object.keys(ERROR_CODES)` is the derivation FR-025 asks for, and the reference
@@ -335,10 +336,23 @@ document's completeness test compares two lists rather than grepping source.
 ladder and would go stale the first time someone formatted it differently — a
 derivation that can silently under-report is the same fault as an empty target list.
 
-**Cost, counted rather than estimated.** Five registry keys, one typed ladder, six
-call sites naming a code (`rate-limit.middleware.ts` ×2, `credential.guard.ts` ×2,
-`usage.controller.ts`, `messages.service.ts`, `session.controller.ts`,
-`gateway/session.ts` — eight, in fact, once both spellings are counted).
+**Cost, counted rather than estimated — and an earlier draft of this paragraph said
+"six", listed eight, and was wrong about both.** Measured with `grep -rn 'code: "'` over
+non-test source: **nine** literals.
+
+```
+services/api/src/auth/credential.guard.ts        rate_limited, wrong_credential_type
+services/api/src/limits/rate-limit.middleware.ts rate_limited ×2
+services/api/src/messages/messages.service.ts    quota_exceeded
+services/api/src/internal/usage.controller.ts    connection_environment_conflict
+services/api/src/internal/session.controller.ts  quota_exceeded
+services/gateway/src/session.ts                  rate_limited
+packages/service-kit/src/index.ts                not_found
+```
+
+Eight of the nine are one task's work; the ninth moves under the `serve()` option that
+keeps service-kit dependency-free (R9). Plus five registry keys, one typed ladder, and the
+twelfth code R24 adds.
 
 ---
 
@@ -679,16 +693,27 @@ proof of coverage.
 **Finding.** This chapter carries more than any Part 3 chapter has: a derived suite over
 22 routes plus a socket surface, a structural check, eleven documented error codes, a
 new published document with three lists to keep in step, two endpoints, a sealed
-package, and four inherited debts. Two chapters in this part have already exceeded the
+package, three inherited debts and four this chapter found for itself. Two chapters in
+this part have already exceeded the
 2,000–4,000 word bound, both discovered afterwards.
 
-**And the stronger argument was sitting unused: the fence surface.** Counted from the
-task list, restricted to `relay-platform` paths, this chapter creates **17 new fenced
-files** and amends **13 existing ones** — 30 files against chapter 3.11's 21 files and
-34 fences, and against chapter 3.5's 39 fences on a budget first estimated at 22. Every
+**And the stronger argument was sitting unused: the fence surface.** Re-derived from the
+task list after three analysis passes had added to it, restricted to `relay-platform`
+paths: **16 new fenced files and 21 amended** — **37**, against chapter 3.11's 21 files
+and 34 fences, and chapter 3.5's 39 fences on a budget first estimated at 22. Every
 amended file needs a diff fence in this chapter's own prose or the chain's HEAD property
 fails, so the fence count is not incidental to the page length; it is a floor under it.
-An argument about prose words alone was the weaker half of the case.
+
+Two files in the raw count are excluded and named rather than quietly dropped:
+`services/api/src/health.controller.ts`, which T022 touches with a throwaway probe and
+reverts, and `services/gateway/src/limits.itest.ts`, which is fenced by nothing (R17) and
+appears in the task list only as a disambiguation note.
+
+**An earlier draft of this paragraph said 17 and 13.** That figure was computed once, in
+the first analysis pass, with a regex that also caught a `relay-tutorial` file — then
+quoted in three documents across two more passes without being recomputed after twenty-odd
+tasks were added. It is the input to T114's split decision, which makes it the wrong number
+to have been casual about.
 
 **Decision.** The documentation half — the error reference, the registry consolidation,
 `docs_url`, the slugifier, the sealed package — is sequenced **last**, so the split can
@@ -897,6 +922,25 @@ refusal message. An optional argument is a required argument nobody supplied.
 **Rejected: leaving it and reporting it.** That was the option on the table, and it was
 declined: the gauntlet would then ship an attack whose expected result is "succeeds", and
 a suite that documents a hole is not the suite constitution I asks for.
+
+**The refusal gets its own code: `wrong_credential_service`.** It belongs beside
+`wrong_credential_type` in the registry, because it is the same kind of distinction one
+dimension over — the class presented is right and the *service* is not, which is neither
+"you lack a permission" (`forbidden`) nor "you presented the wrong kind of credential".
+Chapter 3.2 made exactly this argument when it refused to answer a wrong-credential mistake
+with a generic 403, on the grounds that the SRS names it the most common first-integration
+failure. The status stays `403` and the code is named by the thrower, which is 3.2's
+mechanism.
+
+The message names the service and the permitted set — `"gateway" is not permitted on this
+route (dispatcher)` — and never the credential, which is NFR-SEC-06 and the reason
+`credential.guard.ts` already says the message "names the class and never the credential".
+A service name is a deployment label, not a secret.
+
+**So the emittable set is twelve after this chapter.** R8 counted eleven and was right for
+the code as it stands; this adds one. Every figure describing what ships says twelve, and
+the reference document's two-directional test is what fails if one of the six documents
+carrying that count is missed.
 
 **What this does not fix.** A credential is still a shared secret with no rotation story,
 and `service` is still self-reported by which variable matched rather than proven. The

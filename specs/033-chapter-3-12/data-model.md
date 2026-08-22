@@ -36,13 +36,15 @@ One per routable endpoint, computed at suite start from the express router.
    stale exemption is how a route becomes unattacked after a rename.
 3. `exempt` requires `because`. Nothing may be exempt by omission (FR-003).
 
-**The five shapes**, and the fifth is the one the specification did not anticipate:
+**The five shapes**, and the fifth is the one the specification did not anticipate. The
+five rows sum to 22, which is the check that caught the webhook **create** route missing
+from an earlier draft of this table — 21 named against a derived 22:
 
 | Shape | Members today | The attack |
 |---|---|---|
 | `read` | `GET /v1/webhooks/:id`, `GET /v1/channels/:channelId/messages` | another tenant's id, paired with an id that exists nowhere |
 | `list` | `GET /v1/webhooks` | the caller's own credential against an empty tenant |
-| `write` | the eight `/internal/*` routes, `POST` and `DELETE` on `/v1/webhooks/:id/*`, `POST /v1/channels/:channelId/messages` | a foreign id, plus a state read before and after |
+| `write` | the eight `/internal/*` routes, **`POST /v1/webhooks`**, `POST` and `DELETE` on `/v1/webhooks/:id/*`, `POST /v1/channels/:channelId/messages` — fifteen | a foreign id, plus a state read before and after |
 | `credential` | `POST /auth/dev-token` | a key from environment A must not mint a token that works in B. No identifier is involved (R4) |
 | `exempt` | `GET /healthz`, `GET /auth/:provider/start`, `GET /auth/:provider/callback` | none, with a reason |
 
@@ -84,8 +86,10 @@ finding becomes a classification.
 
 ## 5. `ErrorCode` — the registry becomes the set
 
-Today the emittable set is eleven and `ERROR_CODES` holds six. After this chapter the
-registry holds all eleven and the type system keeps it that way.
+Today the emittable set is eleven and `ERROR_CODES` holds six. This chapter adds a
+twelfth — `wrong_credential_service`, for a platform credential refused on a route
+declared for another service (R24) — so the registry ends at **twelve** and the type
+system keeps it that way.
 
 | Code | Emitted from | In the registry today |
 |---|---|---|
@@ -100,6 +104,7 @@ registry holds all eleven and the type system keeps it that way.
 | `not_found` | the 404 ladder, `service-kit` | **no** |
 | `internal_error` | the ladder's fallback | **no** |
 | `connection_environment_conflict` | `usage.controller.ts` | **no** |
+| `wrong_credential_service` | `credential.guard.ts` — new in this chapter | **new** |
 
 **Shape.** Each entry keeps its one-line meaning, as the six do now. The ladder in
 `protocol-error.filter.ts` is typed `ErrorCode`, so an unregistered code stops

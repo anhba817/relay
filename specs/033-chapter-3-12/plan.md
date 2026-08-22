@@ -97,7 +97,9 @@ What research settled, and four of these came from measuring rather than reading
   (R14a).
 
 - **Constitution VI's 100% clause is 25 branch arms away, and the reporters cannot name
-  them.** `repository.ts` measures 241/266 branches — a countable distance nobody has
+  them.** `repository.ts` measures 241/266 branches on this feature's starting commit —
+  3.11 closed at 90.57% and this run reads 90.60%, run-to-run drift rather than a change —
+  a countable distance nobody has
   ever stated, on a file with 100% function coverage and two uncovered lines, so almost
   all of it is unhit arms on covered lines. `json-summary` emits totals and not
   locations, so FR-040's "name every uncovered branch" needs one more reporter. Found by
@@ -177,17 +179,19 @@ beside the 330 tests already there.
 **Constraints**: The chapter's published page measures 2,000–4,000 prose words, and
 this chapter carries more than any other in Part 3 — so the documentation half is
 sequenced last, to be cut with a number rather than discovered (R19). **The fence
-surface is 17 new files and 13 amended ones**, against chapter 3.11's 21 files and 34
+surface is 16 new files and 21 amended**, 37 against chapter 3.11's 21 files and 34
 fences: every amended file needs a diff fence in this chapter's own prose or the chain's
 HEAD property fails, which puts a floor under the page length that a word count alone
 does not see. The chain is byte-exact across 177 files and 28 chapters, resolves every
 title against `relay-platform` — so tutorial-repo files and the parent's `docs/` cannot
 be fenced at all — and sees every `docs_url` that changes.
 
-**Scale/Scope**: 22 api routes, one WebSocket path, two health endpoints — the
-dispatcher runs no HTTP server — 22 base
-tables, eleven error codes, two new endpoints, four newly guarded tables, three
-inherited debts, one new package, one new document.
+**Scale/Scope**: 22 api routes — one of them `/healthz` — plus one WebSocket path and one
+more health endpoint on the gateway; the dispatcher runs no HTTP server. 22 base tables,
+twelve error codes after this chapter adds one, two new public endpoints, five internal
+routes gaining a declared service, four newly guarded tables, one restored lint rule, one
+new CI job, three inherited debts and four this chapter found for itself, one new package,
+one new document.
 
 ## Constitution Check
 
@@ -195,12 +199,12 @@ inherited debts, one new package, one new document.
 
 | Principle | Check | Verdict |
 |---|---|---|
-| **I. Tenant isolation is a correctness property** | This chapter **is** the principle's fourth bullet — "an automated cross-tenant access test suite MUST attack every endpoint with foreign IDs on every build" — which has been unmet since the clause was written. The two new endpoints are scoped in the repository layer, not in their handlers, and `addMember`'s existing behaviour (false for a foreign channel *or* a foreign user, no error) is the oracle rather than a bug. FR-044 narrows platform credentials from a class to a named service, so the gateway's credential stops reaching the dispatcher's routes. | **Pass on the clause this chapter delivers, and one clause found failing.** The third bullet — "raw connection access outside that layer is lint-forbidden" — is not in force for any `.itest.ts`, measured in R23 and in scope here as FR-043. The second bullet holds: `outbox` and `consumed_events` carry no tenant identifier and are infrastructure rather than records, which R7 reached only after an earlier draft escalated `outbox` wrongly. What the outbox does have is a retention problem that four requirements care about, recorded in R7a and owned by FR-MOD-06's chapter |
+| **I. Tenant isolation is a correctness property** | This chapter **is** the principle's fourth bullet — "an automated cross-tenant access test suite MUST attack every endpoint with foreign IDs on every build" — which has been unmet since the clause was written. The two new endpoints are scoped in the repository layer, not in their handlers, and `addMember`'s existing behaviour (false for a foreign channel *or* a foreign user, no error) is the oracle rather than a bug. FR-044 narrows platform credentials from a class to a named service, so the gateway's credential stops reaching the dispatcher's routes, and FR-046 gives that refusal its own code rather than a generic 403. | **Pass on the clause this chapter delivers, and one clause found failing.** The third bullet — "raw connection access outside that layer is lint-forbidden" — is not in force for any `.itest.ts`, measured in R23 and in scope here as FR-043. The second bullet holds: `outbox` and `consumed_events` carry no tenant identifier and are infrastructure rather than records, which R7 reached only after an earlier draft escalated `outbox` wrongly. What the outbox does have is a retention problem that four requirements care about, recorded in R7a and owned by FR-MOD-06's chapter |
 | **II. No acknowledged message is ever lost** | Nothing touches the write path. The clause that does apply is idempotency on write endpoints "enforced at the storage layer (unique index), not in application memory": channel creation's key is the customer's own identifier under `channels_environment_id_external_id_unique`, and membership's is `members`' composite primary key. Both predate this chapter; R14a is the finding that the current helper does not yet honour the second one. | Pass |
 | **III. Two data paths, never crossed** | Nothing analytical. No ClickHouse, no queue, no metering. | Pass |
 | **IV. Single writer, single source of truth** | The api stays the only writer. `packages/outsider` cannot import `pg` — it cannot import anything — and the gauntlet writes through the repository like every other suite. | Pass |
-| **V. API-first, developer-first** | The clause "every error code has a reachable documentation page" has been unmet since chapter 1.4 and is closed here for all eleven codes. `docs_url` stops being a placeholder. The two new endpoints are the first public surface for FR-CHN since Part 2 promised it. | **Pass, and it closes the debt three chapters recorded** |
-| **VI. Requirement-driven, test-verified** | **45 requirements, 30 measurable outcomes** — re-derive with `grep -c '^- [*][*]FR-' spec.md` and the same for `SC-`, never carried forward by hand. The 100%-branch clause for isolation code is measured against a number rather than restated (FR-040). The suite this principle names as a release gate is what the chapter builds. | Pass |
+| **V. API-first, developer-first** | The clause "every error code has a reachable documentation page" has been unmet since chapter 1.4 and is closed here for all twelve codes. `docs_url` stops being a placeholder. The two new endpoints are the first public surface for FR-CHN since Part 2 promised it. | **Pass, and it closes the debt three chapters recorded** |
+| **VI. Requirement-driven, test-verified** | **46 requirements, 31 measurable outcomes** — re-derive with `grep -c '^- [*][*]FR-' spec.md` and the same for `SC-`, never carried forward by hand. The 100%-branch clause for isolation code is measured against a number rather than restated (FR-040). The suite this principle names as a release gate is what the chapter builds. | Pass |
 | **VII. Boring by design — scope is a commitment** | No new service, no new language, no new dependency, no product migration. One new workspace package, which is a test package and not a service, so §4.2's "deliberately not a separate service" table does not apply. Everything larger is named and refused: the rest of FR-CHN and FR-USR go to 3.13 with a number, the outbox column goes to whoever next touches outbox writes, a human external-developer run is named as the instrument this chapter does not use. | Pass, with three refusals recorded |
 
 **One entry in Complexity Tracking**, and no ADR required. `packages/outsider` is a new
@@ -220,7 +224,7 @@ specs/033-chapter-3-12/
 ├── contracts/
 │   ├── gauntlet.md      # the derivation, the four shapes, the fifth treatment,
 │   │                    # and what the suite does not cover
-│   └── errors.md        # the eleven codes, the registry as the set, the URL rule
+│   └── errors.md        # the twelve codes, the registry as the set, the URL rule
 ├── checklists/
 │   └── requirements.md  # 16/16, with the three items read against a stated reading
 └── tasks.md             # Phase 2 — /speckit-tasks, not created here
@@ -239,7 +243,7 @@ relay-platform/
 │   │   ├── package.json                       #   no @relay/* dependency, by design
 │   │   ├── vitest.integration.config.mts
 │   │   └── src/integrate.itest.ts             #   signup → channel → members → send → socket
-│   ├── protocol/src/codes.ts                  # eleven codes; docsUrl() beside them
+│   ├── protocol/src/codes.ts                  # twelve codes; docsUrl() beside them
 │   ├── service-kit/src/index.ts               # ServeOptions gains a required field
 │   └── test-harness/src/
 │       ├── sentinel.sql                       # four tables, to_jsonb(OLD) (POST-SERIES)
@@ -277,7 +281,7 @@ relay-platform/
 docs/
 ├── 04-srs.md                                  # NFR-USE-05 verification note if it moves
 ├── 07-tutorial-plan.md                        # the 3.13 row, and why the milestone moved
-└── 08-error-reference.md                      # NEW — eleven codes, one h2 each
+└── 08-error-reference.md                      # NEW — twelve codes, one h2 each
 
 relay-tutorial/
 ├── app/(en)/part-3/chapter-12/…/page.mdx      # NEW — the chapter
@@ -317,7 +321,7 @@ until the suite is complete, and the documentation half is last so it can be cut
 | 6 | The two endpoints | channels + members, `addMember`'s upsert | They must appear in the target list without being named there (SC-016) |
 | 7 | The reintroductions | three, run and reverted, recorded | Sensitivity, not correctness. What stayed green is part of the result (R18) |
 | 8 | The instruments | guard's four tables, the itest lint ban, the port, the `json` reporter, the coverage number | The guard lands in post-series; the port needs no fence at all (R17). The lint ban is a constitution clause found off (R23); the reporter is what makes FR-040 nameable (R16) |
-| 9 | **The documentation half — separable** | eleven codes, the registry as the set, `docsUrl()`, `turbo.json`'s env entry, the slugifier, `08-error-reference.md`, three lists | Sequenced here so the split is a measurement (R19) |
+| 9 | **The documentation half — separable** | twelve codes, the registry as the set, `docsUrl()`, `turbo.json`'s env entry, the slugifier, `08-error-reference.md`, three lists | Sequenced here so the split is a measurement (R19) |
 | 10 | **The outsider — separable** | `packages/outsider`, the seed command, two lint rules, a compose-driven CI job, the gap list, the verdict | Needs phase 6; carries the milestone if the chapter splits. The CI job is what gives the package somewhere to run (R25) |
 | 11 | Close-out | chapter prose both locales, fences, the 3.13 row, notes | The plan-table edit is FR-022, not a courtesy (R20) |
 
