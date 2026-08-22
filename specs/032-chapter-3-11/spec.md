@@ -295,6 +295,10 @@ arrives.
 - **FR-031**: The gateway MUST flush a final report on an ordinary process
   termination signal. A shutdown path that only runs when something calls the
   server's close method is not a shutdown path.
+- **FR-032**: Any assertion this chapter makes about a shared resource — the mail
+  server, a global drain's return count, a table another suite also writes — MUST
+  be scoped to rows this test created. A count compared against zero survives any
+  amount of interference and proves nothing.
 
 ### Key Entities
 
@@ -336,7 +340,10 @@ arrives.
   attempt, with no process restart.
 - **SC-009**: Crossing 50%, 80% and 100% produces exactly three emails for the
   connection-minutes dimension per period, verified by reading what the mail
-  server received rather than by asserting on a send call.
+  server received rather than by asserting on a send call. The read MUST be
+  scoped to the recipient this test created: the mail server is shared by the
+  whole lane, and "exactly three" counted across every suite's mail is a claim
+  about the lane rather than about this feature.
 - **SC-010**: A report presented without a valid internal credential changes no
   figure, verified by reading the figure before and after the refused call.
 - **SC-011**: A connection spanning a period boundary places its minutes in both
@@ -350,7 +357,10 @@ arrives.
   a result, not a failure.
 - **SC-014**: The integration lane stays green across twenty consecutive runs,
   and no new file is added to feature 030's exemption list. If one is added, the
-  chapter states which global operation required it.
+  chapter states which global operation required it. **The chapter MUST also state
+  what this does not prove**: the guard watches five tables and none of the usage
+  or notification tables is among them, so silence about them is evidence that
+  nobody is looking rather than evidence that nothing happened.
 - **SC-015**: The chapter's published page measures between 2,000 and 4,000 prose
   words, and its fence count is derived by reading the page, both counted on the
   finished page rather than estimated.

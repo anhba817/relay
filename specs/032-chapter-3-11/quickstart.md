@@ -164,7 +164,12 @@ git diff --stat packages/test-harness/src/exempt.ts
 
 Expected: whatever refusals the baited database already produces, **none naming
 `usage_connections`, `usage_periods` or `quota_notifications`**, and an empty
-diff on `exempt.ts` (SC-014). Research R5 predicts no sweep for the second
+diff on `exempt.ts` (SC-014).
+
+**Record what this does not prove.** The guard watches five tables and none of
+them is a usage or notification table, so silence here means nobody is looking
+rather than nothing happening (R5a, R22). SC-014 can make a claim about the
+exemption list; it cannot make one about the tables. Research R5 predicts no sweep for the second
 chapter running. This step exists to find out the prediction is wrong.
 
 If a file does join the list, the chapter says which global operation required
@@ -193,9 +198,15 @@ open http://localhost:${RELAY_MAILPIT_HTTP_PORT:-8025}
 ```
 
 Expected: exactly three emails for the connection-minutes dimension per period,
-read out of Mailpit rather than asserted on a send call (SC-009). Re-crossing an
-already notified threshold sends nothing. A soft threshold with no hard cap
-sends its email and refuses no connect (SC-020).
+read out of Mailpit rather than asserted on a send call, **filtered to the
+recipient this test created** (SC-009, FR-032). Re-crossing an already notified
+threshold sends nothing. A soft threshold with no hard cap sends its email and
+refuses no connect (SC-020).
+
+Mailpit is shared by the whole lane, and the relay's `drainOnce()` claims
+undelivered rows across every environment — so an unfiltered "exactly three" is a
+claim about the lane, and chapter 3.10's `toBeGreaterThan(0)` is true whether it
+drained this test's row or a neighbour's (R22).
 
 ## V10 — The unauthenticated report
 
@@ -220,10 +231,15 @@ pnpm --filter relay-tutorial check:fences
 pnpm lint
 ```
 
-Expected: every count at or above V0's, coverage at or above its ratchet, and
-the fence chain byte-exact. Thirteen files this chapter touches carry 66 fences
-between them (research R16); a chain failure here is the cheapest place to find
-that a diff hunk was written against the wrong pre-image.
+Expected: every count at or above V0's, coverage at or above its ratchet
+**including the three entries this chapter adds**, and the fence chain byte-exact.
+`repository.ts` is the one to watch: pinned at branches 90, and it went red in
+chapters 3.5 and 3.6 on the same move this chapter makes (R23).
+
+Twenty-one files this chapter touches carry 95 fences between them (research
+R16), four of them build-gate files with entries in `post-series.md` as well; a
+chain failure here is the cheapest place to find that a diff hunk was written
+against the wrong pre-image.
 
 ## V12 — Twenty runs
 

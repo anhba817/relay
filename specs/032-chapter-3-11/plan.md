@@ -47,6 +47,12 @@ settled:
   absence of. An earlier draft forwarded an HTTP status onto a socket, borrowing
   chapter 3.8's shape while discarding the `Retry-After` that was its only
   justification (R21).
+- **The email tests drive a sweep both guards miss.** `createQuotaRelay(...).drainOnce()`
+  calls `drainQuotaNotifications`, which claims rows across every environment.
+  Chapter 3.10 added it and put it on neither the lint restriction list nor
+  `exempt.ts`, whose comment says the two must agree — and the lint rule could not
+  have caught this chapter anyway, because the call is indirect. The half that
+  protects the chapter is scoping the assertions to rows it created (R22).
 - **The gateway had no graceful shutdown to hang the flush on.** `serve()` returns
   a bare `node:http` Server and nothing ever calls `server.close()`; only the
   dispatcher installs signal handlers. Four documents agreed the flush happened
@@ -116,11 +122,11 @@ refuse a connect, or fail a send (FR-012). Reported figures must survive a flush
 of the per-minute counter store (FR-026).
 
 **Scale/Scope**: One migration, one new internal route, one new gateway module,
-six places where a third dimension has to be named (R15), and **seventeen** existing
-files carrying **77** fences between them (R16). That table has been wrong twice,
-both times mine: twelve files at 62 in the first draft, then thirteen at 66 with a
-fence count for `rate-limit.middleware.ts` I asserted rather than counted. The
-second pass counted every row.
+six places where a third dimension has to be named (R15), and **twenty-one** existing
+files carrying **95** fences between them (R16) — four of them build-gate files
+(`compose.yaml`, `turbo.json`, `vitest.coverage.config.mts`, `eslint.config.mjs`)
+that this chapter has to edit. That table was wrong in all three analysis passes,
+every time by extending a list rather than counting one, and T006 now generates it.
 
 ## Constitution Check
 
@@ -166,6 +172,9 @@ specs/032-chapter-3-11/
 relay-platform/
 ├── compose.yaml                              # the gateway's first credential
 ├── turbo.json                                # its env entry (strict env mode)
+├── vitest.coverage.config.mts                # three ratchet entries (R23)
+├── eslint.config.mjs                         # drainQuotaNotifications joins the
+│                                             # restricted family (R22)
 ├── packages/protocol/src/
 │   └── internal.ts                           # the report request/response schemas
 ├── services/api/
@@ -248,10 +257,10 @@ with two numbering schemes is a trap for whoever reads them in order.
 | 1 | Baseline: the lane's current counts, timings and coverage, before anything changes | — |
 | 2 | Foundational: the migration, the schema, `minuteOf`, the third key in three enumerations, the protocol schemas | FR-001, FR-002, FR-003, FR-013, FR-014 |
 | 3 | The credential: one per service, the gateway's compose and turbo entries, `service` stops being a constant | FR-011 |
-| 4 | **US1** — the meter, the close path, the report route, the credit, the flush test | FR-001 to FR-005, FR-009, FR-010, FR-026, FR-004 |
+| 4 | **US1** — the meter, the close path, the report route, the credit, the flush test, and the coverage the ratchets will ask for | FR-001 to FR-005, FR-009, FR-010, FR-026, FR-004 |
 | 5 | **US2** — replay, loss, reordering, the kill, the signal handler and its flush, the isolation of a failed report | FR-006 to FR-008, FR-012, FR-029, FR-031 |
 | 6 | **US3** — the cap at the door, the fourth outcome, the 402 and the 4008, the degradation tests, the overshoot bound | FR-015 to FR-020, FR-025, FR-030 |
-| 7 | **US4** — the third dimension's crossings and emails | FR-021 to FR-023 |
+| 7 | **US4** — the third dimension's crossings and emails, scoped to their own rows | FR-021 to FR-023, FR-027, FR-032 |
 | 8 | Verification: the guard prediction, the connect-path measurement, twenty lane runs, the dimension-cost count | SC-012, SC-013, SC-014, FR-024, FR-027 |
 | 9 | The chapter in English, and the size count | SC-015, FR-019, FR-028 |
 | 10 | Publication: the fences, their routing, and both locales | — |
@@ -279,6 +288,7 @@ mean writing the meter's tests twice.
 | Retaining a closed connection's final total until a report is accepted | A closed connection has no next report to repair a lost one, so R3's "totals repair themselves" reasoning stops applying exactly there (R19) | Reporting synchronously from the `close` handler puts an HTTP call in the one place already documented as "the last place that should throw", and turns a mass disconnect into a burst of requests. Dropping the total instead makes reconnect churn free, which is what R2 chose the bucket model to prevent |
 | A SIGINT/SIGTERM handler in the gateway, and `sessions.close()` becoming async | Nothing in the gateway calls `server.close()`, so the flush FR-008 and `contracts/metering.md` §5 promise had no path that runs. The dispatcher's `main.ts:313` is the precedent (R11) | Leaving it means the guarantee is prose. Firing the flush without awaiting it is the same non-guarantee moved one line down: the process exits first |
 | Emitting close code 4008, and inverting a test chapter 3.8 shipped | EIR-WS-06 requires a close code for quota exhaustion; 4008 has been declared and unemitted for eleven chapters; a browser cannot read a raw HTTP refusal on a failed upgrade (R21) | Forwarding the 402 onto the socket keeps a shipped test green and leaves the requirement open, in the chapter whose subject it is |
+| Three coverage ratchet entries and the tests to earn them | `repository.ts` is pinned at branches 90 and went red in chapters 3.5 and 3.6 for exactly this reason; pure decision files are pinned at 100 by a convention with a written reason each time (R23) | Discovering it in Phase 8 is what 3.5 and 3.6 both did, and both had to write the tests anyway with four phases stacked on top |
 | A second timer in the gateway | Billing cadence and liveness cadence are different requirements; the heartbeat's 30s comes from EIR-WS-04's death detection (R10) | Reusing the heartbeat makes one number answer to two requirements, and the next change to either argues with the other |
 | A fourth `Authentication` outcome | A 402 currently becomes `ApiError` → `unavailable` → close 1011, which tells the client we are broken and that retrying will help. Both wrong (R6) | Mapping 402 to `refused` closes 4001, "your credential is bad", which is also wrong and is the answer a client will act on by re-authenticating for ever |
 | `recordCrossings` and `organisationOf` extracted from `Repository` | The report route is platform-credentialled and `Repository` is environment-scoped by construction; the notification machinery is behind scoping the route cannot satisfy (R8) | Copying the crossing logic into the platform path is a fifth place that has to agree about thresholds. `usageFor` already sets the precedent for a standalone admin-surface function |

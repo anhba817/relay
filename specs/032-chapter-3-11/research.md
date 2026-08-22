@@ -424,39 +424,51 @@ what FR-024 asks for.
 
 ## R16 — The fence surface, counted before it is a problem
 
-**Seventeen** files this chapter is likely to touch already carry **77 titled
+**Twenty-one** files this chapter is likely to touch already carry **95 titled
 fences** between them in the English chapters:
 
-| File | Fences |
-|---|---|
-| `services/api/src/db/repository.ts` | 15 |
-| `services/api/src/db/schema.ts` | 11 |
-| `packages/protocol/src/internal.ts` | 8 |
-| `services/gateway/src/session.ts` | 7 |
-| `services/gateway/src/session.test.ts` | 6 |
-| `services/api/src/internal/internal.module.ts` | 5 |
-| `services/gateway/src/main.ts` | 4 |
-| `services/gateway/src/registry.ts` | 4 |
-| `services/gateway/src/api-client.ts` | 3 |
-| `services/gateway/src/auth.ts` | 3 |
-| `services/api/src/auth/authenticate.middleware.ts` | 3 |
-| `services/api/src/internal/session.controller.ts` | 2 |
-| `packages/protocol/src/codes.ts` | 2 |
-| `services/api/src/quotas/config.ts` | 1 |
-| `services/api/src/quotas/policy.ts` | 1 |
-| `services/api/src/quotas/quota.error.ts` | 1 |
-| `services/api/src/limits/rate-limit.middleware.ts` | 1 |
+| File | Fences | |
+|---|---|---|
+| `services/api/src/db/repository.ts` | 15 | |
+| `services/api/src/db/schema.ts` | 11 | |
+| `packages/protocol/src/internal.ts` | 8 | |
+| `services/gateway/src/session.ts` | 7 | |
+| `turbo.json` | 7 | build gate |
+| `services/gateway/src/session.test.ts` | 6 | |
+| `services/api/src/internal/internal.module.ts` | 5 | |
+| `services/gateway/src/main.ts` | 4 | |
+| `services/gateway/src/registry.ts` | 4 | |
+| `vitest.coverage.config.mts` | 4 | build gate |
+| `eslint.config.mjs` | 4 | build gate |
+| `services/gateway/src/api-client.ts` | 3 | |
+| `services/gateway/src/auth.ts` | 3 | |
+| `services/api/src/auth/authenticate.middleware.ts` | 3 | |
+| `compose.yaml` | 3 | build gate |
+| `services/api/src/internal/session.controller.ts` | 2 | |
+| `packages/protocol/src/codes.ts` | 2 | |
+| `services/api/src/quotas/config.ts` | 1 | |
+| `services/api/src/quotas/policy.ts` | 1 | |
+| `services/api/src/quotas/quota.error.ts` | 1 | |
+| `services/api/src/limits/rate-limit.middleware.ts` | 1 | |
 
-**This table has now been wrong twice, both times by me, and both corrections
-belong here rather than in a note nobody reads.** The first draft listed twelve
-files at 62 and omitted `rate-limit.middleware.ts`, whose chapter 3.8 comment
-says the gateway makes three api calls and holds no platform credential — the
-first analysis pass found that. The fix then *asserted* four fences for it
-without counting; it has one. The second pass counted every row and added four
-more files: `session.test.ts` (R21), `codes.ts` and `quota.error.ts` (the close
-code and the refusal message), and `internal.module.ts` (where the new controller
-registers). A table of numbers assembled by memory is the thing this series says
-not to do.
+`vitest.coverage.config.mts` and `eslint.config.mjs` also carry entries in
+`fences/post-series.md` — two and one respectively — so a change to either has to
+decide which side of the series it belongs on before it is written.
+
+**This table has now been wrong in all three analysis passes, and the pattern is
+worth more than the number.**
+
+| Pass | Said | Wrong because |
+|---|---|---|
+| draft | 12 files, 62 fences | omitted `rate-limit.middleware.ts` |
+| 1 | 13 files, 66 fences | asserted 4 fences for that file; it has 1 |
+| 2 | 17 files, 77 fences | counted only *source* files |
+| 3 | 21 files, 95 fences | counted from the pages |
+
+Every correction came from counting. Every error came from extending a list that
+already existed. **T006 derives this table from the pages and it is never
+hand-edited again** — a hand-maintained inventory of something a script can count
+is the shape of all four mistakes above.
 
 The chain applies **hunked diffs**, so the cost is one diff fence per changed
 region rather than a restatement of each file — `check-fence-chain.mjs` requires
@@ -664,3 +676,102 @@ holds and is now demonstrated rather than asserted: a rate limit refuses the
 handshake with a 429 and a `Retry-After`, a quota completes it and closes with
 4008 and a date. Two refusals at one door, and after this chapter the difference
 is visible on the wire.
+
+---
+
+## R22 — The email tests drive a sweep both guards miss, and chapter 3.10 shipped it
+
+**Found by the third analysis pass, reading against the build gates.**
+
+`quotas.itest.ts` drives the threshold emails through `createQuotaRelay(...).drainOnce()`, which calls
+
+```
+drainQuotaNotifications(db, batchSize, deliver, onError)
+```
+
+— a function that claims undelivered rows **across every environment in the
+database**. It is the fifth member of a family the project already treats as
+dangerous. The other members are named in `eslint.config.mjs`:
+
+```
+drainOutbox, drainDueDeliveries, drainDisableNotifications,
+sweepDisabledEndpoints, outboxDepth, pendingDeliveryDepth
+```
+
+with a message explaining that "an integration test shares that database with
+every other suite". **`drainQuotaNotifications` is on neither that list nor
+`packages/test-harness/src/exempt.ts`**, whose comment says the two "MUST AGREE".
+Chapter 3.10 added the function and listed it nowhere.
+
+**Three mechanisms could have caught it and none does.**
+
+- The **lint rule** does not name the function. Even if it did, `quotas.itest.ts`
+  reaches the drain through `createQuotaRelay`, and the rule's own comment says
+  what it cannot see: "an indirect call — a helper in another file that calls the
+  function, imported here under an innocent name".
+- The **sentinel trigger** watches five tables and `quota_notifications` is not
+  one of them (R5a).
+- The **assertion** is `expect(await relay().drainOnce()).toBeGreaterThan(0)`,
+  which is true whether it drained this test's row or somebody else's. A count
+  compared against zero survives any amount of interference.
+
+That is instance thirteen of this project's recurring fault, sitting green.
+
+**Decisions, three of them, because the problem has three halves.**
+
+1. **Add `drainQuotaNotifications` to the lint restriction list.** It protects a
+   future direct importer and it makes the family complete. It does **not**
+   protect this chapter, and saying so matters more than adding it — a rule
+   trusted further than it goes is worse than no rule.
+2. **Scope this chapter's assertions to this chapter's rows.** SC-009 reads
+   Mailpit for "exactly three emails", and Mailpit is shared by the whole lane.
+   Filter by the recipient this test created, and assert on that. This is the
+   half that actually protects the chapter.
+3. **Do not copy 3.10's `toBeGreaterThan(0)`.** Assert the rows this test wrote
+   were delivered, by id.
+
+**What this does to R5's prediction.** R5 says no file joins the exemption list,
+and that stays true — the guard does not watch these tables, so there is nothing
+to be exempt from. The honest form of the claim is narrower than SC-014's
+wording: **the guard's silence about quota tables is not evidence that no global
+operation happened.** It is evidence that nobody is looking. SC-014 keeps its
+exemption-list check and gains that caveat.
+
+---
+
+## R23 — Three coverage ratchets will go red, and the config says so in advance
+
+`vitest.coverage.config.mts` is not a threshold file, it is a record of every
+chapter that made this mistake. Three of its notes apply directly.
+
+**`repository.ts` is pinned at branches 90 / functions 100 / lines 99 /
+statements 97**, and the config records what happened the last two times a
+chapter grew it:
+
+> CHAPTER 3.5 RAISED THESE, and only after earning it. … branches fell from
+> 85.91% to 78.22% … The instrument was right and the code was not tested.
+
+> CHAPTER 3.6 RAISED THEM AGAIN … Measured mid-chapter with the failure run
+> written and its tests not yet, this file read 96.46 statements and 88.80
+> branches — the instrument saying "you added five operations and tested none of
+> them" in the only language it has.
+
+This chapter adds `creditConnectionMinutes` and extracts two functions. The tests
+belong in Phase 4, beside the code, not in Phase 8 beside the discovery.
+
+**Pure decision files get pinned at 100, by convention with a written reason
+each time**: 3.6 pinned `disable.ts` and `analytics.ts`, 3.8 pinned `bucket.ts`,
+`policy.ts` and `fallback.ts` — "they hold no clock, no store and no framework,
+so a branch they miss is a case nobody thought of rather than a case nobody could
+reach." `quotas/credit.ts` and the pure half of `gateway/src/meter.ts` are that
+shape. Entries go in with the chapter, not after it.
+
+**And the trap that is specific to this chapter.** `meter.ts`'s most important
+tests spawn a gateway child process, and the config states plainly that a child
+process's coverage "is not attributable here". That is exactly how chapter 3.5
+lost 7.69 points of branch coverage on `repository.ts`. So the meter's *logic* is
+covered by in-process unit tests on a driven clock, and the spawned tests are kept
+for the one thing only a process can show: what a signal does.
+
+`**/main.ts` is excluded from coverage entirely. That makes it the right home for
+R11's signal handler and the wrong home for anything the handler calls.

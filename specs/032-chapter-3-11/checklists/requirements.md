@@ -200,3 +200,60 @@ kill. The spawn pattern to copy exists; nothing pointed it at the gateway.
 
 The counts moved: 29 requirements to 31, 21 success criteria to 23, 103 tasks to
 110, and research gained R21 while R11 was rewritten around the handler it assumed.
+
+## Third analysis pass, 2026-08-22
+
+Eleven findings — one CRITICAL, four HIGH, four MEDIUM, two LOW — no constitution
+violation in its text. All eleven applied.
+
+**Pass 1 read the documents and the published prose. Pass 2 read the code. This
+pass read the build gates** — coverage ratchets, lint rules, the TypeScript
+dialect split, and the fence chain's actual inventory. Each surface found what
+the other two structurally could not, and this one found the thing with the
+longest fuse.
+
+**C3: the chapter's email tests drive a sweep that three mechanisms fail to
+catch.** `createQuotaRelay(...).drainOnce()` calls `drainQuotaNotifications`,
+which claims undelivered rows across every environment in the database. The lint
+rule names six such functions and not this one — chapter 3.10 added the fifth
+member of the family and listed it in neither the rule nor `exempt.ts`, whose
+comment says the two "MUST AGREE". The rule could not have caught this chapter
+regardless: the call is indirect, and the rule's own comment admits it cannot see
+that. The sentinel trigger does not watch `quota_notifications`. And 3.10's
+assertion is `expect(await relay().drainOnce()).toBeGreaterThan(0)`, which is true
+whether it drained this test's row or a neighbour's.
+
+That is the project's thirteenth instance of one fault, sitting green, and the
+honest half of the fix is not the lint entry — it is scoping the Mailpit read to
+the recipient this test created. Adding `drainQuotaNotifications` to the list
+protects a future direct importer and nothing in this chapter, and the task says
+so rather than implying otherwise.
+
+**Three coverage ratchets will go red, and `vitest.coverage.config.mts` says so in
+advance.** It is not a threshold file, it is a record of every chapter that made
+this mistake. `repository.ts` is pinned at branches 90; chapter 3.5 dropped it
+from 85.91% to 78.22% by adding operations without tests, and 3.6 measured 88.80%
+mid-chapter for the same reason. This chapter adds an operation and extracts two
+functions. The tests moved into Phase 4 beside the code.
+
+**And one trap specific to this chapter**: `meter.ts`'s most important tests spawn
+a gateway child process, whose coverage the config states is "not attributable" —
+which is precisely how 3.5 lost its 7.69 points. The meter would have measured low
+*because* it was well tested. Its logic is covered in-process on a driven clock;
+the spawned tests keep the one thing only a process can show.
+
+**The fence inventory was wrong in all three passes, and that is now recorded as
+a table rather than a correction.** 12 files/62 → 13/66 (one row asserted, not
+counted) → 17/77 (source files only) → **21/95**, once `compose.yaml`,
+`turbo.json`, `vitest.coverage.config.mts` and `eslint.config.mjs` were counted —
+all four fenced, all four edited by this chapter. Every correction came from
+counting and every error came from extending a list. T006 generates the table
+now; it is not hand-edited again.
+
+**SC-014's claim was narrowed rather than dropped.** "No new file joins the
+exemption list" stays true and stops being oversold: the guard watches five
+tables, none of them a usage or notification table, so silence about them is
+evidence that nobody is looking.
+
+The counts moved: 31 requirements to 32, 23 success criteria unchanged in number
+but two sharpened, 110 tasks to 115, and research gained R22 and R23.
