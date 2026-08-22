@@ -243,3 +243,37 @@ this chapter builds the first shutdown path the gateway has ever had, so the cod
 is sitting right there. Draining is telling clients to reconnect elsewhere, which
 is a feature with its own semantics; reaching for the code because a handler
 arrived is the "declared, so use it" chapter 3.8 refused by name.
+
+## Phase 6 — the cap at the door, and 4008 after nineteen chapters
+
+Green: lint, build, integration **324** (from 304), 192s.
+
+**The tripwire fired on schedule.** `session.test.ts`'s "STILL emits close code
+4008 from nowhere (quickstart V7)" went red the moment `session.ts` emitted it —
+the one thing in this chapter that seven analysis passes DID predict, scheduled as
+T048b since the second. Inverted: 4008 is asserted present, 4009 asserted absent,
+and the self-check that makes it honest survives on 4009. `bait-size.test.ts`'s
+cross-reference to it was updated too.
+
+**Three tests failed on my own mistakes before they passed**, all in the new
+socket-door block and none of them about the code under test:
+
+1. `startApi()` binds a fixed port (`RELAY_SESSION_ITEST_API_PORT ?? 4123`), so a
+   second `describe` calling it silently failed to bind and every test after died
+   on `fetch failed`. It now takes a port.
+2. I set `url` to `ws://…/v1/ws` and then used a `connect` helper copied from the
+   block above, which appends `/v1/ws` itself. `/v1/ws/v1/ws` hits
+   `socket.destroy()` and the client sees `ECONNRESET` with no log line anywhere —
+   the upgrade handler never runs, so nothing reports the path it refused.
+3. `listMessages` and `sendMessage` have different signatures than I assumed.
+
+The second cost the most time and is worth the sentence: a path the gateway
+refuses at `server.on("upgrade")` produces **no log at all**, which makes a typo
+in a test URL indistinguishable from a broken feature.
+
+**T055 is committed rather than ad-hoc**, which is the whole point. Chapter
+3.10's T033 measured with a script that lived nowhere, reported 273% to 411%
+regressions, and sent two code changes chasing a warm-up artefact before the real
+figure turned out to be 0.56 ms. This one asserts on the PLAN — index scans, no
+`Seq Scan` — because a clock cannot show a scan, which is the correction 3.10's
+first analysis pass had to make to its own criterion.
