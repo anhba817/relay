@@ -737,3 +737,62 @@ seventeen checks have never been read against the passes' findings. V6 was caugh
 sweep, not by reading, and a term sweep only finds claims someone thought to grep for. That
 is the same gap `spec.md`'s prose had before pass ten, in the artifact whose entire purpose
 is to be followed literally.
+
+## Analysis pass fourteen — the quickstart sweep
+
+Four findings, two HIGH, all applied. Every one of the seventeen remaining checks read
+against the thirteen previous passes.
+
+**Eleven of seventeen carried their passes' corrections. Four did not, and all four failed
+the same way.**
+
+V16 runs the twenty-run battery and had none of pass nine's four findings except the one
+that named V16 — no stopping rule, no duration record, and no statement of what twenty runs
+establishes. The other three went into `spec.md` and `tasks.md`. V8 is titled "the two
+endpoints, by hand" and tested creation and idempotency only: no `private` refusal, no
+member ceiling, no metadata, though pass five put all three into spec, tasks and data model.
+Nothing anywhere checked the platform-service authorization — pass two's CRITICAL and its
+error code — so V8a is new. And V12 runs `check:fences` while saying nothing about what
+MIRROR compares, which pass nine measured as three invariants before it reaches a body.
+
+**The mechanism, stated once because it explains every sweep since pass ten:** a finding
+names the artifacts it was found in, corrections get applied there, and `quickstart.md` is
+never where anything is found. Thirteen passes read spec, plan, tasks, research, contracts
+and code; those six accumulated the fixes. The file whose entire purpose is to be followed
+literally received corrections only when a finding happened to cite it.
+
+**Verified correct**, recorded because a sweep that reports only hits is not a sweep: V6's
+three-class model, V9's 22→24, V10's thirteen codes, V11's URL resolution, V13's three seal
+levels, V14's four tables, V15's 241/266 and the `json` reporter, V17's lint check, the
+prerequisites' four variables, and V16's corrected port file.
+
+**One probe of my own misfired and is recorded rather than acted on.** A grep for
+"restart the count from one" reported the stopping rule missing; the phrase spans a line
+break and the rule is present at V16. A crude check reading as a finding is the thing this
+chapter is about, and the second time this session a self-probe has produced a false
+positive — the first was `contracts/gauntlet.md`'s class model in pass thirteen.
+
+## Fourteen passes
+
+  pass  1   the documents + the published series      17 findings   2 CRITICAL
+  pass  2   the code                                   9            2
+  pass  3   the build gates                            7            1
+  pass  4   the numbers                                9            0
+  pass  5   the governing documents                    7            1
+  pass  6   task executability                         7            0
+  pass  7   the sixth pass's edits                     5            0
+  pass  8   the publication contract                   4            0
+  pass  9   translation mechanics + the battery        4            0
+  pass 10   acceptance scenarios and edge cases        6            0
+  pass 11   assumptions, dependencies, one open item   5            0
+  pass 12   the narrative sweep + residuals           10            0
+  pass 13   the systematic claim sweep                 3            0
+  pass 14   the quickstart sweep                       4            0
+
+Ninety-two findings, six CRITICAL. All eight artifacts have now been read at depth against
+every pass, and every correction swept across all of them.
+
+**The procedural fix that would have prevented today's four**, recorded as the thing to do
+rather than another pass: when a finding is applied, ask which artifact *describes* the
+thing and which one *instructs* it, and fix both. Every sweep from pass ten onward found
+the same gap between those two, and no amount of reading closes it — only the habit does.

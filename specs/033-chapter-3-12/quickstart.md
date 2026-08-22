@@ -130,8 +130,54 @@ curl -s -X POST localhost:4000/v1/channels \
 # expect 200 — FR-CHN-02, the same channel, not an error
 ```
 
+```bash
+# private is refused — nothing in the platform reads channels.type, so FR-CHN-05 is
+# unimplemented and the documented enum has one member until 3.13 (FR-047)
+curl -s -X POST localhost:4000/v1/channels \
+  -H "authorization: Bearer $KEY" -H 'content-type: application/json' \
+  -d '{"external_id":"secret","type":"private"}' | python3 -m json.tool
+# expect invalid_request, with "field": "type"
+
+# metadata round-trips, and over 8 KB is refused (FR-CHN-01's fourth element, FR-016)
+curl -s -X POST localhost:4000/v1/channels \
+  -H "authorization: Bearer $KEY" -H 'content-type: application/json' \
+  -d '{"external_id":"meta","type":"public","metadata":{"team":"ops"}}' | python3 -m json.tool
+# expect the metadata back; repeat with >8 KB and expect a refusal
+```
+
 Then add members twice and confirm the second call is a success naming them as already
 members, rather than a 500 from `members`' primary key (R14a).
+
+**And the ceiling.** Add members up to a thousand, then one more.
+
+**Expect** `422` with `channel_member_limit_exceeded`, and the channel still holding a
+thousand — read back, not inferred from the status. FR-CHN-07 states the number, the
+status and the requirement of a specific code, and the SRS names that code in its own
+worked example for EIR-API-04 (FR-048).
+
+## V8a — a platform credential is refused on another service's route
+
+```bash
+# the gateway's credential against a dispatcher route
+curl -s -X POST localhost:4000/internal/dispatch/replay \
+  -H "authorization: Bearer $RELAY_INTERNAL_CREDENTIAL_GATEWAY" \
+  -H 'content-type: application/json' -d '{"dead_letter_id":"…"}' | python3 -m json.tool
+# expect 403 wrong_credential_service, naming the service and the permitted set
+
+# and the reverse: the dispatcher's credential against the gateway's route
+curl -s -X POST localhost:4000/internal/usage/connections \
+  -H "authorization: Bearer $RELAY_INTERNAL_CREDENTIAL" \
+  -H 'content-type: application/json' -d '{}' | python3 -m json.tool
+# expect the same refusal
+```
+
+**Both directions, route by route** — five platform routes. Until this chapter `Accepts`
+took kinds and not services, both credentials resolved to the same class, and the gateway's
+reached `POST /internal/dispatch/replay`, whose handler takes a dead-letter id and no
+environment (FR-044, FR-046, SC-029).
+
+**Expect** the message to name the service and the permitted set and no part of the
+credential. A service name is a deployment label; a credential is a secret.
 
 ## V9 — the new endpoints joined the gauntlet without being told to
 
@@ -181,6 +227,14 @@ last fenced state and the file on disk. `check:docs`
 must be checked specifically for the seventh document: a document in the registry and
 not in the sync list renders a stale page and the drift check does not see it, because
 it only walks files its own glob selects.
+
+**And check what MIRROR compares, which is more than bodies.**
+`check-fence-chain.mjs:278` joins `${f.lang} ${f.title}` for every fence in order and
+compares the whole list before it looks at a single body. So a changed language tag
+(```typescript for ```ts), two fences reordered, or a translated title breaks the check with
+every body untouched — on the series' largest fence list at 37 files. Positional matching is
+also why repeated titles are safe, which matters where an amended file carries several diff
+fences.
 
 ## V13 — the outsider is sealed
 
@@ -261,8 +315,23 @@ the lane's coverage is mildly data-dependent on what the test database has accum
 for i in $(seq 1 20); do pnpm test:integration 2>&1 | tail -3; done
 ```
 
-**Expect** the same test count every run. A count that moves is a defect, not noise —
-chapter 3.11 found three that way, two of them older than the chapter.
+**Expect** the same test count **and a stable duration** every run. A count that moves is a
+defect, not noise, and so is a mean that moves far — 3.11 recorded "330 every run, 193.30 s
+mean, 3 s spread", and the spread is how a timeout-shaped defect announces itself. This
+chapter adds a compose-driven job and thirty-odd suites, so state the budget a run may not
+exceed.
+
+**Stop on the first failure attributable to this chapter's code**, fix it, and restart the
+count from one — recording the abandoned run's number and its cause. At roughly 193 s a run
+twenty is about 64 minutes, and the rule is what saves thirteen of them. Chapter 3.11 found
+three defects this way and abandoned its first attempt at run 7.
+
+**And write down what twenty runs establishes.** Twenty green runs give 95% confidence only
+against a per-run failure probability of about 14% or worse — `(1−p)²⁰ ≤ 0.05` needs
+`p ≥ 0.139` — and a 5% flake survives them unseen 36% of the time. **Chapter 3.11's battery
+ran twenty green and an eleven-chapter-old flake surfaced on run twenty-one.** A green
+battery is evidence, not proof; this chapter states the range of every other defence it
+builds and this is the instrument measuring them.
 
 **The fixed port is in `services/gateway/src/limits.itest.ts`**, not the api's — two
 files carry that basename and only the gateway's binds `?? 4124`. Check every suite that
