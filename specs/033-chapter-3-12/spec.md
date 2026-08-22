@@ -248,7 +248,8 @@ report for the isolation file against the constitution's clause.
 
 - **"Every endpoint" needs a definition, and the default has to be attack.** There
   are 22 routes on the api, one WebSocket path on the gateway, and a health check on
-  each of three services. Some take no tenant-owned identifier at all —
+  each of the two services that serve HTTP — the api's and the gateway's; the dispatcher
+  runs no HTTP server at all. Some take no tenant-owned identifier at all —
   `GET /healthz`, `GET /auth/:provider/start`. A classification that lets a route
   default to "no tenant identifier" is a classification that absorbs the next route
   silently, which is the failure mode feature 030 was built about.
@@ -334,11 +335,20 @@ report for the isolation file against the constitution's clause.
 - **FR-007**: The suite MUST cover the WebSocket surface: a credential minted for one
   environment MUST NOT subscribe to, resume from, or send into a channel belonging to
   another, and MUST receive nothing from it.
-- **FR-008**: The suite MUST cover the internal service surface, where the attack is a
-  request that names one environment and carries an identifier belonging to another.
-- **FR-009**: The chapter MUST state what the internal credential is trusted for — it
-  selects the environment and is not scoped to one — and what protects it, rather than
+- **FR-008**: The suite MUST cover the internal service surface, and MUST use the attack
+  that fits each route's credential class rather than one shape for all of them. A route
+  accepting an end-user token MUST be attacked with a token minted for another
+  environment; a route accepting a platform credential — which carries no environment —
+  MUST be attacked with a request that names one environment and carries an identifier
+  belonging to another.
+- **FR-009**: The chapter MUST state what a platform credential is trusted for — it
+  carries no environment and selects one per request — and what protects it, rather than
   leaving a green suite to imply a scope that does not exist.
+- **FR-044**: A route accepting a platform credential MUST declare which internal
+  services may call it, and a credential issued to one service MUST be refused on a
+  route declared for another. Declaring the credential class without naming a service
+  MUST NOT compile: the platform has more than one internal caller, they are not equally
+  exposed, and an authorization that can be omitted is one that will be.
 - **FR-010**: The suite MUST NOT depend on the nine existing scattered isolation
   assertions, and those assertions MUST NOT be deleted to avoid duplication: a suite
   that replaces in-process assertions with over-the-wire ones would move coverage off
@@ -557,6 +567,11 @@ report for the isolation file against the constitution's clause.
   the permitted directories fails lint, demonstrated by adding such an import and
   running the gate. The count of files legitimately exempted is stated, and every one of
   them carries a reason.
+- **SC-029**: Every route accepting a platform credential names its permitted services,
+  and a credential issued to one service is refused on every route declared for another —
+  measured route by route, in both directions, with the count of platform routes stated.
+  A route that accepts the class without naming a service fails to compile, demonstrated
+  by writing one.
 
 ## Assumptions
 

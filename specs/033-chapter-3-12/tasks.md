@@ -65,7 +65,9 @@ wrong too on its first draft, mapping the outsider tasks to `T085–T093` when t
 | T011, T012, T015 | `services/api/src/isolation/targets.ts` | the shapes, the classification list, the derivation |
 | T016–T020 | `services/api/src/isolation/targets.itest.ts` | the derivation's four self-checks and its counts |
 | T023–T026 | `services/api/src/isolation/attack.ts` | one function per shape; not parallel with each other |
-| T027–T033, T036a | `services/api/src/isolation/gauntlet.itest.ts` | 22 routes, in process, so the coverage run sees the branches it exercises (R1) |
+| T030a–T030d | `services/api/src/auth/` — `credential.guard.ts`, `authenticate.middleware.ts` | `AcceptSpec`, so `@Accepts("platform")` stops compiling (R24) |
+| T030d | `services/api/src/internal/usage.controller.ts`, `dispatch.controller.ts` | the five platform routes declare their services |
+| T027–T033, T031a, T031b, T036a | `services/api/src/isolation/gauntlet.itest.ts` | 22 routes, in process, so the coverage run sees the branches it exercises (R1) |
 | T037–T041 | `services/api/src/isolation/tenant-scope.itest.ts` | the live catalogue, no HTTP |
 | T013, T044–T050, T062 | `services/gateway/src/isolation.itest.ts` and `isolation-fixtures.ts` | a socket needs a real gateway; the lane already spawns an api child |
 | T052, T078a | `services/api/src/db/repository.ts` | `addMember`'s upsert, and the branches the ratchet counts |
@@ -137,11 +139,19 @@ the gates, the battery, the counts, the three reintroductions, the two scratch p
 - [ ] T024 [P] [US1] Write the `list` attack in the same file: a credential for an environment that owns nothing gets an empty page rather than a 404, and no row belonging to another environment (FR-006)
 - [ ] T025 [US1] Write the `write` attack in the same file: read the target tenant's rows directly before and after, and assert both the paired-response equality and that no row moved. **The state read is the point** — a 404 that completed the write is the case no status code reveals (FR-005, SC-004)
 - [ ] T026 [P] [US1] Write the `credential` attack in the same file: a key for environment A mints a dev token, and that token is refused against a channel in B (FR-004, R4)
-- [ ] T027 [US1] Wire `services/api/src/isolation/gauntlet.itest.ts` to boot `AppModule` with `Test.createTestingModule`, as nine api suites already do, and run every derived target through the attack for its shape
+- [ ] T027 [US1] Wire `services/api/src/isolation/gauntlet.itest.ts` to boot `AppModule` with `Test.createTestingModule`, as ten other api suites already do, and run every derived target through the attack for its shape
 - [ ] T028 [P] [US1] Cover the two `read` targets: `GET /v1/webhooks/:id` and `GET /v1/channels/:channelId/messages` (FR-004)
 - [ ] T029 [P] [US1] Cover the `list` target: `GET /v1/webhooks` (FR-006)
 - [ ] T030 [P] [US1] Cover the public `write` targets: `POST /v1/channels/:channelId/messages`, and `POST /v1/webhooks/:id/rotate-secret`, `/enable`, `/disable`, `/test`, and `DELETE /v1/webhooks/:id` (FR-005)
-- [ ] T031 [US1] Cover the eight `/internal/*` targets, and note that the attack shape is different: `RELAY_INTERNAL_CREDENTIAL` carries no environment, so the attack is a request naming one environment and carrying an identifier from another — not a foreign credential. Write in the file's own comment what that credential is trusted for and what protects it — the network boundary and the secret, not a scope (FR-008, FR-009, `contracts/gauntlet.md` §3)
+- [ ] T030a [US1] Derive `PlatformService` from `PLATFORM_SERVICES` in `services/api/src/auth/authenticate.middleware.ts` rather than retyping the two names, so a third internal service widens the type on its own — chapter 3.11's `Dimension` lesson (FR-044, R24)
+- [ ] T030b [US1] Change `Accepts` in `services/api/src/auth/credential.guard.ts` from `...kinds: PrincipalKind[]` to `...specs: AcceptSpec[]` per `data-model.md` §8, so **`@Accepts("platform")` stops compiling**. An authorization that can be omitted is one that will be, and the platform has two internal callers with unequal exposure (FR-044)
+- [ ] T030c [US1] Make `CredentialGuard` check `principal.service` against the route's declared services, refusing with a `403` that names the class and not the credential — the rule the guard already follows for a wrong credential class (FR-044)
+- [ ] T030d [US1] Declare the services on the five platform routes: `{ platform: ["gateway"] }` on `services/api/src/internal/usage.controller.ts`, `{ platform: ["dispatcher"] }` on the four in `services/api/src/internal/dispatch.controller.ts` (FR-044)
+- [ ] T030e [P] [US1] Test both directions route by route in `services/api/src/internal/usage.itest.ts` and a dispatch suite: the gateway's credential is refused on every dispatch route, the dispatcher's on `/internal/usage/connections`. State the count of platform routes (SC-029)
+- [ ] T030f [P] [US1] Write a route declaring `@Accepts("platform")` with no service list, confirm it fails to typecheck, and remove it. The compiler is the mechanism; a test that only checks the happy path would pass with the old signature (SC-029)
+- [ ] T031 [US1] Cover the **five** `@Accepts({ platform: … })` targets with the named-environment attack: a request naming environment A carrying an identifier from B. These credentials carry no environment, so a foreign-credential attack is meaningless on them (FR-008, `contracts/gauntlet.md` §3)
+- [ ] T031a [US1] Cover the **three** `@Accepts("user")` targets — `/internal/messages`, `/internal/session`, `/internal/backfill` — with the foreign-**credential** attack: a token minted in A used against a resource in B. Their credential **is** scoped to one environment, so this is the same shape as the socket surface. An earlier draft of this task list gave all eight the platform attack, which would have left these three unattacked in their real shape (FR-008)
+- [ ] T031b [P] [US1] Write in the suite's own comment what a platform credential is trusted for after T030d — it carries no environment, names one per request, and is accepted only on routes declaring its service — and what still does not protect it: there is no rotation, and `service` is self-reported by which variable matched. Distinguish `POST /internal/dispatch/replay`, unscoped **by design** because the dispatcher serves every tenant, from a route unscoped by accident (FR-009, `contracts/gauntlet.md` §3, §7)
 - [ ] T032 [P] [US1] Assert `POST /internal/usage/connections` still answers `409 connection_environment_conflict` for a connection first seen in another environment. Chapter 3.11 built this refusal; the gauntlet generalises its judgement to the other seven routes rather than re-deciding it (FR-008)
 - [ ] T033 [P] [US1] Confirm the nine existing scattered isolation assertions still exist and still pass, counted before and after. The gauntlet adds to the isolation surface; it does not relocate it off the code the coverage run measures (FR-010, SC-024)
 - [ ] T034 [US1] Add a comment at the top of `gauntlet.itest.ts` stating what the suite does not cover, from `contracts/gauntlet.md` §7 — timing, the internal credential's holders, message wisdom beyond equality, anything not routed through the HTTP router. A defence trusted past its range is worse than none, and this is where a reader meets the suite
@@ -180,8 +190,8 @@ the gates, the battery, the counts, the three reintroductions, the two scratch p
 - [ ] T046 [P] [US1] Attack the send: a frame into a channel belonging to B is refused, and B's channel gains no message — read directly, not inferred from the refusal (FR-007)
 - [ ] T047 [P] [US1] Attack the resume: a cursor naming B's channel backfills nothing (FR-007)
 - [ ] T048 [P] [US1] Attack the subscribe: nothing from B's channel is delivered on A's socket (FR-007)
-- [ ] T049 [US1] Derive the inbound frame types from `@relay/protocol`'s frame union rather than typing them out, so a new inbound frame appears in the attack list. List the outbound ones as not-attackable with a reason, by the same rule as `exempt` (FR-007, R6)
-- [ ] T050 [P] [US1] Assert the derived inbound list is non-empty and contains `message.send`, for the same reason T016 exists
+- [ ] T049 [US1] Classify all ten members of `@relay/protocol`'s `frameSchema` as `inbound` or `outbound`, each with a reason, in `services/gateway/src/isolation.itest.ts`. **This is a classification and not a derivation**: the union carries no direction metadata — no inbound/outbound split, no client/server types — so "derive the inbound ones" is not implementable, which an earlier draft of this task and of `contracts/gauntlet.md` §4 both claimed (FR-007, R6)
+- [ ] T050 [P] [US1] Run the totality check in both directions: every union member is classified exactly once, and every entry names a real member. A new frame then fails the suite until somebody classifies it — the property the derivation was supposed to give, obtained the way T017 and T018 obtain it for routes
 - [ ] T051 [US1] Record the socket attack count in `baseline.txt`
 
 **Checkpoint**: the socket surface is attacked from a list the protocol package supplies, and a new frame type joins it without an edit.
@@ -195,6 +205,7 @@ the gates, the battery, the counts, the three reintroductions, the two scratch p
 **Independent test**: with only an API key, create a channel, repeat the request, add two members, send a message, and receive it on a socket for one of those members.
 
 - [ ] T052 [US5] Fix `addMember` in `services/api/src/db/repository.ts`. **It cannot back an endpoint as written**: there is no `ON CONFLICT` and `members`' primary key is `(channel_id, user_id)`, so a repeat raises a unique violation that `ProtocolErrorFilter` renders as `internal_error`. Its single boolean also conflates added, channel-not-yours and user-not-yours — correct for isolation, wrong for an idempotent endpoint (R14a)
+- [ ] T052a [US5] Fix `createChannel` at `repository.ts:2571` the same way and for the same reason: it is a plain `insert(channels).values(...)`, so a repeated `external_id` raises against `channels_environment_id_external_id_unique` and reaches the wire as `internal_error`. Use `ON CONFLICT (environment_id, external_id) DO NOTHING RETURNING`, falling back to `getChannelByExternalId`, which already exists and is already scoped. **Not a read-then-insert in the service**: that races, and Principle II requires idempotency "enforced at the storage layer (unique index), not in application memory" (FR-017, R14a)
 - [ ] T053 [P] [US5] Write `services/api/src/channels/channels.schema.ts`: the create body (`external_id`, `type`, optional `name`) and the members body (`user_ids`, capped at 100 per FR-CHN-06), both zod and both rejecting unknown fields (NFR-SEC-04)
 - [ ] T054 [US5] Write `services/api/src/channels/channels.service.ts`: idempotent creation on the customer-supplied identifier, and a members path that reads the channel scoped first, then upserts. The scoped read is what makes a foreign channel and an absent one answer identically while "already a member" stays a success (FR-016, FR-017, FR-019)
 - [ ] T055 [US5] Write `services/api/src/channels/channels.controller.ts`: `POST /v1/channels` and `POST /v1/channels/:channelId/members`, both behind `CredentialGuard` with `@Accepts("application")`, per `data-model.md` §7 (FR-016, FR-019)
@@ -236,6 +247,7 @@ the gates, the battery, the counts, the three reintroductions, the two scratch p
 
 - [ ] T069a [US6] **Restore the lint ban Principle I relies on.** `eslint.config.mjs` has two flat-config blocks naming `no-restricted-imports`, and the second — `files: ["**/*.itest.ts"]`, feature 030's global-drain restriction — **replaces** the first rather than merging with it, so the `pg` and `drizzle-orm` ban is not in force for any integration test. Measured: `npx eslint services/api/src/quotas/period.itest.ts` exits 0 while that file imports `drizzle-orm` and is not in the ignores list. Merge both restriction sets into one configuration for `**/*.itest.ts` rather than leaving two that overwrite each other (FR-043, R23)
 - [ ] T069b [US6] Measure which integration tests genuinely need the driver or the query engine, and give each an ignores entry with a reason — at least `services/api/src/db/*.itest.ts`, `services/api/src/quotas/*.itest.ts` and `services/gateway/src/limits.itest.ts` today. A list with reasons, not a directory pattern, by the doctrine `exempt.ts` states (FR-043, SC-028)
+- [ ] T069f [US6] **Resolve the conflict this chapter's own suites create with T069a.** `services/api/src/isolation/tenant-scope.itest.ts` queries `information_schema` and `gauntlet.itest.ts` reads rows directly, so restoring the ban breaks them. Prefer putting the catalogue query behind a function in `services/api/src/db/`, where drizzle is already permitted, over widening the ignores list — a ban that grows an entry per new suite is the pattern `exempt.ts` warns about. Whichever is chosen, T037 changes with it (FR-043, FR-012)
 - [ ] T069c [US6] Correct the comment above the first block. It reads "`limits.itest.ts` is the one TEST allowed a raw client, and for a reason the rule cannot express" — every test is allowed one, and has been since the second block was added. The `ignores` entry for `services/gateway/src/limits.itest.ts` has been redundant for as long (FR-043)
 - [ ] T069d [US6] Add an import of `drizzle-orm` to an integration test outside the permitted set, confirm `pnpm lint` fails, and remove it. State the count of legitimately exempted files (SC-028)
 - [ ] T069e [P] [US6] State in the same comment what the restored rule does not buy: it sees an import, so a test reaching raw SQL through a helper in another file or through the repository's own `db` handle is invisible to it — the boundary feature 030's contracts already drew for this rule at a different scope (FR-043)
@@ -382,10 +394,10 @@ Phase 1 (baseline) ─┬─> Phase 2 (foundational) ─┬─> Phase 3 (US1 RES
 
 - **Phase 8 is independent of Phases 3 to 7** and can run any time after Phase 1. It is
   placed after Phase 7 so the coverage measurement in T078 sees the gauntlet's branches.
-  **One exception: T069a to T069e should run early.** Restoring the itest lint ban can
+  **One exception: T069a to T069f should run early.** Restoring the itest lint ban can
   fail files written in Phases 2 to 6, and finding that out after they are written costs
-  more than finding it out before. If it runs late, expect the gauntlet's own files to be
-  among the first it refuses.
+  more than finding it out before — and T069f exists because the gauntlet's own two
+  suites are the first files the restored ban refuses.
 - **Phases 9 and 10 are the separable half.** If T114's count is over the bound, they
   become chapter 3.13 and the milestone goes with them.
 - T061 must run after T055, and re-runs Phase 3. T078 must run after Phase 3, or it
@@ -401,16 +413,21 @@ Phase 1 (baseline) ─┬─> Phase 2 (foundational) ─┬─> Phase 3 (US1 RES
 - **Phase 3**: T017, T018 and T019 are three assertions in one file and go in any order
   once T015 lands. T022 is a scratch edit to a different file and parallel with the
   attacks. T023, T024 and T026 are independent of each other; T025 is not parallel with
-  them — all four are `attack.ts`. T028 to T032 are independent once T027 exists.
+  them — all four are `attack.ts`. T028 to T032 are independent once T027 exists. T030a to T030d are product code in two
+  files and run in that order, before T031 and T031a; T030e and T030f are tests and
+  parallel with each other. T031a is independent of T031 — different credential class,
+  different routes.
 - **Phase 4**: T038, T041 and T042 alongside T039 and T040. T040a is a comment on T040.
 - **Phase 5**: T045 to T048 are four independent attacks once T044 exists. T050 is a
   guard on T049.
-- **Phase 6**: T053 is a schema file and parallel with T052's repository fix. T058, T059,
+- **Phase 6**: T053 is a schema file and parallel with T052 and T052a, which are one file
+  and go in either order. T058, T059,
   T060 and T062 are independent once T057 lands. T056 is not parallel with T055 — same
   file.
 - **Phase 7**: none. Three reintroductions in sequence, each reverted before the next, or
   the second measures the first.
-- **Phase 8**: T069a to T069e are one file and run first, in order — T069a before T069b
+- **Phase 8**: T069a to T069f are one file (T069f may move code into
+  `services/api/src/db/` instead) and run first, in order — T069a before T069b
   because there is nothing to bound until the rule applies. T071, T073, T074 and T077
   alongside T069/T070/T072. T078 and T078a are sequential and both wait on a coverage
   run.

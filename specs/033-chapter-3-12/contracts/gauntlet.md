@@ -79,32 +79,67 @@ have filed it as exempt, which is how a route stops being attacked.
 provider name and a browser cookie. Each carries a written reason; `because` is a
 required field, so nothing is exempt by omission.
 
-## 3. The internal surface
+## 3. The internal surface — two credential classes, two attacks
 
-`RELAY_INTERNAL_CREDENTIAL` is **not scoped to an environment**, by design: one gateway
-and one dispatcher serve every tenant and each names the environment in the request. So
-the attack is not a foreign credential — it is a request that names one environment and
-carries an identifier from another.
+An earlier version of this contract had one, and gave three of the eight routes an attack
+that does not apply to them.
+
+### The three that take an end-user token
+
+`@Accepts("user")` — the credential **is** scoped to one environment, so the attack is a
+foreign credential, the same shape as the socket surface.
 
 ```
-POST /internal/messages          environment A, a channel in B
-POST /internal/backfill          environment A, a channel in B
-POST /internal/session           a token for A, a resume cursor naming B
-POST /internal/dispatch/expand   environment A, an event in B
-POST /internal/dispatch/material environment A, a delivery in B
-POST /internal/dispatch/outcome  environment A, a delivery in B
-POST /internal/dispatch/replay   environment A, a delivery in B
-POST /internal/usage/connections environment A, a connection first seen in B
+POST /internal/messages     a token minted in A, a channel in B
+POST /internal/session      a token minted in A, a resume cursor naming B's channel
+POST /internal/backfill     a token minted in A, a channel in B
 ```
 
-The last one already refuses, with `409 connection_environment_conflict` — chapter 3.11
-treated a connection changing tenants as a correctness question rather than a
-data-quality one, and this suite generalises that judgement to the other seven.
+### The five that take a platform credential
 
-**What the suite therefore does not test, stated because a green result would imply
-otherwise:** the internal credential itself. A holder of that secret can act for any
-tenant, which is what it is for. What contains it is the network boundary and the
-secret's own confidentiality — not a scope, and not this suite.
+`@Accepts({ platform: [...] })` — the credential carries no environment and names one per
+request, so the attack is a request that names one environment and carries an identifier
+from another.
+
+```
+POST /internal/usage/connections   environment A, a connection first seen in B
+POST /internal/dispatch/expand     environment A, an event in B
+POST /internal/dispatch/material   environment A, a delivery in B
+POST /internal/dispatch/outcome    environment A, a delivery in B
+POST /internal/dispatch/replay     a dead letter belonging to B
+```
+
+The last one is unscoped **by design** — `replayDeadLetter(db, id)` takes an id and no
+environment, because the dispatcher legitimately serves every tenant. That is the
+distinction this section has to keep visible: unscoped by design is not the same as
+unscoped by accident, and only the second is a defect.
+
+`POST /internal/usage/connections` already refuses with `409
+connection_environment_conflict`; chapter 3.11 treated a connection changing tenants as a
+correctness question rather than a data-quality one, and the gauntlet generalises that
+judgement to the other four.
+
+### And a third attack, on the credential rather than the request
+
+Until this chapter, a route could say *which class* may call it and not *which service*.
+`Accepts` took `...kinds: PrincipalKind[]`, both platform credentials resolved to
+`{ kind: "platform", service }`, and `service` was documented "for logs" — so the
+gateway's credential reached every dispatch route, including `replay`. Two secrets stopped
+the services sharing a secret; they still shared a surface.
+
+```
+gateway credential    → POST /internal/dispatch/*        must be refused
+dispatcher credential → POST /internal/usage/connections must be refused
+```
+
+Both directions, route by route. The refusal is a `403` naming the class and not the
+credential, by the rule `credential.guard.ts` already follows for a wrong credential class.
+
+**What still protects a platform credential, after this change.** The network boundary,
+the secret's confidentiality, and now the route's declared service list. What does not:
+rotation, which does not exist, and `service`, which is self-reported by which variable
+matched rather than proven. The change narrows which routes a leaked credential reaches;
+it does not make a leak survivable, and the chapter says so.
 
 ## 4. The socket surface
 
@@ -117,10 +152,13 @@ Gateway in process, api as a child (`services/gateway/src/isolation.itest.ts`).
 | resume from a cursor naming B's channel | no backfill from B |
 | subscribe to B's channel | nothing delivered |
 
-Inbound frame types are derived from `@relay/protocol`'s frame union rather than typed
-out, so a new inbound frame appears in the attack list. The union has ten members today
-and only some are inbound; the outbound ones are listed as not-attackable with a reason,
-by the same rule as `exempt`.
+**The inbound list is a classification, not a derivation**, because the package has no
+direction to derive. `frameSchema` is one discriminated union of ten members with no
+inbound/outbound metadata anywhere. So each of the ten is assigned a direction with a
+reason, and a totality check runs in both directions against the union — every member
+classified, every entry naming a real member. A new frame then fails the suite until
+somebody classifies it, which is the property that was wanted, obtained the way §1 obtains
+it for routes.
 
 ## 5. The structural half
 
@@ -153,7 +191,12 @@ than none — feature 030's rule, applied to its own successor.
 - **Timing.** A foreign id answering in 3 ms and an absent id in 30 ms is a disclosure
   this suite cannot see. Measuring it stably in CI is a different discipline and is not
   attempted; the chapter names it as unaddressed rather than implying otherwise.
-- **The internal credential's holders.** See §3.
+- **A leaked platform credential.** §3 narrows which routes each service may call. It
+  does not make a leak survivable: there is no rotation, and `service` is self-reported by
+  which variable matched.
+- **Routes that are unscoped by design.** The four dispatch routes reach every tenant
+  because the dispatcher serves every tenant. The suite checks who may call them, not
+  whether they should exist.
 - **Error-message content beyond equality.** The pair proves the two answers match; it
   does not prove that what they say is wise. A constant message that leaks a schema
   detail would pass.

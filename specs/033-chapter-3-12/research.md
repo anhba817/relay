@@ -22,7 +22,8 @@ measured at zero because only a child-process suite reached them.
 
 The boot pattern already exists and needs no invention. `messages.itest.ts` opens with
 `Test.createTestingModule({ imports: [AppModule] })` against the compose Postgres, and
-eight other api suites do the same.
+**ten other api suites do the same** — eleven files under `services/api/src` import
+`AppModule`, counted rather than remembered, because an earlier draft said nine.
 
 **Rejected.** `packages/e2e` for the whole suite — the milestone precedent from chapter
 2.8 makes it the obvious home, and it is the wrong one for the one reason that matters
@@ -139,24 +140,41 @@ four-shape framing would have filed it wrongly.
 
 ---
 
-## R5 — The internal surface, and what its credential is trusted for
+## R5 — The internal surface is two credential classes, not one
 
-**Finding.** `RELAY_INTERNAL_CREDENTIAL` is not scoped to an environment, by design:
-one gateway and one dispatcher serve every tenant, and each names the environment in
-the request. `credential.guard.ts` resolves it to a principal with no environment, and
-`@Accepts("service")` routes read the environment from the body.
+**An earlier draft of this research had one**, and it produced an attack that does not
+apply to three of the eight routes. Measured from the decorators:
 
-So "attack with a foreign credential" is meaningless on `/internal/*`. The attack that
-means something is a request that **names one environment and carries an identifier
-from another** — and chapter 3.11 already built one instance of the refusal:
-`usage.controller.ts` answers `409 connection_environment_conflict` when a report names
-a connection whose row carries a different environment, on the grounds that "a
-connection moving tenants is either a bug or an attempt".
+| Route | Accepts | The credential's scope |
+|---|---|---|
+| `POST /internal/messages` | `user` | an end-user token, **scoped to one environment** |
+| `POST /internal/session` | `user` | same |
+| `POST /internal/backfill` | `user` | same |
+| `POST /internal/usage/connections` | `platform` | no environment; named per request |
+| `POST /internal/dispatch/expand` | `platform` | same |
+| `POST /internal/dispatch/material` | `platform` | same |
+| `POST /internal/dispatch/outcome` | `platform` | same |
+| `POST /internal/dispatch/replay` | `platform` | same |
 
-**Decision.** All eight internal routes are attacked in that shape. The chapter states,
-in prose, that the internal credential is a tenant-*selection* authority and that what
-protects it is the network boundary and the secret — not a scope. A green suite that
-left that unsaid would imply a containment the code does not have.
+**So there are two attacks, and the first draft named only the second.** For the three
+`user` routes the primary attack is the one that draft called "meaningless on
+`/internal/*`": a token minted in environment A used against a resource in B — the same
+shape as the socket surface, because it is the same credential. For the five `platform`
+routes the credential genuinely carries no environment, so the attack is a request that
+names one environment and carries an identifier from another.
+
+**The vocabulary correction that goes with it.** The principal kind is `platform` and the
+decorator is `@Accepts("platform")`; the first draft wrote `@Accepts("service")`, which
+is not a value the code has. `PlatformPrincipal` in `services/api/src/auth/principal.ts`
+is the type, and its comment states the property the attack turns on: "this kind carries
+NO `environmentId`. That is not an omission — it is what stops it being usable anywhere a
+tenant is expected".
+
+**One instance of the platform-route refusal already exists.**
+`usage.controller.ts` answers `409 connection_environment_conflict` when a report names a
+connection whose row carries a different environment, on the grounds that "a connection
+moving tenants is either a bug or an attempt". The gauntlet generalises that judgement to
+the other four rather than re-deciding it.
 
 ---
 
@@ -173,10 +191,23 @@ B's channel, (4) receive anything from B. The session response is the interestin
 repository is constructed with the token's environment, so the leak would have to come
 from the repository — which is where R1 puts the coverage.
 
-**One asymmetry to state.** `packages/protocol`'s frame union has ten types and only
-some are inbound. The suite attacks the inbound ones and lists the outbound ones as
-not-attackable, derived from the union rather than typed out, so a new inbound frame
-appears in the list.
+**One asymmetry, and the first draft promised more than the package can deliver.**
+`packages/protocol`'s `frameSchema` is one discriminated union of ten members and
+**carries no direction metadata** — no inbound/outbound split, no client/server types,
+nothing to derive a direction from. "Derive the inbound frame types from the union" is
+not implementable: you can derive ten names and still need a hand-written direction for
+each, which is what the derivation was supposed to remove.
+
+**Decision: the same mechanism as the routes.** A classification list assigning each of
+the ten to `inbound` or `outbound` with a reason, plus a totality check against the union
+in both directions — every member classified, every entry naming a real member. A new
+frame then fails the suite until somebody classifies it, which is the property that was
+wanted, obtained the way T011 and T012 obtain it for routes.
+
+**Rejected: adding direction to `packages/protocol`.** It is the better long-term shape
+and it is a published package fenced by chapters 1.3, 3.2 and 3.11 — a contract change
+for a test's convenience, in a chapter that already carries more than any other in this
+part.
 
 ---
 
@@ -466,6 +497,16 @@ read one step earlier — implicitly on first *membership*.
 distinction chapter 2.3 already draws for a duplicate send and the one an integrating
 developer can act on. FR-CHN-02 says "return the existing channel rather than an
 error", not "return the same status".
+
+**Two repository functions need changing, not one.** `createChannel` at
+`repository.ts:2571` is a plain `insert(channels).values(...)` with no `ON CONFLICT`, so a
+repeated `external_id` raises against `channels_environment_id_external_id_unique` — and
+409 is not one of the four statuses `ProtocolErrorFilter` maps, so it reaches the wire as
+`internal_error`. Doing the idempotency in the service as read-then-insert races, and
+Principle II requires it "enforced at the storage layer (unique index), not in application
+memory". So `createChannel` gets `ON CONFLICT (environment_id, external_id) DO NOTHING
+RETURNING`, falling back to `getChannelByExternalId`, which already exists and is already
+scoped. `addMember` gets the same treatment for its own primary key (R14a).
 
 **Bounded on purpose.** FR-CHN-06 allows up to 100 members per request; the endpoint
 accepts an array and caps it, because a member endpoint that takes one id would have to
@@ -769,3 +810,76 @@ by the same doctrine as `exempt.ts`: a list, not a pattern.
 A test that reaches raw SQL through a helper in another file, or through the repository's
 own `db` handle, is invisible to it — which is the boundary feature 030's contracts
 already drew for the same rule at a different scope.
+
+---
+
+## R24 — A platform credential is authorized by class and not by service
+
+**Measured.** `credential.guard.ts:26` is the whole vocabulary:
+
+```ts
+export const Accepts = (...kinds: PrincipalKind[]) => SetMetadata(ACCEPTS, kinds);
+```
+
+Kinds only. There is no way for a route to say "the gateway may call this and the
+dispatcher may not". Meanwhile `authenticate.middleware.ts` resolves **two** credentials:
+
+```ts
+const PLATFORM_SERVICES = [
+  [PLATFORM_CREDENTIAL_ENV, "dispatcher"],
+  [GATEWAY_CREDENTIAL_ENV,  "gateway"],
+];
+```
+
+Both produce `{ kind: "platform", service }`, and `PlatformPrincipal.service` is
+documented as "Which internal service presented it, **for logs**". So every
+`@Accepts("platform")` route accepts either credential. The gateway's reaches
+`POST /internal/dispatch/replay`, whose handler is
+
+```ts
+const replayed = await replayDeadLetter(this.db, body.dead_letter_id);
+```
+
+— a dead-letter id and no environment. That route is unscoped **by design**, because the
+dispatcher legitimately serves every tenant. What is not by design is that the gateway can
+call it: a compromised or buggy gateway can replay any tenant's dead-lettered webhook.
+
+**Chapter 3.11 wrote the argument for two secrets and stopped one step short.** Its
+comment in `authenticate.middleware.ts` says the second property "is worth more than the
+log line. The gateway terminates connections from the public internet and the dispatcher
+does not, so a shared secret lets the more exposed service set the blast radius for both."
+Two secrets stopped them sharing a *secret*. They still share a *surface*.
+
+**And an earlier draft of `contracts/gauntlet.md` argued against testing it** — "what
+protects it is the network boundary and the secret, not a scope". A green suite carrying
+that sentence would assert a containment the code does not have.
+
+**Decision: `Accepts` grows a service argument, and omitting it stops compiling.**
+
+```ts
+type PlatformService = (typeof PLATFORM_SERVICES)[number][1];   // "dispatcher" | "gateway"
+type AcceptSpec = "application" | "user" | { platform: readonly PlatformService[] };
+export const Accepts = (...specs: AcceptSpec[]) => SetMetadata(ACCEPTS, specs);
+```
+
+`@Accepts("platform")` then fails to compile, and the five routes must say which services
+they serve — `{ platform: ["gateway"] }` for `/internal/usage/connections`,
+`{ platform: ["dispatcher"] }` for the four dispatch routes. The service vocabulary is
+derived from `PLATFORM_SERVICES` rather than retyped, so a third internal service widens
+the type on its own. That is chapter 3.11's own lesson from `Dimension`: adding the config
+key widened the type and the two-way ternary underneath it was the thing the compiler
+could not see.
+
+**Rejected: an optional second decorator** (`@AcceptsService("gateway")`). Two decorators
+that must agree is the shape whose failure this project has recorded three times — the
+lint list and `exempt.ts`, the sync glob and the docs registry, the guard's array and its
+refusal message. An optional argument is a required argument nobody supplied.
+
+**Rejected: leaving it and reporting it.** That was the option on the table, and it was
+declined: the gauntlet would then ship an attack whose expected result is "succeeds", and
+a suite that documents a hole is not the suite constitution I asks for.
+
+**What this does not fix.** A credential is still a shared secret with no rotation story,
+and `service` is still self-reported by which variable matched rather than proven. The
+change narrows which routes a leaked credential reaches; it does not make a leak
+survivable.

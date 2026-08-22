@@ -130,3 +130,50 @@ on prose words and never counted fences: 17 new files and 13 amended, against ch
 3.11's 21 files and 34 fences. An amended file needs a diff fence in this chapter's own
 prose or the chain's HEAD property fails, so the fence surface is a floor under the page
 rather than a by-product of it. The stronger half of the case was sitting unused.
+
+## Analysis pass two — the code
+
+Nine findings, two CRITICAL, all applied. Where pass one found paths and mechanisms
+described wrongly, pass two found **surfaces modelled wrongly** — and both CRITICALs were
+the same mistake.
+
+**`/internal/*` is two credential classes and the artifacts had one.** Three routes are
+`@Accepts("user")` and carry an end-user token that **is** scoped to one environment; five
+are platform routes whose credential carries none. Every artifact said the internal attack
+was "names one environment, carries a foreign identifier", justified by the credential
+being unscoped — true of five routes, false of three, and the three would have been
+attacked in a shape that does not apply to them while FR-008 reported satisfied.
+
+**And a platform credential was authorized by class, not by service.** `Accepts` took
+`...kinds: PrincipalKind[]`; both credentials resolve to `{ kind: "platform", service }`
+with `service` documented "for logs"; so the gateway's credential reached
+`POST /internal/dispatch/replay`, whose handler takes a dead-letter id and no environment.
+Chapter 3.11 argued for two secrets on the grounds that "the gateway terminates
+connections from the public internet and the dispatcher does not, so a shared secret lets
+the more exposed service set the blast radius for both" — and stopped one step short. Two
+secrets stopped them sharing a secret; they still shared a surface. Worse, an earlier
+`contracts/gauntlet.md` §3 argued *against* testing this, so a green suite would have
+carried an explicit claim that the class was contained.
+
+That became FR-044 and SC-029: `Accepts` grows a service argument typed so that
+`@Accepts("platform")` **stops compiling**. Requirements moved 43 → 44 and outcomes 28 →
+29. The alternative — assert today's behaviour and report the hole — was on the table and
+declined: a suite that documents a hole is not the suite constitution I asks for.
+
+**Two promises the code cannot keep, now made keepable.** `frameSchema` has no direction
+metadata, so "derive the inbound frame types from the union" was not implementable; it
+becomes a classification with a totality check, the same mechanism the routes use.
+`createChannel` is a plain INSERT, so FR-017's idempotency needed a storage-layer upsert
+rather than a service-level read-then-insert, which races and which Principle II forbids
+by name.
+
+**One defect this checklist's own pass-one remediation introduced.** Restoring the itest
+lint ban (T069a) breaks the gauntlet's two new suites, because
+`services/api/src/isolation/**` was not in the permitted list and `tenant-scope.itest.ts`
+queries `information_schema`. T069f resolves it, preferring a repository function over a
+wider ignores list. This is what a pass reading the previous pass's edits is for.
+
+**And three counts that were wrong because they were remembered.** Eleven api suites boot
+`AppModule`, not nine. The decorator value is `platform`, not `service`. And the dispatcher
+runs no HTTP server at all — no `createServer`, no `listen`, no compose healthcheck — so
+there are two health endpoints in the exempt list, not three.

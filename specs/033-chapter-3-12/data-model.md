@@ -157,7 +157,34 @@ conflation is correct for isolation and wrong for an endpoint: the response must
 same for a foreign channel and an absent one, and *different* for "already a member",
 which is a success. So the service does a scoped channel read first, then an upsert.
 
-## 8. The guard's table array
+## 8. `AcceptSpec` — the decorator that stops under-specifying
+
+New code, no new storage. Today `Accepts` takes `...kinds: PrincipalKind[]`, so a route
+can say which credential *class* may call it and not which internal *service* — and both
+platform credentials resolve to `{ kind: "platform", service }` with `service` documented
+"for logs" (R24).
+
+```ts
+type PlatformService = (typeof PLATFORM_SERVICES)[number][1];   // "dispatcher" | "gateway"
+type AcceptSpec = "application" | "user" | { platform: readonly PlatformService[] };
+```
+
+| Route | Spec after this chapter |
+|---|---|
+| `POST /internal/messages`, `/internal/session`, `/internal/backfill` | `"user"` |
+| `POST /internal/usage/connections` | `{ platform: ["gateway"] }` |
+| `POST /internal/dispatch/expand`, `/material`, `/outcome`, `/replay` | `{ platform: ["dispatcher"] }` |
+| `POST /auth/dev-token`, `/v1/*` | `"application"`, or `"application" \| "user"` as today |
+
+**The property worth having is that `@Accepts("platform")` stops compiling.** An
+authorization that can be omitted is one that will be, and the platform has more than one
+internal caller with unequal exposure — the gateway terminates connections from the public
+internet and the dispatcher does not. `PlatformService` is derived from `PLATFORM_SERVICES`
+rather than retyped, so a third internal service widens the type on its own. Chapter 3.11
+learned the same lesson from `Dimension`: the config key widened the type and the ternary
+underneath it was what the compiler could not see.
+
+## 9. The guard's table array
 
 ```
 webhook_endpoints  webhook_deliveries  webhook_disable_notifications  channels  users

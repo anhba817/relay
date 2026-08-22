@@ -34,12 +34,20 @@ What research settled, and four of these came from measuring rather than reading
   so a suite living there could not contribute to constitution VI's 100%-branch clause
   on isolation code — which FR-040 requires this chapter to measure. The REST half
   boots `AppModule` in process, the way nine api suites already do (R1).
-- **`RELAY_INTERNAL_CREDENTIAL` is not scoped to an environment, so "a foreign
-  credential" is meaningless on `/internal/*`.** The attack that means something names
-  one environment and carries an identifier from another — the shape chapter 3.11
-  already refuses with `409 connection_environment_conflict`. The chapter has to say in
-  prose that the internal credential is a tenant-*selection* authority, or a green
-  suite implies a containment the code does not have (R5).
+- **`/internal/*` is two credential classes and needs two attacks.** Three routes are
+  `@Accepts("user")` and carry an end-user token that **is** scoped to one environment, so
+  their attack is a foreign credential. Five are platform routes whose credential carries
+  no environment, so theirs is a request naming one environment with an identifier from
+  another. An earlier draft of this plan had one shape and would have given three routes
+  an attack that does not apply (R5).
+- **A platform credential is authorized by class and not by service, and this chapter
+  fixes that.** `Accepts` takes `...kinds: PrincipalKind[]`, both credentials resolve to
+  `{ kind: "platform", service }`, and `service` is documented "for logs" — so the
+  gateway's credential reaches `POST /internal/dispatch/replay`, whose handler takes a
+  dead-letter id and no environment. Chapter 3.11 wrote the argument for two secrets and
+  stopped one step short: two secrets stopped the services sharing a secret, and they
+  still shared a surface. `Accepts` grows a service argument typed so that
+  `@Accepts("platform")` stops compiling (R24, FR-044).
 - **There are eleven error codes and the registry holds six.** Five live only as string
   literals in a status-to-code ternary ladder, one only at a call site. So "document
   every code" could not have been done from the registry: the registry becomes the set
@@ -163,7 +171,8 @@ does not see. The chain is byte-exact across 177 files and 28 chapters, resolves
 title against `relay-platform` — so tutorial-repo files and the parent's `docs/` cannot
 be fenced at all — and sees every `docs_url` that changes.
 
-**Scale/Scope**: 22 api routes, one WebSocket path, three health endpoints, 22 base
+**Scale/Scope**: 22 api routes, one WebSocket path, two health endpoints — the
+dispatcher runs no HTTP server — 22 base
 tables, eleven error codes, two new endpoints, four newly guarded tables, three
 inherited debts, one new package, one new document.
 
@@ -173,12 +182,12 @@ inherited debts, one new package, one new document.
 
 | Principle | Check | Verdict |
 |---|---|---|
-| **I. Tenant isolation is a correctness property** | This chapter **is** the principle's fourth bullet — "an automated cross-tenant access test suite MUST attack every endpoint with foreign IDs on every build" — which has been unmet since the clause was written. The two new endpoints are scoped in the repository layer, not in their handlers, and `addMember`'s existing behaviour (false for a foreign channel *or* a foreign user, no error) is the oracle rather than a bug. | **Pass on the clause this chapter delivers, and one clause found failing.** The third bullet — "raw connection access outside that layer is lint-forbidden" — is not in force for any `.itest.ts`, measured in R23 and in scope here as FR-043. The second bullet holds: `outbox` and `consumed_events` carry no tenant identifier and are infrastructure rather than records, which R7 reached only after an earlier draft escalated `outbox` wrongly. What the outbox does have is a retention problem that four requirements care about, recorded in R7a and owned by FR-MOD-06's chapter |
+| **I. Tenant isolation is a correctness property** | This chapter **is** the principle's fourth bullet — "an automated cross-tenant access test suite MUST attack every endpoint with foreign IDs on every build" — which has been unmet since the clause was written. The two new endpoints are scoped in the repository layer, not in their handlers, and `addMember`'s existing behaviour (false for a foreign channel *or* a foreign user, no error) is the oracle rather than a bug. FR-044 narrows platform credentials from a class to a named service, so the gateway's credential stops reaching the dispatcher's routes. | **Pass on the clause this chapter delivers, and one clause found failing.** The third bullet — "raw connection access outside that layer is lint-forbidden" — is not in force for any `.itest.ts`, measured in R23 and in scope here as FR-043. The second bullet holds: `outbox` and `consumed_events` carry no tenant identifier and are infrastructure rather than records, which R7 reached only after an earlier draft escalated `outbox` wrongly. What the outbox does have is a retention problem that four requirements care about, recorded in R7a and owned by FR-MOD-06's chapter |
 | **II. No acknowledged message is ever lost** | Nothing touches the write path. The clause that does apply is idempotency on write endpoints "enforced at the storage layer (unique index), not in application memory": channel creation's key is the customer's own identifier under `channels_environment_id_external_id_unique`, and membership's is `members`' composite primary key. Both predate this chapter; R14a is the finding that the current helper does not yet honour the second one. | Pass |
 | **III. Two data paths, never crossed** | Nothing analytical. No ClickHouse, no queue, no metering. | Pass |
 | **IV. Single writer, single source of truth** | The api stays the only writer. `packages/outsider` cannot import `pg` — it cannot import anything — and the gauntlet writes through the repository like every other suite. | Pass |
 | **V. API-first, developer-first** | The clause "every error code has a reachable documentation page" has been unmet since chapter 1.4 and is closed here for all eleven codes. `docs_url` stops being a placeholder. The two new endpoints are the first public surface for FR-CHN since Part 2 promised it. | **Pass, and it closes the debt three chapters recorded** |
-| **VI. Requirement-driven, test-verified** | **43 requirements, 28 measurable outcomes** — re-derive with `grep -c '^- [*][*]FR-' spec.md` and the same for `SC-`, never carried forward by hand. The 100%-branch clause for isolation code is measured against a number rather than restated (FR-040). The suite this principle names as a release gate is what the chapter builds. | Pass |
+| **VI. Requirement-driven, test-verified** | **44 requirements, 29 measurable outcomes** — re-derive with `grep -c '^- [*][*]FR-' spec.md` and the same for `SC-`, never carried forward by hand. The 100%-branch clause for isolation code is measured against a number rather than restated (FR-040). The suite this principle names as a release gate is what the chapter builds. | Pass |
 | **VII. Boring by design — scope is a commitment** | No new service, no new language, no new dependency, no product migration. One new workspace package, which is a test package and not a service, so §4.2's "deliberately not a separate service" table does not apply. Everything larger is named and refused: the rest of FR-CHN and FR-USR go to 3.13 with a number, the outbox column goes to whoever next touches outbox writes, a human external-developer run is named as the instrument this chapter does not use. | Pass, with three refusals recorded |
 
 **One entry in Complexity Tracking**, and no ADR required. `packages/outsider` is a new
@@ -192,7 +201,7 @@ package that exists to be empty needs its justification written down.
 ```text
 specs/033-chapter-3-12/
 ├── plan.md              # This file
-├── research.md          # Phase 0 — R1 to R23 plus R7a, thirteen measured on a running stack
+├── research.md          # Phase 0 — R1 to R24 plus R7a, fifteen measured on a running stack
 ├── data-model.md        # Phase 1 — no product migration; the shapes the suite derives
 ├── quickstart.md        # Phase 1 — V0 to V16, the reintroductions among them
 ├── contracts/
@@ -236,7 +245,8 @@ relay-platform/
     │   │   ├── gauntlet.itest.ts              #   22 routes, four shapes, one fifth
     │   │   └── tenant-scope.itest.ts          #   FR-TEN-06 from the live catalogue
     │   ├── limits/rate-limit.middleware.ts    # docsUrl() ×2
-    │   ├── auth/credential.guard.ts           # registry codes ×2
+    │   ├── auth/credential.guard.ts           # registry codes ×2; AcceptSpec (R24)
+    │   ├── auth/authenticate.middleware.ts    # PlatformService derived from its own list
     │   ├── internal/usage.controller.ts       # registry code
     │   ├── messages/messages.service.ts       # registry code
     │   ├── internal/session.controller.ts     # registry code
@@ -284,7 +294,7 @@ until the suite is complete, and the documentation half is last so it can be cut
 |---|---|---|---|
 | 1 | Baseline | provenance, both lanes, coverage, site checks | The lane needs four variables only CI sets, or 11 tests fail without naming why (R22). The starting figure is `repository.ts` at 241/266 branches (R16) |
 | 2 | The target list | `targets.ts`, the classification, the non-empty assertion | First red on purpose: an unclassified route fails the suite (SC-002) |
-| 3 | The REST gauntlet | `attack.ts`, `gauntlet.itest.ts` over 22 routes | Four shapes plus the credential-scope treatment for `dev-token` (R4) |
+| 3 | The REST gauntlet | `AcceptSpec`, `attack.ts`, `gauntlet.itest.ts` over 22 routes | Five shapes, two internal attacks (R5), and the platform-service authorization the suite would otherwise document as a hole (R24) |
 | 4 | The structural check | `tenant-scope.itest.ts`, the infrastructure list | Three classes, not four. Where the outbox retention finding lands as a written entry (R7a) |
 | 5 | The socket gauntlet | `services/gateway/src/isolation.itest.ts` | Inbound frame types derived from the protocol union (R6) |
 | 6 | The two endpoints | channels + members, `addMember`'s upsert | They must appear in the target list without being named there (SC-016) |
