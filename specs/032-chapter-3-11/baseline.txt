@@ -509,3 +509,49 @@ it only fails when the relay is slow. Six email tests now carry `20_000`.
 fixed 4124 and has the same lingering-child exposure. It is another chapter's
 file, it is fenced, and it is green — recorded here so it is scheduled rather
 than forgotten.
+
+## T068 — the battery, attempt 2: 20 of 20
+
+  runs 1–20    exit=0   330 tests every run   failed=0   failing-files=0
+  wall         192s min, 195s max, mean 193.30s, 64.4 minutes total
+  spread       3 seconds across twenty runs
+
+**330 in every single run**, which is the assertion that matters as much as the
+exit code: a count that moves between runs means suites are seeing each other.
+
+## T071 — every gate
+
+  unit             exit=0   348
+  integration      exit=0   330
+  coverage         exit=0   90.32 / 83.98 / 89.51 / 91.53, all ratchets held
+  lint             exit=0
+  build            exit=0
+  tutorial docs    exit=0
+  tutorial lint    exit=0
+  tutorial build   exit=0
+  tutorial fences  exit=1   EXPECTED — 24 files edited and not yet fenced,
+                            which is Phase 10's T077. Listed and counted rather
+                            than waved at.
+
+**The gate run immediately after twenty green runs went red**, on one test, and
+it was a latent defect rather than interference — `failing-files=1`, a named
+test, in `credentials.itest.ts`:
+
+    invariant 1: a key's secret is returned once and is unrecoverable afterwards
+    AssertionError: expected '[{"public_id":"9e5240d58441a1df4b9f54…'
+                    not to contain 'A'
+
+The test took the secret as `credential.split("_").at(-1)`. `api-key.ts` explains
+why that is wrong three lines from its own regex: "the public id is hex when the
+secret is base64url … base64url's alphabet INCLUDES the separator". So the secret
+contains underscores, the last segment is whatever follows the final one, and
+once in a while that is a single character which the row's JSON contains by
+chance.
+
+Latent since chapter 3.1, invisible for eleven chapters, and it surfaced on run
+twenty-one. Fixed forward with the same shape the production code parses, plus a
+length assertion so a future regression cannot make the test vacuous again. Ten
+consecutive green runs of that file afterwards.
+
+**The battery's real yield, counted**: three defects across two attempts, none of
+them findable by reading, and two of them older than this chapter.
