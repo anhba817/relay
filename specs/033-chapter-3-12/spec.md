@@ -1,0 +1,634 @@
+# Feature Specification: Chapter 3.12 — Milestone: the isolation gauntlet
+
+**Feature Branch**: `033-chapter-3-12`
+
+**Created**: 2026-08-22
+
+**Status**: Draft
+
+**Input**: User description: "Start chapter 3.12"
+
+Chapter 3.12 is the SRS Phase 2 exit criterion. It runs NFR-SEC-09 — *"cross-tenant
+access shall be verified by an automated test suite covering every endpoint, executed
+on every build"* — and it answers §7.3's exit line for Phase 2: *"an external
+developer integrates using only public documentation, with no assistance"*.
+
+Constitution I calls FR-TEN-05 the single most important requirement in the system and
+requires that suite by name. The repository does not have one. What it has is **nine
+isolation assertions across nine files**, each written by whichever chapter happened
+to be thinking about tenancy that week: a foreign channel's history, a foreign
+external id, a foreign key that looks like an absent key, a webhook test against
+another environment's endpoint, a connection that may not change tenants. Every one of
+them is a good test. Together they are not a suite, because nothing anywhere knows
+which endpoints have been attacked and which have merely never been thought about.
+
+So the subject is not "write more isolation tests". The subject is **the difference
+between a set of assertions and a suite**: a suite knows its own targets, fails when
+a target appears that nobody classified, and has been shown to go red for the fault it
+exists to catch.
+
+The second half of the chapter is the milestone. Phase 2's exit criterion is not about
+code at all — it is about whether somebody outside this repository can integrate — and
+measuring it turned up two things the plan did not know. Every error code the platform
+emits carries a `docs_url` that resolves to nothing, a placeholder every chapter since
+1.4 has carried. And there is no public endpoint to create a channel or add a member:
+`packages/e2e/src/harness.ts` says so in a comment written in chapter 2.8 — *"there is
+no admin API to create an environment, a user or a channel yet — that is Part 3's
+tenancy work"* — and Part 3 ends here.
+
+## User Scenarios & Testing *(mandatory)*
+
+### User Story 1 - Every endpoint is attacked, and the target list maintains itself (Priority: P1)
+
+A suite attacks every endpoint the platform exposes with identifiers belonging to
+another tenant. It does not attack a list somebody typed: it derives its targets from
+the running application, so an endpoint added in a later chapter arrives in the suite
+the moment it exists.
+
+Each attack asserts three things, and the third is the one the scattered assertions
+mostly do not: no data comes back, no state changes, and the answer is
+**indistinguishable from the answer for an identifier that does not exist anywhere**.
+A 403 where a 404 belongs is a disclosure; so is a message that echoes the id back;
+so is an empty list on one path and a 404 on another for the same class of miss.
+
+**Why this priority**: this is NFR-SEC-09, and constitution I makes a build that
+fails it unshippable. Everything else in the chapter reads this suite's verdict.
+
+**Independent Test**: create two environments, walk the derived target list, and
+confirm every target is either attacked or carries a written reason for being
+exempt. Add a route with no classification and confirm the suite goes red.
+
+**Acceptance Scenarios**:
+
+1. **Given** the api's route table, **When** the suite runs, **Then** every route is
+   either attacked with a foreign identifier or listed as taking no tenant-owned
+   identifier, with a stated reason.
+2. **Given** a new route added after this chapter, **When** the suite runs, **Then**
+   it fails until the route is classified.
+3. **Given** an endpoint that reads a tenant-owned resource, **When** it is called
+   with another tenant's identifier and with an identifier that exists nowhere,
+   **Then** the two responses are identical in status, error code, and message.
+4. **Given** an endpoint that writes, **When** it is called with another tenant's
+   identifier, **Then** the target tenant's rows are byte-identical before and after,
+   read directly rather than inferred from the status code.
+5. **Given** a list endpoint, **When** it is called by a tenant with no rows, **Then**
+   it returns an empty page rather than a 404, and returns nothing belonging to the
+   other tenant.
+6. **Given** the WebSocket surface, **When** a token minted for one environment is
+   used to subscribe to, resume from, or send into a channel belonging to another,
+   **Then** each attempt is refused and nothing is delivered.
+7. **Given** the internal surface, **When** a request names one environment and
+   carries an identifier belonging to another, **Then** it is refused and nothing is
+   written.
+
+---
+
+### User Story 2 - The suite has been shown to catch something (Priority: P1)
+
+A test suite that has never failed is an untested test. Before the chapter claims the
+gauntlet verifies isolation, the isolation is deliberately broken — the
+`environment_id` predicate removed from one repository read — and the suite is run.
+The chapter records which assertions fired, which did not, and what that says about
+the ones that stayed green.
+
+**Why this priority**: feature 030 established the practice for a whole class of
+defect and it applies here with more force. Constitution I says a build failing this
+suite must not ship, which is a promise about the suite's sensitivity, not about its
+existence.
+
+**Independent Test**: revert one scoping predicate, run the gauntlet, confirm it is
+red; restore it, confirm green. Repeat for a write path and for the socket.
+
+**Acceptance Scenarios**:
+
+1. **Given** a repository read with its environment predicate removed, **When** the
+   gauntlet runs, **Then** it fails, and the failure names the endpoint and the
+   tenant whose data leaked.
+2. **Given** a repository write with its environment predicate removed, **When** the
+   gauntlet runs, **Then** it fails on the state comparison rather than on a status
+   code.
+3. **Given** an endpoint whose refusal is changed from 404 to 403, **When** the
+   gauntlet runs, **Then** it fails on the indistinguishability assertion.
+4. **Given** every predicate restored, **When** the gauntlet runs, **Then** it is
+   green, and the chapter states which of the three reintroductions each assertion
+   caught.
+
+---
+
+### User Story 3 - An external developer integrates on published documentation alone (Priority: P1)
+
+Mai has never seen this repository. She has the published documentation and a running
+Relay. She signs up, gets a key, creates a channel, adds two users to it, mints a
+token, sends a message over REST, reads it back over REST, connects a socket, and
+receives the next one — with no assistance and nothing she could only have learned
+from the source.
+
+That developer is represented by a package that is **mechanically forbidden from
+knowing anything**: it declares no workspace dependency, so it cannot import
+`@relay/protocol` for a frame type or the test harness for a fixture, and lint fails
+the build if it tries. Every fact it needs comes from published documentation. Any
+fact that is not there is a documentation defect, recorded with a decision.
+
+**Why this priority**: this is the phase exit criterion, and by the plan's Rule 2 a
+part that does not reach its milestone journey is unfinished.
+
+**Independent Test**: run the sealed package against a running stack from a checkout
+with no other build artifacts, and confirm it completes a send and a socket receive.
+Add a workspace import and confirm the build fails.
+
+**Acceptance Scenarios**:
+
+1. **Given** the sealed package, **When** its dependency list is inspected, **Then**
+   it names no workspace package, and a lint rule fails the build if one is added.
+2. **Given** a running stack and published documentation only, **When** the sealed
+   integration runs, **Then** it reaches a delivered message over the socket.
+3. **Given** a step the sealed integration cannot perform from published
+   documentation, **When** the chapter is written, **Then** that step is named, with
+   what was missing and whether it was fixed here or scheduled.
+4. **Given** the sealed integration, **When** it needs a credential, **Then** it
+   obtains one by a documented path that requires no repository knowledge.
+5. **Given** the sealed integration passes, **When** the chapter states what that
+   proves, **Then** it also states what it does not: sufficiency of content is not
+   comprehensibility, and no automated suite can be confused.
+
+---
+
+### User Story 4 - Every error code has a page that resolves (Priority: P2)
+
+Mai gets a `402` with `"code": "quota_exceeded"` and a `docs_url`. She opens it and
+reads what the code means, what causes it, and what to do. Today that URL is
+`https://relay.example/docs/errors/quota_exceeded` and there is nothing behind it.
+
+**Why this priority**: constitution V requires every error code to have a reachable
+page and NFR-USE-05 states it as 100% coverage, verified by test. A chapter whose exit
+criterion is "public documentation alone" cannot ship a documentation link that 404s.
+It is P2 rather than P1 because the gauntlet's verdict does not depend on it.
+
+**Independent Test**: enumerate every code the platform can emit, and confirm each
+resolves to a section of the published reference. Add a code with no entry and confirm
+the build fails.
+
+**Acceptance Scenarios**:
+
+1. **Given** the set of error codes the platform can emit, **When** the reference is
+   checked, **Then** every code has an entry, and every entry names a code that can
+   actually be emitted.
+2. **Given** an error response, **When** its `docs_url` is fetched, **Then** it
+   resolves to the entry for that code.
+3. **Given** a new error code added with no reference entry, **When** the build runs,
+   **Then** it fails.
+4. **Given** the reference, **When** the site is built, **Then** the page renders and
+   the mirrored copy matches the source document.
+
+---
+
+### User Story 5 - A channel and its members exist over the public API (Priority: P2)
+
+A customer's backend creates a channel with its own identifier and adds users to it,
+over the public API, with an API key. Repeating the creation returns the same channel
+rather than an error. Both endpoints are tenant-scoped, and both are attacked by the
+gauntlet on the build that introduces them.
+
+**Why this priority**: without it there is no first integration to verify, so story 3
+cannot run. It is deliberately the minimum: two endpoints, not the channel and user
+surface FR-CHN and FR-USR describe.
+
+**Independent Test**: with only an API key, create a channel, repeat the request, add
+two members, send a message, and receive it on a socket for one of those members.
+
+**Acceptance Scenarios**:
+
+1. **Given** an API key, **When** a channel is created with a customer-supplied
+   identifier, **Then** it is created and returned.
+2. **Given** the same identifier, **When** creation is repeated, **Then** the existing
+   channel is returned rather than an error.
+3. **Given** the same identifier used by a different tenant, **When** creation runs,
+   **Then** both tenants have their own channel and neither can see the other's.
+4. **Given** a channel, **When** members are added by customer-supplied user
+   identifier, **Then** users that do not exist yet are created and the members are
+   added.
+5. **Given** a member of a channel, **When** they connect a socket, **Then** they
+   receive messages sent to that channel.
+6. **Given** another tenant's channel identifier, **When** members are added to it,
+   **Then** the request is refused and that channel's membership is unchanged.
+
+---
+
+### User Story 6 - The things that verify isolation are themselves verified (Priority: P2)
+
+The chapter that claims tenant isolation is verified checks its own instruments. The
+guard that detects cross-environment mutations watches five tables and none of the four
+tenant-scoped tables chapters 3.10 and 3.11 added. The constitution asks for 100%
+branch coverage on isolation code and the file measures 90.57%. The integration lane
+carries a fixed api port that produced three unrelated-looking failures in 3.11 and is
+green today by luck.
+
+**Why this priority**: silence from an instrument that is not looking reads exactly
+like silence from an instrument that found nothing. Chapter 3.10's SC-008 said "no new
+file was added to the exemption list", which was true and meant less than it sounded,
+because the tables it wrote were not guarded.
+
+**Independent Test**: plant a sentinel row in each of the four unguarded tables, drive
+a cross-environment mutation, and confirm the guard refuses it. Read the coverage
+report for the isolation file against the constitution's clause.
+
+**Acceptance Scenarios**:
+
+1. **Given** the four usage tables, **When** a cross-environment mutation is driven
+   against each, **Then** the guard refuses it, and the refusal names the table.
+2. **Given** a table whose primary key has no `id` column, **When** the guard refuses
+   a mutation on it, **Then** the refusal message is produced without error.
+3. **Given** the coverage run, **When** the isolation file is measured, **Then** the
+   number is stated against the constitution's 100% clause and either closes it or
+   names every uncovered branch and why.
+4. **Given** the integration lane, **When** two suites that spawn an api run in
+   parallel or back to back, **Then** neither takes the other's port.
+
+### Edge Cases
+
+- **"Every endpoint" needs a definition, and the default has to be attack.** There
+  are 22 routes on the api, one WebSocket path on the gateway, and a health check on
+  each of three services. Some take no tenant-owned identifier at all —
+  `GET /healthz`, `GET /auth/:provider/start`. A classification that lets a route
+  default to "no tenant identifier" is a classification that absorbs the next route
+  silently, which is the failure mode feature 030 was built about.
+- **The internal surface is a tenant-selection authority, and cannot be attacked the
+  same way.** `RELAY_INTERNAL_CREDENTIAL` is not scoped to an environment: the gateway
+  serves every tenant and names the environment in the request. So the attack there is
+  not "a foreign credential" but "a request that names environment A and carries an id
+  from B". What protects the credential itself is the network and the secret, not a
+  scope, and the chapter must say that rather than let a green suite imply otherwise.
+- **A list endpoint's correct answer is an empty page, not a 404.** The
+  indistinguishability oracle is per endpoint shape, not one status code for
+  everything. A suite that asserts 404 everywhere would be wrong about half the
+  surface and would have to be rewritten by the first chapter that adds a list.
+- **The error message is part of the answer.** `messages.service.ts` already keeps a
+  constant string for exactly this reason — echoing the id back would make the foreign
+  answer differ from the absent answer. The gauntlet has to compare messages, or it
+  will pass an endpoint that leaks through its prose.
+- **Timing is a channel this chapter does not claim to close.** A foreign id that
+  returns in 3 ms and an absent id that returns in 30 ms is a disclosure. Measuring
+  that reliably in CI is a different discipline; the chapter states the bound it does
+  claim and names timing as unaddressed rather than implying it is covered.
+- **The sealed package can still cheat by reading the source.** A dependency rule is
+  mechanically enforceable; not opening `repository.ts` is a discipline. The chapter
+  states which half is enforced.
+- **The sealed package needs a credential, and signup is OAuth in a browser.** An
+  automated suite cannot click GitHub's consent screen. The constitution requires
+  `docker compose up` to include a seeded demo tenant and no seed exists — so either
+  a documented bootstrap is built here or the sealed integration starts from a
+  credential it is handed, and the chapter says which and why.
+- **`packages/e2e` is excluded from the coverage run.** A gauntlet that attacks over
+  HTTP against a spawned api contributes nothing to the constitution's 100%-branch
+  clause on isolation code. Chapter 3.11's R23 measured the same thing from the other
+  side: `creditConnectionMinutes` went up because nineteen in-process tests covered
+  it. Where the gauntlet lives decides what it can measure.
+- **A suite that attacks every write endpoint writes to every table, on every build.**
+  Cleaning up afterwards with a global delete is precisely feature 030's fault class.
+  Every fixture the gauntlet creates has to be scoped to the environments the file
+  created.
+- **The guard's refusal message interpolates `OLD.id`.** Three of the four unguarded
+  tables — `usage_periods`, `usage_active_users`, `usage_connections` — have composite
+  primary keys and no `id` column, so adding them to the trigger's table array
+  produces a guard that raises `record "old" has no field "id"` on the first
+  legitimate write. `quota_notifications` has an `id` and would work unchanged.
+- **The reference document is the seventh, and the sync script globs six.**
+  `scripts/sync-docs.sh` copies `docs/0[1-6]-*.md`; the renderer's registry lists six
+  entries. A document added without touching both is a page that renders stale
+  content, and `check:docs` is what notices.
+- **Changing `docs_url` changes every error response on the wire.** It is not a
+  breaking change — the field is informational — but it is visible in the fences of
+  every chapter that shows an error body, and the fence chain is byte-exact.
+- **The two new endpoints are new gauntlet targets on the build that adds them.** If
+  the target list is derived, this happens by itself. If it is derived and the
+  endpoints are still missed, the derivation is wrong and this is where that shows.
+- **A milestone chapter still has a size gate.** 2,000–4,000 prose words on the
+  finished page. This chapter carries a suite, two endpoints, a documentation
+  reference, a sealed integration, and three inherited debts. The chapter most likely
+  to exceed the bound in this part is this one, and the series' own history says the
+  split is discovered mid-chapter unless the separable half is sequenced last.
+
+## Requirements *(mandatory)*
+
+### Functional Requirements
+
+**The gauntlet**
+
+- **FR-001**: A single automated suite MUST attack every endpoint the platform exposes
+  with identifiers belonging to another tenant, and MUST run on every build in the same
+  lane as the other integration tests.
+- **FR-002**: The suite's target list MUST be derived from the running application
+  rather than maintained by hand. An endpoint that exists and is not classified MUST
+  fail the suite.
+- **FR-003**: Every target MUST be classified as either attacked or as taking no
+  tenant-owned identifier, and each exemption MUST carry a written reason. A target
+  MUST NOT be able to become exempt by omission.
+- **FR-004**: For every endpoint that accepts a tenant-owned identifier, the response
+  to another tenant's identifier MUST be indistinguishable from the response to an
+  identifier that exists nowhere — same status, same error code, and same message.
+- **FR-005**: For every endpoint that writes, an attack MUST be verified to have
+  changed no row belonging to the target tenant, read directly from storage before and
+  after rather than inferred from the response.
+- **FR-006**: For every endpoint that lists, an attack MUST return an empty page rather
+  than an error, and MUST return no row belonging to another tenant.
+- **FR-007**: The suite MUST cover the WebSocket surface: a credential minted for one
+  environment MUST NOT subscribe to, resume from, or send into a channel belonging to
+  another, and MUST receive nothing from it.
+- **FR-008**: The suite MUST cover the internal service surface, where the attack is a
+  request that names one environment and carries an identifier belonging to another.
+- **FR-009**: The chapter MUST state what the internal credential is trusted for — it
+  selects the environment and is not scoped to one — and what protects it, rather than
+  leaving a green suite to imply a scope that does not exist.
+- **FR-010**: The suite MUST NOT depend on the nine existing scattered isolation
+  assertions, and those assertions MUST NOT be deleted to avoid duplication: a suite
+  that replaces in-process assertions with over-the-wire ones would move coverage off
+  the isolation code the constitution measures.
+- **FR-011**: Every fixture the suite creates MUST be scoped to environments the suite
+  itself created. No cleanup may operate across environments.
+- **FR-012**: Isolation MUST be verified structurally as well as behaviourally: every
+  persisted table MUST be shown to carry a tenant identifier directly or through a
+  single foreign-key hop (FR-TEN-06), derived from the live schema so that a new table
+  fails the check until it is either scoped or explained.
+
+**Proving the suite works**
+
+- **FR-013**: Before the chapter claims the suite verifies isolation, at least three
+  deliberate reintroductions MUST be run — a read losing its environment predicate, a
+  write losing its environment predicate, and a refusal changed from indistinguishable
+  to distinguishable — and the suite MUST fail on each.
+- **FR-014**: The chapter MUST record which assertions caught each reintroduction and
+  which stayed green, and MUST state what the green ones do not cover.
+- **FR-015**: No deliberate reintroduction may be left in the shipped code, and the
+  chapter MUST state how that is verified rather than asserted.
+
+**The public surface the criterion needs**
+
+- **FR-016**: The public API MUST support creating a channel with a customer-supplied
+  identifier, a type, and a display name, authenticated by an API key (FR-CHN-01).
+- **FR-017**: Channel creation MUST be idempotent on the customer-supplied identifier:
+  repeating the request MUST return the existing channel rather than an error
+  (FR-CHN-02).
+- **FR-018**: The same customer-supplied channel identifier MUST be usable
+  independently by two tenants, and neither MUST be able to reach the other's channel.
+- **FR-019**: The public API MUST support adding members to a channel by
+  customer-supplied user identifier, creating the user record if it does not exist
+  (FR-CHN-06, FR-USR-02).
+- **FR-020**: A member added over the public API MUST receive that channel's messages
+  on a socket, with no repository access and no seeding.
+- **FR-021**: Both new endpoints MUST appear in the gauntlet's derived target list on
+  the build that introduces them, without being added to it by hand.
+- **FR-022**: The remaining public channel and user surface — listing with cursor
+  pagination, unread counts, user profile and bulk upsert, member removal, and API key
+  management — MUST NOT be built here, and the deferral MUST carry a chapter number in
+  `docs/07-tutorial-plan.md` rather than a promise.
+- **FR-023**: The test-only seam `packages/e2e/src/harness.ts` opened in chapter 2.8 —
+  seeding through the api's repository because no admin API existed — MUST be
+  reassessed against what this chapter builds, and either retired for channels and
+  members or kept with a restated reason and the chapter that will retire it.
+
+**Documentation an outsider can integrate on**
+
+- **FR-024**: Every error code the platform can emit MUST have an entry in a published
+  reference, reachable from the `docs_url` in the error response carrying that code.
+- **FR-025**: The set of codes the platform can emit MUST be derivable rather than
+  remembered, and a code with no reference entry MUST fail the build. An entry naming a
+  code that cannot be emitted MUST also fail.
+- **FR-026**: The derivation MUST account for codes that exist outside
+  `packages/protocol`'s registry: today `invalid_request`, `unauthorized`, `forbidden`,
+  `not_found` and `internal_error` are produced by a status-to-code ladder in the api's
+  error filter, `not_found` again by the shared service kit, and
+  `connection_environment_conflict` at a call site in a controller. The registry is not
+  the set.
+- **FR-027**: `docs_url` MUST resolve for a reader who types it, verified against the
+  published site rather than against a string pattern.
+- **FR-028**: Each reference entry MUST state what the code means, what causes it, and
+  what a client should do about it. The entry for a retryable condition MUST say what
+  makes it retryable, and the entry for one that is not MUST say so.
+- **FR-029**: Adding the reference MUST leave `check:docs` green: the mirrored copy and
+  the source document MUST agree, and the sync script's file selection MUST include the
+  new document rather than silently skipping it.
+
+**The external developer**
+
+- **FR-030**: The integration that stands for an external developer MUST declare no
+  workspace dependency, and a build-time rule MUST fail if one is added.
+- **FR-031**: It MUST complete signup-to-delivered-message: obtain a credential, create
+  a channel, add members, mint an end-user token, send over REST, read history over
+  REST, connect a socket, and receive a message.
+- **FR-032**: It MUST obtain its credential by a path an outsider can follow from
+  published documentation. Where no such path exists, the chapter MUST either build the
+  minimum one and name the requirement or constitution clause it closes, or state
+  precisely which step remains impossible.
+- **FR-033**: Every fact the integration needs that is absent from published
+  documentation MUST be recorded as a defect with a decision — fixed here, or scheduled
+  with a chapter number.
+- **FR-034**: The chapter MUST state what the sealed integration does not prove: that
+  the dependency rule is enforced and reading the source is not, and that content
+  sufficiency is not comprehensibility. A person is the only instrument for the second,
+  and this chapter does not use one.
+- **FR-035**: The chapter MUST give a verdict on the Phase 2 exit criterion — met, met
+  in part, or not met — with the evidence for whichever it is.
+
+**The instruments**
+
+- **FR-036**: The global-operation guard MUST watch the four tenant-scoped tables added
+  by chapters 3.10 and 3.11: `usage_periods`, `usage_active_users`,
+  `quota_notifications`, `usage_connections`.
+- **FR-037**: The guard MUST produce its refusal message for a table whose primary key
+  has no `id` column. Extending the table array alone MUST be shown to be insufficient.
+- **FR-038**: Each newly guarded table MUST be shown to refuse a cross-environment
+  mutation, driven deliberately, rather than assumed to be covered because it is in the
+  array.
+- **FR-039**: The guard's changes MUST land where feature 030's surface lands — the
+  post-series fence entries — because that feature publishes no chapter and a published
+  chapter may only fence what it teaches.
+- **FR-040**: The chapter MUST measure the api repository layer's branch coverage
+  against constitution VI's 100% clause for ordering, idempotency and tenant isolation,
+  and MUST either close the clause or name every uncovered branch with the reason it is
+  uncovered. The ratchet MUST end no lower than it started.
+- **FR-041**: `limits.itest.ts` MUST stop binding a fixed api port, using the random
+  high port `session.itest.ts` and `meter.itest.ts` now use. As another chapter's
+  fenced file, the change belongs in post-series rather than in an amendment to a
+  published chapter.
+- **FR-042**: Any test this chapter adds that drives a global operation MUST be named in
+  the test harness's exemption list with the tables it needs, and in the matching lint
+  ignores list.
+
+### Key Entities
+
+- **Target**: one endpoint plus the tenant-owned identifiers it accepts. Derived, not
+  written down. Either attacked or exempt with a reason; never unclassified.
+- **Attack**: a request carrying another tenant's identifier, paired with the same
+  request carrying an identifier that exists nowhere. The pair is the assertion — one
+  request alone cannot show indistinguishability.
+- **Reintroduction**: a deliberate, reverted removal of an isolation predicate, used to
+  measure the suite's sensitivity rather than the code's correctness.
+- **Error reference**: the published document mapping every emittable code to its
+  meaning, cause, and remedy. Its completeness is derived from the code, not curated.
+- **Sealed integration**: the package standing in for an external developer, defined by
+  what it may not import.
+- **Channel**: extended from chapter 2.1's table with a public creation path keyed on
+  the customer's own identifier, idempotent, and tenant-scoped.
+
+## Success Criteria *(mandatory)*
+
+### Measurable Outcomes
+
+- **SC-001**: Every endpoint the platform exposes is either attacked with a foreign
+  identifier or carries a written exemption. The count of each is stated, and the two
+  sum to the derived total.
+- **SC-002**: Adding an unclassified route turns the suite red, demonstrated rather
+  than asserted.
+- **SC-003**: For every attacked read endpoint, the foreign-identifier response and the
+  nonexistent-identifier response are equal in status, code, and message — compared
+  field by field, not by status alone.
+- **SC-004**: For every attacked write endpoint, the target tenant's affected rows are
+  identical before and after the attack, read from storage.
+- **SC-005**: Three deliberate reintroductions each turn the suite red, and the chapter
+  names which assertion fired for each and which assertions stayed green.
+- **SC-006**: The shipped tree contains no reintroduction, shown by a check rather than
+  by recollection.
+- **SC-007**: Every table in the live schema is shown to carry a tenant identifier
+  within one foreign-key hop, and a table added without one fails the check.
+- **SC-008**: The sealed package's dependency list is empty of workspace packages, and
+  adding one fails the build.
+- **SC-009**: The sealed integration completes a socket-delivered message from a
+  standing start, in one run, with no fixture from the test harness.
+- **SC-010**: Every documentation gap the sealed integration hit is listed with its
+  disposition. A list of zero is a result only if the chapter states how it was
+  checked.
+- **SC-011**: Every error code the platform can emit resolves to a reference entry,
+  counted, with the count of codes and the count of entries stated and equal.
+- **SC-012**: A new error code with no entry fails the build; an entry for a code that
+  cannot be emitted fails it too.
+- **SC-013**: `docs_url` from a live error response is fetched against the published
+  site and returns the entry for that code.
+- **SC-014**: A channel created twice with the same customer-supplied identifier
+  returns the same channel both times, and two tenants using the same identifier hold
+  two channels neither can see from the other.
+- **SC-015**: A member added over the public API receives a message on a socket, in a
+  test that touches no repository function.
+- **SC-016**: The two new endpoints appear in the gauntlet's target list without being
+  named there by hand.
+- **SC-017**: Each of the four newly guarded tables refuses a driven cross-environment
+  mutation, and the refusal names the table. For the three with no `id` column, the
+  refusal is produced without a PL/pgSQL error.
+- **SC-018**: The api repository layer's branch coverage is stated against
+  constitution VI's 100% clause, with the previous figure of 90.57% and every remaining
+  uncovered branch named. The pinned ratchet ends at or above where it started.
+- **SC-019**: The integration lane stays green across twenty consecutive runs, with the
+  test count reported for every run. No file is added to feature 030's exemption list
+  without the chapter naming the global operation that required it.
+- **SC-020**: No suite in the lane binds a fixed api port, verified by reading the port
+  selection of every suite that spawns one.
+- **SC-021**: The chapter states a verdict on the Phase 2 exit criterion, with what was
+  measured and what was assumed.
+- **SC-022**: The chapter's published page measures between 2,000 and 4,000 prose
+  words, with its fence count and box count derived by reading the finished page. If it
+  exceeds the bound, the overrun is stated with the number rather than left to be found
+  later.
+- **SC-023**: `check:fences` and `check:docs` both pass, with the fenced-file and
+  chapter counts stated, in both locales.
+
+- **SC-024**: The nine existing isolation assertions still exist and still pass,
+  counted before and after. The gauntlet adds to the isolation surface rather than
+  relocating it off the code the coverage run measures.
+- **SC-025**: The gauntlet's own fixtures are removed only by identifiers it created,
+  verified by running the lane with the four newly guarded tables armed and the guard
+  silent.
+- **SC-026**: Every reference entry names a cause and a client action. An entry that
+  only restates the code's own name counts as missing, and the count of such entries
+  is zero.
+- **SC-027**: The chapter states which repository functions `packages/e2e`'s seeding
+  seam still needs after this chapter, as a difference against the list it needed
+  before — a shorter list, or the same list with the chapter that shortens it.
+
+## Assumptions
+
+- **"Every endpoint" means every route the platform serves, not every public route.**
+  The internal surface is where a forged environment identifier would be most
+  valuable, and `usage.controller.ts` already refuses a connection that changes tenants
+  because chapter 3.11 treated that as a correctness question. Excluding internal
+  routes would exclude the interesting half.
+- **The oracle is indistinguishability, not refusal.** Constitution I forbids revealing
+  the existence of another tenant's data, so the correct answer to a foreign identifier
+  is whatever the platform says about an identifier that does not exist. Three existing
+  tests already say this in their names — "a foreign channel's history is empty, not
+  forbidden"; "a foreign key sees nothing, and it looks exactly like absent"; "treats a
+  foreign tenant's channel id as a channel that is not there". The gauntlet generalises
+  what they already do.
+- **The gauntlet is measured where coverage can see it.** `packages/e2e` is excluded
+  from the coverage run on purpose, so a suite living only there cannot contribute to
+  constitution VI's clause on isolation code. Chapter 3.11's R23 measured this from the
+  other side. Where the suite lives is a plan decision; that it must be somewhere the
+  coverage run includes is a requirement of FR-040.
+- **The error reference is a document in `docs/`, rendered by the site that already
+  renders the other six.** Feature 009 built a renderer for the project's paper
+  documents and `scripts/sync-docs.sh` mirrors them; a seventh document costs a glob,
+  a registry entry, and a title in two languages. The alternative considered and
+  rejected was a route tree of per-code pages: truer to the `/docs/errors/<code>` shape
+  already shipping, and a dozen hand-authored files to keep in step with a registry
+  that changes every chapter. `docs_url` gains an anchor instead of a path segment.
+  The tutorial plan's line that "a docs site is not a chapter of this series" stands —
+  this is not a docs site, it is one more document on a surface that exists.
+- **The external developer is a sealed package, not a person.** The criterion says a
+  developer integrates with no assistance; what CI can enforce is that no insider
+  knowledge is required, which is the mechanical half of the same claim. A human run
+  would test comprehensibility and is the honest instrument for it; it is not scheduled
+  here, and FR-034 requires the chapter to say so rather than let the suite stand in
+  for it silently.
+- **The minimum public surface is two endpoints.** Channel creation and member
+  addition are what a first integration cannot do without, and both are backed by
+  repository functions that exist and are tested. Everything else FR-CHN and FR-USR
+  describe — listing, unread counts, profiles, bulk upsert, removal — is deferred to
+  its own chapter, because a milestone chapter that builds nine endpoints is a chapter
+  about endpoints.
+- **The deferred surface gets chapter 3.13**, "the surface a customer drives", covering
+  the rest of FR-CHN and FR-USR's public API and the key management chapter 3.2
+  deferred to "the dashboard's chapter". Part 3's milestone therefore no longer sits
+  last in the part. That is recorded as a consequence rather than hidden: the milestone
+  measures Phase 2's exit criterion, which the two endpoints make reachable, and the
+  remainder is Phase 1 requirement completion that the criterion does not depend on.
+  Three of the four splits in this part were discovered mid-chapter; this one is
+  decided before a word is written.
+- **A seeded demo tenant may be needed and does not exist.** The constitution requires
+  the full stack to start with one command "including a seeded demo tenant", and
+  nothing seeds. The sealed integration needs a credential and cannot click an OAuth
+  consent screen. Whether this chapter builds that bootstrap or documents a different
+  path is a plan decision; FR-032 requires one of the two rather than a suite that
+  quietly imports a fixture.
+- **Chapter 3.13's existence does not weaken FR-023.** The 2.8 seam is reassessed here
+  because this chapter changes what it depends on, not because it can be closed
+  entirely.
+- **This chapter publishes**, so its fences belong in the chapter that teaches them.
+  The guard extension and the port fix are the exceptions and belong in
+  `fences/post-series.md`, because feature 030's surface and chapter 3.8's test file
+  are not this chapter's subject.
+- **No new metering, analytics, or dashboard.** FR-ANL and FR-DSH are Part 4.
+- **The chapter is the largest in the part by content and the most likely to exceed the
+  word bound.** The separable half is the documentation and sealed-integration work,
+  and sequencing it last is what lets the split be decided with a number rather than
+  discovered — the method chapter 3.8 used and chapter 3.11 confirmed.
+
+## Dependencies
+
+- Every chapter from 2.1 onward, since the gauntlet attacks all of them. Chapter 2.1's
+  repository layer with its mandatory `environment_id` is the thing being verified;
+  the constitution calls this "designed out, not tested out", and this chapter is the
+  test that the design held.
+- Chapter 3.2's credential model: an API key resolves to one environment, a user token
+  to one environment and one user, and the internal credential to no environment at
+  all. The three classes are the three shapes of attack.
+- Chapter 3.8's error envelope and chapter 3.10's `quota_exceeded`, whose `docs_url`
+  has resolved to nothing since it shipped, and chapter 1.4's placeholder that both
+  inherited.
+- Chapter 2.8's Tuan test and its harness, whose seeding comment scheduled this
+  chapter's channel and member endpoints to "Part 3's tenancy work".
+- Feature 024's coverage run and its pinned ratchets, and the 100%-branch clause it
+  measured and left open for "the next chapter that touches the repository layer".
+- Feature 030's guard, its exemption list, its lint ignores, and the four tables it
+  does not watch.
+- Feature 009's document renderer and `scripts/sync-docs.sh`, which the error
+  reference joins.
+- The fence chain, which is byte-exact across 177 files and 28 chapters and will see
+  every `docs_url` this chapter changes.
