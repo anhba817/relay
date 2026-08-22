@@ -258,9 +258,9 @@ it.
 - [X] T082 Update `docs/07-tutorial-plan.md`'s 3.11 row and its Part 3 narrative with what this chapter turned out to be against what the plan said — including the word count against the estimate, and R5a's finding about chapter 3.10's guard coverage
 - [X] T082a [P] Revisit chapter 3.2's standing limitation, in `relay-tutorial/app/(en)/part-3/chapter-02/keys-and-tokens/page.mdx` and its `(vi)` mirror. Its published prose says "**Service-to-service credentials on the internal hop.** The gateway and api still trust the network between them, exactly as chapter 2.5 recorded." One of the gateway's four calls now presents a credential of its own, so the entry is narrower than it was — narrow it in print rather than leaving a shipped chapter overstating what is still open
 - [X] T083 [P] Record R5a as scheduled work rather than a remembered gap: the four environment-scoped tables feature 030's guard does not watch, and the `OLD.id` problem that makes the extension more than an array change. Name the feature or chapter that owns it
-- [ ] T084 [P] Update `specs/032-chapter-3-11/chapter-notes.md` with the final numbers: the twenty-run battery, the connect-path measurement, the six-place count, and every place the plan was wrong
+- [X] T084 [P] Update `specs/032-chapter-3-11/chapter-notes.md` with the final numbers: the twenty-run battery, the connect-path measurement, the six-place count, and every place the plan was wrong
 - [X] T085 Mark `specs/032-chapter-3-11/checklists/requirements.md` against the finished chapter, including SC-015 which could not be evaluated until the page existed
-- [ ] T086 Commit and tag `part3-ch11`, confirming all three repositories clean and both parent pins matching their submodule HEADs before the tag is cut
+- [X] T086 Commit and tag `part3-ch11`, confirming all three repositories clean and both parent pins matching their submodule HEADs before the tag is cut
 
 ---
 
