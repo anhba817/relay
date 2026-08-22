@@ -421,10 +421,17 @@ report for the isolation file against the constitution's clause.
 **The external developer**
 
 - **FR-030**: The integration that stands for an external developer MUST declare no
-  workspace dependency, and a build-time rule MUST fail if one is added.
+  workspace dependency, MUST NOT import a path outside its own package, and MUST NOT
+  construct one at run time. A build-time rule MUST fail for each of the three. An import
+  restriction alone does not reach the third: a path built from string fragments is not an
+  import specifier, and the repository already reaches into another package that way.
 - **FR-031**: It MUST complete signup-to-delivered-message: obtain a credential, create
   a channel, add members, mint an end-user token, send over REST, read history over
   REST, connect a socket, and receive a message.
+- **FR-045**: The integration MUST target a running platform it does not start, addressed
+  entirely through documented configuration. Starting the platform MUST be the job of
+  something outside the package, MUST use the same command a reader following the
+  published documentation would run, and MUST happen on every build.
 - **FR-032**: It MUST obtain its credential by a path an outsider can follow from
   published documentation. Where no such path exists, the chapter MUST either build the
   minimum one and name the requirement or constitution clause it closes, or state
@@ -512,7 +519,9 @@ report for the isolation file against the constitution's clause.
   counts are recorded rather than asserted, because one of the tables is created by
   the test harness and exists only after the lane has run.
 - **SC-008**: The sealed package's dependency list is empty of workspace packages, and
-  adding one fails the build.
+  three escapes each fail the build, demonstrated one at a time: a workspace package
+  import, a relative import climbing out of the package, and a path to another package
+  built at run time from string fragments.
 - **SC-009**: The sealed integration completes a socket-delivered message from a
   standing start, in one run, with no fixture from the test harness.
 - **SC-010**: Every documentation gap the sealed integration hit is listed with its
@@ -567,6 +576,10 @@ report for the isolation file against the constitution's clause.
   the permitted directories fails lint, demonstrated by adding such an import and
   running the gate. The count of files legitimately exempted is stated, and every one of
   them carries a reason.
+- **SC-030**: The platform is started for the sealed integration by the documented
+  command, on every build, and the package itself starts nothing — verified by reading its
+  source for any process launch and by the integration failing with a clear message when
+  the platform is absent rather than starting one.
 - **SC-029**: Every route accepting a platform credential names its permitted services,
   and a credential issued to one service is refused on every route declared for another —
   measured route by route, in both directions, with the count of platform routes stated.

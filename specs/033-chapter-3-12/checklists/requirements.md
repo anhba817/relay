@@ -177,3 +177,52 @@ wider ignores list. This is what a pass reading the previous pass's edits is for
 `AppModule`, not nine. The decorator value is `platform`, not `service`. And the dispatcher
 runs no HTTP server at all — no `createServer`, no `listen`, no compose healthcheck — so
 there are two health endpoints in the exempt list, not three.
+
+## Analysis pass three — the build gates
+
+Seven findings, one CRITICAL. Six applied; the seventh was a LOW wording note and was
+declined rather than absorbed.
+
+**The sealed package had nowhere to run.** Nothing starts the api or the gateway for it:
+CI has no compose step and no `pnpm dev`, and the way every existing suite gets a server
+is `spawn("node", [join(REPO, "services","api","dist","main.js")])` with
+`REPO = join(HERE, "..", "..", "..")` — the escape this package forbids itself. Compose's
+`api`, `gateway` and `dispatcher` sit behind `profiles: ["services"]`, so
+`docker compose up -d --wait` starts stores only. T099 could not have run anywhere.
+
+Compose now starts the platform, in a CI job of its own — and the reason it is a separate
+job is the trap that would have eaten an afternoon: the platform job uses GitHub service
+containers on `localhost:5432`, while compose's api reads
+`postgres:5432` on its own network. Adding `--profile services` to the existing job would
+have started a second database, migrated the first, and left the api serving a schema that
+does not exist. That became FR-045 and SC-030.
+
+**The seal was two levels and needed three.** R12 said the remaining hole was a
+relative-path import "which only a lint rule closes". A path built at run time is not an
+import specifier, so `no-restricted-imports` never sees `join`, `createRequire`,
+`readFileSync` or `spawn`. `harness.ts`, cited in R12 itself as proof the hole exists, is
+also proof the proposed rule does not close it — and the config has no
+`no-restricted-syntax` rule today. FR-030 and SC-008 now name three escapes and require
+each to be demonstrated failing.
+
+**And the completeness check could not live where it was put.**
+`docs/08-error-reference.md` is above `$TURBO_ROOT$`, so it cannot be a turbo input: edit
+the reference, re-run `pnpm test`, get a cache hit, gate passes stale. It also breaks the
+standalone-clone promise, since `relay-platform` has its own remote and a README saying its
+checks pass from a clean checkout. Split along the repository boundary — the platform
+asserts every emitted code is registered, the tutorial asserts registry against reference,
+where the parent is already in scope and `check-docs-drift.sh` sets the skip-when-absent
+precedent.
+
+**One finding was about where a mistake would most likely be made rather than where one
+was.** Every sibling integration config points `globalSetup` and `setupFiles` at
+`../../packages/test-harness/src/…`, so writing the outsider's config by copying one —
+the obvious move — reaches into another package on its second line. T097 now says to write
+it from scratch and names the trap.
+
+**What the three passes found, by class.** Pass one: things described wrongly, mostly paths
+and mechanisms. Pass two: surfaces modelled wrongly — `/internal/*` as one credential class
+when it is two, and platform credentials authorized by class rather than by service. Pass
+three: work with nowhere to run. Requirements moved 42 → 45 and outcomes 27 → 30 across the
+three, and two of the additions are product code rather than tests, which is not what an
+analysis pass is supposed to produce and is the honest result of reading the gates late.

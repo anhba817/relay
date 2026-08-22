@@ -8,13 +8,14 @@ against what shipped) and `baseline.txt` for every measurement.
 the cross-tenant attack suite against every endpoint (NFR-SEC-09), and the SRS
 Phase 2 exit criterion: *"an external developer integrates using only public
 documentation, with no assistance"*. Its record is `specs/033-chapter-3-12/` —
-read `plan.md` for the eleven phases and `research.md` for R1 to R24, fifteen of
-which were measured against a running stack rather than reasoned about. Two analysis
-passes are applied — 26 findings, 4 CRITICAL — the first reading the documents and the
-published series, the second reading the code. Pass two turned up product work:
-`@Accepts` grows a service argument (FR-044), because a platform credential was
-authorized by class and not by service, so the gateway's credential reached
-`POST /internal/dispatch/replay`.
+read `plan.md` for the eleven phases and `research.md` for R1 to R26, eighteen of
+which were measured against a running stack rather than reasoned about. Three analysis
+passes are applied — 33 findings, 5 CRITICAL — reading, in order, the documents and the
+published series, the code, and the build gates. Two turned up product work: `@Accepts`
+grows a service argument (FR-044), because a platform credential was authorized by class
+and not by service, so the gateway's credential reached `POST /internal/dispatch/replay`;
+and compose starts the platform in a CI job of its own (FR-045), because the sealed
+package may not start a server and nothing else did.
 
 **Two things the plan found that no document contained.** There is no public
 endpoint to create a channel or add a member — `packages/e2e/src/harness.ts` has

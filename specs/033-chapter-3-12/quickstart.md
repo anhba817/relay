@@ -176,8 +176,19 @@ it only walks files its own glob selects.
 
 ```bash
 cd ../relay-platform
-pnpm --filter @relay/outsider test:integration
+docker compose up -d --wait                              # stores only — the services are
+                                                         # behind profiles: ["services"]
+DATABASE_URL=postgres://relay:relay@localhost:15432/relay \
+  node services/api/dist/db/migrate.js
+docker compose --profile services up -d --wait           # api 4000, gateway 4001
+node scripts/seed-demo-tenant.mjs                        # prints a credential
+RELAY_API_URL=http://localhost:4000 RELAY_WS_URL=ws://localhost:4001 \
+  pnpm --filter @relay/outsider test:integration
 ```
+
+The order is load-bearing: the seed writes to a migrated database, and the api needs the
+schema before it serves anything the integration asks for. **The package starts nothing** —
+if the platform is absent it must fail saying so rather than trying to launch one.
 
 **Expect** a completed integration: credential, channel, members, token, REST send,
 history read, socket receive.
@@ -189,9 +200,15 @@ history read, socket receive.
 
 **Then** add `import { ERROR_CODES } from "../../protocol/src/codes.js";` instead.
 
-**Expect** lint to fail. This is the half a dependency list cannot enforce, and
-`packages/e2e/src/harness.ts` proves the hole is reachable — it loads the api's build
-output through `createRequire` today.
+**Expect** lint to fail on the `no-restricted-imports` rule — level 2.
+
+**Then** the escape neither of those reaches:
+`readFileSync(join(import.meta.dirname, "..", "..", "protocol", "src", "codes.ts"))`.
+
+**Expect** lint to fail on the `no-restricted-syntax` rule — level 3. Without it this
+passes, because a path built from string fragments is not an import specifier.
+`packages/e2e/src/harness.ts:31` does exactly this and spawns the api's build output from
+the result.
 
 ## V14 — the guard sees the four usage tables
 

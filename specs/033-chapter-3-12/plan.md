@@ -64,6 +64,19 @@ What research settled, and four of these came from measuring rather than reading
   way to test the pair. Preserving underscores instead changes exactly one anchor in the
   whole site (`ADR-03 … last_sequence …`) and nothing links to it: zero chapter headings
   contain an underscore, and zero links to any docs anchor exist (R10).
+- **The sealed package had nowhere to run, and compose is the answer.** Nothing starts
+  the api or gateway for it: CI has no compose step and no `pnpm dev`, and every existing
+  suite spawns its own children through a relative path escape this package forbids
+  itself. So compose starts the platform in a CI job of its own — a separate job, because
+  the platform job's GitHub service containers sit on `localhost:5432` while compose's api
+  reads `postgres:5432` on its own network, and mixing them would migrate one database
+  and serve from another (R25).
+- **The seal is three levels, not two.** An earlier draft said the remaining hole was a
+  relative-path import "which only a lint rule closes". A path built at run time —
+  `join(HERE, "..", "..", "..")`, `createRequire` — is not an import specifier, and
+  `no-restricted-imports` never sees it. `harness.ts`, cited as proof the hole exists, is
+  also proof the proposed rule does not close it. Level 3 is a `no-restricted-syntax` rule,
+  which the config does not have today (R12).
 - **pnpm already seals the sealed package, and the hole is a relative path.**
   `node_modules/@relay` does not exist at the workspace root, so a package that declares
   no `@relay/*` dependency cannot resolve one. `vitest`, `ws` and `jose` do resolve from
@@ -187,7 +200,7 @@ inherited debts, one new package, one new document.
 | **III. Two data paths, never crossed** | Nothing analytical. No ClickHouse, no queue, no metering. | Pass |
 | **IV. Single writer, single source of truth** | The api stays the only writer. `packages/outsider` cannot import `pg` — it cannot import anything — and the gauntlet writes through the repository like every other suite. | Pass |
 | **V. API-first, developer-first** | The clause "every error code has a reachable documentation page" has been unmet since chapter 1.4 and is closed here for all eleven codes. `docs_url` stops being a placeholder. The two new endpoints are the first public surface for FR-CHN since Part 2 promised it. | **Pass, and it closes the debt three chapters recorded** |
-| **VI. Requirement-driven, test-verified** | **44 requirements, 29 measurable outcomes** — re-derive with `grep -c '^- [*][*]FR-' spec.md` and the same for `SC-`, never carried forward by hand. The 100%-branch clause for isolation code is measured against a number rather than restated (FR-040). The suite this principle names as a release gate is what the chapter builds. | Pass |
+| **VI. Requirement-driven, test-verified** | **45 requirements, 30 measurable outcomes** — re-derive with `grep -c '^- [*][*]FR-' spec.md` and the same for `SC-`, never carried forward by hand. The 100%-branch clause for isolation code is measured against a number rather than restated (FR-040). The suite this principle names as a release gate is what the chapter builds. | Pass |
 | **VII. Boring by design — scope is a commitment** | No new service, no new language, no new dependency, no product migration. One new workspace package, which is a test package and not a service, so §4.2's "deliberately not a separate service" table does not apply. Everything larger is named and refused: the rest of FR-CHN and FR-USR go to 3.13 with a number, the outbox column goes to whoever next touches outbox writes, a human external-developer run is named as the instrument this chapter does not use. | Pass, with three refusals recorded |
 
 **One entry in Complexity Tracking**, and no ADR required. `packages/outsider` is a new
@@ -201,7 +214,7 @@ package that exists to be empty needs its justification written down.
 ```text
 specs/033-chapter-3-12/
 ├── plan.md              # This file
-├── research.md          # Phase 0 — R1 to R24 plus R7a, fifteen measured on a running stack
+├── research.md          # Phase 0 — R1 to R26 plus R7a, eighteen measured on a running stack
 ├── data-model.md        # Phase 1 — no product migration; the shapes the suite derives
 ├── quickstart.md        # Phase 1 — V0 to V16, the reintroductions among them
 ├── contracts/
@@ -217,7 +230,8 @@ specs/033-chapter-3-12/
 
 ```text
 relay-platform/
-├── eslint.config.mjs                          # the outsider's path rule; the itest ban restored (R23)
+├── README.md                                  # the compose sequence the outsider needs (R25)
+├── eslint.config.mjs                          # the outsider's two rules; the itest ban restored (R23)
 ├── turbo.json                                 # env entries — strict mode filters what it does not declare
 ├── vitest.coverage.config.mts                 # the json reporter, then ratchet entries (FR-040)
 ├── packages/
@@ -256,6 +270,9 @@ relay-platform/
         ├── limits.itest.ts                    # random port — NOT fenced anywhere (R17)
         ├── main.ts                            # serve()'s new field
         └── session.ts                         # docsUrl() ×2
+
+.github/workflows/
+└── ci.yml                                     # the `outsider` job — compose for everything
 
 docs/
 ├── 04-srs.md                                  # NFR-USE-05 verification note if it moves
@@ -301,7 +318,7 @@ until the suite is complete, and the documentation half is last so it can be cut
 | 7 | The reintroductions | three, run and reverted, recorded | Sensitivity, not correctness. What stayed green is part of the result (R18) |
 | 8 | The instruments | guard's four tables, the itest lint ban, the port, the `json` reporter, the coverage number | The guard lands in post-series; the port needs no fence at all (R17). The lint ban is a constitution clause found off (R23); the reporter is what makes FR-040 nameable (R16) |
 | 9 | **The documentation half — separable** | eleven codes, the registry as the set, `docsUrl()`, `turbo.json`'s env entry, the slugifier, `08-error-reference.md`, three lists | Sequenced here so the split is a measurement (R19) |
-| 10 | **The outsider — separable** | `packages/outsider`, the seed command, the lint rule, the gap list, the verdict | Needs phase 6; carries the milestone if the chapter splits |
+| 10 | **The outsider — separable** | `packages/outsider`, the seed command, two lint rules, a compose-driven CI job, the gap list, the verdict | Needs phase 6; carries the milestone if the chapter splits. The CI job is what gives the package somewhere to run (R25) |
 | 11 | Close-out | chapter prose both locales, fences, the 3.13 row, notes | The plan-table edit is FR-022, not a courtesy (R20) |
 
 Each phase commits. 3.11's traceability regex broke 36 files and cost five minutes to

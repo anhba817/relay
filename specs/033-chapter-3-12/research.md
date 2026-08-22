@@ -441,17 +441,36 @@ package manager's, for free, and needs no rule. Meanwhile `vitest`, `ws` and `jo
 sit at the workspace root and resolve by the ordinary parent walk, so the sealed
 package can run tests and open a socket while declaring nothing.
 
-**And the hole.** A relative path is not a package specifier. `../../services/api/dist/…`
-resolves regardless of any dependency list, and this repository already does it:
-`packages/e2e/src/harness.ts` uses `createRequire` to load the api's build output
-precisely because it may not declare `pg`. So the seal needs a lint rule after all —
-not for package names, which pnpm handles, but for relative and absolute paths escaping
-the package directory.
+**And the holes — plural, which an earlier draft of this section got wrong.** It said the
+remaining hole was "a relative-path import, which only a lint rule closes". There are two,
+and the second is the one an import rule cannot see.
 
-**Decision.** `packages/outsider`, dependency list empty of `@relay/*`, plus a
-`no-restricted-imports` pattern rule on paths climbing out of it. The chapter states
-which half is mechanical and which is a rule, because a rule trusted past its range is
-the thing feature 030's contracts warn about.
+```
+packages/e2e/src/harness.ts:4    import { createRequire } from "node:module";
+packages/e2e/src/harness.ts:31   const REPO = join(HERE, "..", "..", "..");
+packages/e2e/src/harness.ts:389  spawn("node", [join(REPO, "services", "api", "dist", "main.js")], …)
+```
+
+Line 31 is not an import. It is a string built from fragments, and `no-restricted-imports`
+matches import specifiers — it never sees `join`, `createRequire`, `readFileSync` or
+`spawn`. The file cited as proof that the hole exists is also proof that the proposed rule
+does not close it.
+
+**So the seal is three levels, and the chapter says which is which:**
+
+| Level | Mechanism | Closes |
+|---|---|---|
+| 1 | pnpm's isolated `node_modules` | `import … from "@relay/protocol"` — no rule needed |
+| 2 | `no-restricted-imports` patterns | `import … from "../../services/api/…"` |
+| 3 | `no-restricted-syntax` | `join(HERE, "..", …)`, `createRequire` — a path built at run time |
+
+Level 3 is new: `eslint.config.mjs` has no `no-restricted-syntax` rule today. Banning
+`".."` string literals and `createRequire` inside `packages/outsider/**` is narrow enough
+to state, and testable by writing one and watching lint fail.
+
+**What none of the three closes**, said before the chapter claims otherwise: reading the
+repository's source with human eyes. That is a discipline, and the chapter says so rather
+than letting three rules imply a fourth.
 
 ---
 
@@ -883,3 +902,77 @@ a suite that documents a hole is not the suite constitution I asks for.
 and `service` is still self-reported by which variable matched rather than proven. The
 change narrows which routes a leaked credential reaches; it does not make a leak
 survivable.
+
+---
+
+## R25 — The sealed package has nowhere to run, and the fix is the reader's own command
+
+**Measured.** Nothing starts the api or the gateway for it, and it cannot start them
+itself.
+
+- `.github/workflows/ci.yml` contains no `docker compose` and no `pnpm dev`. The
+  integration lane passes because each suite spawns the children it needs.
+- The way they do it is `spawn("node", [join(REPO, "services","api","dist","main.js")])`
+  with `REPO = join(HERE, "..", "..", "..")` — the level-3 escape R12 now forbids for this
+  package.
+- `compose.yaml` puts `api`, `gateway` and `dispatcher` behind `profiles: ["services"]`,
+  so `docker compose up -d --wait` starts stores only. The api maps to host `4000`, the
+  gateway to `4001`.
+
+**Decision: compose starts the platform, in a CI job of its own.** The package reads
+`RELAY_API_URL` and `RELAY_WS_URL` and starts nothing — which is what an integrator does,
+and the reason to prefer compose over backgrounding `pnpm dev`: the target is genuinely
+external, and the command is the one the published documentation already gives.
+
+**And the trap that makes it a separate job rather than three lines in the existing one.**
+The platform job uses GitHub *service containers* for Postgres, Redis and NATS on
+`localhost:5432`. Compose's api reads
+`DATABASE_URL: postgres://relay:relay@postgres:5432/relay` — its own network, its own
+Postgres. Adding `--profile services` to the existing job would start a second database,
+migrate the first, and leave the api serving a schema that does not exist. So the sealed
+integration runs in a job that uses compose for everything:
+
+```
+docker compose up -d --wait                              # stores; postgres on host 15432
+DATABASE_URL=postgres://relay:relay@localhost:15432/relay \
+  node services/api/dist/db/migrate.js                   # before the api needs the schema
+docker compose --profile services up -d --wait           # api 4000, gateway 4001
+node scripts/seed-demo-tenant.mjs                        # prints a credential
+RELAY_API_URL=http://localhost:4000 RELAY_WS_URL=ws://localhost:4001 \
+  pnpm --filter @relay/outsider test:integration
+```
+
+That ordering is load-bearing: the seed writes to a migrated database, and the api needs
+the schema before it serves anything the integration asks for.
+
+**Cost, stated rather than discovered.** The job builds two Node images from
+`services/api/Dockerfile` and `services/gateway/Dockerfile` on every run. That is the
+price of the target being external, and it is the same build a reader pays once.
+
+---
+
+## R26 — Where the error-reference completeness check can actually live
+
+**Two problems with putting it in the platform's unit lane, both measured.**
+
+`docs/08-error-reference.md` is in the parent repository, outside `relay-platform`.
+Turbo's `test` task declares `inputs: ["$TURBO_DEFAULT$", "$TURBO_ROOT$/compose.yaml"]`,
+and `$TURBO_ROOT$` is the platform workspace — a file above it cannot be an input. So
+editing the reference and re-running `pnpm test` returns a cache hit and the gate passes
+stale.
+
+And `relay-platform` is a submodule with its own remote
+(`git@github.com:anhba817/relay-platform.git`), whose README promises "check it out and
+the toolchain checks pass". A unit test requiring `../docs/08-error-reference.md` fails in
+a standalone clone, where that path does not exist.
+
+**Decision: split the check along the repository boundary.**
+
+| Side | Assertion | Why there |
+|---|---|---|
+| platform | every code the platform can emit is in `ERROR_CODES` | self-contained; no parent, no cache hole |
+| tutorial | `ERROR_CODES` ↔ the reference's `h2` headings, both directions | the parent is already in scope, and `check-docs-drift.sh` sets the precedent — it reaches into `../docs` and skips with a warning when the parent is absent |
+
+The tutorial side reads `packages/protocol/src/codes.ts` as text, which the fence chain
+already does for every published file, so the coupling is one the repository is built on
+rather than a new one.

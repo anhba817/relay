@@ -122,10 +122,22 @@ no translation.
 ## 5. Completeness, both directions
 
 ```
-codes    = Object.keys(ERROR_CODES)                       // eleven
-anchors  = h2 headings in docs/08-error-reference.md      // eleven
-assert setEqual(codes, anchors)
+platform side (packages/protocol/src/codes.test.ts)
+  assert every code the platform can emit is in ERROR_CODES        // self-contained
+
+tutorial side (relay-tutorial/scripts/)
+  codes   = Object.keys(ERROR_CODES)                    // eleven
+  anchors = h2 headings in docs/08-error-reference.md   // eleven
+  assert setEqual(codes, anchors)
 ```
+
+**Split along the repository boundary, and measured rather than chosen for tidiness.**
+`docs/` sits above `$TURBO_ROOT$`, so it cannot be a turbo input — the platform's `test`
+task would return a cache hit after the reference changed and pass stale. And
+`relay-platform` is independently clonable with a README promising its checks pass from a
+clean checkout, where `../docs` does not exist. The tutorial repo already reaches into the
+parent and skips with a warning when it is absent, which is `check-docs-drift.sh`'s
+existing shape (R26).
 
 A code with no entry fails. **An entry naming a code that cannot be emitted also
 fails** — the second direction matters, because a reference that documents a code the
