@@ -456,3 +456,56 @@ oversight.
 
 No signing secret, encryption key or real internal credential appears in any spec
 artifact or any added line.
+
+## T068 — the battery, attempt 1: ABANDONED at run 7, two real defects
+
+  1 exit=0 wall=193s total=330 failed=0 failing-files=0
+  2 exit=0 wall=194s total=330 failed=0 failing-files=0
+  3 exit=1 wall=113s total=276 failed=2 failing-files=1
+  4 exit=0 wall=194s total=330 failed=0 failing-files=0
+  5 exit=0 wall=192s total=330 failed=0 failing-files=0
+  6 exit=0 wall=195s total=330 failed=0 failing-files=0
+  7 exit=1 wall=103s total=8   failed=1 failing-files=1
+
+**`failing-files=1` in both, so both name a test — real defects, not
+interference.** Stopped at run 7 rather than letting thirteen more runs report on
+code already known to be wrong.
+
+**Defect A — a fixed port, three different-looking symptoms.** `startApi()` bound
+4123 and the new cap-at-the-door describe bound 4124, which is
+`limits.itest.ts`'s. Vitest runs files in parallel, so they raced. Worse, back to
+back the previous run's child can still hold the port: the new child exits on
+EADDRINUSE, `waitForHealth` gets its 200 from the OLD api — a different
+environment with a different signing secret — and every token this run minted is
+refused by an api that never heard of it.
+
+Three assertions failed and none of them named the fixture:
+
+    expected 'internal_error' to be 'unauthorized'      (an expired-token send)
+    expected 1011 to be 4001                            (a bad-token connect)
+    TypeError: fetch failed                             (minting a token)
+
+Both describes now take a random high port, the way `meter.itest.ts` already did.
+Twelve consecutive green runs of the failing combinations afterwards.
+
+**Two wrong diagnoses came first, and both were written down before the evidence
+arrived.** The first blamed chapter 3.8's auth limiter — a per-source-address
+failed-authentication budget of ten a minute, in Redis, shared by every suite in
+a lane where all of them are 127.0.0.1. That coupling is real, the isolation
+(`RELAY_AUTH_KEY_PREFIX` per api child) costs one line and is kept, and it fixed
+nothing here. The second blamed the 4124 collision alone, which was real and only
+half the fault. The comments in `session.itest.ts` say which theory was wrong
+rather than quietly presenting the third as the first.
+
+What finally settled it was running one file alone, five times: 2 of 5 red, with
+the whole first describe failing at 7ms. That ruled out every cross-file theory
+in one measurement, and it should have been the first thing tried.
+
+**Defect B — my own test budget.** The Mailpit tests wait through `inbox()`,
+which allows 10s, inside vitest's default 5s test timeout. Intermittent, because
+it only fails when the relay is slow. Six email tests now carry `20_000`.
+
+**A latent fault left in place, deliberately.** `limits.itest.ts` still binds a
+fixed 4124 and has the same lingering-child exposure. It is another chapter's
+file, it is fenced, and it is green — recorded here so it is scheduled rather
+than forgotten.
