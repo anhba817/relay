@@ -172,3 +172,43 @@ unauthenticated in every local run while looking configured.
 
 **One lint failure**: `internalUsageReportRequestSchema` imported and unused —
 the request is validated by the api, not by the caller that builds it. Removed.
+
+## Phase 4 — US1, and a prediction that was wrong
+
+Green: lint, build, unit 348, integration **301** (from 271), 191s, coverage
+exit 0 with three new ratchet entries.
+
+**R23 predicted `repository.ts` would go red. It did not.**
+
+  before  97.48 / 90.17 / 100 / 99.38
+  after   97.60 / 90.57 / 100 / 99.41    ratchet 97 / 90 / 100 / 99
+
+Branch coverage went UP by 0.40 points, against a prediction built on chapters
+3.5 and 3.6 — where the same file lost 7.69 points and 1.20 points respectively
+by gaining operations without tests. The difference is not luck and is worth
+naming: 3.5's `deliveryMaterial` and `pendingDeliveryDepth` were called only from
+a suite that spawns the api as a child, whose coverage is not attributable, so
+the code arrived measured at zero. `creditConnectionMinutes` is called from
+nineteen in-process tests in the same lane, which is what T033b scheduled and
+T033d protected. The instrument was right about the risk and the mitigation was
+the thing that changed the outcome.
+
+**Two coverage gaps the plan did not anticipate**, both found by measuring:
+
+  usage.controller.ts   88.88 / 50 / 100 / 88.88  →  100 / 100 / 100 / 100
+  meter.ts              96.42 / 87.5 / 86.66 / 96.07  →  100 / 93.75 / 100 / 100
+
+The controller's 50% was the RETHROW beside the 409 — the branch separating "this
+connection moved tenants" from "something else broke". The 409 was tested and its
+neighbour was not, which is how a broken caller becomes a conflict nobody
+investigates. Closed with a report for an environment that does not exist.
+
+`meter.ts` was missing its default clock and its timer callback, because every
+other test drives `reportOnce` directly. Closed with the one test that proves the
+meter is a background thing at all.
+
+`meter.ts` is pinned at 93 branches and not 100. The remaining arm is the
+retention cap's duplicate-key guard, which needs four thousand closed connections
+with a repeat among them — a fixture longer to read than the branch is worth.
+
+**Totals** 90.22 / 83.80 / 89.42 / 91.40, from 89.45 / 82.73 / 88.94 / 90.86.
