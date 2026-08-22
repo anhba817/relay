@@ -116,3 +116,32 @@ against these numbers rather than against an impression.
 21 files, 95 fences in the English chapters, 5 further entries in `post-series.md`.
 The generated table matches R16 exactly. R16 also under-listed the post-series
 side: `repository.ts` has one too, so the count there is 5, not 4.
+
+## Phase 2 — what the foundational work turned up
+
+Two tripwires chapter 3.10 left for this chapter, and only one of them was in
+any plan.
+
+**Scheduled (T048b, still ahead):** `session.test.ts`'s "STILL emits close code
+4008 from nowhere".
+
+**NOT scheduled, and found by a red test:** `config.test.ts` carried
+
+    it("rejects a dimension nobody implemented rather than ignoring it", …)
+      // `connection_minutes` is chapter 3.11. Until then …
+      expect(capsFor({ connection_minutes: { hard: 10 } }, "messages").error)
+        .not.toBeNull();
+
+Seven analysis passes did not find it, because none of them opened
+`config.test.ts` — the fence table lists `config.ts`, not its test. The assertion
+inverts onto `media_bytes` (FR-MED-12, Part 4, still unimplemented), so the
+tripwire survives and only the dimension standing on it changes.
+
+**And one wrong expectation of my own**, the same class chapter 3.10 hit twice
+with Mailpit: the month-boundary test asserted 3 + 2 buckets for 23:58:10 →
+00:01:40. It is 2 + 2 — 23:58, 23:59, 00:00, 00:01. Counting boundaries by eye is
+what `bucketsFor` exists to stop anyone doing, and it caught its author first.
+
+**Counts after Phase 2:** api unit 158 → 181, gateway unit 64 → 75, protocol
+37 → 45, and a new integration file at 9 (`config.itest.ts`). Lint, build and the
+harness's `no-trigger-in-migrations` gate all green.
