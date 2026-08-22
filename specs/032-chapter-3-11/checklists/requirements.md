@@ -257,3 +257,58 @@ evidence that nobody is looking.
 
 The counts moved: 31 requirements to 32, 23 success criteria unchanged in number
 but two sharpened, 110 tasks to 115, and research gained R22 and R23.
+
+## Fourth analysis pass, 2026-08-22
+
+Nine findings — no CRITICAL, four HIGH, four MEDIUM, one LOW. All nine applied.
+This is the first pass that did not block implementation.
+
+**The surface was every number and quotation, re-verified against its source.**
+Chapter 3.10's fourth pass did the same, and this feature had earned it: the fence
+inventory was wrong in all three earlier passes.
+
+**Eight of the nine findings are one mechanical error.** A count lives in two
+places, one place gets edited, and the second keeps asserting the old figure:
+
+- `plan.md`'s Constitution Check said "28 requirements, 20 measurable outcomes"
+  through three passes that each added requirements. The claim beside it — every
+  requirement mapped — stayed true the whole time. The row now says how to
+  re-derive the number instead of holding a copy of it.
+- R15 charged for a `Dimension` union member. The second pass had already
+  established there is nothing to edit — `Dimension` is `keyof QuotaConfig`, so it
+  widens by itself, which is precisely why the ternary beside it ships the wrong
+  word silently. The table charged for the line that writes itself and not for the
+  line that breaks. Seven places on the corrected reading, and T066 no longer
+  carries the number into the counting.
+- 4008 was "declared and unemitted for eleven chapters", twice. Counted: 27
+  chapters published, part-1 runs `chapter-01` to `chapter-04`, so nineteen follow
+  1.3.
+- R22 called it "instance thirteen of this project's recurring fault". The ledger's
+  highest recorded instance is 12, and nothing here has failed — it is an operation
+  of that shape in a place neither guard watches, which is a different claim and
+  the one the research now makes. It also called the function "the fifth member" of
+  a family whose membership can be counted four different ways.
+- R16's own footnote, written one pass earlier to stop an undercount, undercounted:
+  `turbo.json`'s `post-series.md` entry was missing.
+- `spec.md`'s browser edge case still demanded either chapter 3.8's answer about
+  the 429 or "an explicit change to it", two passes after R21 made the explicit
+  change.
+
+**The ninth is a defect in an instrument, and it is the one worth the pass.**
+V12's battery extracted the test count with a pattern anchored to the first integer
+after `Tests`. Vitest prints `Tests      473 passed (473)` on a green run and
+`Tests  1 failed | 6 passed (7)` on a red one — so the column labelled "tests"
+would have recorded **1** for a failing run. Wrong only when a run fails, which is
+the run twenty consecutive runs exist to characterise, and chapter 3.10's whole
+diagnostic rule depends on reading that line correctly. It now reads the trailing
+total and reports failures separately.
+
+**What four passes cost and bought.** 19 findings, then 13, then 11, then 9 — 52
+in total, one CRITICAL in each of the first two and none after. Each pass read a
+surface the others could not: the documents and the published series, the code, the
+build gates, the numbers. The first found a socket that counted zero; the second a
+shutdown flush with no shutdown; the third a sweep both guards miss; the fourth a
+counter that lies about the runs that matter.
+
+Counts held: 32 requirements, 23 success criteria, 115 tasks, research R1–R23. The
+figures in `plan.md` now match `spec.md`, checked by grep rather than by reading.

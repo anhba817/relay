@@ -405,7 +405,8 @@ and in `quotas/config.ts`:
 > Chapter 3.11 adds connection-minutes by adding a key here and a line to the
 > migration's CHECK
 
-**What is actually enumerated**, read out of the two files:
+**What is actually enumerated**, read out of the two files — as a **prediction to
+be measured**, not an inventory:
 
 | Place | What a third dimension costs |
 |---|---|
@@ -413,12 +414,24 @@ and in `quotas/config.ts`:
 | `environments_quota_config_shape` CHECK | one `jsonb_typeof` clause + two regex clauses |
 | `quota_notifications_dimension_check` | one value in an `IN` list |
 | `usage_periods` | one column and its non-negative CHECK |
-| `Dimension` union in `quota.error.ts` | one member |
-| `quota-email.ts` | the copy for a third dimension |
+| `publicMessage()` in `quota.error.ts` | a two-way ternary becomes a three-way one, and "sends resume" stops being right |
+| `quota-email.ts` | a key in the `NOUN` map |
+| `usageFor` | two fields on its return shape |
 
-Six places, not two. SC-013 records the real number against the written
-prediction, and a higher number is the result rather than a failure — that is
-what FR-024 asks for.
+**Seven places on this reading, and the reading is not the measurement.** An
+earlier draft of this table listed "`Dimension` union in `quota.error.ts` — one
+member" and called the total six. The second analysis pass found there is no union
+to edit: `Dimension` is `keyof QuotaConfig`, so it widens the moment the config key
+lands, which is exactly why the ternary beside it is dangerous — the compiler
+catches nothing. Charging for a line that writes itself, and not charging for the
+line that silently produces the wrong word, is the shape of a cost estimate
+assembled by looking at type declarations.
+
+Seven places on this reading against "a new key plus a one-line constraint
+change" in the written prediction. **T066 counts what was actually paid and does
+not carry this number into the counting** — a prediction read before a measurement
+is how a measurement becomes a confirmation, and this table has already been wrong
+once about which places cost anything.
 
 ---
 
@@ -451,9 +464,12 @@ fences** between them in the English chapters:
 | `services/api/src/quotas/quota.error.ts` | 1 | |
 | `services/api/src/limits/rate-limit.middleware.ts` | 1 | |
 
-`vitest.coverage.config.mts` and `eslint.config.mjs` also carry entries in
-`fences/post-series.md` — two and one respectively — so a change to either has to
-decide which side of the series it belongs on before it is written.
+Three of the four build-gate files also carry entries in `fences/post-series.md`
+— `turbo.json` 1, `vitest.coverage.config.mts` 2, `eslint.config.mjs` 1,
+`compose.yaml` 0 — so a change to any of them has to decide which side of the
+series it belongs on before it is written. An earlier draft of this footnote gave
+two of the three and omitted `turbo.json`, which is the same undercount the table
+above it exists to stop.
 
 **This table has now been wrong in all three analysis passes, and the pattern is
 worth more than the number.**
@@ -656,7 +672,9 @@ socket that has no place for one.
 This is the 4001 path's shape, for the 4001 path's stated reason. It reaches a
 browser, where a raw HTTP refusal does not. It puts the resume date somewhere a
 close reason string could not hold it. And it emits, for the first time in
-eleven chapters, a code the protocol declared in 1.3 and named for exactly this.
+nineteen published chapters, a code the protocol declared in 1.3 and named for
+exactly this. Counted, not estimated: 27 chapters have published, part-1 runs
+`chapter-01` to `chapter-04`, and nineteen of them come after 1.3.
 
 **What it costs, counted.**
 
@@ -690,8 +708,8 @@ drainQuotaNotifications(db, batchSize, deliver, onError)
 ```
 
 — a function that claims undelivered rows **across every environment in the
-database**. It is the fifth member of a family the project already treats as
-dangerous. The other members are named in `eslint.config.mjs`:
+database**. It belongs to a family the project already treats as dangerous — six
+of whose members are named in `eslint.config.mjs`, and this one is not:
 
 ```
 drainOutbox, drainDueDeliveries, drainDisableNotifications,
@@ -715,7 +733,12 @@ Chapter 3.10 added the function and listed it nowhere.
   which is true whether it drained this test's row or somebody else's. A count
   compared against zero survives any amount of interference.
 
-That is instance thirteen of this project's recurring fault, sitting green.
+**Not "instance thirteen".** The ledger's highest recorded instance is 12
+(`specs/031-chapter-3-10/baseline.txt:479`), and nothing here has failed — no test
+is red, no fixture has been damaged. What this is: an operation of exactly the
+shape those twelve took, in a place neither guard watches, sitting green. Whether
+it becomes the thirteenth depends on what another suite leaves in the database,
+which is the property the ledger records and not one this pass can assert.
 
 **Decisions, three of them, because the problem has three halves.**
 

@@ -246,12 +246,24 @@ against the wrong pre-image.
 ```bash
 for i in $(seq 1 20); do
   pnpm test:integration >"/tmp/ch311-run-$i.txt" 2>&1
-  echo "$i exit=$? tests=$(grep -oP 'Tests\s+\K[0-9]+' "/tmp/ch311-run-$i.txt" | tail -1)"
+  code=$?
+  line=$(grep -E '^\s*Tests ' "/tmp/ch311-run-$i.txt" | tail -1)
+  total=$(printf '%s' "$line" | grep -oE '\([0-9]+\)$' | tr -d '()')
+  failed=$(printf '%s' "$line" | grep -oE '[0-9]+ failed' | grep -oE '[0-9]+')
+  echo "$i exit=$code total=${total:-?} failed=${failed:-0}"
 done
 ```
 
-Expected: twenty green, and the same test count in every run (SC-014). Chapter
-3.10 needed three attempts and invalidated two of them itself — one by editing
+Expected: twenty green, `failed=0`, and the same `total` in every run (SC-014).
+
+**Read the trailing `(N)`, not the first number on the line.** Vitest prints
+`Tests      473 passed (473)` on a green run and
+`Tests  1 failed | 6 passed (7)` on a red one, so a pattern anchored to the first
+integer after `Tests` reports **1** for the red run — the failure count, in the
+column labelled total. That is wrong only when a run fails, which is the run this
+battery exists to characterise.
+
+Chapter 3.10 needed three attempts and invalidated two of them itself — one by editing
 source mid-battery, one by running a concurrent `pnpm turbo run test --force`
 whose `nest build` rewrote `dist/` under a running import.
 

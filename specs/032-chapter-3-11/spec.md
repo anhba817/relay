@@ -195,8 +195,12 @@ arrives.
   named, not discovered on a bill.
 - **A browser cannot read the refusal.** Chapter 3.8 met this with the 429 at the
   same door: a browser `WebSocket` gives the page no status code and no body from
-  a failed upgrade. Whatever this chapter does about the 402 must be the same
-  answer 3.8 gave about the 429, or an explicit change to it.
+  a failed upgrade. This edge case asked for either 3.8's answer or an explicit
+  change to it, and **the change is the one taken**: the api's 402 stops at the
+  gateway, and the client is refused with an error frame and close code 4008, both
+  of which a browser can read. 3.8 could not do that because its refusal needed a
+  `Retry-After` and a close frame has nowhere to put one; a quota refusal carries a
+  date in a message instead (FR-030).
 - **Accounting state that grows with time rather than with connections.** The
   naive record of "which minutes have I already credited" is one row per
   connection per minute, which is tens of millions of rows a month for a
