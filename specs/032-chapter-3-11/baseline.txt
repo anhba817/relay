@@ -555,3 +555,24 @@ consecutive green runs of that file afterwards.
 
 **The battery's real yield, counted**: three defects across two attempts, none of
 them findable by reading, and two of them older than this chapter.
+
+## T076 — the page, counted
+
+  prose words     3,292      gate 2,000–4,000        INSIDE
+  fences           9         counted from the page
+  <Why>            4
+  <Trap>           4         gate ≥1 for a code chapter
+  <Checkpoint>     1
+  <ForwardRef>     1
+  <Figure>         4         gate 2–4, ≥1 per half
+
+**T076a is not triggered.** The estimate was 3,000–3,600 and the page came in at
+3,292 — inside the range for the first time in this part. Chapter 3.10's estimate
+ran 18% high against its own page; this one is 2.4% below the midpoint, which is
+not skill so much as an estimate made after four chapters of evidence about how
+long this author's chapters run.
+
+Phase 7 stays in the chapter. The seam was there and did not need to be used.
+
+Counted on the finished page rather than estimated, which is the rule chapter 3.8
+established after 3.5 shipped 39 fences against an estimate of 22.
