@@ -494,19 +494,51 @@ movement as a result.
 
 ---
 
-## R17 — The fixed port, and why it is not this chapter's file
+## R17 — The fixed port is in the other file with that name, and nothing fences it
 
-**Finding.** `services/api/src/limits/limits.itest.ts` binds `?? 4124`.
-`startApi()` in the same lane binds 4123. Vitest runs files in parallel, and back to
-back a previous run's child can still hold the port — at which point the new child dies
-on `EADDRINUSE` and `waitForHealth` gets its 200 from the **old** api, serving a
-different environment's signing secret. Chapter 3.11 spent a diagnosis on three
-assertions that named none of that.
+**Two corrections, both measured, both to claims this chapter inherited rather than
+checked.**
 
-**Decision.** A random high port, as `session.itest.ts` and `meter.itest.ts` now use.
-The file is chapter 3.8's fence, so the change lands in
-`relay-tutorial/fences/post-series.md` — a published chapter may only fence what it
-teaches, and 3.8 does not teach port selection.
+**The file is `services/gateway/src/limits.itest.ts`, not the api's.** CLAUDE.md and
+chapter 3.11's notes say "`limits.itest.ts` binds a fixed api port (`?? 4124`)", and
+this repository has two files with that basename. The port is in the gateway's:
+
+```
+services/gateway/src/limits.itest.ts:123
+  const port = Number(process.env.RELAY_LIMITS_ITEST_API_PORT ?? 4124);
+```
+
+`services/api/src/limits/limits.itest.ts` binds nothing. It is the file that fails when
+the lane has no platform credential (R22), which is how the two got conflated. An
+earlier draft of this research, of the plan and of the task list all named the api's
+file, so the fix would have edited a file with no port in it and left the defect
+standing.
+
+**And neither file is fenced by any chapter or by `post-series.md`.** Measured with
+`grep -rn 'title="…limits.itest.ts"'` across `app/(en)`, `app/(vi)` and `fences/`: no
+hits for either path. 3.11's notes call it "another chapter's fenced file"; it is not
+one. The prose mentions in chapters 3.8 and 3.11 discuss the file without fencing it,
+and `services/gateway/src/limits.itest.ts` appears inside chapter 3.8's fence of
+`eslint.config.mjs` as a string in an ignores array — which is a fence of the config,
+not of the test.
+
+**So the port fix needs no fence work at all.** No chapter amendment, no post-series
+entry. That is a smaller change than three documents claimed.
+
+**The fault itself is unchanged.** `startApi()` binds 4123 and this file binds 4124;
+vitest runs files in parallel, and back to back a previous run's child can still hold
+the port, at which point the new child dies on `EADDRINUSE` and `waitForHealth` gets its
+200 from the **old** api serving a different environment's signing secret. Chapter 3.11
+spent a diagnosis on three assertions that named none of that.
+
+**One thing that makes it worse than it looks.** The override exists and cannot be used:
+`RELAY_LIMITS_ITEST_API_PORT` is not in `turbo.json`'s `test:integration` env allowlist,
+and turbo's strict env mode filters what it does not declare — so 4124 is the only value
+that ever runs under `pnpm test:integration`. The escape hatch is unreachable from the
+command everybody uses.
+
+**Decision.** A random high port, as `session.itest.ts:106` (`4400 + random*200`) and
+`meter.itest.ts:64` (`4610 + random*60`) now use.
 
 ---
 
@@ -536,8 +568,16 @@ proof of coverage.
 **Finding.** This chapter carries more than any Part 3 chapter has: a derived suite over
 22 routes plus a socket surface, a structural check, eleven documented error codes, a
 new published document with three lists to keep in step, two endpoints, a sealed
-package, and three inherited debts. Two chapters in this part have already exceeded the
+package, and four inherited debts. Two chapters in this part have already exceeded the
 2,000–4,000 word bound, both discovered afterwards.
+
+**And the stronger argument was sitting unused: the fence surface.** Counted from the
+task list, restricted to `relay-platform` paths, this chapter creates **17 new fenced
+files** and amends **13 existing ones** — 30 files against chapter 3.11's 21 files and
+34 fences, and against chapter 3.5's 39 fences on a budget first estimated at 22. Every
+amended file needs a diff fence in this chapter's own prose or the chain's HEAD property
+fails, so the fence count is not incidental to the page length; it is a floor under it.
+An argument about prose words alone was the weaker half of the case.
 
 **Decision.** The documentation half — the error reference, the registry consolidation,
 `docs_url`, the slugifier, the sealed package — is sequenced **last**, so the split can
@@ -563,20 +603,34 @@ deferral has a chapter number rather than a promise, and chapter 2.8's promise t
 
 ## R21 — What lands in the chapter's fences and what lands in post-series
 
+**Three destinations, not two.** An earlier draft of this table had two and put four
+changes in the wrong one.
+
 | Change | Where |
 |---|---|
 | the gauntlet, the structural check, the socket suite | chapter fences |
 | the two endpoints and their tests | chapter fences |
 | the registry consolidation, `docs_url`, `serve()`'s option | chapter fences |
-| `docs/08-error-reference.md` | a source document, mirrored |
-| the slugifier's one character, the docs registry, the two script lists | chapter fences |
 | `packages/outsider` and its lint rule | chapter fences |
+| `eslint.config.mjs`'s restored itest ban (R23) | chapter fences |
+| `turbo.json`'s env entries | chapter fences |
 | `sentinel.sql`'s four tables and the `to_jsonb` fix | **post-series** |
-| `limits.itest.ts`'s port | **post-series** |
+| `services/gateway/src/limits.itest.ts`'s port | **neither — the file is not fenced** |
+| `docs/08-error-reference.md` | **outside the chain** — a source document, mirrored |
+| the slugifier, `lib/docs.ts`, the two shell scripts | **outside the chain** — tutorial-repo files |
 
-The rule is the one the tutorial plan states: a chapter may only fence a change it
-discusses. The guard is feature 030's surface and teaches no chapter; the port is
-chapter 3.8's file and this chapter does not teach port selection.
+**Why the third destination exists.** `scripts/check-fence-chain.mjs:38` resolves every
+fence title against `relay-platform`, so a file in `relay-tutorial` or in the parent
+repository's `docs/` cannot be fenced at all — it is covered by `pnpm build` and
+`pnpm check:docs` instead. The earlier draft filed the slugifier and the two shell
+scripts under "chapter fences", which would have sent implementation looking for a
+mechanism that does not apply to them.
+
+**And one row is empty on both sides.** Neither `limits.itest.ts` is fenced anywhere
+(R17), so the port fix needs no fence entry of any kind.
+
+The rule for the first column is the one the tutorial plan states: a chapter may only
+fence a change it discusses. The guard is feature 030's surface and teaches no chapter.
 
 ---
 
@@ -606,3 +660,61 @@ with one clear message instead of eleven confusing ones — is not scheduled her
 recorded rather than absorbed. This chapter's subject is a suite that names its own
 targets; a lane that fails eleven ways when a secret is missing is the same fault at a
 different altitude, and saying so is cheaper than fixing it badly.
+
+---
+
+## R23 — The lint ban Principle I relies on is off for every integration test
+
+**Measured, by running the gate on a file that should have failed it.**
+
+```
+$ npx eslint services/api/src/quotas/period.itest.ts
+$ echo $?
+0
+```
+
+That file's first line is `import { and, eq } from "drizzle-orm"`, and it is not in the
+ignores list of the block that forbids exactly that import. It passes because
+`eslint.config.mjs` has a **second** block, `files: ["**/*.itest.ts"]`, whose `rules`
+key also names `no-restricted-imports` — feature 030's restriction on the global-admin
+drain functions. In ESLint's flat config, the last configuration for a rule name
+**replaces** the earlier one rather than merging with it. So for every `.itest.ts` in the
+repository, the `pg` and `drizzle-orm` ban is not in force.
+
+**Constitution I's third bullet says "raw connection access outside that layer is
+lint-forbidden".** It is forbidden in two thirds of the tree and permitted in the third
+where tests live — which is where a cross-tenant read is easiest to write by accident,
+because a test has a database handle in scope already.
+
+**The config states the opposite in a comment**, three lines above the block that
+disables it:
+
+```
+// `limits.itest.ts` is the one TEST allowed a raw client, and for a reason
+// the rule cannot express: its whole subject is that the api and the gateway
+// increment the SAME key, and the only way to check that is to read the key
+// with neither of their code.
+```
+
+Every test is allowed a raw client. The `ignores` entry for
+`services/gateway/src/limits.itest.ts` in the first block has been redundant since the
+second block was added, and the comment explaining it has been wrong for as long.
+
+**Why this chapter owns it.** User story 6 is "the things that verify isolation are
+themselves verified", and this is one of them — a rule the constitution names as a
+mechanism, believed to be running, not running. It is the same shape as the guard
+watching five tables while a chapter's success criterion reported silence from the four
+it was not watching.
+
+**How to restore it without breaking the lane.** The two rule configurations have to
+coexist rather than replace each other: either merge both restriction sets into one
+block scoped to `**/*.itest.ts`, or move the global-admin restriction to a differently
+named rule instance. Then measure which files genuinely need `pg` or `drizzle-orm` — at
+least `services/api/src/db/*.itest.ts`, `services/api/src/quotas/*.itest.ts` and
+`services/gateway/src/limits.itest.ts` do today — and give each an entry with a reason,
+by the same doctrine as `exempt.ts`: a list, not a pattern.
+
+**What it does not buy, said before the chapter claims it.** The rule sees an import.
+A test that reaches raw SQL through a helper in another file, or through the repository's
+own `db` handle, is invisible to it — which is the boundary feature 030's contracts
+already drew for the same rule at a different scope.

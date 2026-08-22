@@ -58,7 +58,9 @@ and fails on divergence, as `db-url.test.ts` and `bait-size.test.ts` do — is t
 pattern for a duplicated *constant* and this would be a duplicated *function*.
 
 **The base is configurable with a published default.** `RELAY_DOCS_BASE_URL` falls back
-to the published reference's URL. A placeholder host is what got the project here; a
+to the published reference's URL — and the variable has to be declared in `turbo.json`'s
+`test:integration` env list, because turbo's strict env mode filters what it does not
+declare and an undeclared variable leaves the test silently exercising the default. A placeholder host is what got the project here; a
 configurable value with a real default is honest today and correct when the product has
 its own domain.
 

@@ -54,7 +54,9 @@ one. Plan phase 11 is four phases in practice, the shape chapter 3.11 used.
 equivalent table was wrong in every analysis pass — 12/62, then 13/66, then 17/77 — and
 every error came from adding a row to a list instead of regenerating it. This one was
 wrong too on its first draft, mapping the outsider tasks to `T085–T093` when they are
-`T097–T104`.
+`T097–T104`; and analysis pass one found a row naming
+`services/api/src/limits/limits.itest.ts` for a port that is in
+`services/gateway/src/limits.itest.ts`.
 
 | Tasks | File | Why there |
 |---|---|---|
@@ -72,7 +74,10 @@ wrong too on its first draft, mapping the outsider tasks to `T085–T093` when t
 | T069–T071 | `packages/test-harness/src/sentinel.sql` | feature 030's surface — **post-series fences** |
 | T072 | `packages/test-harness/src/guard.itest.ts` | driving each newly guarded table — **post-series fences** |
 | T073, T074 | `packages/test-harness/src/exempt.ts` | the list and its comment — **post-series fences** |
-| T076 | `services/api/src/limits/limits.itest.ts` | chapter 3.8's file — **post-series fences** |
+| T069a–T069e | `eslint.config.mjs` | the itest lint ban, restored and bounded (R23) |
+| T076 | `services/gateway/src/limits.itest.ts` | the random port — **fenced by nothing**, so no fence entry either way (R17) |
+| T082a, T097a | `turbo.json` | env entries; strict mode filters what it does not declare |
+| T117a–T117c | published chapter pages | `REVISED` notes and illustrative JSON this chapter falsifies |
 | T080–T082 | `packages/protocol/src/codes.ts` | eleven codes and one URL function |
 | T091, T092 | `packages/protocol/src/codes.test.ts` | completeness, both directions |
 | T086 | `docs/08-error-reference.md` | a source document, mirrored by the site |
@@ -107,7 +112,7 @@ the gates, the battery, the counts, the three reintroductions, the two scratch p
 - [ ] T010a [P] Unit test `compare.ts` in `services/api/src/isolation/compare.test.ts`: two bodies differing only in `request_id` are equal, two differing in `message` are not, and a non-object body is handled. Pure, no database
 - [ ] T011 Define the target and classification shapes in `services/api/src/isolation/targets.ts` per `data-model.md` §2: `method`, `path`, `shape` in `read | list | write | credential | exempt`, and `because` required when the shape is `exempt` (FR-003)
 - [ ] T012 [P] Write the classification list in the same file, covering all 22 routes: three exempt with reasons (`GET /healthz`, `GET /auth/:provider/start`, `GET /auth/:provider/callback`), one `credential` (`POST /auth/dev-token`), one `list` (`GET /v1/webhooks`), two `read`, and the rest `write`. **`POST /auth/dev-token` is the shape the specification did not anticipate** — it takes no tenant-owned identifier and is still tenant-scoped, so filing it as exempt is how a route stops being attacked (R4)
-- [ ] T013 [P] Add the two-tenant fixture's gateway-side twin to `services/gateway/src/isolation-fixtures.ts` — two environments and a user token for each, minted through the api child the lane already spawns
+- [ ] T013 [P] Add the two-tenant fixture's gateway-side twin to `services/gateway/src/isolation-fixtures.ts` — two environments and a user token for each, minted through the api child the lane already spawns (FR-007, FR-011)
 - [ ] T014 [P] Confirm no new file needs an entry in `packages/test-harness/src/exempt.ts` or the matching `eslint.config.mjs` ignores. If one does, add it to **both** — the lists' own comments say they must agree, and chapter 3.11 found `drainQuotaNotifications` on neither (FR-042)
 
 **Checkpoint**: two tenants can be created, their answers can be compared, and a target has a shape — and nothing attacks anything yet.
@@ -132,7 +137,7 @@ the gates, the battery, the counts, the three reintroductions, the two scratch p
 - [ ] T024 [P] [US1] Write the `list` attack in the same file: a credential for an environment that owns nothing gets an empty page rather than a 404, and no row belonging to another environment (FR-006)
 - [ ] T025 [US1] Write the `write` attack in the same file: read the target tenant's rows directly before and after, and assert both the paired-response equality and that no row moved. **The state read is the point** — a 404 that completed the write is the case no status code reveals (FR-005, SC-004)
 - [ ] T026 [P] [US1] Write the `credential` attack in the same file: a key for environment A mints a dev token, and that token is refused against a channel in B (FR-004, R4)
-- [ ] T027 [US1] [US1] Wire `services/api/src/isolation/gauntlet.itest.ts` to boot `AppModule` with `Test.createTestingModule`, as nine api suites already do, and run every derived target through the attack for its shape
+- [ ] T027 [US1] Wire `services/api/src/isolation/gauntlet.itest.ts` to boot `AppModule` with `Test.createTestingModule`, as nine api suites already do, and run every derived target through the attack for its shape
 - [ ] T028 [P] [US1] Cover the two `read` targets: `GET /v1/webhooks/:id` and `GET /v1/channels/:channelId/messages` (FR-004)
 - [ ] T029 [P] [US1] Cover the `list` target: `GET /v1/webhooks` (FR-006)
 - [ ] T030 [P] [US1] Cover the public `write` targets: `POST /v1/channels/:channelId/messages`, and `POST /v1/webhooks/:id/rotate-secret`, `/enable`, `/disable`, `/test`, and `DELETE /v1/webhooks/:id` (FR-005)
@@ -153,7 +158,7 @@ the gates, the battery, the counts, the three reintroductions, the two scratch p
 **Goal**: the leak that has no endpoint yet — a table that carries no tenant.
 
 - [ ] T037 [US1] Write `services/api/src/isolation/tenant-scope.itest.ts`: for every base table in `public`, derive `direct`, `hop`, `spine` or `unscoped` from `information_schema` per `data-model.md` §4 (FR-012)
-- [ ] T038 [P] [US1] Assert the counts: 12 direct, 2 hop (`members` and `messages`, both through `channels`), 7 spine, 1 unscoped. A table matching none of the four fails the check until somebody classifies it
+- [ ] T038 [P] [US1] Assert **totality, not counts**: every base table falls into exactly one of the four classes, and a table matching none fails the check until somebody classifies it. Record the counts in `baseline.txt` instead of asserting them — `__sentinel_environments` is created by the harness and exists only after the lane has run, so "12 direct" is 11 or 12 depending on how the database was built (FR-012, SC-007)
 - [ ] T039 [US1] Write the `spine` and `unscoped` lists explicitly with a reason each — `organisations`, `applications`, `environments`, `humans`, `memberships`, `consumed_events`, `schema_migrations`, and `outbox`. A list, not a pattern, for feature 030's stated reason
 - [ ] T040 [US1] **Record the `outbox` finding in the list's own comment, with its numbers.** `outbox` is `id, subject, payload, created_at, published_at` — no tenant column and no foreign key, so constitution I's second clause ("directly or through a single foreign-key hop") is not true of it. Its tenant is `payload->>'environment_id'`, which is neither. The fix measures at **one insert site** (`repository.ts:2823`, inside `Repository`, which already holds `this.environmentId`) with an exact backfill, over **286,871 rows** in the test lane. This chapter does not fix it: a migration on the write path of every send does not belong in a milestone chapter (R7)
 - [ ] T040a [US1] State in the same comment that this is an escalation and not an exemption. The constitution's governance section requires a conflict to be "resolved explicitly by amendment rather than ignored", so the decision — add the column, or amend the clause — is named as owed rather than granted by a test's allow-list
@@ -169,7 +174,7 @@ the gates, the battery, the counts, the three reintroductions, the two scratch p
 
 **Goal**: a credential for one environment hears, sends and resumes nothing belonging to another.
 
-- [ ] T044 [US1] Write `services/gateway/src/isolation.itest.ts` with the gateway in process and the api as a child, the arrangement chapter 3.2 established and 3.11 chose for the same reason
+- [ ] T044 [US1] Write `services/gateway/src/isolation.itest.ts` with the gateway in process and the api as a child, the arrangement chapter 3.2 established and 3.11 chose for the same reason (FR-007, R6)
 - [ ] T045 [P] [US1] Attack the session: a token minted for environment A connects, and `channel_ids` contains nothing belonging to B (FR-007)
 - [ ] T046 [P] [US1] Attack the send: a frame into a channel belonging to B is refused, and B's channel gains no message — read directly, not inferred from the refusal (FR-007)
 - [ ] T047 [P] [US1] Attack the resume: a cursor naming B's channel backfills nothing (FR-007)
@@ -191,9 +196,9 @@ the gates, the battery, the counts, the three reintroductions, the two scratch p
 - [ ] T052 [US5] Fix `addMember` in `services/api/src/db/repository.ts`. **It cannot back an endpoint as written**: there is no `ON CONFLICT` and `members`' primary key is `(channel_id, user_id)`, so a repeat raises a unique violation that `ProtocolErrorFilter` renders as `internal_error`. Its single boolean also conflates added, channel-not-yours and user-not-yours — correct for isolation, wrong for an idempotent endpoint (R14a)
 - [ ] T053 [P] [US5] Write `services/api/src/channels/channels.schema.ts`: the create body (`external_id`, `type`, optional `name`) and the members body (`user_ids`, capped at 100 per FR-CHN-06), both zod and both rejecting unknown fields (NFR-SEC-04)
 - [ ] T054 [US5] Write `services/api/src/channels/channels.service.ts`: idempotent creation on the customer-supplied identifier, and a members path that reads the channel scoped first, then upserts. The scoped read is what makes a foreign channel and an absent one answer identically while "already a member" stays a success (FR-016, FR-017, FR-019)
-- [ ] T055 [US5] Write `services/api/src/channels/channels.controller.ts`: `POST /v1/channels` and `POST /v1/channels/:channelId/members`, both behind `CredentialGuard` with `@Accepts("application")`, per `data-model.md` §7
+- [ ] T055 [US5] Write `services/api/src/channels/channels.controller.ts`: `POST /v1/channels` and `POST /v1/channels/:channelId/members`, both behind `CredentialGuard` with `@Accepts("application")`, per `data-model.md` §7 (FR-016, FR-019)
 - [ ] T056 [P] [US5] Return `201` on creation and `200` on the idempotent repeat — the distinction chapter 2.3 drew for a duplicate send, and one an integrating developer can act on. FR-CHN-02 says return the existing channel, not return the same status (FR-017)
-- [ ] T057 [US5] Register the controller in `services/api/src/app.module.ts`
+- [ ] T057 [US5] Register the controller in `services/api/src/app.module.ts` (FR-016, FR-019)
 - [ ] T058 [P] [US5] Integration tests in `services/api/src/channels/channels.itest.ts`: creation, the idempotent repeat, two tenants using the same external id independently, members added, and users created on first membership (FR-016 to FR-019, SC-014)
 - [ ] T059 [P] [US5] Test that adding the same member twice is a success naming them as already a member, not a 500 (T052's fault, asserted rather than assumed)
 - [ ] T060 [P] [US5] Test the foreign cases directly here as well as through the gauntlet: another tenant's channel id answers exactly as an absent one, for both endpoints, and that channel's membership is unchanged (FR-018, US5 scenario 6)
@@ -228,6 +233,11 @@ the gates, the battery, the counts, the three reintroductions, the two scratch p
 
 **Independent test**: plant a sentinel row in each of the four usage tables, drive a cross-environment mutation, confirm refusal.
 
+- [ ] T069a [US6] **Restore the lint ban Principle I relies on.** `eslint.config.mjs` has two flat-config blocks naming `no-restricted-imports`, and the second — `files: ["**/*.itest.ts"]`, feature 030's global-drain restriction — **replaces** the first rather than merging with it, so the `pg` and `drizzle-orm` ban is not in force for any integration test. Measured: `npx eslint services/api/src/quotas/period.itest.ts` exits 0 while that file imports `drizzle-orm` and is not in the ignores list. Merge both restriction sets into one configuration for `**/*.itest.ts` rather than leaving two that overwrite each other (FR-043, R23)
+- [ ] T069b [US6] Measure which integration tests genuinely need the driver or the query engine, and give each an ignores entry with a reason — at least `services/api/src/db/*.itest.ts`, `services/api/src/quotas/*.itest.ts` and `services/gateway/src/limits.itest.ts` today. A list with reasons, not a directory pattern, by the doctrine `exempt.ts` states (FR-043, SC-028)
+- [ ] T069c [US6] Correct the comment above the first block. It reads "`limits.itest.ts` is the one TEST allowed a raw client, and for a reason the rule cannot express" — every test is allowed one, and has been since the second block was added. The `ignores` entry for `services/gateway/src/limits.itest.ts` has been redundant for as long (FR-043)
+- [ ] T069d [US6] Add an import of `drizzle-orm` to an integration test outside the permitted set, confirm `pnpm lint` fails, and remove it. State the count of legitimately exempted files (SC-028)
+- [ ] T069e [P] [US6] State in the same comment what the restored rule does not buy: it sees an import, so a test reaching raw SQL through a helper in another file or through the repository's own `db` handle is invisible to it — the boundary feature 030's contracts already drew for this rule at a different scope (FR-043)
 - [ ] T069 [US6] Add the four tables to the trigger array in `packages/test-harness/src/sentinel.sql`: `usage_periods`, `usage_active_users`, `quota_notifications`, `usage_connections` (FR-036)
 - [ ] T070 [US6] Change the refusal message's key expression to `coalesce(to_jsonb(OLD) ->> 'id', to_jsonb(OLD)::text)`. **Extending the array alone produces a guard that fails on the writes it permits** — three of the four have composite primary keys and no `id`, and `OLD.id` raises `record "old" has no field "id"` at execution time. Measured on both shapes in R15 (FR-037)
 - [ ] T071 [P] [US6] Add a comment beside it stating that the fallback prints the row, that these four carry counters, dates and identifiers and no message text, and that the same fallback on `messages` would be an NFR-SEC-06 violation
@@ -235,7 +245,7 @@ the gates, the battery, the counts, the three reintroductions, the two scratch p
 - [ ] T073 [P] [US6] Update `packages/test-harness/src/exempt.ts`'s comment: the guarded set is nine tables, not five. Its doc comment currently says "the five in `sentinel.sql`"
 - [ ] T074 [P] [US6] Check whether any existing exempt entry now needs table names added, since four newly guarded tables may be written across environments by a suite already on the list — `notifications.itest.ts` drives the quota relay, which claims `quota_notifications` rows globally (FR-042)
 - [ ] T075 [US6] Register `sentinel.sql` and `exempt.ts` changes in `relay-tutorial/fences/post-series.md`. Feature 030 publishes no chapter and a published chapter may only fence what it teaches (FR-039, R21)
-- [ ] T076 [US6] Replace the fixed `?? 4124` in `services/api/src/limits/limits.itest.ts` with a random high port, as `session.itest.ts` and `meter.itest.ts` now use, and register the change in `post-series.md` — chapter 3.8's file, and this chapter does not teach port selection (FR-041, R17)
+- [ ] T076 [US6] Replace the fixed `?? 4124` in **`services/gateway/src/limits.itest.ts`** with a random high port, as `session.itest.ts:106` (`4400 + random*200`) and `meter.itest.ts:64` (`4610 + random*60`) now use. **Two files are called `limits.itest.ts`** and the api's binds no port — the earlier draft of this task, the plan and the research all named the api's, so the fix would have edited the wrong file and left the defect. **No fence work**: neither file is fenced by any chapter or by `post-series.md`, measured, against 3.11's note calling it "another chapter's fenced file" (FR-041, R17)
 - [ ] T077 [P] [US6] Audit every suite that spawns an api or gateway for a fixed port and record the list in `baseline.txt`. `limits.itest.ts` is the one CLAUDE.md names; the audit is what makes SC-020 a measurement (SC-020)
 - [ ] T078 [US6] Run `pnpm coverage` and record `repository.ts` against T007's 241/266. Either close constitution VI's 100% clause or name every remaining uncovered branch with the reason it is uncovered. The ratchet may not end lower than it started (FR-040, SC-018)
 - [ ] T078a [US6] Cover what the gauntlet reaches in process. The suite exercises repository reads and writes with foreign ids, which is exactly the branch class the ratchet counts — measure before writing new tests, because chapter 3.11's R23 predicted a fall here and got a rise for this reason
@@ -254,9 +264,10 @@ the gates, the battery, the counts, the three reintroductions, the two scratch p
 - [ ] T080 [US4] Add the five missing keys to `ERROR_CODES` in `packages/protocol/src/codes.ts`: `invalid_request`, `forbidden`, `not_found`, `internal_error`, `connection_environment_conflict`, each with its one-line meaning (FR-024, FR-026)
 - [ ] T081 [US4] Type the status ladder in `services/api/src/protocol-error.filter.ts` as `ErrorCode`, so an unregistered code stops compiling rather than reaching the wire undocumented (FR-025)
 - [ ] T082 [P] [US4] Add `docsUrl(code)` beside the registry, reading a base from `RELAY_DOCS_BASE_URL` with the published reference's URL as the default, and returning base + `#` + the code verbatim (FR-027, `contracts/errors.md` §2)
-- [ ] T083 [US4] Replace all six construction sites with `docsUrl()`: `protocol-error.filter.ts:73`, `rate-limit.middleware.ts:122` and `:220`, `session.ts:72` and `:103`, and — via T084 — `service-kit`
+- [ ] T082a [US4] Add `RELAY_DOCS_BASE_URL` to `turbo.json`'s `test:integration` env list, and to the `test` task's inputs if a unit test reads it. **Turbo's strict env mode filters what it does not declare**, so an undeclared variable is invisible to the task and the test silently exercises the default. Chapter 3.11 needed exactly this entry for the gateway's credential; the live proof that it matters is `RELAY_LIMITS_ITEST_API_PORT`, which is absent from that list and therefore unusable — which is why 4124 is the only port that ever runs (FR-027, R17)
+- [ ] T083 [US4] Replace all six construction sites with `docsUrl()`: `services/api/src/protocol-error.filter.ts:73`, `services/api/src/limits/rate-limit.middleware.ts:122` and `:220`, `services/gateway/src/session.ts:72` and `:103`, and — via T084 — `packages/service-kit/src/index.ts:85`. **Full paths, not basenames**: resolving `limits.itest.ts` to the wrong one of two files is what analysis pass one found in T076 (FR-027)
 - [ ] T084 [US4] Give `ServeOptions` in `packages/service-kit/src/index.ts` a required field carrying the not-found `docs_url`, and supply it from `services/gateway/src/main.ts`. **The dependency inverts rather than being added**: service-kit declares no dependencies at all and `serve()` has exactly one caller, so the compiler makes that caller supply the URL and the package stays empty (R9)
-- [ ] T085 [P] [US4] Point the call sites that name their own code at the registry rather than at a string literal: `credential.guard.ts` ×2, `usage.controller.ts`, `messages.service.ts`, `session.controller.ts`, `rate-limit.middleware.ts` ×2, `gateway/session.ts`
+- [ ] T085 [P] [US4] Point the call sites that name their own code at the registry rather than at a string literal: `services/api/src/auth/credential.guard.ts` ×2, `services/api/src/internal/usage.controller.ts`, `services/api/src/messages/messages.service.ts`, `services/api/src/internal/session.controller.ts`, `services/api/src/limits/rate-limit.middleware.ts` ×2, `services/gateway/src/session.ts` (FR-025, FR-026)
 - [ ] T086 [US4] Write `docs/08-error-reference.md`: one `h2` per code, the heading being the code verbatim, each with meaning, cause and remedy. A retryable condition says what makes it retryable; one that is not says so (FR-024, FR-028)
 - [ ] T087 [US4] Add `_` to the kept character class in `slugifyHeading` in `relay-tutorial/components/docs/doc-article.tsx`, so `## quota_exceeded` anchors at `#quota_exceeded`. **Measured blast radius**: zero chapter `h2` headings contain an underscore, one docs heading does (`ADR-03 … last_sequence …`), and zero links anywhere in the site point at a `/docs/<slug>#anchor`. Without this, `docs_url` would need the same transform maintained in two repositories with no test able to see both sides (FR-027, R10)
 - [ ] T088 [P] [US4] Add the seventh `DocEntry` to `relay-tutorial/lib/docs.ts` with a `titleVi`. The Vietnamese route renders the same English source under a translated title with a standing note saying so, so no translation is owed (R11)
@@ -279,7 +290,8 @@ the gates, the battery, the counts, the three reintroductions, the two scratch p
 
 - [ ] T095 [US3] Write `scripts/seed-demo-tenant.mjs`: create an organisation, an application, a development environment and one key, and print the key. The sealed integration cannot complete an OAuth consent screen, and there is no key-management endpoint — chapter 3.2 deferred it to "the dashboard's chapter" (FR-032, R13)
 - [ ] T096 [US3] Document the seed command in `relay-platform/README.md` beside the compose and `pnpm dev` blocks, and **state which half of the constitution's clause it closes**: the clause says "`docker compose up` … including a seeded demo tenant", compose starts stores rather than services, so this closes the intent and not the letter (FR-032)
-- [ ] T097 [US3] Create `packages/outsider/` with `package.json` declaring **no `@relay/*` dependency**, plus `vitest.integration.config.mts` and a `test:integration` script. `vitest`, `ws` and `jose` resolve from the workspace root by the ordinary parent walk, so the package can run while declaring nothing (FR-030, R12)
+- [ ] T097 [US3] Create `packages/outsider/` with `package.json` declaring **no `@relay/*` dependency**, plus `vitest.integration.config.mts`, a `test:integration` script **and a `typecheck` script** — every other package in the workspace has one, and `pnpm typecheck` is `turbo run typecheck`, which silently skips a package that lacks the script. `vitest`, `ws` and `jose` resolve from the workspace root by the ordinary parent walk, so the package can run while declaring nothing (FR-030, R12)
+- [ ] T097a [US3] Add whatever the outsider suite reads from the environment to `turbo.json`'s `test:integration` env list — the api and gateway base URLs and the seeded credential at minimum. Under strict env mode an undeclared variable does not reach the task, and this package has no fallback to a workspace constant, by design (FR-031)
 - [ ] T098 [US3] Add a `no-restricted-imports` pattern rule for `packages/outsider/**` in `eslint.config.mjs`, refusing relative and absolute paths that climb out of the package. **This is the half pnpm cannot enforce**: `node_modules/@relay` does not exist at the workspace root so a package-name import cannot resolve, but `../../services/api/dist/…` is not a package specifier — and `packages/e2e/src/harness.ts` walks through that hole today with `createRequire` (FR-030, R12)
 - [ ] T099 [US3] Write `packages/outsider/src/integrate.itest.ts`: credential from the seed, `POST /v1/channels`, `POST /v1/channels/:id/members`, `POST /auth/dev-token`, `POST` a message, `GET` history, connect `ws://…/v1/ws`, receive (FR-031, SC-009)
 - [ ] T100 [P] [US3] Keep a running list of every fact the integration needed that published documentation did not contain, in `specs/033-chapter-3-12/gaps.md`, as it is written rather than afterwards (FR-033)
@@ -310,7 +322,7 @@ the gates, the battery, the counts, the three reintroductions, the two scratch p
 - [ ] T111 [P] Write the `TRAP` box on the empty target list — a derivation that finds nothing and passes — and the `WHY` boxes citing NFR-SEC-09, FR-TEN-05, constitution I and V
 - [ ] T112 [P] Write the section on what the suite does not cover, from `contracts/gauntlet.md` §7. A chapter that lists its defence's range is the difference between this suite and the nine assertions
 - [ ] T113 [P] Write the `outbox` finding into the chapter, with the numbers and the escalation. A milestone chapter that found a constitutional clause failing and did not say so is the failure mode this whole part is about
-- [ ] T114 **Count the finished page** — prose words outside fences, fences, figures, and the recurring boxes — and record it against the 2,000–4,000 bound. Two chapters in this part exceeded it and both were discovered afterwards (SC-022)
+- [ ] T114 **Count the finished page** — prose words outside fences, fences, figures, and the recurring boxes — and record it against the 2,000–4,000 bound. Two chapters in this part exceeded it and both were discovered afterwards. **Count the fences against the surface this chapter was planned to carry**: 17 new files and 13 amended, against chapter 3.11's 21 files and 34 fences, and chapter 3.5's 39 against an estimate of 22. An amended file needs a diff fence in this chapter's prose or the chain's HEAD property fails, so the fence count is a floor under the page rather than a by-product of it (SC-022, R19)
 - [ ] T115 **Decide the split with the number, not with a feeling.** If the page is over, Phases 9 and 10 become chapter 3.13 and the milestone goes with them, because the Phase 2 exit criterion is the second half. Record the decision and the count either way (R19, SC-022)
 
 **Checkpoint**: the page exists and has been counted rather than estimated.
@@ -319,8 +331,11 @@ the gates, the battery, the counts, the three reintroductions, the two scratch p
 
 ## Phase 13: Publication in both locales
 
-- [ ] T116 Regenerate this chapter's fences into `relay-tutorial/fences/part3-ch12.md` and confirm `pnpm check:fences` replays byte-exact
+- [ ] T116 Confirm the chapter's titled code fences replay byte-exact with `pnpm check:fences`. **There is no per-chapter fence file** — a fence is a titled code fence inside the page, and `relay-tutorial/fences/` holds `post-series.md` and nothing else. Every amended file needs a diff fence here, or the chain's HEAD property fails on the difference between the last fenced state and the file on disk
 - [ ] T117 [P] Confirm `post-series.md` carries the `sentinel.sql`, `exempt.ts` and `limits.itest.ts` changes and that no chapter fences a file it does not discuss (FR-039)
+- [ ] T117a Add a `REVISED` note to `relay-tutorial/app/(en)/part-1/chapter-04/walking-skeleton/page.mdx`, whose prose states that the `docs_url` host "is a placeholder until a docs site exists to make constitution V's promise real". After this chapter it resolves. `docs/07-tutorial-plan.md` §6's third defence requires the note — "never let prose and code disagree silently" — and chapter 3.11's close-out lists a shipped comment that had quietly stopped being true as one of the seven things implementation found
+- [ ] T117b Fix the illustrative JSON in `relay-tutorial/app/(en)/part-3/chapter-02/keys-and-tokens/page.mdx:1232` and `:1480`, which shows `"docs_url": "https://relay.example/docs/errors/…"` in a response body. **No checker sees these** — they are prose examples, not fences — so they rot silently. Fifteen occurrences of `relay.example/docs/errors` exist across six published pages; the fenced ones are correct as earlier states of the chain and must not be touched
+- [ ] T117c [P] Mirror T117a and T117b into the Vietnamese pages, and confirm `pnpm check:fences`'s mirror property still holds — the fence bodies are unchanged, so only prose moves
 - [ ] T118 Translate to `relay-tutorial/app/(vi)/vi/part-3/chapter-12/milestone-the-isolation-gauntlet/page.mdx` with the `translate-mdx` skill, fence bodies byte-identical
 - [ ] T119 [P] Add the chapter to `relay-tutorial/lib/tutorial.ts`'s manifest in both locales, and confirm the fence-delimiter count matches on both sides
 - [ ] T120 Run `pnpm lint`, `pnpm build`, `pnpm check:docs` and `pnpm check:fences` and record the file, chapter and locale counts (SC-023)
@@ -331,7 +346,7 @@ the gates, the battery, the counts, the three reintroductions, the two scratch p
 
 ## Phase 14: Close-out
 
-- [ ] T121 **Add the 3.13 row to `docs/07-tutorial-plan.md`** for the public channel and user surface — the rest of FR-CHN, FR-USR-03/04, and the key management chapter 3.2 deferred — and a paragraph recording why Part 3's milestone no longer sits last. FR-022 makes this a requirement: chapter 2.8's promise to "Part 3's tenancy work" is the eleven-chapter demonstration of what a deferral without a number costs (FR-022, R20)
+- [ ] T121 **Add the 3.13 row to `docs/07-tutorial-plan.md`** for the public channel and user surface — the rest of FR-CHN, FR-USR-03/04, and the key management chapter 3.2 deferred — and a paragraph recording why Part 3's milestone no longer sits last. **Fix the section heading in the same edit**: it reads "### Part 3 — Becoming a platform (7 chapters)" against 12 rows today and 13 after this. FR-022 makes this a requirement: chapter 2.8's promise to "Part 3's tenancy work" is the eleven-chapter demonstration of what a deferral without a number costs (FR-022, R20)
 - [ ] T122 [P] Update `docs/04-srs.md` if NFR-USE-05's verification note needs to name where the reference lives
 - [ ] T123 Write `specs/033-chapter-3-12/chapter-notes.md`: what the plan said against what shipped, the reintroductions and which assertions stayed green, the gap list and its dispositions, the exit-criterion verdict, the numbers, and what was left undone on purpose
 - [ ] T124 [P] Record the `outbox` escalation and its owner in `chapter-notes.md`'s "left undone" section, with the one-insert-site measurement, so the next feature to touch outbox writes inherits a number rather than a memory
@@ -366,6 +381,10 @@ Phase 1 (baseline) ─┬─> Phase 2 (foundational) ─┬─> Phase 3 (US1 RES
 
 - **Phase 8 is independent of Phases 3 to 7** and can run any time after Phase 1. It is
   placed after Phase 7 so the coverage measurement in T078 sees the gauntlet's branches.
+  **One exception: T069a to T069e should run early.** Restoring the itest lint ban can
+  fail files written in Phases 2 to 6, and finding that out after they are written costs
+  more than finding it out before. If it runs late, expect the gauntlet's own files to be
+  among the first it refuses.
 - **Phases 9 and 10 are the separable half.** If T114's count is over the bound, they
   become chapter 3.13 and the milestone goes with them.
 - T061 must run after T055, and re-runs Phase 3. T078 must run after Phase 3, or it
@@ -390,14 +409,19 @@ Phase 1 (baseline) ─┬─> Phase 2 (foundational) ─┬─> Phase 3 (US1 RES
   file.
 - **Phase 7**: none. Three reintroductions in sequence, each reverted before the next, or
   the second measures the first.
-- **Phase 8**: T071, T073, T074 and T077 alongside T069/T070/T072. T078 and T078a are
-  sequential and both wait on a coverage run.
+- **Phase 8**: T069a to T069e are one file and run first, in order — T069a before T069b
+  because there is nothing to bound until the rule applies. T071, T073, T074 and T077
+  alongside T069/T070/T072. T078 and T078a are sequential and both wait on a coverage
+  run.
 - **Phase 9**: T086 (the document), T087/T088/T089 (the site) and T080/T081/T082 (the
-  registry) are three independent groups. T083, T084 and T085 all follow T082. T090 to
+  registry) are three independent groups. T082a is a config file, parallel with all of
+  them and required before T093 can read a non-default base. T083, T084 and T085 all follow T082. T090 to
   T094 follow T086 and T089.
-- **Phase 10**: T095/T096 (the seed) before T099. T097 and T098 are parallel. T100 runs
+- **Phase 10**: T095/T096 (the seed) before T099. T097, T097a and T098 are parallel. T100 runs
   alongside T099 rather than after it — a gap list written afterwards is a memory.
 - **Phase 11**: T106, T108 and T109 alongside T105 and T107.
+- **Phase 13**: T117a, T117b and T117c are three published pages and independent of the
+  fence checks; T117c waits on the other two.
 
 ## Implementation strategy
 

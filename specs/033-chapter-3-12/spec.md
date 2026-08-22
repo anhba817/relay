@@ -123,10 +123,10 @@ token, sends a message over REST, reads it back over REST, connects a socket, an
 receives the next one — with no assistance and nothing she could only have learned
 from the source.
 
-That developer is represented by a package that is **mechanically forbidden from
-knowing anything**: it declares no workspace dependency, so it cannot import
-`@relay/protocol` for a frame type or the test harness for a fixture, and lint fails
-the build if it tries. Every fact it needs comes from published documentation. Any
+That developer is represented by `packages/outsider`, a package **mechanically
+forbidden from knowing anything**: it declares no workspace dependency, so it cannot
+import `@relay/protocol` for a frame type or the test harness for a fixture, and lint
+fails the build if it tries. Every fact it needs comes from published documentation. Any
 fact that is not there is a documentation defect, recorded with a decision.
 
 **Why this priority**: this is the phase exit criterion, and by the plan's Rule 2 a
@@ -446,13 +446,21 @@ report for the isolation file against the constitution's clause.
   against constitution VI's 100% clause for ordering, idempotency and tenant isolation,
   and MUST either close the clause or name every uncovered branch with the reason it is
   uncovered. The ratchet MUST end no lower than it started.
-- **FR-041**: `limits.itest.ts` MUST stop binding a fixed api port, using the random
-  high port `session.itest.ts` and `meter.itest.ts` now use. As another chapter's
-  fenced file, the change belongs in post-series rather than in an amendment to a
-  published chapter.
+- **FR-041**: `services/gateway/src/limits.itest.ts` MUST stop binding a fixed api
+  port, using the random high port `session.itest.ts` and `meter.itest.ts` now use.
+  **The path is stated in full because two files in this repository are called
+  `limits.itest.ts`** — the other is `services/api/src/limits/limits.itest.ts`, which
+  binds no port and is the one that fails when the lane's platform credential is
+  missing.
 - **FR-042**: Any test this chapter adds that drives a global operation MUST be named in
   the test harness's exemption list with the tables it needs, and in the matching lint
   ignores list.
+- **FR-043**: The lint rule that forbids raw data access outside the repository layer
+  MUST actually apply to integration tests. It does not today: a later flat-config block
+  for `**/*.itest.ts` redefines the same rule name and replaces the restriction, so every
+  `.itest.ts` may import the query engine and the driver. The chapter MUST restore the
+  ban, MUST correct the config comment claiming one named test file is "the one TEST
+  allowed a raw client", and MUST state which files legitimately need the exemption.
 
 ### Key Entities
 
@@ -488,8 +496,11 @@ report for the isolation file against the constitution's clause.
   names which assertion fired for each and which assertions stayed green.
 - **SC-006**: The shipped tree contains no reintroduction, shown by a check rather than
   by recollection.
-- **SC-007**: Every table in the live schema is shown to carry a tenant identifier
-  within one foreign-key hop, and a table added without one fails the check.
+- **SC-007**: Every table in the live schema is classified — a tenant identifier
+  directly, one foreign-key hop to a table that has one, or membership of an explicit
+  list with a reason — and a table matching none of the three fails the check. The
+  counts are recorded rather than asserted, because one of the tables is created by
+  the test harness and exists only after the lane has run.
 - **SC-008**: The sealed package's dependency list is empty of workspace packages, and
   adding one fails the build.
 - **SC-009**: The sealed integration completes a socket-delivered message from a
@@ -542,6 +553,10 @@ report for the isolation file against the constitution's clause.
 - **SC-027**: The chapter states which repository functions `packages/e2e`'s seeding
   seam still needs after this chapter, as a difference against the list it needed
   before — a shorter list, or the same list with the chapter that shortens it.
+- **SC-028**: An integration test importing the query engine or the driver from outside
+  the permitted directories fails lint, demonstrated by adding such an import and
+  running the gate. The count of files legitimately exempted is stated, and every one of
+  them carries a reason.
 
 ## Assumptions
 

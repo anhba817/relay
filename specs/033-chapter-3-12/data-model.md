@@ -67,7 +67,7 @@ Computed from `information_schema` for every base table in `public`.
 
 | Value | Meaning | Count today |
 |---|---|---|
-| `direct` | the table has `environment_id` | 12, one of which is the harness's own `__sentinel_environments` |
+| `direct` | the table has `environment_id` | 12 on a database the lane has run against, 11 on a fresh one — `__sentinel_environments` is the harness's, so the counts are recorded rather than asserted (SC-007) |
 | `hop` | exactly one foreign key reaches a table that has it | 2 — `members` and `messages`, both through `channels` |
 | `spine` | the tenancy tables themselves, plus infrastructure | 7 — `organisations`, `applications`, `environments`, `humans`, `memberships`, `consumed_events`, `schema_migrations` |
 | `unscoped` | neither, and not spine | **1 — `outbox`** |

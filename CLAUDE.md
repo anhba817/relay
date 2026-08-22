@@ -8,9 +8,10 @@ against what shipped) and `baseline.txt` for every measurement.
 the cross-tenant attack suite against every endpoint (NFR-SEC-09), and the SRS
 Phase 2 exit criterion: *"an external developer integrates using only public
 documentation, with no assistance"*. Its record is `specs/033-chapter-3-12/` —
-read `plan.md` for the eleven phases and `research.md` for R1 to R22, eleven of
-which were measured against a running stack rather than reasoned about. Next is
-`/speckit-tasks`, then analyze passes.
+read `plan.md` for the eleven phases and `research.md` for R1 to R23, twelve of
+which were measured against a running stack rather than reasoned about. Analysis pass
+one is applied: 17 findings, 3 CRITICAL, and its remediation is in the commit after the
+task list.
 
 **Two things the plan found that no document contained.** There is no public
 endpoint to create a channel or add a member — `packages/e2e/src/harness.ts` has
@@ -22,7 +23,10 @@ last in the part. And `outbox` carries no tenant column and no foreign key, so
 constitution I's second clause is not true of it — escalated in R7 as a
 governance decision (fix the column or amend the clause), not absorbed.
 
-All three debts 3.12 inherited are in its scope, and the plan says how:
+All three debts 3.12 inherited are in its scope, and a fourth turned up while
+analysing it — **Principle I's lint ban is not in force for any integration test**,
+because a second flat-config block for `**/*.itest.ts` replaces the rule instead of
+merging with it (R23, FR-043). The plan says how for all four:
 
 1. **`docs_url` resolves to nothing** for `rate_limited` (chapter 3.8) and
    `quota_exceeded` (3.10, 3.11). 3.11 declined to add a third instance. A

@@ -163,7 +163,11 @@ cd ../relay-tutorial
 pnpm build && pnpm check:docs && pnpm check:fences
 ```
 
-**Expect** all three green, with the fenced-file and chapter counts printed. `check:docs`
+**Expect** all three green, with the fenced-file and chapter counts printed. This
+chapter's fences are the titled code fences inside its own page — there is no
+per-chapter file under `fences/`, which holds `post-series.md` and nothing else — and
+every amended file needs a diff fence here or HEAD fails on the difference between the
+last fenced state and the file on disk. `check:docs`
 must be checked specifically for the seventh document: a document in the registry and
 not in the sync list renders a stale page and the drift check does not see it, because
 it only walks files its own glob selects.
@@ -231,8 +235,26 @@ for i in $(seq 1 20); do pnpm test:integration 2>&1 | tail -3; done
 ```
 
 **Expect** the same test count every run. A count that moves is a defect, not noise —
-chapter 3.11 found three that way, two of them older than the chapter. No suite may bind
-a fixed api port; check every suite that spawns one.
+chapter 3.11 found three that way, two of them older than the chapter.
+
+**The fixed port is in `services/gateway/src/limits.itest.ts`**, not the api's — two
+files carry that basename and only the gateway's binds `?? 4124`. Check every suite that
+spawns an api or a gateway, not just the one CLAUDE.md names.
+
+## V17 — the lint ban applies to tests again
+
+```bash
+npx eslint services/api/src/quotas/period.itest.ts     # before: exits 0, wrongly
+pnpm lint
+```
+
+That file imports `drizzle-orm` and is in no ignores list, and it passes today because a
+second flat-config block for `**/*.itest.ts` redefines `no-restricted-imports` and
+replaces the restriction. After T069a it must fail, or be listed with a reason.
+
+**Then** add a `drizzle-orm` import to an integration test outside the permitted set and
+confirm `pnpm lint` fails. Remove it. **Expect** the count of legitimately exempted files
+to be stated, each with a reason.
 
 ---
 
