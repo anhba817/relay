@@ -11,7 +11,7 @@ documentation, with no assistance"*. Its record is `specs/033-chapter-3-12/` —
 read `plan.md` for the eleven phases and `research.md` for R1 to R26, eighteen of
 which were measured against a running stack rather than reasoned about.
 
-**Nine analysis passes are applied — 69 findings, 6 CRITICAL** — reading, in order,
+**Ten analysis passes are applied — 75 findings, 6 CRITICAL** — reading, in order,
 the documents and the published series, the code, the build gates, the numbers, the
 governing documents, and task executability. The fifth found the worst of them: `POST /v1/channels` was about to
 accept `type: "private"` while **nothing in the platform reads `channels.type`**, so

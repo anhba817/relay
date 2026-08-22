@@ -520,3 +520,60 @@ No further surface is named here. Three passes have now ended with a stopping cl
 of those claims were wrong; the honest position is that no candidate remains that this
 analyst believes in, and the remaining risk is cheaper to find with the lane running than
 with the documents open.
+
+## Analysis pass ten — acceptance scenarios and edge cases
+
+Six findings, two HIGH, all applied. The spec has three kinds of normative content and
+**nine passes verified two of them.**
+
+Every earlier pass ran `grep '^- \*\*FR-'` and `'^- \*\*SC-'`, reported 100% coverage, and
+that number was true while answering a narrower question than it looked like. The 30
+acceptance scenarios and 13 edge cases had never been mapped to anything. They are where a
+story says what it wants in a reader's language, and six passes of corrections flowed into
+research, plan, tasks and contracts while two edge cases went on asserting models the code
+had already refuted.
+
+**The internal surface's edge case still carried pass two's refuted model.** It read
+"`RELAY_INTERNAL_CREDENTIAL` is not scoped to an environment … So the attack there is not
+'a foreign credential'" — true of five routes, false of three, and corrected in R5, in
+`contracts/gauntlet.md` §3, in T031 and in T031a. Four places updated, a fifth left
+standing, and the fifth is the one a human reads first. US1's scenario 7 encoded the same
+single shape as the only internal scenario, so T031a performed an attack the story never
+asked for. Scenario 7 is now three, covering the platform shape, the user-token shape, and
+a credential issued to the wrong service.
+
+**And four requirements added by passes two, three and five had tasks and success criteria
+but no scenario in the story that owns them** — FR-043's lint ban, FR-045's externally
+started platform, FR-047's refusal of `private`, FR-048's member ceiling, with FR-016's
+metadata alongside them. US5 had six scenarios and none of them mentioned the three things
+pass five put in the endpoints. Seven scenarios added; the spec now runs 37 scenarios and
+15 edge cases.
+
+The list edge case also still promised "an empty page" from a route that returns a bare
+array, and claimed a suite asserting 404 would be "wrong about half the surface" where the
+real proportion is one route in 22.
+
+## Ten passes, and three wrong stopping calls
+
+  pass  1   the documents + the published series      17 findings   2 CRITICAL
+  pass  2   the code                                   9            2
+  pass  3   the build gates                            7            1
+  pass  4   the numbers                                9            0
+  pass  5   the governing documents                    7            1
+  pass  6   task executability                         7            0
+  pass  7   the sixth pass's edits                     5            0
+  pass  8   the publication contract                   4            0
+  pass  9   translation mechanics + the battery        4            0
+  pass 10   acceptance scenarios and edge cases        6            0
+
+Seventy-five findings, six CRITICAL. **Analysis was declared finished three times — after
+passes four, seven and nine — and was wrong every time.** The three claims failed for one
+reason: each treated a surface as exhausted because a count came back clean, when the count
+covered less than the surface. 100% FR coverage was true and hid 37 unmapped scenarios;
+"the artifacts are read" was true and hid the series manifest; "no candidate remains" was a
+feeling with a table of nine passes behind it.
+
+What is now factually true rather than predicted: the spec's three normative kinds are all
+mapped, every requirement has a task, a success criterion and a scenario in its own story,
+and no check this analyst knows how to run is unrun. That is a statement about methods
+tried, not about defects remaining.

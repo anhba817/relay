@@ -77,9 +77,16 @@ exempt. Add a route with no classification and confirm the suite goes red.
 6. **Given** the WebSocket surface, **When** a token minted for one environment is
    used to subscribe to, resume from, or send into a channel belonging to another,
    **Then** each attempt is refused and nothing is delivered.
-7. **Given** the internal surface, **When** a request names one environment and
-   carries an identifier belonging to another, **Then** it is refused and nothing is
-   written.
+7. **Given** an internal route that accepts a platform credential, **When** a request
+   names one environment and carries an identifier belonging to another, **Then** it is
+   refused and nothing is written.
+8. **Given** an internal route that accepts an end-user token, **When** a token minted
+   for one environment is used against a resource in another, **Then** it is refused and
+   nothing is written.
+9. **Given** an internal route that accepts a platform credential, **When** the
+   credential presented was issued to a different internal service, **Then** it is
+   refused with the code reserved for that mistake, and the message names the service and
+   the permitted set rather than the credential.
 
 ---
 
@@ -150,6 +157,10 @@ Add a workspace import and confirm the build fails.
 5. **Given** the sealed integration passes, **When** the chapter states what that
    proves, **Then** it also states what it does not: sufficiency of content is not
    comprehensibility, and no automated suite can be confused.
+6. **Given** no running platform, **When** the sealed integration is run, **Then** it
+   fails with a message saying the platform is absent rather than starting one — the
+   platform is started by the documented command, from outside the package, on every
+   build.
 
 ---
 
@@ -211,6 +222,16 @@ two members, send a message, and receive it on a socket for one of those members
    receive messages sent to that channel.
 6. **Given** another tenant's channel identifier, **When** members are added to it,
    **Then** the request is refused and that channel's membership is unchanged.
+7. **Given** a create request naming a private channel, **When** it is submitted, **Then**
+   it is refused with the offending field named, because nothing in the platform enforces
+   private-channel access and an API that accepts the word would sell a guarantee the
+   platform does not keep.
+8. **Given** a channel holding a thousand members, **When** one more is added, **Then**
+   the request is refused with the limit's own error code and the channel still holds a
+   thousand.
+9. **Given** a create request carrying channel metadata, **When** the channel is read
+   back, **Then** the metadata round-trips; and metadata beyond the documented size bound
+   is refused.
 
 ---
 
@@ -244,6 +265,10 @@ report for the isolation file against the constitution's clause.
    names every uncovered branch and why.
 4. **Given** the integration lane, **When** two suites that spawn an api run in
    parallel or back to back, **Then** neither takes the other's port.
+5. **Given** an integration test that imports the query engine or the driver from outside
+   the permitted directories, **When** the lint gate runs, **Then** it fails — the ban
+   Principle I names as a mechanism applies to tests again, and the permitted set is a
+   list with a reason per entry.
 
 ### Edge Cases
 
@@ -254,16 +279,29 @@ report for the isolation file against the constitution's clause.
   `GET /healthz`, `GET /auth/:provider/start`. A classification that lets a route
   default to "no tenant identifier" is a classification that absorbs the next route
   silently, which is the failure mode feature 030 was built about.
-- **The internal surface is a tenant-selection authority, and cannot be attacked the
-  same way.** `RELAY_INTERNAL_CREDENTIAL` is not scoped to an environment: the gateway
-  serves every tenant and names the environment in the request. So the attack there is
-  not "a foreign credential" but "a request that names environment A and carries an id
-  from B". What protects the credential itself is the network and the secret, not a
-  scope, and the chapter must say that rather than let a green suite imply otherwise.
-- **A list endpoint's correct answer is an empty page, not a 404.** The
-  indistinguishability oracle is per endpoint shape, not one status code for
-  everything. A suite that asserts 404 everywhere would be wrong about half the
-  surface and would have to be rewritten by the first chapter that adds a list.
+- **The internal surface is two credential classes and takes two attacks.** Three routes
+  — `/internal/messages`, `/internal/session`, `/internal/backfill` — accept an end-user
+  token, which **is** scoped to one environment, so a foreign credential is exactly the
+  attack: a token minted in A used against a resource in B. The other five accept a
+  platform credential, which carries no environment and names one per request, so their
+  attack is "a request that names environment A and carries an id from B". An earlier
+  draft of this edge case had one shape for all eight and would have left three routes
+  attacked in a way that does not apply to them.
+- **And a platform credential is a third thing to attack: the service that holds it.**
+  Two credentials exist and both resolve to the same class, so until this chapter a route
+  could say which *class* may call it and not which *service* — and the gateway's
+  credential reached the dispatcher's routes. What protects such a credential after the
+  chapter is the network, the secret, and the route's declared service list. What does
+  not: rotation, which does not exist. The chapter must say so rather than let a green
+  suite imply otherwise.
+- **A list endpoint's correct answer is an empty result, not a 404 — and not a page
+  either.** The indistinguishability oracle is per endpoint shape, not one status code for
+  everything, and a suite asserting 404 across the board would be wrong about the one
+  route of 22 that lists. "Page" is the wrong word for it today:
+  `GET /v1/webhooks` takes no `limit` and no `cursor` and returns a bare array, so
+  EIR-API-06's cursor pagination is unmet on the only list route the platform has. The
+  assertion is an empty result in whatever form the endpoint returns, and the gap is
+  recorded as walked into rather than caused.
 - **The error message is part of the answer.** `messages.service.ts` already keeps a
   constant string for exactly this reason — echoing the id back would make the foreign
   answer differ from the absent answer. The gauntlet has to compare messages, or it
