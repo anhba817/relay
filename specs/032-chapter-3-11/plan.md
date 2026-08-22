@@ -97,10 +97,16 @@ a CHECK expression. No new policy column — `connection_minutes` is a third key
 `environments.quota_config`, which is what chapter 3.10 said the jsonb shape was
 for.
 
-**Testing**: Vitest. Unit tests for the minute function and the report
-arithmetic; integration tests against the compose Postgres for the credit, the
-replay, the reordering and the refusal; a gateway integration test that kills the
-process with a socket open; Mailpit reads for the third dimension's emails.
+**Testing**: Vitest, in two integration lanes and **not in `packages/e2e`**. Unit
+tests for the minute function and the report arithmetic; the api's lane for the
+credit, its failure modes, the route's isolation and the Mailpit reads; the
+gateway's lane — which has spawned a live api child since chapter 3.2 — for
+anything needing a real socket, with the gateway itself in-process so its clock is
+injectable. Chapter 3.10 put the equivalent socket test in e2e on a rationale that
+does not hold today, and e2e is refused here for a different reason: the gateway
+is a child process there, so no timing assertion in this chapter could be driven
+rather than waited out (R24). Two tests are the exception and spawn a gateway
+process, because a signal is the one thing an in-process gateway cannot receive.
 Every time-based test drives a clock — `attachSessions` already takes
 `pingIntervalMs` as a parameter for exactly this reason, and nothing in the suite
 sleeps for a minute.

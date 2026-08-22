@@ -798,3 +798,51 @@ for the one thing only a process can show: what a signal does.
 
 `**/main.ts` is excluded from coverage entirely. That makes it the right home for
 R11's signal handler and the wrong home for anything the handler calls.
+
+---
+
+## R24 — Which lane runs the socket tests, and why not e2e
+
+**The sixth analysis pass found this undecided, with a precedent pointing the
+wrong way.** Chapter 3.10 put its equivalent test — a send refused by the cap,
+and the socket still open sixty seconds later — in `packages/e2e/src/`, and gave
+a reason:
+
+> that lane, because the test needs a live api child to do the refusing, **which
+> the gateway's own lane does not spawn**
+
+**That reason is false on the current code.** `services/gateway/src/session.itest.ts:116`
+spawns `node dist/main.js`, waits on `/healthz`, and hands the suite a real api
+URL. `limits.itest.ts:124` does the same. The gateway's lane has spawned a live
+api since chapter 3.2.
+
+**Decision: the gateway's integration lane, and not e2e.** The argument is not
+the precedent's and it is stronger than it.
+
+**e2e cannot drive a clock.** There, the gateway is a child process; here,
+`attachSessions` is called in-process and already takes `pingIntervalMs` as a
+parameter, which is where `meterIntervalMs` goes. Every timing assertion in this
+chapter — three minute boundaries, a socket that lives inside one interval, ten
+intervals after a kill — is stated in calendar minutes. In e2e each of them would
+have to wait in real time, and the quickstart's own rule is that nothing in this
+suite sleeps for a minute.
+
+**And the gateway lane can seed Postgres directly.** e2e may not import `pg`,
+which is why chapter 3.10 had to add `harness.setQuota` to reach the caps at all.
+The gateway lane's `seeder` writes rows, so setting a connection-minutes cap costs
+nothing new.
+
+**What follows.**
+
+- `packages/e2e/src/harness.ts` is **not** touched. It carries 6 chapter fences
+  and a `post-series.md` entry, and would have been a 22nd file in R16's table.
+- The tests split by what they actually exercise. Anything involving a socket goes
+  to `services/gateway/src/session.itest.ts`; anything about the meter's lifecycle
+  goes to `meter.itest.ts`; **T051 goes to the api's lane**, because a REST send
+  and a history read while capped involve no socket at all and putting them in the
+  gateway's suite would spawn a gateway to test the api.
+- The two tests that need a gateway **process** rather than an in-process gateway
+  — the SIGTERM flush and the SIGKILL crash — are the exception, and they are the
+  two that deliberately do not drive a clock: they measure what a signal does.
+  `meter.itest.ts` therefore runs two children, an api and a gateway, and the
+  gateway child's `RELAY_API_URL` points at the api child's ephemeral port.

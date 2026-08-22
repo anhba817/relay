@@ -376,3 +376,49 @@ place while only the first place was edited.
 The counts moved: 115 tasks to 117, SC-015 extended to count the boxes, and the
 figure rule's "≥1 per chapter half" written into T073 with the §5 loss table
 explicitly ruled prose rather than a diagram.
+
+## Sixth analysis pass, 2026-08-22
+
+Seven findings — no CRITICAL, three HIGH, three MEDIUM, one LOW. **The six at
+MEDIUM and above were applied; X7 was left at the author's direction**: the
+`tasks.md` header explains `[P]`, `[US]` and lettered ids and does not state the
+file-path convention — now partly moot, since the convention and its exemption are
+written into Path Conventions by the X1 fix.
+
+**The surface was task executability — `tasks.md` read as an implementer starting
+cold**, which is what the skill's format rules exist for and the one surface five
+passes had not walked. Plus one targeted check they had all missed: `packages/e2e`.
+
+**37 of 117 tasks named no file, and 21 of them were tests.** For the batteries and
+the gate runs that is right. For the test tasks it hid a decision: not just which
+file, but **which lane**.
+
+**The lane was undecided and the precedent pointed the wrong way.** Chapter 3.10
+put its socket-level cap test in `packages/e2e/src/` because "the test needs a live
+api child to do the refusing, which the gateway's own lane does not spawn". The
+gateway's lane has spawned one since chapter 3.2 —
+`services/gateway/src/session.itest.ts:116` runs `node dist/main.js` and waits on
+`/healthz`. Inheriting that choice would have inherited a false premise.
+
+The decision went the other way on a better argument: **e2e cannot drive a clock.**
+There the gateway is a child process; in its own lane `attachSessions` is called
+in-process and already takes `pingIntervalMs`, which is where `meterIntervalMs`
+goes. Every timing assertion in this chapter is stated in calendar minutes, and the
+quickstart's own rule is that nothing sleeps for a minute. So `harness.ts` is not
+touched and does not become a 22nd file in R16's table — the fence surface stays at
+21 files and 95 fences.
+
+The map now lives in Path Conventions rather than on 21 task lines, with T051 split
+out to the api's lane because a REST send and a history read involve no socket, and
+the two signal tests split out because a signal is the one thing an in-process
+gateway cannot receive.
+
+**And one finding was mine, from the third pass**: T067 verified "the three new
+entries T033b added" — T033b writes tests, T033c adds the ratchet entries.
+
+**This is the third consecutive pass to find a defect introduced by an earlier
+pass**: the fifth found a malformed source tree from the second, the fourth found
+five stale counts, this one a wrong task reference. Six passes have produced 68
+findings and three CRITICAL, all three in the first three. The edits are now
+generating defects at a rate comparable to the ones they fix, which is the
+strongest argument available that reading has finished its job here.
