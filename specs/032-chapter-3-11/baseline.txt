@@ -310,3 +310,149 @@ in `quota-email.ts`. Extracted to a `DEFAULT_STOPPAGE` constant, which reads
 better anyway.
 
 FR-RTL-05 is now closed on all three dimensions.
+
+## T064 — the guard's prediction, verified rather than assumed
+
+Zero refusals across the full lane. And a zero proves nothing on its own, so:
+
+  triggers installed          5  (webhook_endpoints, webhook_deliveries,
+                                  webhook_disable_notifications, channels, users)
+  sentinel environments      27
+  baited rows reachable     251  (all in webhook_endpoints)
+  self-check                 an UPDATE across every sentinel environment was
+                             REFUSED — "global-operation guard: this statement
+                             modified sentinel row public.webhook_endpoints"
+
+  exempt.ts vs part3-ch10    no diff
+  lint ignores list          no new file
+  eslint.config.mjs          +13 lines, all of them a RESTRICTION being added
+                             (drainQuotaNotifications), not an exemption
+
+R5's no-sweep prediction holds for the second chapter running.
+
+**What it does not prove**, and SC-014 now says so: the guard watches five tables
+and none of them is a usage or notification table. Silence about
+`usage_connections`, `usage_periods` or `quota_notifications` means nobody is
+looking, not that nothing happened.
+
+The first self-check attempt reported "GUARD DID NOT FIRE" and was wrong — it
+swept `users`, and the sentinel environments hold no user rows, so the trigger
+never fired because no row matched. A guard check that sweeps an empty table is
+the same vacuous pass `no-trigger-in-migrations.test.ts` guards against by
+asserting its own patterns can match.
+
+## T065 — the connect path, measured, and the plan was wrong
+
+Four runs of the shipped build against T004a's single baseline:
+
+  concurrency    before (T004a)   after, two reads      after, folded to one
+  1              6.807            6.4–7.2               4.9–7.2
+  8              5.490            5.7–6.7               5.8–6.2
+  32             15.001           17.4 / 17.4 / 17.5 / 18.1   16.6 / 16.8 / 17.0
+
+**Research R7 chose the wrong shape and the measurement says so.** It reasoned
+that chapter 3.10's H2 forbade extending `environmentLimits`, so the cap should be
+"a second call on the same request rather than a heavier version of the first".
+H2 is still right — `environmentLimits` has a SECOND caller, the rate-limit
+middleware, on every `/v1` request. But a second call costs what a join would
+have: 15.0ms to 17.6ms at 32-way, four runs clustered inside 0.7ms, so a real
+regression rather than noise. Folding the connect path's two reads into one
+`connectPolicy` recovered 0.8ms of it. `environmentLimits` is untouched.
+
+**And T004a's method was wrong**: one measurement is not a baseline. Three runs of
+the shipped build sit inside 0.4ms, so the AFTER is tight — but the 15.001 is a
+single sample and the residual 1.8ms cannot be cleanly attributed. The instrument
+was built to avoid chapter 3.10's mistake and then used once.
+
+SC-012's actual claim — no scan proportional to traffic — is satisfied by the
+`EXPLAIN` in `session.perf.itest.ts`, which is committed rather than ad-hoc.
+
+## T066 — what a third dimension actually cost
+
+Seven places, against chapter 3.10's written prediction of "a new dimension is a
+new key … a one-line constraint change":
+
+  1  quotaConfigSchema                    one key
+  2  environments_quota_config_shape      1 typeof + 2 regex clauses, constraint
+                                          dropped and rebuilt (no ALTER CONSTRAINT)
+  3  quota_notifications_dimension_check  one IN value, dropped and rebuilt
+  4  usage_periods                        one column + one CHECK, in two files
+  5  quota.error.ts                       a two-way ternary became two Record tables
+  6  quota-email.ts                       a key in NOUN, and a new STOPPAGE table
+  7  usageFor's return shape              two fields
+
+The prediction was right about the shape and light about the size. Two of the
+seven are places it did not anticipate at all — and place 5 is the one that
+mattered, because `Dimension` is `keyof QuotaConfig` and widened itself, so the
+ternary would have rendered "monthly ACTIVE USER quota exhausted" with the
+compiler silent.
+
+## T067 — coverage
+
+  TOTAL   90.32 / 83.98 / 89.51 / 91.53   (from 89.45 / 82.73 / 88.94 / 90.86)
+  repository.ts        97.5 / 90.6 / 100 / 99.45   ratchet 97 / 90 / 100 / 99
+  credit.ts            100 / 100 / 100 / 100
+  usage.controller.ts  100 / 100 / 100 / 100
+  meter.ts             100 / 93.75 / 100 / 100
+
+All ratchets hold, including the three this chapter added.
+
+## T069 — the traceability pass
+
+**Chapter 3.10 ships ZERO bare feature-local ids.** T047's fix removed them
+rather than annotating them, and checking that convention first is what stopped
+this chapter shipping ~60 of its own: an `FR-014` in a test name resolves only
+inside `specs/032-chapter-3-11/` and means something else in every other feature.
+
+FR ids mapped to the SRS id a reader can actually resolve (FR-RTL-05/06/07/08,
+NFR-SEC-06, EIR-WS-06, ADR-05, constitution III and VI); SC ids dropped, because
+they identify an acceptance criterion and the test's own name already says what
+it checks.
+
+Done line-by-line against `part3-ch10` so no pre-existing line was rewritten —
+T047's own fix made that mistake, altering six comments belonging to chapters
+3.5, 3.6 and 3.9. Four removed lines DO cite earlier chapters and all four are
+deliberate: the 4008 tripwire in `session.test.ts`, the platform-credential
+comment in `authenticate.middleware.ts`, and `bait-size.test.ts`'s stale
+cross-reference.
+
+**The first attempt at this pass broke the build.** A regex tidying trailing
+`()` after id removal deleted legitimate empty parameter lists — `next: () =>
+void` became `next:  => void` — across 36 files. Everything through Phase 7 was
+committed, so the repair was `git checkout f605840 -- .` and a rewrite of the two
+uncommitted pieces. Committing each phase is what made a bad regex a five-minute
+loss instead of an afternoon.
+
+## T070 — credential scan
+
+Patterns searched (10), recorded because the conclusion is worthless without them:
+
+  rk_svc_                                    rk_live_
+  rk_dev_                                    rk_svc_local_development_credential_0000
+  rk_svc_local_development_gateway_00000     RELAY_INTERNAL_CREDENTIAL
+  RELAY_WEBHOOK_SECRET_KEY                   Bearer ey
+  [0-9a-f]{32,}                              [A-Za-z0-9+/]{40,}={0,2}
+
+Searched: all seven spec artifacts, plus every line this chapter added to source.
+
+Findings, each classified rather than counted:
+
+  research.md:29         "the `rk_svc_` prefix"      — a prefix, not a secret
+  contracts §1           `Bearer rk_svc_…`           — elided
+  tasks.md T070          the pattern list itself
+  baseline.txt           4 × 40-hex                  — git SHAs, T001 provenance
+  source, 9 fixtures     rk_svc_..._0123456789abcdef, ..._nobody_knows_this_one,
+                         ..._tooshort                 — obviously-fake test bodies
+  `Bearer ey`            one occurrence, in an assertion that the report's
+                         credential is NOT a JWT
+
+**One real decision.** `rk_svc_local_development_gateway_00000` is the compose
+default and `compose.yaml` carries three fences, so it will publish. Its sibling
+`rk_svc_local_development_credential_0000` is already published in chapter 3.5,
+the file says "Dev-only credentials — this file never ships anywhere" three lines
+above it, and both are placeholders a deployment overrides. Published on that
+precedent, deliberately, and recorded here so it is a decision rather than an
+oversight.
+
+No signing secret, encryption key or real internal credential appears in any spec
+artifact or any added line.
