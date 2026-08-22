@@ -212,3 +212,34 @@ retention cap's duplicate-key guard, which needs four thousand closed connection
 with a repeat among them — a fixture longer to read than the branch is worth.
 
 **Totals** 90.22 / 83.80 / 89.42 / 91.40, from 89.45 / 82.73 / 88.94 / 90.86.
+
+## Phase 5 — the signals
+
+Green: lint, build, integration **304** (from 301), 192s.
+
+**C2 was real, and the fix is bigger than a handler.** `serve()` returned a bare
+`node:http` Server, nothing called `server.close()`, and no signal handler
+existed — so `server.on("close")` ran on no path. Fixing it meant three changes,
+not one: `createServer` now hands back an awaitable `shutdown`, `sessions.close()`
+became async, and the signal handler awaits it before `process.exit(0)`. A flush
+that is fired rather than awaited is the same non-guarantee one line lower down.
+
+**`meter.itest.ts` runs two children and spawns a third per test.** The api child
+is shared; each test starts its own gateway, because each ends by killing one and
+two signals must not share a victim. `RELAY_METER_INTERVAL_MS` exists so those
+tests drive a 300ms interval rather than waiting a real minute per assertion —
+registered in `turbo.json` too, because strict env mode drops what it is not told
+about.
+
+**And one assertion of mine broke the rule I wrote.** T042 asserted
+`expect(await minutes()).toBe(0)` on an environment the two tests above it had
+already credited: `expected 2 to be +0`. That is FR-032 — "any assertion about a
+shared resource MUST be scoped to rows this test created" — failing against its
+own author, twenty minutes after being written into the spec. Fixed by capturing
+the figure before the test and comparing against it.
+
+**4009 stays unemitted.** `CLOSE_CODES[4009]` is "server shutdown (drain)" and
+this chapter builds the first shutdown path the gateway has ever had, so the code
+is sitting right there. Draining is telling clients to reconnect elsewhere, which
+is a feature with its own semantics; reaching for the code because a handler
+arrived is the "declared, so use it" chapter 3.8 refused by name.
