@@ -352,3 +352,58 @@ does not "fix" them. `T069e -> T069` is the lettered-id convention working as do
 lettered task may precede its base where it is a prerequisite. And T104 still mentions
 `chapter-notes.md`, now in a sentence saying explicitly *not* to write there; the checker
 reads references, not negations.
+
+## Analysis pass seven — the previous pass's edits
+
+Five findings, no CRITICALs, no HIGHs, all applied. **This is what running out of reading
+looks like**, and it is the same result chapter 3.11's seventh pass reported: every finding
+was a sentence or a list the sixth pass wrote, and none of them would have changed what
+gets built.
+
+**Two of the five are the same failure mode, committed while fixing it.** The note that
+deleted T069f for telling a repair to run before the files it repaired existed then claimed
+"Phase 8 finds nothing to fix" — a conclusion stated wider than it holds, since the
+permitted list still owes entries to three pre-existing suites that import the query
+engine. And T115 listed two costs of taking the size split while skipping the one that
+happens in the phase making the decision: the prose for Phases 9 and 10 has been written by
+the time the count exists, so the first cost is discarding sections just drafted. Both
+sentences read as settled and were slightly wider than the facts.
+
+**One omission with a number attached.** `services/api/src/db/catalogue.ts` — created by the
+sixth pass to keep the catalogue query inside the directory where the query engine is
+permitted — was missing from T079's ratchet decision, in the one directory that already
+carries a per-file ratchet and the one the constitution's 100%-branch clause is about. And
+`data-model.md` §4 still described the classification as "computed from `information_schema`"
+with no mention of where, so a reader working from the data model alone would write the
+query into the test and need an exemption for as long as it lived.
+
+**What the pass checked and found clean, recorded because a pass that reports only hits is
+not a pass.** T025's central instruction — read the target tenant's rows through
+`Repository` — needed a public read for every write target, and there is one for each:
+`getEndpoint`, `listEndpoints`, `listDeliveriesForEvent`, `listDeadLetters`, `listMessages`,
+`listMembers`, `listChannels`, and `usageFor` at `repository.ts:612` for the usage tables I
+expected to be the hole. That was the finding this pass went looking for and it was not
+there. No stale references to T051b, T054b, T069f or T002a survive the renumbering, and
+task order is clean but for `T069e -> T069`, which is the lettered-id convention working as
+documented.
+
+## Seven passes, and where they stopped
+
+  pass 1   the documents + the published series   17 findings   2 CRITICAL
+  pass 2   the code                                9            2
+  pass 3   the build gates                         7            1
+  pass 4   the numbers                             9            0
+  pass 5   the governing documents                 7            1
+  pass 6   task executability                      7            0
+  pass 7   the sixth pass's edits                  5            0
+
+Sixty-one findings, six CRITICAL. Requirements moved 42 → 48 and outcomes 27 → 33, and
+**three of those additions are product code rather than test code** — the service-scoped
+authorization, its error code, and the compose-driven CI job. An analysis pass is not
+supposed to produce product work; that three did is the honest cost of reading the
+credential model, the build gates and the governing documents in passes two, three and five
+instead of during planning.
+
+The decline is not monotonic, and the exception is the lesson: pass five found a CRITICAL
+after pass four found none, because it read a surface no earlier pass had. Pass seven read
+no new surface and its yield shows it. Analysis stops here.

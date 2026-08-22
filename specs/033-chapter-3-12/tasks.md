@@ -272,7 +272,7 @@ the gates, the battery, the counts, the three reintroductions, the two scratch p
 - [ ] T077 [P] [US6] Audit every suite that spawns an api or gateway for a fixed port and record the list in `baseline.txt`. `limits.itest.ts` is the one CLAUDE.md names; the audit is what makes SC-020 a measurement (SC-020)
 - [ ] T078 [US6] Run `pnpm coverage` and record `repository.ts` against T007's 241/266. Either close constitution VI's 100% clause or name every remaining uncovered branch with the reason it is uncovered. The ratchet may not end lower than it started (FR-040, SC-018)
 - [ ] T078a [US6] Cover what the gauntlet reaches in process. The suite exercises repository reads and writes with foreign ids, which is exactly the branch class the ratchet counts — measure before writing new tests, because chapter 3.11's R23 predicted a fall here and got a rise for this reason
-- [ ] T079 [P] [US6] Update the ratchet entries in `vitest.coverage.config.mts` to whatever T078 measured, upward only — and **decide explicitly whether this chapter's new files get an entry**. `services/api/src/isolation/*.ts` and `channels/*.ts` are inside the coverage `include` glob and would otherwise be pinned by nothing but the global 70. Chapter 3.11's T033c pinned new code deliberately, for the reason its comment gives: an unpinned file is a figure that can slide. State the decision either way
+- [ ] T079 [P] [US6] Update the ratchet entries in `vitest.coverage.config.mts` to whatever T078 measured, upward only — and **decide explicitly whether this chapter's new files get an entry**. `services/api/src/isolation/*.ts`, `channels/*.ts` and **`services/api/src/db/catalogue.ts`** are inside the coverage `include` glob and would otherwise be pinned by nothing but the global 70. The last of those matters most: it lands in `services/api/src/db/`, the one directory that already carries a per-file ratchet, and it is the directory constitution VI's 100%-branch clause is about. Chapter 3.11's T033c pinned new code deliberately, for the reason its comment gives: an unpinned file is a figure that can slide. State the decision either way
 
 **Checkpoint**: nine guarded tables verified by driving each, no fixed ports, and the 100% clause answered with a number and a list.
 
@@ -353,7 +353,7 @@ the gates, the battery, the counts, the three reintroductions, the two scratch p
 - [ ] T112 [P] Write the section on what the suite does not cover, from `contracts/gauntlet.md` §7. A chapter that lists its defence's range is the difference between this suite and the nine assertions
 - [ ] T113 [P] Write the outbox finding into the chapter — **including the reversal**. The structural check said a constitutional clause was violated, the reasoning for the fix collapsed under a second look, and what was left was a retention problem four other requirements care about. A milestone chapter that reports only the findings that survived is reporting a tidier pass than the one that happened; the correction is the more useful half
 - [ ] T114 **Count the finished page** — prose words outside fences, fences, figures, and the recurring boxes — and record it against the 2,000–4,000 bound. Two chapters in this part exceeded it and both were discovered afterwards. **Count the fences against the surface this chapter was planned to carry**: 16 new files and 21 amended — 37 — against chapter 3.11's 21 files and 34 fences, and chapter 3.5's 39 against an estimate of 22. An amended file needs a diff fence in this chapter's prose or the chain's HEAD property fails, so the fence count is a floor under the page rather than a by-product of it (SC-022, R19)
-- [ ] T115 **Decide the split with the number, not with a feeling.** If the page is over, Phases 9 and 10 become chapter 3.13 and the milestone goes with them, because the Phase 2 exit criterion is the second half. Record the decision and the count either way. **State what taking it costs**: Phase 11's twenty-run battery, coverage figures and traceability map all covered work that would no longer be in the chapter, and Phase 13's fence set would be wrong — so the split costs a Phase 11 re-run and a Phase 13 re-scope. That is an argument for forming an estimate at the phase-9 boundary rather than meeting the number here cold (R19, SC-022)
+- [ ] T115 **Decide the split with the number, not with a feeling.** If the page is over, Phases 9 and 10 become chapter 3.13 and the milestone goes with them, because the Phase 2 exit criterion is the second half. Record the decision and the count either way. **State what taking it costs**, nearest first: this phase's own prose for Phases 9 and 10 has been written by the time the count exists, so the split discards sections just drafted; Phase 11's twenty-run battery, coverage figures and traceability map covered work that would no longer be in the chapter; and Phase 13's fence set would be wrong. A discard here, a Phase 11 re-run, a Phase 13 re-scope. That is an argument for forming an estimate at the phase-9 boundary rather than meeting the number here cold (R19, SC-022)
 
 **Checkpoint**: the page exists and has been counted rather than estimated.
 
@@ -417,8 +417,13 @@ Phase 1 (baseline) ─┬─> Phase 2 (foundational) ─┬─> Phase 3 (US1 RES
   gauntlet's own two files are the first candidates. An earlier draft scheduled a repair
   task for that and then told the repair to run before the files it repaired existed. The
   constraint moved upstream instead: T025 reads rows through `Repository` and T037 puts the
-  catalogue query behind a function in `services/api/src/db/`, so Phase 8 finds nothing to
-  fix and T069b's permitted list must not name `services/api/src/isolation/**`.
+  catalogue query behind a function in `services/api/src/db/`, so Phase 8 finds nothing
+  **of this chapter's** to fix and T069b's permitted list must not name
+  `services/api/src/isolation/**`. It does find work: the permitted list still owes entries
+  to `services/api/src/db/*.itest.ts`, `services/api/src/quotas/*.itest.ts` and
+  `services/gateway/src/limits.itest.ts`, which import the query engine and predate this
+  chapter. An earlier draft of this note said "nothing to fix", which was a conclusion
+  stated wider than it held — in the same note that deleted a task for the same fault.
 - **Phases 9 and 10 are the separable half.** If T114's count is over the bound, they
   become chapter 3.13 and the milestone goes with them.
 - T061 must run after T055, and re-runs Phase 3. T078 must run after Phase 3, or it
@@ -443,8 +448,10 @@ Phase 1 (baseline) ─┬─> Phase 2 (foundational) ─┬─> Phase 3 (US1 RES
 - **Phase 4**: T038, T041 and T042 alongside T039 and T040. T040a is a comment on T040.
 - **Phase 5**: T045 to T048 are four independent attacks once T044 exists. T050 is a
   guard on T049.
-- **Phase 6**: T053 is a schema file and parallel with T052 and T052a, which are one file
-  and go in either order. T058, T059,
+- **Phase 6**: T051a is a registry key in `packages/protocol` with no dependency on the
+  rest of the phase and can go first or last. T053 is a schema file and parallel with T052
+  and T052a, which are one file and go in either order. T054a follows T054; T058a follows
+  T057. T058, T059,
   T060 and T062 are independent once T057 lands. T056 is not parallel with T055 — same
   file.
 - **Phase 7**: none. Three reintroductions in sequence, each reverted before the next, or

@@ -65,7 +65,10 @@ from `messages.itest.ts`, where it and its reasoning already exist (R3).
 
 ## 4. `TenantPath` — the structural check's model
 
-Computed from `information_schema` for every base table in `public`.
+Computed from `information_schema` for every base table in `public` — **by a function in
+`services/api/src/db/catalogue.ts`, not inline in the test.** That directory is where the
+query engine is permitted; the restored lint ban (R23) forbids it elsewhere, and a
+classification written into the test file would need an exemption for as long as it lived.
 
 **Three classes, not four.** An earlier draft had a fourth, `unscoped`, holding
 `outbox` alone — on the reading that Principle I's second clause was violated. R7
