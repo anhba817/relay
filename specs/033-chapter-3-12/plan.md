@@ -273,7 +273,8 @@ relay-platform/
     │   │   ├── channels.schema.ts
     │   │   ├── channels.service.ts
     │   │   └── channels.itest.ts
-    │   ├── db/repository.ts                   # addMember's upsert (R14a)
+    │   ├── db/catalogue.ts                     # NEW — the information_schema read, where drizzle is allowed
+    │   ├── db/repository.ts                   # addMember's and createChannel's upserts (R14a)
     │   ├── isolation/                         # NEW — the gauntlet, in process
     │   │   ├── targets.ts                     #   the derivation + its non-empty assertion
     │   │   ├── attack.ts                      #   the twin-request oracle, lifted from 2.2

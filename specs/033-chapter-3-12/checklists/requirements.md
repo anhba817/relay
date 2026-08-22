@@ -313,3 +313,42 @@ twice, meaning opposite things.
 Eight of the chapter's requirements cited a governing-document id before this pass. T105a
 now builds the map in both directions, which is the check that would have caught FR-CHN-05,
 FR-CHN-07, FR-CHN-01 and EIR-API-06 in one pass instead of five.
+
+## Analysis pass six — task executability
+
+Seven findings, no CRITICALs, all applied — the same shape chapter 3.11's sixth pass
+produced. **Two of the seven came from twenty lines of Python rather than from reading**,
+and that is the pass's real lesson.
+
+A script that treats "Write `X`" as a file's creator, collects every backticked file
+reference, and flags any reference numbered before its creator found both immediately.
+T051a enforced FR-CHN-07 in `channels/channels.service.ts` five tasks before T054 created
+that file — it had also been written to do two things at two different times, a registry key
+with no dependencies and an enforcement with one. And T104 recorded the exit-criterion
+verdict into `chapter-notes.md` and "the page" from Phase 10, when those arrive in Phases 14
+and 12. I had read past T104 three times, because "record the verdict in
+`chapter-notes.md`" is a sentence that looks correct until you ask when the file exists.
+Executability is the most mechanically checkable surface of the six, and the check was built
+on the sixth pass rather than the second.
+
+**One circular instruction, and it was a previous pass's repair.** T069f was added in pass
+two to fix what restoring the lint ban would break in the gauntlet's own suites, and its
+scheduling note then told it to run before those suites existed. The fix was not to
+reorder it but to delete it: T025 now reads rows through `Repository` and T037 puts the
+`information_schema` query behind a function in `services/api/src/db/`, where the query
+engine is already permitted. The constraint moved upstream to where the code is written,
+which is T069f's own argument applied to itself, and T069b now asserts that
+`services/api/src/isolation/**` never appears on the permitted list — the place where a
+shortcut would show.
+
+**And one change three tasks described while leaving a third of it unbuilt.** Widening
+`Accepts` to `AcceptSpec` breaks `expectation()` at `credential.guard.ts:30`, which feeds
+the two strings an integrator actually reads at `:89` and `:96`. T030b changed the type,
+T030c changed the check, and nothing touched the message — in a chapter that had just added
+an error code specifically so the refusal would say what went wrong.
+
+**Two things the mechanical check flags that are not defects**, recorded so a later pass
+does not "fix" them. `T069e -> T069` is the lettered-id convention working as documented — a
+lettered task may precede its base where it is a prerequisite. And T104 still mentions
+`chapter-notes.md`, now in a sentence saying explicitly *not* to write there; the checker
+reads references, not negations.
