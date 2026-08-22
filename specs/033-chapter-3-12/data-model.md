@@ -87,9 +87,10 @@ finding becomes a classification.
 ## 5. `ErrorCode` — the registry becomes the set
 
 Today the emittable set is eleven and `ERROR_CODES` holds six. This chapter adds a
-twelfth — `wrong_credential_service`, for a platform credential refused on a route
-declared for another service (R24) — so the registry ends at **twelve** and the type
-system keeps it that way.
+twelfth and a thirteenth — `wrong_credential_service`, for a platform credential refused
+on a route declared for another service (R24), and `channel_member_limit_exceeded`, which
+FR-CHN-07 requires and the SRS's own EIR-API-04 example names — so the registry ends at
+**thirteen** and the type system keeps it that way.
 
 | Code | Emitted from | In the registry today |
 |---|---|---|
@@ -105,6 +106,7 @@ system keeps it that way.
 | `internal_error` | the ladder's fallback | **no** |
 | `connection_environment_conflict` | `usage.controller.ts` | **no** |
 | `wrong_credential_service` | `credential.guard.ts` — new in this chapter | **new** |
+| `channel_member_limit_exceeded` | `channels.service.ts` — new in this chapter (FR-CHN-07) | **new** |
 
 **Shape.** Each entry keeps its one-line meaning, as the six do now. The ladder in
 `protocol-error.filter.ts` is typed `ErrorCode`, so an unregistered code stops
@@ -132,10 +134,22 @@ side, which is the point of R10's one-character change.
 ### `POST /v1/channels`
 
 ```
-request   { external_id, type: "public" | "private", name? }
-201       { id, external_id, type, name }        created
-200       { id, external_id, type, name }        already existed (FR-CHN-02)
+request   { external_id, type: "public", name?, metadata? }   metadata ≤ 8 KB
+201       { id, external_id, type, name, metadata }   created
+200       { id, external_id, type, name, metadata }   already existed (FR-CHN-02)
+400       invalid_request, field: "type"             "private" — see below
 ```
+
+**All four of FR-CHN-01's elements**, including the 8 KB metadata an earlier draft omitted.
+`channels.metadata` is a `jsonb` column with a default, present since chapter 2.1, so this
+costs a schema field and a bound rather than a migration.
+
+**`private` is refused, and the reason is that nothing enforces it.** `channels.type` has
+been a `"public" | "private"` column with a CHECK constraint since 2.1 and no code reads
+it: history and send scope by `environment_id` alone, with no membership check anywhere. So
+FR-CHN-05 — a P1 clause — is unimplemented, and a public create endpoint accepting
+`private` would sell a guarantee the platform does not keep. The documented enum has one
+member until chapter 3.13 builds the other (R14, FR-047).
 
 `external_id` is the idempotency key, enforced by the unique constraint rather than by a
 read-then-write. The two statuses are the distinction chapter 2.3 drew for a duplicate
@@ -144,10 +158,17 @@ send, and an integrating developer can act on it.
 ### `POST /v1/channels/:channelId/members`
 
 ```
-request   { user_ids: string[] }                 customer-supplied identifiers, capped
+request   { user_ids: string[] }                 ≤ 100 per request (FR-CHN-06)
 200       { added: string[], already_members: string[] }
 404       channel not found — identical for a foreign channel and an absent one
+422       channel_member_limit_exceeded — would exceed 1,000 members (FR-CHN-07)
 ```
+
+**Two limits, and they are different requirements.** 100 is the batch size FR-CHN-06
+allows in one request; 1,000 is the channel's ceiling from FR-CHN-07, which also specifies
+the `422` and requires a code of its own. The SRS names that code in its worked example for
+EIR-API-04: `channel_member_limit_exceeded`. An earlier draft of this document had neither
+the ceiling nor the code.
 
 Users named and not yet present are created, which is FR-USR-02's implicit creation one
 step earlier than first authentication. The cap is stated rather than unbounded because

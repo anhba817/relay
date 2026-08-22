@@ -88,6 +88,16 @@ What research settled, and four of these came from measuring rather than reading
   3.11's R5a predicted `record "old" has no field "id"` and the probe reproduced it.
   `coalesce(to_jsonb(OLD) ->> 'id', to_jsonb(OLD)::text)` gives an id where there is one
   and the row's JSON where there is not, with no per-table branch (R15).
+- **The two endpoints cited two clauses and sat beside four more that nobody read.**
+  `channels.type` has been a `"public" | "private"` column since 2.1 and **nothing reads
+  it**, so FR-CHN-05 — a P1 clause forbidding non-members from reading, sending or
+  observing presence in a private channel — is unimplemented. A public create endpoint
+  accepting `private` would sell a guarantee the platform does not keep, so the documented
+  enum has one member and FR-CHN-03's private half goes to 3.13 with FR-CHN-05. FR-CHN-07's
+  1,000-member ceiling appeared in no artifact, and the SRS names its status **and** its
+  code — `channel_member_limit_exceeded`, in its own worked example for EIR-API-04. And
+  FR-CHN-01 has four elements where the first draft delivered three; `channels.metadata`
+  already exists (R14, R27).
 - **`addMember` cannot serve the members endpoint as written.** It has no
   `ON CONFLICT`, and `members`' primary key is `(channel_id, user_id)`, so a repeat
   raises a unique violation that the filter would render as `internal_error`. Its single
@@ -188,7 +198,7 @@ be fenced at all — and sees every `docs_url` that changes.
 
 **Scale/Scope**: 22 api routes — one of them `/healthz` — plus one WebSocket path and one
 more health endpoint on the gateway; the dispatcher runs no HTTP server. 22 base tables,
-twelve error codes after this chapter adds one, two new public endpoints, five internal
+thirteen error codes after this chapter adds two, two new public endpoints, five internal
 routes gaining a declared service, four newly guarded tables, one restored lint rule, one
 new CI job, three inherited debts and four this chapter found for itself, one new package,
 one new document.
@@ -203,11 +213,18 @@ one new document.
 | **II. No acknowledged message is ever lost** | Nothing touches the write path. The clause that does apply is idempotency on write endpoints "enforced at the storage layer (unique index), not in application memory": channel creation's key is the customer's own identifier under `channels_environment_id_external_id_unique`, and membership's is `members`' composite primary key. Both predate this chapter; R14a is the finding that the current helper does not yet honour the second one. | Pass |
 | **III. Two data paths, never crossed** | Nothing analytical. No ClickHouse, no queue, no metering. | Pass |
 | **IV. Single writer, single source of truth** | The api stays the only writer. `packages/outsider` cannot import `pg` — it cannot import anything — and the gauntlet writes through the repository like every other suite. | Pass |
-| **V. API-first, developer-first** | The clause "every error code has a reachable documentation page" has been unmet since chapter 1.4 and is closed here for all twelve codes. `docs_url` stops being a placeholder. The two new endpoints are the first public surface for FR-CHN since Part 2 promised it. | **Pass, and it closes the debt three chapters recorded** |
-| **VI. Requirement-driven, test-verified** | **46 requirements, 31 measurable outcomes** — re-derive with `grep -c '^- [*][*]FR-' spec.md` and the same for `SC-`, never carried forward by hand. The 100%-branch clause for isolation code is measured against a number rather than restated (FR-040). The suite this principle names as a release gate is what the chapter builds. | Pass |
+| **V. API-first, developer-first** | The clause "every error code has a reachable documentation page" has been unmet since chapter 1.4 and is closed here for all thirteen codes. `docs_url` stops being a placeholder. The two new endpoints are the first public surface for FR-CHN since Part 2 promised it. | **Pass, and it closes the debt three chapters recorded** |
+| **VI. Requirement-driven, test-verified** | **48 requirements, 33 measurable outcomes** — re-derive with `grep -c '^- [*][*]FR-' spec.md` and the same for `SC-`, never carried forward by hand. The 100%-branch clause for isolation code is measured against a number rather than restated (FR-040). The suite this principle names as a release gate is what the chapter builds. | Pass |
 | **VII. Boring by design — scope is a commitment** | No new service, no new language, no new dependency, no product migration. One new workspace package, which is a test package and not a service, so §4.2's "deliberately not a separate service" table does not apply. Everything larger is named and refused: the rest of FR-CHN and FR-USR go to 3.13 with a number, the outbox column goes to whoever next touches outbox writes, a human external-developer run is named as the instrument this chapter does not use. | Pass, with three refusals recorded |
 
-**One entry in Complexity Tracking**, and no ADR required. `packages/outsider` is a new
+**One entry in Complexity Tracking, and still no ADR — restated against FR-044, which did
+not exist when this sentence was first written.** Constitution VII requires an ADR for an
+architecture decision, and narrowing platform credentials from a class to a named service
+touches the internal trust model. Chapter 3.11's precedent covers it: it gave each internal
+service its own credential without an ADR because that "narrows an existing mechanism
+rather than adding one", and FR-044 narrows the same mechanism one step further. What would
+need an ADR is a new authorization *mechanism* — roles, scopes, a policy engine — and none
+is here (R27). `packages/outsider` is a new
 workspace package whose whole design is a negative — it may import nothing — and a
 package that exists to be empty needs its justification written down.
 
@@ -218,13 +235,13 @@ package that exists to be empty needs its justification written down.
 ```text
 specs/033-chapter-3-12/
 ├── plan.md              # This file
-├── research.md          # Phase 0 — R1 to R26 plus R7a, eighteen measured on a running stack
+├── research.md          # Phase 0 — R1 to R27 plus R7a, twenty measured on a running stack
 ├── data-model.md        # Phase 1 — no product migration; the shapes the suite derives
 ├── quickstart.md        # Phase 1 — V0 to V16, the reintroductions among them
 ├── contracts/
 │   ├── gauntlet.md      # the derivation, the four shapes, the fifth treatment,
 │   │                    # and what the suite does not cover
-│   └── errors.md        # the twelve codes, the registry as the set, the URL rule
+│   └── errors.md        # the thirteen codes, the registry as the set, the URL rule
 ├── checklists/
 │   └── requirements.md  # 16/16, with the three items read against a stated reading
 └── tasks.md             # Phase 2 — /speckit-tasks, not created here
@@ -243,7 +260,7 @@ relay-platform/
 │   │   ├── package.json                       #   no @relay/* dependency, by design
 │   │   ├── vitest.integration.config.mts
 │   │   └── src/integrate.itest.ts             #   signup → channel → members → send → socket
-│   ├── protocol/src/codes.ts                  # twelve codes; docsUrl() beside them
+│   ├── protocol/src/codes.ts                  # thirteen codes; docsUrl() beside them
 │   ├── service-kit/src/index.ts               # ServeOptions gains a required field
 │   └── test-harness/src/
 │       ├── sentinel.sql                       # four tables, to_jsonb(OLD) (POST-SERIES)
@@ -281,7 +298,7 @@ relay-platform/
 docs/
 ├── 04-srs.md                                  # NFR-USE-05 verification note if it moves
 ├── 07-tutorial-plan.md                        # the 3.13 row, and why the milestone moved
-└── 08-error-reference.md                      # NEW — twelve codes, one h2 each
+└── 08-error-reference.md                      # NEW — thirteen codes, one h2 each
 
 relay-tutorial/
 ├── app/(en)/part-3/chapter-12/…/page.mdx      # NEW — the chapter
@@ -318,10 +335,10 @@ until the suite is complete, and the documentation half is last so it can be cut
 | 3 | The REST gauntlet | `AcceptSpec`, `attack.ts`, `gauntlet.itest.ts` over 22 routes | Five shapes, two internal attacks (R5), and the platform-service authorization the suite would otherwise document as a hole (R24) |
 | 4 | The structural check | `tenant-scope.itest.ts`, the infrastructure list | Three classes, not four. Where the outbox retention finding lands as a written entry (R7a) |
 | 5 | The socket gauntlet | `services/gateway/src/isolation.itest.ts` | Inbound frame types derived from the protocol union (R6) |
-| 6 | The two endpoints | channels + members, `addMember`'s upsert | They must appear in the target list without being named there (SC-016) |
+| 6 | The two endpoints | channels + members, both upserts, the member ceiling, `public`-only types | They must appear in the target list without being named there (SC-016). FR-CHN-01 in full, FR-CHN-07 enforced, FR-CHN-03's private half deferred (R14) |
 | 7 | The reintroductions | three, run and reverted, recorded | Sensitivity, not correctness. What stayed green is part of the result (R18) |
 | 8 | The instruments | guard's four tables, the itest lint ban, the port, the `json` reporter, the coverage number | The guard lands in post-series; the port needs no fence at all (R17). The lint ban is a constitution clause found off (R23); the reporter is what makes FR-040 nameable (R16) |
-| 9 | **The documentation half — separable** | twelve codes, the registry as the set, `docsUrl()`, `turbo.json`'s env entry, the slugifier, `08-error-reference.md`, three lists | Sequenced here so the split is a measurement (R19) |
+| 9 | **The documentation half — separable** | thirteen codes, the registry as the set, `docsUrl()`, `turbo.json`'s env entry, the slugifier, `08-error-reference.md`, three lists | Sequenced here so the split is a measurement (R19) |
 | 10 | **The outsider — separable** | `packages/outsider`, the seed command, two lint rules, a compose-driven CI job, the gap list, the verdict | Needs phase 6; carries the milestone if the chapter splits. The CI job is what gives the package somewhere to run (R25) |
 | 11 | Close-out | chapter prose both locales, fences, the 3.13 row, notes | The plan-table edit is FR-022, not a courtesy (R20) |
 

@@ -19,9 +19,10 @@ service-kit's 404                           1   not_found
 named at a call site (usage.controller.ts)  1   connection_environment_conflict
                                             ──
 union today                                 11
-added by this chapter (R24)                  1   wrong_credential_service
+added by this chapter                        2   wrong_credential_service   (R24)
+                                                 channel_member_limit_exceeded (FR-CHN-07)
                                             ──
-ships                                       12
+ships                                       13
 ```
 
 **The registry is not the set**, and that is the finding this contract exists because of.
@@ -129,8 +130,8 @@ platform side (packages/protocol/src/codes.test.ts)
   assert every code the platform can emit is in ERROR_CODES        // self-contained
 
 tutorial side (relay-tutorial/scripts/)
-  codes   = Object.keys(ERROR_CODES)                    // twelve
-  anchors = h2 headings in docs/08-error-reference.md   // twelve
+  codes   = Object.keys(ERROR_CODES)                    // thirteen
+  anchors = h2 headings in docs/08-error-reference.md   // thirteen
   assert setEqual(codes, anchors)
 ```
 

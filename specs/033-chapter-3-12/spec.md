@@ -381,15 +381,29 @@ report for the isolation file against the constitution's clause.
 **The public surface the criterion needs**
 
 - **FR-016**: The public API MUST support creating a channel with a customer-supplied
-  identifier, a type, and a display name, authenticated by an API key (FR-CHN-01).
+  identifier, a type, a display name, and up to 8 KB of JSON metadata, authenticated by an
+  API key. All four elements, because FR-CHN-01 names all four and `channels.metadata`
+  already exists with a default.
+- **FR-047**: The create endpoint MUST refuse `private` as a channel type, naming the
+  field, for as long as the platform does not enforce private-channel access. FR-CHN-05
+  requires that a user not read from, send to, or observe presence in a private channel of
+  which they are not a member; nothing in the platform reads `channels.type`, so a channel
+  created as private would be private in name only. An API that accepts the word and
+  delivers nothing is worse than one whose documented vocabulary is honestly smaller.
 - **FR-017**: Channel creation MUST be idempotent on the customer-supplied identifier:
   repeating the request MUST return the existing channel rather than an error
   (FR-CHN-02).
 - **FR-018**: The same customer-supplied channel identifier MUST be usable
   independently by two tenants, and neither MUST be able to reach the other's channel.
 - **FR-019**: The public API MUST support adding members to a channel by
-  customer-supplied user identifier, creating the user record if it does not exist
-  (FR-CHN-06, FR-USR-02).
+  customer-supplied user identifier, creating the user record if it does not exist. The
+  add half of FR-CHN-06, and FR-USR-01's rule that identifiers come from the customer and
+  Relay generates none — **not** FR-USR-02, which is about creation on first
+  authentication and describes a different moment.
+- **FR-048**: A channel MUST NOT exceed 1,000 members. An attempt that would MUST be
+  refused with `422` and an error code specific to that limit. FR-CHN-07 states the number,
+  the status and the requirement of a specific code, and the SRS's own worked example for
+  EIR-API-04 names the code.
 - **FR-020**: A member added over the public API MUST receive that channel's messages
   on a socket, with no repository access and no seeding.
 - **FR-021**: Both new endpoints MUST appear in the gauntlet's derived target list on
@@ -542,7 +556,15 @@ report for the isolation file against the constitution's clause.
   site and returns the entry for that code.
 - **SC-014**: A channel created twice with the same customer-supplied identifier
   returns the same channel both times, and two tenants using the same identifier hold
-  two channels neither can see from the other.
+  two channels neither can see from the other. Metadata round-trips, and metadata over
+  8 KB is refused.
+- **SC-032**: A create request naming `private` is refused with the field named, and the
+  refusal states where private channels arrive. Verified against the published
+  documentation as well as the response: an API whose error says "not supported" and whose
+  reference says otherwise has moved the problem rather than fixed it.
+- **SC-033**: Adding the member that would be the 1,001st is refused with `422` and the
+  limit's own code, and the channel still has 1,000 members afterwards — read from
+  storage, not inferred from the status.
 - **SC-015**: A member added over the public API receives a message on a socket, in a
   test that touches no repository function.
 - **SC-016**: The two new endpoints appear in the gauntlet's target list without being

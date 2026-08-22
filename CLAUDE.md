@@ -11,13 +11,18 @@ documentation, with no assistance"*. Its record is `specs/033-chapter-3-12/` —
 read `plan.md` for the eleven phases and `research.md` for R1 to R26, eighteen of
 which were measured against a running stack rather than reasoned about.
 
-**Four analysis passes are applied — 42 findings, 5 CRITICAL** — reading, in order,
-the documents and the published series, the code, the build gates, and the numbers.
+**Five analysis passes are applied — 49 findings, 6 CRITICAL** — reading, in order,
+the documents and the published series, the code, the build gates, the numbers, and the
+governing documents. The fifth found the worst of them: `POST /v1/channels` was about to
+accept `type: "private"` while **nothing in the platform reads `channels.type`**, so
+FR-CHN-05 is unimplemented and the endpoint would have sold a guarantee the platform does
+not keep. The documented enum is now `public` alone, and FR-CHN-03's private half goes to
+3.13 with FR-CHN-05.
 Three turned up product work rather than corrections: `@Accepts` grows a service
 argument (FR-044), because a platform credential was authorized by class and not by
 service, so the gateway's credential reached `POST /internal/dispatch/replay`; that
 refusal gets its own code, `wrong_credential_service`, so the shipped set is twelve
-codes rather than eleven (FR-046); and compose starts the platform in a CI job of its
+codes rather than eleven (FR-046, and FR-CHN-07 adds a thirteenth); and compose starts the platform in a CI job of its
 own (FR-045), because the sealed package may not start a server and nothing else did.
 
 **Two things the plan found that no document contained.** There is no public

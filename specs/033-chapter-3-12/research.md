@@ -326,7 +326,8 @@ enumerates the eleven, which is why "document every error code" could not have b
 done from the registry — the spec's FR-026 exists because of this measurement.
 
 **Decision.** Make the registry the set by construction — and after this chapter the set
-is **twelve**, because R24 adds `wrong_credential_service`. Add the five missing keys,
+is **thirteen**: R24 adds `wrong_credential_service` and FR-CHN-07 adds
+`channel_member_limit_exceeded`. Add the five missing keys,
 type the filter's ladder as `ErrorCode` so the compiler refuses an unregistered code,
 and reference the registry from the call sites that name their own code. Then
 `Object.keys(ERROR_CODES)` is the derivation FR-025 asks for, and the reference
@@ -523,8 +524,11 @@ POST /v1/channels/:channelId/members   add members by the customer's user id
 Both take an API key. `createChannel(externalId, type, name?)` and
 `addMember(channelId, userId)` exist in the repository with those signatures;
 `createUser(externalId, displayName?)` is what makes a member out of an identifier the
-customer supplies, which is FR-USR-02's "created implicitly on first authentication"
-read one step earlier — implicitly on first *membership*.
+customer supplies. **The clause for that is FR-USR-01**, not FR-USR-02: identifiers come
+from the customer and "Relay shall not generate end-user identities", and FR-CHN-06 does
+not require members to pre-exist. FR-USR-02 is about creation on first *authentication*,
+which is a different moment — an earlier draft cited it, and a requirement id used loosely
+is worse than none, because it makes a traceability table look complete.
 
 **Status codes.** `201` on creation and `200` on the idempotent repeat, which is the
 distinction chapter 2.3 already draws for a duplicate send and the one an integrating
@@ -540,6 +544,41 @@ Principle II requires it "enforced at the storage layer (unique index), not in a
 memory". So `createChannel` gets `ON CONFLICT (environment_id, external_id) DO NOTHING
 RETURNING`, falling back to `getChannelByExternalId`, which already exists and is already
 scoped. `addMember` gets the same treatment for its own primary key (R14a).
+
+**And four neighbouring clauses were never read, which is what analysis pass five was
+for.** `POST /v1/channels` cited FR-CHN-01 and FR-CHN-02 and satisfied part of the first;
+FR-CHN-03, 05 and 07 sit beside them and none had been opened.
+
+**FR-CHN-05 is not implemented, and this endpoint would have made that a promise to a
+customer.** Measured: `channels.type` is a `"public" | "private"` column with a CHECK
+constraint, and **nothing reads it** — the only matches for `"private"` in `repository.ts`
+are the type union at 2198 and TypeScript's `private` modifier. History and send scope by
+`environment_id` alone; there is no membership check in either path. FR-CHN-05 is P1: *"A
+user shall not read messages from, send messages to, or observe presence in a private
+channel of which they are not a member."* Until this chapter only tests could create a
+private channel, so the gap was invisible. A public create endpoint would let a paying
+integrator ask for privacy, be told they had it, and get none.
+
+**Decision: the endpoint's type vocabulary is `public` and nothing else**, refused at the
+schema so the failure names the field. FR-CHN-03's private half and FR-CHN-05 go to chapter
+3.13 together, because access control for private channels is the send path, the history
+path and the socket subscribe path — a chapter, not a validation rule. The column keeps
+both values: the database is not the thing making the promise.
+
+*Rejected: a 422 with a new code meaning "not supported yet".* It reads better and costs a
+fourth new code in a chapter that has already added two. A schema whose documented enum has
+one member is the smaller honest surface, and EIR-API-04's `field` element exists to say
+which input was wrong.
+
+**FR-CHN-07 was in no artifact at all.** *"A channel shall support up to 1,000 members.
+Exceeding the limit shall return `422` with a specific error code."* The SRS names the
+number, the status and the requirement of a specific code — and its own worked example for
+EIR-API-04 names the code itself: `channel_member_limit_exceeded`. Enforced here: one
+count, one 422, one code, which makes the shipped set **thirteen**.
+
+**FR-CHN-01 has four elements and the first draft delivered three.** Metadata was missing,
+and `channels.metadata` is a `jsonb` column with a default that has existed since chapter
+2.1 — so the omission cost a schema field and an 8 KB bound, not a migration.
 
 **Bounded on purpose.** FR-CHN-06 allows up to 100 members per request; the endpoint
 accepts an array and caps it, because a member endpoint that takes one id would have to
@@ -937,8 +976,9 @@ route (dispatcher)` — and never the credential, which is NFR-SEC-06 and the re
 `credential.guard.ts` already says the message "names the class and never the credential".
 A service name is a deployment label, not a secret.
 
-**So the emittable set is twelve after this chapter.** R8 counted eleven and was right for
-the code as it stands; this adds one. Every figure describing what ships says twelve, and
+**So the emittable set grows to thirteen across this chapter.** R8 counted eleven and was
+right for the code as it stands; this adds one and FR-CHN-07 adds another. Every figure
+describing what ships says thirteen, and
 the reference document's two-directional test is what fails if one of the six documents
 carrying that count is missed.
 
@@ -1020,3 +1060,32 @@ a standalone clone, where that path does not exist.
 The tutorial side reads `packages/protocol/src/codes.ts` as text, which the fence chain
 already does for every published file, so the coupling is one the repository is built on
 rather than a new one.
+
+---
+
+## R27 — Two governing-document gaps the gauntlet walks into rather than causes
+
+**`GET /v1/webhooks` does not paginate.** The controller is
+`list() { return this.webhooks.list(); }` — no `limit`, no `cursor`, a bare array back.
+EIR-API-06 is P1: *"List endpoints shall use opaque cursor pagination with `limit` and
+`cursor` parameters, returning `next_cursor` and `has_more`. Offset pagination shall not be
+offered."* Unmet since chapter 3.5 shipped the route.
+
+It matters here only because the `list` attack shape asserted "an empty page rather than a
+404", and there is no page. The shape asserts an empty **result** in whatever form the
+endpoint returns, and the gap is recorded as found. Fixing it is a public-API change that
+belongs with FR-CHN-08's listing work in chapter 3.13, where cursor pagination has to be
+built anyway.
+
+**And the ADR question FR-044 reopened.** The plan said "no ADR required", written before
+`Accepts` grew a service argument. Constitution VII requires every architecture decision to
+be recorded as an ADR with drivers, rejected alternatives and reversal condition, and
+narrowing platform credentials from a class to a named service changes the internal trust
+model.
+
+Chapter 3.11's precedent covers it, and the plan now says so rather than letting the older
+sentence stand: 3.11 gave each internal service its own credential without an ADR, on the
+grounds that it "narrows an existing mechanism rather than adding one". FR-044 narrows the
+same mechanism one step further — the same class, a smaller set of callers per route. What
+would need an ADR is a new authorization *mechanism*: roles, scopes, a policy engine. None
+of those is here.

@@ -44,9 +44,15 @@ A: GET /v1/webhooks     with a key for an environment that owns nothing
 assert 200, an empty page, and no row belonging to any other environment
 ```
 
-A list's correct answer to "nothing of yours here" is an empty page. A suite that
-asserted 404 across the board would be wrong about this shape and would freeze today's
-status choices into a test.
+A list's correct answer to "nothing of yours here" is an empty result, in whatever form
+the endpoint returns one. A suite that asserted 404 across the board would be wrong about
+this shape and would freeze today's status choices into a test.
+
+**And "page" is the wrong word for this endpoint today.** `GET /v1/webhooks` is
+`list() { return this.webhooks.list(); }` — no `limit`, no `cursor`, a bare array — so
+EIR-API-06's cursor pagination is unmet on the one list route the platform has. Recorded as
+found; fixing it belongs with FR-CHN-08's listing work, where cursor pagination has to
+exist anyway (R27).
 
 ### `write`
 

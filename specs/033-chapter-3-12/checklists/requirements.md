@@ -269,3 +269,47 @@ service-scoped authorization, its error code, and the compose-driven CI job — 
 what analysis passes are meant to produce. Two of the three came from reading the credential
 model and the build gates in passes two and three; had either been read during planning,
 they would have been plan decisions instead of corrections.
+
+## Analysis pass five — the governing documents
+
+Seven findings, one CRITICAL, all applied. The CRITICAL is the most consequential single
+finding of the five passes, and four earlier passes had every chance to catch it.
+
+**The chapter was about to ship a privacy guarantee the platform does not implement.**
+`POST /v1/channels` accepted `type: "private"`. `channels.type` has been a
+`"public" | "private"` column with a CHECK constraint since chapter 2.1, and **nothing reads
+it** — the only matches for `"private"` in `repository.ts` are the type union and
+TypeScript's own modifier. History and send scope by `environment_id` alone; there is no
+membership check in either path. FR-CHN-05 is P1: a user must not read from, send to, or
+observe presence in a private channel they are not a member of. Until now only tests could
+create a private channel, so nothing exercised the gap. A public create endpoint would have
+let a paying integrator ask for privacy, be told they had it, and get none — in the chapter
+whose whole subject is access control.
+
+The endpoint's documented type vocabulary is now `public` and nothing else, refused at the
+schema so the failure names the field, and FR-CHN-03's private half goes to chapter 3.13
+with FR-CHN-05, because access control for private channels is the send path, the history
+path and the socket subscribe path.
+
+**Two more clauses beside the ones the endpoints cited.** FR-CHN-07's 1,000-member ceiling
+appeared in no artifact, and the SRS states the number, the `422`, **and** the requirement
+of a specific code — whose name is in the SRS's own worked example for EIR-API-04,
+`channel_member_limit_exceeded`. FR-CHN-01 has four elements and the first draft delivered
+three; `channels.metadata` is a jsonb column with a default that has existed since 2.1, so
+the omission cost a schema field, not a migration. The shipped code set is now thirteen.
+
+**And a requirement id used loosely.** FR-USR-02 was cited for creating users when they are
+named as members. It describes creation on first *authentication* — a different moment. The
+clause that supports the behaviour is FR-USR-01. An id used loosely is worse than none,
+because it makes a traceability table look complete.
+
+**Why four passes missed all of it.** Each earlier pass checked the artifacts against
+something: each other, the code, the gates, arithmetic. None checked them against the
+requirements they claim to deliver. Pass two read `sendMessage` closely enough to note it
+has no membership check and recorded that as *convenient* — it was why the minimum surface
+could be two endpoints — rather than as FR-CHN-05 being unimplemented. The same fact, read
+twice, meaning opposite things.
+
+Eight of the chapter's requirements cited a governing-document id before this pass. T105a
+now builds the map in both directions, which is the check that would have caught FR-CHN-05,
+FR-CHN-07, FR-CHN-01 and EIR-API-06 in one pass instead of five.
