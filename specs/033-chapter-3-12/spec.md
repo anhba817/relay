@@ -72,8 +72,9 @@ exempt. Add a route with no classification and confirm the suite goes red.
    identifier, **Then** the target tenant's rows are byte-identical before and after,
    read directly rather than inferred from the status code.
 5. **Given** a list endpoint, **When** it is called by a tenant with no rows, **Then**
-   it returns an empty page rather than a 404, and returns nothing belonging to the
-   other tenant.
+   it returns an empty result rather than a 404, and returns nothing belonging to the
+   other tenant. The shape of that result is whatever the endpoint returns — the one list
+   route the platform has returns a bare array, not a page.
 6. **Given** the WebSocket surface, **When** a token minted for one environment is
    used to subscribe to, resume from, or send into a channel belonging to another,
    **Then** each attempt is refused and nothing is delivered.
@@ -314,10 +315,13 @@ report for the isolation file against the constitution's clause.
   mechanically enforceable; not opening `repository.ts` is a discipline. The chapter
   states which half is enforced.
 - **The sealed package needs a credential, and signup is OAuth in a browser.** An
-  automated suite cannot click GitHub's consent screen. The constitution requires
-  `docker compose up` to include a seeded demo tenant and no seed exists — so either
-  a documented bootstrap is built here or the sealed integration starts from a
-  credential it is handed, and the chapter says which and why.
+  automated suite cannot click GitHub's consent screen, and the constitution requires
+  `docker compose up` to include a seeded demo tenant where nothing seeds. Both are settled:
+  compose starts the api and gateway from behind their `services` profile, a documented seed
+  command creates a tenant and prints a key, and the integration reads two URLs and starts
+  nothing itself. That closes the clause's intent and not its letter, and the chapter says
+  which.
+
 - **`packages/e2e` is excluded from the coverage run.** A gauntlet that attacks over
   HTTP against a spawned api contributes nothing to the constitution's 100%-branch
   clause on isolation code. Chapter 3.11's R23 measured the same thing from the other
@@ -336,15 +340,20 @@ report for the isolation file against the constitution's clause.
   `scripts/sync-docs.sh` copies `docs/0[1-6]-*.md`; the renderer's registry lists six
   entries. A document added without touching both is a page that renders stale
   content, and `check:docs` is what notices.
-- **Changing `docs_url` changes every error response on the wire.** It is not a
-  breaking change — the field is informational — but it is visible in the fences of
-  every chapter that shows an error body, and the fence chain is byte-exact.
+- **Changing `docs_url` changes every error response on the wire, and the fences are the
+  part that is fine.** It is not a breaking change — the field is informational — and the
+  fenced occurrences across six published chapters are correct as earlier states of a
+  byte-exact chain, so they must not be touched. What rots instead is prose no checker
+  reads: chapter 1.4 asserts the host "is a placeholder until a docs site exists", and
+  chapter 3.2 shows the old URL in illustrative JSON at `:1232` and `:1480`.
 - **The two new endpoints are new gauntlet targets on the build that adds them.** If
   the target list is derived, this happens by itself. If it is derived and the
   endpoints are still missed, the derivation is wrong and this is where that shows.
 - **A milestone chapter still has a size gate.** 2,000–4,000 prose words on the
-  finished page. This chapter carries a suite, two endpoints, a documentation
-  reference, a sealed integration, and three inherited debts. The chapter most likely
+  finished page. This chapter carries a suite, two endpoints, a
+  documentation reference, a sealed integration, service-scoped platform authorization, a
+  compose-driven CI job, a restored lint ban, three inherited debts and four this chapter
+  found for itself. The chapter most likely
   to exceed the bound in this part is this one, and the series' own history says the
   split is discovered mid-chapter unless the separable half is sequenced last.
 
@@ -369,8 +378,11 @@ report for the isolation file against the constitution's clause.
 - **FR-005**: For every endpoint that writes, an attack MUST be verified to have
   changed no row belonging to the target tenant, read directly from storage before and
   after rather than inferred from the response.
-- **FR-006**: For every endpoint that lists, an attack MUST return an empty page rather
-  than an error, and MUST return no row belonging to another tenant.
+- **FR-006**: For every endpoint that lists, an attack MUST return an empty result rather
+  than an error, in whatever form that endpoint returns results, and MUST return no row
+  belonging to another tenant. **Not "a page"**: `GET /v1/webhooks` takes no `limit` and no
+  `cursor` and returns a bare array, so EIR-API-06's cursor pagination is unmet on the only
+  list route there is. The gauntlet asserts emptiness, not a shape it does not have.
 - **FR-007**: The suite MUST cover the WebSocket surface: a credential minted for one
   environment MUST NOT subscribe to, resume from, or send into a channel belonging to
   another, and MUST receive nothing from it.
@@ -686,8 +698,10 @@ report for the isolation file against the constitution's clause.
   coverage run includes is a requirement of FR-040.
 - **The error reference is a document in `docs/`, rendered by the site that already
   renders the other six.** Feature 009 built a renderer for the project's paper
-  documents and `scripts/sync-docs.sh` mirrors them; a seventh document costs a glob,
-  a registry entry, and a title in two languages. The alternative considered and
+  documents and `scripts/sync-docs.sh` mirrors them; a seventh document costs **three
+  lists** — the sync script's, the drift checker's, and the renderer's registry — plus a
+  title in two languages. Not a widened glob: `0[1-6]` stops at six on purpose, and
+  `0[1-8]` would publish the tutorial plan. The alternative considered and
   rejected was a route tree of per-code pages: truer to the `/docs/errors/<code>` shape
   already shipping, and a dozen hand-authored files to keep in step with a registry
   that changes every chapter. `docs_url` gains an anchor instead of a path segment.
@@ -733,10 +747,12 @@ report for the isolation file against the constitution's clause.
 - **Chapter 3.13's existence does not weaken FR-023.** The 2.8 seam is reassessed here
   because this chapter changes what it depends on, not because it can be closed
   entirely.
-- **This chapter publishes**, so its fences belong in the chapter that teaches them.
-  The guard extension and the port fix are the exceptions and belong in
-  `fences/post-series.md`, because feature 030's surface and chapter 3.8's test file
-  are not this chapter's subject.
+- **This chapter publishes**, so its fences belong in the chapter that teaches them. **The
+  guard extension is the one exception** and belongs in `fences/post-series.md`, because
+  feature 030's surface teaches no chapter. The port fix is not an exception: it lands in
+  `services/gateway/src/limits.itest.ts` — not the api's file of the same basename, and not
+  chapter 3.8's — and **neither file is fenced by anything**, so it needs no entry in
+  post-series or anywhere else.
 - **No new metering, analytics, or dashboard.** FR-ANL and FR-DSH are Part 4.
 - **The chapter is the largest in the part by content and the most likely to exceed the
   word bound.** The separable half is the documentation and sealed-integration work,
@@ -766,7 +782,10 @@ report for the isolation file against the constitution's clause.
   measured and left open for "the next chapter that touches the repository layer".
 - Feature 030's guard, its exemption list, its lint ignores, and the four tables it
   does not watch.
-- Feature 009's document renderer and `scripts/sync-docs.sh`, which the error
-  reference joins.
-- The fence chain, which is byte-exact across 177 files and 28 chapters and will see
-  every `docs_url` this chapter changes.
+- Feature 009's document renderer, `scripts/sync-docs.sh` and `scripts/check-docs-drift.sh`
+  — three lists the error reference joins, two of them shell globs that stop at six on
+  purpose.
+- The fence chain, byte-exact across 177 files and 28 chapters, which resolves every fence
+  title against `relay-platform` — so tutorial-repo files and the parent's `docs/` cannot be
+  fenced at all. It will see every platform file this chapter amends; the `docs_url` change
+  needs a new fence per amended file, not an edit to an old one.

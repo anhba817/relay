@@ -41,7 +41,7 @@ assert equal(status), equal(body minus request_id)
 
 ```
 A: GET /v1/webhooks     with a key for an environment that owns nothing
-assert 200, an empty page, and no row belonging to any other environment
+assert 200, an empty result (a bare array here — see below), and no foreign row
 ```
 
 A list's correct answer to "nothing of yours here" is an empty result, in whatever form

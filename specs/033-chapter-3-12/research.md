@@ -121,7 +121,7 @@ decides what the paired "does not exist anywhere" request is.
 | Shape | Attack | Twin | Assertion |
 |---|---|---|---|
 | Read by id | another tenant's id | a well-formed id that exists nowhere | responses equal minus `request_id` |
-| List | caller's own credential, empty tenant | same | empty page, not 404; no foreign row |
+| List | caller's own credential, empty tenant | same | empty result, not 404; no foreign row |
 | Write by id | another tenant's id | an id that exists nowhere | responses equal, **and** target rows unchanged |
 | No tenant identifier | — | — | listed as exempt with a reason |
 

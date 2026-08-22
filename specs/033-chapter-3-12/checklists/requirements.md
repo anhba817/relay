@@ -629,3 +629,53 @@ The reason ten passes missed them is mechanical: every pass asked whether the ar
 was internally consistent and checked the parts carrying identifiers, because identifiers
 are what a script joins on. Prose with no identifier joins to nothing, and gets read as
 context by the same eye that is looking for contradictions elsewhere.
+
+## Analysis pass twelve — the narrative sweep, finished
+
+Five findings covering seven entries, two HIGH, all applied — and then the sweep that
+followed them found five more instances of a claim already corrected twice.
+
+**The sweep's result as a number: 13 of 35 narrative entries carried superseded or
+incomplete claims.** Six from passes ten and eleven's sample of eight, seven from reading
+the remaining twenty-nine. Thirty-seven per cent of the spec's prose was out of date while
+every identifier-bearing check reported clean.
+
+**Two of the seven were the same defect fixed one and eleven passes earlier, in a different
+section of the same file.** The port claim appeared for the third time: pass one corrected
+it in research, the plan and the task list, and left it standing in an assumption that told
+a reader to make a `post-series.md` entry for a file nothing fences. The credential path
+appeared for the second: fixed in Assumptions last pass, still open in Edge Cases.
+
+**And then the method fix proved itself immediately.** After applying the five findings, a
+grep of each corrected claim's distinctive phrase across all eight artifacts found the
+"empty page" claim — identified in pass five, "fixed" in pass ten — still live in five
+places: `contracts/gauntlet.md`'s assertion block, R4's shape table, US1's fifth acceptance
+scenario, T024, and **FR-006 itself**. A functional requirement mandating an empty *page*
+from the one list route the platform has, which returns a bare array because EIR-API-06 is
+unmet there. Two passes had corrected the prose around it and neither had corrected the
+requirement.
+
+That is the whole lesson of passes ten through twelve in one sentence: **corrections were
+applied to the places each finding cited, and no pass swept for the claim.** A grep of
+`"empty page"` after pass five would have found all six instances in one second. Twelve
+passes and one HIGH-severity requirement defect later, that grep now runs after every
+correction.
+
+## Twelve passes
+
+  pass  1   the documents + the published series      17 findings   2 CRITICAL
+  pass  2   the code                                   9            2
+  pass  3   the build gates                            7            1
+  pass  4   the numbers                                9            0
+  pass  5   the governing documents                    7            1
+  pass  6   task executability                         7            0
+  pass  7   the sixth pass's edits                     5            0
+  pass  8   the publication contract                   4            0
+  pass  9   translation mechanics + the battery        4            0
+  pass 10   acceptance scenarios and edge cases        6            0
+  pass 11   assumptions, dependencies, one open item   5            0
+  pass 12   the narrative sweep, finished              5 + 5 residuals   0
+
+Eighty-five findings, six CRITICAL. All 35 narrative entries are now read at depth, and
+every corrected claim has been swept across all eight artifacts. The remaining risk in this
+chapter is not in the documents.
