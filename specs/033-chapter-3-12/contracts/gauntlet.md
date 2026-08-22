@@ -126,8 +126,9 @@ by the same rule as `exempt`.
 
 Behaviour is tested above; this is the shape. For every base table in `public`:
 `environment_id`, or exactly one foreign key to a table that has it, or membership of
-an explicit list with a reason. Twelve, two, seven and one respectively today — and the
-one is `outbox`, whose tenant lives in a jsonb key, which is neither.
+an explicit list with a reason. Twelve, two and eight today. There is deliberately no
+fourth class: a table fitting none of the three is a finding, and a bucket kept open to
+receive it is how a finding turns into a classification.
 
 ## 6. Sensitivity — what the suite has been shown to catch
 
@@ -162,5 +163,10 @@ than none — feature 030's rule, applied to its own successor.
   column; it does not find a query that ignores the one that is there. That is what the
   behavioural half is for, and the two halves are not the same claim.
 - **The guard's blind spots that remain.** Nine tables watched after this chapter, out
-  of 22. `outbox` cannot be watched at all until it carries a tenant column, and the
-  trigger condition is exactly why (`__is_sentinel(OLD.environment_id)`).
+  of 22. `outbox` cannot be watched at all — the trigger condition is
+  `__is_sentinel(OLD.environment_id)` and there is no such column — and it should not be:
+  its legitimate mutation is the relay's cross-environment sweep, so a guard over it
+  would refuse the thing it exists to permit.
+- **Retention.** The structural check sees a missing tenant column. It does not see a
+  table that keeps message text for ever, which is what the outbox turned out to be
+  doing (R7a). Nothing in this contract measures how long data lives.

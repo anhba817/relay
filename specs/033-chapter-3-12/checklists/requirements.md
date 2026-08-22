@@ -75,7 +75,7 @@ visible in the SRS, the SAD, or the tutorial plan.
 
 ## Analysis pass one — documents against each other and against the published series
 
-Seventeen findings, three CRITICAL, all three applied or escalated. The checklist above
+Seventeen findings, two CRITICAL after review, all applied. A third was CRITICAL when written and did not survive its own evidence. The checklist above
 still reads 16/16, and two of its boxes are now ticked for better reasons than they were.
 
 **Two of the three CRITICALs came from testing a claim rather than reading it.**
@@ -95,13 +95,28 @@ merges. The config's own comment claims one named test is "the one TEST allowed 
 client". Every test is. That became FR-043 and SC-028 — the requirement count moved from
 42 to 43 and the outcome count from 27 to 28.
 
-**The third is `outbox`, and it is escalated rather than fixed.** It has no
-`environment_id` column and **zero** foreign keys, so neither branch of Principle I's
-second clause is available; its tenant lives in a jsonb key and in a substring of
-`subject`. Its payload carries `data.text`, so this is not a bookkeeping table — a
-cross-tenant read here reads message content. The fix measures at one insert site with
-an exact backfill. The decision between fixing the column and amending the clause is a
-governance action, not a chapter's.
+**The third finding was `outbox`, and reviewing it reversed it.** The first reading said
+Principle I's second clause was violated — no `environment_id`, zero foreign keys,
+neither branch of "directly or through a single foreign-key hop" available — and proposed
+adding the column at one insert site with an exact backfill. Three of the four arguments
+for that collapsed when they were checked rather than restated: nothing wants a
+tenant-scoped read of the outbox, so a column no query filters on enforces nothing; the
+outbox's legitimate mutation **is** cross-environment, so the column would make feature
+030's guard refuse the relay's own sweep; and the single insert site already holds the
+environment. A foreign key would also block deleting an environment while outbox rows
+exist, which makes FR-TEN-08 harder rather than easier. The classification was
+inconsistent too — `consumed_events` has no tenant either and was filed as infrastructure
+without complaint.
+
+**What survived is worse than what was first reported.** `drainOutbox` sets
+`published_at` and never deletes, nothing in the api deletes a row from any table, and
+the payload is a full copy of the message including its text — 286,871 rows in the test
+database. That collides with DR-06 and FR-MSG-08 (a tombstone that leaves a copy behind
+is not a tombstone), FR-TEN-08 and FR-MOD-06. The fix is a one-line prune that needs no
+tenant column, and it belongs to FR-MOD-06's chapter. So the pass ends at **two**
+CRITICAL rather than three, and the structural check has three classes rather than four —
+with no empty fourth kept open, because a bucket waiting to receive a violation is how a
+finding becomes a classification.
 
 **Four findings were the same mistake at different addresses.** A per-chapter fence file
 that does not exist, tutorial-repo files filed as fenceable when the chain resolves every

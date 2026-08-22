@@ -14,7 +14,7 @@ suite computes at run time — plus three shapes that are new code and no new st
 | `users` | `users_environment_id_external_id_unique` — same property, for the user identifiers a member request names |
 | `members` | primary key `(channel_id, user_id)` — makes a repeated member add a no-op rather than a second row, once the insert says so (R14a) |
 | `usage_periods`, `usage_active_users`, `usage_connections`, `quota_notifications` | the four tables the guard starts watching. Three have composite primary keys and no `id` column |
-| `outbox` | `id, subject, payload, created_at, published_at`. No tenant column and no foreign key; the tenant is `payload->>'environment_id'`. Recorded, not fixed (R7) |
+| `outbox` | `id, subject, payload, created_at, published_at`. No tenant column, zero foreign keys; infrastructure, beside `consumed_events` (R7). Its payload is a full copy of the message and nothing prunes it, which is a retention finding rather than a tenancy one (R7a) |
 
 ## 2. `Target` — derived, never written down
 
@@ -65,16 +65,22 @@ from `messages.itest.ts`, where it and its reasoning already exist (R3).
 
 Computed from `information_schema` for every base table in `public`.
 
+**Three classes, not four.** An earlier draft had a fourth, `unscoped`, holding
+`outbox` alone — on the reading that Principle I's second clause was violated. R7
+reversed that: the outbox is infrastructure, so the class had exactly one member and
+then none.
+
 | Value | Meaning | Count today |
 |---|---|---|
 | `direct` | the table has `environment_id` | 12 on a database the lane has run against, 11 on a fresh one — `__sentinel_environments` is the harness's, so the counts are recorded rather than asserted (SC-007) |
 | `hop` | exactly one foreign key reaches a table that has it | 2 — `members` and `messages`, both through `channels` |
-| `spine` | the tenancy tables themselves, plus infrastructure | 7 — `organisations`, `applications`, `environments`, `humans`, `memberships`, `consumed_events`, `schema_migrations` |
-| `unscoped` | neither, and not spine | **1 — `outbox`** |
+| `spine` | the tenancy tables themselves, plus infrastructure | 8 — `organisations`, `applications`, `environments`, `humans`, `memberships`, `consumed_events`, `schema_migrations`, `outbox` |
 
-`spine` and `unscoped` are an explicit list with a reason each, not a pattern. A new
-table lands in none of the four and fails the check until somebody classifies it, which
-is the property FR-012 asks for.
+`spine` is an explicit list with a reason each, not a pattern. A new table lands in none
+of the three and fails the check until somebody classifies it, which is the property
+FR-012 asks for. **A fourth class is not kept open for future violations**: a table that
+belongs in none of these is a finding, and an empty bucket waiting to receive it is how a
+finding becomes a classification.
 
 ## 5. `ErrorCode` — the registry becomes the set
 

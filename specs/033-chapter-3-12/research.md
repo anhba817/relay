@@ -180,7 +180,7 @@ appears in the list.
 
 ---
 
-## R7 — The structural check, and one table that fails it
+## R7 — The structural check, and the table that looked like it failed it
 
 **Decision.** Derive from the live catalogue: for every base table in `public`, assert
 `environment_id` is present, or exactly one foreign key reaches a table that has it.
@@ -194,36 +194,87 @@ design: `organisations`, `applications`, `environments`, `humans`, `memberships`
 `consumed_events`, `schema_migrations`. One is the harness's own
 `__sentinel_environments`, which is not product.
 
-**And one does not fit any of those categories.**
+**And one needed a second look, which reversed the first.**
 
 ```
 outbox: id, subject, payload, created_at, published_at
 ```
 
-The `outbox` holds product events and carries no tenant column and no foreign key.
-Constitution I's second clause reads *"Every persisted operational and analytical
-record MUST carry a non-null tenant (`environment_id`) identifier, directly or through
-a single foreign-key hop"*. The outbox's tenant is inside `payload` — measured, the
-JSON keys are `id, data, type, occurred_at, environment_id`, and the subject's last
-segment is the environment id as well (`events.msg.created.<uuid>`). A jsonb key is
-neither a column nor a hop. `exempt.ts` records the consequence without naming the
-cause: "`outbox` is not among them and needs no entry", which is true because the
-guard's trigger condition is `__is_sentinel(OLD.environment_id)` and the outbox has no
-such column to test.
+No `environment_id`, **zero** foreign keys. An earlier draft of this research escalated
+that as a Principle I violation — the second clause requires a tenant identifier
+"directly or through a single foreign-key hop" and neither branch is available — and
+proposed adding the column, measured at one insert site (`repository.ts:2823`) with an
+exact backfill from `payload->>'environment_id'`.
 
-**Measured cost of fixing it: one insert site.** `repository.ts:2823` is the only
-`insert(outbox)`, it sits inside `Repository`, which already holds `this.environmentId`,
-and the backfill is exact because the payload carries the id. The test lane's outbox
-holds **286,871 rows**, so the backfill is a real statement rather than a no-op.
+**That was wrong, and three of the four arguments for it do not survive.**
 
-**Decision: record it, do not fix it here, and name what recording costs.** A migration
-on the write path of every message send does not belong in a milestone chapter, and this
-chapter is already carrying two new endpoints, a documentation surface, and three
-inherited debts. But an exception to a constitutional MUST is not something a test's
-allow-list may quietly grant: the governance section requires a conflict to be
-"resolved explicitly by amendment rather than ignored". So the exception list carries
-the entry, the reason, and the measured cost, and the finding is escalated as a
-governance decision — fix the column or amend the clause — rather than absorbed.
+*"Isolation lives in data access and this table cannot express it"* is backwards.
+Nothing wants a tenant-scoped read of the outbox. Its only reader is the global relay,
+and `drainOutbox` sits on feature 030's restricted list precisely because being global
+is its job. A column no query filters on enforces nothing.
+
+*"Feature 030's guard cannot watch it"* is true and is not a reason. The outbox's
+legitimate mutation **is** cross-environment — the relay claims every tenant's rows on
+every pass — so adding the column would make the guard refuse the relay's own sweep. The
+change buys an `exempt.ts` entry rather than protection, and that file's existing line,
+"`outbox` is not among them and needs no entry", was right.
+
+*"Postgres enforces a column"* — against what? The single insert site is inside
+`Repository`, which already holds `this.environmentId`. There is no threat model in which
+an outbox row is written with no tenant.
+
+**And a cost the first draft did not weigh.** A foreign key to `environments` puts a
+constraint check on the hot write path of every send, and blocks deleting an environment
+while any outbox row exists — which makes FR-TEN-08's 30-day erasure harder rather than
+easier. The proposed fix complicated the requirement invoked to justify it.
+
+**The classification was also internally inconsistent.** `consumed_events` has no tenant
+column and no foreign key either, and it was filed as infrastructure without complaint.
+The difference reached for was "the outbox carries content" — which is a retention
+concern wearing a tenancy clause's clothes.
+
+**So `outbox` is infrastructure, beside `consumed_events`. No column, no amendment, and
+the structural check has three classes rather than four.**
+
+---
+
+## R7a — What survives is worse: the outbox keeps message text for ever
+
+**Measured.** `drainOutbox` sets `published_at = now()` and never deletes:
+
+```sql
+UPDATE outbox SET published_at = now() WHERE id = ANY(...)
+```
+
+Nothing prunes it. Nothing prunes anything — the only `.delete(` in non-test api source
+is an in-memory `Map` eviction in `limits/fallback.ts:85`. And the payload is a full copy
+of the message:
+
+```json
+{ "type": "message.created",
+  "environment_id": "a030dd09-…",
+  "data": { "id": "9e19f06c-…", "seq": 369, "text": "m368", "channel_id": "a321f176-…" } }
+```
+
+286,871 rows in the test database, each holding the text of a message that also exists in
+`messages`.
+
+**Four requirements collide with that, and the first draft cited none of them.**
+
+| Requirement | The collision |
+|---|---|
+| DR-06, FR-MSG-08 | a deleted message keeps its row with `text` cleared, and hard deletion happens only through the compliance endpoint. The text survives in `outbox.payload.data.text`. A tombstone that leaves a copy behind is not a tombstone |
+| FR-TEN-08 | deleting an application erases its operational data within 30 days. Unreachable for these rows by any mechanism that exists |
+| FR-MOD-06 | per-environment retention with a scheduled hard-delete job. Same gap, from the other direction |
+
+**The fix is pruning, and it needs no tenant column.**
+`DELETE FROM outbox WHERE published_at < now() - interval 'N days'` reaches every row
+this is about. For the rare per-tenant compliance sweep, `subject`'s last segment already
+carries the environment id (`events.msg.created.<uuid>`) and the payload carries the key.
+
+**Not this chapter.** A scheduled retention job is FR-MOD-06, which is Phase 3 and Part
+4, and building one here would put a fifth half-built thing in Part 3. Recorded here
+because this is the chapter that looked, and owned by whichever chapter builds retention.
 
 ---
 

@@ -101,13 +101,21 @@ What research settled, and four of these came from measuring rather than reading
   `RELAY_LIMITS_ITEST_API_PORT` override that exists is unreachable because `turbo.json`
   does not declare it (R17).
 
-And one finding that is about the constitution rather than the chapter:
-**`outbox` carries no tenant column and no foreign key.** Its tenant is a key inside
-`payload`, which is neither of the two things Principle I's second clause allows. The
-fix is measured at one insert site with an exact backfill, over 286,871 rows in the
-test lane. It is recorded and escalated rather than absorbed, because a migration on
-the write path of every send does not belong in a milestone chapter and an exception to
-a constitutional MUST does not belong in a test's allow-list (R7).
+And one finding that reversed itself under a second look. **`outbox` has no tenant
+column and zero foreign keys**, and an earlier draft of this plan escalated that as a
+Principle I violation and proposed adding the column. Three of the four arguments for it
+do not survive: nothing wants a tenant-scoped read of the outbox, its legitimate mutation
+is cross-environment so the column would make feature 030's guard refuse the relay's own
+sweep, and the single insert site already holds the environment. A foreign key would also
+block deleting an environment while outbox rows exist, which makes FR-TEN-08 harder. So
+`outbox` is infrastructure, beside `consumed_events` — no column, no amendment (R7).
+
+**What survives is a retention problem, and it is worse.** `drainOutbox` sets
+`published_at` and never deletes; nothing in the api deletes a row from any table; and the
+payload is a full copy of the message including its text. That collides with DR-06 and
+FR-MSG-08 (a tombstone that leaves a copy behind), FR-TEN-08 (30-day erasure) and
+FR-MOD-06 (scheduled retention). The fix is pruning, which needs no tenant column, and it
+belongs to FR-MOD-06's chapter rather than to this one (R7a).
 
 ## Technical Context
 
@@ -165,7 +173,7 @@ inherited debts, one new package, one new document.
 
 | Principle | Check | Verdict |
 |---|---|---|
-| **I. Tenant isolation is a correctness property** | This chapter **is** the principle's fourth bullet — "an automated cross-tenant access test suite MUST attack every endpoint with foreign IDs on every build" — which has been unmet since the clause was written. The two new endpoints are scoped in the repository layer, not in their handlers, and `addMember`'s existing behaviour (false for a foreign channel *or* a foreign user, no error) is the oracle rather than a bug. | **Pass on the clause this chapter delivers, and two clauses found failing.** The second bullet — every persisted record carries a tenant identifier directly or through one hop — is not true of `outbox`, which has no `environment_id` column and **zero** foreign keys and carries message text in its payload; escalated in R7 as a governance decision rather than granted an exception. The third bullet — "raw connection access outside that layer is lint-forbidden" — is not in force for any `.itest.ts`, measured in R23, and that one is in scope here as FR-043 |
+| **I. Tenant isolation is a correctness property** | This chapter **is** the principle's fourth bullet — "an automated cross-tenant access test suite MUST attack every endpoint with foreign IDs on every build" — which has been unmet since the clause was written. The two new endpoints are scoped in the repository layer, not in their handlers, and `addMember`'s existing behaviour (false for a foreign channel *or* a foreign user, no error) is the oracle rather than a bug. | **Pass on the clause this chapter delivers, and one clause found failing.** The third bullet — "raw connection access outside that layer is lint-forbidden" — is not in force for any `.itest.ts`, measured in R23 and in scope here as FR-043. The second bullet holds: `outbox` and `consumed_events` carry no tenant identifier and are infrastructure rather than records, which R7 reached only after an earlier draft escalated `outbox` wrongly. What the outbox does have is a retention problem that four requirements care about, recorded in R7a and owned by FR-MOD-06's chapter |
 | **II. No acknowledged message is ever lost** | Nothing touches the write path. The clause that does apply is idempotency on write endpoints "enforced at the storage layer (unique index), not in application memory": channel creation's key is the customer's own identifier under `channels_environment_id_external_id_unique`, and membership's is `members`' composite primary key. Both predate this chapter; R14a is the finding that the current helper does not yet honour the second one. | Pass |
 | **III. Two data paths, never crossed** | Nothing analytical. No ClickHouse, no queue, no metering. | Pass |
 | **IV. Single writer, single source of truth** | The api stays the only writer. `packages/outsider` cannot import `pg` — it cannot import anything — and the gauntlet writes through the repository like every other suite. | Pass |
@@ -184,7 +192,7 @@ package that exists to be empty needs its justification written down.
 ```text
 specs/033-chapter-3-12/
 ├── plan.md              # This file
-├── research.md          # Phase 0 — R1 to R23, twelve measured against a running stack
+├── research.md          # Phase 0 — R1 to R23 plus R7a, thirteen measured on a running stack
 ├── data-model.md        # Phase 1 — no product migration; the shapes the suite derives
 ├── quickstart.md        # Phase 1 — V0 to V16, the reintroductions among them
 ├── contracts/
@@ -277,7 +285,7 @@ until the suite is complete, and the documentation half is last so it can be cut
 | 1 | Baseline | provenance, both lanes, coverage, site checks | The lane needs four variables only CI sets, or 11 tests fail without naming why (R22). The starting figure is `repository.ts` at 241/266 branches (R16) |
 | 2 | The target list | `targets.ts`, the classification, the non-empty assertion | First red on purpose: an unclassified route fails the suite (SC-002) |
 | 3 | The REST gauntlet | `attack.ts`, `gauntlet.itest.ts` over 22 routes | Four shapes plus the credential-scope treatment for `dev-token` (R4) |
-| 4 | The structural check | `tenant-scope.itest.ts`, the exception list | Where the `outbox` finding lands as a written entry (R7) |
+| 4 | The structural check | `tenant-scope.itest.ts`, the infrastructure list | Three classes, not four. Where the outbox retention finding lands as a written entry (R7a) |
 | 5 | The socket gauntlet | `services/gateway/src/isolation.itest.ts` | Inbound frame types derived from the protocol union (R6) |
 | 6 | The two endpoints | channels + members, `addMember`'s upsert | They must appear in the target list without being named there (SC-016) |
 | 7 | The reintroductions | three, run and reverted, recorded | Sensitivity, not correctness. What stayed green is part of the result (R18) |
