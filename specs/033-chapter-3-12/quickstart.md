@@ -87,8 +87,18 @@ comparison, the write shape is not doing its job. Revert with `git checkout`.
 pnpm vitest run services/api/src/isolation/tenant-scope --config services/api/vitest.integration.config.mts
 ```
 
-**Expect** green, and a printed classification: 12 direct, 2 hop, 7 spine, 1 unscoped —
-the unscoped one being `outbox`, named with its reason.
+**Expect** green, and a printed classification in **three** classes: `direct`, `hop` and
+`spine`. On a database the lane has run against that is 12, 2 and 8; on a fresh one 11, 2
+and 8, because `__sentinel_environments` is the harness's. **The counts are recorded, not
+asserted** — the suite asserts that every base table falls into exactly one class, which is
+the invariant that survives either database.
+
+**There is deliberately no fourth class.** An earlier draft had `unscoped` holding `outbox`
+alone, on the reading that Principle I's second clause was violated. It is not: nothing
+wants a tenant-scoped read of the outbox, its only reader is the global relay, and a column
+no query filters on enforces nothing. `outbox` sits in `spine` beside `consumed_events`, and
+what it does carry is a retention problem four requirements care about (R7, R7a). A bucket
+kept open to receive a violation is how a finding becomes a classification.
 
 **Then** create a table with no tenant column in a scratch migration and re-run.
 

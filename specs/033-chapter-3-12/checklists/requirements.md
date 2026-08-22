@@ -679,3 +679,61 @@ correction.
 Eighty-five findings, six CRITICAL. All 35 narrative entries are now read at depth, and
 every corrected claim has been swept across all eight artifacts. The remaining risk in this
 chapter is not in the documents.
+
+## Analysis pass thirteen — the systematic claim sweep
+
+Three findings, one HIGH, all applied. This pass ran pass twelve's method properly: 29
+claim phrases from twelve passes of corrections, swept across all eight artifacts.
+
+**Twenty-nine phrases, three live residuals, four historical records correctly retained.**
+The ratio is the useful number — one residual per ten claims checked, against five
+residuals in a single claim last pass. The method converges.
+
+**`quickstart.md` had taken one correction in thirteen passes.** V6 still told the reader to
+expect "12 direct, 2 hop, 7 spine, 1 unscoped — the unscoped one being `outbox`", a
+classification pass five reversed and pass six replaced with a totality assertion. It is the
+file someone follows to check the chapter, so following it produced an expectation the suite
+cannot meet. It was found by a term sweep rather than by reading, and that is the point:
+`quickstart.md` is the only artifact written as instructions to a human, so it carries no
+identifiers, appears in no coverage grep, and every pass asking "do the artifacts agree"
+was asking it of the artifacts with `FR-` in them.
+
+**And the FR-USR-02 citation appeared a third time**, in `data-model.md`. Pass five fixed
+`spec.md` and `research.md` — the two files its finding named. The fourth instance in three
+passes of a correction landing exactly where the finding pointed and nowhere else.
+
+The third was `plan.md`'s Technical Context still saying "nine api suites" where pass two
+measured eleven and corrected R1 and T027.
+
+**What the sweep confirmed clean**, recorded because a sweep that reports only hits is not a
+sweep: the port file and its post-series claim, the credential-path decision, "costs a
+glob", the inherited-debt count, fences-versus-prose, "empty page", `@Accepts("service")`,
+"three health endpoints", the 17/13 fence surface, "three shapes of attack", all three
+instances of the 90.57% figure correctly attributed, "exist and are tested", T069f, and
+pass seven's "nothing to fix". Four hits were corrections quoting their own superseded text,
+which is how a record should read.
+
+## Thirteen passes
+
+  pass  1   the documents + the published series      17 findings   2 CRITICAL
+  pass  2   the code                                   9            2
+  pass  3   the build gates                            7            1
+  pass  4   the numbers                                9            0
+  pass  5   the governing documents                    7            1
+  pass  6   task executability                         7            0
+  pass  7   the sixth pass's edits                     5            0
+  pass  8   the publication contract                   4            0
+  pass  9   translation mechanics + the battery        4            0
+  pass 10   acceptance scenarios and edge cases        6            0
+  pass 11   assumptions, dependencies, one open item   5            0
+  pass 12   the narrative sweep + residuals           10            0
+  pass 13   the systematic claim sweep                 3            0
+
+Eighty-eight findings, six CRITICAL. Every correction from every pass has now been swept
+across all eight artifacts, and each new correction is swept as it is made.
+
+**What remains unread, named rather than declared absent:** `quickstart.md`'s other
+seventeen checks have never been read against the passes' findings. V6 was caught by a term
+sweep, not by reading, and a term sweep only finds claims someone thought to grep for. That
+is the same gap `spec.md`'s prose had before pass ten, in the artifact whose entire purpose
+is to be followed literally.

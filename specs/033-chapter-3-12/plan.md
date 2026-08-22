@@ -33,7 +33,8 @@ What research settled, and four of these came from measuring rather than reading
 - **The gauntlet is not in `packages/e2e`.** The coverage config excludes it by name,
   so a suite living there could not contribute to constitution VI's 100%-branch clause
   on isolation code — which FR-040 requires this chapter to measure. The REST half
-  boots `AppModule` in process, the way nine api suites already do (R1).
+  boots `AppModule` in process, the way eleven api suites already do — counted, after an
+earlier draft said nine (R1).
 - **`/internal/*` is two credential classes and needs two attacks.** Three routes are
   `@Accepts("user")` and carry an end-user token that **is** scoped to one environment, so
   their attack is a foreign credential. Five are platform routes whose credential carries

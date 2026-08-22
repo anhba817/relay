@@ -173,8 +173,10 @@ the `422` and requires a code of its own. The SRS names that code in its worked 
 EIR-API-04: `channel_member_limit_exceeded`. An earlier draft of this document had neither
 the ceiling nor the code.
 
-Users named and not yet present are created, which is FR-USR-02's implicit creation one
-step earlier than first authentication. The cap is stated rather than unbounded because
+Users named and not yet present are created — **FR-USR-01**'s rule that identifiers come
+from the customer and "Relay shall not generate end-user identities", together with
+FR-CHN-06, which does not require members to pre-exist. Not FR-USR-02, which describes
+creation on first *authentication* and is a different moment. The cap is stated rather than unbounded because
 FR-CHN-06 names 100 and an endpoint that takes one identifier would have to be replaced
 instead of extended.
 
