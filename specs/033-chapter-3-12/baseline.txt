@@ -2223,3 +2223,50 @@ port ranges was NATS on 4222.
 a per-run failure rate of 13.91% or worse at 95% confidence, and a 5% flake
 survives it 36% of the time. Chapter 3.11 ran twenty green and an eleven-chapter-old
 flake surfaced on run twenty-one.
+
+## T120 — the publication gates, and one file 3.12 owed the chain
+
+    relay-tutorial  pnpm lint          exit 0
+                    pnpm build         exit 0 — compiled in 11.6s, 81 static pages,
+                                       both /part-3/chapter-12/… routes generated
+                    pnpm check:docs    exit 0 — seven documents mirror
+                    pnpm check:errors  exit 0 — 13 codes, 13 sections
+                    pnpm check:fences  exit 1 — 20 problems
+
+    en   29 chapters, 452 titled fences, 194 distinct fenced files
+    vi   29 chapters, 452 titled fences, 194 distinct fenced files
+
+**A claim I made twice was wrong, and the arithmetic caught it.** I reported
+chapter 3.12's chain as clean on the strength of "0 problems naming chapter-12's
+page". That is a different question from "0 problems on files 3.12 owns", and the
+two answers differed by one: `services/api/src/messages/messages.itest.ts` is
+3.12's — its change deletes the private `withoutRequestId` and imports the shared
+one — and no fence in the chapter mentioned it.
+
+It is fenced by three earlier chapters (2.2, 3.2, 3.8), so it needed a **diff**
+fence, which is now in both locales beside the oracle it is about. The deletion is
+the argument for lifting the helper: one private copy was fine while one test used
+it; twenty-four routes each comparing bodies with their own copy is how two copies
+come to disagree.
+
+**21 → 20 problems**, and the 20 are exactly the two unwritten chapters' files: 6 of
+3.13's and 14 of 3.14's. The other 22 files those chapters change are not in the
+chain at all, so they produce no HEAD problem — which is why 20 rather than 40.
+
+**The final page**: 3,440 prose words, **20 chain fences over 20 paths**, 29 fence
+delimiters matched in both locales.
+
+## Why `part3-ch12` is NOT tagged, and the push is not made
+
+`pnpm check:fences` exits 1. Tagging and pushing here would put the repositories in
+a state where the CI job that keeps the series honest is red, and it would be red
+for a reason this chapter created: the split left two chapters' worth of code in
+`relay-platform` with no page fencing it.
+
+The code is committed and green — 20 consecutive lane runs, coverage passing, every
+other gate clean. What is missing is two pages, and a tag claiming a clean state
+before they exist would be the same kind of claim this chapter spent fourteen
+analysis passes removing from other documents.
+
+So T125's tag and T126's push wait on chapters 3.13 and 3.14. The alternative —
+tag now, fix the chain later — trades a true record for a convenient one.

@@ -373,7 +373,7 @@ the gates, the battery, the counts, the three reintroductions, the two scratch p
 - [X] T119 **Update** the existing manifest entry at `relay-tutorial/lib/tutorial.ts:487` — do not add one. `id: "3.12"` is already there with the right path and title, `status: "forthcoming"`, and a `readerProduces` written before the chapter acquired two public endpoints, thirteen error codes, a sealed integration and service-scoped platform authorization. Set `status` to `published`, rewrite `readerProduces`, **add the missing `readerProducesVi`** (3.11 has one, 3.12 does not, so the Vietnamese page would render an English summary), and check `readerMinutes: 100` against the finished page — it is already Part 3's maximum, which may be right for 37 fenced files and should be measured rather than inherited. The manifest is one entry carrying both locales, not two
 - [X] T119a [P] Add `docs/08-error-reference.md` to that entry's `sourceDoc`, beside `docs/04-srs.md`. `sourceDoc` is the key `chaptersCiting()` joins on, so naming it makes the new reference page link back to the chapter that built it — and corrects research R11, which concluded the page renders cleanly because no chapter cites it. The empty-citation path still renders cleanly; this document will not be taking it
 - [X] T119b [P] Confirm the fence-delimiter count matches on both locale pages
-- [ ] T120 Run `pnpm lint`, `pnpm build`, `pnpm check:docs` and `pnpm check:fences` and record the file, chapter and locale counts (SC-023)
+- [X] T120 Run `pnpm lint`, `pnpm build`, `pnpm check:docs` and `pnpm check:fences` and record the file, chapter and locale counts (SC-023)
 
 **Checkpoint**: the chain is byte-exact in both locales and no chapter has been made to lie.
 
