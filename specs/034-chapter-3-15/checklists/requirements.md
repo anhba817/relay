@@ -32,7 +32,7 @@
 ## Notes
 
 - **Scope resolved**: the whole deferred surface, on the user's decision. Twelve SRS
-  clauses, five unread columns, three corrections. The chapter division is deferred to
+  clauses, five unread columns, four corrections. The chapter division is deferred to
   planning by FR-040, which requires the split to be measured before any chapter prose
   exists — the one thing chapter 3.12's close-out asks the next feature to do
   differently, after it estimated 37 fenced files and shipped 61 across three chapters.
@@ -54,10 +54,25 @@
   symptom is already in the platform: a token minted for an unknown identifier
   authenticates and then fails its first send with `unknown user`.
 
-- **Three corrections to earlier records**, two of which this spec could make and one
+- **Four corrections to earlier records**, two of which this spec could make and two
   it could not. Chapter 3.12's traceability map recorded FR-CHN-04 as delivered and
   described it with a paraphrase belonging to FR-CHN-06 — corrected. The same map said
   "no membership check on any read path" — corrected. The same sentence in
   `channels.schema.ts:26` sits inside a titled fence in chapter 3.13's page in two
   locales, so FR-037 schedules it as fence work rather than this spec editing three
   files during a specification command.
+
+- **The fourth correction was added after planning, on the user's instruction, and it
+  is a class rather than a sentence.** R17 measured that 31 platform files carry 40
+  "chapter 3.12" citations while the previous feature shipped as three chapters, so 19
+  of those files point a reader at a page that does not contain them. It arrived as a
+  research finding with no requirement over it; it is now **FR-038a**, with **FR-038b**
+  saying what must not change and **SC-021** as the gate.
+
+  **Re-validated after the addition**: 44 requirements, 21 success criteria, 9 edge
+  cases, and the two checklist items the addition could have broken both hold.
+  *Testable and unambiguous* — the rule is "the chapter a change was taught in", not
+  "the chapter that fences the file", and the edge case names the citation that is
+  already correct under it (chapter 2.2 for `last_sequence`) so the rule cannot be
+  applied into a new mistake. *Clear acceptance criteria* — SC-021 counts the same way
+  before and after, which is the only reason the count means anything.

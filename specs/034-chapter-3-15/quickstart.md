@@ -1,6 +1,6 @@
 # Quickstart — validating chapters 3.15 and 3.16
 
-Seventeen checks. Run in order; several depend on earlier ones. Every command is one a
+Eighteen checks. Run in order; several depend on earlier ones. Every command is one a
 maintainer runs, verbatim.
 
 Three of the checks are **negative**: they require breaking something on purpose and
@@ -216,6 +216,29 @@ pnpm vitest run services/api/src/auth --config services/api/vitest.integration.c
 **Expect** a token minted for an identifier with no user row, then a message sent
 through `POST /internal/messages` and accepted (SC-020). Before this feature that
 sequence answers `400 "unknown user"`.
+
+## V15a — the chapter citations, classified
+
+```bash
+cd relay-platform
+grep -rn "chapter 3\.1[2-6]" --include=*.ts --include=*.sql --include=*.mjs . \
+  | grep -v node_modules
+```
+
+**Expect** every hit to name the chapter its change was taught in. The starting position
+is 31 files and 40 `chapter 3.12` citations, of which 12 files are fenced in chapter
+3.12's page — 9 are taught in 3.13, 9 in 3.14, and `exempt.ts` only in the post-series
+appendix. Classify all 40 and record the wrong count before correcting any of them
+(SC-021).
+
+**Two things not to correct.** The `FR-` and `R` identifiers stay: they name
+`specs/033-chapter-3-12/`, and a feature directory is named once (FR-038b). And a
+citation naming a chapter for something other than its own file's change — chapter 2.2
+for `last_sequence` — is already right; rewriting it is the correction making things
+worse.
+
+A comment inside a titled fence moves three files at once, so run `pnpm check:fences`
+after this one and not only at V16.
 
 ## V16 — the gates, the battery, and the prose
 

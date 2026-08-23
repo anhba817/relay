@@ -42,9 +42,9 @@ Its record is `specs/034-chapter-3-15/`: read **`plan.md`** for the seventeen ph
 and the constitution gate, `research.md` for R1 to R17 (twelve measured against a
 running database), then `data-model.md`, `contracts/membership.md`,
 `contracts/listing.md` and `quickstart.md` (V0 to V16, three of them negative).
-42 requirements, 20 success criteria, checklist 16/16.
+44 requirements, 21 success criteria, checklist 16/16.
 
-**Twelve SRS clauses, five dead columns, and three corrections.** The clauses are
+**Twelve SRS clauses, five dead columns, and four corrections.** The clauses are
 FR-CHN-03/04/05/06/08/09/10 and FR-USR-02/03/04/05/06. The columns exist and nothing
 reads them: `channels.type`, `channels.archived_at`, `users.avatar_url`,
 `users.metadata`, `users.banned_at` — that count is the feature's own headline number
@@ -74,14 +74,18 @@ maintains `last_sequence` (chapter 2.2 made it the sequencing authority).
 
 **FOUR THINGS THE PLAN FOUND THAT THE SPEC DID NOT NAME.**
 
-1. **R17 — nineteen files send a reader to the wrong chapter, and no requirement
-   covers it.** The previous feature was specified as one chapter and shipped as
-   three; 31 files carry 40 "chapter 3.12" citations, and only 12 of those files are
-   fenced in chapter 3.12's page. `zod-validation.pipe.ts` and `codes.ts` point at
-   3.12 and are taught in 3.14; `repository.ts` points at 3.12 and is taught in 3.13.
-   The FR and R identifiers in those comments stay — they belong to the feature,
-   `specs/033-chapter-3-12/`. Only the chapter number is wrong. Found while checking a
-   citation for R15, which is the only reason it was found at all.
+1. **R17 — nineteen files send a reader to the wrong chapter.** The previous feature
+   was specified as one chapter and shipped as three; 31 files carry 40 "chapter 3.12"
+   citations, and only 12 of those files are fenced in chapter 3.12's page.
+   `zod-validation.pipe.ts` and `codes.ts` point at 3.12 and are taught in 3.14;
+   `repository.ts` points at 3.12 and is taught in 3.13. **Now FR-038a**, with FR-038b
+   holding the line that the FR and R identifiers stay — they name the feature record
+   `specs/033-chapter-3-12/`, and a feature directory is named once. SC-021 is the
+   gate: all 40 classified, the wrong count recorded, that count to zero. **The rule
+   needed a boundary**: `last_sequence` is cited to chapter 2.2 in files taught much
+   later and that is correct, so the rule is about the chapter a CHANGE was taught in,
+   not the chapter that fences the file. Found while checking a citation for R15, which
+   is the only reason it was found at all.
 2. **`users` has no deletion marker.** R7 decided a deleted user keeps their row, and
    designing that turned up a third new column, `users.deleted_at`. `ON DELETE SET
    NULL` would satisfy the letter of "messages are preserved" and break delivery:

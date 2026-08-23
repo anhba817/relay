@@ -352,9 +352,19 @@ page does not carry the file. This is the same shape as FR-037 — a stale sente
 source file that is also inside a published fence — so a corrected comment in a fenced
 file is three files moving together, and `pnpm check:fences` fails if they do not.
 
-**This has no requirement in the spec.** FR-037 covers one sentence in
-`channels.schema.ts` and FR-038 covers one row in a traceability map; neither covers
-this. Named here rather than absorbed into either.
+**This now has its own requirement.** FR-037 covers one sentence in
+`channels.schema.ts` and FR-038 covers one row in a traceability map; neither reached
+this, so it is **FR-038a** — the rule, with the measurement above as its starting
+count — and **FR-038b**, which says what must not change: the `FR-` and `R` identifiers
+inside those comments name the feature record, and a feature directory is named once.
+Verified by **SC-021**: all 40 citations classified, the wrong count recorded, and that
+count reaching zero.
+
+**And the rule needed a boundary.** "Every citation must name the chapter that fences
+the file" is the wrong rule — `last_sequence` is cited to chapter 2.2 in files taught
+much later, and that citation is correct. The rule is about the chapter a *change* was
+taught in, which is why FR-038a says so and the edge case beside it names the case that
+would otherwise be corrected into a mistake.
 
 **Alternatives considered**: leaving them (a code comment that names a chapter is a
 reference, and a wrong reference is worse than none — the series' own argument for

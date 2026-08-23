@@ -7,7 +7,9 @@
 ## Summary
 
 Twelve SRS clauses that were deferred across chapters 3.12 to 3.14, five schema
-columns that no code reads, and three corrections to what those chapters recorded.
+columns that no code reads, and four corrections to what those chapters recorded — the
+fourth being a class rather than a sentence: 31 files cite the previous feature as one
+chapter, and it shipped as three (FR-038a, from R17).
 
 The work divides into **two chapters, decided on a measured file count before any
 chapter prose exists** — which is the one thing chapter 3.12's close-out asks the next
@@ -56,7 +58,7 @@ planning began.
 | **III. Two data paths, never crossed** | No analytical write. `read_positions` is operational state on the operational store. The unread count is derived from `channels.last_sequence`, which the write path already maintains, so nothing new is computed on a read path that a write path could not already answer. | Pass |
 | **IV. Single writer, single source of truth** | The api remains the only writer. The gateway reads a ban at connect through the api, as it already reads a session — no new table reaches the gateway. | Pass |
 | **V. API-first, developer-first** | Three new error codes — `not_a_member`, `channel_archived`, `user_banned` — each a distinct fact a client acts on differently, which is the test chapter 3.14's registry sets. Sixteen codes after this feature, each with a reference section, checked in both directions by the existing `check:errors`. Every route's status code is documented (FR-039), closing chapter 3.14's gap G5 for the routes this feature touches. | Pass |
-| **VI. Requirement-driven, test-verified delivery** | **42 requirements, 20 measurable outcomes** — re-derive with `grep -c '^- [*][*]FR-' spec.md` and the same for `SC-`, never carried forward by hand. FR-035 is the sharpest gate: each newly-live column must be shown read by a test that **fails when the read is removed**, because chapter 3.13 found that adding a table to the guard's array is not the same as the guard watching it. Coverage ratchets hold or rise; the new `users` module and `read_positions` reads get per-file pins for the reason chapter 3.11's T033c gave — an unpinned file is a figure that can slide. | Pass |
+| **VI. Requirement-driven, test-verified delivery** | **44 requirements, 21 measurable outcomes** — re-derive with `grep -c '^- [*][*]FR-' spec.md` and the same for `SC-`, never carried forward by hand. FR-035 is the sharpest gate: each newly-live column must be shown read by a test that **fails when the read is removed**, because chapter 3.13 found that adding a table to the guard's array is not the same as the guard watching it. Coverage ratchets hold or rise; the new `users` module and `read_positions` reads get per-file pins for the reason chapter 3.11's T033c gave — an unpinned file is a figure that can slide. | Pass |
 | **VII. Boring by design — scope is a commitment** | No new service, no new language, no new dependency. One new module inside an existing service. **No ADR required, and the candidate was weighed rather than waved past**: denormalising `last_activity_at` is the kind of decision an ADR exists for, and R14 records why it is not one — a 145× measurement and no rejected architecture is a rationale, not an architecture decision. Four things larger than this feature are named and refused with owners: presence scope (FR-RTM-07), REST-to-socket delivery (FR-RTM-05), outbox retention (FR-MOD-06), and a human reading the documentation. | Pass, with four refusals recorded |
 
 **Post-design re-evaluation**: unchanged. The design added one table, three columns and
@@ -69,7 +71,7 @@ suite gained the attack class it was missing.
 
 ```
 specs/034-chapter-3-15/
-├── spec.md                  42 FRs, 20 SCs, 9 stories, 42 scenarios, 8 edge cases
+├── spec.md                  44 FRs, 21 SCs, 9 stories, 42 scenarios, 9 edge cases
 ├── research.md              R1–R17; twelve measured, one that pointed the wrong way
 ├── plan.md                  this file
 ├── data-model.md            one new table, three new columns, four state transitions
@@ -119,7 +121,7 @@ relay-tutorial/
 | 11 | US5 — unread | read positions, and the count derived from `last_sequence` | R5: no counter |
 | 12 | US3, US8, US9 — the user surface | the `users` module: profile, bulk upsert, deletion, banning | three of the five dead columns |
 | 13 | FR-USR-02 — implicit creation on authentication | the token route creates, converging on chapter 3.13's idempotent `createUser` | R9: the `unknown user` 400 |
-| 14 | The corrections | `channels.schema.ts:26`'s false sentence, chapter 3.12's traceability row, and **R17's nineteen mis-pointed chapter citations, which no requirement covers yet** | FR-037, FR-038, R17 — a corrected comment in a fenced file is three files moving together or `check:fences` fails |
+| 14 | The corrections | `channels.schema.ts:26`'s false sentence, chapter 3.12's traceability row, and R17's 40 chapter citations classified and corrected | FR-037, FR-038, FR-038a/b, SC-021 — a corrected comment in a fenced file is three files moving together or `check:fences` fails |
 | 15 | Verification | every SC measured, traceability both directions, the twenty-run battery | the battery is an hour and nothing else runs on the machine |
 | 16 | **Chapter 3.16's page**, both locales | prose, fences, figures, counted | the split's second half |
 | 17 | Close-out | `chapter-notes.md`, the plan rows, `CLAUDE.md`, tag, push | pins last |

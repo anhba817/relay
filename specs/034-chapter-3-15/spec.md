@@ -35,8 +35,9 @@ layer down — and unlike prose, a column also costs a migration to remove, so t
 choice is to make it live or to say beside it that it is not.
 
 **This feature closes the whole deferred surface**: **twelve** SRS clauses across
-FR-CHN and FR-USR, the five columns, and three corrections to what chapters 3.12 to
-3.14 recorded.
+FR-CHN and FR-USR, the five columns, and four corrections to what chapters 3.12 to
+3.14 recorded — one of them a whole class rather than a sentence, because the previous
+feature shipped as three chapters and 31 files still cite it as one (FR-038a).
 
     FR-CHN-03  P1   the private type accepted and meaningful
     FR-CHN-04  P2   member roles — no column exists
@@ -399,6 +400,10 @@ their sends are refused, confirm their history is intact, unban, confirm they wo
   membership is channel-scoped, so the ban wins, and the reason is stated.
 - **A token minted for an identifier that is then used by a membership call**: implicit
   creation happens twice for one external identifier, and must produce one row.
+- **A source comment citing a chapter for something other than its own file**, such as
+  chapter 2.2 for `last_sequence`. FR-038a's rule is about the chapter a change was
+  taught in, so a citation like that is already right and rewriting it would be the
+  correction making things worse.
 - **A token minted for a BANNED user's identifier**: implicit creation must not
   resurrect a banned user as a fresh one, which is the interaction between FR-USR-02
   and FR-USR-06.
@@ -512,6 +517,19 @@ their sends are refused, confirm their history is intact, unban, confirm they wo
   FR-CHN-06. **Corrected in that map while this spec was written**; this requirement is
   here so the chapter states the correction rather than leaving it in a file nobody
   re-reads.
+- **FR-038a**: Every source comment that attributes a change to a chapter MUST name the
+  chapter whose page teaches that change. Measured: 31 platform files carry 40
+  "chapter 3.12" citations, written while the previous feature was still one chapter,
+  and 12 of those files are fenced in chapter 3.12's page — 9 are taught in chapter
+  3.13, 9 in chapter 3.14, and 1 only in the post-series appendix. All 40 MUST be
+  classified and every wrong chapter number corrected. A citation naming a chapter for
+  something other than the cited file's own change — chapter 2.2 for `last_sequence`,
+  for example — is already correct and MUST NOT be rewritten.
+- **FR-038b**: The requirement and research identifiers inside those comments MUST NOT
+  change. `FR-025` and `R14a` name the feature record `specs/033-chapter-3-12/`, which
+  keeps its number because a feature directory is named once. Only the chapter number
+  is wrong, and a corrected comment inside a titled fence moves the platform file, the
+  English page and the Vietnamese page together, as FR-037 requires.
 - **FR-039**: The feature MUST document the status code of every public route it adds
   or touches, closing chapter 3.14's gap G5 for those routes.
 - **FR-039a**: A user record MUST be created implicitly on first authentication if it
@@ -595,11 +613,14 @@ their sends are refused, confirm their history is intact, unban, confirm they wo
 - **SC-020**: A token minted for an identifier no user record exists for can send a
   message without a prior membership call, demonstrated end to end — which is the
   sequence that returns `unknown user` today.
+- **SC-021**: All 40 chapter citations are classified, the count that attributed a
+  change to a chapter not teaching it is recorded, and that count reaches zero —
+  counted by the same command before and after.
 
 ## Assumptions
 
 - **The whole deferred surface is in scope, and the chapter division is a plan-time
-  decision.** Eleven SRS clauses, five columns, three corrections. This is larger than
+  decision.** Twelve SRS clauses, five columns, four corrections. This is larger than
   any single chapter in this part has carried: chapter 3.12's feature came to 61 files
   and published as three chapters. So FR-040 requires the split to be measured at
   planning rather than discovered at page-counting, which is the one thing chapter
@@ -648,3 +669,6 @@ their sends are refused, confirm their history is intact, unban, confirm they wo
   that does not exist yet — archived, banned, and not-a-member are three candidates.
 - Chapter 3.13's fenced comment in `channels.schema.ts`, which FR-037 corrects in three
   files at once.
+- The three published pages of chapters 3.12, 3.13 and 3.14, which FR-038a classifies
+  40 source citations against. The classification depends on which page fences which
+  file, so it cannot be done from the platform repository alone.
