@@ -725,10 +725,14 @@ their sends are refused, confirm their history is intact, unban, confirm they wo
   `messages.user_id` points at, and FR-028 requires a deleted author to stay
   distinguishable from no author. A row with cleared fields and a deletion marker does
   that; `ON DELETE SET NULL` does not.
-- **Twenty runs and the size bound carry forward** with the ranges chapters 3.12 to 3.14
-  recorded: twenty green runs reject a per-run failure rate of 13.91% or worse and
-  nothing gentler, and the lane's budget is 240 seconds against a 193-second
-  measurement.
+- **Twenty runs carry forward; the size bound is re-derived.** Twenty green runs reject a
+  per-run failure rate of 13.91% or worse and nothing gentler — that argument is about
+  statistics and does not depend on this feature. The **240-second lane budget does**: chapter
+  3.12 set it when the lane held 407 tests, and this feature adds a fifth again as many. It is
+  predicted at T003a and re-derived at T179b if the lane exceeds it, rather than carried
+  forward as though the number were independent of the work. The budget is enforced by
+  nothing — no turbo, CI or vitest timeout — so exceeding it fails no build and invalidates
+  this assumption silently.
 
 ## Dependencies
 

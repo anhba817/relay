@@ -42,7 +42,7 @@ Its record is `specs/034-chapter-3-15/`: read **`plan.md`** for the seventeen ph
 and the constitution gate, `research.md` for R1 to R18 (twelve measured against a
 running database), then `data-model.md`, `contracts/membership.md`,
 `contracts/listing.md` and `quickstart.md` (18 checks, three of them negative).
-58 requirements, 22 success criteria, 246 tasks in 21 phases, checklist 16/16.
+58 requirements, 22 success criteria, 248 tasks in 21 phases, checklist 16/16.
 
 **Twelve SRS clauses, five dead columns, and four corrections.** The clauses are
 FR-CHN-03/04/05/06/08/09/10 and FR-USR-02/03/04/05/06. The columns exist and nothing
@@ -119,6 +119,28 @@ maintains `last_sequence` (chapter 2.2 made it the sequencing authority).
 4. **The gauntlet has no same-tenant fixture.** All four attack shapes take another
    tenant's identifiers, so "a user of your own tenant who is not a member" is new
    work rather than a reuse (R10, FR-034).
+
+**PASS THIRTEEN SWEPT THE ASSUMPTIONS — the last artifact with no sweep — and found one
+that is a claim about a number this feature changes.** "The lane's budget is 240 seconds
+against a 193-second measurement" was inherited from 3.12, which set it when the lane held
+**407 tests**. This feature has **57 tasks writing integration assertions**, a fifth again as
+many tests, which puts the lane near 230–250 s. The budget is enforced by nothing — no turbo,
+CI or vitest timeout — so exceeding it fails no build and invalidates the assumption in
+silence. Now predicted at T003a and re-derived at T179b instead of carried.
+
+**AND THE PLAN IS THE ARTIFACT THAT DRIFTS MOST QUIETLY.** Pass seven corrected R1's caller
+count in three places and missed `plan.md`'s phase table, where "six callers inherit it"
+survived six more passes — a fourth document holding a number that hid a CRITICAL. And
+**Complexity Tracking had not moved in thirteen passes** while the design under it moved four
+times: it listed six things and omitted the by-id route, the bulk removal, and **attributing
+the user on the public send — half of a gap R16 had declared out of scope, brought in because
+FR-001 cannot hold without it.** The constitution's workflow section names that table as where
+a revised scope commitment gets justified, which is exactly what this was.
+
+**SEVEN SWEEPS, SEVEN DIFFERENT LEFT-HAND SIDES, ALL PRODUCTIVE**: files→chapters,
+routes→handlers, columns→readers, callers→signatures, scenarios→routes, edge-cases→tasks,
+assumptions→reality. `tasks.md` gets edited every pass because implementation reads it;
+`plan.md` gets edited when someone remembers it.
 
 **PASS TWELVE SWEPT THE EDGE CASES, which no earlier pass had.** Ten cases, one with no
 fixture and no test — and it is a case **this feature creates**. "Two tenants using the same
