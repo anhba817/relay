@@ -1755,3 +1755,42 @@ than one, and Phase 14's plan-table edit, now three rows. Phase 11's battery,
 coverage figures and traceability map cover all three chapters and are not
 re-run — they measure the code, and the code does not change because the prose is
 divided differently.
+
+## T110-T114 — chapter 3.12, counted rather than estimated
+
+`app/(en)/part-3/chapter-12/milestone-the-isolation-gauntlet/page.mdx`
+
+    prose words outside fences       3,326      bound 2,000-4,000
+    titled fences                      26      chapter 3.11 carried 31
+    figures                             3      bound 2-4, at least one per half
+    WHY boxes                           5
+    TRAP boxes                          5
+    files fenced                    20 of 20   every file in 3.12's half
+
+Chapter 3.11 for comparison: 3,316 prose words and 31 fences. This lands in the
+same place, which is what splitting on the number was for.
+
+**Figures**, two in the first half and one in the second, per the bound
+`docs/07-tutorial-plan.md` has set since Part 0:
+
+  1. the derived target list — router → 24 targets → five shapes → the build fails
+     naming an unclassified route
+  2. who may call — an end-user token carrying one environment against a platform
+     credential carrying none, and the class/service narrowing
+  3. what masked what — the first reintroduction's layering, which is the second
+     half's finding
+
+**One fence had to lose its title, and the reason generalises.** The T066
+reintroduction's code is a specimen of something DELETED, and the fence chain
+replays every titled fence onto the canonical repository. A title there would have
+put a reintroduction into the tree, which is precisely what FR-015 forbids. It is
+untitled with a comment saying why.
+
+**`public-surface.itest.ts` moved to chapter 3.13.** The classifier had it in
+3.12's half on the strength of the word "socket", but its subject is a member added
+over the PUBLIC API receiving a message — inseparable from the two endpoints, which
+are 3.13's. So 3.12 fences 20 files and 3.13 fences 22.
+
+Page renders at 200 with no compile error, three mermaid figures and ten boxes.
+One component fix: `<ForwardRef>` takes a required `part` prop and was rendering
+its label as `undefined`.
