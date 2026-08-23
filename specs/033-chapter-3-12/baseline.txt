@@ -357,3 +357,69 @@ twice from `specs/033-chapter-3-12` — the directory a previous `cd` had left t
 in — and answered `ERR_PNPM_NO_IMPORTER_MANIFEST_FOUND` both times. It reads as a
 silent failure because the count that follows it is empty rather than wrong. Every
 command that matters gets an absolute `cd` from here.
+
+# ── Phase 3: the derived list and the REST surface ───────────────────────────
+
+## T015-T020 — the derivation, and the number off a run
+
+`deriveTargets()` reads `router` and falls back to `_router`, and RETURNS which one
+answered, so a test can tell "found nothing" from "found a clean surface".
+`targets.itest.ts` runs seven checks: a router was found, routes were found,
+middleware layers were found, the canary route is present, every target is
+classified exactly once, no classification is stale, and every exempt entry has a
+reason.
+
+  gauntlet targets: 22 derived, 19 attacked, 3 exempt
+                    (read 2, list 1, write 15, credential 1)
+
+19 + 3 = 22, against T008's independently generated 22.
+
+**The count only prints under `--reporter=verbose`.** The default reporter
+suppresses test stdout, so SC-001's "comes off a run rather than out of prose"
+holds only for someone who asks for it. Recorded rather than worked around: the
+assertion that the counts sum is what gates the build, and the printed line is for
+a reader.
+
+## T021, T022 — the assertions fire, demonstrated three ways
+
+**T021a — one classification entry removed.** Two tests failed, and the first names
+the route rather than a count:
+
+    AssertionError: expected { …(2) } to deeply equal { unclassified: [], duplicated: [] }
+    -   "unclassified": [],
+    +   "unclassified": [ …
+
+**T021b — the derivation reads a property that no longer exists.** Five tests
+failed, including all three that exist for exactly this:
+
+    × found a router at all, and says which property answered
+        expected 'none' not to be 'none'
+    × found routes — an empty list is a broken derivation, not a clean surface
+        expected 0 to be greater than 0
+    × found the route that has existed since chapter 2.2
+
+That is the failure research R2 asked for: loud, not an empty pass.
+
+**T022 — a route nobody classified.** A throwaway `@Get("probe")` on
+`HealthController`:
+
+    +   "unclassified": [
+    +     "GET /probe",
+    AssertionError: expected 22 to be 23
+
+SC-002 satisfied: the suite fails until the route is classified, and the failure
+names it.
+
+**And a mistake that cost the derivation.** T021a and T021b were run before this
+phase's code was committed, and reverting them with `git checkout` discarded the
+uncommitted `deriveTargets` along with the deliberate break. The next two runs then
+failed at the `beforeAll` hook with `TypeError: deriveTargets is not a function`
+and reported "7 skipped" — which reads as the suite crashing rather than as the
+assertion firing, so the evidence T021b and T022 exist to produce was not produced.
+
+CLAUDE.md's rule is "COMMIT EACH PHASE", and its stated reason is that 3.11's bad
+regex was repaired by one `git checkout`. The other half of that rule is the one
+learned here: **`git checkout` is only a repair if the good state is committed.**
+The derivation was rewritten, verified, and committed at `70a82b6` before the two
+breakages were repeated — and both then failed at their assertions as designed.
+Phase 7's three reintroductions must commit first for the same reason.
