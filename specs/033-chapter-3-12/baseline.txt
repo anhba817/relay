@@ -1174,3 +1174,93 @@ the top of `limits.itest.ts` and every file points at it.
 test-harness 8 → 14, the guard's six new tests. Nothing else moved, which is the
 point: nine guarded tables and seven randomised ports changed no other suite's
 answer.
+
+## T078, T078a, T079 — the coverage answer, with numbers
+
+`pnpm coverage` — exit 0, **771 tests**, every ratchet met including five new ones.
+
+    All files    91.27 stmts   84.93 branches   90.89 fn   92.54 lines
+
+`repository.ts` branches: **254/280 — 90.71%**, against T007's 241/266 (90.60%).
+The file gained 14 branches and 13 of them are covered.
+
+**It went DOWN before it went up, which is the ratchet earning its keep again.**
+Measured mid-phase at 255/282 — 90.43%, below where the chapter found it while
+still above the pinned 90. Three new uncovered arms, all one kind:
+
+  - `addMember`'s `(inserted.rowCount ?? 0)` — **removed rather than named.**
+    `rowCount` is `number | null` in the driver and never null for an INSERT, so
+    the `??` was an arm nothing could take, in the one file constitution VI asks
+    100% of. `RETURNING channel_id` and `.rows.length` replaced it.
+  - `createChannel`'s and `createUser`'s "could not be created or read" throws.
+    Both are the loser of an `ON CONFLICT` race finding no row, which means the
+    winner's row was deleted between two statements of one call. Nothing in the
+    api deletes from either table.
+
+Pin stays at 90: 90.71 is above where the chapter found it and below 91, and a
+pin the next chapter has to earn back is worse than an honest one.
+
+**T078a — the gauntlet's contribution, measured before writing anything.** Chapter
+3.11's R23 predicted a fall here and got a rise; this chapter got the fall first
+and then the rise, and the difference is that the new code was repository writes
+rather than repository reads. The in-process gauntlet covers the foreign-id read
+and write paths; what it cannot cover is a guard whose false arm requires a state
+the layer forbids.
+
+**T079 — the decision, and it is to pin.** Five new entries:
+
+    services/api/src/db/catalogue.ts             100 / 100 / 100 / 100
+    services/api/src/isolation/targets.ts        100 / 100 / 100 / 100
+    services/api/src/isolation/compare.ts        100 / 100 / 100 / 100
+    services/api/src/isolation/attack.ts          83 branches, 100 lines
+    services/api/src/channels/channels.service.ts 75 branches,  94 lines
+
+All five are inside the coverage `include` glob, so unpinned they would be bounded
+by nothing but the aggregate 70 — chapter 3.11's T033c made the same call, and its
+reason is the one to quote: an unpinned file is a figure that can slide.
+
+**Three of the five reached 100 only by separating what a passing suite cannot
+reach**, and that is the phase's own finding rather than a tidying:
+
+  - `catalogue.ts` was 87.5% because the arm returning `null` — the unclassified
+    table — cannot execute against a database that HAS no unclassified table,
+    which is the state the check exists to keep. `classifyRow` is now pure and
+    `catalogue.test.ts` drives all four arms with rows it makes up. T042 proved
+    the arm fires by creating a scratch table by hand; this proves it without one.
+  - `targets.ts` was 50% because a real Nest application has exactly one router
+    shape. `targets.test.ts` passes fakes for Express 4's `_router`, Express 5's
+    `router` and neither — and the `none` arm is the one a reader of a failure
+    most needs working, because it is what separates "no routes found" from "no
+    router found".
+  - `attack.ts` was 61% because every assertion in the gauntlet asserts that
+    `differences` is EMPTY, so the code that builds a difference string runs only
+    when the platform is broken. `comparePair` and `rowsOf` are exported and
+    driven with made-up answers; it now reads 83%.
+
+That is Phase 7's argument one layer down: an instrument that has never produced
+output has never had its output checked.
+
+**And what stays uncovered, named.** `attack.ts`: `send`'s empty-body arm and
+`credentialAttack`'s mint-failure arm, both needing an HTTP fake in a file whose
+subject is real HTTP. `channels.service.ts`: the `not_found` outcome after a
+successful scoped read — the channel deleted between two statements of one call.
+
+**One regression this phase caused and the unit lane caught.**
+`packages/test-harness/src/lists-agree.test.ts` parses `eslint.config.mjs` for the
+block keyed on `**/*.itest.ts` and reads its inline `ignores`. After the
+restructuring that `ignores` holds two spreads and no string, so the comparison
+read `[] vs [6]`. It now parses the named `DRAIN_EXEMPT_TESTS` array and also
+asserts that the block SPREADS it — a list nothing spreads agrees with `exempt.ts`
+and exempts nobody. Parsing a named array is less fragile than parsing a position,
+and the function's old comment was already an apology for the position.
+
+## Phase 8 gates, final
+
+  pnpm lint          exit 0   (1 pre-existing warning in session.perf.itest.ts)
+  pnpm typecheck     12 of 12
+  pnpm turbo run test  374     (was 353: +21 — catalogue 6, targets 6, attack 9)
+  pnpm coverage      exit 0, 771 tests, every ratchet met
+  pnpm test:integration  exit 0, 10 of 10, 3m14.487s
+
+    test-harness   14      api           318      gateway        49
+    dispatcher     16      e2e            10              TOTAL 407
