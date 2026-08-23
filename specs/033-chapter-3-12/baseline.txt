@@ -1794,3 +1794,43 @@ are 3.13's. So 3.12 fences 20 files and 3.13 fences 22.
 Page renders at 200 with no compile error, three mermaid figures and ten boxes.
 One component fix: `<ForwardRef>` takes a required `part` prop and was rendering
 its label as `undefined`.
+
+## T116 — the fence chain, and chapter 3.12's half of it is clean
+
+    node scripts/check-fence-chain.mjs
+    check-fence-chain: 21 problem(s) — HEAD 21
+    problems naming chapter 3.12's page: 0
+
+**All 21 remaining problems are files belonging to chapters 3.13 and 3.14**, whose
+pages do not exist yet: `eslint.config.mjs`, `turbo.json`, `package.json`,
+`repository.ts`, `app.module.ts`, `vitest.coverage.config.mts` and the lane's
+suites (3.13's), and `codes.ts`, `codes.test.ts`, `service-kit/src/index.ts`,
+`protocol-error.filter.ts`, `zod-validation.pipe.ts`, `rate-limit.middleware.ts`,
+`messages.service.ts`, `session.controller.ts`, `gateway/src/main.ts` and
+`gateway/src/session.ts` (3.14's). That is the split's fence assignment confirming
+itself from the other side.
+
+**The final page**: 3,099 lines, **19 chain fences over 19 paths**, 7 excerpt
+illustrations, **3,381 prose words**, 3 figures, 5 WHY, 5 TRAP.
+
+Three things the chain taught, none of which was in the plan:
+
+**A whole file, not an excerpt.** The HEAD property compares the state after a
+path's last fence against the file on disk, so a titled fence states the WHOLE
+file. The first draft carried twenty-six excerpts and produced 43 problems. A title
+containing `(excerpt)` is the documented escape — `NOT_A_FILE` in the checker — and
+means the fence is a prose illustration the chain ignores.
+
+**One full fence per path.** Replacing every excerpt with its file gave 4,995 lines,
+because six paths were fenced more than once and each copy restated the whole file.
+The first appearance carries the file; the later ones became excerpts.
+
+**A diff needs a predecessor in the chain.** `usage.itest.ts` is 371 lines, existed
+before this chapter, and had never been fenced by any chapter — so a diff fence for
+it had nothing to amend, and the checker said exactly that: *diff for … with no
+earlier fence to amend*. It is an excerpt with the reason written beside it: the
+chapter discusses what the change revealed, not a file a reader builds.
+
+**And one fence had to lose its title for a different reason.** The T066
+reintroduction is code that was deliberately deleted. A titled fence would replay
+it into the canonical tree, which is what FR-015 forbids.
