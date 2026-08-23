@@ -1834,3 +1834,60 @@ chapter discusses what the change revealed, not a file a reader builds.
 **And one fence had to lose its title for a different reason.** The T066
 reintroduction is code that was deliberately deleted. A titled fence would replay
 it into the canonical tree, which is what FR-015 forbids.
+
+## T107 — the battery, and run 11's failure was mine
+
+**Run 11 failed and the cause was the person running the battery**, not the
+chapter's code. Recorded in full, because a battery with an unexplained failure in
+it is worth less than one with an explained failure in it.
+
+    run  1  exit=0  tests=407  failed_files=0  seconds=192
+    run  2  exit=0  tests=407  failed_files=0  seconds=193
+    run  3  exit=0  tests=407  failed_files=0  seconds=193
+    run  4  exit=0  tests=407  failed_files=0  seconds=192
+    run  5  exit=0  tests=407  failed_files=0  seconds=193
+    run  6  exit=0  tests=407  failed_files=0  seconds=192
+    run  7  exit=0  tests=407  failed_files=0  seconds=194
+    run  8  exit=0  tests=407  failed_files=0  seconds=197
+    run  9  exit=0  tests=407  failed_files=0  seconds=192
+    run 10  exit=0  tests=407  failed_files=0  seconds=194
+    run 11  exit=1  tests=376  failed_files=2  seconds=135   ← FAILED
+    run 12  exit=0  tests=407  failed_files=0  seconds=194
+
+The failure:
+
+    FAIL  src/limits.itest.ts > one counter, two services (chapter 3.8)
+    Error: api never became healthy
+      ❯ waitForHealth src/limits.itest.ts:85:38
+      ❯ startApi src/limits.itest.ts:162:3
+
+`limits.itest.ts` is the file T076 changed from a fixed port to a random one in
+4100–4300, so it is the first suspect and the evidence had to be gathered rather
+than reasoned about.
+
+**Evidence it was interference:**
+
+    run 10 finished                        11:19
+    run 11 ran and failed                  11:19 – 11:22
+    `next dev -p 3998` last compiled       11:18
+    run 12 passed                          11:22 – 11:25
+
+Two Next.js dev servers were compiling a 3,000-line MDX page on the same machine,
+to check that chapter 3.12's page renders. The api child has a **30-second** health
+deadline and has to boot NestJS; under that load it did not make it.
+
+    nothing listening in 4100–4399          (`ss -ltn`)
+    no EADDRINUSE anywhere in run 11's output
+    `startApi()` is called ONCE in this file — no self-collision, unlike
+      `isolation.itest.ts`, which starts two children and needed a counter
+    the failure is a TIMEOUT, not a refused bind
+
+**The stopping rule does not fire**, because it names failures attributable to this
+chapter's code and this one is attributable to the operator. But twenty
+**consecutive** green runs is what SC-019 asks for, and run 11 broke the streak —
+so the streak restarts at run 12, and this battery cannot supply twenty on its own.
+
+**The lesson, which is not new and was not applied**: nothing else runs on the
+machine during a battery. Chapter 3.11 recorded a 3-second spread across twenty
+runs and called the spread the signal; a run 57 seconds short of the mean is a
+signal too, and the first thing to check is what else was running.
