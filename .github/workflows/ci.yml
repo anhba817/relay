@@ -109,6 +109,24 @@ jobs:
       # code that integration tests reach.
       - run: pnpm coverage
 
+      # Every error code the platform can emit has a section in the published
+      # reference, and every section names a code that exists — both directions,
+      # or a docs_url 404s for a customer and a retired code goes on being
+      # documented (chapter 3.12, SC-011, SC-012).
+      #
+      # A CI STEP, NOT A TURBO TASK, and not in `pnpm test`. Two measured reasons
+      # (R26): `docs/` sits above `$TURBO_ROOT$`, so it cannot be a turbo input,
+      # and a gate whose input turbo cannot see passes from CACHE after the
+      # reference changes; and relay-platform is independently clonable with a
+      # README promising its own checks pass from a clean checkout, where
+      # `../docs` does not exist.
+      #
+      # It runs HERE rather than in the tutorial job because it needs the protocol
+      # package's build output, which this job has and that one would need a
+      # second full install to get. The script itself uses only node builtins, so
+      # it needs nothing from the tutorial's dependency tree — only its path.
+      - run: node ../relay-tutorial/scripts/check-error-codes.mjs
+
   tutorial:
     name: relay-tutorial — build, docs drift, fence chain
     runs-on: ubuntu-latest

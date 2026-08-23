@@ -1264,3 +1264,133 @@ and the function's old comment was already an apology for the position.
 
     test-harness   14      api           318      gateway        49
     dispatcher     16      e2e            10              TOTAL 407
+
+## Phase 9 — thirteen codes, and the debt that has been open since chapter 1.3
+
+    13 codes: invalid_frame, unknown_frame_type, unauthorized, rate_limited,
+              wrong_credential_type, quota_exceeded, wrong_credential_service,
+              channel_member_limit_exceeded, invalid_request, forbidden,
+              not_found, internal_error, connection_environment_conflict
+
+Counted by executing the built registry, not by grepping the source.
+
+**Five of the thirteen went out on the wire for twenty-two chapters while absent
+from the registry.** `ProtocolErrorFilter` maps a status to a code when the thrower
+names none — `invalid_request`, `unauthorized`, `forbidden`, `not_found`,
+`internal_error` — and `docs_url` is derived from the code, so each of those five
+shipped a link to a page that could not exist even in principle. The registry
+called itself "the documented vocabulary" while documenting eight of thirteen.
+
+**`docs_url` now has one construction site.** Six had it: the filter, the rate-limit
+middleware twice, the gateway's session twice, and service-kit's not-found envelope
+— every one a template literal against `https://relay.example`, a host that does
+not resolve. `docsUrl(code)` sits beside the registry, takes `ErrorCode`, and reads
+`RELAY_DOCS_BASE_URL` per call rather than at import, so a test that sets the
+variable in `beforeAll` gets the value it set.
+
+**Four type gates, and each one closes a way a dead link could ship:**
+
+    ProtocolErrorFilter's ladder   typed `ErrorCode` — an unregistered code stops
+                                   compiling; `named` is checked against the
+                                   registry rather than trusted, because a thrower
+                                   can put any string in `code`
+    protocolError(code, …)         a new helper; eight sites named their own code
+                                   by hand through `HttpException`, whose response
+                                   is `unknown`, so `wrong_credental_type` compiled
+    sendError(socket, code, …)     narrowed from `string` to `ErrorCode` — and the
+                                   compiler found no existing call site wrong
+    docsUrl(code)                  the two sites that write the envelope straight to
+                                   the response are gated by this parameter alone
+
+**T084 — the dependency inverted rather than being added.** `packages/service-kit`
+declares no dependencies, which is the property that lets anything use it, and
+importing `@relay/protocol` for one URL would have ended that. `ServeOptions` gained
+a REQUIRED `notFoundDocsUrl` instead, and the compiler named every call site: one
+in production and eight in tests. Optional with a default host would have been the
+fourth instance of this chapter's own subject — `rate_limited`, close code 4008 and
+`request_id` were all declared and left unenforced, and a placeholder with a
+default has a longer life than one without.
+
+**T087 — the underscore.** `slugifyHeading` dropped `_`, so `## quota_exceeded`
+anchored at `#quota-exceeded` and every `docs_url` would have 404'd inside a page
+that looked correct. Blast radius measured before the change: zero chapter `h2`
+headings contain an underscore, one docs heading does, and zero links anywhere in
+the site point at a `/docs/<slug>#anchor`. The alternative was a matching transform
+in `@relay/protocol` maintained in two repositories with no test able to see both
+sides.
+
+**T089 — the glob that would have published the tutorial plan.** `0[1-6]-*.md` in
+both `sync-docs.sh` and `check-docs-drift.sh`. The range stops at 6 because
+`docs/07-tutorial-plan.md` is the series' own plan and is not a published
+reference — so `0[1-8]` publishes it, and nobody notices until a reader finds the
+chapter list with its unpublished chapters. Both scripts now share an explicit
+`DOCS` array with `07` commented out and the reason beside it.
+
+**T091, T091a, T092 — the closure check, in both directions.**
+
+    check-error-codes: 13 codes, 13 sections, each with a cause and a client action
+
+The platform half is five new assertions in `codes.test.ts`, including that every
+`docsUrl` ends in `#` plus the code verbatim and that the base is read per call.
+The tutorial half is `scripts/check-error-codes.mjs`, which also enforces that each
+section states retryability and a client action and clears a length floor a
+restatement cannot — "unauthorized: the request was unauthorized" fails.
+
+Its home is a CI STEP IN THE PLATFORM JOB, and the placement took two corrections.
+Not a turbo task and not in `pnpm test` (R26: `docs/` is above `$TURBO_ROOT$` so it
+cannot be an input, and a gate turbo cannot see passes from cache; and
+relay-platform is independently clonable with a README promising its checks pass
+from a clean checkout, where `../docs` does not exist). First placed in the tutorial
+job, which does not install the platform's dependencies and so could not build the
+package the script reads; moved to the platform job, which already has the build.
+The script uses only node builtins, so it needs nothing from the tutorial's
+dependency tree — only its path.
+
+**T094 — both directions, demonstrated:**
+
+    a fourteenth code with no section:
+      check-error-codes: these codes have no section in the reference, so their
+      docs_url 404s:  probe_code_with_no_page              exit 1
+    a section naming no code:
+      check-error-codes: these sections name no code in ERROR_CODES — remove them
+      or the reference is lying:  retired_code              exit 1
+
+**T093 — the URL resolves, fetched rather than pattern-matched.** The site served
+at `localhost:3999` renders all thirteen anchors as real `id` attributes; a live api
+with `RELAY_DOCS_BASE_URL` pointed at it produced:
+
+    unauthorized     → …/error-reference#unauthorized      RESOLVES
+    not_found        → …/error-reference#not_found          RESOLVES
+    invalid_request  → …/error-reference#invalid_request    RESOLVES
+
+and the full envelope for a refused private channel, five fields including the one
+this chapter added:
+
+    {"code":"invalid_request","message":"Invalid input: expected \"public\"",
+     "docs_url":"…/error-reference#invalid_request",
+     "request_id":"3b3c88fc-…","field":"type"}
+
+**AND ONE SELF-INFLICTED LOSS, worth recording because it is the second time.**
+T094's direction-one probe added a key to `codes.ts` and reverted it with `git
+checkout` — on a file whose T080 and T082 work was UNCOMMITTED. Five codes and
+`docsUrl` went with the probe. Phase 7's reintroductions were safe because the tree
+was committed first, which is CLAUDE.md's own rule; this broke it. The repair was
+five minutes of retyping from the transcript, and it would have been zero. The
+second half of the same command then failed with `pathspec 'docs/08-error-reference.md'
+did not match any file(s) known to git` — a NEW file cannot be reverted with
+checkout either, which is a different way for the same habit to bite.
+
+## Phase 9 gates
+
+  relay-platform  pnpm lint      exit 0 (1 pre-existing warning)
+                  pnpm typecheck 12 of 12
+                  pnpm test      374
+                  pnpm test:integration  exit 0, 10 of 10, 3m12.41s
+                    test-harness 14 · api 318 · gateway 49 · dispatcher 16 · e2e 10 = 407
+  relay-tutorial  pnpm lint      exit 0
+                  tsc --noEmit   clean
+                  pnpm check:docs   all mirrored docs match (seven now)
+                  pnpm check:errors 13 codes, 13 sections
+
+The integration count did not move, which is right: Phase 9 changed how a URL is
+built and what a registry contains, and no suite asserted on the old URL.
