@@ -824,3 +824,108 @@ rather than another draw.
     dispatcher     16      e2e            10              TOTAL 386
 
 Gateway 28 → 47, the socket gauntlet's nineteen. Nothing else moved.
+
+## Phase 6 — the two endpoints, and four faults that reading had not found
+
+`POST /v1/channels` and `POST /v1/channels/:channelId/members`, plus
+`channel_member_limit_exceeded` (the thirteenth code). Files: `channels.schema.ts`,
+`channels.service.ts`, `channels.controller.ts`, `channels.module.ts`,
+`channels.itest.ts`.
+
+**T061's property held exactly.** Registering the module took the derived target
+list from **22 to 24**, and `targets.itest.ts` failed naming both routes as
+unclassified — on the build that added them, before anything in `targets.ts`
+mentioned them. The classification is what changed in answer to that, which is
+the direction FR-021 asks for.
+
+**`createUser` had the same fault as `createChannel` and R14a named neither.**
+R14a caught `addMember` and `createChannel`; the members endpoint creates a user
+on first membership, so `createUser` — a plain insert against
+`users_environment_id_external_id_unique` — was the third function on the same
+request path with the same fault. A second identical members call would have
+answered `internal_error`. Fixed the same way: `ON CONFLICT DO NOTHING RETURNING`
+with a read for the loser of the race, never a read-then-insert in the service
+(Principle II).
+
+That change reached one existing assertion, and the distinction is worth keeping.
+`repository.itest.ts`'s DR-02 test observed the unique index by watching a repeat
+RAISE. The index did not go away; what changed is that the repository no longer
+lets the raise escape. So the assertion now observes the same property through the
+outcome — a repeat returns the same row id, and the existing display name wins
+because a second call is not an update.
+
+**No validation error in the api had ever named a field.** T053b asks for
+`private` to be refused "naming the field", and the answer was
+`{"code":"invalid_request","message":"Invalid input: expected \"public\""}` with no
+`field` at all. EIR-API-04 has carried `field` since chapter 1.3 and
+`errorFrameSchema` declares it optional — and `ZodValidationPipe` threw only
+`issues[0].message`, discarding `issues[0].path`, for twenty-two chapters. This is
+the same shape of finding as `request_id`, which chapter 3.8 first sent after
+declaring it in 1.3.
+
+Fixed in the pipe (it is the only layer that knows the path) and carried by
+`ProtocolErrorFilter` the way `code` already travels — the thrower names it, and
+the key is omitted rather than sent empty when there is nothing to name. The api
+lane went 305 → 318 with no other test disturbed, so nothing was relying on the
+old body.
+
+**A MESSAGE SENT OVER THE PUBLIC REST API CANNOT REACH A SOCKET AT ALL.** This is
+the largest thing Phase 6 found and it is not a bug in this chapter's code.
+
+T062 was written as "REST send, socket receives" and failed. Two independent
+mechanisms stop it, either one sufficient:
+
+  1. Nothing in the api publishes to the gateway's fan-out. `session.ts` publishes
+     when a SOCKET sends; the api's send path writes the row and the outbox and
+     stops; the event consumer's handler is `createRecorder`, which records and
+     does not deliver. There is no live push.
+  2. `POST /v1/channels/:channelId/messages` passes no user — the public
+     controller calls `messages.send(channelId, body)` with no `userId` — so every
+     row it writes has `user_id` NULL, and `backfill.controller.ts`'s `toFrame`
+     drops senderless rows on purpose, because `messageSchema` requires `user` and
+     there is no truthful value to invent. So resume does not carry it either.
+
+Measured, not reasoned: history shows both rows at seq 1 and 2 with `user: null`;
+the resume ack comes back `resume_ok: true` with the channel in the echoed cursor,
+so the page was fetched and every row in it was dropped. Both halves are asserted
+in `public-surface.itest.ts` — a socket send between two members added over the
+API is delivered, and a REST send is delivered neither live nor on resume.
+
+`packages/e2e`'s journeys never noticed because every message in them is sent over
+a socket.
+
+FR-020 is still satisfied — a member added over the public API does receive on a
+socket — but only when the message was SENT over a socket. T099 and quickstart V15
+said "POST a message … receive" and are corrected: the receive follows a socket
+send.
+
+**Not fixed here, and both options are product decisions.** Attributing a public
+send to an end-user token changes what `user` means on the wire for every existing
+caller (FR-MSG-13's territory). A live fan-out from the api is a new coupling
+between the api and Redis that ADR-05 and constitution III would both want an
+argument for. Named for the chapter and for whoever owns FR-RTM-05.
+
+**T063a — the seam is shorter by three.** `packages/e2e/src/harness.ts` said
+"there is no admin API to create an environment, a user or a channel yet — that is
+Part 3's tenancy work". Two of the three now have one:
+
+    still needed   createEnvironment, createApiKey (no admin API, the dashboard's
+                   chapter), sendMessage (only to write an unattributed row)
+    no longer      createChannel, createUser, addMember
+
+Not migrated: `packages/e2e` is excluded from the coverage run by name, so the
+migration would prove nothing the branch figures can see and would rewrite four
+journeys inside an isolation chapter. Chapter 3.13's, with the rest of FR-CHN.
+
+## Phase 6 gates
+
+  pnpm typecheck     clean
+  pnpm lint          exit 0   (1 pre-existing warning)
+  pnpm turbo run test  353     (unchanged — the field change broke no unit test)
+  pnpm test:integration  exit 0, 10 of 10, 3m15.116s
+
+    test-harness    8      api           318      gateway        49
+    dispatcher     16      e2e            10              TOTAL 401
+
+api 305 → 318: eleven in `channels.itest.ts`, two in the gauntlet for the new
+routes. Gateway 47 → 49: `public-surface.itest.ts`. Derived targets 22 → 24.

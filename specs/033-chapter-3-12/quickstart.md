@@ -256,7 +256,15 @@ schema before it serves anything the integration asks for. **The package starts 
 if the platform is absent it must fail saying so rather than trying to launch one.
 
 **Expect** a completed integration: credential, channel, members, token, REST send,
-history read, socket receive.
+history read, **socket send**, socket receive.
+
+**The socket send is not interchangeable with the REST one**, and the outsider suite is
+where that stops being a detail. A message sent over `POST /v1/channels/:id/messages`
+cannot reach a socket at all: the api publishes to no fan-out, and the public send passes
+no user, so `backfill.controller.ts`'s `toFrame` drops the senderless row rather than
+inventing a sender for it. So "send a message and receive it" is only true over the
+socket. Measured in `services/gateway/src/public-surface.itest.ts`, which asserts both
+halves.
 
 **Then** add `import { ERROR_CODES } from "@relay/protocol";` to its test file.
 
