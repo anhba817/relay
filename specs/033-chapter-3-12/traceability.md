@@ -53,7 +53,7 @@ Two directions, because only one of them catches the omission pass five found:
 | FR-047 | **FR-CHN-05** — by REFUSING it. See §2: this is the clause the chapter contradicts on purpose |
 | FR-017 | **FR-CHN-02** (repeating a creation returns the existing channel); constitution II (idempotency enforced by a unique index, not in memory) |
 | FR-018 | **DR-02** (uniqueness is per tenant); FR-TEN-05 |
-| FR-019 | **FR-CHN-04** (members by customer-supplied user id, users created on first membership) |
+| FR-019 | **FR-CHN-06**, first half (adding up to 100 members in one request). **NOT FR-CHN-04** — corrected while specifying chapter 3.15: FR-CHN-04 is member ROLES (`owner`, `moderator`, `member`) and `members` has no role column. The original entry here misquoted the clause and marked it delivered. |
 | FR-048 | **FR-CHN-07** (a channel holds at most 1,000 members); EIR-API-04 |
 | FR-020 | **FR-RTM-05** (real-time events reach a channel's members) |
 | FR-021 | NFR-SEC-09; constitution I (the suite covers what the build adds, on that build) |
@@ -119,8 +119,8 @@ contradicts is not listed, because a map that lists everything says nothing.
 | FR-RTM-05 | FR-020 | **and see the gap**: `gaps.md` G1 — a REST-sent message reaches no socket, so this clause is delivered for socket sends only |
 | FR-CHN-01 | FR-016 | **partly delivered**: all four elements accepted, and `private` refused (FR-047) |
 | FR-CHN-02 | FR-017 | delivered |
-| FR-CHN-04 | FR-019 | delivered |
-| FR-CHN-05 | **FR-047** | **CONTRADICTED ON PURPOSE.** The clause promises a private channel is visible only to its members. `channels.type` has been a `"public" \| "private"` column since chapter 2.1 and NOTHING READS IT — history and send scope by `environment_id` alone, with no membership check on any read path. So the clause is unimplemented, and an endpoint accepting `private` would sell a guarantee the platform does not keep. The enum is `public` alone; the clause goes to chapter 3.15 with FR-CHN-03's private half. This is the finding analysis pass five made and it is the sharpest edit in the chapter. |
+| FR-CHN-04 | — | **NOT DELIVERED, and this row said it was.** FR-CHN-04 is member roles; `members` is `(channel_id, user_id, joined_at)` with no role column, and the `role` column that does exist is on `memberships` (human↔organisation, FR-TEN-07) with a different vocabulary — `owner`, `admin`, `member` against the SRS's `owner`, `moderator`, `member`. Owned by whichever chapter builds it; named in chapter 3.15's spec. |
+| FR-CHN-05 | **FR-047** | **CONTRADICTED ON PURPOSE.** The clause promises a private channel is visible only to its members. `channels.type` has been a `"public" \| "private"` column since chapter 2.1 and NOTHING READS IT. **The second half of this note was wrong and is corrected here:** it said "no membership check on any read path", and `repository.backfill` joins `members` while `session.controller` derives its list from `channelsForUser` — both are read paths and both check membership. What is true is that the PUBLIC history and send routes check nothing, and `POST /internal/messages` resolves a user and checks nothing. So the clause is unimplemented, and an endpoint accepting `private` would sell a guarantee the platform does not keep. The enum is `public` alone; the clause goes to chapter 3.15 with FR-CHN-03's private half. This is the finding analysis pass five made and it is the sharpest edit in the chapter. |
 | FR-CHN-07 | **FR-048** | was UNMENTIONED before pass five; the SRS names `channel_member_limit_exceeded` in its own worked example for EIR-API-04, which is why the code is spelled that way |
 | FR-CHN-03, FR-CHN-06, FR-USR-* | FR-022 | deferred to chapter 3.15, named rather than silent |
 | EIR-API-06 | — | **WALKED INTO, and now claimed.** The clause asks that a validation failure name the offending field. Nothing in the api had ever set `field`: `ZodValidationPipe` threw `issues[0].message` and discarded `issues[0].path` for twenty-two chapters. Fixed in this chapter under FR-047's test (T053b), and the fix is general — every validation error in the platform now names its field. It has no FR of its own because the chapter found it while implementing FR-047 rather than planning for it; recorded here so the next chapter does not rediscover it. |
@@ -134,6 +134,11 @@ contradicts is not listed, because a map that lists everything says nothing.
 | ADR-05 | FR-045 | a service is a port and a health check |
 | ADR-16 | FR-043 | the query engine lives in the repository layer |
 | SRS §1.5 Phase 2 exit | FR-030, FR-031, FR-033, FR-035, FR-045 | verdict in `gaps.md`: **met in part** |
+
+**And one row was wrong.** FR-CHN-04 was recorded as delivered by FR-019 with a
+paraphrase that belongs to FR-CHN-06. Found while auditing the deferred surface for
+chapter 3.15, which is the first thing that read this map for a purpose other than
+writing it. A map is only as good as the next person's reason to check it.
 
 **Four clauses were touched without being claimed before pass five** — FR-CHN-05,
 FR-CHN-07, FR-CHN-01 and EIR-API-06 — and all four now appear above with what the
