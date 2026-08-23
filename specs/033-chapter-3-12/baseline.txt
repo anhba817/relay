@@ -2099,3 +2099,41 @@ outsider files were placed.
 
 Against 61 changed files. A partition claim is three set operations and there is no
 reason to assert it from a list of headings.
+
+## A regression in the Vietnamese pages, found by checking my own consistency
+
+`<Why>`, `<Trap>`, `<Checkpoint>`, `<ForwardRef>` and `<SkipAhead>` take a `locale`
+prop and render their label through it. `lib/i18n.ts` has the Vietnamese labels —
+*Tại sao*, *Cạm bẫy*, *Điểm kiểm tra* — so a Vietnamese page that omits the prop
+renders **English** box labels.
+
+Counted across every Vietnamese chapter page:
+
+    part-0 ch1-5          all boxes carry locale="vi"
+    part-1 ch1-4          all
+    part-2 ch1-8          all
+    part-3 ch1-5          all      (14/14 at 3.5)
+    part-3 chapter-06     0/15
+    part-3 chapter-07     0/7
+    part-3 chapter-08     0/13
+    part-3 chapter-09     0/8
+    part-3 chapter-10     0/11
+    part-3 chapter-11     0/10
+                          -----
+    TOTAL                 154/228
+
+**A clean boundary at part-3/chapter-06**: every page before it passes the prop on
+every box, every page from it onward passes it on none. Seventy-four boxes across
+six published chapters have been rendering English labels on Vietnamese pages since
+3.6.
+
+Found by checking whether chapter 3.12's own Vietnamese page was consistent with
+its neighbours. It was not — 2 of 12, because the two boxes I wrote by hand got the
+prop and the ten produced by translation did not. **3.12's page is now 12/12.**
+
+**Not fixed for 3.6–3.11 here**, and the reason is the one this chapter keeps
+running into: that is six published pages in a locale this chapter is not otherwise
+touching, and a sweep across them is a translation-consistency pass with its own
+mirror check to re-run. Recorded with the inventory so it can be done deliberately
+rather than discovered a seventh time. No fence moved — the chain's problem count
+is 21 before and after.
