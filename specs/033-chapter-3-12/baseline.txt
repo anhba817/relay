@@ -1,0 +1,259 @@
+# Chapter 3.12 — baseline
+# Recorded 2026-08-23
+
+## T001 — provenance
+
+outer repo      2d9b460 docs: chapter 3.12 analysis pass fourteen — quickstart swept
+relay-platform  c7fd20c docs(3.11): the rate-limit comment stopped being true
+                tag: part3-ch11
+relay-tutorial  359bbcf docs(3.2): the internal-hop limitation, narrowed
+
+parent pins vs submodule HEADs:
+  pinned  c7fd20ccb23affb08bc7f9817de1a00d533d53d9  relay-platform
+  pinned  359bbcfa07125bd70bc9ea28b65737ed49eb82f0  relay-tutorial
+  head    c7fd20ccb23affb08bc7f9817de1a00d533d53d9  relay-platform
+  head    359bbcfa07125bd70bc9ea28b65737ed49eb82f0  relay-tutorial
+
+Working trees: platform 0 modified, tutorial 0 modified, outer 0 modified.
+
+## T001a — the four variables the coverage lane needs, BEFORE T002 runs it
+
+Research R22 measured this by getting it wrong first: `pnpm coverage` from a shell
+with only the compose stack up fails 11 tests across 3 files, and none of the
+messages names the cause.
+
+  limits.itest.ts     the lane must configure a platform credential: expected undefined to be truthy
+  dispatcher.itest.ts expected undefined to be defined   (x8, cascading)
+  outbox.itest.ts     NatsError: CONNECTION_REFUSED
+
+The variables live only in `.github/workflows/ci.yml`. The working invocation:
+
+  export RELAY_REDIS_URL=redis://localhost:6379
+  export RELAY_NATS_URL=nats://localhost:4222
+  export RELAY_INTERNAL_CREDENTIAL=rk_svc_ci_0123456789abcdef0123456789abcdef
+  export RELAY_WEBHOOK_SECRET_KEY="BpDal75yBZp7Fc2GtGS3D1vh7qOKgCWJkF6/d0XWxBU="
+
+`DATABASE_URL` stays unset: every package falls back to 15432, this project's
+documented port. Nothing in the repository says any of this; recorded here so the
+run is not spent a second time.
+
+  RELAY_POSTGRES_PORT=15432   redis 6379   nats 4222   mailpit 8025/1025   clickhouse 8123
+
+## T003 — the site, before anything changes
+
+  pnpm lint         exit 0
+  pnpm build        exit 0   (all 28 chapters + 28 vi prerendered)
+  pnpm check:docs   exit 0   all mirrored docs match their sources
+  pnpm check:fences exit 0   177 fenced files replay onto relay-platform across
+                             28 chapters (28 translated, fences mirrored,
+                             1 retired, plus post-series amendments)
+
+Matches what chapter 3.11 closed on: 177 files, 28 chapters.
+
+**A sequencing mistake of my own, recorded rather than tidied.** T003 says "before
+anything changes" and I ran it AFTER applying T006, so the first `check:fences`
+reported a HEAD failure on `vitest.coverage.config.mts` — my own edit, not a
+pre-existing fault. The number above is from a re-run with T006 stashed. The
+lesson is the one the task already carries: a baseline taken after a change is not
+a baseline.
+
+**And T006 turning the fence chain red is the expected working state, not a
+defect.** `vitest.coverage.config.mts` is fenced by four chapters and amended
+eight times in `fences/post-series.md`, so the HEAD property fails the moment the
+file on disk moves ahead of the chain. It closes at Phase 13, when this chapter's
+own fences land. Every platform edit from here to then keeps `check:fences` red;
+that is what a chapter under construction looks like.
+
+## T006 — the json coverage reporter
+
+`vitest.coverage.config.mts` reporter is now `["text", "json-summary", "json"]`,
+with the comment saying why: `json-summary` carries totals and percentages, and
+FR-040 asks for every uncovered branch to be NAMED. The per-branch locations live
+only in `coverage/coverage-final.json`. `coverage/` is gitignored, so this commits
+nothing but the one line and its argument.
+
+## T004 — the environment, and what three runs cost to get
+
+**The first three attempts failed in one second each**, at
+`@relay/test-harness:test:integration`, with
+
+  Serialized Error: { errno: -111, code: 'ECONNREFUSED', address: '127.0.0.1', port: 15432 }
+
+The compose stack had exited nine hours earlier. Bringing it back up failed too:
+
+  Error response from daemon: ... endpoint relay-postgres-1 ...
+  listen tcp4 0.0.0.0:5432: bind: address already in use
+
+**`compose.yaml` defaults Postgres to 5432 and the code defaults to 15432.**
+Line 22 is `"${RELAY_POSTGRES_PORT:-5432}:5432"`; `packages/test-harness/src/db-url.ts`
+and `services/api/src/db/client.ts` both default to **15432**. So the stack has to
+be started as
+
+  RELAY_POSTGRES_PORT=15432 docker compose up -d --wait
+
+or Postgres alone fails to bind while the other four containers come up healthy —
+which is the confusing shape, because `docker compose ps` then shows four of five
+fine. An unrelated `facet-pg` container sits on 55432 and is not the collision;
+this machine's own Postgres holds 5432.
+
+Recorded because it cost four wasted lane invocations, and because the README
+documents `docker compose up -d --wait` without the variable.
+
+## T008 — the route surface, generated rather than typed
+
+Boot the built `AppModule`, read `app.getHttpAdapter().getInstance().router.stack`,
+keep the layers carrying a `route`. This is R2's derivation, and running it is what
+makes 22 a measurement instead of an estimate.
+
+  routes: 22   non-route layers: 8
+
+  DELETE /v1/webhooks/:id
+  GET    /auth/:provider/callback
+  GET    /auth/:provider/start
+  GET    /healthz
+  GET    /v1/channels/:channelId/messages
+  GET    /v1/webhooks
+  GET    /v1/webhooks/:id
+  POST   /auth/dev-token
+  POST   /internal/backfill
+  POST   /internal/dispatch/expand
+  POST   /internal/dispatch/material
+  POST   /internal/dispatch/outcome
+  POST   /internal/dispatch/replay
+  POST   /internal/messages
+  POST   /internal/session
+  POST   /internal/usage/connections
+  POST   /v1/channels/:channelId/messages
+  POST   /v1/webhooks
+  POST   /v1/webhooks/:id/disable
+  POST   /v1/webhooks/:id/enable
+  POST   /v1/webhooks/:id/rotate-secret
+  POST   /v1/webhooks/:id/test
+
+Identical to the probe run during planning (R2), including the eight middleware
+layers the filter drops. `POST /v1/webhooks` is in the list — the route pass four
+found missing from `data-model.md`'s shape table, where five rows summed to 21
+against this 22.
+
+Every later count of attacked-plus-exempt is compared against this. After the two
+new endpoints it becomes 24 (T063).
+
+## T002 — the platform lanes, before anything changes
+
+Unit (`pnpm turbo run test --force`) — exit 0, 5.03s:
+
+  config          7      test-harness    9      service-kit     3
+  protocol       45      api           187      dispatcher      8
+  gateway        89                                     TOTAL 348
+
+Integration (`pnpm test:integration`) — exit 0, 3m11.72s, 10 tasks:
+
+  test-harness    8      api           268      gateway        28
+  dispatcher     16      e2e            10              TOTAL 330
+
+**Both match chapter 3.11's close-out exactly** — 348 unit and 330 integration.
+The lane this chapter starts from is the lane 3.11 finished on.
+
+## T004 — three runs, and every failure
+
+Three consecutive runs, all green, four packages captured per run:
+
+  run 1   8 / 268 / 28 / 16     195s
+  run 2   8 / 268 / 28 / 16     193s
+  run 3   8 / 268 / 28 / 16     193s
+
+A 2-second spread against 3.11's recorded 193.30s mean. Nothing intermittent
+surfaced, which is what T004 exists to establish and is not the same as proving the
+lane cannot flake — SC-019 and T107a carry that argument, and 3.11's own battery
+went twenty green before a flake appeared on run twenty-one.
+
+**Four mistakes of mine cost about twenty minutes here, and they are one mistake.**
+Each was a check whose range I had not verified before trusting it:
+
+  1. a background command with a relative `cd` that did not exist from the cwd it
+     inherited — the site baseline "failed" and the failure was mine
+  2. a capture filter, `^@relay/[a-z-]+:test:integration:`, that silently excluded
+     `@relay/e2e` because the character class has no digits, and could not match
+     `ELIFECYCLE` at all. So the three-run record above is four packages, not five,
+     and could not have shown a package-level abort. The fifth number comes from a
+     fourth run captured whole and filtered at read time
+  3. a gate, `until ! pgrep -f "vitest"`, whose own command line contains the word
+     it greps for, so it matched itself and never exited
+  4. a `pkill` meant for that gate, which took down two lane runs including one
+     started in the same command
+
+The class is the chapter's own subject: a filter, a gate and a pattern each looked
+right and each covered less — or more — than intended. Filtering at capture time
+destroys the evidence; filtering at read time keeps it. That is the rule the fence
+checker, the guard and the lint rule all embody, applied to a shell pipeline.
+
+## T002 (continued) — coverage
+
+`pnpm coverage` — exit 0, 283s, 69 files / 668 tests, all green:
+
+  All files   90.37 statements / 84.17 branches / 89.51 functions / 91.58 lines
+
+Per-file ratchets, measured against what `vitest.coverage.config.mts` pins:
+
+  file               measured (st/br/fn/ln)        pinned          headroom
+  repository.ts      97.50 / 90.60 / 100 / 99.45   97/90/100/99    BRANCHES +0.60
+  user-token.ts      96 / 96 / 100 / 100           96/96/…         0
+  auth-limiter.ts    100 / 87.5 / 100 / 100        …/87/…          +0.50
+  store.ts           100 / 91.66 / 100 / 100       …/91/…          +0.66
+  deliver.ts         100 / 90.9 / 100 / 100        …/90/…          +0.90
+  expand.ts          92.3 / 92.3 / 100 / 100       92/92/…         +0.30
+  gateway limits.ts  100 / 90.9 / 100 / 100        …/90/…          +0.90
+  resume.ts          100 / 95 / 100 / 100          …/95/…          0
+
+## T007 — the isolation code's starting position, by line
+
+`repository.ts` branches **241/266 — 25 uncovered arms**, 90.60% against a pinned 90
+and constitution VI's 100%. Uncovered lines 152 and 3140; functions at 100%, so
+almost all 25 are unhit arms on covered lines. Enumerated from
+`coverage/coverage-final.json`, which exists because of T006:
+
+  by kind: if 14, binary-expr 10, cond-expr 1
+
+  line  151 if        line 1140 if          line 2360 if
+  line  207 if        line 1574 if          line 2392 binary-expr
+  line  212 if        line 1710 if          line 2630 binary-expr
+  line  255 binary    line 1869 binary-expr line 2894 if
+  line  281 if        line 1931 binary-expr line 2916 binary-expr
+  line  325 if        line 2100 if          line 3011 if
+  line  356 binary    line 2240 cond-expr   line 3057 binary-expr
+  line  551 binary    line                  line 3139 if
+  line  579 if
+  line  658 binary
+
+**What they are, sampled rather than assumed**, because "25 arms" says nothing about
+whether the clause can close:
+
+  151   if (!environment) {                                    a precondition guard
+  255   return row ?? null;                                    the `??` default arm
+  1710  if (result.disabled) disabled++;                       a counting branch
+  2240  value instanceof Date ? value.toISOString() : String(value)   a ternary's other side
+  2894  if (organisationId) {                                  a nullable-column path
+  3139  if (!row) {                                            a not-found guard
+
+So the 25 split into two kinds. Some — 1710, 2894, 2240 — are ordinary paths a test
+can reach. Others — 151, 3139, and most of the `??` arms — are guards whose false
+branch means a caller violated a precondition the types nearly forbid, and closing
+them means constructing a state the repository layer exists to make unconstructable.
+FR-040 asks for the number and the names; whether 100% is reachable is a question
+this list makes answerable rather than one it answers.
+
+## T007a — the figure is mildly data-dependent
+
+Chapter 3.11 closed on 90.32 / 83.98 / 89.51 / 91.53 for all files. The same commit
+measured 90.37 / 84.17 / 89.51 / 91.58 during this chapter's research and again now,
+with no code between them. The lane's coverage depends slightly on what the test
+database has accumulated, so a movement under 0.1 is noise rather than a result.
+`repository.ts` itself has been steady at 97.50 / 90.60 / 100 / 99.45 across all
+three measurements; 3.11's close-out recorded 90.57 for its branches, which is the
+same 0.03 drift and not a change.
+
+## T005 — fix forward
+
+Nothing to fix. T004's three runs were green and the one failure it found — the
+compose stack being down, and then Postgres binding 5432 instead of 15432 — is
+environment rather than code, recorded under T004 and not a defect in the tree.
