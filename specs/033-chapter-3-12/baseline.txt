@@ -929,3 +929,87 @@ journeys inside an isolation chapter. Chapter 3.13's, with the rest of FR-CHN.
 
 api 305 → 318: eleven in `channels.itest.ts`, two in the gauntlet for the new
 routes. Gateway 47 → 49: `public-surface.itest.ts`. Derived targets 22 → 24.
+
+## T064-T068 — three reintroductions, and the first one did not fire
+
+**T064, take one: the gauntlet stayed green, 21 passed.** `environment_id` dropped
+from `listMessages`' `scoped()` helper — a repository SELECT on the history read
+path — and every assertion passed.
+
+The reason is layering, and it is worth more than the reintroduction was.
+`GET /v1/channels/:channelId/messages` calls `channelExists(channelId)` first
+(chapter 2.8's fix for the two doors disagreeing), and that read IS scoped. A
+foreign id is refused there and `listMessages` is never reached. **The suite is
+sensitive to the OUTERMOST scoping check on a path and blind to an inner one that
+a live outer check masks.** Nothing in the suite says otherwise, and nothing in
+the plan had noticed.
+
+**T064, take two: both checks dropped, 2 failed.**
+
+    × read: a foreign resource answers as an absent one > GET /v1/channels/:channelId/messages
+      "status 200 (foreign) vs 404 (absent)"
+      "body {\"messages\":[{\"id\":\"0e6c372a-…\",\"seq\":1,\"user\":\"v-nom4bg-user\",
+       \"text\":\"v-nom4bg says something\"…}]} (foreign) vs
+       {\"code\":\"not_found\",\"message\":\"channel not found\"…} (absent)"
+
+    × credential: a key for one environment cannot mint a token that works in another
+      expected '{"messages":[{"id":"9d57f22e-…' not to contain '9d57f22e-…'
+
+Nineteen of twenty-one stayed green, including every write and every platform
+route — correctly, since a read-path scope has nothing to do with them.
+
+**T065: the write shape earned its keep.** `environment_id` dropped from ONE
+UPDATE — `setEndpointEnabled`'s, `this.liveEndpoints` narrowed to the deleted-at
+check — leaving every read scoped.
+
+    × write: a foreign identifier changes nothing > POST /v1/webhooks/:id/disable
+      expected true to be false      (verdict.stateChanged)
+
+**The failure is on the before/after row comparison and NOT on a status**, which
+is exactly what T065 said to check. `verdict.differences` stayed empty: the
+endpoint still answered 404 to both halves of the pair, because `getEndpoint` —
+the read after the update — is still scoped. So the response was indistinguishable
+and the write went through anyway. A suite comparing only responses would have
+passed this.
+
+Only `disable` fired, not `enable`: the victim's endpoint was already enabled, so
+enabling it again changed no row. Twenty of twenty-one green.
+
+**T066: breaking indistinguishability takes an unscoped read, and that is the
+finding.** The task said "change one endpoint's 404 to a 403". Doing that at the
+route level moves BOTH halves of the pair to 403 and the oracle cannot see it —
+the pair compares foreign against absent, so a change that treats them alike is
+invisible by construction. To make them differ, the code has to learn something
+the tenant scope hides. So the reintroduction is the realistic version: an
+unscoped `anyEndpointExists(id)` and a "helpful" 403.
+
+    × read: a foreign resource answers as an absent one > GET /v1/webhooks/:id
+      "status 403 (foreign) vs 404 (absent)"
+      "body {\"code\":\"forbidden\",\"message\":\"that endpoint belongs to another
+       environment\"…} (foreign) vs {\"code\":\"not_found\",\"message\":\"no such
+       webhook endpoint\"…} (absent)"
+
+Twenty of twenty-one green.
+
+**WHAT THIS MEASURES, AND WHAT IT DOES NOT.** Three faults chosen by the author of
+the suite that catches them measure sensitivity to three faults. They are not
+coverage of the class, and the first attempt is the proof of that: it was chosen
+as an obvious leak, and it was not one, for a reason nobody had written down.
+
+What the three do establish, precisely:
+
+  - a dropped scope on the outermost read of a path is caught, by the pair
+  - a dropped scope on a write is caught by the STATE comparison alone, with the
+    responses still identical
+  - a leak of existence is caught by the pair, and requires an unscoped read to
+    create
+
+What stays unmeasured: an inner check masked by an outer one (T064 take one), and
+everything in `gauntlet.itest.ts`'s own "does not cover" header — timing, a leaked
+platform credential, the four dispatch routes' reach, message wisdom beyond
+equality, anything off the HTTP router.
+
+**T068**: `git status` clean, HEAD unchanged at `6c1c90b`, `src/isolation/` 33
+passed. Every reintroduction reverted with `git checkout` against a committed
+tree — the practice CLAUDE.md records, and the one that made take one cost five
+minutes instead of an afternoon.

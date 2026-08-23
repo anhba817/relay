@@ -240,11 +240,11 @@ the gates, the battery, the counts, the three reintroductions, the two scratch p
 
 **Independent test**: revert one scoping predicate, run, confirm red; restore, confirm green.
 
-- [ ] T064 [US2] Reintroduction 1: drop `environment_id` from one repository `SELECT`, run the gauntlet, record which assertion fired, revert with `git checkout` (FR-013)
-- [ ] T065 [US2] Reintroduction 2: drop it from one `UPDATE`, run, and confirm the failure is on the **before/after row comparison** rather than on a status. If it fails only on status, the `write` shape is not doing its job and T025 is wrong (FR-013)
-- [ ] T066 [US2] Reintroduction 3: change one endpoint's 404 to a 403, run, confirm the failure is on the indistinguishability comparison (FR-013)
-- [ ] T067 [US2] Record all three in `baseline.txt` with the exact assertion text, **and record which assertions stayed green**. Three faults chosen by the suite's own author measure sensitivity to three faults, not coverage of the class — the chapter says so rather than presenting three passes as proof (FR-014, SC-005)
-- [ ] T068 [US2] Confirm the working tree is clean and review the phase's diff for the three touched files. FR-015 asks how "no reintroduction shipped" is verified rather than asserted; this is the verification (FR-015, SC-006)
+- [X] T064 [US2] Reintroduction 1: drop `environment_id` from one repository `SELECT`, run the gauntlet, record which assertion fired, revert with `git checkout` (FR-013)
+- [X] T065 [US2] Reintroduction 2: drop it from one `UPDATE`, run, and confirm the failure is on the **before/after row comparison** rather than on a status. If it fails only on status, the `write` shape is not doing its job and T025 is wrong (FR-013)
+- [X] T066 [US2] Reintroduction 3: change one endpoint's 404 to a 403, run, confirm the failure is on the indistinguishability comparison (FR-013)
+- [X] T067 [US2] Record all three in `baseline.txt` with the exact assertion text, **and record which assertions stayed green**. Three faults chosen by the suite's own author measure sensitivity to three faults, not coverage of the class — the chapter says so rather than presenting three passes as proof (FR-014, SC-005)
+- [X] T068 [US2] Confirm the working tree is clean and review the phase's diff for the three touched files. FR-015 asks how "no reintroduction shipped" is verified rather than asserted; this is the verification (FR-015, SC-006)
 
 **Checkpoint**: the suite has gone red three times for three faults, and the chapter knows which of its assertions did the work.
 
