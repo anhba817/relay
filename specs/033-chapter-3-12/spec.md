@@ -724,7 +724,7 @@ report for the isolation file against the constitution's clause.
   Everything else FR-CHN and FR-USR describe — listing, unread counts, profiles, bulk
   upsert, removal — is deferred to its own chapter, because a milestone chapter that builds
   nine endpoints is a chapter about endpoints.
-- **The deferred surface gets chapter 3.13**, "the surface a customer drives": the rest of
+- **The deferred surface gets chapter 3.15**, "the surface a customer drives": the rest of
   FR-CHN and FR-USR's public API, the key management chapter 3.2 deferred to "the
   dashboard's chapter", **FR-CHN-03's private half together with FR-CHN-05's access
   control**, and **EIR-API-06's cursor pagination**, which FR-CHN-08's listing needs
@@ -733,7 +733,7 @@ report for the isolation file against the constitution's clause.
   Part 3's milestone therefore no longer sits last in the part, recorded as a consequence
   rather than hidden. **And the independence is partial, not clean**: the milestone measures
   Phase 2's exit criterion, which the two endpoints make reachable — but FR-CHN-05's absence
-  is exactly why `private` is refused, so what 3.13 owes shapes what this chapter can offer.
+  is exactly why `private` is refused, so what 3.15 owes shapes what this chapter can offer.
   Three of the four splits in this part were discovered mid-chapter; this one is decided
   before a word is written.
 - **The platform is started by compose and seeded by a documented command.** The
@@ -745,7 +745,7 @@ report for the isolation file against the constitution's clause.
   key, and prints it. That closes the clause's intent and not its letter, because compose
   starts stores where the clause says the whole stack, and the chapter says so. The
   integration itself starts nothing (FR-045).
-- **Chapter 3.13's existence does not weaken FR-023.** The 2.8 seam is reassessed here
+- **Chapter 3.15's existence does not weaken FR-023.** The 2.8 seam is reassessed here
   because this chapter changes what it depends on, not because it can be closed
   entirely.
 - **This chapter publishes**, so its fences belong in the chapter that teaches them. **The

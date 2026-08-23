@@ -95,7 +95,7 @@ earlier draft said nine (R1).
   it**, so FR-CHN-05 — a P1 clause forbidding non-members from reading, sending or
   observing presence in a private channel — is unimplemented. A public create endpoint
   accepting `private` would sell a guarantee the platform does not keep, so the documented
-  enum has one member and FR-CHN-03's private half goes to 3.13 with FR-CHN-05. FR-CHN-07's
+  enum has one member and FR-CHN-03's private half goes to 3.15 with FR-CHN-05. FR-CHN-07's
   1,000-member ceiling appeared in no artifact, and the SRS names its status **and** its
   code — `channel_member_limit_exceeded`, in its own worked example for EIR-API-04. And
   FR-CHN-01 has four elements where the first draft delivered three; `channels.metadata`
@@ -205,6 +205,25 @@ routes gaining a declared service, four newly guarded tables, one restored lint 
 new CI job, three inherited debts and four this chapter found for itself, one new package,
 one new document.
 
+## The chapter became three (T115)
+
+The surface measured **61 changed files** against this plan's estimate of 37, and
+the 2,000–4,000 prose-word bound in `docs/07-tutorial-plan.md` cannot hold it.
+Split on the number rather than on a feeling, before any chapter prose existed:
+
+| Chapter | Carries | Surface |
+|---|---|---|
+| **3.12** Milestone: the isolation gauntlet | the derived target list, the four attack shapes, the oracle, the socket surface, the structural check, the three reintroductions, FR-044's service argument | 21 files ≈ 32 fences |
+| **3.13** The endpoints and the instruments | the two public endpoints, the idempotency fixes, the field nobody had set, the guard's four tables, the lint ban that was not in force, the ports, the coverage answer | 21 files ≈ 32 fences |
+| **3.14** Errors that resolve, and an outsider | thirteen codes, a `docs_url` that resolves, the sealed package, the seed, the Phase 2 exit-criterion verdict | 17 files ≈ 26 fences |
+
+The previously-planned **3.13** — the rest of FR-CHN and all of FR-USR — becomes
+**3.15**. The milestone name moves to **3.14**, because it belongs on the chapter
+that gives the Phase 2 exit criterion its verdict.
+
+Everything below describes the work, which is unchanged and complete; only its
+division into pages moved.
+
 ## Constitution Check
 
 *GATE: passed before Phase 0, re-checked after Phase 1 design.*
@@ -217,7 +236,7 @@ one new document.
 | **IV. Single writer, single source of truth** | The api stays the only writer. `packages/outsider` cannot import `pg` — it cannot import anything — and the gauntlet writes through the repository like every other suite. | Pass |
 | **V. API-first, developer-first** | The clause "every error code has a reachable documentation page" has been unmet since chapter 1.4 and is closed here for all thirteen codes. `docs_url` stops being a placeholder. The two new endpoints are the first public surface for FR-CHN since Part 2 promised it. | **Pass, and it closes the debt three chapters recorded** |
 | **VI. Requirement-driven, test-verified** | **48 requirements, 33 measurable outcomes** — re-derive with `grep -c '^- [*][*]FR-' spec.md` and the same for `SC-`, never carried forward by hand. The 100%-branch clause for isolation code is measured against a number rather than restated (FR-040). The suite this principle names as a release gate is what the chapter builds. | Pass |
-| **VII. Boring by design — scope is a commitment** | No new service, no new language, no new dependency, no product migration. One new workspace package, which is a test package and not a service, so §4.2's "deliberately not a separate service" table does not apply. Everything larger is named and refused: the rest of FR-CHN and FR-USR go to 3.13 with a number, the outbox column goes to whoever next touches outbox writes, a human external-developer run is named as the instrument this chapter does not use. | Pass, with three refusals recorded |
+| **VII. Boring by design — scope is a commitment** | No new service, no new language, no new dependency, no product migration. One new workspace package, which is a test package and not a service, so §4.2's "deliberately not a separate service" table does not apply. Everything larger is named and refused: the rest of FR-CHN and FR-USR go to 3.15 with a number, the outbox column goes to whoever next touches outbox writes, a human external-developer run is named as the instrument this chapter does not use. | Pass, with three refusals recorded |
 
 **One entry in Complexity Tracking, and still no ADR — restated against FR-044, which did
 not exist when this sentence was first written.** Constitution VII requires an ADR for an
@@ -300,7 +319,7 @@ relay-platform/
 
 docs/
 ├── 04-srs.md                                  # NFR-USE-05 verification note if it moves
-├── 07-tutorial-plan.md                        # the 3.13 row, and why the milestone moved
+├── 07-tutorial-plan.md                        # the 3.13/3.14/3.15 rows, and why the milestone moved
 └── 08-error-reference.md                      # NEW — thirteen codes, one h2 each
 
 relay-tutorial/
@@ -343,7 +362,7 @@ until the suite is complete, and the documentation half is last so it can be cut
 | 8 | The instruments | guard's four tables, the itest lint ban, the port, the `json` reporter, the coverage number | The guard lands in post-series; the port needs no fence at all (R17). The lint ban is a constitution clause found off (R23); the reporter is what makes FR-040 nameable (R16) |
 | 9 | **The documentation half — separable** | thirteen codes, the registry as the set, `docsUrl()`, `turbo.json`'s env entry, the slugifier, `08-error-reference.md`, three lists | Sequenced here so the split is a measurement (R19) |
 | 10 | **The outsider — separable** | `packages/outsider`, the seed command, two lint rules, a compose-driven CI job, the gap list, the verdict | Needs phase 6; carries the milestone if the chapter splits. The CI job is what gives the package somewhere to run (R25) |
-| 11 | Close-out | chapter prose both locales, fences, the 3.13 row, notes | The plan-table edit is FR-022, not a courtesy (R20) |
+| 11 | Close-out | chapter prose both locales, fences, the 3.13/3.14/3.15 rows, notes | The plan-table edit is FR-022, not a courtesy (R20) |
 
 Each phase commits. 3.11's traceability regex broke 36 files and cost five minutes to
 repair for exactly this reason.

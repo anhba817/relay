@@ -95,10 +95,10 @@ It is defensible either way — a token is not a resource with a URL — and it 
 written down nowhere. Small, and exactly the kind of thing that costs an
 integrating developer twenty minutes.
 
-**Disposition: scheduled with the rest of the public surface, chapter 3.13.** The
+**Disposition: scheduled with the rest of the public surface, chapter 3.15.** The
 error reference this chapter added documents failures; there is no endpoint
 reference yet, and inventing half of one for a single status code would be worse
-than the gap. Recorded so 3.13 inherits it.
+than the gap. Recorded so 3.15 inherits it.
 
 ## G6 — the series' socket examples predate Node's own WebSocket
 

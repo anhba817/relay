@@ -133,7 +133,7 @@ curl -s -X POST localhost:4000/v1/channels \
 
 ```bash
 # private is refused — nothing in the platform reads channels.type, so FR-CHN-05 is
-# unimplemented and the documented enum has one member until 3.13 (FR-047)
+# unimplemented and the documented enum has one member until 3.15 (FR-047)
 curl -s -X POST localhost:4000/v1/channels \
   -H "authorization: Bearer $KEY" -H 'content-type: application/json' \
   -d '{"external_id":"secret","type":"private"}' | python3 -m json.tool

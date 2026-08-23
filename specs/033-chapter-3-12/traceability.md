@@ -57,7 +57,7 @@ Two directions, because only one of them catches the omission pass five found:
 | FR-048 | **FR-CHN-07** (a channel holds at most 1,000 members); EIR-API-04 |
 | FR-020 | **FR-RTM-05** (real-time events reach a channel's members) |
 | FR-021 | NFR-SEC-09; constitution I (the suite covers what the build adds, on that build) |
-| FR-022 | **FR-CHN-03, FR-CHN-06, FR-USR-01…** — scope statement, deferring to chapter 3.13 |
+| FR-022 | **FR-CHN-03, FR-CHN-06, FR-USR-01…** — scope statement, deferring to chapter 3.15 |
 | FR-023 | constitution VI; chapter 2.8's recorded seam and its named retirement |
 
 ### The error vocabulary
@@ -120,9 +120,9 @@ contradicts is not listed, because a map that lists everything says nothing.
 | FR-CHN-01 | FR-016 | **partly delivered**: all four elements accepted, and `private` refused (FR-047) |
 | FR-CHN-02 | FR-017 | delivered |
 | FR-CHN-04 | FR-019 | delivered |
-| FR-CHN-05 | **FR-047** | **CONTRADICTED ON PURPOSE.** The clause promises a private channel is visible only to its members. `channels.type` has been a `"public" \| "private"` column since chapter 2.1 and NOTHING READS IT — history and send scope by `environment_id` alone, with no membership check on any read path. So the clause is unimplemented, and an endpoint accepting `private` would sell a guarantee the platform does not keep. The enum is `public` alone; the clause goes to chapter 3.13 with FR-CHN-03's private half. This is the finding analysis pass five made and it is the sharpest edit in the chapter. |
+| FR-CHN-05 | **FR-047** | **CONTRADICTED ON PURPOSE.** The clause promises a private channel is visible only to its members. `channels.type` has been a `"public" \| "private"` column since chapter 2.1 and NOTHING READS IT — history and send scope by `environment_id` alone, with no membership check on any read path. So the clause is unimplemented, and an endpoint accepting `private` would sell a guarantee the platform does not keep. The enum is `public` alone; the clause goes to chapter 3.15 with FR-CHN-03's private half. This is the finding analysis pass five made and it is the sharpest edit in the chapter. |
 | FR-CHN-07 | **FR-048** | was UNMENTIONED before pass five; the SRS names `channel_member_limit_exceeded` in its own worked example for EIR-API-04, which is why the code is spelled that way |
-| FR-CHN-03, FR-CHN-06, FR-USR-* | FR-022 | deferred to chapter 3.13, named rather than silent |
+| FR-CHN-03, FR-CHN-06, FR-USR-* | FR-022 | deferred to chapter 3.15, named rather than silent |
 | EIR-API-06 | — | **WALKED INTO, and now claimed.** The clause asks that a validation failure name the offending field. Nothing in the api had ever set `field`: `ZodValidationPipe` threw `issues[0].message` and discarded `issues[0].path` for twenty-two chapters. Fixed in this chapter under FR-047's test (T053b), and the fix is general — every validation error in the platform now names its field. It has no FR of its own because the chapter found it while implementing FR-047 rather than planning for it; recorded here so the next chapter does not rediscover it. |
 | DR-06, FR-MSG-08, FR-TEN-08, FR-MOD-06 | — | **TOUCHED AND NOT COVERED, deliberately.** The outbox keeps message text for ever (R7a), which collides with all four. The fix is a one-line prune owned by whichever chapter builds FR-MOD-06. Recorded in `db/catalogue.ts`'s SPINE comment with the numbers — 286,871 rows in the test lane — and not claimed here. |
 | constitution I | FR-001, FR-003, FR-011, FR-012, FR-036, FR-043 | the principle the chapter exists for, and the lint clause it found unenforced |

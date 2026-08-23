@@ -1667,3 +1667,91 @@ touched-and-contradicted, which is the half a one-directional map cannot show:
     DR-06, FR-MSG-08, FR-TEN-08, FR-MOD-06
                  touched by the outbox retention finding and deliberately not
                  covered; owned by FR-MOD-06's chapter
+
+## T114, T115 — the size estimate, formed at the phase-11 boundary rather than cold
+
+T115 argues for estimating before drafting, because a split decided after the
+prose exists discards prose. So the count is of the SURFACE, not of a finished page.
+
+**61 files changed** since `part3-ch11` (62 minus one leftover: `probe.tmp.mts`, the
+abandoned tsx probe from Phase 3, removed in its own commit — no artefact of a
+probe ships). The plan estimated **37** (16 new, 21 amended). Chapter 3.5
+estimated 22 and shipped 39; this is the same error, larger.
+
+An amended file needs a diff fence in the chapter's prose or the chain's HEAD
+property fails, so the file count is a floor under the page rather than a
+by-product of it.
+
+**Chapter 3.11 for scale**: 21 files, **31 titled fences, 3,316 prose words** — at
+the top of the 2,000–4,000 band. That gives ~1.5 fences per file and ~107 prose
+words per fence, which is the ruler used below.
+
+**T115's prescribed split is not enough.** Moving Phases 9 and 10 to chapter 3.13
+leaves:
+
+    3.12  gauntlet + endpoints + sensitivity + instruments   44 files
+          ≈ 66 fences ≈ 7,000 prose words                    — 1.75× the ceiling
+    3.13  error vocabulary + outsider + milestone            17 files
+          ≈ 26 fences ≈ 2,700 prose words                    — inside the band
+
+**A three-way split lands all three inside the band:**
+
+    A  the gauntlet                21 files  ≈ 32 fences  ≈ 3,370 words
+       the derived target list, the four attack shapes, the oracle, the socket
+       surface, the structural check, the three reintroductions, and FR-044's
+       service argument (the platform-route attacks need it)
+
+    B  the endpoints and the instruments   21 files  ≈ 32 fences  ≈ 3,370 words
+       the two public endpoints, the idempotency fixes, the field nobody set, the
+       guard's four tables, the lint ban that was not in force, the ports, the
+       coverage answer
+
+    C  the errors and the outsider  17 files  ≈ 26 fences  ≈ 2,700 words
+       thirteen codes, the resolving docs_url, the sealed package, the seed, and
+       the Phase 2 exit-criterion verdict
+
+`turbo.json` and `package.json` are touched by more than one half and carry a diff
+fence in each chapter that changes them.
+
+**Recorded, not decided.** A three-way split is a change to the shape of Part 3 and
+not a number this phase can act on alone.
+
+## T115 — the decision: THREE chapters
+
+Taken on the number and recorded here. The surface splits three ways and all three
+land inside the 2,000–4,000 bound; T115's two-way split left the first half at
+1.75× the ceiling, which is the same overrun two chapters in this part already
+shipped and had discovered afterwards.
+
+    3.12  Milestone: the isolation gauntlet          21 files ≈ 32 fences
+          the derived target list, the four attack shapes, the oracle, the socket
+          surface, the structural check, the three reintroductions, and FR-044's
+          service argument — the platform-route attacks need it
+
+    3.13  The endpoints and the instruments          21 files ≈ 32 fences
+          the two public endpoints, the idempotency fixes, the field nobody had
+          ever set, the guard's four tables, the lint ban that was not in force,
+          the ports, and the coverage answer
+
+    3.14  Errors that resolve, and an outsider       17 files ≈ 26 fences
+          thirteen codes, a docs_url that resolves, the sealed package, the seed,
+          and the Phase 2 exit-criterion verdict
+
+**AND THE PREVIOUSLY-PLANNED 3.13 BECOMES 3.15.** The deferred public surface —
+the rest of FR-CHN and all of FR-USR, promised a number in `spec.md` and in
+`plan.md`'s Constitution Check — was going to be 3.13. It moves to 3.15, and the
+promise moves with it: what mattered about it was that it had a number, not which
+number.
+
+**THE MILESTONE MOVES TO 3.14.** "Milestone" belongs on the chapter that gives the
+Phase 2 exit criterion its verdict, and that is the outsider's chapter. So 3.12
+keeps the name "Milestone: the isolation gauntlet" for the suite constitution I
+names, and 3.14 carries the part's exit criterion.
+
+**What the decision cost, and what forming it early saved.** Nothing was
+discarded: no chapter prose existed when the count was taken, which is exactly what
+T115 argued for. What it does cost is Phase 13's fence set, now three sets rather
+than one, and Phase 14's plan-table edit, now three rows. Phase 11's battery,
+coverage figures and traceability map cover all three chapters and are not
+re-run — they measure the code, and the code does not change because the prose is
+divided differently.
