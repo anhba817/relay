@@ -42,7 +42,7 @@ Its record is `specs/034-chapter-3-15/`: read **`plan.md`** for the seventeen ph
 and the constitution gate, `research.md` for R1 to R18 (twelve measured against a
 running database), then `data-model.md`, `contracts/membership.md`,
 `contracts/listing.md` and `quickstart.md` (18 checks, three of them negative).
-45 requirements, 21 success criteria, 227 tasks in 21 phases, checklist 16/16.
+45 requirements, 21 success criteria, 231 tasks in 21 phases, checklist 16/16.
 
 **Twelve SRS clauses, five dead columns, and four corrections.** The clauses are
 FR-CHN-03/04/05/06/08/09/10 and FR-USR-02/03/04/05/06. The columns exist and nothing
@@ -233,6 +233,19 @@ so a customer can create a channel and never read its four fields back. **Three
 artifacts rested on it**: SC-001 named "read by id" as one of four verbs, FR-003 said
 "every read", and `contracts/membership.md` had a row for it. Now FR-003a and T039a, and
 the derived-target count moves by **14** rather than 13.
+
+**FIVE ANALYSIS PASSES: 23, 11, 7, 7, 4 findings, and three CRITICALs — all three the
+same shape.** Something every comparable case in the repository has that no task provided:
+the module registration (`app.module.ts`), the handler (`GET /v1/channels/:channelId`), the
+credential class (`@Accepts`). `tasks.md` now holds **two tables** that close the class —
+fourteen routes by handler, credential, repository method and pin; ten columns by migration,
+schema twin, SAD §6.1, writer, reader, removal test and chapter. Pass five found no CRITICAL,
+which is the first pass that did not, and the tables are why.
+
+**AND A HAND-MAINTAINED COUNT WENT STALE IN EVERY SINGLE PASS.** Requirement totals, task
+totals, file counts, overlap figures, "three negative checks" — five for five, including the
+sentence that said to re-derive with `grep -c` and was carried forward by hand. Both counted
+things now point at a table instead of holding a number.
 
 **BOTH CRITICALS CAME FROM ASKING THE REPOSITORY A QUESTION.** Pass two's `app.module.ts`
 came from "which chapter fences this file"; pass three's missing route from "does this

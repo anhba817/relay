@@ -83,7 +83,7 @@ to a list instead of regenerating it; chapter 3.12's was wrong on its first draf
 | T014–T018 | `services/api/src/db/schema.ts` | the TS twin (ADR-16); `read_positions`, `channels.last_activity_at`, `members.role`, `users.deleted_at` |
 | T021–T023 | `packages/test-harness/src/sentinel.sql`, `guard.itest.ts` | feature 030's surface — **post-series fences**, so a chapter excerpts and `fences/post-series.md` amends |
 | T024–T026 | `packages/protocol/src/codes.ts`, `codes.test.ts`, `docs/08-error-reference.md` | three codes, registered and documented, checked both directions |
-| T031–T038 | `services/api/src/db/repository.ts` | the membership check, in the layer constitution I assigns it to |
+| T031–T038, T072a, T129a, T149 | `services/api/src/db/repository.ts` | the membership check in the layer constitution I assigns it to, and the three writers pass four's route table found missing — archive, profile, ban |
 | T032–T034, T041 | `services/api/src/db/repository.itest.ts` | the check driven directly, so a controller cannot mask it |
 | T040–T052 | `services/api/src/channels/` | the private type, join, and the enum that widens last |
 | T053–T062 | `services/api/src/channels/` + `channels.itest.ts` | removal beside chapter 3.13's add, reusing its result shape |
@@ -99,6 +99,7 @@ to a list instead of regenerating it; chapter 3.12's was wrong on its first draf
 | T166–T172 | 31 platform files + three published pages | FR-038a's citations; a fenced comment moves three files at once |
 | T049a–T049c, T097a | `services/api/src/channels/channels.schema.ts` + chapter 3.13's two pages | FR-037, in the phase that already edits the file — it sat in Phase 17 until the first analysis pass found chapter 3.15 publishes at Phase 9 |
 | T091–T106, T183–T198 | `relay-tutorial/app/(en)/…`, `app/(vi)/vi/…`, `lib/tutorial.ts` | the two pages and their mirrors |
+| T174–T174d | `vitest.coverage.config.mts` | ratchets for the new module, the repository's new arms, and `channels.service.ts`'s pin re-earned |
 | T199–T206 | `specs/034-chapter-3-15/`, `CLAUDE.md`, `docs/07-tutorial-plan.md` | the record, the plan rows, the tags |
 
 ## Which route, and what each one needs
@@ -121,7 +122,7 @@ either, which is why T129a exists.
 | `POST /v1/channels/:channelId/archive` | T073 | class `"application"` | `archiveChannel` **T072a** | `repository.ts` |
 | `DELETE /v1/channels/:channelId/archive` | T073 | class `"application"` | `unarchiveChannel` **T072a** | `repository.ts` |
 | `GET /v1/users/:externalId/channels` | T111 | `@Accepts("application")` class | `listChannelsForUser` T110 | `users/*` |
-| `PUT /v1/users/:externalId/channels/:channelId/read` | T120 | class `"application"` — the path names whose position it is; a user-credential variant is out of scope | `setReadPosition` T119 | `users/*` |
+| `PUT /v1/users/:externalId/channels/:channelId/read` | T120 | `@Accepts("application", "user")` method-level — a user records their own position, the tenant records one for the user the path names | `setReadPosition` T119 | `users/*` |
 | `GET /v1/users/:externalId` | T129 | class `"application"` | `getUserByExternalId` (exists) | `users/*` |
 | `PATCH /v1/users/:externalId` | T129 | class `"application"` | `updateUserProfile` **T129a** | `users/*` |
 | `POST /v1/users` | T137 | class `"application"` | `createUser` (chapter 3.13, idempotent) | `users/*` |
@@ -143,6 +144,39 @@ fifteen tests red.
 `rate-limit.middleware.ts` keys off `PUBLIC_PREFIX = "/v1/"` — no limiter change, nothing
 to add. Worth knowing that the request budget FR-RTL-01 sized against three public routes
 now covers seventeen.
+
+## Which column, and what each one needs
+
+The route table's counterpart. Pass five applied the same sweep to data and found two
+gaps — `users.deleted_at` written and never read, and `docs/05-sad.md` §6.1 left behind by
+three schema changes. Seven columns wide so nothing has to be counted twice.
+
+**FR-035's gate is the "removal" column**: each newly-enforced column shown read by a test
+that fails when the read is removed. Eight columns need one. `members.role` is the
+exception and FR-012 is why — nothing reads it, and the chapter says so rather than
+pretending otherwise.
+
+| Column | Migration | Schema | SAD §6.1 | Writer | Reader | Removal | Chapter |
+|---|---|---|---|---|---|---|---|
+| `channels.type` | — | exists | exists | `POST /v1/channels` | T031, T040 | T034 | 3.15 |
+| `channels.archived_at` | — | exists | exists | **T072a** | T071 | T077 | 3.15 |
+| `channels.last_activity_at` | T013 | T015 | **T018a** | T107 | T110 | **T116a** | 3.16 |
+| `members.role` | T016 | T017 | n/a — `members` is not in §6.1 | T063 | **nothing, by FR-012** | n/a | 3.15 |
+| `users.avatar_url` | — | exists | exists | T129a | T129 | T135 | 3.16 |
+| `users.metadata` | — | exists | exists | T129a | T129 | T135 | 3.16 |
+| `users.banned_at` | — | exists | exists | T149 | T150, T151 | T155 | 3.16 |
+| `users.deleted_at` | T016 | T018 | **T018a** | T141 | **T129, T111** | **T146a** | 3.16 |
+| `read_positions.sequence` | T013 | T014 | **T018a** | T119 | T121 | **T127a** | 3.16 |
+| `read_positions.updated_at` | T013 | T014 | **T018a** | T119 | **nothing** | n/a | 3.16 |
+
+**Two columns end this feature with no reader** — `members.role` and
+`read_positions.updated_at` — and T176a states both on the page. A feature about columns
+nothing reads, leaving two behind, is worth saying out loud. `users.deleted_at` was a
+third until pass five: T141 set it, T146 cleared it, and nothing read it.
+
+**`read_positions` carries `environment_id` and is the guard's tenth table** — T022, driven
+by T023, verified by removing it at T024. `members` has none and is classified `hop`, which
+is the asymmetry worth a sentence in the chapter.
 
 **One requirement has no user story**, and this is where that is recorded rather than
 discovered later: FR-039a and FR-039b arrived from R9 after the nine stories were
@@ -183,6 +217,7 @@ or writes something declared here.
 - [ ] T017 Add `role` to `members` in `schema.ts` with its own `check("members_role_check", …)`, **and a comment on it naming `memberships.role` and the one word that differs.** `memberships` is `('owner','admin','member')` — a human in an organisation, FR-TEN-07. A migration reusing that constraint accepts `admin` on a channel member, refuses `moderator`, and looks correct in review (R8)
 - [ ] T017a [P] Add the reciprocal comment to `memberships.role` pointing back. A comment on one side of a trap is a comment the next person does not find — `services/api/src/db/schema.ts`
 - [ ] T018 [P] Add `deletedAt` to `users` in `schema.ts`. This column is not in the spec: R7 decided a deleted user keeps their row, and designing that left nowhere to record that the row is deleted
+- [ ] T018a **Update `docs/05-sad.md` §6.1** — `channels.last_activity_at`, `users.deleted_at`, and `read_positions` as a new `CREATE TABLE`. **§6.1 is exact today**: `last_sequence` with its ADR-03 citation, `archived_at`, `banned_at`, all matching `schema.ts` column for column. `schema.ts`'s own comment says the generated migration "is reviewed against §6.1 before the runner applies it", and that review cannot happen against a document missing the columns. `members.role` needs no entry — `members` is not in §6.1, deliberately, because the tenancy tables are derived from the SRS. `read_positions` does: it sits below the environment boundary and carries `environment_id`, which is §6.1's territory
 - [ ] T019 **Backfill `last_activity_at` inside 0011** from `max(messages.created_at)` per channel, falling back to `now()` for a channel with no messages. A column defaulting to `now()` on every existing row orders every channel identically and the listing's first test passes for the wrong reason — `services/api/migrations/0011_activity_and_read_positions.sql`
 - [ ] T020 Run `node services/api/dist/db/migrate.js` twice and record both exit codes. The second is the one that matters
 - [ ] T021 **Verify `members_role_check` names `owner, moderator, member`** by reading it back with `\d+ members`, not by reading the migration. R8's trap is a constraint that looks right in the file it was written in
@@ -213,7 +248,7 @@ check and confirm the test goes red.
 - [ ] T031 [US1] Add the membership check to `sendMessage` in `services/api/src/db/repository.ts`, gated on `userId` being present. **Create this phase's private channels through the repository, not the API** — `createChannel(externalId, type, …)` already takes a type, and `POST /v1/channels` does not accept `private` until T049 at the end of phase 4 (FR-009's ordering). **The signature already carries the distinction the check needs** — `userId` present means a user is acting, absent means the tenant is — so the gate is the parameter and not a new flag (FR-001, R1)
 - [ ] T032 [US1] Test it in `services/api/src/db/repository.itest.ts`: a user of the tenant who is not a member of a private channel is refused `not_a_member` (SC-001)
 - [ ] T033 [P] [US1] Assert the channel's message count is unchanged after the refusal (SC-003). A refusal that still writes a row is not a refusal, and only this assertion can tell them apart — `services/api/src/db/repository.itest.ts`
-- [ ] T034 [US1] **Remove the check and confirm T032 goes red**, then restore it. This is FR-035's gate and the first of five removals in `quickstart.md`
+- [ ] T034 [US1] **Remove the check and confirm T032 goes red**, then restore it. This is FR-035's gate, and the removals are listed in the column table above rather than counted in each task — five analysis passes each found a hand-maintained count stale
 - [ ] T035 [P] [US1] Enumerate every `sendMessage` caller into `baseline.txt` — six, excluding tests — and confirm none carries a membership check of its own. Six callers inheriting one check is what constitution I means by data access rather than handlers
 - [ ] T036 [US1] Test that `POST /internal/messages` inherits the check: it resolves a user and then sends, so a non-member's message through the internal route is refused too. Chapter 3.12 recorded this route as checking nothing — `services/api/src/internal/internal.itest.ts`
 - [ ] T037 [P] [US1] Test that an application credential — no `userId` — still sends to a private channel. It acts for the tenant and is the customer's own server (FR-005), and this is the assumption the spec asked to be stated rather than assumed — `services/api/src/db/repository.itest.ts`
@@ -318,7 +353,7 @@ works.
 - [ ] T074 [P] [US7] Test that a send to an archived channel is refused with a code distinct from not-found and from `not_a_member` (SC-010) — `services/api/src/channels/channels.itest.ts`
 - [ ] T075 [P] [US7] Test that history is still readable while archived (FR-020) — `services/api/src/channels/channels.itest.ts`
 - [ ] T076 [P] [US7] Test archiving an archived channel and unarchiving an active one — both 200, nothing changed — `services/api/src/channels/channels.itest.ts`
-- [ ] T077 [US7] **Remove the `archived_at` read and confirm T074 goes red**, then restore. FR-035, and the second of **five** removals — T034, T077, T086, T135, T155, one per newly-read column plus the suite's own. The quickstart said three until analysis pass two counted them — `services/api/src/channels/channels.itest.ts`
+- [ ] T077 [US7] **Remove the `archived_at` read and confirm T074 goes red**, then restore. FR-035; the column table lists every removal this feature owes — `services/api/src/channels/channels.itest.ts`
 - [ ] T078 [US7] Test the edge case the spec names: a channel archived while a user has unread messages in it. The count is still true, and this is where "true" gets a definition — `services/api/src/channels/channels.itest.ts`
 - [ ] T079 Commit Phase 7
 
@@ -399,12 +434,13 @@ member of never appears.
 - [ ] T109b [US4] Give `services/api/src/users/users.schema.ts` the listing's query shape now — `cursor`, `limit` — with **`z.strictObject`**, not `z.object`. Constitution VI rejects unknown fields on write endpoints, `messages.schema.ts` and `channels.schema.ts` both use `strictObject`, and `channels.itest.ts:118` tests it. The schema file was created in phase 13 until pass two found phase 11's cursor validation needing it six tasks earlier
 - [ ] T109c [P] [US4] Test that an unknown field is refused rather than ignored on every write route this feature adds, in `services/api/src/users/users.itest.ts` — the assertion `channels.itest.ts:118` already makes for channels
 - [ ] T110 [US4] Add `listChannelsForUser` to `repository.ts`: keyset on `(last_activity_at desc, id desc)`, limit, membership join. **`id` is in the key because `last_activity_at` is not unique** — two channels can take a message in the same millisecond, and a keyset on a non-unique column skips or repeats rows at the page boundary
-- [ ] T111 [US4] Add `GET /v1/users/:externalId/channels` (FR-013) per `contracts/listing.md`
+- [ ] T111 [US4] Add `GET /v1/users/:externalId/channels` (FR-013) per `contracts/listing.md`, **404 for a deleted user** — the second reader of `users.deleted_at`
 - [ ] T112 [P] [US4] Test the ordering: three channels with messages at different times, most recently active first (SC-007) — `services/api/src/users/users.itest.ts`
 - [ ] T113 [P] [US4] Test the cursor: every channel appears exactly once across pages, none skipped, including two channels sharing a `last_activity_at` — `services/api/src/users/users.itest.ts`
 - [ ] T114 [P] [US4] Test that a private channel the user is not a member of never appears (FR-015), and that a **public** one they could read by id does not either — the read set and the subscription set kept apart — `services/api/src/users/users.itest.ts`
 - [ ] T115 [US4] **State and test whether an archived channel appears** (FR-022). It does, with a flag: a customer who archived a channel still needs to find it — `services/api/src/users/users.itest.ts`
 - [ ] T116 [US4] **`EXPLAIN ANALYZE` the listing query and record the plan** in `baseline.txt`. An index scan, not a sequential one. A sequential scan here means R4's 145× is being paid rather than collected, and the test lane is too small to notice
+- [ ] T116a [US4] **Remove the `last_activity_at` ordering and confirm T112 goes red**, then restore (FR-035). A newly-enforced column with no removal test is a column that might be ordered by anything — `services/api/src/users/users.itest.ts`
 - [ ] T117 [P] [US4] Test the cursor's refusals: malformed 400 with `field: "cursor"`, `limit` over 100 400 with `field: "limit"`, and a cursor naming a channel in another environment **400 rather than 404 or an empty page** — anything that distinguishes "exists elsewhere" from "malformed" is the leak the suite exists to catch — `services/api/src/users/users.itest.ts`
 - [ ] T118 [P] [US4] Document the pagination drift the way chapter 2.4 documented history's, or show there is none: a new message mid-pagination moves a channel the caller may have already seen — `specs/034-chapter-3-15/baseline.txt`
 - [ ] T118a Commit Phase 11
@@ -423,7 +459,7 @@ channel's last sequence, watch it fall to zero — then delete a message and con
 count does not move.
 
 - [ ] T119 [US5] Add `setReadPosition` to `repository.ts` (FR-017, FR-018): forwards only, refuse past `channels.last_sequence`, upsert on `(channel_id, user_id)`
-- [ ] T120 [US5] Add `PUT /v1/users/:externalId/channels/:channelExternalId/read` per `contracts/listing.md`
+- [ ] T120 [US5] Add `PUT /v1/users/:externalId/channels/:channelId/read` per `contracts/listing.md`, with a method-level `@Accepts("application", "user")` — a user records their own position and the tenant records one for the user the path names. **The membership the refusal talks about is the path's user, not the caller**: under an application credential the caller has no membership at all, which is what made the authorization table's member/non-member columns say nothing for this row until pass five
 - [ ] T121 [US5] Add the count to the listing (FR-016): `greatest(channels.last_sequence − read_position, 0)`. **No counter and nothing to invalidate** — a cached counter measured no faster (2.1 ms against 1.1–4.5 ms) and adds a value that can go stale (R5) — `services/api/src/db/repository.ts`
 - [ ] T122 [P] [US5] Test that the count rises with each message and falls to zero when the position is set to `last_sequence` (SC-008) — `services/api/src/users/users.itest.ts`
 - [ ] T123 [P] [US5] Test that no row means position zero: a new member's unread count is the channel's whole history, and nothing is seeded on membership — `services/api/src/users/users.itest.ts`
@@ -431,6 +467,7 @@ count does not move.
 - [ ] T125 [P] [US5] Test the refusals: a position past `last_sequence` 400 with `field: "sequence"`, a replayed lower position a 200 no-op — `services/api/src/users/users.itest.ts`
 - [ ] T126 [P] [US5] Test the assumption the spec states: a user's own message does not raise their own unread count. Otherwise every send raises the sender's count, which no chat client shows — `services/api/src/users/users.itest.ts`
 - [ ] T127 [US5] Test `greatest(…, 0)`'s arm by planting a position above `last_sequence` directly in the database. It is defence against a bug rather than a reachable state, so this is the only way the branch is ever covered — and chapter 3.12 found three instruments that had never produced output for exactly this reason — `services/api/src/db/repository.itest.ts`
+- [ ] T127a [US5] **Remove the read-position read from the unread count and confirm T122 goes red**, then restore (FR-035) — `services/api/src/users/users.itest.ts`
 - [ ] T128 Commit Phase 12
 
 **Checkpoint**: FR-CHN-09 is delivered with one new table and no counter.
@@ -445,14 +482,14 @@ by field name.
 **Independent test**: set display name, avatar URL and metadata, read them back, and
 confirm metadata over 4 KB and a malformed URL are each refused with the field named.
 
-- [ ] T129 [US3] Add `GET` and `PATCH /v1/users/:externalId` (FR-023) in `services/api/src/users/`
+- [ ] T129 [US3] Add `GET` and `PATCH /v1/users/:externalId` (FR-023) in `services/api/src/users/`, **both reading `users.deleted_at` and answering 404 for a deleted user**. Until pass five that column was written by T141, cleared by T146 and read by nothing — the third column this feature would have added with no reader, in a feature about columns with no readers
 - [ ] T129a [US3] Add `updateUserProfile` to `services/api/src/db/repository.ts` — the writer T129's `PATCH` needs, setting `display_name`, `avatar_url` and `metadata`. **Found by building the route table**, the third route in this feature with a handler and no repository method
 - [ ] T130 [P] [US3] Add the schema: `display_name`, `avatar_url` as a URL, `metadata` bounded at 4 KB — `services/api/src/users/users.schema.ts`
 - [ ] T131 [P] [US3] Test the round trip for all three (SC-011) — `services/api/src/users/users.itest.ts`
 - [ ] T132 [P] [US3] Test FR-024's two bounds: metadata over 4 KB refused 400 with `field: "metadata"`, and a malformed `avatar_url` refused with its field — `services/api/src/users/users.itest.ts`
 - [ ] T133 [US3] **Record why the users bound is 4 KB when the channels bound is 8 KB** — FR-USR-03 against FR-CHN-01 — and either justify it in the chapter or change it. A bound inherited silently is a bound nobody chose — `specs/034-chapter-3-15/baseline.txt`
 - [ ] T134 [P] [US3] Test that the socket frame's identity shape is unchanged by this feature (US3 scenario 3). The profile is stored; changing the wire contract is not in scope — `services/gateway/src/isolation.itest.ts`
-- [ ] T135 [US3] **Remove the `avatar_url` and `metadata` reads and confirm T131 goes red**, then restore. FR-035, the fourth of five removals — `services/api/src/users/users.itest.ts`
+- [ ] T135 [US3] **Remove the `avatar_url` and `metadata` reads and confirm T131 goes red**, then restore. FR-035; see the column table — `services/api/src/users/users.itest.ts`
 - [ ] T136 Commit Phase 13
 
 ---
@@ -473,7 +510,8 @@ their messages are still readable and still attributed to them.
 - [ ] T143 [P] [US8] Test that a deleted user's messages are still in history and still attributed to them (SC-012). `ON DELETE SET NULL` would satisfy the letter of "preserved" and make those messages invisible to sockets, because `backfill.controller`'s `toFrame` drops senderless rows — `services/api/src/users/users.itest.ts`
 - [ ] T144 [US8] **Test the socket path specifically**: resume a channel containing a deleted user's message and confirm the frame arrives. This is the assertion that would have caught `ON DELETE SET NULL`, and the reason R7 chose the row over the letter of the clause — `services/gateway/src/isolation.itest.ts`
 - [ ] T145 [P] [US8] Test that memberships and read positions are gone, and that `usage_active_users` rows are not — `services/api/src/users/users.itest.ts`
-- [ ] T146 [US8] Test FR-030: presenting the deleted user's external id again reuses the row, clears `deleted_at`, and leaves the profile fields empty. `(environment_id, external_id)` is unique and the row is still there, so there is no other honest answer — `services/api/src/users/users.itest.ts`
+- [ ] T146 [US8] Test FR-030: presenting the deleted user's external id again reuses the row, clears `deleted_at`, and leaves the profile fields empty.
+- [ ] T146a [US8] **Remove the `deleted_at` read from `GET /v1/users/:externalId` and confirm the 404 test goes red**, then restore (FR-035) — `services/api/src/users/users.itest.ts` `(environment_id, external_id)` is unique and the row is still there, so there is no other honest answer — `services/api/src/users/users.itest.ts`
 - [ ] T147 [US8] Test the edge case the spec names: deleting a user who is the `owner` of a channel. FR-CHN-04's roles and FR-USR-05's deletion meet here and the chapter has to say what happens — `services/api/src/users/users.itest.ts`
 - [ ] T148 Commit Phase 14
 
@@ -494,7 +532,7 @@ history is still readable by others.
 - [ ] T152 [P] [US9] Test that a banned user cannot connect and cannot send, and that their history is still readable by others (SC-013) — `services/api/src/users/users.itest.ts and services/gateway/src/isolation.itest.ts`
 - [ ] T153 [US9] **State and test what a ban does to a connection that is already open** (FR-032). The two answers are "closed at the next heartbeat" and "closed immediately", and they differ in whether the gateway has to be told. A ban that only applies to new connections is a ban a client outlasts by not reconnecting — `services/gateway/src/session.ts`
 - [ ] T154 [P] [US9] Test the edge cases the spec names: banning a member of a private channel — the ban is tenant-scoped, so it is not a removal — and a token minted for a banned user's identifier, where implicit creation must not undo the ban — `services/api/src/users/users.itest.ts`
-- [ ] T155 [US9] **Remove the `banned_at` read and confirm T152 goes red**, then restore (FR-035). The fifth and last — `services/api/src/users/users.itest.ts`
+- [ ] T155 [US9] **Remove the `banned_at` read and confirm T152 goes red**, then restore (FR-035); see the column table — `services/api/src/users/users.itest.ts`
 - [ ] T156 Commit Phase 15
 
 **Checkpoint**: all five columns that began dead are read, and each read has been shown to be load-bearing by removing it.
@@ -545,11 +583,11 @@ the fourth**: FR-038a's citation class.
 - [ ] T174c Record in `baseline.txt` which of T174a's arms are isolation and which are authorization, and the file's branch figure before and after. **A private-channel membership check is authorization inside a tenant, not tenant isolation** — the clause does not reach it by its own words, and the same-tenant suite tests it with FR-TEN-05's oracle anyway, so the classification is stated rather than left to whoever next reads the ratchet
 - [ ] T174d [P] **Re-earn `services/api/src/channels/channels.service.ts`'s pin**, currently branches 75 / **functions 100** / lines 94 / statements 94. This feature adds read-by-id, join, archive, unarchive, removal and role-setting to that file, and `functions: 100` goes red on the first partially-covered new function. Chapter 3.5's precedent: six new operations on `repository.ts` took branches from 85.91% to 78.22% on the next run
 - [ ] T176 **Re-run T007's dead-column count and record it: five before, and the after-count with every survivor named beside the requirement it stands for** (SC-016, FR-036) — `specs/034-chapter-3-15/baseline.txt`
-- [ ] T176a **The after-count is not zero, and the chapter says so.** All five of the named columns get readers, and this feature adds two that have none: `members.role` (FR-012, T069 — no operation is authorized by channel role) and `read_positions.updated_at` (written by every position write, read by nothing). A feature whose subject is columns nothing reads, leaving two behind, is the chapter's own joke and it is better told than found — `relay-tutorial/app/(en)/part-3/chapter-16/<slug>/page.mdx`
+- [ ] T176a **The after-count is not zero, and the chapter says so.** All five of the named columns get readers, and this feature leaves two of its own with none — `members.role` (FR-012, T069: no operation is authorized by channel role) and `read_positions.updated_at` (written by every position write, read by nothing). **It was three until analysis pass five**: `users.deleted_at` was set by T141, cleared by T146 and read by nothing, in a feature whose subject is columns nothing reads. A feature whose subject is columns nothing reads, leaving two behind, is the chapter's own joke and it is better told than found — `relay-tutorial/app/(en)/part-3/chapter-16/<slug>/page.mdx`
 - [ ] T177 Write `specs/034-chapter-3-15/traceability.md`, **generated rather than grown**, both directions: every requirement to the clause it implements, and every clause this feature touches to the requirement covering it. Chapter 3.12's map found four clauses touched and unclaimed, and one row that recorded a clause as delivered when it was not — found only because chapter 3.15's spec read the map for a purpose other than writing it
 - [ ] T178 Update `docs/04-srs.md`'s verification notes for the twelve clauses
 - [ ] T179 [P] Split the 3.15 row in `docs/07-tutorial-plan.md` into 3.15 and 3.16 with the shipped numbers. Not mirrored by `check-docs-drift.sh`, deliberately — its DOCS list excludes it because it is the series' own plan and not a published reference
-- [ ] T179a **Run `pnpm sync:docs`, then `pnpm check:docs`, `pnpm check:errors` and `pnpm check:fences` in `relay-tutorial/`** — in that order and after T178. `04-srs.md` is on `check-docs-drift.sh`'s mirrored list, so a drift check run before the edit passes and the edit then breaks it. This task was `T175` and ran three positions too early, marked `[P]` alongside the edit that invalidates it — which made it a race rather than an ordering slip
+- [ ] T179a **Run `pnpm sync:docs`, then `pnpm check:docs`, `pnpm check:errors` and `pnpm check:fences` in `relay-tutorial/`** — in that order and after T178. **Three mirrored documents change in this feature**: `04-srs.md` (T178), `08-error-reference.md` (T027) and `05-sad.md` (T018a), all on `check-docs-drift.sh`'s list. A drift check run before any of those edits passes and the edit then breaks it. This task was `T175` and ran three positions too early, marked `[P]` alongside the edit that invalidates it — which made it a race rather than an ordering slip
 - [ ] T180 **The twenty-run battery (SC-017), on a machine running nothing else.** Chapter 3.12's attempt one failed at run 11 with `api never became healthy` at 135 s against a 193 s mean, and the cause was two Next.js dev servers compiling an MDX page — no port held, no `EADDRINUSE`, and the evidence that told defect from interference was the wall-clock timeline
 - [ ] T181 Record what twenty green buys and does not, in `specs/034-chapter-3-15/baseline.txt`: it rejects a per-run failure rate of 13.91% or worse at 95% confidence, a 5% flake survives it 36% of the time, and rejecting one would take 59 runs. Chapter 3.11 ran twenty green and an eleven-chapter-old flake surfaced on run 21
 - [ ] T182 Commit Phase 18

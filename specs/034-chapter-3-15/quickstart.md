@@ -105,7 +105,7 @@ message count unchanged afterwards (SC-003). A refusal that still writes a row i
 refusal.
 
 **Then remove the check** from `repository.sendMessage` and re-run. The test must fail.
-This is FR-035's gate and the first of five removals.
+This is FR-035's gate; the column table lists every removal this feature owes.
 
 ## V4 — the six callers inherit it
 
@@ -196,8 +196,7 @@ pnpm vitest run services/api/src/channels --config services/api/vitest.integrati
 not-found and from `not_a_member` (SC-010); history still readable; archiving an
 archived channel a 200 no-op.
 
-**Then remove the `archived_at` read** and confirm the refusal test goes red. The second
-removal.
+**Then remove the `archived_at` read** and confirm the refusal test goes red.
 
 ## V11 — roles round-trip, and the fourth value is refused
 
@@ -220,6 +219,8 @@ underneath it, and R8's trap is a constraint that accepts the organisation vocab
 overlap or gap; a channel the caller is not a member of absent (SC-007, FR-015). Two
 channels sharing a `last_activity_at` must page correctly — that is what `id` is doing
 in the keyset.
+
+**Then remove the `last_activity_at` ordering** and confirm the order test goes red.
 
 **And measure it.** The index has to be used:
 
@@ -244,6 +245,9 @@ requires be stated, and this is where a reader sees it.
 A position past `last_sequence` is refused 400 with `field: "sequence"`; a replayed
 lower position is a 200 no-op.
 
+**Then remove the read-position read** from the unread count and confirm the count test
+goes red.
+
 ## V14 — the user surface
 
 ```bash
@@ -260,7 +264,8 @@ Then present the deleted user's external id again: the same row comes back with
 `deleted_at` cleared and empty profile fields (FR-030).
 
 **Then remove the `avatar_url` and `metadata` reads** and confirm the round-trip goes
-red. The fourth removal.
+red. **And the `deleted_at` read**, confirming the 404-for-a-deleted-user test goes red —
+pass five found that column written, cleared and never read.
 
 ## V15 — the ban, and the token that creates
 
@@ -277,8 +282,7 @@ pnpm vitest run services/api/src/auth --config services/api/vitest.integration.c
 through `POST /internal/messages` and accepted (SC-020). Before this feature that
 sequence answers `400 "unknown user"`.
 
-**Then remove the `banned_at` read** and confirm the ban test goes red. The fifth and
-last removal — one per column that began this feature dead.
+**Then remove the `banned_at` read** and confirm the ban test goes red.
 
 ## V15a — the chapter citations, classified
 
