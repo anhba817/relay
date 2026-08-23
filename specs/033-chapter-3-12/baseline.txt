@@ -700,3 +700,70 @@ returns does not list the other tenant's channel.
 Nineteen tests, by group:
 
     control 3 · read 2 · list 1 · write 7 · credential 1 · user token 3 · platform 2
+
+## T037-T043 — every table's tenant path, and the two things writing it found
+
+`db/catalogue.ts` classifies from `information_schema`, not from `schema.ts`: a
+table a migration added and nobody modelled in Drizzle is invisible to a check
+that reads the model, and that is the table this exists to catch. It lives in
+`db/` because that is the only directory the lint ban permits `drizzle-orm` in,
+and T069a is about to restore that ban for integration tests (R23).
+
+    tenant paths: 22 base tables — 12 direct, 2 hop, 8 spine
+    hop: members  → channels, users
+    hop: messages → channels, users
+
+12 direct includes `__sentinel_environments`, which the harness creates — 11 on a
+database the lane has never run against, which is why T038 records these and
+asserts totality instead.
+
+**The `hop` rule in data-model.md was wrong, and writing the query is what showed
+it.** It said "exactly one foreign key reaches a table that has it". Both hop
+tables reach **two** — `channels` and `users` are each `direct` — so the uniqueness
+reading would have classified neither and failed totality on the two tables it
+was written to describe. The rule is existence. Corrected in data-model.md §4.
+
+**`::text` is load-bearing, and the failure was legible only by accident.**
+`information_schema` columns are `sql_identifier`; node-pg has no parser for an
+array of them, so `array_agg(DISTINCT ccu.table_name)` arrives as the literal
+string `{channels,users}`. Iterating it yields `{`, and the assertion read
+`members hops through {, which is not direct` — which named the bug precisely
+because the message interpolates the value. A boolean assertion would have said
+`false is not true`.
+
+One self-inflicted stop worth recording: the comment explaining that cast, written
+inside the SQL, used backticks around `information_schema` — inside a template
+literal, which ended the string. `tsc` was not re-run after that edit, so it
+surfaced as a vite parse error during the test run instead. Typecheck after every
+edit, not after every batch.
+
+## T042 — the check fails, and each escape hatch works
+
+Four stages against a scratch table, DDL rather than a migration file so there is
+nothing left to forget to delete:
+
+    1. CREATE TABLE t042_scratch (id, note)          23 tables, 12 direct, 2 hop, 8 spine
+       → FAILS: "these tables have no path to an environment: t042_scratch.
+          Add environment_id, add a foreign key to a table that has one, or add
+          it to SPINE in db/catalogue.ts with a reason."
+    2. + environment_id                              23 tables, 13 direct — passes
+    3. FK to channels instead                        23 tables, 12 direct, 3 hop — passes
+          hop: t042_scratch → channels
+    4. DROP TABLE                                    22 tables, 12/2/8 — passes
+
+Stage 1 is the property FR-012 asks for. Stages 2 and 3 are the part worth doing
+as well: they prove the check is not merely "an unknown table fails" but that both
+documented ways of giving a table a tenant path actually satisfy it. Stage 4 is
+the evidence the scratch table is gone — the count returns to 22.
+
+## Phase 4 gates
+
+  pnpm typecheck     12 of 12
+  pnpm lint          exit 0   (1 pre-existing warning in session.perf.itest.ts)
+  pnpm turbo run test  353
+  pnpm test:integration  exit 0, 10 of 10, 3m12.283s
+
+    test-harness    8      api           305      gateway        28
+    dispatcher     16      e2e            10              TOTAL 367
+
++5 on Phase 3's 362, all five `tenant-scope.itest.ts`.

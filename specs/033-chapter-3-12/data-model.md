@@ -78,7 +78,7 @@ then none.
 | Value | Meaning | Count today |
 |---|---|---|
 | `direct` | the table has `environment_id` | 12 on a database the lane has run against, 11 on a fresh one — `__sentinel_environments` is the harness's, so the counts are recorded rather than asserted (SC-007) |
-| `hop` | exactly one foreign key reaches a table that has it | 2 — `members` and `messages`, both through `channels` |
+| `hop` | at least one foreign key reaches a `direct` table | 2 — `members` and `messages`. Each reaches **two** (`channels` and `users`), so the rule is existence and not uniqueness; an earlier draft of this table said "exactly one", which would have classified neither and failed totality on both |
 | `spine` | the tenancy tables themselves, plus infrastructure | 8 — `organisations`, `applications`, `environments`, `humans`, `memberships`, `consumed_events`, `schema_migrations`, `outbox` |
 
 `spine` is an explicit list with a reason each, not a pattern. A new table lands in none
