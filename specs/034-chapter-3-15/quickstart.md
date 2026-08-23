@@ -1,0 +1,251 @@
+# Quickstart — validating chapters 3.15 and 3.16
+
+Seventeen checks. Run in order; several depend on earlier ones. Every command is one a
+maintainer runs, verbatim.
+
+Three of the checks are **negative**: they require breaking something on purpose and
+watching a test fail. FR-035 exists because of them — a test that passes with and
+without the code it covers is measuring nothing, and the only way to know which kind
+you have is to remove the code.
+
+## Prerequisites
+
+```bash
+cd relay-platform
+RELAY_POSTGRES_PORT=15432 docker compose up -d --wait
+pnpm install
+pnpm build
+node services/api/dist/db/migrate.js
+```
+
+The four variables only CI sets. Without them 11 tests fail in a way that reads as
+regression — a missing platform credential fails `limits.itest.ts` and cascades into
+the dispatcher, and NATS comes back `CONNECTION_REFUSED`:
+
+```bash
+export RELAY_REDIS_URL=redis://localhost:6379
+export RELAY_NATS_URL=nats://localhost:4222
+export RELAY_INTERNAL_CREDENTIAL=rk_svc_ci_0123456789abcdef0123456789abcdef
+export RELAY_WEBHOOK_SECRET_KEY="BpDal75yBZp7Fc2GtGS3D1vh7qOKgCWJkF6/d0XWxBU="
+```
+
+`DATABASE_URL` stays unset — every package falls back to 15432, this project's
+documented port, and this machine's own Postgres holds 5432.
+
+---
+
+## V0 — the lanes and the dead-column count, before anything changes
+
+```bash
+pnpm lint && pnpm typecheck && pnpm turbo run test
+pnpm test:integration
+pnpm coverage
+```
+
+**Expect** the numbers chapter 3.12 closed on: 379 unit, 407 integration in 10 tasks,
+771 under coverage with every ratchet met.
+
+Then the count this feature is about. Five columns exist and are read by nothing —
+`channels.type`, `channels.archived_at`, `users.avatar_url`, `users.metadata`,
+`users.banned_at`. Record it now (SC-016). A count taken after Phase 2 measures the
+edit, not the starting position.
+
+## V1 — the migrations apply, and apply twice
+
+```bash
+node services/api/dist/db/migrate.js
+node services/api/dist/db/migrate.js   # again
+psql "$RELAY_DB" -c '\d read_positions' -c '\d+ members' -c '\d+ channels'
+```
+
+**Expect** `read_positions` with primary key `(channel_id, user_id)` and no `id`
+column; `members.role` defaulting to `'member'`; `channels.last_activity_at` with the
+`(environment_id, last_activity_at desc)` index. The second run is a no-op.
+
+**And check the CHECK is the right one.** `members_role_check` names
+`owner, moderator, member`. If it names `admin`, the migration reused
+`memberships.role`'s constraint — R8's trap, which looks correct in review.
+
+## V2 — the guard's tenth table
+
+```bash
+pnpm vitest run packages/test-harness/src/guard --config packages/test-harness/vitest.integration.config.mts
+```
+
+**Expect** the sentinel refusal for `read_positions`, naming the composite key rather
+than `undefined`. That is the `coalesce(to_jsonb(OLD) ->> 'id', to_jsonb(OLD)::text)`
+expression chapter 3.13 installed, working for a table with no `id`.
+
+**Then break it**: drop `read_positions` from `sentinel.sql`'s array, re-run. The suite
+must fail. Restore it. Chapter 3.13 learned that a table in the array is not the same
+as a table the guard watches.
+
+## V3 — the membership check, and it fails when removed
+
+```bash
+pnpm vitest run services/api/src/db/repository --config services/api/vitest.integration.config.mts
+```
+
+**Expect** a send to a private channel by a non-member refused, and the channel's
+message count unchanged afterwards (SC-003). A refusal that still writes a row is not a
+refusal.
+
+**Then remove the check** from `repository.sendMessage` and re-run. The test must fail.
+This is FR-035's gate and the first of the three negative checks.
+
+## V4 — the six callers inherit it
+
+```bash
+grep -rn "sendMessage(" services/api/src --include=*.ts | grep -v itest | grep -v "\.test\."
+```
+
+**Expect** six call sites, none of them passing a check of its own. The check is in one
+function because the signature already says who is acting — `userId` present means a
+user, absent means the tenant — and that is what constitution I means by data access
+rather than handlers.
+
+## V5 — a private channel is indistinguishable from absent
+
+```bash
+pnpm vitest run services/api/src/isolation --config services/api/vitest.integration.config.mts
+```
+
+**Expect** for each of read-by-id, history, and send: the private channel the caller
+cannot see and a channel that exists nowhere give the same status and the same body,
+`request_id` excepted (SC-002). Chapter 3.12 built the oracle; this is the first use of
+it inside a single tenant.
+
+## V6 — the same-tenant attack exists and is new
+
+```bash
+pnpm vitest run services/api/src/isolation/gauntlet --config services/api/vitest.integration.config.mts
+```
+
+**Expect** at least one same-tenant, non-member attack per verb (SC-015), on a fixture
+that is not `seedTwoTenants` — one environment, two users, one channel, one of them not
+a member. All four pre-existing attack shapes take another tenant's identifiers, so
+this is new work rather than a reuse.
+
+## V7 — the derived target count moves by exactly the routes added
+
+```bash
+pnpm vitest run services/api/src/isolation/targets --config services/api/vitest.integration.config.mts
+```
+
+**Expect** the count from V0 plus the number of public routes this feature adds, each
+matched to exactly one classification entry (SC-014). An unclassified route fails the
+suite on the build that adds it, which is the point of deriving the list rather than
+writing it.
+
+## V8 — the private type accepted, and the repeat that must not change it
+
+```bash
+pnpm vitest run services/api/src/channels --config services/api/vitest.integration.config.mts
+```
+
+**Expect** `POST /v1/channels` with `type: "private"` returns 201 and the row reads
+back `private` (SC-006); a second creation naming `public` returns 200 with the
+existing channel, still `private` (FR-010).
+
+## V9 — removal, and the messages that survive it
+
+**Expect** a removed member's send refused; their reconnection carrying no history for
+the channel (SC-004); their existing messages still in history, still attributed to
+them (SC-005). Removing a non-member and removing a user who does not exist both give
+200 `not_a_member` — see `contracts/membership.md` for why the second is not a 404.
+
+## V10 — the archive refuses with its own code
+
+**Expect** a send to an archived channel refused with `channel_archived`, distinct from
+not-found and from `not_a_member` (SC-010); history still readable; archiving an
+archived channel a 200 no-op.
+
+## V11 — roles round-trip, and the fourth value is refused
+
+**Expect** `owner`, `moderator` and `member` accepted; a fourth value refused 400 with
+`field: "role"` (SC-009). The field name in the envelope is only there because chapter
+3.14 made `ZodValidationPipe` carry `issues[0].path`.
+
+## V12 — the listing orders, pages and excludes
+
+**Expect** a user's channels most-recently-active first; a cursor that pages without
+overlap or gap; a channel the caller is not a member of absent (SC-007, FR-015). Two
+channels sharing a `last_activity_at` must page correctly — that is what `id` is doing
+in the keyset.
+
+**And measure it.** The index has to be used:
+
+```sql
+EXPLAIN ANALYZE SELECT … ORDER BY last_activity_at DESC, id DESC LIMIT 50;
+```
+
+**Expect** an index scan. A sequential scan here means the index is not being used and
+R4's 145× is not being collected.
+
+## V13 — the unread count, including the tombstone
+
+**Expect** the count rises with each message and falls to zero when a position is set
+to `last_sequence` (SC-008). Then delete a message and check the count again: it stays
+the same, because a tombstone keeps its sequence. That is the approximation FR-019
+requires be stated, and this is where a reader sees it.
+
+A position past `last_sequence` is refused 400 with `field: "sequence"`; a replayed
+lower position is a 200 no-op.
+
+## V14 — the user surface
+
+**Expect** all three profile fields round-trip; metadata over 4 KB and a malformed
+`avatar_url` refused 400, each naming its field (SC-011); 100 users upsert in one
+request and 101 refused (SC-012); a deleted user's messages still readable and still
+attributed, their memberships gone, their `usage_active_users` rows untouched.
+
+Then present the deleted user's external id again: the same row comes back with
+`deleted_at` cleared and empty profile fields (FR-030).
+
+## V15 — the ban, and the token that creates
+
+**Expect** a banned user refused at connect and on send with `user_banned`; their
+history still readable by others (SC-013). The already-open connection behaves the way
+the chapter says it does — whichever answer FR-032 takes, this check is where it is
+verified rather than asserted.
+
+```bash
+pnpm vitest run services/api/src/auth --config services/api/vitest.integration.config.mts
+```
+
+**Expect** a token minted for an identifier with no user row, then a message sent
+through `POST /internal/messages` and accepted (SC-020). Before this feature that
+sequence answers `400 "unknown user"`.
+
+## V16 — the gates, the battery, and the prose
+
+```bash
+pnpm lint && pnpm typecheck && pnpm build
+pnpm turbo run test && pnpm test:integration && pnpm coverage
+pnpm test:outsider
+cd ../relay-tutorial && pnpm check:docs && pnpm check:errors && pnpm check:fences
+```
+
+**Expect** the error registry at 16 codes and 16 reference sections, checked in both
+directions. `check:fences` green — 203 files at the last tag, and every file either
+chapter touches has to replay.
+
+Then the dead-column count again: **five before, zero after**, or a stated reason for
+each survivor (SC-016, FR-036).
+
+Then the battery. Twenty consecutive runs of the integration lane, on a machine running
+nothing else:
+
+```bash
+for i in $(seq 1 20); do … done   # the loop from specs/032-chapter-3-11/
+```
+
+**Expect** 20 green, and record the mean. Chapter 3.12 closed at 193.25 s. Run 11 of
+that battery failed with `api never became healthy` at 135 s against a 193 s mean, and
+the cause was two Next.js dev servers on the same machine compiling an MDX page — the
+evidence was the wall-clock timeline, not the error message. A battery is only a
+measurement if nothing else is running.
+
+Last, the prose (SC-018, SC-019): each page's word count inside 2,000–4,000 by the
+counter the series uses, and the split recorded with the file count that produced it —
+25 platform files, 16 changed and 9 new, counted before any prose was written.

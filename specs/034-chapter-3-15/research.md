@@ -1,0 +1,363 @@
+# Research — chapter 3.15's feature
+
+Twelve of the sixteen items below were measured against a running database or the
+code rather than reasoned about. Two of the measurements pointed the wrong way at
+first, and both are recorded with the number that misled and the number that
+settled it.
+
+---
+
+## R1 — the membership check has a home, and the signature already says so
+
+**Decision**: the check goes inside `repository.sendMessage`, gated on `userId`
+being present.
+
+`sendMessage` already takes `userId?: string`. That optionality is not an accident of
+the API — it is the distinction the whole clause turns on:
+
+    userId present    a USER is sending. Membership applies.
+    userId absent     the TENANT is sending through an application key.
+                      There is no member to check.
+
+So FR-005 — what a private channel means for an application credential — is answered
+by a type that already exists rather than by a new decision. And putting the check in
+the repository rather than a service satisfies constitution I directly: *isolation
+lives in data access*. Every caller inherits it, and there are six:
+
+    packages/e2e/src/harness.ts            services/api/src/isolation/fixtures.ts
+    services/api/src/messages/…service.ts  services/gateway/src/api-client.ts
+    services/gateway/src/isolation-…ts     services/gateway/src/session.ts
+
+The socket path reaches it through `api-client` → `POST /internal/messages` →
+`messages.service.send` → `repository.sendMessage`, so one edit covers the socket and
+the internal route together.
+
+**Alternatives considered**: a guard on `/internal/messages` (misses `sendMessage`'s
+other callers and puts a tenancy rule in a controller); a check in
+`messages.service` (two controllers call it, and the fixtures do not).
+
+## R2 — reading is already membership-scoped; only sending is not
+
+**Measured**, by reading both paths:
+
+    repository.backfill      joins `members` on the caller's user id — membership
+    session.controller       builds its list from `channelsForUser` — membership
+    listMessages             `environment_id` only
+    channelExists            `environment_id` only
+    /internal/messages send  resolves the user, checks nothing
+
+The two that scope by environment alone are reached from the **public** history route,
+which is application-authenticated and has no user — so they are correctly unscoped by
+membership.
+
+The gap is one line's worth of behaviour in one function, and chapter 3.12's shipped
+comment claiming "no membership check on any read path" is wrong. That comment is
+inside a titled fence in chapter 3.13's page in two locales; FR-037 owns the
+correction and it is fence work, not a source edit.
+
+## R3 — `channels.type` gets a reader, and FR-CHN-03's word "join" is the hard part
+
+**Decision**: `private` requires membership on every verb. `public` permits a
+tenant user to **read** without membership and to **join**, and joining is a new
+user-initiated operation.
+
+FR-CHN-03's exact words are that any authenticated user of the tenant "may read and
+join" a public channel. If membership were required for both types, `channels.type`
+would still have no reader and FR-CHN-03 would still be unimplemented — the column
+becomes live only because the two types differ.
+
+**The subscription set is not the read set**, and keeping them apart is what makes
+this affordable. A public channel is readable on demand by id; it is *subscribed*
+only if the caller is a member. Putting every public channel into every user's session
+would make the session unbounded in a tenant with many channels.
+
+**Alternatives considered**: membership for both types (leaves the column dead and the
+clause unmet); public channels auto-subscribed for every tenant user (unbounded
+session, and a socket that delivers channels a user never asked for).
+
+## R4 — `last_sequence` cannot order channels by activity, and the test lane says otherwise
+
+**Decision**: a `channels.last_activity_at` timestamp with an index on
+`(environment_id, last_activity_at DESC)`.
+
+**And this is the measurement that pointed the wrong way.** Ordering by
+`max(messages.created_at)` against the test lane looked free:
+
+    the test lane, busiest environment by messages: 579 messages, 32 channels
+    aggregate ordering, three runs:  1.942 ms   0.630 ms   0.870 ms
+
+Reporting 0.87 ms would have settled the question in favour of adding no column. The
+test lane's largest environment holds 579 messages, so the number measures nothing a
+real tenant would do. Measured again in a scratch database with **2,000 channels and
+1,000,000 messages**, one member in every channel:
+
+    aggregate over messages   159.737 ms   158.103 ms   158.842 ms
+                              → Seq Scan on messages, 1,000,000 rows, every call
+    indexed column              1.102 ms     1.496 ms     2.210 ms
+
+**145× apart, and the aggregate scans every message in the environment on every
+listing.** The cost grows with message volume, which is the one thing a chat platform
+guarantees will grow.
+
+**Alternatives considered**: the aggregate (above); ordering by `last_sequence`
+(a per-channel counter — two channels at sequence 50 say nothing about which was
+active more recently, so it cannot order channels against each other at all).
+
+## R5 — the unread count needs no counter, because `last_sequence` already counts
+
+**Decision**: unread is `greatest(channels.last_sequence − read_position, 0)`.
+
+Three shapes measured on the same 1,000,000-row dataset, for one page of 50 channels:
+
+    count rows past the read position    9.807 ms   11.109 ms   13.431 ms
+    a cached counter on the position     2.129 ms    1.928 ms    1.226 ms
+    last_sequence − read position        1.122 ms    4.426 ms    4.497 ms
+
+The third needs no counter and has nothing to invalidate: `channels.last_sequence` is
+already maintained by the write path, and chapter 2.2 made it the sequencing authority.
+The cached counter is no faster and adds a value that can go stale.
+
+**The approximation this accepts, and FR-019 asks for it to be stated**: a tombstoned
+message still occupies a sequence, so a deleted message counts as one unread. The
+alternative is counting rows, which is 10× the cost to make a deleted message stop
+being unread.
+
+**Alternatives considered**: both of the above.
+
+## R6 — a read position is one table with two columns and no counter
+
+**Decision**: `read_positions (channel_id, user_id, sequence)`, primary key on the
+first two, `environment_id` for the guard.
+
+It is the only entity in this feature with no storage today — measured: no `last_read`,
+`read_at` or equivalent anywhere in the schema. It needs `environment_id` because
+feature 030's guard watches tables that carry one, and a table without it is a table
+the guard cannot see (chapter 3.13 extended the guard to nine tables for exactly this
+reason).
+
+Positions advance forwards only, and a position past `last_sequence` is refused —
+FR-018 — because a position nothing can reach makes every later count wrong.
+
+## R7 — deleting a user keeps the row
+
+**Decision**: clear the profile fields, delete the memberships, keep the `users` row
+with a deletion marker.
+
+Three tables reference `users.id` — `messages`, `members`, `usage_active_users` —
+verified in the schema. FR-USR-05 asks that messages be preserved "as authored by a
+deleted user", and chapters 3.13 and 3.14 established that a NULL author makes a
+message **invisible to sockets**: `backfill.controller`'s `toFrame` drops senderless
+rows because `messageSchema` requires `user`. So `ON DELETE SET NULL` would satisfy
+the letter of "preserved" while making those messages undeliverable.
+
+`usage_active_users` is billing history and is not touched — FR-029.
+
+**Alternatives considered**: `ON DELETE SET NULL` (breaks delivery); `ON DELETE
+CASCADE` (deletes the messages the clause says to keep); a separate
+`deleted_users` table (a second identity space for one flag).
+
+## R8 — two role vocabularies, and neither may borrow the other
+
+**Measured**: `memberships` already has a `role` column with
+`CHECK (role IN ('owner','admin','member'))` — that is FR-TEN-07, a human's role in an
+organisation. FR-CHN-04's channel roles are `owner`, `moderator`, `member`.
+
+Different tables, different subjects, and one word different. A migration that reused
+the organisation constraint would accept `admin` on a channel member and refuse
+`moderator`, and the CHECK would look correct in review.
+
+**Decision**: `members.role` with its own CHECK naming the SRS's three, and a comment
+on each constraint pointing at the other.
+
+## R9 — FR-USR-02 is unmet, and its absence is already a bad error message
+
+**Measured**: `createUser` is called from exactly one non-test place —
+`channels.service.ts`, on first membership. `POST /auth/dev-token` mints a token for
+an identifier that need not exist, and creates nothing.
+
+`POST /internal/messages` then looks the user up and throws
+`BadRequestException("unknown user")`. So the sequence *mint a token, send a message*
+fails with a `400` that names the caller rather than the cause — which is precisely
+what implicit creation on authentication exists to prevent.
+
+**Decision**: the token route creates the user if absent, using chapter 3.13's
+idempotent `createUser`, so authentication and membership converge on one row for one
+external identifier.
+
+## R10 — the gauntlet needs a fixture it does not have
+
+**Measured**: `services/api/src/isolation/fixtures.ts` seeds **two tenants**, and all
+four attack shapes take another tenant's identifiers. A non-member of the caller's
+*own* tenant is a different fixture — one environment, two users, one channel, one of
+them not a member — and nothing in the suite has it.
+
+**Decision**: a second fixture beside `seedTwoTenants`, and one attack per verb. This
+is new work rather than a reuse, and FR-034 says so.
+
+## R11 — which error codes this feature adds
+
+**Measured**: the registry holds thirteen after chapter 3.14. Three refusals in this
+feature have no code:
+
+    not_a_member          a user acting on a channel they do not belong to
+    channel_archived      a send to an archived channel
+    user_banned           a banned user connecting or sending
+
+Each is a distinct fact a client acts on differently, which is the test chapter 3.14's
+registry comment sets: `channel_member_limit_exceeded` is separate from
+`quota_exceeded` because one resets on a date and the other never does. Sixteen codes
+after this feature, and `docs/08-error-reference.md` gains three sections — checked
+in both directions by the existing `check:errors`.
+
+**Alternatives considered**: reusing `forbidden` for all three (a client cannot tell
+"join the channel" from "wait for the archive to lift" from "contact support").
+
+## R12 — the split, measured before any prose exists
+
+FR-040 requires this, and chapter 3.12's close-out is why: it estimated 37 fenced
+files, shipped **61**, and took the split at Phase 12 — after prose for the discarded
+sections had been written.
+
+Counted by enumerating the files each clause group must touch and verifying every one
+exists (a design that names a file that is not there is a design that has not been
+checked):
+
+| Group | changed | new | total |
+|---|---|---|---|
+| A — membership, private type, removal (FR-CHN-03, 05, 06) | 11 | 1 | 12 |
+| B — listing, unread, archiving (FR-CHN-08, 09, 10) | 10 | 2 | 12 |
+| C — users and roles (FR-USR-02→06, FR-CHN-04) | 10 | 6 | 16 |
+| corrections (FR-037, FR-038) | 1 | 0 | 1 + 2 locale pages |
+
+**Union: 16 existing files changed, 9 new, 25 platform files.**
+
+At chapter 3.11's measured ratio — 21 files, 31 fences, 3,316 prose words, so ~1.5
+fences per file and ~107 words per fence:
+
+    A          12 files ≈ 18 fences ≈ 1,926 words
+    B          12 files ≈ 18 fences ≈ 1,926 words
+    C          16 files ≈ 24 fences ≈ 2,568 words
+    A+B+C      25 files ≈ 38 fences ≈ 4,000+ words
+
+**The three-way split fails, and it fails at the floor rather than the ceiling.** The
+bound in `docs/07-tutorial-plan.md` is 2,000–4,000 prose words; A and B each land at
+about 1,900. Chapter 3.12's split only had to avoid the ceiling, so this is the first
+time the other end of the bound has decided anything.
+
+**One chapter also fails**: 25 files lands at the ceiling before any allowance for the
+estimate running low, and it has run low twice — chapter 3.5 estimated 22 fences and
+shipped 39, chapter 3.12 estimated 37 files and shipped 61. Chapter 3.11's was exact.
+An estimate at 4,000 with a known upward bias is an estimate that breaks the bound.
+
+**Decision: two chapters, grouped by subject rather than by arithmetic.**
+
+| Chapter | Carries | Files | ≈ words |
+|---|---|---|---|
+| **3.15** the channel a customer controls | membership enforcement, the private type, removal, member roles, archiving — who is in a channel, what kind it is, and whether it is open | 17 | ≈ 2,730 |
+| **3.16** what a user sees | listing with cursor pagination, activity ordering, unread counts, and the whole user surface — profile, bulk upsert, deletion, banning, and implicit creation on authentication | 20 | ≈ 3,210 |
+
+Both inside the band with room for the estimate to run low, and each has one subject a
+reader can hold. Roles move to 3.15 because a role is a property of membership;
+archiving moves to 3.15 because "can anyone write here" belongs with "who may write
+here".
+
+## R13 — where each of the five dead columns comes alive
+
+| Column | Read by, after this feature | Chapter |
+|---|---|---|
+| `channels.type` | the membership check in `sendMessage`, and the by-id read check | 3.15 |
+| `channels.archived_at` | the same check, refusing with `channel_archived` | 3.15 |
+| `users.avatar_url` | the profile route's read and write | 3.16 |
+| `users.metadata` | the same | 3.16 |
+| `users.banned_at` | the socket's connect path and the send check | 3.16 |
+
+FR-035 requires each to be shown read by a test that fails when the read is removed.
+Being written is not being read — chapter 3.13 recorded the same distinction when it
+found that adding a table to the guard's trigger array is not the same as the guard
+watching it.
+
+## R14 — no ADR is required, and one candidate was weighed
+
+Nothing here chooses between architectures. The read position is a new table in the
+existing store on the existing writer; the activity column is a denormalisation inside
+one table; the membership check is a predicate in the layer constitution I already
+assigns it to.
+
+**The candidate was the activity column.** Denormalising a derivable value is the kind
+of decision an ADR exists for, and R4's numbers are what make it not one: 159 ms
+against 1.1 ms with a sequential scan over every message, on a query a client runs to
+render its first screen. A decision with a 145× measurement behind it and no rejected
+architecture is a recorded rationale, not an architecture decision.
+
+## R15 — the guard, and the two new tables
+
+`read_positions` carries `environment_id` and therefore belongs in feature 030's
+trigger array, taking it from nine tables to ten. Chapter 3.13 recorded what that
+costs: the refusal message needs a key expression that works for a composite primary
+key, and the bait must be planted in a state no global drain can claim — a lesson that
+cost thirteen failing tests in two unrelated files when it was got wrong.
+
+`read_positions` has a composite primary key `(channel_id, user_id)` and no `id`, so
+it needs the `coalesce(to_jsonb(OLD) ->> 'id', to_jsonb(OLD)::text)` expression chapter
+3.13 already installed. Nothing drains read positions globally, so its bait is not
+claimable by construction.
+
+## R16 — what this feature does not do, named rather than implied
+
+- **Presence in a private channel.** FR-CHN-05 names presence alongside read and send.
+  FR-RTM-07 owns delivery scope, and presence fan-out is the gateway's. In scope only
+  as far as: a non-member's socket is not subscribed to the channel, so it receives no
+  presence for it. Anything finer belongs with FR-RTM-07.
+- **A REST-sent message reaching a socket.** Chapter 3.14's gap G1, owner FR-RTM-05.
+  This feature does not change the fan-out.
+- **The outbox's message-text retention.** Chapter 3.12's finding, owner FR-MOD-06.
+- **A human reading the documentation.** Chapter 3.14's verdict on the Phase 2 exit
+  criterion said content sufficiency is not comprehensibility, and that a person is
+  the only instrument for the second. This feature does not use one either.
+
+## R17 — nineteen files point a reader at the wrong chapter
+
+**Found while checking a citation for R15**, which is the only reason it was found:
+`exempt.ts` says "NINE GUARDED TABLES AS OF CHAPTER 3.12", and the guard's ninth table
+is taught in chapter 3.13.
+
+The previous feature was specified as one chapter and shipped as three. Its record
+directory is still `specs/033-chapter-3-12/`, which is correct — a feature directory is
+named once. What moved is the *chapter number a reader is sent to*, and the comments
+written during that feature were not revisited after the split.
+
+Measured against the three published pages, matching each cited file against the page
+that fences it:
+
+    files citing "chapter 3.12" in a comment        31   (40 citations)
+      fenced in chapter 3.12's page                 12   correct
+      fenced in chapter 3.13's page                  9   wrong page
+      fenced in chapter 3.14's page                  9   wrong page
+      fenced in no chapter page                      1   exempt.ts, in the post-series appendix
+
+**Nineteen files send a reader to a page that does not contain them.** Four examples,
+each pointing somewhere different from where its subject is taught:
+
+    zod-validation.pipe.ts:18   "chapter 3.12 is where that stopped being optional"   → 3.14
+    codes.ts:71                 "(chapter 3.12, FR-046)"                              → 3.14
+    session.ts:94               "(chapter 3.12, FR-025)"                              → 3.14
+    repository.ts:2698          "THREE OUTCOMES, NOT A BOOLEAN (chapter 3.12, R14a)"  → 3.13
+
+**The requirement identifiers in those comments stay as they are.** `FR-025` and `R14a`
+belong to the feature, and the feature is `specs/033-chapter-3-12/`. Only the chapter
+number is wrong, and only where the citation points a reader at a page.
+
+**Decision**: classify all 40 citations and correct the chapter number where the cited
+page does not carry the file. This is the same shape as FR-037 — a stale sentence in a
+source file that is also inside a published fence — so a corrected comment in a fenced
+file is three files moving together, and `pnpm check:fences` fails if they do not.
+
+**This has no requirement in the spec.** FR-037 covers one sentence in
+`channels.schema.ts` and FR-038 covers one row in a traceability map; neither covers
+this. Named here rather than absorbed into either.
+
+**Alternatives considered**: leaving them (a code comment that names a chapter is a
+reference, and a wrong reference is worse than none — the series' own argument for
+fixing `docs_url`, which chapter 3.14 made); rewriting the citations to name the
+feature directory instead of a chapter (correct and useless to a reader, who is holding
+a chapter and not a spec directory).

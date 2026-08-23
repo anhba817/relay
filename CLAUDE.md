@@ -33,8 +33,73 @@ their only change is `notFoundDocsUrl` or the outsider's lane split.
   `service-kit/src/index.ts`, `packages/outsider/*`, `scripts/seed-demo-tenant.mjs`,
   `README.md`. **The milestone name lives here**, because this is where the Phase 2
   exit criterion gets its verdict.
-- **3.15 is the deferred surface** — the rest of FR-CHN and all of FR-USR, promised
-  a number as 3.13 until the split took it.
+- **3.15 was the deferred surface** — the rest of FR-CHN and all of FR-USR, promised
+  a number as 3.13 until the split took it. Now specified and planned, and itself
+  split in two; see below.
+
+**CHAPTERS 3.15 AND 3.16 ARE SPECIFIED AND PLANNED** — the deferred public surface.
+Its record is `specs/034-chapter-3-15/`: read **`plan.md`** for the seventeen phases
+and the constitution gate, `research.md` for R1 to R17 (twelve measured against a
+running database), then `data-model.md`, `contracts/membership.md`,
+`contracts/listing.md` and `quickstart.md` (V0 to V16, three of them negative).
+42 requirements, 20 success criteria, checklist 16/16.
+
+**Twelve SRS clauses, five dead columns, and three corrections.** The clauses are
+FR-CHN-03/04/05/06/08/09/10 and FR-USR-02/03/04/05/06. The columns exist and nothing
+reads them: `channels.type`, `channels.archived_at`, `users.avatar_url`,
+`users.metadata`, `users.banned_at` — that count is the feature's own headline number
+and V0 records it before Phase 2 moves anything.
+
+**THE SPLIT WAS TAKEN FROM A MEASURED FILE COUNT BEFORE ANY PROSE EXISTED** (FR-040),
+which is the one thing 3.12's close-out asked the next feature to do differently.
+25 platform files, 16 changed and 9 new. **Three chapters fails at the FLOOR** —
+groups A and B land at ~1,900 words against a 2,000 minimum, the first time the low
+end of the bound has decided anything — and **one chapter fails at the ceiling**,
+because 25 files lands at 4,000 with an estimate that has run low twice (3.5
+estimated 22 fences and shipped 39; 3.12 estimated 37 files and shipped 61). So:
+**3.15 "the channel a customer controls"** (membership, private type, removal, roles,
+archiving — 17 files, ~2,730 words) and **3.16 "what a user sees"** (listing, unread,
+and the whole user surface — 20 files, ~3,210 words). The page phases sit at 9 and 16
+rather than last, so each page is written when its own numbers are real.
+
+**THE MEASUREMENT THAT POINTED THE WRONG WAY, again.** Ordering a user's channels by
+`max(messages.created_at)` costs **0.87 ms on the test lane** — whose largest
+environment holds 579 messages — and **159 ms at 1,000,000 messages, with a sequential
+scan over every message in the environment on every listing**. An indexed
+`channels.last_activity_at` is 1.1 ms. 145× apart, and the gap grows with the one
+number a chat platform guarantees will grow. Reporting the test lane's number would
+have settled the question the wrong way. The unread count needs no such column:
+`greatest(channels.last_sequence − read_position, 0)`, because the write path already
+maintains `last_sequence` (chapter 2.2 made it the sequencing authority).
+
+**FOUR THINGS THE PLAN FOUND THAT THE SPEC DID NOT NAME.**
+
+1. **R17 — nineteen files send a reader to the wrong chapter, and no requirement
+   covers it.** The previous feature was specified as one chapter and shipped as
+   three; 31 files carry 40 "chapter 3.12" citations, and only 12 of those files are
+   fenced in chapter 3.12's page. `zod-validation.pipe.ts` and `codes.ts` point at
+   3.12 and are taught in 3.14; `repository.ts` points at 3.12 and is taught in 3.13.
+   The FR and R identifiers in those comments stay — they belong to the feature,
+   `specs/033-chapter-3-12/`. Only the chapter number is wrong. Found while checking a
+   citation for R15, which is the only reason it was found at all.
+2. **`users` has no deletion marker.** R7 decided a deleted user keeps their row, and
+   designing that turned up a third new column, `users.deleted_at`. `ON DELETE SET
+   NULL` would satisfy the letter of "messages are preserved" and break delivery:
+   `backfill.controller`'s `toFrame` drops senderless rows, so "authored by a deleted
+   user" and "authored by nobody" are different states and only one is the clause.
+3. **Two role vocabularies, one word apart.** `memberships.role` is
+   `('owner','admin','member')` — a human in an organisation, FR-TEN-07. FR-CHN-04's
+   channel roles are `('owner','moderator','member')`. A migration reusing the
+   organisation constraint would accept `admin` on a channel member, refuse
+   `moderator`, and look correct in review.
+4. **The gauntlet has no same-tenant fixture.** All four attack shapes take another
+   tenant's identifiers, so "a user of your own tenant who is not a member" is new
+   work rather than a reuse (R10, FR-034).
+
+**AND THE ORDER MATTERS ON ONE THING.** `POST /v1/channels` accepts `private` only
+once the three read paths and the send path enforce it (FR-009). The enum widened
+first would sell a guarantee the platform does not keep, which is the mistake 3.12's
+fifth analysis pass caught one phase before it shipped.
 
 **THE FENCE CHAIN TAUGHT FIVE THINGS, and four of them cost a wrong first attempt.**
 
