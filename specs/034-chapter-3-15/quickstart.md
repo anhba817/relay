@@ -230,6 +230,10 @@ existence oracle the membership refusal is not allowed to be.
 
 **Then remove the `archived_at` read** and confirm the refusal test goes red.
 
+**And the socket** (FR-022a): an archived channel stays in a member's session and delivers
+nothing new, because nothing new can be sent. The gateway needs no change; the check proves
+the no-op is a no-op rather than assuming it.
+
 ## V11 — roles round-trip, and the fourth value is refused
 
 ```bash
@@ -237,7 +241,9 @@ pnpm vitest run services/api/src/channels --config services/api/vitest.integrati
 psql "$RELAY_DB" -c "insert into members (channel_id, user_id, role) values ('…','…','admin')"
 ```
 
-**Expect** `owner`, `moderator` and `member` accepted; a fourth value refused 400 with
+**Expect** `owner`, `moderator` and `member` accepted **on the add body and on `PATCH`**
+(FR-011); a role given at add time is stored and returned, and a member added without one
+gets `member`; a fourth value refused 400 with
 `field: "role"` (SC-009). The field name in the envelope is only there because chapter
 3.14 made `ZodValidationPipe` carry `issues[0].path`.
 
@@ -271,7 +277,9 @@ pnpm vitest run services/api/src/users --config services/api/vitest.integration.
 
 **Expect** the count rises with each message and falls to zero when a position is set
 to `last_sequence` (SC-008). Then delete a message and check the count again: it stays
-the same, because a tombstone keeps its sequence. That is the approximation FR-019
+the same, because a tombstone keeps its sequence — **and `last_message` still reports that
+tombstone**, with `text: null` rather than the previous message (FR-019). One rule for both
+fields, or they disagree about what the newest message is. That is the approximation FR-019
 requires be stated, and this is where a reader sees it.
 
 A position past `last_sequence` is refused 400 with `field: "sequence"`; a replayed

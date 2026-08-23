@@ -37,7 +37,7 @@ A user's channels, most recently active first, cursor-paginated.
 |---|---|
 | `unread` | `greatest(channels.last_sequence − read_position, 0)` |
 | `last_activity_at` | `channels.last_activity_at` |
-| `last_message` | the row at `channels.last_sequence`, or `null` |
+| `last_message` | the row at `channels.last_sequence`, or `null` if the channel has none — **including when that row is a tombstone**, which reports its sequence, author and `created_at` with `text: null` (FR-019) |
 | `role` | `members.role` |
 
 | Outcome | Status |
@@ -79,7 +79,13 @@ rows past the position is 9.8–13.4 ms, a cached counter on the position is 1.2
 and the subtraction is 1.1–4.5 ms. The cached counter is no faster and adds a value
 that can go stale.
 
-**The approximation, which FR-019 requires be stated: a deleted message still counts as
+**A tombstoned last message is still the last message.** `last_message` reports it with
+`text: null` rather than walking back to the last row that still has text — that walk-back is
+a second query per channel, and it would disagree with the unread count, which counts the
+tombstone because the sequence is kept. One rule for both fields (FR-019). A client that wants
+a preview renders "message deleted" from the null.
+
+**The approximation, which FR-016 requires be stated: a deleted message still counts as
 one unread.** A tombstone keeps its sequence, so it keeps its place in the arithmetic.
 Counting rows instead would make a deleted message stop being unread, at 10× the cost
 on the query a client runs to render its first screen.

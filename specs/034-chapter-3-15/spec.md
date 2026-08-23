@@ -457,7 +457,10 @@ their sends are refused, confirm their history is intact, unban, confirm they wo
 - **FR-010**: A repeated creation naming a different type MUST NOT change the existing
   channel's type.
 - **FR-011**: Members MUST hold one of `owner`, `moderator` or `member`, with a stated
-  default. A role outside the three MUST be refused with the field named.
+  default, and the **member-add endpoint MUST accept a role per entry** so a member can be
+  created with one rather than only changed into one. US6's first scenario asks for that and
+  the plan had add assign the default and a separate route change it.
+- **FR-011a**: A role outside the three MUST be refused with the field named. A role outside the three MUST be refused with the field named.
 - **FR-012**: The feature MUST state whether any operation reads a member's role. A
   role nothing reads is this feature's own subject repeated.
 
@@ -474,16 +477,23 @@ their sends are refused, confirm their history is intact, unban, confirm they wo
 - **FR-015**: A channel the caller is not a member of MUST NOT appear in their listing.
 - **FR-016**: Channel listings MUST include the caller's unread count and the most
   recent message.
-- **FR-017**: The feature MUST record a per-user, per-channel read position, and MUST
-  state what an absent position means for the count.
+- **FR-017**: The feature MUST record a per-user, per-channel read position.
+- **FR-017a**: The feature MUST state what an absent position means for the count.
 - **FR-018**: A read position beyond the channel's last sequence MUST be refused.
-- **FR-019**: The feature MUST state what "most recent message" reports when that
-  message is a tombstone.
+- **FR-019**: The listing's **`last_message` field** MUST report the row at
+  `channels.last_sequence` even when that row is a tombstone — its sequence, its author and
+  its `created_at`, with `text` null. Walking back to the last message that still has text
+  costs a second query per channel and would contradict the unread count, which counts the
+  tombstone as one unread because the sequence is kept (FR-016). One rule for both fields, or
+  the two disagree about what the newest message is. **This requirement was cited by a task
+  that tested the unread count instead** — a different behaviour on a different field — and
+  had zero coverage for eleven analysis passes.
 
 **Archiving**
 
-- **FR-020**: Archiving a channel MUST prevent new messages and preserve history, and
-  MUST be reversible.
+- **FR-020**: Archiving a channel MUST prevent new messages and preserve history.
+- **FR-020a**: Archiving MUST be reversible, and archiving an already-archived channel or
+  unarchiving an active one MUST succeed without changing anything.
 - **FR-021**: A send to an archived channel MUST be refused with a code that
   distinguishes archived from not-found and from banned.
 - **FR-021a**: The send path's three refusals MUST be evaluated in one order: **ban,
@@ -492,8 +502,10 @@ their sends are refused, confirm their history is intact, unban, confirm they wo
   other order leaks: `channel_archived` for a private channel the caller cannot see tells
   them it exists, which is what FR-003 forbids. One order, stated here rather than
   decided inside an implementation task.
-- **FR-022**: The feature MUST state whether an archived channel appears in a listing
-  and whether the socket delivers anything for it.
+- **FR-022**: The feature MUST state whether an archived channel appears in a listing.
+- **FR-022a**: The feature MUST state and test whether the socket delivers anything for an
+  archived channel. **This clause had no task for eleven analysis passes** while the task
+  covering the listing half cited the whole requirement.
 
 **Users**
 
@@ -503,28 +515,33 @@ their sends are refused, confirm their history is intact, unban, confirm they wo
   `invalid_request` and `field` naming the offending key. The bound is FR-USR-03's and is
   half the 8 KB FR-CHN-01 allows a channel; the feature MUST justify the difference or
   change it rather than inherit it silently.
-- **FR-025**: The public API MUST support upserting up to 100 users in one request,
-  reporting each, and refusing 101 with the field named.
+- **FR-025**: The public API MUST support upserting up to 100 users in one request.
+- **FR-025a**: The upsert MUST report one result per entry and MUST refuse 101 with the field
+  named. Split from FR-025 for the reason FR-006 and FR-007 are separate: a bulk bound and a
+  per-entry result shape are independently skippable, and one of them was.
 - **FR-026**: An upsert naming an existing user MUST update rather than fail.
 - **FR-027**: Deleting a user MUST remove their profile data and memberships.
-- **FR-028**: Deleting a user MUST preserve their messages as authored by a deleted
-  user, which MUST remain distinguishable from a message that never had an author —
-  chapters 3.13 and 3.14 established that a NULL author makes a message invisible to
-  sockets, so the two states cannot be the same.
+- **FR-028**: Deleting a user MUST preserve their messages.
+- **FR-028a**: A preserved message MUST remain attributed to the deleted user and
+  distinguishable from a message that never had an author. Chapters 3.13 and 3.14 established
+  that a NULL author makes a message invisible to sockets, so the two states cannot be the
+  same.
 - **FR-029**: Deleting a user MUST NOT change their rows in `usage_active_users`, which
   are billing history.
 - **FR-030**: The feature MUST state what happens when a deleted user's external
   identifier is used again.
-- **FR-031**: Banning a user MUST prevent connection and message send at tenant scope
-  while preserving history, and MUST be reversible.
+- **FR-031**: Banning a user MUST prevent connection and message send at tenant scope.
+- **FR-031a**: A ban MUST preserve the banned user's history, readable by others, and MUST be
+  reversible.
 - **FR-032**: The feature MUST state what a ban does to a connection that is already
   open.
 
 **The suite, and the records**
 
-- **FR-033**: Every route this feature adds MUST appear in the cross-tenant suite's
-  derived target list on the build that introduces it, and be attacked or carry a
-  written exemption.
+- **FR-033**: Every route this feature adds MUST appear in the cross-tenant suite's derived
+  target list on the build that introduces it.
+- **FR-033a**: Every derived target MUST be attacked or carry a written exemption. Nothing is
+  exempt by omission.
 - **FR-034**: The cross-tenant suite MUST gain the same-tenant, non-member attack.
   Today it attacks with another tenant's identifiers only, so a non-member of the
   caller's own tenant is a case no assertion covers. This is a new fixture — one
@@ -567,11 +584,15 @@ their sends are refused, confirm their history is intact, unban, confirm they wo
   its first send with `unknown user` — a `400` that names the caller rather than the
   cause.
 - **FR-039b**: The feature MUST state whether implicit creation on authentication and
-  implicit creation on membership produce the same user record, and MUST NOT create two
-  rows for one external identifier. Chapter 3.13 made `createUser` idempotent on
-  `(environment_id, external_id)`, which is the property this relies on.
-- **FR-040**: The feature MUST form its chapter split from a measured file count
-  **before any chapter prose is written**, and record the count either way. Chapter
+  implicit creation on membership produce the same user record.
+- **FR-039c**: Two rows MUST NOT exist for one external identifier. Chapter 3.13 made
+  `createUser` idempotent on `(environment_id, external_id)`, which is the property this
+  relies on.
+- **FR-040**: The feature MUST form its chapter split from a measured file count **before any
+  chapter prose is written**.
+- **FR-040a**: The count MUST be recorded either way, with the enumeration that produced it —
+  a count without an enumeration cannot be checked, and this feature's went 25, 29, 34, 36
+  across four analysis passes. Chapter
   3.12 estimated 37 fenced files, shipped 61, and took the split at Phase 12 — its own
   task list records that forming the estimate earlier is what makes the split free.
 

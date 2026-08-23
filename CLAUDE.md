@@ -42,7 +42,7 @@ Its record is `specs/034-chapter-3-15/`: read **`plan.md`** for the seventeen ph
 and the constitution gate, `research.md` for R1 to R18 (twelve measured against a
 running database), then `data-model.md`, `contracts/membership.md`,
 `contracts/listing.md` and `quickstart.md` (18 checks, three of them negative).
-46 requirements, 22 success criteria, 241 tasks in 21 phases, checklist 16/16.
+56 requirements, 22 success criteria, 244 tasks in 21 phases, checklist 16/16.
 
 **Twelve SRS clauses, five dead columns, and four corrections.** The clauses are
 FR-CHN-03/04/05/06/08/09/10 and FR-USR-02/03/04/05/06. The columns exist and nothing
@@ -119,6 +119,25 @@ maintains `last_sequence` (chapter 2.2 made it the sequencing authority).
 4. **The gauntlet has no same-tenant fixture.** All four attack shapes take another
    tenant's identifiers, so "a user of your own tenant who is not a member" is new
    work rather than a reuse (R10, FR-034).
+
+**PASS ELEVEN: CITATION IS NOT COVERAGE, AND THE CHECK THAT SAID 100% COULD NOT SEE IT.**
+Three passes running found a task naming a requirement identifier while implementing something
+adjacent. **FR-019** asks what the listing's `last_message` reports for a tombstone; the task
+citing it tested the unread *count* — a different field. **FR-022** asks two things and the task
+covering the listing half cited the whole requirement, so the socket half had no task for
+eleven passes. **US6's first scenario** wanted a member added *with* a role and the plan had add
+assign the default and a separate route change it.
+
+**WHAT THE THREE HAD IN COMMON: more than one clause per requirement.** A single-clause
+requirement is hard to half-implement; a two-clause one is easy. So eleven requirements were
+**split** — FR-011a, FR-017a, FR-020a, FR-022a, FR-025a, FR-028a, FR-031a, FR-033a, FR-039c,
+FR-040a — taking the count from 46 to 56, and every new identifier is cited by a task that
+implements that clause and no other. FR-021a already existed for the same reason, split out in
+pass six, and nothing has half-covered it since.
+
+**AND `grep -c '^- [*][*]FR-'` MEASURES CITATION.** Per-identifier coverage read 100% from pass
+one and concealed FR-006's bulk shape, FR-019 entirely, and half of FR-022. The cure is smaller
+requirements, not a better grep.
 
 **PASS TEN FOUND A REQUIREMENT WITH ZERO COVERAGE THAT TEN PASSES HAD READ AS COVERED.**
 FR-006 says removal takes "up to 100 in one request" and FR-007 says it reports per user —

@@ -18,6 +18,14 @@ session. "Member" means a row in `members` for `(channel_id, user_id)`.
 | subscribed on the socket | yes | **no** | yes | no |
 | join | already in | 200, becomes a member | already in | **404** |
 | set a read position | 200 | **403 `not_a_member`** | 200 | **404** |
+| remove members | tenant credential | tenant credential | tenant credential | tenant credential — 404 only if the channel does not exist |
+| set a member's role | tenant credential | tenant credential | tenant credential | tenant credential |
+| archive or unarchive | tenant credential | tenant credential | tenant credential | tenant credential |
+
+The last three rows and `create the channel` are the tenant's verbs: an application credential
+acts for the tenant, carries no user and sees private channels (FR-005), so the member columns
+do not vary. They are in the table because leaving them out made it look like the table covered
+every verb when it covered eight of eleven.
 
 **The send row said `403 not_a_member` until analysis pass six.** SC-002 requires the
 answer for each of SC-001's four verbs — send included — to be byte-identical to a channel
@@ -127,6 +135,23 @@ exists to hold.
 **Removal deletes the member row and the read position, and no messages** (FR-008). The
 removed user's existing messages stay in history attributed to them (SC-005), and their
 socket stops receiving the channel on its next resume.
+
+### `POST /v1/channels/:channelId/members` — the add body accepts a role
+
+Chapter 3.13 built this route: up to 100 users, one result per entry. This feature adds an
+optional `role` per entry, defaulting to `member` (FR-011).
+
+    {"users": [{"user": "u_dong", "role": "owner"}, {"user": "u_ana"}]}
+
+| Outcome | Status |
+|---|---|
+| added, with the role given or the default | 200, per-entry results |
+| a role outside the three | 400 `invalid_request`, `field: "users.0.role"` |
+
+**Why the add endpoint and not only `PATCH`.** US6's first scenario is a member *added with*
+a role, and the plan had add assign the default and a separate route change it — two calls to
+express one intention, and a window where the member holds a role the customer did not choose.
+Found by analysis pass eleven comparing the scenario to the routes.
 
 ### `PATCH /v1/channels/:externalId/members/:userExternalId`
 
