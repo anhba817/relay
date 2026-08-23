@@ -52,24 +52,33 @@ and V0 records it before Phase 2 moves anything.
 
 **THE SPLIT WAS TAKEN FROM A MEASURED FILE COUNT BEFORE ANY PROSE EXISTED** (FR-040),
 which is the one thing 3.12's close-out asked the next feature to do differently — and
-**the first analysis pass then corrected the count from 25 to 29**, because the task
-list named four files a clause-by-clause count could not reach (`internal.itest.ts`,
-`credentials.itest.ts`, `compare.ts`, `exempt.ts`). 14% low, found before any prose
-existed rather than at Phase 12. That is 3.12's error at one-sixth the size, caught by
-the mechanism 3.12 asked for.
+**the count was then revised twice, because a count is not an enumeration.** R12 counted
+**25** from the clause list. Analysis pass one found the task list naming **29**. Pass
+two enumerated every path and asked which chapter fences it: **34**, including three the
+tasks imply and never name — `app.module.ts`, `users.module.ts`, `users.service.ts`.
 
-**AND THE CORRECTION TOOK THE ARGUMENT AWAY.** R12 killed three chapters at the FLOOR —
-~1,900 words a page against a 2,000 minimum, the first time the low end of the bound
-had decided anything. At 29 files three chapters lands near **2,290 words each, inside
-the band**, so the floor argument is gone. Two chapters holds on subject coherence and
-on ceiling headroom against an estimate that has run low three times (3.5 by 77%, 3.12
-by 65%, this one by 14%) — not on arithmetic, and R18 says so. **3.15 "the channel a
-customer controls"** (membership, private type, removal, roles, archiving — 17 files,
-~2,730 words) and **3.16 "what a user sees"** (listing, unread, the whole user surface
-— 20 files, ~3,210 words). 17 + 20 = 37 against a union of 29: the per-chapter figures
-count files a chapter TEACHES, and at least 12 appear in both, so only one of the two
-may fence a shared file whole. The page phases sit at 9 and 16 rather than last, so each
-page is written when its own numbers are real.
+**The first of those three was a CRITICAL.** `app.module.ts` appeared in NO TASK. It is
+where `ChannelsModule` is registered and chapter 3.13 needed that edit; without it
+`UsersModule` never mounts and eight routes across FR-013, FR-016, FR-017, FR-023,
+FR-025, FR-027 and FR-031 do not exist. Found by asking which chapter fences each file —
+not by rereading the tasks, which had been read twice.
+
+**A COUNT WITHOUT AN ENUMERATION CANNOT BE CHECKED, and each check found more.** The
+enumeration is in R18 with the per-chapter assignment, derived from the phases that touch
+each file rather than by path — assigning by path guessed wrong five times in 3.12.
+
+    3.15 "the channel a customer controls"   19 files  ≈ 3,040 words
+    3.16 "what a user sees"                  20 files  ≈ 3,200 words
+    19 + 20 = 39 instances, union 34: seven files in both chapters, five in neither
+
+Seven files 3.15 fences whole and 3.16 diffs: `repository.ts`, `repository.itest.ts`,
+`isolation.itest.ts`, `schema.ts`, `0012_*.sql`, `codes.ts`, `codes.test.ts`. Both pages
+sit inside 2,000–4,000 with ~800 words of headroom; **three chapters would be ~2,080
+each, 80 words above the floor**, so R12's floor argument holds. Analysis pass one
+reported that argument gone at ~2,290 a page — **wrong instrument**: it scaled a group
+sum by the union's ratio, and instances grow with how many chapters teach a file. The
+page phases sit at 9 and 16 rather than last, so each page is written when its own
+numbers are real.
 
 **THE MEASUREMENT THAT POINTED THE WRONG WAY, again.** Ordering a user's channels by
 `max(messages.created_at)` costs **0.87 ms on the test lane** — whose largest

@@ -8,7 +8,13 @@ published as **two** chapters, on a file count measured before any prose exists.
 
 ## Format: `[ID] [P?] [Story] Description`
 
-- **[P]** — parallelisable: different file, no dependency on an incomplete task
+- **[P]** — no dependency on an incomplete task. **Not "a different file"**, which is
+  the template's wording and is false here in thirteen places: five `[P]` tasks append
+  cases to `users.itest.ts` in phase 11 and five more in phase 14. They are independent
+  in *content* and share a file, so they can be written in any order and must not be
+  written by two hands at once. Analysis pass two counted 38 of the 75 markers in that
+  position; the definition moved rather than the markers, because the information the
+  markers carry is real
 - **[US1]…[US9]** — the user story from spec.md this task serves
 - Setup, Foundational, Suite, Corrections, Verification, Publication and Close-out
   tasks carry no story label, and neither does a **commit task** — a commit is a phase
@@ -33,8 +39,8 @@ sections had been written; the point of deciding first is that this table exists
 
 | Chapter | Phases | Subject |
 |---|---|---|
-| **3.15** the channel a customer controls | 3–8, page at 9–10 | membership, the private type, removal, roles, archiving, **and FR-037's correction** (T049a–T049c, stated at T097a) |
-| **3.16** what a user sees | 11–17, page at 19–20 | listing, unread, the user surface, implicit creation, and FR-038a's citation class (Phase 17) |
+| **3.15** the channel a customer controls | 3–8, page at 9–10 | membership, the private type, removal, roles, archiving, **and FR-037's correction** (T049a–T049c, stated at T097a). 19 files, seven of them fenced whole here and diffed in 3.16 |
+| **3.16** what a user sees | 11–17, page at 19–20 | listing, unread, the user surface, implicit creation, and FR-038a's citation class (Phase 17). 20 files, seven of them diffs |
 
 Phases 1, 2, 18 and 21 belong to neither page: the baseline, the schema both chapters
 stand on, the verification that covers both, and the close-out.
@@ -85,6 +91,7 @@ to a list instead of regenerating it; chapter 3.12's was wrong on its first draf
 | T071–T079 | `services/api/src/channels/`, `repository.ts` | `archived_at` read on the send path |
 | T080–T090 | `services/api/src/isolation/` | the same-tenant fixture and one attack per verb (R10) |
 | T107–T118 | `services/api/src/users/`, `repository.ts` | the listing, its cursor, and R4's index |
+| T109a | `services/api/src/app.module.ts` | `UsersModule` registered — in no task until pass two's enumeration, and eight routes depend on it |
 | T119–T128 | `services/api/src/users/`, `repository.ts` | read positions and the subtraction |
 | T129–T156 | `services/api/src/users/` | profile, bulk upsert, deletion, ban — the new module |
 | T151–T154 | `services/gateway/src/session.ts` | the ban at connect; the gateway reads it through the api |
@@ -163,7 +170,7 @@ check and confirm the test goes red.
 - [ ] T031 [US1] Add the membership check to `sendMessage` in `services/api/src/db/repository.ts`, gated on `userId` being present. **The signature already carries the distinction the check needs** — `userId` present means a user is acting, absent means the tenant is — so the gate is the parameter and not a new flag (FR-001, R1)
 - [ ] T032 [US1] Test it in `services/api/src/db/repository.itest.ts`: a user of the tenant who is not a member of a private channel is refused `not_a_member` (SC-001)
 - [ ] T033 [P] [US1] Assert the channel's message count is unchanged after the refusal (SC-003). A refusal that still writes a row is not a refusal, and only this assertion can tell them apart — `services/api/src/db/repository.itest.ts`
-- [ ] T034 [US1] **Remove the check and confirm T032 goes red**, then restore it. This is FR-035's gate and the first of the three negative checks in `quickstart.md`
+- [ ] T034 [US1] **Remove the check and confirm T032 goes red**, then restore it. This is FR-035's gate and the first of five removals in `quickstart.md`
 - [ ] T035 [P] [US1] Enumerate every `sendMessage` caller into `baseline.txt` — six, excluding tests — and confirm none carries a membership check of its own. Six callers inheriting one check is what constitution I means by data access rather than handlers
 - [ ] T036 [US1] Test that `POST /internal/messages` inherits the check: it resolves a user and then sends, so a non-member's message through the internal route is refused too. Chapter 3.12 recorded this route as checking nothing — `services/api/src/internal/internal.itest.ts`
 - [ ] T037 [P] [US1] Test that an application credential — no `userId` — still sends to a private channel. It acts for the tenant and is the customer's own server (FR-005), and this is the assumption the spec asked to be stated rather than assumed — `services/api/src/db/repository.itest.ts`
@@ -195,7 +202,7 @@ but for `request_id`.
 - [ ] T049 [US1] **Only now**, widen `type` in `services/api/src/channels/channels.schema.ts` to accept `private` (FR-009). The enum widened before T031–T048 sells a guarantee the platform does not keep, which is the mistake chapter 3.12's fifth analysis pass caught one phase before it shipped
 - [ ] T049a [US1] **Correct `services/api/src/channels/channels.schema.ts:26` in the same edit as T049** (FR-037). Its comment says "there is no membership check on any read path" and `repository.backfill` and `session.controller` both check membership. One file, one edit, one diff — the correction sat in Phase 17 until the first analysis pass found that chapter 3.15's page publishes at Phase 9 and would carry the false sentence into print
 - [ ] T049b [US1] **The same sentence sits inside a titled fence in chapter 3.13's page in two locales**, so the platform file, the English page and the Vietnamese page move together or `pnpm check:fences` fails — `services/api/src/channels/channels.schema.ts` plus the two chapter-13 pages
-- [ ] T049c [US1] Run `pnpm check:fences` after T049b. `channels.schema.ts` is fenced whole in chapter 3.13, so chapter 3.15 shows a **diff with 3.13 as predecessor** and eight lines of context — three lines let chapter 3.12's `repository.ts` pre-image match twice
+- [ ] T049c [US1] Run `pnpm check:fences` after T049b — the two chapter-13 pages moved, so the chain has to still replay. The fencing decision for this file belongs to phase 9 (T094a), not here: chapter 3.15's page does not exist yet
 - [ ] T050 [P] [US1] Test that `POST /v1/channels` accepts `private` and the row reads back `private` (SC-006) — `services/api/src/channels/channels.itest.ts`
 - [ ] T051 [US1] Test FR-010: a second creation naming a different type returns the existing channel and does not change its type. Idempotency means the second call returns the first call's channel, and a type change is not a creation — `services/api/src/channels/channels.itest.ts`
 - [ ] T052 Commit Phase 4
@@ -264,7 +271,7 @@ works.
 - [ ] T074 [P] [US7] Test that a send to an archived channel is refused with a code distinct from not-found and from `not_a_member` (SC-010) — `services/api/src/channels/channels.itest.ts`
 - [ ] T075 [P] [US7] Test that history is still readable while archived (FR-020) — `services/api/src/channels/channels.itest.ts`
 - [ ] T076 [P] [US7] Test archiving an archived channel and unarchiving an active one — both 200, nothing changed — `services/api/src/channels/channels.itest.ts`
-- [ ] T077 [US7] **Remove the `archived_at` read and confirm T074 goes red**, then restore. FR-035, and the second of the three negative checks — `services/api/src/channels/channels.itest.ts`
+- [ ] T077 [US7] **Remove the `archived_at` read and confirm T074 goes red**, then restore. FR-035, and the second of **five** removals — T034, T077, T086, T135, T155, one per newly-read column plus the suite's own. The quickstart said three until analysis pass two counted them — `services/api/src/channels/channels.itest.ts`
 - [ ] T078 [US7] Test the edge case the spec names: a channel archived while a user has unread messages in it. The count is still true, and this is where "true" gets a definition — `services/api/src/channels/channels.itest.ts`
 - [ ] T079 Commit Phase 7
 
@@ -301,10 +308,11 @@ and each of those attacks goes red when its check is removed.
 **Goal**: "the channel a customer controls", inside the 2,000–4,000 word bound, every
 fence replaying onto the platform.
 
-- [ ] T091 Count the fenced files this chapter owns before writing a word (FR-040), and record it against the estimate of **17** in `specs/034-chapter-3-15/baseline.txt`. **R18 corrected the feature's file count from 25 to 29**, so record whether 17 moved with it. The estimate has run low three times now — 3.5 by 77%, 3.12 by 65%, and this feature's own count by 14% before any prose existed
+- [ ] T091 Count the fenced files this chapter owns before writing a word (FR-040), and record it against R18's assignment of **19** in `specs/034-chapter-3-15/baseline.txt`, seven of which are fenced whole here and diffed in chapter 3.16. The feature's file count was revised twice before it was enumerated — 25, then 29, then 34 — so record whether 19 moved too. The estimate has run low three times: 3.5 by 77%, 3.12 by 65%, this feature's first count by 26%
 - [ ] T092 Write `relay-tutorial/app/(en)/part-3/chapter-15/<slug>/page.mdx`. The subject is one sentence: who is in a channel, what kind it is, and whether it is open
 - [ ] T093 [P] Write `figures.ts` beside it — the refusal ordering (ban, archive, membership), the two-refusals table, and the same-tenant attack the suite never had
 - [ ] T094 **A titled fence states the whole file, not an excerpt.** Chapter 3.12's 26 excerpts produced 43 chain problems. Where an excerpt is genuinely wanted, put `(excerpt)` in the title — the checker's `NOT_A_FILE` treats it as a prose illustration and leaves the path out of the chain — `relay-tutorial/app/(en)/part-3/chapter-15/<slug>/page.mdx`
+- [ ] T094a **Seven files are fenced whole here and diffed in chapter 3.16** — `repository.ts`, `repository.itest.ts`, `isolation.itest.ts`, `schema.ts`, `0012_member_roles_and_user_deletion.sql`, `codes.ts`, `codes.test.ts` (R18's assignment). And `channels.schema.ts` is already fenced whole in chapter 3.13, so this chapter shows a **diff with 3.13 as predecessor** and eight lines of context — three let chapter 3.12's `repository.ts` pre-image match twice
 - [ ] T095 [P] **One full fence per path.** Replacing every excerpt with its whole file gave 4,995 lines in chapter 3.12, because six paths were fenced twice and each copy restated the file — `relay-tutorial/app/(en)/part-3/chapter-15/<slug>/page.mdx`
 - [ ] T096 [P] Any diff fence needs a predecessor in the chain and enough context to be unique. Three lines let `repository.ts`'s pre-image match twice; eight made each hunk unique
 - [ ] T097 **`sentinel.sql` and `guard.itest.ts` are amended by `fences/post-series.md`**, which the checker applies after every chapter — so a chapter is upstream of its own amendment. Excerpt them here; amend there
@@ -339,7 +347,10 @@ member of never appears.
 
 - [ ] T107 [US4] Maintain `channels.last_activity_at` — FR-014's answer to what "most recent activity" is measured by — in the same statement that advances `last_sequence` in `repository.sendMessage`. The write path already runs that transaction, so the update needs no new one — `services/api/src/db/repository.ts`
 - [ ] T108 [P] [US4] Test that only a message moves it — a member joining, a rename or an archive do not. "Activity" is messages, and a column that moves for anything else orders by something the field name does not say — `services/api/src/users/users.itest.ts`
-- [ ] T109 [US4] Create `services/api/src/users/` — module, controller, service — on the pattern `channels/` sets. Five clauses need user routes and no controller exists for users; putting them on the channels controller would put user lifecycle behind a channel path
+- [ ] T109 [US4] Create `services/api/src/users/` — `users.module.ts`, `users.service.ts`, `users.controller.ts`, `users.schema.ts` — on the pattern `channels/` sets. Five clauses need user routes and no controller exists for users; putting them on the channels controller would put user lifecycle behind a channel path
+- [ ] T109a [US4] **Register `UsersModule` in `services/api/src/app.module.ts`.** `ChannelsModule` is registered there and chapter 3.13 needed that edit. This file appeared in **no task at all** until analysis pass two's enumeration asked which chapter fences it — without it none of the eight user routes mount, and FR-013, FR-016, FR-017, FR-023, FR-025, FR-027 and FR-031 have tasks that cannot deliver them
+- [ ] T109b [US4] Give `services/api/src/users/users.schema.ts` the listing's query shape now — `cursor`, `limit` — with **`z.strictObject`**, not `z.object`. Constitution VI rejects unknown fields on write endpoints, `messages.schema.ts` and `channels.schema.ts` both use `strictObject`, and `channels.itest.ts:118` tests it. The schema file was created in phase 13 until pass two found phase 11's cursor validation needing it six tasks earlier
+- [ ] T109c [P] [US4] Test that an unknown field is refused rather than ignored on every write route this feature adds, in `services/api/src/users/users.itest.ts` — the assertion `channels.itest.ts:118` already makes for channels
 - [ ] T110 [US4] Add `listChannelsForUser` to `repository.ts`: keyset on `(last_activity_at desc, id desc)`, limit, membership join. **`id` is in the key because `last_activity_at` is not unique** — two channels can take a message in the same millisecond, and a keyset on a non-unique column skips or repeats rows at the page boundary
 - [ ] T111 [US4] Add `GET /v1/users/:externalId/channels` (FR-013) per `contracts/listing.md`
 - [ ] T112 [P] [US4] Test the ordering: three channels with messages at different times, most recently active first (SC-007) — `services/api/src/users/users.itest.ts`
@@ -393,7 +404,7 @@ confirm metadata over 4 KB and a malformed URL are each refused with the field n
 - [ ] T132 [P] [US3] Test FR-024's two bounds: metadata over 4 KB refused 400 with `field: "metadata"`, and a malformed `avatar_url` refused with its field — `services/api/src/users/users.itest.ts`
 - [ ] T133 [US3] **Record why the users bound is 4 KB when the channels bound is 8 KB** — FR-USR-03 against FR-CHN-01 — and either justify it in the chapter or change it. A bound inherited silently is a bound nobody chose — `specs/034-chapter-3-15/baseline.txt`
 - [ ] T134 [P] [US3] Test that the socket frame's identity shape is unchanged by this feature (US3 scenario 3). The profile is stored; changing the wire contract is not in scope — `services/gateway/src/isolation.itest.ts`
-- [ ] T135 [US3] **Remove the `avatar_url` and `metadata` reads and confirm T131 goes red**, then restore. FR-035, and the third of the three negative checks — `services/api/src/users/users.itest.ts`
+- [ ] T135 [US3] **Remove the `avatar_url` and `metadata` reads and confirm T131 goes red**, then restore. FR-035, the fourth of five removals — `services/api/src/users/users.itest.ts`
 - [ ] T136 Commit Phase 13
 
 ---
@@ -434,7 +445,7 @@ history is still readable by others.
 - [ ] T152 [P] [US9] Test that a banned user cannot connect and cannot send, and that their history is still readable by others (SC-013) — `services/api/src/users/users.itest.ts and services/gateway/src/isolation.itest.ts`
 - [ ] T153 [US9] **State and test what a ban does to a connection that is already open** (FR-032). The two answers are "closed at the next heartbeat" and "closed immediately", and they differ in whether the gateway has to be told. A ban that only applies to new connections is a ban a client outlasts by not reconnecting — `services/gateway/src/session.ts`
 - [ ] T154 [P] [US9] Test the edge cases the spec names: banning a member of a private channel — the ban is tenant-scoped, so it is not a removal — and a token minted for a banned user's identifier, where implicit creation must not undo the ban — `services/api/src/users/users.itest.ts`
-- [ ] T155 [US9] **Remove the `banned_at` read and confirm T152 goes red**, then restore (FR-035). Five columns, five removals; this is the last — `services/api/src/users/users.itest.ts`
+- [ ] T155 [US9] **Remove the `banned_at` read and confirm T152 goes red**, then restore (FR-035). The fifth and last — `services/api/src/users/users.itest.ts`
 - [ ] T156 Commit Phase 15
 
 **Checkpoint**: all five columns that began dead are read, and each read has been shown to be load-bearing by removing it.
@@ -459,10 +470,12 @@ were written. Their coverage is two edge cases and SC-020.
 
 **Goal**: FR-038a's 40 chapter citations, classified and corrected.
 
-**Two of the four corrections have already happened**: FR-037's false sentence landed in
-Phase 4 with T049a–T049c, and its statement on chapter 3.15's page at T097a. They moved
-here-to-there in the first analysis pass, because a correction to a file chapter 3.15
-fences cannot wait until after chapter 3.15 is published.
+**One of the four corrections moved out of this phase.** FR-037's false sentence is
+fixed in Phase 4 (T049a–T049c) and stated on chapter 3.15's page (T097a), because a
+correction to a file chapter 3.15 fences cannot wait until after chapter 3.15 is
+published. Two more were made during specification — chapter 3.12's traceability row and
+the same map's read-path sentence — and T166 confirms they held. **What is left here is
+the fourth**: FR-038a's citation class.
 
 - [ ] T166 Confirm chapter 3.12's traceability map still carries the FR-CHN-04 fix made while this spec was written, and that `specs/033-chapter-3-12/traceability.md` and this feature's own record agree (FR-038)
 - [ ] T167 **Correct the wrong chapter numbers from the classification T009 wrote into `specs/034-chapter-3-15/baseline.txt`** (FR-038a), in each of the 19 files it names. Only the chapter number changes
@@ -481,7 +494,8 @@ fences cannot wait until after chapter 3.15 is published.
 - [ ] T174a **Enumerate every branch arm this feature adds to `services/api/src/db/repository.ts`** — the membership check, the archive check, the ban check, the unread subtraction — from `coverage/coverage-final.json`, and show each covered. Constitution VI asks 100% branch coverage of ordering, idempotency and tenant isolation; that file holds all three and sits at 89.51%, pinned at 90 as a ratchet with the gap recorded in `specs/024-coverage-and-ci/notes.md`. **The commitment is 100% on the arms this feature adds**, per arm rather than by a file percentage, whichever side of the isolation-or-authorization line they fall
 - [ ] T174b **Check that every new `repository.ts` function is exercised in-process, not only through the gateway.** Five tasks — T038, T058, T134, T144, T152 — test new repository code through a child process whose coverage is not attributable. Chapter 3.5 added six operations to this file the same way and the ratchet went red immediately: **branches 85.91% → 78.22%**, and the instrument was right while the code was not tested. Add an in-process test for each function that has only a gateway one
 - [ ] T174c Record in `baseline.txt` which of T174a's arms are isolation and which are authorization, and the file's branch figure before and after. **A private-channel membership check is authorization inside a tenant, not tenant isolation** — the clause does not reach it by its own words, and the same-tenant suite tests it with FR-TEN-05's oracle anyway, so the classification is stated rather than left to whoever next reads the ratchet
-- [ ] T176 **Re-run T007's dead-column count and record it: five before, zero after** — or a stated reason for each survivor (SC-016, FR-036) — `specs/034-chapter-3-15/baseline.txt`
+- [ ] T176 **Re-run T007's dead-column count and record it: five before, and the after-count with every survivor named beside the requirement it stands for** (SC-016, FR-036) — `specs/034-chapter-3-15/baseline.txt`
+- [ ] T176a **The after-count is not zero, and the chapter says so.** All five of the named columns get readers, and this feature adds two that have none: `members.role` (FR-012, T069 — no operation is authorized by channel role) and `read_positions.updated_at` (written by every position write, read by nothing). A feature whose subject is columns nothing reads, leaving two behind, is the chapter's own joke and it is better told than found — `relay-tutorial/app/(en)/part-3/chapter-16/<slug>/page.mdx`
 - [ ] T177 Write `specs/034-chapter-3-15/traceability.md`, **generated rather than grown**, both directions: every requirement to the clause it implements, and every clause this feature touches to the requirement covering it. Chapter 3.12's map found four clauses touched and unclaimed, and one row that recorded a clause as delivered when it was not — found only because chapter 3.15's spec read the map for a purpose other than writing it
 - [ ] T178 Update `docs/04-srs.md`'s verification notes for the twelve clauses
 - [ ] T179 [P] Split the 3.15 row in `docs/07-tutorial-plan.md` into 3.15 and 3.16 with the shipped numbers. Not mirrored by `check-docs-drift.sh`, deliberately — its DOCS list excludes it because it is the series' own plan and not a published reference
@@ -496,7 +510,7 @@ fences cannot wait until after chapter 3.15 is published.
 
 ## Phase 19: Chapter 3.16's page — prose and fences
 
-- [ ] T183 Count this chapter's fenced files against the estimate of **20** and record the gap in `specs/034-chapter-3-15/baseline.txt`, with R18's corrected 29-file union beside it
+- [ ] T183 Count this chapter's fenced files against R18's assignment of **20** — thirteen of its own and seven diffs of files chapter 3.15 fenced — and record the gap in `specs/034-chapter-3-15/baseline.txt`, with the 34-file union beside it
 - [ ] T184 Write `relay-tutorial/app/(en)/part-3/chapter-16/<slug>/page.mdx` — "what a user sees"
 - [ ] T185 [P] Write its `figures.ts`: the measurement that pointed the wrong way (0.87 ms against 159 ms), the unread subtraction, the keyset cursor, and the deletion states
 - [ ] T186 **The measurement that pointed the wrong way is the chapter's centre, not an aside.** The test lane answered 0.87 ms and would have settled the question in favour of adding no column; the same query at 1,000,000 messages is 159 ms with a sequential scan over every message in the environment on every listing — `relay-tutorial/app/(en)/part-3/chapter-16/<slug>/page.mdx`
@@ -504,7 +518,7 @@ fences cannot wait until after chapter 3.15 is published.
 - [ ] T188 [P] State the two approximations this chapter accepts: a tombstone counts as one unread, and a deleted user's row survives — `relay-tutorial/app/(en)/part-3/chapter-16/<slug>/page.mdx`
 - [ ] T189 Add the chapter to `relay-tutorial/lib/tutorial.ts`
 - [ ] T190 Count the prose words and record it in `specs/034-chapter-3-15/baseline.txt` — inside 2,000–4,000 (SC-018)
-- [ ] T191 [P] Record the split's own numbers on the page (SC-019): **25 as R12 measured it, 29 after R18's correction**, both before any prose existed — and that the correction removed the floor argument the split was decided on, so two chapters held on subject coherence instead — `relay-tutorial/app/(en)/part-3/chapter-16/<slug>/page.mdx`
+- [ ] T191 [P] Record the split's own numbers on the page (SC-019): **25, then 29, then 34**, all three before any prose existed, and that the third revision is the one that found `app.module.ts` — a file no task named, holding the registration eight routes need — `relay-tutorial/app/(en)/part-3/chapter-16/<slug>/page.mdx`
 - [ ] T192 Commit Phase 19
 
 ---
@@ -524,7 +538,7 @@ fences cannot wait until after chapter 3.15 is published.
 
 - [ ] T199 Write `specs/034-chapter-3-15/chapter-notes.md`: what the plan said against what shipped, phase by phase, including the phases that went badly
 - [ ] T200 [P] Write `specs/034-chapter-3-15/gaps.md`: what this feature refused and who owns it — presence scope (FR-RTM-07), REST-to-socket delivery (FR-RTM-05), the outbox's message-text retention (FR-MOD-06), and **a human reading the documentation**, which chapter 3.14 named as the instrument it did not use and this feature does not use either
-- [ ] T201 [P] Record whether the split held, in `specs/034-chapter-3-15/chapter-notes.md`: 17 and 20 files estimated against R18's corrected 29-file union, and what the two chapters actually fenced. **And record that the floor argument stopped carrying the decision** — at 29 files three chapters lands near 2,290 words each, inside the band, so two chapters held on subject coherence and ceiling headroom rather than on arithmetic (R18)
+- [ ] T201 [P] Record whether the split held, in `specs/034-chapter-3-15/chapter-notes.md`: 19 and 20 files assigned against a 34-file union, and what the two chapters actually fenced. **And record the three revisions the count went through** — 25 from the clause list, 29 from the task list, 34 from the enumeration — with what each revision found, because the third found a file no task named and eight routes depended on
 - [ ] T202 Update `CLAUDE.md` between the `<!-- SPECKIT -->` markers: what closed, what the next feature should do differently, and every measurement worth not re-taking
 - [ ] T203 [P] Tick the last task in this file only when it is done, not when it is about to be. Chapter 3.12 marked its close-out complete before pushing and had to reopen it — `specs/034-chapter-3-15/tasks.md`
 - [ ] T204 Tag `part3-ch16` in `relay-platform` and `relay-tutorial`

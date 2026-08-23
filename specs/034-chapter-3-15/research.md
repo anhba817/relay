@@ -239,8 +239,9 @@ checked):
 | C — users and roles (FR-USR-02→06, FR-CHN-04) | 10 | 6 | 16 |
 | corrections (FR-037, FR-038) | 1 | 0 | 1 + 2 locale pages |
 
-**Union: 16 existing files changed, 9 new, 25 platform files.** **Corrected to 29 in
-R18** — the task list named four this clause-by-clause count could not reach.
+**Union: 16 existing files changed, 9 new, 25 platform files.** **Superseded by R18's
+enumeration: 34.** This count was revised twice, and the second revision found a file no
+task named.
 
 At chapter 3.11's measured ratio — 21 files, 31 fences, 3,316 prose words, so ~1.5
 fences per file and ~107 words per fence:
@@ -264,7 +265,7 @@ An estimate at 4,000 with a known upward bias is an estimate that breaks the bou
 
 | Chapter | Carries | Files | ≈ words |
 |---|---|---|---|
-| **3.15** the channel a customer controls (see R18: the floor argument below no longer carries this) | membership enforcement, the private type, removal, member roles, archiving — who is in a channel, what kind it is, and whether it is open | 17 | ≈ 2,730 |
+| **3.15** the channel a customer controls (R18 supersedes these counts: 19 and 20 files against a 34-file union) | membership enforcement, the private type, removal, member roles, archiving — who is in a channel, what kind it is, and whether it is open | 17 | ≈ 2,730 |
 | **3.16** what a user sees | listing with cursor pagination, activity ordering, unread counts, and the whole user surface — profile, bulk upsert, deletion, banning, and implicit creation on authentication | 20 | ≈ 3,210 |
 
 Both inside the band with room for the estimate to run low, and each has one subject a
@@ -388,26 +389,74 @@ a chapter and not a spec directory).
 The first analysis pass raised three things about R12's numbers. Two are real, one is
 refuted by its own measurement, and the third changes what the split rests on.
 
-### The file count was low by four, and the tasks are what found it
+### The file count was low, twice, and the enumeration is why
 
-R12 counted **25** platform files. `tasks.md` names **29**, and two more inside
-`services/api/src/users/` that a directory-level task hides — `users.module.ts` and
-`users.service.ts`. The four R12 missed are the ones a clause list does not reach:
-`internal.itest.ts`, `credentials.itest.ts`, `compare.ts` and `exempt.ts`, each pulled
-in by a test that has to exist rather than by a requirement that names it.
+R12 counted **25** platform files from the clause list. The task list named **29**
+(analysis pass one). Enumerating properly — every path a task line names, basenames
+canonicalised, plus three files the tasks imply and never name — gives **34**.
 
-**This is chapter 3.12's error at one-sixth the size.** That chapter estimated 37 files
-and shipped 61 — 65% low. This estimate is 14% low, found before any prose exists
-rather than at Phase 12, which is the whole point of FR-040.
+    24 changed  +  7 new   =  31 files the tasks name
+     3 more the tasks imply and never name:
+         services/api/src/app.module.ts        UsersModule has to be registered
+         services/api/src/users/users.module.ts    "module, controller, service" — T109
+         services/api/src/users/users.service.ts
+    ── 34 platform files, of which:
+        32 are taught by one chapter or both
+         2 are conditional and taught by neither — packages/test-harness/src/exempt.ts
+           and eslint.config.mjs, touched only if T011 finds a file needing an entry
+         1 is read, not changed — services/api/src/isolation/compare.ts (T043 uses it)
 
-### 17 + 20 = 37, and the union is 25
+**Each revision was found by a mechanism, not by rereading.** 25 → 29 came from the task
+list naming files a clause list cannot reach. 29 → 34 came from asking which chapter
+fences each file, which is the question that finds a file nothing registers: `app.module.ts`
+appeared in **no task at all**, and without it none of the eight user routes mount.
 
-Neither number is wrong and their relationship was never stated. The per-chapter figures
-count files a chapter **teaches**, not files only that chapter touches, so at least 12
-files appear in both. That is not double-counting for a *word* estimate — a chapter that
-shows a diff of `repository.ts` writes prose about it either way — but it has to be said,
-because "one full fence per path" means only one of the two chapters may fence a shared
-file whole and the other must diff it.
+**The lesson is the same one three times: a count without an enumeration cannot be
+checked, and every check found more.** So the enumeration is below, and it is what the
+split rests on now.
+
+### Which chapter teaches which file
+
+Derived from the phases that touch each file, not assigned by path — assigning by path
+guessed wrong five times in chapter 3.12.
+
+| | 3.15 | 3.16 | both |
+|---|---|---|---|
+| its own subject | 12 | 6 | — |
+| shared | — | — | 7 |
+| **teaches** | **19** | **20** | 7 counted twice |
+
+The seven shared: `repository.ts`, `repository.itest.ts`, `isolation.itest.ts`,
+`schema.ts`, `0012_member_roles_and_user_deletion.sql`, `codes.ts`, `codes.test.ts`.
+Chapter 3.15 comes first, so **3.15 fences each of the seven whole and 3.16 diffs it**,
+with eight lines of context — three let chapter 3.12's `repository.ts` pre-image match
+twice.
+
+`schema.ts` and `0012` straddle the two chapters because each carries columns from both:
+`members.role` is 3.15's subject, `users.deleted_at` is 3.16's, and they are in one
+migration. **The alternative is regrouping the migrations by chapter** — 0011 for the
+role column, 0012 for activity, read positions and the deletion marker — which would
+give each migration one chapter and no straddle. Not taken here, because Phase 2 runs
+both before either chapter is written and the straddle costs one diff.
+
+19 + 20 = 39 against a union of 34: **five files appear in neither chapter and seven in
+both.** The per-chapter figures count files a chapter *teaches*.
+
+### What the enumeration does to the word estimate
+
+At chapter 3.11's measured 160 words per file — 1.5 fences per file, 107 words per fence:
+
+    3.15    19 files  ≈ 3,040 words
+    3.16    20 files  ≈ 3,200 words
+
+Both inside 2,000–4,000 with about 800 words of headroom, and seven of 3.16's twenty are
+diffs of files 3.15 already fenced, which run shorter than a whole file. **Three chapters
+would be ~2,080 each — 80 words above the floor**, which is not headroom.
+
+So the two-chapter split is supported by arithmetic again, and by better arithmetic than
+R12's: a real per-file assignment rather than a group sum scaled by a ratio. Analysis
+pass one had reported the floor argument gone, on a scaled estimate of ~2,290 a page for
+three chapters; the scaling was the wrong instrument and the assignment is the right one.
 
 ### The diff-heavy worry is refuted by measurement
 
@@ -434,28 +483,16 @@ to a second analysis pass, and this one would have.
 
 ### What the corrected count does to the decision
 
-At 29 files and the same ratios — 1.5 fences per file, 107 words per fence — the
-instance count rises from 37 to about 43, so:
+Superseded by the assignment above, and recorded rather than deleted because the wrong
+instrument is worth naming.
 
-    two chapters     ≈ 3,440 words each
-    three chapters   ≈ 2,290 words each
+Analysis pass one scaled R12's 37 file-instances by 29/25 to get ~43, divided by three,
+and reported that three chapters now fits inside the band at ~2,290 words a page — so
+the floor argument that killed three was gone. **The scaling was the error.** Instances
+do not grow with the union; they grow with how many chapters teach each file, which is a
+question the enumeration answers directly. The real count is 39 instances, giving ~2,080
+a page for three chapters — still against the floor, by 80 words.
 
-**Three chapters is no longer excluded by the floor.** R12 killed it at ~1,900 words a
-page against a 2,000 minimum, and that argument is gone: at the corrected count all
-three would sit inside the band.
-
-**The two-chapter split holds anyway, and now for different reasons.** The floor is not
-one of them any more. What carries it:
-
-- **Ceiling risk cuts the other way.** Two chapters at 3,440 have 560 words of headroom
-  against an estimate that ran 14% low here, 65% low in 3.12 and 77% low in 3.5. Three
-  chapters at 2,290 have far more room — so on this axis three is safer, and that has to
-  be said rather than skipped.
-- **Subject coherence.** "Who is in a channel, what kind it is, whether it is open" and
-  "what a user sees" are two things a reader can hold. The three-way division R12
-  measured splits the user surface from the listing that renders it, which puts
-  `users.metadata` in one chapter and the listing that returns it in another.
-
-So the decision is now a judgement about what a chapter is for, not an arithmetic
-result — and the honest record is that the number which decided it in R12 no longer
-does.
+Two chapters holds on all three grounds now: arithmetic, subject coherence, and headroom
+against an estimate that has run low three times (3.5 by 77%, 3.12 by 65%, this feature's
+own first count by 26%).

@@ -598,8 +598,10 @@ their sends are refused, confirm their history is intact, unban, confirm they wo
   `usage_active_users` rows are unchanged — each read back from storage.
 - **SC-013**: A banned user cannot connect, their history is still readable by others,
   and lifting the ban restores both.
-- **SC-014**: The cross-tenant suite's derived target count moves by exactly the number
-  of routes this feature adds, and no route is unclassified.
+- **SC-014**: The cross-tenant suite's derived target count moves by exactly **13** — the
+  routes `contracts/membership.md` and `contracts/listing.md` describe — and no route is
+  unclassified. The number is stated here so the criterion can be checked before the
+  build rather than read off it.
 - **SC-015**: The suite gains at least one same-tenant non-member attack per verb, and
   each is shown to fail when the membership check is removed.
 - **SC-016**: The count of schema columns with no non-test reader is stated before and

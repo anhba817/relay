@@ -13,24 +13,30 @@ chapter, and it shipped as three (FR-038a, from R17).
 
 The work divides into **two chapters, decided on a measured file count before any
 chapter prose exists** — which is the one thing chapter 3.12's close-out asks the next
-feature to do differently. R12 has the first arithmetic and **R18 has the correction**:
-the count was **29 platform files, not 25**, found by the task list naming four that a
-clause-by-clause count could not reach.
+feature to do differently.
 
-That correction matters, so it is here rather than only in research. At 29 files three
-chapters would land near 2,290 words each — **inside the band**, so the floor argument
-that killed three in R12 is gone. Two chapters holds on subject coherence and on
-headroom against an estimate that ran 14% low here, 65% low in 3.12 and 77% low in 3.5;
-it no longer holds on arithmetic, and the page that reports the split says so.
+**The count was revised twice before it was enumerated**, and R18 carries both
+revisions. R12 counted 25 from the clause list; the task list named 29; enumerating
+every path and asking which chapter fences it gives **34**, including three the tasks
+imply and never name — `app.module.ts`, `users.module.ts`, `users.service.ts`. The first
+of those three is why the enumeration mattered: nothing registered `UsersModule`, so
+none of the eight user routes would have mounted.
 
-The per-chapter figures below count files a chapter **teaches**: 17 + 20 = 37 against a
-union of 29, because at least 12 files appear in both. Only one chapter may fence a
-shared file whole; the other diffs it.
+**A count without an enumeration cannot be checked, and each check found more.** So the
+enumeration is in R18 and the per-chapter figures below come from a real per-file
+assignment rather than a group sum: 19 + 20 = 39 instances against a union of 34, with
+seven files in both chapters and five in neither.
 
 | Chapter | Carries | Files | ≈ prose words |
 |---|---|---|---|
-| **3.15** the channel a customer controls | membership enforced on send, the `private` type made meaningful, member removal, member roles, archiving | 17 | ≈ 2,730 |
-| **3.16** what a user sees | channel listing with cursor pagination and activity ordering, unread counts, user profiles, bulk upsert, deletion, banning, implicit creation on authentication | 20 | ≈ 3,210 |
+| **3.15** the channel a customer controls | membership enforced on send, the `private` type made meaningful, member removal, member roles, archiving | 19 | ≈ 3,040 |
+| **3.16** what a user sees | channel listing with cursor pagination and activity ordering, unread counts, user profiles, bulk upsert, deletion, banning, implicit creation on authentication | 20 | ≈ 3,200 |
+
+Both inside 2,000–4,000 with about 800 words of headroom. **Three chapters would be
+~2,080 each — 80 words above the floor**, which is not headroom, so the floor argument
+that R12 used still holds and analysis pass one was wrong to report it gone: that pass
+scaled a group sum by a file ratio, and instances grow with how many chapters teach a
+file, not with the union.
 
 ## Technical Context
 
@@ -122,7 +128,8 @@ relay-platform/
 │                            0012 (member roles, users.deleted_at)
 ├── services/api/src/
 │   ├── channels/            + removal, roles, archiving, the private type
-│   ├── users/               NEW — profile, bulk upsert, deletion, banning
+│   ├── users/               NEW — module, service, controller, schema, tests
+│   ├── app.module.ts        + UsersModule registered (found by R18's enumeration)
 │   ├── db/                  + read_positions, last_activity_at, members.role, users.deleted_at
 │   ├── isolation/           + the same-tenant fixture and its attacks
 ├── services/gateway/src/    + the ban check at connect

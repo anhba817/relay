@@ -10,10 +10,12 @@ documented sequence verbatim: compose up, migrate, seed a demo tenant, run the s
 suite. Chapter 3.14 built that. The file you are reading is the Spec Kit artifact a
 maintainer walks by hand, and every check below carries the command that runs it.
 
-Three of the checks are **negative**: they require breaking something on purpose and
-watching a test fail. FR-035 exists because of them — a test that passes with and
-without the code it covers is measuring nothing, and the only way to know which kind
-you have is to remove the code.
+**Six of the checks are negative**: they require breaking something on purpose and
+watching a test fail — V2's guard array, V6's suite removals, and one removal per column
+that began this feature dead, at V3, V10, V14 and V15. FR-035 exists because of them: a test that
+passes with and without the code it covers is measuring nothing, and the only way to know
+which kind you have is to remove the code. The count said three until analysis pass two
+counted the tasks and found five removals and a guard break.
 
 ## Prerequisites
 
@@ -34,7 +36,12 @@ export RELAY_REDIS_URL=redis://localhost:6379
 export RELAY_NATS_URL=nats://localhost:4222
 export RELAY_INTERNAL_CREDENTIAL=rk_svc_ci_0123456789abcdef0123456789abcdef
 export RELAY_WEBHOOK_SECRET_KEY="BpDal75yBZp7Fc2GtGS3D1vh7qOKgCWJkF6/d0XWxBU="
+export RELAY_DB=postgres://relay:relay@localhost:15432/relay
 ```
+
+`RELAY_DB` is for the `psql` checks below and nothing else. V1 and V11 used it before it
+was defined anywhere — two commands that could not run, in the file whose first line
+says every command is one a maintainer runs verbatim. Found by analysis pass two.
 
 `DATABASE_URL` stays unset — every package falls back to 15432, this project's
 documented port, and this machine's own Postgres holds 5432.
@@ -98,7 +105,7 @@ message count unchanged afterwards (SC-003). A refusal that still writes a row i
 refusal.
 
 **Then remove the check** from `repository.sendMessage` and re-run. The test must fail.
-This is FR-035's gate and the first of the three negative checks.
+This is FR-035's gate and the first of five removals.
 
 ## V4 — the six callers inherit it
 
@@ -132,6 +139,11 @@ pnpm vitest run services/api/src/isolation/gauntlet --config services/api/vitest
 that is not `seedTwoTenants` — one environment, two users, one channel, one of them not
 a member. All four pre-existing attack shapes take another tenant's identifiers, so
 this is new work rather than a reuse.
+
+**Then remove each new check in turn** and confirm the matching attack goes red — the
+suite's own removals, T086. Chapter 3.12 found that a scoped `channelExists` running
+first hides an unscoped read below it, so record which of these attacks are masked that
+way rather than reshaping them.
 
 ## V7 — the derived target count moves by exactly the routes added
 
@@ -175,6 +187,9 @@ pnpm vitest run services/api/src/channels --config services/api/vitest.integrati
 **Expect** a send to an archived channel refused with `channel_archived`, distinct from
 not-found and from `not_a_member` (SC-010); history still readable; archiving an
 archived channel a 200 no-op.
+
+**Then remove the `archived_at` read** and confirm the refusal test goes red. The second
+removal.
 
 ## V11 — roles round-trip, and the fourth value is refused
 
@@ -236,6 +251,9 @@ attributed, their memberships gone, their `usage_active_users` rows untouched.
 Then present the deleted user's external id again: the same row comes back with
 `deleted_at` cleared and empty profile fields (FR-030).
 
+**Then remove the `avatar_url` and `metadata` reads** and confirm the round-trip goes
+red. The fourth removal.
+
 ## V15 — the ban, and the token that creates
 
 **Expect** a banned user refused at connect and on send with `user_banned`; their
@@ -250,6 +268,9 @@ pnpm vitest run services/api/src/auth --config services/api/vitest.integration.c
 **Expect** a token minted for an identifier with no user row, then a message sent
 through `POST /internal/messages` and accepted (SC-020). Before this feature that
 sequence answers `400 "unknown user"`.
+
+**Then remove the `banned_at` read** and confirm the ban test goes red. The fifth and
+last removal — one per column that began this feature dead.
 
 ## V15a — the chapter citations, classified
 
@@ -287,8 +308,13 @@ cd ../relay-tutorial && pnpm check:docs && pnpm check:errors && pnpm check:fence
 directions. `check:fences` green — 203 files at the last tag, and every file either
 chapter touches has to replay.
 
-Then the dead-column count again: **five before, zero after**, or a stated reason for
-each survivor (SC-016, FR-036).
+Then the dead-column count again. **Five before, and the after-count is not zero:** all
+five named columns get readers, and this feature leaves two behind that have none —
+`members.role`, which FR-012 and T069 establish nothing reads, and
+`read_positions.updated_at`, written by every position write and read by nothing. Name
+each survivor beside the requirement it stands for (SC-016, FR-036). A feature about
+columns nothing reads, adding two, is worth a sentence on the page rather than a zero
+that does not hold.
 
 Then the battery. Twenty consecutive runs of the integration lane, on a machine running
 nothing else:
