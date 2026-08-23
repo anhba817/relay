@@ -423,3 +423,73 @@ learned here: **`git checkout` is only a repair if the good state is committed.*
 The derivation was rewritten, verified, and committed at `70a82b6` before the two
 breakages were repeated — and both then failed at their assertions as designed.
 Phase 7's three reintroductions must commit first for the same reason.
+
+## T030a-T030f — a platform credential is authorized by service, not by class
+
+`PlatformService` is derived from `PLATFORM_SERVICES` with `as const satisfies`,
+so it is `"dispatcher" | "gateway"` and a third internal service widens it on its
+own. `AcceptSpec` is `"application" | "user" | { platform: readonly PlatformService[] }`,
+and `expectation()` — which builds the two client-visible strings at
+`credential.guard.ts:89` and `:96` — widened with it.
+
+**`@Accepts("platform")` no longer compiles, and the compiler named the two routes
+before the deliberate test was written:**
+
+    services/api/src/internal/dispatch.controller.ts(51,10): error TS2345:
+      Argument of type '"platform"' is not assignable to parameter of type 'AcceptSpec'.
+    services/api/src/internal/usage.controller.ts(43,10): error TS2345: …
+
+T030f's explicit demonstration — the class declared on a fresh route with no
+service list — gives the same error and was reverted:
+
+    services/api/src/health.controller.ts(7,10): error TS2345: …
+
+## The hole FR-044 closes, demonstrated by the chapter's own test suite
+
+**`usage.itest.ts` has been presenting the DISPATCHER's credential to the
+GATEWAY's route since chapter 3.11, and passing.** Line 58 set
+`RELAY_INTERNAL_CREDENTIAL` — the dispatcher's variable — and every request in the
+file carried it to `POST /internal/usage/connections`, which is the gateway's route
+and nothing else's. Nine of its fifteen tests turned `403` the moment the route
+declared its service:
+
+    × accepts the platform credential and says what it credited
+    × refuses a second environment for a connection that already has one
+    × rolls the whole batch back when one entry conflicts
+    … 9 in total, all "expected 403 to be 200"
+
+The suite verifying the gateway's metering route had never used the gateway's
+credential, and nothing could tell. That is not an argument for FR-044; it is the
+gap itself, sitting in the file that exercises the route.
+
+Fixed by setting `RELAY_INTERNAL_CREDENTIAL_GATEWAY`, and the dispatcher's kept
+under its own name so the refusal can be tested in both directions.
+
+## T030e, T030c2 — both directions, route by route
+
+  gateway credential    → the four dispatch routes    403 wrong_credential_service
+  dispatcher credential → /internal/usage/connections 403 wrong_credential_service
+  gateway credential    → /internal/usage/connections 200
+
+The third is not decoration: a rule that refuses everything passes the same
+assertions as a rule that refuses the right thing.
+
+The message names the service and the permitted set — `"gateway" is not permitted
+on this route (dispatcher)` — and is asserted NOT to contain the credential. A
+service name is a deployment label; a credential is a secret (NFR-SEC-06).
+
+  usage.itest.ts   15 → 21 tests
+
+## Phase 3 gates so far (T015-T022, T030a-T030f)
+
+  pnpm lint          exit 0   (1 pre-existing warning in session.perf.itest.ts)
+  pnpm typecheck     exit 0
+  unit               353 → 353
+  integration        330 → 343   (+7 targets.itest.ts, +6 usage.itest.ts)
+
+**Lint needed two fixes the change caused.** `PrincipalKind` became an unused
+import once `AcceptSpec` replaced it, which is an error rather than a warning; and
+an `eslint-disable-next-line no-console` I wrote was itself flagged, because
+`no-console` is not a configured rule in this repository. The second is the
+smaller version of this chapter's subject — a suppression for a rule that does not
+exist, which reads as caution and is noise.
