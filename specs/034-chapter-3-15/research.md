@@ -26,7 +26,9 @@ the API — it is the distinction the whole clause turns on:
 So FR-005 — what a private channel means for an application credential — is answered
 by a type that already exists rather than by a new decision. And putting the check in
 the repository rather than a service satisfies constitution I directly: *isolation
-lives in data access*. Every caller inherits it, and there are six:
+lives in data access*. Every caller inherits it. **The list below said six and is wrong** —
+it counted files that mention a send anywhere, not call sites; the corrected graph is at the
+end of this item:
 
     packages/e2e/src/harness.ts            services/api/src/isolation/fixtures.ts
     services/api/src/messages/…service.ts  services/gateway/src/api-client.ts

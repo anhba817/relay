@@ -181,16 +181,17 @@ gaps — `users.deleted_at` written and never read, and `docs/05-sad.md` §6.1 l
 three schema changes. Seven columns wide so nothing has to be counted twice.
 
 **FR-035's gate is the "removal" column**: each newly-enforced column shown read by a test
-that fails when the read is removed. Eight columns need one. `members.role` is the
-exception and FR-012 is why — nothing reads it, and the chapter says so rather than
-pretending otherwise.
+that fails when the read is removed. **Nine columns need one.** `members.role` was listed as
+the exception on FR-012's answer that nothing reads it — and the listing returns the field,
+which analysis pass fourteen found by putting `contracts/listing.md`'s field table next to
+the claim. What nothing does is *authorize* by role.
 
 | Column | Migration | Schema | SAD §6.1 | Writer | Reader | Removal | Chapter |
 |---|---|---|---|---|---|---|---|
 | `channels.type` | — | exists | exists | chapter 3.13's `POST /v1/channels` | T031, T040 | T034 | 3.15 |
 | `channels.archived_at` | — | exists | exists | **T072a** | T071 | T077 | 3.15 |
 | `channels.last_activity_at` | T013 | T015 | **T018a** | T107 | T110 | **T116a** | 3.16 |
-| `members.role` | T016 | T017 | n/a — `members` is not in §6.1 | T063 | **nothing, by FR-012** | n/a | 3.15 |
+| `members.role` | T016 | T017 | n/a — `members` is not in §6.1 | T063, **T064a** | **T111 — the listing returns it** | **T116b** | 3.15 |
 | `users.avatar_url` | — | exists | exists | T129a | T129 | T135 | 3.16 |
 | `users.metadata` | — | exists | exists | T129a | T129 | T135 | 3.16 |
 | `users.banned_at` | — | exists | exists | T149 | T150, T151 | T155 | 3.16 |
@@ -198,8 +199,10 @@ pretending otherwise.
 | `read_positions.sequence` | T013 | T014 | **T018a** | T119 | T121 | **T127a** | 3.16 |
 | `read_positions.updated_at` | T013 | T014 | **T018a** | T119 | **nothing** | n/a | 3.16 |
 
-**Two columns end this feature with no reader** — `members.role` and
-`read_positions.updated_at` — and T176a states both on the page. A feature about columns
+**One column ends this feature with no reader** — `read_positions.updated_at`, written by
+every position write and read by nothing. It was two until pass fourteen found the listing
+returning `members.role`, and three until pass five found `users.deleted_at` written and
+never read. T176a states the survivor on the page. A feature about columns
 nothing reads, leaving two behind, is worth saying out loud. `users.deleted_at` was a
 third until pass five: T141 set it, T146 cleared it, and nothing read it.
 
@@ -309,7 +312,7 @@ channel that does not exist — and only then does the enum widen.
 private channel and for an id that exists nowhere, and confirm the pairs are identical
 but for `request_id`.
 
-- [ ] T039a [US1] **Add `GET /v1/channels/:channelId`** in `services/api/src/channels/channels.controller.ts` with a method-level `@Accepts("application", "user")`, **resolving `principalUser(req)` and passing the user id into the service** — the route reports the caller's membership and hides a private channel from a non-member, and both need to know who is calling — a user reads their own membership, the tenant reads any channel — and its service method: FR-CHN-01's four elements plus `archived_at` and the caller's membership (FR-003a). **This route does not exist.** The controller carries `POST /v1/channels` and `POST :channelId/members` and no read, so a customer can create a channel and never read it back. SC-001 named "read by id" as one of four verbs, FR-003 said "every read", and `contracts/membership.md` had a row for it — three artifacts resting on a handler nobody wrote, found by analysis pass three asking whether each verb has one
+- [ ] T039a [US1] **Add `GET /v1/channels/:channelId`** in `services/api/src/channels/channels.controller.ts` with a method-level `@Accepts("application", "user")`, **resolving `principalUser(req)` and passing the user id into the service** — the route reports the membership of whoever the credential identifies (a user under a user token; nothing under an application key, which is a member of nothing) and hides a private channel from a non-member, and both need to know who is calling — a user reads their own membership, the tenant reads any channel — and its service method: FR-CHN-01's four elements plus `archived_at` and the caller's membership (FR-003a). **This route does not exist.** The controller carries `POST /v1/channels` and `POST :channelId/members` and no read, so a customer can create a channel and never read it back. SC-001 named "read by id" as one of four verbs, FR-003 said "every read", and `contracts/membership.md` had a row for it — three artifacts resting on a handler nobody wrote, found by analysis pass three asking whether each verb has one
 - [ ] T039b [P] [US1] Test the route in `services/api/src/channels/channels.itest.ts`: 200 for a member, 200 for a non-member of a `public` channel, and the four fields readable back after a create
 - [ ] T040 [US1] Add the membership check to the by-id read path in `services/api/src/channels/channels.service.ts`, answering the not-found envelope for a private channel the caller is not a member of (FR-003)
 - [ ] T041 [US1] Add `userId?: string` to `listMessages` in `services/api/src/db/repository.ts` and the same membership check under it. **The parameter does not exist**: `listMessages(channelId, {beforeSeq, afterSeq, limit})` has no caller in its signature, so before pass eight this task asked for a check with nothing to check against. Then confirm `repository.backfill`'s existing membership join already covers resume (FR-002).
@@ -375,7 +378,7 @@ confirm a fourth value is refused with `field: "role"`.
 - [ ] T066 [P] [US6] Test the round trip for all three roles **through both the add body (FR-011b) and `PATCH`** (FR-011), and a fourth value refused 400 with `field` naming `role` (FR-011a, SC-009). The field name is in the envelope only because chapter 3.14 stopped `ZodValidationPipe` discarding `issues[0].path` — `services/api/src/channels/channels.itest.ts`
 - [ ] T067 [P] [US6] Test that `addMember` gives a new member `member` — the default the migration declares, exercised through the API rather than read from the DDL — `services/api/src/channels/channels.itest.ts`
 - [ ] T068 [US6] Test that the CHECK refuses `admin` at the database, not only the schema at the edge. R8's trap is a constraint that accepts the organisation vocabulary, and only a database-level assertion catches it — `services/api/src/db/repository.itest.ts`
-- [ ] T069 [US6] **State in the chapter whether any operation reads a member's role** (FR-012). Nothing does in this feature: no operation is authorized by channel role. A role column nothing reads is this feature's own subject repeated, so the statement is a requirement rather than a footnote — `specs/034-chapter-3-15/baseline.txt and relay-tutorial/app/(en)/part-3/chapter-15/<slug>/page.mdx`
+- [ ] T069 [US6] **State in the chapter what reads a member's role and what does not** (FR-012): the listing returns it, and **no operation is authorized by it** — no permission decision anywhere consults the column. That distinction is the statement worth making, and it is not the one this task carried until pass fourteen, which said "nothing reads it" while `contracts/listing.md` returned the field — `specs/034-chapter-3-15/baseline.txt and relay-tutorial/app/(en)/part-3/chapter-15/<slug>/page.mdx`
 - [ ] T070 Commit Phase 6
 
 **Checkpoint**: FR-CHN-04 has a column, a constraint, a default and a stated reader — which is none.
@@ -491,6 +494,7 @@ member of never appears.
 - [ ] T115 [US4] **State and test whether an archived channel appears** (FR-022). It does, with a flag: a customer who archived a channel still needs to find it — `services/api/src/users/users.itest.ts`
 - [ ] T116 [US4] **`EXPLAIN ANALYZE` the listing query and record the plan** in `baseline.txt`. An index scan, not a sequential one. A sequential scan here means R4's 145× is being paid rather than collected, and the test lane is too small to notice
 - [ ] T116a [US4] **Remove the `last_activity_at` ordering and confirm T112 goes red**, then restore (FR-035). A newly-enforced column with no removal test is a column that might be ordered by anything — `services/api/src/users/users.itest.ts`
+- [ ] T116b [US4] **Remove `members.role` from the listing's projection and confirm a test goes red** (FR-035) — `services/api/src/users/users.itest.ts`. The ninth removal, and the one the column table listed as `n/a` while the contract returned the field
 - [ ] T117 [P] [US4] Test the cursor's refusals: malformed 400 with `field: "cursor"`, `limit` over 100 400 with `field: "limit"`, and a cursor naming a channel in another environment **400 rather than 404 or an empty page** — anything that distinguishes "exists elsewhere" from "malformed" is the leak the suite exists to catch — `services/api/src/users/users.itest.ts`
 - [ ] T118 [P] [US4] Document the pagination drift the way chapter 2.4 documented history's, or show there is none: a new message mid-pagination moves a channel the caller may have already seen — `specs/034-chapter-3-15/baseline.txt`
 - [ ] T118a Commit Phase 11
@@ -636,7 +640,7 @@ the fourth**: FR-038a's citation class.
 - [ ] T174c Record in `baseline.txt` which of T174a's arms are isolation and which are authorization, and the file's branch figure before and after. **A private-channel membership check is authorization inside a tenant, not tenant isolation** — the clause does not reach it by its own words, and the same-tenant suite tests it with FR-TEN-05's oracle anyway, so the classification is stated rather than left to whoever next reads the ratchet
 - [ ] T174d [P] **Re-earn `services/api/src/channels/channels.service.ts`'s pin**, currently branches 75 / **functions 100** / lines 94 / statements 94. This feature adds read-by-id, join, archive, unarchive, removal and role-setting to that file, and `functions: 100` goes red on the first partially-covered new function. Chapter 3.5's precedent: six new operations on `repository.ts` took branches from 85.91% to 78.22% on the next run
 - [ ] T176 **Re-run T007's dead-column count and record it: five before, and the after-count with every survivor named beside the requirement it stands for** (SC-016, FR-036) — `specs/034-chapter-3-15/baseline.txt`
-- [ ] T176a **The after-count is not zero, and the chapter says so.** All five of the named columns get readers, and this feature leaves two of its own with none — `members.role` (FR-012, T069: no operation is authorized by channel role) and `read_positions.updated_at` (written by every position write, read by nothing). **It was three until analysis pass five**: `users.deleted_at` was set by T141, cleared by T146 and read by nothing, in a feature whose subject is columns nothing reads. A feature whose subject is columns nothing reads, leaving two behind, is the chapter's own joke and it is better told than found — `relay-tutorial/app/(en)/part-3/chapter-16/<slug>/page.mdx`
+- [ ] T176a **The after-count is not zero, and the chapter says so.** All five named columns get readers, and this feature leaves **one** of its own with none: `read_positions.updated_at`, written by every position write and read by nothing. **It was three, then two, then one** — `users.deleted_at` was written and never read until pass five gave it readers, and `members.role` was called dead until pass fourteen noticed the listing returns it. A feature about columns nothing reads, converging on one, is worth the sentence. A feature whose subject is columns nothing reads, leaving two behind, is the chapter's own joke and it is better told than found — `relay-tutorial/app/(en)/part-3/chapter-16/<slug>/page.mdx`
 - [ ] T177 Write `specs/034-chapter-3-15/traceability.md`, **generated rather than grown**, both directions: every requirement to the clause it implements, and every clause this feature touches to the requirement covering it. Chapter 3.12's map found four clauses touched and unclaimed, and one row that recorded a clause as delivered when it was not — found only because chapter 3.15's spec read the map for a purpose other than writing it
 - [ ] T178 Update `docs/04-srs.md`'s verification notes for the twelve clauses
 - [ ] T179 [P] Split the 3.15 row in `docs/07-tutorial-plan.md` into 3.15 and 3.16 with the shipped numbers. Not mirrored by `check-docs-drift.sh`, deliberately — its DOCS list excludes it because it is the series' own plan and not a published reference
@@ -730,7 +734,7 @@ runs on the machine while the battery does.
 ## Implementation strategy
 
 **MVP is Phase 3 alone**: the membership check on the send path. It is one function in
-`repository.ts` with six inheriting callers, it makes `channels.type` live, and it
+`repository.ts` with three call sites inheriting it — once T031a makes the public one supply a user — it makes `channels.type` live, and it
 delivers the clause the platform has been contradicting since chapter 2.1 — a private
 channel is visible only to its members. Everything after it widens the surface.
 

@@ -35,7 +35,7 @@ A user's channels, most recently active first, cursor-paginated.
 
 | Field | Source |
 |---|---|
-| `unread` | `greatest(channels.last_sequence − read_position, 0)` |
+| `unread` | `greatest(channels.last_sequence − read_position, 0)` for **the user the path names**, not the caller — the caller is the tenant |
 | `last_activity_at` | `channels.last_activity_at` |
 | `last_message` | the row at `channels.last_sequence`, or `null` if the channel has none — **including when that row is a tombstone**, which reports its sequence, author and `created_at` with `text: null` (FR-019) |
 | `role` | `members.role` |
@@ -105,7 +105,7 @@ Records a read position. Body `{"sequence": 8814}`.
 | position advanced | 200 |
 | the sequence is at or below the stored position | 200, unchanged |
 | the sequence is past `channels.last_sequence` | 400 `invalid_request`, `field: "sequence"` |
-| the caller is not a member | 403 `not_a_member`, or 404 if the channel is private |
+| **the path's user** is not a member | 403 `not_a_member`, or 404 if the channel is private |
 | no such channel or user | 404 |
 
 Forwards only, and a replayed acknowledgement is a no-op rather than a rewind

@@ -244,7 +244,7 @@ user is not a member of never appears.
 
 ### User Story 5 - The listing says what is unread (Priority: P2)
 
-FR-CHN-09 asks that channel listings include the caller's unread count and the most
+FR-CHN-09 asks that channel listings include the listed user's unread count and the most
 recent message. Nothing records a read position.
 
 **Why this priority**: P2 in the SRS, and it depends on User Story 4 existing first. It
@@ -464,8 +464,11 @@ their sends are refused, confirm their history is intact, unban, confirm they wo
   pass twelve**: pass eleven bundled this clause into FR-011 in the same edit that split ten
   other requirements for being bundled.
 - **FR-011a**: A role outside the three MUST be refused with the field named. A role outside the three MUST be refused with the field named.
-- **FR-012**: The feature MUST state whether any operation reads a member's role. A
-  role nothing reads is this feature's own subject repeated.
+- **FR-012**: The feature MUST state whether any operation **is authorized by** a member's
+  role, separately from whether the role is read at all. The listing returns it, so the
+  column is not dead; nothing decides permission by it, which is the answer worth stating.
+  The earlier wording asked whether anything "reads" it and the answer given was "nothing" —
+  while `contracts/listing.md` returned the field, for fourteen analysis passes.
 
 **Listing and unread**
 
@@ -477,9 +480,12 @@ their sends are refused, confirm their history is intact, unban, confirm they wo
   `channels.last_sequence` is a per-channel counter and cannot order channels against
   each other, so this requires a timestamp the schema does not have or a per-channel
   aggregate over `messages.created_at`.
-- **FR-015**: A channel the caller is not a member of MUST NOT appear in their listing.
-- **FR-016**: Channel listings MUST include the caller's unread count and the most
-  recent message.
+- **FR-015**: A channel **the user the path names** is not a member of MUST NOT appear in
+  that user's listing. The route carries a tenant credential, so "the caller" — as this
+  requirement read for fourteen analysis passes — is an application key that is a member of
+  nothing, and an empty list satisfied it.
+- **FR-016**: Channel listings MUST include **the path user's** unread count and the most
+  recent message. Same correction as FR-015: the caller is the tenant.
 - **FR-017**: The feature MUST record a per-user, per-channel read position.
 - **FR-017a**: The feature MUST state what an absent position means for the count.
 - **FR-018**: A read position beyond the channel's last sequence MUST be refused.

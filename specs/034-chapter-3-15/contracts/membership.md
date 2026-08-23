@@ -14,7 +14,7 @@ session. "Member" means a row in `members` for `(channel_id, user_id)`.
 | read the channel by id | 200 | 200 | 200 | **404** |
 | read history | 200 | 200 | 200 | **404** |
 | send a message | 201 | 201 | 201 | **404** — the not-found envelope |
-| appear in the caller's listing | yes | no | yes | no |
+| appear in the listed user's listing | yes | no | yes | no |
 | subscribed on the socket | yes | **no** | yes | no |
 | join | already in | 200, becomes a member | already in | **404** |
 | set a read position | 200 | **403 `not_a_member`** | 200 | **404** |
@@ -84,7 +84,7 @@ a run.
 ### `GET /v1/channels/:channelId`
 
 Returns the four elements FR-CHN-01 defines: external id, type, name, metadata. Plus
-`archived_at` and the caller's membership, because a client that just read a channel
+`archived_at` and the membership of whoever the credential identifies — the user under a user token, and nothing under an application key, which acts for the tenant and is a member of nothing. A client that just read a channel
 should not need a second call to know whether it may post.
 
 | Outcome | Status |
@@ -208,10 +208,17 @@ and not in a service.
 The signature already encodes the distinction the check needs.
 `sendMessage(…, userId?: string)` means "a user is acting" when `userId` is present and
 "the tenant is acting" when it is not, so the gate is the parameter and not a new flag.
-Six callers inherit the check without changing, which is what constitution I means by
-"isolation is enforced in data access, not in handlers": a seventh caller added later
-gets the check for free, and a caller that wanted to skip it would have to drop the
-user, which is visible in review.
+**Three call sites, and the one that mattered supplied nothing.** `repo.sendMessage` is
+called from `messages.service.ts:47`; `MessagesService.send` from `messages.controller.ts:40`
+— the public route — and `internal.controller.ts:65`. The public route passed no user and
+`MessagesController` declares no `@Accepts`, so a user token was accepted and the
+`userId`-gated check never fired there. This paragraph said "six callers inherit the check"
+until analysis pass seven counted them, and the number was the hole's hiding place.
+
+The decision stands: constitution I is explicit that isolation is enforced in data access,
+not in handlers, and a caller that wanted to skip the check would have to drop the user,
+which is visible in review. What the check needs is callers that say who is acting — T031a
+and T041a.
 
 `POST /internal/messages` resolves a user and then sends, so it inherits the check too.
 That is the route chapter 3.12 recorded as checking nothing.

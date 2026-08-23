@@ -42,7 +42,7 @@ Its record is `specs/034-chapter-3-15/`: read **`plan.md`** for the seventeen ph
 and the constitution gate, `research.md` for R1 to R18 (twelve measured against a
 running database), then `data-model.md`, `contracts/membership.md`,
 `contracts/listing.md` and `quickstart.md` (18 checks, three of them negative).
-58 requirements, 22 success criteria, 248 tasks in 21 phases, checklist 16/16.
+58 requirements, 22 success criteria, 249 tasks in 21 phases, checklist 16/16.
 
 **Twelve SRS clauses, five dead columns, and four corrections.** The clauses are
 FR-CHN-03/04/05/06/08/09/10 and FR-USR-02/03/04/05/06. The columns exist and nothing
@@ -119,6 +119,26 @@ maintains `last_sequence` (chapter 2.2 made it the sequencing authority).
 4. **The gauntlet has no same-tenant fixture.** All four attack shapes take another
    tenant's identifiers, so "a user of your own tenant who is not a member" is new
    work rather than a reuse (R10, FR-034).
+
+**PASS FOURTEEN: A COLUMN CALLED DEAD THAT THE RESPONSE BODY RETURNS.** `contracts/listing.md`
+lists `role` among the fields it returns, from `members.role` — and FR-012's answer, the column
+table's Reader cell, two sentences of prose and T176a all said **nothing reads it**. Returning a
+column is reading it. The statement worth making is sharper and true: **the listing returns the
+role and no operation is authorized by it.** Found by putting a contract's field table next to a
+claim about the same field, which no earlier pass had done. The dead-column survivor count went
+three → two → one across passes five, fourteen: only `read_positions.updated_at` is left.
+
+**AND "THE CALLER" MEANT THE TENANT ON EVERY `/v1/users/:externalId/…` ROUTE.** Those carry an
+application credential, so FR-015 — "a channel **the caller** is not a member of MUST NOT appear
+in their listing" — was **vacuous**: an application key is a member of nothing and an empty list
+satisfied it. Same in FR-016, the read-position row, the authorization table and T039a. Pass
+twelve had already made this correction for one route and left it in five other places.
+
+**WHEN A FINDING IS ABOUT A PHRASE, GREP THE PHRASE.** Told to fix four places, the grep found
+nine — and separately found **"six callers" alive in four more documents** after pass seven fixed
+three and pass thirteen a fourth. That number lived in **eight** places and hid a CRITICAL in
+one of them. Three times now a fix has landed in one place and not its siblings: the send path
+before the history path, R1's count everywhere but the plan, and this.
 
 **PASS THIRTEEN SWEPT THE ASSUMPTIONS — the last artifact with no sweep — and found one
 that is a claim about a number this feature changes.** "The lane's budget is 240 seconds

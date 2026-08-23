@@ -116,16 +116,18 @@ controller passed no user, so the `userId`-gated check never fired.
 **Then remove the check** from `repository.sendMessage` and re-run. The test must fail.
 This is FR-035's gate; the column table lists every removal this feature owes.
 
-## V4 — the six callers inherit it
+## V4 — the send call graph, written out rather than counted
 
 ```bash
 grep -rn "sendMessage(" services/api/src --include=*.ts | grep -v itest | grep -v "\.test\."
 ```
 
-**Expect** six call sites, none of them passing a check of its own. The check is in one
-function because the signature already says who is acting — `userId` present means a
-user, absent means the tenant — and that is what constitution I means by data access
-rather than handlers.
+**Expect three**, not six: `repo.sendMessage` from `messages.service.ts:47`, and
+`MessagesService.send` from `messages.controller.ts:40` and `internal.controller.ts:65`.
+None carries a check of its own — the check is in one function because the signature says
+who is acting, `userId` present meaning a user and absent meaning the tenant. **And the
+public route supplied no user until T031a**, so the parameter encoded nothing there. This
+check said "six" for seven analysis passes and the number was hiding that.
 
 ## V5 — a private channel is indistinguishable from absent
 
@@ -254,7 +256,7 @@ underneath it, and R8's trap is a constraint that accepts the organisation vocab
 ## V12 — the listing orders, pages and excludes
 
 **Expect** a user's channels most-recently-active first; a cursor that pages without
-overlap or gap; a channel the caller is not a member of absent (SC-007, FR-015). Two
+overlap or gap; a channel **the listed user** is not a member of absent (SC-007, FR-015). Two
 channels sharing a `last_activity_at` must page correctly — that is what `id` is doing
 in the keyset.
 
