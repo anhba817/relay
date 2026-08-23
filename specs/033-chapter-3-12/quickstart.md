@@ -245,14 +245,18 @@ RELAY_POSTGRES_PORT=15432 docker compose up -d --wait    # stores only — the s
                                                          # behind profiles: ["services"]
 DATABASE_URL=postgres://relay:relay@localhost:15432/relay \
   node services/api/dist/db/migrate.js
+RELAY_POSTGRES_PORT=15432 docker compose --profile services build
 RELAY_POSTGRES_PORT=15432 docker compose --profile services up -d --wait
-node scripts/seed-demo-tenant.mjs                        # prints a credential
+export RELAY_DEMO_CREDENTIAL=$(node scripts/seed-demo-tenant.mjs)
 RELAY_API_URL=http://localhost:4000 RELAY_WS_URL=ws://localhost:4001 \
-  pnpm --filter @relay/outsider test:integration
+  pnpm test:outsider
 ```
 
 The order is load-bearing: the seed writes to a migrated database, and the api needs the
-schema before it serves anything the integration asks for. **The package starts nothing** —
+schema before it serves anything the integration asks for. **And `build` before `up` is
+load-bearing too**, measured rather than cautious: without it compose serves whatever image
+was last built, and the suite reported six failures — 404s for routes that exist and a
+`docs_url` from two chapters earlier — none of which named a stale image. **The package starts nothing** —
 if the platform is absent it must fail saying so rather than trying to launch one.
 
 **Expect** a completed integration: credential, channel, members, token, REST send,

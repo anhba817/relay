@@ -1394,3 +1394,91 @@ checkout either, which is a different way for the same habit to bite.
 
 The integration count did not move, which is right: Phase 9 changed how a URL is
 built and what a registry contains, and no suite asserted on the old URL.
+
+## Phase 10 — the outsider, and what its passing does not prove
+
+`packages/outsider` — one suite, **8 tests, all passing** against
+`docker compose --profile services`, and it imports **nothing but vitest**.
+
+That last part was not the plan. `ws` resolves from the workspace root by the
+ordinary parent walk, so the suite could have used it while declaring nothing —
+its TYPES do not, which forced a choice between borrowing `@types/ws` sideways,
+writing a local ambient declaration, or using Node's own client. Node 22 has had a
+standards-compliant global `WebSocket` since 22.4 and the platform requires Node
+22, so an integration in 2026 needs no library, and the constructor call is
+identical to the one the series' examples show. A dependency list empty because
+nothing is needed is a stronger claim than one empty because three things were
+reached for sideways.
+
+**THE SEAL WAS NOT IN FORCE ON ITS FIRST DRAFT, and it is R23 a second time in one
+chapter.** The block went in before the `**/*.itest.ts` blocks, and the outsider's
+only file is `integrate.itest.ts` — so a later block set `no-restricted-imports`
+again and won. `npx eslint` on a file importing `@relay/protocol` reported
+**nothing**. Written by whoever had just spent Phase 8 fixing the first instance of
+exactly this.
+
+The block is now last in the file and carries the union it needs, including the
+driver-and-engine ban — because `pg` DOES resolve here by the parent walk even
+though `@relay/*` does not. `no-restricted-syntax` had survived the first draft
+only because no other block sets it: level 3 worked by luck.
+
+**T102 — four escapes, each refused by the level meant for it:**
+
+    import { ERROR_CODES } from "@relay/protocol"
+      runtime: Cannot find package '@relay/protocol' — level 1, no rule involved
+      lint:    '@relay/protocol' import is restricted from being used by a pattern
+
+    import { ERROR_CODES } from "../../protocol/src/codes.js"
+      lint: packages/outsider may not reach outside itself           (level 2)
+
+    readFileSync(join(import.meta.dirname, "..", "..", "protocol", "src", "codes.ts"))
+      lint: may not build a path out of the package — 2 errors, one per ".."  (level 3)
+
+    createRequire(import.meta.url)
+      lint: createRequire turns a computed path into a module + node:module  (level 3)
+
+One more finding while writing the rules: a `group: ["/*"]` pattern for absolute
+paths matched **`vitest/config`**, and a rule that refuses the test runner is a rule
+somebody turns off. Absolute paths are matched by an esquery selector on the
+specifier instead.
+
+**Two lanes, not one.** `pnpm test:integration` is now
+`turbo run test:integration --filter=!@relay/outsider`, with `pnpm test:outsider`
+as the way in. The default lane spawns what it talks to; this suite needs the api
+and gateway already serving, from images that were BUILT, with a tenant already
+seeded. Folding it in would make every developer's integration run depend on a
+compose profile they did not ask for, and the honest failure this suite gives when
+the platform is absent would become noise.
+
+**G2, and it cost six of eight tests.** `docker compose --profile services up -d
+--wait` brought up a healthy stack serving a **stale image**: `POST /v1/channels`
+answered 404 for a route that exists, and `docs_url` came back
+`https://relay.example/docs/errors/not_found` — the pre-Phase-9 host. Nothing in
+the failure named a stale image. `--build` is now its own line in the README, the
+quickstart's V13 and the CI job, each with the measurement beside it.
+
+**Six documentation gaps, with dispositions**, in `gaps.md`: the REST-to-socket
+delivery gap (scheduled, pinned by a test), the stale image (fixed), the Postgres
+port (fixed for the commands this chapter owns), no public way to get a credential
+(fixed as a script, with which half of the constitution's clause that closes), the
+dev-token status (scheduled with 3.13), and Node's own WebSocket (not a defect).
+
+**The verdict is MET IN PART**, written into `gaps.md`, and the missing part is not
+the part the chapter set out to fix. What is met: a full integration from outside,
+sealed three ways, in CI as its own job. What is not: the suite passes because a
+failing test CORRECTED it about the REST-to-socket path, which is precisely the
+assistance the criterion forbids — a real outsider would have filed a bug. And
+content sufficiency is not comprehensibility: this chapter measured whether the
+documentation contains what an integration needs, not whether a person reading it
+unaided can build one. A person is the only instrument for the second and this
+chapter does not use one.
+
+## Phase 10 gates
+
+  pnpm lint          exit 0 (1 pre-existing warning)
+  pnpm typecheck      13 of 13 — `@relay/outsider` among them, which is why T097
+                      insisted on a `typecheck` script: `turbo run typecheck`
+                      silently skips a package that lacks one
+  pnpm test:integration  exit 0, 10 of 10, 3m13.317s — unchanged at 407, and the
+                      outsider is correctly absent from the task list
+  pnpm test:outsider     8 passed, against compose with the services profile

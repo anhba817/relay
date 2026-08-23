@@ -158,3 +158,68 @@ jobs:
         working-directory: relay-tutorial
       - run: pnpm check:fences
         working-directory: relay-tutorial
+
+  outsider:
+    name: relay-platform — the sealed integration
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: relay-platform/pnpm-lock.yaml
+
+      # The four steps every job in this workflow opens with. `pnpm build` is not
+      # optional here: `node services/api/dist/db/migrate.js` runs from build
+      # output two steps down.
+      - run: pnpm install --frozen-lockfile
+        working-directory: relay-platform
+      - run: pnpm build
+        working-directory: relay-platform
+
+      # A SEPARATE JOB, not three lines in the platform job. That job uses GitHub
+      # service containers on `localhost:5432` while compose's api reads
+      # `postgres:5432` on its own network — so adding `--profile services` there
+      # would start a second database, migrate the first, and leave the api serving
+      # a schema that does not exist. The price of the target being external is
+      # building two Node images every run.
+      #
+      # `RELAY_POSTGRES_PORT=15432` ON EVERY COMPOSE CALL. `compose.yaml` defaults
+      # the host port to 5432 and the code defaults to 15432, so a bare `up`
+      # publishes a database the migration a line later cannot reach.
+      - run: RELAY_POSTGRES_PORT=15432 docker compose up -d --wait
+        working-directory: relay-platform
+      - run: DATABASE_URL=postgres://relay:relay@localhost:15432/relay node services/api/dist/db/migrate.js
+        working-directory: relay-platform
+
+      # `--build` is not optional either, and this is measured rather than
+      # cautious: the suite ran against a stale image once and reported six
+      # failures — 404s for routes that exist and a docs_url from two chapters
+      # earlier — none of which named the cause.
+      - run: RELAY_POSTGRES_PORT=15432 docker compose --profile services build
+        working-directory: relay-platform
+      - run: RELAY_POSTGRES_PORT=15432 docker compose --profile services up -d --wait
+        working-directory: relay-platform
+
+      # Stores, migrations, services, seed, suite. The seed writes rows the api's
+      # schema must already accept; the suite needs a credential that must already
+      # exist. There is no public way to obtain one — sign-up ends at an OAuth
+      # consent screen and key management is the dashboard's chapter.
+      - name: Seed a demo tenant and run the sealed suite
+        working-directory: relay-platform
+        run: |
+          RELAY_DEMO_CREDENTIAL=$(RELAY_POSTGRES_PORT=15432 node scripts/seed-demo-tenant.mjs)
+          export RELAY_DEMO_CREDENTIAL
+          export RELAY_API_URL=http://localhost:4000
+          export RELAY_WS_URL=ws://localhost:4001
+          pnpm test:outsider
+
+      - name: What the services said, if anything went wrong
+        if: failure()
+        working-directory: relay-platform
+        run: RELAY_POSTGRES_PORT=15432 docker compose --profile services logs --tail 200
