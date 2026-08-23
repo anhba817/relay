@@ -1013,3 +1013,164 @@ equality, anything off the HTTP router.
 passed. Every reintroduction reverted with `git checkout` against a committed
 tree — the practice CLAUDE.md records, and the one that made take one cost five
 minutes instead of an afternoon.
+
+## T069a-T069e — the lint ban was off for every integration test
+
+Measured before touching anything:
+
+    npx eslint services/api/src/quotas/period.itest.ts     exit 0
+
+while that file's first line is `import { and, eq } from "drizzle-orm";` and it is
+on no exemption list. Ten integration tests import the driver, the query engine or
+Redis; all ten passed lint.
+
+The cause is `no-restricted-imports` being ONE rule. In flat config a later block
+REPLACES an earlier block's setting for a rule rather than merging with it, so
+feature 030's `files: ["**/*.itest.ts"]` block — which restricts the global-admin
+functions — switched the driver-and-engine ban off for every `*.itest.ts` in the
+workspace the moment it was added.
+
+**Fixed as three blocks, and the shape is the fix.** The two exemption lists are
+different files and a block has one `ignores`, so one merged block would have had
+to exempt both sets from both rules:
+
+    files: **/*.itest.ts, minus BOTH exemption lists   → the union of the two sets
+    files: DRIVER_EXEMPT_TESTS (8)                      → the drain restrictions
+    files: DRAIN_EXEMPT_TESTS (6)                       → the driver restrictions
+
+Verified in all three directions rather than assumed. One non-exempt integration
+test given both violations reports both:
+
+    'drizzle-orm' import is restricted from being used …          no-restricted-imports
+    'drainOutbox' import from '../db/repository' is restricted …  no-restricted-imports
+
+and each single-set block still restricts the other set — a drizzle import in
+`outbox.itest.ts` (drain-exempt) is refused, and an `outboxDepth` import in
+`period.itest.ts` (driver-exempt) is refused.
+
+**Eight legitimately exempted integration tests** (T069b), a list with reasons:
+the two repository suites, the harness's guard suite, the two Redis-key suites,
+and the three quota suites that write rows no repository method writes.
+**`services/api/src/isolation/**` is not on it**, and getting there took two
+edits: `gauntlet.itest.ts` imported `eq` for its delivery count, and
+`tenant-scope.itest.ts` imported `pg` for a type. The first moved behind
+`countDeliveriesForEndpoint` on the repository; the second became
+`ReturnType<typeof createPool>`. A type-only import is still an import to this
+rule.
+
+T069c — the stale comment is corrected. It said `limits.itest.ts` "is the one TEST
+allowed a raw client"; every test was allowed one, and had been since the block
+below it was added.
+
+T069e — what the restored rule does not buy, stated beside it: it sees an IMPORT,
+so a test reaching raw SQL through a helper in another file or through the
+repository's own `db` handle is invisible to it. That is the same boundary feature
+030 drew for its own half, which is why the trigger watches statements.
+
+## T069-T074 — nine guarded tables, and the fourth time one law bit
+
+    9 guarded: channels, quota_notifications, usage_active_users, usage_connections,
+               usage_periods, users, webhook_deliveries,
+               webhook_disable_notifications, webhook_endpoints
+
+Read back from `pg_trigger`, not from the source file.
+
+T070's measurement confirmed against the live schema: three of the four new tables
+have composite primary keys and no `id` column —
+
+    usage_periods        (environment_id, period)
+    usage_active_users   (environment_id, period, user_id)
+    usage_connections    (connection_id, period)
+    quota_notifications  (id)
+
+so `OLD.id` in the refusal message raises `record "old" has no field "id"` at
+execution time. The key expression is now
+`coalesce(to_jsonb(OLD) ->> 'id', to_jsonb(OLD)::text)`, and T071's bound is
+written beside it: these four carry counters, dates and identifiers and no message
+text, so printing the row is safe here and would be an NFR-SEC-06 violation on
+`messages`.
+
+**Being in the array is not being watched, so `plant()` gained bait 5**: one row in
+each of the four. One, not `BAIT_ROWS` — the trigger fires on the first sentinel
+row a statement touches, and `BAIT_ROWS` exists for the reader mechanism, which
+only `quota_notifications` has a drain for at all.
+
+**THE FIRST DRAFT COST THIRTEEN FAILING TESTS IN TWO UNRELATED FILES.**
+`guard.itest.ts` seeded its own `quota_notifications` row with `delivered_at` NULL
+— claimable — and `createQuotaRelay` claims undelivered notifications across every
+environment. `quotas.itest.ts` and `connections.itest.ts` then failed thirteen
+tests with a guard refusal naming a uuid `guard.itest.ts` had hardcoded:
+
+    Error: Failed query: UPDATE quota_notifications SET last_error = $1 WHERE id = $2
+    global-operation guard: … public.quota_notifications (id 33333333-…),
+    which belongs to no test — the bait planted by guard.itest.ts#usage
+
+That is the fourth measurement of one law: **bait may be claimable only where
+draining it is database work.** `drainQuotaNotifications` does I/O per row, so its
+bait is planted already delivered, exactly as the disablement notifications are.
+The test now uses `plant()`'s rows instead of inventing its own, which also
+restores the property that a refusal names its owner.
+
+T072 drives all four and asserts the message names the table, plus both halves of
+the key expression — the JSON fallback for `usage_periods` and the plain id for
+`quota_notifications` — and that the permitted connection's write still LANDS,
+which is the silent-discard fault this file exists for. `guard.itest.ts`: 8 → 14.
+
+**T074's premise was wrong and the measurement says so.** The task said
+`notifications.itest.ts` "drives the quota relay, which claims `quota_notifications`
+rows globally". It does not — `grep` for `createQuotaRelay` finds
+`quotas.itest.ts` and `connections.itest.ts`, and neither is on the exempt list.
+Neither needs to be: with the bait planted already-delivered, their global claim
+touches no sentinel row. No existing entry needed table names added.
+
+T073 — `exempt.ts`'s doc comment said "the five in `sentinel.sql`" and now says
+nine, with `outbox` still excluded and the reason restated.
+
+## T075 — nothing to register, measured
+
+No titled fence anywhere names any file under `packages/test-harness/`. The whole
+package is outside the fence chain: feature 030 published no chapter and never
+fenced its own files, and `sentinel.sql` and `exempt.ts` appear in
+`post-series.md` only inside prose and inside another file's diff text.
+
+`eslint.config.mjs` IS fenced — nine places, including feature 030's
+`post-series.md` entry — and this phase changed it substantially. That belongs in
+**chapter 3.12's own fences** rather than in `post-series.md`, because R23 is part
+of what this chapter teaches. `check-fence-chain` reports 14 HEAD problems today,
+all of them chapter 3.12's own code awaiting its chapter.
+
+## T076, T077 — the audit found a second fixed port, and one range I had overlapped
+
+    4100-4300  gateway/limits.itest.ts          api    was a fixed 4124
+    4310-4370  dispatcher/dispatcher.itest.ts   api    was a fixed 4131
+    4400-4600  gateway/session.itest.ts         api
+    4610-4670  gateway/meter.itest.ts           gateway
+    4710-4770  gateway/meter.itest.ts           api
+    4900-5100  gateway/isolation.itest.ts       api    was 4600-4800
+    5200-5400  gateway/public-surface.itest.ts  api    was 4800-5000
+
+**`dispatcher.itest.ts:367` bound a fixed 4131** — the second instance of the fault
+CLAUDE.md names only for `limits.itest.ts`, and the reason T077 asks for an audit
+rather than a fix. Nothing races it within a run, because the lane runs one package
+at a time; what bites is a back-to-back run whose previous child still holds the
+port.
+
+**And two of my own ranges were wrong.** `isolation.itest.ts` took 4600-4800,
+which overlaps BOTH of `meter.itest.ts`'s ranges; `public-surface.itest.ts` then
+took 4800-5000, adjacent to it. Both were chosen by looking at one neighbour
+instead of at all of them, which is how the map came to exist — a range that only
+says what it avoids goes stale the next time a file is added. The map now lives at
+the top of `limits.itest.ts` and every file points at it.
+
+## Phase 8 lane, after the guard and the ports
+
+  pnpm lint          exit 0   (1 pre-existing warning)
+  pnpm typecheck     clean
+  pnpm test:integration  exit 0, 10 of 10, 3m14.695s
+
+    test-harness   14      api           318      gateway        49
+    dispatcher     16      e2e            10              TOTAL 407
+
+test-harness 8 → 14, the guard's six new tests. Nothing else moved, which is the
+point: nine guarded tables and seven randomised ports changed no other suite's
+answer.
