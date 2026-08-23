@@ -22,21 +22,21 @@ imply and never name — `app.module.ts`, `users.module.ts`, `users.service.ts`.
 of those three is why the enumeration mattered: nothing registered `UsersModule`, so
 none of the eight user routes would have mounted.
 
-**A count without an enumeration cannot be checked, and each check found more.** So the
-enumeration is in R18 and the per-chapter figures below come from a real per-file
-assignment rather than a group sum: 19 + 20 = 39 instances against a union of 34, with
-seven files in both chapters and five in neither.
+**A count without an enumeration cannot be checked, and each check found more.** R18's
+table is the authority for every file count in this feature, and the figures below are
+read off it rather than recomputed: **18 + 20 = 38 instances, union 34, 31 taught, 7 in
+both chapters, 3 in neither.** Three analysis passes produced three wrong overlap
+numbers before the table existed to read from.
 
 | Chapter | Carries | Files | ≈ prose words |
 |---|---|---|---|
-| **3.15** the channel a customer controls | membership enforced on send, the `private` type made meaningful, member removal, member roles, archiving | 19 | ≈ 3,040 |
+| **3.15** the channel a customer controls | membership enforced on send, reading a channel by id, the `private` type made meaningful, member removal, member roles, archiving | 18 | ≈ 2,880 |
 | **3.16** what a user sees | channel listing with cursor pagination and activity ordering, unread counts, user profiles, bulk upsert, deletion, banning, implicit creation on authentication | 20 | ≈ 3,200 |
 
-Both inside 2,000–4,000 with about 800 words of headroom. **Three chapters would be
-~2,080 each — 80 words above the floor**, which is not headroom, so the floor argument
-that R12 used still holds and analysis pass one was wrong to report it gone: that pass
-scaled a group sum by a file ratio, and instances grow with how many chapters teach a
-file, not with the union.
+Both inside 2,000–4,000 with 800 words or more of headroom. **Three chapters would be
+~2,027 each — twenty-seven words above the floor**, so R12's floor argument holds and
+analysis pass one was wrong to report it gone: that pass scaled a group sum by a file
+ratio, and instances grow with how many chapters teach a file, not with the union.
 
 ## Technical Context
 
@@ -44,7 +44,9 @@ file, not with the union.
 
 **What is new**: one table (`read_positions`), three columns
 (`channels.last_activity_at`, `members.role`, `users.deleted_at`), one module
-(`services/api/src/users/`), two migrations, three error codes.
+(`services/api/src/users/`), two migrations, three error codes, and **fourteen routes** —
+thirteen the contracts describe plus `GET /v1/channels/:channelId`, which three artifacts
+assumed existed and nothing had built (FR-003a).
 
 **What is not new**: the store, the writer, the repository boundary, the credential
 model, the cross-tenant suite, the fence chain, the coverage ratchets.
@@ -127,7 +129,7 @@ relay-platform/
 ├── services/api/migrations/  + 0011 (activity column, read positions),
 │                            0012 (member roles, users.deleted_at)
 ├── services/api/src/
-│   ├── channels/            + removal, roles, archiving, the private type
+│   ├── channels/            + read by id, removal, roles, archiving, the private type
 │   ├── users/               NEW — module, service, controller, schema, tests
 │   ├── app.module.ts        + UsersModule registered (found by R18's enumeration)
 │   ├── db/                  + read_positions, last_activity_at, members.role, users.deleted_at

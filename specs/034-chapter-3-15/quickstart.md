@@ -124,10 +124,15 @@ rather than handlers.
 pnpm vitest run services/api/src/isolation --config services/api/vitest.integration.config.mts
 ```
 
-**Expect** for each of read-by-id, history, and send: the private channel the caller
-cannot see and a channel that exists nowhere give the same status and the same body,
-`request_id` excepted (SC-002). Chapter 3.12 built the oracle; this is the first use of
-it inside a single tenant.
+**Expect** for each of **SC-001's four verbs — send, resume, subscribe and read by id**:
+the private channel the caller cannot see and a channel that exists nowhere give the same
+status and the same body, `request_id` excepted (SC-002). Chapter 3.12 built the oracle;
+this is the first use of it inside a single tenant.
+
+**Read by id is a route this feature adds** (FR-003a). It did not exist —
+`channels.controller.ts` had a create and a member-add and no read — while this check,
+SC-001 and the authorization table all assumed it. Analysis pass three found it by asking
+whether each verb had a handler.
 
 ## V6 — the same-tenant attack exists and is new
 
@@ -151,8 +156,10 @@ way rather than reshaping them.
 pnpm vitest run services/api/src/isolation/targets --config services/api/vitest.integration.config.mts
 ```
 
-**Expect** the count from V0 plus the number of public routes this feature adds, each
-matched to exactly one classification entry (SC-014). An unclassified route fails the
+**Expect** the count from V0 plus **14** — the routes the two contracts describe, plus
+FR-003a's read-by-id — each matched to exactly one classification entry (SC-014). **The
+classification entries use the router's parameter names**, `:channelId` and not the
+contracts' `:externalId`: `targets.ts` compares literal path strings. An unclassified route fails the
 suite on the build that adds it, which is the point of deriving the list rather than
 writing it.
 
@@ -163,8 +170,9 @@ pnpm vitest run services/api/src/channels --config services/api/vitest.integrati
 ```
 
 **Expect** `POST /v1/channels` with `type: "private"` returns 201 and the row reads
-back `private` (SC-006); a second creation naming `public` returns 200 with the
-existing channel, still `private` (FR-010).
+back `private` (SC-006) — read back **through `GET /v1/channels/:channelId`**, which is
+what FR-003a adds and the only way a customer can see the four fields at all; a second
+creation naming `public` returns 200 with the existing channel, still `private` (FR-010).
 
 ## V9 — removal, and the messages that survive it
 

@@ -4,6 +4,15 @@ One new table, three new columns, and five columns that already exist and are re
 nothing. Every shape below was checked against `services/api/src/db/schema.ts` rather
 than against the SAD, because the schema is the thing the migration has to agree with.
 
+## Two words one letter apart, and which table each means
+
+**`members` is the channel table** — `(channel_id, user_id, joined_at)`, and this document
+says "membership" for a row in it. **`memberships` is the organisation table** — a human's
+role in an account, FR-TEN-07. They are different subjects at different levels of the
+hierarchy, and the only reason to state it here is that both gain nothing from this
+feature except a role column each, with vocabularies one word apart (R8). Where this
+document needs to be unambiguous it names the table.
+
 ## What exists and is dead
 
 Five columns, and the count is this feature's own headline number (SC-016). It is

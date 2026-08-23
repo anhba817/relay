@@ -415,43 +415,52 @@ appeared in **no task at all**, and without it none of the eight user routes mou
 checked, and every check found more.** So the enumeration is below, and it is what the
 split rests on now.
 
-### Which chapter teaches which file
+### Which chapter teaches which file — the canonical table
 
-Derived from the phases that touch each file, not assigned by path — assigning by path
+Derived from the phases that touch each file, not assigned by path: assigning by path
 guessed wrong five times in chapter 3.12.
 
-| | 3.15 | 3.16 | both |
-|---|---|---|---|
-| its own subject | 12 | 6 | — |
-| shared | — | — | 7 |
-| **teaches** | **19** | **20** | 7 counted twice |
+**Every count below is read off this table. Nothing recomputes it.** Three analysis
+passes produced three wrong overlap figures — pass one carried 12 from a 25-file base,
+pass two wrote 5 where 2 followed, and both were hand-arithmetic on quantities the table
+already holds. So the table is the authority and every other document quotes it.
 
-The seven shared: `repository.ts`, `repository.itest.ts`, `isolation.itest.ts`,
-`schema.ts`, `0012_member_roles_and_user_deletion.sql`, `codes.ts`, `codes.test.ts`.
-Chapter 3.15 comes first, so **3.15 fences each of the seven whole and 3.16 diffs it**,
-with eight lines of context — three let chapter 3.12's `repository.ts` pre-image match
-twice.
+| | count | files |
+|---|---|---|
+| **3.15 only** | 11 | `channels.controller.ts`, `channels.itest.ts`, `channels.schema.ts`, `channels.service.ts`, `internal.itest.ts`, `fixtures.ts`, `gauntlet.itest.ts`, `targets.itest.ts`, `targets.ts`, `tenant-scope.itest.ts`, `isolation-fixtures.ts` |
+| **3.16 only** | 13 | `credentials.itest.ts`, `dev-token.controller.ts`, `users.controller.ts`, `users.service.ts`, `users.module.ts`, `users.schema.ts`, `users.itest.ts`, `app.module.ts`, `session.ts`, `0011_*.sql`, `sentinel.sql`, `guard.itest.ts`, `vitest.coverage.config.mts` |
+| **both** | 7 | `repository.ts`, `repository.itest.ts`, `isolation.itest.ts`, `schema.ts`, `0012_*.sql`, `codes.ts`, `codes.test.ts` |
+| **neither** | 3 | `compare.ts` (read by T043, not changed), `exempt.ts` and `eslint.config.mjs` (touched only if T011 finds a file needing an entry) |
 
-`schema.ts` and `0012` straddle the two chapters because each carries columns from both:
-`members.role` is 3.15's subject, `users.deleted_at` is 3.16's, and they are in one
-migration. **The alternative is regrouping the migrations by chapter** — 0011 for the
-role column, 0012 for activity, read positions and the deletion marker — which would
-give each migration one chapter and no straddle. Not taken here, because Phase 2 runs
-both before either chapter is written and the straddle costs one diff.
+    union            34 files
+    taught           31
+    3.15 teaches     11 + 7 = 18
+    3.16 teaches     13 + 7 = 20
+    instances        38   = 31 taught + 7 counted twice   ✓
 
-19 + 20 = 39 against a union of 34: **five files appear in neither chapter and seven in
-both.** The per-chapter figures count files a chapter *teaches*.
+The seven shared files are fenced **whole in 3.15 and diffed in 3.16**, 3.15 coming
+first. `schema.ts` and `0012` straddle because each carries columns from both chapters:
+`members.role` is 3.15's subject and `users.deleted_at` is 3.16's, in one migration. The
+alternative is regrouping the migrations by chapter — 0011 for the role column, 0012 for
+activity, read positions and the deletion marker — which costs nothing except that Phase
+2 runs both before either chapter is written. Not taken; the straddle costs one diff.
+
+`sentinel.sql` and `guard.itest.ts` belong to **3.16**, because `read_positions` is its
+subject. Both are amended by `fences/post-series.md`, which the checker applies after
+every chapter, so the chapter excerpts and the appendix amends — a chapter is upstream of
+its own amendment.
 
 ### What the enumeration does to the word estimate
 
 At chapter 3.11's measured 160 words per file — 1.5 fences per file, 107 words per fence:
 
-    3.15    19 files  ≈ 3,040 words
+    3.15    18 files  ≈ 2,880 words
     3.16    20 files  ≈ 3,200 words
 
-Both inside 2,000–4,000 with about 800 words of headroom, and seven of 3.16's twenty are
-diffs of files 3.15 already fenced, which run shorter than a whole file. **Three chapters
-would be ~2,080 each — 80 words above the floor**, which is not headroom.
+Both inside 2,000–4,000 with 800 words or more of headroom, and seven of 3.16's twenty
+are diffs of files 3.15 already fenced, which run shorter than a whole file. **Three
+chapters would be 38 ÷ 3 × 160 ≈ 2,027 each — twenty-seven words above the floor**,
+which is not headroom by any reading.
 
 So the two-chapter split is supported by arithmetic again, and by better arithmetic than
 R12's: a real per-file assignment rather than a group sum scaled by a ratio. Analysis
@@ -490,8 +499,8 @@ Analysis pass one scaled R12's 37 file-instances by 29/25 to get ~43, divided by
 and reported that three chapters now fits inside the band at ~2,290 words a page — so
 the floor argument that killed three was gone. **The scaling was the error.** Instances
 do not grow with the union; they grow with how many chapters teach each file, which is a
-question the enumeration answers directly. The real count is 39 instances, giving ~2,080
-a page for three chapters — still against the floor, by 80 words.
+question the enumeration answers directly. The real count is 38 instances, giving ~2,027
+a page for three chapters — still against the floor, by 27 words.
 
 Two chapters holds on all three grounds now: arithmetic, subject coherence, and headroom
 against an estimate that has run low three times (3.5 by 77%, 3.12 by 65%, this feature's

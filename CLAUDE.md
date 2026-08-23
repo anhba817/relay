@@ -66,15 +66,17 @@ not by rereading the tasks, which had been read twice.
 **A COUNT WITHOUT AN ENUMERATION CANNOT BE CHECKED, and each check found more.** The
 enumeration is in R18 with the per-chapter assignment, derived from the phases that touch
 each file rather than by path — assigning by path guessed wrong five times in 3.12.
+**R18's table is the authority and every other document quotes it**, because three
+analysis passes produced three wrong overlap figures while each recomputed by hand.
 
-    3.15 "the channel a customer controls"   19 files  ≈ 3,040 words
+    3.15 "the channel a customer controls"   18 files  ≈ 2,880 words
     3.16 "what a user sees"                  20 files  ≈ 3,200 words
-    19 + 20 = 39 instances, union 34: seven files in both chapters, five in neither
+    18 + 20 = 38 instances, union 34, 31 taught, 7 in both chapters, 3 in neither
 
 Seven files 3.15 fences whole and 3.16 diffs: `repository.ts`, `repository.itest.ts`,
 `isolation.itest.ts`, `schema.ts`, `0012_*.sql`, `codes.ts`, `codes.test.ts`. Both pages
-sit inside 2,000–4,000 with ~800 words of headroom; **three chapters would be ~2,080
-each, 80 words above the floor**, so R12's floor argument holds. Analysis pass one
+sit inside 2,000–4,000 with 800 words or more of headroom; **three chapters would be
+~2,027 each, twenty-seven words above the floor**, so R12's floor argument holds. Analysis pass one
 reported that argument gone at ~2,290 a page — **wrong instrument**: it scaled a group
 sum by the union's ratio, and instances grow with how many chapters teach a file. The
 page phases sit at 9 and 16 rather than last, so each page is written when its own
@@ -225,6 +227,21 @@ seconds** a run against a 192–196 s measurement.
 **COMMIT EACH PHASE.** A bad regex in 3.11's traceability pass broke 36 files;
 because everything through the previous phase was committed, the repair was one
 `git checkout` and five minutes.
+**AND PASS THREE FOUND A ROUTE THAT WAS NEVER BUILT.** `GET /v1/channels/:channelId`
+does not exist — `channels.controller.ts` carries a create and a member-add and no read,
+so a customer can create a channel and never read its four fields back. **Three
+artifacts rested on it**: SC-001 named "read by id" as one of four verbs, FR-003 said
+"every read", and `contracts/membership.md` had a row for it. Now FR-003a and T039a, and
+the derived-target count moves by **14** rather than 13.
+
+**BOTH CRITICALS CAME FROM ASKING THE REPOSITORY A QUESTION.** Pass two's `app.module.ts`
+came from "which chapter fences this file"; pass three's missing route from "does this
+verb have a handler". Neither is findable by comparing spec to plan to tasks, which is
+what the passes before them did. **Every arithmetic error came from comparing the
+artifacts to each other** — three passes, three wrong overlap figures, all hand-computed
+from a table that already held the answer. R18's table is the authority now and the other
+documents quote it.
+
 **THE FIRST ANALYSIS PASS, and what it cost to be wrong once.** 23 findings, 1 raised
 CRITICAL and withdrawn. Four worth carrying forward:
 

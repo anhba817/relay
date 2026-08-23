@@ -47,7 +47,31 @@ not exist", and three codes is the only way to say three things.
 the socket is refused at connect. Chapter 3.16 owns this; it is in this table because
 the ordering — ban, then archive, then membership — has to be one ordering and not two.
 
+**Paths here are written with the customer's external id in the position it occupies.**
+The router names that parameter **`:channelId`**, and `targets.ts`'s classification list
+stores the literal router path — `"/v1/channels/:channelId/members"`. A classification
+entry written from this file's `:externalId` will not match a derived target, and the
+suite fails on the build that adds it. Analysis pass three found the drift before it cost
+a run.
+
 ## Routes chapter 3.15 adds
+
+### `GET /v1/channels/:channelId`
+
+Returns the four elements FR-CHN-01 defines: external id, type, name, metadata. Plus
+`archived_at` and the caller's membership, because a client that just read a channel
+should not need a second call to know whether it may post.
+
+| Outcome | Status |
+|---|---|
+| read | 200 |
+| `public`, caller not a member | 200 |
+| `private`, caller not a member | 404 — the not-found envelope, byte-identical |
+| no such channel | 404 |
+
+**This route did not exist and no task created it.** The table above assumed it, SC-001
+named "read by id" as one of four verbs, and FR-003 said "every read" — three artifacts
+resting on a handler that was never written. It is FR-003a now.
 
 ### `DELETE /v1/channels/:externalId/members/:userExternalId`
 

@@ -389,6 +389,11 @@ their sends are refused, confirm their history is intact, unban, confirm they wo
   "public" means today.
 - **Two tenants using the same `external_id`**, one private and one public: the
   identifier is per-tenant and so are the types.
+- **A removed member added back**: removal deletes the read position with the membership,
+  so their unread count starts again at the channel's whole history. The alternative —
+  keeping the position — would have a non-member's row surviving in a per-member table.
+  Stated because the deletion is a design decision `data-model.md` made and no
+  requirement named.
 - **Unread count for a channel with no read position ever recorded**: every message
   unread, or zero? A client that shows every channel as fully unread on first load is
   a bad first impression; one that shows zero hides real messages.
@@ -422,6 +427,13 @@ their sends are refused, confirm their history is intact, unban, confirm they wo
 - **FR-003**: For a private channel the caller cannot see, every read MUST answer
   identically to a channel that does not exist — same status and same body but for
   `request_id`. A private channel's existence MUST NOT be discoverable.
+- **FR-003a**: The public API MUST support reading a channel by id, returning the four
+  elements FR-CHN-01 defines. **This route does not exist**: `channels.controller.ts`
+  carries `POST /v1/channels` and `POST /v1/channels/:channelId/members` and no read, so
+  a customer can create a channel and never read it back. SC-001 names "read by id" as
+  one of four verbs and FR-003 says "every read", both of which assumed a route that was
+  never built. Found by analysis pass three, by asking whether each verb in the
+  authorization table has a handler.
 - **FR-004**: The feature MUST state and test what a `public` channel means for a
   non-member on each verb. The current behaviour — any user of the tenant may send to
   any channel — MUST be kept deliberately or changed deliberately, with the decision
@@ -445,7 +457,9 @@ their sends are refused, confirm their history is intact, unban, confirm they wo
 **Listing and unread**
 
 - **FR-013**: The public API MUST support listing a user's channels with cursor
-  pagination, ordered by most recent activity.
+  pagination, ordered by most recent activity, **at most 100 channels a page** and a
+  refusal naming the field above it. The bound matches FR-CHN-06's member-add bound and
+  FR-USR-04's upsert bound, so the API has one page size rather than three.
 - **FR-014**: The feature MUST state what "most recent activity" is measured by.
   `channels.last_sequence` is a per-channel counter and cannot order channels against
   each other, so this requires a timestamp the schema does not have or a per-channel
@@ -472,8 +486,10 @@ their sends are refused, confirm their history is intact, unban, confirm they wo
 
 - **FR-023**: The public API MUST support setting and updating a user's display name,
   avatar URL and metadata, with metadata bounded at 4 KB of JSON.
-- **FR-024**: Metadata over the bound and a malformed avatar URL MUST be refused with
-  `invalid_request` and `field` naming the offending key.
+- **FR-024**: Metadata over **4 KB** and a malformed avatar URL MUST be refused with
+  `invalid_request` and `field` naming the offending key. The bound is FR-USR-03's and is
+  half the 8 KB FR-CHN-01 allows a channel; the feature MUST justify the difference or
+  change it rather than inherit it silently.
 - **FR-025**: The public API MUST support upserting up to 100 users in one request,
   reporting each, and refusing 101 with the field named.
 - **FR-026**: An upsert naming an existing user MUST update rather than fail.
@@ -598,10 +614,11 @@ their sends are refused, confirm their history is intact, unban, confirm they wo
   `usage_active_users` rows are unchanged — each read back from storage.
 - **SC-013**: A banned user cannot connect, their history is still readable by others,
   and lifting the ban restores both.
-- **SC-014**: The cross-tenant suite's derived target count moves by exactly **13** — the
-  routes `contracts/membership.md` and `contracts/listing.md` describe — and no route is
-  unclassified. The number is stated here so the criterion can be checked before the
-  build rather than read off it.
+- **SC-014**: The cross-tenant suite's derived target count moves by exactly **14** — the
+  routes `contracts/membership.md` and `contracts/listing.md` describe, including
+  FR-003a's read-by-id — and no route is unclassified. The number is stated here so the
+  criterion can be checked before the build rather than read off it. It was 13 until
+  analysis pass three found the fourteenth route missing rather than uncounted.
 - **SC-015**: The suite gains at least one same-tenant non-member attack per verb, and
   each is shown to fail when the membership check is removed.
 - **SC-016**: The count of schema columns with no non-test reader is stated before and

@@ -3,6 +3,10 @@
 Chapter 3.16's routes. Same obligation as `membership.md`: a documented status code per
 route (FR-039).
 
+**And the same note about paths**: they are written with the customer's external id in
+place, while the router names channel parameters `:channelId`. A classification entry
+copied from this file verbatim will not match a derived target.
+
 ## `GET /v1/users/:externalId/channels`
 
 A user's channels, most recently active first, cursor-paginated.
@@ -41,7 +45,7 @@ A user's channels, most recently active first, cursor-paginated.
 | listed, including an empty list | 200 |
 | no such user in the tenant | 404 |
 | a malformed or foreign cursor | 400 `invalid_request`, `field: "cursor"` |
-| `limit` over 100 | 400 `invalid_request`, `field: "limit"` |
+| `limit` over 100 | 400 `invalid_request`, `field: "limit"` — FR-013's bound, the same 100 as the member-add and upsert bounds |
 
 **Only channels the user is a member of** (FR-015). A public channel the user could read
 by id does not appear, which is the read set and the subscription set kept apart —

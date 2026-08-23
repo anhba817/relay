@@ -12,7 +12,7 @@ published as **two** chapters, on a file count measured before any prose exists.
   the template's wording and is false here in thirteen places: five `[P]` tasks append
   cases to `users.itest.ts` in phase 11 and five more in phase 14. They are independent
   in *content* and share a file, so they can be written in any order and must not be
-  written by two hands at once. Analysis pass two counted 38 of the 75 markers in that
+  written by two hands at once. Analysis pass two counted 38 of the 74 markers in that
   position; the definition moved rather than the markers, because the information the
   markers carry is real
 - **[US1]…[US9]** — the user story from spec.md this task serves
@@ -39,8 +39,8 @@ sections had been written; the point of deciding first is that this table exists
 
 | Chapter | Phases | Subject |
 |---|---|---|
-| **3.15** the channel a customer controls | 3–8, page at 9–10 | membership, the private type, removal, roles, archiving, **and FR-037's correction** (T049a–T049c, stated at T097a). 19 files, seven of them fenced whole here and diffed in 3.16 |
-| **3.16** what a user sees | 11–17, page at 19–20 | listing, unread, the user surface, implicit creation, and FR-038a's citation class (Phase 17). 20 files, seven of them diffs |
+| **3.15** the channel a customer controls | 3–8, page at 9–10 | membership, reading a channel by id, the private type, removal, roles, archiving, **and FR-037's correction** (T049a–T049c, stated at T097a). **18 files** per R18's table, seven fenced whole here and diffed in 3.16 |
+| **3.16** what a user sees | 11–17, page at 19–20 | listing, unread, the user surface, implicit creation, and FR-038a's citation class (Phase 17). **20 files** per R18's table, seven of them diffs. `sentinel.sql` and `guard.itest.ts` are its files, not 3.15's |
 
 Phases 1, 2, 18 and 21 belong to neither page: the baseline, the schema both chapters
 stand on, the verification that covers both, and the close-out.
@@ -167,7 +167,7 @@ refusal happens in data access rather than in a handler.
 confirm the refusal, confirm the channel's message count did not move, then delete the
 check and confirm the test goes red.
 
-- [ ] T031 [US1] Add the membership check to `sendMessage` in `services/api/src/db/repository.ts`, gated on `userId` being present. **The signature already carries the distinction the check needs** — `userId` present means a user is acting, absent means the tenant is — so the gate is the parameter and not a new flag (FR-001, R1)
+- [ ] T031 [US1] Add the membership check to `sendMessage` in `services/api/src/db/repository.ts`, gated on `userId` being present. **Create this phase's private channels through the repository, not the API** — `createChannel(externalId, type, …)` already takes a type, and `POST /v1/channels` does not accept `private` until T049 at the end of phase 4 (FR-009's ordering). **The signature already carries the distinction the check needs** — `userId` present means a user is acting, absent means the tenant is — so the gate is the parameter and not a new flag (FR-001, R1)
 - [ ] T032 [US1] Test it in `services/api/src/db/repository.itest.ts`: a user of the tenant who is not a member of a private channel is refused `not_a_member` (SC-001)
 - [ ] T033 [P] [US1] Assert the channel's message count is unchanged after the refusal (SC-003). A refusal that still writes a row is not a refusal, and only this assertion can tell them apart — `services/api/src/db/repository.itest.ts`
 - [ ] T034 [US1] **Remove the check and confirm T032 goes red**, then restore it. This is FR-035's gate and the first of five removals in `quickstart.md`
@@ -190,10 +190,12 @@ channel that does not exist — and only then does the enum widen.
 private channel and for an id that exists nowhere, and confirm the pairs are identical
 but for `request_id`.
 
+- [ ] T039a [US1] **Add `GET /v1/channels/:channelId`** in `services/api/src/channels/channels.controller.ts` and its service method — FR-CHN-01's four elements plus `archived_at` and the caller's membership (FR-003a). **This route does not exist.** The controller carries `POST /v1/channels` and `POST :channelId/members` and no read, so a customer can create a channel and never read it back. SC-001 named "read by id" as one of four verbs, FR-003 said "every read", and `contracts/membership.md` had a row for it — three artifacts resting on a handler nobody wrote, found by analysis pass three asking whether each verb has one
+- [ ] T039b [P] [US1] Test the route in `services/api/src/channels/channels.itest.ts`: 200 for a member, 200 for a non-member of a `public` channel, and the four fields readable back after a create
 - [ ] T040 [US1] Add the membership check to the by-id read path in `services/api/src/channels/channels.service.ts`, answering the not-found envelope for a private channel the caller is not a member of (FR-003)
 - [ ] T041 [US1] Add the same to the history path in `repository.ts`, and confirm `repository.backfill`'s existing membership join already covers resume (FR-002). The spec's own assumption is that reading is already scoped and sending was not; this is where that is confirmed rather than asserted
 - [ ] T042 [P] [US1] Test that a non-member's session does not carry a private channel — `session.controller`'s `channelsForUser` derives the list, so this is a confirmation and the test says so — `services/api/src/internal/internal.itest.ts`
-- [ ] T043 [US1] Use `services/api/src/isolation/compare.ts` to assert indistinguishability for all three verbs: private-and-invisible against exists-nowhere, same status and same body minus `request_id` (SC-002)
+- [ ] T043 [US1] Use `services/api/src/isolation/compare.ts` to assert indistinguishability for **all four verbs SC-001 names — send, resume, subscribe, read by id**: private-and-invisible against exists-nowhere, same status and same body minus `request_id` (SC-002). It said three until analysis pass three counted them against SC-001
 - [ ] T044 [US1] **Verify the oracle can fail here.** Change one of the three refusals to a 403 and confirm the pair test goes red; restore. Chapter 3.12 learned that a route-level 404→403 moves *both* halves of a cross-tenant pair and the oracle cannot see it — inside one tenant only one half moves, and that difference is the reason this test works at all — `services/api/src/isolation/gauntlet.itest.ts`
 - [ ] T045 [US1] Add `POST /v1/channels/:externalId/join` in `services/api/src/channels/channels.controller.ts`, requiring a user credential. FR-CHN-03's word is "join", and joining is the caller acting on their own behalf, not the tenant adding someone
 - [ ] T046 [P] [US1] Test join: 200 for a public channel, 200 again for an already-member, 404 for a private one, 404 for one that does not exist — `services/api/src/channels/channels.itest.ts`
@@ -226,9 +228,10 @@ message they already sent is still there, still attributed to them.
 - [ ] T056 [US2] **Test that an unknown user id answers `not_a_member` and not 404** (FR-007). A 404 for a user that does not exist makes this route a membership oracle for user ids, and the same answer for a real non-member is the property that closes it — `services/api/src/channels/channels.itest.ts`
 - [ ] T057 [P] [US2] Test that a removed member's send is refused (SC-004), which is Phase 3's check reading a row that is now gone — `services/api/src/channels/channels.itest.ts`
 - [ ] T058 [P] [US2] Test that a removed member's reconnection carries no history for the channel — the resume path, through the gateway — `services/gateway/src/isolation.itest.ts`
-- [ ] T059 [P] [US2] Test that the removed member's existing messages are still in history and still attributed to them (SC-005, FR-008) — `services/api/src/channels/channels.itest.ts`
+- [ ] T059 [P] [US2] Test that the removed member's existing messages are still in history and still attributed to them (SC-005, FR-008)
+- [ ] T059a [P] [US2] Test the edge case removal creates: **add the removed member back and their unread count is the channel's whole history**, because removal deleted the read position with the membership. Consistent with T123 — no row means position zero — and the alternative would leave a non-member's row in a per-member table — `services/api/src/channels/channels.itest.ts`
 - [ ] T060 [US2] Test removal from a **public** channel: the removed user can still read and send, because membership was never what permitted that. This is the case that makes FR-004's table load-bearing rather than decorative — `services/api/src/channels/channels.itest.ts`
-- [ ] T061 [US2] Add the route to `services/api/src/isolation/targets.ts`'s classification list on this build (FR-033), and confirm the derived count moved by exactly the routes added
+- [ ] T061 [US2] Add the route to `services/api/src/isolation/targets.ts`'s classification list on this build (FR-033), and confirm the derived count moved by exactly the routes added — **fourteen across the feature** (SC-014). **Write the entries with the router's own parameter names**: `targets.ts` stores literal paths like `"/v1/channels/:channelId/members"` and the contracts write `:externalId`, so an entry copied from a contract matches no derived target
 - [ ] T062 Commit Phase 5
 
 **Checkpoint**: FR-CHN-06's second half is delivered, and removal is idempotent in the shape adding already had.
@@ -315,7 +318,7 @@ fence replaying onto the platform.
 - [ ] T094a **Seven files are fenced whole here and diffed in chapter 3.16** — `repository.ts`, `repository.itest.ts`, `isolation.itest.ts`, `schema.ts`, `0012_member_roles_and_user_deletion.sql`, `codes.ts`, `codes.test.ts` (R18's assignment). And `channels.schema.ts` is already fenced whole in chapter 3.13, so this chapter shows a **diff with 3.13 as predecessor** and eight lines of context — three let chapter 3.12's `repository.ts` pre-image match twice
 - [ ] T095 [P] **One full fence per path.** Replacing every excerpt with its whole file gave 4,995 lines in chapter 3.12, because six paths were fenced twice and each copy restated the file — `relay-tutorial/app/(en)/part-3/chapter-15/<slug>/page.mdx`
 - [ ] T096 [P] Any diff fence needs a predecessor in the chain and enough context to be unique. Three lines let `repository.ts`'s pre-image match twice; eight made each hunk unique
-- [ ] T097 **`sentinel.sql` and `guard.itest.ts` are amended by `fences/post-series.md`**, which the checker applies after every chapter — so a chapter is upstream of its own amendment. Excerpt them here; amend there
+- [ ] T097 **`sentinel.sql` and `guard.itest.ts` belong to chapter 3.16, not here** (R18's table — `read_positions` is 3.16's subject). Confirm this chapter fences neither; the excerpt-and-amend work is T187a. Analysis pass three found this task instructing phase 9 to excerpt files the assignment had already given away
 - [ ] T097a **State both corrections in this chapter's prose** rather than only making them (FR-037, FR-038): the false sentence about read paths, and chapter 3.12's traceability row recording FR-CHN-04 as delivered. Both subjects — membership on read paths, and channel roles — are this chapter's, which is why the statement moved here from chapter 3.16's page during the first analysis pass — `relay-tutorial/app/(en)/part-3/chapter-15/<slug>/page.mdx`
 - [ ] T098 Add the chapter to `relay-tutorial/lib/tutorial.ts`
 - [ ] T099 Count the prose words with the counter the series uses and record it in `specs/034-chapter-3-15/baseline.txt`. Inside 2,000–4,000 or the chapter changes, not the bound (SC-018)
@@ -515,6 +518,7 @@ the fourth**: FR-038a's citation class.
 - [ ] T185 [P] Write its `figures.ts`: the measurement that pointed the wrong way (0.87 ms against 159 ms), the unread subtraction, the keyset cursor, and the deletion states
 - [ ] T186 **The measurement that pointed the wrong way is the chapter's centre, not an aside.** The test lane answered 0.87 ms and would have settled the question in favour of adding no column; the same query at 1,000,000 messages is 159 ms with a sequential scan over every message in the environment on every listing — `relay-tutorial/app/(en)/part-3/chapter-16/<slug>/page.mdx`
 - [ ] T187 [P] Whole files in titled fences, `(excerpt)` where an excerpt is meant, one full fence per path, and eight lines of context on any diff — `relay-tutorial/app/(en)/part-3/chapter-16/<slug>/page.mdx`
+- [ ] T187a **`sentinel.sql` and `guard.itest.ts` are amended by `fences/post-series.md`**, which the checker applies after every chapter — so a chapter is upstream of its own amendment. Excerpt them here; amend there. Moved from phase 9 by analysis pass three, because R18 assigns both to this chapter
 - [ ] T188 [P] State the two approximations this chapter accepts: a tombstone counts as one unread, and a deleted user's row survives — `relay-tutorial/app/(en)/part-3/chapter-16/<slug>/page.mdx`
 - [ ] T189 Add the chapter to `relay-tutorial/lib/tutorial.ts`
 - [ ] T190 Count the prose words and record it in `specs/034-chapter-3-15/baseline.txt` — inside 2,000–4,000 (SC-018)
