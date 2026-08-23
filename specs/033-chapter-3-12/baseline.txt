@@ -257,3 +257,103 @@ same 0.03 drift and not a change.
 Nothing to fix. T004's three runs were green and the one failure it found — the
 compose stack being down, and then Postgres binding 5432 instead of 15432 — is
 environment rather than code, recorded under T004 and not a defect in the tree.
+
+# ── Phase 2: Foundational ────────────────────────────────────────────────────
+
+## T009 — the two-tenant fixture
+
+`services/api/src/isolation/fixtures.ts`. Each tenant gets an environment, an
+`rk_dev_` credential minted the way signup does, and one user, channel, message
+and webhook endpoint — one of every row the 22 routes touch, because the write
+attacks read storage before and after.
+
+Exercised once before committing, since a fixture that has never run is untested
+code:
+
+  attacker  environmentId=4da4edb3  credential=rk_dev_eee  userId=74cfc59a
+            channelId=804bd7ca  messageId=6265c0a6  endpointId=e0c4342e
+  victim    environmentId=8d5f7fad  credential=rk_dev_e95  userId=432c9fe9
+            channelId=79001086  messageId=222db57e  endpointId=2c992d38
+
+  distinct environments: true
+  attacker reading the victim's channel: []
+
+**That `[]` is the oracle for the history route, measured rather than assumed.**
+A foreign channel's history is empty, not forbidden — which is what
+`history.itest.ts` has asserted since chapter 2.4 in a test whose name says so.
+The read shape's twin comparison has to expect an empty result there, not a 404.
+
+Nothing is deleted, by design: feature 030's fault class is a test that performs a
+global operation and asserts a local fact, and a fixture tidying up with a
+`DELETE FROM channels` would be the eleventh instance.
+
+## T010, T010a — the oracle, lifted
+
+`withoutRequestId` moved from `messages/messages.itest.ts` into
+`isolation/compare.ts`, and the original imports it back. The function and its
+comment are unchanged; what changed is that 24 routes can now share the assertion
+one file invented in chapter 2.2 and chapter 3.8 forced into existence.
+
+  compare.test.ts       5 tests, pure, no database
+  api unit lane         22 files / 187 tests  →  23 files / 192 tests
+  messages.itest.ts     4 tests green with the import
+
+## T011, T012 — the target shapes and the classification
+
+`isolation/targets.ts`. Verified by executing the list rather than grepping it,
+after a regex that counted the type definition alongside the entries reported 23:
+
+  shapes   read 2, list 1, write 15, credential 1, exempt 3   total 22
+  accepts  none 3, application 11, user 3, platform 5
+  unique keys 22 of 22        exempt without a reason: 0
+
+**The five shapes sum to 22**, which is the check that caught `POST /v1/webhooks`
+missing from an earlier draft of `data-model.md`'s shape table.
+
+**And `accepts` is a field `data-model.md` §2 does not have.** The internal surface
+is two credential classes — three routes take an end-user token scoped to one
+environment, five take a platform credential carrying none — and a `write` shape
+alone cannot tell them apart. The split measures 3 and 5, exactly as research R5
+found it. Without this field T031 and T031a cannot pick the right attack.
+
+## T013 — the socket fixture
+
+`services/gateway/src/isolation-fixtures.ts`: two environments and a user token
+each, minted through the api child this lane has spawned since chapter 3.2. Tokens
+come from `/auth/dev-token` so the signing secret never leaves the api.
+
+Seeded sequentially rather than concurrently, because chapter 3.8's per-IP
+failed-auth limiter is the one bucket that fails CLOSED, and a suite that learns
+that learns it as an unrelated 429.
+
+It reaches the api through `createRequire` on its build output — the seam chapter
+2.8 opened. Worth noticing while writing it: that is exactly the escape
+`packages/outsider` is forbidden from using, and the reason T098a's rule bans
+`".."` literals rather than trusting an import rule.
+
+## T014 — both lists, checked
+
+  restricted imports (`pg`, `drizzle-orm`) in the new files   none
+  global-admin drain calls                                    none
+  eslint on the three new files                               exit 0
+  `packages/test-harness/src/exempt.ts`                       untouched
+  `eslint.config.mjs` ignores                                 untouched
+
+No entry is needed in either, and both were checked — the lists' own comments say
+they must agree, and chapter 3.11 found `drainQuotaNotifications` on neither.
+
+## Phase 2 gates
+
+  pnpm lint          exit 0
+  pnpm typecheck     exit 0
+  unit               348 → 353   (+5, compare.test.ts)
+  integration        330 → 330   (unchanged; Phase 2 adds no integration test)
+
+`check:fences` stays red, as T003 recorded it would from T006 onward. Two more
+platform files are now ahead of the chain.
+
+**And two cwd mistakes of my own, both the same one.** `pnpm turbo run test` was run
+twice from `specs/033-chapter-3-12` — the directory a previous `cd` had left the shell
+in — and answered `ERR_PNPM_NO_IMPORTER_MANIFEST_FOUND` both times. It reads as a
+silent failure because the count that follows it is empty rather than wrong. Every
+command that matters gets an absolute `cd` from here.
