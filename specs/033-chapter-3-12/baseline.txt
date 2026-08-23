@@ -2356,3 +2356,26 @@ Chapter 3.11 for scale: 3,316 words, 31 fences.
                     pnpm check:docs    exit 0
                     pnpm check:errors  exit 0
                     pnpm check:fences  exit 0
+
+## T125, T126 — the close-out
+
+Held for two invocations while `pnpm check:fences` exited 1, and released when the
+two remaining pages closed it. Every gate at the tag:
+
+    relay-platform  pnpm lint              exit 0
+                    pnpm typecheck         exit 0  (13 packages)
+                    pnpm build             exit 0
+                    pnpm turbo run test    exit 0  379 tests
+                    pnpm test:integration  exit 0  407 tests, 10 tasks, 3m10.752s
+                    pnpm coverage          exit 0  771 tests, every ratchet
+                    check-error-codes      exit 0  13 codes, 13 sections
+                    the battery            20 consecutive green, 193.25 s mean
+
+    relay-tutorial  pnpm lint / tsc / build   exit 0  (85 static pages)
+                    pnpm check:docs           exit 0  (seven documents)
+                    pnpm check:errors         exit 0
+                    pnpm check:fences         exit 0  203 files, 31 chapters,
+                                                      31 translated
+
+Tagged `part3-ch12` in `relay-platform` and `relay-tutorial`, then the parent with
+its submodule pins last so a clone at the tag gets three trees that agree.

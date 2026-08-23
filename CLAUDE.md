@@ -1,8 +1,7 @@
 <!-- SPECKIT START -->
-**CHAPTER 3.12 IS SHIPPED BUT THE FEATURE IS NOT CLOSED.** "Milestone: the
-isolation gauntlet" — 172 of 174 tasks, checklist 16/16, published in both locales,
-committed in all three repositories. **NOT TAGGED AND NOT PUSHED**, and the reason
-is the next paragraph. Its record is
+**CHAPTERS 3.12, 3.13 AND 3.14 ARE CLOSED.** One feature, three published chapters,
+174 of 174 tasks, checklist 16/16, both locales, **`pnpm check:fences` clean — 203
+fenced files across 31 chapters, all 31 translated.** Its record is
 `specs/033-chapter-3-12/` — read `chapter-notes.md` first (what the plan said
 against what shipped), then `gaps.md` (six documentation gaps and the Phase 2
 verdict), `traceability.md` (48 requirements mapped both directions) and
@@ -24,34 +23,38 @@ The partition is in `baseline.txt`, verified by set arithmetic — 21 + 18 + 22 
 nothing unassigned, nothing in two chapters. Assigning by path guessed wrong five
 times: `turbo.json`, `package.json` and three gateway suites belong to 3.14, because
 their only change is `notFoundDocsUrl` or the outsider's lane split.
-- **3.13 IS WRITTEN BUT NOT PUBLISHED**: the endpoints and the instruments. All the
-  code is in `relay-platform` and green; the page does not exist. **18 files** —
+- **3.13 published**: the endpoints and the instruments. 2,452 prose words, 11 chain
+  fences, 4 figures. **18 files** —
   `channels/*`, `repository.ts`, `app.module.ts`, `eslint.config.mjs`,
   `vitest.coverage.config.mts`, `test-harness/*`, `public-surface.itest.ts`,
   `e2e/src/harness.ts`, and the two suites whose ports changed.
-- **3.14 IS WRITTEN BUT NOT PUBLISHED**: errors that resolve, and an outsider. Same
-  state. **22 files** — `codes.ts`, `protocol-error.*`, `zod-validation.pipe.ts`,
+- **3.14 published**: errors that resolve, and an outsider. 2,228 prose words, 17
+  chain fences, 4 figures. **22 files** — `codes.ts`, `protocol-error.*`, `zod-validation.pipe.ts`,
   `service-kit/src/index.ts`, `packages/outsider/*`, `scripts/seed-demo-tenant.mjs`,
   `README.md`. **The milestone name lives here**, because this is where the Phase 2
   exit criterion gets its verdict.
 - **3.15 is the deferred surface** — the rest of FR-CHN and all of FR-USR, promised
   a number as 3.13 until the split took it.
 
-**`pnpm check:fences` EXITS 1 — 20 HEAD problems, and they are exactly 3.13's and
-3.14's files** (6 and 14; the other 22 files those chapters change are not in the
-chain at all). Every other gate is green: 20 consecutive lane runs at 407 tests,
-`pnpm coverage` passing every ratchet, lint, typecheck, build, `check:docs`,
-`check:errors`.
+**THE FENCE CHAIN TAUGHT FIVE THINGS, and four of them cost a wrong first attempt.**
 
-**So `part3-ch12` is deliberately NOT tagged and nothing is pushed.** A tag here
-would mark a state where the CI job that keeps the series honest is red, for a
-reason this chapter created. The two remaining tasks — T125's tag and T126's push —
-wait on those two pages. Writing them is the whole of the outstanding work.
+1. A titled fence states the **whole file**, not an excerpt — 26 excerpts produced 43
+   problems. `(excerpt)` in a title is the documented escape: the checker's
+   `NOT_A_FILE` treats it as a prose illustration and leaves the path out of the chain.
+2. **One full fence per path.** Replacing every excerpt with its file gave 4,995 lines,
+   because six paths were fenced twice and each copy restated the file.
+3. **A diff needs a predecessor in the chain**, and enough context to be a proof.
+   Three lines let `repository.ts`'s pre-image match twice; eight made each hunk unique.
+4. **A chapter cannot amend a state `post-series.md` builds.** Four files —
+   `eslint.config.mjs`, `resume.itest.ts`, `turbo.json`, `package.json` — have entries
+   there, which the checker applies AFTER every chapter, so a chapter is upstream of
+   its own amendment. Excerpt in the chapter, amendment in post-series.
+5. **A reverted reintroduction must never carry a title**, or the chain replays it into
+   the canonical tree and FR-015 is violated by the checker itself.
 
-One correction worth carrying forward: "0 problems naming chapter-12's page" is NOT
-the same question as "0 problems on files 3.12 owns", and the two answers differed
-by one — `messages.itest.ts`, which 3.12 changed and had not fenced. Check the
-second question.
+And one question to ask the right way round: **"0 problems naming this chapter's page"
+is not "0 problems on files this chapter owns."** The answers differed by one —
+`messages.itest.ts` — and I reported the chain clean twice before checking the second.
 
 **THE PHASE 2 EXIT CRITERION IS MET IN PART**, and the missing part is not
 documentation. `packages/outsider` completes a full integration against a stack it
