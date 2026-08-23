@@ -191,14 +191,14 @@ the gates, the battery, the counts, the three reintroductions, the two scratch p
 
 **Goal**: a credential for one environment hears, sends and resumes nothing belonging to another.
 
-- [ ] T044 [US1] Write `services/gateway/src/isolation.itest.ts` with the gateway in process and the api as a child, the arrangement chapter 3.2 established and 3.11 chose for the same reason (FR-007, R6)
-- [ ] T045 [P] [US1] Attack the session: a token minted for environment A connects, and `channel_ids` contains nothing belonging to B (FR-007)
-- [ ] T046 [P] [US1] Attack the send: a frame into a channel belonging to B is refused, and B's channel gains no message — read directly, not inferred from the refusal (FR-007)
-- [ ] T047 [P] [US1] Attack the resume: a cursor naming B's channel backfills nothing (FR-007)
-- [ ] T048 [P] [US1] Attack the subscribe: nothing from B's channel is delivered on A's socket (FR-007)
-- [ ] T049 [US1] Classify all ten members of `@relay/protocol`'s `frameSchema` as `inbound` or `outbound`, each with a reason, in `services/gateway/src/isolation.itest.ts`. **This is a classification and not a derivation**: the union carries no direction metadata — no inbound/outbound split, no client/server types — so "derive the inbound ones" is not implementable, which an earlier draft of this task and of `contracts/gauntlet.md` §4 both claimed (FR-007, R6)
-- [ ] T050 [P] [US1] Run the totality check in both directions: every union member is classified exactly once, and every entry names a real member. A new frame then fails the suite until somebody classifies it — the property the derivation was supposed to give, obtained the way T017 and T018 obtain it for routes
-- [ ] T051 [US1] Record the socket attack count in `baseline.txt`
+- [X] T044 [US1] Write `services/gateway/src/isolation.itest.ts` with the gateway in process and the api as a child, the arrangement chapter 3.2 established and 3.11 chose for the same reason (FR-007, R6)
+- [X] T045 [P] [US1] Attack the session: a token minted for environment A connects, and the `channel_ids` the gateway is given contains nothing belonging to B. **`channel_ids` is the api's `/internal/session` response** (`session.controller.ts:103`, read by `auth.ts:81`), not a field of `connection.ack` — the ack carries `user`, `cursor`, `resume_ok` and `truncated` and nothing else, so assert against the session the gateway fetches from its api child (FR-007)
+- [X] T046 [P] [US1] Attack the send: a frame into a channel belonging to B is refused, and B's channel gains no message — read directly, not inferred from the refusal (FR-007)
+- [X] T047 [P] [US1] Attack the resume: a cursor naming B's channel backfills nothing (FR-007)
+- [X] T048 [P] [US1] Attack the subscribe: nothing from B's channel is delivered on A's socket (FR-007)
+- [X] T049 [US1] Classify all ten members of `@relay/protocol`'s `frameSchema` as `inbound` or `outbound`, each with a reason, in `services/gateway/src/isolation.itest.ts`. **This is a classification and not a derivation**: the union carries no direction metadata — no inbound/outbound split, no client/server types — so "derive the inbound ones" is not implementable, which an earlier draft of this task and of `contracts/gauntlet.md` §4 both claimed (FR-007, R6)
+- [X] T050 [P] [US1] Run the totality check in both directions: every union member is classified exactly once, and every entry names a real member. A new frame then fails the suite until somebody classifies it — the property the derivation was supposed to give, obtained the way T017 and T018 obtain it for routes
+- [X] T051 [US1] Record the socket attack count in `baseline.txt`
 
 **Checkpoint**: the socket surface is attacked from a list the protocol package supplies, and a new frame type joins it without an edit.
 

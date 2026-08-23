@@ -767,3 +767,60 @@ the evidence the scratch table is gone — the count returns to 22.
     dispatcher     16      e2e            10              TOTAL 367
 
 +5 on Phase 3's 362, all five `tenant-scope.itest.ts`.
+
+## T044-T051 — the socket surface, 19 attacks and one lost handshake
+
+`services/gateway/src/isolation.itest.ts` — gateway in process, api as a child,
+the arrangement chapter 3.2 established. **19 tests**:
+
+  control                       2     the four verbs (T045-T048)      4
+  the union, classified         4     a client uttering each of the
+                                      nine outbound frames            9
+
+**T045 named a field that does not exist**, and the code said so before the test
+did. The task said "`channel_ids` contains nothing belonging to B" of the
+`connection.ack`; the ack carries `user`, `cursor`, `resume_ok` and `truncated`
+and nothing else. `channel_ids` is the api's `/internal/session` response
+(`session.controller.ts:103`), which the gateway reads at connect
+(`auth.ts:81`) and turns into the subscription set — so that IS where a leak
+would start, and the assertion moved there. Task corrected.
+
+**The direction of a frame cannot be derived, but the member list can**, and the
+split matters. `frameSchema.options` yields all ten discriminator values at
+runtime, so a frame added to the union shows up here with no edit and fails
+totality until somebody classifies it — the property `targets.itest.ts` gives the
+route list. The DIRECTION has no metadata anywhere in the union: no inbound/
+outbound split, no client/server marker. An earlier draft of T049 and of
+`contracts/gauntlet.md` §4 both said "derive the inbound ones", which is not
+implementable.
+
+The classification is **1 inbound, 9 outbound**, and `session.ts:552` is the
+authority rather than taste — it compares against the single literal
+`message.send` and answers everything else with `unknown_frame_type` and close
+4002. The suite checks the classification against that behaviour frame by frame,
+so a second inbound entry would fail rather than sit in a list being wrong.
+
+**The lost handshake, which cost twelve failing tests.** Await `open`, then attach
+a `message` listener, then read: `connection.ack` is sent the instant the upgrade
+completes, awaiting `open` yields to the event loop first, and the frame arrives
+with no listener attached and is gone. Every test that waited for a SECOND frame
+timed out at exactly 5000ms — twelve of nineteen, all with the same symptom and
+none of it about tenancy. The fix is to collect from the moment the socket exists
+and let `waitFor` read the buffer before it waits, which is also what made the
+timeout message useful: it now names the frames that did arrive.
+
+One preventive edit, from the fixed-port lesson this lane already learned twice:
+the file starts TWO api children, and two draws from one 200-port range collide
+about once in two hundred runs. The second child takes the neighbouring port
+rather than another draw.
+
+## Phase 5 gates
+
+  pnpm typecheck     clean
+  pnpm lint          exit 0   (1 pre-existing warning)
+  pnpm test:integration  exit 0, 10 of 10, 3m11.848s
+
+    test-harness    8      api           305      gateway        47
+    dispatcher     16      e2e            10              TOTAL 386
+
+Gateway 28 → 47, the socket gauntlet's nineteen. Nothing else moved.
