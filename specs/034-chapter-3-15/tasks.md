@@ -83,9 +83,9 @@ to a list instead of regenerating it; chapter 3.12's was wrong on its first draf
 | T014–T018 | `services/api/src/db/schema.ts` | the TS twin (ADR-16); `read_positions`, `channels.last_activity_at`, `members.role`, `users.deleted_at` |
 | T021–T023 | `packages/test-harness/src/sentinel.sql`, `guard.itest.ts` | feature 030's surface — **post-series fences**, so a chapter excerpts and `fences/post-series.md` amends |
 | T024–T026 | `packages/protocol/src/codes.ts`, `codes.test.ts`, `docs/08-error-reference.md` | three codes, registered and documented, checked both directions |
-| T031a, T031b, T032a | `services/api/src/messages/` | the public send made to say who is acting — without it the check below never fires on the route a customer's client calls |
+| T031a, T031b, T032a, T041a, T041b | `services/api/src/messages/` | **both** routes made to say who is acting. The controller has two and dropped the caller on each; pass seven fixed send, pass eight found history |
 | T031–T038, T072a, T129a, T149 | `services/api/src/db/repository.ts` | the membership check in the layer constitution I assigns it to, and the three writers pass four's route table found missing — archive, profile, ban |
-| T032–T034, T041 | `services/api/src/db/repository.itest.ts` | the check driven directly, so a controller cannot mask it |
+| T032–T034, T041 | `services/api/src/db/repository.itest.ts` | the check driven directly — which proves it **exists**. Only T032a and T041b, on the routes, prove it **fires**: the send path passed a repository test for six analysis passes while its controller supplied no caller |
 | T040–T052 | `services/api/src/channels/` | the private type, join, and the enum that widens last |
 | T053–T062 | `services/api/src/channels/` + `channels.itest.ts` | removal beside chapter 3.13's add, reusing its result shape |
 | T063–T070 | `services/api/src/channels/`, `schema.ts` | `members.role`, its CHECK, and the stated answer to who reads it |
@@ -146,6 +146,31 @@ fifteen tests red.
 `rate-limit.middleware.ts` keys off `PUBLIC_PREFIX = "/v1/"` — no limiter change, nothing
 to add. Worth knowing that the request budget FR-RTL-01 sized against three public routes
 now covers seventeen.
+
+## Which routes depend on who is calling
+
+Five routes behave differently according to the caller. Each needs the principal resolved
+at the handler, threaded through the service, and accepted by the repository function —
+**three places, and a gap in any one makes the check unreachable.** Two of the five had a
+gap: pass seven found `send`, pass eight found `history`, both on the same controller,
+both dropping the caller between the guard and the query.
+
+| Route | Handler resolves | Service threads | Repository accepts |
+|---|---|---|---|
+| `POST /v1/channels/:channelId/messages` | **T031a** | **T031b** | `sendMessage(…, userId?)` — exists |
+| `GET /v1/channels/:channelId/messages` | **T041a** | **T041a** | `listMessages` — **gains `userId?` at T041** |
+| `GET /v1/channels/:channelId` | T039a | T039a | new service method, T039a |
+| `POST /v1/channels/:channelId/join` | T045 — the principal *is* the joiner | T045 | `addMember` — chapter 3.13 |
+| `PUT /v1/users/:externalId/channels/:channelId/read` | T120 | T120 | `setReadPosition` T119 |
+
+**The socket's two paths are already scoped and this feature confirms rather than builds
+them**: `repository.backfill` joins `members`, and `session.controller` derives its list
+from `channelsForUser`. T042 and T087 demonstrate them as absences — a private channel a
+non-member cannot see does not appear in a resume and is not subscribed.
+
+**A repository test proves the check exists; only a route test proves it fires.** T032 and
+T041 are the first kind, T032a and T041b the second. The send path had the first and not the
+second, and passed for six analysis passes.
 
 ## Which column, and what each one needs
 
@@ -273,12 +298,14 @@ channel that does not exist — and only then does the enum widen.
 private channel and for an id that exists nowhere, and confirm the pairs are identical
 but for `request_id`.
 
-- [ ] T039a [US1] **Add `GET /v1/channels/:channelId`** in `services/api/src/channels/channels.controller.ts` with a method-level `@Accepts("application", "user")` — a user reads their own membership, the tenant reads any channel — and its service method: FR-CHN-01's four elements plus `archived_at` and the caller's membership (FR-003a). **This route does not exist.** The controller carries `POST /v1/channels` and `POST :channelId/members` and no read, so a customer can create a channel and never read it back. SC-001 named "read by id" as one of four verbs, FR-003 said "every read", and `contracts/membership.md` had a row for it — three artifacts resting on a handler nobody wrote, found by analysis pass three asking whether each verb has one
+- [ ] T039a [US1] **Add `GET /v1/channels/:channelId`** in `services/api/src/channels/channels.controller.ts` with a method-level `@Accepts("application", "user")`, **resolving `principalUser(req)` and passing the user id into the service** — the route reports the caller's membership and hides a private channel from a non-member, and both need to know who is calling — a user reads their own membership, the tenant reads any channel — and its service method: FR-CHN-01's four elements plus `archived_at` and the caller's membership (FR-003a). **This route does not exist.** The controller carries `POST /v1/channels` and `POST :channelId/members` and no read, so a customer can create a channel and never read it back. SC-001 named "read by id" as one of four verbs, FR-003 said "every read", and `contracts/membership.md` had a row for it — three artifacts resting on a handler nobody wrote, found by analysis pass three asking whether each verb has one
 - [ ] T039b [P] [US1] Test the route in `services/api/src/channels/channels.itest.ts`: 200 for a member, 200 for a non-member of a `public` channel, and the four fields readable back after a create
 - [ ] T040 [US1] Add the membership check to the by-id read path in `services/api/src/channels/channels.service.ts`, answering the not-found envelope for a private channel the caller is not a member of (FR-003)
-- [ ] T041 [US1] Add the same to the history path in `repository.ts`, and confirm `repository.backfill`'s existing membership join already covers resume (FR-002). The spec's own assumption is that reading is already scoped and sending was not; this is where that is confirmed rather than asserted
+- [ ] T041 [US1] Add `userId?: string` to `listMessages` in `services/api/src/db/repository.ts` and the same membership check under it. **The parameter does not exist**: `listMessages(channelId, {beforeSeq, afterSeq, limit})` has no caller in its signature, so before pass eight this task asked for a check with nothing to check against. Then confirm `repository.backfill`'s existing membership join already covers resume (FR-002).
+- [ ] T041a [US1] **Resolve the principal on the history route and thread it** — `services/api/src/messages/messages.controller.ts`'s `@Get()` handler and `messages.service.ts`'s `history`. The same edit T031a makes for send, on the other route of the same controller: both dropped the caller, and pass seven fixed one of them
+- [ ] T041b [US1] **Test the history route with a user token**, not the repository — `GET /v1/channels/:channelId/messages` against a private channel the user is not a member of, answering as a channel that does not exist, in `services/api/src/messages/messages.itest.ts`. A repository test proves the check exists; only a route test proves it fires, which is the distinction the send path's six-pass survival taught The spec's own assumption is that reading is already scoped and sending was not; this is where that is confirmed rather than asserted
 - [ ] T042 [P] [US1] Test that a non-member's session does not carry a private channel — `session.controller`'s `channelsForUser` derives the list, so this is a confirmation and the test says so — `services/api/src/internal/internal.itest.ts`
-- [ ] T043 [US1] Use `services/api/src/isolation/compare.ts` to assert indistinguishability for **all four verbs SC-001 names — send, resume, subscribe, read by id**: private-and-invisible against exists-nowhere, same status and same body minus `request_id` (SC-002). It said three until analysis pass three counted them against SC-001
+- [ ] T043 [US1] Use `services/api/src/isolation/compare.ts` to assert indistinguishability for **the five verbs SC-001 says answer — read by id, read history, send, join, set a read position** — private-and-invisible against exists-nowhere, same status and same body minus `request_id` (SC-002). Resume and subscribe are demonstrated as absences instead, at T042 and T087. The count was three, then four, then five: pass three compared T043 against SC-001 and pass eight compared SC-001 against `contracts/membership.md`'s table
 - [ ] T044 [US1] **Verify the oracle can fail here.** Change one of the three refusals to a 403 and confirm the pair test goes red; restore. Chapter 3.12 learned that a route-level 404→403 moves *both* halves of a cross-tenant pair and the oracle cannot see it — inside one tenant only one half moves, and that difference is the reason this test works at all — `services/api/src/isolation/gauntlet.itest.ts`
 - [ ] T045 [US1] Add `POST /v1/channels/:channelId/join` in `services/api/src/channels/channels.controller.ts` with a **method-level `@Accepts("user")`**, overriding the class's `"application"` — `credential.guard.ts:87` resolves `getAllAndOverride([handler, class])` and `dev-token.controller.ts:51` shows the pattern. Without it every user's join is a 403, which is chapter 3.12's FR-044 hole: a credential mismatch that passed for a whole chapter and then turned nine of fifteen tests red. FR-CHN-03's word is "join", and joining is the caller acting on their own behalf, not the tenant adding someone
 - [ ] T046 [P] [US1] Test join: 200 for a public channel, 200 again for an already-member, 404 for a private one, 404 for one that does not exist — `services/api/src/channels/channels.itest.ts`

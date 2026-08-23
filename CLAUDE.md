@@ -42,7 +42,7 @@ Its record is `specs/034-chapter-3-15/`: read **`plan.md`** for the seventeen ph
 and the constitution gate, `research.md` for R1 to R18 (twelve measured against a
 running database), then `data-model.md`, `contracts/membership.md`,
 `contracts/listing.md` and `quickstart.md` (18 checks, three of them negative).
-46 requirements, 21 success criteria, 236 tasks in 21 phases, checklist 16/16.
+46 requirements, 21 success criteria, 238 tasks in 21 phases, checklist 16/16.
 
 **Twelve SRS clauses, five dead columns, and four corrections.** The clauses are
 FR-CHN-03/04/05/06/08/09/10 and FR-USR-02/03/04/05/06. The columns exist and nothing
@@ -119,6 +119,23 @@ maintains `last_sequence` (chapter 2.2 made it the sequencing authority).
 4. **The gauntlet has no same-tenant fixture.** All four attack shapes take another
    tenant's identifiers, so "a user of your own tenant who is not a member" is new
    work rather than a reuse (R10, FR-034).
+
+**AND PASS EIGHT FOUND THE SAME HOLE ON THE OTHER ROUTE OF THE SAME CONTROLLER.**
+`messages.controller.ts` has exactly two routes — send and history — and both called a
+service that dropped the caller into a repository function with no user parameter.
+`listMessages(channelId, {beforeSeq, afterSeq, limit})` had nowhere to put a `userId`, so
+T041's "add the same check to the history path" was asking for a check with nothing to check
+against. **Pass seven fixed send and did not ask whether the read path had the same shape.**
+
+**THREE PLACES, AND A GAP IN ANY ONE MAKES A CHECK UNREACHABLE**: the handler resolves the
+principal, the service threads it, the repository function accepts it. `tasks.md` now carries
+a five-row table for the routes whose behaviour depends on the caller, with those three as
+columns. Two of the five had a gap.
+
+**A REPOSITORY TEST PROVES A CHECK EXISTS; ONLY A ROUTE TEST PROVES IT FIRES.** The send
+path had a passing repository test for six analysis passes while its controller supplied no
+caller — and the tasks file said the repository test existed "so a controller cannot mask
+it", which is the opposite of what happened.
 
 **PASS SEVEN FOUND THE CENTRAL REQUIREMENT UNENFORCED ON THE ONLY ROUTE A CUSTOMER
 CALLS.** The membership check is gated on `userId` being present. `MessagesController`

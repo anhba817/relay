@@ -106,9 +106,10 @@ afterwards (FR-001, SC-003). A refusal that still writes a row is not a refusal,
 refusal that names what it is refusing is not indistinguishable: SC-002 covers send along
 with the three reads, so this answer has to match a channel that does not exist.
 
-**And the same refusal on the public route with a user token** —
-`POST /v1/channels/:channelId/messages` is the only one of the three send paths a
-customer's client calls, and until analysis pass seven it was the one no check reached:
+**And the same refusal on both public routes with a user token** —
+`POST /v1/channels/:channelId/messages` and `GET /v1/channels/:channelId/messages`. These are
+the routes a customer's client actually calls, and until passes seven and eight neither had
+a check that could reach them:
 `MessagesController` declares no `@Accepts`, so a user token is accepted, and the
 controller passed no user, so the `userId`-gated check never fired.
 
@@ -132,15 +133,22 @@ rather than handlers.
 pnpm vitest run services/api/src/isolation --config services/api/vitest.integration.config.mts
 ```
 
-**Expect** for each of **SC-001's four verbs — send, resume, subscribe and read by id**:
-the private channel the caller cannot see and a channel that exists nowhere give the same
-status and the same body, `request_id` excepted (SC-002). Chapter 3.12 built the oracle;
+**Expect** for each of **SC-001's five answering verbs — read by id, read history, send,
+join and set a read position**: the private channel the caller cannot see and a channel that
+exists nowhere give the same status and the same body, `request_id` excepted (SC-002).
+Resume and subscribe are absences and are checked as such. Chapter 3.12 built the oracle;
 this is the first use of it inside a single tenant.
 
 **Read by id is a route this feature adds** (FR-003a). It did not exist —
 `channels.controller.ts` had a create and a member-add and no read — while this check,
 SC-001 and the authorization table all assumed it. Analysis pass three found it by asking
 whether each verb had a handler.
+
+**And two verbs run through routes that dropped the caller.** `messages.controller.ts` has
+send and history, both calling a service that passed no principal to a repository function
+with no user parameter — so a check gated on the caller could not fire on either. Pass seven
+found send, pass eight found history. Run this check against the **routes**, with a user
+token: a repository test proves the check exists and only a route test proves it fires.
 
 ## V6 — the same-tenant attack exists and is new
 

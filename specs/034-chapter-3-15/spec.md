@@ -591,8 +591,13 @@ their sends are refused, confirm their history is intact, unban, confirm they wo
 ### Measurable Outcomes
 
 - **SC-001**: A user of the same tenant who is not a member of a private channel cannot
-  reach it by any verb, demonstrated by one test per verb — send, resume, subscribe,
-  read by id.
+  reach it by any verb, demonstrated by one test per verb. **Five verbs answer** and must
+  answer as a channel that does not exist: read by id, read history, send, join, set a read
+  position. **Two are absences rather than answers** and are demonstrated as such: the
+  channel does not appear in a resume, and the socket does not subscribe to it. The list
+  said "send, resume, subscribe, read by id" until analysis pass eight compared it against
+  `contracts/membership.md`'s table and found history, join and set-a-read-position
+  missing.
 - **SC-002**: For each of those verbs, the answer for a private channel the caller
   cannot see is byte-identical to the answer for a channel that does not exist, but for
   `request_id`.
