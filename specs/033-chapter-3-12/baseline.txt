@@ -1891,3 +1891,75 @@ so the streak restarts at run 12, and this battery cannot supply twenty on its o
 machine during a battery. Chapter 3.11 recorded a 3-second spread across twenty
 runs and called the spread the signal; a run 57 seconds short of the mean is a
 signal too, and the first thing to check is what else was running.
+
+## T117 — nothing to confirm, for the same reason T075 had nothing to register
+
+T117 asks that `post-series.md` carry the `sentinel.sql`, `exempt.ts` and
+`limits.itest.ts` changes. **None of the three is fenced in `post-series.md`, or
+anywhere:**
+
+    packages/test-harness/src/sentinel.sql      in post-series: no
+    packages/test-harness/src/exempt.ts         in post-series: no
+    services/gateway/src/limits.itest.ts        in post-series: no
+
+`post-series.md` fences 17 paths and **8 of them this chapter changed** — and every
+one belongs to chapter 3.13's or 3.14's half:
+
+    eslint.config.mjs                 turbo.json
+    package.json                      vitest.coverage.config.mts
+    packages/e2e/src/harness.ts       services/dispatcher/src/dispatcher.itest.ts
+    services/api/src/db/repository.ts services/gateway/src/resume.itest.ts
+
+Those eight are the reason the chain still reports 21 HEAD problems, and they are
+3.13's and 3.14's fence work rather than amendments to `post-series.md`: a chapter
+that TEACHES a change fences it, and both chapters teach theirs. `package.json`'s
+lane split belongs to 3.14 with the outsider.
+
+## T117a, T117b — two claims that had stopped being true
+
+Sixteen occurrences of `relay.example/docs/errors` across seven English pages.
+**Twelve are inside titled fences** — earlier states of the chain, which must not be
+touched — and **four are prose**, which no checker sees and which rot silently.
+
+Three were straightforward corrections to `https://relay.dev/docs/error-reference#{code}`:
+two in `keys-and-tokens`, one in `limits-you-can-see-coming`.
+
+**The fourth could not be corrected and needed a note instead**, which is the more
+interesting case. Chapter 3.8 has a section headed *"`docs_url` is still a
+placeholder, and that now costs something"* — the paragraph's subject IS the
+placeholder. Swapping the URL there would have made the section incoherent, so it
+carries a `REVISED by chapter 3.14` note saying the debt is paid and that the
+paragraph is why it eventually got paid rather than a description of the present.
+
+Chapter 1.4 gets the same treatment for the same reason: its prose says the host
+"is a placeholder until a docs site exists to make constitution V's reachable-page
+promise true", which the chain replays as the state at that tag.
+
+The fence chain's problem count did not move — 21 before and after — which is the
+check that the prose edits touched no fence.
+
+## T119, T119a — one entry updated, three added
+
+`lib/tutorial.ts` already held `id: "3.12"` as `forthcoming`, with the right path
+and title and a `readerProduces` written before the chapter acquired two endpoints,
+thirteen codes and a sealed integration. Updated rather than added:
+
+    status              forthcoming → published
+    readerProduces      rewritten for what 3.12 actually carries
+    readerProducesVi    ADDED — 3.11 has one and 3.12 did not, so the Vietnamese
+                        page would have rendered an English summary
+    sourceDoc           docs/04-srs.md → docs/04-srs.md, docs/05-sad.md
+    readerMinutes       100 → 80
+
+**80 rather than 100, and measured rather than inherited.** The 100 was set when
+this chapter was planned to carry the endpoints, the error vocabulary and the
+outsider as well. Against chapter 3.11's 100 for 3,316 prose words and 21 fenced
+files, 3,381 words and 19 files is 80.
+
+Three new entries, all `forthcoming`: **3.13** the endpoints and the instruments,
+**3.14** the milestone with the errors and the outsider, **3.15** the surface a
+customer drives — the deferred FR-CHN and FR-USR work that was going to be 3.13.
+T119a's `docs/08-error-reference.md` goes on **3.14's** entry, because 3.14 builds
+the reference.
+
+All four render on the series index; the reference page resolves and links back.
