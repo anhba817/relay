@@ -2012,3 +2012,90 @@ told the reader which command fixes it. That is the whole argument for having it
            — run pnpm sync:docs
 
 Seven documents mirror now, where the glob published six.
+
+## The three-way fence partition, settled per file by what changed in it
+
+Assigning a file to a chapter by its path guessed wrong five times. Settled by
+reading each ambiguous file's diff:
+
+**Chapter 3.12 — the gauntlet (20 files, ALL FENCED, chain clean):**
+
+    services/api/src/isolation/{compare,targets,attack,fixtures}.ts
+    services/api/src/isolation/{compare,targets,attack}.test.ts
+    services/api/src/isolation/{gauntlet,targets,tenant-scope}.itest.ts
+    services/api/src/db/{catalogue.ts,catalogue.test.ts,repository.itest.ts}
+    services/api/src/auth/{credential.guard,authenticate.middleware}.ts
+    services/api/src/internal/{dispatch.controller.ts,usage.controller.ts}
+    services/api/src/internal/usage.itest.ts        (excerpt — never in the chain)
+    services/gateway/src/{isolation-fixtures.ts,isolation.itest.ts}
+
+**Chapter 3.13 — the endpoints and the instruments (16 files):**
+
+    services/api/src/channels/{schema,service,controller,module}.ts
+    services/api/src/channels/channels.itest.ts
+    services/api/src/db/repository.ts               idempotency, outcomes, counts
+    services/api/src/app.module.ts                  registers ChannelsModule
+    services/gateway/src/public-surface.itest.ts    a member added over the API
+    packages/e2e/src/harness.ts                     the 2.8 seam, shorter by three
+    packages/test-harness/src/{sentinel.sql,sentinel.ts,exempt.ts}
+    packages/test-harness/src/{guard.itest.ts,lists-agree.test.ts}
+    eslint.config.mjs                               the lint ban, three blocks
+    vitest.coverage.config.mts                      the ratchets
+
+**Chapter 3.14 — errors and the outsider (17 files):**
+
+    packages/protocol/src/{codes.ts,codes.test.ts}
+    services/api/src/{protocol-error.ts,protocol-error.filter.ts}
+    services/api/src/messages/zod-validation.pipe.ts
+    services/api/src/messages/messages.service.ts
+    services/api/src/internal/session.controller.ts
+    services/api/src/limits/rate-limit.middleware.ts
+    packages/service-kit/src/index.ts               notFoundDocsUrl, required
+    services/gateway/src/{main.ts,session.ts}
+    services/gateway/src/{session.itest,session.test,resume.itest}.ts
+                                                    — ONLY notFoundDocsUrl, so
+                                                    they follow service-kit
+    packages/outsider/{package.json,tsconfig.json,vitest.integration.config.mts}
+    packages/outsider/src/integrate.itest.ts
+    scripts/seed-demo-tenant.mjs
+    README.md
+    turbo.json      all four new variables are the docs URL and the outsider's
+    package.json    the `test:outsider` lane split
+
+**Five files a path-based guess put in the wrong chapter**, each corrected by
+reading the diff:
+
+  `turbo.json`                 looked like instruments; every added variable is
+                               `RELAY_DOCS_BASE_URL` or the outsider's three
+  `package.json`               the lane split is the outsider's
+  `resume.itest.ts`            one line: `notFoundDocsUrl`
+  `session.test.ts`            the same
+  `session.itest.ts`           the same
+  `messages.itest.ts`          moves a comment about `request_id` and the oracle
+                               into `isolation/compare.ts` — 3.12's, and its diff
+                               is a DELETION whose counterpart is already fenced
+
+`services/dispatcher/src/dispatcher.itest.ts` and
+`services/gateway/src/limits.itest.ts` carry only the random-port change and go
+with 3.13's instruments. Both are already fenced in `post-series.md`, so their
+amendments are diff fences in 3.13 rather than new chains.
+
+**The counts, verified by set arithmetic rather than by adding up the headings
+above** — which is how the first version of this paragraph came to be wrong. It
+said "16 + 17 + 20 = 53, plus one = 54", hand-waved the remaining seven, and was
+wrong about all three numbers because the headings were written before
+`dispatcher.itest.ts`, `limits.itest.ts`, `messages.itest.ts` and the four
+outsider files were placed.
+
+    3.12   21 files
+    3.13   18 files
+    3.14   22 files
+           -- 
+           61 assigned
+
+    unassigned:                none
+    in more than one chapter:  none
+    assigned but not changed:  none
+
+Against 61 changed files. A partition claim is three set operations and there is no
+reason to assert it from a list of headings.
