@@ -2137,3 +2137,39 @@ touching, and a sweep across them is a translation-consistency pass with its own
 mirror check to re-run. Recorded with the inventory so it can be done deliberately
 rather than discovered a seventh time. No fence moved — the chain's problem count
 is 21 before and after.
+
+## Eight published boxes render "Forward reference — undefined"
+
+`ForwardRef` types `part` as required — `BoxProps & { part: string }` — and builds
+its label as:
+
+    label={`${t(locale).boxes.forwardRef} — ${part}`}
+
+MDX does not typecheck component props, so an omitted `part` compiles, ships, and
+renders the literal string:
+
+    Forward reference — undefined
+
+Eight uses across seven published English pages omit it:
+
+    part-3/chapter-02/keys-and-tokens                     1
+    part-3/chapter-03/the-outbox                          1
+    part-3/chapter-04/jetstream-and-the-first-consumer    2
+    part-3/chapter-06/when-to-stop-trying                 1
+    part-3/chapter-08/limits-you-can-see-coming           1
+    part-3/chapter-10/quotas-and-what-they-cost           1
+    part-3/chapter-11/counting-a-connection               1
+
+Found because chapter 3.12's own page did it too — the render check caught the
+label reading `undefined`, the prop went in, and the same check across the series
+found seven more.
+
+**Not fixed here.** Seven published pages in both locales is a sweep of its own, it
+touches no fence and no test, and nothing in this chapter's scope reaches it. What
+this chapter owes is its own page being right, which it is.
+
+The class of defect is worth naming, because it is the third instance in this
+chapter's own findings: **a contract the type system states and the build does not
+enforce.** `field` was declared in EIR-API-04 and never set. `PlatformService` was
+"for logs" and enforced nothing. `part` is `string` in a signature no checker reads.
+Each was found by looking at output rather than at types.
