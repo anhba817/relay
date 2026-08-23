@@ -42,7 +42,7 @@ Its record is `specs/034-chapter-3-15/`: read **`plan.md`** for the seventeen ph
 and the constitution gate, `research.md` for R1 to R18 (twelve measured against a
 running database), then `data-model.md`, `contracts/membership.md`,
 `contracts/listing.md` and `quickstart.md` (18 checks, three of them negative).
-46 requirements, 22 success criteria, 240 tasks in 21 phases, checklist 16/16.
+46 requirements, 22 success criteria, 241 tasks in 21 phases, checklist 16/16.
 
 **Twelve SRS clauses, five dead columns, and four corrections.** The clauses are
 FR-CHN-03/04/05/06/08/09/10 and FR-USR-02/03/04/05/06. The columns exist and nothing
@@ -119,6 +119,28 @@ maintains `last_sequence` (chapter 2.2 made it the sequencing authority).
 4. **The gauntlet has no same-tenant fixture.** All four attack shapes take another
    tenant's identifiers, so "a user of your own tenant who is not a member" is new
    work rather than a reuse (R10, FR-034).
+
+**PASS TEN FOUND A REQUIREMENT WITH ZERO COVERAGE THAT TEN PASSES HAD READ AS COVERED.**
+FR-006 says removal takes "up to 100 in one request" and FR-007 says it reports per user —
+chapter 3.13's member-add shape in both halves. The contract specified a single-user
+`DELETE …/members/:userExternalId`, having read "the shape chapter 3.13 chose" as *named
+outcomes* and dropped *bulk*. Every pass compared requirements to tasks, both said
+"removal", and identifier coverage read 100% the whole time. **Shape only becomes visible
+when you compare an ACCEPTANCE SCENARIO to a route**: US2's scenario 4 names a hundred users
+and the route's path named one. Now `POST /v1/channels/:channelId/members/remove`.
+
+**A REFERENCE TO ANOTHER CHAPTER'S DESIGN IS A REQUIREMENT WHOSE CONTENT LIVES ELSEWHERE.**
+"In the shape chapter 3.13 chose" compressed two properties and the contract expanded one.
+Ten passes read the phrase and none re-derived it.
+
+**AND THE FOUR TABLES DO NOT ASK THIS QUESTION.** Routes have a handler, a credential, a
+repository method and a pin; columns have a migration, a writer, a reader and a removal test.
+Neither asks whether the route matches the scenario that motivated it.
+
+**AND ON THE NINTH PASS OF CARRYING FOUR FINDINGS, DEFERRAL BECAME A DECISION.** Two are now
+fixed — the two-identifier attack (T082a) and the migration backfill moved out of 0011 (T019)
+— and two are recorded as accepted: FR-039a/b's missing user story, and FR-002/FR-003's
+deliberate overlap. Nine passes of silence is a decision nobody wrote down.
 
 **AND PASS EIGHT FOUND THE SAME HOLE ON THE OTHER ROUTE OF THE SAME CONTROLLER.**
 `messages.controller.ts` has exactly two routes — send and history — and both called a

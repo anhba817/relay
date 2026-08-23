@@ -201,10 +201,16 @@ pnpm vitest run services/api/src/channels --config services/api/vitest.integrati
 pnpm vitest run services/gateway/src/isolation --config services/gateway/vitest.integration.config.mts
 ```
 
-**Expect** a removed member's send refused; their reconnection carrying no history for
-the channel (SC-004); their existing messages still in history, still attributed to
-them (SC-005). Removing a non-member and removing a user who does not exist both give
-200 `not_a_member` — see `contracts/membership.md` for why the second is not a 404.
+**Expect** a removed member's send refused; their reconnection carrying no history for the
+channel (SC-004); their existing messages still in history, still attributed to them
+(SC-005).
+
+**And the request is bulk** — `POST /v1/channels/:channelId/members/remove`, up to 100 users,
+one result per user in request order (FR-006, FR-007). A non-member and a user who does not
+exist both report `not_a_member` rather than failing the request; 101 entries is refused with
+`field: "users"`. This check tested a single-user `DELETE` until analysis pass ten compared
+US2's scenarios to the route and found the bulk half of the requirement implemented by
+nothing.
 
 ## V10 — the archive refuses with its own code
 
@@ -357,8 +363,9 @@ each survivor beside the requirement it stands for (SC-016, FR-036). A feature a
 columns nothing reads, adding two, is worth a sentence on the page rather than a zero
 that does not hold.
 
-Then the battery. Twenty consecutive runs of the integration lane, on a machine running
-nothing else:
+Then the battery (SC-017). Twenty consecutive runs of the integration lane, with the test
+count and duration recorded for each against the 240-second per-run budget, on a machine
+running nothing else:
 
 ```bash
 for i in $(seq 1 20); do … done   # the loop from specs/032-chapter-3-11/

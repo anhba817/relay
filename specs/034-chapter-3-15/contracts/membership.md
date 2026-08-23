@@ -90,26 +90,43 @@ should not need a second call to know whether it may post.
 named "read by id" as one of four verbs, and FR-003 said "every read" — three artifacts
 resting on a handler that was never written. It is FR-003a now.
 
-### `DELETE /v1/channels/:externalId/members/:userExternalId`
+### `POST /v1/channels/:channelId/members/remove`
 
-Removes one member. Idempotent in the shape chapter 3.13 chose for adding: the outcome
-is named rather than inferred from a status code.
+**Bulk, mirroring add.** FR-006 says up to 100 in one request and FR-007 says the result is
+reported per user — which is chapter 3.13's `POST /v1/channels/:channelId/members` shape in
+both halves. This contract specified a single-user `DELETE …/members/:userExternalId` for ten
+analysis passes, having read "the shape chapter 3.13 chose" as *named outcomes* and dropped
+*up to 100*. Pass ten found it by comparing US2's scenarios to the route.
+
+Body: `{"users": ["u_dong", "u_ana", …]}`, at most 100.
 
 | Outcome | Status | Body |
 |---|---|---|
-| was a member, now removed | 200 | `{"result":"removed"}` |
-| was not a member | 200 | `{"result":"not_a_member"}` |
+| all entries processed | 200 | `{"results": [{"user": "u_dong", "result": "removed"}, …]}` |
+| 101 entries | 400 | `invalid_request`, `field: "users"` |
 | no such channel, or a private one the caller cannot see | 404 | the not-found envelope |
-| no such user in the tenant | 200 | `{"result":"not_a_member"}` |
 
-The last row is the one worth arguing about. A user that does not exist is not a member,
-and answering 404 for it would make the route a membership oracle for user ids. 200
-with `not_a_member` is the same answer the caller gets for a real non-member, which is
-the property the row exists to hold.
+Per-user results, one per entry, in request order:
 
-**Removal deletes the member row and the read position, and no messages** (FR-008).
-The removed user's existing messages stay in history attributed to them (SC-005), and
-their socket stops receiving the channel on its next resume.
+| Per-user result | Meaning |
+|---|---|
+| `removed` | was a member, now is not |
+| `not_a_member` | was not a member, or no such user in this tenant |
+
+**An action-style `POST` rather than `DELETE` with a body.** A body on `DELETE` is legal and
+unreliable — proxies and some clients drop it — and this feature already sets the
+action-style precedent with `POST …/archive` and `POST …/ban`. The singular route is gone
+rather than kept beside it: "up to 100" covers one, and two routes for one job is two
+classification entries, two tests and two chances to disagree.
+
+**A user that does not exist reports `not_a_member`, not an error.** A user that does not
+exist is not a member, and answering anything else would make this route a membership oracle
+for user ids. It is the same answer a real non-member gets, which is the property the row
+exists to hold.
+
+**Removal deletes the member row and the read position, and no messages** (FR-008). The
+removed user's existing messages stay in history attributed to them (SC-005), and their
+socket stops receiving the channel on its next resume.
 
 ### `PATCH /v1/channels/:externalId/members/:userExternalId`
 

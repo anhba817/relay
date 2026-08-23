@@ -444,9 +444,13 @@ their sends are refused, confirm their history is intact, unban, confirm they wo
 - **FR-005**: The feature MUST state what a private channel means for an application
   credential, which carries no user.
 - **FR-006**: The public API MUST support removing members by customer-supplied user
-  identifier, up to 100 in one request.
-- **FR-007**: Removal MUST be idempotent in the shape chapter 3.13 chose for adding:
-  removing a non-member succeeds and says so per user.
+  identifier, **up to 100 in one request** — the same bound and the same bulk shape as
+  chapter 3.13's member add, which this mirrors in both halves rather than one.
+- **FR-007**: Removal MUST be idempotent and MUST report **one result per user**, so a
+  request naming a non-member or an unknown user reports that per entry rather than failing
+  the request. One bad entry MUST NOT refuse the other ninety-nine. "The shape chapter 3.13
+  chose" was the earlier wording, and it compressed two properties — bulk, and named
+  outcomes — of which the contract expanded only the second.
 - **FR-008**: Removal MUST NOT delete the removed user's messages.
 - **FR-009**: `POST /v1/channels` MUST accept `type: "private"` once FR-001 to FR-003
   hold, and MUST NOT accept it before.
@@ -639,8 +643,10 @@ their sends are refused, confirm their history is intact, unban, confirm they wo
 - **SC-014**: The cross-tenant suite's derived target count moves by exactly **14** — the
   routes `contracts/membership.md` and `contracts/listing.md` describe, including
   FR-003a's read-by-id — and no route is unclassified. The number is stated here so the
-  criterion can be checked before the build rather than read off it. It was 13 until
-  analysis pass three found the fourteenth route missing rather than uncounted.
+  criterion can be checked before the build rather than read off it. It was 13 until analysis
+  pass three found the fourteenth route missing rather than uncounted, and it **held at 14**
+  when pass ten turned removal from a singular route into a bulk one: one removal route
+  either way. Re-derived from the route table both times rather than adjusted.
 - **SC-015**: The suite gains at least one same-tenant non-member attack per verb, and
   each is shown to fail when the membership check is removed.
 - **SC-016**: The count of schema columns with no non-test reader is stated before and

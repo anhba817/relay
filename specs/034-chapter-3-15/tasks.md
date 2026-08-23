@@ -119,7 +119,7 @@ either, which is why T129a exists.
 | `POST /v1/channels/:channelId/messages` **(exists, changed)** | T031a, T031b | **none declared — `EITHER` by default**, which is why a user token reaches it and why T031a exists | `sendMessage` T031 | `messages.service.ts` |
 | `GET /v1/channels/:channelId` | T039a | `@Accepts("application", "user")` method-level — a user reads their own membership, the tenant reads any channel | `getChannel` (T039a) | `channels.service.ts` |
 | `POST /v1/channels/:channelId/join` | T045 | **`@Accepts("user")` method-level**, overriding the class's `"application"` | `addMember` (chapter 3.13) | `channels.service.ts` |
-| `DELETE /v1/channels/:channelId/members/:userExternalId` | T054 | class `"application"` | `removeMember` T053 | `repository.ts` |
+| `POST /v1/channels/:channelId/members/remove` | T054 | class `"application"` | `removeMembers` T053 | `repository.ts` |
 | `PATCH /v1/channels/:channelId/members/:userExternalId` | T064 | class `"application"` | `setMemberRole` T063 | `repository.ts` |
 | `POST /v1/channels/:channelId/archive` | T073 | class `"application"` | `archiveChannel` **T072a** | `repository.ts` |
 | `DELETE /v1/channels/:channelId/archive` | T073 | class `"application"` | `unarchiveChannel` **T072a** | `repository.ts` |
@@ -134,7 +134,9 @@ either, which is why T129a exists.
 
 **Every row is classified by T061** — one entry per verb in `targets.ts`, written with the
 router's parameter names and not the contracts' (`:channelId`, not `:externalId`). Fourteen
-entries, which is SC-014's number.
+entries, which is SC-014's number — **re-derived after pass ten changed removal from a
+singular `DELETE` to a bulk `POST`**: one removal route either way, so the count held. Derived
+from the rows above rather than adjusted.
 
 **A method-level `@Accepts` wins.** `credential.guard.ts:87` resolves
 `getAllAndOverride([handler, class])`, and `dev-token.controller.ts:51` already uses the
@@ -205,6 +207,14 @@ third until pass five: T141 set it, T146 cleared it, and nothing read it.
 by T023, verified by removing it at T024. `members` has none and is classified `hop`, which
 is the asymmetry worth a sentence in the chapter.
 
+**Two findings are accepted rather than fixed**, recorded here because nine analysis passes
+carried them without ever writing down that carrying them was the decision. **FR-039a and
+FR-039b have no user story** — they arrived from R9 after the nine stories were written, and
+their coverage is two edge cases plus SC-020, which is enough for a two-requirement pair
+whose behaviour is one route creating one row. **FR-002 and FR-003 overlap** on private-channel
+reads — FR-002 lists the verbs, FR-003 states the answer — and they are complementary rather
+than duplicated, so neither is merged.
+
 **One requirement has no user story**, and this is where that is recorded rather than
 discovered later: FR-039a and FR-039b arrived from R9 after the nine stories were
 written, so their coverage is two edge cases and SC-020. Phase 16 carries them with no
@@ -245,7 +255,7 @@ or writes something declared here.
 - [ ] T017a [P] Add the reciprocal comment to `memberships.role` pointing back. A comment on one side of a trap is a comment the next person does not find — `services/api/src/db/schema.ts`
 - [ ] T018 [P] Add `deletedAt` to `users` in `schema.ts`. This column is not in the spec: R7 decided a deleted user keeps their row, and designing that left nowhere to record that the row is deleted
 - [ ] T018a **Update `docs/05-sad.md` §6.1** — `channels.last_activity_at`, `users.deleted_at`, and `read_positions` as a new `CREATE TABLE`. **§6.1 is exact today**: `last_sequence` with its ADR-03 citation, `archived_at`, `banned_at`, all matching `schema.ts` column for column. `schema.ts`'s own comment says the generated migration "is reviewed against §6.1 before the runner applies it", and that review cannot happen against a document missing the columns. `members.role` needs no entry — `members` is not in §6.1, deliberately, because the tenancy tables are derived from the SRS. `read_positions` does: it sits below the environment boundary and carries `environment_id`, which is §6.1's territory
-- [ ] T019 **Backfill `last_activity_at` inside 0011** from `max(messages.created_at)` per channel, falling back to `now()` for a channel with no messages. A column defaulting to `now()` on every existing row orders every channel identically and the listing's first test passes for the wrong reason — `services/api/migrations/0011_activity_and_read_positions.sql`
+- [ ] T019 **Backfill `last_activity_at` in batches, in its own step after 0011** — not inside the migration. Adding a `not null default now()` column is fast (Postgres stores the default in the catalogue), but `max(messages.created_at)` per channel is a scan, and the workflow section requires migrations to be "executable without downtime". Batch by `channels.id`, record the batch size and the wall clock, and state the number for the 1,000,000-message dataset R4 measured. Open since analysis pass one; **the old text said "inside 0011"** from `max(messages.created_at)` per channel, falling back to `now()` for a channel with no messages. A column defaulting to `now()` on every existing row orders every channel identically and the listing's first test passes for the wrong reason — `services/api/migrations/0011_activity_and_read_positions.sql`
 - [ ] T020 Run `node services/api/dist/db/migrate.js` twice and record both exit codes. The second is the one that matters
 - [ ] T021 **Verify `members_role_check` names `owner, moderator, member`** by reading it back with `\d+ members`, not by reading the migration. R8's trap is a constraint that looks right in the file it was written in
 - [ ] T022 Add `read_positions` to `packages/test-harness/src/sentinel.sql`'s trigger array — the tenth table — and update the count in its comment
@@ -333,10 +343,10 @@ user's messages stay in history.
 is refused and their reconnection carries no history for the channel — and that the
 message they already sent is still there, still attributed to them.
 
-- [ ] T053 [US2] Add `removeMember` to `services/api/src/db/repository.ts` returning a named outcome — `removed | not_a_member | not_found` — in the shape chapter 3.13 chose for `addMember`. Deletes the `members` row and the `read_positions` row, and no messages (FR-006, FR-008)
-- [ ] T054 [US2] Add `DELETE /v1/channels/:externalId/members/:userExternalId` in `services/api/src/channels/channels.controller.ts`, mapping the outcome per `contracts/membership.md`
-- [ ] T055 [P] [US2] Test the four outcomes in `services/api/src/channels/channels.itest.ts`: a member removed, a non-member 200 `not_a_member`, an unknown user 200 `not_a_member`, an invisible channel 404
-- [ ] T056 [US2] **Test that an unknown user id answers `not_a_member` and not 404** (FR-007). A 404 for a user that does not exist makes this route a membership oracle for user ids, and the same answer for a real non-member is the property that closes it — `services/api/src/channels/channels.itest.ts`
+- [ ] T053 [US2] Add `removeMembers` to `services/api/src/db/repository.ts` — **up to 100 users in one call**, returning one named outcome per user (`removed | not_a_member`) in the shape chapter 3.13 chose for `addMember`. Deletes each `members` row and its `read_positions` row, and no messages (FR-006, FR-007, FR-008). **This was singular until analysis pass ten**, which compared US2's scenarios to the route and found FR-006's "up to 100 in one request" and FR-007's "per user" implemented by nothing: the contract had read "the shape chapter 3.13 chose" as *named outcomes* and dropped *bulk*, the other half of the same shape
+- [ ] T054 [US2] Add `POST /v1/channels/:channelId/members/remove` in `services/api/src/channels/channels.controller.ts`, body `{"users": [...]}` at most 100, mapping each outcome per `contracts/membership.md`. **An action-style `POST`, not `DELETE` with a body**: a body on `DELETE` is legal and unreliable through proxies, and this feature already sets the precedent with `POST …/archive` and `POST …/ban`
+- [ ] T055 [P] [US2] Test the outcomes in `services/api/src/channels/channels.itest.ts`: a member `removed`, a non-member `not_a_member`, an unknown user `not_a_member`, all three in one request's result array in request order; an invisible channel 404; **100 accepted and 101 refused 400 with `field: "users"`** (US2 scenarios 4 and 5)
+- [ ] T056 [US2] **Test that an unknown user id reports `not_a_member` rather than failing the request** (FR-007). Failing on a user that does not exist makes this route a membership oracle for user ids; reporting the same result a real non-member gets is the property that closes it. One bad entry must not refuse the other ninety-nine — `services/api/src/channels/channels.itest.ts`
 - [ ] T057 [P] [US2] Test that a removed member's send is refused (SC-004), which is Phase 3's check reading a row that is now gone — `services/api/src/channels/channels.itest.ts`
 - [ ] T058 [P] [US2] Test that a removed member's reconnection carries no history for the channel — the resume path, through the gateway — `services/gateway/src/isolation.itest.ts`
 - [ ] T059 [P] [US2] Test that the removed member's existing messages are still in history and still attributed to them (SC-005, FR-008)
@@ -405,7 +415,8 @@ and each of those attacks goes red when its check is removed.
 
 - [ ] T080 Add `seedSameTenant` beside `seedTwoTenants` in `services/api/src/isolation/fixtures.ts`: one environment, two users, one private channel, one of them not a member. **This is new work and not a reuse** — all four existing attack shapes take another tenant's identifiers, so a non-member of your own tenant is a case no assertion covers (R10, FR-034)
 - [ ] T081 [P] Add the gateway-side twin to `services/gateway/src/isolation-fixtures.ts`
-- [ ] T082 Add one same-tenant attack per verb to `services/api/src/isolation/gauntlet.itest.ts`: read by id, history, send, join, set read position, remove member, set role, archive
+- [ ] T082 Add one same-tenant attack per verb to `services/api/src/isolation/gauntlet.itest.ts`: read by id, history, send, join, set read position, remove members, set role, archive
+- [ ] T082a **Attack the two-identifier route both ways.** `PUT /v1/users/:externalId/channels/:channelId/read` names a user *and* a channel, and the four attack shapes say "another tenant's identifiers" without saying which: a foreign user with an own channel and an own user with a foreign channel are two different code paths, and one scoped read can mask the other — chapter 3.12 found exactly that with `channelExists` running ahead of an unscoped `listMessages`. Open since analysis pass one and deferred by nine passes before this one wrote it down
 - [ ] T083 **Add a control test per attack shape before asserting any refusal.** Chapter 3.12's fourteen passing tests meant nothing because every assertion compared two refusals, and two refusals for an unrelated reason are also indistinguishable. Prove the attacker can succeed when it should — `services/api/src/isolation/gauntlet.itest.ts`
 - [ ] T084 [P] Assert the derived target count moved by exactly the number of public routes this feature adds (SC-014), against T008's recorded number — `services/api/src/isolation/targets.itest.ts`
 - [ ] T085 [P] Assert every new route is attacked or carries a written exemption (FR-033). Nothing is exempt by omission — `services/api/src/isolation/targets.itest.ts`
