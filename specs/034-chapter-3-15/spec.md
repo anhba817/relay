@@ -598,6 +598,11 @@ their sends are refused, confirm their history is intact, unban, confirm they wo
   said "send, resume, subscribe, read by id" until analysis pass eight compared it against
   `contracts/membership.md`'s table and found history, join and set-a-read-position
   missing.
+- **SC-001a**: The demonstration spans both chapters, because the verbs do. Read by id,
+  read history, send and join are demonstrated where those routes are built; **set a read
+  position is demonstrated with its own route**, which arrives in the second chapter. A
+  criterion whose verbs land eight phases apart has to say so, or the first chapter closes
+  with four fifths of it and nothing records which fifth is missing.
 - **SC-002**: For each of those verbs, the answer for a private channel the caller
   cannot see is byte-identical to the answer for a channel that does not exist, but for
   `request_id`.

@@ -133,10 +133,11 @@ rather than handlers.
 pnpm vitest run services/api/src/isolation --config services/api/vitest.integration.config.mts
 ```
 
-**Expect** for each of **SC-001's five answering verbs — read by id, read history, send,
-join and set a read position**: the private channel the caller cannot see and a channel that
-exists nowhere give the same status and the same body, `request_id` excepted (SC-002).
-Resume and subscribe are absences and are checked as such. Chapter 3.12 built the oracle;
+**Expect** for the three verbs that exist at this point — **read by id, read history,
+send** — the private channel the caller cannot see and a channel that exists nowhere give
+the same status and the same body, `request_id` excepted (SC-002). **Join is checked at V8**
+and **set a read position at V13**, because SC-001's five answering verbs land eight phases
+apart and SC-001a says so. Resume and subscribe are absences and are checked as such. Chapter 3.12 built the oracle;
 this is the first use of it inside a single tenant.
 
 **Read by id is a route this feature adds** (FR-003a). It did not exist —
@@ -189,6 +190,9 @@ pnpm vitest run services/api/src/channels --config services/api/vitest.integrati
 back `private` (SC-006) — read back **through `GET /v1/channels/:channelId`**, which is
 what FR-003a adds and the only way a customer can see the four fields at all; a second
 creation naming `public` returns 200 with the existing channel, still `private` (FR-010).
+
+**And join enters the oracle here** (SC-001's fourth answering verb): joining a private
+channel the caller cannot see answers exactly as joining one that does not exist.
 
 ## V9 — removal, and the messages that survive it
 
@@ -266,6 +270,9 @@ requires be stated, and this is where a reader sees it.
 
 A position past `last_sequence` is refused 400 with `field: "sequence"`; a replayed
 lower position is a 200 no-op.
+
+**And set-a-read-position enters the oracle here** — SC-001's fifth and last answering
+verb, demonstrated with its own route rather than in the first chapter (SC-001a).
 
 **Then remove the read-position read** from the unread count and confirm the count test
 goes red.

@@ -42,7 +42,7 @@ Its record is `specs/034-chapter-3-15/`: read **`plan.md`** for the seventeen ph
 and the constitution gate, `research.md` for R1 to R18 (twelve measured against a
 running database), then `data-model.md`, `contracts/membership.md`,
 `contracts/listing.md` and `quickstart.md` (18 checks, three of them negative).
-46 requirements, 21 success criteria, 238 tasks in 21 phases, checklist 16/16.
+46 requirements, 22 success criteria, 240 tasks in 21 phases, checklist 16/16.
 
 **Twelve SRS clauses, five dead columns, and four corrections.** The clauses are
 FR-CHN-03/04/05/06/08/09/10 and FR-USR-02/03/04/05/06. The columns exist and nothing
@@ -152,9 +152,17 @@ supplies nothing. A parameter nobody fills in encodes nothing. The decision surv
 graph, and writing the graph out is what found the hole. **Six passes read that number and
 none counted it.**
 
-**FOUR NUMBERS IN THIS FEATURE WERE CARRIED INSTEAD OF DERIVED, AND THREE HID A DEFECT**:
-the file count (25→29→34→36), the chapter overlap, the removal ordinals, and the caller
-count. The file count and the caller count each concealed a CRITICAL.
+**FIVE NUMBERS IN THIS FEATURE WERE CARRIED INSTEAD OF DERIVED, AND TWO HID A CRITICAL**:
+the file count (25→29→34→36), the chapter overlap, the removal ordinals, the caller count,
+and the oracle's verb count (three→four→five, with its verification task left at three
+through both widenings). The cure is the same every time — **name the set, not its size** —
+and it has now been applied twice: the removals point at a table, and the oracle's
+verification points at "any verb T043 covers".
+
+**AND THREE TIMES A TEST WAS PLACED BEFORE THE THING IT TESTS**: T072's ban ordering, then
+T072b's ban half, then T043's join and read-position verbs — the last two arriving two tasks
+and eight phases after the test that asserted them. A phase whose test cannot pass is a phase
+that cannot close.
 
 **PASS SIX FOUND TWO TASKS THAT COULD NOT BOTH PASS.** The contract and three tasks
 specified a private channel's send refusal as `403 not_a_member`; SC-002 requires send's
