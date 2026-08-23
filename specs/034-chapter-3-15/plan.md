@@ -13,9 +13,19 @@ chapter, and it shipped as three (FR-038a, from R17).
 
 The work divides into **two chapters, decided on a measured file count before any
 chapter prose exists** — which is the one thing chapter 3.12's close-out asks the next
-feature to do differently. R12 has the arithmetic; the short version is that three
-chapters would put two pages under the 2,000-word floor and one chapter would start at
-the 4,000 ceiling with an estimate that has run low twice.
+feature to do differently. R12 has the first arithmetic and **R18 has the correction**:
+the count was **29 platform files, not 25**, found by the task list naming four that a
+clause-by-clause count could not reach.
+
+That correction matters, so it is here rather than only in research. At 29 files three
+chapters would land near 2,290 words each — **inside the band**, so the floor argument
+that killed three in R12 is gone. Two chapters holds on subject coherence and on
+headroom against an estimate that ran 14% low here, 65% low in 3.12 and 77% low in 3.5;
+it no longer holds on arithmetic, and the page that reports the split says so.
+
+The per-chapter figures below count files a chapter **teaches**: 17 + 20 = 37 against a
+union of 29, because at least 12 files appear in both. Only one chapter may fence a
+shared file whole; the other diffs it.
 
 | Chapter | Carries | Files | ≈ prose words |
 |---|---|---|---|
@@ -45,7 +55,7 @@ database with 2,000 channels and 1,000,000 messages (R4).
 `greatest(last_sequence − read_position, 0)` — no counter, nothing to invalidate, and
 measured no slower than a cached counter (R5).
 
-**Unknowns**: none. Every NEEDS CLARIFICATION from the spec was resolved into R1–R17;
+**Unknowns**: none. Every NEEDS CLARIFICATION from the spec was resolved into R1–R18;
 the one open question the spec carried — scope — was answered by the user before
 planning began.
 
@@ -58,7 +68,31 @@ planning began.
 | **III. Two data paths, never crossed** | No analytical write. `read_positions` is operational state on the operational store. The unread count is derived from `channels.last_sequence`, which the write path already maintains, so nothing new is computed on a read path that a write path could not already answer. | Pass |
 | **IV. Single writer, single source of truth** | The api remains the only writer. The gateway reads a ban at connect through the api, as it already reads a session — no new table reaches the gateway. | Pass |
 | **V. API-first, developer-first** | Three new error codes — `not_a_member`, `channel_archived`, `user_banned` — each a distinct fact a client acts on differently, which is the test chapter 3.14's registry sets. Sixteen codes after this feature, each with a reference section, checked in both directions by the existing `check:errors`. Every route's status code is documented (FR-039), closing chapter 3.14's gap G5 for the routes this feature touches. | Pass |
-| **VI. Requirement-driven, test-verified delivery** | **44 requirements, 21 measurable outcomes** — re-derive with `grep -c '^- [*][*]FR-' spec.md` and the same for `SC-`, never carried forward by hand. FR-035 is the sharpest gate: each newly-live column must be shown read by a test that **fails when the read is removed**, because chapter 3.13 found that adding a table to the guard's array is not the same as the guard watching it. Coverage ratchets hold or rise; the new `users` module and `read_positions` reads get per-file pins for the reason chapter 3.11's T033c gave — an unpinned file is a figure that can slide. | Pass |
+| **VI. Requirement-driven, test-verified delivery** | **44 requirements, 21 measurable outcomes** — re-derive with `grep -c '^- [*][*]FR-' spec.md` and the same for `SC-`, never carried forward by hand. FR-035 is the sharpest gate: each newly-live column must be shown read by a test that **fails when the read is removed**, because chapter 3.13 found that adding a table to the guard's array is not the same as the guard watching it. The new `users` module and `read_positions` reads get per-file pins for the reason chapter 3.11's T033c gave — an unpinned file is a figure that can slide. **The quickstart clause is met by the `outsider` CI job**, which runs the README's documented sequence verbatim; `quickstart.md` here is the Spec Kit validation guide, a different artifact. **And the 100%-branch clause is answered below rather than passed over.** | Pass, with one clause answered rather than met |
+
+**Principle VI's second clause, and where this feature stands against it.** Ordering,
+idempotency and tenant isolation MUST have 100% branch coverage (NFR-MNT-02).
+`repository.ts` holds all three and measures 89.51%, pinned at `branches: 90` as a
+ratchet rather than a bar — the shortfall is recorded in
+`specs/024-coverage-and-ci/notes.md` with the uncovered arms named.
+
+This feature adds four branch sets to that file: the membership check, the archive
+check, the ban check and the unread subtraction. **A private-channel membership check is
+authorization inside a tenant, not tenant isolation**, so the clause does not reach
+three of the four by its own words — but the same-tenant attack suite tests it with
+FR-TEN-05's oracle, which is the reason the question is worth answering out loud instead
+of leaving the classification to whoever next reads the ratchet.
+
+The commitment: **100% branch coverage on the new arms**, whichever side of the
+classification they fall on, verified per arm rather than by a file percentage
+(T174a–T174c). The file's pre-existing gap is not this feature's to close and is not
+enlarged by it.
+
+**And one failure mode is pre-armed.** Chapter 3.5 added six operations to
+`repository.ts` and the ratchet went red immediately — **branches 85.91% → 78.22%** —
+because the new code was exercised only through the dispatcher, a child process whose
+coverage is not attributable. Five tasks here test new repository code through the
+gateway, which is the same arrangement. T174b exists for that.
 | **VII. Boring by design — scope is a commitment** | No new service, no new language, no new dependency. One new module inside an existing service. **No ADR required, and the candidate was weighed rather than waved past**: denormalising `last_activity_at` is the kind of decision an ADR exists for, and R14 records why it is not one — a 145× measurement and no rejected architecture is a rationale, not an architecture decision. Four things larger than this feature are named and refused with owners: presence scope (FR-RTM-07), REST-to-socket delivery (FR-RTM-05), outbox retention (FR-MOD-06), and a human reading the documentation. | Pass, with four refusals recorded |
 
 **Post-design re-evaluation**: unchanged. The design added one table, three columns and
@@ -72,7 +106,8 @@ suite gained the attack class it was missing.
 ```
 specs/034-chapter-3-15/
 ├── spec.md                  44 FRs, 21 SCs, 9 stories, 42 scenarios, 9 edge cases
-├── research.md              R1–R17; twelve measured, one that pointed the wrong way
+├── research.md              R1–R18; twelve measured, one that pointed the wrong way,
+│                            and one worry the measurement refuted
 ├── plan.md                  this file
 ├── data-model.md            one new table, three new columns, four state transitions
 ├── contracts/
@@ -111,7 +146,7 @@ relay-tutorial/
 | 1 | Setup and baseline | `baseline.txt` with the lane, coverage, target count and the five dead columns counted before anything moves | The column count is the chapter's own headline number; measuring it after an edit measures nothing |
 | 2 | Foundational — the two migrations and the schema | `0011` and `0012`, and the guard's tenth table | R15: `read_positions` has a composite key and no `id`, so it needs the key expression chapter 3.13 installed |
 | 3 | US1 — membership enforced on send | the check inside `repository.sendMessage`, gated on `userId` | R1: one function, six callers inherit it |
-| 4 | US1 — the private type made meaningful | `private` accepted; the by-id read check; what `public` means for a non-member, decided and tested | R3: the subscription set is not the read set |
+| 4 | US1 — the private type made meaningful | `private` accepted; the by-id read check; what `public` means for a non-member, decided and tested; **FR-037's correction, in the same edit** | R3: the subscription set is not the read set, and `public` means open rather than merely readable |
 | 5 | US2 — removal | the route, the per-user result shape, and the socket that stops working | FR-008: messages survive |
 | 6 | US6 — member roles | `members.role` with its own CHECK, and a stated default | R8: two vocabularies, neither borrows the other |
 | 7 | US7 — archiving | `archived_at` read, `channel_archived` emitted | one of the five dead columns |
@@ -121,7 +156,7 @@ relay-tutorial/
 | 11 | US5 — unread | read positions, and the count derived from `last_sequence` | R5: no counter |
 | 12 | US3, US8, US9 — the user surface | the `users` module: profile, bulk upsert, deletion, banning | three of the five dead columns |
 | 13 | FR-USR-02 — implicit creation on authentication | the token route creates, converging on chapter 3.13's idempotent `createUser` | R9: the `unknown user` 400 |
-| 14 | The corrections | `channels.schema.ts:26`'s false sentence, chapter 3.12's traceability row, and R17's 40 chapter citations classified and corrected | FR-037, FR-038, FR-038a/b, SC-021 — a corrected comment in a fenced file is three files moving together or `check:fences` fails |
+| 14 | The corrections — FR-038a's citation class | R17's 40 chapter citations, classified and corrected | FR-038a/b, SC-021. **FR-037's own correction moved to phase 4**, with the edit that already touches `channels.schema.ts`: this phase runs after chapter 3.15 publishes, and a false sentence inside a fence cannot wait that long |
 | 15 | Verification | every SC measured, traceability both directions, the twenty-run battery | the battery is an hour and nothing else runs on the machine |
 | 16 | **Chapter 3.16's page**, both locales | prose, fences, figures, counted | the split's second half |
 | 17 | Close-out | `chapter-notes.md`, the plan rows, `CLAUDE.md`, tag, push | pins last |

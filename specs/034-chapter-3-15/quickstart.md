@@ -3,6 +3,13 @@
 Eighteen checks. Run in order; several depend on earlier ones. Every command is one a
 maintainer runs, verbatim.
 
+**This is a validation guide, not the published quickstart.** Constitution VI's clause
+— "the quickstart MUST run unmodified, verified by automated execution in CI against
+the published documentation" — is met by the `outsider` job, which runs the README's
+documented sequence verbatim: compose up, migrate, seed a demo tenant, run the sealed
+suite. Chapter 3.14 built that. The file you are reading is the Spec Kit artifact a
+maintainer walks by hand, and every check below carries the command that runs it.
+
 Three of the checks are **negative**: they require breaking something on purpose and
 watching a test fail. FR-035 exists because of them — a test that passes with and
 without the code it covers is measuring nothing, and the only way to know which kind
@@ -149,6 +156,11 @@ existing channel, still `private` (FR-010).
 
 ## V9 — removal, and the messages that survive it
 
+```bash
+pnpm vitest run services/api/src/channels --config services/api/vitest.integration.config.mts
+pnpm vitest run services/gateway/src/isolation --config services/gateway/vitest.integration.config.mts
+```
+
 **Expect** a removed member's send refused; their reconnection carrying no history for
 the channel (SC-004); their existing messages still in history, still attributed to
 them (SC-005). Removing a non-member and removing a user who does not exist both give
@@ -156,15 +168,28 @@ them (SC-005). Removing a non-member and removing a user who does not exist both
 
 ## V10 — the archive refuses with its own code
 
+```bash
+pnpm vitest run services/api/src/channels --config services/api/vitest.integration.config.mts
+```
+
 **Expect** a send to an archived channel refused with `channel_archived`, distinct from
 not-found and from `not_a_member` (SC-010); history still readable; archiving an
 archived channel a 200 no-op.
 
 ## V11 — roles round-trip, and the fourth value is refused
 
+```bash
+pnpm vitest run services/api/src/channels --config services/api/vitest.integration.config.mts
+psql "$RELAY_DB" -c "insert into members (channel_id, user_id, role) values ('…','…','admin')"
+```
+
 **Expect** `owner`, `moderator` and `member` accepted; a fourth value refused 400 with
 `field: "role"` (SC-009). The field name in the envelope is only there because chapter
 3.14 made `ZodValidationPipe` carry `issues[0].path`.
+
+**And the raw insert refused by `members_role_check`.** That second command is the one
+that matters: a schema at the edge rejecting `admin` says nothing about the constraint
+underneath it, and R8's trap is a constraint that accepts the organisation vocabulary.
 
 ## V12 — the listing orders, pages and excludes
 
@@ -184,6 +209,10 @@ R4's 145× is not being collected.
 
 ## V13 — the unread count, including the tombstone
 
+```bash
+pnpm vitest run services/api/src/users --config services/api/vitest.integration.config.mts
+```
+
 **Expect** the count rises with each message and falls to zero when a position is set
 to `last_sequence` (SC-008). Then delete a message and check the count again: it stays
 the same, because a tombstone keeps its sequence. That is the approximation FR-019
@@ -193,6 +222,11 @@ A position past `last_sequence` is refused 400 with `field: "sequence"`; a repla
 lower position is a 200 no-op.
 
 ## V14 — the user surface
+
+```bash
+pnpm vitest run services/api/src/users --config services/api/vitest.integration.config.mts
+pnpm vitest run services/gateway/src/isolation --config services/gateway/vitest.integration.config.mts
+```
 
 **Expect** all three profile fields round-trip; metadata over 4 KB and a malformed
 `avatar_url` refused 400, each naming its field (SC-011); 100 users upsert in one
@@ -271,4 +305,5 @@ measurement if nothing else is running.
 
 Last, the prose (SC-018, SC-019): each page's word count inside 2,000–4,000 by the
 counter the series uses, and the split recorded with the file count that produced it —
-25 platform files, 16 changed and 9 new, counted before any prose was written.
+**25 as R12 measured it, corrected to 29 by R18 before any prose was written**, and the
+sentence that the correction removed the floor argument the split was decided on.

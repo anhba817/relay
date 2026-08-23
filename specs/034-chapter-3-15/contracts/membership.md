@@ -31,6 +31,13 @@ authenticated user of the tenant may read and join it. So a refusal there says
 `not_a_member` and means it. Telling the caller which channel they are not a member of
 leaks nothing they could not read anyway.
 
+**And a non-member may send to a public channel**, which the clause does not say and
+FR-004 is what decides. R3 has the argument: refusing a write that a join — which cannot
+itself be refused — would immediately permit is a refusal with nothing behind it. So
+`public` means "open to this tenant", not "readable by this tenant", and the read
+position is the one verb where membership still matters on a public channel, because a
+read position is per-member state and a non-member has none.
+
 **An archived channel refuses sends with `403 channel_archived`** regardless of type or
 membership, and answers reads normally. The distinction FR-021 asks for is that a
 client can tell "join this channel" from "wait for the archive to lift" from "this does

@@ -58,8 +58,17 @@ correction and it is fence work, not a source edit.
 ## R3 — `channels.type` gets a reader, and FR-CHN-03's word "join" is the hard part
 
 **Decision**: `private` requires membership on every verb. `public` permits a
-tenant user to **read** without membership and to **join**, and joining is a new
-user-initiated operation.
+tenant user to **read** without membership, to **send** without membership, and to
+**join**, where joining is a new user-initiated operation.
+
+**Send was missing from this decision until the first analysis pass**, which found
+`contracts/membership.md` granting it while this paragraph listed only read and join.
+FR-CHN-03's words are "read and join", so the clause does not settle it and FR-004 is
+what asks for an answer. The answer is send, for one reason: a channel a tenant user can
+read and join but not post in is a channel where the platform refuses a write it will
+accept one request later, after a join that cannot be refused. That is a refusal with no
+meaning behind it. The cost is that `public` is a weaker word than it looks — it means
+"open to this tenant", not "readable by this tenant" — and the chapter has to say so.
 
 FR-CHN-03's exact words are that any authenticated user of the tenant "may read and
 join" a public channel. If membership were required for both types, `channels.type`
@@ -73,7 +82,8 @@ would make the session unbounded in a tenant with many channels.
 
 **Alternatives considered**: membership for both types (leaves the column dead and the
 clause unmet); public channels auto-subscribed for every tenant user (unbounded
-session, and a socket that delivers channels a user never asked for).
+session, and a socket that delivers channels a user never asked for); read-and-join
+without send (a refusal a join makes disappear).
 
 ## R4 — `last_sequence` cannot order channels by activity, and the test lane says otherwise
 
@@ -229,7 +239,8 @@ checked):
 | C — users and roles (FR-USR-02→06, FR-CHN-04) | 10 | 6 | 16 |
 | corrections (FR-037, FR-038) | 1 | 0 | 1 + 2 locale pages |
 
-**Union: 16 existing files changed, 9 new, 25 platform files.**
+**Union: 16 existing files changed, 9 new, 25 platform files.** **Corrected to 29 in
+R18** — the task list named four this clause-by-clause count could not reach.
 
 At chapter 3.11's measured ratio — 21 files, 31 fences, 3,316 prose words, so ~1.5
 fences per file and ~107 words per fence:
@@ -253,7 +264,7 @@ An estimate at 4,000 with a known upward bias is an estimate that breaks the bou
 
 | Chapter | Carries | Files | ≈ words |
 |---|---|---|---|
-| **3.15** the channel a customer controls | membership enforcement, the private type, removal, member roles, archiving — who is in a channel, what kind it is, and whether it is open | 17 | ≈ 2,730 |
+| **3.15** the channel a customer controls (see R18: the floor argument below no longer carries this) | membership enforcement, the private type, removal, member roles, archiving — who is in a channel, what kind it is, and whether it is open | 17 | ≈ 2,730 |
 | **3.16** what a user sees | listing with cursor pagination, activity ordering, unread counts, and the whole user surface — profile, bulk upsert, deletion, banning, and implicit creation on authentication | 20 | ≈ 3,210 |
 
 Both inside the band with room for the estimate to run low, and each has one subject a
@@ -371,3 +382,80 @@ reference, and a wrong reference is worse than none — the series' own argument
 fixing `docs_url`, which chapter 3.14 made); rewriting the citations to name the
 feature directory instead of a chapter (correct and useless to a reader, who is holding
 a chapter and not a spec directory).
+
+## R18 — the split's arithmetic, re-derived after the task list existed
+
+The first analysis pass raised three things about R12's numbers. Two are real, one is
+refuted by its own measurement, and the third changes what the split rests on.
+
+### The file count was low by four, and the tasks are what found it
+
+R12 counted **25** platform files. `tasks.md` names **29**, and two more inside
+`services/api/src/users/` that a directory-level task hides — `users.module.ts` and
+`users.service.ts`. The four R12 missed are the ones a clause list does not reach:
+`internal.itest.ts`, `credentials.itest.ts`, `compare.ts` and `exempt.ts`, each pulled
+in by a test that has to exist rather than by a requirement that names it.
+
+**This is chapter 3.12's error at one-sixth the size.** That chapter estimated 37 files
+and shipped 61 — 65% low. This estimate is 14% low, found before any prose exists
+rather than at Phase 12, which is the whole point of FR-040.
+
+### 17 + 20 = 37, and the union is 25
+
+Neither number is wrong and their relationship was never stated. The per-chapter figures
+count files a chapter **teaches**, not files only that chapter touches, so at least 12
+files appear in both. That is not double-counting for a *word* estimate — a chapter that
+shows a diff of `repository.ts` writes prose about it either way — but it has to be said,
+because "one full fence per path" means only one of the two chapters may fence a shared
+file whole and the other must diff it.
+
+### The diff-heavy worry is refuted by measurement
+
+The pass suggested that because **23 of the 29 files are already fenced in earlier
+chapters** — `repository.ts` in twelve of them, `schema.ts` in ten, `session.ts` in
+seven, `codes.ts` in five — most fences here are diffs, and that a diff-heavy chapter
+should run lighter in prose than R12's 107 words per fence.
+
+Measured over the four most recent chapters:
+
+    chapter   titled fences   diffs   diff share   prose words   words/fence
+    3.11             31         22        71%          3,316         107
+    3.12             37          7        19%          3,440          93
+    3.13             25          6        24%          2,452          98
+    3.14             31         13        42%          2,228          72
+
+**The opposite of the prediction.** 3.11 has the highest diff share of the four and the
+highest words per fence; 3.14 has more diffs than 3.12 or 3.13 and the lowest. Words per
+fence does not track diff share at all — and R12's base chapter was already 71% diffs,
+so "these chapters will be diff-heavy" is not new information about the estimate.
+
+Recorded because a plausible worry with a cheap measurement behind it should not survive
+to a second analysis pass, and this one would have.
+
+### What the corrected count does to the decision
+
+At 29 files and the same ratios — 1.5 fences per file, 107 words per fence — the
+instance count rises from 37 to about 43, so:
+
+    two chapters     ≈ 3,440 words each
+    three chapters   ≈ 2,290 words each
+
+**Three chapters is no longer excluded by the floor.** R12 killed it at ~1,900 words a
+page against a 2,000 minimum, and that argument is gone: at the corrected count all
+three would sit inside the band.
+
+**The two-chapter split holds anyway, and now for different reasons.** The floor is not
+one of them any more. What carries it:
+
+- **Ceiling risk cuts the other way.** Two chapters at 3,440 have 560 words of headroom
+  against an estimate that ran 14% low here, 65% low in 3.12 and 77% low in 3.5. Three
+  chapters at 2,290 have far more room — so on this axis three is safer, and that has to
+  be said rather than skipped.
+- **Subject coherence.** "Who is in a channel, what kind it is, whether it is open" and
+  "what a user sees" are two things a reader can hold. The three-way division R12
+  measured splits the user surface from the listing that renders it, which puts
+  `users.metadata` in one chapter and the listing that returns it in another.
+
+So the decision is now a judgement about what a chapter is for, not an arithmetic
+result — and the honest record is that the number which decided it in R12 no longer
+does.

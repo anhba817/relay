@@ -39,10 +39,10 @@ their only change is `notFoundDocsUrl` or the outsider's lane split.
 
 **CHAPTERS 3.15 AND 3.16 ARE SPECIFIED AND PLANNED** — the deferred public surface.
 Its record is `specs/034-chapter-3-15/`: read **`plan.md`** for the seventeen phases
-and the constitution gate, `research.md` for R1 to R17 (twelve measured against a
+and the constitution gate, `research.md` for R1 to R18 (twelve measured against a
 running database), then `data-model.md`, `contracts/membership.md`,
-`contracts/listing.md` and `quickstart.md` (V0 to V16, three of them negative).
-44 requirements, 21 success criteria, checklist 16/16.
+`contracts/listing.md` and `quickstart.md` (18 checks, three of them negative).
+44 requirements, 21 success criteria, 214 tasks in 21 phases, checklist 16/16.
 
 **Twelve SRS clauses, five dead columns, and four corrections.** The clauses are
 FR-CHN-03/04/05/06/08/09/10 and FR-USR-02/03/04/05/06. The columns exist and nothing
@@ -51,16 +51,25 @@ reads them: `channels.type`, `channels.archived_at`, `users.avatar_url`,
 and V0 records it before Phase 2 moves anything.
 
 **THE SPLIT WAS TAKEN FROM A MEASURED FILE COUNT BEFORE ANY PROSE EXISTED** (FR-040),
-which is the one thing 3.12's close-out asked the next feature to do differently.
-25 platform files, 16 changed and 9 new. **Three chapters fails at the FLOOR** —
-groups A and B land at ~1,900 words against a 2,000 minimum, the first time the low
-end of the bound has decided anything — and **one chapter fails at the ceiling**,
-because 25 files lands at 4,000 with an estimate that has run low twice (3.5
-estimated 22 fences and shipped 39; 3.12 estimated 37 files and shipped 61). So:
-**3.15 "the channel a customer controls"** (membership, private type, removal, roles,
-archiving — 17 files, ~2,730 words) and **3.16 "what a user sees"** (listing, unread,
-and the whole user surface — 20 files, ~3,210 words). The page phases sit at 9 and 16
-rather than last, so each page is written when its own numbers are real.
+which is the one thing 3.12's close-out asked the next feature to do differently — and
+**the first analysis pass then corrected the count from 25 to 29**, because the task
+list named four files a clause-by-clause count could not reach (`internal.itest.ts`,
+`credentials.itest.ts`, `compare.ts`, `exempt.ts`). 14% low, found before any prose
+existed rather than at Phase 12. That is 3.12's error at one-sixth the size, caught by
+the mechanism 3.12 asked for.
+
+**AND THE CORRECTION TOOK THE ARGUMENT AWAY.** R12 killed three chapters at the FLOOR —
+~1,900 words a page against a 2,000 minimum, the first time the low end of the bound
+had decided anything. At 29 files three chapters lands near **2,290 words each, inside
+the band**, so the floor argument is gone. Two chapters holds on subject coherence and
+on ceiling headroom against an estimate that has run low three times (3.5 by 77%, 3.12
+by 65%, this one by 14%) — not on arithmetic, and R18 says so. **3.15 "the channel a
+customer controls"** (membership, private type, removal, roles, archiving — 17 files,
+~2,730 words) and **3.16 "what a user sees"** (listing, unread, the whole user surface
+— 20 files, ~3,210 words). 17 + 20 = 37 against a union of 29: the per-chapter figures
+count files a chapter TEACHES, and at least 12 appear in both, so only one of the two
+may fence a shared file whole. The page phases sit at 9 and 16 rather than last, so each
+page is written when its own numbers are real.
 
 **THE MEASUREMENT THAT POINTED THE WRONG WAY, again.** Ordering a user's channels by
 `max(messages.created_at)` costs **0.87 ms on the test lane** — whose largest
@@ -207,4 +216,36 @@ seconds** a run against a 192–196 s measurement.
 **COMMIT EACH PHASE.** A bad regex in 3.11's traceability pass broke 36 files;
 because everything through the previous phase was committed, the repair was one
 `git checkout` and five minutes.
+**THE FIRST ANALYSIS PASS, and what it cost to be wrong once.** 23 findings, 1 raised
+CRITICAL and withdrawn. Four worth carrying forward:
+
+1. **The CRITICAL was mine, not the feature's.** I read constitution VI's "the quickstart
+   MUST run unmodified, verified by automated execution in CI" against
+   `specs/*/quickstart.md` and found no CI job. Wrong artifact: the clause names the
+   PUBLISHED quickstart, and the `outsider` job runs the README's sequence verbatim —
+   compose, migrate, seed, sealed suite. 3.14 built exactly that. The real defect was
+   five of eighteen checks having no command in a file whose own first line says every
+   command is one a maintainer runs.
+2. **A plausible worry, refuted by its own measurement.** 23 of 29 files are already
+   fenced in earlier chapters, so I predicted diff-heavy chapters would run light on
+   prose. Measured: 3.11 was **71% diffs and 107 words/fence, the highest of four**;
+   3.14 was 42% diffs and 72, the lowest. Words per fence does not track diff share, and
+   R12's base chapter was already the diff-heavy one. Recorded in R18 so it is not
+   re-raised.
+3. **A correction cannot live downstream of the page that carries the sentence.**
+   FR-037's false comment in `channels.schema.ts` sat in tasks phase 17; chapter 3.15
+   publishes at phase 9 and fences that file. Moved to phase 4, beside the edit that
+   already touches it.
+4. **`check:docs` ran before the edit that breaks it**, and both were marked `[P]` — a
+   race, not an ordering slip. `04-srs.md` is on `check-docs-drift.sh`'s mirrored list.
+
+**AND ONE CLAUSE IS ANSWERED RATHER THAN MET.** Constitution VI asks 100% branch
+coverage of ordering, idempotency and tenant isolation. `repository.ts` holds all three
+at 89.51%, pinned at 90 as a ratchet with the gap named in
+`specs/024-coverage-and-ci/notes.md`. This feature adds four branch sets to that file and
+commits to 100% **on the arms it adds**, per arm rather than by file percentage. A
+private-channel membership check is authorization inside a tenant, not tenant isolation
+— stated rather than left to whoever next reads the ratchet. And 3.5's failure is
+pre-armed: six operations added to that file, exercised only through a child process,
+took branches from **85.91% to 78.22%** on the next run.
 <!-- SPECKIT END -->
