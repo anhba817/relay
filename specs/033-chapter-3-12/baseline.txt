@@ -2311,3 +2311,48 @@ feature 030's block is exactly that.
 already identical, and the difference is Vietnamese prose being more compact in line
 count. Verified by comparing the fence bodies directly rather than by reasoning about
 line totals.
+
+## Chapter 3.14 — published, and the chain is clean
+
+    en   1,564 lines   2,228 prose words   17 chain fences   4 excerpts   4 figures
+    vi   1,543 lines                       23 fences mirrored, 12/12 boxes with locale
+
+    check-fence-chain: 203 fenced files replay onto relay-platform across
+                       31 chapters (31 translated, fences mirrored, 1 retired,
+                       plus post-series amendments)
+
+**Zero problems.** The chain has not been clean since this feature's first commit.
+
+**Three more amendments belonged in `post-series.md`**, found the same way
+`eslint.config.mjs` was: *hunk pre-image matched 0 times*. `resume.itest.ts`,
+`turbo.json` and `package.json` each already have an entry there, so a chapter
+cannot amend the state those entries build. The chapter carries excerpts and the
+explanation; the amendments are one new post-series section.
+
+That is four files in two chapters that a naive reading would have put in a chapter's
+fences. The rule is not "amended files get diff fences" — it is **a diff fence amends
+the state the chain has at that point**, and for a file whose chain runs through
+post-series, a chapter is upstream of its own amendment.
+
+**One file I listed and never fenced.** `codes.test.ts` was in the fence-form audit
+and had no placeholder in the page, so the chain failed on it after everything else
+passed. Its diff then failed HEAD at line 42 on two strings that looked identical in
+the truncated output — so it became a whole-file fence, which the chain's own header
+permits anywhere: *a plain fence states the whole file at that chapter's state*.
+
+## Part 3's four chapters, as published
+
+    3.12  Milestone: the isolation gauntlet          3,440 words   20 fences   3 figs
+    3.13  The endpoints and the instruments          2,452 words   11 fences   4 figs
+    3.14  Milestone: errors that resolve, and an
+          outsider                                  2,228 words   17 fences   4 figs
+
+All three inside the 2,000–4,000 bound, which is what splitting on a count bought.
+Chapter 3.11 for scale: 3,316 words, 31 fences.
+
+    relay-tutorial  pnpm lint          exit 0
+                    tsc --noEmit       clean
+                    pnpm build         exit 0 — 85 static pages, all four new routes
+                    pnpm check:docs    exit 0
+                    pnpm check:errors  exit 0
+                    pnpm check:fences  exit 0
