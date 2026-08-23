@@ -2173,3 +2173,53 @@ chapter's own findings: **a contract the type system states and the build does n
 enforce.** `field` was declared in EIR-API-04 and never set. `PlatformService` was
 "for logs" and enforced nothing. `part` is `string` in a signature no checker reads.
 Each was found by looking at output rather than at types.
+
+## T107 — twenty consecutive green runs, attempt two
+
+    run  1  exit=0  tests=407  failed_files=0  seconds=194
+    run  2  exit=0  tests=407  failed_files=0  seconds=196
+    run  3  exit=0  tests=407  failed_files=0  seconds=194
+    run  4  exit=0  tests=407  failed_files=0  seconds=194
+    run  5  exit=0  tests=407  failed_files=0  seconds=193
+    run  6  exit=0  tests=407  failed_files=0  seconds=192
+    run  7  exit=0  tests=407  failed_files=0  seconds=195
+    run  8  exit=0  tests=407  failed_files=0  seconds=191
+    run  9  exit=0  tests=407  failed_files=0  seconds=192
+    run 10  exit=0  tests=407  failed_files=0  seconds=195
+    run 11  exit=0  tests=407  failed_files=0  seconds=193
+    run 12  exit=0  tests=407  failed_files=0  seconds=192
+    run 13  exit=0  tests=407  failed_files=0  seconds=193
+    run 14  exit=0  tests=407  failed_files=0  seconds=192
+    run 15  exit=0  tests=407  failed_files=0  seconds=191
+    run 16  exit=0  tests=407  failed_files=0  seconds=195
+    run 17  exit=0  tests=407  failed_files=0  seconds=193
+    run 18  exit=0  tests=407  failed_files=0  seconds=194
+    run 19  exit=0  tests=407  failed_files=0  seconds=192
+    run 20  exit=0  tests=407  failed_files=0  seconds=194
+
+    exit codes      {0}
+    test counts     {407} — one value, twenty runs
+    seconds         min 191, max 196, mean 193.25, median 193
+    spread          5 s        stdev 1.41 s
+    budget          240 s — the worst run is 44 s inside it
+    wall clock      3,865 s = 64.4 minutes
+
+**The count never moved.** 407 every run, which is the assertion that matters more
+than the timing: a count that moves is a defect rather than noise.
+
+**The spread is 5 seconds against chapter 3.11's 3**, on a lane that gained
+thirty-odd suites and two new packages. 3.11's note that the spread is how a
+timeout-shaped defect announces itself is the reason to record it: 1.41 s of
+standard deviation across twenty runs is a lane whose slowest path is not near any
+budget.
+
+**Attempt one is recorded above and is not being hidden.** It reached run 12 with
+one failure at run 11, whose cause was two Next.js dev servers compiling a
+3,000-line MDX page on the same machine. Attempt two ran with nothing else on the
+machine — verified by `ss -ltn` before starting: the only listener in the lane's
+port ranges was NATS on 4222.
+
+**What twenty runs establishes is in T107a above and has not changed**: it rejects
+a per-run failure rate of 13.91% or worse at 95% confidence, and a 5% flake
+survives it 36% of the time. Chapter 3.11 ran twenty green and an eleven-chapter-old
+flake surfaced on run twenty-one.
