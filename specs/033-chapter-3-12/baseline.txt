@@ -1963,3 +1963,52 @@ T119a's `docs/08-error-reference.md` goes on **3.14's** entry, because 3.14 buil
 the reference.
 
 All four render on the series index; the reference page resolves and links back.
+
+## T118, T118a, T117c, T119b — the Vietnamese page, and the mirror's three invariants
+
+`app/(vi)/vi/part-3/chapter-12/milestone-the-isolation-gauntlet/page.mdx` — 3,072
+lines against the English page's 3,099. Translated by splitting the file
+mechanically at every line beginning with a fence delimiter — 36 prose segments,
+35 fence segments — translating the prose and copying the fences across untouched.
+Translating in one pass over the whole file is how a fence gets edited by accident.
+
+The mirror property has three invariants and they were checked in order rather
+than trusted:
+
+    EN fences 28   VI fences 28
+    lang+title lists identical        true
+    bodies identical                  true
+    ``` delimiter count               70 both        (T119b)
+
+`check-fence-chain.mjs` agrees: **0 MIRROR problems, 0 problems naming chapter
+3.12's page.** The 21 that remain are 3.13's and 3.14's files.
+
+T118a — **figures are not fences and the mirror does not reach them**, which is
+what lets the plan's rule work. 25 narrative labels moved into Vietnamese;
+identifiers, table and column names, route paths and code fragments stayed English
+(`router.stack`, `channelExists(id)`, `GET /v1/channels/:id/messages`,
+`listMessages(id)`, the shape counts). The figures module's own header comment now
+says so, so the next translator does not have to infer the rule.
+
+T117c — the two `REVISED` notes and the three prose URL corrections mirrored into
+the Vietnamese pages. The chain's problem count did not move, which is the check
+that no fence was touched.
+
+## T120 — the publication gates
+
+    relay-tutorial  pnpm lint         exit 0
+                    tsc --noEmit      clean
+                    pnpm check:docs   FAILED, then passed
+                    pnpm check:errors 13 codes, 13 sections
+                    pnpm check:fences 21 problems, all 3.13's and 3.14's files
+
+**`check:docs` failed first and it was right to.** `content/docs/08-error-reference.md`
+differed from its source by one blank line — the trailing newline left behind when
+T094's probe section was removed from the canonical document after the mirror had
+been synced. One line, invisible on the page, and the checker named the file and
+told the reader which command fixes it. That is the whole argument for having it.
+
+    DRIFT: content/docs/08-error-reference.md differs from docs/08-error-reference.md
+           — run pnpm sync:docs
+
+Seven documents mirror now, where the glob published six.
