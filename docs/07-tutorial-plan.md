@@ -152,7 +152,10 @@ build on."
 | 3.9 | The email nobody was sending | The transport 3.6 was owed (FR-WHK-07): the outbox pattern a third time, over `webhook_disable_notifications` — no migration, because `delivered_at` was already there and already null. Mailpit in compose, and tests that read what was **received** |
 | 3.10 | Quotas and what they cost | Monthly usage quotas for messages and distinct active users, a hard cap that refuses sends with `402` and a soft threshold that only alerts, the 50/80/100% email (FR-RTL-05…08). The caps live in `environments.quota_config` — the jsonb column 2.1 declared and 3.8 refused in print. **The outbox pattern a fourth time**, and the first chapter in the series that needed no global operation at all: usage rises only on a send, so the send knows what it crossed |
 | 3.11 | Counting a connection | Connection-minutes (the third dimension of FR-RTL-05): periodic accounting in the gateway, which owns no tables and — until this chapter — no identity either; reports that carry totals so a lost one repairs itself; the crash that under-bills by a bounded amount rather than over-billing for ever; and close code 4008, declared in 1.3 and emitted for the first time here |
-| 3.12 | **Milestone: the isolation gauntlet** | The cross-tenant attack suite (NFR-SEC-09) run against every endpoint; the second-external-developer test. This chapter *is* the SRS Phase 2 exit criterion — *"an external developer integrates using only public documentation, with no assistance"* |
+| 3.12 | **Milestone: the isolation gauntlet** | The cross-tenant attack suite (NFR-SEC-09), with a target list derived from the running router rather than maintained by hand; four attack shapes over 24 routes; a structural check that every table has a path back to a tenant; the socket surface attacked from the protocol's own frame union; and three deliberate reintroductions, one of which stayed green and taught the suite's range |
+| 3.13 | The endpoints and the instruments | The two public endpoints Part 3 needed and nobody had built — `POST /v1/channels` and its members route — with idempotency enforced by a unique index rather than in application memory; every validation error naming its field for the first time since EIR-API-06 asked; the global-operation guard extended from five tables to nine; and the api repository layer's branch coverage answered with a number rather than a restatement |
+| 3.14 | **Milestone: errors that resolve, and an outsider** | Thirteen error codes with one registry and one URL rule, a `docs_url` that resolves against the published reference, and a sealed integration package mechanically unable to import workspace code. This chapter gives the SRS Phase 2 exit criterion its verdict — *"an external developer integrates using only public documentation, with no assistance"* |
+| 3.15 | The surface a customer drives | The rest of FR-CHN and all of FR-USR: channel listing with cursor pagination, unread counts, user profiles, and the private channel type made real on every read path that has to honour it — 3.12 refuses `private` at the door precisely because nothing reads the column yet |
 
 **3.5 was narrowed while it was being written, and 3.6 is where the remainder
 went.** The original entry promised auto-disable in the same chapter as the
@@ -354,10 +357,32 @@ prose, this table and the registry — and no fence amendment. 3.8's success cri
 check it rather than assume it, because a rule adopted one chapter ago to make this
 cheap should be made to prove it.
 
-**Phase 2 closes across 3.8 and 3.12, and its exit criterion is a problem the series
+**3.12 BECAME THREE CHAPTERS, on a measurement.** The plan estimated 37 fenced
+files — 16 new and 21 amended. The work came to **61**, and the 2,000–4,000
+prose-word bound in §2 cannot hold that: a single page would have run to about
+7,000 words carrying 66 fences. The split was taken at the phase-11 boundary,
+before any chapter prose existed, so nothing was discarded — which is the whole
+argument for counting the surface rather than the finished page.
+
+The three halves measured 21, 21 and 17 files, and land at roughly 3,400, 3,400 and
+2,700 words. Chapter 3.11 for scale: 21 files, 31 fences, 3,316 words.
+
+**The milestone name moved to 3.14** rather than staying with the suite, because
+the Phase 2 exit criterion is what a milestone chapter gives a verdict on and the
+outsider's chapter is where that verdict lives. And the deferred public surface —
+promised a number as 3.13 — **became 3.15**. What mattered about the promise was
+that the work had a number, not which number.
+
+This is the second time a chapter in this part has been split on a count and the
+third time an estimate was low: 3.5 estimated 22 fences and shipped 39, 3.11
+estimated 21 files and shipped 21, and this one estimated 37 and found 61. The
+estimate is not getting better; what changed is that this one was checked before
+the prose existed rather than after.
+
+**Phase 2 closes across 3.8 and 3.14, and its exit criterion is a problem the series
 has been accumulating.** SRS §7.3 exits Phase 2 on *"an external developer integrates
 using only public documentation, with no assistance"*. 3.8 finishes the requirement set;
-the gauntlet, now 3.12, runs the test.
+the gauntlet, now 3.12, builds the suite, and 3.14 runs the outsider's test.
 
 The awkward part is that 3.8 ships `rate_limited` as the first error code an integrating
 developer will actually receive and look up, and its `docs_url` resolves to nothing — a
