@@ -13,11 +13,18 @@ session. "Member" means a row in `members` for `(channel_id, user_id)`.
 | create the channel | tenant credential, not a user | — | tenant credential | — |
 | read the channel by id | 200 | 200 | 200 | **404** |
 | read history | 200 | 200 | 200 | **404** |
-| send a message | 201 | 201 | 201 | **403 `not_a_member`** |
+| send a message | 201 | 201 | 201 | **404** — the not-found envelope |
 | appear in the caller's listing | yes | no | yes | no |
 | subscribed on the socket | yes | **no** | yes | no |
 | join | already in | 200, becomes a member | already in | **404** |
 | set a read position | 200 | **403 `not_a_member`** | 200 | **404** |
+
+**The send row said `403 not_a_member` until analysis pass six.** SC-002 requires the
+answer for each of SC-001's four verbs — send included — to be byte-identical to a channel
+that does not exist, and a 403 naming the membership announces that the channel exists.
+The oracle chapter 3.12 built for cross-tenant pairs catches exactly this, so T043 would
+have failed against the implementation the same feature specified. The read-position row
+two lines down had it right; this row was written minutes later and did not.
 
 **Two different refusals, and the difference is the whole isolation argument.**
 
@@ -38,14 +45,24 @@ itself be refused — would immediately permit is a refusal with nothing behind 
 position is the one verb where membership still matters on a public channel, because a
 read position is per-member state and a non-member has none.
 
-**An archived channel refuses sends with `403 channel_archived`** regardless of type or
-membership, and answers reads normally. The distinction FR-021 asks for is that a
-client can tell "join this channel" from "wait for the archive to lift" from "this does
-not exist", and three codes is the only way to say three things.
+**An archived channel refuses sends with `403 channel_archived` — but only once the
+caller can see it.** FR-021a fixes the order: **ban, then membership and visibility, then
+archive.** Reversing the last two makes the archive refusal an existence oracle, because a
+non-member of a private archived channel would learn it exists from `channel_archived`.
+The order was ban-archive-membership until analysis pass six.
 
-**A banned user is refused before type is consulted.** `403 user_banned` on send, and
-the socket is refused at connect. Chapter 3.16 owns this; it is in this table because
-the ordering — ban, then archive, then membership — has to be one ordering and not two.
+**A banned user is refused before the channel is resolved at all.** `403 user_banned` on
+send, and the socket refused at connect. That placement is deliberate: resolve the channel
+first and the ban path becomes the oracle the membership path is not allowed to be, since
+a banned user would learn which channel ids exist. Chapter 3.16 owns the ban; it is in this
+table because the order has to be one order.
+
+**Where `not_a_member` is actually emitted**, now that private sends answer 404 and public
+sends are permitted: **one place — the read-position route on a public channel by a
+non-member.** A read position is per-member state, keyed by channel and user, and removal
+deletes the row (T053), so refusing a non-member is the same rule the table already keeps.
+The code is registered in Phase 2 with the other two and its only emitter is in chapter
+3.16.
 
 **Paths here are written with the customer's external id in the position it occupies.**
 The router names that parameter **`:channelId`**, and `targets.ts`'s classification list

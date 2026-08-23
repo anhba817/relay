@@ -42,7 +42,7 @@ Its record is `specs/034-chapter-3-15/`: read **`plan.md`** for the seventeen ph
 and the constitution gate, `research.md` for R1 to R18 (twelve measured against a
 running database), then `data-model.md`, `contracts/membership.md`,
 `contracts/listing.md` and `quickstart.md` (18 checks, three of them negative).
-45 requirements, 21 success criteria, 231 tasks in 21 phases, checklist 16/16.
+46 requirements, 21 success criteria, 232 tasks in 21 phases, checklist 16/16.
 
 **Twelve SRS clauses, five dead columns, and four corrections.** The clauses are
 FR-CHN-03/04/05/06/08/09/10 and FR-USR-02/03/04/05/06. The columns exist and nothing
@@ -119,6 +119,27 @@ maintains `last_sequence` (chapter 2.2 made it the sequencing authority).
 4. **The gauntlet has no same-tenant fixture.** All four attack shapes take another
    tenant's identifiers, so "a user of your own tenant who is not a member" is new
    work rather than a reuse (R10, FR-034).
+
+**PASS SIX FOUND TWO TASKS THAT COULD NOT BOTH PASS.** The contract and three tasks
+specified a private channel's send refusal as `403 not_a_member`; SC-002 requires send's
+answer — send is one of SC-001's four verbs — to be byte-identical to a channel that does
+not exist. A 403 announces the channel exists, so T043's oracle would have failed against
+T031's own implementation. **Private sends now answer the not-found envelope**, and
+`not_a_member` turns out to have exactly one emitter in the whole feature: the read-position
+route on a public channel.
+
+**AND THE REFUSAL ORDER WAS A LEAK.** Ban, then archive, then membership means a non-member
+of a private *archived* channel learns it exists from `channel_archived`. FR-021a fixes the
+order at **ban → membership and visibility → archive**, with the ban check before the
+channel is resolved so a banned user gets one answer for every channel id. Both findings are
+chapter 3.12's fifth-pass defect pointed at this feature: a refusal that reveals what it is
+refusing.
+
+**AND WHAT MADE THEM FINDABLE was making an artifact more precise.** Five passes of
+artifact-vs-artifact reading produced nothing but arithmetic errors. Pass three changed
+"all three verbs" to "all four verbs SC-001 names", and adding `send` to the oracle's list
+put the send refusal in contact with SC-002. Precision creates contradictions where vagueness
+hid them.
 
 **AND THE ORDER MATTERS ON ONE THING.** `POST /v1/channels` accepts `private` only
 once the three read paths and the send path enforce it (FR-009). The enum widened

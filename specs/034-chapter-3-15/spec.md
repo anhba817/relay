@@ -420,7 +420,10 @@ their sends are refused, confirm their history is intact, unban, confirm they wo
 **Membership and the private type**
 
 - **FR-001**: A user MUST NOT send a message to a private channel of which they are not
-  a member. The refusal MUST leave the channel unchanged, verified by reading the
+  a member, **and the refusal MUST be the not-found envelope — byte-identical to a
+  channel that does not exist**, because SC-002 covers send as well as the three reads. A
+  `403` naming the membership would tell the caller the channel exists, which FR-003
+  forbids. The refusal MUST leave the channel unchanged, verified by reading the
   channel's messages rather than by the refusal's status.
 - **FR-002**: A user MUST NOT receive messages from, resume into, or subscribe to a
   private channel of which they are not a member.
@@ -478,7 +481,13 @@ their sends are refused, confirm their history is intact, unban, confirm they wo
 - **FR-020**: Archiving a channel MUST prevent new messages and preserve history, and
   MUST be reversible.
 - **FR-021**: A send to an archived channel MUST be refused with a code that
-  distinguishes archived from not-found and from not-a-member.
+  distinguishes archived from not-found and from banned.
+- **FR-021a**: The send path's three refusals MUST be evaluated in one order: **ban,
+  then membership and visibility, then archive** — and the ban check MUST run before the
+  channel is resolved, so a banned user gets the same answer for every channel id. Any
+  other order leaks: `channel_archived` for a private channel the caller cannot see tells
+  them it exists, which is what FR-003 forbids. One order, stated here rather than
+  decided inside an implementation task.
 - **FR-022**: The feature MUST state whether an archived channel appears in a listing
   and whether the socket delivers anything for it.
 
@@ -606,7 +615,10 @@ their sends are refused, confirm their history is intact, unban, confirm they wo
   refused with the field named, and the feature states whether any operation reads the
   role.
 - **SC-010**: An archived channel refuses sends with a code distinct from not-found and
-  not-a-member, still serves history, and accepts sends again after unarchiving.
+  from banned, still serves history, and accepts sends again after unarchiving. **And an
+  archived channel the caller cannot see answers not-found**, demonstrated by the same
+  oracle SC-002 uses — the archive refusal must not become the existence oracle the
+  membership refusal is not allowed to be.
 - **SC-011**: All three profile fields round-trip; metadata over 4 KB and a malformed
   avatar URL are each refused with `field` naming the key.
 - **SC-012**: 100 users upsert in one request and 101 is refused; a deleted user's

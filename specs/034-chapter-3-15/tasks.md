@@ -158,7 +158,7 @@ pretending otherwise.
 
 | Column | Migration | Schema | SAD §6.1 | Writer | Reader | Removal | Chapter |
 |---|---|---|---|---|---|---|---|
-| `channels.type` | — | exists | exists | `POST /v1/channels` | T031, T040 | T034 | 3.15 |
+| `channels.type` | — | exists | exists | chapter 3.13's `POST /v1/channels` | T031, T040 | T034 | 3.15 |
 | `channels.archived_at` | — | exists | exists | **T072a** | T071 | T077 | 3.15 |
 | `channels.last_activity_at` | T013 | T015 | **T018a** | T107 | T110 | **T116a** | 3.16 |
 | `members.role` | T016 | T017 | n/a — `members` is not in §6.1 | T063 | **nothing, by FR-012** | n/a | 3.15 |
@@ -225,7 +225,7 @@ or writes something declared here.
 - [ ] T023 Add a case to `packages/test-harness/src/guard.itest.ts` driving the refusal for `read_positions`, asserting the message names the composite key rather than `undefined`. The `coalesce(to_jsonb(OLD) ->> 'id', to_jsonb(OLD)::text)` expression chapter 3.13 installed is what makes this work for a table with no `id`
 - [ ] T024 **Verify T023 fires.** Remove `read_positions` from the array, run, confirm red, restore. Chapter 3.13 found that a table in the array is not the same as a table the guard watches, and that finding cost thirteen failing tests in two unrelated files
 - [ ] T024a [P] Confirm `read_positions`' bait is not claimable by any global drain, and record why in `baseline.txt`: nothing in the platform drains read positions. Chapter 3.13's thirteen failures came from bait a global sweep could claim, and that was the fourth measurement of the same lesson
-- [ ] T025 [P] Add `not_a_member`, `channel_archived` and `user_banned` to `packages/protocol/src/codes.ts` with their HTTP statuses. Sixteen codes after this
+- [ ] T025 [P] Add `not_a_member`, `channel_archived` and `user_banned` to `packages/protocol/src/codes.ts` with their HTTP statuses. Sixteen codes after this. **`not_a_member` has exactly one emitter** — the read-position route on a public channel by a non-member (T120, chapter 3.16) — because private cases answer 404 and public sends are permitted. Registered here with the other two; stated so nobody looks for a second emitter
 - [ ] T026 [P] Extend `packages/protocol/src/codes.test.ts` so the three new codes are covered by the existing every-emitted-code-is-registered assertion
 - [ ] T027 [P] Add three sections to `docs/08-error-reference.md`, each saying what a client should do differently — join the channel, wait for the archive to lift, contact support. Reusing `forbidden` for all three is the alternative R11 rejected, and a client that cannot tell them apart is the reason
 - [ ] T028 Run `pnpm sync:docs` in `relay-tutorial/` and `pnpm check:errors`. Sixteen codes, sixteen sections, both directions
@@ -246,16 +246,16 @@ confirm the refusal, confirm the channel's message count did not move, then dele
 check and confirm the test goes red.
 
 - [ ] T031 [US1] Add the membership check to `sendMessage` in `services/api/src/db/repository.ts`, gated on `userId` being present. **Create this phase's private channels through the repository, not the API** — `createChannel(externalId, type, …)` already takes a type, and `POST /v1/channels` does not accept `private` until T049 at the end of phase 4 (FR-009's ordering). **The signature already carries the distinction the check needs** — `userId` present means a user is acting, absent means the tenant is — so the gate is the parameter and not a new flag (FR-001, R1)
-- [ ] T032 [US1] Test it in `services/api/src/db/repository.itest.ts`: a user of the tenant who is not a member of a private channel is refused `not_a_member` (SC-001)
+- [ ] T032 [US1] Test it in `services/api/src/db/repository.itest.ts`: a user of the tenant who is not a member of a private channel is refused with **the not-found envelope, not `not_a_member`** (FR-001, SC-001). Analysis pass six found the contract and three tasks specifying a `403` here while SC-002 requires send's answer to be byte-identical to a channel that does not exist — a 403 announces the channel exists, and T043's oracle would have failed against this feature's own implementation
 - [ ] T033 [P] [US1] Assert the channel's message count is unchanged after the refusal (SC-003). A refusal that still writes a row is not a refusal, and only this assertion can tell them apart — `services/api/src/db/repository.itest.ts`
 - [ ] T034 [US1] **Remove the check and confirm T032 goes red**, then restore it. This is FR-035's gate, and the removals are listed in the column table above rather than counted in each task — five analysis passes each found a hand-maintained count stale
 - [ ] T035 [P] [US1] Enumerate every `sendMessage` caller into `baseline.txt` — six, excluding tests — and confirm none carries a membership check of its own. Six callers inheriting one check is what constitution I means by data access rather than handlers
 - [ ] T036 [US1] Test that `POST /internal/messages` inherits the check: it resolves a user and then sends, so a non-member's message through the internal route is refused too. Chapter 3.12 recorded this route as checking nothing — `services/api/src/internal/internal.itest.ts`
 - [ ] T037 [P] [US1] Test that an application credential — no `userId` — still sends to a private channel. It acts for the tenant and is the customer's own server (FR-005), and this is the assumption the spec asked to be stated rather than assumed — `services/api/src/db/repository.itest.ts`
-- [ ] T038 [US1] Test the socket send path: a non-member's frame is refused with the same code, over the gateway (EIR-WS-06's vocabulary) — `services/gateway/src/isolation.itest.ts`
+- [ ] T038 [US1] Test the socket send path: a non-member's frame is refused the same way as a frame naming a channel that does not exist, over the gateway (EIR-WS-06's vocabulary). The socket surface has the same indistinguishability obligation as the REST one — `services/gateway/src/isolation.itest.ts`
 - [ ] T039 Commit Phase 3
 
-**Checkpoint**: `channels.type` has its first reader, the refusal is `not_a_member`, and removing the check turns a test red.
+**Checkpoint**: `channels.type` has its first reader, a private channel a non-member sends to answers exactly as an absent one, and removing the check turns a test red.
 
 ---
 
@@ -347,10 +347,11 @@ its own code, and history stays readable.
 works.
 
 - [ ] T071 [US7] Read `archived_at` on the send path in `repository.sendMessage`, refusing with `channel_archived` (FR-020, FR-021) — `services/api/src/db/repository.ts`
-- [ ] T072 [US7] Fix the ordering once and in one place: **ban, then archive, then membership**. Three refusals on one path need one order, and two orders is how a client sees `not_a_member` for a channel that is archived — `services/api/src/db/repository.ts`
+- [ ] T072 [US7] Implement FR-021a's order once and in one place: **ban, then membership and visibility, then archive**, with the ban check running **before the channel is resolved** — `services/api/src/db/repository.ts`. This task said ban-archive-membership until analysis pass six, which is a leak: a non-member of a private *archived* channel would learn it exists from `channel_archived`. And the ban goes before channel resolution so a banned user gets the same answer for every channel id, or the ban path becomes the oracle the membership path is not allowed to be
 - [ ] T072a [US7] Add `archiveChannel` and `unarchiveChannel` to `services/api/src/db/repository.ts`, both idempotent — set and clear `archived_at`. **Nothing wrote this column**: T071 read it, T073 added two routes, T074–T078 tested it, and no task set it. Found by pass four checking each route for a repository method
+- [ ] T072b [US7] Test the order with the oracle, not by reading the code: an **archived private channel the caller cannot see** answers exactly as a channel that does not exist (SC-010's second half), and a **banned** user gets `user_banned` for a channel id that exists and for one that does not — `services/api/src/isolation/gauntlet.itest.ts`
 - [ ] T073 [US7] Add `POST` and `DELETE /v1/channels/:channelId/archive`, both idempotent (200 either way) — `services/api/src/channels/channels.controller.ts`
-- [ ] T074 [P] [US7] Test that a send to an archived channel is refused with a code distinct from not-found and from `not_a_member` (SC-010) — `services/api/src/channels/channels.itest.ts`
+- [ ] T074 [P] [US7] Test that a send to an archived channel **the caller can see** is refused with a code distinct from not-found and from `user_banned` (FR-021, SC-010). The comparison was against `not_a_member` until pass six, on a path where that code can no longer appear — `services/api/src/channels/channels.itest.ts`
 - [ ] T075 [P] [US7] Test that history is still readable while archived (FR-020) — `services/api/src/channels/channels.itest.ts`
 - [ ] T076 [P] [US7] Test archiving an archived channel and unarchiving an active one — both 200, nothing changed — `services/api/src/channels/channels.itest.ts`
 - [ ] T077 [US7] **Remove the `archived_at` read and confirm T074 goes red**, then restore. FR-035; the column table lists every removal this feature owes — `services/api/src/channels/channels.itest.ts`

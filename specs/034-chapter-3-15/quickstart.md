@@ -100,9 +100,11 @@ as a table the guard watches.
 pnpm vitest run services/api/src/db/repository --config services/api/vitest.integration.config.mts
 ```
 
-**Expect** a send to a private channel by a non-member refused, and the channel's
-message count unchanged afterwards (SC-003). A refusal that still writes a row is not a
-refusal.
+**Expect** a send to a private channel by a non-member refused **with the not-found
+envelope** — not a `403` naming the membership — and the channel's message count unchanged
+afterwards (FR-001, SC-003). A refusal that still writes a row is not a refusal, and a
+refusal that names what it is refusing is not indistinguishable: SC-002 covers send along
+with the three reads, so this answer has to match a channel that does not exist.
 
 **Then remove the check** from `repository.sendMessage` and re-run. The test must fail.
 This is FR-035's gate; the column table lists every removal this feature owes.
@@ -192,9 +194,15 @@ them (SC-005). Removing a non-member and removing a user who does not exist both
 pnpm vitest run services/api/src/channels --config services/api/vitest.integration.config.mts
 ```
 
-**Expect** a send to an archived channel refused with `channel_archived`, distinct from
-not-found and from `not_a_member` (SC-010); history still readable; archiving an
-archived channel a 200 no-op.
+**Expect** a send to an archived channel **the caller can see** refused with
+`channel_archived`, distinct from not-found and from `user_banned` (SC-010); history still
+readable; archiving an archived channel a 200 no-op.
+
+**And the order, tested with the oracle rather than read from the code** (FR-021a): an
+archived *private* channel the caller cannot see answers exactly as an absent one, and a
+banned user gets `user_banned` for a channel id that exists and for one that does not. Ban,
+then membership and visibility, then archive — reversed, the archive refusal becomes the
+existence oracle the membership refusal is not allowed to be.
 
 **Then remove the `archived_at` read** and confirm the refusal test goes red.
 
