@@ -1482,3 +1482,188 @@ chapter does not use one.
   pnpm test:integration  exit 0, 10 of 10, 3m13.317s — unchanged at 407, and the
                       outsider is correctly absent from the task list
   pnpm test:outsider     8 passed, against compose with the services profile
+
+## T105 — every success criterion, with its number
+
+Thirty-three, walked in order, including the four that came out other than the
+spec expected.
+
+    SC-001  MET      24 derived, 21 attacked, 3 exempt with reasons. 22 before the two
+                     new endpoints; the derivation found them and failed as unclassified.
+    SC-002  MET      demonstrated three ways in T021/T022: a removed classification, a
+                     broken router read, and a route registered before it was classified.
+    SC-003  MET      the pair compares status and whole body minus `request_id`, for two
+                     read targets and one list target. `differences` empty on every run.
+    SC-004  MET      `writeAttack` reads the victim's rows before and after; nine write
+                     targets. T065 proved the check is the one that fires — the responses
+                     stayed identical and only `stateChanged` caught the leak.
+    SC-005  MET, AND THE FIRST ONE DID NOT FIRE. Three reintroductions, two red on the
+                     first attempt. `listMessages` unscoped changed nothing because
+                     `channelExists` refuses first; the finding is recorded rather than
+                     the reintroduction reshaped until it passed. Assertions named per
+                     reintroduction, and the green ones counted (19, 20, 20 of 21).
+    SC-006  MET      `git status` clean, HEAD unchanged, `src/isolation/` 33 passed after
+                     each revert.
+    SC-007  MET      22 base tables — 12 direct, 2 hop, 8 spine. Counts recorded rather
+                     than asserted, because `__sentinel_environments` exists only after
+                     the lane has run.
+    SC-008  MET      four escapes, each refused by the level meant for it — and the seal
+                     was NOT in force on its first draft (R23 a second time). Recorded.
+    SC-009  MET      8 tests from a standing start against compose, no workspace fixture.
+    SC-010  MET      six gaps in `gaps.md`, each with a disposition; the method stated.
+    SC-011  MET      13 codes, 13 sections, set-equal both directions.
+    SC-012  MET      both directions demonstrated and reverted (T094).
+    SC-013  MET      fetched, not pattern-matched: three live `docs_url` values resolved
+                     to real `id` attributes in the served page.
+    SC-014  MET      201 then 200 with the same body; two tenants own `theirs`
+                     independently and neither sees the other's id.
+    SC-032  MET      400, `code: invalid_request`, `field: "type"` — and `field` had
+                     never been set by anything in the api before this chapter.
+    SC-033  MET      422, `channel_member_limit_exceeded`, and `countMembers` reads 1,000
+                     before and after.
+    SC-015  MET, BY A DIFFERENT PATH THAN THE SPEC ASSUMED. A member added over the API
+                     does receive on a socket — when the message is SENT over a socket.
+                     A REST-sent message reaches no socket at all (gaps.md G1), so the
+                     test sends over the socket and a second test pins the REST case as
+                     not delivered.
+    SC-016  MET      22 → 24 on the build that registered the module, failing as
+                     unclassified before `targets.ts` mentioned either route.
+    SC-017  MET      four driven mutations, each refusal naming its table, plus both
+                     halves of the key expression and the permitted write landing.
+    SC-018  MET      254/280 branches — 90.71%, against T007's 241/266 (90.60%). It fell
+                     to 90.43% mid-phase first; one arm was removed rather than named and
+                     two are named. Pin stays at 90.
+    SC-019  see T107 and T107a below.
+    SC-020  MET      seven suites audited; two bound fixed ports (4124 and a second at
+                     4131 that CLAUDE.md does not name), and two of my own ranges
+                     overlapped `meter.itest.ts`. Map recorded.
+    SC-021  MET      verdict in `gaps.md`: met in part, with what was measured and what
+                     was assumed.
+    SC-022  NOT YET  the page is Phase 12.
+    SC-023  NOT YET  `check:fences` reports 14 HEAD problems today, all of them this
+                     chapter's own code awaiting its chapter. Phase 13.
+    SC-024  MET      eleven, by name, before and after — and eleven rather than the nine
+                     the spec said, because T033 counted them.
+    SC-025  MET      the fixtures delete nothing at all, and the guard is armed on nine
+                     tables with the four new ones driven.
+    SC-026  MET      enforced by `check-error-codes.mjs`, not by reading: every section
+                     must carry a retryability line, a client action, and clear a length
+                     floor a restatement cannot.
+    SC-027  MET      three functions come off the seam (`createChannel`, `createUser`,
+                     `addMember`); three stay (`createEnvironment`, `createApiKey`,
+                     `sendMessage`). Stated as a difference, with why it is not migrated.
+    SC-028  MET      demonstrated in three directions, and eight legitimately exempt
+                     files listed with reasons. `services/api/src/isolation/**` is not
+                     among them, which took two edits to earn.
+    SC-031  MET      `wrong_credential_service`, and the hole it closes was found inside
+                     the chapter's own test suite: `usage.itest.ts` presented the
+                     dispatcher's credential to the gateway's route for a whole chapter
+                     and passed. Nine of fifteen tests turned 403.
+    SC-030  MET      compose starts it, the package starts nothing, and the CI job is its
+                     own. `--build` before `up` is in the documented command, which cost
+                     six failing tests to learn.
+    SC-029  MET      five platform routes, each naming its services; both directions
+                     tested route by route in `usage.itest.ts`.
+
+**Two not yet, both Phase 12 and 13's** (SC-022, SC-023). One deferred to the
+battery below (SC-019). Thirty of thirty-three have a number today.
+
+## T107a — what twenty green runs establishes, and what it does not
+
+The chapter states the range of every other defence it builds. This is the one
+defence that had no range written down, and the counterexample was four commits
+back in this repository.
+
+**The arithmetic.** Twenty consecutive green runs reject, at 95% confidence, only
+a per-run failure probability of **13.91% or worse** — `(1−p)²⁰ ≤ 0.05` solves at
+`p ≥ 0.1391`. Everything gentler survives, often comfortably:
+
+    per-run failure rate    probability it survives 20 green runs
+             1%                          81.8%
+             2%                          66.8%
+             5%                          35.8%
+            10%                          12.2%
+          13.9%                           5.0%
+            20%                           1.2%
+
+So a flake that fails one run in twenty — the kind that ruins an afternoon once a
+month — passes this battery **more than a third of the time**. Rejecting a 5%
+flake at the same confidence would take **59 runs**; a 1% flake, **299**. At
+roughly 195 seconds a run, that is 3.2 hours and 16.2 hours.
+
+**AND THE COUNTEREXAMPLE IS NOT HYPOTHETICAL.** Chapter 3.11 ran twenty green and
+an eleven-chapter-old flake surfaced on **run twenty-one**. Its own battery is the
+evidence that twenty is a floor rather than a proof — recorded in this repository's
+git history, at `part3-ch11`.
+
+**What twenty runs does buy**, and it is worth having: it catches the defect class
+that fails often. Chapter 3.11's battery found a timeout-shaped fault on run one —
+six Mailpit tests waiting through a 10-second helper inside a 5-second budget —
+and chapter 3.12 found three of its own on the first attempt. Those are not rare
+events; they are near-certainties that a single run happens to miss because of
+ordering or a warm cache.
+
+**What it does not buy**, stated so nobody reads a green battery as a guarantee:
+
+- a flake below about 14% per run is not excluded by it;
+- a defect that needs a specific interleaving of two suites is not excluded, since
+  the lane runs one package at a time and the ordering within a package is stable;
+- a defect that needs a cold cache, a slower machine or a different CPU count is
+  not excluded, because twenty runs on one machine vary in almost nothing;
+- and nothing about correctness is excluded — twenty green runs of a suite that
+  asserts the wrong thing is twenty green runs.
+
+**The budget a run may not exceed**, stated because a mean that moves is a defect:
+**240 seconds**. The lane measured 191.72 s at chapter 3.11's close and 192–195 s
+through this chapter with thirty-odd suites added, so 240 leaves room for a slower
+machine and none for a timeout-shaped fault. A run over the budget is investigated
+rather than averaged.
+
+## T106, T108, T109 — the counts, the gates, the exemption list
+
+T106 — re-derived, not carried forward: **48 requirements, 33 measurable
+outcomes**. `plan.md`'s Constitution Check row already says 48 and 33; no
+correction needed. (Chapter 3.11's equivalent row read "28 and 20" through three
+passes that each added requirements, which is why this is re-derived rather than
+read.)
+
+T108 — every gate, by exit code:
+
+    pnpm lint              exit 0   (1 pre-existing warning, session.perf.itest.ts)
+    pnpm typecheck         exit 0   13 of 13 packages
+    pnpm build             exit 0
+    pnpm turbo run test    exit 0   379 tests
+    pnpm test:integration  exit 0   407 tests — see the battery
+    pnpm coverage          exit 0   771 tests, every ratchet met
+
+T109 — **nothing was added to `packages/test-harness/src/exempt.ts`.** Six entries
+before this chapter and six after; the diff against it is comment-only (the
+"nine tables, not five" correction). So there is no global operation for the
+chapter to name, and the reason is worth one line: extending the guard to four
+more tables needed no new exemption because the bait was planted already-delivered
+— the suites that drive the quota relay never touch it.
+
+## T105a — the traceability map
+
+`specs/033-chapter-3-12/traceability.md`, both directions, **generated as one file
+rather than edited into 48 bullets**: chapter 3.11's traceability pass tried the
+second way with a regex and broke 36 files.
+
+48 of 48 requirements mapped to a clause. Only 8 cited one in their own text before
+this pass, and none of the other 40 turned out to be implementing nothing.
+
+Six governing clauses are listed as touched-and-not-covered or
+touched-and-contradicted, which is the half a one-directional map cannot show:
+
+    FR-CHN-05    CONTRADICTED on purpose — `private` refused, because nothing
+                 reads `channels.type` and the clause is unimplemented
+    FR-CHN-07    was unmentioned before pass five; now FR-048
+    FR-CHN-01    partly delivered — all four elements, minus the private type
+    EIR-API-06   WALKED INTO and now claimed: no validation error in the api had
+                 ever named its field. Fixed under FR-047's test, and the fix is
+                 general. It has no FR of its own because the chapter found it
+                 while implementing something else.
+    FR-RTM-05    delivered for socket sends only — gaps.md G1
+    DR-06, FR-MSG-08, FR-TEN-08, FR-MOD-06
+                 touched by the outbox retention finding and deliberately not
+                 covered; owned by FR-MOD-06's chapter
