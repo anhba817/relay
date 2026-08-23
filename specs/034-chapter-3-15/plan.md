@@ -24,19 +24,22 @@ none of the eight user routes would have mounted.
 
 **A count without an enumeration cannot be checked, and each check found more.** R18's
 table is the authority for every file count in this feature, and the figures below are
-read off it rather than recomputed: **18 + 20 = 38 instances, union 34, 31 taught, 7 in
-both chapters, 3 in neither.** Three analysis passes produced three wrong overlap
-numbers before the table existed to read from.
+read off it rather than recomputed: **20 + 20 = 40 instances, union 36, 33 taught, 7 in
+both chapters, 3 in neither.** The union has been revised four times — 25, 29, 34, 36 —
+each time by a new question rather than a reread, and three analysis passes produced three
+wrong overlap numbers before the table existed to read from.
 
 | Chapter | Carries | Files | ≈ prose words |
 |---|---|---|---|
-| **3.15** the channel a customer controls | membership enforced on send, reading a channel by id, the `private` type made meaningful, member removal, member roles, archiving | 18 | ≈ 2,880 |
+| **3.15** the channel a customer controls | membership enforced on send, reading a channel by id, the `private` type made meaningful, member removal, member roles, archiving | 20 | ≈ 3,200 |
 | **3.16** what a user sees | channel listing with cursor pagination and activity ordering, unread counts, user profiles, bulk upsert, deletion, banning, implicit creation on authentication | 20 | ≈ 3,200 |
 
-Both inside 2,000–4,000 with 800 words or more of headroom. **Three chapters would be
-~2,027 each — twenty-seven words above the floor**, so R12's floor argument holds and
-analysis pass one was wrong to report it gone: that pass scaled a group sum by a file
-ratio, and instances grow with how many chapters teach a file, not with the union.
+Both inside 2,000–4,000 with 800 words of headroom. **Three chapters would be ~2,133
+each**, which clears the floor — so at the current count the arithmetic no longer argues
+either way and two chapters holds on subject coherence and on ceiling headroom against an
+estimate that has run low three times. Pass one reported the floor argument gone by
+scaling a group sum; that was the wrong instrument, and the right one has now moved the
+same way for a different reason.
 
 ## Technical Context
 
@@ -131,6 +134,7 @@ relay-platform/
 │                            0012 (member roles, users.deleted_at)
 ├── services/api/src/
 │   ├── channels/            + read by id, removal, roles, archiving, the private type
+│   ├── messages/            + the public send attributes its user (T031a)
 │   ├── users/               NEW — module, service, controller, schema, tests
 │   ├── app.module.ts        + UsersModule registered (found by R18's enumeration)
 │   ├── db/                  + read_positions, last_activity_at, members.role, users.deleted_at

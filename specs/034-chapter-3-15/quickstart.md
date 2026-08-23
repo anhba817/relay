@@ -106,6 +106,12 @@ afterwards (FR-001, SC-003). A refusal that still writes a row is not a refusal,
 refusal that names what it is refusing is not indistinguishable: SC-002 covers send along
 with the three reads, so this answer has to match a channel that does not exist.
 
+**And the same refusal on the public route with a user token** —
+`POST /v1/channels/:channelId/messages` is the only one of the three send paths a
+customer's client calls, and until analysis pass seven it was the one no check reached:
+`MessagesController` declares no `@Accepts`, so a user token is accepted, and the
+controller passed no user, so the `userId`-gated check never fired.
+
 **Then remove the check** from `repository.sendMessage` and re-run. The test must fail.
 This is FR-035's gate; the column table lists every removal this feature owes.
 

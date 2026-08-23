@@ -36,6 +36,55 @@ the internal route together.
 other callers and puts a tenancy rule in a controller); a check in
 `messages.service` (two controllers call it, and the fixtures do not).
 
+## R1 — the membership check has a home, and the signature already says so
+
+**Decision**: the check goes inside `repository.sendMessage`, gated on `userId`
+being present.
+
+`sendMessage` already takes `userId?: string`. That optionality is not an accident of
+the API — it is the distinction the whole clause turns on:
+
+    userId present    a USER is sending. Membership applies.
+    userId absent     the TENANT is sending through an application key.
+                      There is no member to check.
+
+So FR-005 — what a private channel means for an application credential — is answered
+by a type that already exists rather than by a new decision. And putting the check in
+the repository rather than a service satisfies constitution I directly: *isolation
+lives in data access*. Every caller inherits it, and there are six:
+
+    packages/e2e/src/harness.ts            services/api/src/isolation/fixtures.ts
+    services/api/src/messages/…service.ts  services/gateway/src/api-client.ts
+    services/gateway/src/isolation-…ts     services/gateway/src/session.ts
+
+The socket path reaches it through `api-client` → `POST /internal/messages` →
+`messages.service.send` → `repository.sendMessage`, so one edit covers the socket and
+the internal route together.
+
+**Alternatives considered**: a guard on `/internal/messages` (misses `sendMessage`'s
+other callers and puts a tenancy rule in a controller); a check in
+`messages.service` (two controllers call it, and the fixtures do not).
+
+**AND THE CALLER COUNT WAS WRONG, WHICH HID A HOLE.** This item said six callers inherit
+the check. Counted in analysis pass seven:
+
+    repo.sendMessage        messages.service.ts:47        (+ isolation/fixtures.ts, a test helper)
+    MessagesService.send    messages.controller.ts:40     the PUBLIC route
+                            internal.controller.ts:65     the socket's route
+
+Three call sites, not six — and the important one supplies nothing.
+`messages.controller.ts:40` calls `this.messages.send(channelId, body)` with **no user**,
+and `MessagesController` declares no `@Accepts`, so `credential.guard.ts` falls back to
+`EITHER = ["application","user"]` and a user token is accepted there. So a user sends to a
+private channel they are not a member of through the route a customer's client actually
+calls, `userId` is absent, and the gate opens.
+
+**The decision survives; the argument for it did not.** "The signature already encodes who
+is acting" is true of the signature and false of that caller: a parameter nobody fills in
+encodes nothing. The check stays in the repository — constitution I is explicit that
+isolation lives in data access — and T031a makes the public route say who is acting, which
+is what the argument assumed all along. Six passes read the number and none counted it.
+
 ## R2 — reading is already membership-scoped; only sending is not
 
 **Measured**, by reading both paths:
@@ -320,8 +369,14 @@ claimable by construction.
   FR-RTM-07 owns delivery scope, and presence fan-out is the gateway's. In scope only
   as far as: a non-member's socket is not subscribed to the channel, so it receives no
   presence for it. Anything finer belongs with FR-RTM-07.
-- **A REST-sent message reaching a socket.** Chapter 3.14's gap G1, owner FR-RTM-05.
-  This feature does not change the fan-out.
+- **A REST-sent message reaching a socket — half of it.** Chapter 3.14's gap G1 has **two
+  independent causes**: the api publishes to no fan-out, and the public send attributes no
+  user. This feature must fix the second, because FR-001 cannot hold without it — a
+  membership check gated on `userId` never fires on a route that supplies none (R1, T031a).
+  It does **not** touch the fan-out, which stays with FR-RTM-05. So G1 closes halfway here,
+  and the half that closes is the half this feature's own central requirement depends on.
+  Stated this way because analysis pass seven found R16 declaring the whole gap out of
+  scope while FR-001 required part of it.
 - **The outbox's message-text retention.** Chapter 3.12's finding, owner FR-MOD-06.
 - **A human reading the documentation.** Chapter 3.14's verdict on the Phase 2 exit
   criterion said content sufficiency is not comprehensibility, and that a person is
@@ -427,16 +482,23 @@ already holds. So the table is the authority and every other document quotes it.
 
 | | count | files |
 |---|---|---|
-| **3.15 only** | 11 | `channels.controller.ts`, `channels.itest.ts`, `channels.schema.ts`, `channels.service.ts`, `internal.itest.ts`, `fixtures.ts`, `gauntlet.itest.ts`, `targets.itest.ts`, `targets.ts`, `tenant-scope.itest.ts`, `isolation-fixtures.ts` |
+| **3.15 only** | 13 | `channels.controller.ts`, `channels.itest.ts`, `channels.schema.ts`, `channels.service.ts`, `internal.itest.ts`, `fixtures.ts`, `gauntlet.itest.ts`, `targets.itest.ts`, `targets.ts`, `tenant-scope.itest.ts`, `isolation-fixtures.ts`, **`messages.controller.ts`**, **`messages.service.ts`** |
 | **3.16 only** | 13 | `credentials.itest.ts`, `dev-token.controller.ts`, `users.controller.ts`, `users.service.ts`, `users.module.ts`, `users.schema.ts`, `users.itest.ts`, `app.module.ts`, `session.ts`, `0011_*.sql`, `sentinel.sql`, `guard.itest.ts`, `vitest.coverage.config.mts` |
 | **both** | 7 | `repository.ts`, `repository.itest.ts`, `isolation.itest.ts`, `schema.ts`, `0012_*.sql`, `codes.ts`, `codes.test.ts` |
 | **neither** | 3 | `compare.ts` (read by T043, not changed), `exempt.ts` and `eslint.config.mjs` (touched only if T011 finds a file needing an entry) |
 
-    union            34 files
-    taught           31
-    3.15 teaches     11 + 7 = 18
+    union            36 files
+    taught           33
+    3.15 teaches     13 + 7 = 20
     3.16 teaches     13 + 7 = 20
-    instances        38   = 31 taught + 7 counted twice   ✓
+    instances        40   = 33 taught + 7 counted twice   ✓
+
+**36, from 34, from 29, from 25.** Four revisions, each found by a different question:
+the task list (29), the chapter assignment (34), and the send call graph (36) —
+`messages.controller.ts` and `messages.service.ts` arrived in analysis pass seven with
+T031a, because the public send had to be made to say who is acting before a membership
+check could fire on it. Every revision has come from asking a new question rather than
+rereading, which is the argument for the enumeration existing at all.
 
 The seven shared files are fenced **whole in 3.15 and diffed in 3.16**, 3.15 coming
 first. `schema.ts` and `0012` straddle because each carries columns from both chapters:
@@ -454,13 +516,14 @@ its own amendment.
 
 At chapter 3.11's measured 160 words per file — 1.5 fences per file, 107 words per fence:
 
-    3.15    18 files  ≈ 2,880 words
+    3.15    20 files  ≈ 3,200 words
     3.16    20 files  ≈ 3,200 words
 
-Both inside 2,000–4,000 with 800 words or more of headroom, and seven of 3.16's twenty
-are diffs of files 3.15 already fenced, which run shorter than a whole file. **Three
-chapters would be 38 ÷ 3 × 160 ≈ 2,027 each — twenty-seven words above the floor**,
-which is not headroom by any reading.
+Both inside 2,000–4,000 with 800 words of headroom, and seven of 3.16's twenty are diffs
+of files 3.15 already fenced, which run shorter than a whole file. **Three chapters would
+be 40 ÷ 3 × 160 ≈ 2,133 each**, which clears the floor by 133 words — still the wrong side
+of comfortable against an estimate that has run low three times, and the reason two
+chapters holds is now subject coherence with the arithmetic no longer arguing either way.
 
 So the two-chapter split is supported by arithmetic again, and by better arithmetic than
 R12's: a real per-file assignment rather than a group sum scaled by a ratio. Analysis

@@ -42,7 +42,7 @@ Its record is `specs/034-chapter-3-15/`: read **`plan.md`** for the seventeen ph
 and the constitution gate, `research.md` for R1 to R18 (twelve measured against a
 running database), then `data-model.md`, `contracts/membership.md`,
 `contracts/listing.md` and `quickstart.md` (18 checks, three of them negative).
-46 requirements, 21 success criteria, 232 tasks in 21 phases, checklist 16/16.
+46 requirements, 21 success criteria, 236 tasks in 21 phases, checklist 16/16.
 
 **Twelve SRS clauses, five dead columns, and four corrections.** The clauses are
 FR-CHN-03/04/05/06/08/09/10 and FR-USR-02/03/04/05/06. The columns exist and nothing
@@ -119,6 +119,25 @@ maintains `last_sequence` (chapter 2.2 made it the sequencing authority).
 4. **The gauntlet has no same-tenant fixture.** All four attack shapes take another
    tenant's identifiers, so "a user of your own tenant who is not a member" is new
    work rather than a reuse (R10, FR-034).
+
+**PASS SEVEN FOUND THE CENTRAL REQUIREMENT UNENFORCED ON THE ONLY ROUTE A CUSTOMER
+CALLS.** The membership check is gated on `userId` being present. `MessagesController`
+declares **no `@Accepts`**, so the guard falls back to `EITHER` and a user token is
+accepted — and `messages.controller.ts:40` calls `this.messages.send(channelId, body)` with
+no user at all. So a user sends to a private channel they are not a member of and nothing
+checks. The planned tests all missed it: one drove the repository directly, one drove the
+internal route, and both supply a `userId` the public route did not.
+
+**R1's ARGUMENT WAS TRUE OF THE SIGNATURE AND FALSE OF THE CALLER.** "Six callers inherit
+the check" — counted in pass seven, there are **three call sites**, and the one that matters
+supplies nothing. A parameter nobody fills in encodes nothing. The decision survives
+(constitution I puts isolation in data access); the argument for it needed the real call
+graph, and writing the graph out is what found the hole. **Six passes read that number and
+none counted it.**
+
+**FOUR NUMBERS IN THIS FEATURE WERE CARRIED INSTEAD OF DERIVED, AND THREE HID A DEFECT**:
+the file count (25→29→34→36), the chapter overlap, the removal ordinals, and the caller
+count. The file count and the caller count each concealed a CRITICAL.
 
 **PASS SIX FOUND TWO TASKS THAT COULD NOT BOTH PASS.** The contract and three tasks
 specified a private channel's send refusal as `403 not_a_member`; SC-002 requires send's
@@ -259,7 +278,7 @@ the derived-target count moves by **14** rather than 13.
 same shape.** Something every comparable case in the repository has that no task provided:
 the module registration (`app.module.ts`), the handler (`GET /v1/channels/:channelId`), the
 credential class (`@Accepts`). `tasks.md` now holds **two tables** that close the class —
-fourteen routes by handler, credential, repository method and pin; ten columns by migration,
+fifteen routes by handler, credential, repository method and pin; ten columns by migration,
 schema twin, SAD §6.1, writer, reader, removal test and chapter. Pass five found no CRITICAL,
 which is the first pass that did not, and the tables are why.
 
