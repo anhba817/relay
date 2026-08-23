@@ -42,7 +42,7 @@ Its record is `specs/034-chapter-3-15/`: read **`plan.md`** for the seventeen ph
 and the constitution gate, `research.md` for R1 to R18 (twelve measured against a
 running database), then `data-model.md`, `contracts/membership.md`,
 `contracts/listing.md` and `quickstart.md` (18 checks, three of them negative).
-44 requirements, 21 success criteria, 214 tasks in 21 phases, checklist 16/16.
+45 requirements, 21 success criteria, 227 tasks in 21 phases, checklist 16/16.
 
 **Twelve SRS clauses, five dead columns, and four corrections.** The clauses are
 FR-CHN-03/04/05/06/08/09/10 and FR-USR-02/03/04/05/06. The columns exist and nothing

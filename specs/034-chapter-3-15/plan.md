@@ -44,9 +44,10 @@ ratio, and instances grow with how many chapters teach a file, not with the unio
 
 **What is new**: one table (`read_positions`), three columns
 (`channels.last_activity_at`, `members.role`, `users.deleted_at`), one module
-(`services/api/src/users/`), two migrations, three error codes, and **fourteen routes** —
-thirteen the contracts describe plus `GET /v1/channels/:channelId`, which three artifacts
-assumed existed and nothing had built (FR-003a).
+(`services/api/src/users/`), two migrations, three error codes, and **fourteen routes**,
+all fourteen in the two contracts — including `GET /v1/channels/:channelId`, which three
+artifacts assumed existed and nothing had built (FR-003a). `tasks.md`'s route table maps
+each to its handler, credential class, repository method and coverage pin.
 
 **What is not new**: the store, the writer, the repository boundary, the credential
 model, the cross-tenant suite, the fence chain, the coverage ratchets.
@@ -76,7 +77,7 @@ planning began.
 | **III. Two data paths, never crossed** | No analytical write. `read_positions` is operational state on the operational store. The unread count is derived from `channels.last_sequence`, which the write path already maintains, so nothing new is computed on a read path that a write path could not already answer. | Pass |
 | **IV. Single writer, single source of truth** | The api remains the only writer. The gateway reads a ban at connect through the api, as it already reads a session — no new table reaches the gateway. | Pass |
 | **V. API-first, developer-first** | Three new error codes — `not_a_member`, `channel_archived`, `user_banned` — each a distinct fact a client acts on differently, which is the test chapter 3.14's registry sets. Sixteen codes after this feature, each with a reference section, checked in both directions by the existing `check:errors`. Every route's status code is documented (FR-039), closing chapter 3.14's gap G5 for the routes this feature touches. | Pass |
-| **VI. Requirement-driven, test-verified delivery** | **44 requirements, 21 measurable outcomes** — re-derive with `grep -c '^- [*][*]FR-' spec.md` and the same for `SC-`, never carried forward by hand. FR-035 is the sharpest gate: each newly-live column must be shown read by a test that **fails when the read is removed**, because chapter 3.13 found that adding a table to the guard's array is not the same as the guard watching it. The new `users` module and `read_positions` reads get per-file pins for the reason chapter 3.11's T033c gave — an unpinned file is a figure that can slide. **The quickstart clause is met by the `outsider` CI job**, which runs the README's documented sequence verbatim; `quickstart.md` here is the Spec Kit validation guide, a different artifact. **And the 100%-branch clause is answered below rather than passed over.** | Pass, with one clause answered rather than met |
+| **VI. Requirement-driven, test-verified delivery** | **45 requirements, 21 measurable outcomes** (derived 2026-08-23; four analysis passes each found this pair stale, so re-derive rather than read) — re-derive with `grep -c '^- [*][*]FR-' spec.md` and the same for `SC-`, never carried forward by hand. FR-035 is the sharpest gate: each newly-live column must be shown read by a test that **fails when the read is removed**, because chapter 3.13 found that adding a table to the guard's array is not the same as the guard watching it. The new `users` module and `read_positions` reads get per-file pins for the reason chapter 3.11's T033c gave — an unpinned file is a figure that can slide. **The quickstart clause is met by the `outsider` CI job**, which runs the README's documented sequence verbatim; `quickstart.md` here is the Spec Kit validation guide, a different artifact. **And the 100%-branch clause is answered below rather than passed over.** | Pass, with one clause answered rather than met |
 
 **Principle VI's second clause, and where this feature stands against it.** Ordering,
 idempotency and tenant isolation MUST have 100% branch coverage (NFR-MNT-02).
@@ -113,7 +114,7 @@ suite gained the attack class it was missing.
 
 ```
 specs/034-chapter-3-15/
-├── spec.md                  44 FRs, 21 SCs, 9 stories, 42 scenarios, 9 edge cases
+├── spec.md                  45 FRs, 21 SCs, 9 stories, 42 scenarios, 10 edge cases
 ├── research.md              R1–R18; twelve measured, one that pointed the wrong way,
 │                            and one worry the measurement refuted
 ├── plan.md                  this file

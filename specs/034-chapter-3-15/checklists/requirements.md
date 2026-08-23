@@ -69,7 +69,7 @@
   research finding with no requirement over it; it is now **FR-038a**, with **FR-038b**
   saying what must not change and **SC-021** as the gate.
 
-  **Re-validated after the addition**: 44 requirements, 21 success criteria, 9 edge
+  **Re-validated after the addition**: 45 requirements, 21 success criteria, 10 edge
   cases, and the two checklist items the addition could have broken both hold.
   *Testable and unambiguous* — the rule is "the chapter a change was taught in", not
   "the chapter that fences the file", and the edge case names the citation that is

@@ -101,6 +101,49 @@ to a list instead of regenerating it; chapter 3.12's was wrong on its first draf
 | T091–T106, T183–T198 | `relay-tutorial/app/(en)/…`, `app/(vi)/vi/…`, `lib/tutorial.ts` | the two pages and their mirrors |
 | T199–T206 | `specs/034-chapter-3-15/`, `CLAUDE.md`, `docs/07-tutorial-plan.md` | the record, the plan rows, the tags |
 
+## Which route, and what each one needs
+
+**Fourteen routes, five columns.** Analysis passes two, three and four each found a
+CRITICAL of the same shape — something every comparable case in the repository has that no
+task provided: the module registration (`app.module.ts`), the handler
+(`GET /v1/channels/:channelId`), the credential class (`@Accepts`). This table is the
+answer to "check five things once" instead of finding the fifth on the fifth pass.
+
+**Building it found a sixth gap**: `PATCH /v1/users/:externalId` had no repository writer
+either, which is why T129a exists.
+
+| Route | Handler | Credential | Repository | Pin |
+|---|---|---|---|---|
+| `GET /v1/channels/:channelId` | T039a | `@Accepts("application", "user")` method-level — a user reads their own membership, the tenant reads any channel | `getChannel` (T039a) | `channels.service.ts` |
+| `POST /v1/channels/:channelId/join` | T045 | **`@Accepts("user")` method-level**, overriding the class's `"application"` | `addMember` (chapter 3.13) | `channels.service.ts` |
+| `DELETE /v1/channels/:channelId/members/:userExternalId` | T054 | class `"application"` | `removeMember` T053 | `repository.ts` |
+| `PATCH /v1/channels/:channelId/members/:userExternalId` | T064 | class `"application"` | `setMemberRole` T063 | `repository.ts` |
+| `POST /v1/channels/:channelId/archive` | T073 | class `"application"` | `archiveChannel` **T072a** | `repository.ts` |
+| `DELETE /v1/channels/:channelId/archive` | T073 | class `"application"` | `unarchiveChannel` **T072a** | `repository.ts` |
+| `GET /v1/users/:externalId/channels` | T111 | `@Accepts("application")` class | `listChannelsForUser` T110 | `users/*` |
+| `PUT /v1/users/:externalId/channels/:channelId/read` | T120 | class `"application"` — the path names whose position it is; a user-credential variant is out of scope | `setReadPosition` T119 | `users/*` |
+| `GET /v1/users/:externalId` | T129 | class `"application"` | `getUserByExternalId` (exists) | `users/*` |
+| `PATCH /v1/users/:externalId` | T129 | class `"application"` | `updateUserProfile` **T129a** | `users/*` |
+| `POST /v1/users` | T137 | class `"application"` | `createUser` (chapter 3.13, idempotent) | `users/*` |
+| `DELETE /v1/users/:externalId` | T142 | class `"application"` | `deleteUser` T141 | `users/*` |
+| `POST /v1/users/:externalId/ban` | T149a | class `"application"` | `banUser` **T149** | `users/*` |
+| `DELETE /v1/users/:externalId/ban` | T149a | class `"application"` | `unbanUser` **T149** | `users/*` |
+
+**Every row is classified by T061** — one entry per verb in `targets.ts`, written with the
+router's parameter names and not the contracts' (`:channelId`, not `:externalId`). Fourteen
+entries, which is SC-014's number.
+
+**A method-level `@Accepts` wins.** `credential.guard.ts:87` resolves
+`getAllAndOverride([handler, class])`, and `dev-token.controller.ts:51` already uses the
+pattern. Without the annotation on join, every user's join is a 403 — chapter 3.12's
+FR-044 hole was this exact mismatch, passing for a whole chapter and then turning nine of
+fifteen tests red.
+
+**All fourteen are under `/v1/`, so all fourteen are rate-limited already.**
+`rate-limit.middleware.ts` keys off `PUBLIC_PREFIX = "/v1/"` — no limiter change, nothing
+to add. Worth knowing that the request budget FR-RTL-01 sized against three public routes
+now covers seventeen.
+
 **One requirement has no user story**, and this is where that is recorded rather than
 discovered later: FR-039a and FR-039b arrived from R9 after the nine stories were
 written, so their coverage is two edge cases and SC-020. Phase 16 carries them with no
@@ -190,14 +233,14 @@ channel that does not exist — and only then does the enum widen.
 private channel and for an id that exists nowhere, and confirm the pairs are identical
 but for `request_id`.
 
-- [ ] T039a [US1] **Add `GET /v1/channels/:channelId`** in `services/api/src/channels/channels.controller.ts` and its service method — FR-CHN-01's four elements plus `archived_at` and the caller's membership (FR-003a). **This route does not exist.** The controller carries `POST /v1/channels` and `POST :channelId/members` and no read, so a customer can create a channel and never read it back. SC-001 named "read by id" as one of four verbs, FR-003 said "every read", and `contracts/membership.md` had a row for it — three artifacts resting on a handler nobody wrote, found by analysis pass three asking whether each verb has one
+- [ ] T039a [US1] **Add `GET /v1/channels/:channelId`** in `services/api/src/channels/channels.controller.ts` with a method-level `@Accepts("application", "user")` — a user reads their own membership, the tenant reads any channel — and its service method: FR-CHN-01's four elements plus `archived_at` and the caller's membership (FR-003a). **This route does not exist.** The controller carries `POST /v1/channels` and `POST :channelId/members` and no read, so a customer can create a channel and never read it back. SC-001 named "read by id" as one of four verbs, FR-003 said "every read", and `contracts/membership.md` had a row for it — three artifacts resting on a handler nobody wrote, found by analysis pass three asking whether each verb has one
 - [ ] T039b [P] [US1] Test the route in `services/api/src/channels/channels.itest.ts`: 200 for a member, 200 for a non-member of a `public` channel, and the four fields readable back after a create
 - [ ] T040 [US1] Add the membership check to the by-id read path in `services/api/src/channels/channels.service.ts`, answering the not-found envelope for a private channel the caller is not a member of (FR-003)
 - [ ] T041 [US1] Add the same to the history path in `repository.ts`, and confirm `repository.backfill`'s existing membership join already covers resume (FR-002). The spec's own assumption is that reading is already scoped and sending was not; this is where that is confirmed rather than asserted
 - [ ] T042 [P] [US1] Test that a non-member's session does not carry a private channel — `session.controller`'s `channelsForUser` derives the list, so this is a confirmation and the test says so — `services/api/src/internal/internal.itest.ts`
 - [ ] T043 [US1] Use `services/api/src/isolation/compare.ts` to assert indistinguishability for **all four verbs SC-001 names — send, resume, subscribe, read by id**: private-and-invisible against exists-nowhere, same status and same body minus `request_id` (SC-002). It said three until analysis pass three counted them against SC-001
 - [ ] T044 [US1] **Verify the oracle can fail here.** Change one of the three refusals to a 403 and confirm the pair test goes red; restore. Chapter 3.12 learned that a route-level 404→403 moves *both* halves of a cross-tenant pair and the oracle cannot see it — inside one tenant only one half moves, and that difference is the reason this test works at all — `services/api/src/isolation/gauntlet.itest.ts`
-- [ ] T045 [US1] Add `POST /v1/channels/:externalId/join` in `services/api/src/channels/channels.controller.ts`, requiring a user credential. FR-CHN-03's word is "join", and joining is the caller acting on their own behalf, not the tenant adding someone
+- [ ] T045 [US1] Add `POST /v1/channels/:channelId/join` in `services/api/src/channels/channels.controller.ts` with a **method-level `@Accepts("user")`**, overriding the class's `"application"` — `credential.guard.ts:87` resolves `getAllAndOverride([handler, class])` and `dev-token.controller.ts:51` shows the pattern. Without it every user's join is a 403, which is chapter 3.12's FR-044 hole: a credential mismatch that passed for a whole chapter and then turned nine of fifteen tests red. FR-CHN-03's word is "join", and joining is the caller acting on their own behalf, not the tenant adding someone
 - [ ] T046 [P] [US1] Test join: 200 for a public channel, 200 again for an already-member, 404 for a private one, 404 for one that does not exist — `services/api/src/channels/channels.itest.ts`
 - [ ] T047 [P] [US1] Test that join respects chapter 3.13's 1,000-member ceiling with `channel_member_limit_exceeded`, read from the existing implementation rather than reimplemented — `services/api/src/channels/channels.itest.ts`
 - [ ] T048 [US1] **State and test what `public` means for a non-member** (FR-004): readable by id, readable in history, sendable, and **not** subscribed on the socket. The subscription set is not the read set, and auto-subscribing every tenant user to every public channel makes a session unbounded (R3) — `services/api/src/channels/channels.itest.ts`
@@ -270,7 +313,8 @@ works.
 
 - [ ] T071 [US7] Read `archived_at` on the send path in `repository.sendMessage`, refusing with `channel_archived` (FR-020, FR-021) — `services/api/src/db/repository.ts`
 - [ ] T072 [US7] Fix the ordering once and in one place: **ban, then archive, then membership**. Three refusals on one path need one order, and two orders is how a client sees `not_a_member` for a channel that is archived — `services/api/src/db/repository.ts`
-- [ ] T073 [US7] Add `POST` and `DELETE /v1/channels/:externalId/archive`, both idempotent (200 either way) — `services/api/src/channels/channels.controller.ts`
+- [ ] T072a [US7] Add `archiveChannel` and `unarchiveChannel` to `services/api/src/db/repository.ts`, both idempotent — set and clear `archived_at`. **Nothing wrote this column**: T071 read it, T073 added two routes, T074–T078 tested it, and no task set it. Found by pass four checking each route for a repository method
+- [ ] T073 [US7] Add `POST` and `DELETE /v1/channels/:channelId/archive`, both idempotent (200 either way) — `services/api/src/channels/channels.controller.ts`
 - [ ] T074 [P] [US7] Test that a send to an archived channel is refused with a code distinct from not-found and from `not_a_member` (SC-010) — `services/api/src/channels/channels.itest.ts`
 - [ ] T075 [P] [US7] Test that history is still readable while archived (FR-020) — `services/api/src/channels/channels.itest.ts`
 - [ ] T076 [P] [US7] Test archiving an archived channel and unarchiving an active one — both 200, nothing changed — `services/api/src/channels/channels.itest.ts`
@@ -350,7 +394,7 @@ member of never appears.
 
 - [ ] T107 [US4] Maintain `channels.last_activity_at` — FR-014's answer to what "most recent activity" is measured by — in the same statement that advances `last_sequence` in `repository.sendMessage`. The write path already runs that transaction, so the update needs no new one — `services/api/src/db/repository.ts`
 - [ ] T108 [P] [US4] Test that only a message moves it — a member joining, a rename or an archive do not. "Activity" is messages, and a column that moves for anything else orders by something the field name does not say — `services/api/src/users/users.itest.ts`
-- [ ] T109 [US4] Create `services/api/src/users/` — `users.module.ts`, `users.service.ts`, `users.controller.ts`, `users.schema.ts` — on the pattern `channels/` sets. Five clauses need user routes and no controller exists for users; putting them on the channels controller would put user lifecycle behind a channel path
+- [ ] T109 [US4] Create `services/api/src/users/` — `users.module.ts`, `users.service.ts`, `users.controller.ts`, `users.schema.ts` — on the pattern `channels/` sets, with `@UseGuards(CredentialGuard)` and a class-level **`@Accepts("application")`**: every route here is the tenant acting on a user it names in the path. Five clauses need user routes and no controller exists for users; putting them on the channels controller would put user lifecycle behind a channel path
 - [ ] T109a [US4] **Register `UsersModule` in `services/api/src/app.module.ts`.** `ChannelsModule` is registered there and chapter 3.13 needed that edit. This file appeared in **no task at all** until analysis pass two's enumeration asked which chapter fences it — without it none of the eight user routes mount, and FR-013, FR-016, FR-017, FR-023, FR-025, FR-027 and FR-031 have tasks that cannot deliver them
 - [ ] T109b [US4] Give `services/api/src/users/users.schema.ts` the listing's query shape now — `cursor`, `limit` — with **`z.strictObject`**, not `z.object`. Constitution VI rejects unknown fields on write endpoints, `messages.schema.ts` and `channels.schema.ts` both use `strictObject`, and `channels.itest.ts:118` tests it. The schema file was created in phase 13 until pass two found phase 11's cursor validation needing it six tasks earlier
 - [ ] T109c [P] [US4] Test that an unknown field is refused rather than ignored on every write route this feature adds, in `services/api/src/users/users.itest.ts` — the assertion `channels.itest.ts:118` already makes for channels
@@ -402,6 +446,7 @@ by field name.
 confirm metadata over 4 KB and a malformed URL are each refused with the field named.
 
 - [ ] T129 [US3] Add `GET` and `PATCH /v1/users/:externalId` (FR-023) in `services/api/src/users/`
+- [ ] T129a [US3] Add `updateUserProfile` to `services/api/src/db/repository.ts` — the writer T129's `PATCH` needs, setting `display_name`, `avatar_url` and `metadata`. **Found by building the route table**, the third route in this feature with a handler and no repository method
 - [ ] T130 [P] [US3] Add the schema: `display_name`, `avatar_url` as a URL, `metadata` bounded at 4 KB — `services/api/src/users/users.schema.ts`
 - [ ] T131 [P] [US3] Test the round trip for all three (SC-011) — `services/api/src/users/users.itest.ts`
 - [ ] T132 [P] [US3] Test FR-024's two bounds: metadata over 4 KB refused 400 with `field: "metadata"`, and a malformed `avatar_url` refused with its field — `services/api/src/users/users.itest.ts`
@@ -442,9 +487,10 @@ what it does to a connection that is already open.
 **Independent test**: ban a user, confirm they cannot connect or send, confirm their
 history is still readable by others.
 
-- [ ] T149 [US9] Add `POST` and `DELETE /v1/users/:externalId/ban`, both idempotent — `services/api/src/users/users.controller.ts`
+- [ ] T149 [US9] Add `banUser` and `unbanUser` to `services/api/src/db/repository.ts`, both idempotent — set and clear `banned_at`. Same omission as the archive column: read by T150, routed by T149a, never written
+- [ ] T149a [US9] Add `POST` and `DELETE /v1/users/:externalId/ban`, both idempotent — `services/api/src/users/users.controller.ts`
 - [ ] T150 [US9] Read `banned_at` on the send path (FR-031), refusing `user_banned` — first in T072's ordering — `services/api/src/db/repository.ts`
-- [ ] T151 [US9] Read it at connect in `services/gateway/src/session.ts`, through the api as the gateway already reads a session. No new table reaches the gateway
+- [ ] T151 [US9] Read it at connect in `services/gateway/src/session.ts`, through the api as the gateway already reads a session — **which means `services/api/src/internal/session.controller.ts` has to carry the ban in its response**. That file is `@Accepts("user")`, resolves the user with `getUserByExternalId` and returns their channels, so the row is already in hand; what is new is what the controller does with `banned_at`. It was in no task and no line of R18's table until pass four. No new table reaches the gateway
 - [ ] T152 [P] [US9] Test that a banned user cannot connect and cannot send, and that their history is still readable by others (SC-013) — `services/api/src/users/users.itest.ts and services/gateway/src/isolation.itest.ts`
 - [ ] T153 [US9] **State and test what a ban does to a connection that is already open** (FR-032). The two answers are "closed at the next heartbeat" and "closed immediately", and they differ in whether the gateway has to be told. A ban that only applies to new connections is a ban a client outlasts by not reconnecting — `services/gateway/src/session.ts`
 - [ ] T154 [P] [US9] Test the edge cases the spec names: banning a member of a private channel — the ban is tenant-scoped, so it is not a removal — and a token minted for a banned user's identifier, where implicit creation must not undo the ban — `services/api/src/users/users.itest.ts`
@@ -497,6 +543,7 @@ the fourth**: FR-038a's citation class.
 - [ ] T174a **Enumerate every branch arm this feature adds to `services/api/src/db/repository.ts`** — the membership check, the archive check, the ban check, the unread subtraction — from `coverage/coverage-final.json`, and show each covered. Constitution VI asks 100% branch coverage of ordering, idempotency and tenant isolation; that file holds all three and sits at 89.51%, pinned at 90 as a ratchet with the gap recorded in `specs/024-coverage-and-ci/notes.md`. **The commitment is 100% on the arms this feature adds**, per arm rather than by a file percentage, whichever side of the isolation-or-authorization line they fall
 - [ ] T174b **Check that every new `repository.ts` function is exercised in-process, not only through the gateway.** Five tasks — T038, T058, T134, T144, T152 — test new repository code through a child process whose coverage is not attributable. Chapter 3.5 added six operations to this file the same way and the ratchet went red immediately: **branches 85.91% → 78.22%**, and the instrument was right while the code was not tested. Add an in-process test for each function that has only a gateway one
 - [ ] T174c Record in `baseline.txt` which of T174a's arms are isolation and which are authorization, and the file's branch figure before and after. **A private-channel membership check is authorization inside a tenant, not tenant isolation** — the clause does not reach it by its own words, and the same-tenant suite tests it with FR-TEN-05's oracle anyway, so the classification is stated rather than left to whoever next reads the ratchet
+- [ ] T174d [P] **Re-earn `services/api/src/channels/channels.service.ts`'s pin**, currently branches 75 / **functions 100** / lines 94 / statements 94. This feature adds read-by-id, join, archive, unarchive, removal and role-setting to that file, and `functions: 100` goes red on the first partially-covered new function. Chapter 3.5's precedent: six new operations on `repository.ts` took branches from 85.91% to 78.22% on the next run
 - [ ] T176 **Re-run T007's dead-column count and record it: five before, and the after-count with every survivor named beside the requirement it stands for** (SC-016, FR-036) — `specs/034-chapter-3-15/baseline.txt`
 - [ ] T176a **The after-count is not zero, and the chapter says so.** All five of the named columns get readers, and this feature adds two that have none: `members.role` (FR-012, T069 — no operation is authorized by channel role) and `read_positions.updated_at` (written by every position write, read by nothing). A feature whose subject is columns nothing reads, leaving two behind, is the chapter's own joke and it is better told than found — `relay-tutorial/app/(en)/part-3/chapter-16/<slug>/page.mdx`
 - [ ] T177 Write `specs/034-chapter-3-15/traceability.md`, **generated rather than grown**, both directions: every requirement to the clause it implements, and every clause this feature touches to the requirement covering it. Chapter 3.12's map found four clauses touched and unclaimed, and one row that recorded a clause as delivered when it was not — found only because chapter 3.15's spec read the map for a purpose other than writing it
