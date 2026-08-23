@@ -14,8 +14,8 @@ on every build"* — and it answers §7.3's exit line for Phase 2: *"an external
 developer integrates using only public documentation, with no assistance"*.
 
 Constitution I calls FR-TEN-05 the single most important requirement in the system and
-requires that suite by name. The repository does not have one. What it has is **nine
-isolation assertions across nine files**, each written by whichever chapter happened
+requires that suite by name. The repository does not have one. What it has is **eleven
+isolation assertions across eight files**, each written by whichever chapter happened
 to be thinking about tenancy that week: a foreign channel's history, a foreign
 external id, a foreign key that looks like an absent key, a webhook test against
 another environment's endpoint, a connection that may not change tenants. Every one of
@@ -648,8 +648,9 @@ report for the isolation file against the constitution's clause.
 - **SC-023**: `check:fences` and `check:docs` both pass, with the fenced-file and
   chapter counts stated, in both locales.
 
-- **SC-024**: The nine existing isolation assertions still exist and still pass,
-  counted before and after. The gauntlet adds to the isolation surface rather than
+- **SC-024**: The eleven existing isolation assertions still exist and still pass,
+  counted before and after — eleven because T033 counted them, where an earlier draft
+  of this document said nine. The gauntlet adds to the isolation surface rather than
   relocating it off the code the coverage run measures.
 - **SC-025**: The gauntlet's own fixtures are removed only by identifiers it created,
   verified by running the lane with the four newly guarded tables armed and the guard

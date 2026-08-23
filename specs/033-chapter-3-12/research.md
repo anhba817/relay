@@ -1021,10 +1021,10 @@ migrate the first, and leave the api serving a schema that does not exist. So th
 integration runs in a job that uses compose for everything:
 
 ```
-docker compose up -d --wait                              # stores; postgres on host 15432
+RELAY_POSTGRES_PORT=15432 docker compose up -d --wait    # stores; the variable is not optional
 DATABASE_URL=postgres://relay:relay@localhost:15432/relay \
   node services/api/dist/db/migrate.js                   # before the api needs the schema
-docker compose --profile services up -d --wait           # api 4000, gateway 4001
+RELAY_POSTGRES_PORT=15432 docker compose --profile services up -d --wait
 node scripts/seed-demo-tenant.mjs                        # prints a credential
 RELAY_API_URL=http://localhost:4000 RELAY_WS_URL=ws://localhost:4001 \
   pnpm --filter @relay/outsider test:integration
@@ -1032,6 +1032,16 @@ RELAY_API_URL=http://localhost:4000 RELAY_WS_URL=ws://localhost:4001 \
 
 That ordering is load-bearing: the seed writes to a migrated database, and the api needs
 the schema before it serves anything the integration asks for.
+
+`RELAY_POSTGRES_PORT=15432` is not optional and is not decoration. `compose.yaml:22`
+reads `"${RELAY_POSTGRES_PORT:-5432}:5432"` while `client.ts` and `db-url.ts` default
+to 15432 — so a bare `docker compose up -d --wait` publishes Postgres on 5432 and the
+migration a line later, addressed at 15432, has nothing to talk to. On a developer
+machine already running Postgres it is worse than a mismatch: four containers come up
+healthy and Postgres alone fails with `bind: address already in use`, which reads as a
+compose problem rather than a port-default one. The series documents 15432 (2.1, 3.2,
+3.3, 3.4) and compose defaults to 5432; until one of them moves, every command that
+starts this stack names the port.
 
 **Cost, stated rather than discovered.** The job builds two Node images from
 `services/api/Dockerfile` and `services/gateway/Dockerfile` on every run. That is the

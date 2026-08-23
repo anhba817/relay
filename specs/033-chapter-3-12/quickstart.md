@@ -7,7 +7,8 @@ maintainer runs, verbatim — the CI workflow's own rule.
 
 ```bash
 cd relay-platform
-docker compose up -d --wait            # postgres 15432, redis, nats, mailpit, clickhouse
+RELAY_POSTGRES_PORT=15432 docker compose up -d --wait   # postgres 15432, redis, nats,
+                                                        # mailpit, clickhouse
 pnpm install
 pnpm build
 node services/api/dist/db/migrate.js
@@ -240,11 +241,11 @@ fences.
 
 ```bash
 cd ../relay-platform
-docker compose up -d --wait                              # stores only — the services are
+RELAY_POSTGRES_PORT=15432 docker compose up -d --wait    # stores only — the services are
                                                          # behind profiles: ["services"]
 DATABASE_URL=postgres://relay:relay@localhost:15432/relay \
   node services/api/dist/db/migrate.js
-docker compose --profile services up -d --wait           # api 4000, gateway 4001
+RELAY_POSTGRES_PORT=15432 docker compose --profile services up -d --wait
 node scripts/seed-demo-tenant.mjs                        # prints a credential
 RELAY_API_URL=http://localhost:4000 RELAY_WS_URL=ws://localhost:4001 \
   pnpm --filter @relay/outsider test:integration

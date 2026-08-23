@@ -8,7 +8,8 @@
 
 The SRS Phase 2 exit criterion, and NFR-SEC-09's suite — cross-tenant access verified
 against every endpoint on every build. Constitution I requires that suite by name and
-the repository has nine isolation assertions across nine files instead.
+the repository has eleven isolation assertions across eight files instead (T033 counted
+them; earlier drafts of this plan said nine across nine).
 
 What research settled, and four of these came from measuring rather than reading:
 

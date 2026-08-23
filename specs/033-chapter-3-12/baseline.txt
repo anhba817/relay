@@ -493,3 +493,210 @@ an `eslint-disable-next-line no-console` I wrote was itself flagged, because
 `no-console` is not a configured rule in this repository. The second is the
 smaller version of this chapter's subject — a suppression for a rule that does not
 exist, which reads as caution and is noise.
+
+## T033 — the scattered assertions, counted rather than remembered
+
+The spec said "nine isolation assertions across nine files" (spec.md, plan.md).
+Both numbers came from a draft. Counted:
+
+    grep -riE 'it\("[^"]*(another (environment|tenant)|other (environment|tenant)|
+                different environment|foreign|cross-tenant|another application)'
+
+    1  services/api/src/messages/history.itest.ts     a foreign channel's history is empty, not forbidden
+    1  services/api/src/internal/backfill.itest.ts    treats a foreign tenant's channel id as a channel that is not there
+    2  services/api/src/db/repository.itest.ts        a foreign external_id resolves to nothing; membership writes with foreign ids affect zero rows
+    2  services/api/src/messages/messages.itest.ts    history 404; a FOREIGN channel id answers as a missing one
+    2  services/api/src/auth/credentials.itest.ts     invariant 4 (a foreign key looks exactly like absent); invariant 7 (foreign is one of five refusal clauses)
+    1  services/api/src/webhooks/test-event.itest.ts  FR-TEN-05: a test against another environment's endpoint answers 404
+    1  services/api/src/auth/user-token.test.ts       refuses a token minted for a different environment
+    1  packages/e2e/src/tuan.itest.ts                 never mentions another tenant, on any surface (constitution I)
+
+**Eleven assertions across eight files**, not nine across nine. Ten are in the
+integration lane; `user-token.test.ts` is a unit test. Eight attack through a
+route or a credential, two at the repository.
+
+The correction matters beyond arithmetic: the pattern above is the whole of the
+inventory, and it is a grep over test TITLES. An isolation assertion whose title
+says none of those words is invisible to it, which is the same weakness the
+gauntlet's derived target list exists to remove. What the repository had was not
+nine deliberate assertions; it was however many happened to get written, counted
+by whoever last looked.
+
+## T035 — the guard, armed, and what it is not armed on
+
+    select tgname, relname from pg_trigger ... where tgname like '__sentinel%'
+
+    __sentinel_guard_channels                        on channels
+    __sentinel_guard_users                           on users
+    __sentinel_guard_webhook_deliveries              on webhook_deliveries
+    __sentinel_guard_webhook_disable_notifications   on webhook_disable_notifications
+    __sentinel_guard_webhook_endpoints               on webhook_endpoints
+
+Five, and inherited debt 2 confirmed against a running database rather than read
+off a source file: none of `usage_periods`, `usage_active_users`,
+`quota_notifications`, `usage_connections` is guarded. A cross-environment DELETE
+on any of the four passes today.
+
+The gauntlet's half of T035 needs no assertion, because the fixtures delete
+nothing at all — `fixtures.ts`'s own comment says why, and a `DELETE FROM
+channels` in this suite would have been the eleventh instance of the fault
+feature 030 exists to catch.
+
+## The lane needs four variables, and one test disagrees with the code about a port
+
+`pnpm test:integration` from a clean shell: **4 failed | 296 passed**.
+
+    limits.itest.ts:263   "the lane must configure a platform credential:
+                           expected undefined to be truthy"
+    gauntlet.itest.ts     the two T031 platform-route attacks, 401 for 200
+    outbox.itest.ts:335   NatsError: CONNECTION_REFUSED
+
+The first three are T001a's finding reaching the integration lane: the four
+variables live in `.github/workflows/ci.yml` — in the PARENT repository, which is
+correct, and which is also why a search inside `relay-platform` for CI finds
+nothing at all. With them exported the api lane is 25 files / 300 tests, green.
+
+The third is its own defect, and older than this chapter:
+
+    outbox.itest.ts:365   url: process.env.RELAY_NATS_URL ?? "nats://localhost:14222"
+
+`DEFAULT_NATS_URL` is `nats://localhost:4222`, and every other test in the
+repository that falls back does so to 4222 — this line is the only `14222` in
+`relay-platform`. In CI `RELAY_NATS_URL` is always set, so the disagreement has
+never been reached there.
+
+It is not a typo, which is the part worth recording. **The published series
+documents two different ports for each of the three infrastructure services**, and
+the same chapter sometimes uses both:
+
+    postgres   15432 in 2.1, 3.2, 3.3, 3.4        5432 in 2.8
+    nats       14222 in 3.3, 3.4, 3.6             4222 in 3.3, 3.4, 3.5, 3.6
+    redis      16379 in 3.2, 3.3, 3.4             6379 in 2.6, 3.8, 3.9, 3.10
+
+`compose.yaml` defaults every host port to the standard one (`:-5432`, `:-4222`,
+`:-6379`), while `client.ts` and `db-url.ts` default Postgres to 15432. So the
+three sources — compose, the code, the series — give three answers for Postgres
+and disagree pairwise on the other two. This is the same fault as the compose
+Postgres collision recorded under T004, seen from the series side.
+
+**Out of scope here, and named rather than fixed.** Rewriting port references
+across ten published chapters in two locales is a documentation pass with a fence
+chain behind it, not a line in an isolation chapter. What 3.12 owes it is one
+decision: FR-045's CI job must name the port it uses instead of relying on a
+default that three sources define differently.
+
+## T032, T033, T036, T036a — Phase 3's gates, on a green lane
+
+`pnpm test:integration` with the four variables exported — **exit 0, 10 of 10
+tasks, 3m13.271s**:
+
+  test-harness    8      api           300      gateway        28
+  dispatcher     16      e2e            10              TOTAL 362
+
+Against T002's 330. **+32, and all thirty-two are the api's**: `targets.itest.ts`
+7, `gauntlet.itest.ts` 19, `usage.itest.ts` 15 → 21. Nothing else moved.
+
+T036 — the counts, printed by the derivation rather than typed here:
+
+    gauntlet targets: 22 derived, 19 attacked, 3 exempt (read 2, list 1, write 15, credential 1)
+
+matching T008's 22.
+
+T036a — the gauntlet needs no separate invocation. Both files appear in the lane
+above under `@relay/api:test:integration`, because `vitest.integration.config.mts`
+includes `src/**/*.itest.ts` and the CI job already runs `pnpm test:integration`.
+No workflow edit, and nothing to remember to type.
+
+T032 — `POST /internal/usage/connections` still answers `409
+connection_environment_conflict`; it is one of the api's 300. Chapter 3.11 made
+that judgement and the gauntlet generalises it rather than re-deciding it.
+
+T033 — all eleven scattered assertions still pass, by name, run with
+`--reporter=verbose` because the lane's default reporter prints file totals only:
+
+    ✓ repository.itest.ts   a foreign external_id resolves to nothing — not even an existence hint
+    ✓ repository.itest.ts   membership writes with foreign ids affect zero rows
+    ✓ history.itest.ts      a foreign channel's history is empty, not forbidden
+    ✓ credentials.itest.ts  invariant 4: a foreign key sees nothing, and it looks exactly like absent
+    ✓ messages.itest.ts     answers a foreign channel's HISTORY with that same 404 (chapter 2.8)
+    ✓ messages.itest.ts     answers a FOREIGN channel id with the same 404 as a missing one
+    ✓ credentials.itest.ts  invariant 7: a token is refused when expired, malformed, mis-signed, foreign, or over-long
+    ✓ backfill.itest.ts     treats a foreign tenant's channel id as a channel that is not there
+    ✓ test-event.itest.ts   FR-TEN-05: a test against another environment's endpoint answers 404
+    ✓ user-token.test.ts    refuses a token minted for a different environment          (unit lane)
+    ✓ tuan.itest.ts         never mentions another tenant, on any surface (constitution I)  (e2e)
+
+Eleven before, eleven after. The gauntlet adds to the isolation surface; it moved
+nothing off the code the coverage run measures.
+
+## T023-T031b — the four shapes, the control, and the two routes that name an environment
+
+`attack.ts` is four functions, one per shape, and each returns the pair rather
+than a boolean: `readAttack`, `listAttack`, `writeAttack`, `credentialAttack`.
+`writeAttack` also reads the victim's state before and after, because a write
+that leaks nothing and changes something is still a breach.
+
+`gauntlet.itest.ts` — **19 tests**, in four groups:
+
+  the control                3      read 2, list 1, write 7, credential 1  = 11
+  internal user token        3      platform routes (T031)                 = 2
+                                                                     TOTAL 19
+
+**The control is the finding of this block.** Fourteen tests passed the first time
+the file ran, and that number was not evidence of anything. Every assertion in the
+suite compares two refusals for sameness — so an expired credential, a lane
+missing a variable, or a route that answers 401 to everything produces two
+identical refusals and passes the whole file while attacking nothing at all. The
+suite now proves its own premise first: the attacker's credential reaches the
+attacker's own webhook endpoint (200), its own channel history containing its own
+message (200, and the id is in the body), and writes to its own channel (201).
+Green means something only with those three above it.
+
+Two attempts to check this from outside the suite failed and are worth recording,
+because both failures were about the harness and not the platform. A scratch
+script could not resolve `reflect-metadata` outside the workspace; run under
+`tsx` inside it, `AppModule` threw `UndefinedDependencyException`, because tsx
+emits no decorator metadata — which is exactly why the vitest configs use the SWC
+plugin. A permanent test in the suite was the cheaper answer as well as the
+better one.
+
+T031, T031b — the platform routes, where isolation means something different.
+Only **two of the five** name an environment alongside an identifier:
+`dispatch/expand` (`environment_id` beside `event_id`) and `usage/connections`
+(an environment per connection). Those two can be told to act on environment A
+while carrying something from B, and both are attacked — expand here, connections
+by `usage.itest.ts`'s `connection_environment_conflict` assertion.
+
+The other three — `material`, `outcome`, `replay` — take one opaque identifier
+and derive the environment from the row they find. There is no cross-environment
+request to make, because the caller never says which environment it means. That
+is not a hole the suite declines to test; it is the absence of the parameter that
+would make the attack expressible. What guards them is FR-044 and nothing else,
+which is why `material` — the one response in the platform that returns a
+decrypted customer secret — is the route to watch first if a platform credential
+ever leaks.
+
+Expand's two assertions, and the first is what makes the second mean anything:
+naming the attacker's environment creates deliveries (`created > 0`, its own
+endpoint subscribes to `message.created`) and leaves the victim's delivery count
+unchanged; naming an environment that exists nowhere creates zero and also leaves
+it unchanged. Without the first, "the victim's count did not move" is what a
+no-op looks like.
+
+## T031a — the three user-token routes, and why "4xx" was not good enough
+
+The three `@Accepts("user")` targets take a token minted in A against a resource
+in B. Written first as `expect(status).toBeGreaterThanOrEqual(400)` plus a
+state check, then rewritten to the pair for two of them: "refused" and "refused
+the way a channel that does not exist is refused" are different claims, and only
+the second is isolation. A route that answers *not yours* where the absent id
+answers *no such channel* has disclosed that the channel exists — a 4xx assertion
+passes that and the oracle does not.
+
+`/internal/session` keeps its own shape and takes no pair: it names no target, so
+there is no foreign-versus-absent to compare. Its assertion is that the session it
+returns does not list the other tenant's channel.
+
+Nineteen tests, by group:
+
+    control 3 · read 2 · list 1 · write 7 · credential 1 · user token 3 · platform 2
