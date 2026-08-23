@@ -2270,3 +2270,44 @@ analysis passes removing from other documents.
 
 So T125's tag and T126's push wait on chapters 3.13 and 3.14. The alternative —
 tag now, fix the chain later — trades a true record for a convenient one.
+
+## Chapter 3.13 — published, and the chain taught two more things
+
+`app/(en)/part-3/chapter-13/the-endpoints-and-the-instruments/page.mdx`
+
+    en   1,710 lines   2,452 prose words   11 chain fences   5 excerpts   12 boxes
+    vi   1,685 lines   2,956 words         11 chain fences   5 excerpts   12/12 locale
+
+    check-fence-chain: 14 problems — 0 naming 3.13, 0 MIRROR
+    pnpm build: exit 0, both routes generated
+
+Eleven fences close the six HEAD problems 3.13 owned: five full files for the new
+`channels/*` and `public-surface.itest.ts`, six diffs for the amended files that were
+already in the chain. The five `packages/test-harness/` files and `limits.itest.ts`
+stay OUT of the chain as excerpts, which is where they have always been — the whole
+package has never been fenced, because feature 030 published no chapter.
+
+**A diff needs enough context to be a proof, and three lines was not.**
+`repository.ts`'s diff failed APPLY with *hunk pre-image matched 2 times (need
+exactly 1)*: `external_id: channels.externalId,` appears in both
+`getChannelByExternalId` and `listChannels`. Widened to eight lines of context —
+237 diff lines became 282 — and each hunk is unique.
+
+**A chapter cannot amend a state that `post-series.md` builds.** `eslint.config.mjs`'s
+diff failed with *hunk pre-image matched 0 times*. Feature 030's amendment to that
+file lives in `post-series.md`, which the checker applies AFTER every chapter — so at
+chapter 3.13's position in the chain, the `**/*.itest.ts` block this chapter
+restructures does not exist yet.
+
+The fix is where the change goes, not how it is written: the chapter carries an
+excerpt and the explanation, and the amendment is a new `post-series.md` entry. That
+is the rule `post-series.md` states in its own header, met from the other direction —
+it exists for changes to fenced files made by work that publishes no chapter, and
+feature 030's block is exactly that.
+
+**And my own diagnosis of a third problem was wrong.** The Vietnamese page came out
+26 lines shorter than the English and I concluded the split had predated the
+`repository.ts` widening. It had not — I had mis-ordered my own steps, the fences were
+already identical, and the difference is Vietnamese prose being more compact in line
+count. Verified by comparing the fence bodies directly rather than by reasoning about
+line totals.
