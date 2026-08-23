@@ -457,9 +457,12 @@ their sends are refused, confirm their history is intact, unban, confirm they wo
 - **FR-010**: A repeated creation naming a different type MUST NOT change the existing
   channel's type.
 - **FR-011**: Members MUST hold one of `owner`, `moderator` or `member`, with a stated
-  default, and the **member-add endpoint MUST accept a role per entry** so a member can be
+  default.
+- **FR-011b**: The member-add endpoint MUST accept a role per entry, so a member can be
   created with one rather than only changed into one. US6's first scenario asks for that and
-  the plan had add assign the default and a separate route change it.
+  the plan had add assign the default and a separate route change it. **Split out by analysis
+  pass twelve**: pass eleven bundled this clause into FR-011 in the same edit that split ten
+  other requirements for being bundled.
 - **FR-011a**: A role outside the three MUST be refused with the field named. A role outside the three MUST be refused with the field named.
 - **FR-012**: The feature MUST state whether any operation reads a member's role. A
   role nothing reads is this feature's own subject repeated.
@@ -543,6 +546,13 @@ their sends are refused, confirm their history is intact, unban, confirm they wo
 - **FR-033a**: Every derived target MUST be attacked or carry a written exemption. Nothing is
   exempt by omission.
 - **FR-034**: The cross-tenant suite MUST gain the same-tenant, non-member attack.
+- **FR-034a**: The suite MUST also gain the **identifier-collision** attack: the same
+  `external_id` present in two environments, `public` in one and `private` in the other. The
+  existing fixture label-prefixes every id so the two tenants never share one, and all four
+  attack shapes take an id that does **not** exist in the attacker's tenant — so the case
+  where the same string resolves in both, to channels of different types, has no coverage.
+  **This feature is what makes it worth testing**: before it every channel was `public` and
+  the two answers matched trivially.
   Today it attacks with another tenant's identifiers only, so a non-member of the
   caller's own tenant is a case no assertion covers. This is a new fixture — one
   environment, two users, one channel — not a reuse of the two-tenant one.

@@ -1,40 +1,15 @@
 # Research — chapter 3.15's feature
 
-Twelve of the sixteen items below were measured against a running database or the
-code rather than reasoned about. Two of the measurements pointed the wrong way at
-first, and both are recorded with the number that misled and the number that
-settled it.
+**18 items, R1 to R18.** Twelve were measured against a running database or the code
+rather than reasoned about. Two measurements pointed the wrong way at first, and both are
+recorded with the number that misled and the number that settled it — as is one worry the
+measurement refuted outright (R18).
+
+R1 appeared **twice** in this file from analysis pass seven to pass twelve: the pass that
+appended the caller-count correction re-emitted the whole section instead of extending it,
+and five passes read past a duplicated header. Removed in pass twelve.
 
 ---
-
-## R1 — the membership check has a home, and the signature already says so
-
-**Decision**: the check goes inside `repository.sendMessage`, gated on `userId`
-being present.
-
-`sendMessage` already takes `userId?: string`. That optionality is not an accident of
-the API — it is the distinction the whole clause turns on:
-
-    userId present    a USER is sending. Membership applies.
-    userId absent     the TENANT is sending through an application key.
-                      There is no member to check.
-
-So FR-005 — what a private channel means for an application credential — is answered
-by a type that already exists rather than by a new decision. And putting the check in
-the repository rather than a service satisfies constitution I directly: *isolation
-lives in data access*. Every caller inherits it, and there are six:
-
-    packages/e2e/src/harness.ts            services/api/src/isolation/fixtures.ts
-    services/api/src/messages/…service.ts  services/gateway/src/api-client.ts
-    services/gateway/src/isolation-…ts     services/gateway/src/session.ts
-
-The socket path reaches it through `api-client` → `POST /internal/messages` →
-`messages.service.send` → `repository.sendMessage`, so one edit covers the socket and
-the internal route together.
-
-**Alternatives considered**: a guard on `/internal/messages` (misses `sendMessage`'s
-other callers and puts a tenancy rule in a controller); a check in
-`messages.service` (two controllers call it, and the fixtures do not).
 
 ## R1 — the membership check has a home, and the signature already says so
 
@@ -365,10 +340,15 @@ claimable by construction.
 
 ## R16 — what this feature does not do, named rather than implied
 
-- **Presence in a private channel.** FR-CHN-05 names presence alongside read and send.
-  FR-RTM-07 owns delivery scope, and presence fan-out is the gateway's. In scope only
-  as far as: a non-member's socket is not subscribed to the channel, so it receives no
-  presence for it. Anything finer belongs with FR-RTM-07.
+- **Presence in a private channel — and there is nothing to defer yet.** FR-CHN-05 names
+  presence alongside read and send, and `presenceChangedSchema` is in the protocol's frame
+  union (`packages/protocol/src/frames.ts:87`). **Nothing emits it**: the gateway sends no
+  presence frame anywhere, so a non-member receives none because nobody receives any. The
+  earlier wording here — "in scope only as far as: a non-member's socket is not subscribed,
+  so it receives no presence for it" — read as though presence flowed, and analysis pass
+  twelve found the claim vacuously true. When FR-RTM-07 gives the frame an emitter, the
+  subscription set is what will scope it. A declared frame with no sender, in a feature about
+  five declared columns with no reader, is worth a sentence on the page.
 - **A REST-sent message reaching a socket — half of it.** Chapter 3.14's gap G1 has **two
   independent causes**: the api publishes to no fan-out, and the public send attributes no
   user. This feature must fix the second, because FR-001 cannot hold without it — a

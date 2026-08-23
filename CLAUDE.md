@@ -42,7 +42,7 @@ Its record is `specs/034-chapter-3-15/`: read **`plan.md`** for the seventeen ph
 and the constitution gate, `research.md` for R1 to R18 (twelve measured against a
 running database), then `data-model.md`, `contracts/membership.md`,
 `contracts/listing.md` and `quickstart.md` (18 checks, three of them negative).
-56 requirements, 22 success criteria, 244 tasks in 21 phases, checklist 16/16.
+58 requirements, 22 success criteria, 246 tasks in 21 phases, checklist 16/16.
 
 **Twelve SRS clauses, five dead columns, and four corrections.** The clauses are
 FR-CHN-03/04/05/06/08/09/10 and FR-USR-02/03/04/05/06. The columns exist and nothing
@@ -119,6 +119,36 @@ maintains `last_sequence` (chapter 2.2 made it the sequencing authority).
 4. **The gauntlet has no same-tenant fixture.** All four attack shapes take another
    tenant's identifiers, so "a user of your own tenant who is not a member" is new
    work rather than a reuse (R10, FR-034).
+
+**PASS TWELVE SWEPT THE EDGE CASES, which no earlier pass had.** Ten cases, one with no
+fixture and no test — and it is a case **this feature creates**. "Two tenants using the same
+`external_id`, one private and one public" was an assertion: `seedTwoTenants` writes
+`${label}-user` and `${label}-channel`, so the two tenants never share an id, and all four
+attack shapes take an id that does **not** exist in the attacker's tenant. Before this
+feature every channel was `public` and the two answers matched trivially; now the types
+differ. **FR-034a and T080a/T082b.**
+
+**EVERY SWEEP HAS FOUND SOMETHING, AND EACH ONE HAD A DIFFERENT LEFT-HAND SIDE**:
+requirements→tasks (nothing after pass one), files→chapters, routes→handlers,
+columns→readers, callers→signatures, scenarios→routes, edge-cases→tasks. Six productive
+sweeps, six different artifacts, and the identifier grep saw none of them. Still unswept:
+the spec's nine **assumptions**, each a claim nothing tests.
+
+**AND A DECLARED FRAME WITH NO SENDER, in a feature about declared columns with no reader.**
+R16 deferred presence "in scope only as far as: a non-member's socket is not subscribed, so
+it receives no presence for it" — `presenceChangedSchema` is in the frame union and **nothing
+emits it**, so the claim was vacuously true. Corrected rather than left to read as though
+presence flowed.
+
+**AND THE PASS THAT SPLIT ELEVEN REQUIREMENTS FOR BEING BUNDLED BUNDLED ONE ITSELF.**
+Pass eleven's rewrite of FR-011 carried two clauses — the enum with its default, and the
+add endpoint accepting a role. Pass twelve split it as FR-011b. The rule is easier to state
+than to follow in the same edit that states it.
+
+**AND R1 WAS IN `research.md` TWICE from pass seven to pass twelve.** The pass that appended
+the caller-count correction re-emitted the whole section instead of extending it, and five
+analysis passes read past a duplicated header without noticing. Nothing downstream was
+wrong; the file was 28 lines longer than it said it was.
 
 **PASS ELEVEN: CITATION IS NOT COVERAGE, AND THE CHECK THAT SAID 100% COULD NOT SEE IT.**
 Three passes running found a task naming a requirement identifier while implementing something
