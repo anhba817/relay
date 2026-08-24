@@ -39,8 +39,8 @@ sections had been written; the point of deciding first is that this table exists
 
 | Chapter | Phases | Subject |
 |---|---|---|
-| **3.15** the channel a customer controls | 3–8, page at 9–10 | membership, reading a channel by id, the private type, removal, roles, archiving, **and FR-037's correction** (T049a–T049c, stated at T097a). **21 files** per R18's table, seven fenced whole here and diffed in 3.16 |
-| **3.16** what a user sees | 11–17, page at 19–20 | listing, unread, the user surface, implicit creation, and FR-038a's citation class (Phase 17). **21 files** per R18's table, seven of them diffs. `sentinel.sql`, `guard.itest.ts` and `internal/session.controller.ts` are its files, not 3.15's |
+| **3.15** the channel a customer controls | 3–8, page at 9–10 | membership, reading a channel by id, the private type, removal, roles, archiving, **and FR-037's correction** (T049a–T049c, stated at T097a). **20 files** per R18's table, seven fenced whole here and diffed in 3.16. `tenant-scope.itest.ts` is this chapter's subject and not one of its fences: the classification moved 22 → 23 tables and the file did not change |
+| **3.16** what a user sees | 11–17, page at 19–20 | listing, unread, the user surface, implicit creation, and FR-038a's citation class (Phase 17). **23 files** per R18's table, seven of them diffs. `sentinel.sql`, `sentinel.ts`, `guard.itest.ts`, `internal/session.controller.ts` and `scripts/backfill-channel-activity.mjs` are its files, not 3.15's — the last two were in no bucket until T091 |
 
 Phases 1, 2, 18 and 21 belong to neither page: the baseline, the schema both chapters
 stand on, the verification that covers both, and the close-out.
@@ -443,17 +443,17 @@ and each of those attacks goes red when its check is removed.
 **Goal**: "the channel a customer controls", inside the 2,000–4,000 word bound, every
 fence replaying onto the platform.
 
-- [ ] T091 Count the fenced files this chapter owns before writing a word (FR-040), and record it against R18's assignment of **21** (FR-040a) in `specs/034-chapter-3-15/baseline.txt`, seven of which are fenced whole here and diffed in chapter 3.16. The feature's file count was revised twice before it was enumerated — 25, then 29, then 34 — so record whether 19 moved too. The estimate has run low three times: 3.5 by 77%, 3.12 by 65%, this feature's first count by 26%
-- [ ] T092 Write `relay-tutorial/app/(en)/part-3/chapter-15/<slug>/page.mdx`. The subject is one sentence: who is in a channel, what kind it is, and whether it is open
-- [ ] T093 [P] Write `figures.ts` beside it — the refusal ordering (ban, archive, membership), the two-refusals table, and the same-tenant attack the suite never had
-- [ ] T094 **A titled fence states the whole file, not an excerpt.** Chapter 3.12's 26 excerpts produced 43 chain problems. Where an excerpt is genuinely wanted, put `(excerpt)` in the title — the checker's `NOT_A_FILE` treats it as a prose illustration and leaves the path out of the chain — `relay-tutorial/app/(en)/part-3/chapter-15/<slug>/page.mdx`
-- [ ] T094a **Seven files are fenced whole here and diffed in chapter 3.16** — `repository.ts`, `repository.itest.ts`, `isolation.itest.ts`, `schema.ts`, `0012_member_roles_and_user_deletion.sql`, `codes.ts`, `codes.test.ts` (R18's assignment). And `channels.schema.ts` is already fenced whole in chapter 3.13, so this chapter shows a **diff with 3.13 as predecessor** and eight lines of context — three let chapter 3.12's `repository.ts` pre-image match twice
-- [ ] T095 [P] **One full fence per path.** Replacing every excerpt with its whole file gave 4,995 lines in chapter 3.12, because six paths were fenced twice and each copy restated the file — `relay-tutorial/app/(en)/part-3/chapter-15/<slug>/page.mdx`
-- [ ] T096 [P] Any diff fence needs a predecessor in the chain and enough context to be unique. Three lines let `repository.ts`'s pre-image match twice; eight made each hunk unique
-- [ ] T097 **`sentinel.sql` and `guard.itest.ts` belong to chapter 3.16, not here** (R18's table — `read_positions` is 3.16's subject). Confirm this chapter fences neither; the excerpt-and-amend work is T187a. Analysis pass three found this task instructing phase 9 to excerpt files the assignment had already given away
-- [ ] T097a **State both corrections in this chapter's prose** rather than only making them (FR-037, FR-038): the false sentence about read paths, and chapter 3.12's traceability row recording FR-CHN-04 as delivered. Both subjects — membership on read paths, and channel roles — are this chapter's, which is why the statement moved here from chapter 3.16's page during the first analysis pass — `relay-tutorial/app/(en)/part-3/chapter-15/<slug>/page.mdx`
-- [ ] T098 Add the chapter to `relay-tutorial/lib/tutorial.ts`
-- [ ] T099 Count the prose words with the counter the series uses and record it in `specs/034-chapter-3-15/baseline.txt`. Inside 2,000–4,000 or the chapter changes, not the bound (SC-018)
+- [X] T091 Count the fenced files this chapter owns before writing a word (FR-040), and record it against R18's assignment of **21** (FR-040a) in `specs/034-chapter-3-15/baseline.txt`, seven of which are fenced whole here and diffed in chapter 3.16. The feature's file count was revised twice before it was enumerated — 25, then 29, then 34 — so record whether 19 moved too. The estimate has run low three times: 3.5 by 77%, 3.12 by 65%, this feature's first count by 26%
+- [X] T092 Write `relay-tutorial/app/(en)/part-3/chapter-15/<slug>/page.mdx`. The subject is one sentence: who is in a channel, what kind it is, and whether it is open
+- [X] T093 [P] Write `figures.ts` beside it — the refusal ordering (ban, archive, membership), the two-refusals table, and the same-tenant attack the suite never had
+- [X] T094 **A titled fence states the whole file, not an excerpt.** Chapter 3.12's 26 excerpts produced 43 chain problems. Where an excerpt is genuinely wanted, put `(excerpt)` in the title — the checker's `NOT_A_FILE` treats it as a prose illustration and leaves the path out of the chain — `relay-tutorial/app/(en)/part-3/chapter-15/<slug>/page.mdx`
+- [X] T094a **Seven files are fenced whole here and diffed in chapter 3.16** — `repository.ts`, `repository.itest.ts`, `isolation.itest.ts`, `schema.ts`, `0012_member_roles_and_user_deletion.sql`, `codes.ts`, `codes.test.ts` (R18's assignment). And `channels.schema.ts` is already fenced whole in chapter 3.13, so this chapter shows a **diff with 3.13 as predecessor** and eight lines of context — three let chapter 3.12's `repository.ts` pre-image match twice
+- [X] T095 [P] **One full fence per path.** Replacing every excerpt with its whole file gave 4,995 lines in chapter 3.12, because six paths were fenced twice and each copy restated the file — `relay-tutorial/app/(en)/part-3/chapter-15/<slug>/page.mdx`
+- [X] T096 [P] Any diff fence needs a predecessor in the chain and enough context to be unique. Three lines let `repository.ts`'s pre-image match twice; eight made each hunk unique
+- [X] T097 **`sentinel.sql` and `guard.itest.ts` belong to chapter 3.16, not here** (R18's table — `read_positions` is 3.16's subject). Confirm this chapter fences neither; the excerpt-and-amend work is T187a. Analysis pass three found this task instructing phase 9 to excerpt files the assignment had already given away
+- [X] T097a **State both corrections in this chapter's prose** rather than only making them (FR-037, FR-038): the false sentence about read paths, and chapter 3.12's traceability row recording FR-CHN-04 as delivered. Both subjects — membership on read paths, and channel roles — are this chapter's, which is why the statement moved here from chapter 3.16's page during the first analysis pass — `relay-tutorial/app/(en)/part-3/chapter-15/<slug>/page.mdx`
+- [X] T098 Add the chapter to `relay-tutorial/lib/tutorial.ts`
+- [X] T099 Count the prose words with the counter the series uses and record it in `specs/034-chapter-3-15/baseline.txt`. Inside 2,000–4,000 or the chapter changes, not the bound (SC-018)
 - [ ] T100 Commit Phase 9
 
 ---
@@ -666,7 +666,7 @@ the fourth**: FR-038a's citation class.
 - [ ] T188 [P] State the two approximations this chapter accepts: a tombstone counts as one unread, and a deleted user's row survives — `relay-tutorial/app/(en)/part-3/chapter-16/<slug>/page.mdx`
 - [ ] T189 Add the chapter to `relay-tutorial/lib/tutorial.ts`
 - [ ] T190 Count the prose words and record it in `specs/034-chapter-3-15/baseline.txt` — inside 2,000–4,000 (SC-018)
-- [ ] T191 [P] Record the split's own numbers on the page (SC-019): **25, 29, 34, 36, 38**, all five before any prose existed. The third found `app.module.ts`, a file no task named holding the registration eight routes need; the fifth came from counting the paths the tasks name instead of reading the total, and added two files earlier passes had already written about — `relay-tutorial/app/(en)/part-3/chapter-16/<slug>/page.mdx`
+- [ ] T191 [P] Record the split's own numbers on the page (SC-019): **25, 29, 34, 36, 38, 40**, all six before any prose existed and each from a different question. The third found `app.module.ts`, a file no task named holding the registration eight routes need; the fifth came from counting the paths the tasks name instead of reading the total, and added two files earlier passes had already written about — `relay-tutorial/app/(en)/part-3/chapter-16/<slug>/page.mdx`
 - [ ] T192 Commit Phase 19
 
 ---
@@ -676,6 +676,7 @@ the fourth**: FR-038a's citation class.
 - [ ] T193 Translate to `relay-tutorial/app/(vi)/vi/part-3/chapter-16/<slug>/page.mdx`, every fence byte-identical
 - [ ] T194 [P] Translate the figure labels in `relay-tutorial/app/(vi)/vi/part-3/chapter-16/<slug>/figures.ts`; identifiers and column names stay English
 - [ ] T195 Run `pnpm check:fences` and ask it about **files this chapter owns**, not about pages naming this chapter
+- [ ] T196a **Re-derive `fences/post-series.md`'s `vitest.coverage.config.mts` amendment** against the file as it stands after every coverage pin this feature adds. Phase 9 amended it for Phase 1's outsider exclusion — the last `[HEAD]` problem, and a change no chapter's subject covers — and phases 12 and 18 change the same file again. `scratchpad/unamend.py` and `mkdiff.py` are the tools; the pre-image is the state the chapters plus the appendix's earlier hunks leave
 - [ ] T196 [P] `pnpm lint`, `tsc`, `pnpm build`, and the static page count
 - [ ] T197 Record both chapters' final numbers in `baseline.txt`
 - [ ] T198 Commit Phase 20
@@ -686,7 +687,7 @@ the fourth**: FR-038a's citation class.
 
 - [ ] T199 Write `specs/034-chapter-3-15/chapter-notes.md`: what the plan said against what shipped, phase by phase, including the phases that went badly
 - [ ] T200 [P] Write `specs/034-chapter-3-15/gaps.md`: what this feature refused and who owns it — presence scope (FR-RTM-07), REST-to-socket delivery (FR-RTM-05), the outbox's message-text retention (FR-MOD-06), and **a human reading the documentation**, which chapter 3.14 named as the instrument it did not use and this feature does not use either
-- [ ] T201 [P] Record whether the split held, in `specs/034-chapter-3-15/chapter-notes.md`: 21 and 21 files assigned against a 38-file union, and what the two chapters actually fenced. **And record the three revisions the count went through** — 25 from the clause list, 29 from the task list, 34 from the enumeration — with what each revision found, because the third found a file no task named and eight routes depended on
+- [ ] T201 [P] Record whether the split held, in `specs/034-chapter-3-15/chapter-notes.md`: 20 and 23 files assigned against a 40-file union, and what the two chapters actually fenced. **And record every revision the count went through, with the mechanism that found each** — 25 from the clause list, 29 from the task list, 34 from the chapter-assignment question, 36 from the send call graph, 38 from counting the named paths, 40 from `git diff` against `check:fences` — because the third found a file no task named that eight routes depended on, and the sixth found two files no document held
 - [ ] T202 Update `CLAUDE.md` between the `<!-- SPECKIT -->` markers: what closed, what the next feature should do differently, and every measurement worth not re-taking
 - [ ] T203 [P] Tick the last task in this file only when it is done, not when it is about to be. Chapter 3.12 marked its close-out complete before pushing and had to reopen it — `specs/034-chapter-3-15/tasks.md`
 - [ ] T204 Tag `part3-ch16` in `relay-platform` and `relay-tutorial`

@@ -473,18 +473,44 @@ already holds. So the table is the authority and every other document quotes it.
 
 | | count | files |
 |---|---|---|
-| **3.15 only** | 14 | `channels.controller.ts`, `channels.itest.ts`, `channels.schema.ts`, `channels.service.ts`, `internal.itest.ts`, `fixtures.ts`, `gauntlet.itest.ts`, `targets.itest.ts`, `targets.ts`, `tenant-scope.itest.ts`, `isolation-fixtures.ts`, `messages.controller.ts`, `messages.service.ts`, **`messages.itest.ts`** |
-| **3.16 only** | 14 | `credentials.itest.ts`, `dev-token.controller.ts`, `users.controller.ts`, `users.service.ts`, `users.module.ts`, `users.schema.ts`, `users.itest.ts`, `app.module.ts`, `session.ts`, `0011_*.sql`, `sentinel.sql`, `guard.itest.ts`, `vitest.coverage.config.mts`, **`internal/session.controller.ts`** |
+| **3.15 only** | 13 | `channels.controller.ts`, `channels.itest.ts`, `channels.schema.ts`, `channels.service.ts`, `internal.itest.ts`, `fixtures.ts`, `gauntlet.itest.ts`, `targets.itest.ts`, `targets.ts`, `isolation-fixtures.ts`, `messages.controller.ts`, `messages.service.ts`, **`messages.itest.ts`** |
+| **3.16 only** | 16 | `credentials.itest.ts`, `dev-token.controller.ts`, `users.controller.ts`, `users.service.ts`, `users.module.ts`, `users.schema.ts`, `users.itest.ts`, `app.module.ts`, `session.ts`, `0011_*.sql`, `sentinel.sql`, `guard.itest.ts`, `vitest.coverage.config.mts`, **`internal/session.controller.ts`**, **`sentinel.ts`**, **`scripts/backfill-channel-activity.mjs`** |
 | **both** | 7 | `repository.ts`, `repository.itest.ts`, `isolation.itest.ts`, `schema.ts`, `0012_*.sql`, `codes.ts`, `codes.test.ts` |
-| **neither** | 3 | `compare.ts` (read by T043, not changed), `exempt.ts` and `eslint.config.mjs` (touched only if T011 finds a file needing an entry) |
+| **neither** | 4 | `compare.ts` (read by T043, not changed), **`tenant-scope.itest.ts`** (run by T089 and not changed — see below), `exempt.ts` and `eslint.config.mjs` (touched only if T011 finds a file needing an entry) |
 
-    union            38 files
-    taught           35
-    3.15 teaches     14 + 7 = 21
-    3.16 teaches     14 + 7 = 21
-    instances        42   = 35 taught + 7 counted twice   ✓
+    union            40 files
+    taught           36
+    3.15 teaches     13 + 7 = 20
+    3.16 teaches     16 + 7 = 23
+    instances        43   = 36 taught + 7 counted twice   ✓
 
-**38, from 36, from 34, from 29, from 25.** Five revisions. The first four each came from a
+### The sixth revision came from asking the repository what changed
+
+Taken at T091, before a word of chapter 3.15 existed, which is what that task exists to do.
+
+**`tenant-scope.itest.ts` was assigned to 3.15 and this feature never touches it.** The
+catalogue's classification moved from 22 base tables to 23 — `read_positions`, direct — and the
+test file did not change by one character, because `classifyTables` derives the classification
+from the live database and not from a list somebody maintains. There is nothing to diff, so it
+cannot be one of the chapter's fences. It is still one of the chapter's **subjects**, and the
+chapter states the fact in prose: a new table appeared in the classification and no test moved.
+
+That distinction is what the table was missing. A file can be a chapter's subject without being
+one of its fences, and only fences carry a word cost.
+
+**Two files this feature changes were in no bucket at all.** `sentinel.ts` gained 32 lines of
+read-position bait — the table holds `sentinel.sql` and `guard.itest.ts` but not the file that
+plants the rows, and the added comment says "chapter 3.16" in its own text.
+`scripts/backfill-channel-activity.mjs` is new: T019 moved the backfill out of migration 0011,
+and the file that move created reached no document. Both are 3.16's, because
+`last_activity_at` and `read_positions` are.
+
+**Six revisions, six mechanisms, and not one of them was a re-reading.** The clause list gave
+25, the task list 29, the chapter-assignment question 34, the send call graph 36, counting the
+named paths 38, and `git diff --name-only` against `check:fences` gives **40**. The number has
+never once been too high.
+
+**40, from 38, from 36, from 34, from 29, from 25.** Six revisions. The first four each came from a
 new question: the task list (29), the chapter assignment (34), and the send call graph (36) —
 `messages.controller.ts` and `messages.service.ts` arrived in pass seven with T031a, because
 the public send had to be made to say who is acting before a membership check could fire.
@@ -519,12 +545,14 @@ its own amendment.
 
 At chapter 3.11's measured 160 words per file — 1.5 fences per file, 107 words per fence:
 
-    3.15    21 files  ≈ 3,360 words
-    3.16    21 files  ≈ 3,360 words
+    3.15    20 files  ≈ 3,200 words
+    3.16    23 files  ≈ 3,680 words
 
-Both inside 2,000–4,000 with 640 words of headroom, and seven of 3.16's twenty-one are diffs
-of files 3.15 already fenced, which run shorter than a whole file. **Three chapters would be
-42 ÷ 3 × 160 ≈ 2,240 each**, which clears the floor by 240 words — still the wrong side
+Both inside 2,000–4,000, and seven of 3.16's twenty-three are diffs of files 3.15 already
+fenced, which run shorter than a whole file. The headroom is no longer symmetric: 3.15 has 800
+words against the ceiling and **3.16 has 320**, which is the number phase 19 has to write
+against. **Three chapters would be 43 ÷ 3 × 160 ≈ 2,293 each**, which clears the floor by 293
+words — still the wrong side
 of comfortable against an estimate that has run low three times, and the reason two
 chapters holds is now subject coherence with the arithmetic no longer arguing either way.
 
@@ -565,8 +593,10 @@ Analysis pass one scaled R12's 37 file-instances by 29/25 to get ~43, divided by
 and reported that three chapters now fits inside the band at ~2,290 words a page — so
 the floor argument that killed three was gone. **The scaling was the error.** Instances
 do not grow with the union; they grow with how many chapters teach each file, which is a
-question the enumeration answers directly. The real count is 38 instances, giving ~2,027
-a page for three chapters — still against the floor, by 27 words.
+question the enumeration answers directly. The real count is 43 instances, giving ~2,293
+a page for three chapters — over the floor by 293 words, which the scaled estimate reached by
+accident at ~2,290 and for the wrong reason. The instrument was still wrong when its answer
+moved to the same side as the truth.
 
 Two chapters holds on all three grounds now: arithmetic, subject coherence, and headroom
 against an estimate that has run low three times (3.5 by 77%, 3.12 by 65%, this feature's

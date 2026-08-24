@@ -801,3 +801,155 @@ So the attack is a cursor naming the private channel, and the assertion is that 
 cursor set does not contain it. Reading the frame union is what turned a task that could not
 be executed as written into one that could; the task's own instruction to derive it from the
 union is why.
+
+## PHASE 9 — chapter 3.15's page (T091–T100)
+
+### T091 — the count, taken from the repository instead of the task list, and it moved a sixth time
+
+R18 assigned **21** files to this chapter. Twenty of them are changed. The full state, from
+`git diff --name-only 607d46b HEAD` against `pnpm check:fences`:
+
+    27 files changed since chapter 3.14's close
+    19 currently raise a [HEAD] problem — a chapter fences them and the repo has moved on
+     3 are new files nothing has ever fenced — 0011_*.sql, 0012_*.sql, backfill-channel-activity.mjs
+     1 is fenced only as an (excerpt) and is therefore outside the chain — sentinel.ts
+     4 are neither fenced nor fenceable — pnpm-lock.yaml, and three whose changes belong to 3.16
+
+**`tenant-scope.itest.ts` is assigned to this chapter and this feature never touches it.**
+The catalogue's classification moved from 22 base tables to 23 and the test file has not
+changed by one character, because `classifyTables` derives the classification from the live
+database rather than from a list somebody maintains. There is nothing to diff. So the file is
+this chapter's **subject** without being one of its **fences** — a distinction R18's table did
+not have, and the chapter states the fact in prose instead.
+
+**And two files this feature changes are in no bucket of R18's table:**
+
+- `packages/test-harness/src/sentinel.ts`, +32 lines — the read-position bait. R18 holds
+  `sentinel.sql` and `guard.itest.ts` and not the file that plants the rows. Its own added
+  comment says "chapter 3.16", which is where it belongs.
+- `scripts/backfill-channel-activity.mjs`, new in Phase 2 — T019 moved the backfill out of
+  migration 0011, and the file it created reached no document. It backfills
+  `last_activity_at`, which is the listing's ordering column, so it is 3.16's.
+
+    3.15 only        13   (was 14 — tenant-scope.itest.ts moved out)
+    3.16 only        16   (was 14 — sentinel.ts and the backfill script moved in)
+    both              7
+    neither           4   (was 3 — tenant-scope.itest.ts joins compare.ts)
+    ── union         40   (was 38)
+    taught           36
+    3.15 teaches     20
+    3.16 teaches     23
+    instances        43   = 36 taught + 7 counted twice   ✓
+
+**SIXTH REVISION, SIXTH MECHANISM.** 25 came from the clause list, 29 from the task list, 34
+from asking which chapter fences each file, 36 from the send call graph, 38 from counting the
+paths the tasks name — and **40 from asking the repository what changed.** Every one of the six
+found more, and none of them was findable by re-reading the artifact that held the previous
+number. T091's own instruction is why this one was taken: it said to count before writing a
+word, and to record whether the number moved.
+
+**What it does to the word estimate.** At R12's 160 words per taught file: 3.15 at 20 files is
+≈3,200 words and 3.16 at 23 is ≈3,680. Both inside 2,000–4,000. The headroom recorded at the
+split was 640 words a page; 3.16's is now **320**, which is the number to watch when phase 19
+writes it. Nothing here argues for a third chapter: the floor is what a split has to clear, and
+three pages of ≈2,400 still clears it.
+
+### T092–T099 — the page, measured
+
+    app/(en)/part-3/chapter-15/the-channel-a-customer-controls/page.mdx
+
+    prose words outside fences     2,947     bound 2,000–4,000
+    titled fences                     20     19 diffs, 1 whole file
+    fence lines                    3,273
+    page lines                     3,769
+    static pages built                86     up from 84
+    pnpm check:fences              CLEAN    204 fenced files, 32 chapters
+    pnpm lint, tsc, build          clean
+
+Against T091's estimate of ≈3,200 words at 20 files: 2,947, low by 8%. The estimate has
+run **low** three times in this series (3.5 by 77%, 3.12 by 65%, this feature's first file
+count by 26%) and this is the first time it has run high, which is worth noting only
+because it is the direction nobody was watching.
+
+For scale: 3.11 wrote 3,218 words over 2,032 fence lines, 3.12 wrote 3,426 over 2,526,
+3.13 wrote 2,348 over 1,271, 3.14 wrote 2,192 over 1,104. This chapter has the most fence
+lines in the series and sits mid-range on prose. The word counter is
+`scratchpad/words.py`, which reads 3,426 for chapter 3.12 where that chapter's own
+close-out recorded 3,326 — about 3% high, from counting words inside JSX box children
+that the earlier count evidently did not.
+
+### T094–T096 — EVERY ONE OF THE NINETEEN IS A DIFF, and R18 said seven would be whole
+
+R18's assignment said the seven files shared with 3.16 are "fenced whole in 3.15 and
+diffed in 3.16". Measured against the chain's actual state, **all nineteen changed files
+already have a predecessor** — `repository.ts` in 3.13, `schema.ts` in 3.11, `codes.ts` in
+3.14, and so on. Only `0012_member_roles_and_user_deletion.sql` is new, and it is the one
+whole fence.
+
+Fencing `repository.ts` whole would have put **3,839 lines** on the page for a change of
+535. The rule "one full fence per path" is about not repeating a path inside one chapter;
+the rule that decides whole-versus-diff is simply whether the chain already holds the
+file.
+
+### THE "EIGHT LINES OF CONTEXT" RULE WAS A PROXY FOR A CHECK
+
+Chapter 3.12 recorded that three lines of context let `repository.ts`'s pre-image match
+twice and eight made each hunk unique. Taken as a rule, that is 5 extra lines × every
+hunk × every diff fence for the rest of the series.
+
+**All nineteen diffs here are authored at three lines**, and the chain applies them
+cleanly, because the generator simulates what the checker does: apply each hunk to the
+evolving text, count occurrences of the pre-image, and widen the context only for a hunk
+that matches more than once. No hunk in this chapter needed widening.
+
+The eight-line rule was never about eight lines. It was about not being able to tell
+whether three were enough. `scratchpad/mkdiff.py` tells you, and two bugs in writing it
+are worth recording because both produced a *silent* wrong answer rather than an error:
+
+- `\ No newline at end of file` is diff's own annotation and begins with a backslash,
+  which the checker's `strip()` leaves untouched — so it lands in both images as a
+  literal line and the pre-image then matches **nothing**. Eight files failed at every
+  context level.
+- `diff`'s stdout ends with a newline, so `split("\n")` leaves one `""` behind, and it
+  lands in the last hunk. That puts a trailing newline on a pre-image the rstripped text
+  cannot match. The failures were always the LAST hunk of a file, which is the clue.
+
+### A CHAPTER CANNOT DO THE APPENDIX'S WORK EITHER
+
+Chapter 3.12's fourth fence lesson was that a chapter cannot amend a state
+`post-series.md` builds, because the checker applies the appendix after every chapter.
+This is the same rule from the other side, and it is the one that bit:
+
+`repository.ts` is amended by the appendix — feature 030 made `drainDisableNotifications`'
+`onError` required. My diff was generated straight to HEAD, so it removed that default
+itself, and the appendix's hunk then matched **0 times**.
+
+The state a chapter must leave for a path the appendix amends is **HEAD with the
+appendix's own edits undone**. `scratchpad/unamend.py` reverse-applies them; the
+regenerated diff is 476 lines over 9 hunks instead of 535 over 11, and the chain is clean.
+Reverse-apply is also a check in itself: it only succeeds if the feature changed nothing
+inside the appendix's context.
+
+### THE ONE PROBLEM THAT WAS NOBODY'S CHAPTER
+
+`vitest.coverage.config.mts` was the last `[HEAD]` problem, from Phase 1's lane fix:
+`packages/outsider` needs a running stack, `pnpm coverage` sets none of its three
+variables, and it failed every coverage run from the day 3.14 shipped — eight tests
+skipped, one failed suite. Chapter 3.12 split the lanes and put the exclusion in the
+script and not in this config, so one lane learned it and the other did not.
+
+R18 assigns the file to 3.16, but the CHANGE belongs to no chapter's subject, which is
+`fences/post-series.md`'s own criterion. Amended there rather than deferred: a red checker
+hides the next problem, and this phase started with 20 problems precisely because they had
+been allowed to accumulate. Phases 12 and 18 will add coverage pins to that file, so the
+amendment will need re-deriving — T196a.
+
+### T093 — the figure the task described was the leak
+
+T093 asked for a figure of "the refusal ordering (ban, archive, membership)". That is the
+order FR-021a **rejects**: archive before membership means a non-member of a private
+archived channel learns it exists from `channel_archived`. The task text predates the
+fix by nine analysis passes and nobody re-read it while the requirement moved.
+
+The figure shows the corrected order — ban, then membership and visibility, then archive —
+with the rejected one as the red node, which is the more useful figure anyway.

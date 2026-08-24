@@ -24,17 +24,21 @@ none of the eight user routes would have mounted.
 
 **A count without an enumeration cannot be checked, and each check found more.** R18's
 table is the authority for every file count in this feature, and the figures below are
-read off it rather than recomputed: **21 + 21 = 42 instances, union 38, 35 taught, 7 in
-both chapters, 3 in neither.** The union has been revised five times — 25, 29, 34, 36, 38 —
-four times by a new question and once by re-deriving a total instead of reading it, and three analysis passes produced three
-wrong overlap numbers before the table existed to read from.
+read off it rather than recomputed: **20 + 23 = 43 instances, union 40, 36 taught, 7 in
+both chapters, 4 in neither.** The union has been revised six times — 25, 29, 34, 36, 38, 40 —
+each time by a different question and never by re-reading the document that held the previous
+number, and three analysis passes produced three wrong overlap numbers before the table existed
+to read from. The sixth revision was taken at T091, from `git diff --name-only` against
+`check:fences`: two files this feature changes were in no bucket, and one file assigned to 3.15
+turned out to be one this feature never touches.
 
 | Chapter | Carries | Files | ≈ prose words |
 |---|---|---|---|
-| **3.15** the channel a customer controls | membership enforced on send, reading a channel by id, the `private` type made meaningful, member removal, member roles, archiving | 21 | ≈ 3,360 |
-| **3.16** what a user sees | channel listing with cursor pagination and activity ordering, unread counts, user profiles, bulk upsert, deletion, banning, implicit creation on authentication | 21 | ≈ 3,360 |
+| **3.15** the channel a customer controls | membership enforced on send, reading a channel by id, the `private` type made meaningful, member removal, member roles, archiving | 20 | ≈ 3,200 |
+| **3.16** what a user sees | channel listing with cursor pagination and activity ordering, unread counts, user profiles, bulk upsert, deletion, banning, implicit creation on authentication | 23 | ≈ 3,680 |
 
-Both inside 2,000–4,000 with 640 words of headroom. **Three chapters would be ~2,240
+Both inside 2,000–4,000. The headroom is not symmetric: 3.15 has 800 words against the
+ceiling and 3.16 has 320. **Three chapters would be ~2,293
 each**, which clears the floor — so at the current count the arithmetic no longer argues
 either way and two chapters holds on subject coherence and on ceiling headroom against an
 estimate that has run low three times. Pass one reported the floor argument gone by
