@@ -381,3 +381,70 @@ is a dependency of `services/api` and not of the workspace root, and `createPool
 applies the documented 15432 default. `scripts/seed-demo-tenant.mjs` reaches for the same
 build output for the same reason.
 
+## Phase 3 — the membership check, and the route that could not trigger it
+
+    lint / typecheck              exit 0
+    pnpm turbo run test           380 tests   (unchanged — this phase's tests are all integration)
+    pnpm test:integration         422 tests, 192 s   (was 410, 193 s)
+
+**Twelve tests and no measurable time**, against T003a's 472 ms per test which predicted
+5.7 s. Two runs of the same lane differ by more than the twelve tests cost, so the
+prediction is not yet falsifiable at this scale — Phases 11 to 15 are where it will be.
+
+### T031 — the check, and where it went
+
+`repository.sendMessage`'s scoped channel read already selected `id` and `lastSequence` and
+threw `ChannelNotFoundError` when the channel was absent. The check goes directly under it:
+`type` added to the select, and for a `private` channel with a `userId` present, one
+membership lookup — and **the same `ChannelNotFoundError`** when there is no row.
+
+That last part is pass six's finding implemented: SC-002 requires send's answer for a
+private channel the caller cannot see to be byte-identical to a channel that does not
+exist, and the contract had specified `403 not_a_member` for ten analysis passes. A 403
+announces that the channel exists.
+
+### T031a — the route a customer's client calls supplied no user, for twenty-three chapters
+
+`messages.controller.ts` called `this.messages.send(channelId, body)` with no user, and
+`MessagesController` declares no `@Accepts` — so `credential.guard.ts` falls back to
+`EITHER` and a user token is accepted there. A check gated on `userId` cannot fire when no
+caller fills it in.
+
+The controller now resolves `req.principal` softly — `actingUser`, which returns `undefined`
+for an application key rather than throwing the way `internal.controller.ts`'s
+`principalUser` does, because both credential classes are legitimate here (FR-MSG-13).
+
+**A behaviour change worth naming**: a user token minted for an identifier with **no user
+row** is now refused with 400, where before the send succeeded UNATTRIBUTED — and an
+unattributed send is one the membership check waves through. `POST /auth/dev-token` mints
+tokens for identifiers that need not exist, so that was reachable. The integration lane
+stayed green through the change: **no existing test sends with a user token for a
+nonexistent user.** FR-039a removes the case by creating the row at mint time.
+
+### T034 — the check removed, and what went red
+
+    repository.itest.ts, check disabled   2 failed | 9 passed
+      × refuses a user of the tenant who is not a member, as if the channel were absent
+      × leaves the channel's message count unchanged after the refusal (SC-003)
+      ✓ the four control tests stayed green
+
+    messages.itest.ts, check disabled     1 failed | 7 passed
+      × refuses a non-member's send with the not-found envelope, body and all
+      ✓ the three control tests stayed green
+
+**Both suites go red on their own and the controls stay green**, which is what tells a
+working attacker from a broken one — chapter 3.12's fourteen passing tests were comparing
+two refusals, and two refusals for unrelated reasons are also indistinguishable.
+
+### The four call sites, and which ones needed anything
+
+    repo.sendMessage       messages.service.ts:47        threads what it is given
+    MessagesService.send   messages.controller.ts:40     SUPPLIED NOTHING → T031a
+                           internal.controller.ts:65     always supplied user.id
+    the socket             api-client → POST /internal/messages → the row above
+
+Three call sites, not the six R1 claimed, and the one that mattered supplied nothing. The
+socket reaches the check through the internal route, so `isolation.itest.ts`'s new case
+tests a path that was already correct — and it is worth having because the gateway holds no
+membership opinion of its own: `session.ts:611` forwards the frame and relays the answer.
+
