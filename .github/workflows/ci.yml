@@ -150,11 +150,19 @@ jobs:
       - run: pnpm build
         working-directory: relay-tutorial
 
-      # The two checks that keep the series honest: prose mirrors its sources,
-      # and every fenced file replays onto the canonical repository byte for
-      # byte. The fence check needs relay-platform, which is why this job
-      # checks out submodules too.
+      # The three checks that keep the series honest: prose mirrors its sources,
+      # every fenced file replays onto the canonical repository byte for byte,
+      # and every figure hands its diagram to the prop the component reads. The
+      # fence check needs relay-platform, which is why this job checks out
+      # submodules too.
+      #
+      # `check:figures` was added in chapter 3.15, after fifteen figures in four
+      # published chapters were found rendering a caption over nothing: MDX props
+      # are not type-checked, so `chart={figThing}` builds green and passes
+      # `code: undefined`.
       - run: pnpm check:docs
+        working-directory: relay-tutorial
+      - run: pnpm check:figures
         working-directory: relay-tutorial
       - run: pnpm check:fences
         working-directory: relay-tutorial

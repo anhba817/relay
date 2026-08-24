@@ -460,12 +460,12 @@ fence replaying onto the platform.
 
 ## Phase 10: Chapter 3.15 — translation and publication
 
-- [ ] T101 Translate to `relay-tutorial/app/(vi)/vi/part-3/chapter-15/<slug>/page.mdx` per the `translate-mdx` skill. **Every fence byte-identical**, comments included — a translated comment fails the build
-- [ ] T102 [P] Translate the figure labels in the mirrored `figures.ts`; participants, identifiers, table and column names stay English
-- [ ] T103 Run `pnpm check:fences` and ask the question the right way round: **"0 problems on files this chapter owns"**, not "0 problems naming this chapter's page". Chapter 3.12's two answers differed by one file and the chain was reported clean twice before the second was checked
-- [ ] T104 [P] Run `pnpm lint`, `tsc` and `pnpm build` in `relay-tutorial/` and record the static page count
-- [ ] T105 Record the chapter's numbers in `baseline.txt`: files, fences, figures, prose words, both locales
-- [ ] T106 Commit Phase 10
+- [X] T101 Translate to `relay-tutorial/app/(vi)/vi/part-3/chapter-15/<slug>/page.mdx` per the `translate-mdx` skill. **Every fence byte-identical**, comments included — a translated comment fails the build
+- [X] T102 [P] Translate the figure labels in the mirrored `figures.ts`; participants, identifiers, table and column names stay English
+- [X] T103 Run `pnpm check:fences` and ask the question the right way round: **"0 problems on files this chapter owns"**, not "0 problems naming this chapter's page". Chapter 3.12's two answers differed by one file and the chain was reported clean twice before the second was checked
+- [X] T104 [P] Run `pnpm lint`, `tsc` and `pnpm build` in `relay-tutorial/` and record the static page count
+- [X] T105 Record the chapter's numbers in `baseline.txt`: files, fences, figures, prose words, both locales
+- [X] T106 Commit Phase 10
 
 **Checkpoint**: chapter 3.15 is published in two locales and the chain replays.
 

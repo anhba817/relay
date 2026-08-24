@@ -953,3 +953,78 @@ fix by nine analysis passes and nobody re-read it while the requirement moved.
 
 The figure shows the corrected order — ban, then membership and visibility, then archive —
 with the rejected one as the red node, which is the more useful figure anyway.
+
+## PHASE 10 — translation, publication, and fifteen figures that rendered nothing (T101–T106)
+
+### T105 — the chapter's numbers, both locales
+
+    app/(en)/part-3/chapter-15/the-channel-a-customer-controls/page.mdx    3,769 lines
+    app/(vi)/vi/part-3/chapter-15/the-channel-a-customer-controls/page.mdx 3,709 lines
+
+    prose words (en)                2,947    bound 2,000–4,000
+    titled fences                      20    19 diffs, 1 whole file
+    untitled fences                     5    sql, json and ts illustrations
+    figures                             3
+    files taught                       20
+    static pages                       87    up from 86, from 84 before this chapter
+    pnpm check:fences               CLEAN    204 files, 32 chapters, 32 translated
+    pnpm check:figures              CLEAN    196 figures
+    pnpm lint / tsc / build         clean
+
+**The translation was assembled mechanically, not written over the English.** The page was
+split at every ``` boundary into 26 prose segments and 25 fence segments; only the prose was
+translated, and reassembly copied the fence segments across untouched. Then the two files
+were re-split and their fence lists compared: 25 against 25, identical. A translated comment
+inside a titled fence fails the build, and this is the way to be sure before finding out.
+
+### T103 — asked the right way round, and the answer has two halves
+
+Chapter 3.12's close-out warned that "0 problems naming this chapter's page" is not "0
+problems on files this chapter owns", and that the two answers differed by one file.
+
+`check:fences` reports **0 problems across all 204 claimed paths**, which settles the
+stronger question for every file the chain knows about. It does not settle the other
+direction, and the checker cannot: **a new file that no chapter has ever fenced produces no
+problem at all.** Six files this feature changed are claimed by nothing —
+
+    packages/test-harness/src/sentinel.ts        excerpt-fenced in 3.13, outside the chain
+    packages/test-harness/src/sentinel.sql       excerpt-fenced, T187a's work
+    packages/test-harness/src/guard.itest.ts     excerpt-fenced, T187a's work
+    services/api/migrations/0011_*.sql           new, 3.16's
+    scripts/backfill-channel-activity.mjs        new, 3.16's — and in no document until T091
+    pnpm-lock.yaml                               never fenced by anything
+
+All five real ones are assigned to chapter 3.16. The point to carry: **the fence chain
+detects drift on paths it already holds, and is silent about code nobody claimed.** Three of
+this feature's files reached the repository that way, and the count that found them was
+`git diff --name-only`, not the checker.
+
+## FIFTEEN FIGURES IN FOUR PUBLISHED CHAPTERS RENDERED A CAPTION OVER NOTHING
+
+Found while translating, by comparing the English page's props against the Vietnamese
+page's. `Figure` takes `caption` and `code`. Chapters 3.11, 3.12, 3.13 and 3.14 all wrote
+`chart={figThing}`, mirrored into Vietnamese, and **chapter 3.15's own three fences were
+written `src={figThing}`** — a third spelling, mine, in the same session that found the
+other two.
+
+    chapter 09 (code=)   4 mermaid sources in the built HTML
+    chapter 13 (chart=)  0 mermaid sources in the built HTML
+
+MDX props are not type-checked by `tsc`, so all three spellings compile, build green, render
+the caption, and hand `code: undefined` to the diagram. 15 English figures, 15 Vietnamese,
+across four chapters that shipped — chapter 3.11 has been published since before this
+feature was specified.
+
+**Nothing in the repository was looking.** `check-fence-chain.mjs` reads fences closely and
+ignores JSX entirely; the build cannot fail on an unknown prop; and a blank space under a
+caption is the kind of defect a person notices only by opening the page. Chapter 3.12's own
+lesson — *three instruments had never produced output* — is the same class one layer up.
+
+Fixed: 30 props renamed across eight files in two locales, plus my three. `scripts/check-figures.mjs`
+is now `pnpm check:figures` and runs in CI beside `check:fences`.
+
+**And the checker's own first version was wrong in the way it was written to catch.** It
+scanned line by line and reported **122 problems in 193 figures** — every one a false
+positive, because chapters up to 3.4 write `<Figure>` across three lines with the prop on
+the second. A checker that reports 122 problems on a healthy tree gets ignored, which is how
+a real one hides. It matches the element now: 196 figures, all correct.
