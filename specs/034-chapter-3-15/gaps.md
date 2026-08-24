@@ -69,9 +69,18 @@ returns it — *returning a column is reading it*, which made the statement shar
 weaker. `updated_at` survived every pass because nothing needed it. An audit field with no
 auditor.
 
-**Owner: unassigned, and the options are two.** A reader — an operations view answering "when
-did this user last catch up" — or a migration that drops it. Naming it is what this feature can
-do; choosing is not.
+**DECIDED: kept as it is.** The two options were a reader — an operations view answering "when
+did this user last catch up" — or a migration that drops it. The column stays, on the
+expectation that the reader arrives later.
+
+Recorded as a decision rather than left open, because the two states look identical in the
+schema and only this line tells them apart. A column nobody chose to keep and a column somebody
+chose to keep are the same column until somebody writes down which one it is — and this
+feature's whole subject is what happens when that sentence never gets written.
+
+**What that costs, stated so the next reader is not surprised:** the count of columns with no
+reader does not go to zero at the end of a feature about columns with no readers. It goes to
+one, deliberately, and the one is ours.
 
 ## 6. The SRS's `docs_url` clause was touched and unclaimed
 

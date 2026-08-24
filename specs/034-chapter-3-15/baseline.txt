@@ -2132,3 +2132,22 @@ them.
 
 T203 was ticked after the push, not before. Chapter 3.12 marked its close-out complete before
 pushing and had to reopen it.
+
+
+## AFTER THE CLOSE-OUT — `read_positions.updated_at` is kept, by decision
+
+The one column this feature leaves with no reader stays. The two options were a reader — an
+operations view answering "when did this user last catch up" — or a migration dropping it;
+kept, on the expectation that the reader arrives later.
+
+**Recorded in three places, which is the point.** `gaps.md` §5 carries the decision,
+`schema.ts` carries it beside the column, and chapter 3.16's page fences that comment in both
+locales. A column nobody chose to keep and a column somebody chose to keep look identical in a
+schema — and this feature exists because five such sentences were never written.
+
+    3.16 prose words   3,800 -> 3,851    still inside 2,000-4,000
+    check:fences       clean, 211 files across 33 chapters
+    the comment's fence lives in 3.16, not 3.15, because 3.16's page is where the column's
+    story is told — and because 3.15 is published, tagged and has no reason to reopen
+
+One trim paid for the addition: the paragraph after the 145x figure restated its own caption.
