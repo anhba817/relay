@@ -554,12 +554,15 @@ its own amendment.
 At chapter 3.11's measured 160 words per file — 1.5 fences per file, 107 words per fence:
 
     3.15    20 files  ≈ 3,200 words
-    3.16    23 files  ≈ 3,680 words
+    3.16    24 files  ≈ 3,840 words
 
 Both inside 2,000–4,000, and seven of 3.16's twenty-three are diffs of files 3.15 already
 fenced, which run shorter than a whole file. The headroom is no longer symmetric: 3.15 has 800
-words against the ceiling and **3.16 has 320**, which is the number phase 19 has to write
-against. **Three chapters would be 43 ÷ 3 × 160 ≈ 2,293 each**, which clears the floor by 293
+words against the ceiling and **3.16 has 160**, which is the number phase 19 has to write
+against — and chapter 3.15 came in at 2,947 against an estimate of 3,200, so the estimate
+runs about 8% high per file on this feature's material. Applied to 3.16 that is ≈3,530,
+which clears the ceiling with room; the 160 is the figure to watch if the estimate stops
+running high. **Three chapters would be 44 ÷ 3 × 160 ≈ 2,347 each**, which clears the floor by 293
 words — still the wrong side
 of comfortable against an estimate that has run low three times, and the reason two
 chapters holds is now subject coherence with the arithmetic no longer arguing either way.
