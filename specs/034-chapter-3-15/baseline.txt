@@ -641,3 +641,78 @@ And the second half of that test is what makes the first mean anything: `moderat
 ACCEPTED. A constraint that refused both words would satisfy "refuses admin" while being
 just as wrong as one that accepted both.
 
+## Phase 7 — archiving, and the order that hides it
+
+    lint / typecheck              exit 0
+    pnpm turbo run test           380 tests   (unchanged)
+    pnpm test:integration         463 tests, 192 s   (was 456, 193 s)
+    derived targets               30 derived, 27 attacked, 3 exempt   (was 28, 25, 3)
+
+`channels.archived_at` is the second of the four dead columns to gain a reader.
+
+### FR-021a's order, with one slot deliberately empty
+
+    ban            → not implemented here. `users.banned_at` has no reader until
+                     chapter 3.16 (T155a), and the slot sits ahead of the channel
+                     read so a banned user gets one answer for every channel id.
+    membership     → phase 3
+    archive        → this phase, BELOW membership
+
+**Reversed, the archive refusal becomes an existence oracle**: a non-member of a private
+archived channel would learn it exists from `channel_archived`. T072b tests that from
+outside, with a control — a MEMBER of the same archived channel does get
+`channel_archived`, so the check is live and the ORDER is what hides it from the
+non-member. Without that control the test would pass against an implementation where the
+archive check simply did not work.
+
+The empty slot is left visible in the code rather than filled with a comment elsewhere. A
+reader who finds two checks where the requirement names three should be able to see which
+one is missing.
+
+### A typed domain error, not a `protocolError` from the repository
+
+The first draft threw `protocolError("channel_archived", …, 403)` inside
+`repository.sendMessage`. That puts an HTTP status in the layer whose job is to not know
+about HTTP — and the repository has raised `ChannelNotFoundError` since chapter 2.2 and let
+the service map it. So `ChannelArchivedError` joins it, and `messages.service` maps it to
+403 with the code. The pattern was already there; the first draft ignored it.
+
+### TWO TESTS FAILED ON THEIR CONTROLS BECAUSE AN EARLIER TEST MUTATED SHARED STATE
+
+Both in the same shape, both caught by a control rather than by the assertion:
+
+**T072b** used the suite's `privateChannelId`, and T057 above it removes `insider` from that
+channel. By the time T072b ran, its "member" was not one — the control asked for 403 and got
+404. Fixed by giving the test its own channel and member: `repo` is now suite-scoped for
+exactly that.
+
+**T078a** failed the same way in the gateway suite: T058's `removeSelf()` never put the
+membership back, so two tests later the attacker was not a member of their own channel and
+the accepted-cursor set was empty. Fixed by adding `rejoinSelf()` and having T058 restore
+what it removed.
+
+**A test that depends on the order it runs in is a test that will fail for a reason it does
+not name.** Both of these failed on the control and not on the subject, which is the only
+reason the cause was obvious rather than mysterious. A suite whose tests each assert one
+thing and restore what they touched is the version of this that does not cost an hour.
+
+### T078 — what "the count is still true" means
+
+The spec's edge case is a channel archived while a user has unread messages in it.
+Archiving writes ONE column on `channels` and touches no message and no read position, so
+`last_sequence` is what it was, every read position is what it was, and the arithmetic
+between them is unchanged. Asserted on the sequence rather than on a count, because the
+count is phase 12's route — this is the invariant that makes the count safe, tested where it
+can be.
+
+### T078a — a no-op proved rather than assumed
+
+FR-022's second clause had no task for eleven analysis passes. The answer: an archived
+channel stays in the session and its resume cursor is still accepted, because archiving
+touches no membership. Nothing new arrives because nothing new can be sent — the refusal is
+at the write, not at the subscription.
+
+"We changed nothing so nothing broke" is the sentence the test replaces. Archiving could
+plausibly have been implemented by removing memberships, and then a member would have
+silently lost the channel from their session.
+
