@@ -111,7 +111,7 @@ by reading it against something else.
 |---|---|---|
 | FR-CHN-03 | FR-004, FR-008 | yes — public read and join, and a private channel answers as absent |
 | FR-CHN-04 | FR-011, FR-011a, FR-011b, FR-012 | yes — `members.role` with its own CHECK, and no operation authorized by it |
-| FR-CHN-05 | FR-001, FR-002, FR-003, FR-005 | yes — all four doors |
+| FR-CHN-05 | FR-001, FR-002, FR-003, FR-005 | **two verbs of three.** See below |
 | FR-CHN-06 | FR-006, FR-007 | yes — removal, up to 100, reported per user |
 | FR-CHN-08 | FR-013, FR-014, FR-015 | yes — keyset on `(last_activity_at, id)` |
 | FR-CHN-09 | FR-016 to FR-019 | yes — `greatest(last_sequence − position, 0)`, no counter |
@@ -137,6 +137,25 @@ The direction chapter 3.12's pass five added, because it is the one that finds a
 | DR-05 | `channels.last_activity_at` gains an index, and `EXPLAIN ANALYZE` shows it used at 50,000 memberships | FR-014 |
 | EIR-WS-06 | A fifth close code, `4003`, for a class the clause does not name | FR-031 |
 | **FR-027 (SRS)** | `docs_url` — the gateway was discarding every api refusal code but 401, so `user_banned` and `channel_archived` reached socket clients as `internal_error` and their `docs_url` never existed. **Touched and unclaimed by any requirement in this spec** | nothing — found in Phase 15, recorded here |
+
+### FR-CHN-05 IS NOT FULLY DELIVERED, AND THIS TABLE SAID IT WAS
+
+The clause names **three** verbs: *"A user shall not read messages from, send messages to, **or
+observe presence in** a private channel of which they are not a member."*
+
+This feature delivered read and send across four doors and tested both with the
+indistinguishability oracle. **The third verb is untouched, because presence does not exist** —
+`presenceChangedSchema` is in the frame union and nothing emits it, so "a non-member cannot
+observe presence" is true the way a statement about an empty set is true.
+
+The row above read "yes — all four doors" until chapter 3.16 was already published. Four doors
+was the count of *this feature's* refusal paths, not the count of verbs the clause names, and
+the two numbers were never compared. **This is the identical defect this feature corrected in
+chapter 3.12's map** — a row recording a clause as delivered when it was not — found the same
+way, by reading the map for a purpose other than writing it, and found in my own map three
+weeks later.
+
+Corrected to "two verbs of three". The clause closes when presence has an emitter.
 
 **One clause touched and unclaimed**, which is the same shape pass five found in chapter
 3.12 and one fewer instance. The gateway's discarded refusal codes are a defect against

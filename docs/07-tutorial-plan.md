@@ -134,7 +134,7 @@ premise. Every chapter here pairs a capability with the failure it prevents.
 | 2.7 | The tunnel | Resume protocol: cursors, backfill, subscribe-before-backfill buffer | The duplicate/gap race in §5.2 of the SAD — the tutorial's flagship bug |
 | 2.8 | **Milestone: the Tuan test** | An integration suite scripting journey 4 end-to-end: kill the socket mid-send, reconnect, assert exactly-once + order | This chapter *is* the SRS Phase 1 exit criterion |
 
-### Part 3 — Becoming a platform (16 chapters)
+### Part 3 — Becoming a platform (16 published, 2 planned)
 
 SRS Phase 2. The chapters that turn "a chat backend" into "infrastructure someone else can
 build on."
@@ -163,6 +163,8 @@ below rather than carried in the heading.
 | 3.14 | **Milestone: errors that resolve, and an outsider** | Thirteen error codes with one registry and one URL rule, a `docs_url` that resolves against the published reference, and a sealed integration package mechanically unable to import workspace code. This chapter gives the SRS Phase 2 exit criterion its verdict — *"an external developer integrates using only public documentation, with no assistance"* |
 | 3.15 | The channel a customer controls | FR-CHN-03/04/05/06/10: the `private` type made to decide something on all four of its doors, bulk member removal, member roles with their own vocabulary, and archiving that refuses a send without announcing the channel exists. 20 files, 2,947 prose words, 20 fences, 3 figures |
 | 3.16 | What a user sees | FR-CHN-08/09 and all of FR-USR: channel listing with cursor pagination and activity ordering, unread counts derived from a sequence the write path already maintains, user profiles, bulk upsert, a deletion that keeps the row, and banning. 24 files |
+| 3.17 | *(planned)* The message that never arrived | FR-RTM-05's message half: the api publishes, so a REST-sent message reaches a socket. Closes the concrete half of chapter 3.14's Phase 2 verdict — an outsider who sends over REST and waits on a socket currently cannot succeed, and no document says so |
+| 3.18 | *(planned)* Presence, and who is allowed to see it | FR-RTM-05's presence half, FR-RTM-06's online/offline with a 30-second grace period, and FR-RTM-07's scoping — delivered only to users sharing a channel with the subject, which is the membership graph 3.15 and 3.16 built. Completes FR-CHN-05's third verb, and decides open question 3: opt-in per channel, or not |
 
 **3.5 was narrowed while it was being written, and 3.6 is where the remainder
 went.** The original entry promised auto-disable in the same chapter as the

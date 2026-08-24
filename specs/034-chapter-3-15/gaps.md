@@ -14,8 +14,41 @@ subscribed, so it receives no presence for it" — and that claim is **vacuously
 worse than false. A reader takes it as "presence flows and is scoped"; the truth is that no
 presence flows at all, so scoping it is untested because it is untestable.
 
-Corrected in the research note rather than left to read as though presence worked. **Owner:
-FR-RTM-07's chapter**, which has to build the emitter before the scoping claim means anything.
+Corrected in the research note rather than left to read as though presence worked.
+
+**AND PRESENCE IS THREE CLAUSES, NOT ONE, ALL OF THEM P1:**
+
+    FR-RTM-05   emit real-time events for message creation, edit, deletion,
+                membership change, PRESENCE CHANGE, and typing
+    FR-RTM-06   track presence as online/offline from connection state,
+                with a 30-second grace period
+    FR-RTM-07   presence updates delivered only to users sharing at least one
+                channel with the subject
+
+Two things follow that were not visible while this was filed as one deferred item.
+
+**FR-RTM-05 is a single clause covering message events AND presence AND typing.** So gap 2
+(a REST-sent message reaches no socket) and this gap are two halves of one requirement, not two
+separate deferrals. Splitting them across parts of the book means one clause delivered twice,
+years apart.
+
+**FR-RTM-07's scoping rule is a membership-graph query** — "users sharing at least one channel
+with the subject" — which is precisely what chapters 3.15 and 3.16 built. Presence could not
+have been written before Part 3 and is cheapest immediately after it.
+
+**And it completes FR-CHN-05's third verb.** That clause reads "shall not read messages from,
+send messages to, **or observe presence in** a private channel" — this feature delivered two of
+the three, and `traceability.md` claimed all of them until this was checked.
+
+**Owner: a Part 3 chapter, and there is no home for it anywhere else in the plan.** Part 4 is
+Phase 3 (ClickHouse, media, moderation); Part 5 is the SDK and dashboard, which *consume*
+presence rather than build it; Parts 6 and 7 ship and run what exists. Three P1 clauses with no
+chapter in any part is the same shape as the deferred surface Part 3 has just spent two chapters
+absorbing.
+
+**One open architecture question rides on it**, unresolved since the SRS: *"Should presence be
+opt-in per channel to reduce fan-out at scale?"* (FR-RTM-07, NFR-SCL-01). That decision belongs
+in presence's chapter, and Part 7's load test is where it would be measured.
 
 ## 2. A REST-sent message reaches no socket — FR-RTM-05
 
