@@ -272,3 +272,112 @@ lane held 407 tests — the same 407 it holds today. It is enforced by nothing: 
 timeout, no CI timeout, no vitest setting. Exceeding it fails no build, which is why it
 needs a task to notice.
 
+## T022–T024 — the guard's tenth table, and a verification method that could not fail
+
+`read_positions` is in `sentinel.sql`'s trigger array, `plant()` grows a sixth bait, and
+`guard.itest.ts` drives three new cases: the refusal names the table, the message prints
+the row (no `id` to interpolate), and a named exemption's write lands. **17 tests, up from
+14.**
+
+**T024 asked for the array entry to be removed and the tests to go red. They stayed green,
+and the reason is a defect in the harness rather than in the tests.**
+
+The DO block in `sentinel.sql` reads:
+
+    DROP TRIGGER IF EXISTS __sentinel_guard_%1$s ON %1$I   -- for each table IN THE ARRAY
+    CREATE TRIGGER __sentinel_guard_%1$s ...
+
+It only drops triggers for tables **it is about to create them for**. Removing a name from
+the array does not un-guard the table — it orphans the trigger, which stays installed for
+ever on any database that has run the harness once. Confirmed in `pg_trigger`:
+`__sentinel_guard_read_positions` was still there after the name was gone.
+
+**Chapter 3.13 recorded "being in the array is not the same as being watched." This is the
+same law one turn further: being OUT of the array is not the same as being unwatched.**
+
+So T024 was performed the only way it can mean anything — `DROP TRIGGER` explicitly, then
+run:
+
+    all three read_positions cases FAILED, 3 failed | 14 passed
+    array restored, setup reinstalls the trigger, 17 passed
+
+**And there is a live consequence beyond this task.** A table removed from that array keeps
+its trigger on a developer's long-lived database and does not have one in CI, where the
+database is fresh. The two environments would disagree about what is guarded, silently.
+Nothing in this feature removes a table from the array, so nothing here trips it. Recorded
+because the next person who does will not find out from a test.
+
+## T024a — `read_positions`' bait is not claimable, by construction
+
+`quota_notifications` had to be planted **already delivered** because
+`drainQuotaNotifications` claims undelivered rows across every environment — the law that
+cost thirteen failures in two unrelated files when it was got wrong.
+
+Nothing in the platform drains read positions: no global sweep, no relay, no batch, no
+statement anywhere that touches `read_positions` without an `environment_id`. There is no
+state that makes the row claimable, so there is no state to get wrong. Bait 6 plants one
+row and one channel — the sentinel had no channel, hence `readChannelId`, and the user is
+the usage user already in that environment.
+
+## Phase 2 — the schema, and what it measured
+
+    0011_activity_and_read_positions.sql   channels.last_activity_at + index, read_positions
+    0012_member_roles_and_user_deletion.sql members.role + CHECK, users.deleted_at
+
+    node dist/db/migrate.js   first  → applied 0011, 0012
+                              second → "nothing to apply"
+
+    members_role_check, read back with \d+ members:
+      CHECK (role = ANY (ARRAY['owner'::text, 'moderator'::text, 'member'::text]))
+
+R8's trap avoided and **verified from the database rather than from the file** — a constraint
+that reused `memberships`' vocabulary would accept `admin`, refuse `moderator`, and read as
+correct in review.
+
+    read_positions   composite PK (channel_id, user_id), no id, three FKs
+    catalogue        23 base tables — 13 direct, 2 hop, 8 spine   (was 22 — 12, 2, 8)
+                     read_positions classified `direct` with no list to edit; the test
+                     derives from information_schema. `members` stays a `hop`.
+
+    error codes      16 registered, 16 reference sections, checked both directions
+    guard            10 tables, 17 tests in guard.itest.ts (was 14)
+
+    lint / typecheck / build      exit 0
+    pnpm turbo run test           380 tests   (was 379: codes.test.ts gained one)
+    pnpm test:integration         410 tests, 39 files, 193 s   (was 407, 192 s)
+
+**Three tests and one second**, against T003a's prediction of 472 ms per test — three tests
+should cost 1.4 s and cost 1. The prediction holds so far; the tests that will move it are
+the route suites in Phases 3 onward.
+
+### T013 — drizzle-kit's journal is four migrations stale, and `generate` re-emits the backlog
+
+`npx drizzle-kit generate` produced **`0008_activity_and_read_positions.sql`** — numbered
+0008 because `migrations/meta/_journal.json` stops at 0007, while `0008_limit_policy.sql`,
+`0009_quotas.sql` and `0010_connection_minutes.sql` already exist on disk. Nothing was
+overwritten (the new file sat beside `0008_limit_policy.sql`), but the SQL contained the
+whole 0008–0010 backlog — `quota_notifications`, `usage_periods`, the limit-policy columns —
+plus this feature's three changes, 25 statements in total.
+
+So the generated file was unusable as a migration and useful as a source of exact DDL. Its
+statements for the three changes were lifted, the file and its snapshot deleted, and
+`_journal.json` reverted, because `drizzle.config.ts` says its migrator and journal are
+"deliberately unused (ADR-16)" — the runner in `src/db/migrate.ts` is the single ledger.
+0011 and 0012 were then written by hand in the house style.
+
+**A trap worth naming**: anyone running `drizzle-kit generate` on this repository gets four
+migrations' worth of already-applied DDL in one file. The generator is a DDL reference, not
+a migration author.
+
+### T019 — the backfill, batched, outside the migration
+
+    scripts/backfill-channel-activity.mjs
+      first run   25,004 channels in 51 batches of 500, 25,004 rows, 1,549 ms
+      second run  same counts, 486 ms
+
+Idempotent by construction: it computes an absolute value from `messages`, so a second run
+writes the same timestamps. It imports the api's built `createPool` rather than `pg` — `pg`
+is a dependency of `services/api` and not of the workspace root, and `createPool` already
+applies the documented 15432 default. `scripts/seed-demo-tenant.mjs` reaches for the same
+build output for the same reason.
+
