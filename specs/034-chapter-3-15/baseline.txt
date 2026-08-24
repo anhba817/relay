@@ -583,3 +583,61 @@ other than what the platform does. Now T123a.
 
 Fourth instance in this feature of a test placed before its subject.
 
+## Phase 6 — member roles
+
+    lint / typecheck              exit 0
+    pnpm turbo run test           380 tests   (unchanged)
+    pnpm test:integration         456 tests, 193 s   (was 446, 197 s)
+    derived targets               28 derived, 25 attacked, 3 exempt   (was 27, 24, 3)
+
+`members.role` with its own CHECK, a stated default, `PATCH …/members/:userExternalId`, and
+a role acceptable per entry on the add body.
+
+### T069 — FR-012's answer, which is not the one the task first carried
+
+**The listing returns the role. No operation is authorized by it.**
+
+That distinction is the whole answer, and the earlier wording — "nothing reads it" — was
+wrong: `contracts/listing.md` lists `role` among the fields the listing returns, which
+analysis pass fourteen found by putting the contract's field table next to the claim.
+Returning a column is reading it. What nothing does is *decide* by it: no permission check
+anywhere in the platform consults `members.role`, and a reader looking for one should stop.
+
+Stated on chapter 3.15's page at T097a.
+
+### THE CONTRACT RENAMED A SHIPPED FIELD AND THE PLATFORM WON
+
+`contracts/membership.md` proposed the add body become `{"users": [...]}`. Chapter 3.13
+shipped `{"user_ids": [...]}`, a customer's server is sending that today, and Phase 5's
+removal route reuses the same name. A rename decided in an analysis pass is a breaking
+change nobody chose.
+
+So the FIELD stays and the ENTRY becomes a union — a bare external id, or
+`{"user": "...", "role": "..."}`, both forms accepted in one request:
+
+    {"user_ids": ["u_ana", {"user": "u_dong", "role": "owner"}]}
+
+The contract is corrected rather than the platform. That is the third time in this feature
+that a document's own invention had to give way to what is shipped — after the `:channelId`
+parameter names and the singular removal route.
+
+### The role a member ends up with is READ BACK, not echoed
+
+`addMembers` returns each member's role from storage rather than from the request, because
+`already_a_member` must report the role they already hold. **Adding is not changing** — a
+request that names `owner` for an existing `member` gets `member` back, and `PATCH` is the
+route that changes one. Echoing the request would have made the response a lie in exactly
+the idempotent case chapter 3.13 built the route for.
+
+### T068 — the constraint's error message hides the constraint's name
+
+`setMemberRole(…, "admin")` throws, and drizzle's top-level message is
+`Failed query: update "members" set "role" = $1 …`. The constraint name is in the driver's
+error underneath. **Asserting on the wrapper's message would have passed for any failed
+update at all**, including one failing for the wrong reason — so the assertion walks the
+cause chain for `members_role_check`.
+
+And the second half of that test is what makes the first mean anything: `moderator` is
+ACCEPTED. A constraint that refused both words would satisfy "refuses admin" while being
+just as wrong as one that accepted both.
+

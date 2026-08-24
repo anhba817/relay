@@ -106,12 +106,13 @@ both halves. This contract specified a single-user `DELETE …/members/:userExte
 analysis passes, having read "the shape chapter 3.13 chose" as *named outcomes* and dropped
 *up to 100*. Pass ten found it by comparing US2's scenarios to the route.
 
-Body: `{"users": ["u_dong", "u_ana", …]}`, at most 100.
+Body: `{"user_ids": ["u_dong", "u_ana", …]}`, at most 100 — the same field name the
+add route uses, because both routes take a list of the same thing.
 
 | Outcome | Status | Body |
 |---|---|---|
 | all entries processed | 200 | `{"results": [{"user": "u_dong", "result": "removed"}, …]}` |
-| 101 entries | 400 | `invalid_request`, `field: "users"` |
+| 101 entries | 400 | `invalid_request`, `field: "user_ids"` |
 | no such channel, or a private one the caller cannot see | 404 | the not-found envelope |
 
 Per-user results, one per entry, in request order:
@@ -139,14 +140,21 @@ socket stops receiving the channel on its next resume.
 ### `POST /v1/channels/:channelId/members` — the add body accepts a role
 
 Chapter 3.13 built this route: up to 100 users, one result per entry. This feature adds an
-optional `role` per entry, defaulting to `member` (FR-011).
+optional `role` per entry, defaulting to `member` (FR-011b).
 
-    {"users": [{"user": "u_dong", "role": "owner"}, {"user": "u_ana"}]}
+**THE FIELD IS `user_ids` AND STAYS `user_ids`.** An earlier draft of this contract renamed
+it to `users`, which would have been a breaking change to a shipped route decided in an
+analysis pass — a customer's server is sending `{"user_ids": [...]}` today, and the removal
+route added in this feature reuses the same name. So an ENTRY is a union rather than the
+field being a new shape: a bare external id, or an id with a role. Both forms in one request
+are fine.
+
+    {"user_ids": ["u_ana", {"user": "u_dong", "role": "owner"}]}
 
 | Outcome | Status |
 |---|---|
 | added, with the role given or the default | 200, per-entry results |
-| a role outside the three | 400 `invalid_request`, `field: "users.0.role"` |
+| a role outside the three | 400 `invalid_request`, `field` naming the offending path |
 
 **Why the add endpoint and not only `PATCH`.** US6's first scenario is a member *added with*
 a role, and the plan had add assign the default and a separate route change it — two calls to

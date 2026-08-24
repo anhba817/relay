@@ -213,7 +213,7 @@ channel (SC-004); their existing messages still in history, still attributed to 
 **And the request is bulk** — `POST /v1/channels/:channelId/members/remove`, up to 100 users,
 one result per user in request order (FR-006, FR-007). A non-member and a user who does not
 exist both report `not_a_member` rather than failing the request; 101 entries is refused with
-`field: "users"`. This check tested a single-user `DELETE` until analysis pass ten compared
+`field: "user_ids"`. This check tested a single-user `DELETE` until analysis pass ten compared
 US2's scenarios to the route and found the bulk half of the requirement implemented by
 nothing.
 
