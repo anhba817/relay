@@ -1970,3 +1970,89 @@ bound is loose enough that a fault firing one run in twenty is more likely to ha
 than to have shown. The 43 seconds of budget headroom is the more useful number: it is the
 margin before a slow run becomes indistinguishable from a hung one, and it shrank from 47 s
 to 43 s across this feature.
+
+## PHASE 19 — chapter 3.16's page (T183–T192)
+
+### T183, T190 — the numbers
+
+    app/(en)/part-3/chapter-16/what-a-user-sees/page.mdx
+
+    prose words                    3,809    bound 2,000–4,000
+    titled fences                     38    30 diffs, 7 whole files, 1 excerpt
+    fence lines                    3,881    the largest in the series (3.12 held 2,526)
+    page lines                     4,442
+    figures                            4
+    files taught                      26
+    static pages                      88
+    pnpm check:fences              CLEAN    211 files, 33 chapters
+    pnpm check:figures             CLEAN    200 figures
+    pnpm lint / tsc / build        clean
+
+Against the estimate: 26 taught files at R12's 160 words each is 4,160, **over the bound.**
+Chapter 3.15 came in 8% under its own estimate, which predicted ≈3,830 for this page; it
+landed at 3,809, 0.5% off that prediction. The estimate corrected by 3.15's measured rate is
+the one that worked; the nominal rate would have said the chapter could not be written.
+
+**Three trims were needed**, from 3,880 to 3,809, and all three cut passages that restated
+their neighbours. Writing to a ceiling and cutting is different from writing to a target: the
+cuts landed on the least load-bearing prose because that is what a ceiling makes visible.
+
+### THE PAGE THAT WOULD NOT PARSE, and the reason is a markdown assumption
+
+    400  {"code": "invalid_request", "message": "unknown user"}
+
+An indented code block. In markdown that is literal text; **in MDX a `{` opens a JSON
+expression**, and the build failed with `Could not parse expression with acorn` pointing at
+line 3134 of a 4,400-line page. Every other indented block in both chapters is plain text
+with no braces, which is why this is the first one to hit it. A fenced block instead.
+
+### T187a AND ITS INVERSE — the appendix's hunk forbade what this chapter needed
+
+`fences/post-series.md` amends `credentials.itest.ts`, and one of its hunks anchored on the
+file's **last four lines**, ending with the outer `});`:
+
+          expect(JSON.stringify(body)).not.toContain(PLATFORM);
+        });
+      });
+    });
+
+That anchor means the hunk can only apply while nothing sits between the inner `});` and the
+file's final one — which is **exactly where a new `describe` block inside that suite has to
+go.** So the appendix, as written, forbade any chapter from adding a test to
+`describe("credentials")`. This feature is the first to try.
+
+Fixed by dropping the trailing context line: the hunk now anchors on the three lines before
+its block and inserts after them, so a chapter may add a describe and the appendix's block
+still lands where the repository has it — **before** the chapter's, which is the order the
+file actually holds even though the chain applies chapters first.
+
+**THREE WRONG ATTEMPTS BEFORE THAT, and each was a different misreading of one `diff` hunk.**
+`diff -U0` reported the difference as `@@ -360,0 +441,186 @@` — one 186-line insertion — and
+that description is true and useless three times over:
+
+1. **The 186 lines are two blocks, not one.** 61 belong to the appendix's own
+   `describe("which service presented it")` and 125 to this feature. Taking all 186 made the
+   chapter do the appendix's work, which is Phase 9's lesson one layer subtler: the chapter
+   reached the repository's exact state by *absorbing an appendix hunk*, and the appendix
+   then had nothing to apply.
+2. **`pre[:360]` dropped the predecessor's tail.** The file's chapter-state is 363 lines;
+   taking the first 360 orphaned three closing braces to after the inserted block.
+3. **`@@ -360,0` is not the semantic insertion point.** diff chose the shortest equivalent
+   edit; the block belongs after line 362, inside the outer `describe` and before its
+   closing `});`. The two positions produce the same file and different hunks, and only one
+   of them leaves the appendix's anchor intact.
+
+A `diff` hunk says *a* way to get from one file to another, not *the* way — and when a second
+tool has to apply its own hunks to the result, which way you chose is the whole question.
+
+### AND THE CITATION CLASS HAD A FORTY-EIGHTH MEMBER, inside a fence
+
+`eslint.config.mjs:247` carries `chapter 3.12` on a line that is **authored inside
+`fences/post-series.md`**, as an added line in an appendix hunk. Phase 17's classification
+searched `relay-platform` for citations; this one lives in `relay-tutorial`, in a fence body
+that quotes the platform's source.
+
+So the appendix carries the correction and chapter 3.16 fences nothing for that file — the
+eleven "fences with no subject" are ten on the page and one in the appendix. Found because
+the chain broke, not because the grep was widened: **a search scoped to one repository cannot
+find a claim about that repository written in another.**

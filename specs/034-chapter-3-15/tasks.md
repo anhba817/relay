@@ -657,17 +657,17 @@ the fourth**: FR-038a's citation class.
 
 ## Phase 19: Chapter 3.16's page — prose and fences
 
-- [ ] T183 Count this chapter's fenced files against R18's assignment of **26 taught** — nineteen of its own and seven diffs, plus eleven citation-only fences of files chapter 3.15 fenced — and record the gap in `specs/034-chapter-3-15/baseline.txt`, with the **41-file union** beside it. The assignment was 21 against a 38-file union when this task was written; it moved three times after that (T091 found two files in no bucket and one this feature never touches, and Phase 15's defect added `api-client.ts`), so **re-derive from R18's table rather than from this line**
-- [ ] T184 Write `relay-tutorial/app/(en)/part-3/chapter-16/<slug>/page.mdx` — "what a user sees"
-- [ ] T185 [P] Write its `figures.ts`: the measurement that pointed the wrong way (0.87 ms against 159 ms), the unread subtraction, the keyset cursor, and the deletion states
-- [ ] T186 **The measurement that pointed the wrong way is the chapter's centre, not an aside.** The test lane answered 0.87 ms and would have settled the question in favour of adding no column; the same query at 1,000,000 messages is 159 ms with a sequential scan over every message in the environment on every listing — `relay-tutorial/app/(en)/part-3/chapter-16/<slug>/page.mdx`
-- [ ] T187 [P] Whole files in titled fences, `(excerpt)` where an excerpt is meant, one full fence per path, and eight lines of context on any diff — `relay-tutorial/app/(en)/part-3/chapter-16/<slug>/page.mdx`
-- [ ] T187a **`sentinel.sql` and `guard.itest.ts` are amended by `fences/post-series.md`**, which the checker applies after every chapter — so a chapter is upstream of its own amendment. Excerpt them here; amend there. Moved from phase 9 by analysis pass three, because R18 assigns both to this chapter
-- [ ] T188 [P] State the two approximations this chapter accepts: a tombstone counts as one unread, and a deleted user's row survives — `relay-tutorial/app/(en)/part-3/chapter-16/<slug>/page.mdx`
-- [ ] T189 Add the chapter to `relay-tutorial/lib/tutorial.ts`
-- [ ] T190 Count the prose words and record it in `specs/034-chapter-3-15/baseline.txt` — inside 2,000–4,000 (SC-018)
-- [ ] T191 [P] Record the split's own numbers on the page (SC-019): **25, 29, 34, 36, 38, 40, 41**, and say which of them came before any prose existed — the first six did, and the seventh came from implementation finding a defect no count could have predicted. The third found `app.module.ts`, a file no task named holding the registration eight routes need; the fifth came from counting the paths the tasks name instead of reading the total, and added two files earlier passes had already written about — `relay-tutorial/app/(en)/part-3/chapter-16/<slug>/page.mdx`
-- [ ] T192 Commit Phase 19
+- [X] T183 Count this chapter's fenced files against R18's assignment of **26 taught** — nineteen of its own and seven diffs, plus eleven citation-only fences of files chapter 3.15 fenced — and record the gap in `specs/034-chapter-3-15/baseline.txt`, with the **41-file union** beside it. The assignment was 21 against a 38-file union when this task was written; it moved three times after that (T091 found two files in no bucket and one this feature never touches, and Phase 15's defect added `api-client.ts`), so **re-derive from R18's table rather than from this line**
+- [X] T184 Write `relay-tutorial/app/(en)/part-3/chapter-16/<slug>/page.mdx` — "what a user sees"
+- [X] T185 [P] Write its `figures.ts`: the measurement that pointed the wrong way (0.87 ms against 159 ms), the unread subtraction, the keyset cursor, and the deletion states
+- [X] T186 **The measurement that pointed the wrong way is the chapter's centre, not an aside.** The test lane answered 0.87 ms and would have settled the question in favour of adding no column; the same query at 1,000,000 messages is 159 ms with a sequential scan over every message in the environment on every listing — `relay-tutorial/app/(en)/part-3/chapter-16/<slug>/page.mdx`
+- [X] T187 [P] Whole files in titled fences, `(excerpt)` where an excerpt is meant, one full fence per path, and eight lines of context on any diff — `relay-tutorial/app/(en)/part-3/chapter-16/<slug>/page.mdx`
+- [X] T187a **`sentinel.sql` and `guard.itest.ts` are amended by `fences/post-series.md`**, which the checker applies after every chapter — so a chapter is upstream of its own amendment. Excerpt them here; amend there. Moved from phase 9 by analysis pass three, because R18 assigns both to this chapter
+- [X] T188 [P] State the two approximations this chapter accepts: a tombstone counts as one unread, and a deleted user's row survives — `relay-tutorial/app/(en)/part-3/chapter-16/<slug>/page.mdx`
+- [X] T189 Add the chapter to `relay-tutorial/lib/tutorial.ts`
+- [X] T190 Count the prose words and record it in `specs/034-chapter-3-15/baseline.txt` — inside 2,000–4,000 (SC-018)
+- [X] T191 [P] Record the split's own numbers on the page (SC-019): **25, 29, 34, 36, 38, 40, 41**, and say which of them came before any prose existed — the first six did, and the seventh came from implementation finding a defect no count could have predicted. The third found `app.module.ts`, a file no task named holding the registration eight routes need; the fifth came from counting the paths the tasks name instead of reading the total, and added two files earlier passes had already written about — `relay-tutorial/app/(en)/part-3/chapter-16/<slug>/page.mdx`
+- [X] T192 Commit Phase 19
 
 ---
 
