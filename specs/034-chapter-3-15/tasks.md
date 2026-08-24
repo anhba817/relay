@@ -622,13 +622,13 @@ published. Two more were made during specification — chapter 3.12's traceabili
 the same map's read-path sentence — and T166 confirms they held. **What is left here is
 the fourth**: FR-038a's citation class.
 
-- [ ] T166 Confirm chapter 3.12's traceability map still carries the FR-CHN-04 fix made while this spec was written, and that `specs/033-chapter-3-12/traceability.md` and this feature's own record agree (FR-038)
-- [ ] T167 **Correct the wrong chapter numbers from the classification T009 wrote into `specs/034-chapter-3-15/baseline.txt`** (FR-038a), in each of the 19 files it names. Only the chapter number changes
-- [ ] T168 **Do not touch the `FR-` and `R` identifiers** (FR-038b). They name `specs/033-chapter-3-12/`, and a feature directory is named once
-- [ ] T169 **Do not "correct" a citation that names a chapter for something other than its own file's change** — chapter 2.2 for `last_sequence` is right. The classification in `specs/034-chapter-3-15/baseline.txt` is what distinguishes them, and applying the rule without it turns the correction into a new mistake
-- [ ] T170 Run `pnpm check:fences` after T167. Nineteen files, several of them fenced, so a corrected comment moves three files at a time
-- [ ] T171 Record the after count in `specs/034-chapter-3-15/baseline.txt` and confirm it is zero (SC-021), counted by the same command as T009
-- [ ] T172 Commit Phase 17
+- [X] T166 Confirm chapter 3.12's traceability map still carries the FR-CHN-04 fix made while this spec was written, and that `specs/033-chapter-3-12/traceability.md` and this feature's own record agree (FR-038)
+- [X] T167 **Correct the wrong chapter numbers from the classification T009 wrote into `specs/034-chapter-3-15/baseline.txt`** (FR-038a), in each of the 19 files it names. Only the chapter number changes
+- [X] T168 **Do not touch the `FR-` and `R` identifiers** (FR-038b). They name `specs/033-chapter-3-12/`, and a feature directory is named once
+- [X] T169 **Do not "correct" a citation that names a chapter for something other than its own file's change** — chapter 2.2 for `last_sequence` is right. The classification in `specs/034-chapter-3-15/baseline.txt` is what distinguishes them, and applying the rule without it turns the correction into a new mistake
+- [X] T170 Run `pnpm check:fences` after T167. Nineteen files, several of them fenced, so a corrected comment moves three files at a time
+- [X] T171 Record the after count in `specs/034-chapter-3-15/baseline.txt` and confirm it is zero (SC-021), counted by the same command as T009
+- [X] T172 Commit Phase 17
 
 ---
 

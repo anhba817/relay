@@ -1589,3 +1589,75 @@ implemented.
 It fails at the row-existence assertion, before the send is even attempted — so the
 verification confirms the creation happens and the separate grep confirms what the absence
 used to produce.
+
+## PHASE 17 — the citation class (T166–T172)
+
+### T167 — THE COUNT WAS 40 AND IT IS 47, BECAUSE THIS FEATURE ADDED ITS OWN
+
+T009 classified 40 citations across 31 files, before implementation. Re-derived now:
+**47 citations across 37 files.** Phases 3 to 16 wrote seven more, in their own new
+comments — `users.itest.ts` twice, `repository.itest.ts`, `isolation-fixtures.ts`,
+`gauntlet.itest.ts`, `targets.itest.ts`, `messages.itest.ts` — every one of them citing
+chapter 3.12 for the oracle, the fixtures or the fourteen green tests, which is correct.
+
+**AND T009'S DISTRIBUTION WAS THE MECHANICAL ONE IT WARNED ABOUT.** Its own note said the
+file-to-page shortcut is "far enough to be worth using, not far enough to be trusted
+unread", and flagged one exception. Applying FR-038a's actual rule — *the chapter whose page
+taught the change being cited* — to all 47:
+
+                        T009 (per file→page)      now (per citation, by rule)
+    KEEP 3.12                    15                        25
+    → 3.13                       14                         9
+    → 3.14                       10                        13
+    → the appendix                1                         0
+    ──                           40                        47
+
+**The shortcut's answer moved under this feature's own feet.** File-to-page depends on which
+chapter most recently fences a file, and Phase 9 re-fenced eleven of them in chapter 3.15 —
+so `fixtures.ts`, `targets.ts`, `compare.ts` and the rest answered "3.12" at T009 and would
+answer "3.15" today, which is nonsense for a citation about the oracle 3.12 built. FR-038a's
+rule does not move, which is why T169 insisted the classification be per citation.
+
+    22 citations corrected      9 → 3.13, 13 → 3.14
+    19 files touched
+    25 citations remain         every one names 3.12 for something 3.12 taught:
+                                the oracle, the four attacks, the two-tenant fixture,
+                                the derived target list, FR-044's credential-by-service,
+                                the catalogue, the fourteen passing tests, the fifth
+                                analysis pass
+
+**SC-021 is met: the wrong count is zero.** Not "no citation says 3.12" — twenty-five do,
+correctly.
+
+### T168 — proved rather than promised
+
+Every changed line was diffed against its predecessor with the chapter number masked out:
+**22 lines changed, each in the chapter number and nothing else**, and the `FR-`, `R-`,
+`SC-`, `NFR-`, `T-` identifier lists are identical on both sides of all 22. They name
+`specs/033-chapter-3-12/`, and a feature directory is named once.
+
+### T170 — 31 HEAD PROBLEMS, 0 APPLY PROBLEMS, and the difference is the whole point
+
+    check-fence-chain: 31 problem(s) — HEAD 31
+
+**Every fence still replays.** An `APPLY` problem means a hunk's pre-image no longer
+matches — a broken fence. A `HEAD` problem means the chain's endpoint differs from the
+repository — *the chapter that teaches this file has not been written yet*. All 31 are the
+second kind, across the 31 paths phases 11 to 17 changed, and chapter 3.16's page (Phase 19)
+is what resolves them.
+
+A corrected comment does move more than one file at a time, as T170 predicted: four of the
+31 are files chapter 3.15 already fences — `repository.ts`, `repository.itest.ts`,
+`codes.ts`, `codes.test.ts` — so 3.16 diffs them from the state 3.15 left, and the citation
+correction rides in that diff rather than needing a published page reopened.
+
+### T166 — the traceability correction held
+
+`specs/033-chapter-3-12/traceability.md` still carries both halves: row FR-019 records that
+it delivers **FR-CHN-06's** first half and **not** FR-CHN-04, and FR-CHN-04's own row reads
+"NOT DELIVERED, and this row said it was." This feature's spec agrees — its clause table
+lists FR-CHN-04 as "member roles — no column exists", which was true when it was written and
+is the state the feature was specified against.
+
+The column exists now. That is this feature's traceability to record, not chapter 3.12's, and
+3.12's row already says "owned by whichever chapter builds it".
