@@ -1028,3 +1028,131 @@ scanned line by line and reported **122 problems in 193 figures** — every one 
 positive, because chapters up to 3.4 write `<Figure>` across three lines with the prop on
 the second. A checker that reports 122 problems on a healthy tree gets ignored, which is how
 a real one hides. It matches the element now: 196 figures, all correct.
+
+## PHASE 11 — the listing (T107–T118a)
+
+    pnpm test:integration    493 tests, 192 s, green    (474 before this phase)
+    gauntlet targets: 31 derived, 28 attacked, 3 exempt (read 3, list 2, write 22, credential 1)
+    users.itest.ts           14 tests
+    repository.itest.ts      17 tests (2 new, the tie at a page boundary)
+
+### T116 — THE PLAN, AND THE LANE CANNOT SEE IT
+
+The test lane's **largest membership set is five channels**, over 26,818 channels and
+88,503 memberships. T116 predicted this — "the test lane is too small to notice" — so the
+measurement was taken the way R4 took its own: a synthetic environment, one user, N
+channels, membership in all, staggered activity, removed afterwards.
+
+    N          first page              deep page (cursor at the Nth)
+    1,000      0.46 ms  top-N heapsort  —
+    5,000      2.22 ms  top-N heapsort  0.49 ms
+    20,000    10.62 ms  top-N heapsort  0.03 ms
+    50,000     9.06 ms  NO SORT         0.03 ms
+
+**No sequential scan at any size.** Every access path is an index scan.
+
+**THE FIRST PAGE IS THE MOST EXPENSIVE ONE, which is the reverse of an offset
+paginator.** The keyset predicate cuts the input set down, so paging gets *cheaper* as
+it goes: 10.62 ms for the first page of a 20,000-channel user, 0.03 ms for the last.
+With `OFFSET` the same walk gets more expensive with every page, and that asymmetry is
+the argument for a keyset stated as a number rather than as a principle.
+
+**AND THE INDEX THIS PHASE ADDED IS NOT THE ONE THE PLANNER USES — until it is.** Up to
+20,000 memberships the plan drives from `members_user_channel`, joins to `channels` by
+id, and **sorts** — a top-N heapsort over the user's whole membership set, bounded at
+28 kB because only 26 rows survive. `channels_environment_last_activity` goes unused.
+
+At 50,000 the planner flips: a parallel ordered walk of
+`channels_environment_last_activity` with a membership probe per row, **no Sort node at
+all** — and it is *faster* than the 20,000 case (9.06 against 10.62). The index earns its
+place at the scale where walking the environment's channels in activity order is cheaper
+than sorting one user's memberships, and the planner finds the crossover without help.
+
+So the cost of this listing scales with **memberships per user**, not with messages — and
+that is the point of the column. R4 measured `max(messages.created_at)` at 159 ms with a
+sequential scan over every message in the environment; this is 2.2 ms at 5,000 and never
+touches `messages` at all.
+
+### T113 — the tie moved suites, and no setter was added
+
+Two channels sharing a `last_activity_at` cannot be produced through the API: the column
+is written from the message's `created_at`, `now()` is the transaction timestamp, and
+every send is its own transaction. Constructing the collision takes a raw `UPDATE`.
+
+`repository.itest.ts` is on `eslint.config.mjs`'s driver-exempt list — the layer under
+test IS the query layer — and `users.itest.ts` is not. So the tie tests live there, and
+the alternative was rejected on purpose: adding `setLastActivityAt` to the repository so
+the route suite could reach one would have put a method in production code **whose only
+caller is a test**, in a feature whose subject is columns nothing reads.
+
+Both tie tests fail without the `id` in the key, in the two different ways the predicate
+can be wrong: `<` on the timestamp alone skips the second tied row, `<=` returns the
+first for ever.
+
+### T117 — THE TASK ASKED FOR 400 AND 400 IS THE LEAK
+
+T117: "a cursor naming a channel in another environment **400** rather than 404 or an
+empty page — anything that distinguishes 'exists elsewhere' from 'malformed' is the leak
+the suite exists to catch."
+
+The reason is right and the mechanism inverts it. To answer 400 for a **foreign** id, the
+server has to look that id up in the global `channels` table and find it — and then a
+uuid that exists in another tenant gets a different answer from a uuid that exists
+nowhere. That is the distinction SC-002 forbids, implemented deliberately.
+
+So the cursor is validated for **shape** and its id is never resolved. A keyset position
+does not have to exist: `(last_activity_at, id) < (ts, id)` is a comparison, not a
+lookup. The test asserts what the requirement wanted — a foreign cursor and an invented
+one produce **byte-identical** responses — and the route answers 200 to both.
+
+The lookup would also have broken a real client: a user removed from a channel between
+pages would find their cursor rejected mid-pagination.
+
+### T108 — the third write in the task does not exist
+
+T108 asks that "a member joining, a rename or an archive" not move the activity column.
+**This platform has no rename.** `POST /v1/channels` is idempotent on the external id and
+its repeat branch returns the existing row without writing `name` or `metadata`; no other
+route or repository function updates them. A rename cannot move the column because a
+rename cannot happen.
+
+Second task this feature has that named an operation the platform does not have — T087's
+subscribe frame was the first, and both were found by looking for the thing rather than
+by re-reading the task.
+
+### T118 — the pagination drift, and it is the opposite of history's
+
+Chapter 2.4 documented history's drift: a message arriving mid-pagination appears on a
+page the client has not fetched yet, and never on one it has.
+
+**This ordering drifts the other way.** The key is `last_activity_at desc`, so a channel
+that takes a message moves toward the FRONT — toward pages already fetched. A client
+paging through a busy tenant can therefore:
+
+- **miss a channel entirely**: page 1 is fetched, channel X on page 3 takes a message and
+  moves to position 2, and the client's page-2 cursor is already past it. X is in no page
+  the client receives.
+- **never see a channel twice**, which is the one guarantee that does hold. The cursor is
+  strictly decreasing in `(last_activity_at, id)` and a moved channel moves to a position
+  the client already passed, so it cannot be re-served.
+
+So the listing is **at-most-once per page walk, not exactly-once**, and the direction is
+worth stating: history's drift hides new rows, this one hides *moved* rows. A client that
+needs a complete set takes the whole walk and accepts that a channel active during it may
+be absent; the next walk starts at the front and finds it immediately, which is where an
+active channel belongs.
+
+Not fixed by ordering on an immutable key. `created_at desc` would page exactly once and
+answer a different question — "your newest channels" is not "your most recently active
+channels", and FR-014 asks for the second.
+
+### A PRE-EXISTING LINT WARNING, LEFT ALONE ON PURPOSE
+
+`pnpm lint` reports one warning: an unused `eslint-disable-next-line no-console` at
+`services/api/src/internal/session.perf.itest.ts:120`. Pre-existing, in a file this
+feature does not touch, and not an error.
+
+Removing it is one line and would make the lane silent. It is left because the file count
+is a **measured** artifact of this feature: touching that file makes it the 41st file in
+the union and gives it a chapter to be fenced in, for a cosmetic warning. Recorded here so
+the next feature to touch that file can delete the directive for free.
