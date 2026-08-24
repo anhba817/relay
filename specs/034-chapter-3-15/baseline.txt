@@ -448,3 +448,84 @@ socket reaches the check through the internal route, so `isolation.itest.ts`'s n
 tests a path that was already correct — and it is worth having because the gateway holds no
 membership opinion of its own: `session.ts:611` forwards the frame and relays the answer.
 
+## Phase 4 — the private type made meaningful
+
+    lint / typecheck              exit 0
+    pnpm turbo run test           380 tests   (unchanged; all of this phase is integration)
+    pnpm test:integration         438 tests, 192 s   (was 422, 192 s)
+    derived targets               26 derived, 23 attacked, 3 exempt   (was 24, 21, 3)
+                                  read 3, list 1, write 18, credential 1
+    pnpm check:fences             exit 1 — 17 problems, all [HEAD]
+
+**The fence chain is red for a known reason and closes at phase 9.** Every problem is
+`[HEAD]`: the repository holds Phase 3 and 4's code and no chapter page fences it yet.
+Chapter 3.12 held its tag for two invocations in exactly this state. The corrected sentence
+in chapter 3.13's two pages replays cleanly — none of the 17 names it.
+
+### The derivation found the two new routes before this file did
+
+`pnpm test:integration` went red naming `GET /v1/channels/:channelId` and
+`POST /v1/channels/:channelId/join` as unclassified, on the build that added them, before
+`targets.ts` mentioned either. That is FR-033 working and it is the second time the
+derivation has produced this failure — chapter 3.12's own comment records the first.
+
+The entries are written with the ROUTER's parameter names, `:channelId`, not the contracts'
+`:externalId`: the derivation compares literal path strings, so an entry copied from a
+contract matches no target. Analysis pass three found that drift before it cost a run.
+
+### T041 — the check had nowhere to go, and the first fix leaked
+
+`listMessages(channelId, {beforeSeq, afterSeq, limit})` had no caller parameter, so the task
+"add the same check to the history path" was asking for a check with nothing to check
+against. Widening the signature was the easy half.
+
+**The first attempt returned an empty page for a private channel a non-member reads**,
+reasoning that `listMessages` answers an unknown channel id with `[]`. It does — at the
+repository. The ROUTE answers 404, because `messages.service` calls `channelExists` first:
+
+    a channel that does not exist   → channelExists false → 404
+    a private channel, non-member   → channelExists TRUE  → 200 and an empty page
+
+Two different answers, so the empty page announced that the channel was there. FR-003 says
+every read answers identically to a channel that does not exist, and the only way to hold
+that is for **one predicate to produce both refusals** — `channelVisibleTo(channelId,
+userId)` replaces `channelExists` on the history path.
+
+**Only pairing the two answers caught it.** A test asserting "200 and an empty page" would
+have passed and shipped the leak.
+
+### T044 — the oracle cannot see a symmetric change, and that is the property
+
+First attempt: `notFound()` was changed to return a 403. **All 21 tests stayed green** —
+because both halves of every pair call that one helper, so both moved together. That is
+chapter 3.12's recorded lesson reproducing itself: *"a route-level 404→403 moves both halves
+of the pair and the oracle cannot see it."*
+
+Changing only the private-channel refusal put the pair out of step and the test went red:
+
+    only the private half broken   1 failed | 20 passed
+      × answers a non-member's read of a private channel as if it were absent
+
+The oracle detects asymmetry, which is what it is for. A test that could see a symmetric
+change would be a test asserting a status code, and a status code is the half that says
+nothing.
+
+### FR-047 superseded, and a shipped test rewritten rather than deleted
+
+Chapter 3.12's `refuses type private, naming the field (FR-047)` asserted the enum rejects
+`private`. FR-009 supersedes it: the guarantee now exists, so the enum may offer it. The
+test was rewritten to refuse a THIRD type — `secret` — which keeps the half of it that is
+still true and still valuable: EIR-API-04 has carried `field` since chapter 1.3 and nothing
+set it until chapter 3.14.
+
+### And one task was marked done before it was written
+
+T047 (the join ceiling) was ticked with no test behind it — the ceiling was implemented in
+`join()` and nothing asserted it. Caught while reconciling the phase's task list against
+what the suites actually contain, reopened, and written: a join at 1,000 members answers 422
+with `channel_member_limit_exceeded` and the count is unchanged afterwards.
+
+Chapter 3.12 recorded the same slip on its own close-out task. Ticking a box is not the same
+as doing the work, and the only thing that catches it is reading the two lists against each
+other.
+
