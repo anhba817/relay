@@ -44,11 +44,16 @@ running database), then `data-model.md`, `contracts/membership.md`,
 `contracts/listing.md` and `quickstart.md` (18 checks, three of them negative).
 58 requirements, 22 success criteria, 249 tasks in 21 phases, checklist 16/16.
 
-**Twelve SRS clauses, five dead columns, and four corrections.** The clauses are
-FR-CHN-03/04/05/06/08/09/10 and FR-USR-02/03/04/05/06. The columns exist and nothing
-reads them: `channels.type`, `channels.archived_at`, `users.avatar_url`,
-`users.metadata`, `users.banned_at` — that count is the feature's own headline number
-and V0 records it before Phase 2 moves anything.
+**Twelve SRS clauses, FOUR dead columns AND A FIFTH THAT IS NOT, and four corrections.**
+The clauses are FR-CHN-03/04/05/06/08/09/10 and FR-USR-02/03/04/05/06. **Phase 1 generated
+the count instead of typing it and the headline was wrong**: `channels.archived_at`,
+`users.avatar_url`, `users.metadata` and `users.banned_at` have **zero** non-test
+references; `channels.type` has **eleven** — declared in `ChannelRow`, selected in two
+queries, and **returned by the create route** (`channels.controller.ts:49`). Returning a
+column is reading it. What is true is that **no decision consults it**: the only `.type ===`
+in non-test code is on a protocol frame. Fifteen analysis passes read "five columns and
+nothing reads them" without measuring it — the same error pass fourteen found for
+`members.role`, and T007 exists because the count had to be generated.
 
 **THE SPLIT WAS TAKEN FROM A MEASURED FILE COUNT BEFORE ANY PROSE EXISTED** (FR-040),
 which is the one thing 3.12's close-out asked the next feature to do differently — and

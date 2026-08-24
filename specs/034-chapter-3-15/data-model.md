@@ -1,7 +1,9 @@
 # Data model — chapters 3.15 and 3.16
 
-One new table, three new columns, and five columns that already exist and are read by
-nothing. Every shape below was checked against `services/api/src/db/schema.ts` rather
+One new table, three new columns, and **four** columns that already exist and are read by
+nothing — plus `channels.type`, which is returned by the create route and consulted by no
+decision anywhere. Phase 1 generated that list rather than typing it, and the count came
+back four where the chapter's headline said five. Every shape below was checked against `services/api/src/db/schema.ts` rather
 than against the SAD, because the schema is the thing the migration has to agree with.
 
 ## Two words one letter apart, and which table each means

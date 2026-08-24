@@ -35,7 +35,8 @@ layer down — and unlike prose, a column also costs a migration to remove, so t
 choice is to make it live or to say beside it that it is not.
 
 **This feature closes the whole deferred surface**: **twelve** SRS clauses across
-FR-CHN and FR-USR, the five columns, and four corrections to what chapters 3.12 to
+FR-CHN and FR-USR, the **four** columns nothing reads plus a fifth that is returned and
+never decided on, and four corrections to what chapters 3.12 to
 3.14 recorded — one of them a whole class rather than a sentence, because the previous
 feature shipped as three chapters and 31 files still cite it as one (FR-038a).
 
@@ -704,7 +705,8 @@ their sends are refused, confirm their history is intact, unban, confirm they wo
 ## Assumptions
 
 - **The whole deferred surface is in scope, and the chapter division is a plan-time
-  decision.** Twelve SRS clauses, five columns, four corrections. This is larger than
+  decision.** Twelve SRS clauses, four unread columns and a fifth nothing decides on, four
+  corrections. This is larger than
   any single chapter in this part has carried: chapter 3.12's feature came to 61 files
   and published as three chapters. So FR-040 requires the split to be measured at
   planning rather than discovered at page-counting, which is the one thing chapter

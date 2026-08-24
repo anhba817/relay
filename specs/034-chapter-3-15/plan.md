@@ -157,13 +157,13 @@ relay-tutorial/
 
 | # | Phase | Produces | Note |
 |---|---|---|---|
-| 1 | Setup and baseline | `baseline.txt` with the lane, coverage, target count and the five dead columns counted before anything moves | The column count is the chapter's own headline number; measuring it after an edit measures nothing |
+| 1 | Setup and baseline | `baseline.txt` with the lane, coverage, target count and the dead columns **generated** before anything moves — Phase 1 did, and the headline count was five where the measurement is four | The column count is the chapter's own headline number; measuring it after an edit measures nothing |
 | 2 | Foundational — the two migrations and the schema | `0011` and `0012`, and the guard's tenth table | R15: `read_positions` has a composite key and no `id`, so it needs the key expression chapter 3.13 installed |
 | 3 | US1 — membership enforced on send | the check inside `repository.sendMessage`, gated on `userId`, **and the public route made to supply one** (T031a, T031b) | R1, corrected: **three call sites, not six**, and the one that matters supplied nothing — a check gated on a parameter no caller fills in is a check that never fires |
 | 4 | US1 — the private type made meaningful | `private` accepted; the by-id read check; what `public` means for a non-member, decided and tested; **FR-037's correction, in the same edit** | R3: the subscription set is not the read set, and `public` means open rather than merely readable |
 | 5 | US2 — removal | the route, the per-user result shape, and the socket that stops working | FR-008: messages survive |
 | 6 | US6 — member roles | `members.role` with its own CHECK, and a stated default | R8: two vocabularies, neither borrows the other |
-| 7 | US7 — archiving | `archived_at` read, `channel_archived` emitted | one of the five dead columns |
+| 7 | US7 — archiving | `archived_at` read, `channel_archived` emitted | one of the four dead columns |
 | 8 | The suite — same-tenant attacks | the new fixture, one attack per verb, and each shown to fail when the check is removed | R10, FR-035 |
 | 9 | **Chapter 3.15's page**, both locales | prose, fences, figures, counted | the split's first half |
 | 10 | US4 — listing | cursor pagination, activity ordering | R4's column |

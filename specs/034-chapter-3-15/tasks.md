@@ -105,7 +105,7 @@ to a list instead of regenerating it; chapter 3.12's was wrong on its first draf
 
 ## Which route, and what each one needs
 
-**Fourteen routes, five columns.** Analysis passes two, three and four each found a
+**Fourteen routes, ten columns.** Analysis passes two, three and four each found a
 CRITICAL of the same shape — something every comparable case in the repository has that no
 task provided: the module registration (`app.module.ts`), the handler
 (`GET /v1/channels/:channelId`), the credential class (`@Accepts`). This table is the
@@ -188,7 +188,7 @@ the claim. What nothing does is *authorize* by role.
 
 | Column | Migration | Schema | SAD §6.1 | Writer | Reader | Removal | Chapter |
 |---|---|---|---|---|---|---|---|
-| `channels.type` | — | exists | exists | chapter 3.13's `POST /v1/channels` | T031, T040 | T034 | 3.15 |
+| `channels.type` | — | exists | exists | chapter 3.13's `POST /v1/channels` | **already returned** by that route (`channels.controller.ts:49`); T031 and T040 are the first *decisions* | T034 | 3.15 |
 | `channels.archived_at` | — | exists | exists | **T072a** | T071 | T077 | 3.15 |
 | `channels.last_activity_at` | T013 | T015 | **T018a** | T107 | T110 | **T116a** | 3.16 |
 | `members.role` | T016 | T017 | n/a — `members` is not in §6.1 | T063, **T064a** | **T111 — the listing returns it** | **T116b** | 3.15 |
@@ -227,22 +227,22 @@ story label. Whether that is enough is a question for `/speckit-analyze`.
 
 ## Phase 1: Setup & baseline
 
-- [ ] T001 Record provenance in `specs/034-chapter-3-15/baseline.txt`: the submodule commits this feature starts from, that `relay-platform` and `relay-tutorial` are at `part3-ch12`, and that both parent pins match their submodule HEADs
-- [ ] T002 Record the four variables the coverage lane needs, in `baseline.txt`, before T003 runs it — `RELAY_INTERNAL_CREDENTIAL`, `RELAY_WEBHOOK_SECRET_KEY`, `RELAY_REDIS_URL`, `RELAY_NATS_URL`. They exist only in `.github/workflows/ci.yml`; without them 11 tests fail across 3 files and no message names the cause. Chapter 3.12 spent a run learning this twice
-- [ ] T003 Record the pre-change platform baseline in `baseline.txt` — unit and integration counts per package, coverage, every per-file ratchet in force, and the exit code of each gate rather than a grep over its output. Chapter 3.12 closed on **379 unit**, **407 integration in 10 tasks**, **771 under coverage**; record what this machine measures
-- [ ] T003a **Record what this feature is expected to do to the lane's duration**, in `specs/034-chapter-3-15/baseline.txt`, before writing any test. `tasks.md` holds **57 tasks that write integration assertions** against a lane at 407 tests and ~193 s, so a fifth again as many tests puts it near 230–250 s — **on or past the 240-second budget chapter 3.12 set when the lane held 407**. The budget lives in `specs/033-chapter-3-12/baseline.txt` and is enforced by nothing: no turbo timeout, no CI timeout, no vitest setting. Write the expected number down now so Phase 18 compares against a prediction rather than against a memory
-- [ ] T004 [P] Record the site baseline in `baseline.txt`: `pnpm lint`, `pnpm build`, `pnpm check:docs`, `pnpm check:errors` and `pnpm check:fences` in `relay-tutorial/`, with the file, chapter and locale counts the chain reports. Chapter 3.12 closed on **203 fenced files across 31 chapters, all 31 translated**
-- [ ] T005 **Run the integration lane three times and record every failure.** A lane with a pre-existing intermittent failure cannot measure a new one, and chapter 3.11's flake surfaced on run 21 of a twenty-run battery eleven chapters after it was introduced
-- [ ] T006 Fix forward, with its own commit, anything T005 finds that is not this feature's work
-- [ ] T007 **Record the five dead columns by generating the list, not typing it.** `grep` for each of `channels.type`, `channels.archived_at`, `users.avatar_url`, `users.metadata`, `users.banned_at` across `services/**` and `packages/**`, excluding tests, schema, migrations and build output, and record the hit count per column in `baseline.txt`. This count is the feature's headline number (SC-016) and a count taken after Phase 2 measures the edit
-- [ ] T007a [P] Record `users.display_name` beside them with its distinction: written by `createUser`, read by nothing. Written is not read (FR-035), and the sixth column is the example that makes the difference legible — `specs/034-chapter-3-15/baseline.txt`
-- [ ] T008 [P] **Record the route surface as it stands, generated rather than typed.** Boot the built `AppModule` and print the derived target count into `baseline.txt`. Every later count of attacked-plus-exempt is compared against this number (SC-014)
-- [ ] T009 **Classify all 40 `chapter 3.12` citations and record the wrong count**, in `baseline.txt`, before Phase 17 corrects any of them (FR-038a, SC-021). 31 files; 12 are fenced in chapter 3.12's page, 9 in 3.13's, 9 in 3.14's, and `exempt.ts` only in the post-series appendix. Classify per citation, not per file: a file can carry one right citation and one wrong one
-- [ ] T010 [P] Record in `baseline.txt` how R4's numbers were produced — a scratch database with 2,000 channels and 1,000,000 messages, one member per channel — and that the test lane's own answer was **0.87 ms against the same query's 159 ms** at that size. The measurement that pointed the wrong way is recorded beside the one that decided, or the next person re-measures on the test lane and concludes the opposite
-- [ ] T011 [P] Confirm no file this feature adds needs an entry in `packages/test-harness/src/exempt.ts` or the matching `eslint.config.mjs` ignores. If one does, add it to **both** — the lists' own comments say they must agree and a test compares them
-- [ ] T012 Commit Phase 1
+- [X] T001 Record provenance in `specs/034-chapter-3-15/baseline.txt`: the submodule commits this feature starts from, that `relay-platform` and `relay-tutorial` are at `part3-ch12`, and that both parent pins match their submodule HEADs
+- [X] T002 Record the four variables the coverage lane needs, in `baseline.txt`, before T003 runs it — `RELAY_INTERNAL_CREDENTIAL`, `RELAY_WEBHOOK_SECRET_KEY`, `RELAY_REDIS_URL`, `RELAY_NATS_URL`. They exist only in `.github/workflows/ci.yml`; without them 11 tests fail across 3 files and no message names the cause. Chapter 3.12 spent a run learning this twice
+- [X] T003 Record the pre-change platform baseline in `baseline.txt` — unit and integration counts per package, coverage, every per-file ratchet in force, and the exit code of each gate rather than a grep over its output. Chapter 3.12 closed on **379 unit**, **407 integration in 10 tasks**, **771 under coverage**; record what this machine measures
+- [X] T003a **Record what this feature is expected to do to the lane's duration**, in `specs/034-chapter-3-15/baseline.txt`, before writing any test. `tasks.md` holds **57 tasks that write integration assertions** against a lane at 407 tests and ~193 s, so a fifth again as many tests puts it near 230–250 s — **on or past the 240-second budget chapter 3.12 set when the lane held 407**. The budget lives in `specs/033-chapter-3-12/baseline.txt` and is enforced by nothing: no turbo timeout, no CI timeout, no vitest setting. Write the expected number down now so Phase 18 compares against a prediction rather than against a memory
+- [X] T004 [P] Record the site baseline in `baseline.txt`: `pnpm lint`, `pnpm build`, `pnpm check:docs`, `pnpm check:errors` and `pnpm check:fences` in `relay-tutorial/`, with the file, chapter and locale counts the chain reports. Chapter 3.12 closed on **203 fenced files across 31 chapters, all 31 translated**
+- [X] T005 **Run the integration lane three times and record every failure.** A lane with a pre-existing intermittent failure cannot measure a new one, and chapter 3.11's flake surfaced on run 21 of a twenty-run battery eleven chapters after it was introduced
+- [X] T006 Fix forward, with its own commit, anything T005 finds that is not this feature's work
+- [X] T007 **Record the five dead columns by generating the list, not typing it.** `grep` for each of `channels.type`, `channels.archived_at`, `users.avatar_url`, `users.metadata`, `users.banned_at` across `services/**` and `packages/**`, excluding tests, schema, migrations and build output, and record the hit count per column in `baseline.txt`. This count is the feature's headline number (SC-016) and a count taken after Phase 2 measures the edit
+- [X] T007a [P] Record `users.display_name` beside them with its distinction: written by `createUser`, read by nothing. Written is not read (FR-035), and the sixth column is the example that makes the difference legible — `specs/034-chapter-3-15/baseline.txt`
+- [X] T008 [P] **Record the route surface as it stands, generated rather than typed.** Boot the built `AppModule` and print the derived target count into `baseline.txt`. Every later count of attacked-plus-exempt is compared against this number (SC-014)
+- [X] T009 **Classify all 40 `chapter 3.12` citations and record the wrong count**, in `baseline.txt`, before Phase 17 corrects any of them (FR-038a, SC-021). 31 files; 12 are fenced in chapter 3.12's page, 9 in 3.13's, 9 in 3.14's, and `exempt.ts` only in the post-series appendix. Classify per citation, not per file: a file can carry one right citation and one wrong one
+- [X] T010 [P] Record in `baseline.txt` how R4's numbers were produced — a scratch database with 2,000 channels and 1,000,000 messages, one member per channel — and that the test lane's own answer was **0.87 ms against the same query's 159 ms** at that size. The measurement that pointed the wrong way is recorded beside the one that decided, or the next person re-measures on the test lane and concludes the opposite
+- [X] T011 [P] Confirm no file this feature adds needs an entry in `packages/test-harness/src/exempt.ts` or the matching `eslint.config.mjs` ignores. If one does, add it to **both** — the lists' own comments say they must agree and a test compares them
+- [X] T012 Commit Phase 1
 
-**Checkpoint**: the starting numbers exist, the lane is green for a known reason, five columns have a measured hit count of zero, and 40 citations have a verdict each.
+**Checkpoint**: the starting numbers exist, the lane is green for a known reason, four columns have a measured hit count of zero, and 40 citations have a verdict each.
 
 ---
 
@@ -407,7 +407,7 @@ works.
 - [ ] T078a [US7] **State and test whether the socket delivers anything for an archived channel** (FR-022a) — `services/gateway/src/isolation.itest.ts`. The answer this feature takes: the channel stays in a member's session and the socket delivers nothing new because nothing new can be sent, so the gateway needs no change and the test proves the no-op is a no-op. FR-022's listing half was covered by T115 and cited the whole requirement; this clause had no task for eleven passes
 - [ ] T079 Commit Phase 7
 
-**Checkpoint**: two of the five dead columns are alive, and each has a test that fails when its read is removed.
+**Checkpoint**: two of the four dead columns are alive, and each has a test that fails when its read is removed.
 
 ---
 
@@ -592,7 +592,7 @@ history is still readable by others.
 - [ ] T155a [US9] **Complete FR-021a's order and test the ban half**: insert the ban check ahead of membership and archive in `services/api/src/db/repository.ts`, and assert a banned user gets `user_banned` for a channel id that exists and for one that does not — `services/api/src/isolation/gauntlet.itest.ts`. T072 left the slot; this fills it, and only here can it be tested
 - [ ] T156 Commit Phase 15
 
-**Checkpoint**: all five columns that began dead are read, and each read has been shown to be load-bearing by removing it.
+**Checkpoint**: all four columns that began dead are read — and `channels.type`, which was already returned, is now decided on for the first time — and each read has been shown to be load-bearing by removing it.
 
 ---
 
@@ -640,7 +640,7 @@ the fourth**: FR-038a's citation class.
 - [ ] T174c Record in `baseline.txt` which of T174a's arms are isolation and which are authorization, and the file's branch figure before and after. **A private-channel membership check is authorization inside a tenant, not tenant isolation** — the clause does not reach it by its own words, and the same-tenant suite tests it with FR-TEN-05's oracle anyway, so the classification is stated rather than left to whoever next reads the ratchet
 - [ ] T174d [P] **Re-earn `services/api/src/channels/channels.service.ts`'s pin**, currently branches 75 / **functions 100** / lines 94 / statements 94. This feature adds read-by-id, join, archive, unarchive, removal and role-setting to that file, and `functions: 100` goes red on the first partially-covered new function. Chapter 3.5's precedent: six new operations on `repository.ts` took branches from 85.91% to 78.22% on the next run
 - [ ] T176 **Re-run T007's dead-column count and record it: five before, and the after-count with every survivor named beside the requirement it stands for** (SC-016, FR-036) — `specs/034-chapter-3-15/baseline.txt`
-- [ ] T176a **The after-count is not zero, and the chapter says so.** All five named columns get readers, and this feature leaves **one** of its own with none: `read_positions.updated_at`, written by every position write and read by nothing. **It was three, then two, then one** — `users.deleted_at` was written and never read until pass five gave it readers, and `members.role` was called dead until pass fourteen noticed the listing returns it. A feature about columns nothing reads, converging on one, is worth the sentence. A feature whose subject is columns nothing reads, leaving two behind, is the chapter's own joke and it is better told than found — `relay-tutorial/app/(en)/part-3/chapter-16/<slug>/page.mdx`
+- [ ] T176a **The after-count is not zero, and the chapter says so.** All four unread columns get readers, `channels.type` gets its first *decision* rather than its first read, and this feature leaves **one** of its own with none: `read_positions.updated_at`, written by every position write and read by nothing. **It was three, then two, then one** — `users.deleted_at` was written and never read until pass five gave it readers, and `members.role` was called dead until pass fourteen noticed the listing returns it. A feature about columns nothing reads, converging on one, is worth the sentence. A feature whose subject is columns nothing reads, leaving two behind, is the chapter's own joke and it is better told than found — `relay-tutorial/app/(en)/part-3/chapter-16/<slug>/page.mdx`
 - [ ] T177 Write `specs/034-chapter-3-15/traceability.md`, **generated rather than grown**, both directions: every requirement to the clause it implements, and every clause this feature touches to the requirement covering it. Chapter 3.12's map found four clauses touched and unclaimed, and one row that recorded a clause as delivered when it was not — found only because chapter 3.15's spec read the map for a purpose other than writing it
 - [ ] T178 Update `docs/04-srs.md`'s verification notes for the twelve clauses
 - [ ] T179 [P] Split the 3.15 row in `docs/07-tutorial-plan.md` into 3.15 and 3.16 with the shipped numbers. Not mirrored by `check-docs-drift.sh`, deliberately — its DOCS list excludes it because it is the series' own plan and not a published reference

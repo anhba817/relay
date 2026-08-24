@@ -59,10 +59,13 @@ pnpm coverage
 **Expect** the numbers chapter 3.12 closed on: 379 unit, 407 integration in 10 tasks,
 771 under coverage with every ratchet met.
 
-Then the count this feature is about. Five columns exist and are read by nothing —
-`channels.type`, `channels.archived_at`, `users.avatar_url`, `users.metadata`,
-`users.banned_at`. Record it now (SC-016). A count taken after Phase 2 measures the
-edit, not the starting position.
+Then the count this feature is about — **generated, not typed.** Four columns have zero
+non-test references: `channels.archived_at`, `users.avatar_url`, `users.metadata`,
+`users.banned_at`. `channels.type` has eleven and is **returned by the create route**, so it
+is read; what nothing does is *decide* on it. Record both (SC-016). A count taken after
+Phase 2 measures the edit, not the starting position — and a count typed rather than
+generated measures nothing, which is how the headline said five for fifteen analysis
+passes.
 
 ## V1 — the migrations apply, and apply twice
 
@@ -365,8 +368,8 @@ cd ../relay-tutorial && pnpm check:docs && pnpm check:errors && pnpm check:fence
 directions. `check:fences` green — 203 files at the last tag, and every file either
 chapter touches has to replay.
 
-Then the dead-column count again. **Five before, and the after-count is not zero:** all
-five named columns get readers, and this feature leaves two behind that have none —
+Then the dead-column count again. **Four before, and the after-count is not zero:** all
+four unread columns get readers, `channels.type` gets its first decision, and this feature leaves two behind that have none —
 `members.role`, which FR-012 and T069 establish nothing reads, and
 `read_positions.updated_at`, written by every position write and read by nothing. Name
 each survivor beside the requirement it stands for (SC-016, FR-036). A feature about

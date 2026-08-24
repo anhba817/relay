@@ -299,7 +299,12 @@ reader can hold. Roles move to 3.15 because a role is a property of membership;
 archiving moves to 3.15 because "can anyone write here" belongs with "who may write
 here".
 
-## R13 — where each of the five dead columns comes alive
+## R13 — where each of the dead columns comes alive
+
+**Phase 1 corrected the count from five to four.** `channels.type` was on this list and is
+returned by the create route (`channels.controller.ts:49`), so it was already read; what it
+gains here is its first *decision*. The four with zero non-test references are
+`channels.archived_at`, `users.avatar_url`, `users.metadata` and `users.banned_at`.
 
 | Column | Read by, after this feature | Chapter |
 |---|---|---|
