@@ -474,15 +474,23 @@ already holds. So the table is the authority and every other document quotes it.
 | | count | files |
 |---|---|---|
 | **3.15 only** | 13 | `channels.controller.ts`, `channels.itest.ts`, `channels.schema.ts`, `channels.service.ts`, `internal.itest.ts`, `fixtures.ts`, `gauntlet.itest.ts`, `targets.itest.ts`, `targets.ts`, `isolation-fixtures.ts`, `messages.controller.ts`, `messages.service.ts`, **`messages.itest.ts`** |
-| **3.16 only** | 16 | `credentials.itest.ts`, `dev-token.controller.ts`, `users.controller.ts`, `users.service.ts`, `users.module.ts`, `users.schema.ts`, `users.itest.ts`, `app.module.ts`, `session.ts`, `0011_*.sql`, `sentinel.sql`, `guard.itest.ts`, `vitest.coverage.config.mts`, **`internal/session.controller.ts`**, **`sentinel.ts`**, **`scripts/backfill-channel-activity.mjs`** |
+| **3.16 only** | 17 | `credentials.itest.ts`, `dev-token.controller.ts`, `users.controller.ts`, `users.service.ts`, `users.module.ts`, `users.schema.ts`, `users.itest.ts`, `app.module.ts`, `session.ts`, `0011_*.sql`, `sentinel.sql`, `guard.itest.ts`, `vitest.coverage.config.mts`, **`internal/session.controller.ts`**, **`sentinel.ts`**, **`scripts/backfill-channel-activity.mjs`**, **`api-client.ts`** |
 | **both** | 7 | `repository.ts`, `repository.itest.ts`, `isolation.itest.ts`, `schema.ts`, `0012_*.sql`, `codes.ts`, `codes.test.ts` |
 | **neither** | 4 | `compare.ts` (read by T043, not changed), **`tenant-scope.itest.ts`** (run by T089 and not changed — see below), `exempt.ts` and `eslint.config.mjs` (touched only if T011 finds a file needing an entry) |
 
-    union            40 files
-    taught           36
+    union            41 files
+    taught           37
     3.15 teaches     13 + 7 = 20
-    3.16 teaches     16 + 7 = 23
-    instances        43   = 36 taught + 7 counted twice   ✓
+    3.16 teaches     17 + 7 = 24
+    instances        44   = 37 taught + 7 counted twice   ✓
+
+**The seventh revision came from implementation, not from a question.** Phase 15's ban test
+asserted `user_banned` on an open socket and got `internal_error`: `ApiError` carried only
+the status, so the socket send path flattened every api refusal but 401 —
+`channel_archived` included, live since this feature's own Phase 7. Fixing it added
+`services/gateway/src/api-client.ts`, which no earlier count could have predicted because
+no earlier count knew the defect existed. 3.16's word estimate goes to ≈3,840, which is 160
+words of headroom against the 4,000 ceiling.
 
 ### The sixth revision came from asking the repository what changed
 

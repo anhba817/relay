@@ -1421,3 +1421,121 @@ and every route that names a user depends on it.
 outcome would have to pick a lie. `@HttpCode(200)`.
 
 And `/auth/dev-token` answers **200**, not 201; I asserted 201 in the gateway test from habit.
+
+## PHASE 15 — the ban (T149–T156)
+
+    pnpm test:integration    536 tests, 195 s, green   (528 before this phase)
+    pnpm turbo run test      11 tasks, all green
+    gauntlet targets: 38 derived, 35 attacked, 3 exempt (read 4, list 2, write 28, credential 1)
+    users.itest.ts           48 tests
+    gauntlet.itest.ts        34 tests
+    isolation.itest.ts (gw)  27 tests
+
+**All four columns that began this feature dead now have readers, and each read has been
+shown to be load-bearing by removing it.** `channels.type` got its first *decision*;
+`channels.archived_at`, `users.avatar_url`, `users.metadata`, `users.deleted_at` and
+`users.banned_at` got writers and readers. `read_positions.updated_at` is the one this
+feature leaves with none.
+
+### T153 — FR-032's ANSWER IS NEITHER OF THE TWO THE TASK NAMED, and it was already built
+
+T153 named two candidates for what a ban does to an already-open connection — "closed at
+the next heartbeat" and "closed immediately" — and observed they differ in whether the
+gateway has to be told.
+
+Measured: **a banned socket stops being able to SEND the instant the ban lands, and keeps
+RECEIVING until it closes for any other reason.** A socket send goes through the api's
+`/internal/messages`, which is the same repository path the ban check sits at the top of.
+Delivery asks the api nothing, so delivery is unaffected.
+
+That is not a compromise invented for this phase. It is the shape chapter 3.2 already
+chose for an expired token, and `session.ts`'s own comment says it: *"the socket is still
+up and still RECEIVES, because delivery never asks the api anything. Writing does."*
+
+Closing the socket would need the api to tell the gateway — new fan-out plumbing for a
+rare event — and re-checking at each heartbeat would put an api call on every ping of
+every connection. Both buy the difference between "cannot speak" and "cannot listen", for
+a user the tenant has already silenced.
+
+### A FIFTH CLOSE CODE, AND THE TEST THAT MADE IT A DECISION
+
+`4003: "banned in this environment"`. Not a reuse of 4001: a banned user's token verifies,
+names a real user and is in date, so closing "invalid or expired token" sends a client
+round the re-authentication loop for ever — which is the argument `codes.ts` already makes
+for having distinct codes at all.
+
+**`codes.test.ts` asserts the exact set and failed on the build that added it.** An
+exact-set assertion is the only kind that makes a new close code a decision rather than an
+accident; updating it is the act of making that decision. EIR-WS-06 names four classes to
+distinguish and a ban is none of them.
+
+## THE GATEWAY THREW AWAY EVERY REFUSAL CODE BUT ONE
+
+Found because the ban test asserted `user_banned` on an open socket and got
+`internal_error`.
+
+`ApiError` carried **only the status**. The socket send path forwards a 401 by hand and
+answers `internal_error` for everything else — so every refusal the api can give a socket
+send arrived as "send failed":
+
+    user_banned         new this chapter
+    channel_archived    reachable from a socket send since THIS FEATURE'S PHASE 7
+    invalid_request     any body the api refuses
+
+Chapter 3.14 built thirteen codes, one registry and a resolving `docs_url` so a client
+could tell refusals apart, and one hop discarded all of it. A client told `internal_error`
+retries; a client told `user_banned` does not.
+
+Fixed: `ApiError` now carries the envelope's `code` and `message`, read defensively
+because an error path must not replace the api's status with a JSON exception. `session.ts`
+forwards the code **only for a 4xx and only if `isErrorCode` says the registry defines
+it** — a 5xx is not the client's business and an unregistered string on the wire would
+defeat the registry. Anything failing either test stays `internal_error`.
+
+`isErrorCode` is a type guard in `codes.ts` rather than a cast at the call site.
+
+**This adds `services/gateway/src/api-client.ts` to the feature's file set — the 41st.**
+Unlike the lint directive left alone in Phase 11, this one is not cosmetic: two of this
+chapter's own refusals were unreadable on the socket, and asserting `internal_error` for a
+ban would have encoded the defect as expected behaviour. It belongs to chapter 3.16, whose
+subject includes the ban.
+
+### T151 — the ban rides the session response
+
+`banned: z.boolean().default(false)` on `internalSessionResponseSchema`. The row is already
+in hand — `getUserByExternalId` reads it for the channel list — so the ban costs one field
+and no query, and the gateway stays without a database.
+
+A boolean and not the timestamp: the gateway's question is "may this socket open", and
+handing it `banned_at` would invite it to decide policy from a date.
+
+**Nine session stubs across two files had to say `banned: false`.** `.default(false)` makes
+the parsed field required, so every stub of `api.session` stopped compiling — which is the
+right outcome: a stub that does not say whether the user is banned has not thought about
+it. The alternative, `.optional()`, would have let them all pass unchanged.
+
+### T154 — the two edge cases, and both hold
+
+**Banning a member of a private channel is not a removal.** The membership survives, the
+listing still shows the channel, and lifting the ban restores sending with nobody re-added.
+
+**Implicit creation does not undo a ban.** `createUser` is idempotent and touches no other
+column, so minting a token for a banned identifier leaves the ban. The upsert clears
+`deleted_at` because FR-030 asks it to and says nothing about `banned_at` — tested, because
+"it happens to not clear it" and "it must not clear it" look identical until one is
+asserted.
+
+### T155, T155a — the removals, and the half of FR-021a that could not be tested until now
+
+    banned_at dropped from the send path      4 failed | 78 passed
+    banned dropped from the session response  1 failed | 26 passed
+
+T072 left the ban's slot in the refusal order and only this phase could fill it, because
+until now nothing wrote the column. The gauntlet now asserts the pair: a banned user gets
+**byte-identical** `user_banned` for a channel that exists and for one that does not,
+because the check runs before the channel is read.
+
+Any other position leaks. Check the channel first and the refusal for a real channel
+differs from the refusal for an invented one, so a banned user can enumerate channel ids by
+watching which refusal comes back — the same defect as the archived-channel leak one
+requirement over.
