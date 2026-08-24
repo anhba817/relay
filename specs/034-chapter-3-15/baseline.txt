@@ -2056,3 +2056,55 @@ So the appendix carries the correction and chapter 3.16 fences nothing for that 
 eleven "fences with no subject" are ten on the page and one in the appendix. Found because
 the chain broke, not because the grep was widened: **a search scoped to one repository cannot
 find a claim about that repository written in another.**
+
+## PHASE 20 — chapter 3.16 translated and published (T193–T198)
+
+### T197 — both chapters' final numbers
+
+                            3.15                    3.16
+    prose words             2,947                   3,800
+    titled fences              20                      38
+    of which diffs             19                      30
+    whole files                 1                       7
+    excerpts                    0                       1
+    fence lines               3,273                  3,881
+    figures                     3                       4
+    files taught               20                      26
+
+    pnpm check:fences     CLEAN — 211 fenced files, 33 chapters, 33 translated
+    pnpm check:figures    CLEAN — 204 figures
+    pnpm lint / tsc / build  clean, 89 static pages
+
+The translation was assembled the way 3.15's was: split at every ``` boundary into 41 prose
+segments and 40 fence segments, translate the prose, copy the fences across untouched, then
+re-split both files and compare the fence lists — **40 against 40, identical.**
+
+### T195 — asked the right way round, and five files sit outside the chain
+
+`check:fences` reports **0 problems across all 211 claimed paths**. The other direction, which
+the checker cannot answer: five of this feature's files are claimed by nothing.
+
+    packages/test-harness/src/sentinel.ts       excerpt-only, by design
+    packages/test-harness/src/sentinel.sql      excerpt-only, by design
+    packages/test-harness/src/guard.itest.ts    excerpt-only, by design
+    services/gateway/src/limits.itest.ts        a corrected citation, in a file nothing claims
+    pnpm-lock.yaml                              never fenced by anything
+
+**AND T187a'S PREMISE WAS WRONG.** It reads: *"`sentinel.sql` and `guard.itest.ts` are amended
+by `fences/post-series.md`, which the checker applies after every chapter — so a chapter is
+upstream of its own amendment. Excerpt them here; amend there."*
+
+The appendix **does not title either path.** It mentions both inside *other* files' fences —
+comments in `eslint.config.mjs` and `repository.ts` that point at the sentinel — and a mention
+inside a fence body is not a claim on that path. So there is nothing to amend, and the
+instruction's second half describes work that does not exist.
+
+The first half stands and was followed: both are excerpted, in chapter 3.13 and again here. The
+consequence is the one worth writing down — **an excerpt-only file is never verified against the
+repository at all.** `sentinel.ts` has grown 32 lines in this feature and no checker has
+compared a single character of it to what any chapter shows.
+
+That is the same gap T103 found from the other side (the chain is silent about code nobody
+claimed), reached this time by checking a task's premise instead of the chain's output. Three
+files, permanently outside the instrument, and the reason each is outside is a real one: the
+guard's SQL is 400 lines of PL/pgSQL that no chapter's word budget can carry whole.

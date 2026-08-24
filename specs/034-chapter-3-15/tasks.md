@@ -673,13 +673,13 @@ the fourth**: FR-038a's citation class.
 
 ## Phase 20: Chapter 3.16 — translation and publication
 
-- [ ] T193 Translate to `relay-tutorial/app/(vi)/vi/part-3/chapter-16/<slug>/page.mdx`, every fence byte-identical
-- [ ] T194 [P] Translate the figure labels in `relay-tutorial/app/(vi)/vi/part-3/chapter-16/<slug>/figures.ts`; identifiers and column names stay English
-- [ ] T195 Run `pnpm check:fences` and ask it about **files this chapter owns**, not about pages naming this chapter
-- [ ] T196a **Re-derive `fences/post-series.md`'s `vitest.coverage.config.mts` amendment** against the file as it stands after every coverage pin this feature adds. Phase 9 amended it for Phase 1's outsider exclusion — the last `[HEAD]` problem, and a change no chapter's subject covers — and phases 12 and 18 change the same file again. `scratchpad/unamend.py` and `mkdiff.py` are the tools; the pre-image is the state the chapters plus the appendix's earlier hunks leave
-- [ ] T196 [P] `pnpm lint`, `tsc`, `pnpm build`, and the static page count
-- [ ] T197 Record both chapters' final numbers in `baseline.txt`
-- [ ] T198 Commit Phase 20
+- [X] T193 Translate to `relay-tutorial/app/(vi)/vi/part-3/chapter-16/<slug>/page.mdx`, every fence byte-identical
+- [X] T194 [P] Translate the figure labels in `relay-tutorial/app/(vi)/vi/part-3/chapter-16/<slug>/figures.ts`; identifiers and column names stay English
+- [X] T195 Run `pnpm check:fences` and ask it about **files this chapter owns**, not about pages naming this chapter
+- [X] T196a **Re-derive `fences/post-series.md`'s `vitest.coverage.config.mts` amendment** against the file as it stands after every coverage pin this feature adds. Phase 9 amended it for Phase 1's outsider exclusion — the last `[HEAD]` problem, and a change no chapter's subject covers — and phases 12 and 18 change the same file again. `scratchpad/unamend.py` and `mkdiff.py` are the tools; the pre-image is the state the chapters plus the appendix's earlier hunks leave
+- [X] T196 [P] `pnpm lint`, `tsc`, `pnpm build`, and the static page count
+- [X] T197 Record both chapters' final numbers in `baseline.txt`
+- [X] T198 Commit Phase 20
 
 ---
 
