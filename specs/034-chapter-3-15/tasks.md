@@ -558,19 +558,19 @@ confirm metadata over 4 KB and a malformed URL are each refused with the field n
 **Independent test**: upsert 100 users, confirm 101 is refused, delete one, and confirm
 their messages are still readable and still attributed to them.
 
-- [ ] T137 [US8] Add `POST /v1/users` (FR-025) — up to 100, per-entry result array in chapter 3.13's `addMember` shape — `services/api/src/users/users.controller.ts`
-- [ ] T138 [P] [US8] Test 100 accepted (FR-025) and 101 refused 400 with `field: "users"` (FR-025a, SC-012) — `services/api/src/users/users.itest.ts`
-- [ ] T139 [P] [US8] Test that an entry naming an existing user updates rather than fails (FR-026), on chapter 3.13's idempotent `createUser` — `services/api/src/users/users.itest.ts`
-- [ ] T140 [P] [US8] Test that a failing entry's field path names the index — `users.7.metadata` — `services/api/src/users/users.itest.ts`
-- [ ] T141 [US8] Add `deleteUser` to `repository.ts`: clear the profile fields, set `deleted_at`, delete the memberships and read positions, **touch no messages and no `usage_active_users` rows** (FR-027, FR-028, FR-029)
-- [ ] T142 [US8] Add `DELETE /v1/users/:externalId`, idempotent — `services/api/src/users/users.controller.ts`
-- [ ] T143 [P] [US8] Test that a deleted user's messages are still in history (FR-028) and still attributed to them, distinguishable from a message that never had an author (FR-028a, SC-012). `ON DELETE SET NULL` would satisfy the letter of "preserved" and make those messages invisible to sockets, because `backfill.controller`'s `toFrame` drops senderless rows — `services/api/src/users/users.itest.ts`
-- [ ] T144 [US8] **Test the socket path specifically**: resume a channel containing a deleted user's message and confirm the frame arrives. This is the assertion that would have caught `ON DELETE SET NULL`, and the reason R7 chose the row over the letter of the clause — `services/gateway/src/isolation.itest.ts`
-- [ ] T145 [P] [US8] Test that memberships and read positions are gone, and that `usage_active_users` rows are not — `services/api/src/users/users.itest.ts`
-- [ ] T146 [US8] Test FR-030: presenting the deleted user's external id again reuses the row, clears `deleted_at`, and leaves the profile fields empty.
-- [ ] T146a [US8] **Remove the `deleted_at` read from `GET /v1/users/:externalId` and confirm the 404 test goes red**, then restore (FR-035) — `services/api/src/users/users.itest.ts` `(environment_id, external_id)` is unique and the row is still there, so there is no other honest answer — `services/api/src/users/users.itest.ts`
-- [ ] T147 [US8] Test the edge case the spec names: deleting a user who is the `owner` of a channel. FR-CHN-04's roles and FR-USR-05's deletion meet here and the chapter has to say what happens — `services/api/src/users/users.itest.ts`
-- [ ] T148 Commit Phase 14
+- [X] T137 [US8] Add `POST /v1/users` (FR-025) — up to 100, per-entry result array in chapter 3.13's `addMember` shape — `services/api/src/users/users.controller.ts`
+- [X] T138 [P] [US8] Test 100 accepted (FR-025) and 101 refused 400 with `field: "users"` (FR-025a, SC-012) — `services/api/src/users/users.itest.ts`
+- [X] T139 [P] [US8] Test that an entry naming an existing user updates rather than fails (FR-026), on chapter 3.13's idempotent `createUser` — `services/api/src/users/users.itest.ts`
+- [X] T140 [P] [US8] Test that a failing entry's field path names the index — `users.7.metadata` — `services/api/src/users/users.itest.ts`
+- [X] T141 [US8] Add `deleteUser` to `repository.ts`: clear the profile fields, set `deleted_at`, delete the memberships and read positions, **touch no messages and no `usage_active_users` rows** (FR-027, FR-028, FR-029)
+- [X] T142 [US8] Add `DELETE /v1/users/:externalId`, idempotent — `services/api/src/users/users.controller.ts`
+- [X] T143 [P] [US8] Test that a deleted user's messages are still in history (FR-028) and still attributed to them, distinguishable from a message that never had an author (FR-028a, SC-012). `ON DELETE SET NULL` would satisfy the letter of "preserved" and make those messages invisible to sockets, because `backfill.controller`'s `toFrame` drops senderless rows — `services/api/src/users/users.itest.ts`
+- [X] T144 [US8] **Test the socket path specifically**: resume a channel containing a deleted user's message and confirm the frame arrives. This is the assertion that would have caught `ON DELETE SET NULL`, and the reason R7 chose the row over the letter of the clause — `services/gateway/src/isolation.itest.ts`
+- [X] T145 [P] [US8] Test that memberships and read positions are gone, and that `usage_active_users` rows are not — `services/api/src/users/users.itest.ts`
+- [X] T146 [US8] Test FR-030: presenting the deleted user's external id again reuses the row, clears `deleted_at`, and leaves the profile fields empty.
+- [X] T146a [US8] **Remove the `deleted_at` read from `GET /v1/users/:externalId` and confirm the 404 test goes red**, then restore (FR-035) — `services/api/src/users/users.itest.ts` `(environment_id, external_id)` is unique and the row is still there, so there is no other honest answer — `services/api/src/users/users.itest.ts`
+- [X] T147 [US8] Test the edge case the spec names: deleting a user who is the `owner` of a channel. FR-CHN-04's roles and FR-USR-05's deletion meet here and the chapter has to say what happens — `services/api/src/users/users.itest.ts`
+- [X] T148 Commit Phase 14
 
 ---
 

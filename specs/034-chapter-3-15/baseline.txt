@@ -1337,3 +1337,87 @@ million rows.
     avatar_url and metadata reads dropped from the response    2 failed | 31 passed
 
 Both new readers are load-bearing. The ninth and tenth removals in the feature.
+
+## PHASE 14 — the bulk upsert and the deletion (T137–T148)
+
+    pnpm test:integration    528 tests, 194 s, green   (517 before this phase)
+    gauntlet targets: 36 derived, 33 attacked, 3 exempt (read 4, list 2, write 26, credential 1)
+    users.itest.ts           43 tests
+    isolation.itest.ts (gw)  25 tests
+
+### `upsertUser` IS A SECOND FUNCTION AND NOT A FLAG ON `createUser`
+
+FR-026 says an entry naming an existing user **updates** it. `createUser` deliberately does
+the opposite, and its own comment says why: *"the display name of the existing row wins; a
+second call is not an update — quietly renaming a user because someone re-sent a member list
+would be a write nobody asked for."* That is right for the member-add, which asks for
+membership and happens to need a user.
+
+Two functions rather than a parameter, so neither route can pick up the other's behaviour by
+accident. The member-add keeps `createUser`.
+
+**The upsert is also FR-030's revival.** `(environment_id, external_id)` is unique and a
+deleted user's row never left, so presenting the id again has no other honest answer than
+reusing it. `deleted_at` is cleared and the profile takes what the call carries — a revived
+row does not inherit the profile the deletion wiped. Three statuses per entry:
+`created`, `updated`, `revived`.
+
+**Sequential, and no transaction around the batch.** Each entry is its own upsert because
+each carries its own partial profile: a multi-row `INSERT … ON CONFLICT DO UPDATE` has one
+`SET` clause for all rows, so "leave `display_name` alone for entry 3 and set it for entry 7"
+cannot be expressed. And wrapping the batch would turn one bad entry into a hundred silent
+non-writes while the result array claimed otherwise.
+
+### T144 — THE TEST THAT DELETED A SHARED FIXTURE, for the third time in this feature
+
+The first version deleted `tenants.victim`'s user to prove the message survives. It did — and
+it took that tenant's membership with it, so the **next** test's profile PATCH answered 404.
+Two failures, one cause, and the second looked unrelated.
+
+Phase 7 hit this twice (T072b and T078a) and the fix is the same: a fixture of its own.
+`seedDeletable()` mints a user, a witness, a channel and one attributed message that nothing
+else in the suite touches. An ordering constraint would have worked and would be invisible to
+whoever adds the next test.
+
+**And the assertion is the one that would have caught `ON DELETE SET NULL`.** `toFrame` turns
+a row into a frame *or into nothing*, and a senderless row is one of the two it drops —
+`messageSchema.user` is `z.string().min(1)`, so a null author cannot be a `message.created`
+payload at all. Nulling `messages.user_id` would have preserved every message in storage and
+removed it from every reconnecting client, with a sequence gap as the only trace. The test
+resumes as a remaining member and checks both halves: the frame arrives, and its `user` is the
+deleted user's external id.
+
+### T147 — deleting a channel's owner, and the answer is "nothing happens"
+
+FR-CHN-04's roles and FR-USR-05's deletion meet here. Measured: the membership row goes with
+the deletion, so the channel is left with **no owner and no route that can appoint one** —
+`PATCH …/members/:userExternalId` sets the role of an existing member, so a channel whose only
+owner is deleted cannot get another until somebody is added first.
+
+Left as it is and stated rather than fixed, because **nothing in the platform reads
+`members.role` to authorize anything**: an ownerless channel behaves exactly like an owned
+one. The day a permission consults that column this becomes a real question, and the answer
+will be a route rather than a cascade. This is the fourth thing in this feature that is
+harmless only because the role column decides nothing.
+
+### T145 — the billing row's only writer is a send
+
+`usage_active_users` is written inside `sendMessage`, when the send is attributed, and nowhere
+else. So the fixture has to send a message rather than call a helper, and the assertion reads
+back through `usageFor` — the reader the billing surface itself uses. Active users and
+messages sent are both unchanged by the deletion (FR-029).
+
+### T146a — the removal
+
+    the deleted_at read dropped from requireUser    4 failed | 39 passed
+
+Four tests across three routes, which is the shape to want: the marker is read in one place
+and every route that names a user depends on it.
+
+### Two mistakes of mine, both caught by the suite
+
+`POST /v1/users` answered **201** because Nest defaults POST to 201, and the contract says 200
+— the array reports created, updated and revived per entry, so one status code for a mixed
+outcome would have to pick a lie. `@HttpCode(200)`.
+
+And `/auth/dev-token` answers **200**, not 201; I asserted 201 in the gateway test from habit.
