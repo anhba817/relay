@@ -529,3 +529,57 @@ Chapter 3.12 recorded the same slip on its own close-out task. Ticking a box is 
 as doing the work, and the only thing that catches it is reading the two lists against each
 other.
 
+## Phase 5 — removal, bulk because the requirement always was
+
+    lint / typecheck              exit 0
+    pnpm turbo run test           380 tests   (unchanged)
+    pnpm test:integration         446 tests, 197 s   (was 438, 192 s)
+    derived targets               27 derived, 24 attacked, 3 exempt   (was 26, 23, 3)
+
+`POST /v1/channels/:channelId/members/remove`, up to 100 users, one named result per
+user in request order. The singular `DELETE …/members/:userExternalId` the contract carried
+for ten analysis passes is gone rather than kept beside it.
+
+### THE FIRST DRAFT OF `removeMembers` WAS AN INJECTION HOLE
+
+It built the id list into raw SQL:
+
+    sql.raw(`ARRAY['${userIds.join("','")}']::uuid[]`)
+
+It typechecked, it would have worked, and those ids arrive in a request body. Rewritten with
+`inArray`, which parameterises — the only reason to reach for the query builder over a
+template here. The repository layer is the one place in this platform that must not have a
+hole like that, and it got one for the length of one edit.
+
+### T058 — two unfalsifiable attempts before a test that could fail
+
+**Attempt one** looked for the channel id inside `connection.ack`. That frame carries
+`user`, `cursor`, `resume_ok`, `truncated` — no channel list. The control failed, which is
+the only reason the attempt was caught.
+
+**Attempt two** sent a message and waited for `message.created`. It hung for five seconds and
+timed out, and the reason is worth more than the test:
+
+**`isolation.itest.ts` ATTACHES NO FAN-OUT.** `attachSessions({ server, api, logger })`
+passes none, so `fanout?.publish` is a no-op and **nothing is ever delivered in this suite**.
+Two assertions already in it — "nothing from the other tenant's channel is delivered" and
+the subscribe case below it — are therefore true no matter what the platform does. Chapter
+3.12's own suite, and exactly the class that chapter recorded about itself: *"fourteen
+passing tests meant nothing."* Not fixed here — it is that chapter's suite and its owner is
+FR-RTM-05, which also owns G1's other half.
+
+**Attempt three** asserts on the ack's `cursor`, which is what the server ACCEPTED, with a
+control showing a member's cursor being taken. That one can fail: remove the member and the
+key is gone from the accepted set.
+
+### T059a moved to phase 12, twice-refused here
+
+The edge case removal creates — a re-added member's unread count is the channel's whole
+history — needs a read position to exist, and `setReadPosition` arrives at T119. The first
+attempt planted one with raw SQL and **the lint rule refused it**: "the query engine lives
+inside the repository layer only (constitution I, ADR-16)". The rule was right and the test
+was wrong; a suite that reaches past the repository to arrange state is testing something
+other than what the platform does. Now T123a.
+
+Fourth instance in this feature of a test placed before its subject.
+
