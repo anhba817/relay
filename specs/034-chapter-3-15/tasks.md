@@ -690,9 +690,9 @@ the fourth**: FR-038a's citation class.
 - [X] T201 [P] Record whether the split held, in `specs/034-chapter-3-15/chapter-notes.md`: 20 and 24 files assigned against a 41-file union, and what the two chapters actually fenced. **And record every revision the count went through, with the mechanism that found each** — 25 from the clause list, 29 from the task list, 34 from the chapter-assignment question, 36 from the send call graph, 38 from counting the named paths, 40 from `git diff` against `check:fences`, 41 from a defect implementation found — because the third found a file no task named that eight routes depended on, the sixth found two files no document held, and the seventh could not have been predicted by any count, since no count knew the gateway was discarding refusal codes
 - [X] T202 Update `CLAUDE.md` between the `<!-- SPECKIT -->` markers: what closed, what the next feature should do differently, and every measurement worth not re-taking
 - [X] T203 [P] Tick the last task in this file only when it is done, not when it is about to be. Chapter 3.12 marked its close-out complete before pushing and had to reopen it — `specs/034-chapter-3-15/tasks.md`
-- [ ] T204 Tag `part3-ch16` in `relay-platform` and `relay-tutorial`
-- [ ] T205 Update the parent's submodule pins, confirm each matches its submodule HEAD, and tag the parent
-- [ ] T206 Push all three. **Hold the tag if `pnpm check:fences` exits 1** — chapter 3.12 held for two invocations and said why, because a split leaves green code with no page fencing it
+- [X] T204 Tag `part3-ch16` in `relay-platform` and `relay-tutorial`
+- [X] T205 Update the parent's submodule pins, confirm each matches its submodule HEAD, and tag the parent
+- [X] T206 Push all three. **Hold the tag if `pnpm check:fences` exits 1** — chapter 3.12 held for two invocations and said why, because a split leaves green code with no page fencing it
 
 ---
 

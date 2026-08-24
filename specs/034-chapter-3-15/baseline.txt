@@ -2108,3 +2108,27 @@ That is the same gap T103 found from the other side (the chain is silent about c
 claimed), reached this time by checking a task's premise instead of the chain's output. Three
 files, permanently outside the instrument, and the reason each is outside is a real one: the
 guard's SQL is 400 lines of PL/pgSQL that no chapter's word budget can carry whole.
+
+## PHASE 21 — close-out (T199–T206)
+
+    tasks                        251 of 251
+    checklist                    16 of 16
+    pnpm lint / typecheck / build / turbo run test      exit 0
+    pnpm test:integration        exit 0, 550 tests
+    pnpm coverage                exit 0, 920 tests, every ratchet met
+    pnpm check:fences            exit 0, 211 files, 33 chapters, 33 translated
+    pnpm check:figures           exit 0, 204 figures
+    pnpm check:docs / :errors    exit 0
+
+    tags       part3-ch16 on relay-platform, relay-tutorial and the parent
+    pins       both submodule pins match their submodule HEAD, verified before tagging
+    pushed     all three, submodules first so the parent's pins resolve on the remote
+
+T206's condition — hold the tag if `check:fences` exits 1 — was checked immediately before
+tagging and again before pushing. It exits 0 both times. Chapter 3.12 held for two invocations
+because a split leaves green code with no page fencing it; this feature's equivalent risk was
+the 31 `HEAD` problems that stood from Phase 11 to Phase 19, and Phase 19's page is what closed
+them.
+
+T203 was ticked after the push, not before. Chapter 3.12 marked its close-out complete before
+pushing and had to reopen it.
