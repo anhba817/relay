@@ -716,3 +716,88 @@ at the write, not at the subscription.
 plausibly have been implemented by removing memberships, and then a member would have
 silently lost the channel from their session.
 
+
+## PHASE 8 — the gauntlet widened to the same tenant (T080–T090)
+
+### T088 — the gauntlet's counts
+
+    gauntlet targets: 30 derived, 27 attacked, 3 exempt (read 3, list 1, write 22, credential 1)
+    services/api/src/isolation/*.itest.ts  46 tests, 3 files, all green
+    services/gateway/src/isolation.itest.ts  23 tests
+
+Chapter 3.12 closed at 24 derived, 21 attacked, 3 exempt. Six of this feature's fourteen
+routes are built, so 30 is the number T084 asserts — as a total and not as a delta, because
+`after − before` computed inside one run is an identity and cannot fail.
+
+The three exempt entries are chapter 3.12's three and carry the same written reasons. Nothing
+this feature adds is exempt.
+
+Control tests in the two new blocks: **six**. Three prove the member's own token works on
+the same channel before any refusal is asserted (read by id, history, send); the collision
+block's two assertions each carry their own positive half; and the socket test's control is
+the accepted cursor two tests above it. Chapter 3.12's fourteen tests compared two refusals
+and meant nothing, so this is the count that matters more than the attack count.
+
+### T089 — the catalogue moved by one table, and it is a direct one
+
+    tenant paths: 23 base tables — 13 direct, 2 hop, 8 spine
+      hop: members → channels, users
+      hop: messages → channels, users
+
+Chapter 3.12 recorded 22 — 12 direct, 2 hop, 8 spine. The new table is `read_positions`, and
+it classifies **direct** because it carries `environment_id`. It could have been a hop —
+`(channel_id, user_id)` reaches a tenant through either parent, and both parents are
+themselves hops — and a hop through a hop is a path this catalogue derives but no table had
+yet used. Giving the table its own `environment_id` is what keeps the depth at two.
+
+The hop list is unchanged, which is the part worth checking: a new table that had needed a
+three-link path would have appeared here.
+
+### T086 — each check removed in turn, and what stayed green
+
+Three removals, each with a rebuild and the whole gauntlet:
+
+    send check disabled (repository.sendMessage)        2 failed | 30 passed
+      × same tenant, not a member > send
+      × the private channel gained nothing from the refused send
+    by-id read check disabled (channels.service.read)   2 failed | 30 passed
+      × same tenant, not a member > read by id
+      × the collision block's "the TYPE is why"
+    history visibility disabled (channelVisibleTo →     1 failed | 31 passed
+      channelExists, messages.service)                  × same tenant, not a member > read history
+
+Each removal fails its own attack and no other, which is the property a suite of refusals
+cannot otherwise demonstrate. **In all three the controls stayed green** — that is what
+separates a working attacker from a broken one, and it is the check chapter 3.12's fourteen
+green tests did not have.
+
+The collision test failing alongside the by-id read is not a leak in the test: it asserts the
+two tenants are answered differently *because the types differ*, so it depends on the type
+deciding. A removal that makes the type stop deciding should take it down.
+
+**NOTHING WAS MASKED.** Chapter 3.12's finding was that `channelExists` runs first and is
+scoped, so an unscoped read beneath it is never reached — the suite is sensitive to the
+outermost check on a path and blind to an inner one. That did not happen here, and the reason
+is Phase 7: the history path's outer check IS the visibility check now, because
+`channelVisibleTo` replaced `channelExists` rather than being added below it. One predicate
+produces both refusals, so there is no outer check left to mask an inner one. Had the check
+been added underneath, this removal would have been the third green 32.
+
+### T081 — the gateway twin was already there
+
+Marked done against Phase 3's `privateChannelId` and Phases 5 and 7's `removeSelf`,
+`rejoinSelf`, `archiveOwnChannel`, `unarchiveOwnChannel`. Each socket tenant's own user is
+not a member of its own private channel, which is the same-tenant fixture on the socket side;
+T087 attacks it.
+
+### T087 — there is no subscribe frame to attack
+
+The task said "a same-tenant non-member's subscribe frame, from the protocol's own frame
+union". The union has exactly one inbound member, `message.send` — **there is no subscribe
+frame**. What a socket may see is decided at connect from the session's channel list, and a
+cursor is the only thing a client asserts about it.
+
+So the attack is a cursor naming the private channel, and the assertion is that the ack's
+cursor set does not contain it. Reading the frame union is what turned a task that could not
+be executed as written into one that could; the task's own instruction to derive it from the
+union is why.
