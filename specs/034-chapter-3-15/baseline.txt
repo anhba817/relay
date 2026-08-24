@@ -1257,3 +1257,83 @@ create route's shape wins because it shipped. The read-position route takes `:ch
 the uuid, like every other channel route — `contracts/listing.md` writes it
 `:channelExternalId` and that file says of itself that its paths are written with the
 customer's identifiers in place while the router names channel parameters `:channelId`.
+
+## PHASE 13 — the profile (T129–T136)
+
+    pnpm test:integration    517 tests, 192 s, green   (506 before this phase)
+    gauntlet targets: 34 derived, 31 attacked, 3 exempt (read 4, list 2, write 24, credential 1)
+    users.itest.ts           33 tests
+    isolation.itest.ts (gw)  24 tests
+
+### T133 — WHY 4 KB FOR A USER AND 8 KB FOR A CHANNEL
+
+FR-USR-03 names 4 KB and FR-CHN-01 names 8 KB. Both are in the SRS, so neither was
+inherited in silence — but "the SRS says so" is not a reason, and T133 asked for one or a
+change. Here is the one that holds, measured on the test lane:
+
+    users     94,144        channels    27,337        3.4 : 1
+    channels per user   1   users per channel   10
+
+**The bound tracks row cardinality.** A channel is a conversation a customer creates
+deliberately; a user row appears for every end user who ever authenticates, implicitly
+(FR-USR-02). At a million end users, 4 KB each is 4 GB of jsonb that every profile read
+walks past. The channel's larger budget also buys something different: channel metadata is
+routing and configuration for a shared object, read once per conversation, where a user's
+is per-person annotation.
+
+Kept at 4 KB, justified rather than inherited. The number is now `USER_METADATA_BYTES` in
+`users.schema.ts` with that argument beside it.
+
+### T134 — THE TEST TIMED OUT BECAUSE NO FRAME EVER ARRIVES IN THAT SUITE
+
+The first version awaited a `message.created` frame after writing a profile, to prove the
+wire still carries `user` as a bare string. It timed out at 5 s — and took a neighbouring
+suite's `beforeAll` down with it at 90 s, which looked like a second failure and was
+contention.
+
+**No test in `services/gateway/src/isolation.itest.ts` has ever received a
+`message.created`.** `say()` writes through the repository, the api publishes to no
+fan-out, and nothing in that suite drains the outbox. Chapter 3.12 recorded exactly this —
+*a REST-sent message reaches no socket, ever*, two independent causes, pinned by
+`public-surface.itest.ts` — and I wrote a test that depended on the opposite.
+
+Rewritten in two halves that suite can actually observe:
+
+- **live**: the `connection.ack` after a full profile exists — `user` is a string and it is
+  the external id.
+- **contract**: `frameSchema` refuses a `message.created` whose `user` is an object, and
+  refuses one carrying a seventh key. If somebody widens the frame, those stop failing —
+  which is the change worth catching, because it is the one that breaks published clients.
+
+Moving the live half to `resume.itest.ts` or `public-surface.itest.ts` would have worked and
+was rejected: both are outside this feature's 40 files, and `resume.itest.ts` is amended by
+`fences/post-series.md`, so touching it costs a chapter and an appendix edit for one
+assertion.
+
+### T129, T129a — the two columns that had never been written
+
+`users.avatar_url` and `users.metadata` have been in the schema since chapter 2.1 with zero
+references outside tests. `updateUserProfile` is the first writer either has ever had, and
+`GET /v1/users/:externalId` the first reader. Two of the four dead columns the feature was
+specified to close.
+
+Three states the API distinguishes, which a PATCH that could only set would not:
+
+    field absent from the patch   keeps its value
+    field present and null        cleared
+    an empty patch {}             200, nothing written, current profile returned
+
+The last one issues no UPDATE at all: drizzle throws on a `set` with no columns, and `SET`
+with nothing to set is a write that means nothing. `exactOptionalPropertyTypes` is what makes
+absent and null different in the type rather than by convention.
+
+`avatar_url` is validated as a URL and not as a string. The column has existed for
+twenty-two chapters with nothing deciding what belongs in it; this is the first thing that
+ever does, and the decision is cheaper now than after a customer has stored `"none"` in a
+million rows.
+
+### T135 — the removal
+
+    avatar_url and metadata reads dropped from the response    2 failed | 31 passed
+
+Both new readers are load-bearing. The ninth and tenth removals in the feature.

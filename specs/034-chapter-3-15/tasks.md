@@ -539,15 +539,15 @@ by field name.
 **Independent test**: set display name, avatar URL and metadata, read them back, and
 confirm metadata over 4 KB and a malformed URL are each refused with the field named.
 
-- [ ] T129 [US3] Add `GET` and `PATCH /v1/users/:externalId` (FR-023) in `services/api/src/users/`, **both reading `users.deleted_at` and answering 404 for a deleted user**. Until pass five that column was written by T141, cleared by T146 and read by nothing — the third column this feature would have added with no reader, in a feature about columns with no readers
-- [ ] T129a [US3] Add `updateUserProfile` to `services/api/src/db/repository.ts` — the writer T129's `PATCH` needs, setting `display_name`, `avatar_url` and `metadata`. **Found by building the route table**, the third route in this feature with a handler and no repository method
-- [ ] T130 [P] [US3] Add the schema: `display_name`, `avatar_url` as a URL, `metadata` bounded at 4 KB — `services/api/src/users/users.schema.ts`
-- [ ] T131 [P] [US3] Test the round trip for all three (SC-011) — `services/api/src/users/users.itest.ts`
-- [ ] T132 [P] [US3] Test FR-024's two bounds: metadata over 4 KB refused 400 with `field: "metadata"`, and a malformed `avatar_url` refused with its field — `services/api/src/users/users.itest.ts`
-- [ ] T133 [US3] **Record why the users bound is 4 KB when the channels bound is 8 KB** — FR-USR-03 against FR-CHN-01 — and either justify it in the chapter or change it. A bound inherited silently is a bound nobody chose — `specs/034-chapter-3-15/baseline.txt`
-- [ ] T134 [P] [US3] Test that the socket frame's identity shape is unchanged by this feature (US3 scenario 3). The profile is stored; changing the wire contract is not in scope — `services/gateway/src/isolation.itest.ts`
-- [ ] T135 [US3] **Remove the `avatar_url` and `metadata` reads and confirm T131 goes red**, then restore. FR-035; see the column table — `services/api/src/users/users.itest.ts`
-- [ ] T136 Commit Phase 13
+- [X] T129 [US3] Add `GET` and `PATCH /v1/users/:externalId` (FR-023) in `services/api/src/users/`, **both reading `users.deleted_at` and answering 404 for a deleted user**. Until pass five that column was written by T141, cleared by T146 and read by nothing — the third column this feature would have added with no reader, in a feature about columns with no readers
+- [X] T129a [US3] Add `updateUserProfile` to `services/api/src/db/repository.ts` — the writer T129's `PATCH` needs, setting `display_name`, `avatar_url` and `metadata`. **Found by building the route table**, the third route in this feature with a handler and no repository method
+- [X] T130 [P] [US3] Add the schema: `display_name`, `avatar_url` as a URL, `metadata` bounded at 4 KB — `services/api/src/users/users.schema.ts`
+- [X] T131 [P] [US3] Test the round trip for all three (SC-011) — `services/api/src/users/users.itest.ts`
+- [X] T132 [P] [US3] Test FR-024's two bounds: metadata over 4 KB refused 400 with `field: "metadata"`, and a malformed `avatar_url` refused with its field — `services/api/src/users/users.itest.ts`
+- [X] T133 [US3] **Record why the users bound is 4 KB when the channels bound is 8 KB** — FR-USR-03 against FR-CHN-01 — and either justify it in the chapter or change it. A bound inherited silently is a bound nobody chose — `specs/034-chapter-3-15/baseline.txt`
+- [X] T134 [P] [US3] Test that the socket frame's identity shape is unchanged by this feature (US3 scenario 3). The profile is stored; changing the wire contract is not in scope — `services/gateway/src/isolation.itest.ts`
+- [X] T135 [US3] **Remove the `avatar_url` and `metadata` reads and confirm T131 goes red**, then restore. FR-035; see the column table — `services/api/src/users/users.itest.ts`
+- [X] T136 Commit Phase 13
 
 ---
 
