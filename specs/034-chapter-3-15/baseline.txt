@@ -1156,3 +1156,104 @@ Removing it is one line and would make the lane silent. It is left because the f
 is a **measured** artifact of this feature: touching that file makes it the 41st file in
 the union and gives it a chapter to be fenced in, for a cosmetic warning. Recorded here so
 the next feature to touch that file can delete the directive for free.
+
+## PHASE 12 — the unread count, with no counter (T119–T128)
+
+    pnpm test:integration    506 tests, 194 s, green   (493 before this phase)
+    gauntlet targets: 32 derived, 29 attacked, 3 exempt (read 3, list 2, write 23, credential 1)
+    users.itest.ts           23 tests
+    repository.itest.ts      20 tests
+
+### T126 — THE SPEC ASSUMED THE ANSWER AND THE ANSWER IS THE OTHER ONE
+
+The assumption: *"A user's own message is read by them. Otherwise every send raises the
+sender's own unread count, which no chat client shows."* The scenario was looser and
+correct — "whether it counts as unread for its author **is stated and tested**".
+
+Measured: **it counts.** The write path does not advance the sender's own read position, so
+a user who sends a message sees their own count go to one until they acknowledge it.
+
+**And the first version of this test hid that.** It sent a message, set the read position to
+that message's sequence, and asserted zero — passing, while proving only that
+`setReadPosition` works. The assertion that matters is the one before the acknowledgement,
+and it only got written because the behaviour was measured instead of assumed. This is the
+same shape as the send path's repository test in Phase 7: a green test whose setup supplied
+the thing under test.
+
+**Not changed, and the cost of where the change would go is the reason.** Advancing the
+position server-side is a second statement on a second table inside the send transaction —
+the platform's highest-frequency operation, for every attributed message, forever.
+`last_activity_at` went into the statement that already updates `channels` precisely to
+avoid that; a read-position upsert has no statement to join. The client pays nothing
+instead: the send response already carries the sequence. And the public REST send
+attributes no user, so a server-side advance would work on some sends and not others.
+
+### FR-MSG-08 IS NOT IMPLEMENTED, and the tombstone is a reader with no writer
+
+`messages.deleted_at` and a null `text` are in the schema. `backfill.controller` passes
+`text` straight through, so a null already reaches the wire. **Nothing in the platform
+writes either** — there is no message-deletion route, no repository method, nothing.
+
+So FR-019's rule (a tombstoned last message reports itself with `text: null` rather than
+walking back) is specified against a state no route can produce. It is implemented and
+tested anyway, with the tombstone written by raw SQL in `repository.itest.ts`, so the day
+FR-MSG-08's chapter ships the count and the preview already agree.
+
+**This is the mirror image of the feature's own subject.** Four columns had writers and no
+readers; the tombstone has a reader and no writer. Third task in this feature to name
+something the platform does not have — T087's subscribe frame, T108's rename, and now
+T124's message deletion — and all three were found by looking for the thing.
+
+`last_message: null` for a channel that never had a message is a distinct state from a
+tombstone, and both are tested: `last_sequence` is 0, no row carries sequence 0, so the
+subquery finds nothing. A client can tell "no messages" from "the last one was deleted".
+
+### T121a — the fifth verb, and the list is the authority
+
+`set a read position` joins the oracle's verb list, whose route is built in this phase
+rather than in chapter 3.15's. The private channel's refusal is byte-identical to a channel
+that exists nowhere, across all five verbs.
+
+The verb count is written down nowhere — the list is the authority — which is the fix for a
+number that went three, then four, then five while its verification task stayed at three.
+
+### T120 — `not_a_member`'s only emitter, and the order that keeps it honest
+
+    private channel, path's user not a member    404, the not-found envelope
+    public channel,  path's user not a member    403 not_a_member
+
+Visibility first, then membership. The 403 reveals only that a *public* channel exists, and
+a public channel is readable by any user of the tenant already. Reverse the two and a
+private channel announces itself.
+
+**And the membership is the PATH's user, not the caller.** Under an application credential
+the caller is a member of nothing, so "the caller is not a member" is a sentence about
+nothing on this route — the correction pass twelve made for one route and left in five
+other places. The route is also the first to rely on method-level `@Accepts` overriding the
+class-level one: `@Accepts("application", "user")` on the handler against
+`@Accepts("application")` on the controller.
+
+`CredentialClass` gained `"either"` for it — the first route in the platform that genuinely
+takes both. Recording it as `"user"` would have understated which attacks apply.
+
+### T127, T127a — the two removals
+
+    read-position term dropped from the count       4 failed | 19 passed
+    a position planted above last_sequence          the clamp's arm, 0 rather than negative
+
+The clamp is unreachable through the API: `setReadPosition` refuses a position past
+`last_sequence` and `last_sequence` never goes backwards. Planted directly, which is the
+only way that branch is ever covered.
+
+### The listing's `id` was the external id, and `POST /v1/channels` returns the uuid
+
+`contracts/listing.md` shows `"id": "c_support"` — a customer's own string under the name
+`id` — while the create route returns `id` as the uuid alongside `external_id`. Phase 11
+built the contract's shape, which would have made `id` mean two different things in one
+API.
+
+Corrected here, before a second route inherited it: the listing returns both, and the
+create route's shape wins because it shipped. The read-position route takes `:channelId`,
+the uuid, like every other channel route — `contracts/listing.md` writes it
+`:channelExternalId` and that file says of itself that its paths are written with the
+customer's identifiers in place while the router names channel parameters `:channelId`.
