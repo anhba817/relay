@@ -52,10 +52,11 @@ and V0 records it before Phase 2 moves anything.
 
 **THE SPLIT WAS TAKEN FROM A MEASURED FILE COUNT BEFORE ANY PROSE EXISTED** (FR-040),
 which is the one thing 3.12's close-out asked the next feature to do differently — and
-**the count was then revised twice, because a count is not an enumeration.** R12 counted
-**25** from the clause list. Analysis pass one found the task list naming **29**. Pass
-two enumerated every path and asked which chapter fences it: **34**, including three the
-tasks imply and never name — `app.module.ts`, `users.module.ts`, `users.service.ts`.
+**the count was then revised FIVE times, because a count is not an enumeration.** R12
+counted **25** from the clause list; the task list named **29**; asking which chapter fences
+each file gave **34**, including three the tasks imply and never name — `app.module.ts`,
+`users.module.ts`, `users.service.ts`; the send call graph added two more for **36**; and
+counting the paths the tasks name, instead of reading the total, gave **38**.
 
 **The first of those three was a CRITICAL.** `app.module.ts` appeared in NO TASK. It is
 where `ChannelsModule` is registered and chapter 3.13 needed that edit; without it
@@ -69,14 +70,15 @@ each file rather than by path — assigning by path guessed wrong five times in 
 **R18's table is the authority and every other document quotes it**, because three
 analysis passes produced three wrong overlap figures while each recomputed by hand.
 
-    3.15 "the channel a customer controls"   18 files  ≈ 2,880 words
-    3.16 "what a user sees"                  20 files  ≈ 3,200 words
-    18 + 20 = 38 instances, union 34, 31 taught, 7 in both chapters, 3 in neither
+    3.15 "the channel a customer controls"   21 files  ≈ 3,360 words
+    3.16 "what a user sees"                  21 files  ≈ 3,360 words
+    21 + 21 = 42 instances, union 38, 35 taught, 7 in both chapters, 3 in neither
 
 Seven files 3.15 fences whole and 3.16 diffs: `repository.ts`, `repository.itest.ts`,
 `isolation.itest.ts`, `schema.ts`, `0012_*.sql`, `codes.ts`, `codes.test.ts`. Both pages
-sit inside 2,000–4,000 with 800 words or more of headroom; **three chapters would be
-~2,027 each, twenty-seven words above the floor**, so R12's floor argument holds. Analysis pass one
+sit inside 2,000–4,000 with 640 words of headroom; **three chapters would be ~2,240 each**,
+which clears the floor — so the arithmetic stopped arguing either way at 38 files and two
+chapters holds on subject coherence and ceiling headroom. Analysis pass one
 reported that argument gone at ~2,290 a page — **wrong instrument**: it scaled a group
 sum by the union's ratio, and instances grow with how many chapters teach a file. The
 page phases sit at 9 and 16 rather than last, so each page is written when its own
@@ -119,6 +121,25 @@ maintains `last_sequence` (chapter 2.2 made it the sequencing authority).
 4. **The gauntlet has no same-tenant fixture.** All four attack shapes take another
    tenant's identifiers, so "a user of your own tenant who is not a member" is new
    work rather than a reuse (R10, FR-034).
+
+**PASS FIFTEEN: THE FIFTH REVISION OF THE FILE COUNT CAME FROM NOT APPLYING A
+RECOMMENDATION.** Pass four found that T151's ban-at-connect needs
+`internal/session.controller.ts` to carry the ban, and its own report said to add the file
+"to T151 **and to R18's table**". Only the task got it. `messages.itest.ts`, where the route
+tests that prove the check fires are written, was never added either. Union 36 → **38**,
+both chapters 21 files, ≈3,360 words each with 640 of headroom. Found by counting the paths
+the tasks name rather than reading the total — the first four revisions each came from asking
+a new question, this one from re-deriving an old answer.
+
+**"A FIX LANDED IN ONE PLACE AND NOT ITS SIBLINGS" IS NOW FOUR FOR FOUR**: the send path
+before the history path, R1's caller count in three documents but not the plan, the
+caller/path-user phrasing in nine places, and a recommendation applied to the task and not
+the table. The class does not converge by re-reading. It converges by grepping the phrase or
+re-deriving the number.
+
+**AND ONE DERIVED NUMBER HELD.** T003a's "57 tasks writing integration assertions" re-derived
+to exactly 57 after a pass added a task — because T003a states the pattern that produces it
+rather than the figure.
 
 **PASS FOURTEEN: A COLUMN CALLED DEAD THAT THE RESPONSE BODY RETURNS.** `contracts/listing.md`
 lists `role` among the fields it returns, from `members.role` — and FR-012's answer, the column

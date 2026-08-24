@@ -39,8 +39,8 @@ sections had been written; the point of deciding first is that this table exists
 
 | Chapter | Phases | Subject |
 |---|---|---|
-| **3.15** the channel a customer controls | 3–8, page at 9–10 | membership, reading a channel by id, the private type, removal, roles, archiving, **and FR-037's correction** (T049a–T049c, stated at T097a). **20 files** per R18's table, seven fenced whole here and diffed in 3.16 |
-| **3.16** what a user sees | 11–17, page at 19–20 | listing, unread, the user surface, implicit creation, and FR-038a's citation class (Phase 17). **20 files** per R18's table, seven of them diffs. `sentinel.sql` and `guard.itest.ts` are its files, not 3.15's |
+| **3.15** the channel a customer controls | 3–8, page at 9–10 | membership, reading a channel by id, the private type, removal, roles, archiving, **and FR-037's correction** (T049a–T049c, stated at T097a). **21 files** per R18's table, seven fenced whole here and diffed in 3.16 |
+| **3.16** what a user sees | 11–17, page at 19–20 | listing, unread, the user surface, implicit creation, and FR-038a's citation class (Phase 17). **21 files** per R18's table, seven of them diffs. `sentinel.sql`, `guard.itest.ts` and `internal/session.controller.ts` are its files, not 3.15's |
 
 Phases 1, 2, 18 and 21 belong to neither page: the baseline, the schema both chapters
 stand on, the verification that covers both, and the close-out.
@@ -443,7 +443,7 @@ and each of those attacks goes red when its check is removed.
 **Goal**: "the channel a customer controls", inside the 2,000–4,000 word bound, every
 fence replaying onto the platform.
 
-- [ ] T091 Count the fenced files this chapter owns before writing a word (FR-040), and record it against R18's assignment of **19** (FR-040a) in `specs/034-chapter-3-15/baseline.txt`, seven of which are fenced whole here and diffed in chapter 3.16. The feature's file count was revised twice before it was enumerated — 25, then 29, then 34 — so record whether 19 moved too. The estimate has run low three times: 3.5 by 77%, 3.12 by 65%, this feature's first count by 26%
+- [ ] T091 Count the fenced files this chapter owns before writing a word (FR-040), and record it against R18's assignment of **21** (FR-040a) in `specs/034-chapter-3-15/baseline.txt`, seven of which are fenced whole here and diffed in chapter 3.16. The feature's file count was revised twice before it was enumerated — 25, then 29, then 34 — so record whether 19 moved too. The estimate has run low three times: 3.5 by 77%, 3.12 by 65%, this feature's first count by 26%
 - [ ] T092 Write `relay-tutorial/app/(en)/part-3/chapter-15/<slug>/page.mdx`. The subject is one sentence: who is in a channel, what kind it is, and whether it is open
 - [ ] T093 [P] Write `figures.ts` beside it — the refusal ordering (ban, archive, membership), the two-refusals table, and the same-tenant attack the suite never had
 - [ ] T094 **A titled fence states the whole file, not an excerpt.** Chapter 3.12's 26 excerpts produced 43 chain problems. Where an excerpt is genuinely wanted, put `(excerpt)` in the title — the checker's `NOT_A_FILE` treats it as a prose illustration and leaves the path out of the chain — `relay-tutorial/app/(en)/part-3/chapter-15/<slug>/page.mdx`
@@ -584,7 +584,7 @@ history is still readable by others.
 - [ ] T149 [US9] Add `banUser` and `unbanUser` to `services/api/src/db/repository.ts`, both idempotent — set and clear `banned_at`. Same omission as the archive column: read by T150, routed by T149a, never written
 - [ ] T149a [US9] Add `POST` and `DELETE /v1/users/:externalId/ban`, both idempotent — `services/api/src/users/users.controller.ts`
 - [ ] T150 [US9] Read `banned_at` on the send path (FR-031), refusing `user_banned` — first in T072's ordering — `services/api/src/db/repository.ts`
-- [ ] T151 [US9] Read it at connect in `services/gateway/src/session.ts`, through the api as the gateway already reads a session — **which means `services/api/src/internal/session.controller.ts` has to carry the ban in its response**. That file is `@Accepts("user")`, resolves the user with `getUserByExternalId` and returns their channels, so the row is already in hand; what is new is what the controller does with `banned_at`. It was in no task and no line of R18's table until pass four. No new table reaches the gateway
+- [ ] T151 [US9] Read it at connect in `services/gateway/src/session.ts`, through the api as the gateway already reads a session — **which means `services/api/src/internal/session.controller.ts` has to carry the ban in its response**. That file is `@Accepts("user")`, resolves the user with `getUserByExternalId` and returns their channels, so the row is already in hand; what is new is what the controller does with `banned_at`. It was in no task until pass four, and **not in R18's table until pass fifteen** — pass four's own report said to add it there and only the task got it. No new table reaches the gateway
 - [ ] T152 [P] [US9] Test that a banned user cannot connect and cannot send (FR-031), that their history is still readable by others, and that lifting the ban restores both (FR-031a, SC-013) — `services/api/src/users/users.itest.ts and services/gateway/src/isolation.itest.ts`
 - [ ] T153 [US9] **State and test what a ban does to a connection that is already open** (FR-032). The two answers are "closed at the next heartbeat" and "closed immediately", and they differ in whether the gateway has to be told. A ban that only applies to new connections is a ban a client outlasts by not reconnecting — `services/gateway/src/session.ts`
 - [ ] T154 [P] [US9] Test the edge cases the spec names: banning a member of a private channel — the ban is tenant-scoped, so it is not a removal — and a token minted for a banned user's identifier, where implicit creation must not undo the ban — `services/api/src/users/users.itest.ts`
@@ -656,7 +656,7 @@ the fourth**: FR-038a's citation class.
 
 ## Phase 19: Chapter 3.16's page — prose and fences
 
-- [ ] T183 Count this chapter's fenced files against R18's assignment of **20** — thirteen of its own and seven diffs of files chapter 3.15 fenced — and record the gap in `specs/034-chapter-3-15/baseline.txt`, with the 34-file union beside it
+- [ ] T183 Count this chapter's fenced files against R18's assignment of **21** — fourteen of its own and seven diffs of files chapter 3.15 fenced — and record the gap in `specs/034-chapter-3-15/baseline.txt`, with the 34-file union beside it
 - [ ] T184 Write `relay-tutorial/app/(en)/part-3/chapter-16/<slug>/page.mdx` — "what a user sees"
 - [ ] T185 [P] Write its `figures.ts`: the measurement that pointed the wrong way (0.87 ms against 159 ms), the unread subtraction, the keyset cursor, and the deletion states
 - [ ] T186 **The measurement that pointed the wrong way is the chapter's centre, not an aside.** The test lane answered 0.87 ms and would have settled the question in favour of adding no column; the same query at 1,000,000 messages is 159 ms with a sequential scan over every message in the environment on every listing — `relay-tutorial/app/(en)/part-3/chapter-16/<slug>/page.mdx`
@@ -665,7 +665,7 @@ the fourth**: FR-038a's citation class.
 - [ ] T188 [P] State the two approximations this chapter accepts: a tombstone counts as one unread, and a deleted user's row survives — `relay-tutorial/app/(en)/part-3/chapter-16/<slug>/page.mdx`
 - [ ] T189 Add the chapter to `relay-tutorial/lib/tutorial.ts`
 - [ ] T190 Count the prose words and record it in `specs/034-chapter-3-15/baseline.txt` — inside 2,000–4,000 (SC-018)
-- [ ] T191 [P] Record the split's own numbers on the page (SC-019): **25, then 29, then 34**, all three before any prose existed, and that the third revision is the one that found `app.module.ts` — a file no task named, holding the registration eight routes need — `relay-tutorial/app/(en)/part-3/chapter-16/<slug>/page.mdx`
+- [ ] T191 [P] Record the split's own numbers on the page (SC-019): **25, 29, 34, 36, 38**, all five before any prose existed. The third found `app.module.ts`, a file no task named holding the registration eight routes need; the fifth came from counting the paths the tasks name instead of reading the total, and added two files earlier passes had already written about — `relay-tutorial/app/(en)/part-3/chapter-16/<slug>/page.mdx`
 - [ ] T192 Commit Phase 19
 
 ---
@@ -685,7 +685,7 @@ the fourth**: FR-038a's citation class.
 
 - [ ] T199 Write `specs/034-chapter-3-15/chapter-notes.md`: what the plan said against what shipped, phase by phase, including the phases that went badly
 - [ ] T200 [P] Write `specs/034-chapter-3-15/gaps.md`: what this feature refused and who owns it — presence scope (FR-RTM-07), REST-to-socket delivery (FR-RTM-05), the outbox's message-text retention (FR-MOD-06), and **a human reading the documentation**, which chapter 3.14 named as the instrument it did not use and this feature does not use either
-- [ ] T201 [P] Record whether the split held, in `specs/034-chapter-3-15/chapter-notes.md`: 19 and 20 files assigned against a 34-file union, and what the two chapters actually fenced. **And record the three revisions the count went through** — 25 from the clause list, 29 from the task list, 34 from the enumeration — with what each revision found, because the third found a file no task named and eight routes depended on
+- [ ] T201 [P] Record whether the split held, in `specs/034-chapter-3-15/chapter-notes.md`: 21 and 21 files assigned against a 38-file union, and what the two chapters actually fenced. **And record the three revisions the count went through** — 25 from the clause list, 29 from the task list, 34 from the enumeration — with what each revision found, because the third found a file no task named and eight routes depended on
 - [ ] T202 Update `CLAUDE.md` between the `<!-- SPECKIT -->` markers: what closed, what the next feature should do differently, and every measurement worth not re-taking
 - [ ] T203 [P] Tick the last task in this file only when it is done, not when it is about to be. Chapter 3.12 marked its close-out complete before pushing and had to reopen it — `specs/034-chapter-3-15/tasks.md`
 - [ ] T204 Tag `part3-ch16` in `relay-platform` and `relay-tutorial`

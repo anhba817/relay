@@ -426,27 +426,31 @@ a chapter and not a spec directory).
 The first analysis pass raised three things about R12's numbers. Two are real, one is
 refuted by its own measurement, and the third changes what the split rests on.
 
-### The file count was low, twice, and the enumeration is why
+### The file count was low five times, and the enumeration is why
 
-R12 counted **25** platform files from the clause list. The task list named **29**
-(analysis pass one). Enumerating properly — every path a task line names, basenames
-canonicalised, plus three files the tasks imply and never name — gives **34**.
+R12 counted **25** platform files from the clause list. The task list named **29** (pass
+one). Asking which chapter fences each file gave **34** (pass three). The send call graph
+added two more (pass seven). Counting the paths the tasks name, rather than reading the
+total, gave **38** (pass fifteen).
 
-    24 changed  +  7 new   =  31 files the tasks name
-     3 more the tasks imply and never name:
+    35 files the tasks name and change
+     3 the tasks imply and never name:
          services/api/src/app.module.ts        UsersModule has to be registered
          services/api/src/users/users.module.ts    "module, controller, service" — T109
          services/api/src/users/users.service.ts
-    ── 34 platform files, of which:
-        32 are taught by one chapter or both
+    ── 38 platform files, of which:
+        35 are taught by one chapter or both
          2 are conditional and taught by neither — packages/test-harness/src/exempt.ts
            and eslint.config.mjs, touched only if T011 finds a file needing an entry
          1 is read, not changed — services/api/src/isolation/compare.ts (T043 uses it)
 
-**Each revision was found by a mechanism, not by rereading.** 25 → 29 came from the task
-list naming files a clause list cannot reach. 29 → 34 came from asking which chapter
-fences each file, which is the question that finds a file nothing registers: `app.module.ts`
-appeared in **no task at all**, and without it none of the eight user routes mount.
+**Four revisions were found by a mechanism; the fifth by re-deriving a total.** 25 → 29 came
+from the task list naming files a clause list cannot reach. 29 → 34 came from asking which
+chapter fences each file, which is the question that finds a file nothing registers:
+`app.module.ts` appeared in **no task at all**, and without it none of the eight user routes
+mount. 34 → 36 came from writing out the send call graph. **36 → 38 came from counting instead
+of reading**, and both files it added had been named in earlier passes' own text without
+reaching this table.
 
 **The lesson is the same one three times: a count without an enumeration cannot be
 checked, and every check found more.** So the enumeration is below, and it is what the
@@ -464,23 +468,35 @@ already holds. So the table is the authority and every other document quotes it.
 
 | | count | files |
 |---|---|---|
-| **3.15 only** | 13 | `channels.controller.ts`, `channels.itest.ts`, `channels.schema.ts`, `channels.service.ts`, `internal.itest.ts`, `fixtures.ts`, `gauntlet.itest.ts`, `targets.itest.ts`, `targets.ts`, `tenant-scope.itest.ts`, `isolation-fixtures.ts`, **`messages.controller.ts`**, **`messages.service.ts`** |
-| **3.16 only** | 13 | `credentials.itest.ts`, `dev-token.controller.ts`, `users.controller.ts`, `users.service.ts`, `users.module.ts`, `users.schema.ts`, `users.itest.ts`, `app.module.ts`, `session.ts`, `0011_*.sql`, `sentinel.sql`, `guard.itest.ts`, `vitest.coverage.config.mts` |
+| **3.15 only** | 14 | `channels.controller.ts`, `channels.itest.ts`, `channels.schema.ts`, `channels.service.ts`, `internal.itest.ts`, `fixtures.ts`, `gauntlet.itest.ts`, `targets.itest.ts`, `targets.ts`, `tenant-scope.itest.ts`, `isolation-fixtures.ts`, `messages.controller.ts`, `messages.service.ts`, **`messages.itest.ts`** |
+| **3.16 only** | 14 | `credentials.itest.ts`, `dev-token.controller.ts`, `users.controller.ts`, `users.service.ts`, `users.module.ts`, `users.schema.ts`, `users.itest.ts`, `app.module.ts`, `session.ts`, `0011_*.sql`, `sentinel.sql`, `guard.itest.ts`, `vitest.coverage.config.mts`, **`internal/session.controller.ts`** |
 | **both** | 7 | `repository.ts`, `repository.itest.ts`, `isolation.itest.ts`, `schema.ts`, `0012_*.sql`, `codes.ts`, `codes.test.ts` |
 | **neither** | 3 | `compare.ts` (read by T043, not changed), `exempt.ts` and `eslint.config.mjs` (touched only if T011 finds a file needing an entry) |
 
-    union            36 files
-    taught           33
-    3.15 teaches     13 + 7 = 20
-    3.16 teaches     13 + 7 = 20
-    instances        40   = 33 taught + 7 counted twice   ✓
+    union            38 files
+    taught           35
+    3.15 teaches     14 + 7 = 21
+    3.16 teaches     14 + 7 = 21
+    instances        42   = 35 taught + 7 counted twice   ✓
 
-**36, from 34, from 29, from 25.** Four revisions, each found by a different question:
-the task list (29), the chapter assignment (34), and the send call graph (36) —
-`messages.controller.ts` and `messages.service.ts` arrived in analysis pass seven with
-T031a, because the public send had to be made to say who is acting before a membership
-check could fire on it. Every revision has come from asking a new question rather than
-rereading, which is the argument for the enumeration existing at all.
+**38, from 36, from 34, from 29, from 25.** Five revisions. The first four each came from a
+new question: the task list (29), the chapter assignment (34), and the send call graph (36) —
+`messages.controller.ts` and `messages.service.ts` arrived in pass seven with T031a, because
+the public send had to be made to say who is acting before a membership check could fire.
+
+**The fifth came from not applying a recommendation.** Pass four found that T151's ban-at-
+connect needs `internal/session.controller.ts` to carry the ban in its response, and its own
+report said to add the file "to T151 **and to R18's table**". Only T151 got it, and the table
+stayed two short for six passes — `messages.itest.ts`, where T032a and T041b write the route
+tests, was never added either. Re-derived in pass fifteen by counting the paths the tasks name
+instead of reading the total.
+
+Both new files are already fenced in earlier chapters — `messages.itest.ts` in 2, 8 and 12,
+`session.controller.ts` in 2, 8, 11 and 14 — so both are **diffs with predecessors**, not whole
+fences. And `messages.itest.ts` is the file behind chapter 3.12's own close-out lesson: *"0
+problems naming this chapter's page is not 0 problems on files this chapter owns"* — the two
+answers differed by that file. This feature changes it again, so T103 and T195 have to ask the
+question the right way round.
 
 The seven shared files are fenced **whole in 3.15 and diffed in 3.16**, 3.15 coming
 first. `schema.ts` and `0012` straddle because each carries columns from both chapters:
@@ -498,12 +514,12 @@ its own amendment.
 
 At chapter 3.11's measured 160 words per file — 1.5 fences per file, 107 words per fence:
 
-    3.15    20 files  ≈ 3,200 words
-    3.16    20 files  ≈ 3,200 words
+    3.15    21 files  ≈ 3,360 words
+    3.16    21 files  ≈ 3,360 words
 
-Both inside 2,000–4,000 with 800 words of headroom, and seven of 3.16's twenty are diffs
-of files 3.15 already fenced, which run shorter than a whole file. **Three chapters would
-be 40 ÷ 3 × 160 ≈ 2,133 each**, which clears the floor by 133 words — still the wrong side
+Both inside 2,000–4,000 with 640 words of headroom, and seven of 3.16's twenty-one are diffs
+of files 3.15 already fenced, which run shorter than a whole file. **Three chapters would be
+42 ÷ 3 × 160 ≈ 2,240 each**, which clears the floor by 240 words — still the wrong side
 of comfortable against an estimate that has run low three times, and the reason two
 chapters holds is now subject coherence with the arithmetic no longer arguing either way.
 
