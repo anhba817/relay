@@ -24,8 +24,10 @@ none of the eight user routes would have mounted.
 
 **A count without an enumeration cannot be checked, and each check found more.** R18's
 table is the authority for every file count in this feature, and the figures below are
-read off it rather than recomputed: **20 + 24 = 44 instances, union 41, 37 taught, 7 in
-both chapters, 4 in neither.** The union has been revised seven times — 25, 29, 34, 36, 38, 40, 41 —
+read off it rather than recomputed: **20 + 26 = 46 instances, 39 taught, 7 in both chapters,
+4 in neither — and 53 files changed in total**, because eleven carry a corrected citation and
+nothing else. The count has been revised eight times — 25, 29, 34, 36, 38, 40, 41, 43 — and
+the eighth split it in two: what a chapter TEACHES is not what it must FENCE.
 each time by a different question and never by re-reading the document that held the previous
 number, and three analysis passes produced three wrong overlap numbers before the table existed
 to read from. The sixth revision was taken at T091, from `git diff --name-only` against
@@ -35,10 +37,13 @@ turned out to be one this feature never touches.
 | Chapter | Carries | Files | ≈ prose words |
 |---|---|---|---|
 | **3.15** the channel a customer controls | membership enforced on send, reading a channel by id, the `private` type made meaningful, member removal, member roles, archiving | 20 | ≈ 3,200 |
-| **3.16** what a user sees | channel listing with cursor pagination and activity ordering, unread counts, user profiles, bulk upsert, deletion, banning, implicit creation on authentication | 24 | ≈ 3,840 |
+| **3.16** what a user sees | channel listing with cursor pagination and activity ordering, unread counts, user profiles, bulk upsert, deletion, banning, implicit creation on authentication | 26 | ≈ 4,160 nominal, ≈3,830 at 3.15's measured rate |
 
 Both inside 2,000–4,000. The headroom is not symmetric: 3.15 has 800 words against the
-ceiling and 3.16 has 160. **Three chapters would be ~2,293
+ceiling and 3.16 has **none nominally** — 26 files at R12's 160 words each is 4,160, over
+the bound. Chapter 3.15 came in 8% under its estimate (2,947 against 3,200), which puts 3.16
+at ≈3,830 and inside; but the estimate is now the thing standing between the page and the
+ceiling, so phase 19 writes against the measured rate and cuts if the count runs over 3,800. **Three chapters would be ~2,293
 each**, which clears the floor — so at the current count the arithmetic no longer argues
 either way and two chapters holds on subject coherence and on ceiling headroom against an
 estimate that has run low three times. Pass one reported the floor argument gone by

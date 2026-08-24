@@ -1638,7 +1638,10 @@ Every changed line was diffed against its predecessor with the chapter number ma
 
 ### T170 — 31 HEAD PROBLEMS, 0 APPLY PROBLEMS, and the difference is the whole point
 
-    check-fence-chain: 31 problem(s) — HEAD 31
+    check-fence-chain: 31 problem(s) — HEAD 31   (measured at Phase 17's close; Phase 18
+                                                 changed four more files, so the figure
+                                                 Phase 19 starts from is higher and is
+                                                 re-derived at T195 rather than carried)
 
 **Every fence still replays.** An `APPLY` problem means a hunk's pre-image no longer
 matches — a broken fence. A `HEAD` problem means the chain's endpoint differs from the
@@ -1661,3 +1664,309 @@ is the state the feature was specified against.
 
 The column exists now. That is this feature's traceability to record, not chapter 3.12's, and
 3.12's row already says "owned by whichever chapter builds it".
+
+## PHASE 18 — verification (T173–T182)
+
+### T173 — every gate, by exit code
+
+    pnpm lint                 exit 0
+    pnpm typecheck            exit 0
+    pnpm build                exit 0
+    pnpm turbo run test       exit 0    11 tasks
+    pnpm test:integration     exit 0    542 tests, 40 suite files, 192 s
+                                        — AND 550 BY THE TIME THE BATTERY RAN. The gate
+                                        sweep happened before T174a's six repository-arm
+                                        tests and T174's three malformed-cursor tests
+                                        landed. The battery's figure is the authoritative
+                                        one; this line is left as it was measured rather
+                                        than back-dated, because a gate table that reports
+                                        numbers the run did not produce is the thing this
+                                        feature has corrected eight times.
+    pnpm coverage             exit 0    920 tests, every ratchet met
+    pnpm sync:docs            exit 0    04-srs.md, 05-sad.md, 06-adr-deep-dives.md, 08-error-reference.md
+    pnpm check:docs           exit 0
+    pnpm check:errors         exit 0
+    pnpm check:figures        exit 0    196 figures
+    pnpm check:fences         exit 1    31 problems — HEAD 31, all owned by Phase 19
+
+Exit codes rather than a grep over output, because `pnpm coverage` prints its threshold
+failures as `ERROR:` lines and still exited 0 in an earlier chapter's tooling.
+
+### T174a, T174c — REPOSITORY BRANCHES WENT 89.51% → 92.11%, and chapter 3.5's precedent was the reverse
+
+    services/api/src/db/repository.ts   97.28 st / 92.11 br / 100 fn / 99.13 ln
+
+Chapter 3.5 added six operations to this file and branches fell **85.91% → 78.22%** on the
+next run. This feature added roughly 600 lines — the membership check, the visibility
+predicate, bulk removal, roles, archiving, the ban, the read position, the listing with its
+unread arithmetic — and the figure went **up**, past its pin of 90 for the first time in the
+file's history. Pin raised to **91**, not 92: 92.11 clears 92 by a tenth, which is the thin
+margin chapter 3.12 declined to pin against.
+
+**The arms this feature adds, and where each is covered.** Every one is exercised, and the
+classification T174c asks for is stated rather than left to whoever next reads the ratchet:
+
+    the membership check on send            AUTHORIZATION inside a tenant, not isolation
+                                           gauntlet same-tenant block + repository.itest
+    channelVisibleTo's two false arms       AUTHORIZATION — private-and-not-a-member,
+                                           and the channel not existing at all
+    the archive check                      neither: a lifecycle refusal
+    the ban check                          AUTHORIZATION at tenant scope
+    greatest(...) clamp                    neither: defence against a bug, planted
+    the unread coalesce                    neither: absence of a row is a value
+    the keyset's `after === undefined`      neither: pagination
+    upsertUser's three status arms          IDEMPOTENCY — constitution VI names it
+
+**A private-channel membership check is authorization inside a tenant, not tenant
+isolation.** Constitution VI's 100% clause does not reach it by its own words. The
+same-tenant suite tests it with FR-TEN-05's oracle anyway, because the *shape* of the
+refusal is the same problem even though the boundary is not.
+
+**What is still uncovered in that file, and all of it is one class**: three
+`could not be created or read` throws — `createChannel`, `createUser`, `upsertUser` — each
+the loser of an `ON CONFLICT` race finding no row, which means the winner's row was deleted
+between two statements of one call. Nothing in the api deletes from either table.
+
+**AND A FOURTH INSTANCE WAS REMOVED RATHER THAN NAMED.** `upsertUser` first read the row,
+threw if absent, updated it, read it back and threw again — two statements for one
+impossible state. That third throw took lines to **98.92% against a pin of 99 and the gate
+went red.** The instrument was right: the second throw said nothing the first had not. One
+throw, and lines read 99.13%. This is the second time the ratchet has caught a redundant
+guard rather than missing tests — chapter 3.12 removed `addMember`'s `(rowCount ?? 0)` the
+same way, and this feature removed `(row.metadata ?? {})` for the same reason, since the
+column is `notNull().default({})`.
+
+### T174b — `functions: 100` IS THE ANSWER, and it is a measurement rather than an audit
+
+Five tasks test new repository code through the gateway's api **child process**, whose
+coverage is not attributable. The question is whether any new function is reached *only*
+that way.
+
+`repository.ts` measures **functions: 100**. Coverage is collected from the in-process run
+only, so a function reached solely through the child would sit at 0 and drag that figure
+below 100. It is at 100, therefore every function in the file — including `banUser`,
+`unbanUser`, `deleteUser`, `upsertUser`, `setReadPosition`, `listChannelsForUser`,
+`updateUserProfile`, `markUserDeleted` — has an in-process caller.
+
+Six arms did need in-process tests, and they are the ones a *route* cannot reach because the
+service layer answers first: `deleteUser` on an id that does not exist, `updateUserProfile`
+on a deleted row (twice, once per branch), an empty patch on an absent row, an upsert that
+creates with no profile fields, an upsert that updates an avatar, and a listing whose last
+message has **no author** — which only a key-authenticated REST send produces.
+
+### T174, T174d — the pins, and a prediction that did not come true
+
+    services/api/src/users/users.controller.ts    100 / 100 / 100 / 100
+    services/api/src/users/users.schema.ts        100 / 100 / 100 / 100
+    services/api/src/users/users.service.ts        97 /  90 / 100 /  97
+    services/api/src/channels/channels.service.ts  96 /  86 / 100 /  96   (was 94 / 75 / 100 / 94)
+    services/api/src/db/repository.ts               97 /  91 / 100 /  99   (branches was 90)
+    services/api/src/messages/messages.service.ts  70 /  61 / 100 /  70   (new pin, a floor)
+
+**T174d predicted `channels.service.ts`'s `functions: 100` would go red on the first
+partially-covered new function.** It did not. The file gains six methods — read-by-id, join,
+archive, unarchive, bulk removal, role-setting — and every one has a route test, so branches
+went **75% → 86.54%**. The prediction was reasonable and the reason it failed is the thing
+worth keeping: a method reached only through a child process would have done exactly what
+T174d feared, which is why T174b checks for that separately.
+
+`users.schema.ts` reached 100 only after **all three** malformed-cursor arms got their own
+test. It measured 66.66% branches with one: the base64 not decoding, the JSON decoding to
+the wrong shape, and the timestamp not being a date are three paths that answer identically,
+and one refusal reaching the wire says nothing about whether the other two work.
+
+`messages.service.ts` is pinned at a **floor, not an achievement**. Its six uncovered
+statements are all pre-existing — the quota refusal and its rethrow, and the history
+cursor's decode — and this feature's additions to the file are covered. A ratchet at 61 does
+not bless 61; it forbids 60.
+
+### T176, T176a — THE DEAD-COLUMN COUNT: FIVE BEFORE, ONE AFTER, and the survivor is this feature's own
+
+Counted the way T007 counted, excluding tests and the schema declaration itself:
+
+    channels.type            10 references, and its FIRST DECISION      (was: returned, never decided on)
+    channels.archived_at      3    written by archive/unarchive, read by the refusal and the listing
+    users.avatar_url          1    read by the profile route; written by PATCH and upsert
+    users.metadata            3    same
+    users.banned_at           3    read at connect and on the send path
+    users.deleted_at          6    read by every route that names a user
+    ── the four dead columns and the fifth that was not: all have readers
+
+    channels.last_activity_at 3    new, written by the send path, read by the listing
+    members.role              3    new, returned by the listing — and no operation authorized by it
+    read_positions.updated_at 0    NEW, WRITTEN BY EVERY POSITION WRITE, READ BY NOTHING
+
+**The after-count is one, and it is a column this feature added.** A feature whose subject is
+columns nothing reads, leaving one of its own behind, is the chapter's own joke and it is
+better told than found.
+
+It went **three → two → one** during specification: `users.deleted_at` was written by the
+deletion and cleared by the revival and read by nothing until analysis pass five gave it
+readers, and `members.role` was called dead until pass fourteen noticed the listing returns
+it. `read_positions.updated_at` survived every pass because nothing needed it — it is an
+audit field with no auditor, and the honest options are a reader or a migration that drops
+it. Neither is this feature's work; naming it is.
+
+### T177 — the traceability map, and ONE CLAUSE TOUCHED AND UNCLAIMED
+
+`specs/034-chapter-3-15/traceability.md`, both directions, 86 rows. All twelve clauses the
+feature was specified to deliver are delivered.
+
+§2's second table is the one that earns its keep — chapter 3.12's pass five added it and
+found four clauses touched without being claimed. This feature has **one**: the SRS's
+`docs_url` clause. The gateway was discarding every api refusal code but 401, so
+`user_banned` and `channel_archived` reached socket clients as `internal_error` and the
+`docs_url` chapter 3.14 built never existed for them. Found in Phase 15 by a failing
+assertion, and **no requirement in this spec asked for the fix**.
+
+Recorded rather than back-filled into a requirement. A requirement written after the work to
+describe the work is not a requirement.
+
+### T178, T179 — the documents
+
+`docs/04-srs.md` gains verification notes for both clause families, in the blockquote form
+the document already uses for FR-TEN-05. They record what was measured, not that it passed:
+the four doors and why the enum widened last, the two role vocabularies one word apart, the
+count with no counter and its three measured alternatives, the index earned at 50,000
+memberships, the refusal order, the 4 KB bound's cardinality argument, and the ban's effect
+on an open socket.
+
+`docs/07-tutorial-plan.md`'s single 3.15 row is now two, with the shipped numbers.
+Deliberately not mirrored by `check-docs-drift.sh` — it is the series' own plan, not a
+published reference.
+
+**T179a ran in its documented order** — `sync:docs`, then `check:docs`, `check:errors`,
+`check:figures` — and this is the task that used to be T175 and ran three positions too
+early, marked `[P]` beside the edit that invalidates it. Four mirrored documents synced.
+
+### T179b — THE BUDGET WAS DECIDED BEFORE THE BATTERY, and the prediction it replaces was wrong for an interesting reason
+
+The 240-second budget was inherited from chapter 3.12, which set it when the lane held
+**407 tests**. Analysis pass thirteen found that this feature has 57 tasks writing
+integration assertions and predicted the lane would land near **230–250 s** — over the
+budget, enforced by nothing, so it would have been exceeded in silence.
+
+Measured before the battery:
+
+    chapter 3.12's close-out    407 tests   193 s mean    2.11 tests/second
+    this feature                550 tests   192 s         2.86 tests/second
+
+**135 more tests and the lane did not get slower.** The prediction assumed the cost scales
+with test count; it scales with **suite count**, because the lane is
+`--concurrency=1` and each suite pays for a fresh api boot, an environment, a key and a
+signing secret. This feature added 135 tests and **two** suite files
+(`users.itest.ts`, and `targets.itest.ts` was already there) — 40 files against 3.12's 38.
+
+So the budget holds at 240 s and needs no re-derivation. What needs correcting is the model
+behind the prediction: **tests are nearly free and suites are not.** A feature that added 135
+tests across 20 new files would have blown the budget; this one put them in five existing
+suites and two new ones.
+
+The budget is still enforced by nothing — no turbo, CI or vitest timeout — which is the
+condition that let pass thirteen's finding matter in the first place. Recorded again rather
+than fixed: adding a timeout to the lane is a change to how the lane fails, and it belongs
+to whoever owns the lane rather than to a chapter about channels.
+
+### T181 — what twenty green buys, computed rather than quoted
+
+    a per-run failure rate of 13.91%  survives 20 green with probability   5.00%
+    a per-run failure rate of 10.00%  survives 20 green with probability  12.16%
+    a per-run failure rate of  5.00%  survives 20 green with probability  35.85%
+    a per-run failure rate of  1.00%  survives 20 green with probability  81.79%
+
+**Twenty green rejects any per-run failure rate above 13.91% at 95% confidence, and nothing
+finer.** A 5% flake — one bad run in twenty, which is exactly the rate that feels like "it
+happens sometimes" — walks through this battery unseen better than one time in three.
+Rejecting a 5% flake at the same confidence needs **59 runs**.
+
+Chapter 3.11 ran twenty green and an eleven-chapter-old flake surfaced on run twenty-one:
+`credentials.itest.ts` took an api key's secret as `split("_").at(-1)`, and base64url
+includes the separator, so once in a while the last segment was a single character the
+stored row happened to contain. Twenty green did not find it and was never going to.
+
+So the battery is evidence about the size of a defect, not its absence. Twenty runs is what
+the project affords; the sentence that matters is the one that says what it does not buy.
+
+### THE EIGHTH REVISION, taken at Phase 18 — and it split the count in two
+
+T091 asked "what did this feature actually change?" before chapter 3.15 was written. Asked
+again at the end: **53 files, against a table holding 41.**
+
+    2 taught and missing        internal.ts (16 lines, the session response's `banned`)
+                               gateway/src/auth.ts (11 lines, the `banned` outcome)
+    2 mechanical               resume.itest.ts, session.test.ts — nine session stubs that
+                               stopped compiling when `banned` became a required field
+    11 FENCED BUT NOT TAUGHT   only change is FR-038a's corrected citation — one word,
+                               zero substantive lines, measured by diffing with the
+                               chapter number filtered out
+    1 never fenced             pnpm-lock.yaml
+    ── 53
+
+**THE FILE COUNT WAS TWO COUNTS ALL ALONG.**
+
+    the SUBJECT count   what a chapter explains — what the word estimate scales with
+    the FENCE count     what a chapter must bring to HEAD — what the chain enforces
+
+T091 found one half of this: `tenant-scope.itest.ts` is a **subject with no fence**, because
+the catalogue's classification moved and the file did not. The eleven citation-only files are
+the exact inverse — **a fence with no subject.** The chain does not care why a file changed;
+a claimed path's state must equal HEAD, so a one-word comment fix costs a diff and buys no
+prose.
+
+R18 conflated the two for eight revisions, and every count before this one was answering
+whichever question the asker had in mind.
+
+**What it does to the ceiling.** 3.16 teaches 26 files. At R12's 160 words each that is
+**4,160 — over the 4,000 bound.** Chapter 3.15 came in 8% under its own estimate (2,947
+against 3,200), which puts 3.16 at ≈3,830 and inside. So the estimate is now the only thing
+between that page and the ceiling, where it used to be a comfort: phase 19 writes against the
+measured rate, not the nominal one, and cuts if the count passes 3,800.
+
+The eleven belong in one grouped diff with one sentence: they are one edit, made once, for
+one reason.
+
+### T180 — the twenty-run battery: 20/20 GREEN, first attempt
+
+    run 1  began 16:31:16  exit=0  192s     run 11 began 17:03:35  exit=0  194s
+    run 2  began 16:34:28  exit=0  195s     run 12 began 17:06:49  exit=0  195s
+    run 3  began 16:37:43  exit=0  197s     run 13 began 17:10:04  exit=0  194s
+    run 4  began 16:41:00  exit=0  192s     run 14 began 17:13:18  exit=0  193s
+    run 5  began 16:44:12  exit=0  196s     run 15 began 17:16:31  exit=0  192s
+    run 6  began 16:47:28  exit=0  195s     run 16 began 17:19:43  exit=0  195s
+    run 7  began 16:50:43  exit=0  194s     run 17 began 17:22:58  exit=0  192s
+    run 8  began 16:53:57  exit=0  193s     run 18 began 17:26:10  exit=0  192s
+    run 9  began 16:57:10  exit=0  192s     run 19 began 17:29:22  exit=0  193s
+    run 10 began 17:00:22  exit=0  193s     run 20 began 17:32:35  exit=0  192s
+
+    20 runs   40 suite files   550 tests   every run identical
+    min 192s  max 197s  mean 193.55s  median 193s  stdev 1.54s  spread 5s
+    budget 240s — 43s of headroom at the worst run
+    64 minutes of test time, nothing else running on the machine
+
+**A 5-second spread and a 1.54-second standard deviation**, against chapter 3.12's recorded
+2-second spread on 407 tests. 143 more tests moved the mean by 0.55 s — from 193.0 to
+193.55 — which is the same finding T179b recorded from a single run, now measured twenty
+times: **the lane's cost is per suite, not per test.**
+
+**First attempt, and chapter 3.12's failed at run 11.** Its cause was two Next.js dev
+servers compiling a 3,000-line MDX page while the api child had 30 seconds to boot — no port
+held, no `EADDRINUSE`, and the wall-clock timeline was the only evidence that told
+interference from defect. This battery ran with nothing else on the machine, and run 11 came
+in at 194 s, a second above the mean.
+
+**Every run reported the same 40 files and the same 550 tests.** A battery where the counts
+move between runs is a battery measuring something other than flakiness — a skipped suite
+reads as green.
+
+### What the battery does NOT establish
+
+Twenty green rejects a per-run failure rate above **13.91%** at 95% confidence and nothing
+finer. A 5% flake survives this battery **35.85%** of the time; rejecting one would take
+**59 runs**. Chapter 3.11 ran twenty green and an eleven-chapter-old flake surfaced on run
+twenty-one.
+
+So what this establishes is a bound on the size of a defect, not its absence — and the
+bound is loose enough that a fault firing one run in twenty is more likely to have hidden
+than to have shown. The 43 seconds of budget headroom is the more useful number: it is the
+margin before a slow run becomes indistinguishable from a hung one, and it shrank from 47 s
+to 43 s across this feature.

@@ -474,15 +474,52 @@ already holds. So the table is the authority and every other document quotes it.
 | | count | files |
 |---|---|---|
 | **3.15 only** | 13 | `channels.controller.ts`, `channels.itest.ts`, `channels.schema.ts`, `channels.service.ts`, `internal.itest.ts`, `fixtures.ts`, `gauntlet.itest.ts`, `targets.itest.ts`, `targets.ts`, `isolation-fixtures.ts`, `messages.controller.ts`, `messages.service.ts`, **`messages.itest.ts`** |
-| **3.16 only** | 17 | `credentials.itest.ts`, `dev-token.controller.ts`, `users.controller.ts`, `users.service.ts`, `users.module.ts`, `users.schema.ts`, `users.itest.ts`, `app.module.ts`, `session.ts`, `0011_*.sql`, `sentinel.sql`, `guard.itest.ts`, `vitest.coverage.config.mts`, **`internal/session.controller.ts`**, **`sentinel.ts`**, **`scripts/backfill-channel-activity.mjs`**, **`api-client.ts`** |
+| **3.16 only** | 19 | `credentials.itest.ts`, `dev-token.controller.ts`, `users.controller.ts`, `users.service.ts`, `users.module.ts`, `users.schema.ts`, `users.itest.ts`, `app.module.ts`, `session.ts`, `0011_*.sql`, `sentinel.sql`, `guard.itest.ts`, `vitest.coverage.config.mts`, **`internal/session.controller.ts`**, **`sentinel.ts`**, **`scripts/backfill-channel-activity.mjs`**, **`api-client.ts`**, **`internal.ts`**, **`gateway/src/auth.ts`** |
 | **both** | 7 | `repository.ts`, `repository.itest.ts`, `isolation.itest.ts`, `schema.ts`, `0012_*.sql`, `codes.ts`, `codes.test.ts` |
 | **neither** | 4 | `compare.ts` (read by T043, not changed), **`tenant-scope.itest.ts`** (run by T089 and not changed — see below), `exempt.ts` and `eslint.config.mjs` (touched only if T011 finds a file needing an entry) |
 
-    union            41 files
-    taught           37
+    union            43 files taught
+    taught           39
     3.15 teaches     13 + 7 = 20
-    3.16 teaches     17 + 7 = 24
-    instances        44   = 37 taught + 7 counted twice   ✓
+    3.16 teaches     19 + 7 = 26
+    instances        46   = 39 taught + 7 counted twice   ✓
+
+    + 11 files fenced but NOT taught  (a corrected citation and nothing else)
+    +  2 mechanical stub updates      (resume.itest.ts, session.test.ts — post-series)
+    +  1 never fenced                 (pnpm-lock.yaml)
+    ── 53 files this feature changes in total
+
+### The eighth revision, and it split the count in two
+
+Taken at Phase 18 by diffing the whole tree against chapter 3.14's close, which is the T091
+question asked once more at the end. **53 files changed; the table held 41.**
+
+Two are genuinely taught and were missing: `packages/protocol/src/internal.ts` (16 lines —
+the `banned` field on the session response) and `services/gateway/src/auth.ts` (11 lines —
+the `banned` outcome). Both are the ban's plumbing and both belong to 3.16. Two more are
+mechanical: nine session stubs across `resume.itest.ts` and `session.test.ts` stopped
+compiling when `banned` became a required parsed field, which is the right outcome and not a
+subject any chapter teaches.
+
+**AND ELEVEN FILES ARE FENCED WITHOUT BEING TAUGHT.** Their only change is FR-038a's
+correction — `chapter 3.12` to `chapter 3.13` or `3.14`, one word, zero substantive lines
+each, measured by diffing with the chapter number filtered out. The fence chain does not care
+why a file changed: a claimed path's state must equal HEAD, so all eleven need a diff in some
+chapter or the appendix.
+
+**So the file count is two counts, and R18 conflated them for eight revisions.**
+
+    the SUBJECT count   what a chapter explains, and what the word estimate scales with
+    the FENCE count     what a chapter must bring to HEAD, which the chain enforces
+
+T091 found the first half of this distinction — `tenant-scope.itest.ts` is a subject with no
+fence, because the catalogue moved and the file did not. The eleven citation-only files are
+the exact inverse: **a fence with no subject.** Neither direction was in the table, and both
+were found by asking the repository rather than by re-reading the plan.
+
+The word estimate uses the subject count (26 for 3.16), because a one-word diff costs a fence
+and no prose. The eleven belong in one grouped diff with one sentence of explanation — they
+are one edit, made once, for one reason.
 
 **The seventh revision came from implementation, not from a question.** Phase 15's ban test
 asserted `user_banned` on an open socket and got `internal_error`: `ApiError` carried only
