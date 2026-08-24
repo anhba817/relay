@@ -602,12 +602,12 @@ history is still readable by others.
 **No story label**: FR-039a and FR-039b arrived from R9 after the spec's nine stories
 were written. Their coverage is two edge cases and SC-020.
 
-- [ ] T157 Create the user if absent in `services/api/src/auth/dev-token.controller.ts`, using chapter 3.13's idempotent `createUser`
-- [ ] T158 Test SC-020 end to end: mint a token for an identifier no user row exists for, send a message through `POST /internal/messages`, and it is accepted. Today that sequence answers `400 "unknown user"` — a message that names the caller rather than the cause, which is precisely what implicit creation exists to prevent — `services/api/src/auth/credentials.itest.ts`
-- [ ] T159 [P] Test FR-039b and FR-039c: authentication and membership converge on one row for one external identifier, and two rows are never created. Chapter 3.13 made `createUser` idempotent on `(environment_id, external_id)`, which is the property this relies on — `services/api/src/auth/credentials.itest.ts`
-- [ ] T160 [P] Test that the status does not distinguish "created" from "existed". A status that told the caller would be a membership oracle for external ids — `services/api/src/auth/credentials.itest.ts`
-- [ ] T161 Test the edge case: a token minted for a **banned** user's identifier does not undo the ban, and a token minted for a **deleted** user's identifier reuses the row per FR-030 — `services/api/src/auth/credentials.itest.ts`
-- [ ] T162 Commit Phase 16
+- [X] T157 Create the user if absent in `services/api/src/auth/dev-token.controller.ts`, using chapter 3.13's idempotent `createUser`
+- [X] T158 Test SC-020 end to end: mint a token for an identifier no user row exists for, send a message through `POST /internal/messages`, and it is accepted. Today that sequence answers `400 "unknown user"` — a message that names the caller rather than the cause, which is precisely what implicit creation exists to prevent — `services/api/src/auth/credentials.itest.ts`
+- [X] T159 [P] Test FR-039b and FR-039c: authentication and membership converge on one row for one external identifier, and two rows are never created. Chapter 3.13 made `createUser` idempotent on `(environment_id, external_id)`, which is the property this relies on — `services/api/src/auth/credentials.itest.ts`
+- [X] T160 [P] Test that the status does not distinguish "created" from "existed". A status that told the caller would be a membership oracle for external ids — `services/api/src/auth/credentials.itest.ts`
+- [X] T161 Test the edge case: a token minted for a **banned** user's identifier does not undo the ban, and a token minted for a **deleted** user's identifier reuses the row per FR-030 — `services/api/src/auth/credentials.itest.ts`
+- [X] T162 Commit Phase 16
 
 ---
 

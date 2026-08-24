@@ -1539,3 +1539,53 @@ Any other position leaks. Check the channel first and the refusal for a real cha
 differs from the refusal for an invented one, so a banned user can enumerate channel ids by
 watching which refusal comes back — the same defect as the archived-channel leak one
 requirement over.
+
+## PHASE 16 — a user record on first authentication (T157–T162)
+
+    pnpm test:integration    542 tests, 192 s, green   (536 before this phase)
+    credentials.itest.ts     23 tests
+    gauntlet targets unchanged at 38 — implicit creation adds no route
+
+### T157 — the whole implementation is one call, and the gap had a symptom
+
+FR-USR-02 has asked since the SRS was written that "a user record shall be created
+implicitly on first authentication if it does not exist". Nothing did it. The symptom is
+concrete and T158 named it: mint a token for an identifier with no row, send through
+`POST /internal/messages`, and the api answered **`400 "unknown user"`** —
+`internal.controller.ts:64`, verified by grep rather than taken on trust.
+
+That message names the caller as the problem when the problem is that nobody created a
+row. Implicit creation exists to prevent exactly that reply.
+
+The fix is `createUser`, chapter 3.13's idempotent one, on the mint path. `ON CONFLICT DO
+NOTHING` on `(environment_id, external_id)` is what makes it safe to call every time.
+
+### THREE PROPERTIES THAT ONLY LOOK FREE
+
+**Authentication and membership converge, whichever arrives first.** Tested both ways
+round, and the second half asserts the display name survives: `createUser` does not
+update, so a mint cannot rename a user to nothing. That function's own comment is the
+argument, and this is the test that holds it.
+
+**The response does not say which happened.** A status or a field distinguishing "created"
+from "existed" would be a membership oracle — mint tokens for guessed external ids and read
+the answer to learn which ones a tenant has. The test compares the two responses' status
+and key sets, not their contents: a token and an expiry differ by construction.
+
+**A mint cannot lift a ban or a deletion.** `createUser` touches no column on an existing
+row, so `banned_at` and `deleted_at` both survive it. The banned case is asserted end to
+end — mint, then send, and the send is refused `user_banned`.
+
+The deleted case is the one worth stating: FR-030 says presenting the id again reuses the
+row, and it does — **but the row stays deleted.** A mint says "somebody asked for a token";
+`POST /v1/users` is a customer's server saying "this user is back", and that is the route
+that clears the marker. Two readings of one requirement, and only the narrow one is
+implemented.
+
+### The removal
+
+    createUser dropped from the mint path    3 failed | 20 passed
+
+It fails at the row-existence assertion, before the send is even attempted — so the
+verification confirms the creation happens and the separate grep confirms what the absence
+used to produce.
