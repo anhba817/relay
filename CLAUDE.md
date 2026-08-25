@@ -1,4 +1,12 @@
 <!-- SPECKIT START -->
+**CHAPTER 3.17 IS IN PLANNING** — `specs/035-chapter-3-17/`, the sender a message never had.
+A message sent by a customer's server has none; chapter 3.3 decided that when nothing read one.
+Bot users with descriptions, a sender required on every send, and an API key that may speak as
+software and not as any person. Read `plan.md`, then `research.md` — R1 measures the blast
+radius (46 send sites, three in the sealed outsider) and R5 puts the two checks in different
+layers for different reasons. **It amends the SRS, which has no bot concept, and principle VI
+makes that amendment the gate.**
+
 **CHAPTERS 3.15 AND 3.16 ARE CLOSED.** One feature, two published chapters, 251 tasks,
 checklist 16/16, both locales, **`pnpm check:fences` clean — 211 fenced files across 33
 chapters, all 33 translated.** Its record is `specs/034-chapter-3-15/` — read
