@@ -111,7 +111,7 @@ write is a compile error.
 - [X] T014 Fix the in-process callers the compiler names, in `idempotency.itest.ts` (11), `repository.itest.ts` (6), `history-drift.itest.ts` (3), `history.itest.ts` (2), `channels.itest.ts` (2), `quotas.itest.ts`, `outbox.itest.ts`, `backfill.itest.ts` — **each gets a real user, not a placeholder**. A fixture that invents `userId: "x"` to satisfy a compiler is a test that stopped meaning what it meant (FR-006)
 - [X] T014a **`repository.itest.ts`'s unattributed-last-message test cannot be fixed this way** (R8). Its subject IS a senderless row, so it must construct one by raw SQL the way chapter 3.16's tombstone test does, and say why in the test (FR-014)
 - [X] T015 Re-run the catalogue's classification and record whether the table count moved — `services/api/src/isolation/tenant-scope.itest.ts`. It should not: this feature adds columns, not tables. **A move means a table arrived that no task named**
-- [ ] T016 Commit Phase 2
+- [X] T016 Commit Phase 2
 
 **Checkpoint**: the compiler, not a test, now guarantees every message has a sender.
 
