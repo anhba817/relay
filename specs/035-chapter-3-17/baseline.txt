@@ -313,3 +313,85 @@ TWO INTEGRATION FAILURES REMAIN, BOTH ON THE DOCUMENTED PATH
     users.itest.ts        62 passed
     repository.itest.ts   29 passed
     backfill / idempotency / history-drift / history / targets   34 passed
+
+PHASE 4: USER STORY 2 — A CREDENTIAL CANNOT POST AS A PERSON
+------------------------------------------------------------
+
+THE DOCUMENTED REFUSAL ORDER IS NOT ACHIEVABLE AS WRITTEN, and the reason is FR-007b
+
+  `contracts/sending.md` numbers the five refusals 1..5 with sender resolution at 4:
+
+    1 banned?   2 visible?   3 archived?   4 sender resolves?   5 may this credential?
+
+  Step 1 reads the SENDER'S ROW — `UserBannedError` is thrown at `repository.ts:3740`
+  and the channel is read three lines later at 3743 — because FR-007b says a ban applies
+  to the sender named, not to the caller. So the sender must already be resolved before
+  step 1 can run, and resolution cannot be step 4. The achievable order:
+
+    0  resolve the named sender              400, field: "user"   (forced by step 1)
+    1  is the sender banned?                 403 user_banned
+    2  can the sender see the channel?       404 as if absent
+    3  is the channel archived?              403 channel_archived
+    4  may this credential send as it?       403 sender_not_permitted
+
+  The contract's load-bearing claim survives: **resolution before the kind check**, so a
+  refusal naming a fact about a user cannot be provoked for a channel the caller could
+  not otherwise reach. What moved is that the two are no longer adjacent — one is first
+  and one is last.
+
+  CONSEQUENCE FOR R5. The kind check could not live in the service: the service runs
+  before the repository, so enforcing it there would put it FIRST, ahead of the ban, the
+  visibility and the archive, and leak exactly what the ordering protects. It is in the
+  repository, which is told `senderMustBeBot` — a CONSTRAINT and not a credential class.
+  R5's rule is that the repository must not learn what a credential is, and it does not.
+
+T029b — the exact-set assertion failed on the build that added the code
+
+    codes.test.ts   "holds sixteen codes"   expected 16, got 17
+
+  Third time this line has turned a new code into a decision instead of an accident;
+  chapter 3.11's close-code set did the same for 4003. Updated to seventeen.
+
+`check:errors` WAS GREEN WHEN IT SHOULD HAVE BEEN RED, AND U1 HAD IT BACKWARDS
+
+  Analysis pass 16 predicted `check:errors` would be RED between T029a (add the code) and
+  T029c (add its reference section). It was GREEN — because it reads
+  `packages/protocol/dist/codes.js`, the BUILT artifact, not the source. The new code was
+  invisible until `pnpm --filter @relay/protocol build`, after which it failed correctly:
+
+    before the build   check-error-codes: 16 codes, 16 sections
+    after the build    these codes have no section: sender_not_permitted
+    after T029c        check-error-codes: 17 codes, 17 sections
+
+  So the hazard is the opposite of the one U1 named: not a spurious red in a window, but
+  a FALSE GREEN for anyone who edits the registry and runs the checker without building.
+  CI builds first, so CI is honest; a developer at a terminal is not. U1's one-clause fix
+  is not the right fix and was not applied.
+
+T038 — the two removals are caught by DIFFERENT instruments, and neither sees both
+
+    removed the sender-resolution refusal    oracle pair RED       T033's 403 still green
+    removed the kind check                   oracle pair GREEN     T033's 403 RED
+
+  The oracle compares the refusals for a FOREIGN sender and a NONEXISTENT one. Both are
+  unresolvable, so neither ever reaches the kind check — the oracle is structurally blind
+  to it. This is chapter 3.15's finding restated one subject over: a suite is blind to an
+  inner check whenever a live outer one answers first. Recorded because "the gauntlet
+  covers the send path" is the sentence that would hide it.
+
+T012c — the capability analysis pass 7 found is verified preserved
+
+    a key's bot sends to a private channel it is NOT a member of      201
+    a person's token sends to the same channel, not a member          404
+
+  Both halves in one place. The first alone would pass if the membership gate had been
+  deleted outright, which is the change that breaks chapter 3.15's FR-005.
+
+WHAT IS STILL RED, AND WHY
+
+    messages.itest.ts   19 passed, 3 failed     key sends naming no sender
+    gauntlet.itest.ts   33 passed, 3 failed     key sends naming no sender
+
+  All six are pre-existing HTTP send sites that post with a credential and no `user`.
+  T058 (gauntlet, 14 sites) and T059 (messages, 8 sites) fix them in Phase 7. Left red on
+  purpose rather than fixed early, so Phase 7's counts stay the counts the plan predicted.
