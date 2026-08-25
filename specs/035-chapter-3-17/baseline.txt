@@ -130,3 +130,104 @@ T005 — the mirrors
 
     pnpm sync:docs   then   pnpm check:docs   ->  all mirrored docs match their sources
     04-srs.md and 05-sad.md both carry the amendment in relay-tutorial/content/docs/
+
+PHASE 2: FOUNDATIONAL — THE SCHEMA AND THE SIGNATURE
+----------------------------------------------------
+
+T011 — the migration, measured rather than assumed
+
+    users rows on this machine                                      134,067
+    ADD COLUMN kind NOT NULL DEFAULT 'person', ADD COLUMN description  4.721 ms
+    ADD CONSTRAINT users_kind_check                                   14.427 ms
+    ADD CONSTRAINT users_bot_description_check                        13.972 ms
+    (DROP of both columns, for the rolled-back measurement)           16.235 ms
+
+  THE ANSWER SPLITS, AND THE TASK ASKED ONE QUESTION. "No backfill" is true of the
+  column add — 4.7 ms against 134,067 rows is metadata-only, exactly as chapter 3.16
+  measured for `last_activity_at`. It is NOT true of the two CHECK constraints: each
+  validates every existing row and each took ~14 ms here. At this size that is nothing;
+  the shape is O(n) and a customer with 10^8 users would notice the constraints and not
+  the columns. Recorded because "the migration needs no backfill" is the sentence
+  somebody will quote.
+
+  Whole `pnpm migrate` wall clock was 3.39 s, of which almost all is `nest build`.
+
+T013 — the compiler named 28, not 27, and the 28th is the one that mattered
+
+    predicted (analysis pass 8)                                           27
+    actual, first run                                                     28
+    after narrowing the sender at the service                             27
+
+  The eight test files matched the prediction EXACTLY: idempotency 11, repository.itest
+  6, history-drift 3, history 2, channels 2, and one each in quotas, outbox, backfill.
+  The 28th was `src/messages/messages.service.ts` — the only production caller.
+
+  Pass 8 counted call sites that OMIT `userId`. The service does not omit it; it passes
+  `string | undefined`, which `exactOptionalPropertyTypes` refuses just as firmly. So the
+  counting method could not see the one call site the count was really about. Three
+  numbers describe this file's send calls — 100 by naive grep, 46 HTTP sites in R1, 27
+  omitting the property — and the true answer to "what breaks" was a fourth.
+
+T013a — SC-003a's evidence
+
+    pnpm typecheck  ->  0 errors, after 27 call sites and one service narrowing
+
+  There is no red test here and there cannot be. The guarantee is that `sendMessage`
+  takes `userId: string`, so a senderless write does not compile; reverting the `?` is
+  what makes it visible, and the 28-error transcript above IS that revert performed
+  forwards. Every other removal test in this feature stays a failing test.
+
+T012a — seven hits, three dead, and the classification held
+
+    3626  the ban check                     REMOVED the gate, kept the check
+    3694  private-channel membership        T012b — gate turned on `kind`, not deleted
+    3885  the usage_active_users insert     REMOVED the gate, kept the insert
+    3915  mayHaveAddedUser (compound)       removed the `userId` conjunct only
+    4055  the active-user ceiling's return   removed the `userId` disjunct only
+    4254  channelVisibleTo(id, userId?)     UNTOUCHED — optional by design
+    4315  listMessages                      UNTOUCHED — optional by design
+
+  `assertWithinQuota`'s parameter went from `string | undefined` to `string` as a
+  consequence of the ceiling's disjunct going.
+
+T012b — the private-channel gate, and one lookup for two answers
+
+  `kind` is read in the same SELECT as `banned_at` and used again at the private-channel
+  check. The alternative is a second query on the write path for every message forever,
+  to learn something the first query already touched.
+
+T014a — TWO tests plant a senderless row, not one
+
+  T014a named `repository.itest.ts`'s `last_message.user` arm. The compiler found a
+  second: `backfill.itest.ts`'s "skips a message no frame can be built from", whose
+  subject is equally a row with no sender. Both now insert by raw SQL, the way chapter
+  3.12's read-position clamp is planted. Found by the compiler rather than by reading —
+  which is what this phase is for.
+
+  `repository.itest.ts:204` was a third surprise of the same family: the repository-level
+  twin of the FR-005 private-channel test. It needed a BOT, not a person, because
+  T012b's gate now turns on `kind` — give it a person and the test inverts into its own
+  opposite. `createUser` cannot set `kind` (that is `upsertUser`, Phase 3), so the bot is
+  promoted by a raw UPDATE.
+
+T015 — the catalogue did not move
+
+    tenant-scope.itest.ts   5 tests, passed — the table count is unchanged
+
+  Correct: this feature adds columns, not tables.
+
+PHASE BOUNDARY: TWO TASKS WERE MIS-PHASED, AND THE COMPILER SAID SO
+
+  T012c and T012d test HTTP behaviour with a bot named in the send body.
+  `sendMessageBodySchema` is a `strictObject` with no `user` field until T028, so at
+  Phase 2 a key send cannot name anybody. Both moved to Phase 4 and annotated in place;
+  the numbering stays where it is, because ids are stable labels (pass 11).
+
+  The same boundary showed up inside `messages.service.ts`. T014's list of callers held
+  only test files, so Phase 2 had no task for the production one — and Phase 2 cannot
+  close with a red build. The service now narrows the sender and throws until T029 gives
+  the refusal its code and field. Every key-authenticated send in the integration lane
+  fails there until Phase 4, which is the boundary showing through rather than a
+  regression.
+
+    pnpm turbo run test   26 files, 213 tests, green
