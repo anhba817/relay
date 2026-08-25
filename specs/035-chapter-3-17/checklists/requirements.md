@@ -13,7 +13,7 @@
 
 ## Requirement Completeness
 
-- [X] No [NEEDS CLARIFICATION] markers remain
+- [ ] No [NEEDS CLARIFICATION] markers remain
 - [X] Requirements are testable and unambiguous
 - [X] Success criteria are measurable
 - [X] Success criteria are technology-agnostic (no implementation details)
@@ -30,6 +30,30 @@
 - [X] No implementation details leak into specification
 
 ## Notes
+
+**SUPERSEDED — see the note below.** FR-006 was first decided as "deliver with a null
+sender". That decision has been replaced: a system message is not anonymous. The tenant
+creates a **bot user** with a description and names it when sending.
+
+**Why the replacement is better, recorded because the rejected option looked cheaper.**
+Nullable sender: no new concept, one schema edit, and a published protocol change that every
+client must tolerate — and it answers "what does a client render for nobody" with "nothing".
+Bot user: the frame contract does not change at all, chapter 3.16's frame-shape assertion
+keeps passing, and the message arrives with something a person can read. The cost moved from
+the protocol to the user model, which is where it belongs.
+
+**It also closes an impersonation surface nobody had named.** A key-authenticated send that
+may name any user is a credential that can post as any human in the tenant. FR-006c forbids
+it, and that requirement exists only because "who may this credential speak as" had to be
+answered before a sender could be required.
+
+**One marker is open and it is about scope, not detail.** The chapter was specified as one
+missing publish and now carries a user kind, an SRS amendment and a breaking route change.
+FR-016 asks whether that is one chapter or two.
+
+---
+
+*Original note, kept because the decision it records was reversed:*
 
 **FR-006 was the chapter's real decision and it is now made: deliver.** A key-authenticated
 REST send reaches the channel's connected members, with a null sender in the frame.
