@@ -68,8 +68,8 @@ post, reconnect with a cursor, assert it arrives on the resume.
 1. **Given** a member connected to a channel, **When** a message is posted to that channel
    over REST with a user token, **Then** that member receives a `message.created` frame.
 2. **Given** the same, **When** the message is posted with an application credential,
-   **Then** the delivery behaviour is whatever FR-006 decides, and it is the same behaviour
-   the documentation describes.
+   **Then** that member receives a `message.created` frame whose sender is null — the same
+   value `GET /v1/channels/:channelId/messages` already returns for that message.
 3. **Given** a member whose socket is closed, **When** a message is posted over REST and the
    member reconnects with a cursor, **Then** the message is in the resume.
 4. **Given** two members on two different gateway instances, **When** a message is posted
@@ -105,14 +105,16 @@ reach a socket and which do not.
 **Why this priority**: Phase 2's criterion is about documentation, not only behaviour. A
 platform that delivers correctly and describes it wrongly fails the criterion the same way.
 
-**Independent test**: the behaviour FR-006 decides is stated in the error reference or the
-API reference, and the sealed outsider suite exercises it without being corrected.
+**Independent test**: the sealed outsider suite posts over REST with an API key, receives the
+frame on a socket, and passes without being corrected.
 
 **Acceptance scenarios**
 
 1. **Given** the published documentation, **When** an integrator looks for whether a
    REST-sent message reaches a socket, **Then** they find a statement that matches the
    platform's behaviour for both credential classes.
+2. **Given** the published frame contract, **When** an integrator reads what `user` may hold,
+   **Then** it says the sender is null for a message the tenant sent on its own behalf.
 
 ### Edge cases
 
@@ -145,14 +147,34 @@ API reference, and the sealed outsider suite exercises it without being correcte
 
 ### The unattributed send
 
-- **FR-006**: The chapter MUST decide and state what a key-authenticated REST send — which
-  carries no user by design — does on a socket. The options are: a frame shape that permits
-  an absent sender, a synthetic sender identity, or no delivery with the documentation saying
-  so. [NEEDS CLARIFICATION: which of the three, and if the frame shape changes, whether
-  published clients parsing `messageSchema` are expected to tolerate it]
-- **FR-007**: Whatever FR-006 decides MUST be the same for live delivery and for resume. A
-  message that arrives live and vanishes on reconnect, or the reverse, is worse than either
-  behaviour consistently applied.
+- **FR-006**: A key-authenticated REST send — which carries no user by design — MUST be
+  delivered to the channel's connected members. **Decided: delivery, not documentation.** A
+  customer's server posting on its own behalf ("your ticket was updated") is an ordinary
+  integration and reaches nobody today.
+- **FR-006a**: The delivered frame MUST represent the absent sender as **null**, not as a
+  synthetic identity and not by omitting the field.
+
+  **This aligns the socket with the surface that already ships.** `MessageWithSender.user` is
+  `string | null` and `GET /v1/channels/:channelId/messages` already returns `user: null` for
+  these rows; chapter 3.16's listing returns `last_message.user: null` for the same reason.
+  The frame is the only representation in the platform that cannot express a message the REST
+  API already returns.
+
+  A synthetic identity is rejected on the same grounds it was rejected for storage: it would
+  put a sender in the event stream matching no user row, and the platform would then have two
+  spellings of "no author".
+- **FR-006b**: The internal send contract MUST carry the same nullability. `POST
+  /internal/messages` answers `user: z.string().min(1)` today, so an unattributed message
+  cannot round-trip through the path a socket send uses even after the frame changes.
+- **FR-006c**: The chapter MUST state that this is a **published protocol change**, name the
+  clients it affects, and record which existing assertions fail on the build that makes it —
+  they are the instrument working, not collateral. At least three are known:
+  chapter 3.16's frame-shape assertion (which refuses a `message.created` whose `user` is not
+  a non-empty string), the gateway's own publish path, and the internal response schema.
+- **FR-007**: FR-006's behaviour MUST be the same for live delivery and for resume. A message
+  that arrives live and vanishes on reconnect, or the reverse, is worse than either behaviour
+  consistently applied. `toFrame` drops a senderless row today, so this is a change to the
+  resume path as well as the live one.
 
 ### What must not change
 
@@ -191,7 +213,10 @@ API reference, and the sealed outsider suite exercises it without being correcte
   verified by the existing indistinguishability oracle.
 - **SC-006**: With the fan-out fabric stopped, a send still succeeds and the message is
   retrievable from history.
-- **SC-007**: The behaviour of an unattributed send is identical live and on resume.
+- **SC-007**: A key-authenticated send is delivered live and on resume, with a null sender in
+  both, and the value matches what the REST history endpoint returns for the same message.
+- **SC-007a**: A client that parses frames against the published schema accepts a null sender,
+  demonstrated by the sealed outsider package rather than by a workspace test.
 - **SC-008**: The sealed outsider suite exercises the REST-then-socket path and passes
   without being corrected — which is the specific failure chapter 3.14 recorded.
 - **SC-009**: The chapter is inside the series' 2,000–4,000 prose-word bound, and every
@@ -209,8 +234,11 @@ API reference, and the sealed outsider suite exercises it without being correcte
   duplicate risk rather than creating it.
 - **A key-authenticated send stays unattributed in storage.** Chapter 3.3 decided that a
   tenant acting for itself carries no user, and chapter 3.16 relies on it — an unattributed
-  message is what the listing's `last_message.user: null` arm exists for. FR-006 decides what
-  that means for delivery, not what it means for the row.
+  message is what the listing's `last_message.user: null` arm exists for. This chapter changes
+  what that means for delivery, not what it means for the row.
+- **The frame's sender becomes nullable and nothing else about the frame changes.** No new
+  field, no sender type, no envelope. The narrowest change that lets the socket say what the
+  REST API already says.
 - **The gateway keeps its subscription model.** One subject per channel, subscribed when a
   session needs it. This chapter changes who publishes, not who listens.
 - **Presence and typing are chapter 3.18's.** FR-RTM-05 names message creation, edit,
