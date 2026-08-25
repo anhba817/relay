@@ -395,3 +395,103 @@ WHAT IS STILL RED, AND WHY
   All six are pre-existing HTTP send sites that post with a credential and no `user`.
   T058 (gauntlet, 14 sites) and T059 (messages, 8 sites) fix them in Phase 7. Left red on
   purpose rather than fixed early, so Phase 7's counts stay the counts the plan predicted.
+
+PHASE 5: USER STORY 3 — A BOT IS A USER, AND IS NOT AN ACCOUNT
+--------------------------------------------------------------
+
+T047 / T047d — the two figures, measured on this machine
+
+    rows in usage_active_users                                        8,553
+    of which bots                                                        15
+    of which persons                                                  8,538
+
+  The BILLED figure is 8,553 and the ENFORCED one is 8,538 — they differ by exactly the
+  bot population, which is FR-018a's decision rather than a discrepancy. `repository.ts`
+  ~648 keeps counting bots because that read is the bill (FR-ANL-05); the ceiling excludes
+  them (FR-RTL-05 as amended). A tenant can therefore see "N of N active users" on a usage
+  page while their people still send. Written down because the next person to compare the
+  two numbers will assume one of them is broken.
+
+  FR-ANL-06's daily reconciliation is unbuilt and will inherit this: a job that compares
+  metered totals against operational counts, written without knowing about the split, will
+  report drift equal to the bot population.
+
+T047c — MY OWN TEST PROVED NOTHING, and the removal experiment is what showed it
+
+  The first version set the ceiling to 1 with one person already active. The second person
+  is then over the limit whether or not a bot ever sent — so the test passed with only
+  HALF of T047b applied. Verified: removing the `kind` filter from the count left all 26
+  quota tests green.
+
+  Rebuilt with a ceiling of 2, which is the arithmetic that separates the two versions:
+
+    persons alone            1   under the ceiling
+    persons + the bot        2   at the ceiling
+
+  Now the second person gets THROUGH (they must) and a third is refused (the ceiling still
+  works). Red with half of T047b, green with all of it — checked both ways.
+
+  This is the sixth entry in this project's family of tests that were green while proving
+  nothing, and the first one written by someone who had read the other five. Analysis pass
+  8 put the warning in T047b's own comment; I wrote the test anyway with a ceiling that
+  made the bot irrelevant.
+
+T045 — the prediction was wrong in an instructive way
+
+  T045 said: remove the `kind` read and T033's **403** goes red. It does not. Setting
+  `senderIsPerson = true` makes the bot check refuse EVERY key send, so the 403 assertion
+  passes — for a degenerate reason — and what goes red is the **201 control**:
+
+    accepts a key's send naming a bot, and echoes the sender it used   RED
+    refuses a key's send naming a person with 403                      still green
+    lets a key's bot send to a private channel                         RED
+
+  An assertion that something is refused cannot detect a change that refuses everything.
+  Only the positive case can. That is T036's control-first lesson applied to a removal
+  test, and it also shows the blast radius of the one-lookup-two-answers decision: the
+  same `kind` read feeds the bot check and the private-channel gate, so removing it breaks
+  two behaviours.
+
+T046 — two tests, not one
+
+  Removing `description` from the profile response reddened the round trip (T022) AND the
+  `description: null` refusal test, which reads the row back to prove nothing changed.
+
+THE SHARED FIXTURE, FOR THE FIFTH TIME IN TWO FEATURES
+
+  T040b's first version promoted the gateway fixture's OWN user to a bot. Every test after
+  it uses that user's token, so the promotion took down the control — "connects and is
+  acknowledged" — along with four isolation tests. T012c's task carries the warning in so
+  many words ("use the fixtures that are already there and do not modify them") and I did
+  it anyway, in a different file.
+
+  Fixed with a `disposable()` capability on the fixture: a user with its own token that a
+  test may destroy. A fixture nobody else depends on, rather than a rule nobody remembers.
+
+T042 — do not assert byte-identity where the comparable case SUCCEEDS
+
+  The mint's three cases: unknown -> 200 and the row is created a PERSON (FR-005a); an
+  existing person -> 200; a bot -> 404 `not_found`. No byte-identity assertion, because
+  the unknown case answers 200 — so any refusal at all says "this identifier exists and is
+  not a person". That leak cannot be closed on this route, and recording it is better than
+  an assertion pretending otherwise.
+
+A COUNT THAT MOVED
+
+    T061 predicts credentials.itest.ts (3)      actual: 5 failing send sites
+
+  Same class as T013's 27 -> 28: the prediction counted one thing and the compiler or the
+  lane counts another. Recorded for Phase 7 rather than corrected here.
+
+WHERE THE SUITES STAND
+
+    users.itest.ts        66 passed
+    quotas.itest.ts       26 passed
+    gateway isolation     28 passed
+    credentials.itest.ts  21 passed, 5 failed    pre-existing send sites (T061)
+    messages.itest.ts     19 passed, 3 failed    pre-existing send sites (T059)
+    gauntlet.itest.ts     33 passed, 3 failed    pre-existing send sites (T058)
+
+  Six of the eleven failures needed Redis and Mailpit rather than a fix: the first quotas
+  run showed seven failures and six were missing infrastructure. Bringing the stack up on
+  the documented port (15432) left exactly one real failure.
