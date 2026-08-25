@@ -182,3 +182,41 @@ sender, while the internal send's response carries `user` and history returns it
 *required* to name a sender got no confirmation of which one was recorded.
 
 Checklist re-validated: 16/16. 121 tasks, all format-valid, coverage 100%.
+
+---
+
+## Analysis pass 4 — six findings applied, and a seventh the first one surfaced
+
+One CRITICAL, two HIGH, two MEDIUM, one LOW. **F1 is the first product defect in four passes**
+— everything before it was shapes, layers and unconsidered states.
+
+**F1: the natural ordering trapped the customer.** `POST …/members` creates any unknown
+identifier through `createUser`, which cannot set `kind`, so the row is a **person**. With an
+immutable kind, *"add support-bot to #support"* followed by *"register the bot"* makes the bot
+permanently impossible — and that is the order a customer follows.
+
+Decided as FR-002d: **`person → bot` is permitted when the row has never sent a message**;
+`bot → person` stays refused unconditionally. The predicate is "no messages" because that is
+what immutability protects — re-labelling a human's messages as software is the harm, and a row
+with no authorship has none to re-label. Memberships are deliberately *not* in the test: the
+member-add is what creates the trap, so requiring none would close the escape it exists to open.
+
+Two consequences are stated rather than discovered later. A live token for that identifier keeps
+working until it expires — at most 24 hours (`MAX_TOKEN_LIFETIME_SECONDS`). And the predicate is
+a filtered scan: `messages.user_id` has **no index**, and R4 measured a full message scan at
+159 ms against a million rows, so T018b records the real number rather than adding an index
+nothing else needs.
+
+**And working out F1's predicate surfaced F7, which no pass had asked about.** FR-005 says no
+socket opens as a bot, and it was enforced only at the mint. `POST /internal/session` resolves
+the user and reads `banned_at` **without reading `kind`** — so a bot promoted while holding a
+live token could open a socket for up to 24 hours. T040a closes it at the session route.
+
+**F3 is the fourth guard this project has met that stopped meaning anything.** `sendMessage`'s
+`if (userId !== undefined)` around the ban check becomes always-true the moment the parameter is
+required, and its comment then describes an impossible state. The three before it —
+`addMember`'s `rowCount ?? 0`, `upsertUser`'s second throw, `(row.metadata ?? {})` — were all
+found *by the coverage ratchet, afterwards*. **Tightening a type makes its runtime guards dead**,
+and this is the first one caught in the plan.
+
+Checklist re-validated: 16/16. 129 tasks, all format-valid, coverage 100%.

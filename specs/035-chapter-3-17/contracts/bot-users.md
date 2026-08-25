@@ -31,7 +31,8 @@ a derived target — the same note `membership.md` and `listing.md` carry.
 | Outcome | Status |
 |---|---|
 | created, updated or revived | 200, per-entry result array as chapter 3.16 defined it |
-| an entry changing an existing row's `kind` | **200**, and that entry's status is `kind_conflict` |
+| an entry changing an existing row's `kind` | **200**, that entry's status is `kind_conflict`, and it reports the row **as it stands** — so a caller can see which kind it actually has |
+| `person` → `bot` on a row that has never sent a message | **200**, status `updated` — the promotion FR-002d permits |
 | `kind: "bot"` with no `description` | 400 `invalid_request`, `field: "users.N.description"` |
 | `description` on a `"person"` | 400 `invalid_request`, `field: "users.N.description"` |
 

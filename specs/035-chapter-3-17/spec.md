@@ -155,6 +155,26 @@ there with a role; then attempt to mint a token for it and confirm the refusal.
   result array**. A missing description is the first; a kind change is the second. Collapsing
   the second into a 400 would fail a batch of 100 because of one entry, which is the outcome
   chapter 3.16's per-entry array exists to prevent.
+- **FR-002d**: A `person` MUST be promotable to `bot` when the row **has never sent a message**.
+  `bot → person` stays refused unconditionally.
+
+  **Without this the natural ordering traps a customer.** `POST …/members` creates any unknown
+  identifier as a person — `createUser` cannot set `kind` — so *"add support-bot to #support"*
+  followed by *"register the bot"* makes the bot permanently impossible. That is the order a
+  customer follows.
+
+  **The predicate is "no messages", because that is what immutability protects.** Re-labelling a
+  human's messages as software is the harm; a row that has never sent one has no authorship to
+  re-label. Memberships are not part of the test — the member-add is what creates the trap, so
+  requiring none would close the escape it exists to open.
+
+  **The consequence is bounded and MUST be stated**: a live token for that identifier keeps
+  working until it expires, at most `MAX_TOKEN_LIFETIME_SECONDS` — 24 hours. The mint refuses
+  new ones immediately.
+- **FR-002e**: The promotion's cost MUST be measured, not assumed. `messages.user_id` carries no
+  index, so "has this user ever sent a message" is a filtered scan — R4 measured a full message
+  scan at 159 ms against 1,000,000 rows. Acceptable for a rare administrative call; the chapter
+  states the number rather than adding an index nothing else needs.
 - **FR-002b**: An upsert entry that omits `kind` for an existing row MUST be read as **no
   change requested**, not as a request for `"person"`. The default applies on creation only;
   otherwise a bot cannot be edited through the route FR-004 says can edit it.
@@ -168,7 +188,11 @@ there with a role; then attempt to mint a token for it and confirm the refusal.
 - **FR-004**: A bot user MUST support the operations a person supports: profile read and
   update, channel membership, roles, listing, ban, and deletion — with FR-USR-05's guarantee
   that its messages survive its deletion, still attributed to it.
-- **FR-004a**: **A bot's description is not profile data**, and deletion MUST NOT clear it.
+- **FR-004a**: **A bot's description is not profile data**, and `deleteUser` MUST NOT clear it.
+  (The repository holds two deletion methods: `deleteUser`, which clears the profile and the
+  memberships, and `markUserDeleted`, which only stamps the marker and has **no production
+  caller** — chapter 3.16 added it so the listing's 404 branch was reachable before the deletion
+  route existed. This rule is `deleteUser`'s.)
   FR-027 clears profile data on deletion — `display_name`, `avatar_url`, `metadata` — and
   clearing `description` would violate `users_bot_description_check`, so **a bot could not be
   deleted at all**. The constraint and the deletion are each correct and meet here.
@@ -179,6 +203,10 @@ there with a role; then attempt to mint a token for it and confirm the refusal.
   first — makes the deletion two writes and turns a bot into a person nobody created.
 - **FR-005**: A bot user MUST NOT authenticate. No token is minted for its identifier and no
   socket opens as it. It is an identity messages are sent *as*, not an account that logs in.
+- **FR-005b**: **The session route MUST refuse a bot too.** FR-005 says no socket opens as one,
+  and `POST /internal/session` resolves the user and reads `banned_at` without reading `kind` —
+  so a bot holding a live token from before its promotion could open a socket. Refusing at the
+  mint alone leaves a 24-hour window.
 - **FR-005a**: Implicit creation on first authentication (FR-USR-02) MUST NOT create a bot,
   and MUST NOT turn an existing bot into an authenticating user.
 
@@ -189,6 +217,15 @@ there with a role; then attempt to mint a token for it and confirm the refusal.
 - **FR-007**: A key-authenticated send MUST name its sender, and the named user MUST be a
   **bot** of that tenant. Naming a person MUST be refused: an API key that can post as any
   human is an impersonation surface.
+- **FR-007b**: A ban applies to the **sender named**, not to the caller. On a key-authenticated
+  send that is the bot, so `user_banned` becomes the answer for a banned bot and banning one is
+  meaningful. The rule is unchanged for a user token, where the sender and the caller are the
+  same person — but the sentence "the caller is banned" stops being true on that route and the
+  chapter must not repeat it.
+- **FR-007c**: FR-USR-06's ban prevents "connection and message send". For a bot the connection
+  half is **empty by construction** — it has no credential — and the chapter MUST say so rather
+  than leave a reader to assume both halves were tested. The last feature recorded a claim that
+  was true the way a statement about an empty set is true, and this is the same shape.
 - **FR-007a**: That refusal MUST carry **its own error code**, not the generic `forbidden`.
   The registry states the rule twice in its own comments — *"NOT `forbidden`. Chapter 3.2 made
   this argument when it added `wrong_credential_type` rather than answering a wrong-credential
