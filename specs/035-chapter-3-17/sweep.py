@@ -57,16 +57,32 @@ cited |= set(re.findall(r'\b((?:DR|CON|ASM)-[0-9]{2})\b', ALL))
 bad = sorted(c for c in cited if c not in defined and c not in NEW)
 check("every cited SRS clause exists", not bad, ", ".join(bad))
 
-# ---- 3. the amendment's new ids are genuinely free ----
+# ---- 3. the amendment's clauses ----
+#
+# THIS CHECK INVERTED AT PHASE 1, and the inversion is correct rather than a bug. Before the
+# amendment the invariant was "these identifiers are free"; after it, "these identifiers are
+# defined, exactly once, saying what this feature says they say". A check written during
+# planning encodes a pre-amendment world, and Phase 1 is where that world ends.
 for nid in sorted(NEW):
-    check(f"{nid} is unallocated", nid not in defined,
-          f"{nid} already defined in the SRS")
+    check(f"{nid} is defined exactly once", list(re.findall(r'^\| %s \|' % nid, srs, re.M)).__len__() == 1,
+          f"{nid} is defined {len(re.findall(r'^.\| %s .\|' % nid, srs, re.M))} times")
+check("FR-MSG-13 is narrowed to a bot user",
+      "on behalf of a bot user of that tenant via API key" in srs,
+      "FR-MSG-13 still says 'any user' — T002 not applied")
+check("FR-RTL-05 enforces on persons, FR-ANL-05 still meters users",
+      "unique active persons, and connection-minutes" in srs
+      and "messages sent, unique active users, connection-minutes, and stored" in srs,
+      "the metering/enforcement split is not in the document")
 
 # ---- 4. clause-id uniqueness in the SRS (the checker's own claim) ----
 rows = re.findall(r'^\| ([A-Z]{2,4}(?:-[A-Z0-9]+)?-[0-9]+)', srs, re.M)
 check("SRS clause ids unique", len(rows) == len(set(rows)),
       f"{len(rows)} rows, {len(set(rows))} unique")
-check("SRS row count is 243 as claimed", len(rows) == 243, f"actual {len(rows)}")
+# PINNED, and the pin is the point. It read 243 before chapter 3.17's amendment and 245
+# after — it fired on the build that changed the document and made the change be confirmed
+# rather than absorbed. Bumping it silently would make it worthless; this is the same
+# mechanism as the derived target list failing on the build that adds a route.
+check("SRS row count is 245 as claimed", len(rows) == 245, f"actual {len(rows)}")
 
 # ---- 5. every FR/SC in spec.md has at least one task ----
 spec, tasks = docs["spec.md"], docs["tasks.md"]

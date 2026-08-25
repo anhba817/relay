@@ -420,8 +420,9 @@ there with a role; then attempt to mint a token for it and confirm the refusal.
   — so a duplicate identifier passes it: both copies agree and both are wrong. The check MUST
   cover **every identifier class the document uses**, and MUST fail on a class it does not know
   rather than skipping it. Principle VI names four (`FR-*`, `NFR-*`, `DR-*`, `EIR-*`); the
-  document uses six, adding `CON-*` and `ASM-*`. Green against the current document at **243
-  clause rows, 243 unique**.
+  document uses six, adding `CON-*` and `ASM-*`. Green at **243 clause rows, 243 unique** before this chapter's amendment and **245/245**
+  after — the check fired on the build that changed the document, which is what a pinned count
+  is for.
 - **FR-016**: The amendment MUST land before the chapter claims delivery, and the chapter MUST
   cite the amended clause rather than describe behaviour the governing document does not
   contain. A feature that ships ahead of its requirement is the defect chapter 3.12's

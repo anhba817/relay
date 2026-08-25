@@ -1,0 +1,132 @@
+BASELINE — chapter 3.17, the sender a message never had
+=======================================================
+
+PHASE 1: THE AMENDMENT (principle VI's gate)
+--------------------------------------------
+
+T000 — the premise check, and what it found beyond the identifiers
+
+    FR-USR   defined 01-06        -> FR-USR-07 free
+    FR-MSG   defined 01-14        -> FR-MSG-15 free
+    check:srs before the edit     243 clause rows, 243 unique, 6 classes
+    check:srs after the edit      245 clause rows, 245 unique, 6 classes
+
+  Reading the sections rather than the identifiers found a THIRD clause touching the
+  sender, which no analysis pass had named:
+
+    FR-MSG-08  "Deleting a message shall replace its content with a tombstone retaining
+                sequence number, AUTHOR, timestamps, and deletion metadata."  P2, T
+
+  It agrees with FR-MSG-15 and has never been built — chapter 3.15's T124 established that
+  nothing writes a tombstone. Recorded, not amended: a clause that already says the right
+  thing needs no edit, and the next chapter should not re-derive that.
+
+T001/T002/T002a/T002c — the amendment, as `git diff` shows it
+
+    + FR-USR-07   NEW      bot users with a description; shall not authenticate.   P2 T
+    ~ FR-MSG-13   AMENDED  "any user" -> "a bot user of that tenant"               P2 T
+    + FR-MSG-15   NEW      every message shall carry a sender                      P1 T
+    ~ FR-RTL-05   AMENDED  "unique active users" -> "unique active persons"        P3 T
+      FR-ANL-05   UNTOUCHED — meters "unique active users", still counting bots
+
+  Two additive rows and two in-place edits. The two in-place edits are the whole reason
+  this amendment is not additive-only: FR-MSG-13 said a key may send as ANY user and
+  FR-RTL-05 capped ALL users, and leaving either as written would have left the document
+  asserting both halves of a contradiction.
+
+T002b — FR-MSG-13 is MET, not introduced
+
+  The clause predates chapter 2.2's route. Chapter 3.3 satisfied it by sending
+  unattributed, and messages.controller.ts has recorded that reading ever since:
+  "A tenant's own server sending on a customer's behalf is FR-MSG-13, not a mistake."
+  Thirteen analysis passes read this feature's claim that the SRS had no such requirement.
+  A requirement satisfied by doing the opposite of what it says is harder to see than one
+  nobody wrote.
+
+T002d — FR-RTL-08's exception, stated in the amendment
+
+  "Quota exhaustion shall degrade predictably: sends rejected with a specific error code."
+  A bot's send is not rejected at exhaustion. In the blockquote, so it reads as a decision.
+
+T002e — the other clause families, including the ones that gave nothing
+
+    FR-AUT-09   dev-token mint, "in the development environment only". T040 refuses a bot
+                there. NOT an in-place amendment: the clause grants an endpoint's existence
+                and carries no universal quantifier, unlike FR-MSG-13's "any user" and
+                FR-RTL-05's unqualified "unique active users". Three clauses looked alike
+                and only two contradict.
+    FR-MOD-03   every moderation action shall be audit-logged. NO AUDIT LOG EXISTS, and
+                banning a person is already unlogged, so a bannable bot adds no violation
+                to a P3 clause nothing has built.
+    FR-MOD-04   the erasure endpoint is not deleteUser. SC-007 claims a deleted bot keeps
+                its attribution; erasure removes everything. Do not let one be read as the
+                other.
+    EIR-API-03  status codes include 400 and 403 — this chapter's refusals are in the set.
+    EIR-API-04  error shape: code, message, optional field, docs_url, request_id. FR-008's
+                "with the field named" and T029c's docs_url anchor both conform.
+    EIR-API-07  OpenAPI 3.1 published — P4, and no spec file exists in the repository.
+    EIR-WHK-01..05  transport only. FR-012a's MessageCreatedData.user is governed by no
+                external-interface clause.
+
+  Seven families read. The empty answers are the point: the next chapter starts from seven
+  rather than from one.
+
+T004 — FR-USR-01 still holds
+
+  "Relay shall not generate end-user identifiers." A bot's identifier is customer-supplied
+  like any other. The rejected alternative is a synthetic sender the platform mints, which
+  is what chapter 3.10 argued against and still argues against. A bot is DECLARED, not
+  synthetic — the customer creates it, names it and describes it. That distinction is what
+  T086d writes into 3.10's Trap.
+
+T004a — the SAD
+
+  docs/05-sad.md's `CREATE TABLE users` gained `kind` and `description` plus both CHECKs,
+  following the idiom twelve lines below it: channels.type TEXT NOT NULL CHECK (type IN
+  ('public','private')). data-model.md had chosen that shape independently.
+
+T004b — governing documents deliberately NOT amended
+
+    amended      04-srs.md, 05-sad.md, 07-tutorial-plan.md   (08-error-reference.md: T029c)
+    not amended  02-personas.md, 03-journey-map.md, 06-adr-deep-dives.md
+
+  The ADR deep-dives were grepped for a bot, service-account or unattributed-send claim and
+  hold none. A bot as an actor class in 02-personas.md is a judgement this chapter declines.
+
+T004e — all thirteen constitution MUST clauses, reviewed
+
+    I    47   non-null tenant id on every persisted record       untouched (no new table)
+    I    49   repository layer with an environment constructor   untouched
+    I    52   cross-tenant suite attacks every endpoint          T026, T035 (new dimension,
+                                                                 existing route)
+    II   62   ack after durable persist                          untouched
+    II   64   ordering by server-assigned sequence               untouched
+    II   66   every write endpoint accepts an idempotency key    untouched (no new route)
+    II   71   state and events commit atomically via the outbox  untouched
+    III  82   analytical queries never against Postgres          untouched
+    III  88   analytical store holds no message text             CHECKED: webhooks/
+                                                                 analytics.ts carries no
+                                                                 description, displayName
+                                                                 or text
+    III  90   metered totals reconcile to within 0.1%            FR-ANL-06, UNBUILT — no
+                                                                 code cites it. It will
+                                                                 inherit the two-count
+                                                                 divergence (T047d).
+    VI  148   coverage >= 70%, 100% branch on the three          Phase 8's ratchets
+    VI  152   the quickstart runs unmodified, verified in CI      WAS IN VIOLATION before
+                                                                 this chapter. T063b names
+                                                                 relay-platform/README.md
+                                                                 the quickstart of record
+                                                                 and T065's outsider run the
+                                                                 verification.
+    V   177   no single-instance WebSocket state                 untouched
+
+  Eleven untouched, one closed, one unbuilt and flagged. Constitution line 158 says
+  "224 requirements" and the SRS holds 192 FR+NFR, 214 with EIR, 231 with DR, 243 with CON
+  and ASM — 245 after this amendment. 224 matches no count. Not this chapter's to fix, and
+  recorded so the next one does not re-measure it.
+
+T005 — the mirrors
+
+    pnpm sync:docs   then   pnpm check:docs   ->  all mirrored docs match their sources
+    04-srs.md and 05-sad.md both carry the amendment in relay-tutorial/content/docs/
