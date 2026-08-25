@@ -109,8 +109,17 @@ to it (FR-USR-05), so a reader asking "what was this thing that posted in March"
 description. That makes the deletion two writes and leaves a person nobody created, holding
 messages a bot sent.
 
-**`usage_active_users` is the one worth a decision.** A bot that sends is counted as an active
-user, and active users are a billing dimension (FR-TEN-08, chapter 3.10). Charging a customer
-for their own software is a product question, and this chapter surfaces it rather than
-answering it by accident: the count is measured before and after, and the chapter states which
-it chose.
+**`usage_active_users` is the one worth a decision, and it turned out to be two.** Today a bot
+that sends is counted as an active user, and active users are a billing dimension (FR-TEN-08,
+chapter 3.10). But `sendMessage` reads that counter **twice**: once at
+`repository.ts:3874` to insert the usage row, and again around `repository.ts:4042` to compare a
+`count(*)` against `caps.active_users.hard` and throw `QuotaExceededError`. The second read
+refuses the send. So the counter is a bill *and* a ceiling, and a bot inherits both by default —
+which means a tenant's own software can consume the last slot and their next human to post this
+period is refused.
+
+FR-018/018a/018b answer the two separately: **billed, exempt from the ceiling.** The insert at
+3874 still runs for a bot; the ceiling at 4042 must neither refuse a bot nor count one. The
+second half is the load-bearing one — a bot whose own send is exempted but whose row still lands
+in the `count(*)` displaces a person exactly as before, and the test that catches the difference
+is the one where a *person* sends after the bot (SC-011).

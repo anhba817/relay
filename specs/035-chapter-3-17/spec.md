@@ -277,10 +277,22 @@ there with a role; then attempt to mint a token for it and confirm the refusal.
 
 ### Billing
 
-- **FR-018**: The chapter MUST decide and state whether a bot's send counts toward
-  `usage_active_users`. Active users are a billing dimension (FR-TEN-08, chapter 3.10), so
-  charging a customer for their own software is a product decision rather than a side effect,
-  and the count MUST be measured before and after a bot's send rather than reasoned about.
+- **FR-018**: A bot's send MUST record a row in `usage_active_users` — a bot **is** billed as an
+  active user. Active users are a billing dimension (FR-TEN-08, chapter 3.10), and the count MUST
+  be measured before and after a bot's send rather than reasoned about.
+- **FR-018a**: The same counter is a **hard cap that refuses sends**, and a bot MUST NOT be
+  refused by it, nor consume a person's allowance. `usage_active_users` is read twice on the send
+  path: once to record usage and once to enforce a ceiling, and only the first applies to a bot.
+  Billing and refusing are separate decisions about one counter, and this chapter answers them
+  differently: **billed, exempt from the ceiling.** The ceiling bounds a customer's human
+  population; a bot is the customer's own infrastructure, and a platform that refuses a paying
+  customer's users because their support bot posted first is a support ticket before it is a line
+  item.
+- **FR-018b**: The exemption has two halves and the second is the one that decides whether it
+  works. Not refusing a bot's own send is the visible half; the count the ceiling compares
+  against MUST also exclude bots, or a bot's row still occupies a slot and **a person** is
+  refused on their first send of the period. A bot exempted from its own refusal while still
+  counted leaves the harm exactly where it was.
 
 ### The governing documents
 
@@ -330,6 +342,9 @@ there with a role; then attempt to mint a token for it and confirm the refusal.
   amended clause in both directions.
 - **SC-010**: The chapter is inside the series' 2,000–4,000 prose-word bound, and every fenced
   file replays onto the platform repository.
+- **SC-011**: A bot cannot exhaust a person's active-user allowance: with the ceiling set to the
+  number of people who have already sent this period, a bot's send succeeds and a person's first
+  send of the period still succeeds after it.
 
 ---
 

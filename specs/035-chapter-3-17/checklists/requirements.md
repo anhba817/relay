@@ -261,6 +261,51 @@ Checklist re-validated: 16/16. 132 tasks, all format-valid, coverage 100%.
 
 ---
 
+## Analysis pass 6 (2026-08-25)
+
+Five findings, one CRITICAL, all applied. This pass followed the two questions pass 5 wrote down
+and did not act on, and **that is where the CRITICAL came from** — a fourth mechanism to add to
+the three the last feature ranked: *the questions a pass leaves open are the next pass's
+highest-yield input*. Writing them down is what makes them available; pass 5 nearly didn't.
+
+**H1: the billing question was a refusal question.** FR-018 asked whether a bot is billed as an
+active user. `usage_active_users` is read twice on the send path — an insert at
+`repository.ts:3874` that records usage, and a block at ~4042 that compares `count(*)` against
+`caps.active_users.hard` and throws `QuotaExceededError`. **The second one refuses sends.** So a
+bot does not merely cost money; on a tenant near its ceiling, the customer's own software takes
+the last slot and **their next human to post that period is refused**. FR-018 forced one decision
+where there were two. Split into FR-018 (billed) and FR-018a (exempt from the ceiling), answered
+*billed, exempt* — the ceiling bounds a customer's human population, and a bot is their own
+infrastructure.
+
+**FR-018b is the half that would have been missed.** Exempting the bot's own send is visible and
+easy; the `count(*)` the ceiling compares against must *also* exclude bots, or the bot's row
+still displaces a person and nothing has been fixed. A test that watches the bot's send succeed
+passes either way. T047c therefore asserts **a person sending after the bot** — the fifth entry
+in this project's family of tests that were green while proving nothing.
+
+**H2 confirmed a generalisation instead of finding an instance.** Pass 4 found `sendMessage`'s ban
+check gated on a `userId !== undefined` that a required parameter makes dead, and concluded that
+tightening a type makes its runtime guards dead. H2 is the second one in the same function — the
+cap block's `userId === undefined` — found by grepping for the pattern. T012a now greps rather
+than patching two known sites. The ratchet would have found a third one later, which is the same
+finding arriving expensively.
+
+**H3 answered the other open question and it changed nothing.** `relay-platform/README.md` is
+fenced by no chapter, so T063a's edit needs no chain work and `check:fences` will not see it.
+Recorded because the inverse is uncomfortable: the file an outsider is pointed at is one no
+chapter teaches and no checker verifies.
+
+**H4 and H5 were the artifacts disagreeing about whether a question was open.** `data-model.md`
+described the bot-counts-as-active-user behaviour as settled while FR-018 said it must be decided;
+and T047a named five assertions as the ones the decision moves when all five assert what the
+counter *holds* and none assert what the ceiling *refuses*. The list that matters was empty, and
+an empty list looked like coverage.
+
+Six passes, 47 findings, 8 CRITICALs. Checklist 16/16. 134 tasks, all format-valid, coverage 100%.
+
+---
+
 ## Five passes, and where each CRITICAL came from
 
     1   an enumeration missing a member; a criterion that could not verify itself
