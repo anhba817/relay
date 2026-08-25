@@ -531,6 +531,58 @@ Ten passes, 71 findings, 17 CRITICALs. Checklist 16/16. **146 tasks, all format-
 
 ---
 
+## Analysis pass 11 (2026-08-25)
+
+Five findings, **no CRITICAL — the first pass without one.** It took a different kind of
+question: ten passes examined content (does this claim hold, does this path exist), and this one
+examined structure. Four structural checks, three clean, one that found twenty mismarked tasks.
+
+**P1: `[P]` means "no shared artifact", and twenty markers were wrong.** Eight parallel-marked
+tasks all wrote tests into `services/api/src/users/users.itest.ts`; three more did in phase 5;
+T033/T034 shared `messages.itest.ts`; T003/T004 both added prose to `docs/04-srs.md`; and
+T086/T086a/T086b/T083 all wrote the chapter page. **This project destroyed a shared fixture three
+times in one feature** (3.16's T144), and pass 7 wrote a task telling T012c not to touch one —
+while eight of its neighbours were cleared to write the same file concurrently. Eleven passes read
+these tasks one at a time, which tells you what a task does and never whether the task beside it
+opens the same file.
+
+**P2 was a task I duplicated myself.** T025 already said *"Test that setting a bot's description
+to null is refused"*; pass 10 added T021b for the same assertion without checking. Merged under
+T025 — the earlier id, because principle VI does not reuse identifiers and eleven passes of
+records cite by number.
+
+**P3 is the fifth time an instrument of mine was wrong, and the second time in this pass.** The
+sweep greps `pnpm ([a-z]+:[a-z]+)` across the feature's markdown, and it read the literal
+`pnpm x:y` out of the checklist sentence *describing that check*. A checker that consumes its own
+documentation will keep doing it, so `sweep.py` now reads only the artifacts somebody executes.
+
+Then the collision check itself had the same bug the SRS checker had: **its extension list stopped
+where it stopped.** `(ts|sql|md|sh|mts)` omitted `.txt`, so every task writing `baseline.txt` read
+as "names no file", and three more collisions only appeared after the list was completed and ten
+unnamed artifacts were filled in — 17 became 20. Three instruments, three passes, one mistake:
+enumerating the cases in front of me instead of the set the rule names.
+
+**P4: the ids are no longer monotonic** — `T013` precedes `T012a`, `T024` precedes `T023a`, seven
+transitions in all. Not renumbered, for the same reason T025 kept its number. The header now says
+file order is execution order and ids are stable labels, which closes the ambiguity in a sentence
+instead of invalidating 146 citations.
+
+**Three structural checks came back clean, and the negative results are worth as much.**
+Requirement duplication: all 58 requirements compared pairwise on distinctive-term overlap, three
+pairs above threshold, **all three legitimate** — a rule and its refusal, two refusals verified
+the same way, a requirement and the criterion that restates it. Phase dependency: every token this
+feature creates is referenced only at or after its creating phase, so no task tests something a
+later phase builds. Task format: 145 of 145.
+
+`sweep.py` now carries the collision check, the artifact-naming check and the file-order-contract
+check, so none of this can drift back.
+
+Eleven passes, 76 findings, 17 CRITICALs. Checklist 16/16. **145 tasks, 27 `[P]` markers all
+verified independent, coverage 100% by citation. 18 + 9 sweep checks green, `check:srs` green at
+243/243.**
+
+---
+
 ## Five passes, and where each CRITICAL came from
 
     1   an enumeration missing a member; a criterion that could not verify itself

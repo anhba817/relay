@@ -4,12 +4,21 @@ import io, os, re, subprocess, sys
 
 ROOT = "/home/dong/work/relay"
 FEAT = os.path.join(ROOT, "specs/035-chapter-3-17")
+# THE RECORD IS NOT AN INSTRUCTION. `checklists/requirements.md` quotes, paraphrases and
+# describes these very checks, and scanning it made check 11 fail on the literal `pnpm x:y`
+# from the sentence explaining check 11. A checker that consumes its own documentation will
+# keep doing that, so it reads only the artifacts somebody executes.
+INSTRUCTIONAL = ("spec.md", "plan.md", "tasks.md", "research.md",
+                 "data-model.md", "quickstart.md")
 docs = {}
 for n in os.listdir(FEAT):
-    if n.endswith(".md"):
+    if n in INSTRUCTIONAL:
         docs[n] = io.open(os.path.join(FEAT, n), encoding="utf-8").read()
-docs["checklists/requirements.md"] = io.open(
-    os.path.join(FEAT, "checklists/requirements.md"), encoding="utf-8").read()
+CONTRACTS = os.path.join(FEAT, "contracts")
+if os.path.isdir(CONTRACTS):
+    for n in os.listdir(CONTRACTS):
+        if n.endswith(".md"):
+            docs["contracts/" + n] = io.open(os.path.join(CONTRACTS, n), encoding="utf-8").read()
 ALL = "\n".join(docs.values())
 
 fails, checks = [], 0
@@ -117,6 +126,35 @@ for r, d, fs in os.walk(ROOT):
 named = set(re.findall(r'pnpm ([a-z]+:[a-z]+)', ALL))
 absent = [n for n in sorted(named) if not any(f'"{n}"' in v for v in pkgs.values())]
 check("every pnpm script named exists", not absent, ", ".join(absent))
+
+# ---- 12. [P] means no shared artifact within a phase ----
+import collections
+_ph=None; _rows=[]
+for line in tasks.split("\n"):
+    m=re.match(r'^## .*Phase (\d+)', line)
+    if m: _ph=int(m.group(1))
+    t=re.match(r'^- \[ \] (T\d{3}[a-z]?)( \[P\])?( \[US\d\])? (.*)$', line)
+    if t: _rows.append((_ph,t.group(1),bool(t.group(2)),t.group(4)))
+_F=re.compile(r'`([a-zA-Z0-9_./()<>-]+\.[a-z]{2,4})`')
+def _art(b):
+    f=_F.findall(b)
+    if f: return f[0]
+    if re.search(r'the chapter page|on the page', b): return "THE CHAPTER PAGE"
+    if re.search(r'locale page', b): return "THE (vi) PAGE"
+    return None
+_b=collections.defaultdict(list)
+for p_,tid,par,body in _rows:
+    if par: _b[(p_,_art(body))].append(tid)
+_col=[f"phase {p} {a}: {' '.join(ts)}" for (p,a),ts in sorted(_b.items(),key=lambda x:(x[0][0] or 0,str(x[0][1])))
+       if a and len(ts)>1]
+check("no [P] task shares an artifact with another in its phase", not _col, " | ".join(_col))
+_noart=[tid for (p,a),ts in _b.items() if a is None for tid in ts]
+check("every [P] task names its artifact", not _noart, ", ".join(sorted(_noart)))
+
+# ---- 13. ids are stable labels; file order is the contract, and it must be stated ----
+check("the file-order contract is stated in the header",
+      "FILE ORDER IS EXECUTION ORDER" in tasks,
+      "ids are non-monotonic and nothing says which order to follow")
 
 print(f"{checks} checks run, {len(fails)} failed\n")
 for n, d in fails:
