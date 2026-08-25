@@ -62,7 +62,7 @@ to tell a bot from a person without parsing the identifier** — that is FR-003,
 | Outcome | Status |
 |---|---|
 | `description` updated on a bot | 200 |
-| `description` set to null on a bot | 400 `invalid_request`, `field: "description"` — the CHECK forbids it |
+| `description` set to null on a bot | 400 `invalid_request`, `field: "description"` — **refused by validation**, and the CHECK would reject it too if validation were ever relaxed |
 | `kind` present at all | 400 `invalid_request`, `field: "kind"` |
 
 ## `POST /auth/dev-token` — a bot cannot be minted for

@@ -144,7 +144,10 @@ there with a role; then attempt to mint a token for it and confirm the refusal.
 - **FR-001**: A tenant MUST be able to create a bot user with a customer-supplied identifier,
   unique within the tenant in the same namespace as its people (FR-USR-01).
 - **FR-002**: A bot user MUST carry a **description** — what the software is and what it
-  posts — readable by anyone who can read the user.
+  posts — of at most **500 characters**, readable by anyone who can read the user. The bound
+  is stated here rather than only in the design, the way FR-024 states 4 KB for user metadata:
+  `display_name`'s 255 is too short for a sentence explaining a bot, and `metadata`'s 4 KB is
+  a document rather than a label.
 - **FR-003**: A bot user MUST be distinguishable from a person by a **stored property**, not
   by a naming convention. A client rendering a conversation, a moderator reading an audit
   trail, and a permission check must each be able to tell them apart without parsing an
@@ -164,6 +167,13 @@ there with a role; then attempt to mint a token for it and confirm the refusal.
 - **FR-007**: A key-authenticated send MUST name its sender, and the named user MUST be a
   **bot** of that tenant. Naming a person MUST be refused: an API key that can post as any
   human is an impersonation surface.
+- **FR-007a**: That refusal MUST carry **its own error code**, not the generic `forbidden`.
+  The registry states the rule twice in its own comments — *"NOT `forbidden`. Chapter 3.2 made
+  this argument when it added `wrong_credential_type` rather than answering a wrong-credential
+  mistake with a generic 403"* — and the precedent is exact: `wrong_credential_type` is a
+  credential of the wrong class, `wrong_credential_service` a credential of the wrong service,
+  and this is a credential naming the wrong **kind of user**. A client that cannot tell it from
+  every other 403 retries the wrong thing.
 - **FR-008**: A key-authenticated send naming no sender MUST be refused with the field named,
   the way every other validation failure names its field (chapter 3.14).
 - **FR-009**: A send naming a sender that does not exist in the caller's tenant MUST be
@@ -177,14 +187,33 @@ there with a role; then attempt to mint a token for it and confirm the refusal.
 
 ### What already exists and must keep working
 
-- **FR-012**: Messages already stored with no sender MUST keep working on every read path that
-  can reach them — history, the listing's `last_message`, and the resume. The column stays
-  nullable because the rows exist; nothing new may create one.
+- **FR-012**: Messages already stored with no sender MUST keep working on **all four** paths
+  that can reach them:
+
+      history                 GET /v1/channels/:channelId/messages
+      the listing             last_message on GET /v1/users/:externalId/channels
+      the resume              toFrame, which drops a senderless row today
+      THE WEBHOOK PAYLOAD     message.created, delivered to a customer's own endpoint
+
+  The column stays nullable because the rows exist; nothing new may create one.
+- **FR-012a**: **The webhook payload is the one that leaves the platform**, and it was missing
+  from this list until the first analysis pass. `MessageCreatedData.user` is `string | null`
+  and is what a customer's HTTPS endpoint receives (FR-WHK-02); FR-WHK-03 retries a failed
+  delivery for up to two hours, so an event for a legacy senderless message can be delivered
+  and redelivered after this chapter ships. The chapter MUST state whether that field stays
+  nullable and what a subscriber should expect.
 - **FR-013**: The chapter MUST state whether those legacy rows become renderable and what a
-  client sees for them, and the answer MUST be the same on every read path.
+  client sees for them, and the answer MUST be the same on **all four** paths.
 - **FR-014**: Chapter 3.16's `last_message.user: null` arm and its test MUST be re-examined
   rather than deleted: the arm now covers legacy rows only, and a test that no new write can
   reach is a test whose subject has changed.
+
+### Billing
+
+- **FR-018**: The chapter MUST decide and state whether a bot's send counts toward
+  `usage_active_users`. Active users are a billing dimension (FR-TEN-08, chapter 3.10), so
+  charging a customer for their own software is a product decision rather than a side effect,
+  and the count MUST be measured before and after a bot's send rather than reasoned about.
 
 ### The governing documents
 
@@ -210,8 +239,18 @@ there with a role; then attempt to mint a token for it and confirm the refusal.
   the public API.
 - **SC-002**: A message sent by a customer's server arrives with an identity a person can
   read, and that identity says it is software rather than a person.
-- **SC-003**: No write path in the platform can produce a message with no sender, shown by
-  removing each guard in turn and watching a test go red.
+- **SC-003**: No write path in the platform can produce a message with no sender. **Verified in
+  two halves, because the two guards fail differently:**
+  - **SC-003a** (compile time): reverting `sendMessage`'s `userId` to optional makes
+    `pnpm typecheck` report the call sites that would then omit it. The transcript is the
+    evidence; there is no test to watch go red, because a removed type constraint makes
+    everything compile.
+  - **SC-003b** (run time): removing the service's bot check makes a test fail, the way every
+    other removal test in this series does.
+
+  **The split exists because the strongest guarantee here is the one FR-035's method cannot
+  reach.** A check with no failing test is a check nobody has seen fail — and a compile-time
+  check can never have one, so it needs a different kind of evidence rather than an exemption.
 - **SC-004**: An application credential cannot post as a person, verified over the public
   route against a real human user of the same tenant.
 - **SC-005**: A foreign or non-existent sender is refused indistinguishably, verified by the

@@ -71,3 +71,35 @@ chapter opens with "every message now has a sender" instead of building a user m
 specification for a tutorial chapter about a specific codebase, and the series' convention
 since chapter 3.10 is that a spec names the artifact whose behaviour it changes. A reader who
 cannot see which decision is being reversed cannot check the claim.
+
+---
+
+## Analysis pass 1 — ten findings, all applied
+
+Two CRITICAL, three HIGH, four MEDIUM, one LOW. The two that matter:
+
+**C1 — the enumeration named three read paths and there are four.** FR-012 listed history, the
+listing and the resume; it omitted the **webhook payload**, which is `MessageCreatedData` on a
+customer's own HTTPS endpoint. FR-WHK-03 retries a failed delivery for two hours, so an event
+for a legacy senderless message can arrive after this chapter ships — and it is the only
+consumer of the sender that leaves the platform. Fixed as FR-012a and T054a/T054b.
+
+**C2 — the feature's strongest guarantee had no way to be verified.** SC-003 asked that no write
+path can produce a senderless message *"shown by removing each guard and watching a test go
+red"*, and the mechanism is a required parameter: remove it and everything compiles, nothing
+fails. Split into SC-003a (a `typecheck` transcript) and SC-003b (a real removal test), with the
+reason stated — a compile-time check can never have a failing test, so it needs different
+evidence rather than an exemption from FR-035's doctrine.
+
+**And one finding was half wrong, corrected before it was applied.** M1 claimed T047 and T051
+were both decisions with no requirement. T051 traces to FR-013 and always did; only the billing
+decision lacked a clause, and it is now FR-018. Checking a finding before acting on it is the
+same discipline the last feature applied to five wrong task premises.
+
+**H1 produced a new error code.** `403 forbidden` for "a key may not post as a person"
+contradicts the registry's own comments, which reject `forbidden` by name twice. The refusal is
+the third instance of a shape the registry already has — wrong class, wrong service, and now
+wrong **kind of user** — so it becomes `sender_not_permitted`, and `codes.test.ts`'s exact-set
+assertion will fail on the build that adds it, which is the instrument working.
+
+Checklist re-validated after the edits: 16/16, no new markers.

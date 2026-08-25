@@ -71,6 +71,7 @@ write is a compile error.
 - [ ] T011 **Confirm the default needs no backfill**: `ADD COLUMN … NOT NULL DEFAULT 'person'` is metadata on Postgres 11+, which chapter 3.16 measured for `last_activity_at`. Record the migration's wall-clock time in `baseline.txt` rather than assuming it
 - [ ] T012 **Make `userId` REQUIRED** in `repository.sendMessage`'s parameter object — `services/api/src/db/repository.ts`. This is SC-003's mechanism: a senderless write becomes a compile error rather than a test somebody has to remember
 - [ ] T013 Run `pnpm typecheck` and record **how many call sites the compiler names**, in `baseline.txt`, against this file's predicted 27. A number that differs is a count that moved and the difference is the finding
+- [ ] T013a **This is SC-003a's evidence and it is not a failing test.** Record the `typecheck` transcript in `baseline.txt` as the proof that no write path can omit a sender — a compile-time guarantee has no red test to watch, so removing the constraint and watching the compiler is the only equivalent. Every other removal test in this feature stays a failing test; this one cannot be, and the chapter says why
 - [ ] T014 Fix the in-process callers the compiler names, in `idempotency.itest.ts` (11), `repository.itest.ts` (6), `history-drift.itest.ts` (3), `history.itest.ts` (2), `channels.itest.ts` (2), `quotas.itest.ts`, `outbox.itest.ts`, `backfill.itest.ts` — **each gets a real user, not a placeholder**. A fixture that invents `userId: "x"` to satisfy a compiler is a test that stopped meaning what it meant
 - [ ] T014a **`repository.itest.ts`'s unattributed-last-message test cannot be fixed this way** (R8). Its subject IS a senderless row, so it must construct one by raw SQL the way chapter 3.16's tombstone test does, and say why in the test
 - [ ] T015 Re-run the catalogue's classification and record whether the table count moved — `services/api/src/isolation/tenant-scope.itest.ts`. It should not: this feature adds columns, not tables. **A move means a table arrived that no task named**
@@ -111,9 +112,13 @@ refusals reveal nothing.
 **Independent test**: post with an API key naming a bot (201), naming a person (403), naming
 nothing (400), naming a foreign bot (400, byte-identical to a nonexistent one).
 
+- [ ] T027a [US2] **Declare `@Accepts("application", "user")` on `MessagesController`** — `services/api/src/messages/messages.controller.ts`. It declares none today and relies on `credential.guard.ts`'s `EITHER` fallback, which is the fallback chapter 3.15's own comment names as what let a user token through unnoticed. Behaviour is unchanged — `EITHER` is exactly those two — but this feature makes the route's behaviour branch on the class, and **every comparable route declares**: `channels.controller.ts`, `users.controller.ts`, `dev-token.controller.ts` and the read-position route's method-level pair
 - [ ] T028 [US2] Add `user` to `sendMessageBodySchema` in `services/api/src/messages/messages.schema.ts`
 - [ ] T029 [US2] Resolve the sender per credential class in `services/api/src/messages/messages.controller.ts`: the body's `user` for an application credential, the token's subject for a user token, and **refuse a body `user` on a user token** with `field: "user"`
-- [ ] T030 [US2] Enforce "an application credential may send only as a bot" in `services/api/src/messages/messages.service.ts` — 403. **The service and not the repository**, because the repository cannot see the credential class and should not learn it (R5)
+- [ ] T029a [US2] Add `sender_not_permitted` to `packages/protocol/src/codes.ts` (FR-007a), with the comment naming its two siblings — `wrong_credential_type` is the wrong class, `wrong_credential_service` the wrong service, this is the wrong kind of user
+- [ ] T029b [US2] **Update `codes.test.ts`'s exact-set assertion, and record that it failed on the build that added the code** — `packages/protocol/src/codes.test.ts`. An exact-set assertion is the only kind that makes a new code a decision rather than an accident; chapter 3.16 recorded the same beat for close code 4003
+- [ ] T029c [P] [US2] Add the code to `docs/08-error-reference.md` so `docsUrl` resolves against a real anchor, then `pnpm sync:docs` and `pnpm check:errors` — a code whose page does not exist is the debt chapter 3.14 closed
+- [ ] T030 [US2] Enforce "an application credential may send only as a bot" in `services/api/src/messages/messages.service.ts` — 403 `sender_not_permitted`. **The service and not the repository**, because the repository cannot see the credential class and should not learn it (R5)
 - [ ] T031 [US2] Refuse an unresolvable sender with `400` and `field: "user"`, **identically for a foreign bot and for one that exists nowhere** — `services/api/src/messages/messages.service.ts`
 - [ ] T032 [US2] **Put the refusals in the documented order** (`contracts/sending.md`): ban, visibility, archive, then sender-resolves, then may-this-credential-send-as-it. Sender resolution comes *before* the bot check for the reason archive comes after visibility — the second refusal names a fact about a user the caller may not be able to confirm exists
 - [ ] T033 [P] [US2] Test the four outcomes for an application credential — bot 201, person 403, absent 400, unresolvable 400 — in `services/api/src/messages/messages.itest.ts`
@@ -139,10 +144,11 @@ token for it and be refused.
 - [ ] T041 [US3] Ensure implicit creation still creates a **person** for an unknown identifier, and never converts an existing bot — `services/api/src/auth/dev-token.controller.ts`
 - [ ] T042 [P] [US3] Test the mint's three cases and that the bot refusal is byte-identical to the unknown-identifier refusal — `services/api/src/auth/credentials.itest.ts`
 - [ ] T043 [P] [US3] Test that a bot can be a channel member with a role, appears in the member list, and that the listing, unread count and last-message field are unaffected by its presence — `services/api/src/users/users.itest.ts`
+- [ ] T043a [P] [US3] Test **a bot's own channel listing** — `GET /v1/users/:botExternalId/channels` — and its read position (FR-004). A bot is a user, so the route answers for one; its unread count is the whole history because nothing ever acknowledges for it, and that is worth asserting rather than leaving a reader to wonder
 - [ ] T044 [P] [US3] Test that a bot can be banned and that its sends are then refused, and that it can be deleted with its messages surviving and still attributed — `services/api/src/users/users.itest.ts`
 - [ ] T045 [US3] **Remove the `kind` read from the send's bot check and confirm T033's 403 goes red**, then restore (the column table's removal test)
 - [ ] T046 [US3] **Remove the `description` read from the profile response and confirm T022 goes red**, then restore
-- [ ] T047 [US3] **Decide and record whether a bot counts toward `usage_active_users`** — measured before and after a bot's send, in `baseline.txt`. Active users are a billing dimension (FR-TEN-08, chapter 3.10), and charging a customer for their own software is a product question this feature must answer on purpose rather than by accident
+- [ ] T047 [US3] **Decide and record whether a bot counts toward `usage_active_users`** (FR-018) — measured before and after a bot's send, in `baseline.txt`. Active users are a billing dimension (FR-TEN-08, chapter 3.10), and charging a customer for their own software is a product question this feature must answer on purpose rather than by accident
 - [ ] T048 [P] [US3] State in `baseline.txt` that a bot's `read_positions` row is written by nothing and read by nothing, so a reader does not go looking for a bot's unread count. It is not a new dead column — it is an existing table holding a row that will never exist
 - [ ] T049 Commit Phase 5
 
@@ -159,6 +165,8 @@ token for it and be refused.
 - [ ] T052 [P] Test history's answer — `services/api/src/messages/history.itest.ts`
 - [ ] T053 [P] Test the listing's answer — `services/api/src/db/repository.itest.ts`, extending T014a's raw-SQL row
 - [ ] T054 [P] Test the resume's answer — `services/gateway/src/public-surface.itest.ts`, which is where `toFrame`'s drop is already pinned
+- [ ] T054a **Test the WEBHOOK payload's answer** (FR-012a) — `services/api/src/outbox/event.test.ts` and the dispatcher's delivery suite. `MessageCreatedData.user` is `string | null` and is what a customer's own endpoint receives (FR-WHK-02); FR-WHK-03 retries for up to two hours, so an event for a legacy senderless message can be delivered after this chapter ships. **This is the fourth read path and the only one that leaves the platform** — it was missing from the enumeration until the first analysis pass
+- [ ] T054b Decide and record whether `MessageCreatedData.user` stays nullable, in `baseline.txt`. New events cannot carry a null; the type describes what a subscriber may still receive from the retry queue
 - [ ] T055 **Re-examine chapter 3.16's `last_message.user: null` test rather than deleting it** (R8). Its arm now covers legacy rows only, and a test whose subject changed needs its comment changed
 - [ ] T056 **Assert that chapter 3.16's frame-shape assertion still passes** — `services/gateway/src/isolation.itest.ts`. A chapter that changes the sender model and leaves the frame contract alone is making a claim a reader will not believe without one
 - [ ] T057 Commit Phase 6
@@ -213,6 +221,8 @@ without being corrected.
 - [ ] T084 **A path the appendix amends needs its target computed as HEAD-minus-appendix.** A diff straight to HEAD does the appendix's work and leaves its hunk matching 0 times
 - [ ] T085 **Re-derive the file count from `git diff --name-only` against `check:fences`** and record whether it moved from T080's. It moved in six of the last feature's eight revisions
 - [ ] T086 [P] State the SRS amendment on the page (FR-015): the chapter cites a clause that did not exist when the chapter was specified, and says so
+- [ ] T086a [P] **State what an existing caller must change** (FR-011), on the page and not only in a spec: the send body gains a required field for one credential class, and the chapter must not describe that as backwards compatible
+- [ ] T086b [P] **State that chapter 3.3's decision is REVERSED, not reinterpreted** (FR-017), and why it was right when it was made — nothing read the sender then, and three chapters since have made the sender decide what is rendered, delivered and seen
 - [ ] T087 Add the chapter to `relay-tutorial/lib/tutorial.ts`
 - [ ] T088 Count the prose words — inside 2,000–4,000, and **write against the measured rate rather than the nominal one**. The nominal 160 words per file said chapter 3.16 could not be written; it landed at 3,800
 - [ ] T089 Commit Phase 9

@@ -134,16 +134,20 @@ files.
 | Phase | What | Ends when |
 |---|---|---|
 | 1 | The amendment: `FR-USR-07`, `FR-MSG-10`, the FR-MSG-01 note; `sync:docs` and `check:docs` | the governing document contains the requirement |
-| 2 | Schema and migration `0013`: `kind`, `description`, both CHECKs; the backfill decision for existing rows | migrations apply and the catalogue's table count is re-measured |
-| 3 | The bot on the user surface: upsert takes `kind` and `description`, the kind-change refusal, the profile read returns them | a tenant can create and describe a bot over the public API |
-| 4 | `sendMessage`'s `userId` becomes required; every in-process caller fixed | the compiler proves no write path can omit a sender |
-| 5 | The send route: `user` required for an application credential, refused for a user token, the bot-only rule, the foreign-sender refusal | the route's four refusals are tested and the oracle covers the new one |
-| 6 | A bot cannot be minted for, and the refusal does not leak which identifiers are bots | the mint path's three cases are tested |
-| 7 | The legacy rows: what a client sees, on every read path, decided and asserted | FR-013 is answered the same way three times |
-| 8 | The 46 sites, the sealed outsider last | `pnpm test:outsider` passes without being corrected |
-| 9 | Verification: every gate by exit code, the ratchets, the twenty-run battery, the traceability map | SC-001 to SC-010 each have a number |
-| 10–11 | The chapter and its translation | both locales, `check:fences` clean |
-| 12 | Close-out: notes, gaps, `CLAUDE.md`, tags | 3.18 can start from a clean record |
+| 2 | Foundational: schema, migration `0013`, both CHECKs, **and `sendMessage`'s `userId` made required** — they merge because the signature change is what the schema exists to enforce | the compiler names every call site that omits a sender |
+| 3 | US1 — the bot on the user surface: upsert takes `kind` and `description`, the kind-change refusal, the profile returns both | a tenant can create and describe a bot over the public API |
+| 4 | US2 — the send: `@Accepts` declared, `user` required for an application credential, the bot-only rule, `sender_not_permitted`, the foreign-sender refusal | the route's four refusals are tested and the oracle covers the new one |
+| 5 | US3 — a bot is a user and not an account: the mint refusal, membership, the listing, the ban, the deletion, the billing decision | a bot inherits everything except a credential |
+| 6 | The legacy rows, on **all four** read paths including the webhook payload | FR-013 is answered the same way four times |
+| 7 | The callers: 46 HTTP sites and 27 repository calls, the sealed outsider last | `pnpm test:outsider` passes without being corrected |
+| 8 | Verification: every gate by exit code, the ratchets, the battery, the traceability map | SC-001 to SC-010 each have a number |
+| 9–10 | The chapter and its translation | both locales, `check:fences` clean |
+| 11 | Close-out: notes, gaps, `CLAUDE.md`, tags | 3.18 can start from a clean record |
+
+**Eleven phases, not the twelve an earlier draft of this table had.** The schema and the
+signature merged because one enforces the other, and the mint refusal joined US3 because "a bot
+cannot authenticate" is part of what a bot *is*. The first analysis pass caught the drift
+between this table and `tasks.md`.
 
 ## Constitution re-check, after Phase 1 design
 
