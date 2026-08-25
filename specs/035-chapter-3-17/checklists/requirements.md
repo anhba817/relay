@@ -460,6 +460,77 @@ coverage 100%.
 
 ---
 
+## Analysis pass 10 and the mechanical sweep (2026-08-25)
+
+Ten passes still landing CRITICALs is a failure of method, not a run of bad luck, and **two of
+the last four were mine rather than the artifacts'**. This pass fixed four findings and then
+replaced sampling with two scripts that check every claim at once.
+
+**N1: the checker I shipped one turn earlier covered 192 of 243 clause rows.** My regex was
+`(FR|NFR|CON|DR)-[A-Z]+-[0-9]+` — three parts — so it silently skipped every two-part id and
+every EIR class: `DR` 17 rows, `EIR-*` 22, `CON` 6. Then it printed *"192 clause rows"*, which
+reads as a complete answer. Principle VI names `EIR-*` explicitly. `check-docs-drift.sh` warns
+about this exact mistake twelve lines from where I was reading — *"A range stops where it stops
+for a reason nobody records"* — and `targets.ts` states the doctrine: **nothing may be exempt by
+omission.** Rewritten with an explicit class list that **fails on an unknown class**, and tested
+red three ways: a duplicate `FR-MSG-10`, a duplicate `DR-01` (the class the first version could
+not see), and an unclassified `XYZ-01`. Green at 243/243, six classes.
+
+Three times in three passes I reached for the pattern that matched the examples in front of me
+rather than the set the rule names. Twice it was a throwaway grep; the third time it went into CI.
+
+**N2: principle VI's quickstart clause was in violation, and nine passes filed it as a gap.**
+*"The quickstart MUST run unmodified, verified by automated execution in CI against the published
+documentation."* No `*quickstart*` file exists and nothing in CI names one. The automated
+execution was already there — CI runs `pnpm test:outsider` in its own job — and what was missing
+was published documentation for it to run against, which is what T063a writes. T063b now names
+`relay-platform/README.md` the quickstart of record and makes T065's run the verification.
+**A violation that predates this chapter by eight closes on work already planned.**
+
+**N3** made `check:srs` the enforcement of a named MUST rather than a convenience: pass 9's
+`FR-MSG-10` collision violated principle VI's *"never reused"*, which is a constitution conflict
+and therefore CRITICAL by the analysis rules, not the inconsistency it was filed as.
+
+### The sweep
+
+Two scripts, committed beside the artifacts, replacing "read it again and hope":
+
+    sweep.py            15 checks   paths, clause existence, id uniqueness both documents,
+                                    FR/SC coverage by citation, task format, file:line ranges,
+                                    placeholders, every `pnpm x:y` script named
+    sweep-sources.py     9 checks   enumerated source attributions, cited symbols, cited
+                                    columns and constraints, five numeric claims re-measured
+
+**The sweep found one real gap: sixteen requirements whose coverage was asserted by inference.**
+`FR-001`, `FR-006`, `SC-001`, `SC-010` and twelve others appeared in no task by identifier. Every
+one had a covering task; none said so. Inference is exactly what missed FR-019 for seven passes,
+and principle VI requires specs and plans to *reference these identifiers*. Sixteen citations
+added, and coverage is now checkable rather than argued.
+
+**And the sweep's own first version cried wolf, twice.** A fuzzy matcher over every italic-quoted
+span reported 9 problems, then 8 after normalising whitespace and comment prefixes — every one a
+false positive from a backtick, an apostrophe, or an emphasised phrase that was never a
+quotation. It also flagged `sender_not_permitted` as a citation of nothing when T029a adds it.
+A checker I could not make precise had no business sitting in the suite as a gate, so the fuzzy
+pass is gone and thirteen attributions are enumerated instead, each verified by hand. That
+decision is the same one `check:figures` forced last feature: 122 false problems in 193 figures
+on its first run.
+
+It did surface one thing about my own writing: FR-015e presented a paraphrase inside quotation
+marks. Now the verbatim clause.
+
+**All thirteen constitution MUST clauses reviewed, not just VI** (T004e). Eleven untouched. VI's
+quickstart clause closed by T063b. FR-ANL-06's 0.1% metered-vs-operational reconciliation is
+unbuilt and cites no code, so this feature cannot break it — but its entire purpose is comparing
+the two counts pass 6 deliberately made different, and T047d now leaves that note. The
+analytical store's no-message-text rule needed checking rather than asserting:
+`webhooks/analytics.ts` carries no `description`, `displayName` or `text`.
+
+Ten passes, 71 findings, 17 CRITICALs. Checklist 16/16. **146 tasks, all format-valid, coverage
+100% by citation. Both sweeps green, `check:srs` green at 243/243.**
+
+---
+
 ## Five passes, and where each CRITICAL came from
 
     1   an enumeration missing a member; a criterion that could not verify itself

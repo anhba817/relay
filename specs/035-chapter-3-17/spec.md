@@ -350,12 +350,33 @@ there with a role; then attempt to mint a token for it and confirm the refusal.
   *"History responses shall include tombstones"*, P2, cited by the personas table — and FR-MSG
   runs 01 through 14, so the free identifier is `FR-MSG-15`. Six artifacts named the wrong one,
   none of them inconsistent with each other, because the contradiction lived in a file none of
-  them quoted. A check MUST enforce this rather than a reader remembering to look (FR-015c).
+  them quoted. **Principle VI makes this a constitution violation rather than an inconsistency**: identifiers
+  *"carry stable identifiers (`FR-*`, `NFR-*`, `DR-*`, `EIR-*`) that are never reused"*. A check
+  MUST enforce it rather than a reader remembering to look (FR-015c).
+- **FR-015d**: **`relay-platform/README.md` becomes the quickstart of record, and the sealed
+  outsider becomes its CI verification.** Principle VI requires that *"The quickstart MUST run
+  unmodified, verified by automated execution in CI against the published documentation."* There
+  is no published quickstart anywhere — no `*quickstart*` file in `relay-tutorial` or `docs/`, and
+  nothing in `.github/workflows/ci.yml` names one — so the platform has been in violation of a
+  constitution MUST since the integration flow first existed. Chapter 3.14 recorded the
+  comprehensibility half of this and closed the other. **The automated execution already exists**:
+  CI runs `pnpm test:outsider` in its own job. What is missing is published documentation for it
+  to run against, which is exactly what this chapter writes.
+- **FR-015e**: The verification MUST be the outsider's own run, not a second artifact. The suite
+  is sealed from workspace code and stands for an external developer, so the constitution's *"run unmodified,
+  verified by automated execution in CI against the published documentation"* is a statement
+  about whether its script can be derived from the README — which makes the question this chapter already asks (did it pass first time?) the gate
+  itself. **A quickstart nobody executes is the debt this clause exists to prevent**, and a second
+  document written to satisfy the clause would recreate it.
+
 - **FR-015c**: A checker MUST assert that every clause identifier in `docs/04-srs.md` is defined
-  exactly once. `check:docs` compares each mirrored document against its canonical source — drift,
-  not validity — so a duplicate identifier passes today. The assertion is green against the
-  current document at 192 clause rows and 192 unique identifiers, and would have failed on the
-  amendment as specified.
+  exactly once, **enforcing principle VI's requirement that identifiers *"are never reused"***.
+  `check:docs` compares each mirrored document against its canonical source — drift, not validity
+  — so a duplicate identifier passes it: both copies agree and both are wrong. The check MUST
+  cover **every identifier class the document uses**, and MUST fail on a class it does not know
+  rather than skipping it. Principle VI names four (`FR-*`, `NFR-*`, `DR-*`, `EIR-*`); the
+  document uses six, adding `CON-*` and `ASM-*`. Green against the current document at **243
+  clause rows, 243 unique**.
 - **FR-016**: The amendment MUST land before the chapter claims delivery, and the chapter MUST
   cite the amended clause rather than describe behaviour the governing document does not
   contain. A feature that ships ahead of its requirement is the defect chapter 3.12's
@@ -408,6 +429,8 @@ there with a role; then attempt to mint a token for it and confirm the refusal.
 - **SC-014**: `PATCH /v1/users/:externalId` with `{"description": null}` is refused at the
   boundary, on a bot and on a person, and no request reaches the database able to violate
   `users_bot_description_check`.
+- **SC-015**: The quickstart clause of principle VI is satisfied: `relay-platform/README.md`
+  describes the bot flow, CI executes the sealed outsider against it, and the run is recorded.
 
 ---
 
