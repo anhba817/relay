@@ -495,3 +495,90 @@ WHERE THE SUITES STAND
   Six of the eleven failures needed Redis and Mailpit rather than a fix: the first quotas
   run showed seven failures and six were missing infrastructure. Bringing the stack up on
   the documented port (15432) left exactly one real failure.
+
+PHASE 6: THE ROWS THAT CAME BEFORE
+----------------------------------
+
+T050 — how many senderless rows exist
+
+    total messages                                                  394,808
+    with no sender                                                  121,250   (30.7%)
+    environments holding at least one                                10,077   of 68,768
+
+  The task said the question is whether the behaviour is reachable at all. It is not
+  merely reachable: nearly a third of the messages in this lane have no sender. The lane
+  is test data accumulated over seventeen chapters rather than a customer distribution,
+  but FR-012's four read paths are load-bearing rather than theoretical.
+
+T051 — FR-013's decision, and where the requirement's wording does not fit
+
+  FR-013 asks that the answer be "the same on all four paths". Measured, the four are:
+
+    history      listMessages       user: null            readable
+    listing      last_message       user: null            readable
+    webhook      MessageCreatedData user: null            readable
+    resume       toFrame            row DROPPED           not renderable
+
+  THEY CANNOT BE THE SAME, and the reason is the contracts rather than the code.
+  `messageSchema.user` is `z.string().min(1)` in three places in `frames.ts`, so a frame
+  cannot carry a null at all; the other three contracts can. Changing the frame contract
+  is what `contracts/sending.md` says this chapter does not do, and chapter 3.16's
+  frame-shape assertion (T056) is what holds it still.
+
+  THE DECISION THAT IS THE SAME ON ALL FOUR: **never invent a sender.** Where a contract
+  can express "nobody", it says null; where it cannot, the row is not delivered. FR-013 is
+  satisfied at the level of the decision and not of the wire shape, and the clause reads as
+  though the four contracts were alike when they are not.
+
+T054b — `MessageCreatedData.user` stays `string | null`
+
+  Nothing can create a new null: FR-MSG-15 requires a sender and the compiler enforces it.
+  The type does not describe what the platform emits — it describes what a subscriber may
+  still RECEIVE, because FR-WHK-03 retries for up to two hours and the queue was already
+  full when the rule changed. Narrowing it to `string` would be a type asserting that
+  something in flight cannot happen.
+
+CHAPTER 3.12'S GAP G1 HALF-CLOSED, AND THE TEST THAT PROVED IT SAID SO BY FAILING
+
+  G1 recorded TWO independent mechanisms for "a REST-sent message reaches no socket":
+  nothing publishes, and the public send passes no user. `public-surface.itest.ts`'s
+  "does NOT deliver a REST-sent message, live or on resume" pinned both at once.
+
+  Giving every send a sender removes the second. Measured:
+
+    live delivery      still nothing      only the gateway publishes to the fan-out
+                                          (`session.ts:651`); the api publishes nothing
+    on resume          NOW ARRIVES        `toFrame` has no reason to drop the row, so the
+                                          backfill delivers it
+
+  So the resume half is closed by this chapter and the live half is not. Chapter 3.18 is
+  that half. The test's name is now half wrong and is left alone on purpose: T096a amends
+  the gap record, and renaming a test is not how a reader learns that a two-mechanism gap
+  became a one-mechanism gap.
+
+  Two of my own assumptions were wrong on the way here. I first read the failure as LIVE
+  delivery having started, which would have contradicted "nothing publishes" — a diagnostic
+  print showed `live.frames` empty and the resume as the real change. Then I asserted two
+  frames on resume where the cursor (`:1`) replays one; the fixture's sequence numbering
+  was an assumption rather than a reading.
+
+A STALE DEFERRAL IN A COMMENT, ANNOTATED RATHER THAN DELETED
+
+  The same test carried: "FIXING IT IS A PRODUCT DECISION AND NOT THIS CHAPTER'S.
+  Attributing a public send to an end-user token would change what `user` means on the wire
+  for every existing caller (FR-MSG-13's territory)." FR-MSG-13 is exactly what this
+  chapter amended. The comment now says which half changed and which did not — the same
+  class of stale prose T086c handles in the api.
+
+ONE T062 SITE PULLED FORWARD
+
+  T054 asks for the resume's answer to be tested, and the test that pins it was red because
+  its own SETUP send named no sender. Fixing one of T062's two sites was the only way to
+  verify the phase's checkpoint, so it was fixed here and T062 has one site left rather
+  than two.
+
+    history.itest.ts        6 passed      T052, with a planted senderless row
+    repository.itest.ts    29 passed      T053 and T055, the listing's arm re-examined
+    public-surface.itest.ts 2 passed      T054, and the resume now delivers
+    event.test.ts         214 passed      T054a, the webhook carries null
+    isolation.itest.ts     28 passed      T056, the frame contract unchanged

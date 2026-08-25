@@ -215,16 +215,16 @@ token for it and be refused.
 
 **Goal**: messages already stored with no sender behave the same way on every read path.
 
-- [ ] T050 **Measure how many senderless rows exist** in the lane, per environment, and record it in `baseline.txt`. The question is not the lane's number but whether the behaviour is reachable at all — the column is nullable and any deployment has them
-- [ ] T051 Decide FR-013 and record it: what a client sees for a legacy senderless message on history, on the listing's `last_message`, and on a resume. **The answer must be the same on all three**
-- [ ] T052 [P] Test history's answer — `services/api/src/messages/history.itest.ts` (SC-008)
-- [ ] T053 [P] Test the listing's answer — `services/api/src/db/repository.itest.ts`, extending T014a's raw-SQL row (FR-012)
-- [ ] T054 [P] Test the resume's answer — `services/gateway/src/public-surface.itest.ts`, which is where `toFrame`'s drop is already pinned (FR-012)
-- [ ] T054a **Test the WEBHOOK payload's answer** (FR-012a) — `services/api/src/outbox/event.test.ts` and `services/api/src/webhooks/deliveries.itest.ts`. `MessageCreatedData.user` is `string | null` and is what a customer's own endpoint receives (FR-WHK-02); FR-WHK-03 retries for up to two hours, so an event for a legacy senderless message can be delivered after this chapter ships. **This is the fourth read path and the only one that leaves the platform** — it was missing from the enumeration until the first analysis pass
-- [ ] T054b Decide and record whether `MessageCreatedData.user` stays nullable, in `baseline.txt`. New events cannot carry a null; the type describes what a subscriber may still receive from the retry queue (FR-012a)
-- [ ] T055 **Re-examine chapter 3.16's `last_message.user: null` test rather than deleting it** (R8). Its arm now covers legacy rows only, and a test whose subject changed needs its comment changed (FR-014)
-- [ ] T056 **Assert that chapter 3.16's frame-shape assertion still passes** — `services/gateway/src/isolation.itest.ts`. A chapter that changes the sender model and leaves the frame contract alone is making a claim a reader will not believe without one (FR-012)
-- [ ] T057 Commit Phase 6
+- [X] T050 **Measure how many senderless rows exist** in the lane, per environment, and record it in `baseline.txt`. The question is not the lane's number but whether the behaviour is reachable at all — the column is nullable and any deployment has them
+- [X] T051 Decide FR-013 and record it: what a client sees for a legacy senderless message on history, on the listing's `last_message`, and on a resume. **The answer must be the same on all three**
+- [X] T052 [P] Test history's answer — `services/api/src/messages/history.itest.ts` (SC-008)
+- [X] T053 [P] Test the listing's answer — `services/api/src/db/repository.itest.ts`, extending T014a's raw-SQL row (FR-012)
+- [X] T054 [P] Test the resume's answer — `services/gateway/src/public-surface.itest.ts`, which is where `toFrame`'s drop is already pinned (FR-012)
+- [X] T054a **Test the WEBHOOK payload's answer** (FR-012a) — `services/api/src/outbox/event.test.ts` and `services/api/src/webhooks/deliveries.itest.ts`. `MessageCreatedData.user` is `string | null` and is what a customer's own endpoint receives (FR-WHK-02); FR-WHK-03 retries for up to two hours, so an event for a legacy senderless message can be delivered after this chapter ships. **This is the fourth read path and the only one that leaves the platform** — it was missing from the enumeration until the first analysis pass
+- [X] T054b Decide and record whether `MessageCreatedData.user` stays nullable, in `baseline.txt`. New events cannot carry a null; the type describes what a subscriber may still receive from the retry queue (FR-012a)
+- [X] T055 **Re-examine chapter 3.16's `last_message.user: null` test rather than deleting it** (R8). Its arm now covers legacy rows only, and a test whose subject changed needs its comment changed (FR-014)
+- [X] T056 **Assert that chapter 3.16's frame-shape assertion still passes** — `services/gateway/src/isolation.itest.ts`. A chapter that changes the sender model and leaves the frame contract alone is making a claim a reader will not believe without one (FR-012)
+- [X] T057 Commit Phase 6
 
 **Checkpoint**: nothing that was readable stopped being readable.
 
@@ -239,7 +239,7 @@ without being corrected.
 - [ ] T059 [P] Fix `services/api/src/messages/messages.itest.ts` (8) (FR-011)
 - [ ] T060 [P] Fix `services/api/src/limits/limits.itest.ts` (4) — the rate-limit suites count requests, so a send that now 400s still counts and the assertions may pass for the wrong reason. **Check what each assertion would do if every send were refused** (FR-011)
 - [ ] T061 [P] Fix `services/api/src/users/users.itest.ts` (3), `services/api/src/auth/credentials.itest.ts` (3), `services/api/src/channels/channels.itest.ts` (3) (FR-011)
-- [ ] T062 [P] Fix `services/gateway/src/public-surface.itest.ts` (2), `services/gateway/src/isolation-fixtures.ts` (2), `services/gateway/src/limits.itest.ts` (1), `services/api/src/internal/internal.itest.ts` (1) (FR-011)
+- [ ] T062 [P] Fix `services/gateway/src/public-surface.itest.ts` (**1 left — the other was pulled forward in Phase 6, because T054 could not verify the resume while the test's own setup send was red**), `services/gateway/src/isolation-fixtures.ts` (2), `services/gateway/src/limits.itest.ts` (1), `services/api/src/internal/internal.itest.ts` (1) (FR-011)
 - [ ] T063 [P] Fix `packages/e2e/src/tuan.itest.ts` (2) (FR-011)
 - [ ] T063a **WRITE THE BOT FLOW DOWN BEFORE TOUCHING THE OUTSIDER.** Add it to (FR-015d)
   `relay-platform/README.md`'s walkthrough — a `curl` creating a bot with a description, and a
