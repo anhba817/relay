@@ -37,6 +37,37 @@ is the honest signal that a published contract changed.
 send as it. The alternative is a compatibility shim, and a shim is how an anonymous send
 survives.
 
+### AND THE COUNT ABOVE IS ONE OF TWO — corrected at `/speckit-tasks`
+
+46 counts **HTTP send sites**. Making `repository.sendMessage`'s `userId` required (R5) breaks
+a different set: in-process calls that omit it, in files the first count never looked at.
+
+    27 repository calls with no userId, across 8 files
+
+    services/api/src/messages/idempotency.itest.ts       11
+    services/api/src/db/repository.itest.ts               6
+    services/api/src/db/history-drift.itest.ts            3
+    services/api/src/messages/history.itest.ts            2
+    services/api/src/channels/channels.itest.ts           2
+    services/api/src/quotas/quotas.itest.ts               1
+    services/api/src/outbox/outbox.itest.ts               1
+    services/api/src/internal/backfill.itest.ts           1
+
+**Five of those eight files are not in the 46's twelve.** `idempotency.itest.ts`,
+`history.itest.ts`, `quotas.itest.ts`, `outbox.itest.ts` and `backfill.itest.ts` never send
+over HTTP, so a count of HTTP sites cannot see them — and `idempotency.itest.ts` alone holds
+eleven, more than any HTTP file but the gauntlet.
+
+**This is the previous feature's eight-revisions lesson arriving on schedule.** Chapters 3.15
+and 3.16 revised one file count eight times, and the eighth revision was the one that split it
+in two. This count split in two at the first re-derivation, because "how many places send" and
+"how many places break" are different questions and the first one was asked first.
+
+**The union is 17 files**, not 12: three files appear in both lists
+(`channels.itest.ts`, `repository.itest.ts` is HTTP-free but in the repository list,
+`messages.itest.ts` is HTTP-only). The enumeration lives in `tasks.md`, and the number to trust
+at implementation time is `git diff --name-only`, not either list.
+
 ## R2 — HOW A BOT IS DISTINGUISHED: a column, `users.kind`
 
 **Decision**: `kind text NOT NULL DEFAULT 'person'` with `CHECK (kind IN ('person','bot'))`,
