@@ -201,6 +201,16 @@ there with a role; then attempt to mint a token for it and confirm the refusal.
   attributed to it (FR-USR-05), and a reader asking "what was this thing that posted in March"
   needs the description to still be there. The alternative — clearing `kind` back to `'person'`
   first — makes the deletion two writes and turns a bot into a person nobody created.
+- **FR-004b**: **`description` MUST NOT be nullable on any route**, and the "null clears" idiom
+  that governs every neighbouring field MUST NOT be extended to it. `userProfileBodySchema`
+  documents that idiom in its own comment — *"`null` CLEARS, and it is distinct from absent.
+  `{"display_name": null}` removes the name; `{}` leaves it"* — and `description` is the one
+  column where it cannot hold: `users_bot_description_check` forbids a null description on a bot,
+  so `PATCH /v1/users/:externalId {"description": null}` would raise a constraint violation and
+  reach the customer as a 500. Nullability buys nothing for either kind — a bot must never clear
+  it, and a person may never be given one (FR-003) — so the field is settable and not clearable.
+  **The schema comment MUST say this**, because the comment is what would otherwise put
+  `.nullable()` back.
 - **FR-005**: A bot user MUST NOT authenticate. No token is minted for its identifier and no
   socket opens as it. It is an identity messages are sent *as*, not an account that logs in.
 - **FR-005b**: **The session route MUST refuse a bot too.** FR-005 says no socket opens as one,
@@ -376,6 +386,9 @@ there with a role; then attempt to mint a token for it and confirm the refusal.
   Both halves in one test, because the gate they share is one line.
 - **SC-013**: A banned bot's send is refused, and the refusal is indistinguishable from the one
   a foreign sender gets.
+- **SC-014**: `PATCH /v1/users/:externalId` with `{"description": null}` is refused at the
+  boundary, on a bot and on a person, and no request reaches the database able to violate
+  `users_bot_description_check`.
 
 ---
 

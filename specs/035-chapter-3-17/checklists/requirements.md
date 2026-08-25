@@ -360,6 +360,58 @@ coverage 100%.
 
 ---
 
+## Analysis pass 8 (2026-08-25)
+
+Five findings applied, one CRITICAL. **Four candidates were withdrawn during verification** —
+more than were kept — and the reasons matter more than the findings.
+
+**Twice the instrument was wrong, not the artifact.** `grep -c 'sendMessage('` returns 100 and
+`grep -c 'path:'` in `targets.ts` returns 41, so T014's per-file counts and the "38 targets"
+baseline both looked stale. They are not. The compiler can only name the **27** call sites that
+*omit* `userId`, which is exactly what T013 predicted, and the target list has 38 entries plus
+three stray `path:` mentions elsewhere in the file. **Both times the grep that was easy to type
+stood in for the thing being counted** — this project's own lesson about the 145× measurement,
+arriving in the analysis process instead of in a benchmark.
+
+**Twice the artifact already knew.** T009 records that the migration is hand-written, that
+`drizzle-kit` emitted an unused four-migration backlog last feature, and that `migrations/meta/`
+is deliberately not updated — everything the stale journal at `0007_webhook_attempts` suggested
+was a problem. And T017 already requires `description` when `kind` is `bot`, which closes the
+promotion path this pass opened as a CRITICAL.
+
+**K1 survived only after being relocated.** The promotion cannot violate
+`users_bot_description_check` — T017 stops it at the boundary. The **PATCH** can.
+`userProfileBodySchema`'s own comment teaches the house rule — *"`null` CLEARS, and it is
+distinct from absent"* — and T021 adds `description` to that schema. Follow the idiom and
+`PATCH {"description": null}` nulls a bot's description, the CHECK raises, and the customer gets
+a 500 for a request the boundary should have refused. FR-004b makes the field settable and not
+clearable, and requires the **comment** to say so, because the comment is what would otherwise
+put `.nullable()` back.
+
+**J1 is the same shape and it is the more dangerous one.** T047b's ceiling join must filter
+`kind` and must **not** filter `deleted_at` — but three `users` joins in that file pair with
+`isNull(users.deletedAt)`, so the wrong version is the one a careful implementer writes.
+`deleteUser` is a soft delete that leaves `usage_active_users` alone, so the filter would make
+deleting users free ceiling slots. `users.itest.ts:728` pins the billed figure across a deletion;
+nothing pins the enforced one.
+
+**Two of five findings are "the defect arrives by following the local convention correctly."**
+That is a new category for this project. The existing families are a guard that stopped meaning
+something, a test that proves nothing, and a task premise that is false. This one is none of
+them: the code is idiomatic, the reviewer nods, and the constraint fires in production. The only
+defence is a comment on the exception, which is why FR-004b requires one.
+
+J2 and J3 are bookkeeping with teeth. T047a called five assertions "exact counts" when two are
+not, and one of the two is precisely the deletion invariant J1 breaks — the mislabel hid the
+interaction. T012c read as though it builds a private-channel fixture when one exists whose
+membership another test controls.
+
+Eight passes, 58 findings, 11 CRITICALs. Checklist 16/16. 140 tasks, all format-valid,
+coverage 100%. **Yield is falling**: pass 7 produced two CRITICALs and withdrew nothing; pass 8
+produced one and withdrew four.
+
+---
+
 ## Five passes, and where each CRITICAL came from
 
     1   an enumeration missing a member; a criterion that could not verify itself
