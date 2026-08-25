@@ -637,6 +637,59 @@ sweep checks green, `check:srs` green at 243/243.**
 
 ---
 
+## Analysis pass 13 (2026-08-25)
+
+**Pass 12 said it was the last one and recommended implementing. That was wrong**, and the way it
+was wrong is worth more than the finding: the recommendation rested on two passes of falling yield,
+which is a measurement of the questions being asked. Pass 13 asked the oldest question in this
+project's playbook — *check a task's premise before executing it* — against Phase 1, and found the
+most consequential thing since pass 10.
+
+**R1: `FR-MSG-13` already required this, and the amendment neither cited nor amended it.**
+
+    | FR-MSG-13 | The system shall support sending a message on behalf of any user
+                  via API key, for backend-originated messages. | P2 | T |
+
+Four rows above where `FR-MSG-15` was to be inserted. Two problems, and the second is the
+serious one:
+
+1. **It says "any user"; this chapter permits only a bot.** Adding a clause beside it would leave
+   the SRS asserting both — the implicit resolution the Governance section forbids. `FR-MSG-13` is
+   now narrowed in place (T002), and `FR-MSG-15` carries only the genuinely new half: that every
+   message has a sender at all (T002a).
+2. **It has never been delivered as written.** Chapter 3.3 satisfied a clause about naming a user
+   by naming nobody, and `messages.controller.ts` has cited it that way for eleven chapters —
+   *"A tenant's own server sending on a customer's behalf is FR-MSG-13, not a mistake"* — and
+   again on line 43, where the same clause is the reason `MessagesController` declares no
+   `@Accepts`, which is the declaration T027a adds. T002b records that the chapter **meets** the
+   clause rather than introducing it.
+
+**A requirement satisfied by doing the opposite of what it says is harder to see than one nobody
+wrote.** Thirteen passes read FR-015's claim that the SRS had no such requirement.
+
+**Why pass 9 could not find it.** Pass 9 opened this exact file and enumerated every `FR-MSG`
+identifier to catch the `FR-MSG-10` collision. Enumerating identifiers answers *is this number
+free* and never *does a clause already say this*. The `check:srs` I then built asserts uniqueness
+and says in its own comment that it does not check existence — the right call about citations,
+and it left the semantic direction unexamined. **The checker made the id question permanent and
+the meaning question invisible.** T000 now has both halves, and the second one is a human read of
+the section, because no checker can do it.
+
+**R1's root cause was a policy decided once.** `research.md`'s R9 proposed *"one new clause in
+each affected family, rather than editing existing ones, so the amendment is additive and the diff
+shows what changed"* — a good default, never tested against §4.5's existing rows. FR-015g now says
+additive-or-in-place is a decision per clause.
+
+**R3, not fixed and recorded here:** the constitution says *"Traceability is what keeps 224
+requirements coherent across four phases."* The SRS holds 192 FR+NFR, 214 with EIR, 231 with DR,
+243 with CON and ASM. **224 matches no count**, and this chapter adds two. Not this feature's to
+fix; T004e's constitution record is where it belongs.
+
+Thirteen passes, 82 findings, 18 CRITICALs. Checklist 16/16. **147 tasks, coverage 100% both
+directions, 21 + 9 sweep checks green, `check:srs` green at 243/243.**
+
+---
+
 ## Five passes, and where each CRITICAL came from
 
     1   an enumeration missing a member; a criterion that could not verify itself

@@ -211,13 +211,27 @@ The SRS has no bot, system or service-account concept: FR-USR-01 to FR-USR-06 de
 users supplied by the customer, and the SAD mentions none. The constitution's Governance
 section requires an explicit amendment.
 
-**Proposed**: one new clause in each affected family, rather than editing existing ones, so the
-amendment is additive and the diff shows what changed.
+**Proposed, and corrected in analysis pass 13**: additive where nothing conflicts, and an
+in-place edit where something does. The original proposal was *"one new clause in each affected
+family, rather than editing existing ones, so the amendment is additive and the diff shows what
+changed"* — a good default that had not been tested against §4.5's existing rows.
 
-    FR-USR-07   Customers shall be able to create bot users representing their own
-                software, carrying a description, which cannot authenticate.
-    FR-MSG-15   Every message shall carry a sender. A message sent with an application
-                credential shall name a bot user of that tenant.
+    FR-USR-07   NEW.       Customers shall be able to create bot users representing their
+                           own software, carrying a description, which cannot authenticate.
+    FR-MSG-13   AMENDED.   "on behalf of any user via API key" -> "on behalf of a bot user
+                           of that tenant via API key". P2 and verification T unchanged.
+    FR-MSG-15   NEW.       Every message shall carry a sender.
+
+**FR-MSG-13 is why the split matters.** It has said since v1 that *"The system shall support
+sending a message on behalf of any user via API key, for backend-originated messages"*, and it
+says **any user** where this chapter permits only a bot. An additive amendment would leave both
+statements standing. It has also never been delivered as written: chapter 3.3 satisfied it by
+sending unattributed, and `messages.controller.ts` cites it for exactly that. So FR-MSG-15 carries
+only the genuinely new half — that every message has a sender at all — and FR-MSG-13 carries the
+narrowing.
+
+**An additive-only policy is a decision per clause, not a policy.** Deciding it once, at the top,
+is what let thirteen passes read FR-015's claim that the SRS lacked this requirement.
 
 **And FR-MSG-01 needs a note, not an edit.** It describes what a message contains and does not
 mention a sender; the amendment record should say the sender requirement is FR-MSG-15's and

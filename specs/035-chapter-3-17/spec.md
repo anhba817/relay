@@ -337,6 +337,26 @@ there with a role; then attempt to mint a token for it and confirm the refusal.
   This chapter therefore requires an **explicit amendment** to `docs/04-srs.md`, which is what
   the constitution's Governance section demands: where the constitution conflicts with the SRS
   or SAD, *"the conflict MUST be resolved explicitly by amendment rather than"* ignored.
+- **FR-015f**: **The sender requirement is not new, and FR-MSG-13 MUST be amended rather than
+  added beside.** *"The system shall support sending a message on behalf of any user via API key,
+  for backend-originated messages"* — P2, verification T, on the books since v1. So the missing
+  concept is the **bot**, not the sender, and FR-015's claim holds only for the first. Two
+  consequences:
+    - **FR-MSG-13 says "any user" and this chapter permits only a bot** (FR-007). Adding a new
+      clause beside it would leave the SRS asserting both, which is precisely the implicit
+      resolution the Governance section forbids. The amendment MUST narrow FR-MSG-13 in place.
+    - **The clause has never been delivered as written.** Chapter 3.3 satisfied it by sending
+      unattributed, and `messages.controller.ts` says so — *"A tenant's own server sending on a
+      customer's behalf is FR-MSG-13, not a mistake."* This chapter is the first implementation
+      that names the user, so the amendment record MUST say the clause is being **met**, not
+      introduced.
+- **FR-015g**: An additive-only amendment policy is a decision that has to be re-taken per
+  clause. `research.md`'s R9 proposed *"one new clause in each affected family, rather than
+  editing existing ones, so the amendment is additive and the diff shows what changed"* — correct
+  when nothing conflicts, and wrong here. **Before adding a clause, the amendment MUST establish
+  that no existing clause already covers the ground**, which is a question about meaning and
+  cannot be answered by `check:srs`: that checker asserts identifiers are unique and deliberately
+  does not read what they say.
 - **FR-015a**: **The SAD is amended too, and this clause exists because FR-015 named the SAD and
   then did not amend it** for eight analysis passes. `docs/05-sad.md` carries the physical schema:
   its `CREATE TABLE users` lists eight columns and this chapter adds two, plus two CHECK
@@ -386,7 +406,12 @@ there with a role; then attempt to mint a token for it and confirm the refusal.
 - **FR-017**: The chapter MUST state that it **reverses** chapter 3.3's decision rather than
   reinterpreting it, and MUST say why that decision was right when it was made: nothing read
   the sender then, and three chapters since have made the sender decide what is rendered, what
-  is delivered and what may be seen.
+  is delivered and what may be seen. **And it MUST say what the reversal closes** — FR-MSG-13
+  required a key to send on behalf of a user before chapter 2.2 shipped the route, and the
+  platform has cited that clause for eleven chapters as the justification for naming nobody. A
+  requirement satisfied by doing the opposite of what it says is a harder thing to notice than
+  one that was never written, and thirteen analysis passes read FR-015's claim that this
+  requirement did not exist.
 
 ---
 

@@ -102,7 +102,7 @@ relay-platform/
 relay-tutorial/
 └── app/(en)/part-3/chapter-17/<slug>/         the chapter, and its (vi) mirror
 
-docs/04-srs.md                                 FR-USR-07 and FR-MSG-15
+docs/04-srs.md                                 FR-USR-07 new, FR-MSG-13 AMENDED, FR-MSG-15 new
 docs/05-sad.md                                 users DDL: kind, description, 2 CHECKs
 relay-tutorial/scripts/check-srs-ids.sh        NEW — clause identifiers, defined once
 ```
@@ -159,7 +159,7 @@ files.
 
 | Phase | What | Ends when |
 |---|---|---|
-| 1 | The amendment: `FR-USR-07`, `FR-MSG-15`, the FR-MSG-01 note; `sync:docs` and `check:docs` | the governing document contains the requirement |
+| 1 | The amendment: `FR-USR-07` new, **`FR-MSG-13` narrowed in place**, `FR-MSG-15` new, the FR-MSG-01 note; the SAD's `users` DDL; `check:srs`; `sync:docs` and `check:docs` | the governing document contains the requirement and does not contradict it |
 | 2 | Foundational: schema, migration `0013`, both CHECKs, **and `sendMessage`'s `userId` made required** — they merge because the signature change is what the schema exists to enforce | the compiler names every call site that omits a sender |
 | 3 | US1 — the bot on the user surface: upsert takes `kind` and `description`, the kind-change refusal, the profile returns both | a tenant can create and describe a bot over the public API |
 | 4 | US2 — the send: `@Accepts` declared, `user` required for an application credential, the bot-only rule, `sender_not_permitted`, the foreign-sender refusal | the route's four refusals are tested and the oracle covers the new one |
