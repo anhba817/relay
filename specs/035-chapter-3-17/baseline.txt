@@ -231,3 +231,85 @@ PHASE BOUNDARY: TWO TASKS WERE MIS-PHASED, AND THE COMPILER SAID SO
   regression.
 
     pnpm turbo run test   26 files, 213 tests, green
+
+PHASE 3: USER STORY 1 — A CUSTOMER NAMES THE SOFTWARE THAT POSTS
+----------------------------------------------------------------
+
+T018b — the promotion's cost, and the asymmetry nobody predicted
+
+    messages rows on this machine                                    394,142
+    "has this user ever sent?" — user HAS sent  (the refusal)          0.321 ms
+    "has this user ever sent?" — user has NOT sent (the promotion)    14.120 ms
+
+  THE SUCCESSFUL PROMOTION IS THE EXPENSIVE ONE, 44x over the refusal, and the reason is
+  that `LIMIT 1` only helps the case that finds something. A user who has sent is
+  answered by the first matching row; proving a user has NEVER sent requires reading all
+  394,142 rows, because `messages.user_id` carries no index. Both are Seq Scans; only one
+  can stop early.
+
+  The task predicted "a filtered scan" and expected the cost to be one number. It is two,
+  and the expensive one is the path a customer actually takes when registering a bot they
+  just created. Still no index added: 14 ms once per promotion is not worth an index on a
+  394k-row table that nothing else would use, and R4's 159 ms figure is a different query
+  shape (an ordering join) rather than a scaling factor for this one.
+
+T017 — the description rule was wrong on its first run, and a test found it
+
+  The rule as written was `kind === "person" && description !== undefined`. The common
+  shape is `kind` ABSENT, not `kind: "person"` — so `{external_id, description}` sailed
+  through and gave a person a description. Corrected to
+  `description !== undefined && kind !== "bot"`, which makes a description and
+  `kind: "bot"` imply each other within an entry.
+
+  CONSEQUENCE, STATED ON PURPOSE: editing a bot's description through the upsert means
+  restating `kind: "bot"`. That is not a change and raises no conflict. Editing it alone
+  is what `PATCH /v1/users/:externalId` is for.
+
+T021a — the two exact-shape assertions broke, exactly as predicted
+
+    users.itest.ts  "round-trips display name, avatar url and metadata"   toEqual, broke
+    users.itest.ts  "reuses the row when the same external id ..."        toEqual, broke
+    48 of 50 passed before the fix; 62 of 62 after the phase's new tests
+
+  This is the argument for exact-shape assertions over `toMatchObject`: they are the only
+  ones that notice a field ARRIVING. Both now pin `kind: "person", description: null`.
+
+T023 — the constraint name is on the cause, not the message
+
+  `rejects.toThrow(/users_bot_description_check/)` FAILED while the constraint was
+  working. Drizzle wraps the driver error as "Failed query: ...", so the regex never saw
+  the constraint name — and a `toThrow` that matches the wrapper would have passed for a
+  typo in the SQL too. The assertion is now
+  `rejects.toMatchObject({ cause: { constraint: "users_bot_description_check" } })`,
+  which is about the constraint rather than about the statement failing.
+
+A PHASE 2 DEFECT THAT PHASE 3 FOUND
+
+  Phase 2's planted senderless rows (T014a) named an `environment_id` column on
+  `messages`. **That column does not exist** — messages are tenant-scoped through
+  `channel_id`. Both inserts typechecked, because raw `sql` is a template string and no
+  types reach inside it, and Phase 2 ran `typecheck`, the unit lane and `tenant-scope`
+  but never `repository.itest.ts`. The commit was green by every instrument that was run
+  and contained two broken tests.
+
+  Corrected to `INSERT INTO messages (id, channel_id, sequence, text, created_at) VALUES
+  (...)`. The lesson is the ordering: raw SQL is the one thing in this repository the
+  compiler cannot check, so a phase that adds any must run the suite that executes it.
+
+T026 — the derived target list did not move
+
+    targets.itest.ts   9 tests, passed — still 38 classifications, no route added
+
+TWO INTEGRATION FAILURES REMAIN, BOTH ON THE DOCUMENTED PATH
+
+    channels.itest.ts  "refuses a send with its own code ..."       500, expects 403
+    channels.itest.ts  "is idempotent in both directions"           500, expects 200
+
+  `sendTo` in that suite posts with `Bearer ${credential}` and a body naming no sender,
+  so it reaches Phase 2's service narrowing and 500s. T061 fixes `channels.itest.ts` in
+  Phase 7, after T028 gives the body a `user` field. Verified that T061's list names the
+  file rather than assuming it did.
+
+    users.itest.ts        62 passed
+    repository.itest.ts   29 passed
+    backfill / idempotency / history-drift / history / targets   34 passed
