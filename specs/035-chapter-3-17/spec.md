@@ -158,6 +158,9 @@ there with a role; then attempt to mint a token for it and confirm the refusal.
 - **FR-002b**: An upsert entry that omits `kind` for an existing row MUST be read as **no
   change requested**, not as a request for `"person"`. The default applies on creation only;
   otherwise a bot cannot be edited through the route FR-004 says can edit it.
+- **FR-002c**: The upsert's per-entry `status` values MUST be pinned by an exact-set assertion,
+  the way `codes.ts`'s error codes and close codes are. `kind_conflict` is a fourth value in a
+  published response field, and a fifth should be a decision rather than an accident.
 - **FR-003**: A bot user MUST be distinguishable from a person by a **stored property**, not
   by a naming convention. A client rendering a conversation, a moderator reading an audit
   trail, and a permission check must each be able to tell them apart without parsing an
@@ -165,6 +168,15 @@ there with a role; then attempt to mint a token for it and confirm the refusal.
 - **FR-004**: A bot user MUST support the operations a person supports: profile read and
   update, channel membership, roles, listing, ban, and deletion — with FR-USR-05's guarantee
   that its messages survive its deletion, still attributed to it.
+- **FR-004a**: **A bot's description is not profile data**, and deletion MUST NOT clear it.
+  FR-027 clears profile data on deletion — `display_name`, `avatar_url`, `metadata` — and
+  clearing `description` would violate `users_bot_description_check`, so **a bot could not be
+  deleted at all**. The constraint and the deletion are each correct and meet here.
+
+  Keeping it is also the better answer on its own terms: a deleted bot's messages stay
+  attributed to it (FR-USR-05), and a reader asking "what was this thing that posted in March"
+  needs the description to still be there. The alternative — clearing `kind` back to `'person'`
+  first — makes the deletion two writes and turns a bot into a person nobody created.
 - **FR-005**: A bot user MUST NOT authenticate. No token is minted for its identifier and no
   socket opens as it. It is an identity messages are sent *as*, not an account that logs in.
 - **FR-005a**: Implicit creation on first authentication (FR-USR-02) MUST NOT create a bot,
@@ -189,6 +201,12 @@ there with a role; then attempt to mint a token for it and confirm the refusal.
 - **FR-009**: A send naming a sender that does not exist in the caller's tenant MUST be
   refused indistinguishably from one naming a sender that exists in another tenant
   (FR-TEN-05), verified by the isolation suite's existing oracle.
+- **FR-009a**: The send response MUST carry the sender it used. The route returns
+  `{id, channel_id, seq, text, created_at}` today and names no user, so a caller who is now
+  *required* to name a sender gets no confirmation of which one was recorded. The internal
+  send's response already carries `user` and history returns it; the public send is the only
+  surface that does not. Chapter 3.13's create-channel response set the precedent by echoing
+  what it created.
 - **FR-010**: A user-token send MUST continue to be attributed to the token's subject. The
   route MUST NOT let a user token name a different sender.
 - **FR-011**: **This is a breaking change to a route shipped in chapter 2.2.** The chapter

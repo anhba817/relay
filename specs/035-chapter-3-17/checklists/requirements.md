@@ -143,3 +143,42 @@ without checking whether its premise applied.
 way.
 
 Checklist re-validated: 16/16, no new markers. 116 tasks, all format-valid.
+
+---
+
+## Analysis pass 3 — six findings, all applied
+
+One CRITICAL, two HIGH, two MEDIUM, one LOW. **The CRITICAL is the first finding in three
+passes that is a design hole rather than a mis-specification.**
+
+**E1: deleting a bot collided with the constraint that defines one.** `deleteUser` clears
+profile data — `display_name`, `avatar_url`, `metadata`. If `description` is profile data it is
+cleared too, and `CHECK (kind <> 'bot' OR description IS NOT NULL)` rejects the UPDATE, so **a
+bot could not be deleted at all**. Both halves were correct on their own; nothing in spec, plan,
+data-model or tasks had put them in the same sentence. T044 asserted a bot *can* be deleted and
+would have been the test that failed.
+
+Decided as FR-004a: **a description is not profile data.** A deleted bot's messages stay
+attributed to it, and a reader asking "what was this thing that posted in March" needs the
+description to still be there. The rejected alternative — clearing `kind` back to `'person'`
+first — makes the deletion two writes and leaves a person nobody created holding messages a bot
+sent. T043b keeps `description` out of the `set` clause *with a comment*, so the omission is not
+tidied away later, and T044a asserts the decision rather than the bug.
+
+**Where the finding came from matters.** Passes 1 and 2 asked *"do these documents agree?"* and
+found things stated wrongly. E1 came from asking *"what happens when this chapter's constraint
+meets last chapter's operation?"* — answerable only against the repository. That is the record's
+top-ranked mechanism, above artifact-versus-artifact reading, and three passes in the artifacts
+largely agree with each other while the boundary with existing code still yields.
+
+**E2 was run as a sweep rather than a finding.** Pass 2's D3 found five billing assertions
+one at a time; this pass enumerated **every** `toEqual({…})` and `Object.keys(…)` over a response
+the feature touches — 29 sites — and found **two** that break: `users.itest.ts:503` and `:760`.
+The field-level `.toBe(…)` assertions in the same file survive. The number is recorded so the
+next feature greps once instead of discovering them one per pass.
+
+**E3 found an asymmetry nobody had looked for**: the send response names five fields and no
+sender, while the internal send's response carries `user` and history returns it. A caller now
+*required* to name a sender got no confirmation of which one was recorded.
+
+Checklist re-validated: 16/16. 121 tasks, all format-valid, coverage 100%.

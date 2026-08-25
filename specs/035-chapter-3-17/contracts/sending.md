@@ -8,6 +8,18 @@ The body gains one field.
 { "text": "your ticket was updated", "user": "support-bot" }
 ```
 
+### The response carries the sender it used
+
+```json
+{ "id": "…", "channel_id": "…", "seq": 8814, "user": "support-bot",
+  "text": "your ticket was updated", "created_at": "2026-08-25T…" }
+```
+
+`user` is **new** (FR-009a). The route returns the other five fields today and names no sender,
+which was tolerable while there was none to name. A caller now required to name one gets the
+confirmation of which was recorded — the internal send's response already carries it and history
+returns it, so this is the public send catching up rather than a new idea.
+
 | Credential | `user` | Outcome |
 |---|---|---|
 | application key | a bot of this tenant | 201, the message is sent as that bot |

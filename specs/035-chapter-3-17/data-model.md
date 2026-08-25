@@ -86,12 +86,28 @@ it:
     messages.user_id                a bot's messages survive its deletion (FR-USR-05)
     usage_active_users.user_id      a bot that sends counts toward active users
     users.banned_at                 a bot can be banned
-    users.deleted_at                a bot can be deleted
+    users.deleted_at                a bot can be deleted — see the constraint below
 
 **`read_positions` is the one worth a second look.** A bot never reads, so its position is
 written by nothing and read by nothing. That is not a new dead column — it is the existing
 table holding a row that will never be created, which costs nothing. The chapter states it so
 a reader does not go looking for the bot's unread count.
+
+## Deletion meets the CHECK, and one reading makes a bot undeletable
+
+`deleteUser` clears `display_name`, `avatar_url` and `metadata`. **`description` is deliberately
+not on that list** (FR-004a): clearing it on a bot violates
+`users_bot_description_check`, and the UPDATE would be rejected — so a bot could not be deleted
+at all.
+
+Both halves are correct on their own. The constraint says a bot always has a description; the
+deletion says profile data is cleared. They only conflict if `description` is profile data, and
+it is not: it describes what the software *was*, and a deleted bot's messages remain attributed
+to it (FR-USR-05), so a reader asking "what was this thing that posted in March" still needs it.
+
+**The rejected alternative** is clearing `kind` back to `'person'` before nulling the
+description. That makes the deletion two writes and leaves a person nobody created, holding
+messages a bot sent.
 
 **`usage_active_users` is the one worth a decision.** A bot that sends is counted as an active
 user, and active users are a billing dimension (FR-TEN-08, chapter 3.10). Charging a customer
