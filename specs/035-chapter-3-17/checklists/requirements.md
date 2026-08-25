@@ -1,4 +1,4 @@
-# Specification Quality Checklist: Chapter 3.17 — the message that never arrived
+# Specification Quality Checklist: Chapter 3.17 — the sender a message never had
 
 **Purpose**: Validate specification completeness and quality before proceeding to planning
 **Created**: 2026-08-25
@@ -13,7 +13,7 @@
 
 ## Requirement Completeness
 
-- [ ] No [NEEDS CLARIFICATION] markers remain
+- [X] No [NEEDS CLARIFICATION] markers remain
 - [X] Requirements are testable and unambiguous
 - [X] Success criteria are measurable
 - [X] Success criteria are technology-agnostic (no implementation details)
@@ -31,53 +31,43 @@
 
 ## Notes
 
-**SUPERSEDED — see the note below.** FR-006 was first decided as "deliver with a null
-sender". That decision has been replaced: a system message is not anonymous. The tenant
-creates a **bot user** with a description and names it when sending.
+**This spec was rewritten twice, and both rewrites came from the user rather than from
+analysis.** The record is kept because the rejected versions were not obviously wrong.
 
-**Why the replacement is better, recorded because the rejected option looked cheaper.**
-Nullable sender: no new concept, one schema edit, and a published protocol change that every
-client must tolerate — and it answers "what does a client render for nobody" with "nothing".
-Bot user: the frame contract does not change at all, chapter 3.16's frame-shape assertion
-keeps passing, and the message arrives with something a person can read. The cost moved from
-the protocol to the user model, which is where it belongs.
+**First shape — "the api publishes".** One missing arrow, which `docs/05-sad.md`'s C4 diagram
+already draws. Research corrected two carried claims: the gap is one cause and not the two
+chapters 3.12 and 3.13 recorded, because chapter 3.15 closed the other without anyone
+noticing; and `public-surface.itest.ts` pins the application-credential path only, which is
+narrower than its name.
 
-**It also closes an impersonation surface nobody had named.** A key-authenticated send that
-may name any user is a credential that can post as any human in the tenant. FR-006c forbids
-it, and that requirement exists only because "who may this credential speak as" had to be
-answered before a sender could be required.
+**Second shape — "deliver with a null sender".** Rejected. It looked cheaper than a new
+concept: `MessageWithSender.user` is already `string | null` and the REST read path already
+returns null, so the socket frame was the outlier. What it could not answer is what a client
+renders for nobody — and it required a published protocol change that every client parsing
+frames would have to tolerate.
 
-**One marker is open and it is about scope, not detail.** The chapter was specified as one
-missing publish and now carries a user kind, an SRS amendment and a breaking route change.
-FR-016 asks whether that is one chapter or two.
+**Third shape — the bot user, and it is the one specified.** The frame contract stops changing
+entirely, the cost moves from the protocol to the user model, and a message that a customer's
+software sent arrives with something a person can read.
 
----
+**Two things fell out of the third shape that neither of the first two had surfaced:**
 
-*Original note, kept because the decision it records was reversed:*
+1. **An impersonation surface.** Requiring a sender forces the question of *which* senders a
+   credential may name. "Any user" means an API key can post as any human in the tenant, which
+   the platform never had while sends were anonymous. FR-007 forbids it.
+2. **The SRS has no bot concept at all** — not in FR-USR, not in the SAD. FR-015 and FR-016
+   require an explicit amendment before delivery is claimed, which is the constitution's own
+   Governance procedure and the defect chapters 3.15/3.16 corrected twice in chapter 3.12's
+   traceability map.
 
-**FR-006 was the chapter's real decision and it is now made: deliver.** A key-authenticated
-REST send reaches the channel's connected members, with a null sender in the frame.
+**Scope was the last open marker and is now closed: two chapters, split before planning.**
+3.17 is the sender; 3.18 is the fan-out; presence moves to 3.19. Chapter 3.12 was specified as
+one chapter and shipped as three, and 3.15 as one and shipped as two — both split *late*,
+after the fences were written. This one splits on purpose, and the seam is clean: the delivery
+chapter opens with "every message now has a sender" instead of building a user model first.
 
-The deciding fact was found while asking the question rather than while answering it:
-`MessageWithSender.user` is already `string | null`, and `GET /v1/channels/:channelId/messages`
-already returns `user: null` for exactly these rows. **The socket frame is the only
-representation in the platform that cannot express a message the REST API already returns** —
-so nullable is alignment rather than novelty, and a synthetic sender would have created a
-second spelling of "no author" alongside the one chapter 3.16 depends on.
-
-The decision carries a published protocol change, and FR-006c requires the chapter to name it
-rather than let it land quietly. Three assertions are known to fail on the build that makes it,
-including one written in chapter 3.16 three days ago — that is the exact-shape instrument doing
-its job, the same way `codes.test.ts` failed when close code 4003 was added.
-
-**On "no implementation details":** the spec names `toFrame`, `messageSchema`,
-`public-surface.itest.ts` and the SAD's C4 arrow. Retained deliberately — this is a
-specification for a *tutorial chapter about a specific codebase*, and the series' convention
-(chapters 3.10 through 3.16) is that a spec cites the artifact whose behaviour it is changing.
-A reader who cannot see which test pins the current behaviour cannot check the claim.
-
-**Two claims in this spec were measured rather than carried**, and both corrected the record:
-- chapters 3.12/3.13 recorded **two** independent causes; there is now **one**, because
-  chapter 3.15's attributed public send closed the other without anyone noticing
-- `public-surface.itest.ts`'s name claims more than the test proves — it pins the
-  application-credential path only
+**On "no implementation details":** the spec cites `messageSchema`, `users.metadata`,
+`public-surface.itest.ts` and chapter 3.3's comment. Retained deliberately — this is a
+specification for a tutorial chapter about a specific codebase, and the series' convention
+since chapter 3.10 is that a spec names the artifact whose behaviour it changes. A reader who
+cannot see which decision is being reversed cannot check the claim.

@@ -40,7 +40,7 @@ have been written before Part 3 and is cheapest immediately after it.
 send messages to, **or observe presence in** a private channel" — this feature delivered two of
 the three, and `traceability.md` claimed all of them until this was checked.
 
-**Owner: a Part 3 chapter, and there is no home for it anywhere else in the plan.** Part 4 is
+**Owner: chapter 3.19.** There is no home for it anywhere else in the plan. Part 4 is
 Phase 3 (ClickHouse, media, moderation); Part 5 is the SDK and dashboard, which *consume*
 presence rather than build it; Parts 6 and 7 ship and run what exists. Three P1 clauses with no
 chapter in any part is the same shape as the deferred surface Part 3 has just spent two chapters
@@ -61,7 +61,7 @@ resolves its caller and threads a user id — that was necessary for FR-CHN-05's
 — so an attributed REST send does now produce a frameable row. The first cause stands: nothing
 publishes it.
 
-**Owner: FR-RTM-05's chapter.** `public-surface.itest.ts` pins the current behaviour, and this
+**Owner: chapter 3.18**, once chapter 3.17 has given every message a sender. `public-surface.itest.ts` pins the current behaviour, and this
 feature's Phase 13 walked into it — a test awaited a frame in a suite where none has ever
 arrived, and timed out.
 
