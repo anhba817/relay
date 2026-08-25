@@ -690,6 +690,63 @@ directions, 21 + 9 sweep checks green, `check:srs` green at 243/243.**
 
 ---
 
+## Analysis pass 14 (2026-08-25)
+
+Three findings, one CRITICAL, and **all seven clause families this chapter cites are now read**.
+Pass 13 found its CRITICAL by reading §4.5's clauses instead of its identifiers; this pass did the
+same to the other six families and to all 21 external citations.
+
+**S1: `FR-TEN-08` was cited three times as the billing authority and governs application
+deletion.** *"Deleting an application shall irreversibly delete all associated operational data
+within 30 days."* Nothing about billing, active users, or metering. The clauses that do exist:
+
+    FR-ANL-05   meter, per tenant per day: messages sent, unique active users, ...
+    FR-RTL-05   enforce configurable monthly quotas on messages sent, unique active users, ...
+
+**Metering and enforcement, two clauses in two families, written years before this chapter — and
+pass 6 spent a whole pass deriving that same split by reading `repository.ts`.** The governing
+document had the answer; the feature cited a third, unrelated clause, and because that citation
+existed every check passed.
+
+**FR-RTL-05 joins FR-MSG-13 as an in-place amendment** (T002c). It enforces a quota on *"unique
+active users"* with no exception and this chapter exempts bots, so the enforced dimension becomes
+*unique active persons* while FR-ANL-05's metered dimension keeps counting bots. That is what makes
+a bot billed and exempt at once, and it is now two clause edits rather than a paragraph in a
+chapter.
+
+**S2: `FR-RTL-08` was uncited and the exemption changes what it promises** — *"Quota exhaustion
+shall degrade predictably: sends rejected with a specific error code."* A bot's send is not
+rejected. Uncited, that is a defect report; cited, a decision (T002d).
+
+**A wrong citation is worse than a missing one.** A missing one fails a coverage check. `sweep.py`
+verified that every cited clause *exists*, and FR-TEN-08 exists. Pass 13 exposed this exact gap —
+identifiers answer *is this free*, never *does this say what I claim* — and I fixed the instance
+instead of the class: T000's semantic half covered §4.5 and left twenty other citations unread.
+
+**Check 17 is the class fix.** `sweep.py` now pins the 28 external clauses that have been read
+against the claim citing them, and a new citation fails until someone reads the clause and adds it.
+Tested: inserting `FR-EMJ-02` fails with *"read the clause, then add it to REVIEWED"*. No checker
+can read meaning; this one refuses a citation nobody has signed off, which is `check:srs`'s class
+list one level up.
+
+**The two families read on request, and the empty answers.** FR-AUT: **FR-AUT-09** grants the
+dev-token mint *"in the `development` environment only"* and T040 refuses a bot there — **not** an
+in-place amendment, because the clause grants an endpoint's existence and carries no universal
+quantifier, unlike FR-MSG-13's *"any user"*. Drawing that line matters: three clauses looked alike
+and only two contradict. FR-MOD: **FR-MOD-03** requires every moderation action be audit-logged and
+**no audit log exists**, so a bannable bot adds no violation to a P3 clause nothing has built;
+**FR-MOD-04**'s erasure endpoint is not `deleteUser`, and SC-007's claim about a deleted bot must
+not be read as a claim about erasure. Also clean: **EIR-API-03**'s status set already contains 400
+and 403, **EIR-API-04**'s error shape matches FR-008 and T029c, **EIR-API-07**'s OpenAPI spec
+exists nowhere in the repository, and **EIR-WHK-01..05** govern transport rather than payload, so
+FR-012a touches no external-interface clause. T002e records the empty answers, because the next
+chapter should start from seven families read rather than one.
+
+Fourteen passes, 85 findings, 19 CRITICALs. Checklist 16/16. **150 tasks, coverage 100% both
+directions, 22 + 9 sweep checks green, `check:srs` green at 243/243.**
+
+---
+
 ## Five passes, and where each CRITICAL came from
 
     1   an enumeration missing a member; a criterion that could not verify itself

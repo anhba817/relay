@@ -314,10 +314,18 @@ there with a role; then attempt to mint a token for it and confirm the refusal.
 ### Billing
 
 - **FR-018**: A bot's send MUST record a row in `usage_active_users` — a bot **is** billed as an
-  active user. Active users are a billing dimension (FR-TEN-08, chapter 3.10), and the count MUST
-  be measured before and after a bot's send rather than reasoned about.
-- **FR-018a**: The same counter is a **hard cap that refuses sends**, and a bot MUST NOT be
-  refused by it, nor consume a person's allowance. `usage_active_users` is read twice on the send
+  active user. The governing clause is **FR-ANL-05** (*"shall meter, per tenant per day: messages
+  sent, unique active users, connection-minutes, and stored message count"*), and the count MUST
+  be measured before and after a bot's send rather than reasoned about. **FR-TEN-08 was cited here
+  for fourteen analysis passes and says nothing about billing** — it governs application deletion
+  and 30-day data retention. A wrong citation is worse than a missing one: a missing one fails a
+  coverage check, and this one looked authoritative enough that nobody read it.
+- **FR-018a**: The same counter is a **hard cap that refuses sends** — **FR-RTL-05**, *"shall
+  enforce configurable monthly quotas on messages sent, unique active users, and
+  connection-minutes"* — and a bot MUST NOT be refused by it, nor consume a person's allowance.
+  **The SRS separated metering from enforcement before this chapter existed**: FR-ANL-05 meters
+  and FR-RTL-05 enforces, in two different families. Pass 6 derived that same split by reading
+  `repository.ts`, and the governing document had it all along. `usage_active_users` is read twice on the send
   path: once to record usage and once to enforce a ceiling, and only the first applies to a bot.
   Billing and refusing are separate decisions about one counter, and this chapter answers them
   differently: **billed, exempt from the ceiling.** The ceiling bounds a customer's human
@@ -337,6 +345,18 @@ there with a role; then attempt to mint a token for it and confirm the refusal.
   This chapter therefore requires an **explicit amendment** to `docs/04-srs.md`, which is what
   the constitution's Governance section demands: where the constitution conflicts with the SRS
   or SAD, *"the conflict MUST be resolved explicitly by amendment rather than"* ignored.
+- **FR-018c**: **FR-RTL-05 MUST be amended in place**, the same treatment FR-MSG-13 gets and for
+  the same reason. It enforces a quota on *"unique active users"* with no exception, and this
+  chapter exempts bots from that ceiling — so leaving the clause as written and describing the
+  exemption only in a chapter would be the implicit resolution the Governance section forbids. The
+  amendment narrows the enforced dimension to **unique active persons**; the metered dimension in
+  FR-ANL-05 stays *unique active users* and keeps counting bots, which is the whole point of the
+  split.
+- **FR-018d**: **FR-RTL-08 MUST be cited and its exception stated.** It reads *"Quota exhaustion
+  shall degrade predictably: sends rejected with a specific error code; existing connections and
+  history reads unaffected."* After FR-018a a bot's send is **not** rejected at exhaustion, which
+  is a documented exception to a clause about predictability. Uncited, a send that succeeds past
+  exhaustion is a defect report; cited, it is a decision.
 - **FR-015f**: **The sender requirement is not new, and FR-MSG-13 MUST be amended rather than
   added beside.** *"The system shall support sending a message on behalf of any user via API key,
   for backend-originated messages"* — P2, verification T, on the books since v1. So the missing
@@ -374,7 +394,10 @@ there with a role; then attempt to mint a token for it and confirm the refusal.
   *"carry stable identifiers (`FR-*`, `NFR-*`, `DR-*`, `EIR-*`) that are never reused"*. A check
   MUST enforce it rather than a reader remembering to look (FR-015c).
 - **FR-015d**: **`relay-platform/README.md` becomes the quickstart of record, and the sealed
-  outsider becomes its CI verification.** **This feature's own `quickstart.md` is not that
+  outsider becomes its CI verification.** The requirement has an SRS twin as well as a
+  constitution clause — **NFR-USE-03**, *"The quickstart shall run without modification, verified
+  by automated execution in CI against the published documentation"* — and the traceability map
+  reads the SRS, so the citation belongs there too. **This feature's own `quickstart.md` is not that
   document** — it is a validation guide no CI job runs, renamed in pass 12 so one word stops
   naming two things, one of which appears in a constitution MUST. Principle VI requires that *"The quickstart MUST run
   unmodified, verified by automated execution in CI against the published documentation."* There

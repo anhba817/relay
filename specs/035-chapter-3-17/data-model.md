@@ -110,8 +110,8 @@ description. That makes the deletion two writes and leaves a person nobody creat
 messages a bot sent.
 
 **`usage_active_users` is the one worth a decision, and it turned out to be two.** Today a bot
-that sends is counted as an active user, and active users are a billing dimension (FR-TEN-08,
-chapter 3.10). But `sendMessage` reads that counter **twice**: once at
+that sends is counted as an active user, active users are metered by FR-ANL-05 and capped by FR-RTL-05 (not FR-TEN-08, which
+this feature mis-cited until analysis pass 14 and which governs application deletion). But `sendMessage` reads that counter **twice**: once at
 `repository.ts:3874` to insert the usage row, and again around `repository.ts:4042` to compare a
 `count(*)` against `caps.active_users.hard` and throw `QuotaExceededError`. The second read
 refuses the send. So the counter is a bill *and* a ceiling, and a bot inherits both by default —

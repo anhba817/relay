@@ -184,6 +184,29 @@ check("the feature's own quickstart is not titled as THE quickstart",
       "quickstart" not in _qtitle.lower(),
       f"{_qtitle!r} collides with FR-015d's quickstart of record")
 
+# ---- 17. an external citation must be READ before it is used ----
+#
+# `sweep.py` has always checked that a cited clause EXISTS. Pass 14 found FR-TEN-08 cited
+# three times as the billing authority when it governs application deletion and 30-day
+# retention — it exists, so every check passed, and the clause that actually needed amending
+# (FR-RTL-05) stayed invisible for fourteen passes. **A wrong citation is worse than a missing
+# one**: the missing one fails a coverage check and the wrong one looks authoritative.
+#
+# No checker can read meaning. What it can do is refuse a citation nobody has signed off:
+# every clause below was read against the claim citing it in pass 13 or 14. Adding a new
+# external citation fails this check until someone reads the clause and adds it here — which
+# is the same "nothing may be exempt by omission" shape as `check:srs`'s class list.
+REVIEWED = {
+  "EIR-API-07","FR-ANL-05","FR-ANL-06","FR-AUT-09","FR-CHN-05","FR-MOD-01","FR-MOD-03",
+  "FR-MOD-04","FR-MSG-01","FR-MSG-07","FR-MSG-10","FR-MSG-13","FR-MSG-15","FR-RTL-05",
+  "FR-RTL-08","FR-RTM-05","FR-RTM-06","FR-RTM-07","FR-TEN-05","FR-TEN-08","FR-USR-01",
+  "FR-USR-02","FR-USR-05","FR-USR-06","FR-USR-07","FR-WHK-02","FR-WHK-03","NFR-USE-03",
+}
+_ext = set(re.findall(r'\b((?:FR|NFR|DR|EIR|CON|ASM)-[A-Z]{2,4}-[0-9]{2})\b', ALL))
+_unread = sorted(_ext - REVIEWED)
+check("every external clause cited has been read against its claim", not _unread,
+      ", ".join(_unread) + " — read the clause, then add it to REVIEWED" if _unread else "")
+
 print(f"{checks} checks run, {len(fails)} failed\n")
 for n, d in fails:
     print(f"  FAIL  {n}")
