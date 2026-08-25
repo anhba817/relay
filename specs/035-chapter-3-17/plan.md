@@ -105,6 +105,28 @@ relay-tutorial/
 docs/04-srs.md                                 FR-USR-07 and FR-MSG-10
 ```
 
+## The sender attributes; it does not authorise
+
+**This is the chapter's governing distinction and it was absent from every artifact until the
+seventh analysis pass.** A person's token does two things at once — it says who may act and who
+is speaking — and because they always travelled together, nothing needed to name them
+separately. Adding a required sender to a key-authenticated send reads naturally as *"the key now
+acts as that user"*, and that reading takes a capability away from every existing integration.
+
+    what the credential decides      WHO MAY ACT          unchanged by this chapter
+    what the sender decides          WHO IS SPEAKING      new, and only this
+
+The concrete case is a private channel. `repository.ts` gates the membership check on
+`channel.type === "private" && userId !== undefined`, so a key send skips it because there is no
+user — which is chapter 3.15's FR-005, delivered on purpose. Require `userId` and the gate goes
+always-true, the check fires, and a bot that is not a member is refused with a 404 that by design
+cannot say why. `messages.itest.ts:194` asserts the opposite in so many words.
+
+**A key naming a bot has exactly the authority the key has today.** FR-019, FR-019a and FR-019b
+carry the rule, its consequence, and the half that is easy to break while fixing the other —
+a person who is not a member is still refused, and a test that only checks the bot passes if that
+refusal was deleted along with the gate.
+
 ## The two counts, kept apart
 
 Chapters 3.15 and 3.16 revised one file count eight times and the eighth revision was the one

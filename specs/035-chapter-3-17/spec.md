@@ -209,6 +209,13 @@ there with a role; then attempt to mint a token for it and confirm the refusal.
   mint alone leaves a 24-hour window.
 - **FR-005a**: Implicit creation on first authentication (FR-USR-02) MUST NOT create a bot,
   and MUST NOT turn an existing bot into an authenticating user.
+- **FR-005c**: **A bot MAY be banned, and the ban MUST refuse its sends.** `users.banned_at`
+  exists on every user row, and removing `sendMessage`'s guard around the ban check makes that
+  check run for a bot's sender id for the first time. The chapter MUST state this as a decision:
+  a ban is how an operator stops a runaway integration without deleting the identity its
+  messages are attributed to. A bot's send after a ban is refused the same way a person's is —
+  indistinguishably, before the channel is read (FR-021a, chapter 3.15) — and the operator's
+  route to that state is the existing ban, not a new one.
 
 ### The sender requirement
 
@@ -274,6 +281,25 @@ there with a role; then attempt to mint a token for it and confirm the refusal.
 - **FR-014**: Chapter 3.16's `last_message.user: null` arm and its test MUST be re-examined
   rather than deleted: the arm now covers legacy rows only, and a test that no new write can
   reach is a test whose subject has changed.
+- **FR-019**: **The sender attributes; it does not authorise.** This is the chapter's governing
+  distinction and it was missing until the seventh analysis pass. A person's token does both
+  things at once — it says who may act and who is speaking — and adding a required sender to a
+  key-authenticated send reads naturally as *"the key now acts as that user"*. It must not mean
+  that. A key naming a bot MUST have exactly the authority the key has today, and the bot's name
+  MUST be what appears on the message and nothing more.
+- **FR-019a**: The concrete consequence: **an application key's send to a private channel MUST
+  keep working, and the bot it names MUST NOT need membership.** Chapter 3.15 delivered this on
+  purpose — FR-005 there, and `channels.service.ts` records it as *"An application credential
+  acts for the customer, carries no user, and sees private channels"*. Today
+  `repository.ts` gates the membership check on `channel.type === "private" && userId !==
+  undefined`, so a key send skips it because there is no user. Requiring `userId` makes that
+  gate always true, the check fires, and a bot that is not a member is refused with
+  `ChannelNotFoundError`. The gate MUST become conditional on **the sender being a person**
+  rather than on a sender existing.
+- **FR-019b**: A person is unaffected. A user token sending to a private channel they are not a
+  member of MUST still be refused, indistinguishably, exactly as chapter 3.15 built it. The two
+  behaviours diverge on `kind`, and a test that only checks the bot's send passes if the
+  person's refusal has been removed along with the gate.
 
 ### Billing
 
@@ -345,6 +371,11 @@ there with a role; then attempt to mint a token for it and confirm the refusal.
 - **SC-011**: A bot cannot exhaust a person's active-user allowance: with the ceiling set to the
   number of people who have already sent this period, a bot's send succeeds and a person's first
   send of the period still succeeds after it.
+- **SC-012**: An application key's send to a private channel succeeds when the bot it names is
+  not a member, and a person's send to the same channel is still refused when they are not.
+  Both halves in one test, because the gate they share is one line.
+- **SC-013**: A banned bot's send is refused, and the refusal is indistinguishable from the one
+  a foreign sender gets.
 
 ---
 

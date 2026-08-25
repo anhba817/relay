@@ -306,6 +306,60 @@ Six passes, 47 findings, 8 CRITICALs. Checklist 16/16. 134 tasks, all format-val
 
 ---
 
+## Analysis pass 7 (2026-08-25)
+
+Six findings, two CRITICAL, all applied. This pass ran the command a task told someone to run,
+and both CRITICALs came out of it.
+
+**I1: requiring a sender was about to revoke a capability chapter 3.15 delivered.**
+`sendMessage` gates the private-channel membership check on `channel.type === "private" &&
+userId !== undefined`. A key send skips it because there is no user — that *is* 3.15's FR-005,
+recorded in `channels.service.ts` as *"An application credential acts for the customer, carries
+no user, and sees private channels"*. Require `userId` and the gate is always true, the check
+fires, and a bot that is not a member is refused `ChannelNotFoundError` — a 404 that by design
+cannot say why. `messages.itest.ts:194` is a named test asserting the opposite. **The word
+"private" appeared zero times across this feature's spec, plan, tasks and research.**
+
+The fix needed a principle, not a patch: **the sender attributes, it does not authorise.** A
+person's token does both at once, which is why nothing had ever needed to name them apart. It is
+now FR-019 and the opening section of `plan.md`, because a chapter that adds a sender to a
+credential's send has to say what the sender does *not* mean.
+
+**I2: the task that would have caused I1 is the one pass 6 sharpened.** Pass 6 wrote *"fix the
+pattern, not the instances"* into T012a and did not run the grep. It returns **seven** hits:
+three dead, one compound where half stays, two in methods whose `userId` is optional by design
+(`channelVisibleTo`, `listMessages`), and the private-channel gate. T012a now carries the
+classified table and the real rule — *`userId` is required in `sendMessage` and nowhere else
+yet.* **A generalisation needs its own verification step.** Pass 6's own lesson was that a
+written-down question is the next pass's best input; writing a command into a task and not
+running it is the same mistake one level up.
+
+**I3 turned a side effect into a decision.** Removing the ban gate makes the ban check run
+against a bot's sender id for the first time — `users.banned_at` was always there. FR-005c says a
+bot MAY be banned and that this is the point: a ban stops a runaway integration without deleting
+the identity its messages are attributed to. Third time in two features that a removed `if`
+would have shipped a feature nobody chose.
+
+**I4 is the same rule one level down.** `repository.ts` ~3869 tells a reader *"unattributed by
+design since chapter 3.3"* — the reversed decision stated as current design, inside the billing
+code — and two more sites say it too. The prose inside the code is an artifact. T086c also says
+to classify, because `channels.service.ts:78` says a *credential* carries no user, which stays
+true.
+
+**I5 records a divergence pass 6 created.** The billed figure counts bots, the enforced ceiling
+does not, so a tenant can see "5 of 5 active users" while their people still send. Written down
+as a chosen consequence rather than left to be filed as a bug.
+
+**I6 checked a premise and it held.** T048 claims a bot's `read_positions` row is written by
+nothing; the only insert is `setReadPosition` at 3345. Recorded so nobody checks it twice —
+after five wrong premises in the last feature, a confirmed one is worth as much as a corrected
+one.
+
+Seven passes, 53 findings, 10 CRITICALs. Checklist 16/16. 139 tasks, all format-valid,
+coverage 100%.
+
+---
+
 ## Five passes, and where each CRITICAL came from
 
     1   an enumeration missing a member; a criterion that could not verify itself
