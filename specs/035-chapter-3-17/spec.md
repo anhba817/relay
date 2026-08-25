@@ -426,6 +426,30 @@ there with a role; then attempt to mint a token for it and confirm the refusal.
   cite the amended clause rather than describe behaviour the governing document does not
   contain. A feature that ships ahead of its requirement is the defect chapter 3.12's
   traceability map recorded and chapters 3.15/3.16 corrected twice.
+- **FR-020**: **Published prose this chapter falsifies MUST be corrected, in both locales.** Two
+  passages are known:
+    - **Chapter 3.10's `<Trap>`** — title *"An unattributed send counts toward the messages and
+      toward nobody"*, body *"A key-authenticated REST send carries no user… It still costs a
+      message against the message quota… The alternative, inventing a synthetic user for it, would
+      inflate the dimension the customer is actually being measured on."* The title is now false,
+      and the body **argues against this chapter's decision on the grounds FR-018 decided the
+      other way**. The correction MUST carry the distinction rather than deleting the argument:
+      3.10 rejected a **synthetic** user the platform invents; a bot is a **declared** one the
+      customer creates, names and describes, and inflating a measured dimension with a real
+      identity the customer asked for is a different act.
+    - **Chapter 3.13** says `sendMessage` stays on the 2.8 seam because it *"is only used to write
+      an unattributed row."* The seam may still be right; **its recorded reason is gone**, and a
+      reason that stops being true is worse than none because the next reader trusts it.
+- **FR-020a**: The chapter MUST record that **no checker reads prose.** `check:fences` replays
+  fenced code against the platform repository, `check:figures` asserts a figure has a source,
+  `check:docs` compares each mirrored reference document to its canonical copy, and `check:srs`
+  reads identifiers. A published sentence asserting something false passes all four. That
+  asymmetry is why FR-020's passages survived fifteen analysis passes, and stating it is what a
+  reader needs in order to distrust the right things.
+- **FR-020b**: Correcting a published page's **prose** does not touch the fence chain. Chapter
+  3.10's page carries 36 titled fences and none of them changes here, so `check:fences` will not
+  see this edit — which is the same asymmetry as FR-020a and the reason the correction needs a
+  task rather than a checker.
 - **FR-017**: The chapter MUST state that it **reverses** chapter 3.3's decision rather than
   reinterpreting it, and MUST say why that decision was right when it was made: nothing read
   the sender then, and three chapters since have made the sender decide what is rendered, what
@@ -481,6 +505,9 @@ there with a role; then attempt to mint a token for it and confirm the refusal.
   `users_bot_description_check`.
 - **SC-015**: The quickstart clause of principle VI is satisfied: `relay-platform/README.md`
   describes the bot flow, CI executes the sealed outsider against it, and the run is recorded.
+- **SC-016**: Chapter 3.10's Trap is corrected in both locales and states the
+  synthetic-versus-declared distinction, and chapter 3.13's stale reason for the 2.8 seam is
+  either repaired or replaced.
 
 ---
 

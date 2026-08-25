@@ -747,6 +747,66 @@ directions, 22 + 9 sweep checks green, `check:srs` green at 243/243.**
 
 ---
 
+## Analysis pass 15 (2026-08-25)
+
+Three findings, one CRITICAL. This pass closed a gap I had named in pass 10 and left open — the
+SAD read past its schema section — and then found the CRITICAL somewhere no pass had looked at
+all: **the published chapters.**
+
+**T1: chapter 3.10 teaches this chapter's reversal in a `<Trap>`, and argues for it.**
+
+    <Trap title="An unattributed send counts toward the messages and toward nobody">
+    A key-authenticated REST send carries no user — unattributed by design since
+    chapter 3.3, because a server-side API key is not a person. It still costs a
+    message against the message quota, and it writes no membership row at all. The
+    alternative, inventing a synthetic user for it, would inflate the dimension the
+    customer is actually being measured on.
+
+The title is false after FR-018 — a key send now names a bot and **is** billed as an active user
+— and the body argues against the decision **on the grounds FR-018 decided the other way**. The
+correction keeps the argument and adds the line it was missing: 3.10 rejected a *synthetic* user
+the platform invents; a bot is a *declared* one the customer creates, names and describes. Both
+locales, or the series contradicts itself in one language (T086d).
+
+**This was reachable from pass 7 and I stopped one artifact short.** Pass 7 found
+`repository.ts:3869` — *"unattributed by design since chapter 3.3 — and counts toward the message
+quota and toward no user"* — and I wrote then that *"the prose inside the code is an artifact
+too."* The published chapter says the same sentence **to the reader**, and I fixed the comment and
+went no further. The rule on file for exactly this — fix the file that describes the thing and the
+one that instructs it, then grep the claim everywhere — was applied to one repository and not to
+the series.
+
+**T2 is the structural reason it survived: no checker reads prose.** `check:fences` replays fenced
+code against the platform, `check:figures` asserts a figure has a source, `check:docs` compares
+mirrored documents to their canonical copies, `check:srs` reads identifiers. **A published
+sentence asserting something false passes all four.** Fifteen passes read prose — all of it this
+feature's own artifacts, never the published series. T086f records the asymmetry; T086e greps and
+**classifies**, because this project has twice shipped a checker that stopped where its pattern
+stopped, and a prose checker is exactly where crying wolf would do the most damage.
+
+**Most of the prose is fine, and the negative results are the useful half.** `3.13:1293`
+(*"toFrame drops senderless rows on purpose"*), `2.07:634`, `2.07:744` and `3.16`'s
+`figures.ts:49` all stay true, because legacy rows still exist and FR-012 is why. **T3**: only
+`3.13:734` also breaks, where *"only used to write an unattributed row"* is given as the reason
+`sendMessage` stays on the 2.8 seam. The seam may still be right; its recorded reason is gone, and
+a reason that stops being true is worse than none because the next reader trusts it.
+
+**The SAD, finally read past the DDL.** Pass 10 admitted reading only the schema section. It states
+nothing about senderless sends, and its one relevant line — *"REST send (FR-MSG-13) uses the
+identical API path — one write path, two entrances"* (`05-sad.md:808`) — survives the narrowing,
+because the clause still authorises REST sends and only the nameable sender changes.
+
+**A third file bucket.** FR-020's corrections are four tutorial files that belong to neither of
+`plan.md`'s two columns: not taught by 3.17, not fenced by it, prose in a published chapter that
+3.17 falsifies. The last feature met the mirror image — eleven files changed by one word, giving
+it **eleven fences with no subject**; here the subjects have no fence. T080 should expect three
+buckets, and T085's `git diff` is what will surface them.
+
+Fifteen passes, 88 findings, 20 CRITICALs. Checklist 16/16. **153 tasks, coverage 100% both
+directions, 22 + 9 sweep checks green, `check:srs` green at 243/243.**
+
+---
+
 ## Five passes, and where each CRITICAL came from
 
     1   an enumeration missing a member; a criterion that could not verify itself

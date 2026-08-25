@@ -144,6 +144,15 @@ columns from the start.
 sixth revision came from asking `git diff` rather than reading the plan. The enumeration
 happens where the tasks are, and the re-derivation happens before any prose exists.
 
+**And this chapter changes other chapters' pages**, which neither column anticipated. FR-020
+corrects chapter 3.10's `<Trap>` and chapter 3.13's stale reason, in both locales — **four files
+in the tutorial repository that belong to neither count**. They are not taught by 3.17 and they
+are not fenced by it; they are prose in a published chapter that this chapter falsifies. The last
+feature met the same shape from the other side: eleven files changed by exactly one word, a
+corrected citation, giving it **eleven fences with no subject**. Here the subjects have no fence.
+T085's `git diff --name-only` re-derivation is what will surface them, and T080 should expect a
+third bucket rather than treat it as drift.
+
 ## Complexity Tracking
 
 | What | Why it is accepted | The cheaper alternative, and why not |
