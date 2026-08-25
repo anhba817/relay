@@ -216,9 +216,9 @@ amendment is additive and the diff shows what changed.
 
     FR-USR-07   Customers shall be able to create bot users representing their own
                 software, carrying a description, which cannot authenticate.
-    FR-MSG-10   Every message shall carry a sender. A message sent with an application
+    FR-MSG-15   Every message shall carry a sender. A message sent with an application
                 credential shall name a bot user of that tenant.
 
 **And FR-MSG-01 needs a note, not an edit.** It describes what a message contains and does not
-mention a sender; the amendment record should say the sender requirement is FR-MSG-10's and
+mention a sender; the amendment record should say the sender requirement is FR-MSG-15's and
 that FR-MSG-01 is unchanged, so a later reader does not look for it there.

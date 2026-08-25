@@ -162,6 +162,8 @@ jobs:
       # `code: undefined`.
       - run: pnpm check:docs
         working-directory: relay-tutorial
+      - run: pnpm check:srs
+        working-directory: relay-tutorial
       - run: pnpm check:figures
         working-directory: relay-tutorial
       - run: pnpm check:fences

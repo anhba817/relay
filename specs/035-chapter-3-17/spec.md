@@ -337,6 +337,25 @@ there with a role; then attempt to mint a token for it and confirm the refusal.
   This chapter therefore requires an **explicit amendment** to `docs/04-srs.md`, which is what
   the constitution's Governance section demands: where the constitution conflicts with the SRS
   or SAD, *"the conflict MUST be resolved explicitly by amendment rather than"* ignored.
+- **FR-015a**: **The SAD is amended too, and this clause exists because FR-015 named the SAD and
+  then did not amend it** for eight analysis passes. `docs/05-sad.md` carries the physical schema:
+  its `CREATE TABLE users` lists eight columns and this chapter adds two, plus two CHECK
+  constraints. The constitution clause FR-015 quotes covers *"the SRS or SAD"*, and the last
+  feature amended `05-sad.md` five times. The amendment MUST add `kind` and `description` to that
+  DDL and MUST follow the document's own idiom for a constrained text column —
+  `type TEXT NOT NULL CHECK (type IN ('public','private'))` on `channels`, which is the shape
+  `data-model.md` chose independently.
+- **FR-015b**: Clause identifiers MUST be verified against the governing document before they are
+  cited. The amendment was specified as `FR-USR-07` and `FR-MSG-10`; **`FR-MSG-10` is taken** —
+  *"History responses shall include tombstones"*, P2, cited by the personas table — and FR-MSG
+  runs 01 through 14, so the free identifier is `FR-MSG-15`. Six artifacts named the wrong one,
+  none of them inconsistent with each other, because the contradiction lived in a file none of
+  them quoted. A check MUST enforce this rather than a reader remembering to look (FR-015c).
+- **FR-015c**: A checker MUST assert that every clause identifier in `docs/04-srs.md` is defined
+  exactly once. `check:docs` compares each mirrored document against its canonical source — drift,
+  not validity — so a duplicate identifier passes today. The assertion is green against the
+  current document at 192 clause rows and 192 unique identifiers, and would have failed on the
+  amendment as specified.
 - **FR-016**: The amendment MUST land before the chapter claims delivery, and the chapter MUST
   cite the amended clause rather than describe behaviour the governing document does not
   contain. A feature that ships ahead of its requirement is the defect chapter 3.12's

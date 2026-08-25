@@ -412,6 +412,54 @@ produced one and withdrew four.
 
 ---
 
+## Analysis pass 9 (2026-08-25)
+
+Five findings, **two CRITICAL, both in Phase 1** — the amendment that principle VI makes the gate
+for every other requirement, and the one artifact eight passes had taken on trust.
+
+**M1: `FR-MSG-10` was already taken.** It is *"History responses shall include tombstones so that
+clients can render deletions without gaps in ordering"* — P2, allocated, cited by the personas
+table for Priya. FR-MSG runs **01 through 14**; the free identifier is **FR-MSG-15**. Six
+artifacts in this feature named FR-MSG-10 and **not one of them disagreed with another** — the
+contradiction lived entirely in a file none of them quoted. That is why five passes of
+artifact-vs-artifact reading could not reach it, and it is chapter 3.16's *"grep the claim in
+both repositories"* lesson with a different pair of files.
+
+**M2: FR-015 named the SAD and then amended only the SRS.** `docs/05-sad.md` carries the physical
+schema — `CREATE TABLE users` with eight columns, gaining two plus two CHECK constraints — and no
+task touched it, while the constitution clause FR-015 *quotes* covers "the SRS or SAD" and the
+last feature amended that file five times. The fix cites a precedent twelve lines below the table
+it edits: `channels.type TEXT NOT NULL CHECK (type IN ('public','private'))` is the shape
+`data-model.md` had already chosen for `kind` without knowing the SAD agreed.
+
+**M3 is now a checker that exists.** `check:srs` asserts every clause identifier in
+`docs/04-srs.md` is defined exactly once, wired into CI beside `check:docs`. It reports **192
+clause rows, 192 unique identifiers** against the current document, and was tested by inserting
+the duplicate this pass found — it fails with both line numbers and both clause texts. The
+distinction it encodes: `check:docs` compares a mirror to its source and catches **drift**, and a
+duplicate identifier is not drift, because both copies agree and both are wrong.
+
+It checks uniqueness and not existence on purpose. The personas table writes `FR-MSG-07/08/10`
+and the ADR notes write `FR-MOD-01→04`; a checker that parses the compressed citation form is a
+checker with its own bugs, and pass 8's rule is that crying wolf on a healthy tree is how a real
+problem hides.
+
+**M4 was a suspected contradiction and is the reverse.** FR-USR-05's SRS note reads
+*"`ON DELETE SET NULL` on `messages.user_id` satisfies the letter of 'preserving their messages'
+and breaks delivery: the resume path drops a senderless row."* I opened it as a conflict with
+SC-007; it is the SRS **rejecting** SET NULL for the same reason this chapter cares about, and it
+anticipates the third of FR-012's four paths. T072 now cites it.
+
+**On declaring convergence too early.** Pass 8 closed by calling falling yield a convergence
+signal — one CRITICAL, four withdrawn candidates. Pass 9 doubled the CRITICAL count by reading
+the gate task. **Falling yield measured the questions being asked, not the defects present**, and
+the eight passes that never opened `docs/04-srs.md` were the reason it looked like convergence.
+
+Nine passes, 60 findings, 13 CRITICALs. Checklist 16/16. 144 tasks, all format-valid,
+coverage 100%.
+
+---
+
 ## Five passes, and where each CRITICAL came from
 
     1   an enumeration missing a member; a criterion that could not verify itself
