@@ -583,6 +583,60 @@ verified independent, coverage 100% by citation. 18 + 9 sweep checks green, `che
 
 ---
 
+## Analysis pass 12 (2026-08-25)
+
+Three findings, no CRITICAL, no HIGH. **The second consecutive pass where the mechanical suite
+found nothing and everything new came from a question the suite did not encode** — which is the
+argument for stopping, and it is recorded here as such.
+
+**Q1: coverage had been checked in one direction for two passes.** Pass 10 added sixteen citations
+so every requirement was named by a task, called it 100%, and never ran the reverse. Sixty-four
+behaviour-bearing tasks named no requirement: T008 adding the columns, T012a removing the dead
+guards, T018c/T018d testing the promotion, the six caller-fixing tasks, the whole of phase 9.
+`targets.ts` states the doctrine this missed — *"an entry matching no derived target fails it too
+— the second direction is the one that catches a stale exemption after a rename"* — and this
+project has now made the one-direction mistake at three different scales: the fence chain, the
+target list, and its own coverage table. 115 of 145 tasks cite a requirement; the other 30 are
+commits and measurements, which trace to nothing by design.
+
+Doing it now also changes what T072 is. Traceability written at close-out from scratch is what
+produced chapter 3.12's wrong row and 3.15's FR-CHN-05 correction; written against 115 existing
+citations, it verifies instead of authors.
+
+**Q2: two documents were called the quickstart, and one of them appears in a constitution MUST.**
+`specs/035-chapter-3-17/quickstart.md` was titled *"Quickstart — validating chapter 3.17"* while
+FR-015d had just named `relay-platform/README.md` the quickstart of record that principle VI's CI
+clause verifies. The spec-kit artifact is now the *validation guide* and carries a note saying so.
+A word that means two things is tolerable until one of the two is a gate.
+
+**Q3: four of eleven phases had no goal** — Verification, The chapter, Translation, Close-out.
+Phase 8's was the one worth writing: "Verification" covers three separate gates (the ratchets, the
+derived target list, the twenty-run battery) and its title names none of them.
+
+`sweep.py` now runs 21 checks, adding the reverse-coverage direction, the phase-goal requirement,
+and an assertion that this feature's own quickstart is not titled as *the* quickstart.
+
+### Why this is the last analysis pass
+
+    pass    CRITICAL  HIGH   top finding
+    9          2       1     a clause id collision in the gate task
+    10         2       0     a constitution MUST in violation; my checker covering 79% of its document
+    11         0       1     twenty [P] markers colliding on one file
+    12         0       0     a traceability direction never run
+
+Eleven passes examined the artifacts; the twelfth found that a table will be authored rather than
+verified. **The highest-yield instrument left is executing the plan.** Five of the last feature's
+task premises were wrong and every one was found by attempting the task — an operation the
+platform lacked, an amendment that did not exist, a refusal code that was the leak it warned
+about. Phase 1 is four documents and a checker. If the amendment lands clean, that is worth more
+than pass 13.
+
+Twelve passes, 79 findings, 17 CRITICALs. Checklist 16/16. **145 tasks, all format-valid, 11 of 11
+phases with goals, coverage 100% forward and every behaviour-bearing task cited in reverse. 21 + 9
+sweep checks green, `check:srs` green at 243/243.**
+
+---
+
 ## Five passes, and where each CRITICAL came from
 
     1   an enumeration missing a member; a criterion that could not verify itself

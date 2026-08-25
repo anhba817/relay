@@ -354,7 +354,9 @@ there with a role; then attempt to mint a token for it and confirm the refusal.
   *"carry stable identifiers (`FR-*`, `NFR-*`, `DR-*`, `EIR-*`) that are never reused"*. A check
   MUST enforce it rather than a reader remembering to look (FR-015c).
 - **FR-015d**: **`relay-platform/README.md` becomes the quickstart of record, and the sealed
-  outsider becomes its CI verification.** Principle VI requires that *"The quickstart MUST run
+  outsider becomes its CI verification.** **This feature's own `quickstart.md` is not that
+  document** — it is a validation guide no CI job runs, renamed in pass 12 so one word stops
+  naming two things, one of which appears in a constitution MUST. Principle VI requires that *"The quickstart MUST run
   unmodified, verified by automated execution in CI against the published documentation."* There
   is no published quickstart anywhere — no `*quickstart*` file in `relay-tutorial` or `docs/`, and
   nothing in `.github/workflows/ci.yml` names one — so the platform has been in violation of a

@@ -156,6 +156,34 @@ check("the file-order contract is stated in the header",
       "FILE ORDER IS EXECUTION ORDER" in tasks,
       "ids are non-monotonic and nothing says which order to follow")
 
+# ---- 14. coverage runs BOTH directions ----
+#
+# Pass 10 fixed requirement -> task and nobody ran task -> requirement for two more passes.
+# `targets.ts` states why both matter: "an entry matching no derived target fails it too — the
+# second direction is the one that catches a stale exemption after a rename." A task that
+# changes behaviour and names no requirement is that stale exemption.
+HOUSEKEEPING = re.compile(
+    r'^(Commit|Run |Re-run|Record|State|Measure|Count|Enumerate|Diff|Translate|Tick'
+    r'|Add the chapter|Review)', re.I)
+_uncited = [tid for tid, body in re.findall(
+                r'^- \[ \] (T\d{3}[a-z]?)(?: \[P\])?(?: \[US\d\])? (.*)$', tasks, re.M)
+            if not re.search(r'\b(FR|SC)-\d', body)
+            and not HOUSEKEEPING.match(re.sub(r'\*+', '', body))]
+check("every behaviour-bearing task cites a requirement", not _uncited, ", ".join(_uncited))
+
+# ---- 15. every phase states its goal ----
+_ph = re.findall(r'^## (Phase \d+[^\n]*)$', tasks, re.M)
+_blocks = re.split(r'^## Phase ', tasks, flags=re.M)[1:]
+_nogoal = [b.split("\n")[0][:34] for b in _blocks if "**Goal**" not in b]
+check("every phase states a goal", not _nogoal, "; ".join(_nogoal))
+
+# ---- 16. one word, one meaning: the quickstart principle VI verifies ----
+qs = os.path.join(FEAT, "quickstart.md")
+_qtitle = io.open(qs, encoding="utf-8").read().split("\n")[0] if os.path.exists(qs) else ""
+check("the feature's own quickstart is not titled as THE quickstart",
+      "quickstart" not in _qtitle.lower(),
+      f"{_qtitle!r} collides with FR-015d's quickstart of record")
+
 print(f"{checks} checks run, {len(fails)} failed\n")
 for n, d in fails:
     print(f"  FAIL  {n}")

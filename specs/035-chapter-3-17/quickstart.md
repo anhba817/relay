@@ -1,7 +1,14 @@
-# Quickstart — validating chapter 3.17
+# Validation guide — chapter 3.17
 
 How to prove this chapter works, end to end, against a running stack. Not implementation
 detail: `data-model.md` has the schema and `contracts/` has the routes.
+
+> **NOT THE QUICKSTART PRINCIPLE VI MEANS.** The constitution requires that *"The quickstart
+> MUST run unmodified, verified by automated execution in CI against the published
+> documentation"* — and FR-015d makes that `relay-platform/README.md`, verified by the sealed
+> outsider in CI. **This file is a spec-kit artifact that no CI job runs.** Two documents were
+> called the quickstart until analysis pass 12; this one is the validation guide, and the
+> README is the quickstart of record.
 
 ## Prerequisites
 
