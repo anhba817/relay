@@ -220,3 +220,61 @@ found *by the coverage ratchet, afterwards*. **Tightening a type makes its runti
 and this is the first one caught in the plan.
 
 Checklist re-validated: 16/16. 129 tasks, all format-valid, coverage 100%.
+
+---
+
+## Analysis pass 5 — five findings applied
+
+One CRITICAL, two HIGH, one MEDIUM, one LOW. **G1 is the most consequential finding of the five
+passes**, not because it is the largest but because it turned a check meant to produce evidence
+into one with a foregone conclusion.
+
+**G1: T065 asked a question whose answer was already fixed, and T066 named an artifact that does
+not exist.** There is **no published quickstart** — no `*quickstart*` file in `relay-tutorial` or
+`docs/`, CI references none, and `relay-platform/README.md`'s walkthrough is docker-compose
+commands rather than API steps. `packages/outsider` is the only place the integration steps
+exist, and it is a test.
+
+Chapter 3.14 built that suite to answer one question: can an external developer integrate on
+public documentation alone? The verdict turns on the suite passing **without being corrected**,
+because a correction is the assistance the criterion forbids. Add a required step — create a
+bot, name it on every send — and the suite can only learn about it by being edited. T065 would
+have measured nothing.
+
+Fixed by ordering rather than by weakening the check: **T063a writes the flow into the README
+before T064 touches the outsider**, because chapter 3.12's `gaps.md` names the README as one of
+the three sources an outsider may read. T063b records what this chapter did *not* fix — the
+absent integration guide is chapter 3.14's unmet half, and this chapter adds a step to a flow no
+document describes, which makes that gap larger.
+
+**G3 found a recorded gap that this chapter half-closes and nobody had noticed.** Chapter 3.12's
+`gaps.md` G1 lists *two* independent mechanisms for "a REST-sent message reaches no socket":
+nothing publishes, and the public send passes no user. This chapter removes the second. T096a
+amends that record so a half-closed gap stops reading as whole — the same shape this project has
+now corrected three times in traceability rows.
+
+**G2 answered a question rather than changing anything.** `attack.ts` needs no fifth shape: the
+sender is a new dimension on a route already classified `write` and already attacked, so T035's
+hand-written pair is correct. Recorded because the next reader will ask.
+
+Checklist re-validated: 16/16. 132 tasks, all format-valid, coverage 100%.
+
+---
+
+## Five passes, and where each CRITICAL came from
+
+    1   an enumeration missing a member; a criterion that could not verify itself
+        found by: reading the artifacts against each other
+    2   a refusal with the wrong shape; a default in the wrong layer
+        found by: reading them again, once pass 1 had made them precise
+    3   a constraint colliding with an operation that already existed
+        found by: asking the repository
+    4   a customer's natural ordering trapping them
+        found by: asking who else creates a user
+    5   a check whose answer was pre-determined, and a task naming an absent artifact
+        found by: checking a task's premise
+
+**Every CRITICAL after pass 2 came from outside the artifacts**, which is the ranking the last
+feature's close-out recorded: ask the repository first, read artifacts against each other second,
+check task premises third. Pass 5 is this feature's first instance of the third mechanism, and
+the last feature found five.

@@ -24,8 +24,10 @@ rather than after.
 dependency.
 
 **What is new**: two columns on `users` (`kind`, `description`) with two CHECK constraints, one
-migration, one required body field on the public send, and a required parameter in the
-repository. No new table, **no new route**, and no change to the protocol's frame contract.
+migration, one required body field on the public send, a `user` field on its response, one new
+error code (`sender_not_permitted`), a fourth per-entry status on the upsert (`kind_conflict`),
+and a required parameter in the repository. No new table, **no new route**, and **no change to
+the protocol's frame contract** — which is the reason a bot was chosen over a nullable sender.
 
 **What this touches that already exists**: `POST /v1/channels/:channelId/messages` (chapter
 2.2), `POST /v1/users` (3.16's upsert), `POST /auth/dev-token` (3.16's implicit creation),

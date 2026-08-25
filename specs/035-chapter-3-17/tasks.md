@@ -134,7 +134,7 @@ nothing (400), naming a foreign bot (400, byte-identical to a nonexistent one).
 - [ ] T032a [US2] **Assert the wire carries `sender_not_permitted` and not `forbidden`** — `services/api/src/messages/messages.itest.ts`. `ProtocolErrorFilter`'s ladder maps 403 to `forbidden`, and this is the only code in the feature that collides with a ladder entry. The filter prefers an explicitly named code; that preference is what this asserts, and the filter's own comment records that 403's fallback arrived late
 - [ ] T033 [P] [US2] Test the four outcomes for an application credential — bot 201, person 403, absent 400, unresolvable 400 — in `services/api/src/messages/messages.itest.ts`, **and that the 201 echoes the sender it used**
 - [ ] T034 [P] [US2] Test that a user token still sends as its subject and that a body `user` is refused — `services/api/src/messages/messages.itest.ts`
-- [ ] T035 [US2] **Add the foreign-sender pair to the oracle** — `services/api/src/isolation/gauntlet.itest.ts`. A bot of another tenant and an identifier that exists nowhere must answer byte-identically under `withoutRequestId`. This is a **new foreign-identifier surface on an existing route**, which is what the constitution check flagged
+- [ ] T035 [US2] **Add the foreign-sender pair to the oracle** — `services/api/src/isolation/gauntlet.itest.ts`. **Hand-written, and `attack.ts` needs no fifth shape**: the sender is a new *dimension* on a route already classified `write` and already attacked, not a new shape. The same-tenant block was added by hand for the same reason in the last feature A bot of another tenant and an identifier that exists nowhere must answer byte-identically under `withoutRequestId`. This is a **new foreign-identifier surface on an existing route**, which is what the constitution check flagged
 - [ ] T036 [P] [US2] Test that the control works first: the same credential, the same channel, its own bot — 201. Chapter 3.12's fourteen green tests compared two refusals and meant nothing
 - [ ] T037 [US2] **Remove the bot check and confirm T033's 403 goes red**, then restore — `services/api/src/messages/messages.service.ts`
 - [ ] T038 [US2] **Remove the sender-resolution refusal and confirm the oracle pair goes red**, then restore. Record which of the two removals the oracle notices and which it does not: chapter 3.15 found a suite is blind to an inner check a live outer one masks
@@ -203,8 +203,20 @@ without being corrected.
 - [ ] T061 [P] Fix `services/api/src/users/users.itest.ts` (3), `services/api/src/auth/credentials.itest.ts` (3), `services/api/src/channels/channels.itest.ts` (3)
 - [ ] T062 [P] Fix `services/gateway/src/public-surface.itest.ts` (2), `services/gateway/src/isolation-fixtures.ts` (2), `services/gateway/src/limits.itest.ts` (1), `services/api/src/internal/internal.itest.ts` (1)
 - [ ] T063 [P] Fix `packages/e2e/src/tuan.itest.ts` (2)
+- [ ] T063a **WRITE THE BOT FLOW DOWN BEFORE TOUCHING THE OUTSIDER.** Add it to
+  `relay-platform/README.md`'s walkthrough — a `curl` creating a bot with a description, and a
+  send naming it — because chapter 3.12's `gaps.md` names the README as one of the three sources
+  an outsider may read (with the published series and the reference documents). **Without this
+  T065's question has a fixed answer**: the sealed suite cannot discover a required step from
+  documentation nobody wrote, so it could only ever learn about bots by being corrected, which
+  is the assistance chapter 3.14's verdict says the criterion forbids
+- [ ] T063b **Record that there is no published quickstart, and that this chapter did not write
+  one.** No `*quickstart*` file exists in `relay-tutorial` or `docs/`, and CI references none —
+  `packages/outsider` is the executable stand-in, and it is a test rather than a document.
+  That is chapter 3.14's unmet half, and this chapter adds a required step to a flow no document
+  describes. Recorded in `gaps.md` as a gap this chapter makes larger, not one it closes
 - [ ] T064 **`packages/outsider/src/integrate.itest.ts` LAST, and it is the one that matters.** It is sealed from workspace code and stands for an external developer. Its script must **create a bot and send as it**, demonstrating the flow a customer follows
-- [ ] T065 **Run `pnpm test:outsider` and record whether it passed first time.** Chapter 3.14's verdict says a suite that passes *because a failing test corrected it* is the assistance the Phase 2 exit criterion forbids. If it needed correcting, the documentation was insufficient and that is the finding
+- [ ] T065 **Run `pnpm test:outsider` and record whether it passed first time** — after T063a, not before, or the answer is fixed. Chapter 3.14's verdict says a suite that passes *because a failing test corrected it* is the assistance the Phase 2 exit criterion forbids. **Either answer is recorded as a finding and neither blocks the chapter**: the criterion's comprehensibility half is already open, and this task measures whether T063a was sufficient rather than gating on it
 - [ ] T066 Update the published quickstart if it sends — `relay-tutorial/`, and NFR-USE-03 has CI execute it against the published documentation
 - [ ] T067 Commit Phase 7
 
@@ -260,6 +272,7 @@ without being corrected.
 ## Phase 11: Close-out
 
 - [ ] T096 Write `specs/035-chapter-3-17/chapter-notes.md`: the plan against what shipped, including the phases that went badly
+- [ ] T096a **Amend chapter 3.12's `gaps.md` G1**, which records "a message sent over REST reaches no socket, ever" as **two** independent mechanisms: nothing publishes, and the public send passes no user so every row is `user_id NULL`. **This chapter removes the second.** The recorded gap now has one mechanism, and the record should say which chapter took which — 3.17 the sender, 3.18 the publish. A gap that is half-closed and still reads as whole is the shape this project has corrected three times in traceability rows
 - [ ] T097 [P] Write `specs/035-chapter-3-17/gaps.md`, and **carry forward the eight from the last feature that are still open**, with 3.18 and 3.19 as owners where they now have one
 - [ ] T098 [P] Record whether the two file counts stayed apart, and what each was at every revision
 - [ ] T099 Update `CLAUDE.md` between the `<!-- SPECKIT -->` markers
