@@ -23,7 +23,10 @@ description" is enforced by the database, so a bot without one is unrepresentabl
 merely refused by validation. A constraint the database can hold, it holds — the same rule
 that gave `members.role` its own CHECK in chapter 3.15 instead of trusting the enum above it.
 
-**`description` is bounded at 500 characters in the schema layer**, not in the database. It
+**`description` is bounded at 500 characters in the schema layer** — zod, not a database
+constraint — which FR-002 now states, because the layer decides the failure's shape: a bound
+zod holds fails the whole batch with an indexed field path, while a rule only the row can
+answer is reported per entry. It
 answers "what is this and why did it message me" for a person reading a conversation:
 `display_name` is 255 and this needs more, `metadata` is 4 KB and this is not a document.
 
@@ -56,8 +59,17 @@ a migration anyone should write.
 ## State transitions
 
     a row is created                    kind = 'person'  (implicit creation, FR-USR-02)
-    a row is created by upsert          kind as given, 'person' if absent
-    an existing row is upserted         kind MUST NOT change — refused
+    a row is created by upsert          kind as given, 'person' IF ABSENT
+    an existing row is upserted,
+      kind absent                       no change requested — the default does NOT apply
+      kind equals the stored kind       no change
+      kind differs                      refused, per-entry status `kind_conflict`
+
+**The default applies only on creation**, and that sentence is load-bearing. Apply it on update
+too and an upsert that omits `kind` while editing a bot's description reads as a demotion to
+person — making a bot uneditable through the route FR-004 says can edit it. Absent is not
+`'person'`; it is the absence of a request, which is the distinction chapters 3.15 and 3.16
+built into the profile patch and `exactOptionalPropertyTypes` exists to hold.
 
 **The refusal in both directions matters.** Person → bot silently revokes the ability to
 authenticate for an identifier a customer's users may already hold tokens for. Bot → person

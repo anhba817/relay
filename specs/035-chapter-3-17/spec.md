@@ -144,10 +144,20 @@ there with a role; then attempt to mint a token for it and confirm the refusal.
 - **FR-001**: A tenant MUST be able to create a bot user with a customer-supplied identifier,
   unique within the tenant in the same namespace as its people (FR-USR-01).
 - **FR-002**: A bot user MUST carry a **description** — what the software is and what it
-  posts — of at most **500 characters**, readable by anyone who can read the user. The bound
-  is stated here rather than only in the design, the way FR-024 states 4 KB for user metadata:
+  posts — of at most **500 characters, enforced in the request schema rather than by a database
+  constraint** — readable by anyone who can read the user. The layer is named because it decides
+  the failure's shape (FR-002a). The bound is stated here rather than only in the design, the
+  way FR-024 states 4 KB for user metadata:
   `display_name`'s 255 is too short for a sentence explaining a bot, and `metadata`'s 4 KB is
   a document rather than a label.
+- **FR-002a**: The upsert MUST report a rule the request schema can check as a **400 naming the
+  entry's index**, and a rule that needs the stored row as a **per-entry status in the 200
+  result array**. A missing description is the first; a kind change is the second. Collapsing
+  the second into a 400 would fail a batch of 100 because of one entry, which is the outcome
+  chapter 3.16's per-entry array exists to prevent.
+- **FR-002b**: An upsert entry that omits `kind` for an existing row MUST be read as **no
+  change requested**, not as a request for `"person"`. The default applies on creation only;
+  otherwise a bot cannot be edited through the route FR-004 says can edit it.
 - **FR-003**: A bot user MUST be distinguishable from a person by a **stored property**, not
   by a naming convention. A client rendering a conversation, a moderator reading an audit
   trail, and a permission check must each be able to tell them apart without parsing an
@@ -187,7 +197,9 @@ there with a role; then attempt to mint a token for it and confirm the refusal.
 
 ### What already exists and must keep working
 
-- **FR-012**: Messages already stored with no sender MUST keep working on **all four** paths
+- **FR-012**: FR-006's rule — no write path may create a senderless message — is stated once,
+  there. What this clause adds is the other direction: messages already stored with no sender
+  MUST keep working on **all four** paths
   that can reach them:
 
       history                 GET /v1/channels/:channelId/messages

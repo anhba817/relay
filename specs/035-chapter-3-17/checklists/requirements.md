@@ -103,3 +103,43 @@ wrong **kind of user** — so it becomes `sender_not_permitted`, and `codes.test
 assertion will fail on the build that adds it, which is the instrument working.
 
 Checklist re-validated after the edits: 16/16, no new markers.
+
+---
+
+## Analysis pass 2 — eight findings, all applied
+
+Two CRITICAL, two HIGH, three MEDIUM, one LOW — and **both CRITICALs were the same defect,
+made by this design and already solved elsewhere in the platform.**
+
+**D1 and D2: the design did not distinguish *absent* from *a value equal to the default*.**
+
+- D1 specified a kind change as `400 invalid_request, field: "users.N.kind"` — the shape zod
+  produces. zod cannot see the stored row, so the rule cannot be a validation failure, and a
+  400 would fail a batch of 100 because of entry 7. That is the outcome chapter 3.16's
+  per-entry array was built to prevent. It is now a fourth status, `kind_conflict`, in a 200.
+- D2 defaulted `kind` to `'person'` in the request schema. Compare that default against a
+  stored bot and every upsert editing a bot's description without restating `kind: "bot"` reads
+  as a demotion — making a bot uneditable through the route FR-004 says can edit it.
+
+Chapters 3.15 and 3.16 built exactly this distinction for the profile patch — *absent keeps its
+value, present-and-null clears it* — and `exactOptionalPropertyTypes` is on for it. The pattern
+was in the repository and this design did not reach for it.
+
+**Neither was findable in pass 1.** Both required asking what shape a refusal takes on the wire
+and what an upsert that omits a field does — questions that became askable only because pass 1
+sharpened "refused" into a status, a code and a field path.
+
+**D7 corrected reasoning of my own that was wrong.** Pass 1 wrote into the contract and into
+T040 that a bot's mint refusal must be byte-identical to an unknown identifier's, on chapter
+3.16's enumeration argument. Two things are wrong with it: an unknown identifier answers **200**
+on that route (3.16 made it create a person), so there is nothing to be identical to; and the
+enumeration argument's premise does not hold, because `POST /auth/dev-token` and
+`GET /v1/users/:externalId` are both `@Accepts("application")` — a caller who reaches the
+refusal can already read that user's `kind`. The argument was carried from a neighbouring route
+without checking whether its premise applied.
+
+**D3 found five assertions the billing decision moves** — `quotas.itest.ts:71,78,103` and
+`users.itest.ts:723,728` all pin exact active-user counts — with no task updating them either
+way.
+
+Checklist re-validated: 16/16, no new markers. 116 tasks, all format-valid.
