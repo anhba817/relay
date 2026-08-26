@@ -70,7 +70,7 @@ So the feature is proven at three levels, and each task says which it is:
 ## Phase 1: Setup
 
 - [ ] T001 Pin the lane environment in `specs/036-chapter-3-18/baseline.txt`: the four variables and the compose profile from `specs/035-chapter-3-17/baseline.txt`, re-verified rather than copied, plus the ports this feature needs (Postgres 15432, Redis 16379 — this machine's own Postgres holds 5432)
-- [ ] T002 [P] Record the starting state in `specs/036-chapter-3-18/baseline.txt` — integration test count, lane mean, coverage pins for every file this feature touches, `pnpm check:fences` file count — measured, not carried over from 3.17's close
+- [ ] T002 [P] Record the starting state in `specs/036-chapter-3-18/baseline.txt` — integration test count, lane mean, coverage pins for every file this feature touches, `pnpm check:fences` file count — measured, not carried over from 3.17's close. **Record the per-suite cost of an api boot separately**: `services/api/src/fanout/fanout.itest.ts` is a NEW suite and the lane is `--concurrency=1`, so it costs a boot rather than a handful of assertions. 3.17 moved 407 -> 589 tests for +0.55 s *within existing suites*; that number does not predict this one, and the budget is 240 s against a 193.55 s mean
 - [ ] T003 [P] Confirm the failing state that justifies the chapter: add the scenario to `relay-platform/packages/outsider/src/integrate.itest.ts` — send over REST, wait on a socket — and watch it **time out**. Record the failure mode in `baseline.txt`. A scenario that passes now is testing something else (3.17's T047c)
 
 ## Phase 2: Foundational (blocking — every story depends on these)
@@ -86,9 +86,12 @@ So the feature is proven at three levels, and each task says which it is:
 ### The publisher
 
 - [ ] T009 Create `relay-platform/services/api/src/fanout/publisher.ts` — a `MessagePublisher` with `publish(message)` and `close()` only, one ioredis client, per `contracts/fanout-publisher.md`. Client options come from `services/api/src/limits/store.ts` (`lazyConnect`, `maxRetriesPerRequest: 0`, `connectTimeout: 1_000`, and an `error` listener), **not** from `createFanout`, which has neither (R10). It reads `RELAY_REDIS_URL` the way `limits/store.ts:86` already does, so this feature adds no configuration. Carry the reason in a comment
+- [ ] T009a **Carry `limits/store.ts`'s down-window into `relay-platform/services/api/src/fanout/publisher.ts`**, not just its four client options. That file says the options alone *were* the slow version: *"each request paid a second or more, twice… So a known-down store is not retried on the request path. The first failure opens a window; while it is open every call answers `null` immediately."* `DOWN_WINDOW_MS = 5_000`, a `downUntil` stamp, cleared on success. **47 send-message calls across 8 api integration suites** will publish once this ships — with a dead Redis and no window each pays about a second, against NFR-PRF-02's 150 ms
+- [ ] T009b Test the window in `relay-platform/services/api/src/fanout/publisher.test.ts`: with the client throwing, the **second** publish inside the window makes no attempt at all. What would have to be false for this to fail? That the window exists — so assert on the client being untouched, not on the publish resolving, which it does either way
 - [ ] T010 [P] Unit-test the publisher in `relay-platform/services/api/src/fanout/publisher.test.ts`: the subject is `chan:{id}`, the payload parses against `messageSchema`, and `publish` **resolves** when the client throws
-- [ ] T011 **Set an explicit coverage pin** for `services/api/src/fanout/publisher.ts` in `relay-platform/vitest.coverage.config.mts`, and prove it bites by deleting T010's throwing-client case and watching it go red. **Unlisted files fall under the global `70`** — a ten-line publisher clears that with its `catch` untested, which is exactly the path FR-010 and FR-011 depend on. A pin added after the fact ratchets to whatever happened; this one is chosen
-- [ ] T012 Wire the publisher into `relay-platform/services/api/src/messages/messages.module.ts`, following `services/api/src/limits/limits.module.ts:36`'s pattern — `{ provide: …, useFactory: … }`, the way the api already provides its Redis-backed counter store
+- [ ] T011 **Set an explicit coverage pin** for `services/api/src/fanout/publisher.ts` in `relay-platform/vitest.coverage.config.mts`, and prove it bites by deleting T010's throwing-client case and watching it go red. **Unlisted files fall under the global `70`** — a ten-line publisher clears that with its `catch` untested, which is exactly the path FR-010 and FR-011 depend on. A pin added after the fact ratchets to whatever happened; this one is chosen. **Pin `services/api/src/messages/messages.controller.ts` too, or record why not**: only `messages.service.ts` is pinned today (`:384`), and the publish guard's two branches — `!duplicate && text !== null`, FR-007's entire mechanism — would otherwise sit under the global 70 as well
+- [ ] T012 Wire the publisher into `relay-platform/services/api/src/messages/messages.module.ts`, following `services/api/src/limits/limits.module.ts:36`'s pattern — `{ provide: …, useFactory: … }`, the way the api already provides its Redis-backed counter store. **Provide it; do not export it.** `internal.module.ts:31` imports `MessagesModule` and *"reuse[s] MessagesModule's providers wholesale"*, so an exported publisher is injectable from the one route that must never publish (FR-006). `MessagesModule` already withholds `"DB"` this way (`internal.module.ts:26`) — FR-006 then holds by module boundary, not only by where the call sits
+- [ ] T012a Add a `…Lifecycle implements OnModuleDestroy` to `relay-platform/services/api/src/messages/messages.module.ts` that calls `publisher.close()`, copying `CounterStoreLifecycle` at `services/api/src/limits/limits.module.ts:26` — it closes the analogous Redis client. `limits.module.ts:10` states the convention: *"resource in this api closes through `OnModuleDestroy`"*, and six modules implement it. **A `close()` nothing calls is a leaked handle in an api that boots once per integration suite**
 - [ ] T013 Write the FR-006 guard test in `relay-platform/services/api/src/fanout/fanout.itest.ts` **before** T012's wiring is trusted: a send through the **internal** route publishes **nothing**, asserted by count on a Redis subscriber over a window (SC-003). What would have to be false for this to fail? That the api publishes for the internal route. This is the test that catches a publish placed in `messages.service.ts`
 
 ### The delivery harness
@@ -168,6 +171,9 @@ So the feature is proven at three levels, and each task says which it is:
 - [ ] T048 [P] Write `relay-tutorial/app/(en)/part-3/chapter-18/the-message-that-never-arrived/figures.ts` — the missing edge from `docs/05-sad.md:138` as it is today and as it becomes, and the ordering comparison between the two transports
 - [ ] T049 [P] Assemble the Vietnamese twin under `relay-tutorial/app/(vi)/part-3/chapter-18/`, fences byte-identical to the English (the chain's `MIRROR` rule)
 - [ ] T050 Fence every path in T042's second column, under `relay-tutorial/fences/`. **Three lines of context suffice because uniqueness is checked**; the predecessor is a **commit**, not a tag — a feature's tail can amend a platform file after tagging, which cost 3.17 five wrong answers
+- [ ] T050a **Amend `docs/05-sad.md`** (spec **FR-002a**): §5.1 gains a REST send sequence, and the ordering bullet at `:254` splits the way FR-005 splits it. The document currently says two different things — `:138`'s component diagram gives the publish to the api, `:248`'s sequence diagram draws `G->>G`, and `:254` states *"The Redis fan-out happens after the ack"* unconditionally. **This chapter's whole justification cites `:138`**, so leaving `:248` contradicting it is the kind of quiet claim the chapter is about
+- [ ] T050b Run `pnpm sync:docs` and confirm `pnpm check:docs` is green. `docs/05-sad.md` is mirrored into `relay-tutorial/content/docs/05-sad.md` and `check-docs-drift.sh` fails on divergence — the amendment is not finished until the mirror matches
+- [ ] T050c State in `page.mdx` what FR-002 and FR-002a distinguish: **no SRS clause changed**, principle VI satisfied by citing FR-RTM-01, *and* a SAD amendment because the SAD disagreed with itself. A reader arriving from 3.17 is looking for an amendment, and the honest answer is "not the one you expect"
 - [ ] T051 Check `relay-tutorial/fences/post-series.md` for whether any file this feature touches is appendix-owned before fencing it. An appendix hunk anchored on a file's last line forbids a chapter from appending to it, and a diff generated straight to HEAD performs the appendix's edit itself
 
 ## Phase 8: Close-out
@@ -211,6 +217,13 @@ evidence.
 
 **T006 before T007.** The grammar's new test exists before the old assertion is removed, so the
 property is never untested.
+
+**T009a before T039.** Measuring a dead Redis without the down-window measures the version that
+`limits/store.ts` already rejected, so the number would describe a design nobody chose.
+
+**T050b immediately after T050a.** A SAD edit that is not synced leaves `check:docs` red, and
+`check:docs` reads drift rather than validity — it will not tell you which of the two files is
+right.
 
 ## Parallel opportunities
 

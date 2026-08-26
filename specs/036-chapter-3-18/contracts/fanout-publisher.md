@@ -46,6 +46,54 @@ optional — without it ioredis emits `error` on an EventEmitter with none attac
 **`createFanout` has neither the options nor the listener** (R10). Do not treat it as the reference
 implementation for this one.
 
+### And the down-window, which is the half that matters
+
+The four options above were `limits/store.ts`'s **first** version, and that file says so:
+
+    FAILING OPEN IS NOT FREE IF IT FAILS SLOWLY, and the first version of this file was
+    slow. With the store gone, every command waits out its connect timeout before giving
+    up — so each request paid a second or more, twice.
+
+    So a known-down store is not retried on the request path. The first failure opens a
+    window; while it is open every call answers `null` immediately, which is the same
+    signal the caller already handles. One probe per window is what notices the store
+    coming back.
+
+So the publisher carries the window too, not only the options:
+
+    const DOWN_WINDOW_MS = 5_000;
+    let downUntil = 0;
+    // publish(): if (Date.now() < downUntil) return;   — no attempt, no wait
+    //            on success: downUntil = 0
+    //            on failure: downUntil = Date.now() + DOWN_WINDOW_MS, and log
+
+**The blast radius makes this concrete: 47 send-message calls across 8 api integration suites**
+will publish once this ships. With a dead Redis and no window, each pays the connect timeout —
+about a second apiece against NFR-PRF-02's 150 ms budget. With the window, the first send in every
+five seconds pays it and the rest return immediately.
+
+An earlier draft of this contract copied the options and not the window, which is to say it copied
+the bug and left the fix.
+
+### Lifecycle
+
+    close(): Promise<void>   — called from a `…Lifecycle implements OnModuleDestroy`
+
+`limits/limits.module.ts:10` states the convention: *"resource in this api closes through
+`OnModuleDestroy`"*, and six modules implement it — webhooks, limits, notifications, outbox,
+consumer, quotas. `CounterStoreLifecycle` (`limits.module.ts:26`) is the one to copy, because it
+closes the analogous Redis client. **A `close()` nothing calls is a leaked handle in an api that
+boots once per integration suite.**
+
+### Module boundary
+
+Provide the publisher in `MessagesModule`; **do not export it.** `internal.module.ts:31` imports
+`MessagesModule` and, in its own words, *"reuse[s] MessagesModule's providers wholesale"* — so an
+exported publisher is injectable from the internal route, the one path that must never publish
+(FR-006). `MessagesModule` already does this with `"DB"`: *"provides 'DB' but does not export it"*
+(`internal.module.ts:26`). FR-006 then holds by module boundary rather than only by where the call
+sits.
+
 ## Behaviour
 
 ### `publish` never rejects

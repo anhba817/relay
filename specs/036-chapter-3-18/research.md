@@ -210,9 +210,23 @@ is compatible with the mechanism being absent.
     FR-RTM-10   P1   no events after membership lapses, within 5 s          see R5
     docs/05-sad.md:138, :254   the edge and its ordering                    drawn, never built
 
-**Nothing needs amending, and that is worth a sentence in the chapter.** Chapter 3.17's gate was
-an SRS amendment because the SRS had no bot concept; principle VI is satisfied here by citation.
-A reader arriving from 3.17 will look for the amendment and there is none.
+**No SRS clause needs amending, and that is worth a sentence in the chapter.** Chapter 3.17's gate
+was an SRS amendment because the SRS had no bot concept; principle VI is satisfied here by citation
+of FR-RTM-01. A reader arriving from 3.17 will look for an SRS amendment and there is none.
+
+**The SAD is a different matter, and the first draft of this section was wrong about it.** It said
+*"nothing needs amending"* on the strength of line 138. Ten lines above §5.1's ordering bullet, the
+same document draws the publish as `G->>G` — the gateway — and models no REST send:
+
+    :138   component view    api -- "publish fan-out" --> redis        the api publishes
+    :248   sequence view     G->>G: publish to Redis chan:{...}        the gateway publishes
+    :254   the bullet        "The Redis fan-out happens after the ack" unconditional, and
+                                                                      FR-005 now splits it
+
+Reading the identifier answered *is the edge drawn*. It never answered *does the document agree
+with itself* — the second of CLAUDE.md's three mechanisms, applied three passes late to the one
+document this chapter's justification rests on. `05-sad.md` is also mirrored into
+`relay-tutorial/content/docs/`, so the edit is not done until `pnpm sync:docs` has run.
 
 **The one thing to verify before writing a requirement about FR-RTM-05**: measured, only message
 creation has a producer. `message.updated` and `membership.changed` have zero producers outside

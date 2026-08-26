@@ -140,11 +140,17 @@ the request path" does not apply to it. The similarity is close enough to mislea
 does put a synchronous Redis call on a request path, and a reader who has III in mind will flag
 it. The chapter should answer that objection rather than let it stand.
 
-**Principle VI — Requirement-Driven, Test-Verified Delivery: satisfied by citation, not by
-amendment.** FR-RTM-01 is the unmet clause (not FR-RTM-05, which the tutorial plan's row names —
-see spec FR-001), and `docs/05-sad.md:138` already draws the edge. Chapter 3.17's gate was an SRS
-amendment because the SRS had no bot concept; **there is no amendment here, and a reader arriving
-from 3.17 will look for one.** Say so in the chapter.
+**Principle VI — Requirement-Driven, Test-Verified Delivery: satisfied by citation of the SRS, and
+by an amendment to the SAD.** FR-RTM-01 is the unmet clause (not FR-RTM-05, which the tutorial
+plan's row names — see spec FR-001). Chapter 3.17's gate was an SRS amendment because the SRS had
+no bot concept; **no SRS clause changes here, and a reader arriving from 3.17 will look for one.**
+
+**`docs/05-sad.md` does change, and the first version of this section said it did not.** It says
+two different things about who publishes: `:138`'s component diagram gives the edge to the api,
+`:248`'s sequence diagram draws `G->>G`, and `:254`'s ordering bullet is unconditional where
+FR-005 now splits by transport. The amendment is a REST send sequence plus that split, and it is
+not complete until `pnpm sync:docs` has run — `05-sad.md` is mirrored into
+`relay-tutorial/content/docs/` and `check-docs-drift.sh` fails on divergence. See spec FR-002a.
 
 **Principle VII — Boring by Design:** presence stays out (spec FR-017). It is chapter 3.19's row
 in `docs/07-tutorial-plan.md`, it needs FR-RTM-06's grace period and FR-RTM-07's scoping, and

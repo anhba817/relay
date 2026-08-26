@@ -1,13 +1,16 @@
 <!-- SPECKIT START -->
 **CHAPTER 3.18 IS IN PLANNING** — `specs/036-chapter-3-18/`, the message that never arrived.
 A message sent over REST commits, returns `201`, and reaches no live socket: the only publisher
-to the fan-out is the gateway's own send handler. Chapter 3.14 recorded it as a verdict, 3.17
-left it as `gaps.md` item 3, and `docs/05-sad.md:138` has drawn the missing edge all along.
-Read `plan.md`, then `research.md` — R10 is why the api writes its own publisher instead of
-reusing the gateway's, and R5 is the risk the plan could not close by reading.
-**There is no SRS amendment. Principle VI is satisfied by citation** (FR-RTM-01 is the unmet
-clause, not FR-RTM-05 as the tutorial plan's row says) — and a reader arriving from 3.17, where
-the amendment *was* the gate, will look for one.
+to the fan-out is the gateway's own send handler. Chapter 3.14 recorded it as a verdict and 3.17
+left it as `gaps.md` item 3. Read `plan.md`, then `research.md` — R10 is why the api writes its
+own publisher instead of reusing the gateway's, and R5 is the risk the plan could not close by
+reading.
+**No SRS clause changes; principle VI is satisfied by citing FR-RTM-01** (not FR-RTM-05, as the
+tutorial plan's row says) — and a reader arriving from 3.17, where the amendment *was* the gate,
+will look for one. **But `docs/05-sad.md` does change, because it disagrees with itself**: `:138`
+gives the publish to the api, `:248` draws `G->>G`, and `:254` states the ordering
+unconditionally. Three documents cited `:138` as "the edge was drawn all along" for three
+analysis passes before anyone read ten lines further. Spec FR-002a.
 
 **CHAPTER 3.17 IS CLOSED**, tagged `part3-ch17` in all three repositories. Its record is
 `specs/035-chapter-3-17/` — read `chapter-notes.md` first, then `gaps.md` (nine items, each with

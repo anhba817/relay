@@ -74,6 +74,22 @@ their open socket within the clause's window.
   FR-RTM-01 and FR-RTM-02 are P1 clauses, and `docs/05-sad.md` line 138 already draws
   `api -- "publish fan-out" --> redis`. This chapter builds a documented edge that was never
   built, and that is a different kind of gap from a missing clause.
+- **FR-002a** *(added during analysis)*: **The SAD does require amending, and the chapter MUST
+  not conflate that with the SRS.** `docs/05-sad.md` says two different things about who
+  publishes. Line 138's component diagram gives the edge to the api; §5.1's sequence diagram
+  ten lines above the ordering bullet draws `G->>G: publish to Redis chan:{channel_id}` — the
+  gateway — and models no REST send at all. The bullet beneath it, *"The Redis fan-out happens
+  after the ack"*, is stated unconditionally and this feature makes it false for one of two
+  transports (FR-005).
+
+  So the amendment `docs/05-sad.md` needs is: a REST send sequence in §5.1, and the ordering
+  bullet split the way FR-005 splits it. `05-sad.md` is mirrored into
+  `relay-tutorial/content/docs/` and `check-docs-drift.sh` fails on divergence, so the edit is
+  not complete until `pnpm sync:docs` has run.
+
+  **FR-002's claim survives, narrowed to what it always meant**: no *SRS* clause is added or
+  changed, and principle VI is satisfied by citation of FR-RTM-01. What the first draft of
+  FR-002 got wrong was reading line 138 and concluding the document agreed with itself.
 - **FR-003**: The chapter MUST state what FR-RTM-05's other five event kinds do, because a
   reader will ask. Measured: `message.updated` and `membership.changed` have **zero** producers
   outside tests, nothing writes `messages.edited_at` or `messages.deleted_at`, and typing has no
