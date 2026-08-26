@@ -3,12 +3,21 @@
 ## The shared grammar (moves to `packages/protocol`)
 
     export function subjectFor(channelId: string): string   // `chan:${channelId}`
-    export const DEFAULT_REDIS_URL = "redis://localhost:6379"
 
-Moved verbatim from `services/gateway/src/fanout.ts`, re-exported from `packages/protocol`'s
-index. The gateway imports them instead of defining them; nothing about the strings changes, so
-**no existing subscription or test should have to change behaviour** — only import paths. If a
-gateway test changes more than an import line, the move was not a move.
+Moved verbatim from `services/gateway/src/fanout.ts`, exported from `packages/protocol`'s index.
+The gateway imports it instead of defining it; nothing about the string changes, so **no existing
+subscription should change behaviour** — only import paths.
+
+**`DEFAULT_REDIS_URL` stays where it is, in all three places it already lives** (`api/src/limits/
+store.ts:44`, `gateway/src/fanout.ts:27`, `gateway/src/limits.ts:22`). Consolidating one of three
+copies into a shared package is worse than leaving three, and a connection URL is not protocol.
+The api's publisher reads `RELAY_REDIS_URL` the way `limits/store.ts:86` already does, so this
+feature adds no configuration.
+
+**No re-export from `gateway/src/fanout.ts`.** One name for one thing: the gateway's consumers —
+including `fanout.itest.ts:8`, whose single import line splits in two — take it from
+`@relay/protocol`. A re-export would leave two paths to the same function and make the move
+cosmetic.
 
 ## The api's interface
 

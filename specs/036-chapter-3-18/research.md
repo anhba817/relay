@@ -42,8 +42,19 @@ milliseconds after the sender's ack, never before durability."*
 
 ## R3 — the subject grammar has to move, and there is a precedent
 
-**Decision**: move `subjectFor(channelId)` and `DEFAULT_REDIS_URL` from
-`services/gateway/src/fanout.ts` into `packages/protocol`. **The payload type does not move — it
+**Decision**: move **`subjectFor(channelId)` only** from `services/gateway/src/fanout.ts` into
+`packages/protocol`.
+
+**`DEFAULT_REDIS_URL` does not move** — corrected during analysis. It is declared **three times**
+in this repository: `services/api/src/limits/store.ts:44`, `services/gateway/src/fanout.ts:27`, and
+`services/gateway/src/limits.ts:22`. Moving one of three copies into a shared package leaves a
+shared definition *and* two locals, which is worse than three locals — a reader cannot tell which
+is authoritative. It is also deployment configuration rather than protocol, and `packages/protocol`
+holds wire contracts. A subject string is a wire-level name; a connection URL is not.
+
+**And the api needs no new configuration at all.** `limits/store.ts:86` already reads
+`process.env["RELAY_REDIS_URL"] ?? DEFAULT_REDIS_URL`, the same variable `createFanout` reads. The
+publisher takes its URL the way the api's own limiter already does. **The payload type does not move — it
 is already there.** `messageSchema` is `frames.ts:15`, `Message` is `frames.ts:145`, and
 `fanout.ts` imports both from `@relay/protocol` today. The first version of this research said the
 payload type had to move; reading the file's import line corrected it.
@@ -132,8 +143,28 @@ never subscribes, so it takes one client and a narrower interface than `Fanout`.
 ## R7 — cross-instance delivery is already tested
 
 `fanout.itest.ts:89` — *"delivers a message published on one instance to a subscriber on
-another"*. FR-RTM-02 holds at the fan-out layer today; what has never been tested is the api as
-the publisher. SC-002's test is that test's shape with a different publisher, not a new fixture.
+another"*. FR-RTM-02 holds at the **fabric** layer today; what has never been tested is the api as
+the publisher.
+
+**The sentence that followed this in the first draft was wrong**, and analysis caught it: *"SC-002's
+test is that test's shape with a different publisher, not a new fixture."* It is not. `instance()`
+in that file builds two `Fanout` objects and nothing else — the file's own line 11 says *"Two fabric
+clients stand in for two gateway instances"* — so it has **zero gateway boots and zero socket
+opens**. There is no socket in it to assert on.
+
+**Measured across the whole repository: no fixture boots a real api with a real gateway.**
+
+    services/gateway/src/fanout.itest.ts    0 gateway boots   0 socket opens   fabric only
+    services/gateway/src/resume.itest.ts    2 gateway boots   6 socket opens   api is a STUB (:21)
+    services/gateway/src/session.itest.ts   4 gateway boots  12 socket opens   api is a stub
+    services/api/src/**.itest.ts            no suite opens a socket at all
+    packages/outsider/src/integrate.itest.ts   reads RELAY_API_URL and RELAY_WS_URL — BOTH,
+                                               against a running platform it did not start
+
+The gateway's suites stub `ApiClient` because the gateway has no database (ADR-05), so they cannot
+share a Postgres fixture with a real api. **The outsider lane is the only place in the repository
+where a real REST send and a real socket coexist**, and that is where an end-to-end claim has to
+live. Everything else is proven at a seam.
 
 ## R8 — what happens today if a publish throws
 

@@ -14,8 +14,16 @@ Nothing else runs on the machine during a timing battery.
 
 ## 1 — the feature: a REST send reaches a socket
 
-The scenario chapter 3.14 recorded as failing. It belongs in the **outsider** lane, because that is
-where 3.14's verdict lives and the outsider lane is filtered out of the integration run by name.
+The scenario chapter 3.14 recorded as failing. It belongs in the **outsider** lane — and analysis
+established that it has nowhere else to go. **No suite in this repository boots a real api with a
+real gateway**: the gateway's suites stub `ApiClient` because the gateway has no database (ADR-05),
+and no api-side suite opens a socket. `packages/outsider/` reads `RELAY_API_URL` *and*
+`RELAY_WS_URL` and runs against a platform it did not start, so it is the only place where a real
+REST send and a real socket meet.
+
+Everything else is proven at a seam: the api publishes the right payload to the right subject
+(`services/api/src/fanout/fanout.itest.ts`, a real Redis subscriber), and a frame on `chan:{id}`
+reaches the right sockets (gateway suites, publishing to the subject directly — no api needed).
 
     open a socket as user A, subscribed to channel C
     POST /v1/channels/C/messages with an API key, sender B
@@ -32,8 +40,11 @@ Principle IV: *"Any new delivery mechanism MUST preserve this recovery property.
 
     stop Redis (or point the publisher at a dead port)
     POST /v1/channels/C/messages  -> 201, and the response is not slow (see 5)
-    start Redis, reconnect the client with its last cursor
-    -> the message arrives in the backfill
+    read the channel's history
+    -> the message is there
+
+No socket is needed for this one: resume reads Postgres, so the recovery property is provable
+api-side. The message must be reachable even though no frame was ever published.
 
 The message must be reachable by resume even though no frame was ever published. This is FR-010 and
 FR-011's test as well as the constitution's.

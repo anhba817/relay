@@ -15,7 +15,8 @@ has drawn the missing edge since before the api existed.
 The fix is one publisher. The fan-out fabric, the payload schema, the gateway's subscription and
 the cross-instance delivery test all exist and all work today (R3, R5, R7). This chapter adds the
 api as a second publisher onto a subject the gateway currently owns alone, moves the subject
-*grammar* — `subjectFor` and `DEFAULT_REDIS_URL`, not the payload type, which is already shared —
+*grammar* — `subjectFor` alone; not the payload type, which is already shared, and not
+`DEFAULT_REDIS_URL`, which is declared in three files and is configuration rather than protocol —
 into `packages/protocol`, and mirrors the two conditions that guard the gateway's publish: a
 recognised retry is not republished, and a tombstone is not a creation.
 
@@ -72,7 +73,8 @@ estimate; the other drives the fence chain, and neither predicts the other.
 
 | | teaches | fences |
 |---|---|---|
-| `packages/protocol/src/fanout.ts` (new — `subjectFor`, `DEFAULT_REDIS_URL`) | yes | yes |
+| `packages/protocol/src/fanout.ts` (new — `subjectFor` only) | yes | yes |
+| `packages/protocol/src/fanout.test.ts` (new — the grammar's own test) | no | **yes** |
 | `services/gateway/src/fanout.ts` (consumes it instead of defining it) | yes | yes |
 | the api's publisher module | yes | yes |
 | the api's send path (the publish site) | yes | yes |
@@ -86,7 +88,7 @@ estimate; the other drives the fence chain, and neither predicts the other.
 | `services/api/package.json` (if `ioredis` is not yet a direct dep) | no | **yes** |
 | `docs/07-tutorial-plan.md` (the row goes from planned to shipped) | no | n/a |
 
-**Nine taught, twelve fenced, and the three that diverge are the ones a chapter forgets.** A
+**Nine taught, thirteen fenced, and the three that diverge are the ones a chapter forgets.** A
 re-export and a moved import path change no behaviour and teach nothing, and the chain does not
 care: a claimed path's state must equal the repository's. The count above is a first count and
 will be wrong. `git diff --name-only` against `pnpm check:fences` at the end is what settles it —
@@ -217,8 +219,7 @@ relay-tutorial/
 ```
 
 **Structure Decision**: the existing three-service layout, unchanged. The one structural move is
-`subjectFor` and `DEFAULT_REDIS_URL` going from `services/gateway/src/fanout.ts` into
-`packages/protocol` — because the api cannot import from the gateway (R3), and because chapter 3.4
+`subjectFor` going from `services/gateway/src/fanout.ts` into `packages/protocol` — because the api cannot import from the gateway (R3), and because chapter 3.4
 already made this exact move for the JetStream subject grammar with the reason written into
 `internal.ts`. Two publishers on one subject is that argument, one subject over.
 

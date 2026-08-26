@@ -84,10 +84,28 @@ their open socket within the clause's window.
 
 - **FR-004**: A message accepted over the public REST route MUST be published to the channel's
   fan-out subject after the write commits.
-- **FR-005**: The publish MUST happen **after the acknowledgement**, not before. `docs/05-sad.md`
-  states the ordering: *"Ack after commit, never before (FR-MSG-05). The Redis fan-out happens
-  after the ack; a recipient may see the message milliseconds after the sender's ack, never
-  before durability."*
+- **FR-005** *(AMENDED during analysis — the original clause was not achievable on this
+  transport)*: The publish MUST happen **after the write commits**. `docs/05-sad.md` states the
+  ordering: *"Ack after commit, never before (FR-MSG-05). The Redis fan-out happens after the ack;
+  a recipient may see the message milliseconds after the sender's ack, never before durability."*
+
+  That sentence was written when a socket was the only way in, and a socket can perform it: the
+  gateway writes an ack frame and *then* awaits the publish, because it has two channels. **A
+  request handler has one.** On REST the response *is* the acknowledgement, so anything the
+  handler awaits necessarily precedes it, and "after the ack" is not a sequence the transport can
+  produce — only a detached publish could, and detaching removes the failure from anywhere a test
+  or an operator can see it synchronously (FR-011).
+
+  So the clause splits by transport, and what it protects survives both readings:
+
+  - **Socket path** (unchanged): commit, ack, publish.
+  - **REST path**: commit, publish, respond. A recipient may see the message before the sender's
+    `201`, and never before durability — which is the guarantee the original sentence names.
+
+  The cost, recorded rather than hidden: **NFR-PRF-01's clock — "send acknowledged to recipient
+  receipt" — is not measurable on the REST path**, because the interval can be negative. It stays
+  measurable on the socket path. The publish instead lands inside NFR-PRF-02's budget (REST write
+  latency, p95 < 150 ms), which is why the publish must be measured rather than assumed cheap.
 - **FR-006**: A message accepted over the **internal** route (a socket send, forwarded by the
   gateway) MUST NOT be published twice. The gateway publishes for that path today, and two
   publishers on one path put the same message on every member's screen twice.
