@@ -1,0 +1,98 @@
+# Contract — the api's fan-out publisher
+
+## The shared grammar (moves to `packages/protocol`)
+
+    export function subjectFor(channelId: string): string   // `chan:${channelId}`
+    export const DEFAULT_REDIS_URL = "redis://localhost:6379"
+
+Moved verbatim from `services/gateway/src/fanout.ts`, re-exported from `packages/protocol`'s
+index. The gateway imports them instead of defining them; nothing about the strings changes, so
+**no existing subscription or test should have to change behaviour** — only import paths. If a
+gateway test changes more than an import line, the move was not a move.
+
+## The api's interface
+
+    export interface MessagePublisher {
+      publish(message: Message): Promise<void>;
+      close(): Promise<void>;
+    }
+
+Two methods. The gateway's `Fanout` has five (`onDelivery`, `publish`, `subscribe`, `unsubscribe`,
+`close`); the api never subscribes and never delivers, so it takes none of those three. One ioredis
+client, not two — the two-client rule exists because a *subscribed* connection cannot issue
+ordinary commands, and this one never subscribes.
+
+## Client options — different from the gateway's, deliberately
+
+    lazyConnect: true
+    maxRetriesPerRequest: 0
+    connectTimeout: 1_000
+    redis.on("error", () => {})
+
+Copied from `services/api/src/limits/store.ts`, not from `createFanout`. The reason is in that
+file: on the request path, a dead Redis that waits out a retry schedule turns every send slow
+rather than merely undelivered, and NFR-PRF-02 asks for p95 < 150 ms. The error listener is not
+optional — without it ioredis emits `error` on an EventEmitter with none attached.
+
+**`createFanout` has neither the options nor the listener** (R10). Do not treat it as the reference
+implementation for this one.
+
+## Behaviour
+
+### `publish` never rejects
+
+    try { await redis.publish(subjectFor(message.channel), JSON.stringify(message)) }
+    catch  { logger.log("error", "fanout.publish_failed", { channel, error }) }
+
+Same contract as the gateway's, same log event name. A caller cannot distinguish a failed publish
+from a successful one, and that is intended: delivery is allowed to fail because the message is
+already durable and resume will find it.
+
+**Consequence for tests, stated here because it is a contract property and not an implementation
+detail:** any test whose only assertion is "the send returned 201 while Redis was down" is
+satisfied by a publisher that does nothing at all. The observable difference is the log line.
+
+### When the api publishes, and when it does not
+
+Two guards, mirrored from `session.ts:651`, both load-bearing:
+
+| condition | why | requirement |
+|---|---|---|
+| the send committed a new row (not a recognised retry) | a client retrying on a flaky link would otherwise put the same message on every member's screen twice | FR-006 |
+| `text !== null` | a tombstone recovered by an old idempotency key is not a creation | FR-007 |
+
+And one the gateway never needed:
+
+| the send was not refused | the gateway publishes only for sends it accepted itself; the api's publish site sits after a call that may throw | FR-008 |
+
+FR-008's shape follows from where the publish goes: on the success path, not in a `finally`. A
+`finally` would publish after a `403`.
+
+## Ordering — the contract REST cannot inherit
+
+`docs/05-sad.md:254` fixes it: *"Ack after commit, never before (FR-MSG-05). The Redis fan-out
+happens after the ack; a recipient may see the message milliseconds after the sender's ack, never
+before durability."* The gateway performs it literally — `send(socket, message.ack)` and *then*
+`await fanout.publish(...)`, with a comment naming the sequence.
+
+**A request handler has no such seam.** The response is the ack, and anything the handler awaits
+happens before the response is written. So the api has two choices:
+
+| | publish before the response | detach the publish |
+|---|---|---|
+| ordering as written | inverted — recipients may see it before the sender's `201` | preserved |
+| the guarantee that ordering protects | **held** — the commit precedes both | held |
+| lands in | NFR-PRF-02 (write, p95 < 150 ms) | NFR-PRF-01 (ack → receipt, p95 < 250 ms) |
+| FR-011's failure observable | yes, synchronously | only by racing the response |
+
+**Decision: publish before the response, awaited.** The sentence's actual guarantee is *"never
+before durability"*, and that holds either way; what the literal reading protects is a measurement
+convention, not a correctness property. Awaiting is what makes the failure testable, and a Redis
+`PUBLISH` against a live server is sub-millisecond against a 150 ms budget — a number the chapter
+must measure rather than assert.
+
+The cost, recorded rather than hidden: **NFR-PRF-01's clock — "send acknowledged to recipient
+receipt" — cannot be read literally on the REST path**, because a recipient may receive before the
+sender is acknowledged. The interval is measurable on the socket path and is not on this one. That
+is the second documented order this feature finds unachievable as written, and both come from the
+same cause: the documents were written when the socket was the only way in.
