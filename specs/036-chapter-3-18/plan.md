@@ -310,6 +310,12 @@ alternative is more attractive than it looks) and R5, below.
 and it already has a zod schema), `contracts/` (the subject grammar and the publisher interface),
 `quickstart.md` (the validation guide, including the constitutional recovery test).
 
+**Close-out spans three repositories.** `relay-platform` and `relay-tutorial` are submodules and
+`docs/`+`specs/` are the parent's, so one chapter is three commits, a gitlink bump, and a tag in
+each — **tagged last**, because CLAUDE.md's fence lesson 2 exists precisely because a feature's tail
+amended a platform file after tagging. T063–T066. Absent from the first task list, found in analysis
+pass 10.
+
 **Phase 2 — tasks.** `/speckit-tasks`. Every task's first step is checking its own premise; five
 were wrong in 3.17 and three more surfaced during implementation. Two premises in this plan are
 already known to need checking before anything is built: R10's claim that a listener-less client
