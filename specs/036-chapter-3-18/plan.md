@@ -132,10 +132,30 @@ Two cautions on the table itself. The reconstructed counts run 4–6% above the 
 hold, but **the instrument that produced the recorded numbers no longer exists in the repository**
 and this is a reconstruction, not that instrument. Whatever counts 3.18 should re-count all three.
 
-3.18 has a small surface and five distinct arguments: the ordering that cannot be copied, the two
-NFRs pulling opposite ways, the subject grammar's move, the recovery property under a lost
-publish, and the membership question in R5. Estimate **2,200–2,800 prose words**, from the
-arguments. A file rate would have predicted ~1,300 and been wrong for the reason above.
+3.18 has a small surface and, after seven analysis passes, **six** arguments. The first estimate
+said five and was made before three more arrived — which is what an estimate derived from arguments
+has to survive, so it was re-derived in pass 7 rather than carried:
+
+    1  the ordering that cannot be copied to REST, and the two NFRs it pulls apart
+    2  why the subject grammar moved and the client did not
+    3  the recovery property under a lost publish — constitution IV's gate
+    4  the membership question in R5, and whatever T031–T034 make of FR-RTM-10
+    5  the SAD disagreeing with itself: an amendment, but not the one a 3.17 reader expects
+    6  a second output channel the isolation oracle cannot see (FR-008a)
+
+Eight were on the table. **Two did not survive the cut**, and saying which is the point of counting
+arguments rather than files:
+
+- The two NFRs pulling opposite ways is not its own argument — it is the *cost* of argument 1, and
+  splitting them would say the same thing twice.
+- The subject grammars' tenancy asymmetry moves to `chapter-notes.md`. It is real, it is
+  defensible, and it is a sidebar: the chapter that makes it visible is not obliged to resolve it,
+  and a reader following the build does not need it to finish.
+
+At the rate the first estimate used — 440 to 560 words per argument — six gives **2,650–3,350
+prose words**, inside SC-011's 2,000–4,000 with room at both ends. Eight would have given
+3,500–4,500 and brushed the ceiling, which is the finding pass 7 raised. A file rate would have
+predicted ~1,300 and been wrong for the reason above.
 
 ## Constitution Check
 

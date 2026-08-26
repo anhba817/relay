@@ -114,6 +114,11 @@ justified, which is the same mistake this contract already made once by copying 
 four client options without the down-window they were the slow version of. A borrowed
 implementation's comment is a precondition, not decoration.
 
+**`environment_id` belongs in the log and never in the payload.** The two sit a line apart in this
+function, and `messageSchema` is a `z.strictObject` of six fields — a seventh key drops the whole
+message at the far end while the send returns `201`. `data-model.md` names `environment_id` and
+`channel_id` as the two most likely additions here. The log is an open record; the payload is closed.
+
 **And the log line is the whole of the observability.** The api has no Prometheus dependency, so
 NFR-OBS-03's metrics do not exist there and an alert on this would be a log-level rule (spec
 FR-011). A caller cannot distinguish a failed publish
