@@ -970,3 +970,56 @@ T086f — no checker reads prose, and this is where that was proven
   green while chapter 3.10 told readers the opposite of what the platform does. Both
   corrections above were made by reading, and the sweep that found them is a `grep` a
   person classified — nine hits, two wrong.
+
+PHASE 10: TRANSLATION AND PUBLICATION
+-------------------------------------
+
+T090 — assembled mechanically, and the fence lists were compared rather than trusted
+
+    segments in the English page          67
+    prose segments                        34   (16 with content, 3,350 words)
+    fence segments                        33
+    fences byte-identical after assembly  33 of 33
+
+  Split at every fence boundary, translate only the prose, copy the fences untouched, then
+  re-split BOTH files and compare the fence lists. The comparison is the point: the chain's
+  MIRROR property requires each Vietnamese fence to be byte-identical to the English one
+  with the same title, and a translation done by editing the whole page cannot promise that.
+
+T091 — the figure labels
+
+    exported names match across locales   4 of 4
+    identifiers, table and column names   left in English
+
+  `usage_active_users`, `sendMessage`, `field: user`, `403 sender_not_permitted`,
+  `FR-ANL-05` — a reader who searches the code for a name from a diagram has to find it.
+
+T092 — what the checker can tell you, and what it cannot
+
+    paths this chapter owns a fence for                27
+    this feature's changed files no chapter claims       7
+
+    README.md                                  the file an outsider is told to read
+    services/api/src/limits/limits.itest.ts
+    services/api/src/messages/history.itest.ts
+    services/api/src/messages/idempotency.itest.ts
+    services/api/src/outbox/event.test.ts
+    services/api/src/quotas/quotas.itest.ts
+    services/gateway/src/limits.itest.ts
+
+  `check:fences` proves that every CLAIMED path matches. It cannot report a changed file
+  that no chapter claims, because it has no way to know the file changed. That list is a
+  `git diff` a person reads, and it is where the README sits.
+
+T093 / T094 — the publication numbers
+
+    pnpm lint                exit 0
+    pnpm exec tsc --noEmit   exit 0
+    pnpm build               exit 0
+    static pages             91   (89 at chapter 3.16's close; +2 for this chapter's
+                                   two locales)
+    check:fences             212 fenced files, 34 chapters, 34 translated
+    check:figures            212 figures, every diagram passed as `code`
+    check:srs                245 clause rows, 245 unique, six classes
+    check:errors             17 codes, 17 sections
+    check:docs               all mirrored docs match their sources

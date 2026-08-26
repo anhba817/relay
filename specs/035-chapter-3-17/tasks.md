@@ -325,12 +325,12 @@ columns from the first task to the last.
 **Goal**: both locales carry the chapter, the build is green, and the page count moved by exactly
 what was added. Identifiers, table names and column names stay English in the translation.
 
-- [ ] T090 Translate to `relay-tutorial/app/(vi)/vi/part-3/chapter-17/<slug>/page.mdx`, **assembled mechanically** — split at every fence boundary, translate the prose, copy the fences untouched, then re-split both and compare the fence lists
-- [ ] T091 [P] Translate the figure labels; identifiers, table and column names stay English — writes the `(vi)` locale page
-- [ ] T092 `pnpm check:fences`, and ask it about **files this chapter owns** rather than pages naming it — and separately list this feature's files that no chapter claims, which the checker cannot tell you (SC-010)
-- [ ] T093 [P] `pnpm lint`, `tsc`, `pnpm build`, `check:figures`, and the static page count — writes `baseline.txt` (SC-010)
-- [ ] T094 Record the chapter's numbers in `baseline.txt`, both locales
-- [ ] T095 Commit Phase 10
+- [X] T090 Translate to `relay-tutorial/app/(vi)/vi/part-3/chapter-17/<slug>/page.mdx`, **assembled mechanically** — split at every fence boundary, translate the prose, copy the fences untouched, then re-split both and compare the fence lists
+- [X] T091 [P] Translate the figure labels; identifiers, table and column names stay English — writes the `(vi)` locale page
+- [X] T092 `pnpm check:fences`, and ask it about **files this chapter owns** rather than pages naming it — and separately list this feature's files that no chapter claims, which the checker cannot tell you (SC-010)
+- [X] T093 [P] `pnpm lint`, `tsc`, `pnpm build`, `check:figures`, and the static page count — writes `baseline.txt` (SC-010)
+- [X] T094 Record the chapter's numbers in `baseline.txt`, both locales
+- [X] T095 Commit Phase 10
 
 ---
 
