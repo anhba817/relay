@@ -113,6 +113,49 @@ Not fenced, and edited anyway: `docs/05-sad.md` and its mirror (governed by `che
 chain), `docs/07-tutorial-plan.md`, `relay-tutorial/lib/tutorial.ts`, and the chapter's own four
 pages. The chain fences platform files a chapter claims; the tutorial *is* the tutorial.
 
+### How each file is fenced, decided here rather than at T050
+
+`check-fence-chain.mjs:39` excludes any fence whose title contains `(excerpt)` or `.naive.` —
+`NOT_A_FILE`. That is the mechanism behind `gaps.md` item 7's three permanently-unverified files,
+and this column now holds five large integration tests: `isolation.itest.ts` **833 lines**,
+`session.itest.ts` 442, `resume.itest.ts` 358, `public-surface.itest.ts` 341,
+`integrate.itest.ts` 310. A chapter does not show an 833-line test in full, so the hatch will be
+reached for; it is already used six ways in the published corpus.
+
+**But `(excerpt)` is not a free choice for a file already in the chain.** The replay compares the
+end state, so if 3.18 excerpts a file it changed, the last contributing fence is some older
+chapter's and the replayed bytes will not match HEAD — a `[HEAD]` drift failure. There are three
+options, not two:
+
+| | what it means |
+|---|---|
+| **titled** | the chapter shows the file and the chain verifies it |
+| **`(excerpt)` + a `fences/post-series.md` hunk** | the chapter shows a fragment; the appendix carries the byte-exact change. This is what the appendix is *for* — *"changes to fenced files made by work that publishes no chapter"* |
+| **`(excerpt)` alone** | only legitimate for a file that was never in the chain |
+
+So, per file:
+
+    protocol/fanout.ts, fanout.test.ts        titled — new, small, the chapter's subject
+    protocol/index.ts                         titled — a one-line change, cheap to show
+    gateway/fanout.ts                         titled — T007 discusses it, comment and all
+    gateway/fanout.itest.ts        152 l      titled — an import split, and 152 lines is showable
+    api/fanout/publisher.ts, .test.ts         titled — the centrepiece
+    api/fanout/fanout.itest.ts    new, big    EXCERPT + appendix hunk; ten cases by the end
+    api/messages/messages.controller.ts       titled — the publish site itself
+    api/messages/messages.module.ts           titled
+    gateway/resume.itest.ts       358 l       EXCERPT + appendix hunk
+    gateway/public-surface.itest.ts 341 l     EXCERPT + appendix hunk — a COMMENT-only change
+    gateway/isolation.itest.ts    833 l       EXCERPT + appendix hunk — a COMMENT-only change
+    vitest.coverage.config.mts    7 chapters  EXCERPT + appendix hunk (one already at :1419)
+    outsider/integrate.itest.ts   310 l       titled — T003 inverts its central test, and a
+                                              reader following the exercise needs to see it
+    gateway/session.itest.ts      442 l       T014a decides; in no chapter today
+
+**The two comment-only changes are the clearest appendix cases in the feature.** 3.18 does not
+teach `isolation.itest.ts` or `public-surface.itest.ts`; it retires a stale sentence in each
+(FR-018). Putting an 833-line file into a chapter that never discusses it is the exact thing
+`post-series.md` exists to prevent — *"no chapter is made to lie."*
+
 **`session.itest.ts` is a decision, not an omission.** It is fenced by no chapter — outside the
 chain the way `sentinel.ts` and `guard.itest.ts` are (`gaps.md` item 7) — and 3.18 puts its
 end-to-end test there, the one test a reader most wants to see. Either the chapter fences it, adding
