@@ -196,6 +196,28 @@ their open socket within the clause's window.
   outsider who sends over REST and waits on a socket cannot succeed and no document says so.
   This chapter makes the attempt succeed; the chapter MUST state whether the verdict is
   satisfied or whether its documentation half remains.
+- **FR-018** *(added during analysis)*: **Published chapters state this chapter's subject as
+  permanent, and those sentences MUST be corrected.** A sweep of the published corpus found four
+  classes of site:
+
+    - `part-3/chapter-13`'s `<Trap title="A message sent over REST reaches no socket, **ever**">`,
+      whose body reads *"Nothing in the api publishes to the gateway's fan-out"* — and its
+      Vietnamese twin, *"không bao giờ tới được"*.
+    - **Part 3's closing paragraph** in `part-3/chapter-16`: *"a REST-sent message still reaches no
+      socket and FR-RTM-05's chapter owns that decision"* — present tense, and repeating the
+      FR-RTM-05 misattribution FR-001 corrects to FR-RTM-01.
+    - `packages/outsider/src/integrate.itest.ts:233`, a test **titled** *"receives a message on a
+      socket — SENT over the socket"*, whose comment calls the fan-out *"the half that remains"*.
+    - Comments in `fanout.ts`, `public-surface.itest.ts` and `isolation.itest.ts`, all in files
+      chapters fence, which makes them published prose.
+
+  **The distinction is tense and attribution.** A sentence saying what *is* the case goes false; a
+  sentence saying what a chapter *recorded* stays true — 3.17's *"Chapter 3.12 recorded that a
+  REST-sent message reaches no socket"* needs no change, and 3.14's verdict is a gap record. Only
+  the present-tense and permanent claims are in scope.
+
+  This is `gaps.md` item 8's artifact class: no checker reads prose, and a published Trap
+  contradicting 3.17's own chapter survived fifteen analysis passes there and nine here.
 - **FR-017**: Presence is **not** in scope. FR-RTM-06 and FR-RTM-07 are chapter 3.19, and
   FR-CHN-05's third verb stays unbuilt. The chapter MUST say so rather than leaving a reader to
   infer it from silence.
@@ -272,6 +294,8 @@ bounded" is a claim that has to keep being true:
 - **A `relay-tutorial/lib/tutorial.ts` entry**, with both Vietnamese fields.
 - **No SRS amendment.** That distinction is the whole point of FR-002 and FR-002a standing
   together.
+- **Corrections to published chapters' prose**, in both locales — a Trap, Part 3's closer, and
+  four fenced-file comments. See FR-018.
 
 ## Out of scope
 

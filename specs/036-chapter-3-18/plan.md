@@ -92,8 +92,16 @@ against the last chapter to claim it, not against a generic HEAD.
 | `services/gateway/src/resume.itest.ts` | no | **yes** | p2/ch07, p3/ch02, ch07, ch08, ch16 |
 | `vitest.coverage.config.mts` | no | **yes** | seven chapters, last p3/ch17 |
 | `packages/outsider/src/integrate.itest.ts` | yes | yes | p3/ch14, p3/ch17 |
+| `services/gateway/src/public-surface.itest.ts` | no | **yes** | p3/ch13, ch16, ch17 |
+| `services/gateway/src/isolation.itest.ts` | no | **yes** | p3/ch12, ch15, ch16, ch17 |
 
-**Nine taught, thirteen-or-fourteen fenced.** The five the first column-guess missed —
+**Nine taught, fifteen-or-sixteen fenced** — the column grew twice under analysis, and the second
+time is the more instructive: **pass 9 found comments in `public-surface.itest.ts` and
+`isolation.itest.ts` that this feature falsifies** (FR-018), which turns two files nothing was
+going to touch into two files that must be edited and therefore fenced. A fence column tracks the
+task list, and the task list moves when analysis reads prose.
+
+**Nine taught, thirteen-or-fourteen fenced** was the pass-4 figure. The five the first column-guess missed —
 `vitest.coverage.config.mts`, `session.itest.ts`, `resume.itest.ts`,
 `packages/outsider/src/integrate.itest.ts`, and `packages/protocol/src/fanout.test.ts` — are all
 files a task modifies without teaching, which is the category a prediction written before the tasks
