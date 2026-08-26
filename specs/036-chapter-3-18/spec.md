@@ -142,9 +142,16 @@ their open socket within the clause's window.
   The other four refusal kinds — a banned sender, an archived channel, an exhausted quota, an
   application key naming a person — are covered by FR-008. This one is separated because it is the
   Sev-0 class and because its observer is different.
-- **FR-009**: The frame delivered MUST be byte-compatible with what a socket send produces
-  today. A client cannot tell which entrance a message used, and `messageSchema` is the contract
+- **FR-009** *(narrowed during analysis — the first wording asked for something no client can
+  observe)*: The frame delivered MUST be **indistinguishable to a client** from one a socket send
+  produces. A client cannot tell which entrance a message used, and `messageSchema` is the contract
   that makes that true.
+
+  The first wording said *"byte-compatible"*, and the api's bytes never reach a client:
+  `session.ts:45` is `socket.send(JSON.stringify(frame))`, so the fan-out payload is parsed on
+  receipt, validated, rewrapped in a frame and re-serialized by the gateway. **Field equality is
+  sufficient precisely because the gateway rebuilds the bytes** — which is worth stating rather
+  than leaving a stronger claim that nothing tests and nothing depends on.
 
 ### Failure, and what it must not take down
 
