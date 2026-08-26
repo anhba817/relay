@@ -345,8 +345,8 @@ before it is done.**
 - [X] T097 [P] Write `specs/035-chapter-3-17/gaps.md`, and **carry forward the eight from the last feature that are still open**, with 3.18 and 3.19 as owners where they now have one (SC-009)
 - [X] T098 [P] Record whether the two file counts stayed apart, and what each was at every revision — writes `chapter-notes.md`
 - [X] T099 Update `CLAUDE.md` between the `<!-- SPECKIT -->` markers (SC-009)
-- [ ] T100 [P] Tick the last task only when it is done, not when it is about to be — chapter 3.12 marked its close-out complete before pushing and had to reopen it — writes `tasks.md`
-- [ ] T101 Tag `part3-ch17` in all three repositories, confirm each submodule pin matches its HEAD, and push. **Hold the tag if `check:fences` exits 1** (SC-009)
+- [X] T100 [P] Tick the last task only when it is done, not when it is about to be — chapter 3.12 marked its close-out complete before pushing and had to reopen it — writes `tasks.md`
+- [X] T101 Tag `part3-ch17` in all three repositories, confirm each submodule pin matches its HEAD, and push. **Hold the tag if `check:fences` exits 1** (SC-009)
 
 ---
 
