@@ -69,6 +69,7 @@ So the feature is proven at three levels, and each task says which it is:
 
 ## Phase 1: Setup
 
+- [ ] T001a **Identify the fence chain's predecessor commit and write it into `specs/036-chapter-3-18/baseline.txt`.** It is a commit, not the `part3-ch17` tag: feature 034's tail amended a platform file *and* a chapter fence after tagging, which cost 3.17 five wrong answers. Find it the way 3.17 eventually did — `git log` on the platform files this feature touches, against what `part3-ch17` points at. Naming it here is what stops T050 guessing
 - [ ] T001 Pin the lane environment in `specs/036-chapter-3-18/baseline.txt`: the four variables and the compose profile from `specs/035-chapter-3-17/baseline.txt`, re-verified rather than copied, plus the ports this feature needs (Postgres 15432, Redis 16379 — this machine's own Postgres holds 5432)
 - [ ] T002 [P] Record the starting state in `specs/036-chapter-3-18/baseline.txt` — integration test count, lane mean, coverage pins for every file this feature touches, `pnpm check:fences` file count — measured, not carried over from 3.17's close. **Record the per-suite cost of an api boot separately**: `services/api/src/fanout/fanout.itest.ts` is a NEW suite and the lane is `--concurrency=1`, so it costs a boot rather than a handful of assertions. 3.17 moved 407 -> 589 tests for +0.55 s *within existing suites*; that number does not predict this one, and the budget is 240 s against a 193.55 s mean
 - [ ] T003 [P] Confirm the failing state that justifies the chapter: add the scenario to `relay-platform/packages/outsider/src/integrate.itest.ts` — send over REST, wait on a socket — and watch it **time out**. Record the failure mode in `baseline.txt`. A scenario that passes now is testing something else (3.17's T047c)
@@ -80,7 +81,7 @@ So the feature is proven at three levels, and each task says which it is:
 - [ ] T004 Create `relay-platform/packages/protocol/src/fanout.ts` with `subjectFor(channelId)` **only**, moved verbatim from `services/gateway/src/fanout.ts` including the comment explaining one subject per channel. **`DEFAULT_REDIS_URL` does not move** — it is declared in `api/src/limits/store.ts:44`, `gateway/src/fanout.ts:27` and `gateway/src/limits.ts:22`, and consolidating one of three copies leaves a shared definition plus two locals. A connection URL is configuration, not protocol
 - [ ] T005 Export `subjectFor` from `relay-platform/packages/protocol/src/index.ts`
 - [ ] T006 [P] Unit-test the grammar in `relay-platform/packages/protocol/src/fanout.test.ts` — `subjectFor(id) === \`chan:${id}\``. It is a pure string assertion and belongs beside the definition, not in an integration suite that needs Redis
-- [ ] T007 Delete `subjectFor` from `relay-platform/services/gateway/src/fanout.ts` and import it from `@relay/protocol`. **No re-export** — one name for one thing, so consumers take it from the package. `fanout.itest.ts:8` imports `createFanout, subjectFor, type Fanout` on one line; that line splits in two. Move the grammar assertion at `fanout.itest.ts:150` to T006 rather than leaving it testing a moved function from an integration lane
+- [ ] T007 Delete `subjectFor` from `relay-platform/services/gateway/src/fanout.ts` and import it from `@relay/protocol`. **Correct the comment at `:11` in the same edit**: it reads *"The instance that handled a send publishes the committed message AFTER the api's response"*, and this feature makes that false for the REST path — the instance that handled the send is the api, for half of all sends. Chapter 2.6 fences this file **whole**, so that sentence is published prose in two locales, and nothing but this task will change it. `gaps.md` item 8 is the precedent: a published Trap contradicting 3.17's own chapter survived fifteen analysis passes because no checker reads prose. **No re-export** — one name for one thing, so consumers take it from the package. `fanout.itest.ts:8` imports `createFanout, subjectFor, type Fanout` on one line; that line splits in two. Move the grammar assertion at `fanout.itest.ts:150` to T006 rather than leaving it testing a moved function from an integration lane
 - [ ] T008 Run `pnpm build` before believing any checker: `check:errors` reads `packages/protocol/dist/codes.js`, the built artifact, and a stale `dist` makes it green for the wrong reason. `session.itest.ts:113` also refuses to run without `services/api/dist/main.js`
 
 ### The publisher
@@ -97,6 +98,7 @@ So the feature is proven at three levels, and each task says which it is:
 ### The delivery harness
 
 - [ ] T014 Wire a fan-out into `relay-platform/services/gateway/src/session.itest.ts`'s harness. `:224` calls `attachSessions({ server, api, logger })` with no `fanout` key, and `session.ts:125` declares `fanout?: Fanout` — so today `fanout?.publish` is a no-op and **nothing in that suite subscribes to any subject**. Every delivery test below needs this. **Add it as a new capability, do not change what the existing fixture is**: promoting or repurposing a shared gateway fixture took five tests down in 3.17's T040b, the fifth such incident in two features. Run the whole gateway suite after, not just the new test
+- [ ] T014a **Decide whether `relay-platform/services/gateway/src/session.itest.ts` joins the fence chain**, and record the decision in `specs/036-chapter-3-18/chapter-notes.md`. It is fenced by **no chapter** today — outside the chain like `sentinel.ts`, `sentinel.sql` and `guard.itest.ts` (`gaps.md` item 7) — and T022 puts this chapter's end-to-end test in it. Fencing it adds a file to the chain for the first time and binds every later chapter that edits it; not fencing it means the chapter shows a test the chain never verifies. Either is defensible; discovering it at T052 is not
 
 ## Phase 3: User Story 1 — a REST send reaches a connected member (P1) 🎯 MVP
 
@@ -126,7 +128,7 @@ So the feature is proven at three levels, and each task says which it is:
 
 ### Implementation for User Story 1
 
-- [ ] T024 [US1] Add the publish to `relay-platform/services/api/src/messages/messages.controller.ts`, immediately before the `return` that assembles the response. Six fields: `channel: message.channel_id` (**renamed** — the frame's field is `channel`), `user: actingExternalId`, and `id`/`seq`/`text`/`created_at` from `message`
+- [ ] T024 [US1] Add the publish to `relay-platform/services/api/src/messages/messages.controller.ts` — fenced by **six** chapters, most recently `part-3/chapter-17`, so 3.18's fence for it is built against 3.17's version and not against a generic HEAD — immediately before the `return` that assembles the response. Six fields: `channel: message.channel_id` (**renamed** — the frame's field is `channel`), `user: actingExternalId`, and `id`/`seq`/`text`/`created_at` from `message`
 - [ ] T025 [US1] Guard it in `relay-platform/services/api/src/messages/messages.controller.ts` with the two conditions mirrored from `session.ts:651` — `!message.duplicate` (**FR-007**) and `message.text !== null`. Carry the gateway's reasons across, and **record the second reason `session.ts` does not give**: `messageSchema.text` is `z.string()`, non-nullable, so a tombstone cannot be published at all — it would be dropped as `fanout.invalid_payload`. The guard has two independent justifications and only one is written down today
 - [ ] T026 [US1] Verify **FR-008** by construction in `relay-platform/services/api/src/messages/messages.controller.ts`: `send()` throws on a refusal, so a publish on the success path never runs for one. **Do not use `finally`** — a `finally` publishes after a `403`
 
@@ -169,8 +171,9 @@ So the feature is proven at three levels, and each task says which it is:
 - [ ] T046 State **FR-003** in `page.mdx`: FR-RTM-05 names six event kinds and this chapter delivers one, because one is all that has a producer. `message.updated` and `membership.changed` have none outside tests, and nothing writes `messages.edited_at` or `messages.deleted_at`
 - [ ] T047 State **FR-012** in `page.mdx`: what a client may conclude from having received nothing. A missing frame is not evidence a message does not exist — resume is the guarantee, the fan-out is the optimisation
 - [ ] T048 [P] Write `relay-tutorial/app/(en)/part-3/chapter-18/the-message-that-never-arrived/figures.ts` — the missing edge from `docs/05-sad.md:138` as it is today and as it becomes, and the ordering comparison between the two transports
-- [ ] T049 [P] Assemble the Vietnamese twin under `relay-tutorial/app/(vi)/part-3/chapter-18/`, fences byte-identical to the English (the chain's `MIRROR` rule)
+- [ ] T049 [P] Assemble the Vietnamese twin under `relay-tutorial/app/(vi)/vi/part-3/chapter-18/the-message-that-never-arrived/` — **both `page.mdx` and its own `figures.ts`**, as chapter 3.17 carries on both sides. Fences byte-identical to the English (the chain's `MIRROR` rule); figure captions and prose translated
 - [ ] T050 Fence every path in T042's second column, under `relay-tutorial/fences/`. **Three lines of context suffice because uniqueness is checked**; the predecessor is a **commit**, not a tag — a feature's tail can amend a platform file after tagging, which cost 3.17 five wrong answers
+- [ ] T049a **Add chapter 3.18 to `relay-tutorial/lib/tutorial.ts`.** The registry holds exactly the 34 shipped chapters — 34 `status: "published"`, zero `"planned"` — so **without an entry the chapter does not route, is not among the static pages, and nothing that walks chapters can see it.** Model it on 3.17's at `:575`: `id`, `path`, `title`, `status`, `readerProduces`, `sourceDoc`, `readerMinutes`, `titleVi`, `readerProducesVi`. `sourceDoc` is **`docs/05-sad.md`** for this chapter, where 3.17's was the SRS — which is the same distinction FR-002 and FR-002a draw. The file is fenced by no chapter and has no appendix hunk: edited, not fenced
 - [ ] T050a **Amend `docs/05-sad.md`** (spec **FR-002a**): §5.1 gains a REST send sequence, and the ordering bullet at `:254` splits the way FR-005 splits it. The document currently says two different things — `:138`'s component diagram gives the publish to the api, `:248`'s sequence diagram draws `G->>G`, and `:254` states *"The Redis fan-out happens after the ack"* unconditionally. **This chapter's whole justification cites `:138`**, so leaving `:248` contradicting it is the kind of quiet claim the chapter is about
 - [ ] T050b Run `pnpm sync:docs` and confirm `pnpm check:docs` is green. `docs/05-sad.md` is mirrored into `relay-tutorial/content/docs/05-sad.md` and `check-docs-drift.sh` fails on divergence — the amendment is not finished until the mirror matches
 - [ ] T050c State in `page.mdx` what FR-002 and FR-002a distinguish: **no SRS clause changed**, principle VI satisfied by citing FR-RTM-01, *and* a SAD amendment because the SAD disagreed with itself. A reader arriving from 3.17 is looking for an amendment, and the honest answer is "not the one you expect"
@@ -178,7 +181,7 @@ So the feature is proven at three levels, and each task says which it is:
 
 ## Phase 8: Close-out
 
-- [ ] T052 Re-derive the file count from `git diff --name-only` in both repositories and reconcile it against `pnpm check:fences`. T042's thirteen is a first count and is **expected to be wrong**; this comparison found two files in no bucket in 3.16
+- [ ] T052 Re-derive the file count from `git diff --name-only` in both repositories and reconcile it against `pnpm check:fences`. `plan.md`'s column was rebuilt from the task list in analysis pass 4, after the pre-task prediction missed five files and invented two — so this step should now **confirm** rather than discover. If it still finds a file in no bucket, that is the interesting result and belongs in `chapter-notes.md`
 - [ ] T053 [P] Run `pnpm turbo run test`, `pnpm test:integration`, `pnpm test:outsider`, `pnpm coverage` — and `pnpm build` first, so `check:errors` reads a current `dist` and `session.itest.ts` can spawn the api
 - [ ] T054 [P] Run `pnpm check:fences`, `pnpm check:figures`, `pnpm check:errors`, `pnpm check:srs`, `pnpm check:docs`
 - [ ] T055 Coverage against `relay-platform/vitest.coverage.config.mts`: confirm T011's pin still holds and that no touched file's pin regressed. The ratchet has **removed** code three times rather than covered it
@@ -220,6 +223,11 @@ property is never untested.
 
 **T009a before T039.** Measuring a dead Redis without the down-window measures the version that
 `limits/store.ts` already rejected, so the number would describe a design nobody chose.
+
+**T049a before T050b.** `pnpm sync:docs` and `check:docs` are about `docs/`; the registry entry is
+what makes the chapter exist as a page, and a chapter that does not route cannot be checked.
+
+**T001a before T050.** The predecessor commit is named once, in the baseline, and read from there.
 
 **T050b immediately after T050a.** A SAD edit that is not synced leaves `check:docs` red, and
 `check:docs` reads drift rather than validity — it will not tell you which of the two files is

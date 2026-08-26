@@ -71,28 +71,51 @@ seventh field or a missing `user` is dropped rather than forwarded (`fanout.ites
 Chapter 3.15/3.16 conflated these and paid eight revisions for it. One column drives the word
 estimate; the other drives the fence chain, and neither predicts the other.
 
-| | teaches | fences |
-|---|---|---|
-| `packages/protocol/src/fanout.ts` (new — `subjectFor` only) | yes | yes |
-| `packages/protocol/src/fanout.test.ts` (new — the grammar's own test) | no | **yes** |
-| `services/gateway/src/fanout.ts` (consumes it instead of defining it) | yes | yes |
-| the api's publisher module | yes | yes |
-| the api's send path (the publish site) | yes | yes |
-| the api's module wiring | yes | yes |
-| `services/api/src/main.ts` or config (the Redis URL) | maybe | yes |
-| the api-side publish test | yes | yes |
-| the cross-service delivery test | yes | yes |
-| the outsider scenario (3.14's verdict, now passing) | yes | yes |
-| `packages/protocol/src/index.ts` (a re-export) | no | **yes** |
-| the gateway's fanout tests (import path moved) | no | **yes** |
-| `services/api/package.json` (if `ioredis` is not yet a direct dep) | no | **yes** |
-| `docs/07-tutorial-plan.md` (the row goes from planned to shipped) | no | n/a |
+**This column was rebuilt in analysis pass 4 from the task list**, after the first version — a
+prediction written before tasks existed — was found to omit five files that tasks modify and to
+invent one that they do not. Each row carries who owns the file today, because a fence is built
+against the last chapter to claim it, not against a generic HEAD.
 
-**Nine taught, thirteen fenced, and the three that diverge are the ones a chapter forgets.** A
-re-export and a moved import path change no behaviour and teach nothing, and the chain does not
-care: a claimed path's state must equal the repository's. The count above is a first count and
-will be wrong. `git diff --name-only` against `pnpm check:fences` at the end is what settles it —
-that comparison split the count in 3.16 and found two files in no bucket.
+| platform file | teaches | fences | fenced today by |
+|---|---|---|---|
+| `packages/protocol/src/fanout.ts` (new — `subjectFor`) | yes | yes | — |
+| `packages/protocol/src/fanout.test.ts` (new) | no | **yes** | — |
+| `packages/protocol/src/index.ts` | no | **yes** | p1/ch03, p2/ch05 |
+| `services/gateway/src/fanout.ts` | yes | yes | **p2/ch06** (whole file) |
+| `services/gateway/src/fanout.itest.ts` | no | **yes** | p2/ch06, ch07 |
+| `services/api/src/fanout/publisher.ts` (new) | yes | yes | — |
+| `services/api/src/fanout/publisher.test.ts` (new) | yes | yes | — |
+| `services/api/src/fanout/fanout.itest.ts` (new) | yes | yes | — |
+| `services/api/src/messages/messages.controller.ts` | yes | yes | six chapters, last **p3/ch17** |
+| `services/api/src/messages/messages.module.ts` | yes | yes | p2/ch02, ch05, p3/ch02 |
+| `services/gateway/src/session.itest.ts` | yes | **decide** | **NOBODY** — see below |
+| `services/gateway/src/resume.itest.ts` | no | **yes** | p2/ch07, p3/ch02, ch07, ch08, ch16 |
+| `vitest.coverage.config.mts` | no | **yes** | seven chapters, last p3/ch17 |
+| `packages/outsider/src/integrate.itest.ts` | yes | yes | p3/ch14, p3/ch17 |
+
+**Nine taught, thirteen-or-fourteen fenced.** The five the first column-guess missed —
+`vitest.coverage.config.mts`, `session.itest.ts`, `resume.itest.ts`,
+`packages/outsider/src/integrate.itest.ts`, and `packages/protocol/src/fanout.test.ts` — are all
+files a task modifies without teaching, which is the category a prediction written before the tasks
+cannot see. It also invented `services/api/package.json`: **`ioredis` is already a direct
+dependency** (`:22`, `^6.0.0`), and `services/api/src/main.ts`, which does not change because the
+publisher reads `RELAY_REDIS_URL` the way `limits/store.ts` already does.
+
+Not fenced, and edited anyway: `docs/05-sad.md` and its mirror (governed by `check:docs`, not the
+chain), `docs/07-tutorial-plan.md`, `relay-tutorial/lib/tutorial.ts`, and the chapter's own four
+pages. The chain fences platform files a chapter claims; the tutorial *is* the tutorial.
+
+**`session.itest.ts` is a decision, not an omission.** It is fenced by no chapter — outside the
+chain the way `sentinel.ts` and `guard.itest.ts` are (`gaps.md` item 7) — and 3.18 puts its
+end-to-end test there, the one test a reader most wants to see. Either the chapter fences it, adding
+a file to the chain for the first time, or it shows an unfenced test and says so. T014a decides.
+
+**Two appendix interactions, both measured rather than assumed.** `fences/post-series.md:1419`
+holds a ```diff hunk titled `vitest.coverage.config.mts` anchored at `@@ -18,8 +18,33 @@` — near
+the top, clear of the `thresholds` object T011 edits around line 104, so the two do not collide.
+`post-series.md:1204` mentions `services/gateway/src/fanout.ts` as a *string inside an
+`eslint.config.mjs` exemption array*, not as a claim on the file. Neither is the last-line anchoring
+that forbids appending, and checking beat assuming in both directions.
 
 ### The word estimate, and why the rate it would have used was discarded
 
