@@ -280,18 +280,18 @@ the twenty-run integration battery inside its budget. **Twenty green rejects a p
 above 13.91% at 95% confidence and nothing finer**, so the battery bounds flakiness rather than
 proving its absence.
 
-- [ ] T068 Run every gate and record the **exit code** of each, not a grep over its output: `pnpm lint`, `pnpm typecheck`, `pnpm build`, `pnpm turbo run test`, `pnpm test:integration`, `pnpm coverage`, `pnpm test:outsider`
-- [ ] T069 [P] Add coverage ratchets for anything this feature adds, and **re-earn the pins it moves**. `repository.ts` sits at 91 branches after the last feature raised it from 90 (SC-003)
-- [ ] T070 Enumerate the branch arms this feature adds and show each covered, per arm rather than by a file percentage — `baseline.txt`
-- [ ] T071 **Check that every new repository function is exercised in-process**, not only through the gateway's api child whose coverage is not attributable. `functions: 100` on `repository.ts` is the measurement that answers it (SC-003)
-- [ ] T072 Write `specs/035-chapter-3-17/traceability.md`, both directions, and **check FR-CHN-05's row**: chapters 3.15/3.16 recorded it delivered when the clause names three verbs and two were built. A map that claims delivery is the defect this project has now corrected three times. **And cite FR-USR-05's existing SRS note**: it already records that *"the resume path drops a senderless row, so every message a deleted user ever sent would vanish from every reconnecting client with a sequence gap as the only trace"* — the third of FR-012's four paths, anticipated by the governing document years before this chapter. Analysis pass 9 opened that note as a suspected contradiction of SC-007 and it is the reverse: the note is the SRS **rejecting** `ON DELETE SET NULL` for exactly this reason. Presenting the resume path as a new discovery understates the document the chapter is amending (SC-009)
-- [ ] T073 [P] Update `docs/04-srs.md`'s verification notes for FR-USR-07 and FR-MSG-15 (FR-016)
-- [ ] T074 [P] Add the 3.17 row to `docs/07-tutorial-plan.md` with the shipped numbers (SC-010)
-- [ ] T075 Run `pnpm sync:docs`, then `check:docs`, `check:errors`, `check:figures`, `check:fences` — in that order and after T073
-- [ ] T076 **Decide the lane budget before the battery runs.** The last feature measured 550 tests at 192–197 s against a 240 s bound, and found the lane costs per **suite** rather than per test. This feature adds tests to existing suites and one new suite at most (SC-010)
-- [ ] T077 The twenty-run battery, on a machine running nothing else (SC-010)
-- [ ] T078 Record what twenty green buys and does not: it rejects a per-run failure rate above 13.91% at 95% confidence, a 5% flake survives it 35.85% of the time, and rejecting one needs 59 runs — writes `baseline.txt`
-- [ ] T079 Commit Phase 8
+- [X] T068 Run every gate and record the **exit code** of each, not a grep over its output: `pnpm lint`, `pnpm typecheck`, `pnpm build`, `pnpm turbo run test`, `pnpm test:integration`, `pnpm coverage`, `pnpm test:outsider`
+- [X] T069 [P] Add coverage ratchets for anything this feature adds, and **re-earn the pins it moves**. `repository.ts` sits at 91 branches after the last feature raised it from 90 (SC-003)
+- [X] T070 Enumerate the branch arms this feature adds and show each covered, per arm rather than by a file percentage — `baseline.txt`
+- [X] T071 **Check that every new repository function is exercised in-process**, not only through the gateway's api child whose coverage is not attributable. `functions: 100` on `repository.ts` is the measurement that answers it (SC-003)
+- [X] T072 Write `specs/035-chapter-3-17/traceability.md`, both directions, and **check FR-CHN-05's row**: chapters 3.15/3.16 recorded it delivered when the clause names three verbs and two were built. A map that claims delivery is the defect this project has now corrected three times. **And cite FR-USR-05's existing SRS note**: it already records that *"the resume path drops a senderless row, so every message a deleted user ever sent would vanish from every reconnecting client with a sequence gap as the only trace"* — the third of FR-012's four paths, anticipated by the governing document years before this chapter. Analysis pass 9 opened that note as a suspected contradiction of SC-007 and it is the reverse: the note is the SRS **rejecting** `ON DELETE SET NULL` for exactly this reason. Presenting the resume path as a new discovery understates the document the chapter is amending (SC-009)
+- [X] T073 [P] Update `docs/04-srs.md`'s verification notes for FR-USR-07 and FR-MSG-15 (FR-016)
+- [X] T074 [P] Add the 3.17 row to `docs/07-tutorial-plan.md` with the shipped numbers (SC-010)
+- [X] T075 Run `pnpm sync:docs`, then `check:docs`, `check:errors`, `check:figures`, `check:fences` — in that order and after T073. **`check:fences` cannot pass in this phase**: 27 `[HEAD]` reports on paths this chapter changed, and the chapter that fences them is Phase 9's. T092 is where it goes green
+- [X] T076 **Decide the lane budget before the battery runs.** The last feature measured 550 tests at 192–197 s against a 240 s bound, and found the lane costs per **suite** rather than per test. This feature adds tests to existing suites and one new suite at most (SC-010)
+- [X] T077 The twenty-run battery, on a machine running nothing else (SC-010) — **19 of 20, then 6 more green: 25 of 26 at 3.8%.** Run 14 failed on `quotas.itest.ts`'s mail-relay test, which this chapter did not modify and whose mechanism is not identified. Recorded as a gap with an owner rather than fixed by changing code until the symptom stops
+- [X] T078 Record what twenty green buys and does not: it rejects a per-run failure rate above 13.91% at 95% confidence, a 5% flake survives it 35.85% of the time, and rejecting one needs 59 runs — writes `baseline.txt`
+- [X] T079 Commit Phase 8
 
 ---
 
