@@ -25,6 +25,27 @@ route passes no user, so every row it writes has `user_id` NULL, which
 `backfill.controller.ts`'s `toFrame` drops on purpose because `messageSchema`
 requires `user` and there is no truthful value to invent.
 
+**AMENDED BY CHAPTER 3.17 — ONE OF THE TWO MECHANISMS IS GONE.**
+
+The second cause is closed. FR-MSG-15 makes every message carry a sender, so the public
+send route no longer writes `user_id NULL` and `toFrame` has no reason to drop the row.
+Measured on `public-surface.itest.ts`: **a REST-sent message now arrives on a resume.** The
+test that pinned both mechanisms at once began failing on the half that changed, which is
+how the change was noticed at all.
+
+The FIRST cause stands, unchanged: nothing in the api publishes to the gateway's fan-out.
+`session.ts` publishes when a socket sends; the api's send path writes the row and the
+outbox and stops. So **live** delivery still reaches nothing, and the sentence that is now
+true is narrower than this heading:
+
+    live delivery      still nothing        chapter 3.18 owns it
+    on resume          NOW ARRIVES          closed by chapter 3.17
+
+A two-mechanism gap became a one-mechanism gap. Recorded here rather than in 3.17's own
+`gaps.md` alone, because a reader who finds this heading needs to know it is half true —
+and because this project has now corrected a "delivered" claim three times by reading the
+record next to the code.
+
 So "send a message and receive it on a socket" is only true over the socket. An
 integrating developer following the obvious path — REST to send, socket to
 receive — waits for ever, and nothing tells them why.

@@ -340,11 +340,11 @@ what was added. Identifiers, table names and column names stay English in the tr
 the gaps with owners, traceability in both directions, and every measurement. **Nothing is ticked
 before it is done.**
 
-- [ ] T096 Write `specs/035-chapter-3-17/chapter-notes.md`: the plan against what shipped, including the phases that went badly (SC-009)
-- [ ] T096a **Amend chapter 3.12's `gaps.md` G1**, which records "a message sent over REST reaches no socket, ever" as **two** independent mechanisms: nothing publishes, and the public send passes no user so every row is `user_id NULL`. **This chapter removes the second.** The recorded gap now has one mechanism, and the record should say which chapter took which — 3.17 the sender, 3.18 the publish. A gap that is half-closed and still reads as whole is the shape this project has corrected three times in traceability rows (SC-009)
-- [ ] T097 [P] Write `specs/035-chapter-3-17/gaps.md`, and **carry forward the eight from the last feature that are still open**, with 3.18 and 3.19 as owners where they now have one (SC-009)
-- [ ] T098 [P] Record whether the two file counts stayed apart, and what each was at every revision — writes `chapter-notes.md`
-- [ ] T099 Update `CLAUDE.md` between the `<!-- SPECKIT -->` markers (SC-009)
+- [X] T096 Write `specs/035-chapter-3-17/chapter-notes.md`: the plan against what shipped, including the phases that went badly (SC-009)
+- [X] T096a **Amend chapter 3.12's `gaps.md` G1**, which records "a message sent over REST reaches no socket, ever" as **two** independent mechanisms: nothing publishes, and the public send passes no user so every row is `user_id NULL`. **This chapter removes the second.** The recorded gap now has one mechanism, and the record should say which chapter took which — 3.17 the sender, 3.18 the publish. A gap that is half-closed and still reads as whole is the shape this project has corrected three times in traceability rows (SC-009)
+- [X] T097 [P] Write `specs/035-chapter-3-17/gaps.md`, and **carry forward the eight from the last feature that are still open**, with 3.18 and 3.19 as owners where they now have one (SC-009)
+- [X] T098 [P] Record whether the two file counts stayed apart, and what each was at every revision — writes `chapter-notes.md`
+- [X] T099 Update `CLAUDE.md` between the `<!-- SPECKIT -->` markers (SC-009)
 - [ ] T100 [P] Tick the last task only when it is done, not when it is about to be — chapter 3.12 marked its close-out complete before pushing and had to reopen it — writes `tasks.md`
 - [ ] T101 Tag `part3-ch17` in all three repositories, confirm each submodule pin matches its HEAD, and push. **Hold the tag if `check:fences` exits 1** (SC-009)
 

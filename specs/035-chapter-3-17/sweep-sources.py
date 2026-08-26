@@ -54,7 +54,12 @@ ATTRIB = [
   ("An application credential acts for", "relay-platform/services/api/src/channels/channels.service.ts"),
   ("acts for the customer, carries no user, and sees private channels", "relay-platform/services/api/src/channels/channels.service.ts"),
   ("null` CLEARS, and it is distinct from absent", "relay-platform/services/api/src/users/users.schema.ts"),
-  ("unattributed by design since chapter 3.3", "relay-platform/services/api/src/db/repository.ts"),
+  # WAS in repository.ts and is GONE — T012a removed the gate whose comment said it, and
+  # T086c corrected the three comments that cited FR-MSG-13 for the opposite of what it says.
+  # The sentence now survives only where it is quoted AS HISTORY: the chapter, and 3.10's
+  # corrected Trap. A sweep that still expected it in the code would be asserting the chapter
+  # had not happened.
+  ("A tenant's own server sending on a customer's", "relay-tutorial/app/(en)/part-3/chapter-17/the-sender-a-message-never-had/page.mdx"),
   ("T057 above removes", "relay-platform/services/api/src/messages/messages.itest.ts"),
   ("accepts an application key's send to the same private channel", "relay-platform/services/api/src/messages/messages.itest.ts"),
   ("carry stable identifiers", ".specify/memory/constitution.md"),
@@ -104,8 +109,11 @@ def n_of(cmd):
     return int(subprocess.run(cmd,shell=True,capture_output=True,text=True,cwd=ROOT).stdout.strip() or 0)
 
 claims = {
- "27 call sites omit userId":
-   (27, n_of("""python3 - <<'E'
+ # 27 BEFORE the work, ZERO AFTER IT, and that inversion is the chapter's claim: no call
+ # site in the workspace omits a sender, and the compiler is what holds it — not this check.
+ # Pinned at 0 so a site that starts omitting one again fails here as well as at `typecheck`.
+ "0 call sites omit userId":
+   (0, n_of("""python3 - <<'E'
 import re,io,subprocess
 fs=subprocess.run(['grep','-rl','sendMessage(','relay-platform/services/api/src','--include=*.ts'],capture_output=True,text=True).stdout.split()
 t=0
@@ -122,12 +130,22 @@ print(t)
 E""")),
  "38 target-list entries":
    (38, n_of("grep -c '^  {' relay-platform/services/api/src/isolation/targets.ts")),
- "243 SRS clause rows":
-   (243, n_of("grep -cE '^\\| [A-Z]{2,4}(-[A-Z0-9]+)?-[0-9]+' docs/04-srs.md")),
- "7 userId guards in repository.ts":
-   (7, n_of("grep -c 'userId [!=]== undefined' relay-platform/services/api/src/db/repository.ts")),
- "3 isNull(users.deletedAt) joins":
-   (3, n_of("grep -c 'isNull(users.deletedAt)' relay-platform/services/api/src/db/repository.ts")),
+ # 243 BEFORE this chapter's amendment, 245 after: FR-USR-07 and FR-MSG-15 were added and
+ # FR-MSG-13 and FR-RTL-05 were narrowed in place. Pinned, so the next amendment has to be
+ # a deliberate edit here rather than a number that drifts.
+ "245 SRS clause rows":
+   (245, n_of("grep -cE '^\\| [A-Z]{2,4}(-[A-Z0-9]+)?-[0-9]+' docs/04-srs.md")),
+ # 7 BEFORE T012a REMOVED THREE DEAD ONES, and the two that remain in code are the
+ # do-not-touch sites in methods whose `userId` is optional by design. The other four
+ # matches are this feature's own comments ABOUT the removal, which is why the pattern
+ # excludes comment lines: a check that counts a sentence as a guard is the same mistake
+ # `check:srs` shipped with.
+ "2 real userId guards left in repository.ts":
+   (2, n_of("grep -nE '^\\s*(if|const).*userId [!=]== undefined' relay-platform/services/api/src/db/repository.ts | wc -l")),
+ # THREE, and the fourth match is a COMMENT in `assertWithinQuota` saying this filter must
+ # NOT be added there — the house idiom would break the ceiling's bot exemption (FR-018b).
+ "3 isNull(users.deletedAt) joins in code":
+   (3, n_of("grep -E '^\\s+isNull\\(users.deletedAt\\),' relay-platform/services/api/src/db/repository.ts | wc -l")),
 }
 for name,(want,got) in claims.items():
     check(f"numeric claim: {name}", want==got, f"claimed {want}, measured {got}")
