@@ -235,13 +235,13 @@ token for it and be refused.
 **Goal**: every send site in the workspace names a sender, and the sealed integration passes
 without being corrected.
 
-- [ ] T058 Fix the HTTP send sites in `services/api/src/isolation/gauntlet.itest.ts` (14) — these are attack shapes, so **each must keep attacking what it attacked**. A gauntlet test that starts passing because its send now fails validation has stopped testing isolation (FR-011)
-- [ ] T059 [P] Fix `services/api/src/messages/messages.itest.ts` (8) (FR-011)
-- [ ] T060 [P] Fix `services/api/src/limits/limits.itest.ts` (4) — the rate-limit suites count requests, so a send that now 400s still counts and the assertions may pass for the wrong reason. **Check what each assertion would do if every send were refused** (FR-011)
-- [ ] T061 [P] Fix `services/api/src/users/users.itest.ts` (3), `services/api/src/auth/credentials.itest.ts` (3), `services/api/src/channels/channels.itest.ts` (3) (FR-011)
-- [ ] T062 [P] Fix `services/gateway/src/public-surface.itest.ts` (**1 left — the other was pulled forward in Phase 6, because T054 could not verify the resume while the test's own setup send was red**), `services/gateway/src/isolation-fixtures.ts` (2), `services/gateway/src/limits.itest.ts` (1), `services/api/src/internal/internal.itest.ts` (1) (FR-011)
-- [ ] T063 [P] Fix `packages/e2e/src/tuan.itest.ts` (2) (FR-011)
-- [ ] T063a **WRITE THE BOT FLOW DOWN BEFORE TOUCHING THE OUTSIDER.** Add it to (FR-015d)
+- [X] T058 Fix the HTTP send sites in `services/api/src/isolation/gauntlet.itest.ts` (14) — these are attack shapes, so **each must keep attacking what it attacked**. A gauntlet test that starts passing because its send now fails validation has stopped testing isolation (FR-011)
+- [X] T059 [P] Fix `services/api/src/messages/messages.itest.ts` (8) (FR-011)
+- [X] T060 [P] Fix `services/api/src/limits/limits.itest.ts` (4) — the rate-limit suites count requests, so a send that now 400s still counts and the assertions may pass for the wrong reason. **Check what each assertion would do if every send were refused** (FR-011)
+- [X] T061 [P] Fix `services/api/src/users/users.itest.ts` (3), `services/api/src/auth/credentials.itest.ts` (3), `services/api/src/channels/channels.itest.ts` (3) (FR-011)
+- [X] T062 [P] Fix `services/gateway/src/public-surface.itest.ts` (**1 left — the other was pulled forward in Phase 6, because T054 could not verify the resume while the test's own setup send was red**), `services/gateway/src/isolation-fixtures.ts` (2), `services/gateway/src/limits.itest.ts` (1), `services/api/src/internal/internal.itest.ts` (1) (FR-011)
+- [X] T063 [P] Fix `packages/e2e/src/tuan.itest.ts` (2) (FR-011)
+- [X] T063a **WRITE THE BOT FLOW DOWN BEFORE TOUCHING THE OUTSIDER.** Add it to (FR-015d)
   `relay-platform/README.md`'s walkthrough — a `curl` creating a bot with a description, and a
   send naming it — because chapter 3.12's `gaps.md` names the README as one of the three sources
   an outsider may read (with the published series and the reference documents). **Without this
@@ -252,7 +252,7 @@ without being corrected.
   or `relay-tutorial/fences/` — so this edit needs no fence work and `check:fences` will not see
   it. That cuts both ways: the file an outsider is told to read is a file no chapter teaches and
   no checker verifies, which is chapter 3.16's *"fences with no subject"* finding inverted
-- [ ] T063b **NAME THE README THE QUICKSTART OF RECORD, and close principle VI's quickstart (FR-015d)
+- [X] T063b **NAME THE README THE QUICKSTART OF RECORD, and close principle VI's quickstart (FR-015d)
   clause** (FR-015d, FR-015e, SC-015). The constitution requires that *"The quickstart MUST run
   unmodified, verified by automated execution in CI against the published documentation"* — and no
   `*quickstart*` file exists in `relay-tutorial` or `docs/`, with nothing in
@@ -263,10 +263,10 @@ without being corrected.
   is the verification rather than a separate artifact — **a quickstart nobody executes is the debt
   the clause exists to prevent, and a second document written to satisfy it would recreate that
   debt**
-- [ ] T064 **`packages/outsider/src/integrate.itest.ts` LAST, and it is the one that matters.** It is sealed from workspace code and stands for an external developer. Its script must **create a bot and send as it**, demonstrating the flow a customer follows (SC-001)
-- [ ] T065 **Run `pnpm test:outsider` and record whether it passed first time** — after T063a, not before, or the answer is fixed. Chapter 3.14's verdict says a suite that passes *because a failing test corrected it* is the assistance the Phase 2 exit criterion forbids. **Either answer is recorded as a finding**, and with T063b the run is also **principle VI's quickstart verification** (SC-015): the suite is sealed from workspace code, so "runs unmodified against the published documentation" is a statement about whether its script can be derived from the README. A failure means the README is insufficient, which is a finding about the documentation and not about the suite
-- [ ] T066 Update the published quickstart if it sends — `relay-tutorial/`, and NFR-USE-03 has CI execute it against the published documentation (FR-015d)
-- [ ] T067 Commit Phase 7
+- [X] T064 **`packages/outsider/src/integrate.itest.ts` LAST, and it is the one that matters.** It is sealed from workspace code and stands for an external developer. Its script must **create a bot and send as it**, demonstrating the flow a customer follows (SC-001)
+- [X] T065 **Run `pnpm test:outsider` and record whether it passed first time** — after T063a, not before, or the answer is fixed. Chapter 3.14's verdict says a suite that passes *because a failing test corrected it* is the assistance the Phase 2 exit criterion forbids. **Either answer is recorded as a finding**, and with T063b the run is also **principle VI's quickstart verification** (SC-015): the suite is sealed from workspace code, so "runs unmodified against the published documentation" is a statement about whether its script can be derived from the README. A failure means the README is insufficient, which is a finding about the documentation and not about the suite
+- [X] T066 Update the published quickstart if it sends — `relay-tutorial/`, and NFR-USE-03 has CI execute it against the published documentation (FR-015d)
+- [X] T067 Commit Phase 7
 
 **Checkpoint**: an outsider following the documentation can send a message.
 

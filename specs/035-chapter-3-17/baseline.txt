@@ -582,3 +582,91 @@ ONE T062 SITE PULLED FORWARD
     public-surface.itest.ts 2 passed      T054, and the resume now delivers
     event.test.ts         214 passed      T054a, the webhook carries null
     isolation.itest.ts     28 passed      T056, the frame contract unchanged
+
+PHASE 7: THE CALLERS
+--------------------
+
+THE WORK LIST WAS NOT THE TASK LIST, AND THE LANE WAS THE ONLY WAY TO GET IT
+
+  Phase 7 predicted six files by name. Running the lane found failures in EIGHT, three of
+  which no task mentioned — `consumer.itest.ts`, `webhooks/attempts.itest.ts`,
+  `outbox.itest.ts`. And of the 22 failures in the first run, **seven were not code at
+  all**:
+
+    RELAY_INTERNAL_CREDENTIAL unset        7 failures across limits and gauntlet
+    NATS absent                            3 suites could not connect
+    NATS on 4222, the lane expects 14222   1 failure (RELAY_NATS_URL)
+    compose `services` profile running     1 failure — the api container drained the
+                                           outbox the test was counting
+
+  Counting `grep` hits per file gave 18, 12, 6, 3, 3, 3, 4, 2, 1, 2 — none of which is the
+  number of things to fix, because a GET is not a send and a user-token send names nobody.
+  **The failures are the work list.** Third time this feature that a predicted count was
+  the wrong measurement (T013's 27 vs 28, T061's 3 vs 5, and now six files vs eight).
+
+  THE LANE ENVIRONMENT, IN FULL, for the next person:
+
+    DATABASE_URL=postgres://relay:relay@localhost:15432/relay
+    RELAY_INTERNAL_CREDENTIAL=rk_svc_local_development_credential_0000
+    RELAY_INTERNAL_CREDENTIAL_GATEWAY=rk_svc_local_development_gateway_00000
+    RELAY_NATS_URL=nats://localhost:4222
+    docker compose up postgres redis mailpit nats   — and the `services` profile STOPPED
+
+T060's WARNING WAS RIGHT, AND IT CHANGED THE FIX
+
+  `limits.itest.ts` counts requests. The obvious repair — upsert a bot inside the send
+  helper — adds an HTTP call per send, which would move every number in the file while
+  every assertion still passed. The bot is seeded once per environment over the
+  repository instead, so the request count is exactly what it was. Same reasoning applied
+  to `gateway/src/limits.itest.ts`.
+
+A REFLEX THAT THE TESTS CAUGHT
+
+  Patching `channels.itest.ts` I added `user: "archive-bot"` to a send that presents a
+  USER TOKEN. FR-010 refuses a body `user` beside a token, so the test went red — the
+  chapter's own rule catching the chapter's own author. Reverted with a comment.
+
+THE OUTSIDER: T065's ANSWER IS "NO, AND FOR TWO DIFFERENT REASONS"
+
+    first run    5 failed, 6 passed
+    second run   1 failed, 10 passed
+    third run    11 passed
+
+  The first run's failures were MINE: I wrote `res.json()` against a helper that returns
+  `{status, body}`. That is a coding error in a test I had just written, not the
+  documentation failing to explain bots — and the distinction matters, because chapter
+  3.14's verdict is about a suite being CORRECTED rather than informed.
+
+  The second run's single failure was neither:
+
+    "refuses a private channel, naming the field"   expected 400, got 201
+
+  **That test had been red since chapter 3.15** (`43899e3`, "the private type decides
+  something, on every read"), which widened the create route's enum to accept `private`.
+  The suite was not run at 3.15's close or 3.16's, because `pnpm test:outsider` is its own
+  lane — `test:integration` filters it out by name, so the twenty-run battery never touches
+  it. **The one suite that stands for an external developer was wrong about the API for two
+  chapters and nobody looked.** That is chapter 3.14's unmet half showing itself, and it is
+  a better argument for T063b than the argument T063b makes.
+
+  On the honest reading of the criterion: the outsider learned the bot flow from the README
+  (T063a) and not from a correction, so the documentation half passes. The suite's own
+  staleness is a separate finding and is recorded as one.
+
+T066 — there is nothing in `relay-tutorial` to update
+
+  No published quickstart exists there; the README is the quickstart of record (T063b), and
+  NFR-USE-03's CI execution is the `outsider` job. Recorded rather than left as an absence
+  somebody re-derives.
+
+THE FULL LANE, GREEN
+
+    @relay/test-harness    17 passed
+    @relay/api            488 passed
+    @relay/dispatcher      16 passed
+    @relay/gateway         58 passed
+    @relay/e2e             10 passed
+                          ---
+                          589 passed, 0 failed
+
+    @relay/outsider        11 passed   (separate lane, against the built images)
