@@ -152,19 +152,39 @@ in that file builds two `Fanout` objects and nothing else — the file's own lin
 clients stand in for two gateway instances"* — so it has **zero gateway boots and zero socket
 opens**. There is no socket in it to assert on.
 
-**Measured across the whole repository: no fixture boots a real api with a real gateway.**
+**The first version of this section then made a second error, caught one pass later.** It said
+*"no fixture boots a real api with a real gateway"*, on the strength of a `grep` for `NestFactory`
+and `AppModule` in `services/gateway/src` that returned nothing. **The harness spawns the api's
+built output instead of importing it**, so the mechanism searched for was not the mechanism in use.
+The true census:
 
-    services/gateway/src/fanout.itest.ts    0 gateway boots   0 socket opens   fabric only
-    services/gateway/src/resume.itest.ts    2 gateway boots   6 socket opens   api is a STUB (:21)
-    services/gateway/src/session.itest.ts   4 gateway boots  12 socket opens   api is a stub
-    services/api/src/**.itest.ts            no suite opens a socket at all
-    packages/outsider/src/integrate.itest.ts   reads RELAY_API_URL and RELAY_WS_URL — BOTH,
-                                               against a running platform it did not start
+    services/gateway/src/session.itest.ts   REAL api, SPAWNED from services/api/dist/main.js
+                                            (:106 startApi — a real pool, a real environment,
+                                            user, channel, membership and key). Its own error
+                                            message: "the api is not built — run `pnpm build`
+                                            before this lane (the suite talks to the real
+                                            service, not a stub)"
+                                            2 sockets · NO FAN-OUT WIRED (:224 passes none,
+                                            and session.ts:125 declares `fanout?: Fanout`)
+    services/gateway/src/resume.itest.ts    stubbed api (:21) · 2 gateway instances · 6 sockets
+                                            · fan-out wired (:65, :76) · :123 already publishes
+                                            from a second client on the same subject
+    services/gateway/src/fanout.itest.ts    fabric only — 0 gateway boots, 0 socket opens
+                                            (:11 "Two fabric clients stand in for two
+                                            gateway instances")
+    services/api/**.itest.ts                no suite opens a socket; three reach a real Redis
+    packages/outsider/                      RELAY_API_URL and RELAY_WS_URL, sealed, against a
+                                            platform it did not start
 
-The gateway's suites stub `ApiClient` because the gateway has no database (ADR-05), so they cannot
-share a Postgres fixture with a real api. **The outsider lane is the only place in the repository
-where a real REST send and a real socket coexist**, and that is where an end-to-end claim has to
-live. Everything else is proven at a seam.
+**So a full cross-service fixture already exists**, and it is one wiring change from hosting this
+chapter's end-to-end test: `session.itest.ts` has the real api and the real socket, and lacks only
+the fan-out. That is a shared-fixture change and carries 3.17's T040b risk, which is why it is its
+own task rather than a line inside another.
+
+Recorded at length because the error is the fifth of its kind in this project: **a pattern matching
+the examples in front of me rather than the set the rule names.** The question that would have
+worked is *"how does any gateway suite obtain an api?"* — not *"does any gateway suite import
+Nest?"*
 
 ## R8 — what happens today if a publish throws
 

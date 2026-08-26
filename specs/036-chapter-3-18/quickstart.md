@@ -14,16 +14,20 @@ Nothing else runs on the machine during a timing battery.
 
 ## 1 — the feature: a REST send reaches a socket
 
-The scenario chapter 3.14 recorded as failing. It belongs in the **outsider** lane — and analysis
-established that it has nowhere else to go. **No suite in this repository boots a real api with a
-real gateway**: the gateway's suites stub `ApiClient` because the gateway has no database (ADR-05),
-and no api-side suite opens a socket. `packages/outsider/` reads `RELAY_API_URL` *and*
-`RELAY_WS_URL` and runs against a platform it did not start, so it is the only place where a real
-REST send and a real socket meet.
+The scenario chapter 3.14 recorded as failing. It runs in **two** places, and an earlier draft of
+this guide wrongly said it could only run in one.
 
-Everything else is proven at a seam: the api publishes the right payload to the right subject
-(`services/api/src/fanout/fanout.itest.ts`, a real Redis subscriber), and a frame on `chan:{id}`
-reaches the right sockets (gateway suites, publishing to the subject directly — no api needed).
+`services/gateway/src/session.itest.ts` spawns the **real api** from `services/api/dist/main.js`
+(`:106`) and opens real sockets against a real gateway — a full cross-service harness that was
+already there. It wires no fan-out today, and doing so is this chapter's one fixture change.
+
+`packages/outsider/` runs the same scenario sealed, against a platform it did not start, following
+the README rather than the source. That is what it adds; it is not a substitute for the integration
+lane.
+
+Everything else is proven at a seam: the api publishes a payload that satisfies `messageSchema` to
+the right subject (`services/api/src/fanout/fanout.itest.ts`, a real Redis subscriber), and a frame
+on `chan:{id}` reaches the right sockets (gateway suites, publishing to the subject directly).
 
     open a socket as user A, subscribed to channel C
     POST /v1/channels/C/messages with an API key, sender B
@@ -38,7 +42,9 @@ feature is written is testing something else — 3.17's T047c passed with half i
 
 Principle IV: *"Any new delivery mechanism MUST preserve this recovery property."*
 
-    stop Redis (or point the publisher at a dead port)
+    point the publisher at a dead port — `redis://127.0.0.1:1`, the pattern
+    limits.itest.ts:510 already uses; in-process and deterministic, where
+    stopping the server is neither
     POST /v1/channels/C/messages  -> 201, and the response is not slow (see 5)
     read the channel's history
     -> the message is there
