@@ -880,3 +880,93 @@ T077 — THE BATTERY: NINETEEN GREEN AND ONE RED, AND THE RED IS NOT EXPLAINED
   26 full-lane runs green at a mean of 193.55 s inside a 240 s budget, 589 tests, with one
   unexplained failure in the quota mail relay recorded in `gaps.md`. That is a weaker
   sentence and it is the true one.
+
+PHASE 9: THE CHAPTER
+--------------------
+
+T080 / T085 — THE TWO COUNTS, AND THE RE-DERIVATION AGREED WITH THEM
+
+    column 1, TEACHES (drives the word estimate)      16 non-test files
+    column 2, FENCES  (drives the chain)              27 claimed paths
+    changed and claimed by NO chapter                  7 files
+
+    re-derived from `git diff --name-only` at the end  35 files changed
+    T080's figure                                     35
+                                                      -> IT DID NOT MOVE
+
+  The last feature revised this count eight times, six of them from asking `git diff`
+  rather than reading the plan. Keeping the columns apart from the first task is what made
+  the difference: the word estimate used 16 and the chain used 27, and neither number was
+  ever asked to do the other's job.
+
+    words written        2,962      inside the 2,000-4,000 bound
+    measured rate        185 words per taught file
+    3.16's rate          146 words per taught file (3,800 / 26)
+
+  The seven files claimed by no chapter: `README.md`, `limits.itest.ts`,
+  `history.itest.ts`, `idempotency.itest.ts`, `event.test.ts`, `quotas.itest.ts`,
+  `gateway/limits.itest.ts`. The README is the one that matters — it is the file an
+  outsider is told to read, and no chapter teaches it and no checker verifies it.
+
+THE FENCE CHAIN COST FIVE WRONG ANSWERS BEFORE IT WENT GREEN
+
+  **1. The predecessor is not the previous chapter's TAG.** Diffs generated from
+  `part3-ch16` failed with `hunk pre-image matched 0 times`. The chain's state already
+  contained commit `928991b` — feature 034's tail, which amended BOTH `schema.ts` and
+  chapter 3.16's fence for it, after the tag was placed. The right base is the last commit
+  before this chapter's work, not the tag. Diagnosed by patching a copy of the checker to
+  dump the state it feeds, after three wrong hypotheses: an orphan change, a stale tag, and
+  whitespace in the diff.
+
+  **2. A diff body in a `ts` fence is read as a whole file.** `codes.ts` was emitted as
+  ```` ```ts ```` and the chain's state for it became the literal text
+  `@@ -66,6 +66,24 @@ ...`. The language tag is what tells the checker which kind of fence
+  it is, and there is no error for a diff that looks like a file.
+
+  **3. Prose fences are not the chain's requirement.** Seven paths were fenced because the
+  chapter teaches them; twenty more had to be fenced because they changed. They are in one
+  section that says so — the inverse of chapter 3.16's *"eleven fences with no subject"*,
+  which is the same rule seen from the other side.
+
+  **4. A path the appendix owns cannot be fenced by a chapter.** `eslint.config.mjs`'s
+  exemption list is CREATED by `fences/post-series.md`, which applies after every chapter —
+  so a chapter's fence for it lands before the appendix re-creates the array, and the chain
+  ends somewhere other than disk. Reversing the appendix's three hunks to compute
+  HEAD-minus-appendix failed too, because this chapter's own edit shifted their context.
+  The resolution is the rule chapter 3.12 recorded in the other direction: the appendix's
+  fence carries the change, and this chapter fences 26 paths rather than 27.
+
+  **5. One word.** `"that chapter"` in the appendix fence against `"this chapter"` in the
+  file. The chain compares bytes, so a comment written from two points of view is a
+  failure; both now say `chapter 3.17`.
+
+  Final: **212 fenced files replay onto relay-platform across 34 chapters**, 208 figures.
+
+T086c — the comments that cited FR-MSG-13 for the opposite of what it says
+
+  Three sites corrected, and the first is the one that mattered:
+  `messages.controller.ts` told a reader *"A tenant's own server sending on a customer's
+  behalf is FR-MSG-13, not a mistake"* — a clause about sending ON BEHALF OF A USER, cited
+  by the code that named nobody. It now says what the clause says and what changed.
+
+T086d / T086e — the published prose, swept and classified
+
+    3.10's <Trap>          CORRECTED, both locales. Its title was false and its body
+                           argued against this chapter on the grounds this chapter decided
+                           the other way. The correction keeps the argument and adds the
+                           distinction it was missing: synthetic versus declared.
+    3.13's seam reason     CORRECTED, both locales. "only used to write an unattributed
+                           row" was the recorded reason `sendMessage` stays on the 2.8
+                           seam. The seam may still be right; the reason is gone.
+    3.13:1293              unchanged — `toFrame` still drops senderless rows
+    2.07:634, 2.07:744     unchanged — legacy rows are still readable, still senderless
+    3.16 figures.ts:49     unchanged — the diagram is still true
+    3.15:3671              unchanged — a declared frame with no sender is still the subject
+
+T086f — no checker reads prose, and this is where that was proven
+
+  `check:fences` replays fenced code. `check:figures` asserts a figure has a source.
+  `check:docs` compares mirrored documents. `check:srs` reads identifiers. All four were
+  green while chapter 3.10 told readers the opposite of what the platform does. Both
+  corrections above were made by reading, and the sweep that found them is a `grep` a
+  person classified — nine hits, two wrong.
