@@ -99,9 +99,24 @@ sits.
 ### `publish` never rejects
 
     try { await redis.publish(subjectFor(message.channel), JSON.stringify(message)) }
-    catch  { logger.log("error", "fanout.publish_failed", { channel, error }) }
+    catch  { logger.log("error", "fanout.publish_failed", {
+               channel, error, request_id, environment_id }) }
 
-Same contract as the gateway's, same log event name. A caller cannot distinguish a failed publish
+Same contract as the gateway's, same log event name — **and two fields more.** NFR-OBS-01 requires
+*"structured JSON logs including request ID, tenant ID, and correlation ID"*, and `Logger.log(level,
+msg, fields)` injects nothing, so they are passed. The api already does this where it can:
+`request-context.middleware.ts:33` supplies `request_id`, `rate-limit.middleware.ts:247` and
+`consumer/recorder.ts:30` supply `environment_id`.
+
+**The gateway's line omits both, and that is correct there** — the gateway is not in a request.
+Copying its shape into a request handler would carry the omission past the point where it was
+justified, which is the same mistake this contract already made once by copying `limits/store.ts`'s
+four client options without the down-window they were the slow version of. A borrowed
+implementation's comment is a precondition, not decoration.
+
+**And the log line is the whole of the observability.** The api has no Prometheus dependency, so
+NFR-OBS-03's metrics do not exist there and an alert on this would be a log-level rule (spec
+FR-011). A caller cannot distinguish a failed publish
 from a successful one, and that is intended: delivery is allowed to fail because the message is
 already durable and resume will find it.
 

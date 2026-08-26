@@ -97,3 +97,19 @@ rather than anomalous — but it is the one clause whose acceptance criterion is
 Recorded rather than reworded, because narrowing it would lose what it is for.
 
 Checklist 16/16 after two spec edits.
+
+## One of pass 5's own remediations did not apply, and the count said so
+
+Pass 5 added three tasks — T000, an MDX warning, and the traceability builder. **Only two landed.**
+The MDX task used a `.replace()` with no assertion, anchored on a task number that had moved two
+passes earlier, and silently matched nothing. Pass 6 found it while editing the same region.
+
+**The evidence was on screen and misread.** The validation printed `tasks: 73` where three
+additions to 71 should have given 74. The check counted tasks, checked `[P]` collisions, checked
+story labels and checked coverage — and none of those asks *did the thing I just wrote exist*. A
+count is not an outcome, and 30/30 coverage was true of a task list missing a task, because the
+missing one carried no requirement id.
+
+Every subsequent edit asserts its anchor and then verifies each new task **by name**. That is the
+same rule the repository's checkers already learned: write the class list explicitly and fail on an
+unknown member.

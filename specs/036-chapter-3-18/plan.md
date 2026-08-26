@@ -141,6 +141,22 @@ arguments. A file rate would have predicted ~1,300 and been wrong for the reason
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
+**Principle I — Tenant Isolation (NON-NEGOTIABLE): engaged, and its own suite cannot see this.**
+
+Clause 1 forbids revealing another tenant's data *"under any input"*; clause 4 mandates a suite that
+attacks every endpoint with foreign IDs on every build. That suite exists, `POST
+/v1/channels/:channelId/messages` is one of its targets (`isolation/targets.ts:185`), and **its
+oracle compares responses** — *"nothing of the victim's came back, not that a status was 4xx."*
+
+This feature gives that endpoint a **second output channel**. A publish on a refused
+foreign-channel send would emit onto a subject outside the caller's tenant with every existing
+test green. The gauntlet cannot be extended to catch it, because comparing responses is what it
+is; so the feature's own test carries the clause. Spec **FR-008a**, task T033.
+
+The other three clauses are untouched: nothing new is persisted, so clause 2 does not bind a
+payload that is never written; data access still goes through the environment-scoped repository,
+and the publish transmits a value that layer already returned rather than reading anything.
+
 **Principle IV — Single Writer, Single Source of Truth: this is the gate.**
 
 > "The live fan-out fabric is permitted to be lossy (at-most-once) precisely because durability

@@ -127,6 +127,21 @@ their open socket within the clause's window.
   publishers on one path put the same message on every member's screen twice.
 - **FR-007**: A recognised idempotent retry MUST publish nothing. It wrote no row.
 - **FR-008**: A send that is refused MUST publish nothing.
+- **FR-008a** *(added during analysis)*: **A send refused because the channel belongs to another
+  tenant MUST publish nothing, and this case MUST be tested by observing the subject rather than
+  the response.** Constitution I is NON-NEGOTIABLE and its clause 1 forbids revealing the
+  existence of another tenant's data *"under any input"*; clause 4 mandates a suite that attacks
+  every endpoint with foreign IDs on every build.
+
+  That suite exists and it cannot see this. `POST /v1/channels/:channelId/messages` is isolation
+  target `targets.ts:185`, and the gauntlet's oracle compares **responses** — its own comment says
+  the point is *"that nothing of the victim's came back, not that a status was 4xx."* A publish is
+  a second output channel, so a frame emitted onto a foreign tenant's subject would leave every
+  existing test green.
+
+  The other four refusal kinds — a banned sender, an archived channel, an exhausted quota, an
+  application key naming a person — are covered by FR-008. This one is separated because it is the
+  Sev-0 class and because its observer is different.
 - **FR-009**: The frame delivered MUST be byte-compatible with what a socket send produces
   today. A client cannot tell which entrance a message used, and `messageSchema` is the contract
   that makes that true.
@@ -136,9 +151,21 @@ their open socket within the clause's window.
 - **FR-010**: A fan-out publish that fails MUST NOT fail the send. The row is committed and
   acknowledged; delivery is best-effort by construction, and the SAD says so: *"Redis lost →
   presence + fan-out pause"*.
-- **FR-011**: A publish failure MUST be observable — logged with the channel and the message, at
-  a level an operator's alerting can find. A silent drop is the defect this chapter exists to
+- **FR-011**: A publish failure MUST be observable — logged at `error` level with the channel, the
+  message, the **request id and the tenant id**. A silent drop is the defect this chapter exists to
   remove, reintroduced one layer down.
+
+  The request and tenant ids are NFR-OBS-01's requirement (*"structured JSON logs including
+  request ID, tenant ID, and correlation ID"*) and they are what NFR-OBS-06's five-minute
+  traceability runs on. The gateway's equivalent line omits them because the gateway is not in a
+  request; the api is, so copying that shape would carry an omission past the point where it was
+  justified.
+
+  **The log line is the whole of the observability, and the first draft of this clause implied
+  more.** It said *"at a level an operator's alerting can find"*, which reads as a metric — and the
+  api has no Prometheus dependency, so NFR-OBS-03's metrics do not exist there to emit one. An
+  alert on this would be a log-level rule, and the chapter should not imply a counter that cannot
+  fire.
 - **FR-012**: The chapter MUST state what a client can and cannot conclude from having received
   nothing. A missing frame is not evidence a message does not exist; the resume path is the
   guarantee, and the fan-out is the optimisation.
