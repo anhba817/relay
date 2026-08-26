@@ -68,3 +68,32 @@ amendment, and FR-002 requires the chapter to say so — a reader who has just f
 expect a gate that is not there.
 
 Checklist 16/16 at first validation, no iterations required.
+
+## Re-validation, 2026-08-26, after two amendments
+
+**A complete checklist certifying an older spec is worse than an incomplete one**, because
+`/speckit-implement` halts on incomplete and proceeds on complete. This one read 16/16 while the
+spec had changed twice since it was written — FR-005 amended in `dd9a1a1`, FR-002a added in
+`69bcd6a` — so it was re-run rather than trusted. Found in analysis pass 5.
+
+**Fourteen items survived unchanged. Two did not, and both for the same reason:**
+
+- **"Scope is clearly bounded"** — FR-002a widened the work into a governing document and its
+  mirror, and neither the Summary nor Out of scope said so. Fixed by adding an *In scope beyond
+  the publisher* section naming the SAD amendment, its re-sync, and the registry entry.
+- **"Dependencies and assumptions identified"** — the same amendment introduced two dependencies
+  that were not listed: `docs/05-sad.md` with its `pnpm sync:docs` step, and
+  `relay-tutorial/lib/tutorial.ts`. Both added.
+
+**Two items are strained further than at first validation and still pass.** "No implementation
+details" and "written for non-technical stakeholders" now have to absorb FR-005's transport
+ordering (commit/publish/respond), two NFR identifiers, and FR-002a's mermaid arrow `G->>G`. The
+line drawn in the note above still holds — requirements state what must be true, the assumptions
+carry how — but it is holding more weight than it was.
+
+**The weakest clause in the spec is FR-002a's "MUST not conflate".** It is a prose requirement
+about the chapter, which is the same category as FR-002, FR-003 and FR-012, so it is consistent
+rather than anomalous — but it is the one clause whose acceptance criterion is a reader's judgment.
+Recorded rather than reworded, because narrowing it would lose what it is for.
+
+Checklist 16/16 after two spec edits.

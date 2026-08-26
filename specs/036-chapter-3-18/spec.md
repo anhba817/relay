@@ -220,6 +220,24 @@ their open socket within the clause's window.
   makes a REST-sent row deliverable at all — the frame contract requires one.
 - **Chapter 3.12's gap record** is the thing being closed, and it has already been amended once.
 - **Chapter 3.14's Phase 2 verdict** is the outsider criterion this chapter is measured against.
+- **`docs/05-sad.md` and its mirror** (added when FR-002a was written). The amendment is not
+  complete until `pnpm sync:docs` has copied it to `relay-tutorial/content/docs/05-sad.md`;
+  `check-docs-drift.sh` fails on divergence and reads drift rather than validity, so it will not
+  say which of the two files is right.
+- **`relay-tutorial/lib/tutorial.ts`** holds exactly the shipped chapters — 34 entries, all
+  `status: "published"`. Without a 3.18 entry the chapter does not route and is not among the
+  static pages.
+
+## In scope beyond the publisher
+
+Named here because FR-002a widened the work after the first checklist pass, and "scope is clearly
+bounded" is a claim that has to keep being true:
+
+- **A `docs/05-sad.md` amendment and its re-sync.** The SAD disagrees with itself about who
+  publishes; `:138` gives the edge to the api and `:248` draws `G->>G`. See FR-002a.
+- **A `relay-tutorial/lib/tutorial.ts` entry**, with both Vietnamese fields.
+- **No SRS amendment.** That distinction is the whole point of FR-002 and FR-002a standing
+  together.
 
 ## Out of scope
 
