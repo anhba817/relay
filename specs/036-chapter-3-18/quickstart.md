@@ -18,7 +18,7 @@ The scenario chapter 3.14 recorded as failing. It belongs in the **outsider** la
 where 3.14's verdict lives and the outsider lane is filtered out of the integration run by name.
 
     open a socket as user A, subscribed to channel C
-    POST /v1/messages with an API key, channel C, sender B
+    POST /v1/channels/C/messages with an API key, sender B
     -> the socket receives message.created with seq, user B, and the text
 
     pnpm test:outsider
@@ -31,7 +31,7 @@ feature is written is testing something else — 3.17's T047c passed with half i
 Principle IV: *"Any new delivery mechanism MUST preserve this recovery property."*
 
     stop Redis (or point the publisher at a dead port)
-    POST /v1/messages          -> 201, and the response is not slow (see 5)
+    POST /v1/channels/C/messages  -> 201, and the response is not slow (see 5)
     start Redis, reconnect the client with its last cursor
     -> the message arrives in the backfill
 
