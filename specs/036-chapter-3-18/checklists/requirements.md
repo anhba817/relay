@@ -110,6 +110,40 @@ story labels and checked coverage — and none of those asks *did the thing I ju
 count is not an outcome, and 30/30 coverage was true of a task list missing a task, because the
 missing one carried no requirement id.
 
+**And in passes 1 through 4 this analysis reported an extension hook that does not exist.**
+`.specify/extensions.yml` declares hooks under `after_specify` and `after_plan` only; there is no
+`after_analyze` key, and the skill's instruction for that case is to *"skip silently"*. Four reports
+carried an `after_analyze` agent-context block anyway — pattern-matched from the hook legitimately
+read during `/speckit-plan`. Passes 5 onward omitted it. Recorded because a fabricated hook is the
+same class of defect as a fabricated citation, and this document is where this feature keeps its
+process failures.
+
 Every subsequent edit asserts its anchor and then verifies each new task **by name**. That is the
 same rule the repository's checkers already learned: write the class list explicitly and fail on an
 unknown member.
+
+
+## The sweep, and its own three bugs
+
+`sweep.py` encodes one check per CRITICAL/HIGH class the sixteen passes found — 32 checks:
+artifact structure (ids, labels, `[P]` collisions, dependency order, placeholders, coverage),
+cross-artifact (the fence column against the task list), **twenty repository premises** that earlier
+passes established, **eleven cited line numbers read rather than trusted**, the five static gates
+with a skip-detector, and `dist` staleness. It was tested red three ways before being believed
+(`--self-test`), per 3.17's rule.
+
+**It failed twice on its first real run and both were the checker.** Diagnosing them is the whole
+value of writing it down:
+
+    check 7   demanded a file path from `git tag part3-ch18` and fifteen others
+              -> now an EXPLICIT exemption list of sixteen ids with reasons, which fails
+                 on an unknown pathless task rather than letting one join a silent majority
+    check 10  counted DEFAULT_REDIS_URL in 5 files, not 3
+              -> `grep -rl` without `--include=*.ts` was reading `services/gateway/dist/*.js`,
+                 the compiled copies. C2's finding of three source declarations is intact
+
+Both are the same failure this feature has now found eleven times: **a pattern matching a broader
+or narrower set than the rule names.** A sweep is not immune to it; a sweep tested red three ways
+and diagnosed on failure is how it stops being fatal.
+
+Final: **32/32**.
