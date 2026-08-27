@@ -69,9 +69,9 @@ So the feature is proven at three levels, and each task says which it is:
 
 ## Phase 1: Setup
 
-- [ ] T000 Create `specs/036-chapter-3-18/baseline.txt`, `chapter-notes.md`, `gaps.md` and `traceability.md` as empty skeletons **now**, in Phase 1. Eleven tasks across Phases 2–8 write into them; without this, a finding in Phase 2 has nowhere to land for six phases and is carried in memory until close-out, which is how findings get lost. T061 then *completes* what earlier phases accumulated rather than authoring it from scratch
-- [ ] T001a **Identify the fence chain's predecessor commit and write it into `specs/036-chapter-3-18/baseline.txt`.** It is a commit, not the `part3-ch17` tag: feature 034's tail amended a platform file *and* a chapter fence after tagging, which cost 3.17 five wrong answers. Find it the way 3.17 eventually did — `git log` on the platform files this feature touches, against what `part3-ch17` points at. Naming it here is what stops T050 guessing
-- [ ] T001 Pin the lane environment in `specs/036-chapter-3-18/baseline.txt` **from `relay-platform/turbo.json`, which is the authoritative list**: its `test:integration` task declares an `env` array of **twenty-six** variables. CLAUDE.md's *"four variables and one stopped compose profile"* is a record of 3.17's incident, not the environment — and it was read as a specification for twelve analysis passes while the real list sat in the build config. **`turbo.json`'s `env` array is a CACHE KEY, not a requirements list** — it declares what should
+- [X] T000 Create `specs/036-chapter-3-18/baseline.txt`, `chapter-notes.md`, `gaps.md` and `traceability.md` as empty skeletons **now**, in Phase 1. Eleven tasks across Phases 2–8 write into them; without this, a finding in Phase 2 has nowhere to land for six phases and is carried in memory until close-out, which is how findings get lost. T061 then *completes* what earlier phases accumulated rather than authoring it from scratch
+- [X] T001a **Identify the fence chain's predecessor commit and write it into `specs/036-chapter-3-18/baseline.txt`.** It is a commit, not the `part3-ch17` tag: feature 034's tail amended a platform file *and* a chapter fence after tagging, which cost 3.17 five wrong answers. Find it the way 3.17 eventually did — `git log` on the platform files this feature touches, against what `part3-ch17` points at. Naming it here is what stops T050 guessing
+- [X] T001 Pin the lane environment in `specs/036-chapter-3-18/baseline.txt` **from `relay-platform/turbo.json`, which is the authoritative list**: its `test:integration` task declares an `env` array of **twenty-five** variables (counted; passes 13, 15 and 19 said twenty-six). CLAUDE.md's *"four variables and one stopped compose profile"* is a record of 3.17's incident, not the environment — and it was read as a specification for twelve analysis passes while the real list sat in the build config. **`turbo.json`'s `env` array is a CACHE KEY, not a requirements list** — it declares what should
     invalidate the hash, and most entries have working defaults. Measured in analysis pass 19: the full
     lane went green, 589 tests in 193 s, with **eight** variables set —
 
@@ -79,8 +79,8 @@ So the feature is proven at three levels, and each task says which it is:
         RELAY_INTERNAL_CREDENTIAL  RELAY_INTERNAL_CREDENTIAL_GATEWAY
         RELAY_OUTBOX_RELAY=off  RELAY_EVENT_CONSUMER=off  RELAY_DELIVERY_RELAY=off
 
-    Pin all twenty-six anyway — that is correct for cache invalidation — but record which eight the
-    lane actually needs, so a red lane is diagnosed against nine lines rather than twenty-six. Name
+    Pin all twenty-five anyway — that is correct for cache invalidation — but record which eight the
+    lane actually needs, so a red lane is diagnosed against nine lines rather than twenty-five. Name
     the four that bit 3.17, with their failure counts from `specs/035-chapter-3-17/baseline.txt:596`:
 
         DATABASE_URL=postgres://relay:relay@localhost:15432/relay
@@ -90,7 +90,7 @@ So the feature is proven at three levels, and each task says which it is:
                                                the STACK is on 4222 (measured)
 
     **The ports, measured rather than repeated (analysis pass 18): Postgres 15432, Redis 6379, NATS 4222.** `compose.yaml` parameterises all three — `${RELAY_POSTGRES_PORT:-5432}`, `${RELAY_REDIS_PORT:-6379}`, `${RELAY_NATS_PORT:-4222}` — and **only Postgres needs an override**, because 5432 is taken by this machine's own server. `docker port` after T001b's command: postgres `-> 15432`, redis `-> 6379`, nats `-> 4222`. CI agrees (`RELAY_REDIS_URL: redis://localhost:6379`, `RELAY_NATS_URL: nats://localhost:4222`) and so does 3.17's baseline. *"Redis 16379"* was folklore that fourteen passes repeated without asking docker; `fanout.itest.ts` ran 5/5 green against 6379. Plus the compose profile. `test:integration` is `cache: false` and `dependsOn: ['^build','build']`, so the lane builds first — which is what satisfies `session.itest.ts:113`'s refusal to run without `services/api/dist/main.js`
-- [ ] T001b **Bring the stack up — and note that the lane has two environments with different ports.** No task said this for fifteen passes: every document states a destination and none stated a command.
+- [X] T001b **Bring the stack up — and note that the lane has two environments with different ports.** No task said this for fifteen passes: every document states a destination and none stated a command.
 
     **CI's `platform` job runs `test:integration` and `coverage` against GitHub service containers on the DEFAULT ports** (`ci.yml:24–50`) — postgres `5432:5432`, redis `6379:6379`, nats `4222:4222` — with the job `env` supplying `DATABASE_URL: postgres://relay:relay@localhost:5432/relay`, `RELAY_REDIS_URL: redis://localhost:6379`, `RELAY_NATS_URL: nats://localhost:4222`. Its comment is the reassurance, not a claim that ports match: *"Same images as compose.yaml, so a lane that passes here passes there."*
 
@@ -113,7 +113,7 @@ So the feature is proven at three levels, and each task says which it is:
         export RELAY_WS_URL=ws://localhost:4001
 
     The seed is not optional and not obtainable another way — CI's comment: *"the suite needs a credential that must already exist. There is no public way to obtain one — sign-up ends at an OAuth consent screen and key management is the dashboard's chapter."* **T003 and T023 both run in that lane and neither can start without all five lines.** There is also a documented networking trap in adding `--profile services` carelessly: the app containers read `postgres:5432` on compose's own network while a host service is on `localhost:5432`
-- [ ] T002 [P] Record the starting state in `specs/036-chapter-3-18/baseline.txt` — integration test count, lane mean, coverage pins for every file this feature touches, `pnpm check:fences` file count — measured, not carried over from 3.17's close. **Record all five gate outputs, not just the test numbers** — they are what T053 and T054 compare against, and they were measured green in analysis pass 12:
+- [X] T002 [P] Record the starting state in `specs/036-chapter-3-18/baseline.txt` — integration test count, lane mean, coverage pins for every file this feature touches, `pnpm check:fences` file count — measured, not carried over from 3.17's close. **Record all five gate outputs, not just the test numbers** — they are what T053 and T054 compare against, and they were measured green in analysis pass 12:
 
         check:srs      245 clause rows, 245 unique · classes ASM CON DR EIR FR NFR
         check:docs     all mirrored docs match their sources
@@ -131,7 +131,7 @@ So the feature is proven at three levels, and each task says which it is:
                              40 files  589 tests  193 s wall
 
     **`fanout.itest.ts` is a 29th file in an existing package**, so it joins a parallel pool rather than adding a serial suite — single-digit seconds, against **47 s of headroom** (193 measured, 240 budget). H26's assertion in T056 is right to exist and unlikely to fire; record both numbers so the next chapter inherits the margin rather than the anxiety
-- [ ] T003 [P] Confirm the failing state that justifies the chapter in `relay-platform/packages/outsider/src/integrate.itest.ts` — **T001b first**, all five outsider lines, or this task fails on the stack rather than on the feature — send over REST, wait on a socket, watch it **time out**. **Invert the test already at `:233`; do not add one beside it.** It is titled *"receives a message on a socket — SENT over the socket"* and its comment reads *"THE SEND HAS TO BE ON THE SOCKET… the api still publishes to no fan-out, so nothing arrives LIVE… Half the gap, and the half that remains is the fan-out."* **The title encodes the workaround this chapter removes** (FR-018), so title, comment and premise all change. The file is fenced by chapters 3.14 and 3.17. Record the failure mode in `baseline.txt`. A scenario that passes now is testing something else (3.17's T047c)
+- [X] T003 [P] Confirm the failing state that justifies the chapter in `relay-platform/packages/outsider/src/integrate.itest.ts` — **T001b first**, all five outsider lines, or this task fails on the stack rather than on the feature — send over REST, wait on a socket, watch it **time out**. **Invert the test already at `:233`; do not add one beside it.** It is titled *"receives a message on a socket — SENT over the socket"* and its comment reads *"THE SEND HAS TO BE ON THE SOCKET… the api still publishes to no fan-out, so nothing arrives LIVE… Half the gap, and the half that remains is the fan-out."* **The title encodes the workaround this chapter removes** (FR-018), so title, comment and premise all change. The file is fenced by chapters 3.14 and 3.17. Record the failure mode in `baseline.txt`. A scenario that passes now is testing something else (3.17's T047c)
 
 ## Phase 2: Foundational (blocking — every story depends on these)
 

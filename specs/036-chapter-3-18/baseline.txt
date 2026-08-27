@@ -1,0 +1,180 @@
+BASELINE — chapter 3.18, the message that never arrived
+=======================================================
+Every number here was measured in this repository, not carried from 3.17's close.
+Where a number came from folklore and the measurement disagreed, both are shown.
+
+THE LANE ENVIRONMENT
+--------------------
+turbo.json's `test:integration.env` declares 25 variables — NOT 26, which is what analysis
+passes 13, 15 and 19 said. Counted here: 25. That array is a CACHE KEY, not a requirements
+list. The lane went green with these NINE (measured, pass 19):
+
+    DATABASE_URL=postgres://relay:relay@localhost:15432/relay
+    RELAY_REDIS_URL=redis://localhost:6379
+    RELAY_NATS_URL=nats://localhost:4222
+    RELAY_INTERNAL_CREDENTIAL=rk_svc_local_development_credential_0000
+    RELAY_INTERNAL_CREDENTIAL_GATEWAY=rk_svc_local_development_gateway_00000
+    RELAY_WEBHOOK_SECRET_KEY=BpDal75yBZp7Fc2GtGS3D1vh7qOKgCWJkF6/d0XWxBU=
+    RELAY_OUTBOX_RELAY=off
+    RELAY_EVENT_CONSUMER=off
+    RELAY_DELIVERY_RELAY=off
+
+The three `off` switches are CI's, with CI's reason: "a background daemon draining the
+table two suites are asserting on is a race between test files, not a property."
+
+THE PORTS — MEASURED WITH `docker port`, NOT REPEATED
+-----------------------------------------------------
+    relay-postgres-1   5432/tcp -> 0.0.0.0:15432
+    relay-redis-1      6379/tcp -> 0.0.0.0:6379
+    relay-nats-1       4222/tcp -> 0.0.0.0:4222   (+ 8222 monitoring)
+
+compose.yaml parameterises all three — ${RELAY_POSTGRES_PORT:-5432},
+${RELAY_REDIS_PORT:-6379}, ${RELAY_NATS_PORT:-4222} — and ONLY Postgres needs the
+override, because 5432 is taken by this machine's own server.
+
+    FOLKLORE                          MEASURED
+    "Redis on 16379"                  6379.  Nothing in the repository runs it on 16379.
+    "NATS 14222"                      4222.  14222 was the LANE's old default, which
+                                      3.17's baseline overrode to 4222.
+
+Fourteen analysis passes repeated "Redis 16379" without asking docker. This chapter's
+publisher is a Redis client: pointed at 16379 it would pass the survives-a-failed-publish
+test for the wrong reason and fail the reaches-the-subject test.
+
+Bring the stack up with:
+    RELAY_POSTGRES_PORT=15432 docker compose up -d --wait
+    DATABASE_URL=postgres://relay:relay@localhost:15432/relay \
+      node services/api/dist/db/migrate.js
+
+`--wait` or the suites race container readiness.
+
+THE INTEGRATION LANE — MEASURED
+-------------------------------
+    @relay/test-harness   1 file    17 tests    0.51 s
+    @relay/api           28 files  488 tests  102.26 s   (196.21 s of test time)
+    @relay/gateway        7 files   58 tests    9.58 s
+    @relay/dispatcher     1 file    16 tests   71.80 s
+    @relay/e2e            3 files   10 tests    6.42 s
+    ---------------------------------------------------
+                         40 files  589 tests  193 s wall clock, all green
+
+CLAUDE.md's "589 integration tests, mean 193.55 s" is EXACT. Both numbers had been
+cited by nineteen analysis passes and verified by none.
+
+`--concurrency=1` serialises PACKAGES; vitest parallelises FILES inside each. The api
+package fits 196.21 s of test time into 102.26 s of wall clock. So "cost scales with api
+boots" is true across packages and false within one, and this feature's new
+services/api/src/fanout/fanout.itest.ts is a 29th file in an existing parallel pool.
+
+    budget 240 s · measured 193 s · headroom 47 s
+
+THE FIVE STATIC GATES — MEASURED
+--------------------------------
+    check:srs      245 clause rows, 245 unique · classes ASM CON DR EIR FR NFR
+    check:docs     all mirrored docs match their sources
+    check:figures  212 figures, every diagram passed as `code`
+    check:fences   212 fenced files across 34 chapters (34 translated, 1 retired,
+                   plus post-series amendments)
+    check:errors   17 codes, 17 sections · dist current, 0 src files newer
+
+Two of these can pass without running: check-docs-drift.sh:35 and check-srs-ids.sh:40
+both `exit 0` when the parent docs/ is absent. Not in CI (both jobs check out the parent
+with submodules: recursive) — the exposure is a standalone tutorial clone.
+
+    typecheck   13/13 turbo tasks   (all cached — 32 ms, FULL TURBO; a cached green is
+                                     not evidence of execution)
+    unit lane   11/11 turbo tasks
+
+THE FENCE CHAIN PREDECESSOR (T001a)
+-----------------------------------
+The predecessor is a COMMIT, not the tag: a feature's tail can amend a platform file
+after tagging, and that cost 3.17 five wrong answers when feature 034 did exactly that.
+Measured this time — HEAD equals the tagged commit in both repositories, so there is no
+tail and the two coincide:
+
+    relay-platform   part3-ch17 -> 8166941 2026-08-26 docs: correct the comments citing FR-MSG-13 for the opposite of what it says
+                     git log part3-ch17..HEAD   ->  EMPTY (no tail)
+                     git diff part3-ch17..HEAD  ->  EMPTY
+
+    relay-tutorial   part3-ch17 -> c79bb99 2026-08-26 docs: chapter 3.17 in Vietnamese, assembled mechanically
+
+So 3.18's fence diffs are generated against relay-platform 8166941, with the
+appendix's edits undone (fences/post-series.md applies AFTER every chapter).
+
+If anything amends a platform file after THIS chapter is tagged, T065 records the
+amending commit here so 3.19 reads a fact instead of excavating one.
+
+THE 25 DECLARED VARIABLES, IN FULL (T001)
+------------------------------------------
+    DATABASE_URL                        RELAY_POSTGRES_PORT               
+    RELAY_REDIS_URL                     RELAY_REDIS_PORT                  
+    RELAY_NATS_URL                      RELAY_NATS_PORT                   
+    RELAY_OUTBOX_RELAY                  RELAY_DELIVERY_RELAY              
+    RELAY_INTERNAL_CREDENTIAL           RELAY_INTERNAL_CREDENTIAL_GATEWAY 
+    RELAY_METER_INTERVAL_MS             RELAY_AUTH_FAILURES_PER_MINUTE    
+    RELAY_AUTH_KEY_PREFIX               RELAY_WEBHOOK_SECRET_KEY          
+    RELAY_EVENT_CONSUMER                RELAY_NATS_REPLICAS               
+    RELAY_E2E_API_PORT                  RELAY_SMTP_URL                    
+    RELAY_MAILPIT_URL                   RELAY_NOTIFICATION_RELAY          
+    RELAY_QUOTA_RELAY                   RELAY_DOCS_BASE_URL               
+    RELAY_API_URL                       RELAY_WS_URL                      
+    RELAY_DEMO_CREDENTIAL             
+
+COVERAGE PINS FOR FILES THIS FEATURE TOUCHES (T002)
+---------------------------------------------------
+    services/api/src/messages/messages.service.ts
+        branches: 61, functions: 100, lines: 70, statements: 70
+    services/api/src/messages/messages.controller.ts
+        NO PIN — falls under the global floor. The publish guard's two branches
+        (!duplicate && text !== null) are FR-007's whole mechanism and would be
+        unenforced. T011 decides whether to pin it.
+    services/api/src/fanout/publisher.ts
+        NO PIN — the file does not exist yet. T011 chooses its number BEFORE
+        T009's first coverage report, not from it.
+    27 files carry an explicit pin; everything else falls to the global floor.
+
+THE TUTORIAL'S COUNTS (T002)
+----------------------------
+    page.mdx files          68   (34 en + 34 vi)
+    fenced files            212  across 34 chapters, 34 translated, 1 retired
+    figures                 212  every diagram passed as `code`
+
+    "91 static pages" is CLAUDE.md's figure and it is NOT the page.mdx count. 68 MDX
+    pages plus index/part/locale routes is what a Next build reports as 91. The number
+    that would reveal a missing lib/tutorial.ts entry is the BUILD's count, so T053 must
+    read it from `pnpm build`, not from `find`. Recorded because the proxy is wrong and
+    a wrong proxy is how C6's failure mode ships.
+
+THE FAILING STATE THIS CHAPTER FIXES (T003)
+-------------------------------------------
+The outsider test at packages/outsider/src/integrate.itest.ts was INVERTED, not added
+beside: its title said "SENT over the socket" in capitals because a REST send could not
+work. It now sends over REST. Measured, against the 26-hour-old service images from
+3.17's close:
+
+    Error: no message.created for the text just sent; saw connection.ack
+    10,114 ms to the 10-second deadline
+
+The POST returned 201. The socket was open before the send and stayed open. Nothing but
+its own handshake arrived. That is the chapter's premise, observed rather than asserted.
+
+Committed as `it.fails(...)`, so the suite is green — 10 passed | 1 expected fail, 10.38 s
+— while the gap stays visible. T023 turns it back into `it(...)`.
+
+TWO PREMISES THE INVERSION GOT WRONG FIRST, both worth the chapter's attention
+-----------------------------------------------------------------------------
+1. A REST send must name a bot user. The first run failed `400` and the failure had
+   nothing to do with delivery. Chapter 3.17 made an application credential speak only
+   as a bot user of its tenant, so the body needs `user: "outside-bot"`. T003's own
+   instruction was to "watch it time out" — it did not time out, it was refused, which
+   is exactly the class of wrong-reason failure this feature keeps finding.
+
+2. THE TWO ENTRANCES HAVE DIFFERENT IDEMPOTENCY CONTRACTS. Measured:
+
+       REST body    idempotency_key: z.string().uuid()          messages.schema.ts:13
+       socket frame idem_key:        z.string().min(1).max(255) frames.ts
+
+   The second run failed `400 invalid_request` naming `idempotency_key`, because
+   `outsider-${Date.now()}` is not a UUID. This matters to FR-006 and FR-007: the retry
+   guard this chapter mirrors from the gateway is about idempotency, and the two paths
+   do not accept the same keys. Recorded for the chapter and for gaps.md.
