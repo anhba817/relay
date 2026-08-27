@@ -235,6 +235,23 @@ AFTER PHASE 3 — THE FULL LANE
     589 -> 597 tests · 193 -> 195 s · 240 s budget, 45 s headroom
     lint: 0 errors (1 pre-existing warning in an untouched file)
 
+PHASE 4 — TWO INSTANCES ON ONE FABRIC (US2)
+-------------------------------------------
+    services/gateway/src/resume.itest.ts   9/9   (was 6; +3)
+
+    the member's instance receives                       [3_001]
+    a channel neither instance holds reaches neither     [] and []
+    the member receives and the bystander does not       [3_003] and []
+
+`boot()` was NOT changed. It is called six times and each call builds its own
+`createFanout` and server, so two calls already give two instances on one Redis.
+
+THE FIRST VERSION FAILED IN TEARDOWN AND LOOKED LIKE A DELIVERY FAILURE.
+Both two-instance tests timed out at ~10.6 s with "Hook timed out in 10000ms"
+pointing at `afterEach`: `Harness.close()` calls `server.close()`, which waits for
+open connections to drain, and those tests never closed their sockets. The
+one-instance test did and passed. Sockets are now closed before the harnesses.
+
 PHASE 3 — THE FEATURE WORKS, MEASURED AT THREE LEVELS
 -----------------------------------------------------
     publisher   services/api/src/fanout/fanout.itest.ts        6/6

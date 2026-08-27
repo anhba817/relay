@@ -99,6 +99,33 @@ sixteen-file table, and it is appendix-owned — `fences/post-series.md` holds a
 anchored just after the `services/gateway/src/fanout.ts` line this change sits beside.
 Chapter 3.17 hit that same collision. Recorded for T047/T050.
 
+## T030 — SC-002 is a composition, and no fixture does both halves
+
+**Stated because the pair of suites would otherwise imply more than either proves.**
+
+    services/gateway/src/resume.itest.ts     TWO gateway instances, real sockets, one
+                                            fabric — and a STUBBED api. Three tests:
+                                            the member's instance receives, the
+                                            bystander's does not, and a channel neither
+                                            holds reaches neither.
+    services/gateway/src/session.itest.ts    a REAL api spawned from dist/main.js, a real
+                                            socket, a real POST — and ONE gateway.
+
+So "a REST send from a real api reaches a socket on another instance" is assembled from
+two measurements rather than taken in one. The gateway has no database (ADR-05), which is
+why its suites stub the api; giving `resume.itest.ts` a real one means giving it a Postgres
+handle and the fixture stops being about the fabric.
+
+**What makes the composition sound rather than convenient**: the api publishes to
+`chan:{id}` and nothing else (asserted in `services/api/src/fanout/fanout.itest.ts`, on a
+real subscriber), and an instance holding a member of that channel delivers while one that
+does not stays silent (asserted here, on real sockets). The join is the subject string, and
+it is one function in `@relay/protocol` with its own test.
+
+**What would close it properly**: a fixture that spawns an api and two gateways. That is
+the same shared-harness feature `gaps.md` item 2 wants for `session.itest.ts`, and it is
+not this chapter's.
+
 ## Decisions recorded during the work
 
     <T009c the off-switch · T014a the session.itest.ts fencing decision ·
