@@ -131,7 +131,13 @@ options, not two:
 |---|---|
 | **titled** | the chapter shows the file and the chain verifies it |
 | **`(excerpt)` + a `fences/post-series.md` hunk** | the chapter shows a fragment; the appendix carries the byte-exact change. This is what the appendix is *for* — *"changes to fenced files made by work that publishes no chapter"* |
-| **`(excerpt)` alone** | only legitimate for a file that was never in the chain |
+| **`(excerpt)` alone** | fine whenever **some** chapter carries a titled fence for the file — so for a file 3.18 *changes*, only if the appendix carries the end state |
+
+**Measured, because the first version of this paragraph was stricter than the truth.** Pass 12 ran
+the checker: `packages/protocol/src/codes.ts` and `packages/config/src/infra.test.ts` each carry an
+`(excerpt)` fence *and* appear in the verified 212, because a titled fence elsewhere holds them.
+`docs/04-srs.md` is excerpt-only and absent from all 212 — which is `gaps.md` item 7's mechanism.
+So the question per file is not *titled or excerpt*; it is **who carries the end state**.
 
 So, per file:
 
