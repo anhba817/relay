@@ -173,6 +173,17 @@ PREMISES = [
      lambda: len(json.loads(read(PLAT/"turbo.json"))["tasks"]["test:integration"]["env"]) > 4),
     ("test:integration is uncached, so the battery really runs (pass 13)",
      lambda: json.loads(read(PLAT/"turbo.json"))["tasks"]["test:integration"]["cache"] is False),
+    ("compose parameterises all three ports with defaults 5432/6379/4222 (C16)",
+     lambda: all(t in read(PLAT/"compose.yaml") for t in
+                 ("${RELAY_POSTGRES_PORT:-5432}:5432","${RELAY_REDIS_PORT:-6379}:6379","${RELAY_NATS_PORT:-4222}:4222"))),
+    # 16379 may appear ONLY on a line that disclaims it. The disclaimer words are
+    # an explicit list so a new bare mention fails, rather than being absorbed by
+    # a lookahead tuned to the two sentences that happened to exist when it was
+    # written — which is what the first version of this check did.
+    ("16379 appears only on lines that disclaim it (C16)",
+     lambda: all(any(w in ln for w in ("folklore", "earlier version", "Do not", "do not"))
+                 for src in (TASKS, read(HERE/"quickstart.md"))
+                 for ln in src.splitlines() if "16379" in ln)),
     ("ADR-07 still argues the clean mapping this chapter breaks (H29)",
      lambda: "gateway to Redis, api and workers to NATS" in read(ROOT/"docs/06-adr-deep-dives.md")),
     ("ADR-07's Decision still says publish once per message (H29)",

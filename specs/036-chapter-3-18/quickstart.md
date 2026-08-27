@@ -6,9 +6,21 @@ close by reading.
 
 ## Prerequisites
 
-    docker compose up -d          # Postgres on 15432, Redis on 16379 — not 5432/6379,
-                                  # this machine's own Postgres holds 5432
-    pnpm install && pnpm build    # check:errors reads packages/protocol/dist — BUILT, not src
+    RELAY_POSTGRES_PORT=15432 docker compose up -d --wait
+    DATABASE_URL=postgres://relay:relay@localhost:15432/relay \
+      node services/api/dist/db/migrate.js
+    pnpm install && pnpm build
+
+    #  PORTS, MEASURED: postgres 15432, redis 6379, nats 4222.
+    #  `compose.yaml` parameterises all three and only Postgres needs the
+    #  override — 5432 is taken by this machine's own server. Redis and NATS
+    #  take their defaults, which is what CI uses and what 3.17's baseline set.
+    #  An earlier version of this line said "Redis on 16379"; nothing in the
+    #  repository runs it there, and this chapter's publisher is a Redis client.
+    #
+    #  `--wait` or the suites race container readiness.
+    #  `pnpm build` before any checker: check:errors reads
+    #  packages/protocol/dist, the BUILT artifact, not src.
 
 Nothing else runs on the machine during a timing battery.
 

@@ -76,12 +76,15 @@ So the feature is proven at three levels, and each task says which it is:
         DATABASE_URL=postgres://relay:relay@localhost:15432/relay
         RELAY_INTERNAL_CREDENTIAL=…            unset -> 7 failures, limits and gauntlet
         RELAY_INTERNAL_CREDENTIAL_GATEWAY=…
-        RELAY_NATS_URL=nats://localhost:4222   the lane defaults to 14222 -> 1 failure
+        RELAY_NATS_URL=nats://localhost:4222   the LANE defaulted to 14222 -> 1 failure;
+                                               the STACK is on 4222 (measured)
 
-    Plus the ports this feature needs (Postgres 15432, Redis 16379 — this machine's own Postgres holds 5432) and the compose profile. `test:integration` is `cache: false` and `dependsOn: ['^build','build']`, so the lane builds first — which is what satisfies `session.itest.ts:113`'s refusal to run without `services/api/dist/main.js`
+    **The ports, measured rather than repeated (analysis pass 18): Postgres 15432, Redis 6379, NATS 4222.** `compose.yaml` parameterises all three — `${RELAY_POSTGRES_PORT:-5432}`, `${RELAY_REDIS_PORT:-6379}`, `${RELAY_NATS_PORT:-4222}` — and **only Postgres needs an override**, because 5432 is taken by this machine's own server. `docker port` after T001b's command: postgres `-> 15432`, redis `-> 6379`, nats `-> 4222`. CI agrees (`RELAY_REDIS_URL: redis://localhost:6379`, `RELAY_NATS_URL: nats://localhost:4222`) and so does 3.17's baseline. *"Redis 16379"* was folklore that fourteen passes repeated without asking docker; `fanout.itest.ts` ran 5/5 green against 6379. Plus the compose profile. `test:integration` is `cache: false` and `dependsOn: ['^build','build']`, so the lane builds first — which is what satisfies `session.itest.ts:113`'s refusal to run without `services/api/dist/main.js`
 - [ ] T001b **Bring the stack up — and note that the lane has two environments with different ports.** No task said this for fifteen passes: every document states a destination and none stated a command.
 
     **CI's `platform` job runs `test:integration` and `coverage` against GitHub service containers on the DEFAULT ports** (`ci.yml:24–50`) — postgres `5432:5432`, redis `6379:6379`, nats `4222:4222` — with the job `env` supplying `DATABASE_URL: postgres://relay:relay@localhost:5432/relay`, `RELAY_REDIS_URL: redis://localhost:6379`, `RELAY_NATS_URL: nats://localhost:4222`. Its comment is the reassurance, not a claim that ports match: *"Same images as compose.yaml, so a lane that passes here passes there."*
+
+    **What this command actually produces, measured with `docker port`:** postgres on **15432**, redis on **6379**, nats on **4222** — because it sets only `RELAY_POSTGRES_PORT` and the other two take `compose.yaml`'s defaults. That is the right outcome: only Postgres collides with a host service. Do not "fix" Redis to 16379 — nothing in the repository runs it there, and this chapter's publisher is a Redis client that would then connect to a closed port, passing T037 for the wrong reason and failing T017.
 
     **Locally the stack needs 15432 because this machine's own Postgres holds 5432**, and `compose.yaml` defaults to 5432. So `baseline.txt` must say **which environment each number describes** — an unlabelled "15432" is a property of this machine, not of the lane. The local command, from `ci.yml`'s outsider job:
 
