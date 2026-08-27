@@ -79,6 +79,23 @@ So the feature is proven at three levels, and each task says which it is:
         RELAY_NATS_URL=nats://localhost:4222   the lane defaults to 14222 -> 1 failure
 
     Plus the ports this feature needs (Postgres 15432, Redis 16379 — this machine's own Postgres holds 5432) and the compose profile. `test:integration` is `cache: false` and `dependsOn: ['^build','build']`, so the lane builds first — which is what satisfies `session.itest.ts:113`'s refusal to run without `services/api/dist/main.js`
+- [ ] T001b **Bring the stack up, with `RELAY_POSTGRES_PORT=15432` on every compose call.** No task said this for fifteen analysis passes: every document states the destination — Postgres 15432, Redis 16379 — and none stated the command, while `compose.yaml` **defaults to 5432**, which is where this machine's own Postgres lives. `.github/workflows/ci.yml` says it in capitals with the reason attached, and it is the authority:
+
+        RELAY_POSTGRES_PORT=15432 docker compose up -d --wait
+        DATABASE_URL=postgres://relay:relay@localhost:15432/relay \
+          node services/api/dist/db/migrate.js
+
+    `--wait` matters: without it the suites race container readiness. `compose.yaml` starts five infrastructure services with no profile — postgres, redis, nats, clickhouse, mailpit — and holds `api`, `gateway` and `dispatcher` behind `profiles: ["services"]`.
+
+    **The two lanes need different things.** `pnpm test:integration` needs infrastructure only, because `session.itest.ts:106` spawns its own api from `dist/main.js`. **The outsider needs the app containers and a seeded tenant**, per CI:
+
+        RELAY_POSTGRES_PORT=15432 docker compose --profile services up -d --wait
+        RELAY_DEMO_CREDENTIAL=$(RELAY_POSTGRES_PORT=15432 node scripts/seed-demo-tenant.mjs)
+        export RELAY_DEMO_CREDENTIAL
+        export RELAY_API_URL=http://localhost:4000
+        export RELAY_WS_URL=ws://localhost:4001
+
+    The seed is not optional and not obtainable another way — CI's comment: *"the suite needs a credential that must already exist. There is no public way to obtain one — sign-up ends at an OAuth consent screen and key management is the dashboard's chapter."* **T003 and T023 both run in that lane and neither can start without all five lines.** There is also a documented networking trap in adding `--profile services` carelessly: the app containers read `postgres:5432` on compose's own network while a host service is on `localhost:5432`
 - [ ] T002 [P] Record the starting state in `specs/036-chapter-3-18/baseline.txt` — integration test count, lane mean, coverage pins for every file this feature touches, `pnpm check:fences` file count — measured, not carried over from 3.17's close. **Record all five gate outputs, not just the test numbers** — they are what T053 and T054 compare against, and they were measured green in analysis pass 12:
 
         check:srs      245 clause rows, 245 unique · classes ASM CON DR EIR FR NFR
@@ -88,7 +105,7 @@ So the feature is proven at three levels, and each task says which it is:
         check:errors   17 codes, 17 sections · dist current, 0 src files newer
 
     **Record the static page count** (91 at 3.17's close) — it is the only observable that would reveal a `lib/tutorial.ts` entry missing: `check-figures.mjs:35` walks `app/` on disk and never reads the registry, so a page with no entry passes every gate and does not route (T049a). **Record the per-suite cost of an api boot separately**: `services/api/src/fanout/fanout.itest.ts` is a NEW suite and the lane is `--concurrency=1`, so it costs a boot rather than a handful of assertions. 3.17 moved 407 -> 589 tests for +0.55 s *within existing suites*; that number does not predict this one, and the budget is 240 s against a 193.55 s mean
-- [ ] T003 [P] Confirm the failing state that justifies the chapter in `relay-platform/packages/outsider/src/integrate.itest.ts` — send over REST, wait on a socket, watch it **time out**. **Invert the test already at `:233`; do not add one beside it.** It is titled *"receives a message on a socket — SENT over the socket"* and its comment reads *"THE SEND HAS TO BE ON THE SOCKET… the api still publishes to no fan-out, so nothing arrives LIVE… Half the gap, and the half that remains is the fan-out."* **The title encodes the workaround this chapter removes** (FR-018), so title, comment and premise all change. The file is fenced by chapters 3.14 and 3.17. Record the failure mode in `baseline.txt`. A scenario that passes now is testing something else (3.17's T047c)
+- [ ] T003 [P] Confirm the failing state that justifies the chapter in `relay-platform/packages/outsider/src/integrate.itest.ts` — **T001b first**, all five outsider lines, or this task fails on the stack rather than on the feature — send over REST, wait on a socket, watch it **time out**. **Invert the test already at `:233`; do not add one beside it.** It is titled *"receives a message on a socket — SENT over the socket"* and its comment reads *"THE SEND HAS TO BE ON THE SOCKET… the api still publishes to no fan-out, so nothing arrives LIVE… Half the gap, and the half that remains is the fan-out."* **The title encodes the workaround this chapter removes** (FR-018), so title, comment and premise all change. The file is fenced by chapters 3.14 and 3.17. Record the failure mode in `baseline.txt`. A scenario that passes now is testing something else (3.17's T047c)
 
 ## Phase 2: Foundational (blocking — every story depends on these)
 
@@ -252,7 +269,7 @@ three repositories"*. None of that was in this list until analysis pass 10.
 **T014 before T021, T022, T032, T033, T035.** Five delivery tests need a fan-out in
 `session.itest.ts`'s harness, and today it has none.
 
-**T011 before T009 is finished.** The pin is chosen deliberately, not ratcheted to whatever the
+**T011's number comes from the requirement, not from T009's first coverage report** — this is a reasoning constraint, not an ordering one, and the earlier wording (*"T011 before T009 is finished"*) read as an ordering claim that contradicts document order. You cannot pin a file that does not exist; the sequence is T009, T010, T011. The pin is chosen deliberately, not ratcheted to whatever the
 first implementation happened to cover.
 
 **T013 before T024.** The guard test comes before the publish is written, because the publish is
