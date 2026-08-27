@@ -530,8 +530,23 @@ three repositories"*. None of that was in this list until analysis pass 10.
     battery's per-run count read 0 for all 22 runs and the first close-out measurement reported
     rc=0 with no count at all, which looked like success. Tags deleted and re-cut rather than
     left wrong, which is what T065 exists to avoid needing.
-- [ ] T065 If anything is amended after T064 — and 3.17's experience says something will be — **record the amending commit in `specs/036-chapter-3-18/chapter-notes.md` under a heading 3.19 will find.** The next chapter's fence predecessor is then a fact it reads rather than an excavation it repeats
-- [ ] T066 Push all three repositories and their tags, and verify the parent's gitlinks point at the pushed submodule commits rather than at local-only ones: presence is untouched, and chapter 3.19 still owns FR-RTM-06 and FR-RTM-07
+- [X] T065 If anything is amended after T064 — and 3.17's experience says something will be — **record the amending commit in `specs/036-chapter-3-18/chapter-notes.md` under a heading 3.19 will find.** The next chapter's fence predecessor is then a fact it reads rather than an excavation it repeats
+
+    Nothing was amended after the tag. The one event worth 3.19's attention happened before it:
+    the tag was cut with 606 tests in its message, deleted in all three repositories and re-cut
+    with 607. Recorded in `chapter-notes.md` under a heading 3.19 will find, together with the
+    predecessor commits and what the next chapter inherits.
+- [X] T066 Push all three repositories and their tags, and verify the parent's gitlinks point at the pushed submodule commits rather than at local-only ones: presence is untouched, and chapter 3.19 still owns FR-RTM-06 and FR-RTM-07
+
+    Pushed submodules first, then the parent, so the gitlinks resolved rather than dangling.
+
+        relay-platform   8166941..caeabc9   + tag part3-ch18
+        relay-tutorial   c79bb99..5558e2e   + tag part3-ch18
+        relay            ea71728..bbc2494   + tag part3-ch18
+
+    Verified rather than assumed: the parent records `caeabc9f5` and `5558e2e16`, and
+    `git branch -r --contains` puts both on `origin/main` in their own remotes. All three tags
+    resolve on their remotes.
 
 ---
 

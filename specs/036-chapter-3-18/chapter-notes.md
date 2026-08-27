@@ -445,6 +445,42 @@ The check that would have caught it is one line, and it belongs at the end of ev
 
     git status --short        # in every repository, not just the one being edited
 
+## For chapter 3.19: the fence predecessor, and what happened after the tag (T065)
+
+**The predecessor commit for 3.19's fence chain is `caeabc9` in `relay-platform`** — the commit
+`part3-ch18` points at. A commit, not the tag: CLAUDE.md's fence lesson 2 exists because a
+feature's tail amended a platform file after tagging, and 3.17 paid five wrong answers for it.
+
+    relay-platform   caeabc9   part3-ch18
+    relay-tutorial   5558e2e   part3-ch18
+    relay (parent)   bbc2494   part3-ch18, gitlinks verified on both remotes
+
+**Nothing was amended after the tag.** One thing happened before it that 3.19 should know
+about: the tag was cut, found to be wrong, deleted in all three repositories and re-cut. Its
+first message said 606 tests; the lane measures 607. The count had never been read because
+turbo puts ANSI colour codes between "Tests" and the digits, so every parse of it in this
+chapter returned zero — including all 22 runs of the battery. Deleting an unpushed tag is
+cheap; the reason to mention it is that the alternative was an amendment after the tag, which
+is the thing T065 exists to catch.
+
+**And this section is itself a post-tag commit, which is the case T065 describes.** It lands
+in the commit immediately after `bbc2494` on the parent's `main`. Nothing fenced changed: no
+file in `relay-platform` or `relay-tutorial` is touched by it, so **3.19's fence predecessor is
+still `caeabc9`** and the chain is unaffected. That is the distinction T065 needs a reader to be
+able to make — a post-tag commit to `specs/` is a record, and a post-tag commit to a fenced
+platform file is the defect that cost 3.17 five wrong answers.
+
+**What 3.19 inherits, stated rather than left to be excavated:**
+
+    FR-RTM-05    one of six event kinds has a producer. Presence change is 3.19's.
+    FR-RTM-06/07 untouched. Neither appears in docs/07-tutorial-plan.md — gaps.md item 8.
+    FR-CHN-05    two of three verbs. Observe presence is unbuilt.
+    FR-RTM-10    NOT MET on both paths, pinned as unmet. gaps.md item 4.
+                 Presence needs the same missing mechanism: a membership snapshot
+                 that is re-read rather than taken once at connection.
+    gaps.md      9 items. Item 6 — use a person — is the author's and is the fifth
+                 chapter to carry it. reader-protocol.md is ready to hand over.
+
 ## What the next feature should do differently
 
 **Build the traceability map both ways in the PLANNING phase, not at close-out.** Running it
