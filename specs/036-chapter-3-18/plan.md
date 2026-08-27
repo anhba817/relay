@@ -92,6 +92,7 @@ against the last chapter to claim it, not against a generic HEAD.
 | `services/gateway/src/resume.itest.ts` | no | **yes** | p2/ch07, p3/ch02, ch07, ch08, ch16 |
 | `vitest.coverage.config.mts` | no | **yes** | seven chapters, last p3/ch17 |
 | `packages/outsider/src/integrate.itest.ts` | yes | yes | p3/ch14, p3/ch17 |
+| `eslint.config.mjs` (found during Phase 2) | yes | **yes** | appendix-owned; hunk beside the line this change touches |
 | `services/gateway/src/public-surface.itest.ts` | no | **yes** | p3/ch13, ch16, ch17 |
 | `services/gateway/src/isolation.itest.ts` | no | **yes** | p3/ch12, ch15, ch16, ch17 |
 

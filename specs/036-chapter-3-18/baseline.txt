@@ -129,8 +129,25 @@ COVERAGE PINS FOR FILES THIS FEATURE TOUCHES (T002)
         (!duplicate && text !== null) are FR-007's whole mechanism and would be
         unenforced. T011 decides whether to pin it.
     services/api/src/fanout/publisher.ts
-        NO PIN — the file does not exist yet. T011 chooses its number BEFORE
-        T009's first coverage report, not from it.
+        branches: 100, functions: 100, lines: 100, statements: 100   (T011)
+
+        Chosen from the requirement, then the code was made to meet it — not read
+        off the first report. The first measurement was 100/100/60/92.85 with line
+        111 uncovered; requiring 100% of FUNCTIONS is what forced `close()` and the
+        ioredis `error` listener to be tested instead of assumed, which is H6's
+        leaked handle and R10's process death respectively.
+
+        PROVING IT BITES TOOK TWO MUTATIONS.
+          1. Deleted the throwing-client test  -> still 100/100/100/100. The catch
+             is covered by two OTHER tests that also throw, so removing one changed
+             nothing. That is 3.17's T086 verbatim: "removing a check can come back
+             green if an earlier phase replaced rather than nested."
+          2. Deleted the `close()` test         -> functions 80% (4/5),
+             "ERROR: Coverage for functions (80%) does not meet global threshold
+             (100%)". Nothing else calls `close()`, so that path is isolated.
+
+        A mutation only proves a pin bites if it is the ONLY thing covering the
+        path it removes. The first mutation proved my method wrong, not the pin.
     27 files carry an explicit pin; everything else falls to the global floor.
 
 THE TUTORIAL'S COUNTS (T002)
@@ -144,6 +161,46 @@ THE TUTORIAL'S COUNTS (T002)
     that would reveal a missing lib/tutorial.ts entry is the BUILD's count, so T053 must
     read it from `pnpm build`, not from `find`. Recorded because the proxy is wrong and
     a wrong proxy is how C6's failure mode ships.
+
+AFTER PHASE 2 — MEASURED
+------------------------
+    @relay/test-harness   1 file    17 tests
+    @relay/api           29 files  490 tests   (+1 file, +2 tests: fanout.itest.ts)
+    @relay/gateway        7 files   58 tests   (T007 removed one, T014 added one)
+    @relay/dispatcher     1 file    16 tests
+    @relay/e2e            3 files   10 tests
+    ---------------------------------------------------
+                         41 files  591 tests   192 s wall clock, all green
+
+589 -> 591 tests and 193 -> 192 s. **The new api suite cost nothing measurable**, which is
+M34's reasoning confirmed: `--concurrency=1` serialises packages and vitest parallelises
+files, so a 29th file in the api package joins a parallel pool rather than adding a boot.
+
+THE FIRST LANE RUN AFTER `docker compose down -v` IS RED, AND LATER RUNS ARE GREEN
+---------------------------------------------------------------------------------
+Diagnosed the long way during Phase 2, after `notifications.itest.ts` failed on a Mailpit
+timeout. What was ruled out, in order, each by measurement:
+
+    the --profile services containers draining it   stopped them; still failed
+    Mailpit's 149 accumulated messages              cleared it; still failed
+    my code                                         git stash; failed IDENTICALLY on a
+                                                    clean tree, twice
+    the SMTP/HTTP ports                             api defaults 1025/8025, Mailpit is
+                                                    on 1025/8025 — they match
+    a second organisation from the demo seed        the suite inserts its own with a
+                                                    randomUUID
+
+Then `down -v` was run to reset, and the FIRST lane run after it failed **all 16 dispatcher
+tests** — while the dispatcher passed 16/16 when run alone. The second and third full runs
+were green, 591/591.
+
+So the lane is not idempotent from cold volumes: the first run creates JetStream state that
+the same run's later packages depend on. `ensureStream` lives in
+`services/api/src/outbox/jetstream.publisher.ts` and is called from `consumer/runtime.ts`,
+which the lane runs with `RELAY_EVENT_CONSUMER=off` — so nothing recreates it deliberately.
+CI never sees this because its runner starts with no volumes and its first run IS the run.
+
+**RUN THE LANE TWICE AFTER ANY `down -v`, AND BELIEVE THE SECOND.** Recorded in gaps.md.
 
 THE FAILING STATE THIS CHAPTER FIXES (T003)
 -------------------------------------------
