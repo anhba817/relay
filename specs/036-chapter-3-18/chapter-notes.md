@@ -171,6 +171,75 @@ FR-RTM-10 and does not fix it.** It adds a second door onto a room whose lock wa
 missing. What it does contribute is the measurement — nobody had run it before, and the
 clause has been P1 since v1.
 
+## T044b — the subject grammars' asymmetry, and a deviation from where it was to go
+
+    events.msg.created.{environment_id}     the spine   — carries the tenant
+    chan:{channel_id}                       the fan-out — carries a channel
+
+Defensible: a channel id is a UUID, and an instance subscribes only to channels a
+tenant-scoped session named at connect. Nothing leaks. But the two grammars now sit in one
+package, so a reader meets both signatures at once and neither states the difference.
+
+**T044b said to record this in chapter-notes and NOT in the chapter**, on analysis pass 7's
+reasoning that it was a sidebar and the word budget was tight. It is in the chapter as well,
+and the reason it changed is that the implementation changed what kind of thing it is:
+
+    src/index.ts(12,1): error TS2308: Module "./internal.js" has already exported a
+    member named 'subjectFor'.
+
+Pass 7 was cutting a speculative aside. What actually happened is that the two grammars
+could not share a name, the compiler said so, and the rename to `subjectForChannel` is a
+line of the chapter's own narrative — the grammar-move section has to explain the name
+regardless. Two sentences of asymmetry attached to a compile error costs less than a
+paragraph of sidebar, and it lands where a reader is already looking.
+
+Recorded as a deviation rather than done quietly, because "the plan said elsewhere" is
+exactly the kind of thing a close-out should not have to reconstruct.
+
+## The fence chain took five wrong answers, same as 3.17 (T050, T051)
+
+`check:fences` went from **16 problems to 0**, and every step of the descent was the checker
+naming a file and a line. Recorded because 3.17 reported exactly five and the shapes repeat.
+
+    16  the starting state. Three of my own fence titles named no file and were read as
+        paths — a title that is a prose label needs `(excerpt)`, which is the same
+        `NOT_A_FILE` hatch that keeps `gaps.md` item 7's files out of the chain.
+        Thirteen files were [HEAD]-drifted: their last titled fence no longer matched
+        the repository.
+
+     4  after ten `diff` fences went into the chapter. The mechanism, read in
+        `check-fence-chain.mjs` rather than guessed: `lang === "diff"` AMENDS by hunk,
+        any other lang RESTATES the whole file, and a `post-series.md` fence "must be a
+        diff — a post-series fence amends, it never restates". Ten hunked diffs of ~500
+        lines total, against printing ten whole files.
+
+     3  after the Vietnamese twin got the same fence list. [MIRROR] is a LIST check:
+        the two locales must carry the same titles in the same order, and adding a fence
+        to one locale alone is an error in its own right.
+
+     1  after `eslint.config.mjs` came OUT of the chapter. A chapter fence for it gave
+        `hunk pre-image matched 0 times` — that file's exemption list is appendix
+        territory, and CLAUDE.md's lesson 3 is exactly this: a chapter cannot do the
+        appendix's work. The change moved to `fences/post-series.md`.
+
+     1  still, at line 83 — and this one is the instructive one. My entry was in the
+        appendix, in the right fence, with correct hunk headers. It was in the WRONG
+        ORDER: the repository has it before `history.itest.ts` because Phase 2 anchored
+        on `backfill.itest.ts`, and the appendix had it after. Same content, and the
+        replay diverges at the first line where the sequence differs.
+
+     0  after the second eslint change — the `ignores` entry — went into the fence that
+        owns that region. Three appendix fences touch `eslint.config.mjs`; the one that
+        matters is the one whose hunk covers the lines you are changing, and finding it
+        meant grepping for the anchor rather than assuming the last fence wins.
+
+**212 fenced files across 35 chapters, 35 translated, fences mirrored.**
+
+The generalisable part: **every one of the five was diagnosed from the checker's own output**,
+which names the file, the line, and both sides of the mismatch. None needed reasoning about
+the chain. The one that took longest — the ordering — is the one whose two sides looked
+identical until you read them as sequences instead of sets.
+
 ## Decisions recorded during the work
 
     <T009c the off-switch · T014a the session.itest.ts fencing decision ·

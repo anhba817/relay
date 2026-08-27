@@ -156,11 +156,25 @@ THE TUTORIAL'S COUNTS (T002)
     fenced files            212  across 34 chapters, 34 translated, 1 retired
     figures                 212  every diagram passed as `code`
 
-    "91 static pages" is CLAUDE.md's figure and it is NOT the page.mdx count. 68 MDX
-    pages plus index/part/locale routes is what a Next build reports as 91. The number
-    that would reveal a missing lib/tutorial.ts entry is the BUILD's count, so T053 must
-    read it from `pnpm build`, not from `find`. Recorded because the proxy is wrong and
-    a wrong proxy is how C6's failure mode ships.
+    "91 static pages" IS NOT READABLE FROM THIS BUILD, and guessing at it is how a
+    proxy goes wrong twice. Measured from `pnpm build` after the English chapter landed:
+
+        route lines total   78
+        static (○)          75
+        SSG (●)              2      /docs/[slug] and /vi/docs/[slug], which expand
+        dynamic (ƒ)          1
+        en chapter pages    35      (34 before this chapter)
+        vi chapter pages    34      (35 after T049)
+
+    75 static plus the SSG expansion (7 mirrored docs x 2 locales) is 89, not 91, and the
+    remaining two are unaccounted for. Rather than reverse-engineer CLAUDE.md's figure,
+    use the number that moves measurably per chapter and that a missing registry entry
+    would freeze:
+
+        THE DETECTOR:  `pnpm build | grep -c '^[├└] ○ /part-'`  goes 34 -> 35
+
+    That is what T053 asserts. It links the filesystem to `lib/tutorial.ts` — which
+    `check:figures` cannot, because it walks `app/` on disk and never reads the registry.
 
 PUBLISH LATENCY (T016) — MEASURED, NOT ASSERTED
 ------------------------------------------------
