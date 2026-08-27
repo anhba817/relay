@@ -46,6 +46,42 @@ CI does not see this: its runner has no volumes and its first run is the run.
 lane, which is a small script and somebody's chapter. Until then: run it twice after a
 `down -v` and believe the second.
 
-    <T031 FR-RTM-10's window, if either path misses it>
+## 4. FR-RTM-10's five-second window is not met, on either path — MEASURED IN T031-T034
+
+**FR-RTM-10 (P1):** events *"shall not be delivered to a client whose membership no longer
+grants access, effective within 5 seconds of the membership change."*
+
+Measured: a member removed over `POST /v1/channels/:id/members/remove` keeps receiving on
+an open socket **indefinitely**. The test is
+`services/gateway/src/session.itest.ts` — *"keeps delivering to a member who was REMOVED
+while connected (FR-RTM-10)"* — and it asserts the violation, waiting 5,500 ms first so the
+clause's own budget is spent before the assertion.
+
+**The mechanism, read before the test rather than after it:**
+
+    session.ts:355   registry.add(connection)          channelIds is a Set built ONCE, at
+                                                       connect, from POST /internal/session
+    session.ts:356   fanout.subscribe(...)             run once over that set
+    session.ts:175   registry.subscribersOf(channelId) the delivery lookup, reading the
+                                                       same set on every frame
+    session.ts:398   fanout.unsubscribe(...)           run once, when the socket CLOSES
+
+Nothing between connect and close re-reads membership. There is no path that could: the
+gateway has no database (ADR-05) and learns memberships only in the session response.
+
+**THIS IS NOT CHAPTER 3.18's REGRESSION.** The gap has existed for socket-originated
+messages since chapter 2.6; this chapter gives it a second entrance. FR-013 was written to
+forbid assuming the socket path's answer covers the REST path — the answer turns out to be
+the same on both, and it is "no".
+
+**FR-013 was NOT narrowed to make a test pass.** T034 said not to and the temptation was
+real: the clause could have been read as "within 5 seconds of a *reconnect*" and everything
+would be green. That reading is not what it says.
+
+**Owner:** chapter 3.19. Presence needs the same missing mechanism — something that tells a
+gateway a membership changed — and FR-RTM-06's grace period is the same shape of problem.
+Whoever builds that closes this. The test above inverts on that day.
+
+    <T038 the gateway's listener-less fan-out client, if the process dies>
     <T038 the gateway's listener-less fan-out client, if the process dies>
     <anything else the work surfaces>

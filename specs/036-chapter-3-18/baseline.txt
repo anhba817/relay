@@ -235,6 +235,42 @@ AFTER PHASE 3 — THE FULL LANE
     589 -> 597 tests · 193 -> 195 s · 240 s budget, 45 s headroom
     lint: 0 errors (1 pre-existing warning in an untouched file)
 
+PHASE 5 — MEMBERSHIP, PRIVACY, AND THE REFUSALS (US3)
+-----------------------------------------------------
+    services/api/src/fanout/fanout.itest.ts       8/8   (was 6; +2)
+    services/gateway/src/session.itest.ts        14/14  (was 12; +2)
+
+FR-RTM-10 IS NOT MET, ON EITHER PATH. See gaps.md item 4 for the measurement and
+the mechanism. A member removed over the public route keeps receiving on an open
+socket after the clause's own 5,500 ms has elapsed. The test asserts the violation
+rather than narrowing FR-013 to make it pass, which T034 forbade and which was
+genuinely tempting — reading the clause as "within 5 seconds of a reconnect" would
+have turned everything green.
+
+FR-014 / SC-007: a private channel's message reaches no non-member's socket. Proven
+by the stronger property rather than by a refusal — a non-member's connection
+subscribes to nothing, so there is no decision to get wrong. Pinned anyway, because
+a future membership re-read could break exactly that.
+
+SC-004: four refusals, none publishing. A key naming a person (403
+`sender_not_permitted`), a sender that does not exist (400 naming `user`), no sender
+named (400), and an archived channel.
+
+FR-008a: a foreign tenant's channel answers 404 and publishes nothing, asserted on
+a subscriber to the VICTIM's subject. The isolation gauntlet attacks this route with
+foreign ids on every build and cannot see this — its oracle compares response bodies
+and its own comment says so.
+
+TWO ROUTE PREMISES THE TESTS CORRECTED
+--------------------------------------
+    POST :channelId/members/remove  wants `user_ids`, not `users`. The 400 named the
+                                    field, which is chapter 3.8's error envelope
+                                    doing its job.
+    DELETE :channelId/archive       is UNARCHIVE. `POST` archives. The first version
+                                    of SC-004 used DELETE, unarchived an already-open
+                                    channel, got a 200, and watched the send succeed.
+                                    The path reads like the verb and is not.
+
 PHASE 4 — TWO INSTANCES ON ONE FABRIC (US2)
 -------------------------------------------
     services/gateway/src/resume.itest.ts   9/9   (was 6; +3)

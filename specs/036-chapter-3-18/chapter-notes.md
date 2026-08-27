@@ -126,6 +126,17 @@ it is one function in `@relay/protocol` with its own test.
 the same shared-harness feature `gaps.md` item 2 wants for `session.itest.ts`, and it is
 not this chapter's.
 
+## The largest risk resolved as a gap, not as a pass (T031-T034)
+
+`plan.md` named FR-RTM-10 the chapter's largest open risk and said: *"If neither path meets
+FR-RTM-10, the outcome is a recorded gap and a sentence in the chapter, not a quiet claim."*
+Neither path meets it. `gaps.md` item 4 has the measurement and the mechanism.
+
+The chapter has to say this, and the honest framing is narrow: **this chapter did not break
+FR-RTM-10 and does not fix it.** It adds a second door onto a room whose lock was already
+missing. What it does contribute is the measurement — nobody had run it before, and the
+clause has been P1 since v1.
+
 ## Decisions recorded during the work
 
     <T009c the off-switch · T014a the session.itest.ts fencing decision ·
