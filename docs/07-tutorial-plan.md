@@ -164,7 +164,7 @@ below rather than carried in the heading.
 | 3.15 | The channel a customer controls | FR-CHN-03/04/05/06/10: the `private` type made to decide something on all four of its doors, bulk member removal, member roles with their own vocabulary, and archiving that refuses a send without announcing the channel exists. 20 files, 2,947 prose words, 20 fences, 3 figures |
 | 3.16 | What a user sees | FR-CHN-08/09 and all of FR-USR: channel listing with cursor pagination and activity ordering, unread counts derived from a sequence the write path already maintains, user profiles, bulk upsert, a deletion that keeps the row, and banning. 24 files |
 | 3.17 | The sender a message never had | A message sent by a customer's server has no sender at all — chapter 3.3 decided that when nothing read one. Bot users with descriptions, a sender required on every send, and an application credential that may speak as software and not as any person. Amends the SRS (FR-USR-07 and FR-MSG-15 added, FR-MSG-13 and FR-RTL-05 narrowed in place) and the SAD's `users` DDL |
-| 3.18 | *(planned)* The message that never arrived | FR-RTM-05's message half: the api publishes, so a REST-sent message reaches a socket. Closes the concrete half of chapter 3.14's Phase 2 verdict — an outsider who sends over REST and waits on a socket currently cannot succeed, and no document says so |
+| 3.18 | The message that never arrived | **FR-RTM-01**, not FR-RTM-05, which this row cited from 3.14 to 3.18: a connected client shall receive messages for every channel of which it is a member, and the api never satisfied it. The api publishes to `chan:{channel_id}` after commit, so a REST-sent message reaches a socket. Closes chapter 3.12's `gaps.md` G1 — both mechanisms, the sender in 3.17 and the publish here — and the concrete half of chapter 3.14's Phase 2 verdict: an outsider who sent over REST and waited on a socket could not succeed, and no document said so |
 | 3.19 | *(planned)* Presence, and who is allowed to see it | FR-RTM-05's presence half, FR-RTM-06's online/offline with a 30-second grace period, and FR-RTM-07's scoping — delivered only to users sharing a channel with the subject, which is the membership graph 3.15 and 3.16 built. Completes FR-CHN-05's third verb, and decides open question 3: opt-in per channel, or not |
 
 **3.5 was narrowed while it was being written, and 3.6 is where the remainder
@@ -212,8 +212,9 @@ fix is a deterministic test, not a flake rate; the flake is only how the defect
 was found.
 
 The cause is the seam Part 3 has already taught three times: a message is durable
-and a message is announced at two different instants, and the gateway publishes to
-the fabric *after* the api has committed. A backfill query landing in that gap
+and a message is announced at two different instants, and the publish lands on the
+fabric *after* the api has committed — the gateway's publish for a socket send, and
+since chapter 3.18 the api's own for a REST send. A backfill query landing in that gap
 returns a message the fabric has not yet delivered, and chapter 2.7's dedup window
 closes when the connection goes live — a moment before the fabric catches up.
 

@@ -249,6 +249,45 @@ AFTER PHASE 3 — THE FULL LANE
     589 -> 597 tests · 193 -> 195 s · 240 s budget, 45 s headroom
     lint: 0 errors (1 pre-existing warning in an untouched file)
 
+THE WORD COUNT (T052a) — ONE INSTRUMENT, FOUR CHAPTERS
+------------------------------------------------------
+`relay-tutorial/scripts/prose-words.mjs`, written for this because the tool that produced
+3.15/3.16/3.17's recorded figures is not in the repository. A count with no tool is a
+number nobody can reproduce.
+
+    chapter   this instrument   recorded earlier   delta
+    3.15                 3009               2947   +2.1%
+    3.16                 3932               3800   +3.5%
+    3.17                 3068               2962   +3.6%
+    3.18                 2836                  —   (2775 at T052a; +61 in T062,
+                                                   the FR-017 paragraph)
+
+It reads 2–4% above the earlier figures, consistently, so the older instrument filtered
+slightly harder. The point is not agreement with a tool that no longer exists; it is that
+all four chapters are now measured the same way and the next one can be too.
+
+    SC-011's bound          2,000 – 4,000     2,836 is inside it
+
+    per ARGUMENT, which is the estimator     2,836 / 6 = 473 words
+    per taught FILE, which is not            2,836 / 9 = 315 words
+
+3.15 and 3.16 agreed on 153.5 and 154.3 words per taught file and 3.17 came in at 84.7 —
+45% below — which is why the rate carried into this chapter was per argument, not per
+file. `plan.md` estimated 2,650–3,350 from six arguments and the count landed at 2,836,
+inside it. The per-file figure above is recorded only to show it moved again: 315 against
+3.17's 84.7 is a factor of 3.7, on a chapter with nine taught files instead of sixteen.
+    plan.md's estimate      2,650 – 3,350     2,775 is inside it
+
+**THE ARGUMENT-BASED ESTIMATE LANDED. A FILE RATE WOULD HAVE MISSED AGAIN.**
+
+    words per ARGUMENT     2775 / 6 arguments = 462   (plan derived 440–560)
+    words per TAUGHT FILE  2775 / 9 files     = 308   (3.15: 150, 3.16: 151, 3.17: 83)
+
+The per-file rate that 3.15 and 3.16 agreed on to within 1% would have predicted ~1,350 for
+nine taught files. The measured figure is more than double that. Prose tracks the number of
+arguments a chapter makes, and 3.18 made six of them across nine files where 3.17 made one
+across sixteen.
+
 AFTER PHASE 6 — THE FULL LANE
 -----------------------------
     harness 17 · api 498 · gateway 65 · dispatcher 16 · e2e 10  =  606 tests
@@ -460,3 +499,24 @@ TWO PREMISES THE INVERSION GOT WRONG FIRST, both worth the chapter's attention
    `outsider-${Date.now()}` is not a UUID. This matters to FR-006 and FR-007: the retry
    guard this chapter mirrors from the gateway is about idempotency, and the two paths
    do not accept the same keys. Recorded for the chapter and for gaps.md.
+
+THE COVERAGE LANE NEEDS THE SERVICES-PROFILE CONTAINERS STOPPED TOO (T055)
+=========================================================================
+This file already said `pnpm test:integration` needs api, gateway and dispatcher stopped. The
+coverage lane needs it for the same reason and shows it differently: not a failing test, but a
+threshold on a file the feature never touched.
+
+    relay-dispatcher-1 up      expand.ts branches 84.61   pin 92   RED   (5 runs of 6)
+    relay-dispatcher-1 stopped expand.ts branches 92.30   pin 92   green (988 tests, 0 errors)
+
+`dispatcher.itest.ts:747-759` publishes one event twice — the first expansion creates, the second
+is absorbed — and covers both sides of `expand.ts:75`. A live dispatcher container subscribes to
+the same NATS queue group and takes one of the two publishes. The suite stays green whichever
+process handles which: it asserts `logged("expand.done").some((l) => l["duplicate"] === true)`,
+and the second publish satisfies that either way. Only the branch counter can see the difference.
+
+    docker stop relay-api-1 relay-gateway-1 relay-dispatcher-1   # stores stay up
+
+3.18's own pins at the same run: services/api/src/fanout/publisher.ts and
+packages/protocol/src/fanout.ts both 100/100/100/100. Total statements 2360/2572; 3.17 closed at
+2552.

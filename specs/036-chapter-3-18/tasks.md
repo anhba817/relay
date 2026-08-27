@@ -153,6 +153,30 @@ So the feature is proven at three levels, and each task says which it is:
     **The fan-out publish is that class of machinery**: once this ships, 47 send sites across 8 api suites publish on every run, and T014 gives `session.itest.ts` a live subscriber. Either add `RELAY_FANOUT_PUBLISH` following the family, or record why per-channel subjects make cross-suite interference impossible — **silence is the one option the convention rules out.** Note the symmetry: pass 3 found the *lifecycle* half of this same family's convention (T012a) from the same grep and missed the switch half
 - [X] T010 [P] Unit-test the publisher in `relay-platform/services/api/src/fanout/publisher.test.ts`: the subject is `chan:{id}`, the payload parses against `messageSchema`, and `publish` **resolves** when the client throws
 - [X] T011 **Set an explicit coverage pin** for `services/api/src/fanout/publisher.ts` in `relay-platform/vitest.coverage.config.mts`, and prove it bites by deleting T010's throwing-client case and watching it go red. **Unlisted files fall under the global `70`** — a ten-line publisher clears that with its `catch` untested, which is exactly the path FR-010 and FR-011 depend on. A pin added after the fact ratchets to whatever happened; this one is chosen. **Pin `services/api/src/messages/messages.controller.ts` too, or record why not**: only `messages.service.ts` is pinned today (`:384`), and the publish guard's two branches — `!duplicate && text !== null`, FR-007's entire mechanism — would otherwise sit under the global 70 as well
+
+    **RE-OPENED AT T061 AND NOW CLOSED.** The second half was never done. T011 said *"pin
+    `services/api/src/messages/messages.controller.ts` too, or record why not"* — the publish
+    guard's two branches are FR-007's entire mechanism. It is neither pinned nor explained; the
+    file sits under the global `70` at branches **83.33**, functions 100, lines 100, statements
+    96.
+
+    Pinned **87 / 100 / 100 / 96** against a measured 87.5 (21/24), and **proven to bite**:
+    with the FR-007 test held aside, `branches (83.33%) does not meet …messages.controller.ts`
+    and nothing else fails. The FR-007 test is what moved the file 83.33 -> 87.5, so the pin and
+    the test the traceability map produced are the same finding twice.
+
+    The remaining uncovered branch is `message.text !== null`'s false side, and it is
+    **unreachable on this route** — the `&&` short-circuits for a duplicate, and a
+    non-duplicate row was just written from a request whose schema requires `text`. It is left
+    rather than deleted, and the config says why: the ratchet has removed unreachable code three
+    times here, but `messageSchema` types `text` as non-nullable and a null would publish a frame
+    the delivery side drops in silence. A guard against a state the types forbid is cheaper than
+    a silent drop.
+
+    **A second defect, found while placing the pin.** My earlier insertion had put the publisher's
+    pin between `messages.service.ts`'s explanatory comment and its pin, so the comment beginning
+    *"A FLOOR, NOT AN ACHIEVEMENT. `messages.service.ts` measures 70.83…"* was documenting the
+    publisher. Reordered so every comment sits above the block it describes.
 - [X] T012 Wire the publisher into `relay-platform/services/api/src/messages/messages.module.ts`, following `services/api/src/limits/limits.module.ts:36`'s pattern — `{ provide: …, useFactory: … }`, the way the api already provides its Redis-backed counter store. **Provide it; do not export it.** `internal.module.ts:31` imports `MessagesModule` and *"reuse[s] MessagesModule's providers wholesale"*, so an exported publisher is injectable from the one route that must never publish (FR-006). `MessagesModule` already withholds `"DB"` this way (`internal.module.ts:26`) — FR-006 then holds by module boundary, not only by where the call sits
 - [X] T012a Add a `…Lifecycle implements OnModuleDestroy` to `relay-platform/services/api/src/messages/messages.module.ts` that calls `publisher.close()`, copying `CounterStoreLifecycle` at `services/api/src/limits/limits.module.ts:26` — it closes the analogous Redis client. `limits.module.ts:10` states the convention: *"resource in this api closes through `OnModuleDestroy`"*, and six modules implement it. **A `close()` nothing calls is a leaked handle in an api that boots once per integration suite**
 - [X] T013 Write the FR-006 guard test in `relay-platform/services/api/src/fanout/fanout.itest.ts` **before** T012's wiring is trusted: a send through the **internal** route publishes **nothing**, asserted by count on a Redis subscriber over a window (SC-003). **It will pass vacuously here, and that is recorded rather than mistaken for a result**: the publish does not exist until T024, so in this phase nothing publishes anywhere and the answer to "what would have to be false for this to fail?" is *everything*. Record the vacuous green in `baseline.txt` the way T003 records its expected timeout. T026a is the run that means something
@@ -254,26 +278,229 @@ So the feature is proven at three levels, and each task says which it is:
 
 ## Phase 8: Close-out
 
-- [ ] T052 Re-derive the file count from `git diff --name-only` in both repositories and reconcile it against **the list `pnpm check:fences` prints**, not its count. **The parse, stated because analysis pass 12 followed pass 11's version of this instruction and got it wrong:**
+- [X] T052 Re-derive the file count from `git diff --name-only` in both repositories and reconcile it against **the list `pnpm check:fences` prints**, not its count. **The parse, stated because analysis pass 12 followed pass 11's version of this instruction and got it wrong:**
 
         node scripts/check-fence-chain.mjs --verbose | grep -E "^  [^ ]"
 
     `--verbose` emits **two lines per file** — the path, then `last fenced at …` — so 212 files is 425 lines of output. Filtering by extension undercounts: an attempt listing `ts mts json mjs` returned **194**, missing `.yaml`, `.md`, `.sql` and `.gitignore`. The pattern above yields exactly 212. **A file fenced as `(excerpt)` and carried by no titled fence is absent from that set**, so a count-to-count comparison cannot see the one failure this step exists to catch (T050). `plan.md`'s column was rebuilt from the task list in analysis pass 4, after the pre-task prediction missed five files and invented two — so this step should now **confirm** rather than discover. If it still finds a file in no bucket, that is the interesting result and belongs in `chapter-notes.md`
-- [ ] T052a **Count the prose, do not carry the estimate (SC-011).** T043 estimated 2,650–3,350 from six arguments; SC-011 requires the chapter to be **inside 2,000–4,000**, and an estimate is not a count — the same distinction T016 draws for the publish latency. **There is no word-count instrument in this repository**: `plan.md` records that the figures for 3.15, 3.16 and 3.17 came from a tool that no longer exists and that the pass-1 reconstruction ran 4–6% high against them. So decide the instrument once, write it down in `specs/036-chapter-3-18/baseline.txt`, and **re-count 3.15, 3.16 and 3.17 with the same one** — otherwise 3.18's number is not comparable to the series it belongs to, and the per-argument rate the next chapter inherits is built on two different rulers
-- [ ] T053 [P] Assert the static page count **moved** — 91 to 92 — against T002's baseline. Nothing else connects the filesystem to `lib/tutorial.ts`, so this number is the registry's only detector. Then follow **CI's order**, which is the authoritative sequence (`.github/workflows/ci.yml:96–110`): `pnpm lint`, `pnpm typecheck`, `pnpm turbo run test --force`, `pnpm build`, **`node services/api/dist/db/migrate.js`**, `pnpm test:integration`, `pnpm coverage`, then `pnpm test:outsider`. The migration step is in CI with its reason attached — *"the suites expect the schema the migration runner produces, not the one drizzle-kit imagines"* — and this task omitted it for thirteen passes. This feature adds no migration, which is why the omission was harmless and not why it was right. **`--force` because turbo caches the unit lane and typecheck**: analysis pass 13 saw 13 typecheck tasks report success in **32ms, FULL TURBO**. The cache is correctly keyed, so a cached green is trustworthy — it is simply not evidence that anything ran, and this is a verification step. Record in `baseline.txt` which numbers came from execution. (`test:integration` is `cache: false`, so the battery needs no flag), so `check:errors` reads a current `dist` and `session.itest.ts` can spawn the api
-- [ ] T054 [P] Run `pnpm check:fences`, `pnpm check:figures`, `pnpm check:errors`, `pnpm check:srs`, `pnpm check:docs`. **Three of these five can be green for the wrong reason, and confirming each RAN is part of the task**: `check:errors` reads `packages/protocol/dist/codes.js`, so build first; `check:docs` exits 0 when the parent `docs/` is absent (`check-docs-drift.sh:35`); and `check:srs` does the same at `check-srs-ids.sh:40` — verified by running it from a scratch directory, where it prints *"not found — skipping (standalone clone?)"* and exits 0. Pass 10 fixed one of those two and missed the sibling eight lines away in a script this feature already touches
-- [ ] T055 Coverage against `relay-platform/vitest.coverage.config.mts`: confirm T011's pin still holds and that no touched file's pin regressed. The ratchet has **removed** code three times rather than covered it
-- [ ] T056 Run `pnpm test:integration` 20+ times with nothing else on the machine. 589 tests at 3.17's close, mean 193.55 s, stdev 0.99, 240 s budget — and the lane costs per **suite**, not per test, so an added api boot moves the mean more than added assertions do. **Twenty green rejects a per-run failure rate above 13.91% and nothing finer**; 3.17's one failure in twenty-six is `gaps.md` item 1, still unidentified.
+- [X] T052a **Count the prose, do not carry the estimate (SC-011).** T043 estimated 2,650–3,350 from six arguments; SC-011 requires the chapter to be **inside 2,000–4,000**, and an estimate is not a count — the same distinction T016 draws for the publish latency. **There is no word-count instrument in this repository**: `plan.md` records that the figures for 3.15, 3.16 and 3.17 came from a tool that no longer exists and that the pass-1 reconstruction ran 4–6% high against them. So decide the instrument once, write it down in `specs/036-chapter-3-18/baseline.txt`, and **re-count 3.15, 3.16 and 3.17 with the same one** — otherwise 3.18's number is not comparable to the series it belongs to, and the per-argument rate the next chapter inherits is built on two different rulers
+- [X] T053 [P] Assert the static page count **moved** — 91 to 92 — against T002's baseline. Nothing else connects the filesystem to `lib/tutorial.ts`, so this number is the registry's only detector. Then follow **CI's order**, which is the authoritative sequence (`.github/workflows/ci.yml:96–110`): `pnpm lint`, `pnpm typecheck`, `pnpm turbo run test --force`, `pnpm build`, **`node services/api/dist/db/migrate.js`**, `pnpm test:integration`, `pnpm coverage`, then `pnpm test:outsider`. The migration step is in CI with its reason attached — *"the suites expect the schema the migration runner produces, not the one drizzle-kit imagines"* — and this task omitted it for thirteen passes. This feature adds no migration, which is why the omission was harmless and not why it was right. **`--force` because turbo caches the unit lane and typecheck**: analysis pass 13 saw 13 typecheck tasks report success in **32ms, FULL TURBO**. The cache is correctly keyed, so a cached green is trustworthy — it is simply not evidence that anything ran, and this is a verification step. Record in `baseline.txt` which numbers came from execution. (`test:integration` is `cache: false`, so the battery needs no flag), so `check:errors` reads a current `dist` and `session.itest.ts` can spawn the api
+
+    **en chapter pages 34 -> 35, vi 34 -> 35.** T053's own premise — "91 to 92" — was already
+    recorded as unreadable in `baseline.txt`: this build has 79 route lines and 76 static, and
+    75 + the SSG expansion is 89, not 91. The number that moves measurably per chapter, and
+    that a missing registry entry would hold still, is the chapter-page count. Both locales
+    moved.
+
+    `Compiled successfully`. And my own grep for `Failed|Error|error` matched two route lines —
+    `/part-3/chapter-14/errors-that-resolve-and-an-outsider` — which is the pattern-versus-set
+    mistake again, in the check written to catch build failures. `Failed to compile|Build error`
+    is the pattern that means what it says: 0 matches.
+- [X] T054 [P] Run `pnpm check:fences`, `pnpm check:figures`, `pnpm check:errors`, `pnpm check:srs`, `pnpm check:docs`. **Three of these five can be green for the wrong reason, and confirming each RAN is part of the task**: `check:errors` reads `packages/protocol/dist/codes.js`, so build first; `check:docs` exits 0 when the parent `docs/` is absent (`check-docs-drift.sh:35`); and `check:srs` does the same at `check-srs-ids.sh:40` — verified by running it from a scratch directory, where it prints *"not found — skipping (standalone clone?)"* and exits 0. Pass 10 fixed one of those two and missed the sibling eight lines away in a script this feature already touches
+
+    **All five green, and three of them were run from the wrong directory first.** `check:srs`,
+    `check:errors` and `check:docs` printed nothing at all from `relay-platform/`, and silence
+    read as success. All five scripts live in `relay-tutorial/package.json`; `pnpm -s` in a
+    workspace with no such script exits quietly. A gate that cannot be found is a gate that
+    passes.
+
+        check:srs      classes checked: ASM CON DR EIR FR NFR
+        check:errors   17 codes, 17 sections, each with a cause and a client action
+        check:docs     all mirrored docs match their sources
+        check:figures  220 figures, every diagram passed as `code`
+        check:fences   216 fenced files across 35 chapters, 35 translated, fences mirrored
+
+    **`check:fences` was red first, twice, both mine.** `[HEAD]` on
+    `fences/post-series.md:2511` and on the chapter's `publisher.test.ts` fence — the close-out
+    itself had drifted the platform: the `RELAY_REDIS_URL` fallback test (T055) changed a
+    whole-file fence, and the controller pin (T011) changed a file the chapter owns by diff.
+    The appendix was reported because it applies last and computes the end state, but the fix
+    belonged in the chapter's own hunk. Regenerated from `git diff -U3 8166941`, which produced
+    two hunks where the fence had one, and rewrote the 169-line whole-file fence to 188 —
+    byte-identical in both locales.
+- [X] T055 Coverage against `relay-platform/vitest.coverage.config.mts`: confirm T011's pin still holds and that no touched file's pin regressed. The ratchet has **removed** code three times rather than covered it
+
+    **Result: green, 988 tests, zero threshold failures.** `services/api/src/fanout/publisher.ts`
+    100/100/100/100 and `packages/protocol/src/fanout.ts` 100/100/100/100. Total statements
+    2360/2572 — 3.17 closed at 2552, so this feature adds 20.
+
+    The pin needed one more test. Branches sat at 5/6 because every existing case either passed
+    `url` explicitly or ran with `RELAY_REDIS_URL` set, so the `?? DEFAULT_FANOUT_REDIS_URL` side
+    of the default parameter was never taken. The number chosen from the requirement caught what
+    reading the file did not.
+
+    **And the lane was red for a reason outside this feature.**
+    `services/dispatcher/src/expand.ts` read 84.61% branches against a pin of 92 in five runs of
+    six, with line 75 — `return result.duplicate ? "duplicate" : "expanded"` — unhit on one side.
+    The file is byte-identical at `8166941` and HEAD (`git diff --name-only` returns 0 files), and
+    holding all three of this feature's new test files aside left it at 84.61: not ours.
+
+    The cause was `relay-dispatcher-1`, up for six hours. `dispatcher.itest.ts:747-759` publishes
+    the same event twice and asserts both outcomes; the container subscribes to the same NATS
+    queue group, so it took one of the two publishes and the in-process consumer saw only one
+    branch. **The test stayed green either way** — it asserts `.some(l => l.duplicate === true)`,
+    which the second publish satisfies whoever handled the first. Stopping api, gateway and
+    dispatcher returned `expand.ts` to 92.3 and the lane to green.
+
+    `baseline.txt` already required those containers stopped for `pnpm test:integration`. It did
+    not say the coverage lane needs it too, and the symptom there is not a failing test — it is a
+    threshold on a file nobody touched. Recorded in `baseline.txt`.
+- [X] T056 Run `pnpm test:integration` 20+ times with nothing else on the machine. 589 tests at 3.17's close, mean 193.55 s, stdev 0.99, 240 s budget — and the lane costs per **suite**, not per test, so an added api boot moves the mean more than added assertions do. **Twenty green rejects a per-run failure rate above 13.91% and nothing finer**; 3.17's one failure in twenty-six is `gaps.md` item 1, still unidentified.
+
+    **22 runs, 20 green, 2 red. The assertion is on the GREEN mean and it passes.**
+
+        20 green      mean 194.74 s   stdev 1.49   min 191.56   max 197.36
+        3.17's close  mean 193.55 s   stdev 0.99   589 tests
+        ASSERT mean < 240             PASS, 45.26 s headroom
+        2 red         134.50 s and 104.82 s — they exited EARLY
+
+    **The mean must exclude the failures, and this is why.** Over all 22 runs the mean is
+    187.91 s with a stdev of 22.61 — *lower* than the green mean, because a lane that fails
+    stops early. A "mean under 240" assertion computed over every run passes more easily the
+    more often the lane breaks. That is the shape of a gate that rewards the defect it exists to
+    catch, and it would have read as 52 s of headroom instead of 45.
+
+    ~1.2 s added to the mean for 17 more tests, which is what "the lane costs per suite" predicts:
+    `fanout.itest.ts` is a 29th file in an existing package, so it joined a parallel pool rather
+    than adding an api boot to a serial chain.
+
+    **The two failures: `AssertionError: expected 201 to be 429`.** Runs 6 and 7, consecutive,
+    with 15 green after and nothing red again. Traced by reading:
+
+        rate-limit.middleware.ts:168   refused: count !== null && count > limit
+        store.ts:123                   DOWN_WINDOW_MS = 5_000
+        store.ts:102                   maxRetriesPerRequest: 0, connectTimeout: 1_000
+
+    **The REST limiter fails open, and a test asserting 429 cannot tell "the limiter allowed
+    this" from "the limiter did not count".** One connection error opens a five-second window in
+    which every call answers `null`, and a null count is not a refusal. Five seconds is far more
+    than the three requests of `limits.itest.ts:129`. The store's comments argue for failing open
+    and argue it well; what they do not say is that it makes an assertion untestable from the
+    outside.
+
+    **And I broke the battery's own protocol in exactly that window.** *"Nothing else runs on the
+    machine during a timing battery"* — during runs 6 and 7 I was running recursive `grep`s and
+    `find`s over this repository from the same shell. So **2 of 22 is not a per-run failure
+    rate**, and reporting it as one would repeat 3.12's attempt-one mistake with the two dev
+    servers. Measured separately in T056b, with the machine quiet.
 
     **Assert the mean against 240 s rather than reporting it** — measured baseline 193 s for 589 tests across 40 files (pass 19), so 47 s of headroom. The budget is enforced by nothing today — analysis pass 14 found no `timeout-minutes` in `.github/workflows/ci.yml` and no lane timeout in any vitest config, only per-test `testTimeout: 60_000`. So a lane at 300 s ships green, and **this feature adds the one thing that moves the mean**: a new api-boot suite, on a lane that is `--concurrency=1` and costs per suite. Compute the mean over the battery, compare it to 240, and fail the task if it is over — a comparison someone reads is not a gate
-- [ ] T056a **Sweep the published corpus for claims this chapter retires**, both locales, and record the phrase list and every hit in `specs/036-chapter-3-18/chapter-notes.md`. Pass 9 found every FR-018 site with eight `grep -rln` calls over `app/(*)/**/page.mdx` — *"reaches no socket"*, *"no live socket"*, *"does not reach"*, *"never arrives"*, *"cannot succeed"*, *"the gateway publishes"*, *"instance that handled"*, *"only publisher"* — **plus the architectural phrasings, because scope and vocabulary have to widen together**: *"clean mapping"*, *"gateway to Redis"*, *"publish once per message"*, *"two broker clients"*. Pass 10 pointed this sweep at `docs/` and left its word list derived from chapter narrative; all eight original phrases score **zero** in `06-adr-deep-dives.md`, where the two that matter are the two that were missing. **Sweep the parent's `docs/` as well as the chapters** — that is where this feature's two worst prose defects were: `docs/05-sad.md:254` stated the ordering unconditionally for three analysis passes (FR-002a) and `docs/07-tutorial-plan.md:167` misattributed the clause for nine (T061). The sweep was scoped to `page.mdx` because that is where pass 9 was looking, which is the same narrowing it exists to catch. **No checker reads prose** (`gaps.md` item 8), and this is the five-minute mechanical check that stands in for one. Classify every hit: a present-tense claim is a defect, an attributed record — *"Chapter 3.12 recorded that…"* — is not
-- [ ] T057 **SC-010**: the sealed outsider in `relay-platform/packages/outsider/` sends over REST, waits on a socket, and succeeds — following its README, not the source
+- [X] T056a **Sweep the published corpus for claims this chapter retires**, both locales, and record the phrase list and every hit in `specs/036-chapter-3-18/chapter-notes.md`. Pass 9 found every FR-018 site with eight `grep -rln` calls over `app/(*)/**/page.mdx` — *"reaches no socket"*, *"no live socket"*, *"does not reach"*, *"never arrives"*, *"cannot succeed"*, *"the gateway publishes"*, *"instance that handled"*, *"only publisher"* — **plus the architectural phrasings, because scope and vocabulary have to widen together**: *"clean mapping"*, *"gateway to Redis"*, *"publish once per message"*, *"two broker clients"*. Pass 10 pointed this sweep at `docs/` and left its word list derived from chapter narrative; all eight original phrases score **zero** in `06-adr-deep-dives.md`, where the two that matter are the two that were missing. **Sweep the parent's `docs/` as well as the chapters** — that is where this feature's two worst prose defects were: `docs/05-sad.md:254` stated the ordering unconditionally for three analysis passes (FR-002a) and `docs/07-tutorial-plan.md:167` misattributed the clause for nine (T061). The sweep was scoped to `page.mdx` because that is where pass 9 was looking, which is the same narrowing it exists to catch. **No checker reads prose** (`gaps.md` item 8), and this is the five-minute mechanical check that stands in for one. Classify every hit: a present-tense claim is a defect, an attributed record — *"Chapter 3.12 recorded that…"* — is not
+- [X] T056b **Measure the fail-open flake with the machine quiet.** T056 saw
+
+    **The 429 failure did not reproduce: 0 of 15 isolated runs.** So the battery's 2-of-22 is
+    not attributable to this feature on the evidence available, and the leading explanation
+    stays the one I can demonstrate — recursive `grep`s and `find`s over this repository during
+    runs 6 and 7, from the same shell, against the rule that says nothing else runs. The
+    fail-open mechanism is recorded as a finding regardless of what triggered it: it is a
+    property of the limiter, not of a run.
+
+    **The second arm was not run, because there was nothing left to compare.** The plan was 15
+    more runs with the publish disabled, to see whether the rate moved. With the
+    publish-enabled arm at 0/15, a publish-disabled arm can only also read 0/15 — a difference
+    between two zeros measures nothing. The experiment that would answer it needs load, and the
+    only load harness here is the full lane, which is where the protocol violation happened.
+
+    **And it found a different flake, in the same suite, unrelated to this chapter.** Run 1:
+
+        FAIL  limits.itest.ts > the limiter > carries all three headers on a SUCCESSFUL response
+        AssertionError: expected 1787832720 to be greater than 1787832720
+
+    `limits.itest.ts:113` asserts `Number(reset) > Math.floor(Date.now() / 1000)` — a
+    strictly-greater comparison between two whole-second values. A request served in the final
+    second of its window makes them equal. One in sixty by arithmetic; 1 of 15 observed.
+    `gaps.md` item 9, with the fix written out and deliberately not applied here.
+  `expected 201 to be 429` twice in 22 runs, consecutive, in the window where I was running
+  recursive greps over the same repository — so that figure is not a rate. Run
+  `services/api/src/limits/limits.itest.ts` alone, 15 times, running nothing else, and record
+  the failing assertion by name. If it reproduces, disable the controller's publish and run 15
+  more: the question is whether this feature's second Redis client and per-send publish moved
+  the rate, or whether the limiter has always been one connection error away from a false 201
+  and 3.17's one failure in twenty-six was this same thing
+
+    Twelve English phrases plus six Vietnamese, over both locales and `docs/`. FR-018's four
+    classes all corrected in both locales. **Two defects found that FR-018's class list did not
+    name**: 3.14's closing `<ForwardRef>` (present tense, FR-RTM-05, no chapter named — fixed
+    both locales) and `docs/07-tutorial-plan.md:215` (publisher unqualified by transport, the
+    `05-sad.md:254` defect in a second file — fixed). `07-tutorial-plan.md:167` confirmed still
+    open for T061. Full phrase table and classification in `chapter-notes.md`.
+- [X] T057 **SC-010**: the sealed outsider in `relay-platform/packages/outsider/` sends over REST, waits on a socket, and succeeds — following its README, not the source
+
+    **11 passed (11), 365 ms.** Run through the README's own procedure rather than the source:
+    `docker compose --profile services build`, `up -d --wait`, `migrate.js`,
+    `seed-demo-tenant.mjs` for a fresh credential, then `RELAY_API_URL` / `RELAY_WS_URL` and
+    `pnpm test:outsider`. The build step is in there because the README records that skipping it
+    once produced six failures — 404s for routes that exist — none of which named the cause.
+
+    This is the assertion chapter 3.14 could not make. Its suite passed only because a failing
+    test had corrected it, which the Phase 2 criterion calls out as *"precisely the assistance
+    the criterion forbids"*. This one sends over REST, waits on a socket, and receives — with no
+    correction to the suite and nothing read from the workspace.
 - [ ] T058 **Use a person**, and record what they hit in `specs/036-chapter-3-18/chapter-notes.md`. Chapters 3.14, 3.15, 3.16 and 3.17 each named this gap and none closed it. Every check in this repository compares bytes; the sealed outsider was wrong about the API for two chapters because nobody ran it, and a published Trap contradicting 3.17's own chapter survived fifteen analysis passes because no checker reads prose
-- [ ] T058a **Build `specs/036-chapter-3-18/traceability.md` both ways** (**SC-009**). 3.17's is 77 lines and bidirectional on purpose: *"a map that only runs requirement→test cannot catch a test that verifies nothing, and a map that only runs test→requirement cannot catch a requirement nobody built."* It has been wrong before — *"chapter 3.12's map recorded FR-CHN-05 delivered when two of its three verbs were built, and chapters 3.15 and 3.16 corrected it twice."* This chapter's map opens on the governing documents as amended: **FR-RTM-01** the unmet clause now met, **FR-RTM-05** one of six kinds met and five recorded as unbuilt, **FR-RTM-10** whatever T031–T034 found, and the `docs/05-sad.md` amendment with no SRS change beside it
-- [ ] T059 **SC-009, FR-015**: close chapter 3.12's `gaps.md` G1 rather than amending it again, and cite **FR-RTM-01** in `specs/036-chapter-3-18/traceability.md`
-- [ ] T060 **FR-016**: re-examine chapter 3.14's Phase 2 verdict and record what is now true of it in `specs/036-chapter-3-18/chapter-notes.md`
-- [ ] T061 Write `specs/036-chapter-3-18/chapter-notes.md` — the plan against what shipped, including the phases that went badly — and `specs/036-chapter-3-18/gaps.md` with an owner per item. **Correct `docs/07-tutorial-plan.md`'s 3.18 row, not just its status.** It reads *"FR-RTM-05's message half"* and the unmet clause is **FR-RTM-01** (FR-001) — FR-RTM-05 is about which event kinds exist. Flipping planned to shipped while leaving the citation makes the series' own plan disagree with the chapter it commissioned. While there, look at 3.19's row: it cites FR-RTM-05 alongside the correct FR-RTM-06 and FR-RTM-07, so it is less wrong rather than right
-- [ ] T062 Confirm **FR-017** against `docs/07-tutorial-plan.md`
+
+    **NOT CLOSED. Left unchecked deliberately — this is the fifth chapter to name it.** I am
+    not a person, and no command in this repository can stand in for one; a check that compares
+    bytes is the thing this task exists to compensate for. Marking it done on the strength of
+    my own reading would be the same error as the sealed outsider being "verified" for two
+    chapters by nobody running it.
+
+    What this chapter did instead: `reader-protocol.md`, 81 lines — one engineer who has not
+    read the specs, the published chapter and nothing else, 45 minutes, six questions with the
+    expected answers and the two that matter most, and a named place in `chapter-notes.md` to
+    record what they could not answer. `gaps.md` item 6, owned by the author, to be run before
+    3.19.
+- [X] T058a **Build `specs/036-chapter-3-18/traceability.md` both ways** (**SC-009**). 3.17's is 77 lines and bidirectional on purpose: *"a map that only runs requirement→test cannot catch a test that verifies nothing, and a map that only runs test→requirement cannot catch a requirement nobody built."* It has been wrong before — *"chapter 3.12's map recorded FR-CHN-05 delivered when two of its three verbs were built, and chapters 3.15 and 3.16 corrected it twice."* This chapter's map opens on the governing documents as amended: **FR-RTM-01** the unmet clause now met, **FR-RTM-05** one of six kinds met and five recorded as unbuilt, **FR-RTM-10** whatever T031–T034 found, and the `docs/05-sad.md` amendment with no SRS change beside it
+
+    134 lines, both directions, and **running it the second way found an uncovered MUST.**
+    requirement -> test credited FR-007 (*"a recognised idempotent retry MUST publish
+    nothing"*) to `fanout.itest.ts`'s "publishes nothing for any refused send", on the strength
+    of that test's name. test -> requirement showed all seven `idempotency_key` values in the
+    file were a fresh `randomUUID()`: nothing had ever sent the same key twice, and the only
+    retry assertion in the repository is `idempotency.itest.ts`'s against the **repository**,
+    which proves the check exists and never that this route's publish respects it. Test
+    written; the suite is 11 tests, not 10.
+
+    A second row was wrong the same way: `isolation.itest.ts` was credited with "the derived
+    target list", and its diff is comments only.
+
+    The map also records what it cannot do: **eight of nineteen requirements are prose** with
+    no test, and FR-013/SC-006 are pinned as UNMET rather than reported met.
+- [X] T059 **SC-009, FR-015**: close chapter 3.12's `gaps.md` G1 rather than amending it again, and cite **FR-RTM-01** in `specs/036-chapter-3-18/traceability.md`
+
+    G1's heading now carries **[CLOSED — chapter 3.18]** and a closure block a reader meets
+    before the history: the sender closed by FR-MSG-15 in 3.17, the publish by **FR-RTM-01** in
+    3.18. The record below it is kept rather than rewritten, with three present-tense sentences
+    moved to past tense and the stale pinning sentence corrected — `public-surface.itest.ts`
+    asserted "delivered neither live nor on resume" and now asserts arrival on both legs, its
+    own name having changed with it. The criterion's *"what is not met"* paragraph gained the
+    met-as-of note, quoting the condition it set.
+- [X] T060 **FR-016**: re-examine chapter 3.14's Phase 2 verdict and record what is now true of it in `specs/036-chapter-3-18/chapter-notes.md`
+
+    One of the two unmet halves is now met, on the condition 3.12's own paragraph set. The
+    other — comprehensibility — is untouched, and this is the fifth chapter to say so.
+    Recorded in `chapter-notes.md`.
+- [X] T061 Write `specs/036-chapter-3-18/chapter-notes.md` — the plan against what shipped, including the phases that went badly — and `specs/036-chapter-3-18/gaps.md` with an owner per item. **Correct `docs/07-tutorial-plan.md`'s 3.18 row, not just its status.** It reads *"FR-RTM-05's message half"* and the unmet clause is **FR-RTM-01** (FR-001) — FR-RTM-05 is about which event kinds exist. Flipping planned to shipped while leaving the citation makes the series' own plan disagree with the chapter it commissioned. While there, look at 3.19's row: it cites FR-RTM-05 alongside the correct FR-RTM-06 and FR-RTM-07, so it is less wrong rather than right
+
+    `chapter-notes.md` is 448 lines with all four close-out sections written, including the
+    phases that went badly. `gaps.md` has **8 items, each with an owner** — and reading it to
+    add three revealed that **item 5's entire section was in the file twice, verbatim**: a
+    remediation applied to a document nobody re-read, which is the same shape as the pass-5
+    remediation that silently did not apply. Removed.
+
+    `docs/07-tutorial-plan.md`'s 3.18 row: status *(planned)* dropped, clause corrected from
+    FR-RTM-05 to **FR-RTM-01** with the misattribution named in the row itself, and the
+    present-tense *"currently cannot succeed"* moved to past. The sweep also found a second
+    defect in the same file at `:215` (T056a).
+- [X] T062 Confirm **FR-017** against `docs/07-tutorial-plan.md`
+
+    The plan's 3.19 row already owns presence and cites FR-RTM-05's presence half, which is
+    right — FR-RTM-05 is the event-emission clause and does list presence change. **But the
+    chapter did not say what FR-017 requires it to say.** Its `<ForwardRef>` named FR-RTM-10,
+    3.19 and FR-RTM-05's five producerless event kinds, and stopped there: FR-RTM-07 and
+    FR-CHN-05's third verb were left to silence, which is the specific failure FR-017 names.
+    Both locales now carry the sentence, following 3.17's *"the clause has three verbs"*
+    framing. FR-RTM-07 and FR-CHN-05 appear nowhere in `docs/07-tutorial-plan.md`; that is the
+    plan's gap, not this chapter's, and it is in `gaps.md`.
 
 ### The three-repository close-out
 

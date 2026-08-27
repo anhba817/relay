@@ -100,22 +100,80 @@ reason, which is in its comment.
 **Owner:** unassigned. Correcting `limits/store.ts`'s comment means editing a file chapter
 3.8 fences, for a claim that chapter made; a later chapter touching the limiter should fix
 it there rather than this one reaching across.
-## 5. Two comments state that a missing ioredis error listener kills the process — MEASURED IN T041
 
-    services/api/src/limits/store.ts:137   "Without a listener ioredis emits `error` on an
-                                           EventEmitter with none attached, which Node turns
-                                           into an unhandled exception and the api dies"
+## 6. The comprehensibility half of the Phase 2 criterion still needs a person — NOT CLOSED IN T058
 
-Measured against ioredis 6.0.0 by reproducing `createFanout`'s exact client: the process
-**stays alive**. ioredis prints `[ioredis] Unhandled error event: …` itself and continues.
-Seven lines in four seconds against a dead port.
+**Named by chapters 3.14, 3.15, 3.16, 3.17 and 3.18. Closed by none of them.**
 
-The listener is still worth attaching — those lines are unstructured, unbounded, and
-defeat NFR-OBS-01 — but the stated reason is wrong, and `services/gateway/src/fanout.ts`
-is not the hazard R10 supposed. Chapter 3.18's own publisher attaches one for the accurate
-reason, which is in its comment.
+3.12 stated it as *content sufficiency is not comprehensibility*, and no test reaches it.
+Every check here compares bytes. The two most expensive prose defects in this repository were
+both found by a person reading, late: the sealed outsider package was wrong about the API for
+two chapters because nobody outside ran it, and a published Trap contradicted 3.17's own
+chapter through fifteen analysis passes because no checker reads prose.
 
-**Owner:** unassigned. Correcting `limits/store.ts`'s comment means editing a file chapter
-3.8 fences, for a claim that chapter made; a later chapter touching the limiter should fix
-it there rather than this one reaching across.
-    <anything else the work surfaces>
+What changed in this chapter is only that it is runnable rather than aspirational:
+`specs/036-chapter-3-18/reader-protocol.md` — one engineer who has not read the specs, the
+published chapter and nothing else, 45 minutes, six questions, and a named place to record
+what they could not answer. Question 2 is the one this chapter is most likely to fail
+(FR-RTM-01, against a reader arriving from 3.17 expecting an amendment); question 4 is the one
+that matters most (a 201 with Redis down, evidenced only by a log line).
+
+**Owner:** the author, and it needs a second person. No command in this repository can
+discharge it, which is why five chapters have deferred it. Run it before chapter 3.19 rather
+than naming it a sixth time.
+
+## 7. A coverage pin that reads differently depending on a container nobody stopped — FOUND IN T055
+
+`services/dispatcher/src/expand.ts` reads **84.61%** branches against a pin of 92 with
+`relay-dispatcher-1` up, and **92.30%** with it stopped. The file is byte-identical either
+way. `dispatcher.itest.ts:747-759` publishes one event twice to cover both sides of
+`expand.ts:75`, and a live dispatcher container subscribes to the same NATS queue group and
+takes one of the two publishes.
+
+**The suite stays green either way.** It asserts
+`logged("expand.done").some((l) => l["duplicate"] === true)`, which the second publish
+satisfies whichever process handled the first. Only the branch counter sees the difference,
+and what it reports is a threshold failure on a file this feature never touched — which is
+where half an hour went, proving 3.18 innocent of it.
+
+`baseline.txt` already required those containers stopped for `pnpm test:integration`; it now
+says the coverage lane needs it too.
+
+**Owner:** unassigned. The real fix is for that suite to assert both outcomes by count rather
+than by `.some()`, so a stolen publish fails a test instead of moving a percentage. It is an
+edit to a file chapter 3.5 fences.
+
+## 8. FR-RTM-07 and FR-CHN-05 appear nowhere in the tutorial plan — FOUND IN T062
+
+`docs/07-tutorial-plan.md` names FR-RTM-06 in the 3.19 row and neither FR-RTM-07 nor
+FR-CHN-05 anywhere. FR-CHN-05's third verb is the one presence needs; FR-RTM-07 is the scoping
+rule that decides who may see it. A plan that does not name them is a plan a chapter cannot be
+checked against.
+
+**Owner:** chapter 3.19, where both are due.
+
+## 9. A rate-limit header assertion compares two whole seconds with `>` — FOUND IN T056b
+
+    services/api/src/limits/limits.itest.ts:113
+        expect(Number(res.headers.get(HEADERS.reset))).toBeGreaterThan(
+          Math.floor(Date.now() / 1000),
+        );
+
+`x-ratelimit-reset` is a window end in whole seconds and `Date.now()/1000` floored is the
+current second. A request served in the final second of its window makes them equal and the
+strict comparison fails: `expected 1787832720 to be greater than 1787832720`. One in sixty by
+arithmetic, and 1 of 15 runs observed it.
+
+The fix is two-sided and says more than the current check does:
+
+    const now = Math.floor(Date.now() / 1000);
+    expect(Number(res.headers.get(HEADERS.reset))).toBeGreaterThanOrEqual(now);
+    expect(Number(res.headers.get(HEADERS.reset))).toBeLessThanOrEqual(now + 61);
+
+**Not applied in this chapter, and the reason is not fencing** — no chapter fences the api's
+`limits.itest.ts`; chapter 3.13 fences the *gateway's* file of the same name. The reason is
+that T056's battery has already measured the committed tree across 22 runs, and adding a
+twentieth changed file after that measurement would mean the battery no longer describes what
+ships. A two-line test fix does not justify 72 minutes of re-measurement.
+
+**Owner:** unassigned, and cheap. Any chapter that touches the api limiter should take it.

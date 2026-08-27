@@ -5,7 +5,27 @@ name them; anything still angle-bracketed has not been done.*
 
 ## What shipped
 
-    <T042, T043, close-out>
+    3.18 "the message that never arrived"     9 files taught, 2,836 words, 36 fences
+                                              19 files changed, re-derived from git diff
+                                              4 figures, 2 locales, reader minutes 70
+
+    36 titled fences: 20 excerpt-or-prose, 12 diff, 4 whole-file
+    216 fenced files across 35 chapters, 35 translated, fences mirrored
+
+    coverage  services/api/src/fanout/publisher.ts    100 / 100 / 100 / 100
+              packages/protocol/src/fanout.ts         100 / 100 / 100 / 100
+              statements 2360/2572 — 3.17 closed at 2552, so this adds 20
+              expand.ts's pin needs the dispatcher container stopped: gaps.md item 7
+
+    NO SRS CLAUSE CHANGED. Principle VI satisfied by citing FR-RTM-01.
+    docs/05-sad.md amended (it disagreed with itself), docs/06-adr-deep-dives.md
+    amended (ADR-07's exception, dated to 3.8), docs/07-tutorial-plan.md corrected
+    (the row cited FR-RTM-05 from 3.14 to 3.18, and a publisher claim at :215).
+
+    traceability.md  134 lines, both directions. Running it the second way found
+                     FR-007 — a MUST — with no test at all. Written, and proven red.
+    gaps.md          8 items, each with an owner. Item 6 is T058, not closed.
+    FR-013 / SC-006  pinned as UNMET rather than narrowed until they passed.
 
 ## The two file counts (T042)
 
@@ -240,15 +260,212 @@ which names the file, the line, and both sides of the mismatch. None needed reas
 the chain. The one that took longest — the ordering — is the one whose two sides looked
 identical until you read them as sequences instead of sets.
 
+## The prose sweep, and the two sites the class list did not name (T056a)
+
+Twelve phrases over `app/(en)/**/page.mdx`, `app/(vi)/**/page.mdx` and the parent's `docs/`.
+Eight from FR-018's own list — *"reaches no socket"*, *"no live socket"*, *"does not reach"*,
+*"never arrives"*, *"cannot succeed"*, *"the gateway publishes"*, *"instance that handled"*,
+*"only publisher"* — and four architectural: *"clean mapping"*, *"gateway to Redis"*,
+*"publish once per message"*, *"two broker clients"*.
+
+    phrase                      en   vi   docs        phrase                     en   vi   docs
+    reaches no socket            5    4     0         clean mapping               1    0     1
+    no live socket               1    0     0         gateway to Redis            1    0     1
+    does not reach               3    2     1         publish once per message    0    0     1
+    never arrives                2    0     0         two broker clients          1    0     2
+    cannot succeed               3    0     1
+    the gateway publishes        2    2     1
+    instance that handled        2    2     0
+    only publisher               1    1     0
+
+**FR-018's four classes are all corrected, both locales.** 3.13's Trap now reads *"A message
+sent over REST reached no socket — closed in 3.17 and 3.18"*, past tense, and its twin carries
+`đã không tới được socket — đóng lại ở 3.17 và 3.18`. 3.16's closing paragraph names 3.18 and
+cites FR-RTM-01 in both. The outsider test records its own old title at
+`integrate.itest.ts:247`. Every remaining hit in 3.17 is an attributed record — *"Chương 3.12
+ghi lại rằng…"* — or a `<ForwardRef>` that names 3.18.
+
+**Two sites were defects, and neither was on the list.**
+
+`part-3/chapter-14`'s closing `<ForwardRef>` read *"a REST-sent message reaches no socket and
+FR-RTM-05's chapter owns the choice"* — present tense, no chapter named, and the FR-RTM-05
+misattribution FR-001 corrects to FR-RTM-01. FR-018 named 3.16's closing paragraph and
+explicitly exempted *"3.14's verdict"* as a gap record. This is a third thing in 3.14: not the
+verdict, and not the paragraph the class list named. Corrected in both locales to *"chapter
+3.18 owns the publish — FR-RTM-01, not FR-RTM-05"*, following 3.16's precedent.
+
+`docs/07-tutorial-plan.md:215` read *"the gateway publishes to the fabric after the api has
+committed"* — the same defect as `docs/05-sad.md:254`, which stated the ordering
+unconditionally for three analysis passes, in a different file. Now qualified by transport:
+the gateway's publish for a socket send, the api's own for a REST send. The passage still says
+*"four instances of one seam"* and there is now a fifth; the enumeration was left alone.
+
+`docs/07-tutorial-plan.md:167` is still *(planned)* and still cites FR-RTM-05. That is T061's,
+and the sweep confirms it open.
+
+**An English phrase list cannot sweep a Vietnamese chapter.** The eight FR-018 phrases score 4
+hits in `(vi)`, all in code-adjacent text, and 0 in vi prose making the claims that matter.
+Six Vietnamese phrasings were needed to sweep the twin at all — `không tới được socket`,
+`không bao giờ tới`, `không có gì publish`, `chỉ gateway`, `instance xử lý`,
+`chỉ có gateway` — and they are what confirmed 3.13's and 3.16's twins were corrected. A
+mirrored corpus needs a mirrored word list; this is the same failure as a checker whose
+pattern matches the examples in front of it.
+
+## Chapter 3.14's Phase 2 verdict, re-examined (T060, FR-016)
+
+3.14 recorded the SRS Phase 2 exit criterion — *an external developer integrates using only
+public documentation, with no assistance* — as **met in part, with the missing part named**.
+Two things were not met, and 3.12's `gaps.md` says they *"are different in kind"*.
+
+    G1: REST send, socket receive, cannot succeed        MET as of this chapter
+    comprehensibility is not content sufficiency         NOT MET, and no test reaches it
+
+**The first is now met, on the condition that paragraph itself set.** It read *"until the
+platform delivers a REST-sent message or the documentation says it does not, the criterion is
+not met for that path"* — two ways out, and this chapter took the first. The sealed outsider's
+REST-send / socket-receive test passes with no correction to the suite, which is what the
+criterion actually asks: 3.12's suite passed only because a failing test had corrected it,
+*"precisely the assistance the criterion forbids"*.
+
+**The second is untouched, and this is the fifth chapter to say so.** 3.14, 3.15, 3.16 and
+3.17 each named it; so does this one. Every check in this repository compares bytes, and none
+of them can tell whether a chapter is comprehensible to somebody who has not read the plan
+that produced it. See T058 — it is recorded there with an owner and a protocol rather than as
+an aspiration, which is the only thing that has changed about it in five chapters.
+
+## T058 — use a person: NOT CLOSED, for the fifth time
+
+Chapters 3.14, 3.15, 3.16 and 3.17 each named this and none closed it. Neither did this one,
+and the task is left unchecked rather than reported done.
+
+The reason it keeps not happening is that it is the only task in the cycle that no command can
+discharge. Everything else here ends in an exit code. This ends in somebody saying "I could not
+tell from the chapter why the api publishes instead of the gateway", and there is no way to
+fake that from inside the loop that wrote the chapter.
+
+What changed: `reader-protocol.md`. Six questions, the expected answers, the two that carry the
+most weight (FR-RTM-01 against a reader arriving from 3.17 expecting an SRS amendment; and a
+201 with Redis down whose only evidence is a log line), a 45-minute box, and a place to write
+down what the reader could not answer. It is `gaps.md` item 6 with the author's name on it.
+
+Whether that is progress or a more elaborate way of deferring is a fair question. The honest
+answer is that four sentences of intent produced nothing four times, and this is the first
+version somebody could actually be handed.
+
 ## Decisions recorded during the work
 
-    <T009c the off-switch · T014a the session.itest.ts fencing decision ·
-     T030 SC-002's composition · T044b the subject grammars' asymmetry>
+Each of these is written into the source or a section above, not only here.
+
+**T009c — no off-switch, and that is a decision.** Four api modules carry one
+(`RELAY_OUTBOX_RELAY` and its three siblings) and CI sets them off because *"a background
+daemon draining the table two suites are asserting on is a race between test files, not a
+property"*. Every one of those is a daemon polling shared state; this is a synchronous
+publish to `chan:{uuid}` that a suite which did not create the channel cannot observe. The
+stronger reason is in `publisher.ts:30`: **a switch would let the lane run green with the
+publish disabled, which is the false-green shape the whole feature exists to remove.**
+
+**The DI token lives beside the interface, not in the module.** A controller importing it
+from the module closes an import loop, and Nest reports it as a missing dependency rather
+than as a cycle — *"Nest can't resolve dependencies of the MessagesController
+(MessagesService, Repository, ?)"*. Recorded at `publisher.ts:33` because the error message
+does not name the cause.
+
+**T014a — `session.itest.ts` stays outside the fence chain**, and the new delivery block is a
+third `describe` rather than a fourth argument to the existing ones, so suites that want no
+broker keep none. `isolation.itest.ts` records the same decision from the other side.
+
+**T030 — SC-002 is a composition** and no fixture did both halves; `resume.itest.ts` got the
+delivery half because it is the suite that already runs two instances on one Redis.
+
+**T044b — the subject grammars are asymmetric** and the deviation is recorded rather than
+smoothed: `subjectForChannel` in `@relay/protocol`, while the gateway's event-subject helper
+stays where it is. The rename was forced — `internal.ts:112` already exports `subjectFor`,
+and `index.ts` would not compile (`TS2308`).
 
 ## The phases that went badly
 
-    <as they happen>
+**Phase 2 — T003 failed twice for reasons that were not the feature.** First a 400 because an
+application credential may only send as a bot (chapter 3.17's rule, working). Then a second
+400 because the REST route types `idempotency_key` as `z.string().uuid()` while the socket
+frame takes any string — `gaps.md` item 1, found by a test that was trying to do something
+else.
+
+**Phase 2 also committed against a database that was not idempotent from cold volumes.**
+After `docker compose down -v` the first lane run failed all 16 dispatcher tests and the
+second and third were green. Five hypotheses were eliminated before the sixth: service
+containers, 149 Mailpit messages, my own code via `git stash`, the ports, the demo seed.
+`gaps.md` item 3, deliberately unfixed.
+
+**Phase 3 was marked complete with T025a unstarted.** The file-count reconciliation caught it:
+`isolation.itest.ts` was in the fenced column and showed no diff. A count that only agrees
+with itself would not have said so.
+
+**Phase 4's timeouts were `afterEach`, not the tests.** `server.close()` waits for open
+connections and the tests never closed their sockets. The failure looked like the feature and
+was the fixture.
+
+**Phase 7 — the fence chain went 16 → 0 through five wrong answers**, the same count as 3.17:
+prose titles read as paths, whole-file versus `diff` fences, `[MIRROR]` being a list check
+rather than a content one, `eslint.config.mjs` turning out to be appendix territory
+(`hunk pre-image matched 0 times`), and finally **ordering** — the right entry in the right
+appendix fence, placed after `history.itest.ts` where the repository has it before.
+
+**And my own instruments failed about thirteen times, in one shape**: a pattern matching the
+examples in front of me rather than the set the rule names. The `[P]` collision check omitted
+a file class; a `grep -rl` read `dist/*.js`; a `--verbose` parse gave 194 for 212; a lookahead
+for `16379` matched a port nothing uses; an awk matched a cross-reference; and one pass-5
+remediation silently did not apply, which the count caught by reading 73 where 74 was due.
+`gaps.md` item 5's section was in the file **twice**, verbatim, until T061 read it.
+
+## The fence chain reads the working tree, not git (T063)
+
+**460 lines of chapter 3.18 were never committed, and every gate was green the whole time.**
+
+The chapter's four closing whole-file fences — `protocol/fanout.ts`,
+`protocol/fanout.test.ts`, `fanout/publisher.ts`, `fanout/publisher.test.ts` — and their
+prose were written while landing the fence chain in Phase 7, *after* `9d20932` had already
+committed the chapter. `pnpm check:fences` reported 216 fenced files and mirrored locales
+against a working tree that git did not have.
+
+It surfaced at the close-out commit, from a line count that did not add up: 472 insertions on
+a page where 56 were due. The four fences show up in a marker-sequence diff as an append,
+which is what sent me looking.
+
+Nothing was lost, and that is luck rather than process. 3.12 destroyed uncommitted work twice
+with `git checkout`, and the rule written down after it — **commit each phase** — is about
+exactly this window. The rule held for the platform, whose close-out commit is 90 lines and
+all of them mine; it did not hold for the tutorial, because Phase 7's commit came before
+Phase 7's last edits.
+
+The check that would have caught it is one line, and it belongs at the end of every phase:
+
+    git status --short        # in every repository, not just the one being edited
 
 ## What the next feature should do differently
 
-    <close-out>
+**Build the traceability map both ways in the PLANNING phase, not at close-out.** Running it
+the second way here found FR-007 — a MUST — with no test at all, at T058a, after eight phases
+and nineteen analysis passes had all read `requirement -> test` and believed it. The map cost
+an hour and found something nineteen passes of reading did not. It belongs before the tests
+are written, where its answer changes what gets built.
+
+**Stop the compose app containers before ANY lane, coverage included.** `baseline.txt` said it
+for `test:integration` and not for `pnpm coverage`, and a live `relay-dispatcher-1` moved a
+pin on a file this feature never touched — half an hour spent proving innocence. The symptom
+was not a failing test. It was a percentage.
+
+**A phrase sweep needs one word list per locale.** Eight English phrases scored zero against
+the Vietnamese prose making the claims they were written to find. Six Vietnamese phrasings
+found them. A mirrored corpus needs a mirrored instrument, which is the checker lesson one
+level up.
+
+**When a requirement enumerates a class, check the class rather than the enumeration.**
+FR-018 listed four classes of stale published claim and named the chapters they were in. Two
+defects sat outside the list — 3.14's closing `<ForwardRef>`, which the clause explicitly
+exempted as *"3.14's verdict"* when it is a third thing in that chapter, and a second file
+carrying `05-sad.md:254`'s exact defect. The sweep found both in five minutes; the list had
+had nineteen passes.
+
+**And run the reader protocol.** It is written now (`reader-protocol.md`, `gaps.md` item 6).
+Five chapters have named this gap. The sixth should be the one that hands the document to
+somebody.

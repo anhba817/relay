@@ -12,7 +12,27 @@ documentation ran out. Six places did.
 
 ---
 
-## G1 — a message sent over REST reaches no socket, ever
+## G1 — a message sent over REST reaches no socket, ever  **[CLOSED — chapter 3.18]**
+
+**CLOSED. Both mechanisms are gone, and the clause is FR-RTM-01.**
+
+    the sender    FR-MSG-15, chapter 3.17     every REST send names a bot user
+    the publish   FR-RTM-01, chapter 3.18     the api publishes to chan:{channel_id}
+
+The api now holds its own Redis client for the fan-out
+(`services/api/src/fanout/publisher.ts`) and `messages.controller.ts` publishes the
+committed message after the transaction, for non-duplicate sends only.
+`services/gateway/src/public-surface.itest.ts` asserts arrival on **both** legs now — live
+and on resume — where it once asserted `[]` on both. The sealed outsider sends over REST
+and receives on a socket without reading platform source, which is the criterion this gap
+was blocking.
+
+**The clause cited below is wrong and was wrong for six chapters.** This gap is
+FR-RTM-01's, not FR-RTM-05's; chapter 3.18's FR-001 corrects the attribution and
+`docs/07-tutorial-plan.md`'s row carried the same error from 3.14 to 3.18.
+
+Everything from here down is the record as it stood, kept rather than rewritten.
+
 
 **Found by:** the socket test failing with `never received the message; saw
 connection.ack` after a `POST /v1/channels/:id/messages` returned 201.
@@ -46,19 +66,21 @@ A two-mechanism gap became a one-mechanism gap. Recorded here rather than in 3.1
 and because this project has now corrected a "delivered" claim three times by reading the
 record next to the code.
 
-So "send a message and receive it on a socket" is only true over the socket. An
+So "send a message and receive it on a socket" was only true over the socket. An
 integrating developer following the obvious path — REST to send, socket to
-receive — waits for ever, and nothing tells them why.
+receive — waited for ever, and nothing told them why. That was the state through
+chapter 3.17.
 
-**Disposition: scheduled, and the chapter names it.** Two candidate fixes and both
+**Disposition: CLOSED by chapter 3.18.** Recorded when scheduled as: Two candidate fixes and both
 are product decisions rather than corrections. Attributing a public send to an
 end-user token changes what `user` means on the wire for every existing caller
 (FR-MSG-13's territory); a live fan-out from the api is a new coupling between the
 api and Redis that ADR-05 and constitution III would each want an argument for.
-Owned by whoever owns FR-RTM-05. **Documented here and pinned by a test**:
-`services/gateway/src/public-surface.itest.ts` asserts both halves — a socket send
-between two members added over the public API is delivered, and a REST send is
-delivered neither live nor on resume.
+Owned by whoever owns FR-RTM-05. **Documented here and pinned by a test** — and the test changed when the gap closed.
+`services/gateway/src/public-surface.itest.ts` asserted both halves: a socket send
+between two members added over the public API is delivered, and a REST send is delivered
+neither live nor on resume. Chapter 3.18 rewrote the second half and the test's own name,
+which had said "does NOT deliver". Both legs now assert arrival.
 
 ## G2 — `docker compose --profile services up` serves whatever was last built
 
@@ -167,6 +189,12 @@ failing test — which is precisely the assistance the criterion forbids. A real
 outsider would have filed a bug or given up. Until the platform delivers a
 REST-sent message or the documentation says it does not, the criterion is not met
 for that path.
+
+> **Met as of chapter 3.18.** The platform delivers a REST-sent message: the api
+> publishes to `chan:{channel_id}` after commit, and the sealed outsider's REST-send /
+> socket-receive test passes with no correction to the suite. The condition this
+> paragraph set — *"until the platform delivers a REST-sent message"* — is the one that
+> was satisfied, rather than the documentation alternative.
 
 The second is the criterion's harder half, and no test can reach it. **Content
 sufficiency is not comprehensibility.** This chapter measured whether the
