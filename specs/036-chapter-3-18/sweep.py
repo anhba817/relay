@@ -173,6 +173,10 @@ PREMISES = [
      lambda: len(json.loads(read(PLAT/"turbo.json"))["tasks"]["test:integration"]["env"]) > 4),
     ("test:integration is uncached, so the battery really runs (pass 13)",
      lambda: json.loads(read(PLAT/"turbo.json"))["tasks"]["test:integration"]["cache"] is False),
+    ("ADR-07 still argues the clean mapping this chapter breaks (H29)",
+     lambda: "gateway to Redis, api and workers to NATS" in read(ROOT/"docs/06-adr-deep-dives.md")),
+    ("ADR-07's Decision still says publish once per message (H29)",
+     lambda: "Publish once per message" in read(ROOT/"docs/06-adr-deep-dives.md")),
     ("CI's platform job uses default ports; the outsider job uses 15432 (C15)",
      lambda: "localhost:5432/relay" in read(ROOT/".github/workflows/ci.yml")
              and "RELAY_POSTGRES_PORT=15432" in read(ROOT/".github/workflows/ci.yml")),

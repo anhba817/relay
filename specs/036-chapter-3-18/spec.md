@@ -87,6 +87,26 @@ their open socket within the clause's window.
   `relay-tutorial/content/docs/` and `check-docs-drift.sh` fails on divergence, so the edit is
   not complete until `pnpm sync:docs` has run.
 
+  **And a third document holds a third position.** `docs/06-adr-deep-dives.md:401` is ADR-07's deep
+  dive on this exact fabric, and its case against core NATS rests on a mapping this chapter breaks:
+  *"fan-out on NATS gives the gateway two broker clients where it had one… Choosing Redis keeps a
+  clean mapping — gateway to Redis, api and workers to NATS — where each broker's guarantee matches
+  its cargo."* This chapter gives the **api** a Redis client on the hottest path.
+
+  Two things stay true and must be said with it: ADR-07's **Decision** — *"Publish once per message
+  to `chan:{channel_id}`"* — is untouched, because each message still has exactly one entrance; and
+  its **Revisit when** clauses are gap-refetch rate and subscription scale, neither of which this
+  triggers. **The mapping also broke before this chapter**, when 3.8's rate limiter gave the api
+  `limits/store.ts`. This is the second breach and the first on the hot path.
+
+    ADR-07:465   "gateway to Redis, api and workers to NATS"    the selection argument
+    SAD:138      api -- "publish fan-out" --> redis             the component view
+    SAD:248      G->>G: publish to Redis chan:{channel_id}      the sequence view
+
+  None of the three is a lie; all three were written about a system with one publisher. Reconciling
+  them is what the chapter owes a reader, and `06-adr-deep-dives.md` is in the mirrored `DOCS` set,
+  so its edit needs `pnpm sync:docs` too.
+
   **FR-002's claim survives, narrowed to what it always meant**: no *SRS* clause is added or
   changed, and principle VI is satisfied by citation of FR-RTM-01. What the first draft of
   FR-002 got wrong was reading line 138 and concluding the document agreed with itself.
