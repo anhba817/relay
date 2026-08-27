@@ -162,6 +162,25 @@ THE TUTORIAL'S COUNTS (T002)
     read it from `pnpm build`, not from `find`. Recorded because the proxy is wrong and
     a wrong proxy is how C6's failure mode ships.
 
+PUBLISH LATENCY (T016) — MEASURED, NOT ASSERTED
+------------------------------------------------
+    242-byte payload, 2000 samples after 200 warm-up, ioredis against
+    redis://localhost:6379
+
+    p50   0.142 ms
+    p95   0.226 ms
+    p99   0.472 ms
+    max   0.965 ms
+
+NFR-PRF-02 gives the whole REST write a p95 budget of 150 ms. The publish is
+**0.15% of it**. `contracts/fanout-publisher.md` claimed "sub-millisecond"; every
+sample including the maximum is under a millisecond, so the claim holds — and it is
+now a measurement rather than an assertion, which is the distinction T016 exists to
+draw and the same one T052a draws for the word count.
+
+This is why the publish is awaited inside the handler rather than detached: at 0.226 ms
+p95 the cost of making the failure synchronously observable is not worth avoiding.
+
 AFTER PHASE 2 — MEASURED
 ------------------------
     @relay/test-harness   1 file    17 tests
@@ -201,6 +220,80 @@ which the lane runs with `RELAY_EVENT_CONSUMER=off` — so nothing recreates it 
 CI never sees this because its runner starts with no volumes and its first run IS the run.
 
 **RUN THE LANE TWICE AFTER ANY `down -v`, AND BELIEVE THE SECOND.** Recorded in gaps.md.
+
+AFTER PHASE 3 — THE FULL LANE
+-----------------------------
+    @relay/test-harness   1 file    17 tests
+    @relay/api           29 files  494 tests   (+4 over Phase 2)
+    @relay/gateway        7 files   60 tests   (+2: T021, T022)
+    @relay/dispatcher     1 file    16 tests
+    @relay/e2e            3 files   10 tests
+    ---------------------------------------------------
+                         41 files  597 tests   195 s wall, all green
+    outsider              1 file    11 tests   420 ms, all green
+
+    589 -> 597 tests · 193 -> 195 s · 240 s budget, 45 s headroom
+    lint: 0 errors (1 pre-existing warning in an untouched file)
+
+PHASE 3 — THE FEATURE WORKS, MEASURED AT THREE LEVELS
+-----------------------------------------------------
+    publisher   services/api/src/fanout/fanout.itest.ts        6/6
+                a REST send publishes to chan:{id}, the payload satisfies
+                messageSchema with exactly six keys, and it is indistinguishable
+                from the socket path's payload
+    delivery    services/gateway/src/session.itest.ts         60/60 (whole suite)
+                a real spawned api, a real gateway, a real socket, a real POST
+    end-to-end  packages/outsider/src/integrate.itest.ts      11/11 in 420 ms
+                the sealed exercise. 10,114 ms of timeout became ~150 ms of
+                delivery, and chapter 3.14's Phase 2 verdict is closed
+
+T026a — THE GUARD IS NOW EVIDENCE
+---------------------------------
+T013 passed vacuously while nothing published anywhere. With the publish in place it
+was deliberately mis-sited into `messages.service.ts`, where both callers reach it:
+
+    AssertionError: expected [ Array(1) ] to have a length of +0 but got 1
+
+The internal route published one frame where it must publish none. Reverted; `git diff`
+on the service is empty. SC-003's count is evidence from here, not a green.
+
+FOUR PREMISES THE IMPLEMENTATION CORRECTED
+------------------------------------------
+1. THE TOKEN'S HOME IS A CYCLE. `MESSAGE_PUBLISHER` declared in `messages.module.ts`
+   and imported by the controller closes a loop — the module imports the controller —
+   and Nest reports it as a missing dependency, not a cycle: "Nest can't resolve
+   dependencies of the MessagesController (MessagesService, Repository, ?)". The token
+   moved beside the interface it names.
+
+2. THE REQUEST ID WAS NOWHERE A HANDLER COULD READ IT. `RequestContextMiddleware`
+   generated it, set `X-Request-Id`, logged it, and never put it on the request. NFR-OBS-01
+   wants it in every structured line and the publish logs from inside the handler, so the
+   middleware now attaches it. One line, and it was invisible until something needed it.
+
+3. FR-009 CANNOT COMPARE SENDERS. The first version of that test compared a bot-sent
+   REST payload with a person-sent socket payload and failed on `user`. An application
+   credential may speak only as a bot (chapter 3.17) and the internal route speaks as the
+   token's person, so demanding one `user` demands what the platform forbids. It now
+   compares the key sets, the schema, the channel and the text, and names the two fields
+   that differ by construction.
+
+4. THE BUILT ARTIFACT IS WHAT THE TESTS RUN. `session.itest.ts` spawns
+   `services/api/dist/main.js` and the outsider runs against docker IMAGES, so a change
+   in `src` is invisible to both until `pnpm build` and `docker compose build`. T022
+   failed once for that reason and the outsider failed once more. This is
+   `check:errors reads dist` two levels up.
+
+A TEST WRITTEN IN ANTICIPATION FAILED, WHICH IS THE BEST CONFIRMATION AVAILABLE
+------------------------------------------------------------------------------
+`services/gateway/src/public-surface.itest.ts:252` was titled *"does NOT deliver a
+REST-sent message, live or on resume"*, and its own comment said *"the resume half of G1
+is closed by this chapter and the LIVE half is not… Chapter 3.18 is that half."* It broke
+the moment the publish landed.
+
+Inverted, renamed *"delivers a REST-sent message, live and on resume"*, and it now waits
+for BOTH frames rather than the first — one arriving would be satisfied by a publisher
+that fired once and by one that fired correctly twice. Chapter 3.12's `gaps.md` G1 listed
+two mechanisms; neither remains.
 
 THE FAILING STATE THIS CHAPTER FIXES (T003)
 -------------------------------------------
