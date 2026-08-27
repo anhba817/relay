@@ -7,9 +7,43 @@ name them; anything still angle-bracketed has not been done.*
 
     <T042, T043, close-out>
 
-## The two file counts
+## The two file counts (T042)
 
-    <T042 — teaches / fences, kept in separate columns>
+    9    what the chapter TEACHES     -> drove the word estimate
+    19   what the chapter must FENCE  -> drives the chain
+    19   files changed, re-derived from `git diff 8166941..HEAD` at the end
+
+Kept in two columns from `plan.md` to here, and **neither number was ever asked to do the
+other's job**. The taught column is the nine files a reader follows; the fenced column is
+every platform path whose end state this chapter is now responsible for.
+
+**THE RE-DERIVATION DISAGREED WITH THE PREDICTION, AND THAT IS THE POINT.** `plan.md`'s
+column — itself rebuilt in analysis pass 11 after the pre-task version missed five files —
+predicted 17. `git diff` says 19. The difference:
+
+    NOT PREDICTED, CHANGED   services/api/src/auth/principal.ts
+                             services/api/src/request-context.middleware.ts
+    PREDICTED, NOT CHANGED   (none — isolation.itest.ts was predicted and DID change,
+                             once T025a was noticed)
+
+The two unpredicted files are the request-id plumbing. Analysis pass 6 found that
+NFR-OBS-01 wants a request id in every structured line, and the publish logs from inside a
+handler — but nobody traced that requirement to the files it would touch. The id existed
+only as a generated local and a response header; a handler could not read it. One line in
+the middleware and one field on an interface, invisible until something needed them.
+
+**And the reconciliation caught a missed task.** `isolation.itest.ts` was in the column and
+showed no diff, which is how T025a — retire the comments this feature falsifies — was found
+unstarted after Phase 3 had been marked complete. A count that only ever agrees with itself
+would not have said so.
+
+## The word estimate (T043)
+
+`plan.md` estimated **2,650–3,350** from six arguments, after analysis pass 7 cut two of the
+eight that had accumulated. The chapter is written against that and measured at close-out
+by T052a, which counts rather than estimates and re-counts 3.15, 3.16 and 3.17 with the
+same instrument — because the figures those chapters recorded came from a tool that no
+longer exists.
 
 ## The grammar could not move verbatim (T004, T007)
 
