@@ -173,6 +173,10 @@ PREMISES = [
      lambda: len(json.loads(read(PLAT/"turbo.json"))["tasks"]["test:integration"]["env"]) > 4),
     ("test:integration is uncached, so the battery really runs (pass 13)",
      lambda: json.loads(read(PLAT/"turbo.json"))["tasks"]["test:integration"]["cache"] is False),
+    ("the measured lane baseline is recorded, not the folklore (M34)",
+     lambda: "589 tests" in TASKS and "193 s wall" in TASKS and "47 s of headroom" in TASKS),
+    ("T001 distinguishes the 8 the lane needs from the 26 turbo hashes (M35)",
+     lambda: "CACHE KEY, not a requirements list" in TASKS),
     ("compose parameterises all three ports with defaults 5432/6379/4222 (C16)",
      lambda: all(t in read(PLAT/"compose.yaml") for t in
                  ("${RELAY_POSTGRES_PORT:-5432}:5432","${RELAY_REDIS_PORT:-6379}:6379","${RELAY_NATS_PORT:-4222}:4222"))),

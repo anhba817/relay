@@ -147,3 +147,26 @@ or narrower set than the rule names.** A sweep is not immune to it; a sweep test
 and diagnosed on failure is how it stops being fatal.
 
 Final: **32/32**.
+
+
+## The two numbers that were right
+
+Eighteen passes found folklore in almost every number that had no config behind it — four env
+variables against turbo's twenty-six, a 240 s budget no timeout enforces, a Redis port nothing
+binds. So it is worth recording that pass 19 ran the lane and **CLAUDE.md's "589 integration tests,
+mean 193.55 s" was exact**: 589 tests across 40 files, 193 s wall clock, all green.
+
+    @relay/test-harness   1 file    17 tests    0.51 s
+    @relay/api           28 files  488 tests  102.26 s   (196.21 s of test time — parallel)
+    @relay/gateway        7 files   58 tests    9.58 s
+    @relay/dispatcher     1 file    16 tests   71.80 s
+    @relay/e2e            3 files   10 tests    6.42 s
+
+Two refinements came out of it. **"Cost scales with api boots" holds across packages and not within
+one** — `--concurrency=1` serialises packages, vitest parallelises files, and the api package fits
+196 s of tests into 102 s of wall clock. And **turbo's twenty-six variables are a cache key, not a
+requirements list**: eight sufficed.
+
+The lesson cuts against the pattern the earlier passes established. Finding folklore repeatedly
+makes it tempting to treat every unverified number as wrong; two of them were exactly right, and
+running the command was the only way to tell which.
