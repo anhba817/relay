@@ -235,6 +235,71 @@ AFTER PHASE 3 — THE FULL LANE
     589 -> 597 tests · 193 -> 195 s · 240 s budget, 45 s headroom
     lint: 0 errors (1 pre-existing warning in an untouched file)
 
+AFTER PHASE 6 — THE FULL LANE
+-----------------------------
+    harness 17 · api 498 · gateway 65 · dispatcher 16 · e2e 10  =  606 tests
+    41 files · 200 s wall · all green
+
+    589 -> 606 tests · 193 -> 200 s · 240 s budget, 40 s headroom
+    The api gained 8 and the gateway 7 across five phases; the mean moved 7 s.
+
+PHASE 6 — THE FAILURE PATH (T037-T041)
+--------------------------------------
+    services/api/src/fanout/fanout.itest.ts   10/10  (was 8; +2)
+
+T037/T038: with the publisher on a dead port a REST send answers 201 and the message
+is readable from history — constitution IV's recovery gate. And the suite contains its
+own proof that this distinguishes something: a SECOND app is booted with a publisher
+that does NOTHING, it passes 201-and-recoverable identically, and fails only on the
+`fanout.publish_failed` line. That is FR-011 earning its place.
+
+T039 — THE DEAD-PORT COST, AND THE CONTRACT UNDERSTATED IT
+-----------------------------------------------------------
+    the shipped publisher, 12 sends at a dead port    total 2 ms
+                                                      (2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+    createFanout's options, 12 sends                  HUNG past 420 s
+
+The first send costs 2 ms — ECONNREFUSED on localhost is instant and
+`maxRetriesPerRequest: 0` does not wait out `connectTimeout`. The other eleven cost
+0 ms: the down-window returns without touching the client.
+
+`contracts/fanout-publisher.md` said copying the gateway's options would mean "an outage
+that adds seconds to every request has refused it in a slower way". Measured, that is too
+kind. Default ioredis retries FOREVER, so `publish` never rejects and the command queues
+indefinitely — a request handler awaiting it does not slow down, it never returns.
+
+T040 — A CONNECTED SERVER THAT NEVER ANSWERS, AND A FIX TO SHIPPED CODE
+-----------------------------------------------------------------------
+Against a TCP listener that accepts and never speaks:
+
+    as first shipped (no commandTimeout)   publish HUNG past a 3,000 ms bound, twice
+    with commandTimeout: 100               rejected in 100 ms, then 4 ms, then 100 ms
+
+`maxRetriesPerRequest: 0` and `connectTimeout` bound a DEAD server and do nothing for a
+silent one. `plan.md`'s post-design re-check named this as the residual risk of awaiting
+the publish; the contract left it open and T040 was written to measure it. It is now
+`commandTimeout: 100` in `publisher.ts` — ~440x the measured p95 of 0.226 ms, ~100x the
+worst sample of 0.965 ms, and inside NFR-PRF-02's 150 ms budget, which a timeout above
+that budget could not protect.
+
+T041 — R10 WAS WRONG, AND SO IS A COMMENT IN SHIPPED CODE
+---------------------------------------------------------
+R10 asked whether `createFanout`'s listener-less `new Redis(url)` takes the gateway down,
+and flagged it as "a claim to verify, not a conclusion". Verified against ioredis 6.0.0,
+reproduced exactly: it does NOT. ioredis prints its own line —
+
+    [ioredis] Unhandled error event: Error: connect ECONNREFUSED 127.0.0.1:1
+
+— and the process stays alive. Seven such lines in four seconds.
+
+So the hypothesis is refuted, AND `services/api/src/limits/store.ts:137` is wrong where it
+says "Node turns that into an unhandled exception and the api dies for the thing it was
+designed to survive". Either it was true of an older ioredis or it was never tested.
+
+What is real is unbounded UNSTRUCTURED log noise: those lines are not JSON, so they defeat
+NFR-OBS-01's structured-logging requirement while filling a log an operator greps. That is
+a smaller finding than a crash and it is still worth the listener. gaps.md item 5.
+
 PHASE 5 — MEMBERSHIP, PRIVACY, AND THE REFUSALS (US3)
 -----------------------------------------------------
     services/api/src/fanout/fanout.itest.ts       8/8   (was 6; +2)

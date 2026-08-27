@@ -82,6 +82,40 @@ would be green. That reading is not what it says.
 gateway a membership changed — and FR-RTM-06's grace period is the same shape of problem.
 Whoever builds that closes this. The test above inverts on that day.
 
-    <T038 the gateway's listener-less fan-out client, if the process dies>
-    <T038 the gateway's listener-less fan-out client, if the process dies>
+## 5. Two comments state that a missing ioredis error listener kills the process — MEASURED IN T041
+
+    services/api/src/limits/store.ts:137   "Without a listener ioredis emits `error` on an
+                                           EventEmitter with none attached, which Node turns
+                                           into an unhandled exception and the api dies"
+
+Measured against ioredis 6.0.0 by reproducing `createFanout`'s exact client: the process
+**stays alive**. ioredis prints `[ioredis] Unhandled error event: …` itself and continues.
+Seven lines in four seconds against a dead port.
+
+The listener is still worth attaching — those lines are unstructured, unbounded, and
+defeat NFR-OBS-01 — but the stated reason is wrong, and `services/gateway/src/fanout.ts`
+is not the hazard R10 supposed. Chapter 3.18's own publisher attaches one for the accurate
+reason, which is in its comment.
+
+**Owner:** unassigned. Correcting `limits/store.ts`'s comment means editing a file chapter
+3.8 fences, for a claim that chapter made; a later chapter touching the limiter should fix
+it there rather than this one reaching across.
+## 5. Two comments state that a missing ioredis error listener kills the process — MEASURED IN T041
+
+    services/api/src/limits/store.ts:137   "Without a listener ioredis emits `error` on an
+                                           EventEmitter with none attached, which Node turns
+                                           into an unhandled exception and the api dies"
+
+Measured against ioredis 6.0.0 by reproducing `createFanout`'s exact client: the process
+**stays alive**. ioredis prints `[ioredis] Unhandled error event: …` itself and continues.
+Seven lines in four seconds against a dead port.
+
+The listener is still worth attaching — those lines are unstructured, unbounded, and
+defeat NFR-OBS-01 — but the stated reason is wrong, and `services/gateway/src/fanout.ts`
+is not the hazard R10 supposed. Chapter 3.18's own publisher attaches one for the accurate
+reason, which is in its comment.
+
+**Owner:** unassigned. Correcting `limits/store.ts`'s comment means editing a file chapter
+3.8 fences, for a claim that chapter made; a later chapter touching the limiter should fix
+it there rather than this one reaching across.
     <anything else the work surfaces>
