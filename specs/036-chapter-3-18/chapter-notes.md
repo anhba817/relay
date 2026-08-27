@@ -9,6 +9,10 @@ name them; anything still angle-bracketed has not been done.*
                                               19 files changed, re-derived from git diff
                                               4 figures, 2 locales, reader minutes 70
 
+    607 integration tests across 41 files (3.17: 589 across 40)
+    20 of 22 full-lane runs green, mean 194.74 s, stdev 1.49, budget 240
+    the sealed outsider 11 of 11 through the README's own procedure
+
     36 titled fences: 20 excerpt-or-prose, 12 diff, 4 whole-file
     216 fenced files across 35 chapters, 35 translated, fences mirrored
 

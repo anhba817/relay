@@ -508,8 +508,28 @@ So the feature is proven at three levels, and each task says which it is:
 One logical chapter is three commits plus a gitlink bump, and 3.17 was *"tagged `part3-ch17` in all
 three repositories"*. None of that was in this list until analysis pass 10.
 
-- [ ] T063 Commit in each repository that changed — `relay-platform`, `relay-tutorial`, and the parent for `docs/` and `specs/` — then **bump the parent's submodule pointers** so the parent's recorded state includes the chapter. Without the bump, `check-docs-drift.sh`'s cross-repo comparison and every fence replay describe a tree nobody has
-- [ ] T064 **Tag `part3-ch18` LAST**, after the platform, the tutorial, the fences and every gate — in all three repositories. CLAUDE.md's fence lesson 2 exists because a feature's tail amended a platform file *after* tagging, which cost 3.17 five wrong answers and is the entire reason this feature has T001a. Tagging before the tail is what creates that
+- [X] T063 Commit in each repository that changed — `relay-platform`, `relay-tutorial`, and the parent for `docs/` and `specs/` — then **bump the parent's submodule pointers** so the parent's recorded state includes the chapter. Without the bump, `check-docs-drift.sh`'s cross-repo comparison and every fence replay describe a tree nobody has
+
+    Three commits: `caeabc9` platform (90 lines, all of them this close-out's), `5558e2e`
+    tutorial, `d8f0fc0` parent with both submodule pointers bumped.
+
+    **The tutorial commit carried 460 lines Phase 7 never committed** — the chapter's four
+    closing whole-file fences and their prose, written while landing the fence chain after
+    `9d20932` had already committed the chapter. `check:fences` read green throughout because it
+    reads the working tree, not git. Found by a line count that did not add up: 472 insertions
+    where 56 were due. Recorded in `chapter-notes.md`; the one-line check that catches it is
+    `git status --short` in every repository at the end of every phase.
+- [X] T064 **Tag `part3-ch18` LAST**, after the platform, the tutorial, the fences and every gate — in all three repositories. CLAUDE.md's fence lesson 2 exists because a feature's tail amended a platform file *after* tagging, which cost 3.17 five wrong answers and is the entire reason this feature has T001a. Tagging before the tail is what creates that
+
+    Annotated `part3-ch18` in all three: platform `caeabc9`, tutorial `5558e2e`, parent
+    `d8f0fc0`. Tagged after every commit, every gate and the fence chain.
+
+    **Tagged twice, because the first message was wrong.** It said 606 tests, carried from an
+    earlier phase, and the lane measures **607** — the FR-007 test. The count took three
+    attempts to read: turbo emits ANSI colour codes between "Tests" and the number, so the
+    battery's per-run count read 0 for all 22 runs and the first close-out measurement reported
+    rc=0 with no count at all, which looked like success. Tags deleted and re-cut rather than
+    left wrong, which is what T065 exists to avoid needing.
 - [ ] T065 If anything is amended after T064 — and 3.17's experience says something will be — **record the amending commit in `specs/036-chapter-3-18/chapter-notes.md` under a heading 3.19 will find.** The next chapter's fence predecessor is then a fact it reads rather than an excavation it repeats
 - [ ] T066 Push all three repositories and their tags, and verify the parent's gitlinks point at the pushed submodule commits rather than at local-only ones: presence is untouched, and chapter 3.19 still owns FR-RTM-06 and FR-RTM-07
 

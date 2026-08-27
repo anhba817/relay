@@ -520,3 +520,25 @@ and the second publish satisfies that either way. Only the branch counter can se
 3.18's own pins at the same run: services/api/src/fanout/publisher.ts and
 packages/protocol/src/fanout.ts both 100/100/100/100. Total statements 2360/2572; 3.17 closed at
 2552.
+
+THE LANE AT CLOSE-OUT (T064) — 607 TESTS, 41 FILES
+--------------------------------------------------
+    @relay/test-harness   1 file    17 tests
+    @relay/api           29 files  499 tests
+    @relay/gateway        7 files   65 tests
+    @relay/dispatcher     1 file    16 tests
+    @relay/e2e            3 files   10 tests
+    ---------------------------------------------
+                         41 files  607 tests   195 s wall, rc=0
+
+3.17 closed at 40 files and 589 tests. One file, eighteen tests, and 1.2 s on the mean.
+
+AND THE COUNT TOOK THREE ATTEMPTS TO READ, for one reason: **turbo emits ANSI colour codes
+between the word and the number**, so `grep -oE "Tests +[0-9]+ passed"` matches nothing.
+The battery's per-run test count read 0 for all 22 runs for exactly this, and so did the
+first close-out measurement — which reported rc=0 and no count, and looked like success.
+
+    NO_COLOR=1 FORCE_COLOR=0 pnpm test:integration | sed -r 's/\x1B\[[0-9;]*[mK]//g'
+
+Same shape as every other instrument failure in this chapter: a pattern written against what
+the output was expected to look like rather than against what it is.
