@@ -410,3 +410,54 @@ The fix here is stronger than filtering, and the difference matters. Filtering t
 other tenant's subject would prove that ONE user did not leak; asserting that *everything
 the stranger heard was about the stranger* catches any of them. A negative test that
 names what must not appear is weaker than one that names what may.
+
+
+PHASE 6 — THE FAILURE PATHS, AND THE BUDGET'S REAL LEVER
+----------------------------------------------------------
+
+    gateway integration   8 files   96 passed     41.91 s
+    FULL LANE (--force)  42 files  638 passed    231.4 s against a 240 s budget
+
+**8.6 s OF HEADROOM.** It was 5.2 s before trimming: the five-connection case settled
+after each of four closes rather than once, the drain used eight users, and the scoping
+settles were 700 ms. Trimming those cost nothing in coverage and bought 3.4 s.
+
+**THE GATEWAY PACKAGE'S WALL CLOCK IS PRESENCE.ITEST.TS'S DURATION**, because files
+inside a package run in parallel and this is the slowest of the eight. 41.91 s package,
+41.9 s file. Every second cut from this one file is a second off the lane, and no other
+gateway file matters to the total at all.
+
+**THE STRUCTURAL FIX, NOT TAKEN HERE.** Splitting `presence.itest.ts` in two would put
+both halves in the same parallel pool and make the package's wall clock the LARGER half
+rather than the sum — roughly 20 s instead of 42 s, and about 20 s back on the lane. It is
+a file move rather than a test change. Left for a deliberate decision rather than done
+mid-phase; it is the single largest lever this chapter has on the budget.
+
+
+WHAT THE FAILURE PATH NEEDED THAT THE MODULE DID NOT HAVE
+-----------------------------------------------------------
+
+**DEFAULT IOREDIS RETRIES FOREVER AND QUEUES, so the failure path was never taken.** The
+first run of T069 found ZERO `presence.failed` lines against a dead port: `new Redis(url)`
+neither succeeds nor rejects, it waits. Chapter 3.18 measured the same thing about its
+publisher — *"default ioredis retries FOREVER, so `publish` never rejects and the command
+queues"* — and this module had copied `fanout.ts`'s bare constructor, which is right for a
+fire-and-forget publisher and wrong for one whose failures are a requirement.
+
+The commands client now takes the limiter's shape, `maxRetriesPerRequest: 0` and a
+one-second connect timeout. **The subscriber keeps its retries**, because "the next
+transition publishes without a restart" rests on it reconnecting.
+
+**AND THE TEST'S OWN LOG CAPTURE WAS BROKEN IN A WAY THAT PASSED.** `createLogger`'s sink
+receives a JSON STRING with its fields spread at the top level, not an object with a
+`fields` key. The first capture pushed raw lines, so every `l.msg` was `undefined` and
+every log assertion matched nothing — a filter over zero results is a filter that agrees
+with you. "Observability you can't test rots", from the logger's own comment, in the test
+rather than in the code.
+
+**T070 uses an in-process TCP proxy**, never `docker compose stop redis`. The rule was
+already written down at `services/api/src/limits/limits.itest.ts:484` — the lane runs
+files in parallel and stopping Redis breaks every other suite mid-run. A dead port covers
+"down" and cannot cover "restored", and `redis-server` is not installed on the lane
+machine, so the proxy is what is left: cut the sockets, close the listener, re-listen on
+the same port, and ioredis reconnects on its own.
