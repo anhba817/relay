@@ -67,3 +67,118 @@ the 30% threshold was crossed. It was not. If it is crossed later, the remedy st
 table is the one this chapter declined — channels opting in — and the argument against it
 recorded in Appendix C row 3 was made at a scale where the question could not be answered.
 That argument should be re-read, not re-cited.
+
+## The two file counts, kept apart from the start
+
+    10   what the chapter TEACHES     -> drives the word estimate
+     9   what the chapter FENCES      -> drives the chain
+    10   files changed                -> re-derived from `git diff --name-only` at close-out
+
+The two disagree by exactly one file and that file is `eslint.config.mjs`, for the reason
+in the next section. Everything else this feature touched is both taught and fenced, which
+is what a small feature looks like; the practice exists so the numbers are not conflated,
+not to force them apart.
+
+**The word estimate comes from arguments, not from the file count.** The rate is not an
+estimator: 3.15 and 3.16 agreed on ~154 words per taught file, 3.17 came in at 84.7, and
+3.18 at 315. This chapter makes five arguments —
+
+    1  a frame declared in chapter 1.3 that nothing has ever produced
+    2  why presence gets its own subject grammar rather than riding `chan:{id}`
+    3  three 30-second numbers that turned out to be three quantities
+    4  the scoping is topology; there is no filter to read
+    5  a TTL expiring publishes nothing, so somebody has to be elected to say it
+
+— and 3.18's 2,836 words over a comparable set puts the estimate near **2,500**.
+
+**Actual: 2,445**, measured with `scripts/prose-words.mjs`. The estimate was 2.2% high.
+
+That is one data point and it should not be read as more than one, but it is the first time
+in this series the estimate was made from arguments rather than from a rate, and the rate
+would have been wrong by a wide margin either way: at 3.15/3.16's ~154 words per taught file
+the prediction was 1,540, and at 3.18's 315 it was 3,150. The true value sits between them
+at 245 per taught file, which is a fourth rate — the point being that there is no rate.
+Counting the arguments took a minute and was worth it.
+
+## What this chapter fences, decided rather than discovered
+
+Chapter 3.18 left `session.itest.ts` outside the chain and found out at close-out; it is
+`gaps.md` item 2 and item 7 there, and the cost is stated in its own words — *"the
+end-to-end test that proves this chapter's claim is never replayed against the
+repository"*. So this is decided here, in phase 8, before a fence is written.
+
+**All five new files are fenced, integration test included.**
+
+    packages/protocol/src/presence.ts          60 lines   whole file
+    packages/protocol/src/presence.test.ts     50         whole file
+    packages/protocol/src/index.ts              +1 line   diff
+    services/gateway/src/presence.ts          426         whole file
+    services/gateway/src/presence.test.ts      69         whole file
+    services/gateway/src/presence.itest.ts   1302         whole file
+    services/gateway/src/registry.ts          +14         diff
+    services/gateway/src/session.ts           +85         diff
+    services/gateway/src/main.ts               +9         diff
+
+`presence.itest.ts` is the longest single fence in the series — the previous high is
+`users.itest.ts` at 916 lines — and it is fenced anyway. The series already fences
+twenty-five `.itest.ts` files whole and none as diffs alone, so the precedent is not in
+question; only the size is, and a size
+argument is how the previous chapter arrived at an unverified test.
+
+**`eslint.config.mjs` is the one exception, and it is a chain fact rather than a choice.**
+The state that file reaches after every chapter has run is **73 lines**; the repository's is
+386. The difference is `fences/post-series.md`, which owns the two restriction sets and all
+three ignore lists and is applied *after* the last chapter. This chapter's edit adds one
+entry to an ignore list that does not exist yet at the point a chapter could fence it — a
+hunk anchored on `"services/api/src/fanout/**",` has **zero** matches in the pre-3.19
+chapter state, because post-series is what puts that line there.
+
+    node dump-state.mjs eslint.config.mjs chapters   73 lines
+    node dump-state.mjs eslint.config.mjs head       386 lines, byte-identical to caeabc9
+
+So the amendment goes to `fences/post-series.md` as a fourth `eslint.config.mjs` hunk, and
+the chapter teaches the same lines as an **excerpt**. This is fence-chain rule 3 from the
+other side: a chapter cannot do the appendix's work, and here the appendix already owns the
+file. The excerpt is not chain-verified (`gaps.md` item 7's class), but the file is —
+post-series checks it as strictly as any chapter, so what is unverified is the chapter's
+quotation of it, not the line itself.
+
+## Six frame kinds, two producers
+
+FR-RTM-05 names six real-time event kinds. All six have had frames in `frameSchema` since
+chapter 1.3. Before chapter 3.18, **none of them had a producer**; 3.18 gave
+`message.created` one and this chapter is the second.
+
+    message.created      3.18 (api publisher) and 2.6 (gateway)   HAS a producer
+    presence.changed     this chapter                             HAS a producer
+    message.updated      nothing writes messages.edited_at        none
+    message.deleted      nothing deletes                          none
+    membership.changed   the writer exists; nothing publishes     none
+    typing               a frame and a 5 s expiry in its comment  none
+
+The list is written out rather than counted because chapter 3.18's spec claimed `typing`
+had no frame in the union, and `typingSchema` is in `frameSchema`. An unnamed set is a set
+nobody has checked.
+
+`presence.changed`'s eighteen idle chapters have a sharper record than the schema. Chapter
+3.12's direction gauntlet asserts it is refused when a client utters it — *"derived from
+connections the gateway holds, not claimed"* — and that row has been green since 3.12
+against a system in which the gateway derived nothing. **A test can be green about a
+capability that does not exist.**
+
+## Nine translated chapters are missing from the sitemap
+
+Found by checking T098's premise, which said chapter 3.18 sets `translatedIn` and is "the
+only one of the last eight" to do so. It sets none.
+
+    entries in lib/tutorial.ts: 35   missing translatedIn: 3.10 … 3.18   (nine)
+    every one of those nine has a Vietnamese page.mdx on disk
+
+`app/sitemap.ts:26` is the field's only consumer, and it gates whether the `/vi` URL is
+emitted as its own entry. So nine Vietnamese chapters route, render and are absent from the
+sitemap. The `alternates.languages.vi` hint is still emitted for them, which is why nothing
+looked broken.
+
+The field's own doc comment says it "gates all vi links". One grep says it gates one thing:
+the sitemap. Both facts belong in `gaps.md`; nine manifest entries are not this chapter's to
+change, and 3.19's own entry sets the field correctly.

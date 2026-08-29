@@ -483,3 +483,51 @@ already there and left a shipped chapter described as a plan with an open questi
 This is the third mechanism in CLAUDE.md working exactly as written: the premise was
 checkable with two `grep -c`s, and checking it changed what the task was.
 
+
+
+PHASE 8 — THE STATIC PAGE COUNT WAS READABLE ALL ALONG
+------------------------------------------------------------
+
+T104 expected `92 -> 93` and told me to re-derive rather than trust the line. Measured
+both ends by removing the chapter and building, then putting it back:
+
+    with chapter 3.19       Generating static pages using 27 workers (0/95)
+    without it              Generating static pages using 27 workers (0/93)
+
+**93 -> 95. A chapter in two locales moves it by TWO, not one.** T104 said one, citing
+chapter 3.18's T053 assertion of `91 -> 92` — and 3.18's own `baseline.txt` says why that
+is not the whole move: it measured "after the English chapter landed", before its
+Vietnamese page existed. So 3.17 closed at 91, 3.18 mid-chapter was 92, 3.18 closed at 93,
+and this chapter takes it to 95. The lineage is consistent; one number in it was a
+half-measurement quoted as a close.
+
+**And the number is printed by `pnpm build`.** Chapter 3.18's `baseline.txt` records
+*"91 static pages IS NOT READABLE FROM THIS BUILD, and guessing at it is how a proxy goes
+wrong twice"*, then derives a substitute detector from the route table. The figure is in
+the build output, on the progress line above the route table:
+
+    grep -oE "Generating static pages using [0-9]+ workers \(0/[0-9]+\)"
+
+It does not reconcile with the route table by arithmetic — 78 static rows plus ten docs in
+two locales is 98, not 95 — which is presumably why the route table looked like the only
+honest source. The lesson is the one this project keeps relearning about proxies: the
+derivation disagreed with the observable, and the observable was three lines away.
+
+3.18's substitute detector still works and is kept, because it is the one that links the
+filesystem to `lib/tutorial.ts`:
+
+    pnpm build | grep -c '^[├└] ○ /part-'        35 -> 36
+    pnpm build | grep -c '^[├└] ○ /vi/part-'     35 -> 36
+    route lines total                            79 -> 81
+
+THE GATES, PHASE 8
+------------------------------------------------------------
+
+    check:fences    221 fenced files, 36 chapters, 36 translated   (was 216 / 35 / 35)
+    check:figures   226 figures, every diagram passed as `code`
+    check:srs       245 clause rows, 245 unique identifiers
+    check:errors    17 codes, 17 sections — unchanged, as required
+    check:docs      all mirrored docs match their sources
+    check-prose     all 8 listed claims gone from both locales
+    check-refs      117 tasks, 42 requirements, 14 success criteria, every one traced
+    pnpm build      compiled successfully in 13.4 s, no acorn error
