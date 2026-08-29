@@ -1,39 +1,54 @@
 <!-- SPECKIT START -->
-**CHAPTER 3.19 IS IN PLANNING** — `specs/037-chapter-3-19/`, presence, and who is allowed to
-see it. `presence.changed` has been in the protocol union since chapter 1.3 and **nothing has
-ever produced one**: the frame exists, `frames.test.ts` asserts its shape, 3.12's gauntlet proves
-a client cannot forge one, and the event does not exist. 3.18's shape one layer up.
-Read `plan.md`, then `research.md` — **R1 is why presence gets its own subject and its own
-module instead of riding `chan:{channel_id}`** (the fan-out is typed to messages at three points
-and the third is inside a function ten chapters fence), and **R2 is the mechanism, measured
-against the running Redis rather than reasoned about**: a TTL expiring publishes nothing, so the
-closing instance schedules one check and `SET … NX` elects a single publisher.
-**No SRS clause changes; principle VI is satisfied by citing FR-RTM-05, FR-RTM-06, FR-RTM-07 and
-FR-CHN-05's third verb.** Appendix C row 3 does change — open question 3 closes as *not opt-in*,
-confirming ADR-10, with its revisit trigger named as undischarged because the lane's largest
-membership set is five channels. `docs/05-sad.md` changes twice: ADR-10 says transitions publish
-"on the affected channels' subjects only", which the fabric it describes cannot carry, and §4.2's
-table still points at the SRS as though the question were open.
-**THREE 30-SECOND NUMBERS ARE THREE QUANTITIES.** `PING_INTERVAL_MS`, FR-RTM-06's grace period
-and the SAD's key TTL are all 30_000, and a TTL equal to its refresh interval expires a connected
-user. Research R3.
+**CHAPTER 3.19 IS CLOSED**, tagged `part3-ch19` in all three repositories. Its record is
+`specs/037-chapter-3-19/` — read `chapter-notes.md` first (its close-out names the fence
+predecessor and what the two red battery runs were), then `gaps.md` (**seventeen** items,
+each with an owner and each reference carrying its chapter, because the numbers collide:
+3.17's item 1 is a flake and 3.18's item 1 is the idempotency keys). Then
+`traceability.md` and `baseline.txt`.
 
-**CHAPTER 3.18 IS CLOSED**, tagged `part3-ch18` in all three repositories. Its record is
-`specs/036-chapter-3-18/` — read `chapter-notes.md` first (its T065 section names the fence
-predecessor and what happened after the tag), then `gaps.md` (nine items, each with an owner;
-item 4 is FR-RTM-10 and 3.19 corrects its premise rather than inheriting it, item 6 is *use a
-person* and is now on its sixth chapter), `traceability.md` and `baseline.txt`.
+    3.19 "presence, and who is allowed to see it"  10 files taught, 2,445 words, 9 fences
+                                                   11 files changed in the platform,
+                                                   re-derived from git diff
+    645 integration tests across 42 files, 18 of 20 full-lane runs green
+    mean 228.18 s, stdev 1.41, budget 240 — 11.8 s of headroom
+    coverage: gateway/presence.ts and protocol/presence.ts both 100/100/100/100
+    221 fenced files across 36 chapters, 36 translated · fence predecessor `d38f415`
 
-    3.18 "the message that never arrived"     9 files taught, 2,836 words, 36 fences
-                                              19 files changed, re-derived from git diff
-    607 integration tests across 41 files, 20 of 22 full-lane runs green
-    mean 194.74 s, stdev 1.49, budget 240 — 45 s of headroom
-    coverage: api/fanout/publisher.ts and protocol/fanout.ts both 100/100/100/100
-    216 fenced files across 35 chapters, 35 translated · fence predecessor `caeabc9`
+**The fence predecessor for 3.20 is commit `d38f415`, not the tag** — `part3-ch19` is
+annotated, so `git rev-parse part3-ch19` returns the tag object and `^{commit}` returns the
+commit. And **nothing is pushed**: all three repositories are ahead of `origin/main`, so the
+tag exists on one machine until somebody pushes it with the branches.
 
-**The fence predecessor for 3.19 is commit `caeabc9`, not the tag.** And `check:fences` says
-**216 across 35 chapters** — run, not read: 3.18's own `chapter-notes.md` says 216 at line 17 and
-212 at line 260, and the checker settles it.
+**Four items in `gaps.md` are addressed to the next chapter rather than to nobody.** Item 2
+is FR-RTM-10, now unmet on three paths — socket sends, REST sends and presence — and one
+membership re-read in the session layer closes all three. Item 5 is nine translated chapters
+absent from the sitemap, nine one-line edits. Item 8 is this feature's two checkers, which
+die like 3.18's `sweep.py` unless somebody decides. Item 17 is six of the gateway's eight
+integration files each spawning their own api, which is the mechanism behind the battery's
+run 10.
+
+**USE A PERSON is on its sixth chapter.** 3.18 made it runnable —
+`specs/036-chapter-3-18/reader-protocol.md`, 45 minutes, six questions — and nobody ran it.
+3.19's two most expensive findings were both prose: four published claims about presence that
+nine analysis passes of tooling went past, and a test whose title claimed an arm it never
+touched. Every check here compares bytes.
+
+**A TEST'S TITLE IS NOT CHECKED AGAINST ITS ASSERTION.** *"logs presence.invalid_payload for
+a payload that is not a transition"* asserted `toEqual([])` — a good test under a false name —
+and both rejection arms of the module read zero coverage while it was green, through six
+analysis passes and four phases. The coverage ratchet found it, and only because the pin was
+100. Grep the test names for a requirement id and read the assertion under each.
+
+**THREE 30-SECOND NUMBERS ARE THREE QUANTITIES**, and this is now shipped code rather than a
+research note. `PING_INTERVAL_MS`, FR-RTM-06's grace period and the SAD's key TTL are all
+30_000; a TTL equal to its refresh interval expires a connected user, so presence refreshes
+at 10_000. And a fix can be worse than its bug: arming the grace check at exactly `graceMs`
+puts two deadlines on one instant reached by two clocks, and the losing side strands a user
+online for ever.
+
+**CHAPTER 3.18 IS CLOSED**, tagged `part3-ch18`. Its record is `specs/036-chapter-3-18/`, and
+3.19's `gaps.md` carries its items 1, 2, 3, 5 and 9 forward with their status re-checked —
+its 4, 6 and 8 were 3.19's and closed or moved there.
 
 ## THE TWO FILE COUNTS ARE NOW A PRACTICE, AND IT WORKED
 
