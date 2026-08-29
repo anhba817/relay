@@ -1,26 +1,39 @@
 <!-- SPECKIT START -->
-**CHAPTER 3.18 IS IN PLANNING** — `specs/036-chapter-3-18/`, the message that never arrived.
-A message sent over REST commits, returns `201`, and reaches no live socket: the only publisher
-to the fan-out is the gateway's own send handler. Chapter 3.14 recorded it as a verdict and 3.17
-left it as `gaps.md` item 3. Read `plan.md`, then `research.md` — R10 is why the api writes its
-own publisher instead of reusing the gateway's, and R5 is the risk the plan could not close by
-reading.
-**No SRS clause changes; principle VI is satisfied by citing FR-RTM-01** (not FR-RTM-05, as the
-tutorial plan's row says) — and a reader arriving from 3.17, where the amendment *was* the gate,
-will look for one. **But `docs/05-sad.md` does change, because it disagrees with itself**: `:138`
-gives the publish to the api, `:248` draws `G->>G`, and `:254` states the ordering
-unconditionally. Three documents cited `:138` as "the edge was drawn all along" for three
-analysis passes before anyone read ten lines further. Spec FR-002a.
+**CHAPTER 3.19 IS IN PLANNING** — `specs/037-chapter-3-19/`, presence, and who is allowed to
+see it. `presence.changed` has been in the protocol union since chapter 1.3 and **nothing has
+ever produced one**: the frame exists, `frames.test.ts` asserts its shape, 3.12's gauntlet proves
+a client cannot forge one, and the event does not exist. 3.18's shape one layer up.
+Read `plan.md`, then `research.md` — **R1 is why presence gets its own subject and its own
+module instead of riding `chan:{channel_id}`** (the fan-out is typed to messages at three points
+and the third is inside a function ten chapters fence), and **R2 is the mechanism, measured
+against the running Redis rather than reasoned about**: a TTL expiring publishes nothing, so the
+closing instance schedules one check and `SET … NX` elects a single publisher.
+**No SRS clause changes; principle VI is satisfied by citing FR-RTM-05, FR-RTM-06, FR-RTM-07 and
+FR-CHN-05's third verb.** Appendix C row 3 does change — open question 3 closes as *not opt-in*,
+confirming ADR-10, with its revisit trigger named as undischarged because the lane's largest
+membership set is five channels. `docs/05-sad.md` changes twice: ADR-10 says transitions publish
+"on the affected channels' subjects only", which the fabric it describes cannot carry, and §4.2's
+table still points at the SRS as though the question were open.
+**THREE 30-SECOND NUMBERS ARE THREE QUANTITIES.** `PING_INTERVAL_MS`, FR-RTM-06's grace period
+and the SAD's key TTL are all 30_000, and a TTL equal to its refresh interval expires a connected
+user. Research R3.
 
-**CHAPTER 3.17 IS CLOSED**, tagged `part3-ch17` in all three repositories. Its record is
-`specs/035-chapter-3-17/` — read `chapter-notes.md` first, then `gaps.md` (nine items, each with
-an owner; item 3 is what 3.18 does), `traceability.md` and `baseline.txt` for every measurement.
+**CHAPTER 3.18 IS CLOSED**, tagged `part3-ch18` in all three repositories. Its record is
+`specs/036-chapter-3-18/` — read `chapter-notes.md` first (its T065 section names the fence
+predecessor and what happened after the tag), then `gaps.md` (nine items, each with an owner;
+item 4 is FR-RTM-10 and 3.19 corrects its premise rather than inheriting it, item 6 is *use a
+person* and is now on its sixth chapter), `traceability.md` and `baseline.txt`.
 
-    3.17 "the sender a message never had"    16 files taught, 2,962 words, 27 fences
-                                             + 7 files changed and claimed by no chapter
-    589 integration tests, 25 of 26 full-lane runs green, mean 193.55 s, stdev 0.99
-    coverage: repository.ts branches 91 -> 92, functions 100% (115/115)
-    212 fenced files across 34 chapters, 34 translated · 212 figures · 91 static pages
+    3.18 "the message that never arrived"     9 files taught, 2,836 words, 36 fences
+                                              19 files changed, re-derived from git diff
+    607 integration tests across 41 files, 20 of 22 full-lane runs green
+    mean 194.74 s, stdev 1.49, budget 240 — 45 s of headroom
+    coverage: api/fanout/publisher.ts and protocol/fanout.ts both 100/100/100/100
+    216 fenced files across 35 chapters, 35 translated · fence predecessor `caeabc9`
+
+**The fence predecessor for 3.19 is commit `caeabc9`, not the tag.** And `check:fences` says
+**216 across 35 chapters** — run, not read: 3.18's own `chapter-notes.md` says 216 at line 17 and
+212 at line 260, and the checker settles it.
 
 ## THE TWO FILE COUNTS ARE NOW A PRACTICE, AND IT WORKED
 
