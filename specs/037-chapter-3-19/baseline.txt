@@ -291,3 +291,80 @@ watcher's own arrival counted toward the subject's frames — `expected [ …(2)
 FR-011 working: a subject shares every channel with themselves, so their own socket hears
 them arrive. The behaviour was right and the assertion was wrong, and the fix made T025 a
 real assertion instead of the placeholder it had been.
+
+
+PHASE 4 — THE GRACE PERIOD, AND THE BUDGET IT NEARLY SPENT
+------------------------------------------------------------
+
+    gateway integration   8 files   82 passed
+    FULL LANE (--force)  42 files  624 passed     222.7 s against a 240 s budget
+
+**HEADROOM IS DOWN TO 17.3 s FROM 44.5**, and the gateway package carries all of it:
+
+    gateway package wall clock    11.20 s (phase 1)  ->  32.67 s (phase 4)
+
+This run used `--force`, so nothing was cached and it is comparable to a cold CI run.
+The phase 1 and phase 3 lane totals were partially cached and are NOT comparable to it;
+the package duration is.
+
+**THE FIRST VERSION OF THIS FILE COST 65.4 s ON ITS OWN.** Two changes halved it, and
+only one of them was the obvious one:
+
+    scaled window 500/100 -> 250/60            65.4 s -> 53.9 s
+    ONE api for the file, seeded concurrently  53.9 s -> 32.6 s
+
+The timings were not the dominant cost. Three describes each called `startApi()` — three
+process spawns and three seeds of forty users with a hundred and twenty memberships,
+issued one round trip at a time. Sharing the api and seeding with `Promise.all` was worth
+twice what the timing cut was worth. Measured twice at 32.62 s and 32.58 s.
+
+If more headroom is ever needed, the drain (eight users) and the five-connection case are
+where the remaining seconds are.
+
+**SC-005's BOUND.** At the scaled window the `offline` arrives between `graceMs + marginMs`
+and about 200 ms after it, so the overhead beyond the two configured numbers is a Redis
+round trip and timer skew. At production defaults that is 30 s + 1 s + <0.2 s — about
+**31.2 s** from the last close. Not sampled at production timings: one sample costs 31 s.
+
+
+THE REGRESSION TEST WAS PROVEN AGAINST THE BUG
+------------------------------------------------
+
+A test that passes with and without the fix proves nothing, so the re-pin was removed and
+the case re-run:
+
+    × publishes no second online when the reconnect lands past the TTL
+    AssertionError: expected [ { type: 'presence.changed', …(1) } ] to deeply equal []
+
+That is R2a's defect, reproduced: with the key left on its refresh TTL it dies at
+`last_refresh + ttlMs`, a reconnection in the gap wins `SET … NX`, and the watcher sees a
+second `online` for a user who never left. Every other reconnect case in the suite lands
+in the first part of the window where the key is still alive and the bug is invisible —
+which is exactly what analysis pass 1 predicted before any of this existed.
+
+
+PHASE 4 — WHAT WENT WRONG
+---------------------------
+
+**A real bug in `disconnected`, found while writing the tests rather than by them.** The
+first implementation dropped the user from its refresh set unconditionally, so closing one
+of two connections on one instance would have published `offline` — FR-006's exact
+prohibition. The fix is the reason T017 exists: `session.ts` asks
+`registry.connectionsFor(user)` AFTER the removal and only calls `disconnected` when
+nothing local remains. The question "was that the last one here?" belongs to the registry,
+not to a count presence keeps for itself.
+
+**Four assertions were wrong in the same way, twice over.** In phase 3 a collector
+attached before the subject arrived counted the watcher's own `online`; in phase 4 four
+grace tests attached the collector before the subject arrived and counted the subject's.
+Both times the implementation was right and the test was watching from too early. The
+shape to remember: a presence test watches from the event it is about, not from setup.
+
+**T047 IS NOT IMPLEMENTED AS WRITTEN, and this is the honest version.** It asks for a test
+proving that swapping `registry.remove` and `presence.disconnected` fails. That cannot be
+written without editing production code from a test. What guards the ordering instead is
+the pair of behavioural cases: closing one of two connections publishes nothing, and
+closing the last publishes one. With the calls swapped, `connectionsFor` counts the
+closing connection, the `=== 0` guard never passes, and BOTH cases fail. The ordering is
+therefore covered by an assertion rather than by a comment — which was T047's point — but
+the swap itself is not exercised. Recorded rather than claimed.
