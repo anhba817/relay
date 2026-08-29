@@ -38,3 +38,32 @@ environment id, none read that was not composed here.
 set is taken once at connect. A user who joins a channel while connected does not appear
 online to that channel's members until they reconnect (FR-021). That is FR-RTM-10's
 staleness wearing a different hat, and it is unfixed here on purpose.
+
+## The chapter took half of ADR-10's remedy, and its trigger never fired
+
+ADR-10's revisit condition, written in the SAD and again at `docs/06-adr-deep-dives.md:651`,
+names two remedies and a threshold: above ~30% of gateway publish volume, *"presence
+subjects get their own fabric or channels opt in"*.
+
+**This chapter took the first remedy and closed the door on the second, and neither move was
+caused by the threshold.**
+
+Presence now publishes on `presence:{channel_id}` — its own fabric — because `chan:{id}` is
+typed to messages at three points and the third is inside a function fenced by ten chapters
+(R1). And SRS open question 3 closes as *not opt-in*: a per-channel toggle is a data model,
+a UI, an API surface and a defaulting rule, bought to solve a volume problem nobody has
+measured. Both decisions are about the shape of the code that exists. Publish volume did not
+enter either argument.
+
+**So the trigger is undischarged, and so is NFR-SCL-01.** Nothing in this chapter measured
+presence as a fraction of gateway publish traffic, because the lane's largest membership set
+is five channels and its largest instance count is two. The numbers this chapter does have —
+`cmdstat_subscribe calls=12`, six fan-out and six presence across two instances and three
+channels — describe the cost's *shape*, one subscribe per channel per instance, and say
+nothing about its size at ten thousand connections.
+
+A later reader has an easy wrong inference available: presence got its own fabric, therefore
+the 30% threshold was crossed. It was not. If it is crossed later, the remedy still on the
+table is the one this chapter declined — channels opting in — and the argument against it
+recorded in Appendix C row 3 was made at a scale where the question could not be answered.
+That argument should be re-read, not re-cited.

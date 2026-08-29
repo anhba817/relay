@@ -26,6 +26,11 @@ that owns its own Redis clients.** `packages/protocol/src/fanout.ts` gains a
 `subjectForPresence` beside `subjectForChannel`; `services/gateway/src/presence.ts`
 is new; `fanout.ts` is not touched at all.
 
+> **Superseded during planning.** Putting `subjectForPresence` in `fanout.ts` costs a
+> `diff` hunk on a file chapter 3.18 fences, and the second sentence here already says
+> `fanout.ts` is untouched — the two halves of this decision contradicted each other.
+> `packages/protocol/src/presence.ts` is new too. See `plan.md`, Structure Decision.
+
 **Rationale.** The message path is the highest-volume path in the system and it
 would gain a discriminated-union parse to serve the lowest-volume one. Separating
 the subjects also makes cross-kind mis-delivery structurally impossible instead of

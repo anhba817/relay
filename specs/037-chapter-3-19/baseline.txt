@@ -461,3 +461,25 @@ files in parallel and stopping Redis breaks every other suite mid-run. A dead po
 "down" and cannot cover "restored", and `redis-server` is not installed on the lane
 machine, so the proxy is what is left: cut the sockets, close the listener, re-listen on
 the same port, and ioredis reconnects on its own.
+
+
+PHASE 7 — A TASK PREMISE THAT WAS ALREADY FALSE WHEN IT WAS WRITTEN
+------------------------------------------------------------
+
+T084 and FR-018 both say `docs/07-tutorial-plan.md` names neither FR-RTM-07 nor FR-CHN-05
+"anywhere in that document today". It names both, in the 3.19 row, and has since commit
+`d8f0fc0` — chapter 3.18's phase 8, which owned `gaps.md` item 8 and evidently discharged
+half of it while writing the row for the chapter that would inherit the rest.
+
+    grep -c FR-RTM-07 docs/07-tutorial-plan.md   1
+    grep -c FR-CHN-05 docs/07-tutorial-plan.md   1
+    git log --oneline -1 -- docs/07-tutorial-plan.md   d8f0fc0 (3.18 phase 8)
+
+**The real work was a different edit and the task did not name it.** The row still opened
+with *(planned)* and still ended "decides open question 3: opt-in per channel, or not" — a
+question this chapter answers. Executing T084 literally would have added two ids that were
+already there and left a shipped chapter described as a plan with an open question.
+
+This is the third mechanism in CLAUDE.md working exactly as written: the premise was
+checkable with two `grep -c`s, and checking it changed what the task was.
+
