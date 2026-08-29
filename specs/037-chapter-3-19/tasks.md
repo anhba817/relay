@@ -188,19 +188,19 @@ one `offline` after. Separately, reconnect inside the window and assert nothing 
 
 ### Tests for User Story 3
 
-- [ ] T057 [P] [US3] Integration test in `presence.itest.ts`: a user sharing no channel with the subject receives nothing across a full online→offline cycle, **while a co-member in the same run receives both**. A test that only asserts the negative passes when the producer is dead.
-- [ ] T058 [P] [US3] Integration test in `presence.itest.ts`: a non-member of a **private** channel receives nothing when a member of it transitions (FR-014, FR-CHN-05's third verb).
-- [ ] T059 [P] [US3] Integration test in `presence.itest.ts`: a user in a different tenant receives nothing (constitution I). Use the cross-tenant fixtures `seedSocketTenants` already provides in `relay-platform/services/gateway/src/isolation-fixtures.ts`.
-- [ ] T060 [P] [US3] Integration test in `presence.itest.ts`: no message is ever delivered as a presence frame and no presence payload as a message (FR-029). Publish both kinds on one channel's two subjects and assert each arrives as itself, exactly once.
-- [ ] T061 [P] [US3] Integration test in `presence.itest.ts`: a transition arriving while a connection is mid-resume is delivered immediately and never enters the buffer (FR-027). Assert the frame arrives **and** that the buffer's overflow flag is untouched.
-- [ ] T062 [P] [US3] Confirm the union is still ten members each classified exactly once — run the existing totality check in `relay-platform/services/gateway/src/isolation.itest.ts` unchanged. This feature adds no frame, so the number must not move.
-- [ ] T063 [US3] Confirm `relay-platform/services/api/src/isolation/targets.ts` is unchanged — no route was added, so nothing external can set presence (FR-008). The derived target list fails the build that adds a route and is the highest-yield check in the repository.
-- [ ] T064 [US3] Confirm the presence path reads no database (FR-009): `relay-platform/services/gateway/src/presence.ts` and `session.ts` import no `pg`, no `drizzle-orm` and no repository, and `pnpm lint` in `relay-platform` still passes chapter 2.1's ban. ADR-05 is enforced by a build failure and by nothing else, so the check is running it rather than citing it.
+- [X] T057 [P] [US3] Integration test in `presence.itest.ts`: a user sharing no channel with the subject receives nothing across a full online→offline cycle, **while a co-member in the same run receives both**. A test that only asserts the negative passes when the producer is dead.
+- [X] T058 [P] [US3] Integration test in `presence.itest.ts`: a non-member of a **private** channel receives nothing when a member of it transitions (FR-014, FR-CHN-05's third verb).
+- [X] T059 [P] [US3] Integration test in `presence.itest.ts`: a user in a different tenant receives nothing (constitution I). Use the cross-tenant fixtures `seedSocketTenants` already provides in `relay-platform/services/gateway/src/isolation-fixtures.ts`.
+- [X] T060 [P] [US3] Integration test in `presence.itest.ts`: no message is ever delivered as a presence frame and no presence payload as a message (FR-029). Publish both kinds on one channel's two subjects and assert each arrives as itself, exactly once.
+- [X] T061 [P] [US3] Integration test in `presence.itest.ts`: a transition arriving while a connection is mid-resume is delivered immediately and never enters the buffer (FR-027). Assert the frame arrives **and** that the buffer's overflow flag is untouched.
+- [X] T062 [P] [US3] Confirm the union is still ten members each classified exactly once — run the existing totality check in `relay-platform/services/gateway/src/isolation.itest.ts` unchanged. This feature adds no frame, so the number must not move.
+- [X] T063 [US3] Confirm `relay-platform/services/api/src/isolation/targets.ts` is unchanged — no route was added, so nothing external can set presence (FR-008). The derived target list fails the build that adds a route and is the highest-yield check in the repository.
+- [X] T064 [US3] Confirm the presence path reads no database (FR-009): `relay-platform/services/gateway/src/presence.ts` and `session.ts` import no `pg`, no `drizzle-orm` and no repository, and `pnpm lint` in `relay-platform` still passes chapter 2.1's ban. ADR-05 is enforced by a build failure and by nothing else, so the check is running it rather than citing it.
 
 ### Implementation for User Story 3
 
-- [ ] T065 [US3] No new scoping code. Confirm by reading that the scope is a property of the topology: an instance receives a transition only on the presence subjects it subscribed to, and it subscribed only to the channels its local members belong to. Record this in `specs/037-chapter-3-19/chapter-notes.md` — the requirement is met by the subscription set, not by a filter, and a reader will look for the filter.
-- [ ] T066 [US3] `git status --short` in all three repositories and commit phase 5, **naming in the body the requirement ids this phase closes** (the rule is on the phase 1 commit).
+- [X] T065 [US3] No new scoping code. Confirm by reading that the scope is a property of the topology: an instance receives a transition only on the presence subjects it subscribed to, and it subscribed only to the channels its local members belong to. Record this in `specs/037-chapter-3-19/chapter-notes.md` — the requirement is met by the subscription set, not by a filter, and a reader will look for the filter.
+- [X] T066 [US3] `git status --short` in all three repositories and commit phase 5, **naming in the body the requirement ids this phase closes** (the rule is on the phase 1 commit).
 
 **Checkpoint**: FR-RTM-07 and FR-CHN-05's third verb are green, and the negatives are trustworthy.
 

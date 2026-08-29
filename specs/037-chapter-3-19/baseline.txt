@@ -368,3 +368,45 @@ closing the last publishes one. With the calls swapped, `connectionsFor` counts 
 closing connection, the `=== 0` guard never passes, and BOTH cases fail. The ordering is
 therefore covered by an assertion rather than by a comment — which was T047's point — but
 the swap itself is not exercised. Recorded rather than claimed.
+
+
+PHASE 5 — THE NEGATIVES, AND THE BUDGET IS NOW A RISK
+-------------------------------------------------------
+
+    gateway integration   8 files   87 passed     36.55 s
+    FULL LANE (--force)  42 files  629 passed    226.4 s against a 240 s budget
+
+**13.6 s OF HEADROOM**, from 44.5 s at phase 1. The gateway package holds all of the
+growth: 11.20 -> 32.67 -> 36.55 s. Phase 6 adds the failure cases and phase 9 adds
+nothing, so the remaining spend is small — but this is now the constraint to plan
+against rather than a number to report. If it needs to come back, the drain (eight
+users) and the five-connection case are ~8 s between them and neither is load-bearing
+for a clause.
+
+**THE THREE CONFIRMATIONS, RUN RATHER THAN ASSERTED (T062, T063, T064)**
+
+    union classification      4 passed — ten members, each classified exactly once
+    targets.ts                `git diff caeabc9 -- …/targets.ts` is empty: no route added,
+                              so nothing external can set presence (FR-008)
+    no database on the path   presence.ts imports no `pg`, no drizzle, no repository, and
+                              `pnpm eslint` is clean — chapter 2.1's ban makes ADR-05 a
+                              build failure rather than a review comment (FR-009)
+
+
+PHASE 5 — WHAT WENT WRONG, FOR THE THIRD TIME IN THREE PHASES
+---------------------------------------------------------------
+
+**An unfiltered collector read a subject's own frame as a leak.** The cross-tenant test
+asserted the stranger received nothing and it received `{user: "stranger", state:
+"online"}` — its own arrival, in its own tenant, which is FR-011 working.
+
+That is the third phase running in which a test watched more than it meant to: phase 3's
+collector caught the watcher's own `online`, phase 4's four grace tests caught the
+subject's, and this one caught the stranger's. **The shape is always the same** — a
+subject shares every one of their channels with themselves, so any socket that is also a
+subject sees itself.
+
+The fix here is stronger than filtering, and the difference matters. Filtering to the
+other tenant's subject would prove that ONE user did not leak; asserting that *everything
+the stranger heard was about the stranger* catches any of them. A negative test that
+names what must not appear is weaker than one that names what may.
