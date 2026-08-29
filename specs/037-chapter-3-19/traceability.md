@@ -182,3 +182,83 @@ is the check chapter 3.18 could not pass at this stage.
 gateway reads no database) was recorded as verified by chapter 2.1's lint ban with no task running
 it, and **FR-022** (the producer-less kinds named) had no task at all. Both now have one. A
 requirement verified by "a rule exists somewhere" is a requirement nobody checked.
+
+---
+
+## 5. Re-derived from the shipped tree at close-out — both directions again
+
+**The second run is the one that catches a test renamed or deleted**, and it caught three
+things the planning map could not have.
+
+### Shipped
+
+    packages/protocol/src/presence.test.ts        6 unit
+    services/gateway/src/presence.test.ts         8 unit
+    services/gateway/src/presence.itest.ts       38 integration   (31 + 7 added at close-out)
+    services/gateway/src/isolation.itest.ts       1 cited, not written
+                                                 -----
+                                                 53 tests carrying this feature
+
+### Every planned row, checked against a title in the tree
+
+Twenty-one planned rows in §3. **Nineteen exist. One shipped at a different size. One does
+not exist and is named rather than quietly dropped.**
+
+| Planned | Shipped as |
+|---|---|
+| a watcher receives `online` when a co-member connects | *delivers presence.changed online to a connected co-member* |
+| the same across two instances | *delivers it when the subject is on another instance* |
+| a second connection produces no frame | *publishes nothing for a second connection of a user already online* |
+| three shared channels produce one frame | *delivers ONE frame to a watcher sharing three channels* |
+| `offline` after `graceMs`, not before | *publishes one offline after the window and nothing before it* |
+| the production default is 30_000 | *keeps FR-RTM-06's thirty seconds somewhere a reader can find it* |
+| reconnect at half the window → nothing | *publishes nothing at all for a reconnection inside the window* |
+| reconnect to a different instance → nothing | *publishes nothing when the reconnection lands on another instance* |
+| close/reopen/close → one `offline` | *leaves one decision for two closes inside one window* |
+| non-sharer receives nothing while co-member receives | *delivers to a co-member and not to a user sharing no channel* |
+| private non-member, cross-tenant | *does not let a non-member observe presence in a private channel*, *delivers nothing to a user of another tenant* |
+| a client uttering `presence.changed` is refused | `isolation.itest.ts`'s `DIRECTIONS` row — cited, unchanged |
+| a transition during a resume | *delivers a transition to a connection that is resuming* |
+| Redis down: socket opens, messages deliver | *opens the socket and completes the handshake anyway*, *does not stop messages reaching a connected member* |
+| Redis down then restored | *logs presence.failed with an op and an error*, *publishes the next transition after the connection is restored* |
+| no outbox row | *writes no outbox row for a transition* |
+| the re-pin awaited, check at `graceMs + marginMs` | *is the grace plus the margin, never the grace alone* (unit) and *holds the key for the grace, not for the TTL* (integration) |
+| five connections close one by one | *publishes nothing until the fifth of five connections closes* |
+| the union still has ten members | `isolation.itest.ts`'s `DIRECTIONS`, ten rows |
+
+**The one that shipped smaller.** The planned row reads *"twenty sockets close in one tick,
+twenty `offline` frames"*; the shipped test is *"publishes one offline per user when six
+close in the same tick"*. Six, not twenty — trimmed while cutting the file from 65.4 s to
+32.6 s. The mechanism it defends is the `pending` map surviving a deploy drain, and six
+users across two instances exercises it; twenty exercised the same thing more slowly. The
+number in the plan was never a requirement, and this row is here so that nobody reads the
+plan later and believes twenty ran.
+
+**The one that does not exist.** *"Swapping `registry.remove` and `presence.disconnected`
+fails"* has no test and never will in this form: a test cannot swap two lines of production
+code. What ships in its place is the ordering assertion — the grace check IS scheduled on
+the last close — plus a comment at the call site stating the constraint and its cost. The
+task was left open deliberately rather than marked done, and this row is its record.
+
+### Shipped tests with no planned row — the direction that found the most
+
+Twelve of the 38 integration tests answer to no row in §3. Two classes:
+
+**Behaviour the design had and the plan did not enumerate.** *Delivers the subject's own
+transition to the subject's own socket* (FR-011); *publishes to nobody for a subject who is
+a member of no channel* — FR-RTM-07's degenerate case, and the one that explained an
+`INFO commandstats` reading of seven election wins against six publishes; *publishes
+nothing while another connection remains open*, and its cross-instance twin; *publishes no
+second online when the reconnect lands past the TTL* (FR-007, research R2a); *closes a
+socket without throwing or leaving a rejection*; and the three log-vocabulary assertions
+that FR-030 was written in analysis pass 1 to require.
+
+**Seven written at close-out for coverage**, listed in `baseline.txt` with the arm each
+closes. They are not scenarios a user performs, and one of them replaced a test whose title
+claimed an arm it never touched.
+
+### What the second pass changed in this map
+
+Nothing about requirement coverage — every FR still has a verification and the four
+inspection-only rows are the same four. What it changed is the honesty of §3: two of its
+twenty-one rows described a test that is not in the tree, and both were readable as done.

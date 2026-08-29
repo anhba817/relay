@@ -531,3 +531,200 @@ THE GATES, PHASE 8
     check-prose     all 8 listed claims gone from both locales
     check-refs      117 tasks, 42 requirements, 14 success criteria, every one traced
     pnpm build      compiled successfully in 13.4 s, no acorn error
+
+
+PHASE 9 — THE COVERAGE RUN, AND WHAT IT FOUND (T106, T107, T108)
+------------------------------------------------------------
+
+**Run one of `pnpm coverage` failed and it was not this feature.** Nine tests in
+`services/dispatcher/src/dispatcher.itest.ts`, every one a delivery that did not
+arrive. The compose `services` profile was already stopped — five stores running, no
+`relay-dispatcher-1` — so chapter 3.18's `gaps.md` item 7 is ruled out. What it is:
+
+    dispatcher package alone      16/16 green
+    pnpm coverage, run two        86 files, 1034 tests, 0 failures
+
+That is chapter 3.18's `gaps.md` item **3** exactly — the lane is not idempotent from
+cold JetStream state, the first run creates it as a side effect, and `pnpm coverage`
+runs every suite in one vitest process where the file order differs from turbo's
+package order. Carried forward unfixed; the standalone run in between is what created
+the stream.
+
+**AND THE INSTRUMENT LIED ABOUT IT.** The first run was invoked as
+
+    pnpm coverage 2>&1 | sed -r 's/…//g' > out.txt; echo "exit=$?" >> out.txt
+
+and wrote `coverage exit=0` under nine failures, because `$?` after a pipeline is the
+LAST command's status — `sed`'s. Every run since uses `set -o pipefail` and reports
+`PIPESTATUS[0]`. A checker's blind spot is worse than its absence, and this one was
+mine rather than the repository's.
+
+THE GATES IN CI'S ORDER (T107) — ALL EIGHT, EXECUTED
+------------------------------------------------------------
+
+    1 pnpm lint                                    status=0
+    2 pnpm typecheck                               status=0
+    3 pnpm turbo run test --force                  status=0   11 tasks
+    4 pnpm build                                   status=0
+    5 node services/api/dist/db/migrate.js         status=0   nothing to apply
+    6 pnpm test:integration                        status=0
+    7 pnpm coverage                                status=0   92.11 / 86.21 / 91.93 / 93.57
+    8 pnpm test:outsider                           status=0   11/11
+
+Step 8 needs the platform, so it runs after coverage: `docker compose --profile
+services build`, then `up -d --wait`, then `seed-demo-tenant.mjs`, then the suite, then
+**`docker compose stop api gateway dispatcher`** — never `--profile services down`,
+which removes the stores and the network too.
+
+COVERAGE (T108) — 100/100/100/100, AND WHAT IT TOOK
+------------------------------------------------------------
+
+    packages/protocol/src/presence.ts    100/100/100/100 on the first run
+    services/gateway/src/presence.ts      91.52 / 81.81 / 93.93 / 92.92  ->  100 on all four
+
+Thirty-one integration tests and eight unit tests were green while six arms of the
+module had never executed:
+
+    the JSON.parse catch          a body that is not JSON
+    the safeParse rejection       JSON that is not a transition
+    the refresh re-election       the key lost under a live connection
+    `counts.get(c) ?? 1`          unsubscribe for a channel never subscribed
+    the no-op `deliver`           a transition with no handler registered
+    the pending-timer clear       close() while a grace check is armed
+
+**ONE OF THEM HAD A TEST WHOSE TITLE CLAIMED IT.** *"logs presence.invalid_payload for
+a payload that is not a transition"* asserts `toEqual([])`: it publishes a MESSAGE on a
+MESSAGE subject and checks presence never sees it. That is FR-029 from the other side
+and a good test under a false name — both rejection arms read zero while it was green.
+Renamed to what it asserts; the real ones publish onto `presence:{channel_id}` with a
+client belonging to neither module, which is why `presence.itest.ts` joins the ioredis
+exemption list on 3.18's argument.
+
+**AND THE FIRST DRAFT OF THOSE TWO TESTS FAILED FOR A REASON THAT WAS NOT THE CODE.**
+They opened a socket for a user named `watcher`; the fixture's watcher is `linh`. The
+dev-token endpoint mints a token for any id, so the socket opened, the user was a member
+of nothing, the instance subscribed to nothing, and both publishes reached nobody. A red
+that looks like the subject and is the fixture — the third time in this feature.
+
+**ONE BRANCH WAS DELETED RATHER THAN COVERED — the ratchet's fourth.** The
+re-election's `if (wonTransition(won))` guard around clearing the offline marker is
+reachable only when two instances race the same re-election, which a test could only
+flake on. Clearing unconditionally is also more correct: unlike `connected`, nothing
+publishes here, so a loser that skipped the delete left a stale marker standing against
+a user who is demonstrably connected. Statements 2703 -> 2702.
+
+FR-RTM-10 (T113) — RUN, NOT ASSUMED
+------------------------------------------------------------
+
+    npx vitest run --config vitest.integration.config.mts -t "FR-RTM-10"
+    Test Files  1 passed | 7 skipped (8)
+    Tests       1 passed | 102 skipped (103)
+
+`session.itest.ts:677` — *"keeps delivering to a member who was REMOVED while connected
+(FR-RTM-10)"* — still passes, which means the violation is still asserted. Unchanged by
+this chapter.
+
+THE LANE AFTER PHASE 9's TESTS
+------------------------------------------------------------
+
+Seven tests were added to `presence.itest.ts` for the coverage arms, and the fear was
+that they would spend the budget's remaining headroom. Measured instead of assumed:
+
+    presence.itest.ts standalone     32.6 s -> 45.2 s      (+12.6 s)
+    the gateway PACKAGE's clock      41.91 s -> 45.38 s    (+3.5 s)
+    the full lane                    231.4 s -> 231.35 s   (unchanged)
+
+**The standalone number is not the lane's number.** Run alone the file pays for its own
+api spawn; inside the package eight files run in parallel and the package's clock is its
+slowest file. The lane total moved by less than one run's variation — the dispatcher
+package happened to come in four seconds under its phase-6 figure. The headroom against
+the 240 s budget is still about 8.6 s, which is thin, and only the battery says whether
+it is real.
+
+
+THE CLOSE-OUT BATTERY (T109) — TWENTY RUNS, EIGHTEEN GREEN
+------------------------------------------------------------
+
+    run  ok     wall  files  tests  gateway      api    disp
+      1 RED   103.93      1     17     0.00   102.35    0.00
+      2   y   229.48     42    645    45.44   102.16   73.81
+      3   y   229.83     42    645    45.40   102.22   73.88
+      4   y   229.37     42    645    45.37   102.08   73.70
+      5   y   229.58     42    645    45.62   102.22   73.69
+      6   y   229.95     42    645    45.52   102.21   73.86
+      7   y   229.53     42    645    45.45   102.19   73.72
+      8   y   229.31     42    645    45.51   102.10   73.84
+      9   y   227.35     42    645    45.47   102.25   71.12
+     10 RED   204.84     30    516   101.02   102.36    0.00
+     11   y   226.61     42    645    43.92   101.90   72.82
+     12   y   225.10     42    645    44.21   102.04   70.99
+     13   y   228.30     42    645    44.58   102.11   73.23
+     14   y   228.38     42    645    45.49   102.55   71.95
+     15   y   228.32     42    645    44.56   102.28   73.33
+     16   y   226.41     42    645    44.68   102.21   71.26
+     17   y   226.93     42    645    44.80   102.43   71.39
+     18   y   226.82     42    645    44.62   102.24   71.58
+     19   y   227.53     42    645    45.30   102.13   71.75
+     20   y   228.50     42    645    45.67   102.44   71.83
+
+    green 18 of 20      every green run: 42 files, 645 tests, identical
+    wall  mean 228.18 s   stdev 1.41   min 225.10   max 229.95   BUDGET 240
+    gateway     mean  45.09 s  stdev 0.54  max  45.67
+    api         mean 102.21 s  stdev 0.15  max 102.55
+    dispatcher  mean  72.65 s  stdev 1.13  max  73.88
+
+Counted with the colour codes stripped: `NO_COLOR=1 FORCE_COLOR=0` and a `sed` over the
+ANSI escapes, then the per-package `Test Files`/`Tests` lines summed. **11.8 s of
+headroom**, not the 8.6 s phase 6 implied — and the difference is not an improvement. Phase
+6 took ONE sample and got 231.4 s, which is above every run in this battery. A single
+measurement of a distribution reports one draw from it.
+
+RUN 1 — CONTAMINATED BY THE STEP BEFORE IT
+------------------------------------------------------------
+
+    limits.itest.ts > "refuses with 429, Retry-After, and a four-field body"
+    AssertionError: expected 201 to be 429
+
+and one line above it, from the api under test:
+
+    limits.auth_degraded — counter store unreachable; counting failed
+                           authentications in process
+
+The counter store was Redis, which had been up seven hours and was never restarted
+(`docker inspect relay-redis-1`). What HAD just happened is the sealed-outsider step:
+`docker compose --profile services build`, `up -d --wait`, the suite, then
+`stop api gateway dispatcher` — and the battery started while those three containers were
+still winding down. Both limiters fail open when the store is unreachable, so the third
+request got 201.
+
+**This is CLAUDE.md's rule broken by my own previous step.** "Nothing else runs on the
+machine during a timing battery" has to include what the machine is still finishing.
+
+RUN 10 — A MECHANISM, WHICH IS THE DIFFERENCE THAT MATTERS
+------------------------------------------------------------
+
+    FAIL  src/isolation.itest.ts > the socket gauntlet
+    Error: Hook timed out in 90000ms.
+      ❯ src/isolation.itest.ts:198   beforeAll -> api = await startApi()
+
+The gateway package took **101.02 s** in that run against a mean of 45.09. Nothing failed
+an assertion: an api process took more than ninety seconds to answer `/health`.
+
+**Six of the gateway's eight integration files spawn their own api**, and vitest runs files
+in parallel inside a package:
+
+    limits.itest.ts   meter.itest.ts   public-surface.itest.ts
+    isolation.itest.ts   presence.itest.ts   session.itest.ts
+
+**This feature added the sixth.** So the mechanism is named rather than left as a flake:
+six concurrent api boots, and one of them lost. Unlike chapter 3.17's `gaps.md` item 1 —
+one failure in twenty-six with no mechanism — this one is understood and its fix is
+structural: the api-spawning files should share one api the way `presence.itest.ts` shares
+one across its seven describes, or the gateway lane should cap `maxWorkers`.
+
+**Not fixed here, and the reason is chapter 3.18's.** The battery has measured the
+committed tree; a change after it means the battery no longer describes what ships. In
+`gaps.md` with an owner.
+
+    observed rate   1 in 19 legitimate runs (5.3%)
+    to reject 5%    59 runs at 95% confidence — not run
