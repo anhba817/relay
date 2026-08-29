@@ -171,3 +171,61 @@ THE TWO REQUIREMENTS THAT ARE ALREADY GREEN (T006, T007)
                                      refused with `unknown_frame_type` and close 4002 —
                                      `presence.changed` among them. FR-015 is CITED by
                                      this chapter, not written by it.
+
+
+PHASE 2 — WHAT THE TOOLS FOUND THAT THE PLAN DID NOT
+-----------------------------------------------------
+
+Four corrections, three of them from a tool refusing to compile or lint something the
+design documents had agreed on for fifteen analysis passes.
+
+**1. ioredis is a RESTRICTED IMPORT, and presence is the limiter's case, not the
+fan-out's.** `eslint.config.mjs` forbids `ioredis` outside a named list, because
+"its keys are per environment; an unrestricted client is a cross-tenant read"
+(constitution I). Chapter 3.18 added `services/api/src/fanout/**` with an explicit
+justification — *"THE RULE'S REASON DOES NOT APPLY HERE… this client touches no keys:
+it calls PUBLISH and nothing else, onto `chan:{channel_id}`"*.
+
+**That justification does not transfer.** Presence's client touches keys and they are
+environment-scoped: `presence:{env}:{user}` is exactly the shape the rule guards. So the
+exemption is written against the limiter's standard instead — every key is composed from
+the environment id on the authenticated connection's own identity, no key is read that was
+not composed here, and there is no scan, `KEYS` or pattern read that could reach another
+tenant's. Nothing in the plan or the contracts had noticed the rule existed.
+
+**2. The four presence timings were on the wrong object, and eslint said so.** They were
+mirrored onto `SessionServerOptions` as `presenceGraceMs` and friends, by analogy with
+`meterIntervalMs`. The analogy is false: `attachSessions` **builds** the meter, so its
+interval must arrive through it, while `fanout`, `limits` and `presence` are **injected
+already built** and carry their own configuration. All four were declared, destructured,
+and used by nothing. They now live only on `PresenceOptions`; a test wanting a
+hundred-millisecond grace period constructs the module with it and injects that.
+
+**3. `check-refs.py` could not see a completed task.** Its task pattern was `^- \[ \] `,
+written before any box was ticked. The moment phase 2 marked its tasks `[X]` it reported
+38 problems beginning with "ids are not sequential" — it had silently stopped counting
+nine tasks. Fixed to `^- \[[ xX]\] ` and red-tested against a done task.
+
+A residual, recorded rather than fixed: a bogus marker such as `[Q]` is still absorbed into
+the description, because `( \[P\])?` simply does not match and the description regex is
+permissive. The checker validates the markers it knows and ignores ones it does not.
+
+**4. The gateway compiles against `@relay/protocol`'s `dist`, not its source.** The first
+gateway typecheck after adding `presence.ts` to the protocol package failed with
+`TS2305: Module '"@relay/protocol"' has no exported member 'subjectForPresence'`. The
+package needs `pnpm --filter @relay/protocol build` first. Same class as `check:errors`
+reading `packages/protocol/dist/codes.js`: a stale `dist` is a wrong answer, not an error.
+
+
+PHASE 2 — THE SUITES
+---------------------
+
+    gateway unit         6 files    89 passed
+    gateway integration  8 files    65 passed, 1 failed   <- presence.itest.ts, on purpose
+    protocol unit        5 files    60 passed             (54 before, +6 this phase)
+
+The seven pre-existing gateway integration files still pass, so the module, the options and
+the registry lookup changed nothing under them. `presence.itest.ts` now stands up **two**
+gateway instances on one Redis — new harness, because no existing suite runs two at once —
+and the subject connects to the second one, so the test cannot pass by working in-process.
+It still fails with `no presence.changed frame within 5000ms`.

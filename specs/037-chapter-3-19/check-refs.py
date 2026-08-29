@@ -66,8 +66,13 @@ ID_CLASSES = {
     "success criterion": r"^- \*\*(SC-\d+)\*\*",
 }
 
-TASK = re.compile(r"^- \[ \] (T\d{3})( \[P\])?( \[US\d\])? (.+)$")
-ANY_TASK_LINE = re.compile(r"^- \[ \]")
+# `[ ]` OR `[X]`. The first version matched only unchecked boxes, because it was
+# written before any task was done — so the moment phase 1 was marked complete it
+# reported 38 problems, starting with "ids are not sequential". A checker that
+# only recognises the state it was born in is the blind spot this file's header
+# is about, found in its own second week.
+TASK = re.compile(r"^- \[[ xX]\] (T\d{3})( \[P\])?( \[US\d\])? (.+)$")
+ANY_TASK_LINE = re.compile(r"^- \[[ xX]\]")
 PATHISH = re.compile(r"[\w./<>-]+\.(ts|mts|md|txt|mdx|json|yaml)\b|`docs/|`pnpm |`git |`docker |specs/")
 REF = re.compile(r"(?<![A-Za-z0-9])T(\d{3})(?![A-Za-z0-9])")
 

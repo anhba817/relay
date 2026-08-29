@@ -54,20 +54,19 @@ the delivery callback registered by the session layer rather than passed in.
 | `url` | `process.env.RELAY_REDIS_URL ?? DEFAULT_REDIS_URL` | The same resolution `fanout.ts` uses. |
 | `logger` | required | NFR-OBS-01. |
 
-**Two names for each, and the mapping is the one the meter already uses.** The module's options are
-unprefixed because the module is the scope; the session layer's are prefixed because
-`SessionServerOptions` already holds three other intervals:
+**The four timings live on `PresenceOptions` and nowhere else, and phase 2's implementation is what
+settled it.** An earlier draft mirrored them onto `SessionServerOptions` as `presenceGraceMs` and
+friends, reasoning from `createMeter({ …, intervalMs: meterIntervalMs })`. The meter is the wrong
+precedent: `attachSessions` **builds** the meter, so its interval has to arrive through it.
+`fanout`, `limits` and `presence` are **injected already built**, and an injected thing carries its
+own configuration.
 
-    SessionServerOptions          PresenceOptions
-    presenceGraceMs        ->     graceMs
-    presenceTtlMs          ->     ttlMs
-    presenceRefreshMs      ->     refreshMs
-    presenceMarginMs       ->     marginMs
+    createPresence({ logger, graceMs, ttlMs, refreshMs, marginMs })  ->  injected as `presence`
 
-`session.ts` does exactly this for chapter 3.11 — `createMeter({ …, intervalMs: meterIntervalMs })`, at `:168` in the tree at `caeabc9`.
-An earlier draft of this contract called all three by their module names at the session layer while
-the task list called two of them by their prefixed names; the pair disagreed on three identifiers,
-and the task list asserts those defaults *by name*, so a mismatch is a failing test rather than a puzzle.
+A test that wants a hundred-millisecond grace period constructs the module with it and injects that,
+which is what the two-instance harness does. The mirrored options were declared, destructured, and
+used by nothing — **eslint reported all four as unused**, which is how the wrong shape surfaced. The
+task list asserts these defaults by name against `PresenceOptions`.
 
 The reason they are overridable at all is the one already written above `pingIntervalMs` in `session.ts`: an interval is
 a contract, not a constant the tests should have to wait out. Without them the grace-period cases
