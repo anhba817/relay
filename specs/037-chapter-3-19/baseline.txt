@@ -728,3 +728,37 @@ committed tree; a change after it means the battery no longer describes what shi
 
     observed rate   1 in 19 legitimate runs (5.3%)
     to reject 5%    59 runs at 95% confidence — not run
+
+THE TAG (T116)
+------------------------------------------------------------
+
+    repository        tag object   commit
+    relay             1526332b     7b93bd01
+    relay-platform    48ee410d     d38f4159
+    relay-tutorial    8c47ca90     9fe15a11
+
+Annotated, so the tag object and the commit are different hashes — which is the whole
+reason `chapter-notes.md` tells chapter 3.20 to read `part3-ch19^{commit}`.
+
+    git log --oneline part3-ch19..HEAD     0 commits in all three
+    git ls-tree HEAD relay-platform relay-tutorial
+        160000 commit d38f4159…  relay-platform
+        160000 commit 9fe15a11…  relay-tutorial
+
+The root's gitlinks point at exactly the two tagged commits. **Verified locally, and not on
+the remotes**, because nothing is pushed:
+
+    relay             origin/main 4a49653   9 commits behind
+    relay-platform    origin/main caeabc9   8 commits behind
+    relay-tutorial    origin/main 5558e2e   3 commits behind
+
+Pushing is the author's call and was not made here. Whoever pushes should push the three
+tags with the branches, or chapter 3.20 will read a tag that exists on one machine.
+
+WHAT THIS CHAPTER DID NOT CLOSE (T117)
+------------------------------------------------------------
+
+**`specs/036-chapter-3-18/reader-protocol.md` still needs a second person.** Named by
+chapters 3.14, 3.15, 3.16, 3.17 and 3.18, and now 3.19. Not marked done, because it is not:
+no command in this repository can discharge it, and marking it would be the sixth chapter
+in a row quietly agreeing that it is somebody else's.
