@@ -229,3 +229,65 @@ the registry lookup changed nothing under them. `presence.itest.ts` now stands u
 gateway instances on one Redis — new harness, because no existing suite runs two at once —
 and the subject connects to the second one, so the test cannot pass by working in-process.
 It still fails with `no presence.changed frame within 5000ms`.
+
+
+PHASE 3 — THE CLAUSE IS GREEN, AND WHAT IT COST
+------------------------------------------------
+
+    gateway integration   8 files   71 passed        (was 7 files, 65 passed)
+    gateway unit          7 files   93 passed        (was 6 files, 89 passed)
+    protocol unit         5 files   60 passed
+    FULL LANE            42 files  613 passed        207.3 s against a 240 s budget
+
+**THE LANE TOTAL IS NOT COMPARABLE ACROSS THESE TWO RUNS.** Phase 1 measured 195.5 s
+with 5 of 10 turbo tasks cached; this run had 1 of 10. The number that IS comparable is
+the gateway package's own duration, which is the one research R18 said to watch:
+
+    gateway package wall clock    11.20 s  ->  16.28 s     (+5.08 s)
+    gateway package test time     37.04 s  ->  54.10 s
+
+`presence.itest.ts` is the pool's new eighth file and costs about five seconds of wall
+clock. 32.7 s of headroom remains against the budget on the slower measurement.
+
+
+THE SUBSCRIPTION COST, MEASURED WITH REDIS'S OWN COUNTERS (T033)
+-----------------------------------------------------------------
+
+`CONFIG RESETSTAT`, then the six presence tests, then `INFO commandstats`:
+
+    cmdstat_subscribe   calls=12
+    cmdstat_publish     calls=18
+    cmdstat_set         calls=12
+    cmdstat_del         calls=7
+
+**THE DOUBLING IS REAL AND IT IS SIX.** Two instances × three channels = 6 fan-out
+subscriptions and 6 presence subscriptions. R1 declared this cost and predicted nothing
+about its size; it is one `SUBSCRIBE` per channel per instance, exactly, and the
+reference count means the second local member of a channel adds none.
+
+**AND ONE COUNT CONFIRMS T026 INDEPENDENTLY.** Twelve connects produced twelve `SET … NX`
+and seven wins (seven `DEL`s of the offline marker), but only **eighteen** publishes —
+six transitions × three channels. The seventh winner is the user who belongs to no
+channel: it won the election, cleared the marker, and published on **no subject at all**.
+FR-RTM-07's degenerate case, arrived at from the other direction.
+
+
+PHASE 3 — WHAT WENT WRONG, AND IT LOOKED LIKE A FABRIC BUG
+------------------------------------------------------------
+
+**Test 1 passed and tests 2, 3 and 4 reported `expected [] to have a length of 1`.** The
+one that passed put the subject on the same instance as the watcher; the failures were the
+cross-instance cases. That reads exactly like a fabric that does not cross instances.
+
+It is not. **A subject who came online in test 1 is still online in test 2** — the key
+`presence:{env}:{user}` has a thirty-second TTL, so `SET … NX` correctly refuses and
+nothing publishes. Correct behaviour under FR-006, and a shared fixture.
+
+T016 asked for fresh channel **and user** ids per run for this exact reason and the first
+implementation namespaced the channels only. The suite now seeds one subject per test.
+
+**A second wrong assertion, from the same run.** The collector was unfiltered, so a
+watcher's own arrival counted toward the subject's frames — `expected [ …(2) ]`. That is
+FR-011 working: a subject shares every channel with themselves, so their own socket hears
+them arrive. The behaviour was right and the assertion was wrong, and the fix made T025 a
+real assertion instead of the placeholder it had been.
