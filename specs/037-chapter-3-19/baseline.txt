@@ -732,10 +732,19 @@ committed tree; a change after it means the battery no longer describes what shi
 THE TAG (T116)
 ------------------------------------------------------------
 
-    repository        tag object   commit
-    relay             1526332b     7b93bd01
-    relay-platform    48ee410d     d38f4159
-    relay-tutorial    8c47ca90     9fe15a11
+    repository        commit
+    relay-platform    d38f4159      <- the fence predecessor for chapter 3.20
+    relay-tutorial    9fe15a11
+    relay             the last close-out commit, deliberately not named here
+
+**The root's hash is not written down, and that is not laziness.** The first version of
+this table named it; committing the table changed it; re-cutting the tag over the new
+commit made the table wrong again. A record of a commit hash inside the commit it names
+does not converge. The two that matter are the submodules — chapter 3.20 reads
+`relay-platform`'s — and those are stable because the close-out records live in the root.
+
+The root tag was deleted and re-cut once, which is what its own task prescribes: deleting
+an unpushed tag is cheap and the alternative is an amendment after the tag.
 
 Annotated, so the tag object and the commit are different hashes — which is the whole
 reason `chapter-notes.md` tells chapter 3.20 to read `part3-ch19^{commit}`.
