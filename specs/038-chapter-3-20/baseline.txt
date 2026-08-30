@@ -650,3 +650,61 @@ subscribe on `member:{env}:{user}` plus one per channel on `chan:`, `presence:`
 and `member:`, released symmetrically. The 185/144 gap is the connections still
 open when the file ends, which the harness closes at teardown after the stats
 were read.
+
+
+PHASE 7 — THE BAN
+============================================================
+
+T089 — THE CONTRACT'S OPEN QUESTION HAD A THIRD ANSWER
+`contracts/membership-fabric.md` offered two: `channel: "*"` on the fabric (one
+schema, one parse, one code path) or a separate payload shape (no sentinel, two
+of everything). **Both leak the sentinel to somebody** — the first to a log
+reader and, worse, to a client, because the wire frame's `channel` is
+`z.string().min(1)` and a client would receive a channel id of `"*"`.
+
+The answer taken keeps `"*"` on the fabric and **expands it in the gateway**, one
+wire frame per channel that connection holds. A client sees what N individual
+removals would have produced. `change` stays `removed`; the enum needs no third
+member and `frames.ts` is not edited.
+
+The api cannot do this expansion: it knows which channels the ban revoked, not
+which of them a given connection on a given instance holds — and that per-
+connection set is what a client's frames have to match.
+
+    for (const channelId of [...connection.channelIds])
+
+**The copy is load-bearing.** The recursion deletes from `channelIds`, and
+iterating a Set while deleting from it skips entries — a ban that revoked every
+other channel. Written as a copy from the start because the deletion is two
+frames away in the same function, but it is the kind of thing that reads as
+defensive until it isn't.
+
+TWO 5.5-SECOND WAITS WERE A THIRD OF THE FILE, AND THE TASKS SAID SO IN ADVANCE
+The ban's negative assertion opened a second window for the same clause:
+
+    stops both channels, tells the user per channel        6130 ms
+    delivers nothing on either instance after five seconds 6096 ms
+                                                           ------
+    file                                                   37.93 s   budget 40 s
+
+T041 asked for one shared window and T092 repeated it — *"if the fixtures allow,
+set the ban up inside that wait rather than opening a third"* — and the ban test
+was still written with its own. Merged: the ban is set up beside the removals,
+one wait, three cases. **32.33 s**, which is 5.6 s back and the headroom Phase 8
+needs.
+
+What stayed in the ban's own test is what makes a ban a ban rather than a
+removal, and none of it needs a wait: two frames, one per channel, neither
+carrying the sentinel, and a bystander still receiving on both.
+
+THE UNBAN PUBLISHES NOTHING, AND ONE EDGE READS AS "NO CHANGE" WITHOUT BEING ONE
+`banUser` returns `[]` both for a repeated ban — `isNull(users.banned_at)` makes
+it touch no row — and for a real ban of a user who belongs to no channel. The
+controller publishes on a non-empty list, so the second case is silent. Nothing
+is lost: a connection with no channels receives nothing whether or not it is
+told, and distinguishing the two would mean widening the repository's return for
+a publish with no audience. Named here because it is the kind of thing a later
+reader finds and takes for a bug.
+
+The unban's reasoning is in `chapter-notes.md`, along with the answer to chapter
+3.19's `gaps.md` item 8 that T011 owed and nobody had written.

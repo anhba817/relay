@@ -59,10 +59,29 @@ connection it is about to act on and refuses a mismatch (FR-007). A client alrea
 environment, and putting it on a socket frame would be the first time this platform sent a tenant
 identifier to a client for no purpose.
 
-**A ban carries `channel: "*"` — or a separate payload shape, and this is the one open question in
-this contract.** The phase that builds US4 decides it. For `"*"`: one schema, one parse, one code
-path. Against: `channel` is `z.string().min(1)` and a sentinel inside a string is the kind of
-thing that reads as a channel id in a log line for a year.
+**A ban carries `channel: "*"` on the fabric, and never on the wire. DECIDED IN PHASE 7, and the
+answer is neither of the two this contract offered.**
+
+Both original options leaked the sentinel to somebody. `"*"` on the fabric buys one schema, one
+parse, one code path — and the objection was real: `channel` is `z.string().min(1)`, and a
+sentinel inside a string reads as a channel id in a log line for a year. A separate payload shape
+avoids that and costs a second schema, a second parse and a second delivery path for a case that
+is a removal from every channel.
+
+The third answer takes the first and closes its objection where it actually matters. **The
+gateway expands `"*"` into one wire frame per channel that connection holds**, so a client
+receives exactly the frames N individual removals would have produced, and no client ever sees a
+sentinel. `change` stays `removed` — a ban is a revocation, `data-model.md` §1 is right that the
+enum has no third member, and the wire frame is unchanged since chapter 1.3.
+
+The sentinel survives in two places, both internal and both deliberate: the fabric payload, and
+the `membership.published` log line. `ALL_CHANNELS` in `packages/protocol/src/membership.ts` is
+the one spelling of it.
+
+**The api cannot do this expansion.** It knows which channels the ban revoked, but not which of
+them any given gateway's connection holds — that set is per connection and per instance, and a
+publish per channel would be the "once per channel" shape `data-model.md` §5 rules out. Expansion
+belongs where the connection is.
 
 ---
 
