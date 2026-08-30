@@ -113,3 +113,36 @@ Three things make this the right trade rather than a shortfall dressed up:
 anybody measured a requirement against. Nothing in the SRS bounds a post-loss
 revocation. Sixty is what the connection budget affords, and if a clause is ever
 written for that case, this is the number it has to argue with.
+
+---
+
+## The SRS did not change, and Appendix C gained nothing (Phase 9)
+
+`git diff docs/04-srs.md` is **empty**. Not "no clause row changed" — no byte changed.
+Research R10 expected that and expecting is not verifying, so it is checked here
+where a reader can re-run it:
+
+    git diff --numstat docs/04-srs.md      (no output)
+    git diff docs/04-srs.md | grep -cE "^[+-]\| \*\*(FR|NFR|EIR|DR|CON)"     0
+
+FR-RTM-05, FR-RTM-10, FR-WHK-02, FR-CHN-04 and FR-006 already said what this
+chapter built. That is the outcome FR-002 asks for and the one chapter 3.18
+named the alternative to: *"a specification edited until it matches the code has
+stopped being a specification."*
+
+**Appendix C is unchanged too, and that is a decision rather than an oversight**
+(FR-002a). Its six open questions are about sequence numbering, the thousand-member
+ceiling, presence opt-in (closed by 3.19 as question 3), metering precision, the
+dev-token endpoint's rate limit, and emoji pack sharing. **None is about
+revocation, and this chapter does not open one.**
+
+It could have. The question it would open — *what bounds a revocation the fabric
+dropped?* — is answered here by a number nobody specified: sixty seconds, chosen
+from the connection budget. That is recorded in ADR-20 with its arithmetic and its
+revisit trigger, which is where a decision with a cost and no clause belongs. An
+open question is for a choice the product has not made; this is a choice made and
+written down, waiting for a clause to disagree with it.
+
+**One clause of this chapter's own spec did change** — FR-032, from three log names
+to four — and the amendment is written into `spec.md` with the argument. That is a
+feature specification, not the SRS.

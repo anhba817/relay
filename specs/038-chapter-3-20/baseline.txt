@@ -803,3 +803,74 @@ THE BACKSTOP TESTS BITE
 Four of forty-five, and the four that are about the backstop. Restored.
 
     45 tests, 36.18 s        T041's budget: 40 s
+
+
+PHASE 9 — THE DOCUMENTS
+============================================================
+
+T110 — THE GREPS, AND THE ONE THEY FOUND
+Six questions asked of every document in `docs/`, four of which came back clean:
+
+    membership.changed described as having no producer          0 hits
+    a subject-grammar count that is now wrong                    0 (3.19's "second"
+                                                                 is still correct)
+    FR-RTM-10 described as unmet outside this chapter's row      0
+    at-most-once claims                                          6 hits, 5 accurate
+
+**THE SIXTH FOUND A PUBLISHED SENTENCE THIS CHAPTER MAKES FALSE.**
+`docs/06-adr-deep-dives.md`, ADR-07's deep dive:
+
+    Given that machinery, a lost pub/sub frame is indistinguishable from a lost
+    WiFi packet, and both heal identically.
+
+True of every payload the fabric carried when it was written. False of the one
+this chapter adds: a revocation has no sequence and no cursor, so a client cannot
+detect a gap in it and there is nothing to refetch. A dropped one is a client
+that keeps receiving a channel it was removed from, indefinitely.
+
+The load-bearing clause is "given that machinery", and it names machinery a
+revocation does not have. Amended in place with a dated note that keeps the
+record's argument and retires the general claim: **anything new on this fabric
+has to answer "what recovers it?" for itself.**
+
+This is the class CLAUDE.md names — *"No checker reads prose. A published Trap
+contradicting 3.17's own chapter survived fifteen analysis passes"* — and the
+only reason it was caught is that T110 asks for greps rather than for a reading.
+`git diff` finds a changed sentence; nothing finds a sentence that stopped being
+true because the code moved underneath it.
+
+T105 — THE ARCHITECTURE RECORD CHANGES, AND IT IS A NEW ADR
+ADR-20, because ADRs are immutable once accepted. ADR-07's status line gains one
+line saying it is extended, the way ADR-10's says it is superseded in part.
+
+The decision worth having in the record is not the third grammar — that is
+ADR-19's argument applied again — it is that **ADR-07's permission to lose frames
+rests on a recovery property this payload does not have**, and the re-read is
+what supplies it. Also recorded: the sixty-second interval with its arithmetic,
+that no SRS clause bounds a post-loss revocation, and three rejected
+alternatives (JetStream for revocations, holding the publish until gateways
+acknowledge, and reusing `POST /internal/session` for the re-read).
+
+T107 — THE SRS DID NOT CHANGE AT ALL
+    git diff --numstat docs/04-srs.md          (no output)
+
+Not "no clause row changed" — no byte. Appendix C gained no question either, and
+that is recorded in `chapter-notes.md` as a decision: the question this chapter
+could have opened is answered by a number chosen from the connection budget, and
+ADR-20 with its revisit trigger is where such a number belongs.
+
+T108 — THE HEADER WAS STALE BY THREE, NOT ONE
+    ### Part 3 — Becoming a platform (16 published, 3 planned)
+
+19 rows were already listed and all 19 were published — 3.17, 3.18 and 3.19 had
+each moved from planned to published without the header moving. Every other part
+is headed with a plain count (`(8 chapters)`, `(5 chapters)`), so the split was
+the anomaly as well as the stale part. Now `(20 chapters)`, which is a number the
+row count checks.
+
+T109 — THE MIRROR
+`pnpm sync:docs` then `pnpm check:docs` in **relay-tutorial**, which is where the
+five `check:*` scripts live. Two files moved — `05-sad.md` and
+`06-adr-deep-dives.md` — and `07-tutorial-plan.md` correctly did not:
+`sync-docs.sh` holds the published set as an explicit list and says in its own
+comment that the series' plan is not one of them.
