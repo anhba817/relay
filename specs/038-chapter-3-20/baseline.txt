@@ -406,3 +406,116 @@ that file imports" the restricted module. Reading the config's header is not the
 same as reading its blocks, and the entry still went to the wrong one. It is now
 on `DRIVER_EXEMPT_TESTS`, beside `presence.itest.ts`, which is where the working
 precedent was the whole time.
+
+
+PHASE 4 — THE REMOVAL, END TO END
+============================================================
+
+T054a — NO TASK OWNED THE OPEN PATH'S SUBSCRIPTION
+T054 covers the release on a revocation and T079 covers the user's own subject at
+connect. The ordinary `membership?.subscribeChannel(channelId)` in `open()` fell
+between them and is in neither. Without it the fabric has no receiver at all: the
+publisher publishes, the gateway module parses nothing, and every test of the
+revocation path fails in a way that reads like a broken fabric. Added as T054a.
+
+T061 — THE ORDERING ASSERTION WAS UNFALSIFIABLE, AND THE PROOF SAID SO
+This is the phase's most expensive finding and it cost nothing but the discipline
+of running T065 as written.
+
+T061 asked for the frames in arrival order, asserting `membership.changed`
+precedes the last `message.created`, on the stated grounds that "both orders end
+with the notice delivered and the channel quiet; only arrival order separates
+send-then-cut from cut-then-send". T065 then asks for the proof: remove the
+send-before-delete and watch it fail.
+
+It did not fail. The implementation was edited to cut first —
+`connection.channelIds.delete()` moved above `send()` — and all 22 tests stayed
+green. **Swapping those two statements changes nothing any client can observe**,
+because the notice goes to a socket reference the function already holds, and the
+cut only affects future fabric routing.
+
+What FR-008 actually forbids is one line further out. `registry.subscribersOf()`
+is how the removed user is found; deriving the audience AFTER the mutation
+removes them from their own notice's audience — revoked and never told. That
+implementation was built too:
+
+    audience-after-cut  ->  "tells the removed user…" FAILED in 5 s, no notice
+
+So the requirement's content is audience-then-mutate, the first test in the file
+carries it, and the ordering test was rewritten to assert that directly. **Two
+implementations were run to find out which line the requirement was about.**
+Reading the code would have suggested both were fine.
+
+T056 — THE FR-029 TEST PASSED WITH THE THING IT TESTS DELETED
+Twice, for two different reasons, and neither was visible from the assertion.
+
+**First: the cursor and the frame had the same sequence.** The test presented
+`channel:1` and then buffered that channel's FIRST message, whose seq is also 1.
+`flushable(buffer, marks)` filters `frame.seq > marks[channel]`, so the frame was
+dropped as at-or-below the mark. Green with the FR-029 filter deleted — a test
+about the resume, under a title about revocation. The buffered frame has to sit
+ABOVE the cursor or nothing in the test is about membership.
+
+**Second: the connection was not buffering.** A connection is `buffering` from
+the upgrade until `api.backfill` returns, which on this lane is one local HTTP
+round trip — about twenty milliseconds. The removal always landed after the flush,
+so the delivery under assertion was ordinary live delivery of a message posted
+while the user was still a member, which is correct behaviour.
+
+Slowing the FABRIC does not widen the window: `withDeadline(subscribing,
+resumeDeadlineMs)` failing calls `degrade()`, and `degrade()` empties the buffer
+itself. The seam that works is the `ApiClient`, which `attachSessions` already
+takes as a parameter — a decorator whose `backfill` sleeps 2,000 ms first. The
+code path under test is the real one; only the clock moved.
+
+With both fixed, deleting the filter turns the test red in 3.7 s.
+
+TWO TEARDOWNS IN THE WRONG ORDER, AND NEITHER FAILURE NAMED ITSELF
+`server.close()` does not resolve while a connection is open, and vitest runs
+`afterEach` hooks in REVERSE registration order — so a describe-level teardown
+closing instances runs BEFORE the file-level one that closes sockets.
+
+    7 tests, 83 s, all reporting `Hook timed out in 10000ms` at a teardown
+
+The same trap then appeared inside a single test's `finally`, which closed its
+instance before its socket: one 20 s timeout, reported as a test timeout. Fixed
+by sharing instances per describe (fresh USERS and CHANNELS per test is the
+isolation this file needs, and `seed()` gives that for a few inserts) and by
+closing the socket before the server.
+
+THE SENDER MUST BE A BOT, AND A BOT MUST HAVE A DESCRIPTION
+`postMessage` named a seeded person and got 403 `sender_not_permitted`: "an
+application credential may send only as a bot user". `createUser` cannot make one
+— chapter 3.17 refused that deliberately — so the sender goes through
+`upsertUser({ kind: "bot" })`. That then hit `users_bot_description_check`, a
+database CHECK rather than a validator: `kind <> 'bot' OR description IS NOT
+NULL`. Its own comment is the rule — "a description is what turns an opaque
+sender into an answerable one, so a bot without one is not a bot" — and it
+refuses a seed as readily as a route.
+
+T066 — THE REVOCATION DELAY, MEASURED
+Request return to notice arrival, three runs:
+
+    34 ms    88 ms    87 ms        FR-RTM-10's budget: 5,000 ms
+
+Research R5 predicted milliseconds and it is milliseconds. **The five seconds is
+not a latency budget** — it is the margin the clause left for a mechanism that did
+not exist. The figures include `waitFor`'s 10 ms poll, so they are upper bounds.
+The test asserts under 1,000 ms rather than under 100: a tight bound in a lane
+running nine files at once is a flake, not a measurement.
+
+T064 — THE LANE
+    membership.itest.ts   22 tests, 22.41 s     T041's budget: 40 s
+    gateway package       9 files, 125 tests, 45.13 s
+                          against 45.14 s at the end of phase 3
+
+The new file grew by 5.5 s of deliberate waiting and the package clock did not
+move, because the clock is `max(file)` and `presence.itest.ts` is still the
+pacesetter at ~45 s. T064's decision point — split before phase 6 if over 40 s —
+is not triggered. It has ~17 s of headroom and three more stories to hold.
+
+THE API LANE NEEDS THE PINNED VARIABLES, AND FOUR REDS SAID SO
+Run without them: 4 failed of 505 — three platform routes answering 401 and
+`invariant 9` throwing `NatsError: CONNECTION_REFUSED`. Read as a regression from
+this phase's controller change for about a minute. With the nine variables above:
+505 passed, 29 files, 102.19 s. This is what T001 pinned them for.

@@ -67,7 +67,12 @@ ID_CLASSES = {
 # reported 38 problems, starting with "ids are not sequential". A checker that
 # only recognises the state it was born in is the blind spot this file's header
 # is about, found in its own second week.
-TASK = re.compile(r"^- \[[ xX]\] (T\d{3})( \[P\])?( \[US\d\])? (.+)$")
+# A SUFFIXED ID IS A TASK ID. `T054a` is how this project inserts a task without
+# renumbering the hundred below it — chapter 3.17 shipped T012a, T047c and T054b, and
+# this pattern rejected all of them as "does not match the checklist format". The
+# sequence check below therefore compares the NUMERIC part only: a suffixed id sits
+# beside the number it extends and does not advance the count.
+TASK = re.compile(r"^- \[[ xX]\] (T\d{3}[a-z]?)( \[P\])?( \[US\d\])? (.+)$")
 ANY_TASK_LINE = re.compile(r"^- \[[ xX]\]")
 PATHISH = re.compile(r"[\w./<>-]+\.(ts|mts|md|txt|mdx|json|yaml)\b|`docs/|`pnpm |`git |`docker |specs/")
 REF = re.compile(r"(?<![A-Za-z0-9])T(\d{3})(?![A-Za-z0-9])")
@@ -108,13 +113,20 @@ def main() -> int:
         if not PATHISH.search(desc):
             problems.append(f"tasks.md:{n} {tid} names no file path or command")
 
-    expected = [f"T{i:03d}" for i in range(1, len(ids) + 1)]
+    # Suffixed ids extend the number before them rather than taking one of their own,
+    # so the sequence is checked over the unsuffixed ids and each suffixed id is
+    # checked against the number it claims to extend.
+    plain = [t for t in ids if len(t) == 4]
+    expected = [f"T{i:03d}" for i in range(1, len(plain) + 1)]
     if len(set(ids)) != len(ids):
         dupes = sorted({t for t in ids if ids.count(t) > 1})
         problems.append(f"duplicate task ids: {', '.join(dupes)}")
-    elif ids != expected:
-        first = next((a for a, b in zip(ids, expected) if a != b), "?")
+    elif plain != expected:
+        first = next((a for a, b in zip(plain, expected) if a != b), "?")
         problems.append(f"task ids are not sequential from T001 — first mismatch at {first}")
+    for tid in ids:
+        if len(tid) == 5 and tid[:4] not in set(plain):
+            problems.append(f"{tid} extends {tid[:4]}, which is not a task here")
 
     # THE RULE: task ids live in tasks.md. Any T-id in another artifact must be a
     # declared foreign reference. Citing a local task id in prose is itself the defect —
