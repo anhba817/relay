@@ -295,3 +295,114 @@ because `outboxDepth` fixtures are the thing that would notice next.
     api lane      29 files   505 tests   102.08 s      (was 499 tests)
     consumer      10/10 with its own runtime, driven by hand
     lint, typecheck                                     green
+
+
+PHASE 3 — THE FABRIC
+============================================================
+
+THE PROTOCOL BUILD IS NEEDED ONE TASK EARLIER THAN THE FIX PUT IT
+------------------------------------------------------------
+
+Analysis pass 6 moved `pnpm --filter @relay/protocol build` to the head of the gateway
+work, because the gateway compiles against the protocol's `dist`. **So does the api.**
+The publisher task hit it immediately:
+
+    services/api/src/membership/publisher.ts(2,3): error TS2305:
+      Module '"@relay/protocol"' has no exported member 'ALL_CHANNELS'
+
+Three errors, one build, zero. The instruction was right and its position was one task
+late; `tasks.md` now says where it is really needed. This is the fifth time in this
+chapter that a fix landed adjacent to the problem rather than on it.
+
+A FAKE AT THE SEAM, NOT A PROPERTY ON THE INSTANCE (T034)
+------------------------------------------------------------
+
+The publisher's first test file reached for `publisher.redis` to install a double.
+`createMembershipPublisher` closes over its client and exposes no such property, so
+**six of seven tests failed against a fake that was never installed** — and the one
+that passed was the one asserting a log line, which the real client happened to
+produce on its way to failing.
+
+`fanout/publisher.test.ts` does it with `vi.mock("ioredis", …)` at the module seam and
+captures the `error` handler out of `on()`. Rewritten that way: eight tests, matching
+chapter 3.18's eight, and four of them are arms nothing else reaches — the `error`
+event, the url default, `close()`, and a failure that must not also log success.
+
+**THE SEVENTH `OnModuleDestroy` (T033)**
+
+`limits/limits.module.ts:10` states the convention and six modules implement it. This
+is the seventh, and it exists because `close()` is a function against a 100%-of-
+functions pin — but more practically because an unclosed Redis client in a service
+that boots once per integration suite makes a suite hang rather than fail.
+
+**The publisher module is EXPORTED where `MESSAGE_PUBLISHER` is not**, and the
+difference was checked rather than copied. `messages.module.ts` withholds its
+publisher because `internal.module.ts` reuses that module's providers wholesale, so
+an export would reach the one route that must never publish. `ChannelsModule` and
+`UsersModule` are imported only by `app.module.ts` and this module only by them —
+there is no wholesale reuse to leak through. Written into the module's own comment so
+the next person adding an importer meets it.
+
+T039 — A FIELD CAN SHIP A PHASE BEFORE ITS BINDING, AND THE TASK SAID OTHERWISE
+The task read "a `membership?: Membership` field on `SessionServerOptions`,
+destructured in `attachSessions`". Both were written; eslint answered
+
+    session.ts:183:3  error  'membership' is defined but never used
+
+because the first consumer is T051, in phase 4. The phase's own T047 runs
+`pnpm lint`, so following T039 exactly makes the phase uncommittable — a task
+whose premise fails against a gate the same phase runs. The field is the seam
+and stands alone; the binding moved to T051, beside its use.
+
+Worth naming because the shape recurs: an interface is a contract and can be
+declared before anything reads it, while a local binding is only legal once
+something does. Presence did not hit this because chapter 3.19 wired and used it
+in one phase. This chapter's fabric phase deliberately stops short of the
+session layer, so it meets the gap the other never saw.
+
+T041/T042 — THE ITEST FILE IS PHASE 3'S OWN, AND THE API HARNESS IS NOT IN IT
+T041 asked for `membership.itest.ts` with a two-instance harness and one
+file-level `startApi()`. Written that way in this phase, `startApi` and
+`startInstance` are declared and called by nothing until T055 — the same unused
+binding T039 had just cost, one scope up. The file was written instead on
+`fanout.itest.ts`'s shape: Redis only, no api, no gateway, no sessions. Phase 4
+adds the harness beside its first consumer.
+
+The seventh api spawn is therefore not paid in this phase. It is still coming,
+and `gaps.md` item 4 still owes it an owner.
+
+    13 tests, 1.28 s wall clock
+    budget for the finished file: 40 s (T041), of which ~18 s is waiting
+    what phase 4 adds: one api spawn (~4 s), three 5.5 s negative windows
+    shared into one, and the story tests
+
+T045 — SUBSCRIPTION COST, MEASURED
+`CONFIG RESETSTAT`, the suite, `INFO commandstats`:
+
+    subscribe      8
+    unsubscribe    1
+    publish        9
+
+R1's prediction — 18 for two instances over three channels plus one per
+connected user per instance — is a prediction about the PHASE 4 file, which has
+instances and users. This suite has neither, so the number to compare it against
+does not exist yet. What this measurement is good for is the reference counter:
+four tests call an unsubscribe and exactly one reaches Redis. The second
+subscriber's `unsubscribeChannel` correctly does not, and neither do the two for
+channels never subscribed. **The counter is visible in the command count**, which
+is a cheaper check than any assertion in the file and was not planned as one.
+
+T038 — THE EXEMPTION WENT ON THE LIST THAT DOES NOT WORK FOR `.itest.ts`
+`eslint.config.mjs` restricts `ioredis`, and the integration file needs it to put
+malformed bytes on the fabric. The entry was written into the `files: ["**/*.ts"]`
+block's `ignores`, which is where `membership.ts` itself belongs — and for an
+`.itest.ts` path it does nothing, because the later `files: ["**/*.itest.ts"]`
+block REPLACES the rule for every integration test not on `DRIVER_EXEMPT_TESTS`
+or `DRAIN_EXEMPT_TESTS`. Flat config replaces rather than merges.
+
+The file's own header states this hazard by name — chapter 3.12 found it as R23
+and FR-043, and the comment even gives the symptom: a lint run "exited 0 while
+that file imports" the restricted module. Reading the config's header is not the
+same as reading its blocks, and the entry still went to the wrong one. It is now
+on `DRIVER_EXEMPT_TESTS`, beside `presence.itest.ts`, which is where the working
+precedent was the whole time.
