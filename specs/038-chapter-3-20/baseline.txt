@@ -1,0 +1,175 @@
+BASELINE — chapter 3.20, the membership that changed under a live socket
+========================================================================
+
+*Every measurement this feature takes, and every thing that went wrong taking it.
+Written as it happens, not at close-out.*
+
+
+THE LANE ENVIRONMENT (T001)
+------------------------------------------------------------
+
+Pinned from chapter 3.19's record rather than rediscovered one red run at a time.
+
+    RELAY_POSTGRES_PORT=15432 docker compose up -d --wait
+
+**FIVE store containers, not four.** clickhouse, mailpit, nats, postgres, redis —
+mailpit is one of them and a lane without it fails on `ECONNREFUSED :8025`.
+`--wait` matters: without it the suites race container readiness.
+
+**This machine's own PostgreSQL holds 5432**, so the stack goes on 15432. Checked
+this session rather than assumed: `services/api/src/db/client.ts:13` already
+defaults to `postgres://relay:relay@localhost:15432/relay`, so a bare
+`node services/api/dist/db/migrate.js` connects to the right database — analysis
+pass 7 chased this specifically, because on this host the wrong default would have
+found a live Postgres on 5432 and reported a false green.
+
+The nine variables:
+
+    DATABASE_URL=postgres://relay:relay@localhost:15432/relay
+    RELAY_REDIS_URL=redis://localhost:6379
+    RELAY_NATS_URL=nats://localhost:4222
+    RELAY_INTERNAL_CREDENTIAL=rk_svc_local_development_credential_0000
+    RELAY_INTERNAL_CREDENTIAL_GATEWAY=rk_svc_local_development_gateway_00000
+    RELAY_WEBHOOK_SECRET_KEY=BpDal75yBZp7Fc2GtGS3D1vh7qOKgCWJkF6/d0XWxBU=
+    RELAY_OUTBOX_RELAY=off
+    RELAY_EVENT_CONSUMER=off
+    RELAY_DELIVERY_RELAY=off
+
+Plus `NO_COLOR=1 FORCE_COLOR=0` and a `sed` over the ANSI escapes for any run whose
+counts are recorded.
+
+**THE STORES WERE DOWN WHEN THIS PHASE STARTED.** `docker compose ps` returned
+nothing and the three service containers showed `exited`; chapter 3.19 left them
+running and something between then and now stopped them. Brought up before any
+measurement, which is the only reason T002's numbers mean anything.
+
+    node services/api/dist/db/migrate.js    migrations: nothing to apply
+
+
+THE PREMISES, CHECKED BY COMMAND (T006, T007, T008)
+------------------------------------------------------------
+
+Research R2 and R4 make four and two claims about the tree. All six hold.
+
+    grep -c outbox services/api/src/channels/channels.service.ts        0
+    grep -c "tx.insert(outbox)" services/api/src/db/repository.ts       1
+    sed -n 29p services/api/src/outbox/event.ts        type: "message.created";
+    FR-WHK-02's names in docs/04-srs.md                                 8
+
+The eight, in the clause's own order — `message.created`, `message.updated`,
+`message.deleted`, `channel.created`, `channel.member_added`,
+`channel.member_removed`, `user.connected`, `user.disconnected`. **One has a
+producer.** This chapter adds two more and claims nothing about the other five.
+
+    nothing outside packages/protocol/src/internal.ts parses
+      internalMembershipsResponseSchema                                 confirmed
+    no route serves /internal/memberships                              confirmed
+
+**AND A NAME COLLISION NOBODY HAD NOTICED.** Grepping for the route turned up two
+unrelated hits: `services/api/src/db/schema.ts:76` and
+`services/api/src/db/catalogue.ts:57` both carry a table called **`memberships`**,
+described there as *"joins humans to organisations, above the environment level"*
+— chapter 3.1's platform-side table. The route this chapter revives returns
+**channel** memberships for one user, which is a different concept one boundary
+down. Neither is wrong and they will read as the same word in a grep; the module
+and its tests should say `channel_ids` where they can, as the contract already does.
+
+T008 — the fixture's assertion, read rather than its path:
+
+    services/api/src/tenancy/signup.itest.ts:285-296
+    POSTs /internal/memberships with no credential, asserts status !== 200
+    and that the body does not contain "organisation"
+
+**A GET-only revival leaves it standing**, because a GET-only route answers a POST
+with 404. What breaks it is registering `ALL`, adding a POST twin, or answering an
+unauthenticated caller. Research R4's first draft said the revival would break this
+and analysis pass 2 corrected it; this is the confirmation.
+
+THE STARTING LANE (T002, T003)
+------------------------------------------------------------
+
+    NO_COLOR=1 FORCE_COLOR=0 pnpm test:integration | sed -r 's/\x1B\[[0-9;]*[mK]//g'
+
+    42 files   645 tests   229.41 s against a 240 s budget
+
+    package         files  tests   package wall clock   test time
+    test-harness        1     17          0.62 s          0.42 s
+    api                29    499        102.09 s        186.28 s
+    dispatcher          1     16         71.72 s         71.46 s
+    gateway             8    103         45.60 s         82.73 s
+    e2e                 3     10          6.49 s          6.08 s
+
+**229.41 s is one draw, not the distribution.** Chapter 3.19's close-out battery put
+the mean at 228.18 with stdev 1.41 over eighteen green runs, so this sits half a
+standard deviation high and means nothing on its own. It is the before-number the
+close-out battery is compared against, and it is a single sample by design — the
+twenty-run version costs eighty minutes and belongs at the end.
+
+**THE GATEWAY PACKAGE IS 45.60 s AND THAT IS ONE FILE.** 28 cores against 8 files, so
+all run concurrently and the package's clock is its slowest — `presence.itest.ts`,
+which measured 45.2 s standalone at chapter 3.19's close. This feature adds a ninth
+file to that package. Under 45 s it costs the lane almost nothing; over, it becomes
+the pacesetter and every second is a lane second. T041 budgets it at 40, of which
+about 18 is waiting FR-RTM-10's own five seconds three times over.
+
+THE VIOLATION, STILL ASSERTED (T004)
+------------------------------------------------------------
+
+    npx vitest run --config vitest.integration.config.mts -t "FR-RTM-10"
+    Test Files  1 passed | 7 skipped (8)
+    Tests       1 passed | 102 skipped (103)      6.44 s
+
+`session.itest.ts:677` — *"keeps delivering to a member who was REMOVED while
+connected (FR-RTM-10)"* — passes, and **a pass is the violation.** It waits out the
+clause's own 5,500 ms and asserts the frame the clause forbids does arrive. Its
+closing comment is this chapter's instruction: *"change this to `.rejects` on the day
+a re-read exists."*
+
+**Recording which red it is NOT.** It is green today and it must go red the moment
+the module is wired and before the assertion is inverted — a red there means the
+removal reached the gateway. If it stays green after wiring, nothing arrived and the
+inversion would pass for the wrong reason.
+
+THE SUBSCRIPTION COST BEFORE THIS FEATURE (T005)
+------------------------------------------------------------
+
+`CONFIG RESETSTAT`, then the gateway integration lane, then `INFO commandstats`:
+
+    cmdstat_subscribe     calls=141
+    cmdstat_unsubscribe   calls=33
+    cmdstat_publish       calls=164
+
+Two grammars are in that 141 — `chan:{channel_id}` and `presence:{channel_id}`.
+This feature adds a third per channel plus one per connected user, and R1 predicts
+the shape rather than the size. **The number to compare against is 141**, measured on
+the whole gateway package rather than on one file, because that is the run T045
+repeats.
+
+THE CHECKER CAUGHT ME AGAIN, FOR THE NINTH TIME (T010, T011)
+------------------------------------------------------------
+
+Writing `gaps.md` cited seven task ids outside `tasks.md`, which is this feature's own
+rule and the one thing `check-refs.py` enforces that nothing else could:
+
+    gaps.md:23 cites T130 · :25 T120 · :28 T011, T117 · :30 T062 · :37 T041 · :46 T007
+
+**Nine times now across this feature** — four during the analysis passes, two while
+writing the traceability map, one in the checklist, and these seven at once. The rule
+exists because chapter 3.17 renumbered three times and left references pointing at the
+wrong tasks; this session reproduced that failure directly in analysis pass 1, where a
+renumber silently broke seven in-file references and `check-refs.py` could not see them
+because they were inside `tasks.md` rather than outside it.
+
+**The instrument earns its place by catching its author.** A rule with a checker is a
+rule; without one it is a preference, and the evidence is that knowing the rule did not
+stop me breaking it nine times.
+
+THE MAP, RE-READ (T009)
+------------------------------------------------------------
+
+`traceability.md` was built at plan time and found six requirements with no task before
+any code existed. Re-read here against the tests phase 3 is about to make possible:
+its §3 rows still describe tests this feature intends, and the five rows added by
+analysis passes 3, 7, 8 and 11 — the mid-resume flush, the notice's own path, the log
+vocabulary, cross-kind, and the transaction-failure proof — are the ones with no
+counterpart in chapter 3.19's map. Nothing needed adding.

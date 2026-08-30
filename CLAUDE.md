@@ -1,4 +1,41 @@
 <!-- SPECKIT START -->
+**CHAPTER 3.20 IS IN PLANNING** — `specs/038-chapter-3-20/`, the membership that changed under a
+live socket. Read `plan.md`, then `research.md`. **Two P1 clauses are unmet and they are one
+mechanism**: FR-RTM-10's five-second revocation, which `services/gateway/src/session.itest.ts:677`
+has asserted as VIOLATED since 3.18 — it waits out the clause's own 5,500 ms and checks that the
+forbidden frame arrives — and FR-RTM-05's `membership.changed`, the third of six kinds to get a
+producer. The gateway learns memberships once, at connect, and nothing between connect and close
+re-reads anything.
+
+**R1 IS WHY THERE IS A THIRD SUBJECT GRAMMAR AND WHY IT HAS TWO SHAPES.** A removal can ride
+`member:{channel_id}` and reach both audiences in one publish, because the removed user is still a
+member at the moment it goes out. **An addition cannot** — the instance holding the new member is
+not subscribed to that channel yet — so `member:{env}:{user}` exists, and this is the first event
+in the system addressed to a **principal** rather than a channel.
+
+**TWO CONSTITUTION GATES PASS ONLY CONDITIONALLY, AND THEY CHANGED THE DESIGN.**
+**II** forbids publish-after-commit without the outbox. Chapter 3.18's Redis publish is legal
+because the same transaction wrote the durable event; a membership write records nothing, so the
+same publish here would be exactly the case II names. **R2: the membership write gains an outbox
+row**, and FR-WHK-02 already spells the two types — `channel.member_added`,
+`channel.member_removed` — so this is a requirement being met, not a principle appeased. The phase
+order puts the row before the publish for that reason.
+**IV** permits a lossy fabric *"precisely because durability and resume live in PostgreSQL
+sequences and cursors"* and demands any new mechanism preserve that recovery property. A message
+recovers through its resume cursor; **a revocation has none**. R3 is the backstop, and R4 is the
+contract waiting for it: `internalMembershipsResponseSchema`, exported since chapter 3.2 and
+parsed by nothing — `presence.changed`'s shape one contract down.
+
+**FR-014a IS THE ESCAPE HATCH AND IT IS NOT NARROWING.** If no backstop interval is affordable
+against NFR-SCL-01's 10,000 connections, the honest outcome is FR-RTM-10 recorded as met on the
+happy path and unmet under fabric loss. Chapter 3.18 refused this exact temptation on this exact
+clause: *"a specification edited until it matches the code has stopped being a specification."*
+
+**THE SHARP TEST IS NOT THE OBVIOUS ONE** (R6). After a removal, assert that a **second local
+member of the same channel still receives** — the obvious test is satisfied by an implementation
+that unsubscribes the channel outright. This is the first caller of the reference counters that is
+not a connection's own open or close path.
+
 **CHAPTER 3.19 IS CLOSED**, tagged `part3-ch19` in all three repositories. Its record is
 `specs/037-chapter-3-19/` — read `chapter-notes.md` first (its close-out names the fence
 predecessor and what the two red battery runs were), then `gaps.md` (**seventeen** items,
