@@ -1,128 +1,232 @@
-# Open things — chapter 3.20
+# Gaps — chapter 3.20
 
-*One item per gap, each with an owner. Written when found, not at close-out.*
+*Every gap this chapter leaves, and every gap it inherited, each with a status that was
+re-checked rather than copied. Chapter 3.17 carried seven of nine forward without
+re-checking; chapter 3.18 carried none that way, and this ledger follows 3.18.*
 
-**Every reference carries its chapter**, because the numbers collide: chapter 3.17's
-item 1 is an unidentified lane flake, chapter 3.18's item 1 is the idempotency-key
-mismatch, and chapter 3.19's item 1 is the missing presence snapshot.
-
-**Seventeen items are carried from chapter 3.19 with their status re-checked at the
-start of this feature rather than copied at the end of it.** Chapter 3.18 carried none
-of its predecessors' forward and chapter 3.17 carried seven of nine; the cost of not
-doing it is that CLAUDE.md's header names one predecessor, so an item nobody carries
-becomes unreachable by the path the header describes.
+**Each reference names its chapter, because item numbers are per-feature and collide.**
+Chapter 3.17's item 1 is a flake; chapter 3.18's item 1 is the idempotency keys.
 
 ---
 
-## Carried from chapter 3.19 — status at the start of this feature
+## THIS CHAPTER'S OWN
 
-| # (3.19) | Item | Status here | Owner |
-|---|---|---|---|
-| 1 | Presence has no snapshot, so a roster starts empty | **open**, untouched | unassigned |
-| 2 | A user who joins a channel while connected is invisible there | **this chapter closes it** — US3 and FR-022 | chapter 3.20 |
-| 3 | A test whose title claimed an arm it did not touch | **open as a class**; the close-out re-reads every new test title against its assertion | unassigned |
-| 4 | The refresh re-election restores the key and publishes nothing | **open**, untouched — presence's `held` still carries no channel set | unassigned |
-| 5 | Nine translated chapters absent from the sitemap | **open**; the chapter phase sets `translatedIn` for 3.20 only | unassigned |
-| 6 | `conn:{env}:{user}` specified as a shape that cannot work | **open, and cited** — FR-019 names it as why FR-RTM-09 stays unbuilt | whoever builds the connection cap |
-| 7 | Two fenced files instruct a Redis port that is not listening | **open**, untouched | unassigned |
-| 8 | The fate of chapter 3.19's two checkers | **answered here**: `check-refs.py` is carried forward and reset per feature, which phase 1 records; `check-prose.py` is rewritten per chapter because its claim list is per-feature | chapter 3.20 |
-| 9 | The lane is not idempotent from cold JetStream state | **open**, and this feature will meet it — `pnpm coverage` runs every suite in one process, where the file order differs from turbo's package order | unassigned |
-| 10 | A fourth file outside the fence chain (`session.itest.ts`) | **open, and this chapter edits it** — the US1 phase wires `membership` into its delivery describe, so the file gains code no chapter fences | unassigned |
-| 11 | Three files permanently outside the chain | **open**, untouched | unassigned |
-| 12 | A twenty-six-run battery failed once, mechanism unidentified | **open**; not reproduced by this feature's runs so far | whoever next touches `quota-relay.ts` |
-| 13 | Two comments claim a missing ioredis listener kills the process | **open**; this chapter's three new listeners are justified by NFR-OBS-01 instead, as chapter 3.19's were | unassigned |
-| 14 | The two entrances accept different idempotency keys | **open**, untouched — membership carries no idempotency key | unassigned |
-| 15 | A rate-limit header assertion compares two whole seconds with `>` | **open**, untouched | unassigned |
-| 16 | Two published counts disagree; a spec claimed a frame did not exist | **open** as a record defect in chapter 3.18's files | unassigned |
-| 17 | Six of the gateway's eight integration files each spawn their own api | **this chapter makes it worse** — the fabric phase adds the seventh, and says so | unassigned |
+## 1. A dropped publish is repaired in sixty seconds, not five — NEW
 
-**Four of the seventeen are this chapter's business**: it closes 2, answers 8, worsens
-17, and edits the file behind 10.
+FR-RTM-10 gives a mechanism five seconds. The publish meets it at 34–88 ms measured. When
+the publish is **dropped** — a severed fabric, a Redis restart, a partition — the backstop
+repairs it within its interval, and that interval is sixty seconds.
 
----
+So under fabric loss the clause is exceeded by fifty-five seconds. **The revocation is
+guaranteed; what is bounded is how late it can be.** No SRS clause bounds a post-loss
+revocation, and ADR-20 carries the arithmetic: five seconds against NFR-SCL-01's 10,000
+connections per instance is 2,000 requests per second per instance.
 
-## New in this chapter
+**Owner:** whoever writes a clause for the post-loss case. Sixty seconds is the number it
+has to argue with, and the trade is a request rate, not an implementation.
 
-## 1. The word `memberships` already means something else — FOUND IN PHASE 1
+## 2. Two ordering requirements had no observable difference — NEW
 
-`services/api/src/db/schema.ts:76` and `services/api/src/db/catalogue.ts:57` carry a
-table called **`memberships`**, described there as *"joins humans to organisations,
-above the environment level"* — chapter 3.1's platform-side table, above the tenant
-boundary. The route this chapter revives, `GET /internal/memberships`, returns a
-**channel** membership list for one end user, which is a different concept one
-boundary down.
+This chapter's task list specified send-before-cut (FR-008) and subscribe-before-insert
+(FR-010) as requirements, and asked for the proof that each bites. **Neither swap failed
+anything.** Both were unobservable, and the second was checked with the window widened to
+1.5 s to be sure.
 
-Neither is wrong and both are correctly named for their own layer. They will read as
-the same word in any grep, which is how the next person to search for "memberships"
-loses ten minutes.
+The lesson is recorded in the chapter and in `baseline.txt`, but the *class* is open: a
+task list can specify an ordering whose failure mode does not exist, and nothing catches it
+except running the proof.
 
-**Owner:** this chapter, partially. The module and its tests say `channel_ids` where
-they can, as `internalMembershipsResponseSchema` already does. Renaming either table
-or route is a public-surface change and belongs to nobody yet.
+**Owner:** the next feature that writes an ordering requirement. Falsify the claim before
+writing the test, not after.
 
-## 2. Two envelope schemas, and a grep finds the permissive one — FOUND IN PHASE 2
+## 3. A message published inside the subscribe window is lost — NEW
 
-`services/api/src/outbox/event.ts` exports `outboxEventSchema`, which the consumer
-parses with. `packages/protocol/src/internal.ts:276` exports a second envelope whose
-`type` is `z.string().min(1)`. **An analysis pass checked the second and cleared a
-hazard that lived in the first**, and the first would have terminated every membership
-event at the consumer — `message.term()`, redelivery stopped for good.
+Between an add committing at the api and the gateway's `fanout.subscribe` landing, that
+instance is not receiving the channel. A message published then does not reach the new
+member over the socket. It is in Postgres and history returns it, so nothing is permanently
+lost — but "you are a member, delivery starts" has a gap the width of a Redis round trip.
 
-Widened here to a discriminated union, so this instance is closed. **The two schemas
-are still two**, and the next person to ask "what does a consumer accept?" gets the
-permissive one from a grep.
+`membership.itest.ts` asserts the loss, so a change that closes it turns that test red and
+has to say what it did. Closing it properly needs the api to hold its publish until every
+gateway acknowledges a subscription, which is a round trip on an administrative path and a
+new failure mode for news the reader can already fetch.
 
-**Owner:** unassigned. The fix is either one schema or a comment on each naming the
-other; both are edits to files chapters 3.3 and 3.4 fence.
+**Owner:** undecided, deliberately.
 
-## 3. Nothing checks a produced event against the consuming schema — FOUND IN PHASE 2
-
-The defect above is invisible to every gate this repository has: not a typecheck (the
-producer and the consumer never meet in one type), not lint, not the integration lane
-(which runs `RELAY_EVENT_CONSUMER=off`). It was found by a task that said to run the
-consumer rather than reason about it, and it would have reached production.
-
-`event.test.ts` now round-trips what `membershipEvent` builds through
-`outboxEventSchema`. **`messageCreatedEvent` has no such test**, and neither will the
-five FR-WHK-02 types still to come.
-
-**Owner:** whoever adds the next event type. One assertion per producer, in the unit
-test that already exists.
-
-## 4. A fenced file edited for a reason this chapter does not teach — FOUND IN PHASE 2
+## 4. A fenced file edited for a reason this chapter does not teach — NEW
 
 `services/api/src/outbox/outbox.itest.ts` is fenced by chapters 3.3 and 3.17 and by
 `post-series.md`. Two of chapter 3.3's crash invariants counted every outbox row in an
-environment, which was the same question while `message.created` was the only type;
-the walk's own seed calls `addMember`, so they now measure a membership row. Scoped to
+environment — the same question while `message.created` was the only type — and the walk's
+own seed calls `addMember`, so they now measure a membership row. Both are scoped to
 `payload->>'type' = 'message.created'`, which is what they always meant.
 
-**Owner:** this chapter's phase 10, which owes the fence hunk. Recorded now because a
-fence cost discovered at close-out is chapter 3.18's item 2 repeating.
+**Owner: DISCHARGED IN PHASE 10.** This chapter fences the file. Recorded here because it
+was found in phase 2 and a fence cost discovered at close-out is chapter 3.18's item 2
+repeating.
 
-## 5. A message published inside the subscribe window is lost — FOUND IN PHASE 6
+## 5. `membership.itest.ts` is an excerpt, and excerpts are never verified — NEW
 
-Between an add committing at the api and the gateway's `fanout.subscribe` landing,
-the instance holding the new member is not receiving that channel. A message
-published in that window does not reach them over the socket. It is in Postgres and
-they can page history for it, so nothing is lost permanently — but the socket's
-promise, "you were told you are a member, and delivery starts", has a gap on the
-order of a Redis round trip.
+Over a thousand lines, and fencing it in full would make a test file a third of the
+chapter. An excerpt-only fence is `NOT_A_FILE` to `check-fence-chain.mjs` — **it is never
+compared against the repository at all.** Chapter 3.19's item 7 records the same for
+`sentinel.ts`, `sentinel.sql` and `guard.itest.ts`; this is the fourth.
 
-**The subscribe-before-insert ordering this chapter specified does not close it.** Widening the window to 1.5 s and
-publishing inside it produced identical results under subscribe-then-insert and
-insert-then-subscribe: `registry.subscribersOf` returning the connection changes
-nothing while the instance is not subscribed. The window is the subscribe itself,
-not the two statements around it.
+**Owner:** whoever decides whether a fence chain should cover test files at all. The
+honest options are to fence them in full and accept the page weight, or to say in the
+appendix that test files are outside the chain by policy. Neither is a chapter's decision.
 
-Closing it needs the api to hold the publish until the gateway acknowledges the
-subscription, which is a round trip on an administrative path and a new failure mode
-for a message the reader can already fetch. Not obviously worth it.
+## 6. FR-032 was amended, and an amended clause is a thing to watch — NEW
 
-**Owner:** undecided, and deliberately so. `membership.itest.ts` asserts the loss, so
-a change that closes the gap turns that test red and has to say what it did.
+The clause said the membership path's log vocabulary is exactly three names. The gateway's
+delivery half emitted six. Four are gone — `rejected` folded into `failed`, `revoked_all`
+deleted, `revoked` and `granted` collapsed into one `membership.applied` — and the clause
+now says four, with the argument written into `spec.md`.
+
+This is not the amendment chapter 3.18 refused: that one would have narrowed FR-RTM-10
+until the code passed. This kept the clause's purpose — closed, exhaustive, tested name by
+name — and corrected a count taken before half the path existed. **It is still an
+amendment, and a reader should be able to find it.**
+
+**Owner:** nobody. Recorded so that "the spec was edited" is never a discovery.
 
 ---
 
-*More items land here as the phases run. An item written at close-out is an item
-somebody reconstructed.*
+## CARRIED, WITH THE STATUS RE-CHECKED
+
+## 7. Presence has no snapshot on connect — CHAPTER 3.19's item 1, UNCHANGED
+
+A client learns transitions from the moment it connects and nothing about the state before
+it, so a roster starts empty and fills in as people move. This chapter touches delivery
+scope, not the roster.
+
+**Owner:** the chapter that gives presence a read endpoint or a connect frame.
+
+## 8. A user who joins a channel while connected is invisible — CHAPTER 3.19's item 2, **CLOSED HERE**
+
+The subscribe set was taken once at connect, so a mid-connection join reached neither
+delivery nor presence. This chapter's addition path subscribes `chan:`, `presence:` and the
+channel's membership subject together, and a test asserts a co-member's arrival observed
+over a channel joined mid-connection.
+
+**Both halves of chapter 3.19's staleness close with one mechanism**, which is why that
+chapter said the debt belonged to the session layer rather than to presence.
+
+## 9. A test title that claims an arm it does not touch — CHAPTER 3.19's item 3, **RECURRED**
+
+3.19's instance was fixed in 3.19. **The class recurred in this chapter and was caught by
+the same reading**: a ban test titled "stops both channels, tells the user per channel, and
+leaves others alone" no longer asserted the stop — that half had moved to the shared
+five-second window — and two other titles claimed counts that lived in a `waitFor` rather
+than an `expect`. All three reconciled.
+
+**Owner:** every close-out. Nothing compares a title to an assertion, and this is the
+second consecutive chapter where reading them side by side found something.
+
+## 10. The refresh re-election restores the key and publishes nothing — CHAPTER 3.19's item 4, UNCHANGED
+
+A presence key lost under a live connection is restored by the next refresh, and no
+`online` is published for a user who never appeared to go offline.
+
+**Owner:** the chapter that gives presence its snapshot — a roster read makes the
+divergence visible and therefore worth fixing.
+
+## 11. Nine translated chapters are absent from the sitemap — CHAPTER 3.19's item 5, UNCHANGED AT NINE
+
+Verified rather than assumed: chapters 3.10 through 3.18 each ship a Vietnamese body with
+no `translatedIn: ["vi"]`, so nine Vietnamese pages route and none appears in the sitemap.
+**3.20 does not become a tenth** — its entry carries all three Vietnamese fields.
+
+    part-3 entries without translatedIn: 3.10 … 3.18   (nine)
+
+**Owner:** nine one-line edits, and no chapter's to make alone.
+
+## 12. `conn:{env}:{user}` is specified as a shape that cannot work — CHAPTER 3.19's item 6, UNCHANGED
+
+FR-RTM-09's five-connection cap rests on a Redis *set* with one TTL, and a TTL is per key
+rather than per member — one instance refreshing it keeps a dead instance's entry alive for
+ever. A sorted set scored by heartbeat and pruned on read is the correct version. **This
+chapter names it in the published prose** as one of the things it does not do.
+
+**Owner:** the chapter that builds FR-RTM-09, and it is a design change before it is an
+implementation.
+
+## 13. Two fenced files instruct a Redis port that is not listening — CHAPTER 3.19's item 7 (its research R13), UNCHANGED
+
+## 14. The fate of a feature's own checkers — CHAPTER 3.19's item 8, **ANSWERED HERE**
+
+Chapter 3.18's `sweep.py` died with its directory; 3.19 asked what happens to a checker
+written for one feature and useful in the next. **This chapter's answer is to copy the file
+and reset `FOREIGN`** — not to promote it to a repository script, which makes it a thing to
+maintain for chapters that do not want it, and not to import across feature directories,
+which makes one record depend on another's.
+
+The answer is in `chapter-notes.md` with its cost: a carried-forward checker carries its
+blind spots too. This one rejected `T054a` outright — `T\d{3}` with no suffix — although
+chapter 3.17 shipped `T012a`, `T047c` and `T054b`. Fixed here and tested red four ways.
+
+## 15. Six of the gateway's eight integration files spawn their own api — CHAPTER 3.19's item 17, **WORSE**
+
+Now **seven of nine**. This chapter adds `membership.itest.ts` with its own `startApi()`,
+and its task list said so in as many words before the file existed: no cross-file fixture
+exists to share, building one is item 17's actual fix and a job of its own, so the decision
+was to pay the seventh spawn and say so.
+
+    7 of 9 gateway integration files spawn an api
+
+**Owner:** a shared fixture, which is a feature rather than a chapter's tail. The counter
+moves the wrong way once per chapter until somebody builds it.
+
+## 16. Three files permanently outside the fence chain — CHAPTER 3.17's item 7, **NOW FOUR**
+
+`sentinel.ts`, `sentinel.sql`, `guard.itest.ts`, and now
+`services/gateway/src/membership.itest.ts`. See item 5 above; they are the same gap counted
+from two directions and the owner is the same.
+
+## 17. A fourth file outside the chain — CHAPTER 3.18's item 2, UNCHANGED
+
+`services/gateway/src/session.itest.ts` is fenced by nobody. **This chapter edited it** —
+the FR-RTM-10 test is inverted there — so the file has now been changed by two consecutive
+chapters without a fence noticing either.
+
+**Owner:** whoever fences it. The cost of not doing so rises every chapter.
+
+## 18. The lane is not idempotent from cold JetStream state — CHAPTER 3.18's item 3 via 3.19's item 9, UNCHANGED
+
+## 19. A twenty-six-run battery failed once, mechanism unidentified — CHAPTER 3.17's item 1 via 3.19's item 12, UNCHANGED
+
+Deliberately unfixed. Twenty green runs reject a per-run failure rate above 13.91% at 95%
+confidence and nothing finer; a 5% flake survives twenty runs 35.85% of the time, and
+rejecting one needs 59 runs.
+
+## 20. Two comments claim a missing ioredis listener kills the process — CHAPTER 3.18's item 5 via 3.19's item 13, UNCHANGED
+
+The measurement says otherwise: ioredis 6.0.0 prints `[ioredis] Unhandled error event: …`
+and the process continues. **This chapter's new modules carry the corrected reason** — the
+listener exists for NFR-OBS-01, because those lines are unstructured and unbounded — so the
+tree now holds both the accurate version and the two inaccurate ones.
+
+**Owner:** two comment edits, in `services/gateway/src/limits.ts` and
+`services/api/src/limits/store.ts`.
+
+## 21. The two entrances accept different idempotency keys — CHAPTER 3.18's item 1 via 3.19's item 14, UNCHANGED
+
+## 22. A rate-limit header assertion compares two whole seconds with `>` — CHAPTER 3.18's item 9 via 3.19's item 15, UNCHANGED
+
+---
+
+## THE ONE THAT IS NOT NUMBERED, BECAUSE SIX CHAPTERS HAVE NUMBERED IT
+
+**`specs/036-chapter-3-18/reader-protocol.md` has still not been run by a person.**
+
+Chapters 3.14, 3.15, 3.16, 3.17, 3.18 and 3.19 each named this gap. 3.18 made it runnable —
+forty-five minutes, six questions — and nobody ran it. This chapter is the sixth to name it
+and the sixth to leave it.
+
+**Every check in this repository compares bytes.** And this chapter's two most expensive
+findings were not byte comparisons: an ordering requirement whose failure mode did not
+exist, found by running a proof and reading the result; and a published sentence in ADR-07's
+deep dive that stopped being true because the code moved underneath it, found by grepping
+for a claim rather than for a symbol.
+
+**Owner: a second person.** No command discharges this.

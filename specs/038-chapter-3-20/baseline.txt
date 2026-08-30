@@ -961,3 +961,124 @@ requirements, the ban's sentinel, the missing cursor — and came in 23% above i
 **The rate would have been useless**: 3.17 measured 84.7 words per taught file and
 3.15/3.16 measured 153.5 and 154.3. Nine taught files at either rate predicts 762
 or 1,382 against an actual 2,999.
+
+
+PHASE 11 — POLISH AND CLOSE-OUT
+============================================================
+
+T126 — THE SERVICES PROFILE WAS RUNNING, AND THE TASK KNEW IT WOULD BE
+`docker compose stop api gateway dispatcher` stopped two live containers. Chapter
+3.18 measured a live `relay-dispatcher-1` moving a branch pin on a byte-identical
+file by 7.7 points, and this run started from exactly that state.
+
+**AND BRINGING THE STACK BACK UP WITHOUT `RELAY_POSTGRES_PORT=15432` TOOK POSTGRES
+DOWN.** Compose tried to recreate it on 5432, this machine's own PostgreSQL holds
+that port, and the container died mid-recreate:
+
+    Error response from daemon: … listen tcp4 0.0.0.0:5432: bind: address already in use
+
+The variable is in `baseline.txt`'s first section and in the outsider suite's own
+refusal message. It was omitted from one command anyway.
+
+COVERAGE — THREE FILES SHORT, AND ONE OF THEM WAS A SURPRISE
+    packages/protocol/src/membership.ts        100 100 100 100   first run
+    services/api/src/membership/publisher.ts   100 100 100 100   first run
+    services/gateway/src/membership.ts         100 100 100 100   first run
+    services/api/src/internal/memberships.controller.ts
+                                            28.57   0  50 28.57  first run
+
+**The three that reached 100 immediately are the payoff of listing the arms in phase
+3 and driving them there.** Chapter 3.19 met its equivalents at close-out and paid
+seven tests, a deleted branch and a re-measured battery for it.
+
+**The fourth is the finding: a route can be thoroughly tested and completely
+uncovered.** `GET /internal/memberships` is exercised end to end by five gateway
+integration tests — that suite runs in the *gateway* package, and the api's coverage
+is measured in the *api* package. Four tests in `internal.itest.ts` fixed the
+measurement, including one asserting the route answers a POST with 404, which is
+what keeps `signup.itest.ts`'s fixture standing.
+
+TWO PINS BROKE, AND BOTH BREAKS WERE UNREACHABLE CODE
+    users.controller.ts   branches 75  against a pin of 100
+    repository.ts         lines 98.79 against a pin of 99
+
+`req.principal?.environmentId ?? "unknown"` — the fallback cannot be taken, because
+the guard has already refused a request without a principal. `Repository.environment`
+is the same id from the same verified credential and is not optional. The identical
+arm was in `channels.controller.ts`, unpinned and therefore silent at 81.81%.
+
+`repository.ts`'s two lines were **the same check written twice**: a
+`if (!row.user_external_id) throw` on each membership path, where `membershipEvent`
+already refuses an empty external id and `event.test.ts` reaches that refusal by
+name. Two guards, one reachable. Deleted the pair — statements 2901 -> 2895.
+
+And `memberships.controller.ts`'s last branch was a `principal?.kind !== "user"`
+throw the guard makes impossible. It moved into the signature's type:
+`@Req() req: { principal: UserPrincipal }`. **A check no request can fail is not a
+check, it is an invariant**, and an invariant belongs in the type. The trade is
+stated in the file: a compile-time claim that depends on two decorators twelve lines
+up.
+
+    final: all four new production files at 100 / 100 / 100 / 100
+
+T129 — THE COVERAGE WORK INVALIDATED FIVE FENCES, WHICH IS WHY THE TASK EXISTS
+Deleting production code changed files this chapter fences. `check:fences` went from
+green to two problems and then, one fix at a time, to green again:
+
+    vitest.coverage.config.mts   the appendix's hunk, three times over —
+                                 the pin block landed mid-hunk, then a stray blank
+                                 line, then a block captured one line short
+    internal.itest.ts            fenced by chapter 3.15; the four new tests moved it,
+                                 so chapter 3.20 fences it now
+
+**And the Vietnamese page broke on an index.** The chapter's fence list gained an
+entry, every segment after it renumbered, and the translation map keyed by absolute
+index threw `KeyError: 64`. Rebuilt keyed by **prose ordinal** — adding a fence
+cannot renumber the nth paragraph.
+
+T127 — THE GATES IN CI's ORDER, WITH `set -o pipefail`
+    pnpm lint                    exit=0    1 task
+    pnpm typecheck               exit=0   13 tasks
+    pnpm turbo run test --force  exit=0   11 tasks
+    pnpm build                   exit=0    5 tasks
+    node …/db/migrate.js         exit=0
+    pnpm test:integration        exit=0   43 files, 700 tests
+    pnpm coverage                exit=0   92.36 / 86.59 / 91.98 / 93.73
+    pnpm test:outsider           exit=0   11 tests
+
+**The outsider needed the platform back up**, which T126 had just stopped — it
+refuses on purpose and prints the five commands. Seeded a demo tenant and ran it:
+11 passed. **This chapter changed public routes, and the outsider is the only check
+that uses them as a customer does.** It is also the check CLAUDE.md records as having
+been wrong about the API for two chapters because nobody ran it.
+
+T133 — THE MAP RE-DERIVED FROM THE TREE FOUND THREE ROWS
+Reading `requirement -> test` had passed every phase. Reading
+`planned test -> is it in the tree?` found:
+
+    the write fails; neither survives (FR-016)   NO SUCH TEST EXISTED
+    swapping send-and-delete fails a test        it did not fail
+    swapping subscribe-and-insert fails a test   it did not fail either
+
+The first is written now — an add and a remove naming another tenant's channel,
+asserting no outbox row survives either. **Atomicity was proven for
+`message.created` by chapter 3.3's invariant 2 and for membership by nothing**,
+which is the exact shape chapter 3.18 found for FR-007 at its own close-out.
+
+The other two are rows describing a *proof technique* rather than a test, and a
+proof technique can fail to prove anything while the code is correct. The map had no
+column for a prediction that turned out false; it has one now.
+
+The other direction found no orphans: 110 test titles across the seven files this
+chapter added or grew, each reachable from a row.
+
+T130 — THREE TITLES RECONCILED WITH THEIR ASSERTIONS
+    "stops both channels, tells the user per channel, and leaves others alone"
+
+That test stopped asserting the stop when the five-second window was shared, and the
+title kept the claim. Retitled. Two others claimed counts that lived in a `waitFor`
+rather than an `expect` — both would fail, but only one says in the report what the
+test was about.
+
+**Second consecutive chapter where reading titles against assertions found
+something.** Nothing compares them.

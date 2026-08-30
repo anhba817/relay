@@ -143,12 +143,12 @@ fail?**
 | an added user receives the channel's next message | FR-010 | the user-addressed subject is not reaching a non-subscribed instance |
 | the added user's presence is observed by that channel | FR-022 | chapter 3.19's staleness is not closed, only claimed |
 | an idempotent re-add publishes nothing | FR-005 | every retry fires a frame and a webhook |
-| the write fails after the outbox insert; **neither survives** | FR-016 | the row is written beside the transaction, not inside it, and every other outbox test still passes |
 | Redis down: the route answers, the row is written, one line logged | FR-015 | the publisher does nothing and two of the three assertions cannot tell |
 | the backstop corrects a severed publish within one interval | FR-014a | constitution IV's recovery property is not preserved |
 | the re-read is a no-op when nothing changed, **by request count** | FR-014a | the backstop is re-applying a diff it should not have |
-| swapping send-and-delete makes a test fail | FR-008 | the ordering is a comment, not a property |
-| swapping subscribe-and-insert makes a test fail | FR-010 | the window is open and the loss is silent |
+| ~~swapping send-and-delete makes a test fail~~ **neither swap made anything fail** | FR-008, FR-010 | **RE-DERIVED FROM THE SHIPPED TREE.** Both rows planned a proof that did not come off, and the "what its failure would mean" column was right about the wrong thing: the ordering *was* a comment rather than a property, in both cases. The send-before-cut is unobservable because the notice goes to a socket reference the function already holds; the subscribe-before-insert is unobservable because `subscribersOf` returning a connection changes nothing while the instance is not subscribed. What FR-008 actually forbids is deriving the audience **after** the mutation — built, run, and it fails the file's first test in 5 s |
+| an audience derived after the mutation loses the subject's own notice | FR-008 | the removed user is revoked and never told. This is the assertion the two rows above were reaching for |
+| the write fails; **no outbox row survives either** | FR-016 | the row is written beside the transaction rather than inside it, and every other outbox test still passes. **This row claimed a test that was not in the tree** until the close-out pass wrote it |
 
 **Five rows exist only because a reading demanded them** — the second-local-member test, the
 arrival-order assertion, the transaction-failure test, the two swaps, and the mid-resume flush.
@@ -177,3 +177,25 @@ edge-case list asked the question in one line and nothing followed it up.
 | FR-026 | half a command — `check-prose.py` proves a sentence is gone, never that its replacement is right | a command, plus a reader |
 
 Nothing on this list is a MUST about platform behaviour. That was the check worth running.
+
+---
+
+## 5. Re-derived from the shipped tree at close-out (both directions)
+
+**The direction that found things, again.** Reading `requirement → test` had passed every
+phase. Reading `planned test → is it in the tree?` found three rows:
+
+| Row | What was true | What was done |
+|---|---|---|
+| the write fails; neither survives (FR-016) | **no such test existed.** Atomicity was proven for `message.created` by chapter 3.3's invariant 2 and for membership by nothing | written into `outbox.itest.ts` — an add and a remove naming a channel of another tenant, asserting no row survives either |
+| swapping send-and-delete makes a test fail (FR-008) | it did not fail. All 22 tests stayed green | row replaced with what the swap actually proved, and with the assertion that does bite |
+| swapping subscribe-and-insert makes a test fail (FR-010) | it did not fail either, under a window widened to 1.5 s | same |
+
+The second direction — every shipped test maps to a requirement — found no orphans:
+110 test titles across the seven files this chapter added or grew, each reachable from a
+row above.
+
+**The shape worth keeping:** two of the three were rows describing a *proof technique*
+rather than a test, and a proof technique can fail to prove anything while the code is
+correct. A row that says "swapping X makes a test fail" is a prediction, and this map had
+no column for a prediction that turned out false. It has one now, in the rows themselves.

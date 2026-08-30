@@ -208,3 +208,34 @@ established the practice with 16/27/35; the gap between 27 and 29 here is
 `services/api/src/outbox/event.test.ts` and
 `services/gateway/src/session.itest.ts`, which this chapter changed and nobody
 fences — the second being chapter 3.18's own recorded gap.
+
+---
+
+## What twenty green runs actually prove (Phase 11)
+
+**A per-run failure rate above 13.91%, rejected at 95% confidence. Nothing finer.**
+
+If a suite fails with probability *p* per run, twenty independent green runs have
+probability (1−*p*)²⁰. Setting that to 0.05 gives *p* = 1 − 0.05^(1/20) = 0.1391. So
+twenty green runs are consistent with a flake that fails one run in eight.
+
+    a 5% flake survives twenty green runs   35.85% of the time
+    rejecting a 5% flake at 95% confidence  needs 59 runs
+    twenty runs reject                      p > 13.91%
+
+**Chapter 3.17 ran twenty-six and failed once**, mechanism unidentified, and left it
+unfixed on exactly this reasoning: one failure in twenty-six is not evidence of a 4% flake
+rather than a 1% one, and chasing it would cost more runs than the information is worth.
+That is chapter 3.19's `gaps.md` item 12, carried here.
+
+**What the battery is for, then.** Not "the lane is reliable" — twenty runs cannot say
+that. It is for the failures a single run cannot show: an ordering dependency between
+files, a fixture that survives one run and not two, a port that is free until it is not.
+Those either appear within twenty runs or are rarer than this instrument can see, and
+saying which is the honest report.
+
+**And it measures the machine as much as the code.** Chapter 3.19 lost its run 1 to
+containers a previous step was still stopping; chapter 3.12's first attempt failed at run
+11 to two Next.js dev servers, with no port held and no `EADDRINUSE`. The battery here was
+started after `docker compose stop api gateway dispatcher` returned, and nothing else was
+run on the machine while it was going.
