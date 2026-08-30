@@ -352,3 +352,53 @@ FR-RTM-08 brings a five-second expiry and a rate limit with it.
 
 **USE A PERSON.** `specs/036-chapter-3-18/reader-protocol.md` is now named by seven
 consecutive chapters and run by none.
+
+---
+
+## Where this stopped, and what tomorrow picks up
+
+**The chapter is complete except for its timing battery.** Everything else in the
+close-out is done: coverage pinned at 100/100/100/100 on all four new production
+files, all six tutorial gates green, the traceability map re-derived in both
+directions, `gaps.md` written with every carried status re-checked, and all three
+repositories committed with the root's gitlinks matching both submodule HEADs.
+
+**The battery is six runs of twenty**, stopped by hand rather than by a failure.
+Six green runs reject a per-run failure rate above 39.3% at 95% confidence, where
+twenty reject 13.91% — and the first battery already observed three failures in
+twenty, which is 15%. So six runs cannot exclude the rate that has already been
+measured, and the count is not usable as a close-out figure.
+
+The timings from those six are usable, because their variance is small:
+
+    wall     mean 228.72 s  stdev 0.42   budget 240, so 11.28 s of headroom
+    gateway  mean 45.66 s   stdev 0.17
+    43 files, 701 tests, every run
+
+Those agree with the first battery's 228.50 and 45.50 to within a fifth of a second.
+
+### To resume
+
+1. **Nothing else on the machine**, and that now explicitly includes editing a
+   source file. The first battery lost its homogeneity to a test written into
+   `outbox.itest.ts` while it was running.
+2. `docker compose stop api gateway dispatcher` first — the services profile was
+   running when this phase began, and chapter 3.18 measured a live dispatcher moving
+   a coverage pin by 7.7 points.
+3. Run twenty. The harness that produced the numbers above is a loop around
+   `pnpm test:integration` with the nine pinned variables, `set -o pipefail`, and
+   the ANSI escapes stripped — the last two both matter, and a repro script written
+   during this phase omitted `pipefail` and reported `exit=0` under a real failure.
+4. **Two mechanisms are already known and neither blocks the tag** — the limiter's
+   wall-clock-aligned fixed window and `session.itest.ts` losing its own spawned api,
+   which are chapter 3.20's `gaps.md` items 19 and 19a. A recurrence of either is expected rather than
+   new information; anything else is.
+
+**Then tag** `part3-ch20` in all three repositories, annotated, and verify
+`git rev-parse part3-ch20^{commit}` in each — that commit, not the tag object, is
+what chapter 3.21's fence chain reads.
+
+**Nothing is pushed.** All three repositories are ahead of `origin/main` — the root
+by 16, `relay-platform` by 9, `relay-tutorial` by 3 — so the tag will exist on one
+machine until somebody pushes it with the branches. Submodules first, then the
+superproject, or the root's gitlinks name commits the remotes do not have.

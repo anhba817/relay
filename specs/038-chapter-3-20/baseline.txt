@@ -1152,3 +1152,35 @@ was `sed`'s and the failing run captured no detail. That is the trap T127 names,
 a script written to investigate a battery whose own harness had it right.
 
 `session.itest.ts`'s flake is unresolved and carried in `gaps.md`.
+
+T131 — THE SECOND BATTERY, STOPPED AT SIX RUNS
+Re-run against the shipped tree — the port-range fix committed, no source edits
+under it — and **stopped by hand after run 6.** Not a failure: the chapter is
+otherwise complete and the remaining fourteen runs are an hour of wall clock that
+can be paid tomorrow.
+
+    run  1  wall=229.27  gateway=45.73   run  4  wall=228.54  gateway=45.44
+    run  2  wall=228.91  gateway=45.87   run  5  wall=228.84  gateway=45.74
+    run  3  wall=228.68  gateway=45.74   run  6  wall=228.09  gateway=45.46
+
+    6 of 6 green   43 files, 701 tests every run
+    wall     mean 228.72  stdev 0.42  min 228.09  max 229.27   budget 240
+    gateway  mean 45.66   stdev 0.17
+
+**701 from run 1**, which is the point of the re-run: the first battery's run 1
+read 700 because the tree changed underneath it.
+
+**SIX GREEN RUNS PROVE ALMOST NOTHING, and the arithmetic is the same one twenty
+runs get:** six reject a per-run failure rate above 1 − 0.05^(1/6) = **39.3%** at 95%
+confidence. Twenty reject 13.91%. The first battery observed three failures in
+twenty, which is 15% — **above what six runs can exclude and below what twenty can.**
+So these six are consistent with the failure rate already measured and say nothing
+new about it.
+
+The numbers that ARE usable from six runs are the timings, because their variance is
+tiny: 228.72 s against a 240 s budget, 11.28 s of headroom, and a gateway package at
+45.66 s. Those agree with the first battery's 228.50 and 45.50 to within a fifth of a
+second, which is the strongest thing six runs can say.
+
+**WHAT IS OWED:** fourteen more runs, or a fresh twenty, before the chapter is
+tagged. The two failure mechanisms are already recorded and are not blocked on it.
