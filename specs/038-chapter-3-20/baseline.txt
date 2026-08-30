@@ -1082,3 +1082,73 @@ test was about.
 
 **Second consecutive chapter where reading titles against assertions found
 something.** Nothing compares them.
+
+T131 — THE FIRST BATTERY, AND WHY IT WAS RUN TWICE
+    17 of 20 green
+    wall  mean 228.50 s  stdev 1.25  min 227.44  max 232.86   budget 240
+    gateway package                          mean 45.50 s  stdev 0.15
+    43 files, 701 tests
+
+**THE MEASUREMENT WAS NOT HOMOGENEOUS, AND THE CAUSE WAS THIS SESSION.** Run 1
+counted 700 tests and every later run counted 701. The tree changed underneath the
+battery: the FR-016 atomicity test that the traceability re-derivation asked for was
+written into `outbox.itest.ts` **while the battery was running**.
+
+The battery's own rule is that nothing else runs on the machine. Editing a source
+file is worse than a stray container, and the rule did not say so because nobody had
+done it. **Run 1 measured a tree one test smaller than runs 2–20.**
+
+    api package     505 -> 509 (four backstop-route tests) -> 510 (FR-016)
+    lane total      701 = 17 harness + 510 api + 16 dispatcher + 148 gateway + 10 e2e
+
+THREE FAILURES, TWO MECHANISMS, ONE IDENTIFIED
+**Run 11 — `limits.itest.ts`, and this one names itself.**
+
+    two environments carry DIFFERENT configured limits, each at its own number
+    AssertionError: expected 201 to be 429
+
+The limiter is a **fixed window aligned to the wall clock**:
+`rl:{scope}:{operation}:{windowStartMs}` with
+`windowStart = Math.floor(now / windowMs) * windowMs`. The test sends three times and
+expects the third to be refused. If a window boundary falls between the second and
+the third, the counter resets and the third is allowed. Under a loaded machine the
+gap between those sends is not microseconds.
+
+**This is chapter 3.17's `gaps.md` item 1 with a mechanism.** That chapter ran
+twenty-six, failed once, and recorded the mechanism as unidentified. It is a
+boundary-crossing fixed window, and the fix is a test that pins the clock or asserts
+the pair rather than the third request. Not this chapter's file.
+
+**Runs 16 and 17 — `session.itest.ts`, and this one does not.**
+
+    stops delivering to a member who was REMOVED while connected (FR-RTM-10)
+    delivers nothing from a PRIVATE channel to a non-member's socket
+    TypeError: fetch failed → ECONNREFUSED 127.0.0.1:4524   (run 16)
+                            → ECONNREFUSED 127.0.0.1:4463   (run 17)
+
+Both ports are in `session.itest.ts`'s own range (4400–4599), so the spawned api
+became healthy and then stopped answering. Both failures are the last two tests of
+the describe this chapter wired `membership` into, which makes the chapter a suspect.
+
+**A PORT COLLISION WAS FOUND WHILE LOOKING, AND IT IS NOT THE CAUSE.**
+`membership.itest.ts` picked `4900 + random(200)` — `isolation.itest.ts`'s range
+exactly. The second attempt at a fix picked 5000–5199, which still overlaps, because
+that file's `4900 + (… % 200)` reaches 5099 and reading only its first number misses
+it. Now 5400–5599, with every range in the package written into the file, because
+nothing listed them.
+
+It cannot explain runs 16 and 17: those failed on 4400-range ports, which only
+`session.itest.ts` uses. **A defect found while investigating another defect is still
+a defect**, and this one would have surfaced as exactly this symptom eventually.
+
+TWENTY-TWO GATEWAY-ONLY RUNS AFTER THE FIX
+    12 runs   one at 139 of 148 tests, one with 1 failed
+    10 runs   148 of 148, ten times
+
+Two anomalies in the first twelve and none in the last ten is not evidence the fix
+worked — the two are in the same file the battery failed on, and the fix cannot
+touch it. **The first repro script also lacked `set -o pipefail`**, so its `exit=0`
+was `sed`'s and the failing run captured no detail. That is the trap T127 names, in
+a script written to investigate a battery whose own harness had it right.
+
+`session.itest.ts`'s flake is unresolved and carried in `gaps.md`.

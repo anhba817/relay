@@ -193,7 +193,44 @@ chapters without a fence noticing either.
 
 ## 18. The lane is not idempotent from cold JetStream state — CHAPTER 3.18's item 3 via 3.19's item 9, UNCHANGED
 
-## 19. A twenty-six-run battery failed once, mechanism unidentified — CHAPTER 3.17's item 1 via 3.19's item 12, UNCHANGED
+## 19. The rate limiter's fixed window crosses under a loaded machine — CHAPTER 3.17's item 1 via 3.19's item 12, **MECHANISM IDENTIFIED**
+
+Chapter 3.17 ran twenty-six and failed once, mechanism unidentified. This chapter's
+battery failed on the same class and the mechanism is now nameable.
+
+`limits.itest.ts` — *"two environments carry DIFFERENT configured limits, each at its own
+number"* — sends three requests and expects the third to be refused:
+
+    AssertionError: expected 201 to be 429
+
+The limiter is a fixed window **aligned to the wall clock**:
+`rl:{scope}:{operation}:{windowStartMs}`, with
+`windowStart = Math.floor(now / windowMs) * windowMs`. If a boundary falls between the
+second send and the third, the counter resets and the third is allowed. Under a loaded
+machine the gap between those sends is not microseconds, and the failure rate follows
+that gap divided by the window.
+
+**Owner:** whoever owns `services/api/src/limits/limits.itest.ts`. The fix is a test that
+pins the clock or asserts the pair rather than the third request — not a change to the
+limiter, which is behaving as `bucket.ts` documents.
+
+## 19a. `session.itest.ts` stops answering on its own api port — NEW, unresolved
+
+Two of twenty battery runs failed the same two tests with `ECONNREFUSED` on ports in that
+file's own range (4400–4599), so the spawned api became healthy and then stopped
+answering. Both are the last two tests of the describe this chapter wired `membership`
+into, which makes the chapter a suspect and not a proven cause.
+
+Twenty-two gateway-only runs afterwards produced two more anomalies in the first twelve
+and none in the last ten — not enough to separate a fix from luck.
+
+**A port collision was found while looking and is not the cause**:
+`membership.itest.ts` had taken `isolation.itest.ts`'s range exactly, then overlapped it
+again on the second attempt. Fixed to 5400–5599, with every range in the package written
+into the file. The failing ports belong to `session.itest.ts` alone.
+
+**Owner:** unassigned. It is chapter 3.19's item 17 in a different costume — seven of
+nine files spawning apis on random ports — and the shared fixture is the fix for both.
 
 Deliberately unfixed. Twenty green runs reject a per-run failure rate above 13.91% at 95%
 confidence and nothing finer; a 5% flake survives twenty runs 35.85% of the time, and

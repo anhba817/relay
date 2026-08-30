@@ -239,3 +239,116 @@ containers a previous step was still stopping; chapter 3.12's first attempt fail
 11 to two Next.js dev servers, with no port held and no `EADDRINUSE`. The battery here was
 started after `docker compose stop api gateway dispatcher` returned, and nothing else was
 run on the machine while it was going.
+
+---
+
+# Close-out
+
+## What shipped
+
+**FR-RTM-10 is met.** The clause has been unmet since chapter 2.6 and a test in
+`session.itest.ts` has asserted the violation on purpose since 3.18, carrying the
+instruction for whoever fixed it: *"change this to `.rejects` on the day a re-read
+exists."* That test is inverted, its 5,500 ms wait unchanged, and its title with it.
+
+**FR-RTM-05's third event kind has a producer.** `membership.changed` has been in the
+protocol union since chapter 1.3 with nothing emitting one. Three of six kinds now
+have producers; the other three are named in the chapter with the reason each waits.
+
+**FR-WHK-02 gains two of its eight event types** — `channel.member_added` and
+`channel.member_removed` — which is the durable record constitution II requires beside
+the publish. No endpoint subscribes to either yet.
+
+**A third subject grammar, with two shapes** (ADR-20). A removal rides
+`member:{channel_id}` and reaches the remaining members and the removed user in one
+publish, because the removed user is still a member at that instant. An addition
+cannot, so `member:{env}:{user}` exists — the first event in this system addressed to
+a **principal** rather than a channel.
+
+**A backstop, because ADR-07's permission does not cover this payload.** That record
+allows a lossy fabric on the grounds that a dropped message is recovered by its
+cursor. A revocation has no sequence and no cursor, so a sixty-second re-read stands
+in for one, applied through the same function a published change takes.
+
+**Chapter 3.19's presence staleness closes as a consequence.** A mid-connection join
+subscribes `chan:`, `presence:` and the channel's membership subject together, so both
+halves of that staleness close with one mechanism — which is why 3.19 said the debt
+belonged to the session layer rather than to presence.
+
+## The phases that went badly
+
+**Two ordering requirements had no observable difference, and both were specified as
+requirements.** Two tasks each asked for the proof that an ordering bites: remove it,
+watch a test fail. Neither failed. The send-before-cut is unobservable because the
+notice goes to a socket reference the function already holds; the subscribe-before-insert
+is unobservable because `subscribersOf` returning a connection changes nothing while
+the instance is not subscribed. **Both were found only by running the proof the task
+asked for.** What FR-008 actually forbids is deriving the audience *after* the
+mutation — that implementation was built, and it fails the file's first test in five
+seconds with no notice at all.
+
+**A test passed with its subject deleted, twice, for two unrelated reasons.** The
+FR-029 buffer test presented a cursor equal to the buffered frame's sequence, so the
+resume marks dropped it — a test about the resume under a title about revocation. Then
+the connection was not buffering at all: that window is one backfill round trip, about
+twenty milliseconds. Slowing the fabric does not widen it, because a failed fabric
+confirmation calls `degrade()`, which empties the buffer itself.
+
+**Three tasks specified a binding, a fixture and an exemption a phase too early.**
+One wanted `membership` destructured before its consumer existed; one wanted the api
+harness two phases before its caller; and an ioredis exemption went to the eslint list
+that flat config overrides for `.itest.ts`. All three fail a gate the same phase runs.
+
+**The collector was unfiltered for the fourth time across two chapters.** This feature's own task list says
+"filter every collector by subject" and cites the three phases of 3.19 it caught. The
+cross-kind assertion counted by type anyway and read two `presence.changed` where a
+watcher correctly sees their own arrival.
+
+**A published sentence stopped being true and no checker could see it.** ADR-07's deep
+dive says a lost pub/sub frame "heals identically" to a lost WiFi packet. True of every
+payload that fabric carried when it was written; false of this one. Found by grepping
+for a *claim* rather than for a symbol.
+
+## What the next feature should do differently
+
+**Falsify an ordering claim before writing its test.** A task that says "the ordering
+is the requirement" is asserting an observable difference. This chapter wrote two such
+tasks and neither survived. The check is cheap — swap the lines, run the suite — and it
+belongs before the test, not after.
+
+**List a module's arms in the phase that builds it.** Three of this chapter's four new
+production files reached 100/100/100/100 on the first coverage run because phase 3
+enumerated the arms and drove them there. Chapter 3.19 met its equivalents at close-out
+and paid seven tests, a deleted branch and a re-measured battery.
+
+**Ask where a route's coverage is measured, not just whether it is tested.**
+`memberships.controller.ts` had five integration tests and read 28.57%. The suite runs
+in another package.
+
+**Read the map the other way at close-out, every time.** It found a requirement with
+no test — the same shape chapter 3.18 found for FR-007 — and two rows describing a
+proof technique that proved nothing.
+
+**Share a negative window before writing the second one.** Two 5.5-second waits for the
+same clause were a third of the file's wall clock. Two tasks said so in advance, in writing,
+and the second wait was written anyway.
+
+## Hand-off to chapter 3.21
+
+**The fence predecessor is a commit, not the tag.** `part3-ch20` is annotated, so
+`git rev-parse part3-ch20` returns the tag object; `git rev-parse part3-ch20^{commit}`
+is what a fence chain needs.
+
+**`gaps.md` has 22 items.** Four are addressed to a next chapter rather than to nobody:
+item 11 (nine translated chapters absent from the sitemap — nine one-line edits), item
+15 (seven of nine gateway integration files spawn their own api, worse by one this
+chapter), item 17 (`session.itest.ts` outside the fence chain, edited by two consecutive
+chapters), and item 20 (two comments claiming a missing ioredis listener kills the
+process, which a measurement contradicts).
+
+**The typing indicator is the natural next chapter.** It is the one remaining kind of
+FR-RTM-05's six that can reuse `chan:{channel_id}` rather than adding a grammar, and
+FR-RTM-08 brings a five-second expiry and a rate limit with it.
+
+**USE A PERSON.** `specs/036-chapter-3-18/reader-protocol.md` is now named by seven
+consecutive chapters and run by none.
