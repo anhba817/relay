@@ -100,6 +100,28 @@ the walk's own seed calls `addMember`, so they now measure a membership row. Sco
 **Owner:** this chapter's phase 10, which owes the fence hunk. Recorded now because a
 fence cost discovered at close-out is chapter 3.18's item 2 repeating.
 
+## 5. A message published inside the subscribe window is lost — FOUND IN PHASE 6
+
+Between an add committing at the api and the gateway's `fanout.subscribe` landing,
+the instance holding the new member is not receiving that channel. A message
+published in that window does not reach them over the socket. It is in Postgres and
+they can page history for it, so nothing is lost permanently — but the socket's
+promise, "you were told you are a member, and delivery starts", has a gap on the
+order of a Redis round trip.
+
+**The subscribe-before-insert ordering this chapter specified does not close it.** Widening the window to 1.5 s and
+publishing inside it produced identical results under subscribe-then-insert and
+insert-then-subscribe: `registry.subscribersOf` returning the connection changes
+nothing while the instance is not subscribed. The window is the subscribe itself,
+not the two statements around it.
+
+Closing it needs the api to hold the publish until the gateway acknowledges the
+subscription, which is a round trip on an administrative path and a new failure mode
+for a message the reader can already fetch. Not obviously worth it.
+
+**Owner:** undecided, and deliberately so. `membership.itest.ts` asserts the loss, so
+a change that closes the gap turns that test red and has to say what it did.
+
 ---
 
 *More items land here as the phases run. An item written at close-out is an item

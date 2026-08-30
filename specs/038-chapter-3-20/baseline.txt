@@ -570,3 +570,83 @@ CLAUDE.md records: `grep -c "path:"` reads 41 against the real 38, and
 `grep -c "^\s*path:"` reads 14. Two wrong answers, neither of them obviously
 wrong. `node -e "require('./services/api/dist/isolation/targets.js')"` is the
 one that agrees with the suite.
+
+
+PHASE 6 — THE ADDITION
+============================================================
+
+T080/T086 — THE SECOND ORDERING REQUIREMENT WHOSE FAILURE MODE DOES NOT EXIST
+T080 asked for subscribe, then insert into `channelIds`, then send, because the
+reverse "opens a window where `registry.subscribersOf` returns a connection for a
+channel this instance is not yet receiving — a silently lost message rather than
+an error". T086 asked for the proof: swap the two lines, watch a test fail.
+
+All 36 tests stayed green. So the window was widened to 1.5 s with a delayed
+`fanout.subscribe` and a message published inside it, under both orders:
+
+    subscribe-then-insert   [["presence.changed",null],["membership.changed","added"]]
+    insert-then-subscribe   [["presence.changed",null],["membership.changed","added"]]
+
+Byte-identical. `subscribersOf` returning the connection changes nothing while
+the INSTANCE is not subscribed: the frame never reaches this process, so there is
+no delivery for the registry to be consulted about. **Both orders lose the
+message**, which makes the ordering unobservable rather than merely hard to test.
+
+**This is the second time in this feature** — T061 was the first, and the shape
+is identical: a task named two adjacent statements, asserted that their order was
+the requirement, and the requirement turned out to live somewhere else. Both were
+found by running the proof the task itself asked for, and neither would have been
+found by reading. The generalisation worth keeping: **a task that says "the
+ordering is the requirement" is making a claim about an observable difference,
+and that claim needs its own falsification before the test is written, not
+after.**
+
+The shipped order is subscribe-then-insert regardless. It cannot produce a
+connection claiming a subscription it does not hold, which is worth having for
+whoever reads the code next even though no test can see it.
+
+THE REAL WINDOW IS A GAP, AND IT IS NOW A TEST
+A message published between the add committing and the gateway's subscribe
+landing reaches the new member through history and not through the socket. The
+test asserts the loss rather than the ordering, so a future change that closes
+the gap turns it red and has to say so. `gaps.md` item 5.
+
+THE ADDITION'S AUDIENCE IS A DIFFERENT LOOKUP, AND THE FIRST VERSION USED ONE
+`deliverMembership` found its audience with `registry.subscribersOf(channel)` for
+both directions. That is right for a removal — the removed user is still in
+`channelIds` at that instant, which is why one publish reaches both audiences —
+and **wrong for an addition**, where the new member is not in the channel yet.
+`subscribersOf` returns every member except the one the frame is about, so the
+person being added is the only one not told. Additions now also walk
+`connectionsFor(user)`, which is the reason a principal-addressed subject has to
+exist at all.
+
+Caught by T081 failing on the first run rather than by reading, which is worth
+noting: R1 states the asymmetry in the research document, this file's own module
+comment restates it, and the audience lookup was still written once for both.
+
+A LOCAL `join` SHADOWED `node:path`'s, AND VITEST RAN IT ANYWAY
+The self-service helper was named `join`. TypeScript refused it — `TS2440: Import
+declaration conflicts with local declaration of 'join'` — and vitest, which
+transpiles without typechecking, ran the suite regardless:
+
+    AssertionError: expected '692d98b8-7121-43d9-828a-ffd2d3dfb59d/…' to be 'joined'
+
+The test called `path.join` and asserted against a filesystem path. Renamed to
+`joinChannel`. **`pnpm typecheck` and the test lane are not the same gate**, and
+the lane is the one that answers first.
+
+T087 — SUBSCRIPTION COST WITH A USER SUBJECT PER CONNECTION
+The whole file, 37 tests:
+
+    subscribe      185      against T045's 8 (13 tests, no sessions)
+    unsubscribe    144
+    publish        103
+
+T045's reading came from a suite with no gateway instances and no connections,
+so the two are not a before-and-after of the same thing — the growth is sessions
+arriving, not the user subject alone. R1's declared cost per connection is one
+subscribe on `member:{env}:{user}` plus one per channel on `chan:`, `presence:`
+and `member:`, released symmetrically. The 185/144 gap is the connections still
+open when the file ends, which the harness closes at teardown after the stats
+were read.
