@@ -319,12 +319,32 @@ inside the budget while another user's delivery is unaffected.
   inherited was about failure — chapter 3.18's trap, chapter 3.19's `presence.failed`. The working
   path said nothing out loud, so an operator could see the mechanism breaking and never see it
   working. Chapter 3.19 required this as its FR-025 and this spec had no counterpart.
-- **FR-032**: **The membership path's log vocabulary is exactly three names and a test MUST reach
-  each**: `membership.published` (FR-031), `membership.failed` (FR-015) and
+- **FR-032**: **The membership path's log vocabulary is exactly four names and a test MUST reach
+  each**: `membership.published` (FR-031), `membership.applied`, `membership.failed` (FR-015) and
   `membership.invalid_payload` — a body that is not JSON, or JSON the fabric schema rejects.
   Nothing else is emitted from this path. *`membership.invalid_payload` appeared once in the whole
   feature directory, in a task, mandated by no requirement and asserted by no test — which is the
   sentence chapter 3.19's FR-030 was written to stop being true a second time.*
+
+  **AMENDED FROM THREE TO FOUR IN PHASE 8, AND THE AMENDMENT IS THE KIND THIS PROJECT ALLOWS.**
+  Written at analysis pass 8, this clause named the vocabulary of the api's *publisher*. The
+  gateway's delivery half did not exist in code yet, and when it did it emitted six names —
+  `revoked`, `granted`, `revoked_all` and `rejected` beside the two it shared. Four of those are
+  gone: `rejected` is a failure and became `membership.failed` with an `op`, `revoked_all` said
+  nothing its per-channel lines did not, and `revoked`/`granted` collapsed into one
+  `membership.applied` carrying its direction — the fabric's own payload spells direction in a
+  field, and two names would be two entries for one event.
+
+  What is left is the name FR-031's own argument demands and this clause had no slot for.
+  `membership.published` means *it went onto the fabric*; `membership.applied` means *it took
+  effect on a connection*, which is the event an operator wants when a customer says access did
+  not change. A publish with no application is exactly the failure the backstop exists for, and
+  with three names it was invisible.
+
+  **This is not the amendment chapter 3.18 refused.** That would have been narrowing FR-RTM-10
+  until the code passed — destroying the clause's purpose. This keeps the purpose intact: the
+  vocabulary is still closed, still exhaustive, still tested name by name. It grew by one because
+  it was counted before half the path was built.
 - **FR-033**: **No frame may arrive as the wrong kind.** After this chapter the fabric carries four
   subject shapes — `chan:{channel_id}`, `presence:{channel_id}`, `member:{channel_id}` and
   `member:{env}:{user}` — and a message MUST NOT reach a client as a membership frame, a membership

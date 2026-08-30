@@ -65,3 +65,51 @@ The objection the contract raised against `"*"` was that a sentinel inside a
 `z.string().min(1)` reads as a channel id for a year. It survives in the fabric
 payload and in the `membership.published` log line, both internal, with
 `ALL_CHANNELS` as its one spelling. It does not survive to a customer.
+
+---
+
+## The verdict on FR-RTM-10 (Phase 8)
+
+FR-014a permits two honest outcomes and forbids a third. The third — editing the
+clause until the code passes — is what chapter 3.18 refused on this same clause:
+*"a specification edited until it matches the code has stopped being a
+specification."*
+
+**FR-RTM-10 is met, and the qualification is a bound rather than an exception.**
+
+    on the happy path      34 ms, 88 ms, 87 ms      budget 5,000 ms
+    with the fabric lost   one backstop interval    60,000 ms
+
+The five-second clause is met by the publish, measured at 57x margin. When the
+publish is dropped — a severed fabric, a Redis restart, a partition — the
+revocation still lands, through the periodic re-read, within sixty seconds rather
+than within five.
+
+**So under fabric loss the clause is exceeded by 55 seconds, and that is stated
+here rather than hidden in an interval nobody wrote down.** It is not the
+happy-path-only outcome FR-014a describes as the fallback: the revocation is
+guaranteed, not abandoned. What is bounded is how late it can be.
+
+Three things make this the right trade rather than a shortfall dressed up:
+
+- **Five seconds and sixty seconds are budgets for different events.** The clause
+  gives a working mechanism five seconds to take effect. The backstop bounds the
+  damage of a mechanism that did not run at all, which is rarer by orders of
+  magnitude. `baseline.txt` carries the arithmetic: five seconds against
+  NFR-SCL-01's 10,000 connections per instance is 2,000 requests per second per
+  instance, which is a poll wearing a backstop's name.
+- **Constitution IV is satisfied in the form it asks for.** It permits a lossy
+  fabric *"precisely because durability and resume live in PostgreSQL sequences
+  and cursors"* and requires any new mechanism to preserve that recovery
+  property. A message recovers through its resume cursor; a revocation has none,
+  so the re-read is its cursor. Without it this chapter would be publishing
+  revocations onto a fabric that is allowed to drop them, with nothing behind it.
+- **Both halves are tested, and both bite.** The happy path is
+  `session.itest.ts`'s inverted FR-RTM-10 test, still waiting its own 5,500 ms.
+  The loss path is four tests in `membership.itest.ts` that fail within five
+  seconds when `membership?.watch(…)` is removed.
+
+**What a reader should not take from this:** that sixty seconds is a number
+anybody measured a requirement against. Nothing in the SRS bounds a post-loss
+revocation. Sixty is what the connection budget affords, and if a clause is ever
+written for that case, this is the number it has to argue with.

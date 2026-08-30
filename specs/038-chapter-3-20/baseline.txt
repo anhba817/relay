@@ -708,3 +708,98 @@ reader finds and takes for a bug.
 
 The unban's reasoning is in `chapter-notes.md`, along with the answer to chapter
 3.19's `gaps.md` item 8 that T011 owed and nobody had written.
+
+
+PHASE 8 — THE BACKSTOP
+============================================================
+
+T096 — THE DERIVED TARGET LIST FIRED, FOR THE SIXTH TIME
+CLAUDE.md calls this the highest-yield check in the repository on the strength of
+five previous occasions. `GET /internal/memberships` was added, `targets.itest.ts`
+was run, and it produced three failures naming the route by hand:
+
+    classifies every derived target exactly once   unclassified: [GET /internal/memberships]
+    has grown from chapter 3.12's 24 …             expected 38 to be 39
+    leaves nothing exempt by omission              expected 39 to be 38
+
+Sixth occasion, and the first where the route was a REVIVAL of one the
+classification list had never carried — the route existed before chapter 3.2 and
+the list was written after it was removed. Classified `read` / `user`:
+
+    gauntlet targets: 39 derived, 36 attacked, 3 exempt
+                      (read 5, list 2, write 28, credential 1)
+
+`read` and not `list`: a list endpoint can be paged against a foreign id, and
+this takes no identifier at all — the subject is the token's own principal. The
+attack that applies is the foreign CREDENTIAL, not the foreign id.
+
+T008'S PREDICTION HELD. `signup.itest.ts` POSTs this path with no credential and
+asserts the status is not 200; a GET-only route answers a POST with 404. 53 tests
+green across the gauntlet, the target derivation and the signup suite.
+
+ADDING A METHOD TO `ApiClient` BROKE TWELVE TEST DOUBLES
+`memberships` is required on the interface, so every hand-built stub failed to
+typecheck: 11 in `resume.itest.ts`, 1 in `session.test.ts`. The same blast radius
+phase 2 hit with `addMember`, and the same lesson — **a required member on a
+widely-doubled interface costs one edit per double.**
+
+Not made optional. An optional method on a client interface is a lie about the
+real client, and the backstop would then need a branch for a case that cannot
+happen in production. `session.test.ts` has a shared `stubApi` factory and took
+one line; `resume.itest.ts` builds its doubles inline and took six. The factory
+is the difference, and it is the argument for having one.
+
+T097 — THE INTERVAL, AND ITS ARITHMETIC
+    DEFAULT_REREAD_INTERVAL_MS = 60_000
+
+NFR-SCL-01 budgets 10,000 connections per instance, and the re-read is per
+connection because the api answers for the token that connection presented:
+
+    60 s   10,000 / 60   =   167 requests per second per instance
+     5 s   10,000 / 5    = 2,000 requests per second per instance
+
+Two thousand a second for a backstop is not a backstop, it is a poll — and the
+mechanism it backs up already meets FR-RTM-10 in 34-88 ms. Sixty seconds bounds
+the damage of a DROPPED publish, which is a rarer event with a different budget;
+reading the two as one number is how a backstop turns into a poll.
+
+Every test injects a short interval (200-300 ms) the way chapter 3.19's tests
+inject a hundred-millisecond grace. Waiting out sixty seconds once would be a
+quarter of the whole lane's budget.
+
+FR-032 SAID THREE NAMES AND THE CODE EMITTED SIX
+The gateway's delivery half emitted `revoked`, `granted`, `revoked_all` and
+`rejected` beside the two the clause named. Four are gone:
+
+    rejected     -> membership.failed with op: "environment_mismatch"  (it IS a failure)
+    revoked_all  -> deleted; its per-channel lines say it
+    revoked      -\
+    granted      -/ -> one `membership.applied` carrying its direction
+
+Four names remain — published, applied, failed, invalid_payload — and the
+integration file now asserts the SET of names an instance actually emitted rather
+than what a grep can find, so a fifth fails a test rather than a review.
+
+**FR-032 was amended from three to four, and the amendment is written into the
+spec with its argument.** The clause was drafted at analysis pass 8 about the
+api's publisher, before the gateway's delivery half existed in code.
+`membership.published` means *it went onto the fabric*; `membership.applied`
+means *it took effect on a connection* — and a publish with no application is
+precisely the failure the backstop exists for, invisible with three names.
+
+This is not what chapter 3.18 refused. That would have been narrowing FR-RTM-10
+until the code passed, which destroys the clause's purpose. This keeps the
+purpose — closed, exhaustive, tested name by name — and corrects a count taken
+before half the path was built.
+
+THE BACKSTOP TESTS BITE
+`membership?.watch(…)` removed, whole file re-run:
+
+    corrects a removal the fabric never delivered      FAILED  5076 ms
+    changes nothing when nothing changed (by count)    FAILED  5024 ms
+    converges a pair that arrived in the wrong order   FAILED  5027 ms
+    answers the route … with Redis unreachable         FAILED  5040 ms
+
+Four of forty-five, and the four that are about the backstop. Restored.
+
+    45 tests, 36.18 s        T041's budget: 40 s
