@@ -146,3 +146,65 @@ written down, waiting for a clause to disagree with it.
 **One clause of this chapter's own spec did change** — FR-032, from three log names
 to four — and the amendment is written into `spec.md` with the argument. That is a
 feature specification, not the SRS.
+
+---
+
+## What this chapter fences, decided before a fence was written (Phase 10)
+
+**The chain decides most of it, not preference.** `pnpm check:fences` at HEAD
+reported 18 problems before a word of the chapter existed — 18 files this chapter
+edited that earlier chapters or the appendix already fence. Every one must be
+re-fenced here or the reconstruction stops being valid. That list is not a choice:
+
+    eslint.config.mjs                              packages/protocol/src/index.ts
+    services/api/src/channels/channels.controller.ts    …/channels.module.ts
+    services/api/src/db/repository.ts              …/internal/internal.module.ts
+    services/api/src/isolation/targets.ts          …/isolation/targets.itest.ts
+    services/api/src/outbox/event.ts               …/outbox/outbox.itest.ts
+    services/api/src/users/users.controller.ts     …/users/users.module.ts
+    services/api/src/users/users.service.ts        services/gateway/src/api-client.ts
+    services/gateway/src/main.ts                   services/gateway/src/resume.itest.ts
+    services/gateway/src/session.ts                services/gateway/src/session.test.ts
+
+**The choice is the nine new files**, which nobody fences yet. Five are fenced in
+full because they are what the chapter teaches — the protocol module, the api's
+publisher and its module, the revived controller, and the gateway's module. Two
+unit tests are fenced in full because they are short and because a test nobody
+can read is a test nobody checks.
+
+**`services/gateway/src/membership.itest.ts` is an excerpt, and that is a cost.**
+It is over a thousand lines and would be a third of the chapter. An excerpt-only
+file is **never verified against the repository at all**. That is
+chapter 3.19's `gaps.md` item 7, recorded there for `sentinel.ts`, `sentinel.sql`
+and `guard.itest.ts`; this adds a fourth. Taken deliberately: the alternative is a
+chapter whose bulk is a test file, and the file is exercised by the lane on every
+run whether or not a fence watches it.
+
+### The appendix owns four of them, and one entry sits inside its hunk
+
+`fences/post-series.md` carries hunks for `eslint.config.mjs`,
+`services/api/src/db/repository.ts`, `services/api/src/outbox/outbox.itest.ts`
+and `services/gateway/src/resume.itest.ts`.
+
+The eslint one is the sharp case. Its hunk inserts a block between
+`"services/gateway/src/fanout.ts",` and the list's closing `],` — and this
+chapter's `"services/gateway/src/membership.ts"` entry lands **inside** that
+inserted region, as chapter 3.19's `presence.ts` entry did before it. A chapter
+hunk anchored on a line the appendix inserts matches zero times, which is what
+this chapter's own task list warned about and what chapter 3.19 answered by
+fencing `eslint.config.mjs` as an **excerpt**. The same answer here, for the same
+reason: an excerpt is `NOT_A_FILE` to the checker, so it never joins the chain
+and never fights the appendix for an anchor.
+
+### The two counts, kept apart
+
+    9    what the chapter teaches   -> drives the word estimate
+    27   what the chapter fences    -> drives the chain (18 required + 9 new)
+    29   files changed              -> re-derived from `git diff --name-only`
+                                      against `d38f415` at the end
+
+Three numbers, three jobs, and none of them asked to do another's. Chapter 3.17
+established the practice with 16/27/35; the gap between 27 and 29 here is
+`services/api/src/outbox/event.test.ts` and
+`services/gateway/src/session.itest.ts`, which this chapter changed and nobody
+fences — the second being chapter 3.18's own recorded gap.

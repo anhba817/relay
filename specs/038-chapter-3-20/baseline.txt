@@ -874,3 +874,90 @@ five `check:*` scripts live. Two files moved — `05-sad.md` and
 `06-adr-deep-dives.md` — and `07-tutorial-plan.md` correctly did not:
 `sync-docs.sh` holds the published set as an explicit list and says in its own
 comment that the series' plan is not one of them.
+
+
+PHASE 10 — THE CHAPTER
+============================================================
+
+THE FENCE CHAIN DECIDED THE FENCE SET, AND IT SAID SO BEFORE A WORD WAS WRITTEN
+`pnpm check:fences` at HEAD, run before the chapter existed: **18 problems**. Every
+one a file this chapter edited that an earlier chapter or the appendix already
+fences. That is not a list anybody chooses — a file left un-refenced breaks the
+reconstruction — so T112's "decide which files this chapter fences" turned out to
+be mostly a matter of reading the checker's output.
+
+    18   the chain demands           27   fenced in total
+     9   new, this chapter's own     29   changed, from `git diff --name-only`
+
+Three numbers, three jobs. The gap between 27 and 29 is `outbox/event.test.ts` and
+`session.itest.ts`, both changed here and fenced by nobody — the second being
+chapter 3.18's own recorded gap.
+
+ONE HUNK MATCHED SIX TIMES, AND -U3 IS WHY
+`resume.itest.ts` carries six identical `sendMessage` stubs. A three-line hunk
+around one of them matched all six, and the checker requires exactly one:
+
+    [APPLY] hunk pre-image matched 6 times (need exactly 1)
+
+`-U10` for that file makes every hunk unique. Checked by script across all 29
+files at widths 3, 6, 10 and 15 rather than by trying one and hoping: **only that
+file needs more than three.**
+
+THE APPENDIX OWNS FOUR FILES, AND TWO OF ITS HUNKS HAD TO MOVE
+`eslint.config.mjs`'s exemption lists do not exist at the moment a chapter could
+fence them — the appendix's entries are what create them. So this chapter's two
+eslint entries went into `fences/post-series.md`'s hunks, beside chapter 3.19's,
+which is where 3.19 put its own for the same reason. The chapter fences
+`eslint.config.mjs` not at all.
+
+Found by the checker naming a line number and then a second line number: fixing
+the `DRIVER_EXEMPT_TESTS` hunk moved the failure from line 100 to line 230, which
+is the second block. **A checker that reports one problem at a time is still a
+checker that finds them all, one run apart.**
+
+FOUR VIETNAMESE FENCES VANISHED FROM A MIRROR THAT WAS BYTE-IDENTICAL
+    [MIRROR] fence list differs from app/(en)/…/page.mdx
+
+The fence bodies compared equal — 31 of 31, verified in the assembler — and the
+checker still saw 26 titles against 30. Its regex is line-anchored:
+
+    /^```(\w+) title="([^"]+)"\s*$/
+
+Four translated paragraphs ended without a trailing newline, so the fence after
+each began mid-line and was invisible. The fix is to copy the English segment's
+leading and trailing whitespace exactly rather than to translate a stripped
+paragraph. **A fence can be perfect and unreachable**, and "the bytes match" was
+the wrong thing to have verified.
+
+THE PROSE CHECKER, RED FIRST
+`specs/038-chapter-3-20/check-prose.py`, run before any correction: **8 of 8
+fragments still published.** Four of those eight were the wrong kind of failure —
+`does not exist — cannot check` — because the chapter 3.18 slug in the list was
+`the-message-that-came-from-somewhere-else` and the real one is
+`the-message-that-never-arrived`.
+
+That arm exists on purpose: a checker that silently skips what it cannot find
+reports green on a moved file, which is `check:srs` shipping "192 clause rows" as
+though that were the document. **It caught its own author's bad path on the first
+run.** With the slug fixed: 8 real failures, then 0 after the corrections.
+
+THE GATES
+    check:fences    229 fenced files, 37 chapters, 37 translated
+                    (was 221 / 36 / 36 — eight new fenced files)
+    check:figures   232 figures, every diagram passed as `code`
+    check:srs       245 clause rows, 245 unique identifiers
+    check:errors    17 codes, 17 sections — unmoved, as a chapter adding no
+                    close code requires. Run AFTER `pnpm build`, because it
+                    reads the built `packages/protocol/dist/codes.js`
+    check-prose     8 fragments, none still published
+    next build      97 static pages, was 95 — two per chapter, both locales route
+
+THE WORD COUNT, ESTIMATED FROM ARGUMENTS
+    2,999 prose words across 31 fences
+
+Chapter 3.19 measured 2,445 from five arguments. This chapter makes seven — three
+grammars, the constitution II ordering, two orderings that turned out not to be
+requirements, the ban's sentinel, the missing cursor — and came in 23% above it.
+**The rate would have been useless**: 3.17 measured 84.7 words per taught file and
+3.15/3.16 measured 153.5 and 154.3. Nine taught files at either rate predicts 762
+or 1,382 against an actual 2,999.
