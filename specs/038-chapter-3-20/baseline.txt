@@ -173,3 +173,125 @@ its §3 rows still describe tests this feature intends, and the five rows added 
 analysis passes 3, 7, 8 and 11 — the mid-resume flush, the notice's own path, the log
 vocabulary, cross-kind, and the transaction-failure proof — are the ones with no
 counterpart in chapter 3.19's map. Nothing needed adding.
+
+
+PHASE 2 — THE DURABLE RECORD, AND WHAT RUNNING IT FOUND
+============================================================
+
+THE SIGNATURE CHANGE THAT WAS THE WRONG LEVER (T017, T018)
+------------------------------------------------------------
+
+The event a customer reads carries external ids and `addMember` holds `users.id`, so
+the obvious fix is a third parameter. It typechecked to **68 errors across 15 files**:
+
+    users.itest.ts 27 · repository.itest.ts 13 · backfill.itest.ts 5 · fanout.itest.ts 3
+    channels.service.ts 3 · channels.itest.ts 3 · credentials.itest.ts 3 · and eight more
+
+Twelve of the fifteen are test fixtures seeding a membership, and several sit inside
+files other chapters fence. **A signature change to a method this old is a fence-chain
+cost paid by chapters that never mention membership.**
+
+    RETURNING channel_id,
+      (SELECT external_id FROM users WHERE users.id = members.user_id) AS user_external_id
+
+One subquery on the inserted branch, zero call sites changed, 68 errors to 0. The same
+move on `removeMembers`'s `.returning({...})` took the last two. **The typecheck found
+the blast radius in four seconds; the alternative would have surfaced in phase 10.**
+
+A BAN HAS NO EVENT TYPE, AND THE TASK LIST SAID IT DID (T019)
+------------------------------------------------------------
+
+T019 said "write the outbox row inside the ban transaction — one event for the user,
+not one per channel". **There is no such event.** FR-WHK-02 names eight types and none
+of them is a ban; inventing a ninth is scope this chapter does not have, because the
+spelling is the clause's and a customer's subscription filters on it.
+
+So the choice was a ban with no durable record — which makes the Redis publish beside
+it exactly the publish-after-commit constitution II forbids — or **the removals a ban
+actually is**. It writes one `channel.member_removed` per channel and returns the list,
+and the FABRIC publish stays one per user. `data-model.md` §5's "once per user, not
+once per channel" is about that publish; the two were one sentence in that document and
+are not one thing.
+
+Sixteen analysis passes did not find this. Writing the method did, in a minute.
+
+`admin` IS THE ORGANISATION'S ROLE, NOT A CHANNEL MEMBER'S
+------------------------------------------------------------
+
+The role-change test used `"admin"` and hit `members_role_check`. `members.role` is
+`('owner','moderator','member')` — FR-CHN-04's three — and `memberships.role` is
+`('owner','admin','member')`, FR-TEN-07's. **`schema.ts:423` predicts this confusion in
+as many words**: "reusing the other constraint here would accept `admin` on a channel
+member, refuse `moderator`, and read as correct in review." The comment was right and
+the first draft of the test made the mistake anyway. Second name collision this feature
+has hit, after `memberships` the table.
+
+
+THE ONE THAT MATTERED: EVERY MEMBERSHIP EVENT WOULD HAVE BEEN DESTROYED
+------------------------------------------------------------
+
+`services/api/src/outbox/event.ts:167` — the schema the **consumer** parses with:
+
+    export const outboxEventSchema = z.strictObject({
+      id: ..., type: z.literal("message.created"), ...
+    });
+
+A `channel.member_added` payload fails that parse. `consumer/runtime.ts:163` answers a
+failed parse with `message.term()` — **redelivery stopped for good** — and logs
+`consumer.unparseable`, under a comment that says "nothing catches what lands here". So
+every membership event reaching the spine would have been silently destroyed at the
+consumer, in production, with the row correctly written and the relay correctly
+publishing it.
+
+**Three things hid it.**
+
+1. **The lane runs `RELAY_EVENT_CONSUMER=off`.** The api suite went green through 505
+   tests with the defect in place.
+2. **Analysis cleared it by reading the wrong file.** Pass 1 checked
+   `packages/protocol/src/internal.ts:276`, whose `type` is `z.string().min(1)`, and
+   reported the hazard closed. There are two envelope schemas and a grep finds the
+   permissive one first.
+3. **It is invisible to every gate this repository has.** Not a typecheck failure — the
+   producer and the consumer never meet in one type. Not a lint failure. Not a lane
+   failure. The only thing that finds it is handing a produced event to the consuming
+   schema, which is what T027 said to do in the words *"run the consumer against one
+   membership event rather than reasoning about it."*
+
+The fix is a `z.discriminatedUnion("type", …)` over the same three names, so a fourth
+type added to `OUTBOX_EVENT_TYPES` without a branch below is now a typecheck failure
+rather than a terminated message. Three tests carry it: every producible type parses,
+what `membershipEvent` builds round-trips, and an unknown type or a mismatched `data`
+is still refused — the union widened without becoming permissive.
+
+TWO OF CHAPTER 3.3's CRASH INVARIANTS WERE MEASURING MY FIXTURE
+------------------------------------------------------------
+
+    invariant 6  expected 1 to be +0
+    invariant 5  expected 'events.channel.member_added.…' to be 'events.msg.created.…'
+
+`scripts/dual-write-walk.mjs:49` calls `repo.addMember`, which now writes a row before
+the walk sends its message. Invariant 6 counted **every** row in the environment and
+invariant 5 took `ORDER BY id` row zero — both correct questions while `message.created`
+was the only type, and both now answered by the seed rather than by the subject.
+
+Scoped to `payload->>'type' = 'message.created'`, which is what they always meant.
+**`outbox.itest.ts` is fenced by chapters 3.3 and 3.17 and by `post-series.md`**, so
+this is a fence hunk phase 10 owes for a file this chapter does not teach.
+
+WHAT THE PHASE COSTS THE LANE (T027)
+------------------------------------------------------------
+
+    message.created         80,977      accumulated; the lane runs the relay off
+    (sentinel bait)          6,800      feature 030's guard, unrelated
+    channel.member_added      3,302     <- new, ~1,100 per api lane run
+    channel.member_removed       58     <- new
+
+**Every seeding `addMember` across 29 api test files now writes a row.** Nothing broke:
+the outbox suite drains to zero rather than assuming a clean start, so the extra rows
+flow through the relay and out to its recording publisher — which means an existing
+test moved a membership event end to end without knowing it. The count is recorded
+because `outboxDepth` fixtures are the thing that would notice next.
+
+    api lane      29 files   505 tests   102.08 s      (was 499 tests)
+    consumer      10/10 with its own runtime, driven by hand
+    lint, typecheck                                     green

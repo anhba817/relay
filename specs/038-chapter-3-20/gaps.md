@@ -60,6 +60,46 @@ loses ten minutes.
 they can, as `internalMembershipsResponseSchema` already does. Renaming either table
 or route is a public-surface change and belongs to nobody yet.
 
+## 2. Two envelope schemas, and a grep finds the permissive one — FOUND IN PHASE 2
+
+`services/api/src/outbox/event.ts` exports `outboxEventSchema`, which the consumer
+parses with. `packages/protocol/src/internal.ts:276` exports a second envelope whose
+`type` is `z.string().min(1)`. **An analysis pass checked the second and cleared a
+hazard that lived in the first**, and the first would have terminated every membership
+event at the consumer — `message.term()`, redelivery stopped for good.
+
+Widened here to a discriminated union, so this instance is closed. **The two schemas
+are still two**, and the next person to ask "what does a consumer accept?" gets the
+permissive one from a grep.
+
+**Owner:** unassigned. The fix is either one schema or a comment on each naming the
+other; both are edits to files chapters 3.3 and 3.4 fence.
+
+## 3. Nothing checks a produced event against the consuming schema — FOUND IN PHASE 2
+
+The defect above is invisible to every gate this repository has: not a typecheck (the
+producer and the consumer never meet in one type), not lint, not the integration lane
+(which runs `RELAY_EVENT_CONSUMER=off`). It was found by a task that said to run the
+consumer rather than reason about it, and it would have reached production.
+
+`event.test.ts` now round-trips what `membershipEvent` builds through
+`outboxEventSchema`. **`messageCreatedEvent` has no such test**, and neither will the
+five FR-WHK-02 types still to come.
+
+**Owner:** whoever adds the next event type. One assertion per producer, in the unit
+test that already exists.
+
+## 4. A fenced file edited for a reason this chapter does not teach — FOUND IN PHASE 2
+
+`services/api/src/outbox/outbox.itest.ts` is fenced by chapters 3.3 and 3.17 and by
+`post-series.md`. Two of chapter 3.3's crash invariants counted every outbox row in an
+environment, which was the same question while `message.created` was the only type;
+the walk's own seed calls `addMember`, so they now measure a membership row. Scoped to
+`payload->>'type' = 'message.created'`, which is what they always meant.
+
+**Owner:** this chapter's phase 10, which owes the fence hunk. Recorded now because a
+fence cost discovered at close-out is chapter 3.18's item 2 repeating.
+
 ---
 
 *More items land here as the phases run. An item written at close-out is an item
