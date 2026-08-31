@@ -1248,3 +1248,87 @@ The last eight have been about the tree or the published product rather than the
 files, and pass 16 is the first where **applying a fix surfaced the next finding.**
 Worth remembering as a habit rather than an accident: after adding an artifact,
 ask what counts it, what claims completeness over it, and what pattern it joins.
+
+ANALYSIS PASS 17 — WHAT COUNTS THE ARTIFACT
+------------------------------------------------------------
+
+Pass 16 ended on a habit: after adding an artifact, ask what counts it, what
+claims completeness over it, and what pattern it joins. Applied to everything
+this chapter adds. The eleventh union member has two counters and the task list
+owned one.
+
+    grep -rn "toHaveLength(10)\|length).toBe(10)" services packages
+
+      isolation.itest.ts:777   expect(members.length).toBe(10)               T015, T016
+      main.test.ts:38          expect(body.protocol.frames).toHaveLength(10) nobody
+
+    C19  CRITICAL  Three things follow and the third is the expensive one.
+
+                   **It breaks in Phase 2 and is reported as clean.** T015
+                   predicts the gauntlet's three failures precisely and T017 then
+                   said "T009's test is still red; nothing else is." False:
+                   `main.test.ts` is a UNIT test and `test:integration` never runs
+                   it.
+
+                   **No phase gate catches it.** Every phase commit runs `pnpm
+                   lint` and `pnpm typecheck` — an earlier pass's decision, and the
+                   right one — but not `test`. The first command that runs unit
+                   tests is T099, "the gates in CI's order", in Phase 11. **Nine
+                   phases, attributed to whatever was touched last** — the exact
+                   failure mode eleven phase-gate tasks warn about, arriving
+                   through the one gate they do not run.
+
+                   **And the file is fenced by chapter 1.04.** So the edit needs
+                   what T083 gives `eslint.config.mjs`. **T083 could not have
+                   caught it**: it checks the files this chapter edits, and no task
+                   edited this one. No task -> no fence check -> no fence -> a red
+                   test and a broken chain. T014a runs the unit lane and expects
+                   the failure, T014b fixes the count and treats the file as
+                   fenced, T014c re-runs it and records which lane each red test
+                   lived in.
+
+    H20  HIGH      **The gateway's `/health` advertises the wire vocabulary.**
+
+                     health: () => ({ uptime_s, protocol: { frames, close_codes } })
+
+                   Derived from `@relay/protocol`, with its own comment saying the
+                   advertisement "cannot drift from the contract" — a completeness
+                   claim that holds, because it is derived, and the reason the
+                   `toEqual` half of main.test.ts can never rot. After this chapter
+                   it advertises eleven frames over HTTP, and no artifact here
+                   mentioned it, in a chapter whose thesis is that the inbound seam
+                   is where a protocol is attacked.
+
+                   **This also corrects pass 16's H19.** I reported that nothing
+                   satisfies EIR-WS-07 and that no protocol reference exists.
+                   `/health`'s `protocol` object is the closest thing that does:
+                   machine-readable, current by construction, named in none of the
+                   seven published documents. It carries no payload shapes, no
+                   semantics and nothing about reconnection, ordering or backfill,
+                   so it does not discharge the clause — but the gaps item is now
+                   "a derived advertisement exists and no document points at it".
+
+WHAT CAME BACK CLEAN
+------------------------------------------------------------
+
+    no log-name registry in docs/ — the three names are asserted only by T069's
+      emitted-set test, which is the right place
+    the SAD needs no ADR index row — §9 is sequential headings
+    main.test.ts's other derived list is Object.keys(CLOSE_CODES); no new code
+    public-surface.itest.ts does not enumerate the union, and the outsider checks
+      /healthz's status and not its payload
+    nothing outside the gateway consumes `frameSchema`, so plan.md's "services NOT
+      touched" holds
+
+SEVENTEEN PASSES
+------------------------------------------------------------
+
+    17  what counts the artifact   1 CRITICAL — a second counter, in the lane no
+                                   phase gate runs
+
+**Twenty CRITICALs. Eight were inside this feature's own documents.**
+
+Two passes running, the finding came from a habit rather than a new search space:
+pass 16 from "what does my own fix make worse", pass 17 from "what counts this".
+Both are cheap, both are repeatable, and neither needed a direction nobody had
+walked.
