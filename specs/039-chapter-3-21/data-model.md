@@ -72,10 +72,13 @@ act on, while a client already knows its own environment and has no use for a te
 | Thing | Lives | Length | Ends by |
 |---|---|---|---|
 | The indicator a user sees | the receiving client | 5 s from the last frame | a timer lapsing, silently |
-| Permission to publish again | the gateway's token bucket | 2 s | the window rolling |
+| Permission to publish again | a `Map` on the connection, per channel | 2 s | the interval elapsing |
 | The fabric subscription | the gateway, reference-counted | the connection | the last local member leaving |
 
-**Three lifetimes, three owners, and none of them is a stored fact.** Chapter 3.19's most
+**Three lifetimes, three owners, and none of them is a stored fact.** The middle row was a
+token bucket until analysis pass 1 read the limiter it would have used: keyed per
+environment on a 60-second window, against a rule that is per connection, per channel and 2
+seconds. Three mismatches, each fatal alone. Chapter 3.19's most
 expensive finding was three separate 30-second numbers that turned out to be three
 quantities; this table exists so that the five and the two are never read as one number.
 

@@ -96,3 +96,80 @@ Carried from chapter 3.20's close-out; to be re-measured at T002.
 **Twenty green would reject a rate above 13.91%**, so this lane's measured rate is
 above what twenty runs can exclude. Expect failures in this chapter's battery;
 a recurrence of either mechanism is expected rather than information.
+
+
+ANALYSIS PASS 1 — TWO CRITICALS, AND BOTH WERE UNASKED QUESTIONS
+------------------------------------------------------------
+
+Nine findings: 2 CRITICAL, 3 HIGH, 3 MEDIUM, 1 LOW. All eight above LOW fixed.
+
+**C1 — THE CLAUSE THIS CHAPTER EXISTS TO CLOSE HAD NO TASK.**
+FR-009 says the indicator expires with no frame sent to end it. Twenty-one
+requirements, 108 tasks, and `grep -niE "expire" tasks.md` returned one line —
+T064, about reconnect replay, which is FR-018.
+
+It slipped because "the client holds the timer" reads like an answer, and an
+answer feels like coverage. **The server's half is testable and was untested**:
+FR-009a now asserts that no frame of any kind follows a signal, on the watcher's
+whole frame list rather than on the absence of one type — a server that sends
+nothing ever would satisfy the weaker version.
+
+**C2 — THE PLANNED RATE LIMIT COULD NOT WORK, AND THE FIX MADE THE DESIGN
+SMALLER.**
+Research R5 said a third `"typing"` operation on the existing limiter needs "no
+schema change and no new Redis shape". True of the grammar. Two more lines of the
+same file:
+
+    limits.ts:89   const WINDOW_MS = 60_000
+    limits.ts:115  `rl:${environmentId}:${operation}:${windowStartFor(now, WINDOW_MS)}`
+
+    scope    per tenant   vs  per connection — 10,000 users would share one budget
+                              and one chatty user would silence the rest
+    window   60 s         vs  2 s — "N per minute" cannot express "one per 2 s"
+    subject  no channel   vs  per channel
+
+Three mismatches, each fatal alone. **The replacement is a `Map` on the
+connection** — no Redis, no third operation, `limits.ts` not edited.
+
+**And the per-environment ceiling was dropped rather than kept alongside.** It
+would bound a rate the debounce already bounds: the gateway enforces the interval
+itself, so a hostile client cannot exceed it by trying. What stays unbounded is the
+number of connections, and that is FR-RTM-09's cap — chapter 3.22.
+
+**The design got smaller because a premise was checked, not because somebody
+wanted a smaller design.** Constitution VII passed the third bucket as a small
+addition; it was an addition that could not do the job.
+
+THE OTHER SIX
+------------------------------------------------------------
+
+    H1  FR-008 said `typingSchema` must not change and named `git diff` as its
+        verification. No task ran it. The file IS edited to add a sibling schema,
+        so "unchanged" is a claim about one REGION of a changed file and nothing
+        in this repository checks a region -> T017a.
+
+    H2  "Renewal interval" and "typing limit" were two mechanisms under one name —
+        a per-connection debounce and a per-tenant ceiling. Chapter 3.19's three
+        30-second numbers, recurring. Split into FR-011a and FR-013a.
+
+    H3  FR-014 — typing must not spend the message send quota — was in US3 at P2.
+        Stopping after the MVP would have shipped a cosmetic feature able to
+        exhaust a customer's message budget. Moved to US1 as T048b.
+
+    M1  T043 asked the session to log an environment mismatch and the contract's
+        closed set had no name for it. Decided as `typing.failed` with
+        `op: "environment_mismatch"` — chapter 3.20's shape — and the contract's
+        description widened to say so, before the code emitted a fourth name.
+
+    M2  SC-002 had no task; the same root as C1, fixed with it.
+
+    M3  The inbound frame's name was deferred to T011 with no home but the code.
+        T011 now writes it into the contract in the same commit.
+
+    L1  Four subscriptions per channel after this chapter. Recorded, measured by
+        T051, not a defect.
+
+**Both CRITICALs are the same kind of thing: a document asserting a mechanism
+exists without asking the repository.** C2's claim was written during planning by
+the same author who then verified four other premises by command and skipped this
+one — because it read like a detail rather than a decision.

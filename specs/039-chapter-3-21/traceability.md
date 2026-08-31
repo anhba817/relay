@@ -46,12 +46,16 @@ requirement whose verification is a sentence rather than a test.
 | FR-005 | the signaller receives none, in a run where another member does | integration |
 | FR-006 | the delivered `user` is the connection's identity, never the payload's | integration + a schema with no `user` |
 | FR-007 | a foreign channel publishes nothing, asserted on a **subscriber** | integration |
-| FR-008 | `git diff` touches no line of `typingSchema` | **command** |
+| FR-008 | `git diff` on `frames.ts` shows additions only, no `typingSchema` removal | **command** |
 | FR-009 | no frame is sent to end an indicator | integration, by absence + inspection |
+| FR-009a | **no frame of any kind** follows a signal until the next one | integration, on the watcher's whole frame list |
+| FR-009b | the client's five seconds is stated in the chapter | inspection |
 | FR-010 | no table, no key, no outbox row | inspection + `INFO commandstats` |
 | FR-011 | 2 s against 5 s, with the arithmetic recorded | inspection |
+| FR-011a | two connections in one channel both publish; one connection in two channels publishes twice | integration |
 | FR-012 | repeated signals in one window produce one publish | integration, **by count** |
-| FR-013 | an over-limit signal produces no frame and no close | integration |
+| FR-013 | a dropped signal produces no frame, no close **and no log line** | integration |
+| FR-013a | `limits.ts` is not edited and no `"typing"` operation exists | **command** — `git diff` |
 | FR-014 | the send budget is unchanged across typing signals | integration |
 | FR-015 | fabric severed: socket open, one logged event | integration |
 | FR-016 | the SET of names an instance emitted is the closed set | integration |
@@ -106,6 +110,8 @@ fail?**
 | a non-member receives nothing **in a run where a member receives** | FR-007 | a must-not-receive test passing because nothing was produced |
 | a cross-tenant user receives nothing, same run | FR-007 | principle I, structurally |
 | repeated signals produce one publish | FR-012 | a publish per keystroke at 10,000 connections per instance |
+| **nothing at all follows a signal** | FR-009a | the server is ending indicators, which the frame cannot express — or the test proves nothing because the server sends nothing ever |
+| two connections in one channel both publish | FR-011a | the interval is per user or per tenant, and one chatty client silences everybody else |
 | an over-limit signal is silent | FR-013 | a cosmetic feature disconnects a client |
 | **the send budget is unchanged** | FR-014 | typing exhausts a customer's message quota |
 | a mid-resume frame is sent, not buffered | FR-018 | it lands after the cut-off or is dropped by the buffer's seq filter |
@@ -114,7 +120,7 @@ fail?**
 | **the emitted name SET is the closed set** | FR-016 | the vocabulary grew and nobody decided — chapter 3.20's FR-032 said three while the code emitted six |
 | four kinds, each once, under its own type | FR-017 | five subject shapes share one Redis and the topology stopped keeping them apart |
 | **swapping in a third inbound type fails a test** | FR-003 | the set is a comment rather than a property |
-| **raising the typing limit fails a test** | FR-012 | the limit is not the thing being measured |
+| **setting the interval to zero fails a test** | FR-012 | the interval is decoration rather than a property |
 | **routing typing through the buffer fails a test** | FR-018 | the separate path is decoration |
 
 **The last three rows are proof techniques rather than tests, and this project has learned
@@ -129,7 +135,7 @@ the finding is the row, not the code.
 | FR | Why no test | What stands in |
 |---|---|---|
 | FR-008 | "this file is not edited" is not a runtime property | `git diff` on `frames.ts`, and the fence chain, which compares the file byte for byte |
-| FR-009 | the absence of a frame over five seconds is the client's behaviour, not the server's | the server sends nothing to end an indicator — verified by there being no code that could |
+| FR-009b | the client's timer is the half no test in this repository can reach | the chapter states it; FR-009a covers the server's half with a test |
 | FR-010 | "nothing is persisted" cannot be asserted by a test that does not know where to look | `INFO commandstats` shows no key written, and the schema has no table |
 | FR-011 | a number and its argument | recorded in `baseline.txt` and read at close-out |
 | FR-019 | a diff, not a behaviour | `git diff docs/04-srs.md` |

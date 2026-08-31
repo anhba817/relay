@@ -84,6 +84,10 @@ signaller does not receive their own.
 4. **Given** Tuan signals typing in #incidents, **When** Linh is a member of #ops only,
    **Then** Linh receives nothing.
 5. **Given** Tuan signals typing, **Then** Tuan does not receive his own indicator.
+6. **Given** Tuan signals typing several times, **When** he then sends a message, **Then**
+   his send budget is what it was — a typing signal spends no message quota (FR-014).
+7. **Given** Mai has received a typing frame, **When** Tuan sends nothing further, **Then**
+   no frame of any kind reaches Mai for that channel until he signals again (FR-009a).
 
 ### User Story 2 - A client may say it is typing, and may not say anything else (Priority: P1)
 
@@ -116,7 +120,14 @@ A typing indicator renewed on every keystroke is a publish per keystroke. At NFR
 10,000 connections per instance that is the highest-frequency inbound path in the system.
 
 **Why this priority**: the feature works without it and the platform does not survive it.
-Separable because the delivery path is testable before the limit exists.
+Separable because the delivery path is testable before the interval exists.
+
+**P2 MEANS SEPARABLE, NOT OPTIONAL, AND THE DISTINCTION MATTERS HERE.** An earlier draft
+put FR-014 — a typing signal must not spend the message send quota — in this story, where
+stopping after the MVP would ship a cosmetic feature capable of exhausting a customer's
+message budget. That requirement moved to US1, which is the story that first publishes.
+What is left here is the interval itself, which changes a cost rather than a correctness
+property.
 
 **Independent Test**: signal typing faster than the renewal interval and assert the number
 of frames other members receive is bounded rather than proportional to the signals sent.
@@ -127,7 +138,8 @@ of frames other members receive is bounded rather than proportional to the signa
    interval has not elapsed, **Then** at most one publish reaches the fabric.
 2. **Given** a client exceeds the typing signal limit, **When** the next signal arrives,
    **Then** it is dropped without an error frame and without closing the socket.
-3. **Given** a client signals typing, **Then** the send quota for messages is unchanged.
+3. **Given** two connections of one user typing in one channel, **When** both signal within
+   one interval, **Then** both publish — the interval is per connection, not per user.
 
 ### Edge Cases
 
@@ -164,19 +176,42 @@ of frames other members receive is bounded rather than proportional to the signa
 - **FR-007**: A signal naming a channel the connection is not a member of MUST publish
   nothing and MUST NOT reveal whether the channel exists.
 - **FR-008**: `packages/protocol/src/frames.ts`'s `typingSchema` MUST NOT change. The frame
-  a client receives is what chapter 1.3 published and `frames.test.ts` asserts.
+  a client receives is what chapter 1.3 published and `frames.test.ts` asserts. **A command
+  MUST verify it** — the file is edited by this chapter to add a sibling schema, so "not
+  changed" is a claim about one region of a file that did change.
 - **FR-009**: The indicator MUST expire without any frame being sent to end it. Expiry is
   the receiving client's timer, five seconds from the last frame for that (channel, user).
+- **FR-009a**: A test MUST assert that after a signal, **no further frame of any kind
+  reaches the watcher** for that channel until another signal is sent. "The server sends
+  nothing to end an indicator" is otherwise satisfied by a server that sends nothing at all,
+  and it is the obligation FR-RTM-08 actually states.
+- **FR-009b**: The chapter MUST state the client's side of the contract — five seconds from
+  the last frame, per (channel, user) — because it is the half of this requirement no test
+  in this repository can reach.
 - **FR-010**: Nothing about a typing indicator MUST be persisted — no database row, no
   Redis key, no outbox event.
 - **FR-011**: The renewal interval MUST be defined as a number with its arithmetic recorded
   against NFR-SCL-01's 10,000 connections per instance, and MUST be shorter than the
   five-second expiry by a margin that is stated rather than assumed.
-- **FR-012**: Repeated signals within one renewal interval MUST produce at most one publish.
-- **FR-013**: A client exceeding the typing limit MUST have the signal dropped silently —
-  no error frame, no close code. A typing indicator is not worth a disconnection.
+- **FR-011a**: The renewal interval MUST be enforced **per connection and per channel**,
+  and the enforcement MUST be authoritative at the gateway rather than trusted to the
+  client. Two connections of one user typing in one channel are two independent signals; a
+  well-behaved client and a hostile one MUST cost the fabric the same.
+- **FR-012**: Repeated signals from one connection for one channel within one renewal
+  interval MUST produce at most one publish.
+- **FR-013**: A signal dropped for arriving inside the renewal interval MUST be dropped
+  **silently** — no error frame, no close code, and no log line. A typing indicator is not
+  worth a disconnection, and a line per keystroke is the unbounded output NFR-OBS-01 exists
+  to prevent.
+- **FR-013a**: The system MUST NOT add a per-environment typing quota. The per-connection
+  interval already bounds the publish rate at the gateway, so an environment-scoped counter
+  would bound a rate that is already bounded and would refuse one tenant's users on account
+  of another's. **The number of connections is FR-RTM-09's concern, not this chapter's.**
 - **FR-014**: A typing signal MUST NOT consume the message send quota (FR-RTL-01), and a
-  test MUST assert the send budget is unchanged across typing signals.
+  test MUST assert the send budget is unchanged across typing signals. **This is verified in
+  the story that first publishes**, not in the story that adds the interval — a cosmetic
+  feature exhausting a customer's message quota is an outage, and it must not be reachable
+  by stopping after the MVP.
 - **FR-015**: A fabric failure on the typing path MUST NOT fail the connection, MUST NOT
   close the socket, and MUST be logged once with a stable event name.
 - **FR-016**: The typing path's log vocabulary MUST be a closed set of names, a test MUST
@@ -215,9 +250,11 @@ of frames other members receive is bounded rather than proportional to the signa
 - **SC-001**: A member of a shared channel sees another member's typing indicator within
   the same budget a message takes, on a different gateway instance.
 - **SC-002**: The indicator disappears five seconds after the last signal, with no message
-  crossing the network to end it.
-- **SC-003**: A client that signals typing continuously sends no more than one publish per
-  renewal interval, regardless of keystroke rate.
+  crossing the network to end it — asserted as **no frame of any kind arriving** after a
+  signal, not as the absence of a frame nobody sends.
+- **SC-003**: One connection signalling typing continuously in one channel produces no more
+  than one publish per renewal interval, regardless of keystroke rate, and a second
+  connection is unaffected by the first.
 - **SC-004**: A client cannot cause any other user's name to appear in a typing indicator.
 - **SC-005**: A user who shares no channel with the signaller receives nothing, in a run
   where a channel member does receive.
@@ -250,6 +287,12 @@ of frames other members receive is bounded rather than proportional to the signa
   gauntlet row forbids.
 - **`message.deleted`, `message.updated` and the webhook names are out of scope.** They are
   chapters 3.23 and 3.24 in the plan that closes Part 3.
+
+- **The renewal interval is a gateway-held debounce, not a token bucket.** Analysis pass 1
+  found that the existing limiter cannot express it: `spend(environmentId, operation, limit)`
+  keys on `rl:{environmentId}:{operation}:{window}` with a 60-second window, which is
+  per tenant and per minute. A 2-second rule per connection and per channel is neither.
+  **The planned third bucket is not built** — see FR-013a.
 
 ---
 

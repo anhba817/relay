@@ -115,7 +115,7 @@ frame is a different type that carries no user.
 |---|---|---|
 | A signal for a channel the connection is not in | nothing published, no error | Revealing that a channel exists is a disclosure (FR-TEN-05) |
 | A signal naming another user | the payload has no user field | Removed at the schema, not checked at the handler |
-| Over the typing limit | **silence** — no frame, no close | An advisory indicator is not worth an error, and the client will signal again in seconds |
+| Inside the renewal interval | **silence** — no frame, no close, **no log line** | An advisory indicator is not worth an error, and one line per keystroke is the unbounded output NFR-OBS-01 prevents. The interval is held in gateway memory per connection and channel; there is no bucket and no key |
 | Any other inbound frame type | `unknown_frame_type`, close 4002 | Unchanged for the other nine types |
 | The fabric is unreachable | socket stays open, one logged event | FR-015; the client is told nothing because there is nothing it can do |
 
@@ -133,9 +133,15 @@ finds. Chapter 3.20's FR-032 named three and the code emitted six; the amendment
 record and this chapter is not repeating it.
 
     typing.published        a signal went onto the fabric
-    typing.failed           a publish or a subscribe failed, with an op
+    typing.failed           a publish, a subscribe, or an environment mismatch, with an `op`
     typing.invalid_payload  a body that is not JSON, or JSON the schema rejects
 
-**No name for a dropped rate-limited signal.** It is expected traffic, not a failure, and
+**`typing.failed` covers the environment mismatch, and its description says so rather than
+leaving a reader to assume.** Chapter 3.20's FR-032 declared three names while the code
+emitted six — `rejected`, `granted`, `revoked` and `revoked_all` beside the two it shared —
+and the clause had to be amended with its argument. The `op` field is what keeps this set at
+three, and the mismatch's op is `environment_mismatch`, which is that chapter's shape.
+
+**No name for a signal dropped inside the interval.** It is expected traffic, not a failure, and
 one log line per keystroke over the limit is the unbounded output NFR-OBS-01 exists to
 prevent.

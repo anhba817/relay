@@ -117,27 +117,41 @@ builder at `isolation.itest.ts:759` gains a case.
 
 ---
 
-## R5 — Can typing reuse the existing token buckets?
+## R5 — Can typing reuse the existing token buckets? **No, and the first version of this
+entry said yes.**
 
-    services/gateway/src/limits.ts:83
-    operation: "connect" | "send",
-    services/gateway/src/limits.ts:115
-    const key = `rl:${environmentId}:${operation}:${windowStartFor(now, WINDOW_MS)}`;
+    services/gateway/src/limits.ts:83   operation: "connect" | "send"
+    services/gateway/src/limits.ts:89   const WINDOW_MS = 60_000
+    services/gateway/src/limits.ts:115  `rl:${environmentId}:${operation}:${windowStart}`
 
-`operation` is a two-member union, not a string, so a third member is a typed decision and
-every call site is checked. The key grammar already carries the operation, so a third
-bucket needs no schema change and no new Redis shape.
+This entry originally read *"the key grammar already carries the operation, so a third
+bucket needs no schema change and no new Redis shape"*, and recommended a third
+`"typing"` operation. **That is true of the grammar and false of the semantics**, which
+analysis pass 1 found by reading two more lines of the same file.
 
-**Decision: a third operation, `"typing"`, with its own limit.** It must not spend the
-send budget — FR-014 — because a typing indicator that exhausts a customer's message quota
-turns a cosmetic feature into an outage.
+The bucket is keyed on the **environment** and counts within a **60-second** window. The
+requirement is at most one publish per **2 seconds** per **connection and channel**. Those
+are three mismatches, and each is fatal on its own:
 
-**The refusal differs from both existing ones and that is the interesting part.** A refused
-connect is a 429 with `Retry-After`; a refused send is an error frame. **A refused typing
-signal is silence**: no error frame, no close code, nothing. Dropping it is correct because
-the indicator is advisory and the client will signal again in a few seconds anyway.
+    scope    per tenant       vs   per connection — one tenant's 10,000 users would share
+                                   one typing budget, and one chatty user would silence
+                                   the rest
+    window   60 s             vs   2 s — "N per minute" cannot express "one per 2 s"
+    subject  no channel       vs   per channel — typing in two channels is two indicators
 
----
+**Decision: a gateway-held debounce, and no Redis at all.** A `Map` keyed by
+(connection, channel) holding the last publish time. The gateway drops a signal that
+arrives inside the interval.
+
+**And the third bucket is not built, which is the simplification.** A per-environment
+ceiling would bound a rate the debounce already bounds: the gateway enforces the interval
+itself, so a hostile client cannot exceed it by trying. What is left unbounded is the
+number of connections, and **that is FR-RTM-09's cap — chapter 3.22 — not this chapter's.**
+
+**The refusal is silence, and now it logs nothing either.** A refused connect is a 429 with
+`Retry-After`; a refused send is an error frame. A signal inside the interval is dropped
+with no frame and no log line, because one line per keystroke over the interval is exactly
+the unbounded output NFR-OBS-01 exists to prevent.
 
 ## R6 — What is the renewal interval, and what does it cost?
 

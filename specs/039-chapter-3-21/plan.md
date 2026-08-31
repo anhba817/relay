@@ -94,6 +94,12 @@ No new service, no new language, no new dependency. The grammar is the only addi
 R1 states the rule it follows rather than arguing it afresh: a kind that cannot share a
 payload type cannot share a subject.
 
+**One gate moved after pass 1.** Principle VII — scope is a commitment — was passed on the
+grounds that a third limiter operation was a small addition. It turned out to be an
+addition that could not do the job, and removing it left the design smaller than planned:
+no Redis key, no third operation, no edit to `limits.ts`. **The simplification came from
+checking a premise, not from wanting a simpler design.**
+
 **Nothing here is a conditional pass.** Chapter 3.20 had two, and both changed its phase
 order; this chapter has none, which is itself worth recording — it is the first chapter in
 four whose design the constitution did not move.
@@ -135,10 +141,16 @@ gauntlet's DIRECTIONS table, its count, and its sample builder. **Assert the set
 membership and exact size**, which is what makes a third inbound frame a decision rather
 than an accident.
 
-### Phase 6 — US3: the renewal interval and the third bucket (P2)
-`"typing"` as a third `operation` in the gateway limiter. The 2-second renewal with R6's
-arithmetic in `baseline.txt`. **Assert the send budget is unchanged** across typing
-signals — a test that only counts typing frames cannot see the quota it might be spending.
+### Phase 6 — US3: the renewal interval, in memory (P2)
+A `Map` on the connection holding the last publish time per channel. **No Redis, no third
+`operation`, and `limits.ts` is not edited** — analysis pass 1 found the existing bucket
+cannot express a 2-second per-connection rule, and that a per-environment ceiling on top
+would bound a rate the debounce already bounds. The number of connections is FR-RTM-09's
+concern, which is chapter 3.22.
+
+**FR-014 moved out of this phase.** A typing signal must not spend the message send quota,
+and leaving that in a P2 story meant stopping after the MVP could ship a cosmetic feature
+able to exhaust a customer's message budget. It is asserted in Phase 5.
 
 ### Phase 7 — The resume buffer, and what must not enter it
 A typing frame arriving mid-resume is sent immediately and never buffered (FR-018). Chapter
@@ -172,7 +184,7 @@ re-derived from the shipped tree in both directions.
 |---|---|---|
 | A fourth subject grammar | ADR-19's three typed points are intact; sharing `chan:` means editing the highest-volume path for the lowest-volume traffic | An enveloped payload on `chan:` — a union parse on every message on every instance, and `fanout.invalid_payload` per keystroke during a rolling deploy |
 | A second inbound frame type | No frame lets a client say it is typing; the socket refuses everything but `message.send` | Making `typing` bidirectional — its payload names a user, so a client could type as anybody |
-| A third limiter operation | A publish per keystroke at 10,000 connections per instance | Reusing the send bucket — a cosmetic feature would exhaust a customer's message quota |
+| A gateway-held debounce, per connection and channel | A publish per keystroke at 10,000 connections per instance | **A third limiter operation, which analysis pass 1 found cannot work** — that bucket is keyed per environment on a 60-second window, against a rule that is per connection, per channel and 2 seconds. And a per-environment ceiling on top, which would bound a rate the debounce already bounds |
 | Nothing else | — | No Redis key, no server timer, no table, no outbox row, no backstop |
 
 **The last row is the one to read.** Three chapters in a row added durable state or a

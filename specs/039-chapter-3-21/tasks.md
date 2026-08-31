@@ -28,13 +28,14 @@ the refusal that guards it is proven still to work*.
 
 ## Phase 2: The protocol — an eleventh frame, and three tests that must go red
 
-- [ ] T011 Add the inbound schema to `relay-platform/packages/protocol/src/frames.ts`. **Name it in this task and nowhere else**, so one decision has one home: `typing.start` reads as a state machine with a missing `typing.stop`, which is the frame this protocol deliberately does not have. Prefer a name that says *signal* rather than *state*. Payload is `{ channel }` and **no `user`** — the absence is the security property (data-model §2).
+- [ ] T011 Add the inbound schema to `relay-platform/packages/protocol/src/frames.ts`. **Name it in this task and nowhere else**, so one decision has one home, and **write the chosen name into `specs/039-chapter-3-21/contracts/typing-fabric.md` in the same commit** — every task downstream says "the new type" and a name that lives only in code is a name nobody agreed: `typing.start` reads as a state machine with a missing `typing.stop`, which is the frame this protocol deliberately does not have. Prefer a name that says *signal* rather than *state*. Payload is `{ channel }` and **no `user`** — the absence is the security property (data-model §2).
 - [ ] T012 Add it to `frameSchema`'s discriminated union in `relay-platform/packages/protocol/src/frames.ts`. **`typingSchema` is not edited** (FR-008): the frame a client parses is what chapter 1.3 published.
 - [ ] T013 [P] Unit-test the new schema in `relay-platform/packages/protocol/src/frames.test.ts`: it accepts a channel, rejects an unknown field, and **rejects a payload carrying a `user`** — a client that could name a user could type as anybody.
 - [ ] T014 [P] Unit-test in `relay-platform/packages/protocol/src/frames.test.ts` that the union has **eleven** members and that the two inbound types are exactly the two named. Chapter 3.19's `codes.test.ts` is the precedent: asserting an exact set and an exact count is what makes a new member a decision rather than an accident.
 - [ ] T015 Run `pnpm --filter @relay/gateway test:integration` in `relay-platform` and **expect the direction gauntlet to fail three ways**: `expect(members.length).toBe(10)`, `classifies every member exactly once`, and `names no frame the union does not have`. Record all three in `specs/039-chapter-3-21/baseline.txt`. **This is the derived-list check firing on the build that adds a frame** — the same instrument that catches a new route, six times in three features.
 - [ ] T016 Update `relay-platform/services/gateway/src/isolation.itest.ts`: the count to eleven, a DIRECTIONS row for the new type with direction **inbound** and a stated reason, and a case in the sample builder at its `switch`. **`typing` stays outbound with its reason unchanged** — *"server-fanned; a client claiming one could type as anybody"* — and it stays true, because the inbound frame is a different type carrying no user.
 - [ ] T017 Run `pnpm --filter @relay/gateway test:integration` again and require the gauntlet green. T009's test is still red; nothing else is.
+- [ ] T017a **Verify FR-008 by command**: `git diff relay-platform/packages/protocol/src/frames.ts` must show additions only, and no line of `typingSchema` may appear as a removal. The file IS edited by this chapter to add a sibling schema, so "unchanged" is a claim about one region of a file that changed — and nothing else in this repository checks a region. Record the diff's shape in `specs/039-chapter-3-21/baseline.txt`.
 - [ ] T018 Run `pnpm build` in `relay-platform`, then `pnpm check:errors` in **relay-tutorial**. This chapter adds no close code, so the count must not move from 17. **It reads the built `packages/protocol/dist/codes.js`** — a stale `dist` makes it green for the wrong reason.
 - [ ] T019 Commit phase 2, naming the requirement ids it closes. Run `git status --short` in `relay-platform` first.
 
@@ -116,12 +117,15 @@ other receives exactly one `typing` frame naming the signaller; the signaller re
 nothing.
 
 - [ ] T042 [US1] Subscribe the typing subject per channel in `open()` in `relay-platform/services/gateway/src/session.ts`, beside `fanout?.subscribe`, `presence?.subscribe` and `membership?.subscribeChannel`, and release it on close. **Chapter 3.20 found no task owned this** for its own fabric — T054 covered the revocation release and T079 the user subject, and the ordinary open path fell between them.
+- [ ] T042a [US1] **Decide the environment-mismatch log name before writing it** and record it in `specs/039-chapter-3-21/contracts/typing-fabric.md`: `typing.failed` with `op: "environment_mismatch"`, which is chapter 3.20's shape, rather than a fourth name. The contract's closed set describes `typing.failed` as a publish or subscribe failure, and a mismatch is neither — so the description widens or the set does. **Chapter 3.20's FR-032 named three and the code emitted six.**
 - [ ] T043 [US1] Deliver an arriving signal in `relay-platform/services/gateway/src/session.ts`: walk `registry.subscribersOf(channelId)`, **skip the connection whose identity is the signaller** (FR-005), and send `{ type: "typing", payload: { channel, user } }`. **Refuse a signal whose environment does not match the connection's** and log it — principle I is structural here.
 - [ ] T044 [P] [US1] Integration-test cross-instance delivery in `relay-platform/services/gateway/src/typing.itest.ts`: two instances, two members of one channel, one signals and the other receives exactly one frame naming the signaller.
 - [ ] T045 [P] [US1] Integration-test in `relay-platform/services/gateway/src/typing.itest.ts` that the signaller does **not** receive their own indicator, in the same run in which another member does. Chapter 3.19's presence collector was unfiltered in three consecutive phases and every time the behaviour was correct and the assertion was wrong.
 - [ ] T046 [P] [US1] Integration-test in `relay-platform/services/gateway/src/typing.itest.ts` that a member of a different channel receives nothing, **in a run where a member of the signalled channel does receive**. A must-not-receive test that passes because the producer is dead proves nothing.
 - [ ] T047 [P] [US1] Integration-test in `relay-platform/services/gateway/src/typing.itest.ts` that a second signal within the renewal window still delivers a frame to the watcher — **renewal is a repeat, not a state change**, and there is no "already typing" to suppress at the delivery end.
 - [ ] T048 [P] [US1] Integration-test in `relay-platform/services/gateway/src/typing.itest.ts` that a user of another tenant receives nothing, in the same run.
+- [ ] T048a [P] [US1] **Integration-test that NOTHING follows a signal** (FR-009a) in `relay-platform/services/gateway/src/typing.itest.ts`: after one signal reaches the watcher, assert no frame of any kind arrives for that channel until another signal is sent. **This is FR-RTM-08's actual obligation and it had no task until analysis pass 1.** "The server sends nothing to end an indicator" is otherwise satisfied by a server that sends nothing at all, which is why the assertion is on the watcher's whole frame list rather than on the absence of one type.
+- [ ] T048b [US1] **Integration-test that a typing signal spends no message quota** (FR-014) in `relay-platform/services/gateway/src/session.itest.ts`: signal several times, then send a message and assert the budget is the one the connection was born with. **Moved here from US3 by analysis pass 1** — leaving it in a P2 story meant stopping after the MVP could ship a cosmetic feature able to exhaust a customer's message budget.
 - [ ] T049 [US1] **Filter every collector in `relay-platform/services/gateway/src/typing.itest.ts` by subject and by frame type.** Chapter 3.20 counted `presence.changed` frames by type and read two where a watcher correctly sees their own arrival — the fourth occurrence of that mistake across two chapters.
 - [ ] T050 [US1] **Capture logs correctly** in `relay-platform/services/gateway/src/typing.itest.ts`: `createLogger`'s sink receives a JSON **string** with fields at the top level, not an object. Assert one known line before relying on the mechanism.
 - [ ] T051 [US1] Measure the subscription cost and record it in `specs/039-chapter-3-21/baseline.txt`: `CONFIG RESETSTAT`, the suite, `INFO commandstats`. **A prediction is not a measurement.** Chapter 3.20's reading showed the reference counter in the command count, which was cheaper than any assertion in the file.
@@ -132,21 +136,44 @@ nothing.
 
 ## Phase 6: User Story 3 — a keystroke does not become a publish (P2)
 
-**Goal**: the renewal interval enforced at the gateway, on its own budget.
+**Goal**: the renewal interval enforced at the gateway, in memory, per connection and per
+channel.
 
-**Independent test**: signal faster than the renewal interval; the number of publishes
-reaching the fabric is bounded rather than proportional to the signals sent.
+**Independent test**: signal faster than the interval; the number of publishes reaching the
+fabric is bounded rather than proportional to the signals sent, and a second connection is
+unaffected.
 
-- [ ] T054 [US3] Add `"typing"` as a third member of the `operation` union in `relay-platform/services/gateway/src/limits.ts`. It is a typed union, so every call site is checked by the compiler and the key grammar `rl:{env}:{operation}:{window}` needs no change.
-- [ ] T055 [US3] Spend the typing budget in `relay-platform/services/gateway/src/session.ts` before publishing, and **drop a refused signal silently** — no error frame, no close code (FR-013). This is the first refusal in this platform that answers with nothing, and the reason belongs in the code: an advisory indicator is not worth a disconnection and the client will signal again in seconds.
-- [ ] T056 [US3] Record the renewal interval and its arithmetic in `specs/039-chapter-3-21/baseline.txt`: 2 s against FR-RTM-08's 5 s expiry is 2.5 renewals per window, so one dropped publish does not make an indicator flicker. **Five and two are two quantities** — chapter 3.19's most expensive finding was three separate 30-second numbers that turned out to be three.
-- [ ] T057 [P] [US3] Integration-test in `relay-platform/services/gateway/src/typing.itest.ts` that repeated signals inside one window produce **at most one publish**, asserted on a Redis subscriber rather than on frame counts at a socket.
-- [ ] T058 [P] [US3] Integration-test in `relay-platform/services/gateway/src/typing.itest.ts` that an over-limit signal produces no error frame and does not close the socket.
-- [ ] T059 [US3] **Integration-test in `relay-platform/services/gateway/src/session.itest.ts` that the message send budget is unchanged** across typing signals (FR-014). Spend typing signals, then assert a send still succeeds with the budget the connection was born with. A test that counts only typing frames cannot see the quota it might be spending.
-- [ ] T060 [US3] **Prove the limit bites**: raise the typing limit in `relay-platform/services/gateway/src/session.ts` to a number no test can reach, watch T057 fail, restore. Chapter 3.17 proved a filter by removing it and watching 26 tests stay green.
+**THE PLANNED THIRD TOKEN BUCKET IS NOT BUILT** (FR-013a). Research R5 recommended a
+`"typing"` operation on the existing limiter and analysis pass 1 found that it cannot work:
+that limiter keys on `rl:{environmentId}:{operation}:{window}` with a 60-second window,
+which is per tenant and per minute, against a requirement that is per connection, per
+channel and 2 seconds. R5 now records the three mismatches.
+
+- [ ] T054 [US3] Hold the last publish time per (connection, channel) in `relay-platform/services/gateway/src/session.ts` — a `Map` on the connection, cleared with it. **No Redis, no third
+  `operation`, and `relay-platform/services/gateway/src/limits.ts` is not edited.** The
+  gateway enforces the interval itself, so a hostile client cannot exceed it by trying.
+- [ ] T055 [US3] Drop a signal arriving inside the interval in `relay-platform/services/gateway/src/session.ts` with **no
+  frame, no close code and no log line** (FR-013). This is the first refusal in this
+  platform that answers with nothing at all, and the reason belongs beside it: a line per
+  keystroke is the unbounded output NFR-OBS-01 exists to prevent.
+- [ ] T056 [US3] Record the interval and its arithmetic in `specs/039-chapter-3-21/baseline.txt`: 2 s against FR-RTM-08's 5 s expiry is 2.5
+  renewals per window, so one dropped publish does not make an indicator flicker. **Five and
+  two are two quantities** — and so were the interval and the ceiling, which is what pass 1
+  found.
+- [ ] T057 [P] [US3] Integration-test in `relay-platform/services/gateway/src/typing.itest.ts` that repeated signals from
+  one connection for one channel inside the interval produce **at most one publish**,
+  asserted on a Redis subscriber rather than on frame counts at a socket.
+- [ ] T058 [P] [US3] Integration-test in `relay-platform/services/gateway/src/typing.itest.ts` that a dropped signal
+  produces no error frame, does not close the socket, **and writes no log line** — assert
+  the log sink is unchanged across the dropped signals.
+- [ ] T059 [US3] Integration-test in `relay-platform/services/gateway/src/typing.itest.ts` that the interval is **per
+  connection and per channel** (FR-011a): two connections of one user typing in one channel
+  both publish, and one connection typing in two channels publishes twice.
+- [ ] T060 [US3] **Prove the interval bites**: set it to zero in `relay-platform/services/gateway/src/session.ts`, watch
+  T057 fail, restore. Chapter 3.20 ran this technique twice and **got no failure both
+  times**, which is how it learned neither of its ordering requirements was observable. Run
+  it and believe the result.
 - [ ] T061 [US3] Commit phase 6, naming the requirement ids it closes. Run `git status --short` in `relay-platform` first.
-
----
 
 ## Phase 7: The resume buffer, and what must not enter it
 
