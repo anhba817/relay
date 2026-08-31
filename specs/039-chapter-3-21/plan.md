@@ -83,6 +83,27 @@ A new inbound frame is public protocol surface. It must be in the union, in
 also be documented as the second thing a client may send, because twenty chapters of
 documentation say there is one.
 
+### FR-RTM-08 itself — **MET ON THE PLATFORM'S HALF, AND THE OTHER HALF IS THE CLIENT'S**
+
+Not a constitution gate, and it belongs here anyway, because analysis pass 6 found five
+passes had gone past it. The clause reads *"Typing indicators **shall** expire automatically
+after 5 seconds without renewal and shall not be persisted."*
+
+The second half is met absolutely: nothing is stored anywhere. **The first half the platform
+cannot execute.** `typingSchema` carries no state field, so no frame exists with which a
+server could end an indicator, and there is no SDK in this repository — the timer belongs to
+the customer's own application.
+
+So the verdict is *met, with the boundary named*, and it is recorded rather than asserted.
+Chapter 3.20 did the same for FR-RTM-10: met on the happy path, bounded by an interval under
+fabric loss, with the 55-second excess stated rather than hidden in a number nobody wrote
+down. Chapter 3.18 refused to narrow a clause until the code passed.
+
+**Why five passes missed it**: "the protocol has no stop frame, therefore the client holds
+the timer" is a correct account of the mechanism and an elegant one, and it never asks whose
+obligation the clause states. A derivation that satisfies the reader is not the same as a
+requirement that is met.
+
 ### VI. Requirement-Driven, Test-Verified — **PASS with the coverage obligation**
 
 The new fabric module is delivery-scope code and takes NFR-MNT-02's 100/100/100/100.

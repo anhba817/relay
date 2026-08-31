@@ -65,8 +65,10 @@ rather than from arithmetic.
 Mai has #incidents open. Tuan starts typing a reply on another gateway instance. Mai sees
 an indicator naming Tuan, and it disappears on its own when he stops.
 
-**Why this priority**: it is the whole feature. FR-RTM-08's clause and FR-RTM-05's sixth
-frame kind are both discharged by this scenario and nothing else.
+**Why this priority**: it is the whole feature. FR-RTM-05's sixth frame kind is discharged
+by this scenario and nothing else. **FR-RTM-08 is discharged in part** — the platform's half
+— and the other half is the receiving client's timer, which is FR-009c's verdict rather than
+a completion this story can claim.
 
 **Independent Test**: two sockets on two instances, one member of a shared channel signals
 typing, assert the other receives a `typing` frame naming the first, and assert the
@@ -199,6 +201,23 @@ of frames other members receive is bounded rather than proportional to the signa
 - **FR-009b**: The chapter MUST state the client's side of the contract — five seconds from
   the last frame, per (channel, user) — because it is the half of this requirement no test
   in this repository can reach.
+- **FR-009c**: **The chapter MUST record an honest verdict on FR-RTM-08 rather than assert
+  the clause is closed.** That clause reads *"Typing indicators **shall** expire
+  automatically after 5 seconds without renewal"* — a system obligation — and this design
+  delegates the expiry to the customer's own application. There is no SDK in this
+  repository, so "the client" is code the platform does not own, and the server cannot end
+  an indicator: `typingSchema` carries no state field and no frame exists to send.
+
+  The verdict to record is **met, with the boundary named**: the platform emits and stops
+  emitting, the disappearance is the client's, and the clause's second half — *"shall not be
+  persisted"* — is met absolutely because nothing is stored anywhere. Nothing else the
+  platform could build would satisfy the first half without editing `frames.ts`, which this
+  chapter refuses for chapters 3.19 and 3.20's reason.
+
+  **What is forbidden is claiming closure without the argument.** Chapter 3.20 recorded
+  FR-RTM-10 as met on the happy path and bounded by an interval under fabric loss, with the
+  55-second excess stated rather than hidden; chapter 3.18 refused to narrow a clause until
+  the code passed. A design that cannot execute a *shall* has to say so.
 - **FR-010**: Nothing about a typing indicator MUST be persisted — no database row, no
   Redis key, no outbox event.
 - **FR-011**: The renewal interval MUST be defined as a number with its arithmetic recorded
@@ -268,7 +287,8 @@ of frames other members receive is bounded rather than proportional to the signa
   the same budget a message takes, on a different gateway instance.
 - **SC-002**: The indicator disappears five seconds after the last signal, with no message
   crossing the network to end it — asserted as **no frame of any kind arriving** after a
-  signal, not as the absence of a frame nobody sends.
+  signal, not as the absence of a frame nobody sends. **The disappearance itself is the
+  client's and this criterion does not claim otherwise** (FR-009c).
 - **SC-003**: One connection signalling typing continuously in one channel produces no more
   than one publish per renewal interval, regardless of keystroke rate, and a second
   connection is unaffected by the first.

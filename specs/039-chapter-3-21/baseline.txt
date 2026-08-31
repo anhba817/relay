@@ -444,3 +444,69 @@ FIVE PASSES
 previous chapter's code, a published customer-facing reference, the tag itself, and
 an instruction that cannot be executed. **The yield has not fallen and no two
 passes found the same class of thing.**
+
+
+ANALYSIS PASS 6 — WHOSE OBLIGATION IS THE CLAUSE?
+------------------------------------------------------------
+
+**C8 — THE CLAUSE SAYS THE SYSTEM SHALL, AND THIS DESIGN CANNOT.**
+
+    FR-RTM-08  "Typing indicators shall expire automatically after 5 seconds
+                without renewal and shall not be persisted."
+
+Second half: met absolutely, nothing is stored anywhere. **First half: the
+platform cannot execute it.** `typingSchema` carries no state field, so no frame
+exists with which a server could end an indicator, and there is **no SDK in this
+repository** — `packages/` is config, e2e, outsider, protocol, service-kit,
+test-harness. The timer belongs to the customer's own application.
+
+The spec said US1 "discharged" the clause. It discharges half.
+
+**Verdict recorded rather than asserted**: met on the platform's half, delegated on
+the client's, with the delegation named as a boundary. Nothing else the platform
+could build satisfies the first half without editing `frames.ts`, which this
+chapter refuses for chapters 3.19 and 3.20's reason. Now FR-009c, T104a, and a
+section in `plan.md`'s constitution check.
+
+Chapter 3.20 recorded FR-RTM-10 as met on the happy path and bounded under fabric
+loss, with the 55-second excess stated. Chapter 3.18 refused to narrow a clause
+until the code passed. **This is the same act on a different clause.**
+
+**WHY FIVE PASSES WENT PAST IT.** "The protocol has no stop frame, therefore the
+client holds the timer" is a correct account of the mechanism and an elegant one.
+It never asks whose obligation the clause states. **A derivation that satisfies the
+reader is not the same as a requirement that is met** — and elegance is the
+condition under which nobody re-reads the clause.
+
+**H8 — THE ARM LIST WENT STALE WHEN PASS 5 CHANGED THE MODULE.**
+It said "the error listener", singular, and the module now has two clients. It also
+had no arm for a failed publish, which the module only gained in pass 5. **Chapter
+3.20 recorded this exact drift in the opposite direction** — its list said "three
+error listeners" and became two when its module dropped to one client.
+
+    an arm list is a claim about a module's shape, and it goes stale when the
+    shape moves
+
+**M10** — `onSignal` in one place and `onChange` in another, the second carried
+from 3.20's module.
+
+TWO CLEAN CONFIRMATIONS
+------------------------------------------------------------
+
+    no SDK package        nothing needs the new frame but the protocol package
+                          itself, which this chapter already edits
+    session.ts unpinned   bounded only by the aggregate 70, so the handler,
+                          debounce and delivery cannot break a ratchet
+
+SIX PASSES
+------------------------------------------------------------
+
+    1  premises                    2 CRITICAL
+    2  self-audit, 3.20's code      2 CRITICAL
+    3  the wider tree — docs/       1 CRITICAL
+    4  running the commands         1 CRITICAL — the predecessor's tag
+    5  implementability             1 CRITICAL — a module that cannot publish
+    6  whose obligation             1 CRITICAL — a clause the platform cannot execute
+
+**Eight CRITICALs. Two were inside this feature's documents.** No two passes found
+the same class. The yield has not fallen once.

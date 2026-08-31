@@ -51,10 +51,16 @@ and a re-measured battery.
     the JSON.parse catch          a body that is not JSON
     the safeParse rejection       JSON the fabric schema rejects
     `counts.get(c) ?? 0`          unsubscribe for a channel never subscribed
-    the onChange no-op default    a signal arriving with no handler wired
+    the onSignal no-op default    a signal arriving with no handler wired
     close() with subscriptions    close while a channel is still held
     `url ?? DEFAULT_REDIS_URL`    neither supplied
-    the error listener            emit on the client to reach it
+    the publish failure           the publisher throws — swallowed and logged
+    TWO error listeners           one per client; emit on each to reach both
+
+**THE LAST TWO ROWS ARRIVED WITH ANALYSIS PASS 5**, which gave this module a publisher as
+well as a subscriber. Chapter 3.20 recorded the same drift in the opposite direction — its
+arm list said "three error listeners" and became two when its module dropped to one client.
+**An arm list is a claim about a module's shape and it goes stale when the shape moves.**
 
 - [ ] T020 Create `relay-platform/packages/protocol/src/typing.ts` with `subjectForTyping(channelId)` returning `typing:{channelId}` and `typingFabricSchema` as a `z.strictObject` of `environment`, `channel` and `user`. **Say why it is not in `fanout.ts` and not called `subjectFor`** — `internal.ts` already exports one and chapter 3.18 paid for that collision.
 - [ ] T021 Export `./typing.js` from `relay-platform/packages/protocol/src/index.ts`.
@@ -249,6 +255,7 @@ channel and 2 seconds. R5 now records the three mismatches.
 - [ ] T102 State the battery's power honestly in `specs/039-chapter-3-21/chapter-notes.md`. **Twenty green rejects a per-run failure rate above 13.91% at 95% confidence and nothing finer** — and chapter 3.20 measured **7 failures in 40 runs**, which is 17.5%, so twenty green would be luck rather than a measurement. Expect failures; two mechanisms are known and neither is new code.
 - [ ] T103 Re-derive `specs/039-chapter-3-21/traceability.md` from the shipped tree, **both directions**, **and if it produces a code change, re-run the six gates afterwards**. Chapter 3.20's re-derivation added a test to a fenced file after its phase had regenerated the fences, and it tagged on a red chain. Chapter 3.20's second pass found a requirement whose planned test was not in the tree at all, and two rows describing a proof technique that proved nothing.
 - [ ] T104 Complete `specs/039-chapter-3-21/gaps.md`, one item per gap with an owner, **each reference naming its chapter**. Give every one of chapter 3.20's twenty-five carried items a status and say which this chapter changed: its item 15 (seven of nine gateway files spawn their own api) is **unchanged**, because this chapter adds no file; its item 19a's four open failures are **unchanged**; and FR-RTM-05's remaining two kinds move to chapter 3.23. **Carrying an item forward without re-checking is copying.**
+- [ ] T104a **Record the honest verdict on FR-RTM-08** in `specs/039-chapter-3-21/chapter-notes.md` (FR-009c): met on the platform's half, delegated on the client's, with the delegation named as a boundary rather than a completion. **The clause says the system SHALL expire an indicator and this design cannot** — there is no SDK in this repository, so the timer belongs to the customer's application, and the server has no frame to end one with. Chapter 3.20 recorded FR-RTM-10 as met on the happy path and bounded under fabric loss, with the 55-second excess stated; chapter 3.18 refused to narrow a clause until the code passed. **Five analysis passes went past this because the derivation is elegant** — "the protocol has no stop frame, therefore the client holds the timer" is a correct account of the mechanism and never asks whose obligation the clause states.
 - [ ] T105 Write `specs/039-chapter-3-21/chapter-notes.md`'s four sections — what shipped, the phases that went badly, what the next feature should do differently, and the hand-off for chapter 3.22 with the fence predecessor **as a commit**. The metrics block is what the next chapter's `CLAUDE.md` header is built from.
 - [ ] T106 `git status --short` in all three repositories and **commit the close-out records before anything is tagged**. A record of a commit hash inside the commit it names does not converge.
 - [ ] T107a **Run all six gates LAST, after every record is written and every file is final** — `pnpm check:fences`, `check:docs`, `check:figures`, `check:srs`, `check:errors` in `relay-tutorial`, plus `python3 specs/039-chapter-3-21/check-prose.py`. **A gate that runs before the last file change is a gate that ran.** Chapter 3.20's own coverage task named this hazard in as many words — *"nothing between here and the tag would catch it"* — ran its gates, then changed a fenced file during its traceability re-derivation and tagged on a red chain. Chapter 3.21's analysis pass 4 found it by running `check:fences` before writing any code.
