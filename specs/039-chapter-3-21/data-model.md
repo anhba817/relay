@@ -75,6 +75,13 @@ act on, while a client already knows its own environment and has no use for a te
 | Permission to publish again | a `Map` on the connection, per channel | 2 s | the interval elapsing |
 | The fabric subscription | the gateway, reference-counted | the connection | the last local member leaving |
 
+**The module holds two Redis connections, not one** — a publisher and a subscriber, because
+a subscribed connection cannot issue ordinary commands and `PUBLISH` is one
+(`fanout.ts:33`). Neither holds typing state; they are transport. Chapter 3.20's equivalent
+module needed only a subscriber because its api published, and analysis pass 5 found this
+chapter's task list carrying that shape forward to a module that publishes from the
+gateway.
+
 **Three lifetimes, three owners, and none of them is a stored fact.** The middle row was a
 token bucket until analysis pass 1 read the limiter it would have used: keyed per
 environment on a 60-second window, against a rule that is per connection, per channel and 2

@@ -128,8 +128,11 @@ that adds a frame — expected, and the phase records it.
 The fourth subject grammar in the protocol package, and the gateway module that publishes
 and subscribes. **List the module's arms before writing them** — chapter 3.20 reached
 100/100/100/100 on three of four files that way and 3.19 paid seven tests and a re-measured
-battery for not doing it. One Redis client unless a command is actually needed; 3.20's
-module was specified with two and used one.
+battery for not doing it. **Two Redis clients, a publisher and a subscriber**, because
+`fanout.ts:33` states the rule — a subscribed connection cannot issue ordinary commands and
+`PUBLISH` is one. Chapter 3.20's module needed only a subscriber because its **api** did the
+publishing; this module publishes from the gateway, so it needs both. Analysis pass 5 found
+this plan and its task list both specifying one, which would not have run.
 
 ### Phase 4 — US1: Mai sees Tuan typing (P1) 🎯 MVP
 The delivery path end to end, cross-instance. **The sharp test is the negative one that

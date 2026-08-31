@@ -375,3 +375,72 @@ FOUR PASSES, AND THE DIRECTION HAS MOVED OUTWARD EVERY TIME
 other four were in the previous chapter's code, a published customer-facing
 reference, and the tag itself. Reading the three core artifacts against each other
 would have found two of six.
+
+
+ANALYSIS PASS 5 — WALKED THE PHASES AS AN IMPLEMENTER
+------------------------------------------------------------
+
+Pass 5 asked one question: **can each task actually be written as described?**
+
+**C7 — T024 SPECIFIED ONE REDIS CLIENT AND THE MODULE CANNOT WORK WITH ONE.**
+
+    fanout.ts:33  "a subscribed connection cannot issue ordinary commands, so
+                   publisher and subscriber [are separate]"
+    fanout.ts:63  const publisher = new Redis(url);
+    fanout.ts:64  const subscriber = new Redis(url);
+
+`PUBLISH` is an ordinary command. **This module publishes** — a client's signal
+arrives at its own gateway, which puts it on the fabric — and the same instance is
+subscribed because it holds members of that channel. Both roles coexist on every
+instance, so it needs both clients. The task said one and gave a reason that is
+false for this module: "there is no key to read" is about keys, and the constraint
+is about commands.
+
+**This is the sharpest of seven CRITICALs, because following it produces code that
+cannot run.** Every other one was a missing test, a stale claim, or a wrong count.
+
+**AND THE CAUSE IS A LESSON OVER-APPLIED.** Chapter 3.20 recorded *"written with
+two by analogy and the second was created, listened to, closed and never used"* —
+a real finding — and this chapter carried it to a module with a different shape.
+**3.20's gateway module only ever RECEIVED; its api did the publishing.** Here
+there is no api in the path.
+
+    A lesson from the previous chapter is a claim about THAT chapter's code, and it
+    transfers only when the shapes match. Checking the shape is the same discipline
+    as checking a premise.
+
+Corrected in T024, T028 (seventh and eighth clients, not seventh), `plan.md` and
+`data-model.md`.
+
+**H7 — NO TASK CREATED THE CHAPTER'S FIGURES.**
+T084 wrote `page.mdx`; nothing wrote `figures.ts`. Every recent chapter in this
+part has three or four:
+
+    3.17  four    3.18  four    3.19  three    3.20  three
+
+A page importing a file that does not exist fails the build; a page with no
+`<Figure>` breaks a convention the whole part follows. `check:figures` would not
+catch either — it validates that diagrams pass as `code`, not that a chapter has
+any. Now T083b, with the three diagrams named.
+
+**M8 — `<slug>` APPEARED THREE TIMES AND NO TASK DECIDED IT.** An unresolved
+placeholder, which is a detection target the analysis brief names. Now T083a.
+
+**M9 — ONE TASK LINE CARRIED BOTH THE CORRECTED COUNT AND THE STALE ONE.**
+T086 said "Four claims, **eight** fragments" and then "watch all **six** fail".
+Pass 3 widened R8 from three claims to four and updated the number it was thinking
+about, not the one three lines later.
+
+FIVE PASSES
+------------------------------------------------------------
+
+    pass 1   the feature's own premises        2 CRITICAL
+    pass 2   self-audit, and 3.20's code       2 CRITICAL
+    pass 3   the wider tree — docs/            1 CRITICAL
+    pass 4   running the tasks' commands       1 CRITICAL — in the predecessor's tag
+    pass 5   implementability                  1 CRITICAL — a module that cannot publish
+
+**Seven CRITICALs. Two were inside this feature's documents.** The rest: the
+previous chapter's code, a published customer-facing reference, the tag itself, and
+an instruction that cannot be executed. **The yield has not fallen and no two
+passes found the same class of thing.**
