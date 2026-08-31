@@ -1,40 +1,71 @@
 <!-- SPECKIT START -->
-**CHAPTER 3.20 IS IN PLANNING** — `specs/038-chapter-3-20/`, the membership that changed under a
-live socket. Read `plan.md`, then `research.md`. **Two P1 clauses are unmet and they are one
-mechanism**: FR-RTM-10's five-second revocation, which `services/gateway/src/session.itest.ts:677`
-has asserted as VIOLATED since 3.18 — it waits out the clause's own 5,500 ms and checks that the
-forbidden frame arrives — and FR-RTM-05's `membership.changed`, the third of six kinds to get a
-producer. The gateway learns memberships once, at connect, and nothing between connect and close
-re-reads anything.
+**CHAPTER 3.20 IS CLOSED**, tagged `part3-ch20` in all three repositories. Its record is
+`specs/038-chapter-3-20/` — read `chapter-notes.md` first, then `gaps.md` (**24 items**,
+each with an owner and each reference carrying its chapter, because the numbers collide),
+then `traceability.md` and `baseline.txt`.
 
-**R1 IS WHY THERE IS A THIRD SUBJECT GRAMMAR AND WHY IT HAS TWO SHAPES.** A removal can ride
-`member:{channel_id}` and reach both audiences in one publish, because the removed user is still a
-member at the moment it goes out. **An addition cannot** — the instance holding the new member is
-not subscribed to that channel yet — so `member:{env}:{user}` exists, and this is the first event
-in the system addressed to a **principal** rather than a channel.
+    3.20 "the membership that changed under a live socket"
+                                            9 files taught, 2,999 words, 27 fenced
+                                            (18 the chain demanded + 9 new)
+                                            31 files changed, re-derived from git diff
+    two twenty-run batteries: 17/20 and 16/20 green
+    lane mean 228.50 / 228.77, stdev 1.25 / 0.50, budget 240 — 11.2 s headroom
+    43 files, 701 tests · gateway package 45.50 / 45.48
+    coverage: all four new production files 100/100/100/100
+    229 fenced files across 37 chapters, 37 translated · predecessor `d38f415`
 
-**TWO CONSTITUTION GATES PASS ONLY CONDITIONALLY, AND THEY CHANGED THE DESIGN.**
-**II** forbids publish-after-commit without the outbox. Chapter 3.18's Redis publish is legal
-because the same transaction wrote the durable event; a membership write records nothing, so the
-same publish here would be exactly the case II names. **R2: the membership write gains an outbox
-row**, and FR-WHK-02 already spells the two types — `channel.member_added`,
-`channel.member_removed` — so this is a requirement being met, not a principle appeased. The phase
-order puts the row before the publish for that reason.
-**IV** permits a lossy fabric *"precisely because durability and resume live in PostgreSQL
-sequences and cursors"* and demands any new mechanism preserve that recovery property. A message
-recovers through its resume cursor; **a revocation has none**. R3 is the backstop, and R4 is the
-contract waiting for it: `internalMembershipsResponseSchema`, exported since chapter 3.2 and
-parsed by nothing — `presence.changed`'s shape one contract down.
+**The fence predecessor for 3.21 is `git rev-parse part3-ch20^{commit}`, not the tag** —
+it is annotated. And **nothing is pushed**: all three repositories are ahead of
+`origin/main`, so the tag exists on one machine until somebody pushes it with the branches,
+submodules first.
 
-**FR-014a IS THE ESCAPE HATCH AND IT IS NOT NARROWING.** If no backstop interval is affordable
-against NFR-SCL-01's 10,000 connections, the honest outcome is FR-RTM-10 recorded as met on the
-happy path and unmet under fabric loss. Chapter 3.18 refused this exact temptation on this exact
-clause: *"a specification edited until it matches the code has stopped being a specification."*
+**FORTY RUNS, SEVEN FAILURES — AND "TWENTY GREEN" WOULD HAVE BEEN LUCK.** The observed
+per-run failure rate is **17.5%**, which twenty green runs reject at 95% confidence. So
+3.19's 18/20 and 3.17's 25/26 are consistent with this same rate and none of the three
+batteries could tell them apart. Two mechanisms, neither in this chapter's code:
 
-**THE SHARP TEST IS NOT THE OBVIOUS ONE** (R6). After a removal, assert that a **second local
-member of the same channel still receives** — the obvious test is satisfied by an implementation
-that unsubscribes the channel outright. This is the first caller of the reference counters that is
-not a connection's own open or close path.
+- **the rate limiter's fixed window is aligned to the wall clock.** `windowStart =
+  Math.floor(now / windowMs) * windowMs`, and two tests in `limits.itest.ts` send three
+  requests expecting the third to be refused. A boundary between the second and third
+  resets the counter. Chapter 3.17 recorded this class with the mechanism unidentified; it
+  is identified now. `gaps.md` item 19.
+- **a gateway api fixture fails under contention, in three different files.** Five
+  occurrences across forty runs in `session.itest.ts`, `presence.itest.ts` and
+  `isolation.itest.ts`, each the same shape: a file-level `beforeAll` spawns an api, it
+  does not come up, and every test in that file fails at 0–5 ms. Seven of nine gateway
+  integration files spawn their own api on a random port, in parallel. **The shared fixture
+  is the fix for all five**, and no per-file change explains three files failing
+  identically. `gaps.md` items 19a and 15.
+
+**TWO TASKS SPECIFIED AN ORDERING AS THE REQUIREMENT AND NEITHER WAS OBSERVABLE.** Both
+asked for the proof that it bites — remove the ordering, watch a test fail — and neither
+failed. Send-before-cut is unobservable because the notice goes to a socket reference the
+function already holds; subscribe-before-insert because `subscribersOf` returning a
+connection changes nothing while the instance is not subscribed. What FR-008 actually
+forbids is deriving the audience **after** the mutation, which fails the first test in five
+seconds. **A task claiming "the ordering is the requirement" is claiming an observable
+difference, and that claim needs falsifying before the test is written.**
+
+**A PUBLISHED SENTENCE STOPPED BEING TRUE AND NO CHECKER COULD SEE IT.** ADR-07's deep dive
+says a lost pub/sub frame "is indistinguishable from a lost WiFi packet, and both heal
+identically" — true of every payload that fabric carried when it was written, false of a
+revocation, which has no sequence and no cursor. Found by grepping for a **claim** rather
+than a symbol. `git diff` finds a changed sentence; nothing finds one that stopped being
+true because the code moved underneath it.
+
+**A ROUTE CAN BE THOROUGHLY TESTED AND COMPLETELY UNCOVERED.**
+`GET /internal/memberships` had five integration tests and read **28.57% statements, 0%
+branches** — that suite runs in the gateway package and the api's coverage is measured in
+the api package. Ask where a route's coverage is measured, not just whether it is tested.
+
+**AND THREE OF FOUR NEW FILES HIT 100/100/100/100 ON THE FIRST RUN**, because the phase
+that built them listed the arms before writing them. Chapter 3.19 met its equivalents at
+close-out and paid seven tests, a deleted branch and a re-measured battery.
+
+**I DISTURBED MY OWN MEASUREMENT.** The first battery's run 1 counted 700 tests and the
+rest 701, because a test was written into `outbox.itest.ts` while it was running. The rule
+is that nothing else runs on the machine; editing a source file is worse than a stray
+container, and the rule did not say so because nobody had done it.
 
 **CHAPTER 3.19 IS CLOSED**, tagged `part3-ch19` in all three repositories. Its record is
 `specs/037-chapter-3-19/` — read `chapter-notes.md` first (its close-out names the fence

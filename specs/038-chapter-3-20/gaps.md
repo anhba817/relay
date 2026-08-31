@@ -165,7 +165,7 @@ The answer is in `chapter-notes.md` with its cost: a carried-forward checker car
 blind spots too. This one rejected `T054a` outright — `T\d{3}` with no suffix — although
 chapter 3.17 shipped `T012a`, `T047c` and `T054b`. Fixed here and tested red four ways.
 
-## 15. Six of the gateway's eight integration files spawn their own api — CHAPTER 3.19's item 17, **WORSE**
+## 15. Seven of the gateway's nine integration files spawn their own api — CHAPTER 3.19's item 17, **WORSE**
 
 Now **seven of nine**. This chapter adds `membership.itest.ts` with its own `startApi()`,
 and its task list said so in as many words before the file existed: no cross-file fixture
