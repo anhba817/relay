@@ -1,4 +1,53 @@
 <!-- SPECKIT START -->
+**CHAPTER 3.21 IS IN PLANNING** — `specs/039-chapter-3-21/`, the typing indicator. Read
+`plan.md`, then `research.md`. **Two premises in the brief were false and both were checked
+by command before a requirement was written**, which is why they open the spec rather than
+sit in research.
+
+**IT DOES NEED A FOURTH SUBJECT GRAMMAR** (R1). The brief said typing is the one remaining
+kind that reuses `chan:{channel_id}`. ADR-19 refused `chan:` for presence because the
+message path is typed to messages at three points, and all three are intact —
+`publish(message: Message)` and the `messageCreatedSchema` parse in `fanout.ts`, and the
+literal `message.created` send in `session.ts`. Three chapters have now reached this
+independently, so it is a rule rather than a judgement: **a fabric owns its subject
+grammar, and a kind that cannot share a payload type cannot share a subject.**
+
+**AND IT IS NOT THE SMALL ONE.** `session.ts:948` refuses every inbound frame but
+`message.send` — chapter 3.12's gauntlet states it as a row — so **this is the first
+chapter to open a second inbound frame**, which is a larger change than a grammar. The
+inbound seam is where a protocol is attacked, and twenty chapters of tests assert exactly
+one type is accepted.
+
+**THE PUBLISHED FRAME CANNOT SAY "STOPPED"** (R3). `typingSchema` has carried exactly
+`{ channel, user }` since chapter 1.3 — no `state`, no deadline. So the five-second expiry
+belongs to the **receiving client** by construction, and FR-RTM-08's "shall not be
+persisted" is true because **nothing is stored anywhere**: no table, no Redis key, no
+server timer. A Redis key would let the gateway learn an indicator lapsed and then be
+unable to say so.
+
+**CONSTITUTION IV IS PASSED VACUOUSLY, AND THAT IS THE FINDING.** Chapter 3.20 needed a
+backstop because a revocation has no cursor. Typing needs none, and not because it is
+unimportant: a dropped typing publish self-corrects within one renewal interval, and if the
+user stopped, the correct end state is no indicator. **A lost typing frame converges on the
+truth; a lost revocation converges on a lie.** This chapter is the opposite case that makes
+the distinction visible.
+
+**THE NUMBERS ARE FIVE AND TWO, AND THEY ARE TWO QUANTITIES.** Five seconds is
+FR-RTM-08's expiry and cannot move. Two seconds is this chapter's renewal interval and is
+argued: 2.5 renewals per expiry window, so one dropped publish does not make an indicator
+flicker. Chapter 3.19 armed a grace check at exactly its own grace period and stranded a
+user online for ever.
+
+**THREE PUBLISHED CLAIMS NEED CORRECTING AND TWO ARE CHAPTER 3.20's** (R8) — its "the one
+kind that could genuinely reuse `chan:{channel_id}`" and its ForwardRef "the first that can
+reuse a grammar rather than adding one". Both were written yesterday and both are false.
+**A ForwardRef should describe what the next chapter must decide, not what it will
+conclude.**
+
+**NO TENTH GATEWAY INTEGRATION FILE** (R9). Seven of nine already spawn their own api and
+five of the seven failures across chapter 3.20's forty battery runs were a gateway api
+fixture failing to come up. This chapter's integration tests share an existing file.
+
 **CHAPTER 3.20 IS CLOSED**, tagged `part3-ch20` in all three repositories. Its record is
 `specs/038-chapter-3-20/` — read `chapter-notes.md` first, then `gaps.md` (**25 items**,
 each with an owner and each reference carrying its chapter, because the numbers collide),
