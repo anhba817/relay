@@ -155,8 +155,23 @@ arrives inside the interval.
 
 **And the third bucket is not built, which is the simplification.** A per-environment
 ceiling would bound a rate the debounce already bounds: the gateway enforces the interval
-itself, so a hostile client cannot exceed it by trying. What is left unbounded is the
-number of connections, and **that is FR-RTM-09's cap — chapter 3.22 — not this chapter's.**
+itself, so a hostile client cannot exceed it by trying.
+
+**WHAT IS LEFT UNBOUNDED IS THE CONNECTION COUNT, AND THIS ENTRY SAID IT WAS FR-RTM-09's.
+IT IS NOT.** That clause caps connections **per user** at five — *"A user shall be permitted
+up to 5 concurrent connections"* — so a tenant with 3,000 users holds 15,000 connections and
+complies. **Chapter 3.22 does not bound the per-instance publish rate and never will.**
+
+    0.5 publishes/s per connection  x  NFR-SCL-01's 10,000 per instance
+                                    =  5,000 publishes/s per instance, worst case
+
+NFR-SCL-01 is the real bound, and the SAD's risk register calls it *"a budget, not a
+measurement"* — R2, *"the SAD's single most urgent action item"*, unvalidated since the
+architecture was written. **A per-tenant ceiling would not have helped either**: the thing
+at risk is an instance and a tenant counter bounds a tenant.
+
+The removal was still right; the sentence explaining where the residual risk went was wrong,
+and it read as rigour because it cited an identifier. Analysis pass 7 read the clause.
 
 **The refusal is silence, and now it logs nothing either.** A refused connect is a 429 with
 `Retry-After`; a refused send is an error frame. A signal inside the interval is dropped

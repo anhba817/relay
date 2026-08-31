@@ -170,8 +170,12 @@ than an accident.
 A `Map` on the connection holding the last publish time per channel. **No Redis, no third
 `operation`, and `limits.ts` is not edited** — analysis pass 1 found the existing bucket
 cannot express a 2-second per-connection rule, and that a per-environment ceiling on top
-would bound a rate the debounce already bounds. The number of connections is FR-RTM-09's
-concern, which is chapter 3.22.
+would bound a rate the debounce already bounds. **The residual risk is the connection count,
+and it is NOT FR-RTM-09's** — that clause caps connections per USER at five, so a tenant with
+3,000 users holds 15,000 and complies. At 0.5 publishes per second per connection,
+NFR-SCL-01's 10,000 per instance is 5,000 per second worst case, and the SAD calls that
+clause *"a budget, not a measurement"* (R2). Analysis pass 7 read the clause this plan had
+deferred to.
 
 **FR-014 moved out of this phase.** A typing signal must not spend the message send quota,
 and leaving that in a P2 story meant stopping after the MVP could ship a cosmetic feature
@@ -217,6 +221,47 @@ recovery mechanism. This one adds none, and the constitution check explains why 
 correct rather than lazy: a lost typing frame converges on the truth.
 
 ---
+
+## The two counts, and the word estimate
+
+**Kept apart from the start, and neither is allowed to do the other's job.** Chapter 3.17
+established the practice with 16 taught / 27 fenced / 35 changed, and *"neither number was
+ever asked to do the other's job"*.
+
+    9    what the chapter TEACHES     -> drives the word estimate
+         packages/protocol/src/frames.ts (the inbound schema)
+         packages/protocol/src/typing.ts
+         services/gateway/src/typing.ts
+         services/gateway/src/session.ts (the seam, the debounce, delivery)
+         services/gateway/src/isolation.itest.ts (the gauntlet's eleventh member)
+         services/gateway/src/typing.itest.ts
+         services/gateway/src/limits.ts — NOT edited, and the chapter says why
+         docs/05-sad.md (ADR-21)
+         docs/08-error-reference.md (the entry this chapter falsifies)
+
+    ~20  what the chapter must FENCE  -> drives the chain, and the number is a
+         PREDICTION. `check:fences` at HEAD in Phase 10 is what settles it, and
+         chapter 3.20's prediction of that number was never made — it read the
+         checker's 18 and used it.
+
+    ?    files changed                -> re-derived from `git diff --name-only`
+         against the predecessor at the very end. A first count is expected to be
+         wrong.
+
+**THE WORD ESTIMATE IS ~3,200, FROM ARGUMENTS RATHER THAN FILES.** Nine arguments:
+
+    the fourth grammar, and the rule three chapters reached independently
+    the second inbound frame in twenty chapters
+    a published frame that cannot say "stopped"
+    the expiry belongs to the client, and the clause says the system SHALL
+    two Redis clients, because PUBLISH is an ordinary command
+    the debounce, and the limiter that could not express it
+    a customer-facing document this chapter falsifies
+    what the previous chapter's two branches left incomplete
+    5,000 publishes per second against a budget nobody enforces
+
+Chapter 3.20 made seven and measured 2,999; 3.19 made five and measured 2,445. **The rate
+per taught file is not an estimator** — 3.17 came in 45% below 3.15 and 3.16's agreement.
 
 ## Risks
 

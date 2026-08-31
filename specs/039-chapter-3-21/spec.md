@@ -234,9 +234,22 @@ of frames other members receive is bounded rather than proportional to the signa
   worth a disconnection, and a line per keystroke is the unbounded output NFR-OBS-01 exists
   to prevent.
 - **FR-013a**: The system MUST NOT add a per-environment typing quota. The per-connection
-  interval already bounds the publish rate at the gateway, so an environment-scoped counter
-  would bound a rate that is already bounded and would refuse one tenant's users on account
-  of another's. **The number of connections is FR-RTM-09's concern, not this chapter's.**
+  interval already bounds each connection to one publish per interval, so an
+  environment-scoped counter would bound a rate that is already bounded and would refuse one
+  tenant's users on account of another's.
+
+  **AND THE REMAINING RISK IS NOT FR-RTM-09's — AN EARLIER DRAFT SAID IT WAS.** That clause
+  caps connections **per user** at five; a tenant with 3,000 users may hold 15,000
+  connections and be fully compliant, so chapter 3.22 does not bound this and never will.
+  What bounds the per-instance publish rate is the connection count itself: 0.5 publishes
+  per second per connection, so **NFR-SCL-01's 10,000 per instance is 5,000 per second worst
+  case.** That clause is a budget the SAD's own risk register calls *"a budget, not a
+  measurement"* (R2, its single most urgent action item), and nothing enforces it.
+
+  **This chapter neither introduces that risk nor can fix it**, and a per-tenant counter
+  would not have: the thing at risk is an instance and a tenant counter bounds a tenant. The
+  chapter MUST state the arithmetic and name R2 rather than defer to a clause that cannot
+  accept the deferral.
 - **FR-014**: A typing signal MUST NOT consume the message send quota (FR-RTL-01), and a
   test MUST assert the send budget is unchanged across typing signals. **This is verified in
   the story that first publishes**, not in the story that adds the interval — a cosmetic

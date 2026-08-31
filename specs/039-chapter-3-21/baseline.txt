@@ -510,3 +510,75 @@ SIX PASSES
 
 **Eight CRITICALs. Two were inside this feature's documents.** No two passes found
 the same class. The yield has not fallen once.
+
+
+ANALYSIS PASS 7 — DO THE DEFERRALS HOLD?
+------------------------------------------------------------
+
+Pass 7 asked whether the claims this chapter makes about its neighbours are true —
+the clauses it defers to, and the chapters it defers to them in.
+
+**C9 — A DEFERRAL TO A CLAUSE THAT CANNOT ACCEPT IT.**
+FR-013a, R5 and the plan all said the residual risk is "FR-RTM-09's cap — chapter
+3.22". Read the clause:
+
+    FR-RTM-09  "A user shall be permitted up to 5 concurrent connections"
+
+**Per USER.** A tenant with 3,000 users holds 15,000 connections and complies, so
+chapter 3.22 does not bound the per-instance publish rate and never will.
+
+    0.5 publishes/s per connection x 10,000 per instance = 5,000/s worst case
+
+The real bound is NFR-SCL-01, and the SAD's own risk register calls it **"a budget,
+not a measurement"** — R2, *"the SAD's single most urgent action item"*,
+unvalidated since the architecture was written.
+
+**The conclusion still stands: do not build the ceiling.** A per-tenant counter
+bounds a tenant and the thing at risk is an instance. What was wrong was the
+sentence explaining where the residual risk went — and **it read as rigour because
+it cited an identifier.**
+
+Pass 1 verified the removal three ways: the limiter's scope, its window, and
+FR-RTL-01's three named operations. All correct. **Nobody read the clause the same
+paragraph deferred to.** Enumerating an id answers *is this number free*; it never
+answers *does this clause say what I need it to say.*
+
+**H9 — A TASK THAT QUOTED THE LESSON IT BROKE.**
+T077 said move the Part 3 header "from 20 to 24" for the four-chapter plan, while
+the table has twenty rows and this chapter adds one. A header of 24 against 21
+rows.
+
+**Chapter 3.20 replaced that header's `(16 published, 3 planned)` form precisely
+because a split, unre-derived count was the anomaly**, having found it stale by
+three — and T077 quoted that finding in the sentence that instructed the defect.
+Now `(21 chapters)`, matching the rows; 3.22–3.24's rows arrive with those
+chapters.
+
+**M11 — NEITHER OF THE TWO COUNTS EXISTED, SEVEN PASSES IN.**
+T082 says keep them "from the start". Now in `plan.md`:
+
+    9     taught      -> the word estimate
+    ~20   fenced      -> the chain, and stated as a PREDICTION
+    ?     changed     -> re-derived from `git diff` at the end
+    ~3,200 words      -> from NINE arguments, not from a per-file rate
+
+Chapter 3.20 made seven arguments and measured 2,999; 3.19 made five and measured
+2,445. The rate per taught file is not an estimator — 3.17 came in 45% below the
+figure 3.15 and 3.16 had agreed on to within 1%.
+
+**The counts are the one item on this list no analysis pass would ever find.**
+They were absent, not wrong, and absence contradicts nothing.
+
+SEVEN PASSES
+------------------------------------------------------------
+
+    1  premises                 2 CRITICAL
+    2  self-audit, 3.20's code   2 CRITICAL
+    3  the wider tree — docs/    1 CRITICAL
+    4  running the commands      1 CRITICAL — the predecessor's tag
+    5  implementability          1 CRITICAL — a module that cannot publish
+    6  whose obligation          1 CRITICAL — a clause the platform cannot execute
+    7  the deferrals             1 CRITICAL — a clause that cannot accept one
+
+**Nine CRITICALs. Two were inside this feature's documents.** No two passes found
+the same class and the yield has not fallen once.
