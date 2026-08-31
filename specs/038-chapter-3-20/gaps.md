@@ -214,27 +214,45 @@ that gap divided by the window.
 pins the clock or asserts the pair rather than the third request — not a change to the
 limiter, which is behaving as `bucket.ts` documents.
 
-## 19a. `session.itest.ts` stops answering on its own api port — NEW, unresolved
+## 19a. A gateway integration file's api fixture fails, in three different files — NEW
 
-Two of twenty battery runs failed the same two tests with `ECONNREFUSED` on ports in that
-file's own range (4400–4599), so the spawned api became healthy and then stopped
-answering. Both are the last two tests of the describe this chapter wired `membership`
-into, which makes the chapter a suspect and not a proven cause.
+**Five failures across forty battery runs, in three files, all the same shape.** A
+file-level `beforeAll` spawns an api; the api does not come up or stops answering; every
+test in that file or describe fails at once at 0–5 ms, which is a fixture's signature
+rather than a behaviour's.
 
-Twenty-two gateway-only runs afterwards produced two more anomalies in the first twelve
-and none in the last ten — not enough to separate a fix from luck.
+    battery 1 runs 16, 17   session.itest.ts     ECONNREFUSED on its own 4400-range port
+    battery 3 run 13        presence.itest.ts    the whole file
+    battery 3 run 15        session.itest.ts     the same two tests as battery 1
+    battery 3 run 19        isolation.itest.ts   the gauntlet describe, 15 skipped
 
-**A port collision was found while looking and is not the cause**:
+**This is chapter 3.19's item 15 costing runs rather than merely being untidy.** Seven of
+nine gateway integration files spawn their own api on a random port, vitest runs the files
+in parallel, and under that contention one of them intermittently fails to become or stay
+healthy. No per-file change explains three files failing identically.
+
+A port collision was found and fixed while investigating and is **not** the cause:
 `membership.itest.ts` had taken `isolation.itest.ts`'s range exactly, then overlapped it
-again on the second attempt. Fixed to 5400–5599, with every range in the package written
-into the file. The failing ports belong to `session.itest.ts` alone.
+again on the second attempt. The failing ports in `session.itest.ts` belong to that file
+alone.
 
-**Owner:** unassigned. It is chapter 3.19's item 17 in a different costume — seven of
-nine files spawning apis on random ports — and the shared fixture is the fix for both.
+**Owner:** the shared api fixture chapter 3.19's item 15 asks for. It is the fix for all
+five occurrences, and it is a feature rather than a chapter's tail.
 
-Deliberately unfixed. Twenty green runs reject a per-run failure rate above 13.91% at 95%
-confidence and nothing finer; a 5% flake survives twenty runs 35.85% of the time, and
-rejecting one needs 59 runs.
+## 19b. `createFanout` has no ioredis `error` listener, and this chapter made it audible — CHAPTER 3.18's R10, UNCHANGED
+
+    [ioredis] Unhandled error event: Error: connect ECONNREFUSED 127.0.0.1:38513
+
+Ephemeral ports, so this is a TCP proxy severing a fabric — `presence.itest.ts` has one and
+this chapter added a second in `membership.itest.ts`. The client with no listener is
+`createFanout`'s. Both rate limiters have one and both explain why; the fan-out does not.
+
+The process survives — chapter 3.18 measured that against ioredis 6.0.0 — so these lines
+are noise rather than a failure. But they are unstructured and unbounded, which is exactly
+the NFR-OBS-01 argument every module this chapter wrote used to justify its own listener.
+
+**Owner:** one listener in `services/gateway/src/fanout.ts`, with the reason this chapter's
+modules already state.
 
 ## 20. Two comments claim a missing ioredis listener kills the process — CHAPTER 3.18's item 5 via 3.19's item 13, UNCHANGED
 

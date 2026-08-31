@@ -355,50 +355,36 @@ consecutive chapters and run by none.
 
 ---
 
-## Where this stopped, and what tomorrow picks up
+## The metrics
 
-**The chapter is complete except for its timing battery.** Everything else in the
-close-out is done: coverage pinned at 100/100/100/100 on all four new production
-files, all six tutorial gates green, the traceability map re-derived in both
-directions, `gaps.md` written with every carried status re-checked, and all three
-repositories committed with the root's gitlinks matching both submodule HEADs.
+    3.20  "the membership that changed under a live socket"
+          9 files taught, 2,999 words, 27 fenced (18 the chain demanded + 9 new)
+          31 files changed in the platform, re-derived from git diff
 
-**The battery is six runs of twenty**, stopped by hand rather than by a failure.
-Six green runs reject a per-run failure rate above 39.3% at 95% confidence, where
-twenty reject 13.91% — and the first battery already observed three failures in
-twenty, which is 15%. So six runs cannot exclude the rate that has already been
-measured, and the count is not usable as a close-out figure.
+    two twenty-run batteries      17/20 and 16/20 green
+    lane   mean 228.50 / 228.77   stdev 1.25 / 0.50    budget 240
+    gateway package               45.50 / 45.48        stdev 0.15 / 0.22
+    43 files, 701 tests
+    229 fenced files across 37 chapters, 37 translated
+    coverage: all four new production files 100/100/100/100
 
-The timings from those six are usable, because their variance is small:
+**FORTY RUNS, SEVEN FAILURES, AND NEITHER MECHANISM IS THIS CHAPTER'S.** The observed
+rate is 17.5%, which twenty green runs would have rejected — so a chapter reporting
+"twenty green" about this lane would have been reporting luck. The two mechanisms are
+the rate limiter's wall-clock-aligned fixed window and a gateway api fixture failing
+under contention in three different files, and both are in `gaps.md` with owners.
 
-    wall     mean 228.72 s  stdev 0.42   budget 240, so 11.28 s of headroom
-    gateway  mean 45.66 s   stdev 0.17
-    43 files, 701 tests, every run
+That is the honest close-out number, and it is worse than chapter 3.19's 18 of 20 and
+chapter 3.17's 25 of 26 **without the lane having got worse** — those are all
+consistent with one rate that none of the three batteries could distinguish.
 
-Those agree with the first battery's 228.50 and 45.50 to within a fifth of a second.
+## What is left
 
-### To resume
+**Nothing is pushed.** All three repositories are ahead of `origin/main` — the root,
+`relay-platform` and `relay-tutorial` — so `part3-ch20` exists on one machine until
+somebody pushes it with the branches. Submodules first, then the superproject, or the
+root's gitlinks name commits the remotes do not have.
 
-1. **Nothing else on the machine**, and that now explicitly includes editing a
-   source file. The first battery lost its homogeneity to a test written into
-   `outbox.itest.ts` while it was running.
-2. `docker compose stop api gateway dispatcher` first — the services profile was
-   running when this phase began, and chapter 3.18 measured a live dispatcher moving
-   a coverage pin by 7.7 points.
-3. Run twenty. The harness that produced the numbers above is a loop around
-   `pnpm test:integration` with the nine pinned variables, `set -o pipefail`, and
-   the ANSI escapes stripped — the last two both matter, and a repro script written
-   during this phase omitted `pipefail` and reported `exit=0` under a real failure.
-4. **Two mechanisms are already known and neither blocks the tag** — the limiter's
-   wall-clock-aligned fixed window and `session.itest.ts` losing its own spawned api,
-   which are chapter 3.20's `gaps.md` items 19 and 19a. A recurrence of either is expected rather than
-   new information; anything else is.
-
-**Then tag** `part3-ch20` in all three repositories, annotated, and verify
-`git rev-parse part3-ch20^{commit}` in each — that commit, not the tag object, is
-what chapter 3.21's fence chain reads.
-
-**Nothing is pushed.** All three repositories are ahead of `origin/main` — the root
-by 16, `relay-platform` by 9, `relay-tutorial` by 3 — so the tag will exist on one
-machine until somebody pushes it with the branches. Submodules first, then the
-superproject, or the root's gitlinks name commits the remotes do not have.
+**The fence predecessor for 3.21 is a commit, not the tag.** `part3-ch20` is
+annotated, so `git rev-parse part3-ch20` returns the tag object;
+`git rev-parse part3-ch20^{commit}` is what a fence chain reads.

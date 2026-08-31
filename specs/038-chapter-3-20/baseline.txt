@@ -1153,34 +1153,71 @@ a script written to investigate a battery whose own harness had it right.
 
 `session.itest.ts`'s flake is unresolved and carried in `gaps.md`.
 
-T131 — THE SECOND BATTERY, STOPPED AT SIX RUNS
-Re-run against the shipped tree — the port-range fix committed, no source edits
-under it — and **stopped by hand after run 6.** Not a failure: the chapter is
-otherwise complete and the remaining fourteen runs are an hour of wall clock that
-can be paid tomorrow.
+T131 — THE BATTERY, RUN TWICE AND STOPPED ONCE
+A second battery was stopped by hand at six runs (all green, wall 228.72, stdev
+0.42) and re-run in full afterwards. Only the two complete batteries are reported.
 
-    run  1  wall=229.27  gateway=45.73   run  4  wall=228.54  gateway=45.44
-    run  2  wall=228.91  gateway=45.87   run  5  wall=228.84  gateway=45.74
-    run  3  wall=228.68  gateway=45.74   run  6  wall=228.09  gateway=45.46
+    battery 1   17 of 20 green    mean 228.50  stdev 1.25   gateway 45.50
+    battery 3   16 of 20 green    mean 228.77  stdev 0.50   gateway 45.48
+                                  budget 240 -> 11.23 s of headroom
+                43 files, 701 tests on every green run
 
-    6 of 6 green   43 files, 701 tests every run
-    wall     mean 228.72  stdev 0.42  min 228.09  max 229.27   budget 240
-    gateway  mean 45.66   stdev 0.17
+**THE TIMINGS ARE THE SOLID PART.** Two batteries taken hours apart agree to 0.27 s
+on the lane and 0.02 s on the gateway package. Chapter 3.19 measured 228.18 and 3.20
+adds a ninth gateway file and 56 tests for +0.3 s, because the gateway package's
+clock is `max(file)` and `presence.itest.ts` is still the pacesetter.
 
-**701 from run 1**, which is the point of the re-run: the first battery's run 1
-read 700 because the tree changed underneath it.
+**SEVEN FAILURES IN FORTY RUNS, AND THEY ARE TWO MECHANISMS.**
 
-**SIX GREEN RUNS PROVE ALMOST NOTHING, and the arithmetic is the same one twenty
-runs get:** six reject a per-run failure rate above 1 − 0.05^(1/6) = **39.3%** at 95%
-confidence. Twenty reject 13.91%. The first battery observed three failures in
-twenty, which is 15% — **above what six runs can exclude and below what twenty can.**
-So these six are consistent with the failure rate already measured and say nothing
-new about it.
+    limits.itest.ts        battery 1 run 11, battery 3 run 18        2 of 40
+    a gateway api fixture  battery 1 runs 16, 17 (session)
+                           battery 3 runs 13 (presence), 15 (session),
+                                     19 (isolation)                  5 of 40
 
-The numbers that ARE usable from six runs are the timings, because their variance is
-tiny: 228.72 s against a 240 s budget, 11.28 s of headroom, and a gateway package at
-45.66 s. Those agree with the first battery's 228.50 and 45.50 to within a fifth of a
-second, which is the strongest thing six runs can say.
+**The limiter is understood.** `rl:{scope}:{operation}:{windowStartMs}` with
+`windowStart = Math.floor(now / windowMs) * windowMs` is a fixed window aligned to
+the wall clock. Two tests send three requests and expect the third to be refused; a
+boundary between the second and third resets the counter and the third is allowed.
+Both occurrences are `expected 201 to be 429`, in two different tests of that file.
+Chapter 3.17 recorded this class with the mechanism unidentified; it is identified.
 
-**WHAT IS OWED:** fourteen more runs, or a fresh twenty, before the chapter is
-tagged. The two failure mechanisms are already recorded and are not blocked on it.
+**The gateway fixture failures are chapter 3.19's `gaps.md` item 17, costing runs.**
+Five failures across **three different files**, each the same shape: a file-level
+`beforeAll` spawns an api, the api does not come up or stops answering, and every
+test in that file or describe fails at once — 1 ms each, which is the signature of a
+fixture rather than a behaviour.
+
+    run 13  presence.itest.ts    the whole file, ~20 tests at 0-5 ms
+    run 15  session.itest.ts     the last two tests of one describe
+    run 19  isolation.itest.ts   the gauntlet describe, 15 skipped
+
+Seven of nine gateway integration files spawn their own api on a random port, in
+parallel, and this chapter made it seven from six. **The shared fixture item 17 asks
+for is the fix for all five occurrences**, and no per-file change would have caught
+them: three different files failed the same way.
+
+**ONE THING THIS BATTERY EXPOSED THAT NEITHER MECHANISM EXPLAINS.**
+
+    [ioredis] Unhandled error event: Error: connect ECONNREFUSED 127.0.0.1:38513
+
+Ephemeral ports, so these are the TCP proxies `presence.itest.ts` and
+`membership.itest.ts` use to sever a fabric. The client with no `error` listener is
+`createFanout`'s — CLAUDE.md records it as chapter 3.18's R10, *"`createFanout` does
+not [have one], while both rate limiters do and both explain why"*. The process
+survives, as 3.18 measured, so these lines are noise rather than a failure. **A test
+that cuts a fabric is the only thing that makes that gap audible**, and this chapter
+added the second such test.
+
+WHAT FORTY RUNS SAY, AND WHAT THEY DO NOT
+    observed          7 failures in 40 runs = 17.5%
+    twenty green      would reject p > 13.91% at 95% confidence
+    forty runs        the 95% interval on 7/40 is roughly 7% to 33%
+
+So the lane's per-run failure rate is **not** below 13.91%, and saying "twenty runs
+green" about this lane would have been luck rather than a measurement. Chapter 3.19
+reported 18 of 20 and chapter 3.17 reported 25 of 26; those are consistent with the
+same rate, and none of the three chapters could have distinguished them.
+
+**Neither mechanism is in this chapter's code.** The limiter's test predates it, and
+the fixture failures are a package-level contention this chapter made one file worse.
+Both are in `gaps.md` with owners: items 19 and 19a.
