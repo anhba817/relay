@@ -44,7 +44,7 @@ requirement whose verification is a sentence rather than a test.
 | FR-003 | `INBOUND_FRAME_TYPES` has exactly two members, asserted as a set and a size | unit |
 | FR-004 | a member on another instance receives one frame | integration, cross-instance |
 | FR-004a | a member added mid-connection receives a typing frame without reconnecting | integration |
-| FR-005 | the signaller receives none, in a run where another member does | integration |
+| FR-005 | the signaller receives none, in a run where another member does — **and their own second connection receives none either**, in the two-connection topology FR-011a already requires | integration |
 | FR-006 | the delivered `user` is the connection's identity, never the payload's | integration + a schema with no `user` |
 | FR-007 | a foreign channel publishes nothing, asserted on a **subscriber** | integration |
 | FR-008 | `git diff` on `frames.ts` shows additions only, no `typingSchema` removal | **command** |
@@ -83,7 +83,7 @@ requirement whose test did not exist by reading this column the other way.
 | SC-003 | FR-011, FR-012 | integration, **by publish count** on a subscriber |
 | SC-004 | FR-006 | integration, plus a schema that has no `user` to send |
 | SC-005 | FR-007 | integration, the negative and the positive in one run |
-| SC-006 | FR-002, FR-003 | integration, driven from the union rather than a list |
+| SC-006 | FR-002, FR-003 | integration, driven from the union rather than a list — **and once from the sealed client**, which had sent no frame in its history |
 | SC-007 | FR-014 | integration, a send after typing signals |
 | SC-008 | FR-015, FR-016 | integration, fabric severed by a TCP proxy |
 | SC-009 | FR-018 | integration, reconnect after signals |
@@ -111,6 +111,9 @@ fail?**
 | a member on another instance receives one frame | FR-004 | the fabric is instance-local |
 | **a member added mid-connection receives one** | FR-004a | chapter 3.20's `added` branch subscribes three grammars and not the fourth — messages and presence arrive, typing does not, and the obvious test passes against that bug |
 | **the signaller receives none while another member does** | FR-005 | the self-filter is missing, or the collector is unfiltered — chapter 3.19 got this wrong three phases running |
+| **the signaller's SECOND connection receives none** | FR-005 | the filter is by socket rather than by identity. One connection per user cannot tell the two apart, and the wrong one shows a user their own indicator on their own second device |
+| **the sealed client sends a typing frame and gets it delivered** | FR-001, FR-004 | the inbound seam works only for a client that imports this workspace's `ws` package |
+| **the sealed client sends an unknown type and reads `unknown_frame_type`** | SC-006 | the refusal is asserted eleven times in-workspace and never once from outside it |
 | a non-member receives nothing **in a run where a member receives** | FR-007 | a must-not-receive test passing because nothing was produced |
 | a cross-tenant user receives nothing, same run | FR-007 | principle I, structurally |
 | repeated signals produce one publish | FR-012 | a publish per keystroke at 10,000 connections per instance |

@@ -714,3 +714,76 @@ NINE PASSES
 in the previous chapter's code, a customer-facing reference, the tag itself, an
 instruction that could not be executed, a clause the platform cannot satisfy, a
 deferral to a clause that cannot accept it, and a promise made to the reader.
+
+ANALYSIS PASS 10 — WHO ACTUALLY DRIVES THE NEW SURFACE
+------------------------------------------------------------
+
+The direction: not what the documents say the checks do, but what one check
+actually does. One yes-or-no question to the repository.
+
+    grep -c "\.send(" packages/outsider/src/integrate.itest.ts   ->  0
+
+    C11  CRITICAL  The sealed outsider has never sent a frame. Eleven tests: ten
+                   REST, one socket test that RECEIVES a message sent over REST —
+                   and whose title says so in capitals because chapter 3.18
+                   corrected it.
+
+                   This chapter's argument is the inbound seam. FR-001, FR-002,
+                   FR-003 widen the accepted set; SC-006 says everything outside it
+                   is still refused. All of that is verified in-workspace with the
+                   `ws` package. The one thing here shaped like a customer touches
+                   none of it.
+
+                   And two of this chapter's own artifacts said otherwise, in the
+                   same sentence: "It is the only check that uses the public surface
+                   as a customer does, and this chapter adds a frame to that
+                   surface." First clause true, second does not follow, and it read
+                   as though it did — which is why no task added outbound coverage
+                   to the sealed client in the chapter about inbound frames.
+
+                   T100a and T100b are the first `.send(` in that file's history.
+
+    H12  HIGH      FR-005 says the signalling USER receives no frame of their own.
+                   T045 tests one connection per user and passes whether the filter
+                   is by identity or by socket. FR-011a REQUIRES the plural case to
+                   exist — its interval is per connection, and its scenario 3 puts
+                   two connections of one user in one channel. The spec built the
+                   topology that breaks FR-005 and pointed no test at it. T059a uses
+                   the fixture T059 already builds.
+
+    M14  MEDIUM    data-model.md's lifetimes table said the debounce is "a `Map` on
+                   the connection". The task that builds it says, in bold, NOT a
+                   field on `Connection` — `registry.ts` is fenced by four chapters.
+                   The row was wrong in its last column too: an outer key never ends
+                   by an interval elapsing.
+
+TEN PASSES
+------------------------------------------------------------
+
+     1  premises                 2 CRITICAL
+     2  self-audit, 3.20's code   2 CRITICAL
+     3  the wider tree — docs/    1 CRITICAL
+     4  running the commands      1 CRITICAL — the predecessor's tag
+     5  implementability          1 CRITICAL — a module that cannot publish
+     6  whose obligation          1 CRITICAL — a clause the platform cannot execute
+     7  the deferrals             1 CRITICAL — a clause that cannot accept one
+     8  phase committability      0 CRITICAL — a direction already walked
+     9  what was PROMISED         1 CRITICAL — a fenced IOU
+    10  who drives the surface    1 CRITICAL — a client that has never sent
+
+**Eleven CRITICALs. Three were inside this feature's own documents.**
+
+WHY A TENTH PASS STILL FINDS ONE
+------------------------------------------------------------
+
+Not because the artifacts are getting worse. Every pass that found something
+asked a question no previous pass had asked, and the supply of such questions is
+not exhausted by re-reading. Passes 9 and 10 are the same shape one level apart:
+a claim about something OUTSIDE these documents, believed because it was written
+down rather than because it was checked. 3.20's R8 cleared a fenced promise;
+T100 credited a test file with a capability it does not have. Both were checkable
+in one command, and neither command had been run.
+
+**The stopping rule is unchanged and it is not yield: stop when nobody can name a
+direction that has not been walked.** Pass 8 walked a covered one and found
+nothing, which is what that looks like.

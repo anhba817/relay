@@ -134,8 +134,10 @@ commands that would satisfy it:
     export RELAY_DEMO_CREDENTIAL=$(node scripts/seed-demo-tenant.mjs)
     export RELAY_API_URL=http://localhost:4000 RELAY_WS_URL=ws://localhost:4001
 
-**It is the only check that uses the public surface as a customer does**, and this chapter
-adds a frame to that surface.
+**It is the only check that uses the public surface as a customer does** — and it has never
+sent a frame. Zero `.send(` calls across eleven tests; the one socket test receives a
+message that went over REST. This chapter adds an inbound frame, so T100a and T100b make
+this file send one, and send a bad one.
 
 ---
 

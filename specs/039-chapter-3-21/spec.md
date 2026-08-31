@@ -183,7 +183,13 @@ of frames other members receive is bounded rather than proportional to the signa
   channel revoked mid-connection MUST be released, **through the same two branches chapter
   3.20 built for its own fabric**. A fourth grammar makes both incomplete, and the failure
   is silent: a user added mid-connection would receive messages and presence but no typing.
-- **FR-005**: The signalling user MUST NOT receive their own typing frame.
+- **FR-005**: The signalling user MUST NOT receive their own typing frame **on any of their
+  connections**. The filter is by identity, not by socket: a user may hold several
+  connections (chapter 3.22 caps them at five), the fabric frame carries no socket
+  reference, and FR-011a **requires** the multi-connection case to exist by making the
+  renewal interval per connection. A test with one connection per user passes whether the
+  filter is per user or per socket, and the wrong one shows a user their own indicator on
+  their own second device.
 - **FR-006**: The user named in a delivered frame MUST be the authenticated identity of the
   signalling connection, never a value taken from the inbound payload.
 - **FR-007**: A signal naming a channel the connection is not a member of MUST publish

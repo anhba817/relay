@@ -72,7 +72,7 @@ act on, while a client already knows its own environment and has no use for a te
 | Thing | Lives | Length | Ends by |
 |---|---|---|---|
 | The indicator a user sees | the receiving client | 5 s from the last frame | a timer lapsing, silently |
-| Permission to publish again | a `Map` on the connection, per channel | 2 s | the interval elapsing |
+| Permission to publish again | a `Map` in `attachSessions`'s closure, keyed by connection then channel | 2 s | the value by the interval elapsing, **the connection's whole entry by the close handler** |
 | The fabric subscription | the gateway, reference-counted | the connection | the last local member leaving |
 
 **The module holds two Redis connections, not one** — a publisher and a subscriber, because
@@ -81,6 +81,13 @@ a subscribed connection cannot issue ordinary commands and `PUBLISH` is one
 module needed only a subscriber because its api published, and analysis pass 5 found this
 chapter's task list carrying that shape forward to a module that publishes from the
 gateway.
+
+**The middle row said "a `Map` on the connection" until analysis pass 10, and the task that
+builds it says the opposite in bold** — not a field on `Connection`, because `registry.ts`
+is fenced by four chapters. Two artifacts describing one structure, and the one a reader meets first was
+wrong. **The row was also wrong in its last column**: an outer key never ends by an interval
+elapsing, and at NFR-SCL-01's 10,000 connections a closure-level map keyed by connection id
+with nothing reaping it grows for the life of the process.
 
 **Three lifetimes, three owners, and none of them is a stored fact.** The middle row was a
 token bucket until analysis pass 1 read the limiter it would have used: keyed per
