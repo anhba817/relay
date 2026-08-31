@@ -1332,3 +1332,69 @@ Two passes running, the finding came from a habit rather than a new search space
 pass 16 from "what does my own fix make worse", pass 17 from "what counts this".
 Both are cheap, both are repeatable, and neither needed a direction nobody had
 walked.
+
+ANALYSIS PASS 18 — THE GATE THAT COSTS LESS THAN THE TWO ALREADY THERE
+------------------------------------------------------------
+
+Pass 17 found one unit test broken by Phase 2, by accident. This pass ran that
+search exhaustively and then measured the gap that let it hide.
+
+MEASURED, on this machine, nothing else running:
+
+    pnpm lint                    3.5 s   at every phase gate
+    pnpm typecheck               3.4 s   at every phase gate
+    pnpm turbo run test --force  5.9 s   at NO phase gate
+    pnpm turbo run test          2.2 s   warm, 8 of 11 packages cached
+
+    H21  HIGH   Eleven phase-commit tasks each say "a phase that commits without
+                them is a phase whose breakage surfaces in a later phase's gate,
+                attributed to the wrong work" — and stop one command short. The
+                first thing that ran unit tests was T099, in Phase 11.
+
+                What sits in that lane:
+
+                    gateway unit lane   8 files, 100 tests
+                      session.test.ts   29 tests, 3 of them chapter 3.7's
+                      resume.test.ts    23 tests
+
+                **Phases 4, 5, 6, 7 and 8 all edit `session.ts`.** T062 changes how
+                a frame reaches a socket, on the same delivery path the suppression
+                logic lives on, and the oracle for that logic is entirely in the
+                unit lane: deleting `suppressed(connection.marks, message)` turns
+                two `resume.test.ts` cases red in about ten seconds. That is this
+                project's most expensive historical defect and its detector was
+                100% in the lane no phase gate ran.
+
+                Now in nine of ten commit tasks. **T030 had named none of the three
+                gates** and it is the phase that creates two production modules.
+                T080 is the documented exception and now says so: phase 9 edits
+                prose in two trees and no TypeScript, so `check:docs` is its gate.
+
+                **HIGH and not CRITICAL, deliberately.** The Quality Gates section
+                and Principle VI both name what must be verified and neither
+                enumerates commands — checked, not assumed — so no MUST was
+                violated, and pass 17's instance is already owned by T014a-c. What
+                remained was residual risk on five phases with a six-second remedy.
+
+THE EXHAUSTIVE SWEEP FOUND NOTHING, WHICH IS THE OTHER RESULT
+------------------------------------------------------------
+
+    hard-coded frame counts, whole repo   exactly two, both now owned
+    session.test.ts's 4002 test           sends `message.ack`, still server-only
+    frames.test.ts                        no member count exists; T014 adds the
+                                          protocol package's first
+    subject-builder enumerations          none in an existing test
+    protocol export-surface test          none exists
+    main.test.ts's other derived list     Object.keys(CLOSE_CODES); no new code
+    api package, 241 unit tests           the union change is additive
+
+**Pass 17 found the only instance there was.** Worth stating: the value here was
+not a second defect but knowing the first was not the tip of anything.
+
+EIGHTEEN PASSES
+------------------------------------------------------------
+
+    18  the lane no gate ran   0 CRITICAL, 1 HIGH — measured rather than argued
+
+**Twenty CRITICALs across eighteen passes. Eight were inside this feature's own
+documents.**

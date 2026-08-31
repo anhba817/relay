@@ -116,6 +116,18 @@ from 17.
 
 ---
 
+## The gate at every phase commit
+
+    pnpm lint                    3.5 s
+    pnpm typecheck               3.4 s
+    pnpm turbo run test          5.9 s cold, 2.2 s warm, 11 packages
+
+**The third was missing until analysis pass 18.** Pass 17 found `main.test.ts` red
+from Phase 2 and invisible until Phase 11 because the first command that runs unit
+tests was the CI-order block below. 100 gateway unit tests guard `session.ts`,
+which five phases edit, and `resume.test.ts`'s suppression cases are the only
+oracle for the seam chapter 3.6 got wrong.
+
 ## The gates, in CI's order
 
     set -o pipefail        # without it, $? after a pipeline is sed's

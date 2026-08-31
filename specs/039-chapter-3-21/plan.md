@@ -286,9 +286,11 @@ per taught file is not an estimator** — 3.17 came in 45% below 3.15 and 3.16's
   one of them has to keep meaning what it meant.
 - **The union's size is asserted in two lanes and the task list predicted one.** The
   gauntlet's `expect(members.length).toBe(10)` is an integration test; `main.test.ts`'s
-  `expect(body.protocol.frames).toHaveLength(10)` is a unit test, and the phase gates run
-  `lint` and `typecheck` rather than `test`. Analysis pass 17 found the second one unowned,
-  nine phases from where it would have surfaced. **The gateway's `/health` advertises the
+  `expect(body.protocol.frames).toHaveLength(10)` is a unit test, and the phase gates ran
+  `lint` and `typecheck` and not `test`. Analysis pass 17 found the second one unowned, nine
+  phases from where it would have surfaced; **pass 18 added `pnpm turbo run test` to every
+  phase gate** after measuring it at 5.9 s cold against lint's 3.5 s and typecheck's 3.4 s.
+  The lane it was missing holds the only oracle for the resume seam. **The gateway's `/health` advertises the
   vocabulary**, so the count is network-observable and not only internal.
 - **No new api spawn — and that is not the same rule as "no tenth file".** R9 wrote the
   constraint as "no tenth gateway integration file" because seven of nine spawn their own
