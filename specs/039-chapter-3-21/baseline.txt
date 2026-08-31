@@ -173,3 +173,59 @@ THE OTHER SIX
 exists without asking the repository.** C2's claim was written during planning by
 the same author who then verified four other premises by command and skipped this
 one — because it read like a detail rather than a decision.
+
+
+ANALYSIS PASS 2 — TWO MORE CRITICALS, AND ONE OF THEM WAS INVISIBLE FROM HERE
+------------------------------------------------------------
+
+Pass 1 asked whether the tasks' premises held. Pass 2 asked two different
+questions: **does pass 1's own fix hold up, and do the artifacts agree with each
+other?** Five findings, all fixed.
+
+**C3 — TWO TASKS IN ONE FILE ASSERTED OPPOSITE BEHAVIOURS.**
+
+    T047  a second signal within the renewal window still delivers a frame
+    T057  repeated signals inside the interval produce at most one publish
+
+Both would have been written before anyone noticed. US1's scenario 2 was true
+when there was no interval and became false when US3 added one; **pass 1 walked
+past it while fixing the very requirement that contradicts it.** Pure document
+drift, visible without opening a single source file.
+
+**C4 — CHAPTER 3.20's TWO BRANCHES ARE INCOMPLETE AND NOTHING HERE COULD SEE IT.**
+
+    session.ts:367   the `added` branch subscribes fanout, presence, membership
+    session.ts:425   the revocation branch releases the same three
+
+A fourth grammar makes both wrong. **A user added mid-connection would receive
+messages and presence but no typing** — FR-004 silently false for exactly the case
+chapter 3.20 built, and the obvious test (a member who was in the channel at
+connect) passes against it.
+
+**This is the finding that would have shipped.** Every artifact in this feature
+was internally consistent; the defect lives in the interaction with the chapter
+before it, and it is only visible by opening `session.ts` and noticing that the
+previous chapter left two branches that enumerate subscriptions. Now FR-004a,
+T043a, T043b and T048c.
+
+**H4 — THE DEBOUNCE WAS ABOUT TO EDIT A TYPE FOUR CHAPTERS FENCE.**
+T054 said "a `Map` on the connection". `Connection` lives in `registry.ts`, fenced
+by chapters 3.7, 3.8, 3.11 and 3.19. A `Map` in `attachSessions`'s closure keyed
+by connection id needs no fenced type and has a clearer lifetime. No task
+mentioned `registry.ts` at all.
+
+**M4** — nothing cleared a channel's debounce entry when a revocation dropped the
+channel. Folded into T043b, which is the act that drops it.
+
+**M5** — "renewal window" and "renewal interval" were one thing under two names,
+in the file where C3's contradiction lived.
+
+**AND A CLAUSE READ RATHER THAN ASSUMED, WHICH CONFIRMED PASS 1's FIX.**
+
+    FR-RTL-01  "per-tenant rate limits on REST requests, message sends, and
+                connection establishment"
+
+Three operations, and typing is not one of them. So removing the typing bucket
+does not merely avoid a mechanism that could not work — **it aligns with the
+clause, and the third bucket would have added a counted operation the SRS does not
+name.** The fix was more right than the argument given for it in pass 1.

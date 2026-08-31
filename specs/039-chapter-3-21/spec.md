@@ -76,18 +76,23 @@ signaller does not receive their own.
 1. **Given** Mai and Tuan are members of #incidents on different gateway instances,
    **When** Tuan's client signals that he is typing, **Then** Mai receives exactly one
    `typing` frame whose payload names Tuan and #incidents.
-2. **Given** Tuan has signalled typing, **When** he signals again within the renewal
-   interval, **Then** Mai receives a second frame — renewal is a repeat, not a state
-   change.
-3. **Given** Tuan signals typing, **When** he stops and the expiry elapses, **Then** no
+2. **Given** Tuan has signalled typing, **When** he signals again **after** the renewal
+   interval has elapsed, **Then** Mai receives a second frame — renewal is a repeat, not a
+   state change, and there is no "already typing" to suppress.
+3. **Given** Tuan has signalled typing, **When** he signals again **inside** the interval,
+   **Then** Mai receives nothing further — the interval is what stops a keystroke becoming
+   a publish (FR-012).
+4. **Given** Tuan signals typing, **When** he stops and the expiry elapses, **Then** no
    further frame is sent and Mai's indicator clears on her own timer.
-4. **Given** Tuan signals typing in #incidents, **When** Linh is a member of #ops only,
+5. **Given** Tuan signals typing in #incidents, **When** Linh is a member of #ops only,
    **Then** Linh receives nothing.
-5. **Given** Tuan signals typing, **Then** Tuan does not receive his own indicator.
-6. **Given** Tuan signals typing several times, **When** he then sends a message, **Then**
+6. **Given** Tuan signals typing, **Then** Tuan does not receive his own indicator.
+7. **Given** Tuan signals typing several times, **When** he then sends a message, **Then**
    his send budget is what it was — a typing signal spends no message quota (FR-014).
-7. **Given** Mai has received a typing frame, **When** Tuan sends nothing further, **Then**
+8. **Given** Mai has received a typing frame, **When** Tuan sends nothing further, **Then**
    no frame of any kind reaches Mai for that channel until he signals again (FR-009a).
+9. **Given** Linh is added to #incidents **while already connected**, **When** Tuan signals
+   typing there, **Then** Linh receives the frame without reconnecting (FR-004a).
 
 ### User Story 2 - A client may say it is typing, and may not say anything else (Priority: P1)
 
@@ -170,6 +175,11 @@ of frames other members receive is bounded rather than proportional to the signa
   member MUST be a decision rather than an accident.
 - **FR-004**: The system MUST deliver a `typing` frame to every other member of the named
   channel who holds a connection, across gateway instances.
+- **FR-004a**: The typing subscription MUST follow membership for the whole life of a
+  connection, not only at connect. A channel joined mid-connection MUST be subscribed and a
+  channel revoked mid-connection MUST be released, **through the same two branches chapter
+  3.20 built for its own fabric**. A fourth grammar makes both incomplete, and the failure
+  is silent: a user added mid-connection would receive messages and presence but no typing.
 - **FR-005**: The signalling user MUST NOT receive their own typing frame.
 - **FR-006**: The user named in a delivered frame MUST be the authenticated identity of the
   signalling connection, never a value taken from the inbound payload.

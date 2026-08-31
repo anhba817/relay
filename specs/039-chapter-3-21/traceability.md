@@ -43,6 +43,7 @@ requirement whose verification is a sentence rather than a test.
 | FR-002 | the inbound type differs from `typing`; the gauntlet still calls `typing` outbound | integration + inspection |
 | FR-003 | `INBOUND_FRAME_TYPES` has exactly two members, asserted as a set and a size | unit |
 | FR-004 | a member on another instance receives one frame | integration, cross-instance |
+| FR-004a | a member added mid-connection receives a typing frame without reconnecting | integration |
 | FR-005 | the signaller receives none, in a run where another member does | integration |
 | FR-006 | the delivered `user` is the connection's identity, never the payload's | integration + a schema with no `user` |
 | FR-007 | a foreign channel publishes nothing, asserted on a **subscriber** | integration |
@@ -106,6 +107,7 @@ fail?**
 | a payload carrying a `user` is refused | FR-006 | a client can type as anybody, which is the gauntlet's stated attack |
 | a foreign channel publishes nothing, **on a subscriber** | FR-007 | scoping is absent, or the publisher is dead and the socket cannot tell |
 | a member on another instance receives one frame | FR-004 | the fabric is instance-local |
+| **a member added mid-connection receives one** | FR-004a | chapter 3.20's `added` branch subscribes three grammars and not the fourth — messages and presence arrive, typing does not, and the obvious test passes against that bug |
 | **the signaller receives none while another member does** | FR-005 | the self-filter is missing, or the collector is unfiltered — chapter 3.19 got this wrong three phases running |
 | a non-member receives nothing **in a run where a member receives** | FR-007 | a must-not-receive test passing because nothing was produced |
 | a cross-tenant user receives nothing, same run | FR-007 | principle I, structurally |
