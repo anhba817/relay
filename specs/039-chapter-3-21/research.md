@@ -239,8 +239,10 @@ The search space is both trees:
     relay-tutorial/app/(en)/**  and  (vi)/**      chapter narrative
     docs/*.md                                     the product's own documents
 
-**Four claims, eight fragments.** All extracted with `grep` and verified present before
-being written here.
+**Five claims, ten fragments.** All extracted with `grep` and **verified present verbatim
+under whitespace collapse** before being written here — analysis pass 9 ran that check and
+found one entry that was a description rather than a string, and one claim missing
+altogether.
 
     1  docs/08-error-reference.md — THE CUSTOMER-FACING ONE, and the sharpest
        :264 "`message.send` is the only inbound frame; every other member of the
@@ -258,18 +260,56 @@ being written here.
 
        This file is in `sync-docs.sh`'s published list, so the correction mirrors.
 
-    2  chapter 3.19, on the six kinds
-       en  "typing" named as a kind still without a producer
-       vi  the same sentence
+    2  chapter 3.19's count of the six kinds — QUOTED, not described
+       en :62 "`message.updated`, `message.deleted`, `membership.changed` and
+                `typing` are still four declared words with nothing behind them"
+       vi :62 "vẫn là bốn từ đã khai báo mà phía sau không có gì"
+
+       **The first version of this entry read "'typing' named as a kind still
+       without a producer" — a DESCRIPTION of the claim rather than a string.** A
+       fragment list is an input to a program: a description compiles into a
+       checker that matches nothing and reports green. Chapter 3.20 found the same
+       failure from the other end, quoting sentences 3.19 had already deleted.
+       Both directions produce a green checker with no coverage.
 
     3  chapter 3.20's "what this chapter does not do"
-       en  "the one kind that could genuinely reuse `chan:{channel_id}` rather than
-            needing a fourth grammar"
-       vi  the same
+       en :2204 "the one kind that could genuinely reuse `chan:{channel_id}` rather
+                 than needing a fourth grammar"
+       vi :2208 "nó là loại duy nhất có thể thật sự tái dùng `chan:{channel_id}`
+                 thay vì cần một ngữ pháp thứ tư"
 
     4  chapter 3.20's ForwardRef
-       en  "the first that can reuse a grammar rather than adding one"
-       vi  the same
+       en :2217 "the first that can reuse a grammar rather than adding one"
+       vi :2222 "là loại đầu tiên tái dùng được một ngữ pháp thay vì thêm một cái mới"
+
+       **Every `vi` entry here read "the same sentence" until pass 9.** The English
+       half was quotable and the Vietnamese half was a description — the same defect
+       H11 names, in five of the ten fragments rather than one. A translated
+       sentence is not the English one, so "the same" cannot be searched for.
+
+    5  chapter 3.19's FENCED IOU — the one a reader was actually promised
+       en :71-73  a fence titled "chapter 2.6 (excerpt)" reading
+                  "And presence (FR-RTM-06) and typing (FR-RTM-08) will reuse this
+                   exact pub/sub plumbing with TTLs per ADR-10."
+       vi :71-73  byte-identical — VERIFIED, not assumed: fences must be, and the
+                  fence chain is what makes that safe to state
+
+       Under the heading *"The plumbing a reader was promised, and why it is not
+       this"*. Chapter 3.19 discharges the presence half in the prose beneath it and
+       leaves typing's standing — *"Typing's half of this promise is still open."*
+       **This chapter falsifies it.**
+
+       **CHAPTER 3.20 EXAMINED THIS SENTENCE AND CLEARED IT.** Its R8 recorded that
+       the quote "has not existed since chapter 3.19 corrected it" and that what
+       stands there "is **not contradicted by this chapter at all**". True — of 3.20.
+       What 3.19 did was quote chapter 2.6's IOU inside a fence and discharge only
+       half of it. **"Not contradicted by me" was carried forward as "not a claim to
+       worry about."**
+
+       **THE CORRECTION CANNOT EDIT THE FENCE.** Those are chapter 2.6's words and
+       the fence chain compares them. The prose beneath it must retire the typing
+       half the way 3.19 retired presence's — and that is a better opening for this
+       chapter than an apology, which is what 3.19 said about the same sentence.
 
 **Claims 3 and 4 are mine, written one chapter ago, and they are wrong.** A ForwardRef is a
 prediction, and this project has now published two in one chapter that the next chapter

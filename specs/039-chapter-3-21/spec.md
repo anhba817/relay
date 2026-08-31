@@ -271,9 +271,12 @@ of frames other members receive is bounded rather than proportional to the signa
 - **FR-019a**: Every published document this chapter makes false MUST be corrected, and the
   search MUST cover `docs/` as well as both locales of the tutorial. **`docs/` holds the
   product's claims and a customer reads those**; the tutorial holds a chapter's narrative
-  claims. `docs/08-error-reference.md`'s `unknown_frame_type` entry is one of them — it
-  names `message.send` as the only inbound frame, in the reference for the error code this
-  chapter's own seam produces.
+  claims. Two are outside the tutorial's narrative and both were
+  missed by the first search: `docs/08-error-reference.md`'s `unknown_frame_type` entry names
+  `message.send` as the only inbound frame, in the reference for the error code this
+  chapter's own seam produces; and chapter 3.19 carries a **fenced** IOU from chapter 2.6
+  promising that typing reuses `chan:` — a promise made to the reader, which chapter 3.20
+  examined and cleared because it was not contradicted by *that* chapter.
 - **FR-020**: The chapter MUST state which of FR-RTM-05's six frame kinds now have
   producers and MUST NOT claim FR-WHK-02 or FR-RTM-09 are affected by this chapter.
 - **FR-021**: The chapter MUST state that the fourth subject grammar was taken rather than

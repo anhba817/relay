@@ -645,3 +645,72 @@ recommended stopping and its passes 13, 14 and 15 each found a CRITICAL. But the
 REASON it fell here is diagnostic: every pass that produced a CRITICAL opened a new
 search space, and pass 8 walked one already covered. **The stopping question is not
 "has the yield fallen" but "is there a direction nobody has looked in yet."**
+
+ANALYSIS PASS 9 — WHAT WAS PROMISED TO THE READER
+------------------------------------------------------------
+
+The direction nobody had looked in: not what the previous chapters CONCLUDED, but
+what they PROMISED. R8 had been asking "which published sentence does this chapter
+falsify" and answering it from narrative prose. A promise is also a claim, and this
+one was inside a fence.
+
+    C10  CRITICAL  chapter 3.19 :71-73, both locales — a fence titled
+                   `chapter 2.6 (excerpt)` reading "And presence (FR-RTM-06) and
+                   typing (FR-RTM-08) will reuse this exact pub/sub plumbing with
+                   TTLs per ADR-10." 3.19 discharges the presence half in the prose
+                   beneath and leaves typing's standing. This chapter falsifies it,
+                   and R8 did not list it.
+
+                   Chapter 3.20's R8 examined this exact sentence and cleared it:
+                   "not contradicted by this chapter at all." True of 3.20. Carried
+                   forward as "not a claim to worry about."
+
+                   The correction cannot edit the fence — chapter 2.6's words, which
+                   the fence chain compares byte for byte. The prose beneath retires
+                   the typing half the way 3.19 retired presence's.
+
+    H11  HIGH      R8's claim 2 was a DESCRIPTION, not a quotable string: "'typing'
+                   named as a kind still without a producer". A fragment list is an
+                   input to a program — a description compiles into a checker that
+                   matches nothing and reports green. Chapter 3.20 hit the same
+                   failure from the other end, quoting sentences already deleted.
+
+                   And it was worse than the finding said: EVERY `vi` entry read
+                   "the same sentence". Five of the ten fragments were descriptions,
+                   not one.
+
+    M13  MEDIUM    Four claims and eight fragments became five and ten. Restated in
+                   research R8, T086 and FR-019a.
+
+FRAGMENT VERIFICATION RUN IN THE PASS THAT WROTE IT
+------------------------------------------------------------
+
+    10 fragments, 0 missing        whitespace-collapsed, both trees
+
+    1a 1b  docs/08-error-reference.md          one locale — docs/ has no mirror
+    2en 2vi  chapter 3.19 :62                  translated, so two different strings
+    3en 3vi  chapter 3.20 :2204 / :2208
+    4en 4vi  chapter 3.20 :2217 / :2222
+    5en 5vi  chapter 3.19 :71-73               byte-identical, verified not assumed
+
+Two checks came back clean. `docs/01-product-vision.md:110` — "presence and typing
+indicators" — is made MORE true by this chapter. And no document counts the subject
+grammars, so a fourth breaks no published total.
+
+NINE PASSES
+------------------------------------------------------------
+
+    1  premises                 2 CRITICAL
+    2  self-audit, 3.20's code   2 CRITICAL
+    3  the wider tree — docs/    1 CRITICAL
+    4  running the commands      1 CRITICAL — the predecessor's tag
+    5  implementability          1 CRITICAL — a module that cannot publish
+    6  whose obligation          1 CRITICAL — a clause the platform cannot execute
+    7  the deferrals             1 CRITICAL — a clause that cannot accept one
+    8  phase committability      0 CRITICAL — a direction already walked
+    9  what was PROMISED         1 CRITICAL — a fenced IOU
+
+**Ten CRITICALs. Two were inside this feature's own documents.** The other eight were
+in the previous chapter's code, a customer-facing reference, the tag itself, an
+instruction that could not be executed, a clause the platform cannot satisfy, a
+deferral to a clause that cannot accept it, and a promise made to the reader.
