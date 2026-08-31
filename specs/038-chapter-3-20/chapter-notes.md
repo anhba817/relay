@@ -339,7 +339,7 @@ and the second wait was written anyway.
 `git rev-parse part3-ch20` returns the tag object; `git rev-parse part3-ch20^{commit}`
 is what a fence chain needs.
 
-**`gaps.md` has 24 items.** Four are addressed to a next chapter rather than to nobody:
+**`gaps.md` has 25 items.** Four are addressed to a next chapter rather than to nobody:
 item 11 (nine translated chapters absent from the sitemap — nine one-line edits), item
 15 (seven of nine gateway integration files spawn their own api, worse by one this
 chapter), item 17 (`session.itest.ts` outside the fence chain, edited by two consecutive

@@ -1,6 +1,6 @@
 <!-- SPECKIT START -->
 **CHAPTER 3.20 IS CLOSED**, tagged `part3-ch20` in all three repositories. Its record is
-`specs/038-chapter-3-20/` — read `chapter-notes.md` first, then `gaps.md` (**24 items**,
+`specs/038-chapter-3-20/` — read `chapter-notes.md` first, then `gaps.md` (**25 items**,
 each with an owner and each reference carrying its chapter, because the numbers collide),
 then `traceability.md` and `baseline.txt`.
 
@@ -29,18 +29,33 @@ batteries could tell them apart. Two mechanisms, neither in this chapter's code:
   requests expecting the third to be refused. A boundary between the second and third
   resets the counter. Chapter 3.17 recorded this class with the mechanism unidentified; it
   is identified now. `gaps.md` item 19.
-- **a gateway api fixture fails and THE MECHANISM IS NOT KNOWN.** Five occurrences across
-  forty runs in `session.itest.ts`, `presence.itest.ts` and `isolation.itest.ts`, each the
-  same shape: a file-level `beforeAll` spawns an api, the api does not answer, and every
-  test in that file fails at 0–5 ms. **Three hypotheses measured and eliminated** — Postgres
-  connection exhaustion (peak 50 of 100), a port collision (the failing ports are in each
-  file's own range), and an undrained stdout pipe (Node buffers a full pipe in memory; an
-  api spawned that way answered 4,000 requests). **"Contention" was written into this file
-  as the cause before any of that was checked, and it was a guess.** `gaps.md` item 19a.
+- **a gateway api fixture fails; one of the five is chapter 3.19's known case and four are
+  not explained.** Run 19 repeated 3.19's run 10 exactly — `isolation.itest.ts`, the same
+  `beforeAll`, `Hook timed out in 90000ms`, gateway package 101.21 s against that chapter's
+  101.02. 3.19 named it: several files each spawn an api, vitest runs them in parallel, one
+  api takes over ninety seconds to answer `/health`. **This chapter added the seventh
+  spawning file and then recorded the failure as unexplained.**
 
-  **The reason it is still unknown is that the evidence is thrown away**: all seven files
+  The other four — `session.itest.ts` ×3 with `ECONNREFUSED`, `presence.itest.ts` ×1 with
+  `fetch failed` — have **three hypotheses measured and eliminated**: Postgres connection
+  exhaustion (peak 50 of 100), a port collision (the failing ports are in each file's own
+  range), and an undrained stdout pipe (Node buffers a full pipe in memory; an api spawned
+  that way answered 4,000 requests). "Contention" was written into this file as the cause
+  before any of that was checked. `gaps.md` item 19a.
+
+  **The reason four are still open is that the evidence is thrown away**: all seven files
   either spawn with `stdio: "ignore"` or pipe and never read, so every failing api has
   already said why and nobody was listening.
+
+- **AND A GREEN e2e PACKAGE IS NOT EVIDENCE THE RESUME SEAM HOLDS.** Chapter 3.6's flake 4
+  was a real duplicate there — `expected [ 1, 2, 3, 4, 4 ]`, the backfill and the live
+  flush both delivering sequence 4. Chapter 3.7 ran twenty clean and refused to call that a
+  fix: the race needs a backfill to land between an api commit and a Redis publish, that gap
+  widens under load, and 3.6's lane was slow only because 4,068 pending deliveries were
+  being retried. **The defect did not get rarer; the conditions that exposed it went away.**
+  3.7 demoted its own criterion in writing and moved the proof to tests that force the race.
+  Deleting `suppressed(connection.marks, message)` still turns two of them red in ten
+  seconds. `gaps.md` item 19c.
 
 **TWO TASKS SPECIFIED AN ORDERING AS THE REQUIREMENT AND NEITHER WAS OBSERVABLE.** Both
 asked for the proof that it bites — remove the ordering, watch a test fail — and neither

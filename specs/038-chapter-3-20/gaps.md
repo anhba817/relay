@@ -226,9 +226,24 @@ rather than a behaviour's.
     battery 3 run 15        session.itest.ts     the same two tests as battery 1
     battery 3 run 19        isolation.itest.ts   the gauntlet describe, 15 skipped
 
-**THE MECHANISM IS NOT KNOWN, AND THREE PLAUSIBLE ONES ARE ELIMINATED.** An earlier draft
-of this item asserted "contention" as the cause. That was a guess dressed as a finding, and
-each candidate was then measured:
+**ONE OF THE FIVE IS ALREADY EXPLAINED, AND I MISSED IT.** Run 19 is chapter 3.19's run
+10 repeated — same file, same describe, same hook, and a gateway package clock of 101.21 s
+against that chapter's 101.02:
+
+    FAIL  src/isolation.itest.ts > the socket gauntlet
+    Error: Hook timed out in 90000ms.
+      beforeAll -> api = await startApi()
+
+Chapter 3.19 named the cause: several gateway files each spawn an api, vitest runs the
+files in parallel, and one api takes more than ninety seconds to answer `/health`. That
+chapter wrote *"the mechanism is named rather than left as a flake"* and called the fix
+structural — share one api, or cap the lane's workers. **This chapter added the seventh
+spawning file and then recorded the failure as unexplained.** It is 3.19's case, worse by
+one file.
+
+**THE OTHER FOUR ARE NOT EXPLAINED, AND THREE HYPOTHESES ARE ELIMINATED.** An earlier
+draft asserted "contention" for all five. That was a guess dressed as a finding, and each
+candidate was then measured:
 
     Postgres connection exhaustion   DISPROVEN. Sampled every 2 s through a gateway
                                      lane: peak 50 of max_connections=100. Each api
@@ -249,10 +264,10 @@ each candidate was then measured:
                                      that way answered 4,000 requests, eleven times the
                                      buffer, without pausing.
 
-What is established is the symptom and its spread: a file-level `beforeAll` spawns an api,
-the api does not answer, and every test in that file or describe fails at 0–5 ms. Three
-symptoms across three files — `TypeError: fetch failed` (presence), `ECONNREFUSED`
-(session), `Hook timed out in 90000ms` (isolation).
+What is established for the remaining four is the symptom: a file-level `beforeAll` spawns
+an api, the api does not answer, and every test in that file fails at 0–5 ms.
+`TypeError: fetch failed` in presence, `ECONNREFUSED` in session. Whether they are 3.19's
+mechanism wearing different symptoms is exactly what the discarded output would settle.
 
 **The next thing to try is the evidence nobody keeps.** `presence.itest.ts` and
 `membership.itest.ts` spawn with `stdio: "ignore"` and the other four pipe without reading,
@@ -279,6 +294,42 @@ the NFR-OBS-01 argument every module this chapter wrote used to justify its own 
 
 **Owner:** one listener in `services/gateway/src/fanout.ts`, with the reason this chapter's
 modules already state.
+
+## 19c. "e2e passed forty of forty" is weaker evidence than it looks — NEW
+
+The e2e package never failed across both batteries. That is worth almost nothing about the
+property it guards, and chapter 3.7 explained why before this chapter existed.
+
+Chapter 3.6's flake 4 was a real duplicate across the resume seam —
+`expected [ 1, 2, 3, 4, 4 ]` in `packages/e2e/src/tuan.itest.ts` — where the backfill and
+the live flush both delivered sequence 4. It reproduced once in six runs. Chapter 3.7 then
+ran twenty and saw it zero times, and rather than claim a fix, wrote the reason: the race
+needs a backfill query to land between an api commit and a Redis publish, and that gap
+widens under load. 3.6's lane took nine minutes because 4,068 pending deliveries were being
+retried against dead endpoints. The backlog was cleared, the lane dropped to 183 s, and the
+gap narrowed. **The defect did not get rarer; the conditions that exposed it went away.**
+
+3.7 demoted its own success criterion in writing — *"SC-001 IS NOW A CRITERION THAT CANNOT
+FAIL"* — and moved the proof onto tests that force the race instead of waiting for it.
+
+This chapter's lane runs at 228 s. So forty green e2e runs mean the lane was fast, not that
+the seam holds.
+
+**The seam does hold, and it was verified here rather than assumed.** Deleting
+`suppressed(connection.marks, message)` from `session.ts:222` turns two integration tests
+red in about ten seconds each:
+
+    × suppresses a frame the backfill already delivered
+      AssertionError: expected [ 42, 42 ] to deeply equal [ 42 ]
+    × still suppresses when two instances publish out of order
+      AssertionError: expected [ 42, 43, 42 ] to deeply equal [ 42, 43 ]
+
+That is flake 4 on demand. With the fix in place: 23 unit tests in `resume.test.ts` and 9
+integration tests in `resume.itest.ts`, all green.
+
+**Owner:** nobody — this is not an open defect. It is recorded so that a future close-out
+reading "e2e 40/40" does not mistake a fast lane for a proof, which is the mistake this
+entry was written after making.
 
 ## 20. Two comments claim a missing ioredis listener kills the process — CHAPTER 3.18's item 5 via 3.19's item 13, UNCHANGED
 
