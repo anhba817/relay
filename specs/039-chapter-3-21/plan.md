@@ -268,9 +268,14 @@ per taught file is not an estimator** — 3.17 came in 45% below 3.15 and 3.16's
 - **The inbound seam is the highest-risk change here**, not the grammar. Twenty chapters
   of tests assert that exactly one frame type is accepted. Phase 5 widens that and every
   one of them has to keep meaning what it meant.
-- **No tenth gateway integration file.** R9: seven of nine already spawn their own api and
-  five of forty battery failures were a fixture failing to come up. This chapter's
-  integration tests share an existing file or an existing api.
+- **No new api spawn — and that is not the same rule as "no tenth file".** R9 wrote the
+  constraint as "no tenth gateway integration file" because seven of nine spawn their own
+  api and five of forty battery failures were a fixture failing to come up. Checked against
+  the tree: `resume.itest.ts` spawns none, stubs the `ApiClient` and boots gateways in
+  process, and typing needs no api either. **So there is a tenth file, `typing.itest.ts`,
+  and the spawn count stays at seven.** The superseded wording survived here, in a task and
+  in `CLAUDE.md` after the decision was made in the task list — which is how a refinement
+  reaches one file and leaves three.
 - **A forward reference this chapter falsifies was published yesterday.** R8's claims 2 and
   3 are chapter 3.20's, and correcting them is Phase 10's work rather than an embarrassment
   to be buried.

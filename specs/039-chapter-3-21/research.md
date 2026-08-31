@@ -333,8 +333,14 @@ of nine already do, chapter 3.20 added the seventh and recorded it as making 3.1
 worse, and five of the seven battery failures across forty runs were a gateway api fixture
 failing to come up.
 
-**So this chapter's integration tests go in an existing file or share an api.** The
-decision belongs in planning; the constraint is recorded here.
+**So the constraint is the spawn count, and planning read it that way**: `typing.itest.ts`
+is a tenth file that spawns nothing, on `resume.itest.ts`'s shape — a stubbed `ApiClient`,
+two in-process gateway instances, a real Redis. Seven spawns before, seven after.
+
+**The sentence here used to read "go in an existing file or share an api,"** which is the
+constraint stated as its proxy. A file count was never the thing that failed; an api boot
+was. `CLAUDE.md` and a plan risk both carried the proxy forward after planning had replaced
+it.
 
 ---
 

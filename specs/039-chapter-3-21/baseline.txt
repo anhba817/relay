@@ -787,3 +787,80 @@ in one command, and neither command had been run.
 **The stopping rule is unchanged and it is not yield: stop when nobody can name a
 direction that has not been walked.** Pass 8 walked a covered one and found
 nothing, which is what that looks like.
+
+ANALYSIS PASS 11 — A DECISION THAT CHANGED, AND EVERYWHERE IT DIDN'T
+------------------------------------------------------------
+
+Pass 10 found a claim believed because it was written down. This pass asked the
+same question of a claim that was REVISED: does the revision reach every place
+that carries it?
+
+    C12  CRITICAL  R9's constraint was refined from "no tenth integration file" to
+                   "no new api spawn" — recorded in this file above, and stated in
+                   capitals in the Phase 5 header. FIVE other places still carried
+                   the proxy, and the finding underestimated it at three:
+
+                     tasks.md T052    "**No tenth file was added**, so the package
+                                      clock should not move" — an instruction
+                                      somebody executes, asserting a false fact
+                                      into this file
+                     plan.md :269     a Risk that reads as a constraint the
+                                      chapter violates
+                     research.md :336 "go in an existing file or share an api"
+                     quickstart.md:99 the same, found only by grepping the claim
+                                      after the first four were fixed
+                     CLAUDE.md :47    loaded into every session in this project
+
+                   **A proxy for a constraint outlives the constraint.** The file
+                   count was always a stand-in for the api boot count, and the
+                   stand-in kept being true-looking after the real rule was
+                   measured. Four of the five were fixed from the finding; the
+                   fifth came from `grep -rn "no tenth"` afterwards.
+
+    H13  HIGH      The renewal interval was a hardcoded constant, against the seam
+                   the same file already carries twice:
+
+                     session.ts:150        meterIntervalMs?: number
+                     membership.ts:67      rereadIntervalMs?: number
+                     membership.itest.ts:882   build({ rereadIntervalMs: 40 })
+
+                   Chapter 3.20 tests a SIXTY-second backstop in FORTY
+                   milliseconds. This chapter's plan tested a two-second interval
+                   by waiting two seconds, in the package that paces a lane with
+                   11.2 s of headroom, in a battery already measured at a 17.5%
+                   per-run failure rate. And T060's proof was edit-and-restore —
+                   the form that produced no failure twice in chapter 3.20.
+                   Now `renewalIntervalMs?`, defaulting to 2_000, and T060 is a
+                   case built with 0 rather than a source edit.
+
+    M15  MEDIUM    T052's prediction was wrong in both directions: a tenth suite
+                   costs something, and what it does not cost is an api boot.
+                   Predict against `resume.itest.ts`'s clock from the same run.
+
+WHAT CAME BACK CLEAN
+------------------------------------------------------------
+
+    coverage location   protocol/typing.test.ts and gateway/typing.test.ts both
+                        planned; 8 of 12 gateway modules have a unit test, and the
+                        coverage config includes *.itest.ts on purpose. The
+                        28.57% class does not apply.
+    metering            meter.ts counts connection-minutes, not frames. Nobody is
+                        billed for keystrokes.
+    the failure path    T068 severs the fabric with a TCP proxy and requires ONE
+                        structured event; T069 asserts the emitted SET. 3.18's
+                        lesson applied — the log line is what carries FR-015.
+    the gauntlet        T015 predicts its three failures, T016 owns the eleventh
+                        member and says why it gets no sample case.
+
+ELEVEN PASSES
+------------------------------------------------------------
+
+    11  a decision that changed   1 CRITICAL — a proxy that outlived its rule
+
+**Twelve CRITICALs. Four were inside this feature's own documents.**
+
+Passes 9, 10 and 11 are one shape at three distances: a fenced promise nobody
+re-read, a test file credited with a capability it lacks, and a constraint stated
+as its proxy in five places after the real one was measured. **All three were one
+grep away, and in all three the sentence had been written down, which is what
+stopped it looking like a question.**

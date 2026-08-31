@@ -44,9 +44,14 @@ reuse a grammar rather than adding one". Both were written yesterday and both ar
 **A ForwardRef should describe what the next chapter must decide, not what it will
 conclude.**
 
-**NO TENTH GATEWAY INTEGRATION FILE** (R9). Seven of nine already spawn their own api and
-five of the seven failures across chapter 3.20's forty battery runs were a gateway api
-fixture failing to come up. This chapter's integration tests share an existing file.
+**THE CONSTRAINT IS API SPAWNS, NOT FILES** (R9) — and this sentence said "no tenth gateway
+integration file" for eleven analysis passes after planning had decided otherwise. Seven of
+nine gateway integration files spawn their own api, and five of the seven failures across
+chapter 3.20's forty battery runs were one of those fixtures failing to come up. But
+`resume.itest.ts` spawns none: it stubs the `ApiClient` and boots gateways in process, and
+typing needs no api either. **So chapter 3.21 adds a tenth file, `typing.itest.ts`, and the
+spawn count stays at seven.** A proxy for a constraint outlives the constraint, and this
+file is where a proxy does the most damage — it is loaded into every session.
 
 **CHAPTER 3.20 IS CLOSED**, tagged `part3-ch20` in all three repositories. Its record is
 `specs/038-chapter-3-20/` — read `chapter-notes.md` first, then `gaps.md` (**25 items**,

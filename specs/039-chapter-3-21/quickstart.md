@@ -94,9 +94,11 @@ not the plan breaking.
     RELAY_POSTGRES_PORT=15432 npx vitest run --root services/gateway \
       --config vitest.integration.config.mts src/<file>.itest.ts
 
-**There is no tenth integration file.** Seven of nine already spawn their own api, and five
-of forty battery failures across chapter 3.20's two batteries were a gateway api fixture
-failing to come up. This chapter's tests share an existing file or an existing api.
+**There is a tenth integration file and it spawns no api.** Seven of nine already spawn
+their own, and five of forty battery failures across chapter 3.20's two batteries were one
+of those fixtures failing to come up — so the count that matters is seven, before and
+after. `typing.itest.ts` follows `resume.itest.ts`: a stubbed `ApiClient`, two in-process
+gateway instances, a real Redis.
 
 ---
 
