@@ -1015,3 +1015,77 @@ THIRTEEN PASSES
     13  which artifact missed it   1 CRITICAL — the plan, five times over
 
 **Fourteen CRITICALs. Six were inside this feature's own documents.**
+
+ANALYSIS PASS 14 — THE SPEC'S OWN ASSUMPTIONS, AND A SWEEP
+------------------------------------------------------------
+
+    C15  CRITICAL  "**The gateway holds no typing state.** No Redis key, no timer
+                   per indicator, nothing to refresh. This is what makes the cost
+                   against 10,000 connections per instance a publish rate rather
+                   than a key count."
+
+                   It holds a last-publish timestamp per (connection, channel),
+                   which is a key count, and FR-011a requires it to be
+                   authoritative at the gateway. **Two assumptions twenty lines
+                   apart in one list, contradicting each other on the property the
+                   chapter is about** — and the chapter is required to state it, so
+                   the wrong version would have shipped as prose.
+
+                   The split that resolves it: no state about an INDICATOR — which
+                   is why nothing can announce that one stopped — and state about
+                   the gateway's own recent publishes, in memory, one interval
+                   long. Conflating them also invites someone to delete the map
+                   believing FR-010 forbids it. **FR-010 forbids persistence.**
+
+    H16  HIGH      Nothing pruned an elapsed debounce entry. Removal happened on
+                   close and on revocation, so the bound was channels a connection
+                   had EVER typed in while connected. One line on read —
+                   `if (now - last > interval) channels.delete(channelId)` — makes
+                   it channels it is typing in.
+
+    M20  MEDIUM    The disconnect edge case read "Nothing is published" in a
+                   scenario whose premise is that a signal WAS published.
+
+    M21  MEDIUM    No edge case covered a user's own second connection, which is a
+                   requirement and a test after pass 10.
+
+THE SWEEP, AND WHAT IT FOUND
+------------------------------------------------------------
+
+Every gate green: check:fences 229 files / 37 chapters, check:docs, check:figures
+232, check:srs 245 rows, check:errors 17 codes, check-refs.
+
+Then a cross-artifact sweep, which found two more:
+
+    traceability.md :67   FR-019a still said "four claims, eight fragments".
+                          **Pass 9's count reached research, tasks and spec and
+                          missed this file.** The fourth instance of one
+                          correction landing in some artifacts and not others.
+    plan.md :203          a bare `FR-032` — chapter 3.20's id, in a chapter whose
+                          own ids stop at FR-021.
+
+So the sweep is now `sweep.py`, and it checks the class rather than the instances:
+the phase order and MVP marker across plan and tasks, every superseded phrasing
+this chapter has corrected, stated counts against measured ones, foreign ids, and
+placeholders. **Tested red five ways.** Four fired; the fifth (renaming a traced
+id) belongs to `check-refs.py` and it catches it.
+
+**THE THIRD RED TEST FOUND A BLIND SPOT, WHICH IS WHY IT WAS RUN.** The
+foreign-id rule sat behind the prose skip list — the list that lets a superseded
+phrase through when a nearby line says it was superseded. The skip word "said
+three" appears in the very sentence that cites chapter 3.20's FR-032, so a real
+hit read GREEN. Whether an id is labelled is a byte comparison and no longer has
+a heuristic in front of it. Chapter 3.17 recorded this class five times in one
+feature: **a pattern matching the examples in front of you rather than the set
+the rule names.**
+
+`sweep.py` needs an owner or a recorded absence of one, and that is now part of
+the gaps task. Chapter 3.18's `sweep.py` died unowned.
+
+FOURTEEN PASSES
+------------------------------------------------------------
+
+    14  the spec's own assumptions   1 CRITICAL — the central claim, overstated
+                                     + 2 from a sweep nobody had run
+
+**Sixteen CRITICALs. Eight were inside this feature's own documents.**

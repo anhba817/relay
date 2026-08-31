@@ -64,7 +64,7 @@ requirement whose verification is a sentence rather than a test.
 | FR-017 | four kinds over shared channels, each once, under its own type | integration |
 | FR-018 | nothing buffered, nothing replayed on reconnect | integration + a proof it bites |
 | FR-019 | `git diff docs/04-srs.md` is empty | **command** |
-| FR-019a | four claims, eight fragments, none still published | **command** — `check-prose.py` across `docs/` and both locales |
+| FR-019a | five claims, ten fragments, none still published | **command** — `check-prose.py` across `docs/` and both locales |
 | FR-020 | four of six kinds have producers, the other two named | inspection |
 | FR-021 | the chapter says the fourth grammar was taken and why the plan assumed otherwise | inspection |
 

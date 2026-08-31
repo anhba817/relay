@@ -151,12 +151,17 @@ of frames other members receive is bounded rather than proportional to the signa
 
 ### Edge Cases
 
-- A client signals typing and disconnects before the expiry elapses. Nothing is published;
-  the receiver's timer clears the indicator with no help from the server.
+- A client signals typing and disconnects before the expiry elapses. **Nothing further is
+  published and no frame ends it** — the signal itself was published, which is why an
+  indicator is showing — and the receiver's timer clears it with no help from the server.
 - A member is removed from the channel (chapter 3.20) while an indicator is showing for
   them. The removal frame arrives; the typing indicator clears on its own timer.
 - Two members type at once. Each receiver holds one timer per (channel, user) and shows
   both.
+- A user types on one connection while holding a second one in the same channel. **The
+  second receives nothing**: the filter is by identity, not by socket, and the frame crosses
+  the fabric with no socket reference to compare against. A test with one connection per
+  user passes either way (FR-005).
 - The fabric is unreachable when a signal arrives. The signal is dropped, the socket stays
   open, and one structured failure event is logged.
 - A client signals typing for a channel that does not exist. Treated as a channel it is not
@@ -344,9 +349,19 @@ of frames other members receive is bounded rather than proportional to the signa
   **strengthened**: its record counts three typed points, and running the verification
   returned eight lines covering seven. All seven were verified present before this was
   assumed.
-- **The gateway holds no typing state.** No Redis key, no timer per indicator, nothing to
-  refresh. This is what makes the cost against 10,000 connections per instance a publish
-  rate rather than a key count.
+- **The gateway holds no state about an INDICATOR, and it does hold state about its own
+  recent publishes.** These are two claims and the first version of this bullet said only
+  the strong one — "the gateway holds no typing state" — which the debounce below
+  contradicts. Nothing anywhere knows an indicator exists: no table, no Redis key, no
+  server timer, nothing to refresh, which is why nothing can announce that one stopped.
+  What the gateway keeps is a last-publish timestamp per (connection, channel), in memory,
+  with a lifetime of one renewal interval. **So the cost against NFR-SCL-01's 10,000
+  connections per instance is a publish rate plus a bounded map**, and the bound is the
+  number of (connection, channel) pairs typed in within the last interval — an entry is
+  written on publish and deleted when it goes stale, on close, or when a revocation drops
+  the channel. Conflating the two claims costs twice: a reader finds the spec contradicting
+  itself, and someone eventually deletes the map believing FR-010 forbids it. **FR-010
+  forbids persistence, and an in-memory map is not that.**
 - **The inbound frame is new rather than the existing `typing` made bidirectional.** A
   bidirectional frame would let a client name a user, which is exactly what chapter 3.12's
   gauntlet row forbids.

@@ -72,7 +72,7 @@ act on, while a client already knows its own environment and has no use for a te
 | Thing | Lives | Length | Ends by |
 |---|---|---|---|
 | The indicator a user sees | the receiving client | 5 s from the last frame | a timer lapsing, silently |
-| Permission to publish again | a `Map` in `attachSessions`'s closure, keyed by connection then channel | `DEFAULT_RENEWAL_INTERVAL_MS` = 2 s, injectable per instance | the value by the interval elapsing, **the connection's whole entry by the close handler** |
+| Permission to publish again | a `Map` in `attachSessions`'s closure, keyed by connection then channel | `DEFAULT_RENEWAL_INTERVAL_MS` = 2 s, injectable per instance | the entry deleted on read once stale, the connection's whole entry by the close handler, a channel's by a revocation |
 | The fabric subscription | the gateway, reference-counted | the connection | the last local member leaving |
 
 **The module holds two Redis connections, not one** — a publisher and a subscriber, because

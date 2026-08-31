@@ -200,7 +200,7 @@ phase reads that record before writing its own.
 ### Phase 8 — Failure, and the closed vocabulary
 Fabric unreachable: socket stays open, nothing reaches the client, one logged event.
 **Assert the SET of names an instance emitted**, not what a grep finds — chapter 3.20's
-FR-032 said three names while the code emitted six, and the amendment is on record.
+chapter 3.20's FR-032 said three names while the code emitted six, and the amendment is on record. **The chapter label is not decoration** — this chapter's ids stop at FR-021, so a bare FR-032 sends a reader looking in the wrong spec.
 
 ### Phase 9 — The documents
 ADR-21 if the architecture record changes, and R1 says it does: a fourth grammar and the
