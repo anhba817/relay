@@ -582,3 +582,66 @@ SEVEN PASSES
 
 **Nine CRITICALs. Two were inside this feature's documents.** No two passes found
 the same class and the yield has not fallen once.
+
+
+ANALYSIS PASS 8 — DOES EVERY PHASE COMMIT CLEANLY?
+------------------------------------------------------------
+
+**THE FIRST PASS WITH NO CRITICAL**, and the honest reading is that the question
+was narrower than the seven before it. "Does each phase commit cleanly" has one
+answer per phase and all eleven could be checked. "What does this chapter falsify"
+had an unbounded search space and kept producing.
+
+**H10 — SEVEN OF ELEVEN PHASES COMMITTED WITH NO LINT OR TYPECHECK.**
+Only T029 (Phase 3) and T099 (the close-out) ran them. Phases 1, 2, 4, 5, 6, 7 and
+8 each ended in a commit task with neither.
+
+**Chapter 3.20 had the same thin coverage — three mentions across eleven phases —
+and paid for it.** Its Phase 3 was uncommittable because a destructured binding had
+no consumer, and that surfaced only because a gate happened to run in that phase.
+In six of its others it would not have.
+
+Now all eleven phases gate before committing. **A phase that commits without them
+is a phase whose breakage surfaces in a later phase's gate, attributed to the wrong
+work.**
+
+**M12 — A TASK MANDATED DEAD CODE.**
+T016 said to add a case to `isolation.itest.ts`'s sample builder for the new frame
+type. That builder feeds the refusal loop, which iterates
+`DIRECTIONS.filter(([, d]) => d === "outbound")`, and the new type is **inbound** —
+so nothing ever asks for its sample. The task now says to omit the case and to say
+why in the file, because the next reader adding an inbound type will wonder.
+
+THREE CONFIRMATIONS, ONE OF WHICH I EXPECTED TO BE A DEFECT
+------------------------------------------------------------
+
+    T009's red test typechecks. It sends a frame type Phase 2 has not created yet,
+    which looked like a compile failure — and `session.itest.ts` sends
+    `JSON.stringify({ type: … })` on an object literal, so no union type is
+    involved. Frames go over the wire as strings.
+
+    One switch in the tree touches the frame union — isolation.itest.ts:746 — and
+    T016 owns it in the same phase that breaks it.
+
+    No `: never` exhaustiveness guards anywhere in the gateway or protocol source,
+    so an eleventh union member cannot break a narrowing somewhere unseen.
+
+EIGHT PASSES, AND WHY THE YIELD FELL
+------------------------------------------------------------
+
+    1  premises                 2 CRITICAL
+    2  self-audit, 3.20's code   2 CRITICAL
+    3  the wider tree — docs/    1 CRITICAL
+    4  running the commands      1 CRITICAL — the predecessor's tag
+    5  implementability          1 CRITICAL — a module that cannot publish
+    6  whose obligation          1 CRITICAL — a clause the platform cannot execute
+    7  the deferrals             1 CRITICAL — a clause that cannot accept one
+    8  phase committability      0 CRITICAL
+
+**Nine CRITICALs. Two were inside this feature's own documents.**
+
+**Falling yield is not a stopping signal in this project** — chapter 3.16's pass 12
+recommended stopping and its passes 13, 14 and 15 each found a CRITICAL. But the
+REASON it fell here is diagnostic: every pass that produced a CRITICAL opened a new
+search space, and pass 8 walked one already covered. **The stopping question is not
+"has the yield fallen" but "is there a direction nobody has looked in yet."**

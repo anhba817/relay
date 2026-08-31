@@ -2,6 +2,13 @@
 
 **Spec**: [spec.md](./spec.md) · **Plan**: [plan.md](./plan.md) · **Research**: [research.md](./research.md)
 
+**EVERY PHASE RUNS `pnpm lint` AND `pnpm typecheck` BEFORE ITS COMMIT.** Analysis pass 8
+found seven of eleven phases committing with neither — only Phase 3 and the close-out had
+them. Chapter 3.20 had the same thin coverage, three mentions across eleven phases, and its
+Phase 3 turned out to be uncommittable because a destructured binding had no consumer. That
+surfaced only because a gate happened to run in that phase; in six of its others it would
+not have.
+
 **THE PLAN'S PHASE ORDER WAS WRONG AND THIS FILE CORRECTS IT.** `plan.md` puts US1 —
 Mai sees Tuan typing — before US2, the inbound seam. **US1 cannot be delivered without
 US2**: no frame lets a client say it is typing, so there is no trigger for the delivery
@@ -22,7 +29,7 @@ the refusal that guards it is proven still to work*.
 - [ ] T007 Copy `specs/038-chapter-3-20/check-refs.py` to `specs/039-chapter-3-21/check-refs.py` with `FOREIGN` reset, and record in `specs/039-chapter-3-21/chapter-notes.md` that this is chapter 3.19's `gaps.md` item 8 answered the same way twice — a copy with its declarations emptied. **Already done during planning; verify rather than repeat.**
 - [ ] T008 Run `python3 specs/039-chapter-3-21/check-refs.py` and require it green before Phase 2.
 - [ ] T009 Write the failing test in `relay-platform/services/gateway/src/session.itest.ts`: a client uttering the typing signal today receives `unknown_frame_type` and close 4002. **RED ON PURPOSE, and the phase commit body says so.** A red lane nobody explained is indistinguishable from a red lane nobody noticed, and CI cannot tell them apart. This is the refusal Phase 4 narrows.
-- [ ] T010 Commit phase 1, naming the requirement ids it closes. Run `git status --short` in `relay-platform` first.
+- [ ] T010 Commit phase 1, naming the requirement ids it closes. **Run `pnpm lint` and `pnpm typecheck` in `relay-platform` first** — a phase that commits without them is a phase whose breakage surfaces in a later phase's gate, attributed to the wrong work.  Run `git status --short` in `relay-platform` first.
 
 ---
 
@@ -33,11 +40,15 @@ the refusal that guards it is proven still to work*.
 - [ ] T013 [P] Unit-test the new schema in `relay-platform/packages/protocol/src/frames.test.ts`: it accepts a channel, rejects an unknown field, and **rejects a payload carrying a `user`** — a client that could name a user could type as anybody.
 - [ ] T014 [P] Unit-test in `relay-platform/packages/protocol/src/frames.test.ts` that the union has **eleven** members and that the two inbound types are exactly the two named. Chapter 3.19's `codes.test.ts` is the precedent: asserting an exact set and an exact count is what makes a new member a decision rather than an accident.
 - [ ] T015 Run `pnpm --filter @relay/gateway test:integration` in `relay-platform` and **expect the direction gauntlet to fail three ways**: `expect(members.length).toBe(10)`, `classifies every member exactly once`, and `names no frame the union does not have`. Record all three in `specs/039-chapter-3-21/baseline.txt`. **This is the derived-list check firing on the build that adds a frame** — the same instrument that catches a new route, six times in three features.
-- [ ] T016 Update `relay-platform/services/gateway/src/isolation.itest.ts`: the count to eleven, a DIRECTIONS row for the new type with direction **inbound** and a stated reason, and a case in the sample builder at its `switch`. **`typing` stays outbound with its reason unchanged** — *"server-fanned; a client claiming one could type as anybody"* — and it stays true, because the inbound frame is a different type carrying no user.
+- [ ] T016 Update `relay-platform/services/gateway/src/isolation.itest.ts`: the count to eleven, a DIRECTIONS row for the new type with direction **inbound** and a stated reason, and **no case in the sample builder**, which an earlier version of this task
+  mandated. That builder feeds the refusal loop, which iterates
+  `DIRECTIONS.filter(([, d]) => d === "outbound")`, and the new type is **inbound** — so
+  nothing ever asks for its sample and the case would be dead code a task required. Say so
+  in the file, because the next reader adding an inbound type will wonder. **`typing` stays outbound with its reason unchanged** — *"server-fanned; a client claiming one could type as anybody"* — and it stays true, because the inbound frame is a different type carrying no user.
 - [ ] T017 Run `pnpm --filter @relay/gateway test:integration` again and require the gauntlet green. T009's test is still red; nothing else is.
 - [ ] T017a **Verify FR-008 by command**: `git diff relay-platform/packages/protocol/src/frames.ts` must show additions only, and no line of `typingSchema` may appear as a removal. The file IS edited by this chapter to add a sibling schema, so "unchanged" is a claim about one region of a file that changed — and nothing else in this repository checks a region. Record the diff's shape in `specs/039-chapter-3-21/baseline.txt`.
 - [ ] T018 Run `pnpm build` in `relay-platform`, then `pnpm check:errors` in **relay-tutorial**. This chapter adds no close code, so the count must not move from 17. **It reads the built `packages/protocol/dist/codes.js`** — a stale `dist` makes it green for the wrong reason.
-- [ ] T019 Commit phase 2, naming the requirement ids it closes. Run `git status --short` in `relay-platform` first.
+- [ ] T019 Commit phase 2, naming the requirement ids it closes. **Run `pnpm lint` and `pnpm typecheck` in `relay-platform` first** — a phase that commits without them is a phase whose breakage surfaces in a later phase's gate, attributed to the wrong work.  Run `git status --short` in `relay-platform` first.
 
 ---
 
@@ -100,7 +111,7 @@ types are accepted and every other type is refused with `unknown_frame_type` and
 - [ ] T038 [US2] Unit-test in `relay-platform/services/gateway/src/session.test.ts` that `INBOUND_FRAME_TYPES` has **exactly two members and exactly these two**. A third is then a decision somebody made rather than a diff nobody read.
 - [ ] T039 [US2] **Prove the refusal still bites**: add a third type to `INBOUND_FRAME_TYPES` in `relay-platform/services/gateway/src/session.ts` by hand, watch T035 fail, remove it. A widened check that admits everything passes every test that only sends valid frames.
 - [ ] T040 [US2] Run the full gateway integration lane and require it green: `pnpm --filter @relay/gateway test:integration` in `relay-platform`.
-- [ ] T041 [US2] Commit phase 4, naming the requirement ids it closes. Run `git status --short` in `relay-platform` first.
+- [ ] T041 [US2] Commit phase 4, naming the requirement ids it closes. **Run `pnpm lint` and `pnpm typecheck` in `relay-platform` first** — a phase that commits without them is a phase whose breakage surfaces in a later phase's gate, attributed to the wrong work.  Run `git status --short` in `relay-platform` first.
 
 ---
 
@@ -143,7 +154,7 @@ nothing.
 - [ ] T050 [US1] **Capture logs correctly** in `relay-platform/services/gateway/src/typing.itest.ts`: `createLogger`'s sink receives a JSON **string** with fields at the top level, not an object. Assert one known line before relying on the mechanism.
 - [ ] T051 [US1] Measure the subscription cost and record it in `specs/039-chapter-3-21/baseline.txt`: `CONFIG RESETSTAT`, the suite, `INFO commandstats`. **A prediction is not a measurement.** Chapter 3.20's reading showed the reference counter in the command count, which was cheaper than any assertion in the file.
 - [ ] T052 [US1] Run the full gateway integration lane and record the package's wall clock in `specs/039-chapter-3-21/baseline.txt`. **No tenth file was added**, so the package clock should not move — the gateway package is `max(file)` and `presence.itest.ts` is the pacesetter at ~45 s.
-- [ ] T053 [US1] Commit phase 5, naming the requirement ids it closes. Run `git status --short` in `relay-platform` first.
+- [ ] T053 [US1] Commit phase 5, naming the requirement ids it closes. **Run `pnpm lint` and `pnpm typecheck` in `relay-platform` first** — a phase that commits without them is a phase whose breakage surfaces in a later phase's gate, attributed to the wrong work.  Run `git status --short` in `relay-platform` first.
 
 ---
 
@@ -184,7 +195,7 @@ channel and 2 seconds. R5 now records the three mismatches.
   T057 fail, restore. Chapter 3.20 ran this technique twice and **got no failure both
   times**, which is how it learned neither of its ordering requirements was observable. Run
   it and believe the result.
-- [ ] T061 [US3] Commit phase 6, naming the requirement ids it closes. Run `git status --short` in `relay-platform` first.
+- [ ] T061 [US3] Commit phase 6, naming the requirement ids it closes. **Run `pnpm lint` and `pnpm typecheck` in `relay-platform` first** — a phase that commits without them is a phase whose breakage surfaces in a later phase's gate, attributed to the wrong work.  Run `git status --short` in `relay-platform` first.
 
 ## Phase 7: The resume buffer, and what must not enter it
 
@@ -192,7 +203,7 @@ channel and 2 seconds. R5 now records the three mismatches.
 - [ ] T063 Integration-test that a typing frame arriving mid-resume is sent immediately rather than buffered. **Chapter 3.20's equivalent test passed twice with its subject deleted, for two unrelated reasons** — a cursor equal to the buffered frame's sequence, and a connection that was no longer buffering. Read that record in `specs/038-chapter-3-20/baseline.txt` before writing this one.
 - [ ] T064 Integration-test in `relay-platform/services/gateway/src/typing.itest.ts` that a reconnecting client receives **no** typing frames for signals sent while it was away (FR-018, SC-009). A typing indicator replayed after a reconnect is a claim about the present that was true five seconds ago.
 - [ ] T065 **Prove T063 bites**: route the typing frame in `relay-platform/services/gateway/src/session.ts` through `deliver`'s buffering path, watch it fail, restore. Chapter 3.20 ran this proof on two orderings and **neither failed** — both were unobservable — so run it and believe the result rather than the intention.
-- [ ] T066 Commit phase 7, naming the requirement ids it closes. Run `git status --short` in `relay-platform` first.
+- [ ] T066 Commit phase 7, naming the requirement ids it closes. **Run `pnpm lint` and `pnpm typecheck` in `relay-platform` first** — a phase that commits without them is a phase whose breakage surfaces in a later phase's gate, attributed to the wrong work.  Run `git status --short` in `relay-platform` first.
 
 ---
 
@@ -204,7 +215,7 @@ channel and 2 seconds. R5 now records the three mismatches.
 - [ ] T070 Confirm in `relay-platform/services/gateway/src/typing.itest.ts` that **no name is emitted for a rate-limited signal**. It is expected traffic, not a failure, and one line per keystroke over the limit is the unbounded output NFR-OBS-01 exists to prevent.
 - [ ] T071 Integration-test in `relay-platform/services/gateway/src/typing.itest.ts` that the next signal publishes normally after the fabric is restored, without a restart. The subscriber keeps ioredis's default retry for exactly this.
 - [ ] T072 Integration-test **FR-017's cross-kind property** in `relay-platform/services/gateway/src/typing.itest.ts`: a message, a presence transition, a membership change and a typing signal over the same channels each arrive once, under their own `type`. **Five subject shapes now share one Redis** and the topology is what keeps them apart — count **by subject and by type**, not by type alone.
-- [ ] T073 Commit phase 8, naming the requirement ids it closes. Run `git status --short` in `relay-platform` first.
+- [ ] T073 Commit phase 8, naming the requirement ids it closes. **Run `pnpm lint` and `pnpm typecheck` in `relay-platform` first** — a phase that commits without them is a phase whose breakage surfaces in a later phase's gate, attributed to the wrong work.  Run `git status --short` in `relay-platform` first.
 
 ---
 
@@ -239,7 +250,7 @@ channel and 2 seconds. R5 now records the three mismatches.
 - [ ] T091 [P] Run `pnpm check:figures`, `pnpm check:srs`, and `python3 ../specs/039-chapter-3-21/check-prose.py` in **relay-tutorial**, and require all three green.
 - [ ] T092 Run `pnpm build` in `relay-platform`, **then** `pnpm check:errors` in **relay-tutorial**. The count must not move from 17.
 - [ ] T093 [P] Run `pnpm build` in **relay-tutorial** and confirm both locales route. Re-derive the static page count from the `Generating static pages` line — it moved 95 → 97 for chapter 3.20, two per chapter.
-- [ ] T094 Commit phase 10, naming the requirement ids it closes. Run `git status --short` in `relay-tutorial` first.
+- [ ] T094 Commit phase 10, naming the requirement ids it closes. **Run `pnpm lint` and `pnpm typecheck` in `relay-platform` first** — a phase that commits without them is a phase whose breakage surfaces in a later phase's gate, attributed to the wrong work.  Run `git status --short` in `relay-tutorial` first.
 
 ---
 
