@@ -29,13 +29,18 @@ batteries could tell them apart. Two mechanisms, neither in this chapter's code:
   requests expecting the third to be refused. A boundary between the second and third
   resets the counter. Chapter 3.17 recorded this class with the mechanism unidentified; it
   is identified now. `gaps.md` item 19.
-- **a gateway api fixture fails under contention, in three different files.** Five
-  occurrences across forty runs in `session.itest.ts`, `presence.itest.ts` and
-  `isolation.itest.ts`, each the same shape: a file-level `beforeAll` spawns an api, it
-  does not come up, and every test in that file fails at 0–5 ms. Seven of nine gateway
-  integration files spawn their own api on a random port, in parallel. **The shared fixture
-  is the fix for all five**, and no per-file change explains three files failing
-  identically. `gaps.md` items 19a and 15.
+- **a gateway api fixture fails and THE MECHANISM IS NOT KNOWN.** Five occurrences across
+  forty runs in `session.itest.ts`, `presence.itest.ts` and `isolation.itest.ts`, each the
+  same shape: a file-level `beforeAll` spawns an api, the api does not answer, and every
+  test in that file fails at 0–5 ms. **Three hypotheses measured and eliminated** — Postgres
+  connection exhaustion (peak 50 of 100), a port collision (the failing ports are in each
+  file's own range), and an undrained stdout pipe (Node buffers a full pipe in memory; an
+  api spawned that way answered 4,000 requests). **"Contention" was written into this file
+  as the cause before any of that was checked, and it was a guess.** `gaps.md` item 19a.
+
+  **The reason it is still unknown is that the evidence is thrown away**: all seven files
+  either spawn with `stdio: "ignore"` or pipe and never read, so every failing api has
+  already said why and nobody was listening.
 
 **TWO TASKS SPECIFIED AN ORDERING AS THE REQUIREMENT AND NEITHER WAS OBSERVABLE.** Both
 asked for the proof that it bites — remove the ordering, watch a test fail — and neither

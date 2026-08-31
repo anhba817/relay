@@ -226,18 +226,44 @@ rather than a behaviour's.
     battery 3 run 15        session.itest.ts     the same two tests as battery 1
     battery 3 run 19        isolation.itest.ts   the gauntlet describe, 15 skipped
 
-**This is chapter 3.19's item 15 costing runs rather than merely being untidy.** Seven of
-nine gateway integration files spawn their own api on a random port, vitest runs the files
-in parallel, and under that contention one of them intermittently fails to become or stay
-healthy. No per-file change explains three files failing identically.
+**THE MECHANISM IS NOT KNOWN, AND THREE PLAUSIBLE ONES ARE ELIMINATED.** An earlier draft
+of this item asserted "contention" as the cause. That was a guess dressed as a finding, and
+each candidate was then measured:
 
-A port collision was found and fixed while investigating and is **not** the cause:
-`membership.itest.ts` had taken `isolation.itest.ts`'s range exactly, then overlapped it
-again on the second attempt. The failing ports in `session.itest.ts` belong to that file
-alone.
+    Postgres connection exhaustion   DISPROVEN. Sampled every 2 s through a gateway
+                                     lane: peak 50 of max_connections=100. Each api
+                                     child holds a default pg.Pool of 10 and seven
+                                     spawn, but they do not overlap the way the
+                                     arithmetic suggested.
+    a port collision                 DISPROVEN. The failing ports are inside each
+                                     file's own exclusive range. A real collision was
+                                     found and fixed while looking — `membership.itest.ts`
+                                     had taken `isolation.itest.ts`'s range exactly — but
+                                     it is not this.
+    an undrained stdout pipe         DISPROVEN. Four of these files spawn with
+                                     `stdio: ["ignore","pipe","pipe"]` and **none reads
+                                     the streams**, so the 64 KB buffer fills after about
+                                     350 requests at the measured 185 bytes per logged
+                                     request. Node buffers a full pipe in the writer's
+                                     memory rather than blocking: an api spawned exactly
+                                     that way answered 4,000 requests, eleven times the
+                                     buffer, without pausing.
 
-**Owner:** the shared api fixture chapter 3.19's item 15 asks for. It is the fix for all
-five occurrences, and it is a feature rather than a chapter's tail.
+What is established is the symptom and its spread: a file-level `beforeAll` spawns an api,
+the api does not answer, and every test in that file or describe fails at 0–5 ms. Three
+symptoms across three files — `TypeError: fetch failed` (presence), `ECONNREFUSED`
+(session), `Hook timed out in 90000ms` (isolation).
+
+**The next thing to try is the evidence nobody keeps.** `presence.itest.ts` and
+`membership.itest.ts` spawn with `stdio: "ignore"` and the other four pipe without reading,
+so **every spawned api's stdout is discarded in all seven files**. When one of them fails to
+answer, it has already said why and nobody was listening. Draining the pipe to a buffer and
+printing it on a fixture failure costs a few lines and is the difference between a fourth
+hypothesis and a diagnosis.
+
+**Owner:** the shared api fixture chapter 3.19's item 15 asks for, which should keep the
+child's output. It is the fix for all five occurrences, and it is a feature rather than a
+chapter's tail.
 
 ## 19b. `createFanout` has no ioredis `error` listener, and this chapter made it audible — CHAPTER 3.18's R10, UNCHANGED
 
