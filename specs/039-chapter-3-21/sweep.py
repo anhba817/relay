@@ -9,6 +9,15 @@ baseline.txt and applied only to tasks.md). No instrument in this repository
 compares a claim in one document to the same claim in another — `check-refs.py`
 reads ids, `check:srs` says in its own comment that it does not read meaning.
 
+SCOPE: `baseline.txt` IS EXEMPT FROM THE CLAIM CHECKS, and that is a decision
+rather than a convenience. It is an append-only record of what happened, and what
+happened includes quoting a superseded sentence in order to retire it — pass 14's
+entry opens with the old assumption in quotation marks, pass 13's names a bare
+`FR-032` as the finding. Those are history, not claims about now, and nothing
+consults the record for current fact. **The risk this accepts**: a genuinely
+stale statement written into the record would not be caught here. Placeholders
+are still checked everywhere, including there.
+
 WHAT IT CHECKS
   1. every superseded phrasing this chapter has already corrected, anywhere
   2. the phase order and the MVP marker agree between plan.md and tasks.md
@@ -84,8 +93,10 @@ def main():
     docs = load()
     problems = []
 
-    # 1 + 4 — superseded phrasings and unlabelled foreign ids
-    for name, text in docs.items():
+    # 1 + 4 — superseded phrasings and unlabelled foreign ids. The record is
+    # exempt: see SCOPE above.
+    claims = {n: t for n, t in docs.items() if n != "baseline.txt"}
+    for name, text in claims.items():
         lines = text.splitlines()
         for pattern, should in STALE.items():
             for m in re.finditer(pattern, text):
@@ -100,7 +111,7 @@ def main():
     # test found it green on a real hit: the skip word "said three" appears in
     # the very sentence that cites chapter 3.20's FR-032. Whether an id is
     # labelled is a byte comparison, so it gets one.
-    for name, text in docs.items():
+    for name, text in claims.items():
         for m in re.finditer(r"\bFR-0(?:29|32)\b", text):
             n = text[: m.start()].count("\n")
             line = text.splitlines()[n]

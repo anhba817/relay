@@ -1089,3 +1089,78 @@ FOURTEEN PASSES
                                      + 2 from a sweep nobody had run
 
 **Sixteen CRITICALs. Eight were inside this feature's own documents.**
+
+ANALYSIS PASS 15 — THE CLAIMS ONLY ONE ARTIFACT MAKES
+------------------------------------------------------------
+
+`sweep.py` proves consistency and says so about itself: a sentence nobody has
+contradicted passes every line of it. So the unchecked surface is every claim
+only ONE artifact makes. Six of those, each asserting something about the
+repository, were run as commands. All six true:
+
+    sed -n '96,102p' frames.ts shows a two-field payload, no `state`   T005  exact
+    operation: "connect" | "send" is a two-member union                T006  limits.ts:83
+    the gauntlet asserts members.length).toBe(10)                      T015  isolation:777
+    presence.itest.ts has the TCP proxy pattern                        T068  11 matches
+    DRIVER_EXEMPT_TESTS is the list's name                             T029  eslint:57
+    figures: 3.17 four, 3.18 four, 3.19 three, 3.20 three              T083b 4 4 3 3
+
+Then three things nobody had asserted at all:
+
+    C16  CRITICAL  **`typing.itest.ts` had no port strategy.** The right answer
+                   was already in the tree and unstated: `resume.itest.ts:78` does
+                   `server.listen(0)` and reads `server.address()`, so the OS
+                   assigns the port — no range, no map entry, and two in-process
+                   instances get two distinct ports for free. `fanout.itest.ts` is
+                   the same. **The seven files that take ranges are the seven that
+                   spawn an api.**
+
+                   An implementer reaching for the nearest fabric itest finds
+                   `membership.itest.ts:233`'s `5400 + Math.random() * 200` and
+                   then has to pick a range. Chapter 3.20 did that and collided
+                   twice. **A port collision does not fail loudly** — it fails one
+                   run in N, in a battery at 17.5% with four failures unexplained,
+                   and T101 would have had to explain it.
+
+    H17  HIGH      **The lane's port map lists seven ranges and the lane has
+                   nine.** Missing: presence.itest.ts 4700–4900 (chapter 3.19) and
+                   membership.itest.ts 5400–5600 (chapter 3.20). Two consecutive
+                   chapters took a range and neither registered it, while
+                   isolation.itest.ts:73 and public-surface.itest.ts:61 both cite
+                   that block as the authority.
+
+                   **A 78%-complete registry is worse than none, because it is
+                   consulted and believed** — and it is why 3.20's second collision
+                   happened. Chapters 3.08 and 3.13 both fence that file, so two
+                   comment lines cost two chapters' diffs. T083c makes it a
+                   decision with the cost stated rather than a third silent pass.
+
+    H18  HIGH      T057 required the publish count to be asserted "on a Redis
+                   subscriber" and did not say which client. Raw `ioredis` is what
+                   presence.itest.ts and membership.itest.ts both chose and both
+                   took the exemption for; the alternative measures publishes
+                   through the code that publishes, which is chapter 3.18's warning
+                   in a new place. **No task added typing.itest.ts to
+                   DRIVER_EXEMPT_TESTS**, so `pnpm lint` fails and every gate from
+                   Phase 5 runs lint first — the failure lands on the Phase 5
+                   commit and is attributed to the wrong work.
+
+AND THE SWEEP NEEDED A SCOPE DECISION
+------------------------------------------------------------
+
+Running it after pass 14's own record was appended produced two hits inside
+`baseline.txt`: pass 14's entry opens by quoting "the gateway holds no typing
+state" and pass 13's names a bare `FR-032` as its finding. Both are history.
+
+**The record is now exempt from the claim checks, and the docstring says so and
+says what that accepts**: a genuinely stale statement written into the record
+would not be caught. Placeholders are still checked everywhere. Re-tested red
+after the change — the phase-order and foreign-id tests still fire on live
+artifacts.
+
+FIFTEEN PASSES
+------------------------------------------------------------
+
+    15  claims only one artifact makes   1 CRITICAL — a new itest with no ports
+
+**Seventeen CRITICALs. Eight were inside this feature's own documents.**
