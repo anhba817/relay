@@ -1,0 +1,276 @@
+# Tasks — chapter 3.21, the typing indicator
+
+**Spec**: [spec.md](./spec.md) · **Plan**: [plan.md](./plan.md) · **Research**: [research.md](./research.md)
+
+**THE PLAN'S PHASE ORDER WAS WRONG AND THIS FILE CORRECTS IT.** `plan.md` puts US1 —
+Mai sees Tuan typing — before US2, the inbound seam. **US1 cannot be delivered without
+US2**: no frame lets a client say it is typing, so there is no trigger for the delivery
+path to react to. The stories keep their spec numbering and the phases run US2 first, which
+is what the plan's own stated rule asks for — *everything a client can reach comes after
+the refusal that guards it is proven still to work*.
+
+---
+
+## Phase 1: Setup, and the failing state observed
+
+- [ ] T001 Bring the stack up and pin the lane environment in `specs/039-chapter-3-21/baseline.txt`: `RELAY_POSTGRES_PORT=15432 docker compose up -d --wait`, the nine variables from `specs/039-chapter-3-21/quickstart.md`, and `NO_COLOR=1 FORCE_COLOR=0`. **Five store containers, not four** — a lane without mailpit fails on `ECONNREFUSED :8025`. **Omitting the port variable takes Postgres down mid-recreate**, which chapter 3.20 did once with `bind: address already in use`.
+- [ ] T002 Record the starting lane in `specs/039-chapter-3-21/baseline.txt` with the colour codes stripped: `pnpm test:integration` in `relay-platform`, per-package files, tests and wall clock. Chapter 3.20 closed at 43 files, 701 tests, 228.77 s against a 240 s budget.
+- [ ] T003 Verify R1 by command and record the output in `specs/039-chapter-3-21/baseline.txt`: `grep -n "message: Message\|messageCreatedSchema" relay-platform/services/gateway/src/fanout.ts` and `grep -n '"message.created"' relay-platform/services/gateway/src/session.ts`. **Four hits, and if any has gone the fourth grammar's justification has gone with it.** A premise checked in planning is a premise that was true then.
+- [ ] T004 Verify R2: `sed -n '948,956p' relay-platform/services/gateway/src/session.ts` shows one refusal covering every type but `message.send`. Record it.
+- [ ] T005 [P] Verify R3: `sed -n '96,102p' relay-platform/packages/protocol/src/frames.ts` shows a two-field payload with no `state`. **If a state field has appeared, the expiry decision reverses** and this chapter is a different chapter.
+- [ ] T006 [P] Verify R5: `grep -n 'operation: "connect" | "send"' relay-platform/services/gateway/src/limits.ts` shows a two-member union. A third member is a typed decision and every call site is checked.
+- [ ] T007 Copy `specs/038-chapter-3-20/check-refs.py` to `specs/039-chapter-3-21/check-refs.py` with `FOREIGN` reset, and record in `specs/039-chapter-3-21/chapter-notes.md` that this is chapter 3.19's `gaps.md` item 8 answered the same way twice — a copy with its declarations emptied. **Already done during planning; verify rather than repeat.**
+- [ ] T008 Run `python3 specs/039-chapter-3-21/check-refs.py` and require it green before Phase 2.
+- [ ] T009 Write the failing test in `relay-platform/services/gateway/src/session.itest.ts`: a client uttering the typing signal today receives `unknown_frame_type` and close 4002. **RED ON PURPOSE, and the phase commit body says so.** A red lane nobody explained is indistinguishable from a red lane nobody noticed, and CI cannot tell them apart. This is the refusal Phase 4 narrows.
+- [ ] T010 Commit phase 1, naming the requirement ids it closes. Run `git status --short` in `relay-platform` first.
+
+---
+
+## Phase 2: The protocol — an eleventh frame, and three tests that must go red
+
+- [ ] T011 Add the inbound schema to `relay-platform/packages/protocol/src/frames.ts`. **Name it in this task and nowhere else**, so one decision has one home: `typing.start` reads as a state machine with a missing `typing.stop`, which is the frame this protocol deliberately does not have. Prefer a name that says *signal* rather than *state*. Payload is `{ channel }` and **no `user`** — the absence is the security property (data-model §2).
+- [ ] T012 Add it to `frameSchema`'s discriminated union in `relay-platform/packages/protocol/src/frames.ts`. **`typingSchema` is not edited** (FR-008): the frame a client parses is what chapter 1.3 published.
+- [ ] T013 [P] Unit-test the new schema in `relay-platform/packages/protocol/src/frames.test.ts`: it accepts a channel, rejects an unknown field, and **rejects a payload carrying a `user`** — a client that could name a user could type as anybody.
+- [ ] T014 [P] Unit-test in `relay-platform/packages/protocol/src/frames.test.ts` that the union has **eleven** members and that the two inbound types are exactly the two named. Chapter 3.19's `codes.test.ts` is the precedent: asserting an exact set and an exact count is what makes a new member a decision rather than an accident.
+- [ ] T015 Run `pnpm --filter @relay/gateway test:integration` in `relay-platform` and **expect the direction gauntlet to fail three ways**: `expect(members.length).toBe(10)`, `classifies every member exactly once`, and `names no frame the union does not have`. Record all three in `specs/039-chapter-3-21/baseline.txt`. **This is the derived-list check firing on the build that adds a frame** — the same instrument that catches a new route, six times in three features.
+- [ ] T016 Update `relay-platform/services/gateway/src/isolation.itest.ts`: the count to eleven, a DIRECTIONS row for the new type with direction **inbound** and a stated reason, and a case in the sample builder at its `switch`. **`typing` stays outbound with its reason unchanged** — *"server-fanned; a client claiming one could type as anybody"* — and it stays true, because the inbound frame is a different type carrying no user.
+- [ ] T017 Run `pnpm --filter @relay/gateway test:integration` again and require the gauntlet green. T009's test is still red; nothing else is.
+- [ ] T018 Run `pnpm build` in `relay-platform`, then `pnpm check:errors` in **relay-tutorial**. This chapter adds no close code, so the count must not move from 17. **It reads the built `packages/protocol/dist/codes.js`** — a stale `dist` makes it green for the wrong reason.
+- [ ] T019 Commit phase 2, naming the requirement ids it closes. Run `git status --short` in `relay-platform` first.
+
+---
+
+## Phase 3: Foundational — the fabric
+
+**THE ARMS THIS MODULE WILL HAVE, LISTED NOW RATHER THAN FOUND AT CLOSE-OUT.** Chapter 3.20
+reached 100/100/100/100 on three of four new files by doing this in the phase that built
+them; chapter 3.19 met its equivalents at close-out and paid seven tests, a deleted branch
+and a re-measured battery.
+
+    the JSON.parse catch          a body that is not JSON
+    the safeParse rejection       JSON the fabric schema rejects
+    `counts.get(c) ?? 0`          unsubscribe for a channel never subscribed
+    the onChange no-op default    a signal arriving with no handler wired
+    close() with subscriptions    close while a channel is still held
+    `url ?? DEFAULT_REDIS_URL`    neither supplied
+    the error listener            emit on the client to reach it
+
+- [ ] T020 Create `relay-platform/packages/protocol/src/typing.ts` with `subjectForTyping(channelId)` returning `typing:{channelId}` and `typingFabricSchema` as a `z.strictObject` of `environment`, `channel` and `user`. **Say why it is not in `fanout.ts` and not called `subjectFor`** — `internal.ts` already exports one and chapter 3.18 paid for that collision.
+- [ ] T021 Export `./typing.js` from `relay-platform/packages/protocol/src/index.ts`.
+- [ ] T022 [P] Unit-test in `relay-platform/packages/protocol/src/typing.test.ts` that **all five** subject builders are pairwise distinct for the same id — `subjectForChannel`, `subjectForPresence`, `subjectForChannelMembership`, `subjectForUserMembership`, `subjectForTyping`. Cross-kind mis-delivery is a property of the topology and this test is what proves the topology holds.
+- [ ] T023 [P] Unit-test `typingFabricSchema` in `relay-platform/packages/protocol/src/typing.test.ts`: it requires an environment, and **rejects an unknown field instead of ignoring it**.
+- [ ] T024 Create `relay-platform/services/gateway/src/typing.ts`: **one Redis client, not two.** The pair in `fanout.ts` and `presence.ts` exists because those modules run ordinary commands and a subscriber-mode connection cannot. This module runs none — subscribe and unsubscribe are subscriber-mode operations and there is no key to read. **Chapter 3.20's module was specified with two and the second was created, listened to, closed and never used.** Reference-counted `subscribe`/`unsubscribe` per channel, an `onSignal` hook, a `publish`, and a `close`.
+- [ ] T025 [P] Unit-test the pure helpers in `relay-platform/services/gateway/src/typing.test.ts`. `createTyping` builds its own client from a url and cannot be handed a double, so anything reply-dependent belongs in the integration file — `limits.test.ts` is the precedent.
+- [ ] T026 Add `relay-platform/services/gateway/src/typing.ts` to the `ioredis` exemption list in `relay-platform/eslint.config.mjs`, justified to the **fan-out's** standard rather than the limiter's: this client publishes and subscribes on `typing:{channel_id}`, a channel uuid, and reads no key. **Check which list.** Chapter 3.20 put an `.itest.ts` entry in the `files: ["**/*.ts"]` block's `ignores`, where the later `**/*.itest.ts` block silently overrides it.
+- [ ] T027 Add `membership`-shaped wiring to `relay-platform/services/gateway/src/session.ts`: a `typing?: Typing` field on `SessionServerOptions` and its import. **The destructuring is NOT here.** `no-unused-vars` rejects a binding whose first consumer is a later phase, which makes the phase uncommittable — chapter 3.20 paid for that exact task once.
+- [ ] T028 Build the module in `relay-platform/services/gateway/src/main.ts` beside `createFanout`, `createGatewayLimits`, `createPresence` and `createMembership`, and await its `close()` in `shutdown()`. The **seventh** Redis client; keep the import list alphabetical.
+- [ ] T029 Run `pnpm lint` and `pnpm typecheck` in `relay-platform`. **`pnpm` in the wrong repository exits without running anything and reads as green.**
+- [ ] T030 Commit phase 3, naming the requirement ids it closes. Run `git status --short` in `relay-platform` first.
+
+---
+
+## Phase 4: User Story 2 — a client may say it is typing, and nothing else (P1)
+
+**Goal**: the inbound seam widened from one frame type to a named set of two, with the
+refusal that guards the other nine unchanged.
+
+**Independent test**: send every frame type in the union from a client; the two inbound
+types are accepted and every other type is refused with `unknown_frame_type` and close 4002.
+
+**This phase runs before US1 because US1 depends on it** — see this file's opening note.
+
+- [ ] T031 [US2] Replace the single-type check at `relay-platform/services/gateway/src/session.ts:948` with a **named set**, not a second `!==` and not an inlined array. `INBOUND_FRAME_TYPES` beside the handler, so the set has one home and a test can read its size.
+- [ ] T032 [US2] Destructure `typing` in `attachSessions` in `relay-platform/services/gateway/src/session.ts` — this is where its first consumer is (T027).
+- [ ] T033 [US2] Handle the inbound signal in `relay-platform/services/gateway/src/session.ts`: resolve the channel, **refuse silently if the connection is not a member of it** (FR-007), and publish on the typing subject with the connection's own identity and environment. A client that named a user could type as anybody.
+- [ ] T034 [P] [US2] Integration-test in `relay-platform/services/gateway/src/session.itest.ts` that the typing signal is accepted and the socket stays open. **This is T009 inverted** — its own comment is the instruction, and the inverted test keeps the same shape so a pass means the seam moved rather than the assertion.
+- [ ] T035 [P] [US2] Integration-test in `relay-platform/services/gateway/src/session.itest.ts` that **every other non-`message.send` type is still refused** with `unknown_frame_type` and close 4002, driven from the union rather than from a hand-written list. A hand-written list is a second place to forget the eleventh type.
+- [ ] T036 [P] [US2] Integration-test in `relay-platform/services/gateway/src/typing.itest.ts` that a signal for a channel the connection is not a member of publishes nothing and returns no error — asserted on a **Redis subscriber**, not on the socket. A silence assertion on the socket cannot tell a filtered publish from a broken publisher.
+- [ ] T037 [P] [US2] Integration-test in `relay-platform/services/gateway/src/session.itest.ts` that a signal whose payload carries a `user` is refused by the schema, and that the delivered frame names the connection's identity in a run where a signal succeeds.
+- [ ] T038 [US2] Unit-test in `relay-platform/services/gateway/src/session.test.ts` that `INBOUND_FRAME_TYPES` has **exactly two members and exactly these two**. A third is then a decision somebody made rather than a diff nobody read.
+- [ ] T039 [US2] **Prove the refusal still bites**: add a third type to `INBOUND_FRAME_TYPES` in `relay-platform/services/gateway/src/session.ts` by hand, watch T035 fail, remove it. A widened check that admits everything passes every test that only sends valid frames.
+- [ ] T040 [US2] Run the full gateway integration lane and require it green: `pnpm --filter @relay/gateway test:integration` in `relay-platform`.
+- [ ] T041 [US2] Commit phase 4, naming the requirement ids it closes. Run `git status --short` in `relay-platform` first.
+
+---
+
+## Phase 5: User Story 1 — Mai sees that Tuan is typing (P1) 🎯 MVP
+
+**A TENTH INTEGRATION FILE, AND ZERO NEW API SPAWNS — R9's CONSTRAINT IS SPAWNS, NOT
+FILES.** Research R9 said "no tenth gateway integration file" because seven of nine spawn
+their own api and five of chapter 3.20's seven battery failures were a fixture failing to
+come up. Checked against the tree: `resume.itest.ts` spawns **no** api — it stubs the
+`ApiClient` and boots gateways in process. Typing needs no api either, because it writes
+nothing and reads nothing.
+
+So `typing.itest.ts` follows `resume.itest.ts`'s pattern: stubbed api, two in-process
+gateway instances, a real Redis. **The constraint that matters is the spawn count, which
+stays at seven.**
+
+The inbound-seam tests stay in `session.itest.ts`, where T009's red test already is and
+where a real api and a real client already exist.
+
+**Goal**: FR-RTM-05's sixth frame kind delivered, cross-instance, to the right audience.
+
+**Independent test**: two sockets on two instances sharing a channel; one signals, the
+other receives exactly one `typing` frame naming the signaller; the signaller receives
+nothing.
+
+- [ ] T042 [US1] Subscribe the typing subject per channel in `open()` in `relay-platform/services/gateway/src/session.ts`, beside `fanout?.subscribe`, `presence?.subscribe` and `membership?.subscribeChannel`, and release it on close. **Chapter 3.20 found no task owned this** for its own fabric — T054 covered the revocation release and T079 the user subject, and the ordinary open path fell between them.
+- [ ] T043 [US1] Deliver an arriving signal in `relay-platform/services/gateway/src/session.ts`: walk `registry.subscribersOf(channelId)`, **skip the connection whose identity is the signaller** (FR-005), and send `{ type: "typing", payload: { channel, user } }`. **Refuse a signal whose environment does not match the connection's** and log it — principle I is structural here.
+- [ ] T044 [P] [US1] Integration-test cross-instance delivery in `relay-platform/services/gateway/src/typing.itest.ts`: two instances, two members of one channel, one signals and the other receives exactly one frame naming the signaller.
+- [ ] T045 [P] [US1] Integration-test in `relay-platform/services/gateway/src/typing.itest.ts` that the signaller does **not** receive their own indicator, in the same run in which another member does. Chapter 3.19's presence collector was unfiltered in three consecutive phases and every time the behaviour was correct and the assertion was wrong.
+- [ ] T046 [P] [US1] Integration-test in `relay-platform/services/gateway/src/typing.itest.ts` that a member of a different channel receives nothing, **in a run where a member of the signalled channel does receive**. A must-not-receive test that passes because the producer is dead proves nothing.
+- [ ] T047 [P] [US1] Integration-test in `relay-platform/services/gateway/src/typing.itest.ts` that a second signal within the renewal window still delivers a frame to the watcher — **renewal is a repeat, not a state change**, and there is no "already typing" to suppress at the delivery end.
+- [ ] T048 [P] [US1] Integration-test in `relay-platform/services/gateway/src/typing.itest.ts` that a user of another tenant receives nothing, in the same run.
+- [ ] T049 [US1] **Filter every collector in `relay-platform/services/gateway/src/typing.itest.ts` by subject and by frame type.** Chapter 3.20 counted `presence.changed` frames by type and read two where a watcher correctly sees their own arrival — the fourth occurrence of that mistake across two chapters.
+- [ ] T050 [US1] **Capture logs correctly** in `relay-platform/services/gateway/src/typing.itest.ts`: `createLogger`'s sink receives a JSON **string** with fields at the top level, not an object. Assert one known line before relying on the mechanism.
+- [ ] T051 [US1] Measure the subscription cost and record it in `specs/039-chapter-3-21/baseline.txt`: `CONFIG RESETSTAT`, the suite, `INFO commandstats`. **A prediction is not a measurement.** Chapter 3.20's reading showed the reference counter in the command count, which was cheaper than any assertion in the file.
+- [ ] T052 [US1] Run the full gateway integration lane and record the package's wall clock in `specs/039-chapter-3-21/baseline.txt`. **No tenth file was added**, so the package clock should not move — the gateway package is `max(file)` and `presence.itest.ts` is the pacesetter at ~45 s.
+- [ ] T053 [US1] Commit phase 5, naming the requirement ids it closes. Run `git status --short` in `relay-platform` first.
+
+---
+
+## Phase 6: User Story 3 — a keystroke does not become a publish (P2)
+
+**Goal**: the renewal interval enforced at the gateway, on its own budget.
+
+**Independent test**: signal faster than the renewal interval; the number of publishes
+reaching the fabric is bounded rather than proportional to the signals sent.
+
+- [ ] T054 [US3] Add `"typing"` as a third member of the `operation` union in `relay-platform/services/gateway/src/limits.ts`. It is a typed union, so every call site is checked by the compiler and the key grammar `rl:{env}:{operation}:{window}` needs no change.
+- [ ] T055 [US3] Spend the typing budget in `relay-platform/services/gateway/src/session.ts` before publishing, and **drop a refused signal silently** — no error frame, no close code (FR-013). This is the first refusal in this platform that answers with nothing, and the reason belongs in the code: an advisory indicator is not worth a disconnection and the client will signal again in seconds.
+- [ ] T056 [US3] Record the renewal interval and its arithmetic in `specs/039-chapter-3-21/baseline.txt`: 2 s against FR-RTM-08's 5 s expiry is 2.5 renewals per window, so one dropped publish does not make an indicator flicker. **Five and two are two quantities** — chapter 3.19's most expensive finding was three separate 30-second numbers that turned out to be three.
+- [ ] T057 [P] [US3] Integration-test in `relay-platform/services/gateway/src/typing.itest.ts` that repeated signals inside one window produce **at most one publish**, asserted on a Redis subscriber rather than on frame counts at a socket.
+- [ ] T058 [P] [US3] Integration-test in `relay-platform/services/gateway/src/typing.itest.ts` that an over-limit signal produces no error frame and does not close the socket.
+- [ ] T059 [US3] **Integration-test in `relay-platform/services/gateway/src/session.itest.ts` that the message send budget is unchanged** across typing signals (FR-014). Spend typing signals, then assert a send still succeeds with the budget the connection was born with. A test that counts only typing frames cannot see the quota it might be spending.
+- [ ] T060 [US3] **Prove the limit bites**: raise the typing limit in `relay-platform/services/gateway/src/session.ts` to a number no test can reach, watch T057 fail, restore. Chapter 3.17 proved a filter by removing it and watching 26 tests stay green.
+- [ ] T061 [US3] Commit phase 6, naming the requirement ids it closes. Run `git status --short` in `relay-platform` first.
+
+---
+
+## Phase 7: The resume buffer, and what must not enter it
+
+- [ ] T062 Deliver a typing frame **on its own path** in `relay-platform/services/gateway/src/session.ts`, consulting neither `connection.phase` nor `connection.marks` (FR-018). `deliverPresence` and `deliverMembership` are both this shape and both say why: a frame carrying no sequence can neither duplicate a backfilled row nor leave a gap.
+- [ ] T063 Integration-test that a typing frame arriving mid-resume is sent immediately rather than buffered. **Chapter 3.20's equivalent test passed twice with its subject deleted, for two unrelated reasons** — a cursor equal to the buffered frame's sequence, and a connection that was no longer buffering. Read that record in `specs/038-chapter-3-20/baseline.txt` before writing this one.
+- [ ] T064 Integration-test in `relay-platform/services/gateway/src/typing.itest.ts` that a reconnecting client receives **no** typing frames for signals sent while it was away (FR-018, SC-009). A typing indicator replayed after a reconnect is a claim about the present that was true five seconds ago.
+- [ ] T065 **Prove T063 bites**: route the typing frame in `relay-platform/services/gateway/src/session.ts` through `deliver`'s buffering path, watch it fail, restore. Chapter 3.20 ran this proof on two orderings and **neither failed** — both were unobservable — so run it and believe the result rather than the intention.
+- [ ] T066 Commit phase 7, naming the requirement ids it closes. Run `git status --short` in `relay-platform` first.
+
+---
+
+## Phase 8: Failure, and the closed vocabulary
+
+- [ ] T067 Swallow and log fabric failures in `relay-platform/services/gateway/src/typing.ts` and in the session's publish path (FR-015). A typing failure must not fail a connection, a send, or a message delivery.
+- [ ] T068 Integration-test with the fabric severed that the socket stays open, the client is told nothing, and **one** structured event is logged. Use the TCP proxy pattern from `relay-platform/services/gateway/src/presence.itest.ts` — **never `docker compose stop redis`**, because the lane runs files in parallel.
+- [ ] T069 **Assert the log vocabulary as the SET of names an instance actually emitted**, not as what a grep finds, in `relay-platform/services/gateway/src/typing.itest.ts`. Three names: `typing.published`, `typing.failed`, `typing.invalid_payload`. **Chapter 3.20's FR-032 said three while the code emitted six**, and the clause had to be amended with its argument.
+- [ ] T070 Confirm in `relay-platform/services/gateway/src/typing.itest.ts` that **no name is emitted for a rate-limited signal**. It is expected traffic, not a failure, and one line per keystroke over the limit is the unbounded output NFR-OBS-01 exists to prevent.
+- [ ] T071 Integration-test in `relay-platform/services/gateway/src/typing.itest.ts` that the next signal publishes normally after the fabric is restored, without a restart. The subscriber keeps ioredis's default retry for exactly this.
+- [ ] T072 Integration-test **FR-017's cross-kind property** in `relay-platform/services/gateway/src/typing.itest.ts`: a message, a presence transition, a membership change and a typing signal over the same channels each arrive once, under their own `type`. **Five subject shapes now share one Redis** and the topology is what keeps them apart — count **by subject and by type**, not by type alone.
+- [ ] T073 Commit phase 8, naming the requirement ids it closes. Run `git status --short` in `relay-platform` first.
+
+---
+
+## Phase 9: The documents
+
+- [ ] T074 Write **ADR-21** in `docs/05-sad.md`: a fourth subject grammar, and the rule three chapters reached independently — a fabric owns its subject grammar, and a kind that cannot share a payload type cannot share a subject. **ADRs are immutable once accepted**, so this is a new record; ADR-19's status line gains a line saying it is extended. State the rejected alternatives: an enveloped payload on `chan:` (a union parse on every message on every instance, and `fanout.invalid_payload` per keystroke during a rolling deploy) and a bidirectional `typing` frame.
+- [ ] T075 [P] Add the `typing:{channel_id}` row to the Redis table in `docs/05-sad.md`, beside the rows chapters 3.19 and 3.20 added. **Its TTL column is `—`, and that is the point**: no key is created.
+- [ ] T076 Verify no SRS clause changed: `git diff docs/04-srs.md` must be empty, **and record the Appendix C decision either way** in `specs/039-chapter-3-21/chapter-notes.md`. Research R10 expects neither to change; expected is not verified.
+- [ ] T077 [P] Add the 3.21 row to `docs/07-tutorial-plan.md` and **update the Part 3 header count**, which this chapter's plan moves from 20 to 24. A count in a header nobody re-derives is the class chapter 3.19 found twice and chapter 3.20 found stale by three.
+- [ ] T078 Run `pnpm sync:docs` then `pnpm check:docs` in **relay-tutorial**. Only the published documents mirror; `docs/07-tutorial-plan.md` must **not**.
+- [ ] T079 Grep every document for the claims this chapter changes and record the greps in `specs/039-chapter-3-21/baseline.txt`. **Chapter 3.20 found a published sentence in ADR-07's deep dive that its own code had made false**, and only because the task asked for greps rather than a reading.
+- [ ] T080 Commit phase 9, naming the requirement ids it closes. The documents live in `docs/` and their mirrors in `relay-tutorial`.
+
+---
+
+## Phase 10: The chapter
+
+- [ ] T081 Run `pnpm check:fences` in **relay-tutorial** at HEAD **before writing a fence** and record what it demands in `specs/039-chapter-3-21/chapter-notes.md`. Chapter 3.20 found 18 files it had to fence this way, before a word of the chapter existed. **The chain decides most of the fence set; the choice is only the new files.**
+- [ ] T082 Keep two counts in `specs/039-chapter-3-21/chapter-notes.md` and never let either do the other's job: what the chapter **teaches** drives the word estimate, what it must **fence** drives the chain. Re-derive the third — files changed — from `git diff --name-only` against the predecessor at the very end.
+- [ ] T083 **Check whether `relay-tutorial/fences/post-series.md` already owns any file this chapter edits.** `eslint.config.mjs` is the sharp case: its exemption lists do not exist at the moment a chapter could fence them, so this chapter's entry goes in the appendix's hunk as chapters 3.19 and 3.20 both did.
+- [ ] T084 Write `relay-tutorial/app/(en)/part-3/chapter-21/<slug>/page.mdx`. **Estimate words from arguments, not files** — chapter 3.20 made seven arguments and came in at 2,999 words where the per-file rate would have predicted 762 or 1,382.
+- [ ] T085 State in `relay-tutorial/app/(en)/part-3/chapter-21/<slug>/page.mdx` the things a reader will otherwise discover, each of which is a requirement whose only verification is a sentence (FR-019, FR-020, FR-021): that the fourth grammar was **taken rather than avoided** and why the plan assumed otherwise; that the expiry is the client's because the frame has no state field; that a lost typing frame converges on the truth while a lost revocation converges on a lie; and that `message.updated` and `message.deleted` are the two kinds still without producers, waiting on chapter 3.23.
+- [ ] T086 Write `specs/039-chapter-3-21/check-prose.py` **before correcting anything**, on chapter 3.20's model: one fragment per contradicted claim **per locale**, matched against whitespace-collapsed text. **Three claims, six fragments** — research R8 has the list. **Run it and watch all six fail.** An instrument written after the corrections it checks can only ever be green. Chapter 3.20's caught its own author's wrong chapter slug on the first run, which is why the missing-file arm exists.
+- [ ] T087 Correct all three published claims in **both locales**, then watch `check-prose.py` go from six failures to none. **Two of the three are chapter 3.20's**, written one chapter ago: its "the one kind that could genuinely reuse `chan:{channel_id}`" and its ForwardRef "the first that can reuse a grammar rather than adding one". Record in `specs/039-chapter-3-21/chapter-notes.md` that **a ForwardRef should describe what the next chapter must decide, not what it will conclude.**
+- [ ] T088 [P] Translate to `relay-tutorial/app/(vi)/vi/part-3/chapter-21/<slug>/page.mdx`, with every fence byte-identical to the English one. **Match the English segment's leading and trailing whitespace exactly** — a translated paragraph that loses its trailing newline puts the next fence's opening mid-line, where the checker's line-anchored regex cannot see it, and four fences vanished from chapter 3.20's mirror that way while their bytes were identical.
+- [ ] T089 [P] Add the 3.21 entry to `relay-tutorial/lib/tutorial.ts` with **all three** Vietnamese fields including `translatedIn: ["vi"]`. Chapters 3.10 to 3.18 each shipped a translated body without it and are absent from the sitemap.
+- [ ] T090 Run `pnpm check:fences` in **relay-tutorial** against the predecessor commit `git rev-parse part3-ch20^{commit}`, not the annotated tag. Expect the count to rise from 229 across 37 chapters.
+- [ ] T091 [P] Run `pnpm check:figures`, `pnpm check:srs`, and `python3 ../specs/039-chapter-3-21/check-prose.py` in **relay-tutorial**, and require all three green.
+- [ ] T092 Run `pnpm build` in `relay-platform`, **then** `pnpm check:errors` in **relay-tutorial**. The count must not move from 17.
+- [ ] T093 [P] Run `pnpm build` in **relay-tutorial** and confirm both locales route. Re-derive the static page count from the `Generating static pages` line — it moved 95 → 97 for chapter 3.20, two per chapter.
+- [ ] T094 Commit phase 10, naming the requirement ids it closes. Run `git status --short` in `relay-tutorial` first.
+
+---
+
+## Phase 11: Polish and close-out
+
+- [ ] T095 Stop the compose services profile — `docker compose stop api gateway dispatcher` in `relay-platform`, never `--profile services down` — then run `pnpm coverage`. **They will be running**: chapter 3.20 found them up at this exact step, and a live dispatcher moved a branch pin on a byte-identical file by 7.7 points in chapter 3.18.
+- [ ] T096 Write the per-file coverage pins in `relay-platform/vitest.coverage.config.mts` for `packages/protocol/src/typing.ts` and `relay-platform/services/gateway/src/typing.ts`. **The target is 100/100/100/100** and it is NFR-MNT-02's MUST. **Do not lower a pin with a reason** — a measurement always supplies one. That file is fenced by `relay-tutorial/fences/post-series.md`, so the edit needs the appendix's hunk regenerated **from the file after the edit**, which chapter 3.20 got wrong three times running.
+- [ ] T097 For any branch that cannot be reached, delete the unreachable code and say so in `relay-platform/vitest.coverage.config.mts`'s comment. **The ratchet has removed code five times rather than covered it**, most recently two guards written twice — a repository check duplicating one `membershipEvent` already made. **Then regenerate every fence this phase invalidated and re-run all six gates**, because deleting production code changes files the chapter fences and the gates last ran in Phase 10.
+- [ ] T098 **Read every new test's title against its assertion**, starting with `relay-platform/services/gateway/src/typing.itest.ts`. Chapter 3.19 shipped a good test under a false name; chapter 3.20 shipped a title claiming an assertion that had moved to another test. **Two consecutive chapters, found only by reading them side by side.**
+- [ ] T099 Run the gates in CI's order and record each status in `specs/039-chapter-3-21/baseline.txt`: `pnpm lint`, `pnpm typecheck`, `pnpm turbo run test --force`, `pnpm build`, `node services/api/dist/db/migrate.js`, `pnpm test:integration`, `pnpm coverage`, then `pnpm test:outsider`. **Use `set -o pipefail`** — `$?` after a pipeline is `sed`'s, and chapter 3.20 wrote a repro script without it that reported `exit=0` under a real failure.
+- [ ] T100 `pnpm test:outsider` needs a **running** platform, which T095 has just stopped. Bring it up with `RELAY_POSTGRES_PORT=15432` — omitting that takes Postgres down — seed a demo tenant, and run it. **It is the only check that uses the public surface as a customer does, and this chapter adds a frame to that surface.**
+- [ ] T101 Run the twenty-run battery and record it in `specs/039-chapter-3-21/baseline.txt` with the colour codes stripped: per-run wall clock, files, tests, and the gateway package's own clock. **Nothing else runs on the machine, and that includes editing a source file** — chapter 3.20's first battery lost its homogeneity to a test written into `outbox.itest.ts` while it was running.
+- [ ] T102 State the battery's power honestly in `specs/039-chapter-3-21/chapter-notes.md`. **Twenty green rejects a per-run failure rate above 13.91% at 95% confidence and nothing finer** — and chapter 3.20 measured **7 failures in 40 runs**, which is 17.5%, so twenty green would be luck rather than a measurement. Expect failures; two mechanisms are known and neither is new code.
+- [ ] T103 Re-derive `specs/039-chapter-3-21/traceability.md` from the shipped tree, **both directions**. Chapter 3.20's second pass found a requirement whose planned test was not in the tree at all, and two rows describing a proof technique that proved nothing.
+- [ ] T104 Complete `specs/039-chapter-3-21/gaps.md`, one item per gap with an owner, **each reference naming its chapter**. Give every one of chapter 3.20's twenty-five carried items a status and say which this chapter changed: its item 15 (seven of nine gateway files spawn their own api) is **unchanged**, because this chapter adds no file; its item 19a's four open failures are **unchanged**; and FR-RTM-05's remaining two kinds move to chapter 3.23. **Carrying an item forward without re-checking is copying.**
+- [ ] T105 Write `specs/039-chapter-3-21/chapter-notes.md`'s four sections — what shipped, the phases that went badly, what the next feature should do differently, and the hand-off for chapter 3.22 with the fence predecessor **as a commit**. The metrics block is what the next chapter's `CLAUDE.md` header is built from.
+- [ ] T106 `git status --short` in all three repositories and **commit the close-out records before anything is tagged**. A record of a commit hash inside the commit it names does not converge.
+- [ ] T107 Tag `part3-ch21` in all three repositories with `git tag -a` and verify the gitlinks: the root's tree must name exactly the two submodule tags. **Do not push** unless asked; chapter 3.20 left all three ahead of `origin/main`.
+- [ ] T108 Hand `specs/036-chapter-3-18/reader-protocol.md` to a second person. **Named by chapters 3.14 through 3.20 and closed by none of them.** No command in this repository can discharge it: every check here compares bytes, and chapter 3.20's two most expensive findings were an ordering requirement whose failure mode did not exist and a published sentence that stopped being true.
+
+---
+
+## Dependencies and execution order
+
+    Phase 1 ──> Phase 2 ──> Phase 3 ──> Phase 4 (US2) ──> Phase 5 (US1) ──> Phase 6 (US3)
+                                                                   │
+                                             Phase 7 ──> Phase 8 <─┘
+                                                              │
+                                    Phase 9 ──> Phase 10 ──> Phase 11
+
+- **US2 BLOCKS US1, WHICH REVERSES `plan.md`'s ORDER.** No frame lets a client say it is
+  typing, so the delivery path has no trigger until the inbound seam exists. The plan put
+  the MVP story first out of habit; the dependency is the other way and this file says so.
+- **Phase 2 blocks Phase 3** only in that the fabric payload and the frame should be
+  decided together. The gauntlet's three red tests are the phase's own gate.
+- **Phase 3 blocks every story.** No story can start without the subject grammar and the
+  module.
+- **Phase 6 depends on Phase 5**, because a limit on a publish needs the publish.
+- **Phase 7 is not a story** and depends on Phase 5's delivery path existing.
+- **T039, T060 and T065 are the same technique on three subjects.** Each removes the thing
+  under test and requires a failure. **Chapter 3.20 ran this twice and got no failure both
+  times**, which is how it learned that neither of its ordering requirements was
+  observable. Run them and believe the result.
+
+## Parallel opportunities
+
+| Where | Tasks | Note |
+|---|---|---|
+| Phase 1 | T005, T006 | different files; T001–T004 all append to `baseline.txt` |
+| Phase 2 | T013, T014 | one test file, so `[P]` means independently writable |
+| Phase 3 | T022, T023, T025 | different test files |
+| US2 | T034–T037 | four integration tests; T038 and T039 are serial |
+| US1 | T044–T048 | five integration tests in one file |
+| US3 | T057, T058 | T059 and T060 are serial |
+| Phase 9 | T075, T077 | different documents |
+| Phase 10 | T088, T089, T091, T093 | after T084 |
+
+## Independent test criteria
+
+| Story | Green when |
+|---|---|
+| **US2** | the typing signal is accepted, every other non-`message.send` type is refused with `unknown_frame_type` and close 4002, and a signal for a foreign channel publishes nothing |
+| **US1** | a member of a shared channel on another instance receives exactly one frame naming the signaller, the signaller receives none, and a non-member receives nothing in the same run |
+| **US3** | repeated signals inside one window produce at most one publish, an over-limit signal is dropped silently, and the message send budget is unchanged |
+
+## Implementation strategy
+
+**MVP is Phase 1 + Phase 2 + Phase 3 + Phase 4 + Phase 5.** At that point FR-RTM-08's frame
+kind has a producer and a client can drive it end to end. **US3 is not optional for
+production** — a publish per keystroke at 10,000 connections per instance is the reason the
+requirement exists — but it is separable, because the delivery path is testable before the
+limit exists.
+
+**Do not stop analysing on falling yield.** Chapter 3.17 ran sixteen analyse passes for 20
+CRITICALs; 3.16 ran fifteen for 8, and its pass 12 recommended stopping while passes 13, 14
+and 15 each found one.

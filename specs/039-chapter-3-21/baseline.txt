@@ -1,0 +1,98 @@
+BASELINE — chapter 3.21, the typing indicator
+=============================================
+
+*Every measurement this feature takes, and every thing that went wrong taking it.
+Written as it happens, not at close-out.*
+
+
+WHAT PLANNING ALREADY MEASURED
+------------------------------------------------------------
+
+Four premises were checked by command before a requirement was written. Two of the
+brief's were false, and both are recorded in `spec.md` rather than here because
+they changed the scope rather than informed it.
+
+    R1  the message path is still typed to messages, at four points
+        fanout.ts:44  onDelivery(handler: (channelId, message: Message) => void)
+        fanout.ts:47  publish(message: Message): Promise<void>
+        fanout.ts:80  messageCreatedSchema.shape.payload.safeParse(parsed)
+        session.ts:223 send(socket, { type: "message.created", payload: message })
+        -> the fourth grammar is justified, not assumed
+
+    R2  session.ts:948 refuses every inbound frame but `message.send`
+        -> this chapter opens the second inbound frame in twenty chapters
+
+    R3  frames.ts:96  typingSchema payload is { channel, user } — no `state`
+        -> there is no frame for "stopped", so the expiry is the client's
+
+    R5  limits.ts:83  operation: "connect" | "send" — a closed union
+        -> a third member is a typed decision, checked at every call site
+
+TASK LIST — WHAT THE CHECKER CAUGHT
+------------------------------------------------------------
+
+`check-refs.py`, carried forward from chapter 3.20 with `FOREIGN` reset, on its
+first run against a finished `tasks.md`:
+
+    27 problems — 26 tasks naming no file path, and a missing traceability.md
+
+A quarter of the task list did not say where the work goes. Every one is an
+integration test, and the reason they were vague is that the file they belong in
+was an open question until R9's constraint was read properly.
+
+R9 SAYS "NO TENTH INTEGRATION FILE" AND THAT IS NOT WHAT IT MEANS
+    grep -c "spawn(" services/gateway/src/resume.itest.ts    0
+    grep -c "spawn(" services/gateway/src/session.itest.ts   1
+
+`resume.itest.ts` stubs the `ApiClient` and boots gateways in process — it spawns
+no api at all. **The constraint that costs battery runs is the spawn count, not
+the file count**: seven of nine files spawn an api and five of chapter 3.20's
+seven failures across forty runs were a fixture failing to come up.
+
+Typing writes nothing and reads nothing, so it needs no api either.
+`typing.itest.ts` follows `resume.itest.ts`'s pattern and the spawn count stays
+at seven.
+
+THE PLAN'S PHASE ORDER WAS WRONG
+------------------------------------------------------------
+
+`plan.md` puts US1 (Mai sees Tuan typing) before US2 (the inbound seam). **US1
+cannot be delivered without US2** — no frame lets a client say it is typing, so
+the delivery path has no trigger. The stories keep their spec numbering and the
+phases run US2 first.
+
+Found while writing the task list rather than while executing it, which is the
+cheap place to find it. Chapter 3.15/3.16 had five wrong premises and 3.17 had
+five more; three of 3.17's surfaced only during implementation.
+
+WHAT TRACEABILITY FOUND BEFORE ANY CODE
+------------------------------------------------------------
+
+Three requirements with no task, all the same shape: **a requirement satisfied by
+prose is the kind a task list forgets**, because a task list is written by
+thinking about what to build.
+
+    FR-019  what to do if the SRS diff is NOT empty
+    FR-020  state which of the six kinds have producers
+    FR-021  state that the fourth grammar was taken rather than avoided
+
+And six of twenty-one requirements are verified by inspection or a command rather
+than by a test. Chapter 3.20 had five and its close-out found the one whose test
+did not exist by reading that column the other way.
+
+THE STARTING LANE
+------------------------------------------------------------
+
+Carried from chapter 3.20's close-out; to be re-measured at T002.
+
+    43 files   701 tests   228.77 s against a 240 s budget
+    gateway package 45.48 s — the pacesetter is presence.itest.ts
+    two twenty-run batteries: 17/20 and 16/20 green
+
+    7 failures in 40 runs = 17.5%, in two mechanisms, neither new code:
+      the rate limiter's wall-clock-aligned fixed window          2 of 7
+      a gateway api fixture failing to come up, in three files    5 of 7
+
+**Twenty green would reject a rate above 13.91%**, so this lane's measured rate is
+above what twenty runs can exclude. Expect failures in this chapter's battery;
+a recurrence of either mechanism is expected rather than information.
