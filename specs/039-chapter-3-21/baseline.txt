@@ -294,3 +294,84 @@ internally consistent through three passes while both sat there.
 **The yield has not fallen and the direction has moved outward each time.** Chapter
 3.16's pass 12 recommended stopping and its passes 13, 14 and 15 each found a
 CRITICAL.
+
+
+ANALYSIS PASS 4 — RAN THE COMMANDS THE TASKS TELL SOMEBODY TO RUN
+------------------------------------------------------------
+
+CLAUDE.md's third mechanism, and it found the previous chapter tagged on a red
+tree.
+
+**C6 — CHAPTER 3.20 WAS TAGGED ON A FENCE CHAIN THAT DOES NOT PASS.**
+`pnpm check:fences` in `relay-tutorial`, before this chapter touched one line:
+
+    [HEAD] fences/post-series.md:1517
+           services/api/src/outbox/outbox.itest.ts differs at line 599
+           chapters: it("writes nothing at all for a role change", …)
+           repo:     it("writes no row when the membership write itself fails (FR-016)"
+
+The FR-016 atomicity test that chapter 3.20's traceability re-derivation asked for
+was added **after** its phase 11 had regenerated the fences. Its chapter fence for
+that file was generated from a tree without the test, so the replay diverges.
+
+**3.20's own task list predicted this and named the reason** — *"Deleting
+production code changes files the chapter fences, and the gates last ran in
+Phase 10 before any of this. Nothing between here and the tag would catch it."*
+The gates ran. Then a later task changed a fenced file. Nothing caught it.
+
+**And a green gate was reported to the user that had stopped being true.** All six
+were green when they ran and the chain was red by the time the tag was cut.
+
+Fixed: the chapter's `outbox.itest.ts` diff regenerated in both locales, hunks
+checked for single-match uniqueness, all six gates green, and `part3-ch20` re-cut
+in all three repositories — the third time that tag has moved.
+
+    229 fenced files, 37 chapters, 37 translated
+    root gitlinks verified against both submodule tags
+
+**H6 — "THREE TYPED POINTS" IS WRONG IN ADR-19, AND "FOUR" WAS WRONG HERE.
+THERE ARE SEVEN.**
+T003's own grep, run as written:
+
+    fanout.ts:44   onDelivery(handler: (channelId, message: Message) => void)
+    fanout.ts:47   publish(message: Message): Promise<void>
+    fanout.ts:62   let deliver: (channelId, message: Message) => void
+    fanout.ts:80   messageCreatedSchema.shape.payload.safeParse(parsed)
+    session.ts:223 send(socket, { type: "message.created", … })
+    session.ts:896 the same literal, in the resume flush
+    session.ts:912 the same literal again
+
+Eight lines, seven places. ADR-19 counted three; research R1 counted four; the
+task beside the command said "four hits". **Nobody re-derived it until a task said
+to run the grep** — which is `grep -c sendMessage(` reading 100 for 27, one
+chapter later.
+
+**The argument gets stronger.** Seven places to widen is a worse case for sharing
+`chan:` than the three ADR-19 argued from. Corrected in `research.md`, `spec.md`,
+`plan.md`, the contract and T003.
+
+**M7 — A GATE THAT RUNS BEFORE THE LAST FILE CHANGE IS A GATE THAT RAN.**
+The generalisation from C6, and now T107a: the six gates run **last**, after every
+record is written and every file is final. T103 also says to re-run them if the
+traceability re-derivation produces a code change, because that is precisely what
+happened in 3.20.
+
+THREE CLAIMS VERIFIED AND CORRECT
+------------------------------------------------------------
+
+    check:errors        17 codes — the count this chapter must not move
+    T006's grep         matches exactly as written
+    check-refs.py       green at 118 / 27 / 10
+
+FOUR PASSES, AND THE DIRECTION HAS MOVED OUTWARD EVERY TIME
+------------------------------------------------------------
+
+    pass 1   the feature's own premises        2 CRITICAL
+    pass 2   self-audit, and 3.20's code       2 CRITICAL
+    pass 3   the wider tree — docs/            1 CRITICAL
+    pass 4   running the tasks' commands       1 CRITICAL — in the predecessor's tag
+
+**Six CRITICALs, and only two of them were inside this feature's documents.** The
+other four were in the previous chapter's code, a published customer-facing
+reference, and the tag itself. Reading the three core artifacts against each other
+would have found two of six.

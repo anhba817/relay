@@ -13,8 +13,8 @@ One subject per channel. Every gateway instance holding a member of that channel
 subscribes; the publishing instance is one of them and filters its own signaller out at
 delivery rather than at publish, because it cannot know which other connections exist.
 
-**Why not `chan:{channel_id}`.** ADR-19 refused it for presence and all three of its
-reasons are still in the tree — `publish(message: Message)` and a
+**Why not `chan:{channel_id}`.** ADR-19 refused it for presence and all of its
+reasons are still in the tree — **seven typed points, where that record counts three** — `publish(message: Message)` and a
 `messageCreatedSchema.shape.payload.safeParse` in `services/gateway/src/fanout.ts`, and the
 literal `message.created` send in `session.ts`'s `deliver`. Carrying a second kind there
 means widening a type, loosening a parse that currently rejects everything that is not a

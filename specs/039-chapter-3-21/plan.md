@@ -58,7 +58,8 @@ typing indicator touches neither the analytical path nor the database.
 
 **The fourth subject grammar is the same principle one level down.** Carrying typing on
 `chan:{channel_id}` would cross the message path with an ephemeral one, and ADR-19 already
-refused that for presence with three typed points as evidence — all three still present.
+refused that for presence with typed points as evidence — **seven of them, where that
+record counts three**, and all seven still present.
 
 ### IV. Single Writer, Single Source of Truth — **PASS, vacuously, and that is the finding**
 
@@ -182,7 +183,7 @@ re-derived from the shipped tree in both directions.
 
 | Addition | Why it is not avoidable | What was rejected |
 |---|---|---|
-| A fourth subject grammar | ADR-19's three typed points are intact; sharing `chan:` means editing the highest-volume path for the lowest-volume traffic | An enveloped payload on `chan:` — a union parse on every message on every instance, and `fanout.invalid_payload` per keystroke during a rolling deploy |
+| A fourth subject grammar | ADR-19's typed points are intact and there are seven, not the three that record names; sharing `chan:` means editing the highest-volume path for the lowest-volume traffic | An enveloped payload on `chan:` — a union parse on every message on every instance, and `fanout.invalid_payload` per keystroke during a rolling deploy |
 | A second inbound frame type | No frame lets a client say it is typing; the socket refuses everything but `message.send` | Making `typing` bidirectional — its payload names a user, so a client could type as anybody |
 | A gateway-held debounce, per connection and channel | A publish per keystroke at 10,000 connections per instance | **A third limiter operation, which analysis pass 1 found cannot work** — that bucket is keyed per environment on a 60-second window, against a rule that is per connection, per channel and 2 seconds. And a per-environment ceiling on top, which would bound a rate the debounce already bounds |
 | Nothing else | — | No Redis key, no server timer, no table, no outbox row, no backstop |

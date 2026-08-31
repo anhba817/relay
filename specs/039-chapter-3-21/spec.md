@@ -15,15 +15,16 @@ requirement was written.** They are recorded here rather than in research becaus
 change the scope rather than inform it.
 
 **WRONG 1: "the one remaining kind that reuses `chan:{channel_id}`."** ADR-19 refused
-`chan:` for presence because the message path is typed to messages at three points. All
-three are intact:
+`chan:` for presence because the message path is typed to messages at **seven** points — ADR-19 said three and
+analysis pass 4 counted them. All seven are intact:
 
     services/gateway/src/fanout.ts:44   onDelivery(handler: (channelId, message: Message) => void)
     services/gateway/src/fanout.ts:47   publish(message: Message): Promise<void>
     services/gateway/src/fanout.ts:80   messageCreatedSchema.shape.payload.safeParse(parsed)
     services/gateway/src/session.ts:223 send(socket, { type: "message.created", payload: message })
 
-Nothing about typing makes that argument weaker than it was for presence. Riding `chan:`
+Nothing about typing makes that argument weaker than it was for presence, and seven
+places is a worse case than the three ADR-19 argued from. Riding `chan:`
 still means editing the highest-volume path in the system to carry the lowest-volume
 traffic on it, and it still makes cross-kind mis-delivery a property tests defend rather
 than one the topology guarantees. **This chapter takes the fourth grammar**, and the

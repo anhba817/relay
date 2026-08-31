@@ -5,21 +5,31 @@ command that answered it. Two of the brief's premises were false and are R1 and 
 
 ---
 
-## R1 — Can typing ride `chan:{channel_id}`? **No, and ADR-19 already wrote the reason.**
+## R1 — Can typing ride `chan:{channel_id}`? **No, and there are SEVEN typed points, not
+three.**
 
 The brief said typing is the one remaining kind that needs no new grammar. ADR-19 refused
-`chan:` for presence because the message path is typed to messages at three points. All
-three are in the tree today:
+`chan:` for presence because the message path is typed to messages at three points. **That
+count is wrong, this entry's first version said four, and running its own verification
+command in analysis pass 4 returned eight lines covering seven places:**
 
     services/gateway/src/fanout.ts:44   onDelivery(handler: (channelId, message: Message) => void)
     services/gateway/src/fanout.ts:47   publish(message: Message): Promise<void>
+    services/gateway/src/fanout.ts:62   let deliver: (channelId, message: Message) => void
     services/gateway/src/fanout.ts:80   messageCreatedSchema.shape.payload.safeParse(parsed)
-    services/gateway/src/session.ts:223 send(socket, { type: "message.created", payload: message })
+    services/gateway/src/session.ts:223 send(socket, { type: "message.created", … })
+    services/gateway/src/session.ts:896 the same literal, in the resume flush
+    services/gateway/src/session.ts:912 the same literal again
 
-Nothing about a typing frame makes that argument weaker than it was for presence. Carrying
-a second kind on `chan:` means widening `Fanout`'s type, loosening the parse that currently
-rejects everything that is not a message, and editing `deliver` — the highest-volume path
-in the system, fenced by ten chapters — to serve the lowest-volume traffic on it.
+ADR-19 named three. This entry named four. **Nobody re-derived it until a task said to run
+the grep** — and `fanout.ts:62`'s `deliver` type and two more literal `message.created`
+sends in `session.ts` had been sitting there the whole time.
+
+The argument is not weakened by the correction. It is stronger: **seven places to widen
+rather than three.** Carrying a second kind on `chan:` means changing a type in four places,
+loosening a parse that currently rejects everything that is not a message, and editing the
+highest-volume path in the system — fenced by ten chapters — to serve the lowest-volume
+traffic on it.
 
 **Decision: a fourth subject grammar.** `chan:`, `presence:{channel_id}`,
 `member:{channel_id}` + `member:{env}:{user}`, and now typing's.
