@@ -5,6 +5,30 @@ now allowed to say.*
 
 ---
 
+## The inbound frame, named
+
+    typing.send        { type: "typing.send", payload: { channel } }
+
+**Decided in phase 1 and written here in phase 2's commit, because a name that
+lives only in code is a name nobody agreed.** Two arguments produced it.
+
+`typing.start` was the obvious alternative and it is the wrong one: it reads as a
+state machine with a missing `typing.stop`, and `typing.stop` is precisely the
+frame this protocol does not have — `typingSchema` carries no `state` field, so
+the expiry belongs to the receiving client (FR-009). A name that says *signal*
+rather than *state* keeps that honest.
+
+The `.send` suffix is the second argument. `message.send` was the only inbound
+frame for twenty chapters, so the set becomes `{ message.send, typing.send }` and
+**the rule is legible: an inbound frame ends in `.send`.** FR-003 asks for a
+named set rather than a list, and a set with a spelling rule is one the next
+person extends correctly.
+
+**The payload has one field and the absence of the second is the security
+property** (FR-006): the connection supplies the user. `typingSchema` carries a
+`user` because the server fills it in on the way out — same subject, two frames,
+and only the server's names a person.
+
 ## The fourth subject grammar
 
     typing:{channel_id}

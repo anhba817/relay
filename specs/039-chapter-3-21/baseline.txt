@@ -1613,3 +1613,93 @@ because its pattern had been written against a different run's format.
 chapter 3.17 recorded this five times in one feature, `sweep.py`'s skip list did
 it to a real hit two passes ago, and these are the third and fourth instances in
 this chapter. All four were mine.
+
+
+================================================================
+PHASE 2 — THE PROTOCOL, AND THE TWO COUNTERS
+================================================================
+
+T011, T012 — `typing.send`, AND THE DIFF SHAPE FR-008 ASKS FOR
+------------------------------------------------------------
+
+    packages/protocol/src/frames.ts | 26 ++++++++++++++++++++++++++
+    1 file changed, 26 insertions(+)
+    removals: 0
+
+**T017a satisfied by command.** `typingSchema` is not touched; the new schema is
+a sibling. "Unchanged" was a claim about one region of a file that changed, and
+nothing else in this repository checks a region — so the check is the diff's
+shape, and its shape is 26 additions and nothing else.
+
+T014a, T014b, T014c — BOTH COUNTERS, IN THEIR OWN LANES
+------------------------------------------------------------
+
+    pnpm turbo run test --force
+
+      × advertises exactly the vocabulary @relay/protocol exports    main.test.ts
+
+**Pass 17's prediction, confirmed at the moment it said it would arrive.** The
+test's `toEqual(expectedFrames)` assertion is derived on both sides and passed;
+only `toHaveLength(10)` failed. Its title is accurate — the count is the brittle
+half, not the claim.
+
+This is the lane that had no phase gate until pass 18, and the failure surfaced
+in phase 2 rather than at T099 in phase 11. Afterwards: 11 tasks, 11 successful,
+5.3 s.
+
+T015 — PREDICTED THREE FAILURES, GOT TWO, AND THE THIRD CAME LATER
+------------------------------------------------------------
+
+    × derives all ten members from the union itself
+        AssertionError: expected 11 to be 10
+    × classifies every member exactly once
+        these frames are in frameSchema and classified nowhere: typing.send
+
+    ✓ names no frame the union does not have        DID NOT FAIL
+
+**The third prediction could not have failed.** That test filters DIRECTIONS for
+names absent from the union — only a REMOVAL reaches it, and this chapter adds.
+A task predicting an observable that cannot occur, which is chapter 3.20's
+recorded lesson arriving in a new place: *a task claiming an observable
+difference needs that claim falsified before the test is written.*
+
+**And there is a fourth test T015 never mentioned**: *"agrees with the gateway:
+exactly one member is inbound"*, whose own comment says a second inbound row
+"would be a classification the code does not implement". It fails one edit later
+— after T016 adds the row — and it is RIGHT to fail, because `session.ts` still
+accepts only `message.send` until phase 4. So it is `it.fails` from here to phase
+4, with the reason in the file.
+
+    after T012 (union)        2 failures
+    after T016 (DIRECTIONS)   those 2 green, the fourth red -> it.fails
+
+**The test title carried the number too** — *"derives all ten members"* — and
+updating the assertion without the title is how chapter 3.19 shipped a good test
+under a false name. Both moved.
+
+T017 — T009's `it.fails` FLIPPED ON SCHEDULE
+------------------------------------------------------------
+
+    × answers typing.send with invalid_frame today, and keeps the socket open
+        expected { code: 'unknown_frame_type' } to match { code: 'invalid_frame' }
+    × PHASE 2: refuses typing.send as a direction violation, not a parse failure
+        (it.fails, and the body now succeeds)
+
+Both phase-1 tests failed on the commit that changed the behaviour, which is what
+they were built to do. **Phase 1 held two and phase 2 holds one**: the
+`invalid_frame` assertion was true until this commit and keeping it would assert a
+state the code has left. Its record is here, which is where such a state belongs.
+
+The `it.fails` half is the part worth keeping as a technique. A red test would
+have sat red for four phases and taken `@relay/e2e` down with it; `it.fails`
+stayed green and **announced the transition the instant it happened**, with no
+task needing to remember to look.
+
+T018 — NO NEW CLOSE CODE
+------------------------------------------------------------
+
+    pnpm build                              5 tasks, 3 cached
+    check-error-codes: 17 codes, 17 sections, each with a cause and a client action
+
+Read from the BUILT `packages/protocol/dist/codes.js`, after the build, so the
+green is not a stale artifact's.
