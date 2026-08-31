@@ -200,30 +200,61 @@ chapter 3.20 found the hard way. A typing frame that entered the buffer would fl
 
 ## R8 — Which published prose does this chapter contradict?
 
-Checked with `grep` against both locales rather than recalled. **Three claims, six
-fragments** — the list and every fragment go into `check-prose.py` before anything is
-corrected, and it is run red first.
+**THE FIRST VERSION OF THIS ENTRY SEARCHED THE WRONG TREE, AND ANALYSIS PASS 3 FOUND WHAT
+IT MISSED.** It said "checked with `grep` against both locales", meaning
+`relay-tutorial/app/(en)` and `(vi)`, and found three claims in chapter prose. It never
+looked at `docs/`.
 
-    1  chapter 3.19, on the six kinds
+**`docs/` is where the PRODUCT's claims live. The tutorial is where a chapter's NARRATIVE
+claims live.** A customer reads the first one. Chapter 3.20 found this same class in
+ADR-07's deep dive — also `docs/` — and this entry still did not include the directory.
+
+The search space is both trees:
+
+    relay-tutorial/app/(en)/**  and  (vi)/**      chapter narrative
+    docs/*.md                                     the product's own documents
+
+**Four claims, eight fragments.** All extracted with `grep` and verified present before
+being written here.
+
+    1  docs/08-error-reference.md — THE CUSTOMER-FACING ONE, and the sharpest
+       :264 "`message.send` is the only inbound frame; every other member of the
+             frame union is server-to-client"
+       :272 "**What to do:** send `message.send`. Do not send events; receive them."
+
+       This is the reference entry for `unknown_frame_type` — **the error code this
+       chapter's own seam produces.** After this chapter a customer refused for a
+       typing frame would read documentation telling them the wrong thing, in the
+       document written to explain that refusal.
+
+       `check:errors` cannot see it: that checker asserts 17 codes each with a cause
+       and a client action, which is structure. Whether the prose is TRUE is not a
+       property it checks.
+
+       This file is in `sync-docs.sh`'s published list, so the correction mirrors.
+
+    2  chapter 3.19, on the six kinds
        en  "typing" named as a kind still without a producer
        vi  the same sentence
 
-    2  chapter 3.20's "what this chapter does not do"
+    3  chapter 3.20's "what this chapter does not do"
        en  "the one kind that could genuinely reuse `chan:{channel_id}` rather than
             needing a fourth grammar"
        vi  the same
 
-    3  chapter 3.20's ForwardRef
+    4  chapter 3.20's ForwardRef
        en  "the first that can reuse a grammar rather than adding one"
        vi  the same
 
-**Claims 2 and 3 are mine, written yesterday, and they are wrong.** That is the finding
-worth keeping: a forward reference is a prediction, and this project has now published two
-in one chapter that the next chapter falsified. The correction is not "3.20 was careless" —
-it is that **a ForwardRef should describe what the next chapter must decide, not what it
-will conclude.**
+**Claims 3 and 4 are mine, written one chapter ago, and they are wrong.** A ForwardRef is a
+prediction, and this project has now published two in one chapter that the next chapter
+falsified. The correction is not "3.20 was careless" — it is that **a ForwardRef should
+describe what the next chapter must decide, not what it will conclude.**
 
----
+**Two things came back clean.** `packages/outsider` only reads frames and sends none, so a
+new inbound type does not touch the sealed client. And no document counts the subject
+grammars — ADR-19 and ADR-20 each name their own without asserting a total — so a fourth
+breaks no published count.
 
 ## R9 — What does the lane cost, and where does this chapter land?
 

@@ -235,6 +235,12 @@ of frames other members receive is bounded rather than proportional to the signa
   about the present.
 - **FR-019**: No SRS clause MAY change. If a clause is found to say something this chapter
   cannot satisfy, the chapter records the mismatch rather than editing the clause.
+- **FR-019a**: Every published document this chapter makes false MUST be corrected, and the
+  search MUST cover `docs/` as well as both locales of the tutorial. **`docs/` holds the
+  product's claims and a customer reads those**; the tutorial holds a chapter's narrative
+  claims. `docs/08-error-reference.md`'s `unknown_frame_type` entry is one of them — it
+  names `message.send` as the only inbound frame, in the reference for the error code this
+  chapter's own seam produces.
 - **FR-020**: The chapter MUST state which of FR-RTM-05's six frame kinds now have
   producers and MUST NOT claim FR-WHK-02 or FR-RTM-09 are affected by this chapter.
 - **FR-021**: The chapter MUST state that the fourth subject grammar was taken rather than

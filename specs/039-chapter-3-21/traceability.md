@@ -63,6 +63,7 @@ requirement whose verification is a sentence rather than a test.
 | FR-017 | four kinds over shared channels, each once, under its own type | integration |
 | FR-018 | nothing buffered, nothing replayed on reconnect | integration + a proof it bites |
 | FR-019 | `git diff docs/04-srs.md` is empty | **command** |
+| FR-019a | four claims, eight fragments, none still published | **command** — `check-prose.py` across `docs/` and both locales |
 | FR-020 | four of six kinds have producers, the other two named | inspection |
 | FR-021 | the chapter says the fourth grammar was taken and why the plan assumed otherwise | inspection |
 
@@ -141,6 +142,7 @@ the finding is the row, not the code.
 | FR-010 | "nothing is persisted" cannot be asserted by a test that does not know where to look | `INFO commandstats` shows no key written, and the schema has no table |
 | FR-011 | a number and its argument | recorded in `baseline.txt` and read at close-out |
 | FR-019 | a diff, not a behaviour | `git diff docs/04-srs.md` |
+| FR-019a | prose in two trees | `check-prose.py`, run red before the corrections |
 | FR-020, FR-021 | prose | the chapter, and `check-prose.py` for the claims they replace |
 
 **Six requirements whose only verification is a sentence or a command.** That is the class

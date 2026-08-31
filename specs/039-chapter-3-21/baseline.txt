@@ -229,3 +229,68 @@ Three operations, and typing is not one of them. So removing the typing bucket
 does not merely avoid a mechanism that could not work — **it aligns with the
 clause, and the third bucket would have added a counted operation the SRS does not
 name.** The fix was more right than the argument given for it in pass 1.
+
+
+ANALYSIS PASS 3 — A CUSTOMER-FACING DOCUMENT, AND WHY TWO PASSES MISSED IT
+------------------------------------------------------------
+
+Pass 3 asked one question: **what else in the repository enumerates the things
+this chapter changes, and did R8 look everywhere it should have?**
+
+**C5 — `docs/08-error-reference.md` TELLS A CUSTOMER THE WRONG THING.**
+
+    :264  "`message.send` is the only inbound frame; every other member of the
+           frame union is server-to-client"
+    :272  "**What to do:** send `message.send`. Do not send events; receive them."
+
+That is the `unknown_frame_type` entry — **the reference for the error code this
+chapter's own seam produces.** After this chapter, a customer refused for a typing
+frame would read documentation telling them the wrong thing, in the document
+written to explain the refusal. The file is in `sync-docs.sh`'s published list, so
+it mirrors to the site.
+
+**No task touched it.** Phase 9 named `05-sad.md`, `04-srs.md` and
+`07-tutorial-plan.md`. Now T077a corrects it and FR-019a requires it.
+
+**`check:errors` CANNOT CATCH THIS, AND A GREEN RUN AFTER A FALSE ENTRY IS THE
+CHECKER WORKING AS DESIGNED.** It asserts 17 codes, 17 sections, each with a cause
+and a client action. Structure, not truth. T077b records that beside the gate's
+output so nobody reads green as coverage.
+
+**H5 — R8's SEARCH SPACE WAS THE REASON, AND IT IS THE FINDING WORTH KEEPING.**
+R8 said "checked with `grep` against both locales" and meant
+`relay-tutorial/app/(en)` and `(vi)`. It never looked at `docs/`.
+
+    relay-tutorial/app/**   a chapter's NARRATIVE claims
+    docs/*.md               the PRODUCT's claims — the ones a customer reads
+
+**Chapter 3.20 found this exact class in ADR-07's deep dive, also in `docs/`, and
+R8 still did not include the directory.** Widened to four claims and eight
+fragments across both trees, and `check-prose.py`'s paths must span both.
+
+**M6** folded into C5. **L2** is a confirmation: EIR-WS-06 still holds, because
+4002 keeps its meaning and its entry.
+
+TWO THINGS CAME BACK CLEAN
+------------------------------------------------------------
+
+    packages/outsider     only READS frames, sends none — a new inbound type does
+                          not touch the sealed client
+    the grammar count     no document asserts a total; ADR-19 and ADR-20 each name
+                          their own, so a fourth breaks no published count
+
+C4 AND C5 ARE ONE FAILURE IN TWO COSTUMES
+------------------------------------------------------------
+
+Both are true statements about the system that this chapter falsifies, and **both
+live outside the feature directory** — one in the previous chapter's code, one in a
+published reference. Every document inside `specs/039-chapter-3-21/` stayed
+internally consistent through three passes while both sat there.
+
+    pass 1   premises           2 CRITICAL   both inside the feature's documents
+    pass 2   self-audit, code   2 CRITICAL   one document drift, one in session.ts
+    pass 3   the wider tree     1 CRITICAL   in docs/
+
+**The yield has not fallen and the direction has moved outward each time.** Chapter
+3.16's pass 12 recommended stopping and its passes 13, 14 and 15 each found a
+CRITICAL.
