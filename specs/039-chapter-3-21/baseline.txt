@@ -1398,3 +1398,218 @@ EIGHTEEN PASSES
 
 **Twenty CRITICALs across eighteen passes. Eight were inside this feature's own
 documents.**
+
+
+================================================================
+PHASE 1 — SETUP, AND THE FAILING STATE OBSERVED
+================================================================
+
+T001 — THE LANE ENVIRONMENT
+------------------------------------------------------------
+
+    RELAY_POSTGRES_PORT=15432 docker compose up -d --wait
+
+    clickhouse   Up (healthy)
+    mailpit      Up (healthy)
+    nats         Up (healthy)
+    postgres     Up (healthy)
+    redis        Up (healthy)
+
+Five containers, and the nine variables plus NO_COLOR=1 FORCE_COLOR=0 exported
+for every recorded run. This machine's own PostgreSQL holds 5432.
+
+T003 — R1 VERIFIED. EIGHT LINES, SEVEN TYPED POINTS, UNCHANGED
+------------------------------------------------------------
+
+    services/gateway/src/fanout.ts
+      2:  messageCreatedSchema,                                    (the import)
+      44: onDelivery(handler: (channelId: string, message: Message) => void): void;
+      47: publish(message: Message): Promise<void>;
+      62: let deliver: (channelId: string, message: Message) => void = () => {};
+      80: const message = messageCreatedSchema.shape.payload.safeParse(parsed);
+
+    services/gateway/src/session.ts
+      223: send(connection.socket, { type: "message.created", payload: message });
+      896:          type: "message.created",
+      912: send(connection.socket, { type: "message.created", payload: message });
+
+Seven typed points, the same seven research R1 lists. The fourth grammar's
+justification stands.
+
+**AND THE QUICKSTART SAID "Expect four hits".** Written before pass 4 re-derived
+the count, corrected in three files and not in the command block a person would
+actually run. `sweep.py` now carries the phrase, so it cannot come back.
+
+T004 — R2 VERIFIED, AND IT IS TWO REFUSALS RATHER THAN ONE
+------------------------------------------------------------
+
+    session.ts:939   frameSchema.safeParse(parsed)  -> invalid_frame, NO close
+    session.ts:947   type !== "message.send"        -> unknown_frame_type, 4002
+
+The quickstart's R2 line says "Expect one refusal". There are two, and which one
+a frame meets depends on whether its type is in the union. **That distinction is
+the whole of T009's premise and T009 got it wrong** — see below.
+
+T005 — R3 VERIFIED
+------------------------------------------------------------
+
+    typingSchema = { type: "typing", payload: { channel, user } }
+
+Two fields, no `state`, no deadline. The expiry stays the client's.
+
+T006 — R5 VERIFIED
+------------------------------------------------------------
+
+    limits.ts:83   operation: "connect" | "send",
+
+Two members. A third would be a typed decision at every call site, and this
+chapter adds none.
+
+T007, T008, T008a — THE INSTRUMENTS
+------------------------------------------------------------
+
+    check-refs.py   136 tasks, 28 requirements, 10 success criteria, all traced
+    sweep.py        no superseded claim, no placeholder, no count disagreement
+
+`FOREIGN` is an empty set, as T007 requires.
+
+T009 — THE RED TEST, AND ITS PREMISE WAS WRONG
+------------------------------------------------------------
+
+T009: *"a client uttering the typing signal today receives `unknown_frame_type`
+and close 4002."* **It does not.** `unknown_frame_type` is the DIRECTION refusal
+and only a frame that PARSED can reach it. `typing.send` is not in `frameSchema`
+yet, so `safeParse` fails first: the answer is `invalid_frame` and the socket
+stays open.
+
+So the refusal this chapter narrows has THREE states:
+
+    phase 1   not in the union         ->  invalid_frame, socket open
+    phase 2   in the union, not send   ->  unknown_frame_type, close 4002
+    phase 4   in the named inbound set ->  accepted
+
+Two tests in `session.itest.ts` rather than one:
+
+    answers typing.send with invalid_frame today, and keeps the socket open
+        GREEN. Pins the starting state, which no test recorded.
+
+    PHASE 2: refuses typing.send as a direction violation, not a parse failure
+        RED ON PURPOSE, and red for ONE phase rather than four. Green when
+        phase 2 adds the schema; inverted in phase 4.
+
+**Both are needed and the task asked for one.** A test asserting today's
+behaviour is green and documents the baseline; a test asserting the next state is
+red and drives the change. T009 described the second and called for the first.
+
+**THE FRAME TYPE IS `typing.send`, DECIDED HERE AND NOT IN T011.** T011 says
+"name it in this task and nowhere else", one phase later than the test that has
+to utter it — a premise failure of the same shape as chapter 3.20's phase 3,
+where a task wanted a binding a phase before its consumer. The name matches the
+one inbound verb the protocol already has, so the inbound set is
+`{ message.send, typing.send }` and **the rule is legible: an inbound frame ends
+in `.send`**. That is worth more than any single name, and FR-003 asks for a
+named set rather than a list.
+
+T002 — THE LANE, AND THREE ATTEMPTS TO MEASURE IT
+------------------------------------------------------------
+
+**T002 names `pnpm test:integration` and does not say `--force`, and turbo
+caches.** The first run read
+
+    Time: 2m30.034s      150.0 s      against chapter 3.20's 228.77 s
+
+which looks like a 35% improvement and is two of four packages actually
+executing — the rest were cache hits. A recorded baseline that is not comparable
+to the one it is compared against is worse than no baseline.
+
+    pnpm test:integration
+      = turbo run test:integration --concurrency=1 --filter=!@relay/outsider
+
+**Attempt two dropped two of those three flags** and died in 97 ms:
+`--force` alone pulls in `@relay/outsider`, which needs a running api and gateway
+and refuses without them. `Tasks: 0 successful, 4 total`. All four flags matter
+and the task quotes one.
+
+**Attempt three is the canonical command with `--force` appended.**
+
+AND A NEXT.JS DEV SERVER IS RUNNING ON THIS MACHINE
+------------------------------------------------------------
+
+    384034 node /home/dong/work/3d_site/molten-chrome/.next/dev/...
+
+Another of this machine's projects, not relay's, and **not killed** — it is
+somebody's work in progress. Chapter 3.12's first battery attempt failed at run
+11 to exactly this, "with no port held and no `EADDRINUSE`". For a single
+baseline it is a contaminant worth naming; **for T101's twenty-run battery it is
+disqualifying**, and the rule says so in the words "nothing else runs on the
+machine". Check `pgrep -af node` before the battery rather than after run 11.
+
+T002 — THE STARTING LANE, MEASURED
+------------------------------------------------------------
+
+    package        files  tests   duration
+    test-harness       1     17     0.44 s
+    api               29    510   102.15 s
+    dispatcher         1     16    71.19 s
+    gateway            9    150    45.22 s
+    e2e                3     10     6.08 s
+    ------------------------------------------
+                      43    703
+
+    turbo wall clock, four packages, uncached   225.68 s   (3m45.683s)
+    e2e, measured separately                     10.50 s
+    ------------------------------------------------------
+    ~236 s against a 240 s budget
+
+**43 files matches chapter 3.20's record exactly**, and 703 tests is its 701 plus
+this phase's two. The arithmetic confirms the predecessor's number rather than
+restating it.
+
+**The wall clock is ~236 s, not 228.77 s, and the headroom is ~4 s rather than
+11.2 s.** Three honest caveats, in order of size: a Next.js dev server from
+another project was running (see above); one run is not a mean and chapter 3.20's
+228.77 s was a twenty-run mean; and the e2e package's 10.5 s was measured in a
+separate turbo invocation, so it carries its own startup rather than sharing the
+first one's. **T101's battery is what produces a comparable figure.** Recording
+one run as if it were the mean is how a budget gets believed.
+
+    gateway package clock   45.22 s   against 3.20's 45.50 / 45.48
+
+WHY e2e HAD TO BE MEASURED SEPARATELY, AND WHAT THAT FOUND
+------------------------------------------------------------
+
+**A red test in an earlier package hides every later one.** `--concurrency=1`
+makes turbo abort remaining tasks on a failure, `@relay/gateway` runs before
+`@relay/e2e`, and the run therefore reported
+
+    40 files, 693 tests      Tasks: 8 successful, 9 total
+
+against chapter 3.20's 43 and 701. `turbo run test:integration --dry=json`
+schedules **16** tasks including `@relay/e2e#test:integration`, and that package
+holds exactly 3 files and 10 tests. 40 + 3 = 43. 691 + 10 = 701.
+
+**The hidden package is the one that matters most.**
+`packages/e2e/src/tuan.itest.ts` — 8 tests — is the suite that guards chapter
+3.6's duplicate delivery, the defect the twenty-run battery exists for. Phases 1
+through 4 would have run with it silently unexecuted, because T017 keeps the lane
+red until phase 4 inverts the test.
+
+**So T009's red half is `it.fails` rather than a failing test.** It passes while
+the assertion throws and **fails the moment the behaviour arrives**, so phase 2
+does not have to remember to look. Proven rather than assumed: flipping the
+expected code to what the code actually answers today makes the body succeed, and
+vitest reports `× PHASE 2: refuses typing.send as a direction violation`.
+Restored afterwards.
+
+AND TWO INSTRUMENT FAILURES OF MY OWN, BOTH THE SAME CLASS
+------------------------------------------------------------
+
+A background waiter armed on `grep -qE "^ *Time:|ERR_PNPM|error"` fired
+immediately: `error` matches the `"level":"error"` lines the api's own tests emit
+on purpose. And a results filter matched nothing on a file that was complete,
+because its pattern had been written against a different run's format.
+
+**A pattern that matches something other than the set it was meant to name** —
+chapter 3.17 recorded this five times in one feature, `sweep.py`'s skip list did
+it to a real hit two passes ago, and these are the third and fourth instances in
+this chapter. All four were mine.

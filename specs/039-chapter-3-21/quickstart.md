@@ -42,8 +42,10 @@ like a regression.
 Two of this chapter's brief were false. These are the commands that found that, and they
 should be re-run at the start rather than trusted.
 
-    # R1 — is the message path still typed to messages? Expect four hits.
-    grep -n "publish(message: Message)\|message: Message\|messageCreatedSchema" \
+    # R1 — is the message path still typed to messages?
+    # Expect EIGHT lines covering SEVEN typed points: fanout.ts 44, 47, 62, 80
+    # (line 2 is the schema import) and session.ts 223, 896, 912.
+    grep -n "message: Message\|messageCreatedSchema" \
       services/gateway/src/fanout.ts
     grep -n '"message.created"' services/gateway/src/session.ts
 

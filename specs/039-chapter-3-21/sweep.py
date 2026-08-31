@@ -53,6 +53,7 @@ STALE = {
     r"\bthree published claims\b": "five claims, ten fragments (pass 9)",
     r"\bfour claims, eight fragments\b": "five claims, ten fragments (pass 9)",
     r"ADR-19's three typed points": "seven typed points (R1, pass 4)",
+    r"Expect four hits": "eight lines, seven typed points (R1, pass 4)",
     r"\bno tenth (gateway )?integration file\b": "a tenth file, zero new api spawns (pass 11)",
     r"`Map` on the connection\b": "a Map in attachSessions's closure (pass 11)",
     r"\bthe four premises R1[-–]R4\b": "R1, R2, R3 and R5 (pass 13)",
@@ -146,7 +147,10 @@ def main():
 
     # 3 — counts stated in prose against counts measured
     measured = {
-        "tasks": len(re.findall(r"^- \[ \] T\d+", docs["tasks.md"], re.M)),
+        # `[ ]` OR `[X]`: the count is how many tasks exist, not how many are
+        # outstanding. This read `^- \[ \]` until phase 1 checked nine boxes and
+        # the total silently fell from 136 to 127.
+        "tasks": len(re.findall(r"^- \[[ Xx]\] T\d+", docs["tasks.md"], re.M)),
         "requirements": len(set(re.findall(r"\*\*(FR-\d+[a-z]?)\*\*:", docs["spec.md"]))),
         "success criteria": len(set(re.findall(r"\*\*(SC-\d+)\*\*:", docs["spec.md"]))),
         "phases": len(tasks),
