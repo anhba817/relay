@@ -51,7 +51,7 @@ requirement whose verification is a sentence rather than a test.
 | FR-009 | no frame is sent to end an indicator | integration, by absence + inspection |
 | FR-009a | **no frame of any kind** follows a signal until the next one | integration, on the watcher's whole frame list |
 | FR-009b | the client's five seconds is stated in the chapter | inspection |
-| FR-009c | the verdict on FR-RTM-08 is recorded, not asserted | inspection |
+| FR-009c | the verdict on FR-RTM-08 is recorded, not asserted — **in a published document as well as in the notes** | inspection |
 | FR-010 | no table, no key, no outbox row | inspection + `INFO commandstats` |
 | FR-011 | 2 s against 5 s, with the arithmetic recorded | inspection |
 | FR-011a | two connections in one channel both publish; one connection in two channels publishes twice | integration |
@@ -143,7 +143,7 @@ the finding is the row, not the code.
 |---|---|---|
 | FR-008 | "this file is not edited" is not a runtime property | `git diff` on `frames.ts`, and the fence chain, which compares the file byte for byte |
 | FR-009b | the client's timer is the half no test in this repository can reach | the chapter states it; FR-009a covers the server's half with a test |
-| FR-009c | a verdict is a judgement, not a behaviour | `chapter-notes.md`, in the shape chapter 3.20 used for FR-RTM-10 |
+| FR-009c | a verdict is a judgement, not a behaviour | `chapter-notes.md` in the shape chapter 3.20 used for FR-RTM-10, **and ADR-22 in `docs/05-sad.md`, which a customer can read** |
 | FR-010 | "nothing is persisted" cannot be asserted by a test that does not know where to look | `INFO commandstats` shows no key written, and the schema has no table |
 | FR-011 | a number and its argument | recorded in `baseline.txt` and read at close-out |
 | FR-019 | a diff, not a behaviour | `git diff docs/04-srs.md` |

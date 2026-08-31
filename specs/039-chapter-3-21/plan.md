@@ -203,9 +203,13 @@ Fabric unreachable: socket stays open, nothing reaches the client, one logged ev
 chapter 3.20's FR-032 said three names while the code emitted six, and the amendment is on record. **The chapter label is not decoration** — this chapter's ids stop at FR-021, so a bare FR-032 sends a reader looking in the wrong spec.
 
 ### Phase 9 — The documents
-ADR-21 if the architecture record changes, and R1 says it does: a fourth grammar and the
-rule that produced it. Amend the SAD's Redis table. Verify `git diff docs/04-srs.md` is
-empty and record the Appendix C decision either way.
+**Two ADRs, not one.** ADR-21 is the fourth subject grammar and the rule that produced it,
+which R1 says the architecture record needs. **ADR-22 is the delegated expiry** — the
+chapter's central finding, and without it that finding reaches no published document while
+`docs/04-srs.md`'s FR-RTM-08 goes on reading as a platform promise. Both need deep dives in `docs/06-adr-deep-dives.md`, whose Purpose
+claims the long form exists "for each ADR" — a sentence chapter 3.20 made false by writing
+ADR-20 and no dive for it. Amend the SAD's Redis table. Verify `git diff docs/04-srs.md` is empty and record the Appendix C decision either
+way.
 
 ### Phase 10 — The chapter
 Decide the fence set before writing a fence: run `check:fences` at HEAD and read what it

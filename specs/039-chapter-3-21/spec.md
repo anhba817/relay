@@ -225,6 +225,14 @@ of frames other members receive is bounded rather than proportional to the signa
   platform could build would satisfy the first half without editing `frames.ts`, which this
   chapter refuses for chapters 3.19 and 3.20's reason.
 
+  **And the verdict MUST reach a published document, not only the chapter and the
+  chapter's notes.** `docs/04-srs.md` is published and mirrored, its FR-RTM-08 reads as a
+  platform obligation, and FR-019 forbids editing the clause — so the boundary goes in the
+  SAD as its own ADR, which is published and is the instrument for a decision whose
+  consequence a requirement's plain reading does not convey. A verdict recorded only where
+  the customer cannot read it is the same defect as a correction that reaches the argument
+  and not the instruction.
+
   **What is forbidden is claiming closure without the argument.** Chapter 3.20 recorded
   FR-RTM-10 as met on the happy path and bounded by an interval under fabric loss, with the
   55-second excess stated rather than hidden; chapter 3.18 refused to narrow a clause until

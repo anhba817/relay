@@ -1164,3 +1164,87 @@ FIFTEEN PASSES
     15  claims only one artifact makes   1 CRITICAL — a new itest with no ports
 
 **Seventeen CRITICALs. Eight were inside this feature's own documents.**
+
+ANALYSIS PASS 16 — THE PUBLISHED DOCUMENT SET
+------------------------------------------------------------
+
+R8 searched the published documents for sentences this chapter FALSIFIES. Nobody
+asked what it is obliged to ADD. `sync-docs.sh` publishes seven files: the
+vision, the personas, the journey map, the SRS, the SAD, the ADR deep dives, the
+error reference.
+
+    C17  CRITICAL  **The FR-RTM-08 verdict reached no published document.**
+                   `docs/04-srs.md:475` says typing indicators "shall expire
+                   automatically after 5 seconds" — a platform obligation — and
+                   this chapter's finding is that the platform cannot keep it:
+                   `typingSchema` has no `state`, no frame ends an indicator, the
+                   disappearance is the receiving client's.
+
+                   FR-009c requires an honest verdict and gets one, into
+                   `chapter-notes.md` and the tutorial chapter. **A customer reads
+                   neither.** FR-019 rightly forbids editing the clause. The SAD
+                   is published, this phase already writes into it, and an ADR is
+                   the instrument for a decision whose consequence a requirement's
+                   plain reading does not convey.
+
+                   So ADR-22, separate from ADR-21, for T074's own reason: ADRs are
+                   immutable once accepted, and these are two decisions with
+                   different drivers that will be superseded on different
+                   schedules.
+
+    H19  HIGH      **No published document is a protocol reference.** EIR-WS-07 —
+                   "the protocol shall be fully documented, including reconnection,
+                   ordering and backfill semantics", P2, verified by inspection —
+                   appears twice in the repository, both times inside the SRS.
+                   Nothing claims to satisfy it. The gap predates this chapter and
+                   **this chapter is the first to widen it**, adding the first new
+                   inbound frame in twenty chapters. Recorded in the gaps task with
+                   an owner; ADR-22 carries the client's timer obligation and is
+                   not a substitute for the frame's shape.
+
+    C18  CRITICAL — AND IT CAME OUT OF C17's OWN FIX.
+                   `docs/06-adr-deep-dives.md`'s Purpose says the long form exists
+                   **"for each ADR"**. The SAD holds twenty ADRs; the deep dives
+                   stop at ADR-19.
+
+                     grep -c "^### ADR-" docs/05-sad.md          20
+                     last dive in docs/06-adr-deep-dives.md      ADR-19
+
+                   Chapter 3.20 wrote ADR-20 into the SAD, amended ADR-07's deep
+                   dive in that same file, and wrote no dive for its own record.
+                   Nineteen for nineteen, then a gap nobody recorded — not in its
+                   `gaps.md`, not in its task list. **Adding ADR-21 and ADR-22
+                   without dives would have taken it to three of twenty-two**, so
+                   the fix for one CRITICAL was quietly making another worse.
+
+                   Found by reading a document's own statement of scope rather than
+                   grepping for a contradiction — the same mechanism as R8's
+                   claims, pointed at a Purpose paragraph.
+
+WHAT CAME BACK CLEAN
+------------------------------------------------------------
+
+    EIR-WS-02      "a `type` discriminator and a `payload`" — the new inbound
+                   frame is { type, payload: { channel } }. Compliant.
+    sad.md :119    the C4 box already reads "WS termination, fan-out, presence,
+                   backfill, typing". Made true by this chapter.
+    ADR-10         never promised typing a TTL. Its only typing sentence is "the
+                   correct amount of durability for typing dots and green circles
+                   is none", which this chapter corroborates exactly. **So chapter
+                   2.6's fenced "with TTLs per ADR-10" was wrong ABOUT ADR-10**,
+                   which makes R8's claim 5 easier to retire: the prose beneath the
+                   fence can cite ADR-10 agreeing.
+    EIR-WS-06      no new close code; check:errors holds at 17.
+
+SIXTEEN PASSES
+------------------------------------------------------------
+
+    16  the published document set   2 CRITICAL — one of them exposed by fixing
+                                     the other
+
+**Nineteen CRITICALs. Eight were inside this feature's own documents.**
+
+The last eight have been about the tree or the published product rather than these
+files, and pass 16 is the first where **applying a fix surfaced the next finding.**
+Worth remembering as a habit rather than an accident: after adding an artifact,
+ask what counts it, what claims completeness over it, and what pattern it joins.
