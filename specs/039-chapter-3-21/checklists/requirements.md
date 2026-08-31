@@ -41,8 +41,9 @@ product's vocabulary rather than an implementation detail. A version of SC-006 t
 **Two premises in the brief were checked and both were false**, which is why the spec opens
 with them rather than burying them in research:
 
-- *"typing reuses `chan:{channel_id}`"* — ADR-19's three typed points are all still in the
-  tree, so the argument that refused `chan:` for presence refuses it here too.
+- *"typing reuses `chan:{channel_id}`"* — the typed points that refused `chan:` for presence
+  are all still in the tree, and there are **seven** where ADR-19's record counts three, so
+  the argument refuses it here too and for more places than the record names.
 - *"typing is the small one"* — `session.ts:948` refuses every inbound frame but
   `message.send`, and the published `typingSchema` has no `state` field. This is the first
   chapter to open a second inbound frame.

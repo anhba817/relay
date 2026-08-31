@@ -864,3 +864,77 @@ re-read, a test file credited with a capability it lacks, and a constraint state
 as its proxy in five places after the real one was measured. **All three were one
 grep away, and in all three the sentence had been written down, which is what
 stopped it looking like a question.**
+
+ANALYSIS PASS 12 — DID THE CORRECTION REACH THE NORMATIVE TEXT?
+------------------------------------------------------------
+
+Pass 11's finding, asked one level in: if a refinement can reach one file and
+miss five, which of the misses are NORMATIVE? Pass 11 closed by saying no
+twelfth direction could be named. The direction was inside pass 11's own result.
+
+    C13  CRITICAL  FR-021 required the chapter to cite "ADR-19's three typed
+                   points" as the reason for the fourth grammar. **R1 measured
+                   seven.** The grep it was told to run returned eight lines over
+                   seven places: fanout.ts 44, 47, 62, 80 and session.ts 223, 896,
+                   912. ADR-19's record counts three; R1's own first draft said
+                   four.
+
+                   The correction reached research.md, contracts/typing-fabric.md
+                   and plan.md. It did not reach:
+
+                     spec.md :289  FR-021 — a MUST
+                     spec.md :340  the assumption note
+                     checklists/requirements.md :44
+                     CLAUDE.md :9  "three points, and all three are intact"
+
+                   **FR-020 and FR-021 are verified by a sentence** — no checker
+                   here reads prose — so a chapter satisfying FR-021 exactly as
+                   written publishes the number its own research disproved, with
+                   every gate green.
+
+                   Second consecutive pass in which CLAUDE.md carried the
+                   superseded version of a number this chapter measured.
+
+    H14  HIGH      **No task wrote this chapter's ForwardRef.** grep -c
+                   '<ForwardRef>' reads 1 for chapters 3.17, 3.18, 3.19 and 3.20.
+                   This chapter retracts 3.20's ForwardRef and derives the rule —
+                   describe what the next chapter must DECIDE, not what it will
+                   conclude — and had no task applying that rule to itself.
+
+                   The trap is specific: 3.22's shape is already known to be
+                   unworkable, so "3.22 will replace it with a sorted set" is a
+                   prediction of a conclusion, which is the exact sentence being
+                   retracted. T085a says what 3.22 must decide instead.
+
+    M16  MEDIUM    `deliverPresence` at session.ts:240 walks `subscribersOf` with
+                   NO self-filter — a user sees their own presence transition, and
+                   chapter 3.20 confirmed it counting two frames where a watcher
+                   correctly sees their own arrival. FR-005 requires the opposite
+                   for typing. **Two adjacent functions in one file with opposite
+                   self-delivery rules**, and the natural implementation move —
+                   copy the neighbour — gives the wrong one. Now warned at T043
+                   and stated in the chapter at T085.
+
+WHAT CAME BACK CLEAN
+------------------------------------------------------------
+
+    FR-RTL-01   names REST requests, message sends and connection establishment.
+                A typing signal is none of the three, so FR-013a's refusal of a
+                per-environment typing quota is what the clause permits rather
+                than a gap in it.
+    FR-RTM-09   "each shall receive all events independently" governs events
+                addressed to a user, not events they generate. No conflict with
+                FR-005.
+
+TWELVE PASSES
+------------------------------------------------------------
+
+    12  did the correction reach the MUST   1 CRITICAL — it reached three files
+                                            of seven, and missed the normative one
+
+**Thirteen CRITICALs. Five were inside this feature's own documents.**
+
+Passes 11 and 12 are one finding at two depths. A correction propagates through
+the documents that argue and stalls before the documents that instruct — and the
+instruction is the copy that gets executed. **Grep the claim, then ask which hit
+is normative.**

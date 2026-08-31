@@ -6,9 +6,11 @@ sit in research.
 
 **IT DOES NEED A FOURTH SUBJECT GRAMMAR** (R1). The brief said typing is the one remaining
 kind that reuses `chan:{channel_id}`. ADR-19 refused `chan:` for presence because the
-message path is typed to messages at three points, and all three are intact —
-`publish(message: Message)` and the `messageCreatedSchema` parse in `fanout.ts`, and the
-literal `message.created` send in `session.ts`. Three chapters have now reached this
+message path is typed to messages at three points. **That record undercounts: the grep
+returns eight lines covering SEVEN places** — `onDelivery`, `publish(message: Message)` and
+a `deliver` type in `fanout.ts`, the `messageCreatedSchema` parse there, and three separate
+literal `message.created` sends in `session.ts` at 223, 896 and 912. This file said "three
+points, and all three are intact" for twelve analysis passes after R1 measured seven. Three chapters have now reached this
 independently, so it is a rule rather than a judgement: **a fabric owns its subject
 grammar, and a kind that cannot share a payload type cannot share a subject.**
 

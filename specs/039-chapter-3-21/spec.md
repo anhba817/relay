@@ -286,8 +286,12 @@ of frames other members receive is bounded rather than proportional to the signa
 - **FR-020**: The chapter MUST state which of FR-RTM-05's six frame kinds now have
   producers and MUST NOT claim FR-WHK-02 or FR-RTM-09 are affected by this chapter.
 - **FR-021**: The chapter MUST state that the fourth subject grammar was taken rather than
-  avoided, with ADR-19's three typed points cited as the reason, because the plan for Part
-  3's closing chapters assumed the opposite.
+  avoided, with **the seven typed points R1 measured** cited as the reason — and MUST say
+  that ADR-19's own record counts three. The plan for Part 3's closing chapters assumed the
+  opposite conclusion, and **this requirement said "three" until analysis pass 12**: the
+  correction landed in research, the contract and the plan, and left the MUST that cites it
+  behind. FR-020 and FR-021 are verified by a sentence, so nothing downstream would have
+  caught the chapter publishing the number its own research disproved.
 
 ### Key Entities
 
@@ -336,8 +340,10 @@ of frames other members receive is bounded rather than proportional to the signa
   assumption because it could be reversed by editing `frames.ts`, which this chapter
   refuses for chapters 3.19 and 3.20's reason: the frame a client parses is what chapter
   1.3 published.
-- **A fourth subject grammar, not `chan:`.** ADR-19's argument holds unchanged and its
-  three typed points were verified present before this was assumed.
+- **A fourth subject grammar, not `chan:`.** ADR-19's argument holds unchanged and
+  **strengthened**: its record counts three typed points, and running the verification
+  returned eight lines covering seven. All seven were verified present before this was
+  assumed.
 - **The gateway holds no typing state.** No Redis key, no timer per indicator, nothing to
   refresh. This is what makes the cost against 10,000 connections per instance a publish
   rate rather than a key count.
