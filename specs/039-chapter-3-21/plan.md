@@ -134,8 +134,8 @@ four whose design the constitution did not move.
 reach comes after the refusal that guards it is proven still to work.
 
 ### Phase 1 — Setup and the failing state observed
-Pin the lane environment in `baseline.txt`. Verify the four premises R1–R4 by command
-rather than by memory, and record the outputs. Write a test that a client uttering the
+Pin the lane environment in `baseline.txt`. Verify four premises by command rather than by memory — **R1, R2, R3 and R5**, which is
+what Phase 1's four verification tasks run; R4 is verified by no command anywhere — and record the outputs. Write a test that a client uttering the
 typing signal today is refused with `unknown_frame_type` and close 4002 — **red on purpose,
 and the phase commit says so**, because that refusal is what this chapter narrows.
 
@@ -155,19 +155,30 @@ battery for not doing it. **Two Redis clients, a publisher and a subscriber**, b
 publishing; this module publishes from the gateway, so it needs both. Analysis pass 5 found
 this plan and its task list both specifying one, which would not have run.
 
-### Phase 4 — US1: Mai sees Tuan typing (P1) 🎯 MVP
+### Phase 4 — US2: the inbound seam (P1)
+Widen `session.ts:948` from one type to a named set. Invert Phase 1's red test. Update the
+gauntlet's DIRECTIONS table and its count — **and not its sample builder**: that builder
+feeds a loop over `DIRECTIONS.filter(([, d]) => d === "outbound")`, the new type is
+inbound, so a case there is dead code. An earlier version of this plan and its task both
+mandated one. **Assert the set's exact membership and exact size**, which is what makes a
+third inbound frame a decision rather than an accident.
+
+### Phase 5 — US1: Mai sees Tuan typing (P1) 🎯 MVP
 The delivery path end to end, cross-instance. **The sharp test is the negative one that
 shares a run with a positive**: a non-member receives nothing while a member receives, in
 the same publish.
 
-### Phase 5 — US2: the inbound seam (P1)
-Widen `session.ts:948` from one type to a named set. Invert Phase 1's red test. Update the
-gauntlet's DIRECTIONS table, its count, and its sample builder. **Assert the set's exact
-membership and exact size**, which is what makes a third inbound frame a decision rather
-than an accident.
+**These two phases were the other way round in this file until analysis pass 13**, with the
+MVP marker on the wrong one. `baseline.txt` recorded the correction under the heading *"THE
+PLAN'S PHASE ORDER WAS WRONG"* while the task list was being written — **US1 cannot be
+delivered without US2**, because no frame lets a client say it is typing — and the fix
+reached `tasks.md` and the record and not the file the heading names.
 
 ### Phase 6 — US3: the renewal interval, in memory (P2)
-A `Map` on the connection holding the last publish time per channel. **No Redis, no third
+A `Map` in `attachSessions`'s closure, keyed by connection id then channel, holding the last
+publish time — **not a field on `Connection`**, whose file four chapters fence. The interval
+is `renewalIntervalMs?` on the session options, defaulting to 2 s, so a test builds an
+instance with 40 rather than waiting two real seconds in the package that paces the lane. **No Redis, no third
 `operation`, and `limits.ts` is not edited** — analysis pass 1 found the existing bucket
 cannot express a 2-second per-connection rule, and that a per-environment ceiling on top
 would bound a rate the debounce already bounds. **The residual risk is the connection count,
@@ -179,7 +190,7 @@ deferred to.
 
 **FR-014 moved out of this phase.** A typing signal must not spend the message send quota,
 and leaving that in a P2 story meant stopping after the MVP could ship a cosmetic feature
-able to exhaust a customer's message budget. It is asserted in Phase 5.
+able to exhaust a customer's message budget. It is asserted in Phase 5, which is US1 — the phase numbers above were swapped when this was written and the sentence happened to survive the swap pointing at a different story.
 
 ### Phase 7 — The resume buffer, and what must not enter it
 A typing frame arriving mid-resume is sent immediately and never buffered (FR-018). Chapter
@@ -198,8 +209,9 @@ empty and record the Appendix C decision either way.
 
 ### Phase 10 — The chapter
 Decide the fence set before writing a fence: run `check:fences` at HEAD and read what it
-demands. Correct R8's three published claims — **two of them written by chapter 3.20 and
-falsified by this one** — in both locales, with `check-prose.py` written and run red first.
+demands. Correct R8's **five** published claims, ten fragments — **two written by chapter 3.20 and
+falsified by this one, and one a fence quoting chapter 2.6 that only the prose beneath it can
+retire** — in both locales, with `check-prose.py` written and run red first.
 
 ### Phase 11 — Polish and close-out
 Coverage pins, the battery, `gaps.md` with every carried status re-checked, traceability

@@ -49,5 +49,14 @@ with them rather than burying them in research:
   chapter to open a second inbound frame.
 
 **What planning must decide, and the spec deliberately does not**: the renewal interval's
-number (FR-011 requires arithmetic, not a value), the inbound frame's name, and whether the
-typing limit reuses `rl:{env}:{bucket}` or needs its own bucket.
+number (FR-011 requires arithmetic, not a value) and the inbound frame's name, which one
+task decides and no other repeats.
+
+**A third item stood here and it was already answered when this file was written down.**
+*"Whether the typing limit reuses `rl:{env}:{bucket}` or needs its own bucket"* — the answer
+is **neither**. Analysis pass 1 read the limiter: it is keyed per environment on a 60-second
+window with a two-member `operation` union, against a rule that is per connection, per
+channel and 2 seconds. Three mismatches, each fatal alone. The interval is a gateway-held
+debounce and `limits.ts` is not edited. **The question offered a binary that excluded its
+own answer**, which is the shape a question takes when it is written before the code is
+read.

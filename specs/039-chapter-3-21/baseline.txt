@@ -938,3 +938,80 @@ Passes 11 and 12 are one finding at two depths. A correction propagates through
 the documents that argue and stalls before the documents that instruct — and the
 instruction is the copy that gets executed. **Grep the claim, then ask which hit
 is normative.**
+
+ANALYSIS PASS 13 — WHERE THE CORRECTIONS WENT TO DIE
+------------------------------------------------------------
+
+Pass 12's filter, applied to every other correction this chapter made: which
+artifact didn't get it? The answer was the same file five times, and the sixth
+turned up inside the fix.
+
+    C14  CRITICAL  **plan.md and tasks.md disagreed on the phase order and on
+                   which phase is the MVP.**
+
+                     plan.md   Phase 4 = US1 (delivery) MVP, Phase 5 = US2 (seam)
+                     tasks.md  Phase 4 = US2, Phase 5 = US1 MVP, stated twice —
+                               in the dependency graph and in "MVP is Phase
+                               1 + 2 + 3 + 4 + 5"
+
+                   The correction is recorded in THIS FILE, under the heading
+                   "THE PLAN'S PHASE ORDER WAS WRONG", written while the task list
+                   was being written: US1 cannot be delivered without US2, because
+                   no frame lets a client say it is typing. **It reached tasks.md
+                   and this record and never the file its own heading names.**
+
+                   `/speckit-implement` runs once per phase, eleven times, and
+                   loads the plan as design context. The first invocation would
+                   have been told to build a delivery path with no trigger.
+
+                   And the plan's Phase 6 note — "FR-014 is asserted in Phase 5" —
+                   pointed at US2 in the plan's numbering and US1 in the task
+                   list's, correct in exactly one of them.
+
+    H15  HIGH      plan.md Phase 10 still said "R8's three published claims".
+                   Pass 9 made it five claims and ten fragments and updated
+                   research.md, tasks.md and spec.md. **Third artifact to carry a
+                   superseded count** — after FR-021's three typed points last
+                   pass.
+
+    M17  MEDIUM    plan.md Phase 6 still said "A `Map` on the connection" — the
+                   exact phrase pass 11 corrected in data-model.md, which T054
+                   contradicts in bold. Pass 11 fixed two files and did not grep
+                   for the third.
+
+    M18  MEDIUM    plan.md Phase 1 said "the four premises R1–R4". Phase 1 verifies
+                   R1, R2, R3 and **R5**. R4 is verified by no command anywhere.
+
+    M19  MEDIUM    checklists/requirements.md still listed as open a question pass 1
+                   had answered: "whether the typing limit reuses `rl:{env}:{bucket}`
+                   or needs its own bucket". The answer is **neither** — three
+                   mismatches, each fatal alone, and `limits.ts` is not edited.
+                   **The question offered a binary that excluded its own answer.**
+                   Second stale claim found in a 53-line file in two passes.
+
+    AND A SIXTH, INSIDE C14's OWN FIX. The plan's Phase 4 body told the
+    implementer to update "the gauntlet's DIRECTIONS table, its count, and its
+    sample builder". T016 says explicitly NOT the sample builder — that loop
+    filters for outbound and the new type is inbound, so a case there is dead
+    code an earlier version of the task mandated. The task was corrected; the
+    plan sentence that says the same thing was not.
+
+WHY plan.md AND NOT THE OTHERS
+------------------------------------------------------------
+
+Every correction this chapter made reached three places: the artifact that argues
+(research.md), the artifact that gets executed (tasks.md), and this record. The
+plan is written once, read at the start of implementation, and compared against
+nothing. `check-refs.py` reads it for task ids and requirement ids — both were
+always fine — and **no checker compares a phase heading in one file to a phase
+heading in another.**
+
+    thirteen passes, and the artifact with the most stale facts is the one
+    nobody re-reads and no instrument inspects
+
+THIRTEEN PASSES
+------------------------------------------------------------
+
+    13  which artifact missed it   1 CRITICAL — the plan, five times over
+
+**Fourteen CRITICALs. Six were inside this feature's own documents.**
