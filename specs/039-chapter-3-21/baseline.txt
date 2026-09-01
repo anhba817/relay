@@ -1885,3 +1885,113 @@ Not the test's Postgres — this file stubs the api and touches no database. It 
 the integration config's `globalSetup`, which migrates once per lane. `docker
 compose ps` printed a header and no rows. Brought back with T001's command,
 port variable included.
+
+
+================================================================
+PHASE 5 — DELIVERY, CROSS-INSTANCE (US1, MVP)
+================================================================
+
+T042, T043a, T043b — FOUR SUBSCRIPTION SITES, NOT ONE
+------------------------------------------------------------
+
+    open()                    subscribe    the ordinary path
+    close()                   unsubscribe
+    the `added` branch        subscribe    chapter 3.20's mid-connection join
+    the revocation branch     unsubscribe
+
+**The previous chapter's own note is what made the first one findable.** Its
+equivalent had no task, because the revocation release and the user subject each
+had one and the ordinary open path fell between them. A channel now carries four
+subscriptions on one instance, all reference-counted.
+
+T043 — THE NEIGHBOUR WITH THE OPPOSITE RULE
+------------------------------------------------------------
+
+`deliverTyping` sits directly above `deliverPresence`, and they disagree on
+purpose: presence walks `subscribersOf` unfiltered, so a user sees their own
+transition; typing skips every connection whose identity is the signaller. **The
+natural move — copy the neighbour — gives the wrong one**, which is why the
+warning is in the file rather than only in a task.
+
+Skipped by IDENTITY, never by socket. The signal arrives from Redis with no
+socket reference, on the publishing instance too, and a user may hold several
+connections.
+
+T045b — THE TEST T045 CANNOT BE
+------------------------------------------------------------
+
+    sends nothing to the signaller's OTHER connection, which a socket filter would
+
+Three instances: the signaller, the signaller again, and a watcher. **T045 passes
+with one connection per user whether the filter compares identities or sockets**,
+and the wrong implementation shows a user their own indicator on their own second
+device. Analysis pass 10 found the gap in the requirement; this is the test.
+
+T048c — THE MID-CONNECTION JOIN, AND MY FIRST VERSION PUBLISHED ON THE WRONG
+SUBJECT
+------------------------------------------------------------
+
+    expected [] to deeply equal [ { channel, user: 'tuan' } ]
+
+Published on `member:{channel_id}` and delivered nothing. **That is the previous
+chapter's central asymmetry, walked into from the outside**: an ADDITION cannot
+ride the channel's subject, because the instance holding the new member is not
+subscribed to that channel yet — which is exactly the case under test, since Mai
+connects holding nothing. The event goes on `member:{env}:{user}`.
+
+The failure was worth more than the test: three chapters of documents say this
+and it still took a red assertion to make it mine.
+
+T048a — FIVE AND A HALF SECONDS BOUGHT NOTHING
+------------------------------------------------------------
+
+The obvious FR-009a test waits past FR-RTM-08's five seconds to watch the expiry
+instant pass unannounced. It cost 5.6 s, tripped vitest's 5 s default timeout,
+and would have added its weight to the package that paces the lane — against
+about four seconds of headroom in the whole budget.
+
+**And it was waiting for nothing.** There is no server timer: no Redis key, no
+`setTimeout`, no row. The gateway does not know an indicator exists, which is
+exactly why it cannot end one. Any silence window proves the same property and
+FR-009a names no duration, so the wait is 1.5 s with the argument written beside
+it.
+
+T051 — THE SUBSCRIPTION COST, MEASURED
+------------------------------------------------------------
+
+    CONFIG RESETSTAT, then the typing suite alone, then INFO commandstats
+
+    cmdstat_subscribe   calls=24   usec_per_call=3.42
+    cmdstat_publish     calls=15   usec_per_call=2.00
+    cmdstat_hello       calls=43   usec_per_call=6.07
+    cmdstat_info        calls=43   usec_per_call=35.30
+
+**24 subscribes for 10 tests across 14 gateway instances**, which is the
+reference counter working: an instance holding one channel subscribes once
+whatever else it does. The publishes are one per signal, 15 of them, at 2 µs
+each. The expensive command in the file is `INFO` — the harness's own health
+check — at ten times a publish.
+
+T052 — THE TENTH FILE COST THE PACKAGE NOTHING MEASURABLE
+------------------------------------------------------------
+
+    gateway package     45.22 s     10 files, 161 tests
+      phase 1           45.22 s      9 files, 150 tests
+      phase 4           45.67 s     10 files, 153 tests
+
+    typing.itest.ts alone   5.84 s   10 tests
+
+The package clock is `max(file)` and `presence.itest.ts` still paces it at ~45 s,
+so a 5.84 s file that spawns no api runs inside that shadow. **The prediction was
+"the cost of one api-less suite — not zero, and not an api boot", and the honest
+reading is that it is not zero and is not visible either**: it is 5.84 s of
+parallel work under a 45 s ceiling.
+
+T047 IS DEFERRED TO PHASE 6, AND COULD NOT HAVE BEEN OTHERWISE
+------------------------------------------------------------
+
+T047 asks for "a signal after the renewal interval delivers a second frame, and a
+signal inside it delivers nothing further", built with `renewalIntervalMs: 40` —
+**an option T054 creates, in phase 6.** Both halves of the assertion need an
+interval that does not exist yet. The task names its own dependency and sits in
+the wrong phase; it runs beside T057.
