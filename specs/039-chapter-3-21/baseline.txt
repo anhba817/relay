@@ -2063,3 +2063,114 @@ Deferred from phase 5 because both halves need the option this phase creates.
 Built with 40 ms rather than waiting out two real seconds, and the wait is 120 ms
 — **never exactly the interval**, which is the two-deadlines-one-instant shape
 again.
+
+
+================================================================
+PHASE 7 — THE RESUME BUFFER, AND WHAT MUST NOT ENTER IT
+================================================================
+
+T062 — VERIFIED RATHER THAN BUILT
+------------------------------------------------------------
+
+`deliverTyping` was written in phase 5 consulting neither `connection.phase` nor
+`connection.marks`, so this phase's implementation task was already satisfied.
+Confirmed by command: zero matches for either identifier inside the function.
+
+T063 — MY FIRST VERSION SLEPT THROUGH THE WINDOW IT WAS TESTING
+------------------------------------------------------------
+
+    AssertionError: expected [ { type: 'message.created' } ] to deeply equal []
+
+The backfilled frame arrived inside a 300 ms check against an 800 ms delay.
+**Because the test awaited the watcher's `connection.ack` first**, and on the
+resume path the order is *"confirm, backfill, ack, emit, flush, live"* —
+`session.ts` says so in its own comment. The ack goes out AFTER `api.backfill`
+returns, so waiting for it burns the whole window.
+
+**A wait for the wrong signal closes the window it was meant to hold open.** The
+signaller is acked first, then the watcher is opened and NOT awaited.
+
+Chapter 3.20's two traps, both handled: the connection is genuinely `buffering`
+(a cursor is presented — `session.ts:766` makes `phase` depend on it) and the
+cursor/sequence collision does not apply, because a typing frame has no sequence
+at all. That absence is why it cannot be meaningfully buffered.
+
+**The assertion is an ORDERING, not an arrival.** A buffered frame still arrives,
+after the flush — so "it arrived" proves nothing. An immediate frame arrives
+BEFORE the backfilled `message.created`.
+
+T065 — AND IT BITES
+------------------------------------------------------------
+
+    if (connection.phase === "buffering") continue;   // spliced into deliverTyping
+
+    × sends a typing frame during a resume, before the backfill it is racing
+      AssertionError: expected [] to have a length of 1 but got +0
+
+Restored. Chapter 3.20 ran this same proof on two orderings and got no failure
+either time, so the result was worth having rather than assuming.
+
+A FLAKE, CAUGHT AND FIXED RATHER THAN RE-RUN
+------------------------------------------------------------
+
+    × sends nothing at all after the signal, until another signal is sent  315ms
+
+Passed on repeat. **A connection is acked before its Redis SUBSCRIBE has
+necessarily landed** — the non-resume branch of `open()` acks without awaiting
+`subscribing` — so a test that acks a watcher and then signals can miss the
+frame, and a fixed `settle()` afterwards makes that unlikely rather than
+impossible.
+
+Every positive-arrival assertion in the file now polls with a deadline
+(`untilTyping`) instead of sleeping. Negative assertions keep a fixed wait,
+because there is nothing to poll for. Three consecutive runs: 17/17, 11.1 s,
+11.0 s, 11.0 s.
+
+**This is the shape the twenty-run battery exists to catch, and the shape that
+gets waved away as "flaky" when a re-run is green.** The re-run was green.
+
+AND I FAILED TO RESTORE A FILE FROM THE WRONG DIRECTORY
+------------------------------------------------------------
+
+    cp: cannot create regular file 'services/gateway/src/session.ts': No such
+    file or directory
+
+The `cd` was into `services/gateway/src` and the path was repository-relative, so
+T065's temporary edit stayed in the tree until the next command. Third directory
+mistake of this implementation, after `pnpm lint` from a package subdirectory and
+`pnpm turbo run test` filtering to one package while reading green. **`git status`
+is the check that caught it**, which is why every phase gate runs one.
+
+AND THE FULL LANE FAILED ONCE, WITH THE SHAPE gaps.md ITEM 19a DESCRIBES
+------------------------------------------------------------
+
+    × stops delivering to a member who was REMOVED while connected (FR-RTM-10)  5562ms
+    × delivers nothing from a PRIVATE channel to a non-member's socket             3ms
+    × accepts typing.send and answers with nothing at all                          2ms
+    × refuses every non-inbound type with unknown_frame_type and 4002              2ms
+    × refuses a typing.send whose payload names a user                             1ms
+
+    Test Files  1 failed | 9 passed (10)      Tests  5 failed | 163 passed (168)
+
+**One root and four cascades.** The first is a 5.5-second timeout; the other four
+fail in one to three milliseconds, which is a dead fixture rather than four
+independent defects — `session.itest.ts` spawns an api and every test after the
+one that killed it fails instantly.
+
+Narrowed rather than re-run and forgotten:
+
+    session.itest.ts alone                    17/17
+    session.itest.ts + typing.itest.ts        34/34
+    the full package, again                   168/168, 45.57 s
+
+**So it is not this chapter's new file interfering with that one**, which was the
+obvious hypothesis and the wrong one. It reproduces only under the whole
+package's parallelism, and its shape — an api fixture that stops answering, in a
+file that spawns one — is chapter 3.20's `gaps.md` item 19a: four failures across
+forty runs with three hypotheses measured and eliminated, still open because
+every spawning file either uses `stdio: "ignore"` or pipes and never reads.
+
+**Recorded rather than explained.** One failure in three full-lane runs this phase
+is consistent with the 17.5% per-run rate that chapter measured, and T101's
+battery is the instrument for it. What this phase can say is that it is not new:
+the same file, the same spawn, and a green run on either side.
