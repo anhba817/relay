@@ -157,7 +157,28 @@ rate above 13.91%; 19 of 20 rejects only 21.61%, which does not reject chapter
 `part3-ch21` is annotated, so `git rev-parse part3-ch21` returns the tag object.
 This chapter's own predecessor was `ba5e3d6`, obtained the same way.
 
-**Nothing is pushed.** All three repositories are ahead of `origin/main`.
+**Tagged, and the value is `0ecb21f`:**
+
+    relay-platform   part3-ch21 -> 0ecb21f   test(3.21): keep the meter fixture's
+                                             child output (gaps item 9)
+    relay-tutorial   part3-ch21 -> 3009af7   docs(3.21): regenerate chapter 21's
+                                             fences after the wiring fix
+    root             part3-ch21 -> 49cb482   docs(3.21): close-out records
+
+The root's tree at its tag names exactly those two submodule commits, checked with
+`git ls-tree part3-ch21^{commit} relay-platform relay-tutorial` rather than
+assumed.
+
+**And the root repository is one commit AHEAD of its own tag, by construction.**
+T106 states the reason — *a record of a commit hash inside the commit it names does
+not converge* — so T107's checkbox can only be ticked after the tag exists. That
+commit touches `specs/` only; neither submodule tag moves. This is the same shape
+as chapter 3.20's note that a feature's tail can amend a file after tagging, and it
+is why the predecessor is a commit rather than a tag.
+
+**Nothing is pushed.** All three repositories are ahead of `origin/main`, and the
+three tags exist on one machine until somebody pushes them with the branches,
+submodules first.
 
 **3.22 builds FR-RTM-09's five-connection cap, and its first job is a decision.**
 The SRS describes `conn:{env}:{user}` as a Redis set with one TTL, and a TTL is per
