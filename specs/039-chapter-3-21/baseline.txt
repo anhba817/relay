@@ -2653,3 +2653,48 @@ client connected. Now it asserts a round trip through the fallback url.
 **Two of the four moved a coverage number while asserting nothing.** That is the
 combination worth naming: the ratchet is satisfied by execution, and only a
 reader is satisfied by an assertion.
+
+T099 — THE GATES IN CI's ORDER, AND THE SIXTH FAILED
+------------------------------------------------------------
+
+    lint          PASS     0s
+    typecheck     PASS     1s
+    unit          PASS     5s
+    build         PASS     1s
+    migrate       PASS     0s
+    integration   FAIL   222s
+
+    FAIL  src/session.itest.ts > stops delivering to a member who was REMOVED
+          while connected (FR-RTM-10)
+      TypeError: fetch failed
+      Caused by: Error: connect ECONNREFUSED 127.0.0.1:4517
+
+Port 4517 is inside `session.itest.ts`'s own 4400–4600 range, so the api it
+spawned is dead rather than displaced. Four cascades at 1–2 ms follow, because
+every later test in the file hits the same corpse.
+
+**Second occurrence in this chapter, and it is chapter 3.20's `gaps.md` item 19a**
+— `session.itest.ts` × ECONNREFUSED, one of four failures across forty runs with
+three hypotheses measured and eliminated. Re-running the package alone: 10 files,
+174 tests, 45.11 s, green. It appears only under the whole lane.
+
+SO THE EVIDENCE IS NO LONGER THROWN AWAY
+------------------------------------------------------------
+
+Item 19a's own diagnosis says why it is still open: *"all seven files either spawn
+with `stdio: "ignore"` or pipe and never read."* `session.itest.ts` is the second
+kind —
+
+    stdio: ["ignore", "pipe", "pipe"]
+
+— and neither pipe was ever read. **Every dead api in those four occurrences had
+already said why, into a buffer nobody drained.**
+
+Both pipes now feed a 200-line ring, the child's exit code and signal are
+appended, and `waitForHealth`'s timeout message carries the tail. Chapter 3.20
+measured that an undrained pipe is not itself the cause — an api spawned that way
+answered 4,000 requests — so this changes nothing about the failure and everything
+about the next diagnosis.
+
+**Twelve lines, in a file this chapter already edits and already fences.** Four
+occurrences across two chapters went unexplained for want of them.
