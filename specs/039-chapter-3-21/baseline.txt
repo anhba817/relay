@@ -2258,3 +2258,106 @@ extra hop, and the first publish after a boot lands later than a fixed 300 ms
 wait. Polled with a deadline instead (`untilSignals`), matching the socket-side
 `untilTyping` phase 7 added. **Both are properties of the fixture rather than of
 the code**, and both would have read as flakes in a battery.
+
+
+================================================================
+PHASE 9 — THE DOCUMENTS
+================================================================
+
+T074, T074a — TWO ADRs, NOT ONE
+------------------------------------------------------------
+
+    ADR-21   typing on a fourth subject grammar
+    ADR-22   the typing expiry belongs to the receiving client
+
+**ADR-22 exists because analysis pass 16 found the chapter's central finding
+reaching no published document.** FR-009c's verdict was going to `chapter-notes.md`
+and the tutorial, and a customer reads neither — while `docs/04-srs.md`'s
+FR-RTM-08 goes on saying indicators "shall expire automatically", which reads as a
+server promise. The clause is unchanged: a requirement is the customer's contract,
+and a chapter does not rewrite one to match its code.
+
+Three status lines now point at the correction rather than being edited, because
+ADRs are immutable once accepted:
+
+    ADR-07   extended by ADR-22 — the opposite case to ADR-20's; a dropped typing
+             frame self-corrects, so ADR-07's loss argument holds for it exactly
+    ADR-19   extended by ADR-21 — seven typed points where this record says three
+    ADR-20   the count it borrows from ADR-19 is corrected in ADR-21
+
+**And I mangled ADR-07's status line first**, appending to it twice so it read
+"extended by ADR-20 … · extended by ADR-20, which". Repaired before the commit.
+The first edit had also targeted the wrong record — ADR-07 rather than ADR-19 —
+because both status lines matched the pattern I searched for.
+
+T074b, T074c — THE DEEP DIVES, AND ADR-20's DEBT PAID HERE
+------------------------------------------------------------
+
+    grep -c "^### ADR-" docs/05-sad.md            22
+    grep -c "^## ADR-"  docs/06-adr-deep-dives.md 22
+
+**That file's Purpose says the long form exists "for each ADR" and it stopped
+being true in chapter 3.20**, which wrote ADR-20 into the SAD, amended ADR-07's
+deep dive in the same file, and wrote no dive for its own record. Analysis pass 16
+found it while checking what ADR-22 would join.
+
+T074c asked which chapter pays. **Paid here**: this phase already had the file
+open, the alternative was leaving a published document's own scope claim false for
+a third chapter, and the cost was one page. The closing section's heading moved
+from "Reading the nineteen together" to twenty-two.
+
+T077 — TWO COUNTS IN ONE DOCUMENT, AND ONLY ONE WAS MAINTAINED
+------------------------------------------------------------
+
+    ### Part 3 — Becoming a platform (20 chapters)   -> 21, matching its rows
+    Part 3   Becoming a platform   10 chapters       -> 21
+                                   54 chapters       -> 65
+
+**The summary table at the top of the plan said Part 3 had ten chapters.** Every
+other part's summary matches its rows exactly — 5, 4, 8, 8 — so this is not a
+historical table with one stale row; it is a live table nobody updated while Part
+3 grew from ten to twenty-one across chapters 3.11 to 3.21. The total was wrong by
+eleven.
+
+This is the project's own two-counts discipline failing in the document that
+teaches it.
+
+T077a, T077b — THE CUSTOMER-FACING CORRECTION
+------------------------------------------------------------
+
+`docs/08-error-reference.md`'s `unknown_frame_type` entry said *"`message.send` is
+the only inbound frame"* and *"**What to do:** send `message.send`."* Both now
+name the set, and the entry states the rule rather than the list: **an inbound
+frame ends in `.send`.**
+
+It also now says which refusal comes first — a type the union does not contain
+fails schema validation and gets `invalid_frame` with the socket open, which is
+the three-state finding from phase 1 reaching the document a customer reads.
+
+`pnpm check:errors` is green at 17 codes and **could not have caught any of
+this**: it asserts structure, not truth. A green run after a false entry is the
+checker working as designed.
+
+T077c — THE ADVERTISEMENT, AND THE ROUTE IS `/healthz`
+------------------------------------------------------------
+
+    curl -s localhost:4001/healthz | jq '.protocol.frames | length'   ->  11
+
+    connection.ack, error, membership.changed, message.ack,
+    message.created, message.deleted, message.send, message.updated,
+    presence.changed, typing, typing.send
+
+**T077c's command said `/health` and the gateway answered 404.** The route is
+`/healthz`. Corrected in the task; the count is right and `typing.send` is on the
+wire.
+
+T076, T078, T079 — THE CHECKS
+------------------------------------------------------------
+
+    git diff docs/04-srs.md          empty, as R10 expected
+    pnpm sync:docs                   05-sad, 06-adr-deep-dives, 08-error-reference
+    pnpm check:docs                  all mirrored docs match their sources
+
+    "only inbound frame"             0 hits remaining, both trees
+    "declared words with nothing"    chapter 3.19 — phase 10's to correct
+    "genuinely reuse"                chapter 3.20 — phase 10's to correct
