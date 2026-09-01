@@ -1703,3 +1703,100 @@ T018 — NO NEW CLOSE CODE
 
 Read from the BUILT `packages/protocol/dist/codes.js`, after the build, so the
 green is not a stale artifact's.
+
+
+================================================================
+PHASE 3 — THE FABRIC
+================================================================
+
+T020, T021 — `packages/protocol/src/typing.ts`
+------------------------------------------------------------
+
+`subjectForTyping(channelId)` -> `typing:{channelId}`, and `typingFabricSchema`
+as a strict object of `environment`, `channel`, `user`. **One subject shape, not
+two**: chapter 3.20 needed a principal-addressed subject because an addition
+cannot ride the channel it adds you to, and typing has no such case — a signal is
+only interesting to people already in the channel.
+
+Not named `subjectFor`, which `internal.ts` already exports and chapter 3.18 paid
+for once with `TS2308`.
+
+T022, T023 — FIVE GRAMMARS, PAIRWISE DISTINCT
+------------------------------------------------------------
+
+    protocol package   7 files, 85 tests
+
+The pairwise test has a third arm the task did not ask for: **no other grammar
+starts with `typing:`**. A `new Set` catches equal strings and cannot see a prefix
+collision, which is the one a `psubscribe` or any future wildcard read would meet.
+
+T024 — TWO CLIENTS, AND THE TASK LIST HAD SAID ONE
+------------------------------------------------------------
+
+    fanout.ts       2        publisher + subscriber
+    limits.ts       1
+    presence.ts     2
+    membership.ts   1        the api publishes; this half only receives
+    typing.ts       2        <- both roles on every instance
+                   --
+                    8        chapter 3.20 closed at six
+
+Analysis pass 5 caught this before any code existed. The module is the first
+fabric this service both publishes to and consumes from: a client's signal
+arrives at its own gateway over the socket, that instance puts it on the fabric,
+and the same instance is subscribed because it holds members of that channel.
+One client would subscribe successfully and fail every publish.
+
+T025 — THE TASK ASKED FOR PURE HELPERS AND THIS MODULE HAS NONE
+------------------------------------------------------------
+
+`presence.ts` exports `graceCheckDelay` and `wonTransition` because presence has
+arithmetic — three thirty-second numbers that turned out to be three quantities.
+**Typing has no arithmetic at all**: the five-second expiry is the receiving
+client's and the two-second renewal interval lives in `session.ts`. What is left
+is transport and a reference count, and every branch of both needs a client.
+
+So `typing.test.ts` covers the one thing that is pure — `DEFAULT_REDIS_URL` — and
+says in the file that the module's eight arms are `typing.itest.ts`'s. **Padding
+it with a constructed `createTyping` would have opened two sockets to nothing and
+leaked them past the file**, because ioredis connects on construction.
+
+T026 — THE EXEMPTION, AND WHICH LIST
+------------------------------------------------------------
+
+`services/gateway/src/typing.ts` goes in the `files: ["**/*.ts"]` block's
+`ignores`, beside `fanout.ts`, `presence.ts` and `membership.ts`. **It is the
+fan-out's case and the cleanest of the four**: PUBLISH and SUBSCRIBE onto
+`typing:{channel_id}`, a channel uuid, and no key of any kind — so it does not
+need the argument presence and membership each had to make about an
+environment-scoped id.
+
+The `.itest.ts` file is NOT listed there. Chapter 3.20 put one in that block and
+the later `**/*.itest.ts` block silently overrode it; the typing suite's exemption
+is T057a's `DRIVER_EXEMPT_TESTS` entry instead.
+
+T027 — THE OPTION WITHOUT THE DESTRUCTURING
+------------------------------------------------------------
+
+`typing?: Typing` on `SessionServerOptions` and the import, and **no destructuring
+in `attachSessions`**. `no-unused-vars` rejects a binding whose first consumer is
+a later phase, which makes the phase uncommittable — chapter 3.20 paid for that
+exact task once. Phase 5 destructures it in the commit that calls it.
+
+T028, T029, T030 — THE GATES
+------------------------------------------------------------
+
+    pnpm lint         green
+    pnpm typecheck    green
+    pnpm turbo run test --force   11 successful, 11 total, 4.8 s
+
+AND TWO SELF-INFLICTED TRAPS, BOTH THE ONE T029 WARNS ABOUT
+------------------------------------------------------------
+
+**`pnpm lint` from `packages/protocol/src`** answered
+`ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL Command "lint" not found` — loudly, which is
+the good case. **`pnpm turbo run test` from `services/gateway/src`** did not: it
+ran 4 tasks instead of 11 and printed a green summary. T029 says "pnpm in the
+wrong repository exits without running anything and reads as green"; the sharper
+version is that a subdirectory of the RIGHT repository filters the workspace and
+reads green too. Both gates were re-run from the workspace root.
