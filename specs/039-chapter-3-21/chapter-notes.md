@@ -163,18 +163,22 @@ This chapter's own predecessor was `ba5e3d6`, obtained the same way.
                                              child output (gaps item 9)
     relay-tutorial   part3-ch21 -> 3009af7   docs(3.21): regenerate chapter 21's
                                              fences after the wiring fix
-    root             part3-ch21 -> 49cb482   docs(3.21): close-out records
+    root             part3-ch21 -> the last close-out commit on `main`
 
-The root's tree at its tag names exactly those two submodule commits, checked with
+**The two submodule hashes are quoted and the root's is not, and that asymmetry is
+the point.** The submodule commits are what the fence chain needs and what the
+root's tree names — verified with
 `git ls-tree part3-ch21^{commit} relay-platform relay-tutorial` rather than
-assumed.
+assumed. The root's own hash cannot be written down here: T106 states why — *a
+record of a commit hash inside the commit it names does not converge* — and the
+first attempt at this paragraph proved it, quoting `49cb482` and then being
+overtaken twice while the close-out finished, once by T107's own checkbox and once
+by a checker fix. Naming the root tag by its ROLE is true after every such commit;
+naming it by its hash was false within the hour.
 
-**And the root repository is one commit AHEAD of its own tag, by construction.**
-T106 states the reason — *a record of a commit hash inside the commit it names does
-not converge* — so T107's checkbox can only be ticked after the tag exists. That
-commit touches `specs/` only; neither submodule tag moves. This is the same shape
-as chapter 3.20's note that a feature's tail can amend a file after tagging, and it
-is why the predecessor is a commit rather than a tag.
+Neither submodule tag moved for any of it. This is the same shape as chapter 3.20's
+note that a feature's tail can amend a file after tagging, and it is why the
+predecessor is a commit rather than a tag.
 
 **Nothing is pushed.** All three repositories are ahead of `origin/main`, and the
 three tags exist on one machine until somebody pushes them with the branches,
