@@ -2174,3 +2174,87 @@ every spawning file either uses `stdio: "ignore"` or pipes and never reads.
 is consistent with the 17.5% per-run rate that chapter measured, and T101's
 battery is the instrument for it. What this phase can say is that it is not new:
 the same file, the same spawn, and a green run on either side.
+
+
+================================================================
+PHASE 8 — FAILURE, AND THE CLOSED VOCABULARY
+================================================================
+
+T068 — THE PUBLISH DOES NOT FAIL, AND FR-015 DID NOT EXPECT THAT
+------------------------------------------------------------
+
+Severing the fabric with a TCP proxy and reading the sink:
+
+    AFTER CUT: [{"msg":"typing.failed","op":"connection"},
+                {"msg":"typing.failed","op":"connection"},
+                {"msg":"typing.failed","op":"connection"},
+                {"msg":"typing.failed","op":"connection"},
+                {"msg":"typing.failed","op":"connection"}]
+
+**Five lines, all `op: "connection"`, and not one `op: "publish"`.**
+`publisher.publish()` never rejects: ioredis's default offline queue accepts the
+command and resolves it when the connection returns. So a severed fabric does not
+DROP a typing signal — it DELAYS it, and the queued signal arrives on reconnect
+alongside the next one.
+
+FR-015's first two clauses hold and were asserted: the socket stays open and the
+client is told nothing. **Its third does not.** "MUST be logged once with a stable
+event name" — the name is stable and what is logged once per outage is *nothing*,
+while what is logged per reconnect attempt is unbounded.
+
+**A publisher that queues satisfies "the socket stayed open" the way chapter
+3.18's fan-out satisfied "the send returned 201 while Redis was down":
+trivially.** The test was written expecting one publish failure, measured five
+connection failures and zero publish failures, and now asserts what happens.
+
+**Not fixed here.** All four fabric modules share this error-listener shape —
+`fanout.ts`, `presence.ts`, `membership.ts` and `typing.ts` — so bounding the
+retry logging is a cross-module decision rather than this chapter's. It goes to
+`gaps.md` with the measurement attached.
+
+T069, T070 — THE SET, AND THE SILENCE
+------------------------------------------------------------
+
+    emitted, from one instance:   typing.invalid_payload, typing.published
+
+Asserted as the set an instance actually emitted rather than as what a grep
+finds. Chapter 3.20's FR-032 declared three names while the code emitted six and
+the clause had to be amended afterwards; a set assertion is what catches that on
+the day.
+
+`typing.failed` is the third declared name and is reached by the severed-fabric
+test above and by the environment-mismatch test earlier in the file — asserted
+there rather than forced here, because **a name reached only by a test that
+exists to reach it is a name nothing needs.**
+
+And a debounced signal writes nothing at all: the sink length is unchanged across
+a burst of five. One line per keystroke is the unbounded output NFR-OBS-01 exists
+to prevent.
+
+T072 — FOUR KINDS, ONE CHANNEL, ONE WATCHER
+------------------------------------------------------------
+
+    message.created     1
+    presence.changed    1
+    membership.changed  1
+    typing              1
+    total non-ack       4
+
+**Five subject shapes share one Redis** and every gateway subscribes to a string.
+`typing.test.ts`'s pairwise test proves the SUBJECTS cannot collide; this proves
+the DELIVERY does not, which is a different claim — a builder can be distinct
+while a handler is wired to the wrong one.
+
+The first version wired fanout and presence and not membership, and the failure
+named itself: `membership: expected [] to have a length of 1`.
+
+AND A SECOND FIXTURE RACE, SAME SHAPE AS PHASE 7's
+------------------------------------------------------------
+
+    AssertionError: expected [] to have a length of 1 but got +0
+
+An instance publishing through the TCP proxy opens a fresh connection through an
+extra hop, and the first publish after a boot lands later than a fixed 300 ms
+wait. Polled with a deadline instead (`untilSignals`), matching the socket-side
+`untilTyping` phase 7 added. **Both are properties of the fixture rather than of
+the code**, and both would have read as flakes in a battery.
