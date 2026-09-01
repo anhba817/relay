@@ -127,7 +127,102 @@ chapter 3.6 got wrong.
 documented exception: it edits prose in two trees and no TypeScript, so
 `check:docs` is its gate.
 
-## 8. CHAPTER 3.20's ITEMS, RE-CHECKED
+## 8. COVERAGE CANNOT SEE AN OMISSION, AND `main.ts` IS WHERE OMISSIONS LIVE — NEW, OPEN
+
+`vitest.coverage.config.mts:97` excludes `**/main.ts`, and its comment gives a
+good reason: *"entry points and framework wiring: reached by running the service,
+not by asserting on it."* That reasoning is sound and this item does not ask for
+it to be reversed.
+
+**The consequence had not been written down.** This chapter's most expensive
+defect lived in exactly that file: `main.ts` built the typing module, awaited its
+`close()`, and never passed it to `attachSessions`. The feature was inert in the
+product while **1,174 coverage tests and 174 gateway integration tests were
+green**, and both new production files measured 100/100/100/100.
+
+**And including `main.ts` would not have caught it.** That is the part worth
+keeping. Coverage counts lines executed, and every line of `main.ts` executed on
+every boot — the defect was an **argument that was not there**. A missing
+argument has no line to be uncovered. Deleting the exclusion would have produced
+a number, and the number would have been high, and the feature would still have
+done nothing.
+
+So the defect is not the exclusion. **It is the belief that a green ratchet says
+anything about whether a feature is connected to the product.** For that question
+there is exactly one instrument in this repository:
+`packages/outsider/src/integrate.itest.ts`, which boots the shipped binary and
+speaks the wire protocol, and which is where the bug surfaced.
+
+**Owner: whoever writes chapter 3.22's plan.** The decision to make is narrow: a
+chapter that adds an argument to `attachSessions` — or to any other constructor
+the entry point calls — owes an outsider test, or it owes a written reason why the
+wiring cannot be inert. 3.22 adds the connection cap and touches this same seam.
+
+## 9. `.resume()` IS A THIRD WAY TO THROW THE EVIDENCE AWAY, AND FIVE FILES STILL DO — NEW, PARTLY CLOSED
+
+Chapter 3.20's item 19a names two ways a spawned api's explanation gets
+discarded. There are three, and the third is the one that looks handled:
+
+    stdio: "ignore"              the output is never created
+    pipe, and nobody reads it    it sits in a kernel buffer until the pipe fills
+    pipe, then `.resume()`       it is actively read and thrown away
+
+**`meter.itest.ts` used the third on all four streams** — its api child and its
+gateway child, stdout and stderr — and it is the file that failed **run 8 of this
+chapter's twenty-run battery**: `no ack within 5s`, 5150 ms, in *"a report the api
+refuses breaks nothing a customer can see (constitution III)"*.
+
+What that cost, measured rather than asserted:
+
+    "service":"gateway" lines in the whole run-8 log        0
+    the auth-limiter 429 theory      run 8 has the same TEN 429s as green run 9,
+                                    all on rate-limit test paths, none on
+                                    /internal/session — eliminated
+    the auth_degraded theory         present exactly once in runs 8, 9, 12 and 20,
+                                    redis-ish error counts 14/13/16/13 —
+                                    eliminated
+    cause                            UNDETERMINED, and undeterminable from that log
+
+Established and not more: the gateway child booted (a failure earlier gives a
+different error), the socket opened (or it would say `no socket within 5s`), and
+`connection.ack` never arrived — so the gateway's `api.session(token)` did not
+complete inside five seconds. **Both processes had already said why, and both were
+speaking into a stream that was being drained to nowhere.**
+
+**Fixed in `meter.itest.ts`**: both children's stdout and stderr feed a 300-line
+ring, each child's exit code and signal are appended on exit, and the `no ack
+within 5s` message carries the tail. Same twelve-line change as
+`session.itest.ts`, which this chapter's phase 11 already made.
+
+**Still open, and this is the whole item.** Ten integration files spawn a child.
+Read the actual `stdio` argument rather than grepping for one spelling of it —
+`stdio: *"ignore"` matches the array form's first element too, which is this
+repository's own recorded instrument failure, committed again while writing this
+line:
+
+    api/src/consumer/consumer.itest.ts      pipe, 2 listeners    kept
+    api/src/outbox/outbox.itest.ts          pipe, 2 listeners    kept
+    dispatcher/src/dispatcher.itest.ts      pipe, 1 listener     kept
+    gateway/src/session.itest.ts            pipe, 2 listeners    fixed, phase 11
+    gateway/src/meter.itest.ts              pipe, 4 listeners    fixed, close-out
+    gateway/src/isolation.itest.ts          pipe, 0 listeners    DISCARDED
+    gateway/src/limits.itest.ts             pipe, 0 listeners    DISCARDED
+    gateway/src/public-surface.itest.ts     pipe, 0 listeners    DISCARDED
+    gateway/src/membership.itest.ts         stdio: "ignore"      NEVER CREATED
+    gateway/src/presence.itest.ts           stdio: "ignore"      NEVER CREATED
+
+**Two of the five discarding files are the files behind the named, still-open
+battery failures.** `isolation.itest.ts` is 3.19's run 10 and 3.20's run 19 — the
+same `beforeAll`, the same `Hook timed out in 90000ms`. `presence.itest.ts` is one
+of 3.20's four unexplained failures (`fetch failed`), and it uses
+`stdio: "ignore"`, so its evidence does not exist to be read.
+
+**Owner: chapter 3.22.** Five files, one twelve-line change each, now written
+twice. It is deliberately NOT done here: the gates run after the last file change,
+and editing five test files after the records are written is the exact hazard
+T107a names and chapter 3.20 walked into.
+
+## 10. CHAPTER 3.20's ITEMS, RE-CHECKED
 ------------------------------------------------------------
 
     3.20 item  status against the tree today
@@ -172,7 +267,10 @@ documented exception: it edits prose in two trees and no TypeScript, so
                are appended, and `waitForHealth`'s timeout carries the tail. **The
                failure rate is unchanged; the next occurrence will name its
                cause.** It recurred twice in this chapter — `ECONNREFUSED
-               127.0.0.1:4517`, inside that file's own range.
+               127.0.0.1:4517`, inside that file's own range. **And there is a
+               THIRD variant, `.resume()`, which cost this chapter its own battery
+               failure — see item 9, which also names the five files that still
+               discard.**
     19c        a green e2e package is not evidence the resume seam holds —
                UNCHANGED, and this chapter's T063/T065 followed its instruction:
                the mid-resume test asserts an ORDERING rather than an arrival,

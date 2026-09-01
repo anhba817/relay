@@ -2858,3 +2858,84 @@ exactly: *a checker that cries wolf on a healthy tree is how a real problem
 hides*, and the remedy each time was the same — name the set explicitly instead of
 guessing at a pattern. The mapping above is written out requirement by
 requirement, and each title is checked as an exact string.
+
+T106/T107a — THE COVERAGE RE-VERIFICATION, AND TWO INVALID RUNS BEFORE IT
+------------------------------------------------------------
+
+The wiring fix changed `main.ts` after T096/T097 had measured coverage, so the
+measurement was retaken. It holds:
+
+    coverage, green         93 files, 1174 tests, 436.45 s   exit 0
+    every pin held          against T096/T097's 433.43 s
+
+    packages/protocol/src/typing.ts    2/2 statements, 0/0 branches, 1/1 functions
+    services/gateway/src/typing.ts    45/45,          13/13,         13/13
+    services/gateway/src/session.ts   240/258 (93.02), 102/114 (89.47)
+    total                             92.80 / 87.04 / 92.47 / 94.12
+                                      2759 of 2973 statements
+
+Read from `coverage-summary.json`, for the reason T097 recorded: the text reporter
+omits a file that is at 100% on all four metrics, so a gap in the table is a gap
+in the table.
+
+**IT TOOK THREE RUNS, AND THE FIRST TWO WERE MY OWN DOING.** Both are worth the
+lines because each failed in a way that reads as a regression.
+
+    run 1   9 failures, all in dispatcher.itest.ts
+    run 2   4 failures — gauntlet.itest.ts x2 (401), outbox invariant 9, limits
+    run 3   green
+
+**Run 1: I disturbed my own measurement, which is chapter 3.20's own heading.** I
+launched `pnpm coverage` in the background and then ran `pnpm typecheck --force`
+(13 packages) and `pnpm lint --force` while it was in flight. The coverage lane is
+`fileParallelism: false`, so nothing inside it was competing; the contention came
+from outside. `dispatcher.itest.ts` passes 16/16 alone.
+
+**Run 2: I ran the lane without the nine pinned variables, and `quickstart.md`
+predicts that result in as many words** — *"Without these the api lane reads four
+red — three platform routes answering 401 and `invariant 9` throwing
+`NatsError: CONNECTION_REFUSED` — and it looks like a regression."* It did.
+`RELAY_INTERNAL_CREDENTIAL` was absent, `gauntlet.itest.ts:707` reads it as
+`?? ""`, the request went out as `Bearer `, and `resolvePlatformCredential`
+answered null. **A 401, not a 429** — which is why the auth limiter was the first
+suspect and the wrong one.
+
+**And I reached for the wrong cause before checking the cheap one.** Run 1's nine
+dispatcher failures were explained as turbo contention while the environment was
+ALSO missing in that run — so neither run is evidence about anything, and the
+contention story was unnecessary. `env | grep RELAY` costs nothing and was not
+run until after the second failure. **The first question about a red lane is what
+the lane was given, not what else was running.**
+
+The nine variables are in `quickstart.md` and the pinned invocation is now also in
+this session's project memory, whose previous wording — *"exporting `DATABASE_URL`
+is belt and braces rather than a requirement"* — is what made the mistake
+available. That sentence is true of the ADDRESSES, which have fallbacks in
+`db-url.ts` and `client.ts`, and false of the CREDENTIALS, which have none.
+
+T107a — RUN 8 OF THE BATTERY, DIAGNOSED AS FAR AS THE EVIDENCE GOES
+------------------------------------------------------------
+
+    FAIL src/meter.itest.ts > a signal, and what it does to a bill
+         > a report the api refuses breaks nothing a customer can see
+           (constitution III)
+    Error: no ack within 5s          5150 ms      meter.itest.ts:278
+
+Established: the gateway child booted, the socket opened, and `connection.ack`
+never arrived — so the gateway's `api.session(token)` did not complete inside five
+seconds. Two hypotheses eliminated against green runs rather than argued:
+
+    the auth-limiter 429   run 8 carries the same TEN 429s as green run 9, all on
+                          rate-limit test paths, none on /internal/session
+    auth_degraded         present exactly once in runs 8, 9, 12 and 20 alike,
+                          with redis-ish error counts 14/13/16/13
+
+**The cause is undetermined and undeterminable from that log**, because
+`meter.itest.ts` called `.resume()` on all four child streams and the run contains
+zero `"service":"gateway"` lines. `gaps.md` item 9 carries the fix, the third
+variant, and the five files that still discard their children's output.
+
+**19 of 20 does not weaken the chapter's claim and does not strengthen it either.**
+Nineteen green rejects a per-run failure rate above 21.61% at 95% confidence, and
+chapter 3.20 measured 17.5% across forty runs. This battery is consistent with
+that rate and cannot distinguish it from a lower one.

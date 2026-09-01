@@ -167,6 +167,6 @@ per-member expiry is expressed**, and whatever structure it picks, the argument 
 owes is why the members expire independently. This chapter's ForwardRef says that
 and does not guess the structure, which is the rule chapter 3.20's ForwardRef broke.
 
-**Read `gaps.md` first** — seven new items, twenty-five carried with their status
+**Read `gaps.md` first** — nine new items, twenty-five carried with their status
 re-checked. Item 4 is addressed to 3.22 directly: the lane's port map lists seven
 ranges and the lane has nine, and the next chapter to take a range owns it.
