@@ -2698,3 +2698,62 @@ about the next diagnosis.
 
 **Twelve lines, in a file this chapter already edits and already fences.** Four
 occurrences across two chapters went unexplained for want of them.
+
+T100 — THE FEATURE WAS INERT IN THE PRODUCT, AND ONLY THE SEALED CLIENT COULD SAY SO
+------------------------------------------------------------
+
+    × says it is typing, and a second member's socket hears it       10129 ms
+      Error: no a typing frame naming ana; saw connection.ack, presence.changed
+    ✓ is refused with unknown_frame_type for a frame only the server may send
+
+**That pair is the diagnosis.** The refusal passed, so the seam was alive; no
+typing frame arrived. Two causes, found in that order.
+
+**FIRST: the container was three days old.**
+
+    relay-gateway  latest  built 3 days ago
+    curl localhost:4001/healthz  ->  frames: 10, typing.send: False
+
+`message.ack` earns 4002 in the old code too, which is exactly why the refusal
+test passed and localised the staleness. Rebuilt: 11 frames, `typing.send` present.
+
+**AND IT STILL FAILED.** No `typing.*` line in the gateway's log at all — not even
+a failure — so nothing had reached `publish`. The container's compiled code was
+correct:
+
+    export const INBOUND_FRAME_TYPES = new Set(["message.send", "typing.send"]);
+
+**SECOND: `main.ts` never passed `typing` to `attachSessions`.**
+
+    attachSessions({ server, api, logger, fanout, limits, presence, membership,
+                     meterIntervalMs })          <- no `typing`
+
+So `signalTyping` ran `await typing?.publish(...)` against `undefined` and the
+optional chain made it a **silent no-op**. The gateway advertised eleven frames,
+accepted `typing.send`, answered nothing, logged nothing, and closed no socket.
+
+**Every in-workspace test passed because every one of them injects `typing`
+directly into `attachSessions`.** 174 gateway integration tests, 1174 coverage
+tests, both new files pinned at 100/100/100/100 — and the feature did not exist
+in the product.
+
+THE BINDING HAD NO OWNER, AND THAT WAS WRITTEN DOWN
+------------------------------------------------------------
+
+Phase 3's T027 deferred the destructuring to keep the phase committable —
+`no-unused-vars` rejects a binding whose first consumer is a later phase — and
+this file's phase 3 record says the wiring was "T051's job". **T051 is "measure
+the subscription cost."** No task owned the line.
+
+Three things hid it:
+
+    the module IS built in main.ts        so it looks wired
+    `close()` IS awaited in shutdown      so lint sees a used variable
+    `typing?.publish` is optional         so the missing option is not a crash
+
+Chapter 3.20 recorded the same class from the other side: a task wanting a binding
+a phase before its consumer. **The lesson generalises past that instance: a
+deferred binding needs a task, and "a later phase will do it" is not one.**
+
+    after wiring:  13/13 outsider tests, and one `typing.published` in the
+                   gateway's own log
