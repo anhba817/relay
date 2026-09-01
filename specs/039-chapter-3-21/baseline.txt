@@ -2472,3 +2472,146 @@ impossible rather than unlikely.
 `lib/tutorial.ts` has all three Vietnamese fields including `translatedIn: ["vi"]`
 — chapters 3.10 to 3.18 each shipped a translated body without it and are absent
 from the sitemap.
+
+
+================================================================
+PHASE 11 — POLISH AND CLOSE-OUT
+================================================================
+
+T095 — THE SERVICES WERE RUNNING, AS T095 PREDICTED
+------------------------------------------------------------
+
+    docker compose stop api gateway dispatcher
+      Container relay-gateway-1 Stopped
+      Container relay-api-1 Stopped
+
+Chapter 3.20 found them up at this exact step, and a live dispatcher moved a
+branch pin on a byte-identical file by 7.7 points in chapter 3.18. They were up
+again — from phase 9's `/healthz` check, which started a gateway to read the
+protocol advertisement and is exactly the kind of thing this task exists to catch.
+
+T100a, T100b — THE SEALED CLIENT SENDS, FOR THE FIRST TIME
+------------------------------------------------------------
+
+    grep -c "\.send(" packages/outsider/src/integrate.itest.ts
+      before: 0        after: 3
+
+Eleven tests, ten REST and one socket test whose title says "sent over REST"
+because chapter 3.18 corrected it. **This file is the only check in the repository
+that uses the public surface as a customer does** — Node's global `WebSocket`, no
+workspace import — and it had never exercised the inbound seam at all.
+
+Two tests now do:
+
+    says it is typing, and a second member's socket hears it
+    is refused with unknown_frame_type for a frame only the server may send
+
+The second is the correction to `docs/08-error-reference.md` in bytes rather than
+in prose. That document tells a customer *"send `message.send` … Do not send
+events; receive them"* and **nothing had ever checked what happens when they do.**
+
+T095 — COVERAGE IS RED, AND THE CAUSE IS THE CALENDAR
+------------------------------------------------------------
+
+    Test Files  2 failed | 91 passed (93)
+    Tests       2 failed | 1164 passed | 5 skipped (1171)
+    Duration    456.97 s
+
+**Vitest prints no coverage report when tests fail**, so there are no per-file
+numbers yet and T096's pins cannot be written until the lane is green.
+
+    × services/api/src/internal/usage.itest.ts
+        answers 402 with a named code when the cap is spent
+        AssertionError: expected 200 to be 402
+        carries NO Retry-After, which is the whole difference from a rate limit
+
+**Neither file is this chapter's, and the cause is a hardcoded month.**
+
+    services/api/src/internal/usage.itest.ts:56    const AUGUST = "2026-08-01";
+    date -u +%Y-%m-%d                              2026-09-01
+
+`oneReport` credits connection-minutes to the **August** period; the quota check
+in `POST /internal/session` reads the **current** period, which became September
+while this chapter was being implemented. The test credits 50 minutes to a month
+nobody is asking about, the cap reads zero used, and the session is allowed.
+
+**It was correct yesterday and wrong today, and nothing in this chapter touched
+it.** Phase 1's baseline recorded the api lane at 29 files / 510 tests all green;
+the same lane now reads 508 passed, 2 failed, on the same commit for that file —
+whose last change was chapter 3.12's.
+
+FIXED, AND ONLY ONE OF THE FIVE NEEDED IT
+------------------------------------------------------------
+
+Five api integration files hardcode a period and **the literal is not the
+hazard** — the CROSSING is: a fixture naming a period while the subject derives
+one. Checked individually rather than replaced in bulk:
+
+    usage.itest.ts             THE BUG. `oneReport` writes a period;
+                               `session.controller.ts:104` reads
+                               `periodOf(new Date())`. Now `const PERIOD =
+                               periodOf(new Date())`, so the two agree in every
+                               month. 21/21 green.
+
+    connections.itest.ts       passes the period EXPLICITLY —
+                               `assertConnectionsWithinQuota(db, env, AUGUST)`.
+                               Both sides agree by construction. Correct.
+
+    period.itest.ts            tests `periodOf`'s arithmetic: a fixed input with
+                               a fixed expected output, which is the right shape
+                               for a pure function. Correct.
+
+    config.itest.ts            the period is filler in a row that exists to test
+                               a `dimension` CHECK constraint. Nothing reads it.
+
+    session.perf.itest.ts      an `EXPLAIN ANALYZE` whose own comment says "THE
+                               ASSERTION IS ABOUT THE PLAN, NOT THE CLOCK".
+
+**The first version of this entry said five files had the problem**, written
+before any of them was read. One did.
+
+**A test whose fixture names a month while its subject reads the clock is a test
+with an expiry date** — and the timing is worth keeping: a twenty-run battery
+started on 31 August and finished on 1 September would have recorded this as a
+flake at a 5% rate, and three hypotheses would have been measured before anyone
+ran `date`.
+
+    × services/gateway/src/limits.itest.ts — one counter, two services (3.8)
+
+The second failure is chapter 3.20's `gaps.md` item 19, unchanged: the rate
+limiter's fixed window is aligned to the wall clock, and two tests send three
+requests expecting the third to be refused.
+
+T096, T097 — 100/100/100/100 ON BOTH, AFTER FOUR ARMS
+------------------------------------------------------------
+
+    coverage, green         93 files, 1174 tests, 433.43 s
+    every pin held          exit 0
+
+    packages/protocol/src/typing.ts    2/2 statements, 0/0 branches, 1/1 functions
+    services/gateway/src/typing.ts    45/45,          13/13,         13/13
+
+**The protocol module reached 100 on the first run** — one function and no
+branches, which is what a subject builder and a schema are. The gateway module did
+not: **97.77 / 76.92 / 92.3 / 97.67**, with four arms unreached.
+
+T097 asks whether unreachable code should be deleted before it asks for a test.
+**All four were reachable and nothing had reached them:**
+
+    url ?? DEFAULT_REDIS_URL   every test supplies a url, or the env var does
+    the onSignal no-op         every test wires a handler through attachSessions
+    counts.get(c) ?? 0         needs a SECOND subscribe for one channel
+    next <= 0's else           needs one of TWO holders releasing
+
+The last two are the reference count, and they decide whether a second member of a
+channel silently loses typing when the first disconnects. **A gateway cannot reach
+them** — the session layer holds one connection per socket — so they are driven
+against `createTyping` directly, in a describe that builds the module itself.
+
+AND THE PROTOCOL MODULE'S NUMBER CAME FROM THE JSON, NOT THE TABLE
+------------------------------------------------------------
+
+The text reporter omits a file that is at 100% on all four metrics, so
+`packages/protocol/src/typing.ts` was simply **absent** from the table. Its
+absence is not evidence: `coverage-final.json` is, and it was read rather than
+inferred. A gap in a table is a gap in a table.
