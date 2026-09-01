@@ -2448,3 +2448,27 @@ Claims 3 and 4 are chapter 3.20's, written one chapter ago. Its ForwardRef
 predicted a conclusion; it now names a decision. **A ForwardRef should describe
 what the next chapter must decide, not what it will conclude** — and this
 chapter's own, about FR-RTM-09's per-member expiry, is written to that rule.
+
+T088, T089, T091–T093 — THE MIRROR AND THE GATES
+------------------------------------------------------------
+
+    check-fence-chain   234 fenced files, 38 chapters, 38 translated  (was 37)
+    check-figures       238 figures, every diagram passed as `code`   (was 232)
+    check:srs           245 clause rows, 245 unique ids
+    check:errors        17 codes, read from a fresh build
+    check-prose         none of the superseded sentences is still published
+    check-docs          all mirrored docs match their sources
+
+    tutorial build      99 static pages  (was 97 — two per chapter)
+                        /part-3/chapter-21/the-frame-nobody-may-send
+                        /vi/part-3/chapter-21/the-frame-nobody-may-send
+
+**The translation was produced by splitting the page on its fences and rewriting
+only the prose**, so every fence is byte-identical by construction rather than by
+inspection. Chapter 3.20 lost four fences from its mirror to whitespace drift
+while their bytes were identical; splitting on the fence regex makes that
+impossible rather than unlikely.
+
+`lib/tutorial.ts` has all three Vietnamese fields including `translatedIn: ["vi"]`
+— chapters 3.10 to 3.18 each shipped a translated body without it and are absent
+from the sitemap.
