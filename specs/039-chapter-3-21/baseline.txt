@@ -1995,3 +1995,71 @@ signal inside it delivers nothing further", built with `renewalIntervalMs: 40` �
 **an option T054 creates, in phase 6.** Both halves of the assertion need an
 interval that does not exist yet. The task names its own dependency and sits in
 the wrong phase; it runs beside T057.
+
+
+================================================================
+PHASE 6 — THE RENEWAL INTERVAL (US3)
+================================================================
+
+T054, T056 — TWO SECONDS, AND WHY IT IS NOT FIVE
+------------------------------------------------------------
+
+    DEFAULT_RENEWAL_INTERVAL_MS = 2_000     the gateway's minimum gap
+    FR-RTM-08's expiry          = 5_000     the receiving client's timer
+
+**2.5 renewals per expiry window**, so one dropped publish does not make an
+indicator flicker. At 1.67 s the margin is thinner for no gain; at 4 s a single
+loss blanks the indicator for a user who never stopped typing. **Five and two are
+two quantities**, and chapter 3.19's grace check — armed at exactly its own grace
+period, two deadlines on one instant reached by two clocks — is what the ratio
+exists to avoid.
+
+The map is `Map<connectionId, Map<channelId, number>>` in `attachSessions`'s
+closure. Not a field on `Connection`: that type lives in `registry.ts`, which four
+chapters fence, and a two-second value is not worth four diffs. **No Redis, no
+third `operation`, `limits.ts` untouched** — R5's bucket cannot express this rule
+on three counts, each fatal alone.
+
+Three deletions, and the third is the one an obvious implementation misses:
+
+    the close handler        the connection's whole entry
+    a revocation             that channel's entry
+    a read, once elapsed     `if (now - at > interval) channels.delete(channel)`
+
+Without the third the bound is channels a connection has EVER typed in while
+connected rather than channels it is typing in.
+
+T060 — THE PROOF IS A CASE, NOT A SOURCE EDIT
+------------------------------------------------------------
+
+    publishes once for a burst inside the interval                 8 sends -> 1
+    publishes every signal when the interval is zero               8 sends -> 8
+
+Same burst, two instances, `renewalIntervalMs` 2000 and 0. **Edit-and-restore is
+the proof form that has now failed twice** — chapter 3.20 ran it on two orderings
+and got no failure either time — and a proof written as a case stays in the suite
+rather than being something somebody did once and wrote down.
+
+PHASE 6 BROKE A PHASE 5 TEST, CORRECTLY
+------------------------------------------------------------
+
+    × sends nothing at all after the signal, until another signal is sent
+      AssertionError: expected [ { …(2) } ] to have a length of 2 but got 1
+
+T048a ends with a liveness probe — a second signal, sent to show the fabric is
+alive so the silence before it reads as a decision. It was written in phase 5 with
+the default interval, which was nothing. **Phase 6 made the default a two-second
+debounce and the probe landed inside it.**
+
+A P2 story's mechanism silently changing a P1 story's test, caught in the phase
+that caused it rather than at T099 — which is the gate analysis pass 18 added.
+The test's subject is FR-009a's silence, not the interval, so it now builds with
+`renewalIntervalMs: 40` and says why in the file.
+
+T047 — RAN HERE, AND 120 ms AGAINST 40 rather than 40 AGAINST 40
+------------------------------------------------------------
+
+Deferred from phase 5 because both halves need the option this phase creates.
+Built with 40 ms rather than waiting out two real seconds, and the wait is 120 ms
+— **never exactly the interval**, which is the two-deadlines-one-instant shape
+again.
