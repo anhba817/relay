@@ -74,6 +74,24 @@ FOREIGN: set[tuple[str, str]] = {
     ("gaps.md", "T065"),
     ("gaps.md", "T098"),
     ("gaps.md", "T108"),
+    # ADDED AT CLOSE-OUT, and the last two exist because T106 states the reason the
+    # root repository ends one commit ahead of its own tag — a record of a commit
+    # hash inside the commit it names does not converge. Describing that task
+    # instead of naming it makes the record harder to check.
+    ("gaps.md", "T107a"),
+    ("chapter-notes.md", "T106"),
+    ("chapter-notes.md", "T107"),
+    # AND SIX MORE THE OLD PATTERN COULD NOT SEE. These were written across four
+    # phases and cited in the records the whole time; widening `REF` by one optional
+    # letter surfaced all six in one run. Every one is a legitimate reference to this
+    # chapter's own task — which is the point: the checker was not silent because
+    # the records were clean.
+    ("chapter-notes.md", "T083a"),
+    ("chapter-notes.md", "T083c"),
+    ("chapter-notes.md", "T085a"),
+    ("chapter-notes.md", "T104a"),
+    ("quickstart.md", "T100a"),
+    ("quickstart.md", "T100b"),
 }
 
 # THE CLASSES THAT MUST BE TRACED. Explicit, and an empty class fails — a pattern that
@@ -96,7 +114,15 @@ ID_CLASSES = {
 TASK = re.compile(r"^- \[[ xX]\] (T\d{3}[a-z]?)( \[P\])?( \[US\d\])? (.+)$")
 ANY_TASK_LINE = re.compile(r"^- \[[ xX]\]")
 PATHISH = re.compile(r"[\w./<>-]+\.(ts|mts|md|txt|mdx|json|yaml)\b|`docs/|`pnpm |`git |`docker |specs/")
-REF = re.compile(r"(?<![A-Za-z0-9])T(\d{3})(?![A-Za-z0-9])")
+# THE SUFFIX. This read `T(\d{3})(?![A-Za-z0-9])` and so could not see `T107a`,
+# `T012a`, `T031b` or `T047c` — real ids in this chapter's own task list, which
+# `TASK` twenty lines up accepts as `T\d{3}[a-z]?`. **Two patterns in one file
+# disagreed about what a task id is, and the citation rule was the one that was
+# wrong**, so it printed "no undeclared task ids" while `gaps.md` cited `T107a`.
+# Sixth instrument in this chapter to match the examples in front of it rather
+# than the set the rule names. Derive the suffix from `TASK` rather than
+# restating it, so the two cannot drift again.
+REF = re.compile(r"(?<![A-Za-z0-9])T(\d{3}[a-z]?)(?![A-Za-z0-9])")
 
 def main() -> int:
     # ANCHORED ON THE SCRIPT, NOT THE SHELL. Both tasks that invoke this say to run it

@@ -2939,3 +2939,49 @@ variant, and the five files that still discard their children's output.
 Nineteen green rejects a per-run failure rate above 21.61% at 95% confidence, and
 chapter 3.20 measured 17.5% across forty runs. This battery is consistent with
 that rate and cannot distinguish it from a lower one.
+
+T107 — AND THE SIXTH INSTRUMENT, FOUND BY ITS OWN DISAGREEMENT
+------------------------------------------------------------
+
+`check-refs.py` held two patterns for "a task id" and they did not agree:
+
+    TASK  ^- \[[ xX]\] (T\d{3}[a-z]?)          accepts the suffix
+    REF   (?<![A-Za-z0-9])T(\d{3})(?![A-Za-z0-9])   refuses it
+
+So the citation rule could not see `T012a`, `T031b`, `T047c`, `T083a`, `T085a`,
+`T100a`, `T100b`, `T104a` or `T107a` — **nine real ids in this chapter's own task
+list** — and printed *"no undeclared task ids outside tasks.md"* while `gaps.md`
+cited `T107a` two paragraphs above the line that said so.
+
+Widening `REF` by one optional letter surfaced **six live citations in one run**,
+written across four phases:
+
+    chapter-notes.md:7    T083a
+    chapter-notes.md:45   T083c
+    chapter-notes.md:60   T104a
+    chapter-notes.md:71   T085a
+    quickstart.md:155     T100a, T100b
+
+Every one is legitimate, which is the finding: **the checker was not quiet because
+the records were clean.** Declared count 10 -> 19.
+
+Tested red three ways, and the third is the one that matters:
+
+    drop a SUFFIXED entry (T083a)     chapter-notes.md:7 cites T083a       exit 1
+    drop an UNSUFFIXED entry (T051)   gaps.md:30 cites T051                exit 1
+    a suffixed id nobody declared     scratch-red-test.md:1 cites T077q    exit 1
+
+**This is the sixth instrument in this chapter to match the examples in front of it
+rather than the set the rule names**, after the `"level":"error"` waiter, the
+results filter that read a complete file as empty, `sweep.py`'s task count,
+`sweep.py`'s skip list and the traceability matcher's 28 false gaps. Five of the
+six cried wolf; this one did the opposite, and a checker that under-reports is the
+worse failure — the remedy is the same either way. `REF` now derives its suffix
+from the same expression `TASK` uses so the two cannot drift again.
+
+**AND I COMMITTED WHILE IT WAS RED.** The command was
+`python3 check-refs.py | tail -1 && git commit`, so `&&` read `tail`'s exit status
+and not the checker's. The complaint was printed, on screen, in the same output as
+the commit hash. **A pipeline that ends in `tail` has no exit code worth reading**,
+and this chapter has now recorded two variants of the same class one screen apart:
+a stream drained to nowhere and a status masked by the last process in a pipe.
