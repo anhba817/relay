@@ -70,3 +70,103 @@ ForwardRef: *"the first that can reuse a grammar rather than adding one"*. It
 predicted a conclusion. **A ForwardRef should describe what the next chapter must
 decide, not what it will conclude** — and chapter 3.21's own, in T085a, names what
 3.22 must decide about a per-member expiry rather than guessing the structure.
+
+---
+
+## What shipped
+
+    3.21 "the frame nobody may send"
+                                    9 files taught, 2,306 words, 18 fenced blocks
+                                    14 files fenced (9 the chain demanded + 5 new)
+                                    18 platform files changed, re-derived from
+                                       git diff: +2,559 -26
+                                    13 tutorial files changed
+    twenty-run battery: 19/20 green
+    lane mean 228.63 s, stdev 0.68, budget 240 — 11.37 s headroom
+    44 files, 727 tests · gateway package 45.38 s (stdev 0.45)
+    coverage: both new production files 100/100/100/100
+    234 fenced files across 38 chapters, 38 translated · 99 static pages
+    predecessor `ba5e3d6`
+
+FR-RTM-08 is closed with its boundary named rather than asserted, and FR-RTM-05
+has four of six producers. `message.updated` and `message.deleted` wait on a
+surface that does not exist — chapter 3.23.
+
+## The phases that went badly
+
+**PHASE 11 FOUND THE FEATURE DID NOT WORK.** `main.ts` built the typing module,
+awaited its `close()`, and never passed it to `attachSessions`. Everything else was
+green: 174 gateway integration tests, 1,174 coverage tests, both new files pinned
+at 100/100/100/100, a `/healthz` advertising eleven frames, and a seam that
+accepted `typing.send`. `signalTyping` called `typing?.publish(...)` on `undefined`
+and the optional chain made it silent.
+
+**Found by the sealed outsider client — the only check here that talks to a built
+image rather than importing source.** Analysis pass 10 had noticed that file
+contained zero `.send(` calls and called it a coverage gap; it was a product gap.
+
+**PHASE 2's PREMISE WAS WRONG ABOUT ITS OWN FAILURE.** T009 predicted
+`unknown_frame_type` and close 4002 for a typing signal "today". A type absent from
+the union fails `safeParse` first, so the answer was `invalid_frame` with the socket
+open. The refusal has three states, not two, and the task list described the middle
+one as the first.
+
+**PHASE 4's NAMED SET COST THE UNION'S NARROWING.** Three `TS2339`s forty lines
+below the seam. The single `!==` had been refusing types *and* narrowing the
+discriminated union, and a predicate over the type string still does not narrow —
+it has to take the frame.
+
+**T098 FOUND FOUR TEST TITLES THAT OUTRAN THEIR ASSERTIONS, ALL MINE, ALL WRITTEN
+IN THIS PHASE.** One quoted FR-015's clause while the body refuted it. Two moved a
+coverage number while asserting nothing — `expect(true).toBe(true)` and no
+`expect` at all.
+
+**FIVE INSTRUMENTS CRIED WOLF, ALSO ALL MINE.** A waiter that fired on the api's
+own `"level":"error"` lines; a filter that read a complete file as empty;
+`sweep.py`'s task count falling to 127 when nine boxes were checked; `sweep.py`'s
+skip list swallowing a real hit; and a traceability matcher reporting 28 false
+gaps. Every remedy was the same: name the set, do not guess the pattern.
+
+## What the next feature should do differently
+
+**A DEFERRED BINDING NEEDS A TASK.** Phase 3 deferred a destructuring to keep the
+phase committable and recorded the wiring as a later task's job. No later task had
+it, and three things hid the hole: the module was built, its `close()` was awaited
+so lint saw a use, and the call site was optional so absence was not a crash.
+**"A later phase will do it" is not an owner.**
+
+**RUN THE SEALED CLIENT BEFORE THE LAST PHASE.** It is the only check against a
+built artifact, and it ran once, at the end, and found the chapter's largest
+defect. Running it after the MVP phase would have found it six phases earlier.
+
+**A FIXTURE THAT NAMES A MONTH WHILE ITS SUBJECT READS THE CLOCK HAS AN EXPIRY
+DATE.** One api test broke at midnight UTC on 1 September, mid-close-out, in a file
+this chapter never touched. A battery spanning that boundary would have filed it as
+a 5% flake.
+
+**ONE RED RUN COSTS A FIFTH OF A BATTERY'S POWER.** Twenty green rejects a failure
+rate above 13.91%; 19 of 20 rejects only 21.61%, which does not reject chapter
+3.20's measured 17.5%. **"19 of 20 green" reads better than it measures.**
+
+## The hand-off for chapter 3.22
+
+**The fence predecessor is a commit, not a tag:**
+
+    git rev-parse part3-ch21^{commit}
+
+`part3-ch21` is annotated, so `git rev-parse part3-ch21` returns the tag object.
+This chapter's own predecessor was `ba5e3d6`, obtained the same way.
+
+**Nothing is pushed.** All three repositories are ahead of `origin/main`.
+
+**3.22 builds FR-RTM-09's five-connection cap, and its first job is a decision.**
+The SRS describes `conn:{env}:{user}` as a Redis set with one TTL, and a TTL is per
+key rather than per member — one instance refreshing the key keeps a dead
+instance's entry alive for ever. **What that chapter must decide is how a
+per-member expiry is expressed**, and whatever structure it picks, the argument it
+owes is why the members expire independently. This chapter's ForwardRef says that
+and does not guess the structure, which is the rule chapter 3.20's ForwardRef broke.
+
+**Read `gaps.md` first** — seven new items, twenty-five carried with their status
+re-checked. Item 4 is addressed to 3.22 directly: the lane's port map lists seven
+ranges and the lane has nine, and the next chapter to take a range owns it.

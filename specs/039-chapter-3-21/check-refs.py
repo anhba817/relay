@@ -53,7 +53,28 @@ import re, sys, pathlib
 # id-only allowlist silently accepts either. Testing this checker red is what found
 # that — removing T065 from an id-only list changed nothing, because T065 had become
 # real. Pairs make the collision impossible to hide.
-FOREIGN: set[tuple[str, str]] = set()
+FOREIGN: set[tuple[str, str]] = {
+    # THIS CHAPTER'S OWN IDS, IN THIS CHAPTER'S OWN CLOSE-OUT RECORDS.
+    #
+    # The rule exists because a task id in another document goes stale when tasks
+    # are renumbered. These are written AFTER the task list is final and they name
+    # what a task did — "T098 found four titles that outran their assertions" is
+    # the sentence a reader needs, and describing it instead ("a late task in the
+    # polish phase") makes the record harder to check rather than easier.
+    #
+    # Declared one by one rather than by a pattern, because a pattern that skips
+    # "any id in a records file" is the blind spot this project keeps paying for.
+    ("chapter-notes.md", "T009"),
+    ("chapter-notes.md", "T011"),
+    ("chapter-notes.md", "T098"),
+    ("chapter-notes.md", "T082"),
+    ("chapter-notes.md", "T087"),
+    ("gaps.md", "T051"),
+    ("gaps.md", "T063"),
+    ("gaps.md", "T065"),
+    ("gaps.md", "T098"),
+    ("gaps.md", "T108"),
+}
 
 # THE CLASSES THAT MUST BE TRACED. Explicit, and an empty class fails — a pattern that
 # silently matches nothing is how the success criteria went untraced for eleven passes.

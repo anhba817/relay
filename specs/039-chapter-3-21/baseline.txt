@@ -2757,3 +2757,104 @@ deferred binding needs a task, and "a later phase will do it" is not one.**
 
     after wiring:  13/13 outsider tests, and one `typing.published` in the
                    gateway's own log
+
+T101, T102 — THE TWENTY-RUN BATTERY
+------------------------------------------------------------
+
+    run  status  wall_s  files  tests  gateway_s
+      1  green      228     44    727    44.67
+      2  green      229     44    727    45.54
+      3  green      229     44    727    45.94
+      4  green      229     44    727    45.82
+      5  green      230     44    727    45.78
+      6  green      229     44    727    45.40
+      7  green      229     44    727    45.79
+      8  RED        221     32    543    45.32   meter.itest.ts, "no ack within 5s"
+      9  green      229     44    727    44.97
+     10  green      229     44    727    45.58
+     11  green      228     44    727    45.51
+     12  green      228     44    727    45.00
+     13  green      229     44    727    45.79
+     14  green      229     44    727    45.81
+     15  green      229     44    727    45.25
+     16  green      228     44    727    45.65
+     17  green      229     44    727    45.56
+     18  green      228     44    727    44.60
+     19  green      228     44    727    44.94
+     20  green      227     44    727    44.62
+
+    19 green, 1 red — observed 5.0%
+    lane wall     mean 228.63 s   stdev 0.68   min 227   max 230
+    gateway pkg   mean  45.38 s   stdev 0.45   min 44.6  max 45.94
+    budget 240 -> 11.37 s of headroom
+    44 files, 727 tests   (phase 1 measured 43 and 703)
+
+**THE TENTH FILE COST NOTHING MEASURABLE.** Chapter 3.20 closed at 228.50 and
+228.77; this reads 228.63 with a stdev of 0.68. `typing.itest.ts` is 5.8 s of
+parallel work under a 45 s package ceiling `presence.itest.ts` still sets.
+
+AND THE HONEST POWER OF 19/20
+------------------------------------------------------------
+
+    twenty green    rejects a rate above 13.91% at 95%
+    19 of 20        rejects a rate above 21.61% at 95%
+
+**One failure costs more than a fifth of the battery's discriminating power.**
+Chapter 3.20 measured 7 failures in 40 runs — 17.5% — and this battery cannot
+reject that: 21.61% is above it. So **this result is consistent with 3.20's rate
+and does not improve on it**, which is the opposite of what "19 of 20 green" reads
+like at a glance.
+
+    run 8   meter.itest.ts > "a report the api refuses breaks nothing a customer
+            can see (constitution III)"
+            Error: no ack within 5s
+
+Chapter 3.11's test, waiting for `connection.ack` from a gateway it spawned.
+`meter.itest.ts` is one of the seven api-spawning files, and this is gaps item
+19a's family — a fixture that did not answer in time. **`typing.itest.ts` passed
+23/23 in that run too.**
+
+**A RED RUN'S FILE AND TEST COUNTS ARE TRUNCATED, AND THAT IS WORTH KNOWING.** Run
+8 reads 32 files and 543 tests because `--concurrency=1` aborts the remaining
+packages on a failure. Reading those as a regression would be reading the abort.
+
+THE MACHINE, RECORDED RATHER THAN CLAIMED CLEAN
+------------------------------------------------------------
+
+    756938  next-server (v16.3.3)  ~2.0% CPU, 1.8% mem
+            /home/dong/work/3d_site/molten-chrome, moved to another port
+
+A dev server from another project ran throughout, at about 2% of one core. **The
+rule says nothing else runs on the machine and this breaks it.** The load was
+CONSTANT across all twenty runs, so it biases the mean rather than manufacturing
+intermittent failures — and the stdev of 0.68 s over twenty runs is the evidence
+that it did not vary. Chapter 3.12's battery died at run 11 to two dev servers
+under heavier load; this is not that, and it is not a clean machine either.
+
+The api, gateway and dispatcher containers were stopped for the battery, as T095
+requires for coverage and for the same reason.
+
+T103 — TRACEABILITY RE-DERIVED, BOTH DIRECTIONS
+------------------------------------------------------------
+
+    19 requirements mapped to an EXACT shipped test title   0 absent
+    34 tests in the three new files                          0 serving nothing
+
+Both directions come back clean, and the second is the one worth stating: every
+test in `typing.itest.ts`, `gateway/typing.test.ts` and `protocol/typing.test.ts`
+serves a named requirement, including the four that exist only to reach a coverage
+arm — those serve NFR-MNT-02's pin, which is a requirement rather than an excuse.
+
+**MY FIRST RE-DERIVATION REPORTED 28 GAPS AND EVERY ONE WAS FALSE.** It matched
+the first two long words of each traceability proof phrase against test titles —
+and a proof phrase is a description while a title is a sentence, so almost nothing
+matched. Twenty-eight false positives from a matcher written in one line.
+
+**That is the fifth instrument in this chapter to cry wolf**, after the waiter that
+fired on `"level":"error"`, the results filter that read a complete file as empty,
+`sweep.py`'s task count that fell to 127 when nine boxes were checked, and
+`sweep.py`'s skip list that swallowed a real hit. Chapter 3.17's rule holds
+exactly: *a checker that cries wolf on a healthy tree is how a real problem
+hides*, and the remedy each time was the same — name the set explicitly instead of
+guessing at a pattern. The mapping above is written out requirement by
+requirement, and each title is checked as an exact string.
