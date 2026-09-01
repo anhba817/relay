@@ -1800,3 +1800,88 @@ ran 4 tasks instead of 11 and printed a green summary. T029 says "pnpm in the
 wrong repository exits without running anything and reads as green"; the sharper
 version is that a subdirectory of the RIGHT repository filters the workspace and
 reads green too. Both gates were re-run from the workspace root.
+
+
+================================================================
+PHASE 4 — THE INBOUND SEAM (US2)
+================================================================
+
+T031 — THE NAMED SET COST THE NARROWING, AND THE COMPILER SAID SO
+------------------------------------------------------------
+
+Replacing `frame.data.type !== "message.send"` with `INBOUND_FRAME_TYPES.has(…)`
+compiled at the seam and broke the send path forty lines below:
+
+    src/session.ts(1081,13): error TS2339: Property 'channel' does not exist
+    src/session.ts(1081,22): error TS2339: Property 'text' does not exist
+    src/session.ts(1081,28): error TS2339: Property 'idem_key' does not exist
+
+**The single `!==` had been doing two jobs and only one of them was visible.** It
+refused the other types AND narrowed the discriminated union for everything after
+it. A `Set.has` does neither for the type system.
+
+**The first fix did not work either.** A predicate over the type string —
+`(type: string): type is InboundFrameType` — compiles, reads correctly, and still
+leaves the send path broken: TypeScript cannot push a narrowing of `.type` back
+onto the union it came from. The predicate has to take the FRAME:
+
+    function isInboundFrame(frame: Frame): frame is Extract<Frame, { type: InboundFrameType }>
+
+The rejected alternative was an unreachable `if (type !== "message.send") return;`
+after the typing branch — dead code, in a chapter whose coverage pins are
+100/100/100/100.
+
+T033 — THREE THINGS THE CLIENT DOES NOT DECIDE
+------------------------------------------------------------
+
+The user, the environment and the audience, each one line. The payload has no
+`user` field at all, so reading `connection.identity` is belt and braces — but a
+reader checks the field, not the schema.
+
+A signal for a channel the connection does not hold publishes nothing and says
+nothing (FR-007). Not an error: an error tells a client whether a channel exists,
+which is the probe chapter 3.15 closed on the REST surface.
+
+T036 — THE TENTH FILE, WITH NO API AND NO PORT RANGE
+------------------------------------------------------------
+
+`services/gateway/src/typing.itest.ts`, on `resume.itest.ts`'s shape: stubbed
+`ApiClient`, gateways in process, real Redis, `server.listen(0)`. **Spawn count
+stays at seven.** The file appears in no port map because it needs no range.
+
+Its publish assertions are on a raw `ioredis` subscriber, which is why it takes
+the `DRIVER_EXEMPT_TESTS` entry T057a specifies — added a phase early, because
+`pnpm lint` needs it the moment the file imports the driver.
+
+T039 — THE FALSIFICATION, AND IT BIT IN FOUR PLACES
+------------------------------------------------------------
+
+Adding `message.ack` to `INBOUND_FRAME_TYPES` by hand:
+
+    × refuses every non-inbound type with unknown_frame_type and 4002
+        direction refusal for message.ack: expected { code: 'invalid_request' }
+        to match object { code: 'unknown_frame_type' }
+    × closes with 4002 when a client utters a server-only frame (EIR-WS-06)
+        15022ms — chapter 2.5's test, waiting for a close that never came
+    × has exactly two members
+    × is exactly message.send and typing.send
+    × holds no server-to-client type, checked against the ones that matter
+
+**Both lanes, and one of them is a test written twenty chapters ago.** The
+per-type label in T035's assertion earned its place: the failure names
+`message.ack` rather than saying an object did not match.
+
+And the widened seam did not go silent — `message.ack` passed the direction check
+and fell through to the send path, which answered `invalid_request`. A refusal
+moved rather than vanished, which is the harder case to notice and the reason the
+assertion pins the CODE rather than the presence of an error.
+
+AND THE STORE CONTAINERS HAD GONE DOWN BETWEEN PHASES
+------------------------------------------------------------
+
+    ECONNREFUSED 127.0.0.1:15432
+
+Not the test's Postgres — this file stubs the api and touches no database. It is
+the integration config's `globalSetup`, which migrates once per lane. `docker
+compose ps` printed a header and no rows. Brought back with T001's command,
+port variable included.
