@@ -2615,3 +2615,41 @@ The text reporter omits a file that is at 100% on all four metrics, so
 `packages/protocol/src/typing.ts` was simply **absent** from the table. Its
 absence is not evidence: `coverage-final.json` is, and it was read rather than
 inferred. A gap in a table is a gap in a table.
+
+T098 — FOUR TITLES READ AGAINST THEIR BODIES, AND FOUR WERE WRONG
+------------------------------------------------------------
+
+Every new test's title, printed beside its `expect` calls and read as a pair.
+Twenty-three integration tests, one gateway unit test, ten protocol unit tests.
+**Four did not say what they check.**
+
+    "survives a severed fabric, LOGS IT ONCE, and publishes again"
+
+The body proves the opposite — five `op: "connection"` lines and zero
+`op: "publish"`. **The title quoted FR-015's clause while the test refuted it**,
+which is chapter 3.19's exact failure appearing in this chapter's own file.
+Retitled to say which failure is logged.
+
+    "emits exactly THE THREE NAMES it declares, and none for a debounced signal"
+
+Asserts two: `typing.invalid_payload` and `typing.published`. The third is
+deliberately reached by other tests and the body's comment says so. Retitled to
+"the two names this run reaches".
+
+    "drops a signal on the floor when no handler is wired"
+        expect(true).toBe(true)
+
+**A test with no assertion about its subject.** "No throw" is equally true of a
+module that never received the signal. Now a second, WIRED module subscribes to
+the same subject: its delivery proves the publish landed, so the unwired one's
+silence is the no-op default running rather than an absent publish.
+
+    "falls back to DEFAULT_REDIS_URL when neither a url nor the env var is given"
+        (no expect at all)
+
+It took the branch, moved the coverage number, and proved nothing about where the
+client connected. Now it asserts a round trip through the fallback url.
+
+**Two of the four moved a coverage number while asserting nothing.** That is the
+combination worth naming: the ratchet is satisfied by execution, and only a
+reader is satisfied by an assertion.
