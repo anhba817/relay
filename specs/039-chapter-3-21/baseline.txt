@@ -2361,3 +2361,90 @@ T076, T078, T079 — THE CHECKS
     "only inbound frame"             0 hits remaining, both trees
     "declared words with nothing"    chapter 3.19 — phase 10's to correct
     "genuinely reuse"                chapter 3.20 — phase 10's to correct
+
+
+================================================================
+PHASE 10 — THE CHAPTER
+================================================================
+
+T081 — WHAT THE CHAIN DEMANDED, BEFORE A WORD WAS WRITTEN
+------------------------------------------------------------
+
+    9 problems, 9 files, in 5 pages plus the appendix
+
+    eslint.config.mjs                        post-series.md
+    packages/protocol/src/frames.ts          chapter 3.18
+    packages/protocol/src/frames.test.ts     chapter 3.18
+    packages/protocol/src/index.ts           chapter 3.08
+    services/gateway/src/main.ts             chapter 3.20
+    services/gateway/src/main.test.ts        **chapter 1.04**
+    services/gateway/src/session.ts          chapter 3.20
+    services/gateway/src/session.test.ts     chapter 3.20
+    services/gateway/src/isolation.itest.ts  chapter 3.18
+
+**`main.test.ts` is chapter 1.04's**, which is analysis pass 17's finding arriving
+as a fence demand: a Part 1 chapter fences a file this chapter had to edit for the
+frame count, and no task touched it until that pass.
+
+    9 demanded + 5 created = 14 fenced      T082 predicted ~20
+    9 taught                                -> the word estimate
+
+T083 — THE ESLINT FENCE BELONGS TO THE APPENDIX, AND I WROTE IT TWICE
+------------------------------------------------------------
+
+The chapter's first draft fenced `eslint.config.mjs` itself and the chain refused:
+
+    [HEAD] fences/post-series.md:2560
+        eslint.config.mjs differs at line 112
+
+**The appendix owns that file** — its exemption lists do not exist at the moment a
+chapter could fence them, which is what T083 says and what chapters 3.19 and 3.20
+both did. Removed from the chapter, added to two of the appendix's hunks: the
+ioredis `ignores` block and `DRIVER_EXEMPT_TESTS`.
+
+AND THREE FENCES THAT WERE NOT FENCES
+------------------------------------------------------------
+
+    services/gateway/src/session.ts (before this chapter)   does not exist
+    the grep that changed the chapter                        does not exist
+    packages/protocol/src/frames.ts (chapter 1.3, unchanged) does not exist
+
+**Every titled fence is a file path unless the title contains `(excerpt)`** —
+`check-fence-chain.mjs:43` is the whole rule. An illustrative snippet with a
+descriptive title is read as a claim about a file that must exist. Three of mine
+were, including one whose title was not a path at all.
+
+    check-fence-chain: 234 fenced files across 38 chapters   (was 229 / 37)
+
+T086, T086a — THE CHECKER FOUND ITS OWN BAD FRAGMENT
+------------------------------------------------------------
+
+Written before any correction and run red: **8 of 10 fragments present**, and the
+two that passed were claim 1's, already corrected in phase 9.
+
+**But claim 5's two fragments passed for the wrong reason.** I had guessed at
+chapter 3.19's sentence — "Typing's half of this promise is still open." — and it
+matched nothing, because the real sentence is 2,700 lines further down in that
+chapter's ForwardRef:
+
+    Typing may well reuse the fan-out's plumbing — that half of 2.6's sentence
+    is still open, and this chapter closed only presence's half of it.
+
+**A fragment that describes a claim rather than quoting it reports green**, which
+is exactly what analysis pass 9 named and exactly what I then did. Running the
+checker BEFORE correcting is what surfaced it: one green line among seven red ones
+is visible in a way a green run is not.
+
+T087 — FIVE CLAIMS, TEN FRAGMENTS, BOTH LOCALES
+------------------------------------------------------------
+
+    check-prose: none of the superseded sentences is still published
+
+Claim 5's correction could not touch its own fence — those are chapter 2.6's words
+and the chain compares them byte for byte — so the ForwardRef beneath answers the
+question the fence left open, and says chapter 3.21 answered it *no*.
+
+Claims 3 and 4 are chapter 3.20's, written one chapter ago. Its ForwardRef
+predicted a conclusion; it now names a decision. **A ForwardRef should describe
+what the next chapter must decide, not what it will conclude** — and this
+chapter's own, about FR-RTM-09's per-member expiry, is written to that rule.
