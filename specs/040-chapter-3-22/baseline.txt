@@ -227,3 +227,82 @@ and belongs beside them.
 **Research R11b is amended rather than left standing.** It said the new integration
 file would be the only fixture enforcing the cap. Two will: the new file and this
 block. That is a deliberate second, not a leak.
+
+
+PHASE 2 — US3, AND THE FALSIFICATIONS FOUND MORE THAN THE TESTS DID
+------------------------------------------------------------
+
+T013 — THE BREAK, AND FR-014 IS NOT UNVERIFIED AFTER ALL
+
+Replacing `registry.subscribersOf(channelId)` in `deliver` with a list
+de-duplicated by `identity.userExternalId` turned three files red:
+
+    session.itest.ts    × delivers to EVERY connection the same person holds (T021)
+    presence.itest.ts   × does not stop messages reaching a connected member
+    limits.itest.ts     FAIL (5/5 green clean and alone — collateral)
+
+**The task anticipated the opposite.** T013 said "if none do, FR-014 is currently
+unverified and that is the finding". One does: **chapter 3.18 already ships a test
+for the message path.** So FR-014's first half was verified before this chapter
+started, and the finding is the inverse of the one the task expected.
+
+**But it stops short of Story 3 scenario 1.** That test waits for the FIRST
+matching frame, so a DUPLICATE passes it unnoticed. The scenario says *"both
+receive it, and each receives it once"* — and only a count can say the second half.
+That is what T014 adds, and it is the whole reason a second test is not redundant.
+
+T014, T015, T016 — GREEN ON UNCHANGED CODE, WHICH IS THE POINT
+
+    src/connections.itest.ts    3 passed (3)
+
+A per-run environment, `env-${randomUUID()}`, and not the `"env-1"` two neighbours
+share. No api spawned, so the lane's spawn count stays at seven.
+
+T017 — THE FALSIFICATION RUN, AND TWO OF THREE TESTS FAILED IT
+
+Re-applying T013's break turned **one** of the three red, not three. That is a
+finding about my own tests, not about the code:
+
+    T014  message, exactly once     RED under the break            falsifiable
+    T015  membership to both        green — the break was in the
+                                    WRONG PATH; a second
+                                    falsification, de-duplicating the
+                                    membership audience by user
+                                    instead of by connection id,
+                                    turns it red                   falsifiable
+    T016  a live connection after
+          an earlier one is gone    NOT FALSIFIABLE — see below
+
+**T016 could not be falsified and the test's claim was corrected rather than the
+test kept.** FR-014's second half says one connection's delivery failure must not
+prevent another's. `send` is a bare `socket.send(...)` with no try/catch, so the
+falsification is to make it throw on a socket that is not OPEN — and **all three
+tests stayed green**, because `registry.remove` runs from the terminated socket's
+own close handler before any publish arrives. There is no failing send to survive:
+a dead connection is *gone from the registry*, not *present and broken*.
+
+So the property is real and **unobservable through this fixture**. Chapter 3.20's
+lesson in its own words: a claim about an observable difference needs falsifying
+before the test is written. The test stays, retitled to what it does assert — a
+surviving connection keeps receiving after an earlier one is gone — and its comment
+records why the stronger claim is not made.
+
+**And the first draft of T016 terminated the WRONG socket.** `subscribersOf`
+returns `[...byId.values()]` — a `Map`, so insertion order — so terminating the
+second connection would leave a delivery loop that dies on its first failure
+looking correct, having already reached the first. It now terminates the first.
+
+ONE MORE THING THE PHASE NEEDED: AN ESLINT EXEMPTION, FOR A NEW REASON
+
+`no-restricted-imports` forbids `ioredis` outside the two limits modules.
+`connections.itest.ts` is now on `DRIVER_EXEMPT_TESTS`, and **not for the reason
+the four gateway entries above it give**. Those four need a raw client as the
+ORACLE — an assertion on Redis, read with neither service's code. This file needs
+one as the STIMULUS: `Membership` exposes `onChange`, `subscribeChannel` and
+`watch` and no `publish`, because the api publishes and the gateway only
+subscribes. A fifth reason the rule cannot express, listed explicitly rather than
+reached through a helper.
+
+    lint       2 warnings, 0 errors      both pre-existing
+    typecheck  13/13
+    unit lane  11/11
