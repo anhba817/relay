@@ -1,59 +1,102 @@
 <!-- SPECKIT START -->
-**CHAPTER 3.21 IS IN PLANNING** — `specs/039-chapter-3-21/`, the typing indicator. Read
-`plan.md`, then `research.md`. **Two premises in the brief were false and both were checked
-by command before a requirement was written**, which is why they open the spec rather than
-sit in research.
+**CHAPTER 3.22 IS IN PLANNING** — `specs/040-chapter-3-22/`, FR-RTM-09's five-connection
+cap. Read `plan.md`, then `research.md`. **The hand-off it was given was wrong in a new
+way: it assigned a decision that had already been published**, and the decision it did not
+name was the larger one.
 
-**IT DOES NEED A FOURTH SUBJECT GRAMMAR** (R1). The brief said typing is the one remaining
-kind that reuses `chan:{channel_id}`. ADR-19 refused `chan:` for presence because the
-message path is typed to messages at three points. **That record undercounts: the grep
-returns eight lines covering SEVEN places** — `onDelivery`, `publish(message: Message)` and
-a `deliver` type in `fanout.ts`, the `messageCreatedSchema` parse there, and three separate
-literal `message.created` sends in `session.ts` at 223, 896 and 912. This file said "three
-points, and all three are intact" for twelve analysis passes after R1 measured seven. Three chapters have now reached this
-independently, so it is a rule rather than a judgement: **a fabric owns its subject
-grammar, and a kind that cannot share a payload type cannot share a subject.**
+**THREE OF FOUR DESIGN DECISIONS WERE ALREADY WRITTEN IN THE TREE.** Reading beat deriving,
+which is this file's mechanism 2 with a number on it. Where the refusal happens: chapter
+3.11 settled it at `session.ts:715` for the closest analogue — *"the argument for the HTTP
+shape evaporates with it, and the shape that is left reaches a browser where a failed
+upgrade's body does not"*. **A browser cannot read a failed upgrade's body**, so refusing at
+the upgrade seam gives a browser a bare connection failure. Whether it needs a sixth close
+code: `codes.ts:10` states the test — *"a client that cannot tell them apart retries the
+wrong one for ever"* — and all four reuses fail it. The two intervals: three refreshes per
+window, from `presence.ts:41`.
 
-**AND IT IS NOT THE SMALL ONE.** `session.ts:948` refuses every inbound frame but
-`message.send` — chapter 3.12's gauntlet states it as a row — so **this is the first
-chapter to open a second inbound frame**, which is a larger change than a grammar. The
-inbound seam is where a protocol is attacked, and twenty chapters of tests assert exactly
-one type is accepted.
+**AND THE FOURTH CONTRADICTS A PUBLISHED DOCUMENT.** `docs/05-sad.md:574` prescribes a
+sorted set pruned with `ZREMRANGEBYSCORE`, which needs Lua for FR-013's atomicity —
+and **Constitution VII requires "a superseding ADR with profiling evidence" for a second
+language, which this lane cannot produce** (largest fixture: five channels; NFR-SCL-01 asks
+about ten thousand connections). `grep` for `.eval(`, `defineCommand` and `.multi(` returns
+ZERO hits: this platform has never issued a multi-command Redis operation. So the design is
+**five slot keys claimed with `SET NX PX`** — presence's own primitive — which makes the TTL
+per member by construction rather than working around it, and needs an ADR plus the SAD
+amendment.
 
-**THE PUBLISHED FRAME CANNOT SAY "STOPPED"** (R3). `typingSchema` has carried exactly
-`{ channel, user }` since chapter 1.3 — no `state`, no deadline. So the five-second expiry
-belongs to the **receiving client** by construction, and FR-RTM-08's "shall not be
-persisted" is true because **nothing is stored anywhere**: no table, no Redis key, no
-server timer. A Redis key would let the gateway learn an indicator lapsed and then be
-unable to say so.
+**THE SAD DESCRIBES `conn:{env}:{user}` TWICE, IN TWO SHAPES AND TWO TENSES.** Line 167 says
+the gateway *"registers the connection in Redis (`conn:{env}:{user}` → instance ID,
+TTL-refreshed)"* — present tense, single value, describing something that does not exist.
+Line 574 says *set* of instance IDs and *"Not built"*. `conn:` appears in exactly one place
+in the platform: a comment saying presence does not need it.
 
-**CONSTITUTION IV IS PASSED VACUOUSLY, AND THAT IS THE FINDING.** Chapter 3.20 needed a
-backstop because a revocation has no cursor. Typing needs none, and not because it is
-unimportant: a dropped typing publish self-corrects within one renewal interval, and if the
-user stopped, the correct end state is no indicator. **A lost typing frame converges on the
-truth; a lost revocation converges on a lie.** This chapter is the opposite case that makes
-the distinction visible.
+**`policy.ts` DIVIDES BY FIVE AND SHIPS A DIFFERENT NUMBER.** `10_000 / 5 = 2_000`; the
+constant is `connect: 3_000`, and `policy.test.ts:54` pins it while its comment says *"the
+chapter states the derivation and this asserts the result"*. The limiter counts
+establishments, so the figure for its stated goal is 10,000 — three numbers. **Until this
+chapter, five was enforced nowhere, so the division was sizing against a hypothetical.**
+Not this chapter's to fix; `gaps.md` gets the arithmetic.
 
-**THE NUMBERS ARE FIVE AND TWO, AND THEY ARE TWO QUANTITIES.** Five seconds is
-FR-RTM-08's expiry and cannot move. Two seconds is this chapter's renewal interval and is
-argued: 2.5 renewals per expiry window, so one dropped publish does not make an indicator
-flicker. Chapter 3.19 armed a grace check at exactly its own grace period and stranded a
-user online for ever.
+**AN ELIMINATED HYPOTHESIS WAS ELIMINATED BY THE WRONG TEST.** `presence.itest.ts` takes
+`4700 + %200` = 4700–4899; `meter.itest.ts`'s api takes `4710 + %60` = 4710–4769. **The
+unregistered range strictly contains a registered one**, and the gateway's integration
+config sets no `fileParallelism`, so both run at once. Chapter 3.20 eliminated "a port
+collision" because *"the failing ports are in each file's own range"* — a test that cannot
+see this, because the colliding port IS in each file's own range. P = 1/200 per run, which
+is a contributor and not a cause. These are the two files with open battery failures.
 
-**THREE PUBLISHED CLAIMS NEED CORRECTING AND TWO ARE CHAPTER 3.20's** (R8) — its "the one
-kind that could genuinely reuse `chan:{channel_id}`" and its ForwardRef "the first that can
-reuse a grammar rather than adding one". Both were written yesterday and both are false.
-**A ForwardRef should describe what the next chapter must decide, not what it will
-conclude.**
+**CHAPTER 3.21 IS CLOSED**, tagged `part3-ch21` in all three repositories — fence
+predecessor `0ecb21f`, which is `git rev-parse part3-ch21^{commit}` and not the tag. Its
+record is `specs/039-chapter-3-21/` — `chapter-notes.md` first, then `gaps.md` (**nine new
+items**, twenty-five carried), then `traceability.md` and `baseline.txt`.
 
-**THE CONSTRAINT IS API SPAWNS, NOT FILES** (R9) — and this sentence said "no tenth gateway
-integration file" for eleven analysis passes after planning had decided otherwise. Seven of
-nine gateway integration files spawn their own api, and five of the seven failures across
-chapter 3.20's forty battery runs were one of those fixtures failing to come up. But
-`resume.itest.ts` spawns none: it stubs the `ApiClient` and boots gateways in process, and
-typing needs no api either. **So chapter 3.21 adds a tenth file, `typing.itest.ts`, and the
-spawn count stays at seven.** A proxy for a constraint outlives the constraint, and this
-file is where a proxy does the most damage — it is loaded into every session.
+    3.21 "the frame nobody may send"        2,306 words, 18 fenced, 3 figures
+                                            18 platform files (+2,559 -26), 13 tutorial
+    19 of 20 battery runs green · mean 228.63 s, stdev 0.68, budget 240 — 11.37 s spare
+    44 files, 727 tests · coverage 93 files / 1174 tests / 436.45 s, exit 0
+    both new production files 100/100/100/100 · 234 fenced files, 38 chapters translated
+
+**A FABRIC OWNS ITS SUBJECT GRAMMAR, and a kind that cannot share a payload type cannot
+share a subject.** Three chapters reached this independently, so it is a rule. ADR-19's
+"three typed points" undercounted: the grep returns eight lines over seven places.
+
+**COVERAGE CANNOT SEE AN OMISSION.** `**/main.ts` is excluded from the ratchet
+(`vitest.coverage.config.mts:97`) and that is where 3.21's worst defect lived — the module
+was built, its `close()` awaited, and it was never passed to `attachSessions`. The feature
+was inert in the product while 1,174 coverage tests and 174 gateway integration tests were
+green. **Including `main.ts` would not have caught it either**: every line executed; the
+defect was an argument that was not there. `packages/outsider/src/integrate.itest.ts` is the
+only instrument that boots the shipped binary, and it is what found it. **A chapter that adds
+an argument to `attachSessions` owes an outsider test.** `gaps.md` item 8.
+
+**VERIFY BY EXIT CODE, NEVER BY ABSENCE OF OUTPUT.** Three ways a check reads green without
+running, all hit in one close-out: `pnpm -s` in the wrong repo returns 254 silently; a
+pipeline ending in `tail` makes `&&` read `tail`'s status (this committed over a RED
+checker); and `[ -z "$(git -C relay-platform status)" ]` prints "clean" when the path does
+not resolve. **And the nine pinned lane variables apply to `pnpm coverage`, not just
+`test:integration`** — two full lane runs were spent learning that, one of them predicted
+verbatim by `quickstart.md`.
+
+**`.resume()` IS A THIRD WAY TO THROW THE EVIDENCE AWAY** and the most deceptive, because it
+looks handled: `stdio: "ignore"` never creates the output, an unread pipe leaves it in a
+kernel buffer, `.resume()` reads it and discards it. It cost 3.21 its own battery failure —
+run 8, `no ack within 5s`, **zero `"service":"gateway"` lines in the whole log**, with the
+429 and `auth_degraded` theories both eliminated against green runs and the cause
+undeterminable. **Five files still discard**: `isolation`, `limits`, `public-surface` pipe
+and read nothing; `membership` and `presence` use `stdio: "ignore"`. Two of the five are the
+files behind the open battery failures. `gaps.md` item 9.
+
+**TWO PATTERNS IN ONE FILE DISAGREED ABOUT WHAT AN ID IS, AND THE CHECKER WAS THE WRONG
+ONE.** `check-refs.py`'s `TASK` accepted `T\d{3}[a-z]?` and its `REF` refused the letter, so
+it printed "no undeclared task ids" while `gaps.md` cited `T107a` two paragraphs above.
+Widening it by one optional letter surfaced **six live citations in one run**. The sixth
+instrument in that chapter to match the examples in front of it rather than the set the rule
+names — and the first to under-report rather than cry wolf, which is worse.
+
+**A TEST'S TITLE IS NOT CHECKED AGAINST ITS ASSERTION**, and 3.21's T098 found four of its
+own: "logs it once" over a body proving five connection failures and zero publish ones,
+"exactly the three names" asserting two, an `expect(true).toBe(true)`, and one test with no
+`expect` at all.
 
 **CHAPTER 3.20 IS CLOSED**, tagged `part3-ch20` in all three repositories. Its record is
 `specs/038-chapter-3-20/` — read `chapter-notes.md` first, then `gaps.md` (**25 items**,

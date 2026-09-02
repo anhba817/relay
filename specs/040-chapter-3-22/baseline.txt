@@ -1,0 +1,229 @@
+CHAPTER 3.22 — BASELINE
+================================================================
+
+Every figure here was produced by a command and the command is named. A number
+without one is a guess, and this chapter has had fifteen analysis passes' worth of
+guesses corrected already.
+
+
+T001 — THE LANE ENVIRONMENT
+------------------------------------------------------------
+
+    cd relay-platform
+    RELAY_POSTGRES_PORT=15432 docker compose up -d --wait
+
+    clickhouse running   mailpit running   nats running
+    postgres running     redis running                      five, not four
+
+**Five store containers.** A lane without mailpit fails on `ECONNREFUSED :8025`,
+and omitting the port variable takes Postgres down mid-recreate with `bind:
+address already in use`.
+
+The nine pinned variables, prefixed on every lane command in this chapter:
+
+    DATABASE_URL=postgres://relay:relay@localhost:15432/relay
+    RELAY_REDIS_URL=redis://localhost:6379
+    RELAY_NATS_URL=nats://localhost:4222
+    RELAY_INTERNAL_CREDENTIAL=rk_svc_local_development_credential_0000
+    RELAY_INTERNAL_CREDENTIAL_GATEWAY=rk_svc_local_development_gateway_00000
+    RELAY_WEBHOOK_SECRET_KEY=BpDal75yBZp7Fc2GtGS3D1vh7qOKgCWJkF6/d0XWxBU=
+    RELAY_OUTBOX_RELAY=off
+    RELAY_EVENT_CONSUMER=off
+    RELAY_DELIVERY_RELAY=off
+
+plus `NO_COLOR=1 FORCE_COLOR=0`. **These apply to `pnpm coverage` as well as
+`test:integration`** — chapter 3.21's close-out spent two full lane runs learning
+that, and one of the two failures was predicted verbatim by its own `quickstart.md`.
+
+
+T002 — THE STARTING LANE
+------------------------------------------------------------
+
+    pnpm test:integration --force        exit 0
+
+    @relay/test-harness    1 file      17 tests
+    @relay/api            29 files    510 tests
+    @relay/gateway        10 files    174 tests
+    @relay/dispatcher      1 file      16 tests
+    @relay/e2e             3 files     10 tests
+    ------------------------------------------------
+    total                 44 files    727 tests
+
+    wall clock  3m54.007s = 234.0 s      budget 240 s      6.0 s of headroom
+
+**`--force` matters and this is why**: chapter 3.21's equivalent task omitted it,
+turbo served a cached result, and the record read 150 s against the previous
+chapter's 228.77 s.
+
+**The count matches chapter 3.21's close-out exactly** — 44 files, 727 tests — so
+nothing has drifted in the tree since it was tagged. **The wall clock is 5.4 s
+slower** than that chapter's 228.63 s mean. Not investigated and not attributed: a
+single run against a twenty-run mean is not a comparison, the same dev server from
+another project was running then and now, and 6.0 s of headroom is the number that
+matters for SC-010.
+
+
+T003–T007, T006a, T006b — THE SEVEN PREMISES, ALL CONFIRMED
+------------------------------------------------------------
+
+Every one held. That is worth stating plainly because it is unusual: chapter 3.21
+opened with three of its Phase 1 premises wrong, and this chapter's premises had
+fifteen analysis passes to be wrong in.
+
+T003 (P1) — no Lua, no MULTI, anywhere:
+
+    grep -rn "\.eval(\|defineCommand\|\.multi(" --include="*.ts" services packages
+      | grep -v node_modules
+    -> 0 lines
+
+The whole basis for rejecting the SAD's sorted set (research R3) and for the
+Constitution VII argument. Still true.
+
+T004 (P2) — one unregistered port range strictly contains a registered one:
+
+    presence.itest.ts:95   const port = 4700 + Math.floor(Math.random() * 200)
+    meter.itest.ts:65      const apiPort = 4710 + Math.floor(Math.random() * 60)
+    gateway/vitest.integration.config.mts   fileParallelism: 0 lines
+
+So 4700–4899 contains 4710–4769, and with no `fileParallelism` setting vitest's
+default runs the two files at once. P = 1/200 per run. Chapter 3.20's `gaps.md`
+item 19a eliminated "a port collision" because *"the failing ports are in each
+file's own range"* — a test that cannot see this, because the colliding port is in
+each file's own range.
+
+T005 (P3) — the close-code set is written TWICE:
+
+    codes.test.ts:18   it("contains exactly 4001, 4002, 4003, 4008, 4009", () => {
+    codes.test.ts:20         4001, 4002, 4003, 4008, 4009,
+
+Both get edited in Phase 3, or the test's name lists five codes while it checks six.
+**The first version of this premise said one hit.** Analysis pass 6 ran the command.
+
+T006 (P4) — `policy.ts` divides by five and ships a different number:
+
+    policy.ts:43        connect: 3_000,
+    policy.test.ts:54   expect(DEFAULT_LIMITS).toEqual({ ..., connect: 3_000 });
+
+`10_000 / 5 = 2_000`. The limiter counts establishments, so the figure for its own
+stated goal is 10,000. Three numbers. Not this chapter's to fix; the arithmetic goes
+to `gaps.md`.
+
+T006a (P5) — the renewal's flag exists on this server:
+
+    redis_version:8.10.0
+    SET p5 B IFEQ A     PX 60000  ->  OK          p5 = B
+    SET p5 C IFEQ WRONG PX 60000  ->  (empty)     p5 = B, untouched
+
+The design's correctness rests on this and it is newer than anything else this
+platform asks of Redis. `compose.yaml:33` pins `redis:8-alpine` and that tag floats.
+
+T006b — every gateway module is OPTIONAL, so the cap is opt-in per fixture:
+
+    session.ts:192  fanout?: Fanout
+    session.ts:206  limits?: GatewayLimits
+    session.ts:217  presence?: Presence
+    session.ts:222  membership?: Membership
+    session.ts:231  typing?: Typing
+
+    attachSessions( calls: presence 1, typing 1, resume 1   — all direct
+
+No existing fixture will pass `connections`, so none claims a slot. **Analysis pass
+2 assumed the opposite and built two findings and three tasks on it**; pass 3 found
+the premise false. This is the check that carries the whole test strategy.
+
+T007 — the two SAD rows still disagree:
+
+    05-sad.md:167  (`conn:{env}:{user}` -> instance ID, TTL-refreshed), subscribes…
+    05-sad.md:574  | `conn:{env}:{user}` -> set of instance IDs | … **Not built** …
+
+Present tense and a single value in one; a set and "not built" in the other. FR-017
+closes both.
+
+
+T008–T010 — THE THREE INSTRUMENTS
+------------------------------------------------------------
+
+Copied and reset during planning at analysis pass 4, because four passes had
+rewritten every artifact with no id or count checker in the directory.
+
+    check-refs.py    exit 0   125 tasks, ids sequential, 28 declared foreign refs
+    sweep.py         exit 0   125 tasks · 21 requirements · 14 criteria · 11 phases
+    check-prose.py   exit 1   RED BY DESIGN — 8 fragments, 4 claims, all still
+                              published until the two chapter pages are corrected
+    check-prose --declared
+                     exit 0   every fragment matches, so every claim is catchable
+
+**check-refs red-tested here, not just run**: a scratch file citing `T077q` fired
+`scratch-red.md:1 cites T077q`, and the file was deleted.
+
+**And `check-refs` reached exit 0 for the first time in the chapter's life.** Its
+standing complaint — *"traceability.md is missing, so nothing is traced"* — had been
+reported as "expected" on all fifteen analysis passes without anyone asking why.
+T009b is why.
+
+
+T009b — TRACEABILITY, BUILT DURING PLANNING, AND IT FOUND TWO ORPHANS
+------------------------------------------------------------
+
+The previous chapter's file opens with the argument for this placement: chapter 3.18
+ran the map at close-out and found FR-007 — a MUST — with no test at all, after
+eight phases and nineteen analysis passes had each read `requirement -> test` and
+believed it. **This chapter's re-derivation sat in the last phase until analysis pass
+15 read that paragraph.**
+
+Mapping 21 requirements and 14 criteria against the task list found two the list had
+forgotten, both the shape the predecessor named — *a requirement whose verification
+is a sentence rather than a test*:
+
+    FR-011a / SC-013   the shutdown release was IMPLEMENTED AND UNTESTED. One task
+                       writes releaseAll(), another asserts close() is REGISTERED in
+                       main.ts — wiring, not release. The crash test covers the
+                       opposite path, where slots free at the bound. Nothing
+                       asserted a clean shutdown frees them IMMEDIATELY, which is
+                       the point against NFR-REL-03.        -> new task T053a
+
+    FR-002             "stated in exactly one place" was cited only by a commit
+                       task. Nothing checked the single-statement property, which is
+                       the whole requirement: a second literal five is how two
+                       figures come apart, which is what policy.ts did.
+                                                            -> new task T032a
+
+And one requirement is now recorded as satisfied BY CONSTRUCTION rather than left
+looking untested: FR-004's "no retry instruction" is guaranteed by
+`errorFrameSchema` being a `z.strictObject` that cannot carry the field.
+
+**The first draft of the file cited 56 task ids and `check-refs` rejected every
+one.** Chapter 3.21's traceability carries zero: an id in another document goes
+stale the moment tasks are renumbered, and what a reader needs is *how* a
+requirement is verified rather than which line of the task list says so. Rewritten
+to descriptions.
+
+
+T011 — THE FAILING STATE, OBSERVED, AND A PREMISE THIS TASK GOT WRONG
+------------------------------------------------------------
+
+    × refuses a sixth connection for one user (FR-RTM-09 (3.22))   5094 ms
+    Error: no close within 5s
+
+**Red for exactly the stated reason.** The five acks succeeded — the loop asserts
+each one's identity — and the sixth stayed open, which is the failing state this
+phase exists to observe. Not `fetch failed`, not a timeout on the api, not a port
+collision: the connection was accepted.
+
+**AND WRITING IT FOUND A HOLE IN THE TASK.** T011 as planned put the test in
+`session.itest.ts` and said nothing about which describe or which modules. But
+T006b had just established that every gateway module is optional and that this file
+calls `attachSessions` with none — **so a red test here could never go green.** A
+red test that cannot pass is worse than no test: it trains a reader to ignore the
+lane.
+
+The resolution keeps the test where the task put it and adds what the task missed.
+It lives in the describe named **"the cap at the door"**, which already holds the
+other two door refusals — chapter 3.8's rate limit and chapter 3.11's quota, the
+second needing no module because the api decides it — and **T042d passes the module
+into that block in Phase 5.** The connection cap is the third refusal at that door
+and belongs beside them.
+
+**Research R11b is amended rather than left standing.** It said the new integration
+file would be the only fixture enforcing the cap. Two will: the new file and this
+block. That is a deliberate second, not a leak.
