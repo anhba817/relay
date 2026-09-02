@@ -610,3 +610,124 @@ ONE FAILURE THAT WAS NOT MINE
 Passed alone: `1 passed | 22 skipped`. Parallel interference in the gateway
 package, which is the class chapter 3.20's `gaps.md` item 19a is about. Recorded,
 not attributed to this phase.
+
+
+PHASE 6 — US2, WHERE EVERY TEST WAS GREEN FIRST TRY AND EIGHT FALSIFICATIONS
+DECIDED WHETHER THAT MEANT ANYTHING
+
+Sixteen of sixteen passed on the first run of the file, which this chapter has
+learned not to believe. So each of the ten new tests was broken on purpose, one
+mechanism at a time, and the reds recorded.
+
+    A   `IFEQ` -> `XX`               2 red   the hijack, and the cap-really-full
+    B   `IFEQ` -> plain `SET`        4 red   + the resurrection and the re-claim
+    C   the claim drops its `PX`     1 red   frees after the bound
+    D   the claim's `PX` is 1 ms     1 red   still refuses before the bound
+    D'  one key tag per module       1 red   counts five across two instances
+    F   `releaseAll` deleted         1 red   frees immediately on a clean shutdown
+    G   `renew` reports success
+        without asking Redis         1 red   the slot across three bounds
+    H   the `full` branch keeps
+        the connection               1 red   closed when the cap is really full
+
+Every one of the ten is red under at least one mechanism, and A/D/D'/F/G/H each
+single out one test. That is the property a suite of eleven arms wants and it is
+not the property a green run demonstrates.
+
+A TASK'S CLAIM ABOUT ITS OWN FALSIFICATION WAS WRONG, and it is the chapter's
+most common finding one level up. T056a's text says the hijack test is "the only
+test in the chapter that catches that substitution". Mechanism A turns TWO tests
+red: the hijack and the cap-really-full. The claim came from the task list, was
+carried into the test's comment, and was corrected only because the mechanism was
+actually run. Six analysis passes read that sentence.
+
+AND MY OWN COMMENT ON T053 WAS BACKWARDS. It said a slot-frees-eventually test
+"passes against an implementation whose keys carry no TTL". With no TTL it is the
+freeing that fails — mechanism C, one red, and it is the OTHER half. What T053
+actually catches is a cap that never really holds the places: mechanism D, a 1 ms
+`PX`, which turns T053 red and T052 green. The two halves were then measured to be
+independent rather than asserted to be, which is the only reason to write both.
+
+TWO UNBOUNDED WAITS COST FORTY SECONDS EACH ON A RED, AND THE LANE HAS ELEVEN
+SECONDS OF HEADROOM
+
+    refusedOn, waiting only for a close      40,192 ms  ->  335 ms
+    untilClosed, on the cap-really-full test 40,172 ms  ->  5,211 ms
+
+Both were waiting for something a broken implementation never sends. The first now
+polls the close AND the ack and returns `{ code: -1, error: "accepted" }`, so the
+diff names the defect; the second carries a five-second deadline and a message.
+
+`Promise.race` WAS THE FIRST FIX AND IT WAS WRONG. `untilAcked` rejects at its own
+deadline, and once the race has resolved that rejection has nobody waiting on it —
+an unhandled rejection, which in this package ends the process. Polling both
+conditions has no second promise to abandon.
+
+THE CRASH IS SIMULATED AT THE REGISTRY, NOT AT THE SOCKET, and the fixture says so
+
+In process there is no way to stop a gateway's own `close` handlers running:
+destroying the socket is what triggers them. So `crash()` quits the instance's
+Redis client and nothing else. From Redis's side — the only side that can see any
+of this — that is exactly a `kill -9`: no release lands, no renewal lands, and the
+five keys sit until their bound elapses. Teardown then runs the ordinary path,
+where every release and every `releaseAll` throws inside the module's own
+`failable` and is logged rather than thrown, so the timers still get cleared. It
+does not reproduce a half-written command or a torn connection, and the comment
+does not claim it does.
+
+ONE MODULE PER INSTANCE, MOVED INTO `boot()` (T050a)
+
+Phase 5's three tests built a registry in the test body and handed it in. Two
+gateways sharing one module would have the crashed instance's `releaseAll()` free
+the SURVIVING instance's places, and T052 would have passed for the wrong reason.
+`boot({ cap: {} })` now builds one per instance and closes it after
+`sessions.close()`, which is also the ordering the release needs.
+
+FR-011a NEEDED A THIRD DOOR ON THE FIXTURE. `sessions.close()` frees the places
+and then calls `wss.close()`, which does not close established sockets — and the
+fixture's own `close()` waits on `server.close()`, which does not return while a
+socket is open. So the deploy path can only be observed by a call that stops the
+sessions and leaves the rest to teardown: `instance.shutdown()`. The test uses the
+DEFAULT bound, sixty seconds, so expiry cannot explain the acceptance, and the
+default twenty-second heartbeat, so a renewal cannot re-claim what `releaseAll`
+just freed.
+
+THE TEARDOWN SWEEP IS NOT HYGIENE (T050c)
+
+A slot's bound is 60,000 ms and this package's whole run is about 45 s, so a slot
+leaked by a close handler that never ran survives into the next file and into the
+next battery run — and this is the only file that deliberately fills all five
+places. The sweep deletes `conn:{env}:*` for each environment this run booted an
+instance in; the prefixes are UUIDs, so it cannot reach another suite's keys.
+`limits.itest.ts:297` deletes its three rate-limit keys by name for the same
+reason and is the only other Redis cleanup in the gateway's integration files. A
+name list is not available here because the production code chooses the user and
+the slot.
+
+WHAT PHASE 6 MEASURED
+
+    connections.itest.ts    16 passed (16)      10.55 s
+    gateway lane            11 files, 191 tests, all green, 45.50 s
+    unit lane               11 packages green, gateway 10 files / 119 tests
+    typecheck               13/13
+    lint                    0 errors, 2 warnings (both pre-existing, root)
+
+The gateway package's 45.50 s is chapter 3.20's number to two decimal places —
+the ten new tests add about ten seconds of TEST time and no wall time, because the
+package runs its files in parallel and this file spawns no api.
+
+THE TWO GATES THAT ARE STILL RED, AND WHY EACH IS EXPECTED
+
+    check:srs      exit 0
+    check:figures  exit 0
+    check:fences   exit 1   8 problems, all HEAD
+    check:errors   exit 1   connection_limit_reached has no reference section
+
+`check:errors` is T072's, in Phase 9 — the code exists in the built `dist` and the
+error reference does not describe it yet, which is exactly what that instrument is
+for. `check:fences` is Phase 10's: the chain's HEAD property says the state after
+the last fence equals disk, and this chapter has changed twelve platform files
+with no chapter written. The eight anchors are in chapters 17, 19 and 21 plus
+`fences/post-series.md`, and every one of them covers a file in that twelve.
+Phase 6 changed one file — `connections.itest.ts`, which no fence covers yet — so
+it added none of them.
