@@ -378,3 +378,93 @@ section in Phase 9's documents phase; the gate is red from here until then. That
 the chapter's second deliberately-red instrument alongside `check-prose.py`, and the
 reason is the same one chapter 3.21 gave: a red gate nobody explained is
 indistinguishable from one nobody noticed.
+
+
+PHASE 4 — T026, THE ELEVEN ARMS, LISTED BEFORE THE MODULE WAS WRITTEN
+------------------------------------------------------------
+
+Chapter 3.21 did this and three of four new files hit 100/100/100/100 on the first
+run. Chapter 3.19 met the same requirement at close-out and paid seven tests, a
+deleted branch and a re-measured battery.
+
+     1  SET NX misses on a slot                       the walk moves to the next
+     2  the walk finds no free slot                   five held, the cap bites
+     3  SET IFEQ refused, key GONE                    the bound elapsed
+     4  SET IFEQ refused, key holds ANOTHER id        somebody re-claimed it
+     5  the failable catch, Redis unreachable         null, not zero
+     6  a conditional release refused, slot not ours  do not free another's
+     7  a conditional release for a slot never held   nothing to do
+     8  releaseAll with nothing held                  the empty loop
+     9  re-claim after a refused renewal: FREE SLOT   FR-011b, the common case
+    10  re-claim: every slot held by another          the cap is genuinely full
+    11  re-claim: the registry unreachable            FR-016 applies
+
+**Eight of the eleven were listed in the task; three came from FR-011b**, which
+analysis pass 5 added and which nothing re-derived this list against until analysis
+pass 6 caught it.
+
+
+T027–T035 — THE MODULE, AND TWO DEFECTS THE ARMS LIST DID NOT PREVENT
+------------------------------------------------------------
+
+    connections.test.ts    14 passed (14)    606 ms
+
+**DEFECT ONE: `null` FROM A REPLY AND `null` FROM A THROW WERE THE SAME VALUE.**
+
+`failable` returned `T | null` and read `null` as failure. But `SET … NX` returns
+**nil on a miss**, which is the ordinary case when a slot is taken — so every claim
+past the first reported `unenforced`:
+
+    6 failed | 8 passed (14)
+    AssertionError: expected { kind: 'unenforced' } to deeply equal
+                    { kind: 'claimed', slot: 1, held: 1 }
+
+**Arm 1 and arm 5 of T026's list produce the same wire value**, and listing them
+separately did not stop me writing code that cannot tell them apart. The module's
+own comment claimed the distinction — *"`null` means COULD NOT ASK; it is never
+conflated with nothing held"* — while the code conflated them. Fixed with a
+wrapper: `{ asked: true, reply } | { asked: false }`.
+
+`presence.ts:232` gets away with `T | null` because its `SET` uses `NX`/`XX` where
+nil and failure lead to the same branch. This module has to distinguish them, and
+copying its signature was the mistake.
+
+**DEFECT TWO: AN UNREACHABLE REDIS DID NOT FAIL, IT HUNG.**
+
+    × returns unenforced rather than zero when Redis is unreachable   20003 ms
+
+ioredis' defaults queue a command and retry, so `claim` waited out the test's own
+timeout. **Against NFR-PRF-04's p95 < 1 s from handshake to `connection.ack`, a cap
+that fails open must fail open QUICKLY** — otherwise FR-016's "accept the
+connection" is indistinguishable from refusing it. `limits.ts:95` and
+`presence.ts:133` both already use the three options that bound it:
+
+    lazyConnect: true, maxRetriesPerRequest: 0, connectTimeout: 1_000
+
+Now 606 ms for the whole file. **Neither defect was in the arms list, the plan, or
+fifteen analysis passes** — both surfaced from running the tests against a real
+Redis, which is the reason T034 insists on one.
+
+AND A THIRD PINNED-NUMBER TEST, WHICH IS FR-002's
+
+`connections.test.ts` reads `connections.ts` **from disk** and counts bare fives
+outside comments. One, and it is `MAX_CONNECTIONS_PER_USER`. The requirement is
+about drift rather than the value, and reasoning about it could not answer "how
+many fives are in this file".
+
+TWO ESLINT EXEMPTIONS, BOTH FOR STATED REASONS
+
+`no-restricted-imports` forbids `ioredis` outside the two limits modules, in
+production files as well as tests.
+
+    services/gateway/src/connections.ts       the production block
+    services/gateway/src/connections.itest.ts DRIVER_EXEMPT_TESTS (phase 2)
+
+The production entry notes that this module's keys are the strongest case on that
+list rather than the weakest: `conn:{env}:{user}:{slot}` puts the environment
+first, so Principle I is structural in the key. And the `.itest.ts` file is
+deliberately NOT in the production block — chapter 3.20 put one there and the later
+`**/*.itest.ts` block silently overrode it.
+
+    lint       2 warnings, 0 errors
+    typecheck  13/13
