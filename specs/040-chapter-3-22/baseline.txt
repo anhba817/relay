@@ -468,3 +468,145 @@ deliberately NOT in the production block — chapter 3.20 put one there and the 
 
     lint       2 warnings, 0 errors
     typecheck  13/13
+
+
+PHASE 5 — THE SEAM, AND THE FIXTURE LEAKED INTO ITSELF
+------------------------------------------------------------
+
+T037–T041a — WHERE EACH PIECE WENT, AND WHY
+
+    T037  the claim, after authenticate and after limits.spend. After
+          authenticate because the environment is unknown before it — the rate
+          limiter's own comment says the same. After the limiter because a client
+          hammering the door should meet the cheaper check first: one INCR against
+          a walk of up to five.
+    T038  the refusal INSIDE handleUpgrade's callback: sendError then close 4004.
+          A browser cannot read the body of a failed upgrade, so refusing at the
+          seam gives it a bare connection failure with no code and no message.
+    T039  the connection id is minted at the CLAIM, not at `open`, so the
+          connection and its place agree — FR-011's "exactly one place for its
+          lifetime". Only a connection that will be accepted claims one.
+    T040  one renewal timer per connection, `unref`'d, cleared on close. An
+          interval that outlives its connection renews a place nobody holds, and
+          the `IFEQ` guard cannot fix that alone because the value would still be
+          this connection's id.
+    T040a FR-011b's three branches, with the FR-005 tension named in the code:
+          FR-005 governs a REFUSAL, and here the connection has already lost its
+          place to a competitor.
+    T041  release on the close path that exists. **No 4009 drain path added** —
+          `session.test.ts:965` says 4009 is emitted by nothing and `:982` asserts
+          it stays that way.
+    T041a `releaseAll` from `sessions.close()`, BEFORE `wss.close()`, because that
+          call does not close established sockets and this is the last chance.
+
+`heldPlaces` is a Map in the closure rather than a field on `Connection`: chapter
+3.21 put one on the connection and corrected it to this, and the shared type in
+`registry.ts` belongs to every chapter.
+
+T042–T042d — THE FOUR WIRING TASKS, AND THE ONE THAT MADE ANOTHER VERIFIABLE
+
+    T042   the `attachSessions` argument — the line chapter 3.21 forgot
+    T042a  `connections?: Connections`, optional like the other five, recorded as
+           a decision with what it costs
+    T042b  main.test.ts asserts every module the file builds is also closed
+    T042c  `await connections.close()` in `shutdown()`
+    T042d  the module into `session.itest.ts`'s "cap at the door" describe
+
+**T042b WENT RED ON ITS FIRST RUN AND THAT WAS THE CHECK WORKING.**
+
+    × closes every module it builds (T042b (3.22))
+    AssertionError: logger is built but never closed in shutdown()
+
+`createLogger` returns a writer with nothing to release and `createServer` is the
+file's own export. Both are now on a two-name `NOT_CLOSEABLE` list — **named rather
+than pattern-excluded**, so a seventh module arriving without a `close()` fails
+instead of being quietly skipped. Six closeable modules today.
+
+    main.test.ts   3 passed (3)
+
+**AND T011's RED TEST WENT GREEN.** The sixth connection closes 4004.
+
+T043–T046 — AND A FIXTURE DEFECT OF MY OWN
+
+First run: **2 failed | 4 passed**, both failures timing out at 5 s.
+
+    × frees a slot on close, reusable with NO waiting period
+    × logs the refusal with the user, the environment and the count
+
+Both take five connections, and the test before them fills all five. **Every test
+in the file shared one user**, so they shared five places — and the cap tests
+exhaust them. Worse, each test did `await registry.close()` in its own body, which
+quit the client BEFORE `afterEach` closed the sockets whose close handlers issue the
+release. So five slots stayed held for the full sixty-second bound.
+
+Two fixes, and the second is the one that makes the class impossible:
+
+    a fresh user per test        `u-${randomUUID()}` in `beforeEach`, the way
+                                `connections.test.ts` already does it
+    registries closed in
+    afterEach, after a 150 ms
+    beat                        a release is fire-and-forget from a close handler
+
+**The per-run environment reasoning was applied at file level and not at test
+level**, which is the same mistake one scope down.
+
+    connections.itest.ts   6 passed (6)
+
+T044 — THE FALSIFICATION, WHICH IS THE TASK
+
+Evicting the oldest instead of refusing the newest — the design the spec's Q1
+rejected — turns the five-then-sixth test red:
+
+    × accepts five and refuses the sixth with 4004    5332 ms
+
+T047, T048 — AND T042d BROKE TWO OF CHAPTER 3.11's TESTS
+
+**T048 PASSES AGAINST THE SHIPPED BINARIES.**
+
+    packages/outsider    14 passed (14)
+
+Five connections held and a sixth refused with 4004 and
+`connection_limit_reached`, through rebuilt Docker images, a real api, a real
+gateway and a browser `WebSocket`. **Nothing in that suite is stubbed**, which is
+why it is the only instrument that could have caught chapter 3.21's inert feature —
+and the reason T048 is a plan requirement rather than a polish item.
+
+Running it needs the platform up, which the suite's own error message documents:
+migrate, `--profile services up -d --build`, seed a tenant, export three
+variables. **The images are built from Dockerfiles rather than bind-mounted**, so
+they had to be rebuilt or the outsider would have tested the previous chapter's
+code and passed for the wrong reason. `compose.yaml` sets
+`RELAY_REDIS_URL: redis://redis:6379` for the gateway, checked before the run —
+without it `createConnections` would default to `localhost` inside the container,
+find nothing, and fail open silently.
+
+**AND T042d WAS WRONG IN A WAY THE GATEWAY LANE FOUND.**
+
+    × opens normally the moment the cap is raised
+    × leaves a socket opened before the breach open and receiving
+
+Both are chapter 3.11's quota tests. T042d wired the module into that chapter's
+"cap at the door" describe, whose five tests share the user "tuan" — so the cap bit
+them and exhausted the five places. **Wiring a new module into an existing describe
+changes the behaviour of every test in it**, which is the same class as the leak
+inside `connections.itest.ts` one file over, and I made it twice in one phase.
+
+The fix keeps T011's test where Phase 1 put it and stops it borrowing somebody
+else's fixture: a describe of its own, `the connection cap at the door (chapter
+3.22, US1)`, with its own api, server and module. Chapter 3.11's block is back to
+what it was.
+
+    session.itest.ts        18 passed (18)
+    gateway lane            11 files, 181 tests, all green
+
+T047's comment records that `presence.itest.ts` still enforces nothing — it passes
+no module — so its "FR-RTM-09's five is enforced NOWHERE" sentence stays true in
+that file, and its five connections are now exactly the cap.
+
+ONE FAILURE THAT WAS NOT MINE
+
+    × typing.itest.ts > refuses a signal whose environment does not match
+
+Passed alone: `1 passed | 22 skipped`. Parallel interference in the gateway
+package, which is the class chapter 3.20's `gaps.md` item 19a is about. Recorded,
+not attributed to this phase.
