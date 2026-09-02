@@ -306,3 +306,75 @@ reached through a helper.
     lint       2 warnings, 0 errors      both pre-existing
     typecheck  13/13
     unit lane  11/11
+
+
+PHASE 3 — THE PROTOCOL, AND A THIRD PINNED COUNT NO TASK OWNED
+------------------------------------------------------------
+
+T019 — THE TWO NAMES, DECIDED ONCE
+
+    close code   4004  "connection limit reached"
+    error code   connection_limit_reached
+
+`4004` is the next free number after chapter 3.15's `4003`, from the space 1.3 and
+3.15 drew from. **The error code's name was chosen against a collision rather than
+for its sound**: `rate_limited` is one word away in the register and means the
+opposite thing — it throttles a tenant's establishments per window and its own
+message reads *"too many connections; retry after the window resets"*. Retrying is
+what this code must not suggest, so it cannot borrow that phrasing.
+
+T020, T021 — WHY NO REUSE WORKS, WRITTEN WHERE THE CODE IS
+
+Every one of the five fails `codes.ts`'s standing test — *a client that cannot tell
+them apart retries the wrong one for ever*:
+
+    4001  sends the client to re-authenticate. The token is valid, so minting a new
+          one succeeds and connecting fails again: 3.15's loop against a wall.
+    4002  blames a client that did nothing wrong.
+    4003  tells a person they are barred while four of their connections work.
+    4008  tells a client to wait for a quota window. The slot may free a second
+          later, and waiting never causes it.
+
+T022 — AND A THIRD PINNED COUNT, WHICH T005 DID NOT MEASURE
+
+T005 measured the close-code set's **two** places, at `codes.test.ts:18` and `:20`,
+and both were updated. Running the file then failed on a third:
+
+    × holds seventeen codes
+    AssertionError: expected [ 'invalid_frame', …(17) ] to have a length of 17
+                    but got 18
+
+`ERROR_CODES`'s own count, pinned in a title and an assertion — 17 -> 18. **This
+chapter's own `CLAUDE.md` records it** ("`codes.test.ts` asserts the exact close-code
+set and the exact code count (16 -> 17)") and **no task named it**, which is the
+fourth instance this chapter of a pinned number in a file it changes being owned by
+nobody. Four places in one file, not two.
+
+    codes.test.ts   10 passed (10)   after all four
+
+T023, T023a — NO SCHEMA CHANGED, AND THE UNIT LANE PROVES IT
+
+The refusal reuses `errorFrameSchema` exactly as it stands and the figures go in
+`message`, per `quota_exceeded`'s precedent. So the frame union stays at eleven
+members and `main.test.ts` stays green:
+
+    main.test.ts    2 passed (2)
+
+Line 43's `toHaveLength(11)` is untouched, and line 44's `close_codes` assertion is
+derived from `CLOSE_CODES` and followed the new entry on its own. **Do not "fix"
+it.**
+
+T024 — check:errors IS RED, AND STAYS RED UNTIL PHASE 9
+
+    pnpm build                exit 0   5 tasks
+    pnpm -s check:errors      exit 1
+
+    check-error-codes: these codes have no section in the reference, so their
+    docs_url 404s:
+      connection_limit_reached
+
+**Expected, and now written into the task so nobody rediscovers it.** T072 adds the
+section in Phase 9's documents phase; the gate is red from here until then. That is
+the chapter's second deliberately-red instrument alongside `check-prose.py`, and the
+reason is the same one chapter 3.21 gave: a red gate nobody explained is
+indistinguishable from one nobody noticed.

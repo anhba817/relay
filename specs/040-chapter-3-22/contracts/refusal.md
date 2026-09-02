@@ -39,9 +39,16 @@ chapter 3.11 wrote when it made the same call for quota exhaustion.
 
 ## The close code
 
-A sixth code, added to `CLOSE_CODES` in `packages/protocol/src/codes.ts`. The exact
-number is the implementation's to choose from the same unassigned space chapters 1.3
-and 3.15 drew from; what this contract fixes is that **it is new**.
+**Close code `4004`, meaning `connection limit reached`**, added to `CLOSE_CODES` in
+`packages/protocol/src/codes.ts`. Drawn from the same unassigned space chapters 1.3
+and 3.15 used, and the next free number after 3.15's `4003`.
+
+**The error code is `connection_limit_reached`**, and the name is chosen against a
+collision rather than for its sound: `rate_limited` is one word away in the register
+and means the opposite thing — it throttles a tenant's establishments per window, and
+its own message reads *"too many connections; retry after the window resets"*.
+Retrying is precisely what this code must not suggest. Both names are decided here
+and nowhere else.
 
 `packages/protocol/src/codes.test.ts:19` pins the set, so this is a visible
 decision:
