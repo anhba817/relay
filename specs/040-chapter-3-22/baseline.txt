@@ -731,3 +731,99 @@ with no chapter written. The eight anchors are in chapters 17, 19 and 21 plus
 `fences/post-series.md`, and every one of them covers a file in that twelve.
 Phase 6 changed one file — `connections.itest.ts`, which no fence covers yet — so
 it added none of them.
+
+
+PHASE 7 — THE RACE, AND A REAL DEFECT FOUND BY FALSIFYING SOMETHING ELSE
+
+T058 ran two mechanisms, not one.
+
+    the claim's SET drops its NX          8 of 16 red
+    the claim becomes GET-then-SET        0 of 16 red
+
+The first is what the task asked for and it proves less than it looks: dropping
+`NX` destroys mutual exclusion even when the calls are strictly sequential, so of
+course the cap stops capping. The second is the mechanism that isolates ATOMICITY —
+check-then-act is exclusive when nothing else is in flight and racy in the window
+between the two commands — and it left every existing test green.
+
+"NOTHING WENT RED, THEREFORE THE ORDERING IS NOT OBSERVABLE" IS A STATEMENT ABOUT
+THE SUITE
+
+T058's own instruction says that if nothing goes red the race is not observable
+from the application and T059 changes shape. Following it would have produced the
+wrong answer. Nothing went red because no test in the file put more than one claim
+in flight at a time. T059's test does, and under check-then-act it admits ALL
+TWELVE attempts, six runs out of six — every one of them reads slot 0 as free
+before any of them writes it.
+
+    expected [ …(12) ] to have a length of 5 but got 12
+
+So the race is observable, deterministically, and the ordering is what carries
+FR-013 after all. The test had to be written to find that out, which is the part
+the procedure did not allow for. Chapter 3.20's rule — a claim about an observable
+difference needs falsifying before the test is written — holds; what needs adding
+is that a falsification can only see the tests that exist.
+
+T059's fixture is the two instances Phase 6 built, and it has to be. `Promise.all`
+of twelve connects against one gateway is not a race: they reach Redis through one
+client on one socket and the commands serialise there.
+
+THE FLAKE THAT WAS A PRODUCT DEFECT
+
+The check-then-act run showed one red — the clean-shutdown test, at
+`no connection.ack within 5s`. It passed alone. Under the SHIPPED code it failed
+2 runs in 6, so it was never about check-then-act at all: the new test was flaky
+and about to go into a twenty-run battery.
+
+The message threw the evidence away. `untilAcked` reported only that no ack
+arrived; the socket had been refused half a second earlier. Rewritten to carry
+what it saw, the next failure said:
+
+    no connection.ack within 5s — frames: error (connection_limit_reached);
+    close: 4004
+
+which named the defect. `release` retires a slot by writing a one-millisecond
+tombstone, and the walk's `SET NX` refuses any key that exists — so a claim
+arriving inside that millisecond stepped over the slot. The module's comment said
+so and called it safe: "one slot briefly skipped, never an over-admit". True of one
+slot. **`releaseAll` tombstones ALL FIVE AT ONCE**, and then the walk finds nothing
+free and returns `full`:
+
+    expected { kind: 'full', held: 5 } to deeply equal { kind: 'claimed', slot: 0 }
+
+A client reconnecting to the new instance after a deploy is refused with
+`connection_limit_reached`, whose documented remedy is to close one of the
+connections it already holds. Those went with the old instance. FR-011a exists to
+make a deployment cost one reconnection cycle; this made it cost a refusal with
+impossible advice.
+
+THE FIX IS THAT A TOMBSTONE MEANS FREE
+
+The walk now tries `SET NX` and then, on the same slot, `SET … IFEQ - PX bound`.
+Two commands per contested slot; one for the common case where the first slot is
+free; ten for a genuinely full user, against NFR-PRF-04's one-second budget. The
+race stays inside the command: two connections both finding the tombstone both
+attempt it, the first wins, the second's comparison fails against the winner's id
+and it walks on. No connection id can equal `-`.
+
+`tombstoneMs` IS NOW A NAMED, INJECTABLE NUMBER, and that is what turns the flake
+into a test. At one millisecond the broken walk passes about half the time; at 500
+ms it fails every time. Three unit tests, all deterministic:
+
+    frees a slot it holds, and the slot is reusable at once      slot 0, no sleep
+    claims a slot whose tombstone has NOT expired                tombstoneMs: 500
+    accepts a claim immediately after releaseAll frees all five  tombstoneMs: 500
+
+Removing the second command turns all three red. The first of them USED TO SLEEP
+20 ms and accept any slot, with a comment saying either outcome was correct — the
+sleep is what hid this for two phases, and the clean-shutdown test now reconnects
+with no wait at all for the same reason.
+
+WHAT PHASE 7 MEASURED
+
+    connections.itest.ts    17 passed (17)
+                            8 consecutive green runs after the fix, 4 of 6 before
+    connections.test.ts     16 passed (16)
+    gateway lane            11 files, 192 tests, green, 45.42 s
+    unit lane               11 packages green, gateway 121 tests
+    typecheck 13/13 · lint 0 errors

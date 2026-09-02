@@ -175,10 +175,10 @@ its sockets and assert a slot frees after the bound and not before.
 
 ## Phase 7: The race, and whether it can be observed at all
 
-- [ ] T058 Falsify FR-013 before writing its test: change `claim`'s `SET ... NX` to a plain `SET` in `relay-platform/services/gateway/src/connections.ts`, run the Phase 6 suite, and record in `specs/040-chapter-3-22/baseline.txt` what goes red. **If nothing does, the race is not observable from the application** and T059 changes shape. Chapter 3.20 specified two orderings as requirements and neither was observable; the claim needs falsifying before the test is written.
-- [ ] T059 Write the race test in `relay-platform/services/gateway/src/connections.itest.ts` per T058's result. **`Promise.all` of two connects does not force a race** — both reach Redis through one client on one socket and the commands serialise. Forcing it needs the two instances Phase 6 already built. If T058 found the ordering unobservable, this test asserts the invariant instead — never six held across many concurrent attempts — and the task record says the ordering itself could not be observed.
-- [ ] T060 Record the outcome in `specs/040-chapter-3-22/baseline.txt` either way, including the case where the honest answer is *"`SET NX` makes the race unobservable and the invariant is what carries FR-013"*. Chapter 3.21 wrote that sentence twice and both times it was the right one.
-- [ ] T061 Commit phase 7 in `relay-platform`, naming FR-013. Gates first.
+- [X] T058 Falsify FR-013 before writing its test: change `claim`'s `SET ... NX` to a plain `SET` in `relay-platform/services/gateway/src/connections.ts`, run the Phase 6 suite, and record in `specs/040-chapter-3-22/baseline.txt` what goes red. **If nothing does, the race is not observable from the application** and T059 changes shape. Chapter 3.20 specified two orderings as requirements and neither was observable; the claim needs falsifying before the test is written.
+- [X] T059 Write the race test in `relay-platform/services/gateway/src/connections.itest.ts` per T058's result. **`Promise.all` of two connects does not force a race** — both reach Redis through one client on one socket and the commands serialise. Forcing it needs the two instances Phase 6 already built. If T058 found the ordering unobservable, this test asserts the invariant instead — never six held across many concurrent attempts — and the task record says the ordering itself could not be observed.
+- [X] T060 Record the outcome in `specs/040-chapter-3-22/baseline.txt` either way, including the case where the honest answer is *"`SET NX` makes the race unobservable and the invariant is what carries FR-013"*. Chapter 3.21 wrote that sentence twice and both times it was the right one.
+- [X] T061 Commit phase 7 in `relay-platform`, naming FR-013. Gates first.
 
 ---
 
