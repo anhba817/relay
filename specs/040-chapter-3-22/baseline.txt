@@ -1213,3 +1213,24 @@ THE FILE COUNTS, SETTLED (T089)
     measured, phase 11     14 changed, `git diff` against the 3.21 tag
 
 The prediction was right, and it was right because it was two numbers rather than one.
+
+THE ONE TASK THIS CHAPTER DID NOT CLOSE
+
+T101 is unchecked and stays unchecked. `specs/036-chapter-3-18/reader-protocol.md`
+needs a second person for forty-five minutes, and **no command in this repository
+discharges it** — every check here compares bytes. Nine chapters have now named it.
+It is recorded in `gaps.md` as the item that is not numbered.
+
+GATES, RUN LAST, EVERY EXIT CODE CAPTURED INTO A VARIABLE
+
+    check:fences   0      check:docs     0      check:figures  0
+    check:srs      0      check:errors   0
+    typecheck      0      lint           0      build          0      unit  0
+    check-refs.py  0      sweep.py       0      check-prose.py 0
+
+**`check-prose.py` was red on this run and that is the instrument working.** Chapter
+3.20's *"FR-RTM-09's five-connection cap stays unbuilt"* was still published in both
+locales: phase 9 corrected the sorted-set prescription in that paragraph and left the
+sentence asserting the cap is unbuilt. Both instruments that were deliberately red
+from earlier phases — `check:errors` from phase 3 and this one from phase 1 — are
+green, and each went green by the edit it was written to demand.
