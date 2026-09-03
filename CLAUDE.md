@@ -5,7 +5,7 @@ with an owner and each reference carrying its chapter), then `traceability.md` a
 
     3.22 "the sixth connection, and where the count lives"
                                             2,914 words, 12 fenced, 4 figures
-                                            14 platform files, 37 new tests
+                                            14 platform files, 40 new tests
     17 of 20 battery runs green · mean 228.65 s, stdev 0.64, budget 240 — 11.35 s spare
     45 files, 748 tests · coverage 95 files / 1,213 tests / 448.31 s, exit 0
     connections.ts 100/100/100/100 · 237 fenced files, 39 chapters, 39 translated

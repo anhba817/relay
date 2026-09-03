@@ -98,9 +98,10 @@ optionality is.
     the wiring         main.ts builds it, passes it, and closes it
     the documents      ADR-23 in both homes, both SAD `conn:` rows, the SRS
                        revision row, the error reference, the chapter table
-    37 new tests       17 unit, 20 integration, plus one each in session.itest.ts,
-                       main.test.ts and integrate.itest.ts, and two changed in
-                       codes.test.ts
+    40 new tests       17 in connections.test.ts, 20 in connections.itest.ts, and
+                       one each in session.itest.ts, main.test.ts and
+                       integrate.itest.ts — plus two CHANGED in codes.test.ts,
+                       which are not new and are not counted here
 
 ## The five arguments, and how they came out
 
