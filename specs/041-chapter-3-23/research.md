@@ -287,3 +287,38 @@ routes, each in the phase that adds it, because the failure lands inside that ph
 `gaps.md` item 4 carries
 it — including that analysis pass 6 decided the decorator values and created the second home
 in the same breath, six passes after the first home already existed.
+
+## R18 — The grammar decided: one subject, a discriminator, `revision:{channel_id}`
+
+**Re-counted before deciding, and the re-count did not agree with R13** — because R13 never
+said what a typed point is. Four definitions were tried against its 1 / 3 / 7 / 4 and none
+returns it. the baseline's typed-point entry has the table and the definition now pinned:
+occurrences, on non-comment lines, of the identifiers that name the fabric's payload type.
+Under it the four files read 0 / 2 / 6 / 2 before this phase and 0 / 4 / 12 / 4 after, with
+`revision.ts` a new 7.
+
+The `1` R13 gave `packages/protocol/src/fanout.ts` was a sentence in a comment. That file
+declares `subjectForChannel` and **no payload type at all**, which its own docstring says:
+the fan-out "has always carried a wire frame's payload rather than a shape of its own".
+
+**One subject for both mutations, not two**, following ADR-20 rather than ADR-19. That record
+took `member:{channel_id}` for membership and put the distinction in the payload —
+`change: "added" | "removed"` — for a reason that transfers exactly: an edit and a deletion
+are two things that happen to one message, a receiver subscribes to both or neither, and two
+subjects would double the subscription bookkeeping for a distinction the payload already
+makes.
+
+**The name is `revision:{channel_id}`**, beside `chan:`, `member:` (two shapes), `presence:`
+and `typing:`. Each of the four names what the fabric carries; this one carries revisions of a
+message.
+
+**No `environment` field, and that is a decision.** `membershipFabricSchema` carries one
+because `member:{env}:{user}` names a user, which is unique only within an environment. A
+channel id is a UUID and identifies its tenant transitively — which is what `chan:{channel_id}`
+has always relied on.
+
+**The payload is a `discriminatedUnion` on `kind`**, each arm a `strictObject`. The strictness
+argument is `membershipFabricSchema`'s: a field added on one side of a rolling deploy fails
+loudly on the other instead of being dropped. And the deleted arm reuses
+`messageDeletedPayloadSchema` rather than restating it, so the fabric and the wire frame cannot
+drift — which is why that schema was given a name of its own in Phase 2.

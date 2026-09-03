@@ -278,7 +278,8 @@ def main() -> int:
             print(f"  {p}")
         return 1
     print(f"check-refs: {len(ids)} tasks, ids sequential, "
-          f"{len(FOREIGN)} declared foreign reference(s), no undeclared task ids outside tasks.md")
+          f"{len(FOREIGN)} declared foreign reference(s), no undeclared task ids in any "
+          f".md outside tasks.md")
     PLURAL = {"requirement": "requirements", "success criterion": "success criteria"}
     print("check-refs: " + ", ".join(f"{n} {PLURAL.get(label, label + 's')}"
                                      for label, n in counts.items())

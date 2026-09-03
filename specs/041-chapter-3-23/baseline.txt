@@ -234,3 +234,127 @@ so the error code would have been committed under a heading about subject gramma
 Phase 2 had closed. Eight analysis passes did not catch it because **no check compares a
 task's content with its phase** — the id sequence was legal, the file path was named, the
 requirement was cited. Moved before T018.
+
+THE TYPED POINTS, RE-COUNTED — AND R13'S NUMBER CANNOT BE REPRODUCED (T018a)
+
+T018a said to re-count and carry nothing, because ADR-19's record had said three typed
+points and a re-derivation found eight. The re-count did not agree with R13, and **the
+reason is that R13 never said what a typed point is.** Four definitions were tried against
+its 1 / 3 / 7 / 4 and none of them returns it:
+
+    occurrences of `Message` as a whole word           1  2  4  3
+    LINES mentioning it                                1  2  4  3
+    adding `messageSchema`, `messageCreatedSchema`      2  2  6  3
+    the same, comment lines excluded                    0  2  6  2
+
+**A count with no definition is not a measurement**, and R18 wrote "the numbers are R13's
+unchanged" — a claim about a quantity that could not be re-derived. This is the chapter's own
+recorded failure mode arriving in its own research note: an instrument fitted to the examples
+in front of it. R18 has been corrected in place.
+
+The definition pinned from here on: **occurrences, on non-comment lines, of the identifiers
+that name the fabric's payload type** — `Message`, `messageSchema`, `messageCreatedSchema`,
+`messageDeletedPayloadSchema`, `RevisionFabric`, `revisionFabricSchema`. Comment lines are
+excluded because they were the whole of R13's `1` for `packages/protocol/src/fanout.ts`,
+which declares `subjectForChannel` and **no payload type at all** — the file's own docstring
+says the fan-out "has always carried a wire frame's payload rather than a shape of its own".
+
+    file                                       before  after
+    packages/protocol/src/fanout.ts                 0      0
+    packages/protocol/src/revision.ts               0      7   (new)
+    services/api/src/fanout/publisher.ts            2      4
+    services/gateway/src/fanout.ts                  6     12
+    services/gateway/src/session.ts                 2      4
+    total                                          10     27
+
+`before` is `git show HEAD:` at the start of the phase, not a number carried from research.
+
+THE NEW GRAMMAR DID NOT GO WHERE THE TASK SAID (T018c, T018d)
+
+T018c named `packages/protocol/src/fanout.ts` and T018d named its test. **The repository's
+own practice is one module per grammar** and the grep says so in one line: `presence.ts`,
+`typing.ts` and `membership.ts` each declare their subject function and their fabric schema,
+each with a test file of its own. `fanout.ts` holds `subjectForChannel` and nothing else.
+
+So the fifth grammar is `packages/protocol/src/revision.ts` with
+`packages/protocol/src/revision.test.ts` beside it. Another task premise that named a file
+without checking where its three predecessors live — the fourth of this chapter's tasks to
+be written against a plausible location rather than a measured one.
+
+`REVISION_SUBJECT_PREFIX` AND `isChannelRevisionSubject` WERE NOT IN THE PLAN
+
+The gateway holds **one** Redis subscriber for both `chan:{channel_id}` and
+`revision:{channel_id}`, so `subscriber.on("message")` has to route on the subject. The first
+version wrote `subject.startsWith("revision:")` in `services/gateway/src/fanout.ts` — a
+second place that knows the grammar, which is the thing "a fabric owns its subject grammar"
+forbids. `internal.ts` had already set the precedent with `EVENT_SUBJECT_PREFIX`. The
+predicate now lives in `revision.ts` with a test whose negative cases are the ones that
+matter: `chan:revision:c1` and `revisionc1` are both false.
+
+THE DISCRIMINATOR'S FALSIFICATION IS NOT DEFERRED AFTER ALL (T018i)
+
+T018i's premise: the falsification needs a delivery test to go red against, and the first one
+does not exist until US1. **That stopped being true inside this phase.** T018h added three
+unit tests to `services/gateway/src/session.test.ts` — the two arms and the buffering
+refusal — so the distinction became observable two phases early. Five falsifications ran, all
+red for the stated reason and all restored:
+
+    F1  the subscriber does not route on the prefix        4 of 8 fanout.itest red
+    F2  `subscribe` takes only the message subject         4 of 8 red
+    F3  `unsubscribe` leaves the revision subject open     1 red, in 37 ms
+    F4  `session.ts` stamps `message.created` again        2 session.test red
+    F5  the buffering check removed                        1 session.test red
+
+    publisher.test: two windows instead of one shared      1 red
+    publisher.test: the revision on `chan:` instead        1 red ("expected 'chan:c1'")
+
+**T033a still stands and is not redundant.** F4 falsifies the kind against a stub fanout in
+one process; T033a falsifies it against two connected sockets and a real Redis, which is
+where a shared reference count or a mis-scoped subject would show. A falsification at the
+unit seam does not retire one at the integration seam — chapter 3.21's inert module passed
+1,174 unit tests.
+
+TWO GATES ARE RED ON PURPOSE FROM HERE, AND ONE WAS FIXED INSTEAD (T018j)
+
+    check:errors    RED until T075 (phase 10) — `not_message_author` has no reference
+                    section yet. Chapter 3.22 held the same red from its phase 3 to its 9.
+    check:fences    RED until T088 (phase 11) — twelve fenced files now differ from the
+                    chapters that teach them. The list, so phase 11 re-derives nothing:
+
+        chapter 3.17  services/api/src/db/repository.itest.ts
+        chapter 3.18  services/gateway/src/fanout.ts
+                      services/gateway/src/fanout.itest.ts
+                      services/api/src/fanout/publisher.ts
+                      services/api/src/fanout/publisher.test.ts
+        chapter 3.21  packages/protocol/src/frames.ts
+                      packages/protocol/src/frames.test.ts
+                      packages/protocol/src/index.ts
+                      services/gateway/src/session.test.ts
+        chapter 3.22  packages/protocol/src/codes.ts
+                      packages/protocol/src/codes.test.ts
+                      services/gateway/src/session.ts
+
+    check:docs      was red and is now GREEN. `pnpm -s sync:docs` was scheduled for T076 in
+                    phase 10, which would have left the gate red for eight phases over an
+                    edit made in this one. ADR-24 landed here, so its mirror belongs here.
+                    T076 still runs — phase 10 edits `docs/` again — and it is idempotent.
+
+**A gate held red for eight phases catches nothing during them.** That is chapter 3.17's
+recorded finding about a checker that cries wolf, one level up: the reason to fix a red gate
+in the phase that broke it is not tidiness, it is that a red gate is a blind gate.
+
+check-refs.py WALKS `*.md` ONLY, AND THIS FILE IS `.txt`
+
+Its rule — a task id in any artifact but `tasks.md` is a defect, because it survives a
+renumber attached to an unrelated task — never reaches `baseline.txt`. Every heading here is
+keyed to one, `(T018a)` included, and the checker has printed "no undeclared task ids outside
+tasks.md" the whole time.
+
+The file stays as it is, deliberately: it is a lab notebook, and a record of what was run
+belongs beside the id that ran it. **What was wrong is the sentence the checker printed**,
+which claimed more than it checked, and that is now `no undeclared task ids in any .md
+outside tasks.md`. A checker that overstates its reach is the failure this chapter has hit
+four times; the reach itself is fine.
+
+Found by the rule firing on `research.md` for two citations added in this phase — the same
+two ids, in a `.md` file. The instrument caught the copy it could see.
