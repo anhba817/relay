@@ -193,7 +193,7 @@ by three chapters: a kind that cannot share a payload type cannot share a subjec
 - [X] T054 [US3] Write the other-user-refused test in `relay-platform/services/api/src/messages/messages.itest.ts` (FR-013 (3.23)): an end user who is not the author gets 403 for both routes.
 - [X] T055 [US3] Write the cross-tenant test in `relay-platform/services/api/src/messages/messages.itest.ts` (FR-014 (3.23)): another environment's message is 404 and not 403, so existence does not leak.
 - [X] T056 [US3] Re-check `specs/041-chapter-3-23/gaps.md` item 2 — FR-MOD-03's audit log, widened by this chapter and not built — against what shipped, and add the detail the analysis pass could not have: **the tombstone keeps the author of the message, which is the wrong person.** It says who wrote it, not who removed it.
-- [ ] T057 [US3] Commit phase 7 in `relay-platform`, naming FR-012 (3.23), FR-013 (3.23), FR-013a (3.23), FR-014 (3.23), SC-005 (3.23). Gates first.
+- [X] T057 [US3] Commit phase 7 in `relay-platform`, naming FR-012 (3.23), FR-013 (3.23), FR-013a (3.23), FR-014 (3.23), SC-005 (3.23). Gates first.
 
 ---
 
