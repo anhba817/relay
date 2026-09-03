@@ -857,3 +857,56 @@ pushed, so the tag still points at the wrong number — the amendment lands on `
 where the next reader is.
 
 `check-prose.py` IS GREEN FOR THE FIRST TIME: five claims, none still published.
+
+PHASE 9 — THE WEBHOOK EVENTS. T070's RE-MEASUREMENT
+
+T007 predicted **four** pinned places for adding a type to `OUTBOX_EVENT_TYPES`. Measured
+across Phases 6 and 9: **five, plus a sixth the prediction could not have named.**
+
+    1  event.ts    the OUTBOX_EVENT_TYPES array
+    2  event.ts    outboxEventSchema — two branches, and the file's own comment says a
+                   missing one is a row DESTROYED at the consumer (`message.term()`)
+    3  event.ts    OutboxEvent.data — a third union member
+    4  event.test.ts:144  the exact-set assertion, three names -> five
+    5  event.test.ts:149  toHaveLength(3) -> 5
+    6  event.test.ts       "accepts every type the producer can build" used a TERNARY —
+                           message or membership — so a third shape sent the membership
+                           payload to `message.deleted` and would have reported a schema
+                           failure as though the schema were wrong. Now a lookup keyed by
+                           type, where an unhandled member is a compile error.
+
+Chapter 3.22 predicted two pinned places for its close code and found four. This one
+predicted four and found five and a half. **The pattern is that the prediction counts the
+places that hold the VALUE and misses the places that BRANCH on its shape.**
+
+THE EDIT'S OUTBOX EVENT, AND THE ASYMMETRY WITH THE DELETION'S
+
+`editMessage` writes `message.updated` inside its transaction, and the test that carries
+FR-019 is a count:
+
+    one edit      1 message.updated
+    two edits     2      — FR-021 says the platform does not compare texts, so every edit
+                           is an edit and every one emits
+    a refusal     still 2 — the transaction that would have written it never commits
+    creations     still 1 — the send wrote one, the edits wrote none
+
+**T043's answer for the deletion is the opposite and both are right.** A repeated deletion
+writes NO second event because the row did not change (FR-009); a repeated edit writes one
+every time. Two requirements that look symmetrical and are not, which is why each has its
+own count rather than one shared helper.
+
+`editMessage`'s SELECT GAINED A LEFT JOIN FOR THE EVENT
+
+`MessageCreatedData`'s boundary is that `user_id` does not cross it, so the event needs the
+author's EXTERNAL id. Joined in the read the transaction already does rather than looked up
+afterwards — and `leftJoin`, like every other read of that table, so a senderless row is
+still READ and refused by name (FR-018) instead of looking absent.
+
+T069's NEGATIVE CONTROL IS THE TEST
+
+`seedEndpoint` is parameterised and all three existing call sites pass `["message.created"]`,
+so an endpoint subscribed to creations is the default a forgetful test would get. T069 seeds
+**two** endpoints — one on the two new types, one on creations only — and asserts the
+delivery rows name the first and not the second. FR-WHK-02 spells four separate names rather
+than one `message.*` with a discriminator precisely so that filter exists, and a test with one
+endpoint cannot see it.
