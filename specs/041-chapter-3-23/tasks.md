@@ -253,7 +253,7 @@ by three chapters: a kind that cannot share a payload type cannot share a subjec
 - [X] T086 [P] Mirror `figures.ts` into the `(vi)` route.
 - [X] T087 Register the chapter in `relay-tutorial/lib/tutorial.ts` with `status: "published"` and `translatedIn: ["vi"]`. **Not the sitemap**, which derives every entry from that registry.
 - [X] T088 Run `check:fences` and `check:figures` from `relay-tutorial` with exit codes captured, and expect the fenced-file count to rise from 237 and the figure count from 242.
-- [ ] T089 Commit phase 11 in `relay-tutorial` and `relay-platform`. Gates first, in both.
+- [X] T089 Commit phase 11 in `relay-tutorial` and `relay-platform`. Gates first, in both.
 
 ---
 
