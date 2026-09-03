@@ -211,7 +211,7 @@ by three chapters: a kind that cannot share a payload type cannot share a subjec
 - [X] T061 [US4] Write the repair test in `relay-platform/services/api/src/internal/backfill.itest.ts` (**moved from the gateway's `resume.itest.ts`, which has no database**) (SC-006 (3.23)): after re-reading that range through history, the client's view matches a client that never disconnected.
 - [X] T062 [US4] Correct `relay-platform/services/api/src/internal/backfill.controller.ts:83`'s comment, which promises *"when deletes arrive in Part 4 they get `message.deleted`, and resume will carry that frame instead"*. **Resume does not carry it**, by decision. The comment was written before the decision existed and is now half true; leaving it is how a published sentence stops being true and no checker sees it.
 - [X] T063 [US4] Record the bound in `specs/041-chapter-3-23/baseline.txt` and in the chapter: what Slack does, what Matrix does instead, what IMAP's `MODSEQ` did, and why this platform is already the first shape.
-- [ ] T064 [US4] Commit phase 8 in `relay-platform`, naming FR-016 (3.23), FR-016a (3.23), FR-016b (3.23), SC-006 (3.23), SC-006a (3.23). Gates first.
+- [X] T064 [US4] Commit phase 8 in `relay-platform`, naming FR-016 (3.23), FR-016a (3.23), FR-016b (3.23), SC-006 (3.23), SC-006a (3.23). Gates first.
 
 ---
 
