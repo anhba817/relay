@@ -104,7 +104,7 @@ by three chapters: a kind that cannot share a payload type cannot share a subjec
 - [X] T020 Generate the migration with drizzle-kit and **review the generated SQL against `docs/05-sad.md` §6.1 before applying it**, which is the discipline ADR-16 names: the schema exists twice and the drift is checked rather than assumed away. **The review is not a formality here** — drizzle-kit's snapshot sits at 0007 while the directory sits at 0013, so it generates a colliding number and replays six tables from migrations it cannot see. Hand-write `0014_message_edits.sql`; chapter 3.23's `gaps.md` item 6 owns the tool.
 - [X] T021 Run `relay-platform/services/api/src/db/repository.itest.ts` **and `src/isolation/tenant-scope.itest.ts`** with the nine pinned variables from `specs/041-chapter-3-23/baseline.txt`. The second is the one that executes anything about the new table this phase: it reads `information_schema`, and **it refuses a table it cannot trace to an environment** — `message_edits` is two foreign-key links from one, which the catalogue's one-hop query could not see. **A phase that adds raw SQL must run the suite that executes it** — chapter 3.17 committed two broken tests that typechecked, because a raw `sql` template is just a string.
 - [X] T022 Note in `specs/041-chapter-3-23/baseline.txt` that `prior_text` is `NOT NULL` and what follows from it: a deletion writes no edit-history row, which is why FR-010 (3.23) refuses an edit on a tombstone rather than defining what its history would say.
-- [ ] T023 Commit phase 4 in `relay-platform`. Gates first, and the migration applied.
+- [X] T023 Commit phase 4 in `relay-platform`. Gates first, and the migration applied.
 
 ---
 
