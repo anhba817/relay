@@ -1002,3 +1002,84 @@ AND THE `tail` TRAP CAUGHT ME ONCE, IN THIS PHASE
 `$?` read `tail`. The real exit code is 1. This is the second of the three false
 greens `CLAUDE.md` names, hit while running the gate that was going to be red
 anyway — every exit code above was captured into a variable before being printed.
+
+
+PHASE 10 — THE CHAPTER, AND A FILE THE CHAPTER IS NOT ALLOWED TO FENCE
+
+FENCE EXPOSURE, MEASURED PER LOCALE (T079a)
+
+The task's table counted both locales and said so nowhere, which is why its
+`session.ts` figure is 52. Per locale, in `app/(en)` plus `fences/`:
+
+    services/gateway/src/session.ts             26 fences, 12 excerpts, 14 places
+    vitest.coverage.config.mts                  14 fences,  0 excerpts,  9 places
+    services/gateway/src/main.ts                11 fences,  1 excerpt,  10 places
+    eslint.config.mjs                           10 fences,  2 excerpts,  7 places
+    packages/protocol/src/codes.ts               8 fences,  1 excerpt,   8 places
+    packages/protocol/src/codes.test.ts          5 fences,  0 excerpts,  5 places
+    packages/outsider/src/integrate.itest.ts     4 fences,  0 excerpts,  4 places
+    services/gateway/src/session.itest.ts        3 fences,  3 excerpts,  2 places
+    services/gateway/src/main.test.ts            2 fences,  0 excerpts,  2 places
+    services/gateway/src/presence.itest.ts       1 fence,   0 excerpts,  1 place
+    services/gateway/src/limits.itest.ts         1 fence,   1 excerpt,   1 place
+
+**`session.itest.ts` is excerpt-only, like `limits.itest.ts`** — three fences, all
+excerpts. So this chapter's changes to it are free at the chain and unverified by
+it, which no task had noticed and which doubles chapter 3.21's seventh gaps item
+from one file to two.
+
+A FILE THIS CHAPTER TEACHES AND IS NOT ALLOWED TO FENCE
+
+`eslint.config.mjs` was in the fence list until the chain refused it:
+
+    [APPLY] app/(en)/…/chapter-22/the-sixth-connection/page.mdx:2715
+
+The state that file reaches after every chapter has run is **73 lines**. The
+repository's is 472. `DRIVER_EXEMPT_TESTS` is not in the 73 — the whole list arrives
+from `fences/post-series.md`, which is applied after the last chapter — so a hunk
+anchored on `"services/gateway/src/typing.itest.ts",` matches **zero** times in the
+predecessor state.
+
+**Chapter 3.19 hit this exact wall and wrote the precedent into the appendix**, in
+its own words: *"A chapter teaches this one and cannot fence it, which no entry here
+has had to say before"*, with the same 73-line measurement. No task in this chapter
+mentioned it; the precedent was found by reading the appendix section next to the
+one the chain was complaining about. The change is now an appendix section of its
+own and the chapter shows the lines as an excerpt.
+
+Measured by dumping the chain's own state rather than reasoning about it: a copy of
+`check-fence-chain.mjs` with a `DUMP_PATH` hook, run from `scripts/` — **the first
+copy ran from the scratchpad and reported "no state" for every path**, because
+`APP_ROOT` is derived from the script's own location.
+
+A TITLED FENCE THAT NAMES NO FILE IS A FENCE
+
+    [HEAD] …/page.mdx:1011  the two states, from the logs alone does not exist
+
+A ```text fence titled with a description rather than a path is read as a claim
+about a file. `check-fence-chain.mjs:43` skips exactly two things: a title containing
+`(excerpt)` and one containing `.naive.`. The illustration is now untitled.
+
+WHAT PHASE 10 PRODUCED
+
+    page.mdx (en)          2,914 prose words, 2,773 lines, 12 fences
+    page.mdx (vi)          translated by splitting on the fence regex, so the
+                           fences are byte-identical by construction
+    figures.ts             4 diagrams, mirrored into the (vi) route
+    lib/tutorial.ts        3.22 registered, status published, translatedIn ["vi"]
+    fences/post-series.md  one new section for the lint change
+    docs/07-tutorial-plan.md  the row's title matched to the chapter's
+
+**The word estimate was 2,400 ±400 and the actual is 2,914** — 4% above the top of
+the range, 21% above the point estimate. The basis was chapter 3.21's 436 words per
+argument; this chapter came in at 583. Both chapters made five arguments, so the
+per-argument rate is not stable either: what moved is that three of these five are
+arguments against something already published, and disagreeing costs more words than
+deciding.
+
+GATES
+
+    check:fences   0    237 fenced files, 39 chapters, 39 translated (was 234/38)
+    check:figures  0    242 figures (was 238)
+    check:docs     0
+    tutorial build 0    both routes rendered
