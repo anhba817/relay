@@ -223,7 +223,7 @@ by three chapters: a kind that cannot share a payload type cannot share a subjec
 - [X] T068 Write the event-payload tests in `relay-platform/services/api/src/outbox/event.test.ts` asserting each payload's **exact key set**, which is how that file already tests `channel.member_added`.
 - [X] T069 Write the end-to-end webhook test in `relay-platform/services/api/src/webhooks/deliveries.itest.ts` (SC-011 (3.23)): a subscriber to message events is told about an edit and a deletion. **Pass the new types to `seedEndpoint(eventTypes)` explicitly** — that helper is parameterised and all three existing call sites pass `["message.created"]`, so a test that forgets receives nothing and looks like a delivery failure.
 - [X] T070 Re-measure the pinned places against T007's prediction of four and record both numbers in `specs/041-chapter-3-23/baseline.txt`.
-- [ ] T071 Commit phase 9 in `relay-platform`, naming FR-019 (3.23), FR-020 (3.23), SC-011 (3.23). Gates first.
+- [X] T071 Commit phase 9 in `relay-platform`, naming FR-019 (3.23), FR-020 (3.23), SC-011 (3.23). Gates first.
 
 ---
 
