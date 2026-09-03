@@ -493,3 +493,137 @@ text of a message the caller has already been told does not exist.
 
 It also settles a question US2 would otherwise have to answer: **a deletion is not an edit**,
 in the schema and not only in the wording. The two operations touch different tables.
+
+THE STALE @Accepts SENTENCE HAD THREE COPIES AND THE TASK NAMED ONE (T029a)
+
+T029a pointed at `messages.controller.ts:89`. `grep` for the claim rather than the line
+returns three:
+
+    services/api/src/messages/messages.controller.ts:89
+    services/api/src/messages/messages.itest.ts:161
+    services/api/src/db/repository.ts:3999
+
+All three say `MessagesController` declares no `@Accepts` and the guard falls back to
+`EITHER`. Line 64 of that controller has read `@Accepts("application", "user")` since
+chapter 3.17. The repository's copy is the interesting one: it mixes tenses in one sentence —
+*"declares no `@Accepts` — so the guard falls back to `EITHER` and a user token was accepted
+there"* — present for the decorator, past for the consequence, which is how a sentence rots
+without ever looking wrong.
+
+Corrected to past tense in all three, each naming 3.17 as what changed it. **Nothing compares
+a comment with the decorator it describes**, which is the same shape as the finding CLAUDE.md
+records about a claim that stopped being true when the code moved underneath it: `git diff`
+finds a changed sentence and nothing finds an unchanged one that became false.
+
+PHASE 5 — THE EDIT. NINE FALSIFICATIONS, AND ONE OF THEM CAME BACK GREEN
+
+    F8    `@Accepts("user")` removed from PATCH          red   T024 key-may-not-edit
+    F9    `channelVisibleTo` removed from the service    GREEN — see below
+    F10   `editMessage` ignores the channel in the path  red   message-not-in-channel
+    F11   the history row UPDATEd instead of appended    red   T028
+    F12   the authorship check removed                   red   T036
+    F13   `messageExistsIn` removed from the edits route red   "expected 200 to be 404"
+    T033g `@Accepts("application")` removed from /edits  red   "expected 200 to be 403"
+    T035  `lastActivityAt` set inside `editMessage`      red   T034
+    T033a `session.ts` stamps `message.created` again    red, at the integration seam:
+                                        "saw connection.ack, message.created,
+                                         message.created" — the edit as a second creation
+
+**F9 IS THE ONE WORTH THE PHASE.** Removing the visibility check from
+`messages.service.edit` broke nothing. `editMessage`'s join already carries the
+environment, so a FOREIGN channel refuses either way — and the foreign-versus-missing pair
+test compares two bodies that both read "message not found" whichever check produced them.
+The pair passed while proving nothing.
+
+The case only the predicate answers is **a private channel of this tenant that the caller
+cannot see.** Without it the caller is refused for AUTHORSHIP — a 403 naming a fact about a
+message in a channel they may not read, which is the leak FR-014 exists to forbid. The test
+that makes it observable is now in `messages.itest.ts` and its falsification reads
+`expected 403 to be 404`.
+
+`message_deleted` — A SECOND NEW ERROR CODE, AND THE CONTRACT SAID 404
+
+`contracts/edit-and-delete.md` decided 404 for an edit on a tombstone, in a paragraph that
+called itself the replacement for an open question. **Its argument was false**: *"A 410 on a
+message a caller may not edit would confirm the message exists"* — nobody who may not edit
+it reaches that refusal, because `editMessage` checks authorship BEFORE it looks at the text.
+The only caller who sees the tombstone answer is the author, and the author can read the
+message in history (FR-011).
+
+So a 404 there is **chapter 2.8's defect inside one resource**: that chapter found `POST`
+answering 404 for a channel `GET` answered 200 for and made the two agree — *"one resource
+should not answer two ways depending on the verb."* A `GET` returning the tombstone beside a
+`PATCH` saying it is not there is the same disagreement.
+
+Contract amended, `codes.test.ts` moved 19 -> 20, and `codes.ts` rejects `forbidden`,
+`not_message_author`, `not_found` and a bare 409 in writing. `check:errors` now names two
+codes until T075.
+
+T028a's PREMISE WAS WRONG, AND THE FIX WAS TO DELETE A GATE
+
+T028a said three new routes made `public-surface.itest.ts:30-32` untrue and told this chapter
+to add the sentence to `check-prose.py`. **That sentence is not an inventory of the public
+surface** — it lists what THAT TEST calls, and the new routes are not on its path. It was true
+before this chapter and is true after.
+
+So the `check-prose.py` entry was removed rather than satisfied. A gate failing on a true
+sentence is a checker crying wolf on a healthy tree, which chapter 3.17 records as how a real
+problem hides. The surface's actual inventory is `isolation/targets.ts`, DERIVED from the
+running application, and this chapter's two routes are declared there.
+
+One line was added to the test's comment saying the list is the test's own calls, because a
+task in this chapter read it the other way and a second reader will too.
+
+NO TASK CREATED THE OUTSIDER TEST, AND T090 AUDITS IT
+
+T090 lists `packages/outsider/src/integrate.itest.ts` among *"all eleven files this chapter
+adds tests to"*. **Nothing in the plan added one.** An audit task was scheduled over work no
+task did — the same shape as the missing-falsification finding in Phase 3, one artifact out.
+
+Written in this phase, because CLAUDE.md's rule applies one level up: this file is the only
+instrument that boots the shipped binary, and 3.21's worst defect was a module built,
+awaited and never wired, inert past 1,174 coverage tests. This chapter adds a second Redis
+subject, a second fan-out callback and a second frame kind, and **every in-workspace test of
+that path uses a stub fan-out or the `ws` package this file refuses to import.**
+
+Two things it cost, both worth recording:
+
+    the running image was STALE          `PATCH …/:messageId` answered 404 against the
+                                         compose services until `--build`. `docker compose
+                                         --profile services up -d --wait` reuses the image;
+                                         a route added since the last build is invisible and
+                                         looks exactly like a route that does not exist.
+    the member body was guessed          `{ user: "watcher" }` -> 400.
+                                         `addMembersBodySchema` is `{ user_ids: [...] }`.
+                                         Two earlier tests in that file were written twice
+                                         for the same reason, which is what the file is for.
+
+15 tests, exit 0, against `dist/main.js` in a container.
+
+A FORGED FRAME STOPPED BEING WELL-FORMED, AND A DIRECTION TEST WENT RED FOR THE RIGHT REASON
+
+`session.itest.ts`'s *"refuses every non-inbound type with unknown_frame_type and 4002"*
+built `message.deleted` from the same `Message` object as `message.created`. Phase 2 gave
+that frame a payload with no text, so the forged frame failed the SHAPE check and came back
+`invalid_frame`.
+
+**The test's whole claim is that a WELL-FORMED outbound frame is refused for its DIRECTION.**
+A malformed one is refused a phase earlier and says nothing about direction — so tolerating
+the new code would have left the test asserting something it no longer tested. The forged
+payload is now a real tombstone.
+
+T033 FAILED FIRST ON MEMBERSHIP WEARING A DELIVERY PROBLEM'S MESSAGE
+
+    Error: no the creation; saw connection.ack
+
+Two sockets opened, both authenticated, neither delivered to: `mintToken` mints for any
+identifier, and `editor` and `watcher` were not members of the fixture's channel. The api
+fixture now seeds both, additively, on chapter 3.18's precedent recorded in that same
+function.
+
+AND A CONTROL TEST WAS GREEN BEFORE ITS FIELD EXISTED
+
+*"an unedited message reports no edited_at"* read `rows[0]!["edited_at"] ?? null` and passed
+against a read path that did not carry the column at all — an ABSENT key and a null one are
+the same value through `??`. `toHaveProperty("edited_at", null)` fails until the field is
+really there.

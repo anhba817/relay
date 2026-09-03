@@ -34,20 +34,35 @@ Both live on the channel's message resource, beside the existing send and histor
   refused here** — FR-MOD-02 grants deletion of any message and is silent on editing, and
   silence is not permission. **Not the generic permission code**: no credential grants
   authorship, so that code's published remedy is advice nobody can act on (FR-022).
-- **404** the message is not in a channel this caller can see, does not exist, **or is a
-  tombstone** (FR-010).
+- **403** `message_deleted` — the message is a tombstone (FR-010).
+- **404** the message is not in a channel this caller can see, or does not exist.
 
-**404 for a tombstone, and 410 was the alternative.** 410 says more — *it was here and it is
-gone* — and that is exactly what this api declines to say everywhere else: chapter 2.8 made a
-foreign channel a 404 rather than a 403 so existence does not leak, and chapter 3.15 made a
-private channel a non-member reads a 404 for the same reason. A 410 on a message a caller may
-not edit would confirm the message exists. The deletion route answers 204 for an
-already-deleted message (FR-009) because idempotence is the requirement there; the edit route
-refuses, and refuses in the way the rest of this api refuses.
+**AMENDED DURING PHASE 5. This section said 404 for a tombstone and the argument it gave was
+false.** It read: *"A 410 on a message a caller may not edit would confirm the message
+exists."* Nobody who may not edit the message ever reaches this refusal —
+`repository.editMessage` checks authorship **before** it looks at the text, so a stranger is
+refused with `not_message_author` whether the message is a tombstone or not. The only caller
+who sees the tombstone answer is the author, and the author can read the message in history:
+FR-011 (3.23) keeps deleted messages in their original position.
 
-**This paragraph replaces an open question that was sitting in a contract** — the first draft
-listed 410 and said *"the plan picks one"*, and the plan did not. A contract with a choice
-still in it is not a contract.
+So a 404 here would tell a caller that a message they are looking at does not exist — and
+that is **chapter 2.8's defect, in one resource with two verbs.** That chapter found `POST`
+answering 404 for a channel `GET` answered 200 for, and its fix was to make the two agree:
+*"one resource should not answer two ways depending on the verb."* A `GET` that returns the
+tombstone beside a `PATCH` that says it is not there is the same disagreement.
+
+`message_deleted` is a new error code, which makes two in one chapter — one more than the plan
+expected. `codes.ts` applies that file's own test to it out loud: what a client does on this
+code (stop offering an edit control, re-read history) differs from what it does on
+`not_message_author` (never offer one), and 404, `forbidden` and `not_message_author` were each
+rejected in writing.
+
+**The rejected alternative is still 410**, for the reason the original paragraph gave: it says
+*it was here and it is gone*, which is more than this api says anywhere. 403 with a specific
+code says the same thing to the one caller entitled to hear it and nothing to anybody else.
+
+The deletion route answers 204 for an already-deleted message (FR-009) because idempotence is
+the requirement there; the edit route refuses.
 
 ### Delete
 

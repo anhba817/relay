@@ -32,11 +32,15 @@ CLAIMS: list[tuple[str, str, str]] = [
         "relay-platform/services/api/src/internal/backfill.controller.ts",
         "and resume will carry",  # one line; the sentence wraps in the source
     ),
-    (
-        "the public surface gains three routes",
-        "relay-platform/services/gateway/src/public-surface.itest.ts",
-        "`POST /auth/dev-token`, `POST",
-    ),
+    # REMOVED IN PHASE 5, and the reason is the one this file exists to prevent.
+    # The entry read "the public surface gains three routes" and pointed at
+    # `public-surface.itest.ts`'s list of `POST /v1/channels`, `POST …/members`,
+    # `POST /auth/dev-token`, `POST …/messages` and the socket. That list is what
+    # THAT TEST CALLS, not an inventory of the surface — so the sentence was true
+    # before this chapter and is true after it, and a gate failing on it would have
+    # been a checker crying wolf on a healthy tree. The surface's real inventory is
+    # `services/api/src/isolation/targets.ts`, derived from the running application,
+    # and this chapter's two routes are declared there (T030a, T033h).
     (
         "message_edits is built, not a named absence",
         "relay-platform/services/api/src/db/schema.ts",
