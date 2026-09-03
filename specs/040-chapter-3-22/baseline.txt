@@ -905,3 +905,100 @@ WHAT PHASE 8 MEASURED
     gateway lane            11 files, 195 tests, green, 45.62 s
     unit lane               11 packages green, gateway 121 tests
     typecheck 13/13 · lint 0 errors, 2 warnings (both pre-existing, root)
+
+
+PHASE 9 — THE DOCUMENTS, AND THREE CLAIMS IN THE TASK LIST THAT GREP DISAGREED WITH
+
+`sync-docs.sh` PUBLISHES SEVEN DOCUMENTS, NOT EIGHT
+
+Two task lines said otherwise and one of them was built on it. T071a's reason for
+adding the chapter row was that "`sync-docs.sh` publishes the file", and T073b's
+whole correction to its own first version was that "it publishes all eight docs".
+The script's `DOCS=(...)` list has seven entries and a comment where the eighth
+would be:
+
+    # 07-tutorial-plan.md is deliberately NOT here — see above.
+
+with twelve lines above explaining that a `0[1-6]` range stopped where it stopped
+for a reason nobody had recorded, and that the tutorial plan is the series' own plan
+rather than a published reference.
+
+The row still belongs in the chapter table — it is the series' index and it stopped
+one chapter short — but the reason is not the one the task gave. And T073b's
+argument got STRONGER: `4008` appears in `docs/07-tutorial-plan.md` and nowhere
+else, so quota exhaustion, which EIR-WS-06 names by name, is documented in no
+published document at all.
+
+THE CLOSE-CODE TABLE, MEASURED RATHER THAN ASSERTED
+
+    4001  invalid or expired token      docs/04-srs.md               x1
+    4002  protocol violation            docs/08-error-reference.md   x2
+    4003  banned in this environment    nowhere at all
+    4004  connection limit reached      docs/08-error-reference.md   x1  (this chapter)
+    4008  quota exhausted               docs/07-tutorial-plan.md     x2  (unpublished)
+    4009  server shutdown (drain)       docs/05-sad.md               x1
+
+T073b's text said these have "one mention each in the SRS and the SAD". Four of the
+six are somewhere; `4003` is nowhere; and the reference documents two of six after
+this chapter, having documented one of five before it. `gaps.md` item 1.
+
+`limits.itest.ts` IS FENCED BY CHAPTER 13, NOT CHAPTER 08
+
+T073 said "chapter-08 only, twice, and both are `(excerpt)`". `grep` for the fence
+title returns chapter 13 twice — once per locale — and both ARE excerpts, so the
+conclusion held and the citation did not. The chapter-08 hits are the path appearing
+inside an eslint config fence, which is not a fence title for the file. Third time
+this chapter that a task's premise was inherited from a predecessor's record and
+never re-run; the pattern is now the most common single finding in the chapter.
+
+THE CHECKER CRIED WOLF ON A LINE WRAP, AND IT HAD DONE IT ONCE BEFORE
+
+`check-refs.py` rejected `gaps.md`'s "chapter\n3.21's `gaps.md` item 4" because it
+scanned line by line and its qualifier pattern wanted a literal space. The rule's
+own comment already records the first time this pattern was wrong about a healthy
+tree. Widened to scan the whole document with `re.S` and `\s+`, and tested three
+ways rather than one:
+
+    an unqualified citation                    red    gaps.md:100
+    qualified on one line                      green
+    qualified across a line wrap               green
+
+NO TASK SAID TO RUN `sync:docs`, AND THE GATE CAUGHT IT
+
+`check:docs` went red on four files the moment the canonical documents were edited —
+`content/docs/` is a machine-written mirror and every published document had
+drifted. T075 lists the gate and no task lists the step it prescribes. The gate is
+doing exactly what it exists for; the note is that the phase's task list assumed a
+step it never named.
+
+WHAT PHASE 9 CHANGED
+
+    docs/05-sad.md            ADR-23 declared; BOTH `conn:` rows reconciled (FR-017)
+    docs/06-adr-deep-dives.md ADR-23 deep dive; heading twenty-two -> twenty-three
+    docs/04-srs.md            revision row 1.5, no clause changed
+    docs/07-tutorial-plan.md  the 3.22 row, 21 rows -> 22
+    docs/08-error-reference.md  connection_limit_reached, 17 sections -> 18
+    limits.itest.ts           the port map, +2 ranges and the containment
+    chapter-20 and chapter-21 pages, both locales — three false published claims
+
+Counted after: 23 `### ADR-` in the SAD, 23 `## ADR-` in the deep dives.
+
+GATES
+
+    relay-platform   typecheck 0 · lint 0 (2 pre-existing warnings) · unit 0 · build 0
+    relay-tutorial   build 0 (14.5 s, every MDX page parsed) · check:docs 0 after
+                     sync:docs · check:srs 0 (245 clause rows) · check:figures 0
+                     (238 figures) · check:errors 0 (18 codes, 18 sections)
+                     check:fences 1 — 8 HEAD, unchanged, Phase 10's
+    specs            check-refs 0 · sweep 0
+
+**`check:errors` IS GREEN**, which is T072's whole point: it was deliberately red
+from Phase 3, when `codes.ts` gained a code the reference did not describe.
+
+AND THE `tail` TRAP CAUGHT ME ONCE, IN THIS PHASE
+
+    pnpm -s check:fences 2>&1 | tail -3; echo "exit=$?"   ->  exit=0
+
+`$?` read `tail`. The real exit code is 1. This is the second of the three false
+greens `CLAUDE.md` names, hit while running the gate that was going to be red
+anyway — every exit code above was captured into a variable before being printed.

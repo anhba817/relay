@@ -199,21 +199,28 @@ def main() -> int:
                 )
 
     # Gap references must name their chapter — see the header's point 3.
-    GAP_REF = re.compile(r"(.{0,30}?)`gaps\.md` items? \d")
+    # SCANNED AS ONE DOCUMENT RATHER THAN LINE BY LINE, and `\s+` rather than a
+    # literal space, because the qualifier and the citation can land on either side
+    # of a line wrap. Chapter 3.22 wrote "chapter\n3.21's `gaps.md` item 4" and this
+    # rule called it unqualified — the SECOND time this pattern has cried wolf on a
+    # correctly-qualified reference, which is what the note below records the first
+    # of. A checker that is wrong about a healthy tree is how a real problem hides.
+    GAP_REF = re.compile(r"(.{0,30}?)`gaps\.md` items? \d", re.S)
     # Tolerates markdown emphasis: "**chapter 3.17's** `gaps.md` item 1" is qualified.
     # The first version of this rule did not, and rejected a correctly-qualified
     # reference on its first run — a checker crying wolf is how a real problem hides.
     GAP_QUALIFIED = re.compile(
-        r"(?:chapter |Chapter )3\.\d+'s\*{0,2}\s*$|specs/\d+-chapter-3-\d+/\s*$")
+        r"(?:chapter|Chapter)\s+3\.\d+'s\*{0,2}\s*$|specs/\d+-chapter-3-\d+/\s*$")
     for path in sorted(here.rglob("*.md")):
         rel = path.relative_to(here).as_posix()
-        for n, line in enumerate(path.read_text().split("\n"), 1):
-            for m in GAP_REF.finditer(line):
-                if not GAP_QUALIFIED.search(m.group(1)):
-                    problems.append(
-                        f"{rel}:{n} cites a gaps.md item without naming its chapter — "
-                        f"item numbers are per-feature and collide across ledgers"
-                    )
+        body = path.read_text()
+        for m in GAP_REF.finditer(body):
+            if not GAP_QUALIFIED.search(m.group(1)):
+                n = body.count("\n", 0, m.start()) + 1
+                problems.append(
+                    f"{rel}:{n} cites a gaps.md item without naming its chapter — "
+                    f"item numbers are per-feature and collide across ledgers"
+                )
 
     # Requirements: every FR in spec.md needs a traceability row. The count is printed,
     # never asserted against a literal — see the header.
