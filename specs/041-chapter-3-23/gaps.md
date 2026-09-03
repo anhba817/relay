@@ -123,3 +123,50 @@ a `specs/` ledger.
 **The instrument that could catch it is this chapter's**: `check-prose.py` fails on a superseded
 sentence, and *"Thirty-seven new tests read one at a time"* is one. Adding the fragment costs a
 line and makes the next chapter's inheritance impossible rather than unlikely.
+
+## 6. drizzle-kit's SNAPSHOT IS SIX MIGRATIONS BEHIND THE DIRECTORY — NEW, OPEN
+
+`services/api/migrations/meta/` holds snapshots through `0007_snapshot.json` while the
+directory holds `0013_bot_users.sql`. Migrations 0008 to 0013 were hand-written and no
+snapshot was regenerated, so **every `drizzle-kit generate` from chapter 3.9 onward has
+produced a colliding number and a body that replays six tables and fourteen alters.** This
+chapter's generation came out as `0008_message_edits.sql`, against an existing
+`0008_limit_policy.sql`, and would have failed on `CREATE TABLE "quota_notifications"` had
+anybody applied it.
+
+It caused no damage in four chapters because ADR-16 requires the generated SQL to be reviewed
+before it is applied, and every chapter since 3.9 has hand-written the file instead. **The
+review is the control, and it worked here** — which is also why this is a gap and not a
+defect: the safety net is doing the whole job, and the tool underneath it has been useless
+since 3.9.
+
+Two ways to close it, and they are not equivalent:
+
+- **Regenerate the snapshots** from 0008 forward so `drizzle-kit generate` produces a correct
+  diff again. Reconciles six migrations across four chapters, and the snapshot format is
+  drizzle-kit's, so the work is not reviewable by reading §6.1.
+- **Delete `meta/` and the `drizzle-kit generate` step**, and say in `drizzle.config.ts` that
+  migrations here are hand-written and reviewed against SAD §6.1. That is what the last four
+  chapters have actually done; the config's own comment already calls drizzle-kit's migrator
+  and journal "deliberately unused".
+
+**Owner: whichever chapter next adds a table.** It will run `generate`, get a colliding
+number, and either discover this from scratch or read this item.
+
+## 7. THE TENANCY CATALOGUE'S REACH WAS FIXED; THE GUARD'S COVERAGE WAS NOT — NEW, OPEN
+
+`db/catalogue.ts` now follows foreign-key chains, so `message_edits` classifies as `hop`
+through `messages`. That answers *can this table's rows be traced to one tenant*. It does not
+answer the other half, which feature 030's trigger asks: **a table without an
+`environment_id` has no trigger protecting it from a cross-environment write.**
+
+`members` has been in that position since chapter 2.1 and migration 0011 names it as the
+counter-example in writing. `message_edits` joins it, and the argument for leaving it there is
+narrower than it looks: the table is append-only (FR-004 (3.23)), so there is no update or
+delete for a trigger to refuse. **That argument is a claim about the code, not about the
+schema** — nothing stops a later chapter writing an `UPDATE message_edits`, and the day one
+does, the append-only justification is gone and no test says so.
+
+The cheap instrument: a check that every table classified `hop` is either in a declared
+append-only list or protected, red on an unknown member. **Owner: whichever chapter first
+needs to mutate a `hop` table** — or the retention chapter, which will delete from several.

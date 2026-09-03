@@ -358,3 +358,138 @@ four times; the reach itself is fine.
 
 Found by the rule firing on `research.md` for two citations added in this phase — the same
 two ids, in a `.md` file. The instrument caught the copy it could see.
+
+THE ONE NEW TABLE'S SHAPE WAS NOT THE SHAPE THE SAD PUBLISHED (T019)
+
+`data-model.md:39` says *"Its shape is the SAD's, not this chapter's"* and then gives a shape
+the SAD does not have. T019 repeated it. What `docs/05-sad.md:435` actually publishes:
+
+    CREATE TABLE message_edits (
+        message_id  UUID NOT NULL REFERENCES messages(id),
+        edited_at   TIMESTAMPTZ NOT NULL,
+        prior_text  TEXT NOT NULL,                              -- FR-MSG-07
+        PRIMARY KEY (message_id, edited_at)
+    );
+
+Three columns and a **composite primary key**. Both documents invented a fourth column —
+`id UUID PRIMARY KEY` — and dropped the key. Eleven analysis passes went past it, and the
+reason is the one this chapter keeps writing down: **every checker here compares identifiers,
+and this was a clause.** `sweep.py` verified that the table is named in the plan, the tasks
+and the data model; nothing read the DDL under the name.
+
+Both documents corrected, and the table is built to §6.1.
+
+WHAT THE COMPOSITE KEY COSTS, WHICH THE SAD DOES NOT SAY
+
+`PRIMARY KEY (message_id, edited_at)` means **two edits to one message at the same timestamp
+collide** — a unique violation on the second insert rather than a second history row.
+Postgres timestamps hold microseconds, so this needs two edits inside one microsecond on the
+same message.
+
+Not worked around, and the reason is not that it is unlikely. A surrogate `id` would accept
+both rows and leave the history with two entries claiming the same instant, which is a
+silent wrong answer; the key refuses instead. **A published constraint is a decision until an
+ADR supersedes it** (Constitution VII), and this chapter has no evidence to supersede it
+with — the largest fixture here is five channels.
+
+drizzle-kit GENERATED A MIGRATION THAT WOULD HAVE FAILED, AND T020 IS WHY IT DID NOT (T020)
+
+`pnpm exec drizzle-kit generate --name message_edits` produced
+**`migrations/0008_message_edits.sql`** — a number `0008_limit_policy.sql` has held since
+chapter 3.9 — containing `message_edits` and then six whole `CREATE TABLE`s and fourteen
+`ALTER TABLE`s replayed from migrations 0008 through 0013:
+
+    quota_notifications  read_positions  usage_active_users
+    usage_connections    usage_periods   (+ channels.last_activity_at, members.role,
+                                            users.kind, three environments limits, …)
+
+**Its snapshot sits at 0007 while the directory sits at 0013**, because those six were
+hand-written and nobody regenerated a snapshot. `migrate.ts` keys its ledger on the full
+filename, so the file would have been treated as new and applied — failing on
+`CREATE TABLE "quota_notifications"` and rolling back the whole transaction.
+
+Hand-written as `0014_message_edits.sql` instead, and reviewed against §6.1 line by line —
+identical column for column, the only difference being the named constraint
+`message_edits_message_id_edited_at_pk`, which is both the house pattern
+(`read_positions_channel_id_user_id_pk`) and the name drizzle-kit itself generated.
+
+**Bringing the snapshots forward is not this chapter's work.** Six migrations and four
+chapters would have to be reconciled, and ADR-16 already says generation is a draft and the
+reviewed file is the artifact. `gaps.md` gets it.
+
+THE CATALOGUE REFUSED THE NEW TABLE, IN 4 ms, AND ALL THREE OF ITS REMEDIES WERE WRONG (T021)
+
+    AssertionError: these tables have no path to an environment: message_edits.
+    Add environment_id, add a foreign key to a table that has one, or add it to
+    SPINE in db/catalogue.ts with a reason.
+
+`classifyTables` accepted a path of length **one**: a foreign key landing directly on a table
+carrying `environment_id`. `message_edits` is the first table two links out —
+`message_edits → messages → channels` — and it classified as having no tenant at all.
+
+The three remedies the message named, and why each is wrong here:
+
+    environment_id on the table      the SAD does not publish the column; deviating from a
+                                     published DDL needs an ADR, and there is no evidence
+                                     to supersede it with (Constitution VII)
+    a second foreign key             the same objection, plus a denormalisation
+    SPINE with a reason              the row holds message text. SPINE's own comment says
+                                     an entry should be an edit somebody has to justify,
+                                     and "a table of message text is platform bookkeeping"
+                                     cannot be justified
+
+**So the query was wrong, not the table.** The rule the check states is that every table has
+*a path* back to one environment; the implementation accepted only paths of length one, which
+covered every table that existed. That is this project's most-repeated failure — a pattern
+matching the examples in front of it rather than the set the rule names — arriving in the
+check that CLAUDE.md calls the highest-yield instrument in the repository.
+
+`WITH RECURSIVE` now walks the foreign-key graph and reports **the direct tables the chain
+arrives at**, never the intermediate ones. That keeps `tenant-scope.itest.ts`'s existing
+invariant — every entry in `via` is itself `direct` — literally unchanged:
+
+    tenant paths: 24 base tables — 13 direct, 3 hop, 8 spine
+      hop: members       → channels, users
+      hop: message_edits → channels, users        (through messages)
+      hop: messages      → channels, users
+
+**"This is not a weakening" is a claim, so it was falsified twice against the live database:**
+
+    F7a  a table with no foreign key at all       zz_orphan     red, named in the message
+    F7b  a table whose only chain reaches the     zz_spineward  red, named in the message
+         spine (→ organisations → nothing)
+
+Both dropped afterwards. And the failure message was corrected: it said *"a foreign key to a
+table that has one"*, which is what the query used to mean and is now advice that would send
+the next chapter to denormalise a column it does not need.
+
+TWO TRAPS THIS FILE HAD ALREADY WRITTEN DOWN, AND ONE OF THEM STILL FIRED
+
+`catalogue.ts`'s query carries the note *"(No backticks in here: this is inside a template
+literal.)"*. The new comment block went in with five of them and the parse failed at
+`catalogue.ts(150,11): error TS1005`. Reading a warning is not the same as heeding it — the
+same shape as chapter 3.22's `tail` trap, hit three times by somebody who had just documented
+it.
+
+The second was caught before running: a self-referencing CTE needs `WITH RECURSIVE`, and the
+keyword belongs on the first CTE in the chain even though `base` and `direct` are not
+recursive.
+
+WHAT T021 ACTUALLY MEASURED, WHICH IS NOT WHAT IT SAID
+
+T021 says to run "the suite that executes the new SQL". **Nothing writes to `message_edits`
+until US1** — this phase creates the table and no query touches it. The suites that did
+exercise the new SQL were the migration runner and `tenant-scope.itest.ts`, which reads
+`information_schema` and is the one that refused it. `repository.itest.ts` (30 tests) and
+`packages/test-harness`'s guard suite (17 tests) ran green and proved the FK and the
+tenancy trigger catalogue survived, which is worth having and is not what the task claimed.
+
+`prior_text` IS NOT NULL, AND WHAT FOLLOWS (T022)
+
+A deletion writes **no** edit-history row: a tombstone has no text to preserve, and the
+column will not take a null. That is why FR-010 (3.23) refuses an edit on a tombstone rather
+than defining what its history would say — the alternative is a row whose `prior_text` is the
+text of a message the caller has already been told does not exist.
+
+It also settles a question US2 would otherwise have to answer: **a deletion is not an edit**,
+in the schema and not only in the wording. The two operations touch different tables.

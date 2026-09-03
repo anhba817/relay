@@ -38,10 +38,19 @@ it *"a live reader with no writer"*.
 `docs/05-sad.md:435` gives the DDL and `schema.ts:26` names it as a deliberate absence with
 an arrival date. Its shape is the SAD's, not this chapter's:
 
-    id          UUID PRIMARY KEY
     message_id  UUID NOT NULL → messages(id)
-    prior_text  TEXT NOT NULL        -- FR-MSG-07: what the message said before
     edited_at   TIMESTAMPTZ NOT NULL
+    prior_text  TEXT NOT NULL        -- FR-MSG-07: what the message said before
+    PRIMARY KEY (message_id, edited_at)
+
+**Three columns and a composite key, with no surrogate `id`.** The first draft of this
+section gave it one and said it was quoting the SAD; it was not. See `baseline.txt` —
+the correction, and what the key costs: two edits to one message inside one microsecond
+collide rather than both being kept.
+
+**No `environment_id`, like `messages` itself.** The tenant is reached through
+`message_id → messages → channels`, which is how every read below the boundary already
+scopes (Constitution I).
 
 **Append only.** Nothing updates or deletes a row here; FR-004 says so and a later edit adds
 a row rather than touching one.
