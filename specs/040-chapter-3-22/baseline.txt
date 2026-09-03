@@ -827,3 +827,81 @@ WHAT PHASE 7 MEASURED
     gateway lane            11 files, 192 tests, green, 45.42 s
     unit lane               11 packages green, gateway 121 tests
     typecheck 13/13 · lint 0 errors
+
+
+PHASE 8 — FAILING OPEN, WHERE 18 OF 20 TESTS CANNOT SEE THE DIFFERENCE
+
+The three new tests passed on the first run, so the mechanisms were run.
+
+    I   the fail-open path logs nothing      2 red   both log tests
+    J   the accept line drops cap_enforced   1 red   the two-states test
+    K   a fallback to the local count        1 red   the no-fallback test
+
+**MECHANISM I IS THE CHAPTER'S OWN THESIS, MEASURED.** Delete the
+`connection.cap_unenforced` line and the gateway still fails open, still accepts
+every connection, and still opens six against an unreachable registry — eighteen
+of twenty tests stay green, INCLUDING the one that opens those six. From outside,
+"accepted with the cap unenforced" and "accepted because the user was under it"
+are the same event. Chapter 3.18 found this in the fan-out, where `publish`
+swallows its errors and resolves; here it is the same shape one requirement over.
+Only the log line carries FR-016.
+
+FR-016a NEEDED A POSITIVE STATEMENT, NOT AN ABSENCE
+
+The first design told the two states apart by whether `connection.cap_unenforced`
+appeared. That works for one connection at a time and not for a log: the line
+carried the environment and the user and no connection id, so with several
+connections in flight nothing said WHICH one went unchecked. Two changes:
+`connection.opened` now carries `cap_enforced`, so one line answers the question;
+and both unenforced lines carry `connection_id`, so they join to it.
+
+`cap_enforced` IS ABSENT, NOT `true`, WHEN NO MODULE IS WIRED. Every gateway
+module is an optional `attachSessions` parameter and most fixtures pass none —
+`cap_enforced: true` there would claim a check that never happened.
+
+CONSTITUTION IV, PASSED NON-VACUOUSLY (T066)
+
+Chapter 3.21 recorded that this principle can pass for the wrong reason, so the
+reason is written down. No row is written anywhere in this chapter: the api
+remains the single writer of persisted state and the cap never touches Postgres.
+That much is vacuous — it would be true of a feature that did nothing.
+
+What is not vacuous is the second bullet: *"Nothing in Redis is a source of truth:
+total Redis loss must cause no data loss."* The connection registry is named in
+that bullet's own list of ephemeral state. FR-016's decision to fail open is that
+sentence applied rather than restated — if the registry were authoritative, its
+absence would have to deny service, and refusing every connection while Redis is
+down is exactly the data-loss-shaped outcome the principle forbids.
+
+And mechanism K is what a violation would have looked like. Falling back to
+`registry.connectionsFor(user)` puts the invariant in a second place — the
+per-instance registry — which is the rationale's own words: duplicating invariants
+means testing them twice and breaking them once. Five per instance across four
+gateways is an effective cap of twenty wearing the label five.
+
+THE STACK WENT DOWN BETWEEN PHASES, AND THE FIRST LANE RUN AFTER IT WAS RED
+
+`docker compose ps` returned nothing; every container had exited while the session
+was idle (redis at 2026-09-02T16:59:08Z, about forty minutes after Phase 7's last
+run). Restarted with `RELAY_POSTGRES_PORT=15432 docker compose up -d --wait`.
+
+The first full gateway lane after the restart failed one file:
+
+    FAIL  src/limits.itest.ts > one counter, two services (chapter 3.8)
+    Error: api never became healthy
+    TypeError: Cannot read properties of undefined (reading 'close')
+
+Alone: 5 passed. Re-run of the whole lane: 195 passed. This is chapter 3.20's
+`gaps.md` item 19a — several files each spawn an api, vitest runs them in
+parallel, one api does not answer `/health` in time — with cold containers as a
+plausible aggravator and no evidence either way, because `limits.itest.ts` is one
+of the five files on item 9's list: it pipes its child's output and never reads
+it. The api said why it was unhealthy and nobody was listening. Not attributed to
+this phase.
+
+WHAT PHASE 8 MEASURED
+
+    connections.itest.ts    20 passed (20)      13.59 s
+    gateway lane            11 files, 195 tests, green, 45.62 s
+    unit lane               11 packages green, gateway 121 tests
+    typecheck 13/13 · lint 0 errors, 2 warnings (both pre-existing, root)
