@@ -1,0 +1,170 @@
+BASELINE — chapter 3.23, editing and deleting a message
+
+THE LANE ENVIRONMENT, PINNED WHERE THE TASKS CAN SEE IT (T004)
+
+Nine variables and one compose line. Chapter 3.22 spent two full lane runs learning that
+they apply to `pnpm coverage` as well as `test:integration`, one of them predicted verbatim
+by its own quickstart.
+
+    RELAY_POSTGRES_PORT=15432 docker compose up -d --wait
+
+    DATABASE_URL=postgres://relay:relay@localhost:15432/relay
+    RELAY_REDIS_URL=redis://localhost:6379
+    RELAY_NATS_URL=nats://localhost:4222
+    RELAY_INTERNAL_CREDENTIAL=rk_svc_local_development_credential_0000
+    RELAY_INTERNAL_CREDENTIAL_GATEWAY=rk_svc_local_development_gateway_00000
+    RELAY_WEBHOOK_SECRET_KEY=BpDal75yBZp7Fc2GtGS3D1vh7qOKgCWJkF6/d0XWxBU=
+    RELAY_OUTBOX_RELAY=off
+    RELAY_EVENT_CONSUMER=off
+    RELAY_DELIVERY_RELAY=off
+
+All local development values. Before a timing battery:
+`RELAY_POSTGRES_PORT=15432 docker compose stop api gateway dispatcher`, and nothing else runs
+on the machine — including your own tooling.
+
+VERIFY EVERY EXIT CODE INTO A VARIABLE, NEVER THROUGH A PIPE. `pnpm -s check:x 2>&1 | tail -3;
+echo $?` reads `tail`'s status. This session hit that three times while ANALYSING, on the one
+gate that was red — knowing the hazard is not the same as not doing it.
+
+THE INSTRUMENTS, AND WHAT COPYING THEM COST (T001, T002)
+
+`check-refs.py` and `sweep.py` are per-chapter copies by decision, not by default — chapter
+3.22's `gaps.md` item 8 recorded that for the fourth chapter running, and its one argument is
+that an instrument can be improved mid-chapter without breaking another chapter's record.
+**Both halves of that bargain showed up in the first ten minutes.**
+
+The improving half:
+
+    check-refs.py  every id must be cited by a task that DOES WORK, not by a commit task
+                   -> tested red two ways: "cited only by a commit task", "cited by no task"
+    check-refs.py  the success-criteria pattern gains `[a-z]?`
+                   -> 11 -> 13, and SC-002a and SC-006a were never required to have a
+                      traceability row at all, which is the half that mattered
+    sweep.py       the same hole, in the same field, in the sibling instrument
+                   -> 11 -> 13
+    check-refs.py  the checklist-format message now names the id grammar
+
+The inheriting half, which nothing warned about:
+
+    check-refs.py arrived with **31 stale FOREIGN pairs** — chapter 3.22's task ids,
+    declared foreign in chapter 3.22's records. Carried here they would have masked a real
+    citation of a task id that does not exist in this chapter. Emptied deliberately.
+
+    sweep.py's docstring said "chapter 3.21" — it had been copied 3.21 -> 3.22 with partial
+    re-pointing, and a naive replace of "3.22" would have compounded it.
+
+**A COPY INHERITS STATE AS WELL AS CODE.** That sentence is the cost of the decision, and it
+is not in chapter 3.22's argument for it.
+
+AND ONE ANALYSIS FINDING WAS WRONG (T001b)
+
+Pass 7 reported that a malformed task id like `T033c1` would slip past `check-refs.py` with
+"ids sequential" printed, because the sequence rule reads length-4 ids and the suffix rule
+reads length-5. **The two branches do miss it and the run fails anyway**: `TASK.match` fails
+first, the format problem is appended, and the line `continue`s before the id list is built.
+
+A rule iterating that id list could never see such an id. It was written, tested, found to be
+dead code, and **removed rather than covered** — the ratchet's discipline applied to a
+checker. What was kept is the message.
+
+
+THE FOUR PREMISES, RUN RATHER THAN ASSERTED (T005–T008)
+
+P1 — the history read has no predicate on `messages.text` (T005)
+
+    services/api/src/db/repository.ts:4686   async listMessages
+      its three `.where(` clauses, at +40, +78 and +95 of that function, are the
+      channel-visibility predicate and the sequence bounds. `text` appears once,
+      at +60, as a SELECTED column: `text: messages.text`.
+    services/api/src/messages/messages.service.ts:176   history()
+      returns `repo.listMessages(...)` rows unchanged; the only validation on that
+      route is `ZodValidationPipe(historyQuerySchema)` on the QUERY.
+
+**So a tombstone already crosses the REST history route and always has.** That is what the
+spec's resume decision rests on and what T009 tests before any writer exists.
+
+P2 — the published message payload cannot express a tombstone (T006)
+
+    packages/protocol/src/frames.ts:20                text: z.string()
+    services/api/src/messages/messages.controller.ts:194
+      "`messageSchema.text` is `z.string()`, not nullable, so a tombstone could not
+       be published anyway"
+    services/api/src/internal/backfill.controller.ts:83
+      "A tombstone (FR-MSG-08) is not a creation. When deletes arrive in Part 4 they
+       get `message.deleted`, and resume will carry that frame instead"
+
+Two comments already name the constraint. The second is a promise this chapter keeps by half:
+deletes do get `message.deleted`, and resume does **not** carry it — `check-prose.py` holds
+that sentence.
+
+P3 — the event-type set is a pinned place, and the prediction is four (T007)
+
+    event.ts:55       OUTBOX_EVENT_TYPES = [            the array
+    event.ts:61       type OutboxEventType = …[number]   derived; no edit needed
+    event.ts:188      "Adding a type … now forces a branch here"
+    event.test.ts:144 expect([...OUTBOX_EVENT_TYPES]).toEqual([…])
+    event.test.ts:149 expect(OUTBOX_EVENT_TYPES).toHaveLength(3)
+    event.test.ts:255 for (const type of OUTBOX_EVENT_TYPES)   iterates; no edit needed
+
+Seven mentions, of which **four need an edit**: the array, the branch at :188, the exact-set
+assertion and the count. The two derived ones do not. **Predicted four, re-measured at the
+phase that changes it** — chapter 3.22 predicted two for one close code and found four.
+
+P4 — `message_edits` exists in exactly one place, and it is a note about its absence (T008)
+
+    services/api/src/db/schema.ts:26   "absent, with named arrivals: message_edits (edit
+                                        chapter), emoji/media tables, …"
+    docs/05-sad.md                     1 occurrence — the DDL at :435
+
+No table, no migration, no reference in any query. The absence is dated and this is the date.
+
+
+T009 AND T010 — THE READER PASSED, AND THE FIRST FALSIFICATION DID NOT WORK
+
+    repository.itest.ts  "returns a tombstone in its original position, with the run
+                          unbroken (FR-011 (3.23), SC-003 (3.23))"    1 passed
+
+Green against unchanged code, which is the whole point: the repair path this chapter's resume
+decision rests on already works and nothing had said so.
+
+**THEN THE FALSIFICATION CAME BACK GREEN.** Adding `isNotNull(messages.text)` to the history
+query left the test passing. The reason is not a subtlety:
+
+    listMessages is a TERNARY OVER TWO QUERIES
+      beforeSeq branch   .orderBy(desc(...))   a backward page
+      afterSeq  branch   .orderBy(asc(...))    a forward page
+
+The test called it with no cursor, which takes the backward branch alone, and the filter went
+into the forward one. **A test that covers one of two query branches passes with half its
+subject applied** — chapter 3.17's T047c in a different file, and it took running the
+falsification to see it, not reading the test.
+
+The test now reads both directions in a loop with the direction in every assertion message,
+and both branches turn it red:
+
+    filter the forward branch    1 failed
+    filter the backward branch   1 failed
+
+TRACEABILITY, GENERATED RATHER THAN TYPED (T011)
+
+43 rows — 30 requirements, 13 criteria — every id and every task read out of `spec.md` and
+`tasks.md` by a script. **All 43 have at least one task that does work**, which is the check
+four analysis passes could not perform because the instrument counted commit lines.
+
+AND THE MAP FORCED A DECISION ABOUT ITS OWN CHECKER
+
+`check-refs.py` forbids a task id in any artifact but `tasks.md`, because ids go stale on a
+renumber. **`traceability.md`'s whole subject is task ids.** Exempting it would be weakening a
+rule to fit an artifact — the failure this chapter has caught itself in three times — so the
+prohibition became a **consistency check**: every id the map names must exist in `tasks.md`.
+A renumber now turns it red instead of leaving it quietly wrong.
+
+That rule then caught its own author twice: the improved format message used `T000`/`T000a` as
+examples, and both were parsed as references to tasks that do not exist. They are `Tnnn` now.
+
+PHASE 1 GATES
+
+    check-refs.py   exit 0   142 tasks, ids sequential, 30 requirements, 13 criteria, all traced
+    sweep.py        exit 0   no superseded claim, no placeholder, no count disagreement
+    check-prose.py  exit 1   6 claims, 6 still present — RED ON PURPOSE until their phases
+    typecheck       exit 0

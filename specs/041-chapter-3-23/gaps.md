@@ -1,0 +1,125 @@
+# Chapter 3.23 — gaps
+
+*Every item has an owner. Every reference names its chapter, because the numbers collide.*
+
+**Opened during analysis rather than at close-out**, because two items are findings of the
+analysis passes and writing them down when they are found is the only version of this that has
+ever worked. Chapter 3.22's eight items are carried and re-checked in the close-out phase, not
+copied here.
+
+---
+
+## 1. A CUSTOMER CAN SUBSCRIBE TO AN EVENT TYPE THAT DOES NOT EXIST — NEW, OPEN
+
+FR-WHK-01 says an endpoint subscribes to *"a selected set of event types"*.
+`services/api/src/webhooks/webhooks.service.ts:208`'s `assertEventTypes` checks one thing:
+
+    if (!Array.isArray(types) || types.length === 0)
+
+**Membership is never checked.** A customer who posts `"mesage.updated"` gets a 201, an
+endpoint that will never fire, and no signal that anything is wrong. Delivery filtering is
+`(e.eventTypes as string[]).includes(event.type)` in the repository, so a typo simply never
+matches.
+
+**The gap predates this chapter and this chapter changes its character.** Before it, two of
+FR-WHK-02's eight named types were emitted by nothing, so silence was the expected answer for
+them and a typo was indistinguishable from a correct subscription to an unbuilt event. After
+it, five of eight are emitted, and the remaining silence is more likely to be a mistake than a
+feature.
+
+**Owner: the chapter that adds the sixth event type, or a webhook chapter.** The remedy is one
+`includes` against `OUTBOX_EVENT_TYPES` at create and update time — and **it goes red for any
+customer already storing a bad value**, which is why it is a decision rather than a drive-by.
+
+## 2. FR-MOD-03's AUDIT LOG IS WIDENED BY THIS CHAPTER AND NOT BUILT — NEW, OPEN
+
+FR-MOD-02 permits a tenant API key to delete any message irrespective of author, and this
+chapter builds it. FR-MOD-03 requires *"every moderation action recorded in an immutable audit
+log with actor, action, target, timestamp, and request ID, retained for 1 year"* — P3, and not
+built.
+
+**RE-POINTED BY ANALYSIS PASS 5, AND THE FIRST VERSION BLAMED THE WRONG CLAUSE.** This item
+said the tombstone kept the author of the message rather than the remover, and attributed the
+whole gap to FR-MOD-03's unbuilt audit log. Reading FR-MSG-08 instead of its identifier says
+otherwise: it itemises *"sequence number, author, timestamps, and deletion metadata"*, with
+timestamps listed separately, so **the actor was already this chapter's to record** and it now
+is — FR-006a, in `messages.metadata`, no migration.
+
+**What remains FR-MOD-03's** is narrower and still real: an immutable log with actor, action,
+target, timestamp and request id, retained a year, **across every moderation action** rather
+than one fact on one row. A tombstone that names its remover is not an audit log — it can be
+overwritten by the next writer of that row, it holds no request id, and it says nothing about
+actions that leave no row.
+
+**Owner: FR-MOD-03's chapter.** Named here because this chapter makes the gap reachable and
+because the boundary between the two is now written down rather than assumed.
+
+## 3. A CONCURRENT EDIT AND DELETION OF ONE MESSAGE IS NOT TESTED — NEW, OPEN
+
+Both routes are single-row writes in one transaction, so the last writer wins and neither can
+leave a half-state. What is untested is the interleaving.
+
+**And forcing it is harder than it looks.** Chapter 3.22 spent a phase learning that
+`Promise.all` of two operations against one client does not force a race — the commands
+serialise at the socket — and that seeing one needed two separate clients. The same is true
+here: two requests through one api process share a connection pool.
+
+**Owner: whoever needs it.** The shape a real test would need is recorded so the next person
+does not start from `Promise.all`.
+
+## 4. ONE AUTHORIZATION FACT LIVES IN TWO PLACES AND NOTHING COMPARES THEM — NEW, OPEN
+
+Which credential class may call a route is declared twice:
+
+    messages.controller.ts   @Accepts("user") / @Accepts("application")   the guard reads it
+    isolation/targets.ts     accepts: "user" | "application" | "either"   a declared list
+
+`targets.ts:24` says what its field is for — *"Which credential class the route accepts, and
+therefore which attack applies"* — and the derived-versus-declared comparison in
+`targets.itest.ts` covers the route's **existence**. **Searching for a consumer of
+`target.accepts` outside prose returns nothing**, so the field is a hand-maintained annotation
+that can disagree with the decorator without anything noticing.
+
+**The consequence if it ever does drive the attack**: a route attacked with the wrong
+credential class passes isolation for the wrong reason, which is the failure mode the gauntlet
+exists to prevent. **The consequence today**: a reader of `targets.ts` learns something about
+a route that may not be true.
+
+**This chapter widens it by three**, and it widened it while deciding the decorators — analysis
+pass 6 chose the `@Accepts` values and created a second home for them in the same breath,
+without noticing the first home already existed. Pass 7 found that.
+
+**Owner: whoever adds a route with a non-default accepted set, or an isolation chapter.** The
+remedy is a test that reads the reflector metadata for each controller method and compares it
+with the declared entry — the same shape `targets.itest.ts` already uses for existence, one
+field over. It goes red on any entry that is already wrong, which is why it is a decision.
+
+**The same shape as two recorded defects**: chapter 3.22's `policy.ts`, where a stated
+derivation and a shipped constant disagreed by a factor of three, and `eslint.config.mjs`'s
+two lists whose own comment says *they MUST AGREE* and which nothing compares.
+
+## 5. A CLOSED CHAPTER'S TWO RECORDS DISAGREE, AND THIS CHAPTER ALMOST INHERITED IT — NEW, OPEN
+
+Chapter 3.22's own close-out records give two different numbers for the same thing:
+
+    specs/040-chapter-3-22/baseline.txt      "Thirty-seven new tests read one at a time"
+    specs/040-chapter-3-22/chapter-notes.md  "40 new tests"
+
+Forty is right. That chapter's **last commit before tagging** was *"40 new tests, not 37 — 17
+plus 20 plus three, and two changed"* — it corrected `chapter-notes.md` and left `baseline.txt`
+standing, then tagged and pushed.
+
+**This chapter cited the uncorrected one** in its title-reading task for eleven analysis passes,
+which is exactly the class chapter 3.22 recorded as *its own most common defect*: a premise
+inherited from a predecessor's record and never re-run. Found in pass 11 by taking every number
+this chapter attributes to another chapter and reading it in that chapter's files. Six of seven
+held; this was the seventh.
+
+**Owner: whoever amends a closed chapter's records, or nobody.** The uncomfortable part is that
+`part3-ch22` is tagged and pushed in three repositories, so correcting it edits a published
+record — which the series does do, for published *chapters*, and has no convention for doing to
+a `specs/` ledger.
+
+**The instrument that could catch it is this chapter's**: `check-prose.py` fails on a superseded
+sentence, and *"Thirty-seven new tests read one at a time"* is one. Adding the fragment costs a
+line and makes the next chapter's inheritance impossible rather than unlikely.
