@@ -627,3 +627,106 @@ AND A CONTROL TEST WAS GREEN BEFORE ITS FIELD EXISTED
 against a read path that did not carry the column at all — an ABSENT key and a null one are
 the same value through `??`. `toHaveProperty("edited_at", null)` fails until the field is
 really there.
+
+PHASE 6 — THE DELETION. A PHASE ORDERING DEFECT, AND A FORGED FRAME IN TWO FILES
+
+THE OUTBOX EVENT COULD NOT WAIT FOR PHASE 9 (T039, T043, and T065-T067 moved)
+
+T043's own words: *"asserting 204 twice, one tombstone, and ONE event — the event count is
+the assertion that carries the requirement, because two 204s prove nothing."* The event it
+counts is `message.deleted`, which the task list created in **Phase 9**.
+
+`deleteMessage` writes its outbox row **inside the transaction that writes the tombstone**,
+which ADR-06 requires: publishing after the commit leaves a window where the row changed and
+the event never existed, silently, with nothing to reconcile against. So the envelope cannot
+arrive three phases after the transaction that has to build it, and FR-009's idempotence is
+unassertable without it.
+
+Brought forward: `OUTBOX_EVENT_TYPES` (3 -> 5), both consumer-side union branches, both
+builders, and the pinned places in `event.test.ts`. **Phase 9 keeps the edit's outbox insert,
+the payload key-set tests and the webhook end-to-end.** Its tasks are amended rather than
+deleted, because the work that moved is smaller than the work that stayed.
+
+The pinned places T007 predicted as four, measured: **five**.
+
+    event.ts             OUTBOX_EVENT_TYPES array          the set itself
+    event.ts             outboxEventSchema union            two branches, and the file's
+                                                            own comment says a missing one
+                                                            is a row DESTROYED at the
+                                                            consumer (`message.term()`)
+    event.ts             OutboxEvent.data union             a third member
+    event.test.ts:144    the exact-set assertion            three names -> five
+    event.test.ts:149    toHaveLength(3)                    -> 5
+
+**And a sixth that the prediction could not have named**, because it is not a pinned count:
+`event.test.ts`'s *"accepts every type the producer can build"* used a **ternary** — message
+or membership — and a third shape made its `else` branch hand the membership payload to
+`message.deleted`. It would have reported a schema failure as though the schema were wrong.
+Now a lookup keyed by type, so an unhandled member is a compile error.
+
+A FORGED FRAME STOPPED BEING WELL-FORMED IN TWO FILES, NOT ONE
+
+`session.itest.ts` was found in Phase 5. `isolation.itest.ts` has its own `sample()` builder
+with the same `case "message.created": case "message.updated": case "message.deleted":`
+fall-through, and it failed the same way — `expected 'invalid_frame' to be
+'unknown_frame_type'` — but only when the WHOLE gateway integration suite ran, because that
+file is not one the phase's own tests touch.
+
+**Two copies of one fixture, and the first fix did not find the second.** `grep` for
+`case "message.deleted":` returns exactly two lines and would have. The lesson is the one
+CLAUDE.md already records about applying a finding to both artifacts, in a place where both
+artifacts were test fixtures.
+
+WHAT `alreadyDeleted` IS FOR, AND WHY THE STATUS CANNOT CARRY IT
+
+FR-009 makes the second deletion answer 204 like the first, so the controller cannot tell
+from the status whether to publish — and a second `message.deleted` on every member's socket
+for one deletion is the failure. `deleteMessage` returns the flag; the fan-out is guarded on
+it, which is this route's version of the send path's `!duplicate`.
+
+`deleted_at` IS THE ROW'S, THREADED THROUGH THREE LAYERS
+
+The controller's first draft read `new Date().toISOString()` for the frame. The outbox event
+built inside the transaction quotes the committed instant, so the two would have differed by
+however long the transaction took — and a consumer comparing its webhook against a client's
+frame would see two timestamps for one deletion. `deleteMessage` now returns it and the
+repeated-deletion branch returns the **existing** one, because FR-009 says nothing changes and
+`deleted_at` is the column that would otherwise move.
+
+`text === null` IS THE TOMBSTONE TEST, NOT `deleted_at !== null`
+
+Both are set together by this method, but the lane holds rows where only `text` is null —
+system messages have had no text since chapter 2.1 — and `text` is the column every read path
+already branches on. Such a row reaches the already-deleted branch, which is why that branch
+reports `created_at` rather than inventing a deletion time for a message nobody deleted.
+
+FR-018 APPLIES TO THE DELETION, WHICH IS THE HALF A TENANT KEY CAN REACH
+
+The requirement says *"an edit or deletion"* and the first task list tested only the edit.
+FR-012 lets a key delete anybody's message, so the null-author check goes **before** the
+`userId === undefined` shortcut rather than inside the user branch — otherwise a key would
+delete a row nobody wrote and nothing would have refused it. Both principals are refused, and
+T042a asserts both.
+
+T049a's SIX PRODUCERS, AND THE CHECK THAT CAN FAIL
+
+FR-RTM-05 names six kinds and two had no producer anywhere before this chapter. The test
+reads `session.ts` as text, because nothing else can see a producer: a zod union knows its
+members and not what emits them, and coverage sees a line execute and cannot see a line that
+was never written — which is exactly how chapter 3.21 shipped an inert module.
+
+Falsified: renaming the `message.updated` literal to `forged.updated` prints
+*"message edit has no producer: no `type: "message.updated"` in session.ts"*.
+
+gaps.md ITEM 3, RE-CHECKED AGAINST THE SHIPPED ROUTES
+
+The analysis note said "the last writer wins and neither can leave a half-state". True, and
+the re-check found the two orderings are **not symmetrical**: delete-then-edit refuses with
+`message_deleted`, while edit-then-delete keeps the edit's history row and tombstones the
+message — the correct history either way, because that edit did happen. Neither order can
+leave a message saying something nobody wrote.
+
+What the re-check ADDED is the frame-ordering consequence: `message.updated` and
+`message.deleted` have no ordering guarantee on the wire, so a client applying them in
+arrival order can show the edited text after the tombstone. Repaired by a history re-read —
+the same bound FR-016a already states for a missed revision. Item 3 amended in place.

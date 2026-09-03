@@ -56,8 +56,28 @@ because the boundary between the two is now written down rather than assumed.
 
 ## 3. A CONCURRENT EDIT AND DELETION OF ONE MESSAGE IS NOT TESTED — NEW, OPEN
 
-Both routes are single-row writes in one transaction, so the last writer wins and neither can
-leave a half-state. What is untested is the interleaving.
+**RE-CHECKED AGAINST THE SHIPPED ROUTES IN PHASE 6, and the transaction shape turned
+out to matter more than the analysis note expected.** Both writes read the row and then write
+it inside one transaction, and **neither takes a row lock** — no `FOR UPDATE`, following
+`assertWithinQuota`'s recorded decision to state an overshoot rather than engineer around it.
+The two orderings that follow are not symmetrical:
+
+    delete, then edit    the edit's SELECT sees `text = NULL` and refuses with
+                         `message_deleted` (FR-010). Correct, and tested.
+    edit, then delete    the deletion's SELECT sees the pre-edit row. It writes
+                         `text = NULL` and the tombstone is right, but the EDIT'S HISTORY
+                         ROW holds the text the edit superseded — which is the correct
+                         history either way, because that edit did happen.
+
+**Both interleavings end in a tombstone**, which is what makes this a gap rather than a
+defect: there is no order of the two that leaves a message saying something nobody wrote. The
+untested part is that claim, not the outcome.
+
+The one state worth naming: an edit that commits **between** the deletion's SELECT and its
+UPDATE loses its text with no `message.updated`-then-`message.deleted` ordering guarantee on
+the wire — the two frames can arrive in either order. A client that applies them in arrival
+order can end up showing the edited text after the tombstone. **Repaired by a history
+re-read, which is the same bound FR-016a already states for a missed revision.**
 
 **And forcing it is harder than it looks.** Chapter 3.22 spent a phase learning that
 `Promise.all` of two operations against one client does not force a race — the commands
@@ -65,7 +85,9 @@ serialise at the socket — and that seeing one needed two separate clients. The
 here: two requests through one api process share a connection pool.
 
 **Owner: whoever needs it.** The shape a real test would need is recorded so the next person
-does not start from `Promise.all`.
+does not start from `Promise.all`. The cheap alternative, if the frame ordering ever matters
+to a customer: `SELECT … FOR UPDATE` in both methods, which serialises the pair at the cost
+`assertWithinQuota` declined to pay on the send path.
 
 ## 4. ONE AUTHORIZATION FACT LIVES IN TWO PLACES AND NOTHING COMPARES THEM — NEW, OPEN
 
