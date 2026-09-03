@@ -94,7 +94,7 @@ by three chapters: a kind that cannot share a payload type cannot share a subjec
 - [X] T018g Update the count in the heading `docs/06-adr-deep-dives.md` reads *"Reading the twenty-three together"*. **A count in a heading is a claim** and `sweep.py` compares it.
 - [X] T018h Add the publisher side in `relay-platform/services/api/src/fanout/publisher.ts` and the subscriber side in `relay-platform/services/gateway/src/fanout.ts`, and **stop `relay-platform/services/gateway/src/session.ts:347` deciding the kind at the call site** — the payload carries it now.
 - [X] T018i Record the falsifications in `specs/041-chapter-3-23/baseline.txt`. **The premise that they were deferred to T033a stopped being true inside this phase**: T018h added three unit tests to `session.test.ts`, so the distinction became observable two phases early, and seven falsifications ran red for their stated reason. T033a still stands — it falsifies the kind against two sockets and a real Redis, where a shared reference count or a mis-scoped subject would show, and chapter 3.21's inert module passed 1,174 unit tests. **A falsification can only see the tests that exist** — chapter 3.22 concluded a race was unobservable when the test that could see it had not been written. The first draft put the falsification in this phase and its own text said to run it two phases later.
-- [ ] T018j Commit phase 3 in `relay-platform` and `relay`, naming the new grammar and ADR-24. Gates first.
+- [X] T018j Commit phase 3 in `relay-platform` and `relay`, naming the new grammar and ADR-24. Gates first.
 
 ---
 
