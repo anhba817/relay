@@ -187,12 +187,12 @@ by three chapters: a kind that cannot share a payload type cannot share a subjec
 
 **Independent test**: delete a message authored by one user with a tenant API key that acts as no user, and assert the same tombstone and the same event.
 
-- [ ] T051 [US3] Allow a tenant API key to delete any message in its environment in `relay-platform/services/api/src/messages/messages.controller.ts` (FR-012 (3.23), SC-004 (3.23)), following the credential handling the send path already uses for an application acting as no person (chapter 3.17).
-- [ ] T052 [US3] Write the key-deletes-another's-message test in `relay-platform/services/api/src/messages/messages.itest.ts` (FR-012 (3.23), SC-005 (3.23)): the same tombstone an author's deletion produces.
-- [ ] T053 [US3] Write the key-cannot-edit test in `relay-platform/services/api/src/messages/messages.itest.ts` (FR-013a (3.23)): 403. **FR-MOD-02 grants deletion and is silent on editing, and silence is not permission** — the test is what stops that reading drifting.
-- [ ] T054 [US3] Write the other-user-refused test in `relay-platform/services/api/src/messages/messages.itest.ts` (FR-013 (3.23)): an end user who is not the author gets 403 for both routes.
-- [ ] T055 [US3] Write the cross-tenant test in `relay-platform/services/api/src/messages/messages.itest.ts` (FR-014 (3.23)): another environment's message is 404 and not 403, so existence does not leak.
-- [ ] T056 [US3] Re-check `specs/041-chapter-3-23/gaps.md` item 2 — FR-MOD-03's audit log, widened by this chapter and not built — against what shipped, and add the detail the analysis pass could not have: **the tombstone keeps the author of the message, which is the wrong person.** It says who wrote it, not who removed it.
+- [X] T051 [US3] **ALREADY TRUE AT THE END OF PHASE 6, AND BY DECLARATION RATHER THAN BY CODE.** The DELETE route in `relay-platform/services/api/src/messages/messages.controller.ts` carries no method-level `@Accepts`, so it inherits the class's `("application", "user")` (:64) — which is what FR-012 (3.23) asks for and what `targets.ts`'s `accepts: "either"` records. `deleteMessage` skips the authorship comparison when there is no user. Nothing to add; confirm the entry and the inheritance are both deliberate.
+- [X] T052 [US3] Write the key-deletes-another's-message test in `relay-platform/services/api/src/messages/messages.itest.ts` (FR-012 (3.23), SC-005 (3.23)): the same tombstone an author's deletion produces.
+- [X] T053 [US3] Write the key-cannot-edit test in `relay-platform/services/api/src/messages/messages.itest.ts` (FR-013a (3.23)): 403. **FR-MOD-02 grants deletion and is silent on editing, and silence is not permission** — the test is what stops that reading drifting.
+- [X] T054 [US3] Write the other-user-refused test in `relay-platform/services/api/src/messages/messages.itest.ts` (FR-013 (3.23)): an end user who is not the author gets 403 for both routes.
+- [X] T055 [US3] Write the cross-tenant test in `relay-platform/services/api/src/messages/messages.itest.ts` (FR-014 (3.23)): another environment's message is 404 and not 403, so existence does not leak.
+- [X] T056 [US3] Re-check `specs/041-chapter-3-23/gaps.md` item 2 — FR-MOD-03's audit log, widened by this chapter and not built — against what shipped, and add the detail the analysis pass could not have: **the tombstone keeps the author of the message, which is the wrong person.** It says who wrote it, not who removed it.
 - [ ] T057 [US3] Commit phase 7 in `relay-platform`, naming FR-012 (3.23), FR-013 (3.23), FR-013a (3.23), FR-014 (3.23), SC-005 (3.23). Gates first.
 
 ---

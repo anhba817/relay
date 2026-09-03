@@ -51,6 +51,24 @@ than one fact on one row. A tombstone that names its remover is not an audit log
 overwritten by the next writer of that row, it holds no request id, and it says nothing about
 actions that leave no row.
 
+**RE-CHECKED AGAINST WHAT SHIPPED IN PHASE 7, and there is one more fact than the analysis
+pass could have had.** `metadata.deleted_by` is written and **no read path exposes it.** Not
+the history route, not the listing, not the frame, not the webhook event — the frame and the
+event both carry the message's AUTHOR, deliberately (FR-008), because a client already holds
+that name beside the message and who removed it is a different question.
+
+So the actor is recorded and unreadable. That is the right place to stop for this chapter —
+inventing a read surface for it would be deciding, without a requirement, who may learn that
+an operator removed somebody's message — but it means **the only way to answer "who deleted
+this" today is a database query**, and a test asserts the column rather than an answer anybody
+can get.
+
+The re-check also confirms the sharper half of this item: `metadata` is a single jsonb column
+on a mutable row. A second deletion cannot overwrite `deleted_by` — FR-009 returns before the
+write — but nothing stops a later chapter's writer of that column from replacing the object
+wholesale. `deleteMessage` merges rather than replaces, and there is no test anywhere that a
+future writer must.
+
 **Owner: FR-MOD-03's chapter.** Named here because this chapter makes the gap reachable and
 because the boundary between the two is now written down rather than assumed.
 

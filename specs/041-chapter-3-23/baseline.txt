@@ -730,3 +730,35 @@ What the re-check ADDED is the frame-ordering consequence: `message.updated` and
 `message.deleted` have no ordering guarantee on the wire, so a client applying them in
 arrival order can show the edited text after the tombstone. Repaired by a history re-read —
 the same bound FR-016a already states for a missed revision. Item 3 amended in place.
+
+PHASE 7 — THE MODERATOR, AND MOST OF IT WAS ALREADY TRUE
+
+T051 asked for code that was already there **by declaration rather than by writing any.** The
+DELETE route carries no method-level `@Accepts`, so it inherits the controller's
+`("application", "user")` — which is what FR-012 (3.23) asks for — and `deleteMessage` skips
+the authorship comparison when there is no user. The only artifact that says this is
+deliberate is `targets.ts`'s `accepts: "either"`, because **in the controller an inherited
+declaration and a forgotten one read identically.**
+
+Three tests were genuinely missing and are not restatements of Phase 6's:
+
+    T052   a key's tombstone compared FIELD BY FIELD with an author's, through the read
+           path. Phase 6 asserted "the text is null"; this asserts the two are
+           indistinguishable, which is what SC-004 (3.23) asks and what would tell an
+           outside reader WHICH deletion happened.
+    T054   both verbs in one test, because FR-013 (3.23) is one requirement over two paths
+           that reach the refusal through different methods — and it asserts nothing was
+           written either way.
+    T055   both verbs against a foreign id, byte-identical 404s. A 403 on a foreign id
+           says the id is real, which is chapter 2.8's finding.
+
+gaps.md ITEM 2, RE-CHECKED: THE ACTOR IS RECORDED AND UNREADABLE
+
+`metadata.deleted_by` is written and **no read path exposes it** — not history, not the
+listing, not the frame, not the webhook event. The frame and the event both carry the
+message's AUTHOR, deliberately (FR-008 (3.23)).
+
+That is the right place to stop: inventing a read surface would decide, with no requirement
+asking, who may learn that an operator removed somebody's message. But it means **the only
+way to answer "who deleted this" today is a database query**, and the test asserts the column
+rather than an answer anybody can get. Recorded in the item rather than fixed.
