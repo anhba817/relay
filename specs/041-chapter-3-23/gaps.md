@@ -222,3 +222,45 @@ does, the append-only justification is gone and no test says so.
 The cheap instrument: a check that every table classified `hop` is either in a declared
 append-only list or protected, red on an unknown member. **Owner: whichever chapter first
 needs to mutate a `hop` table** — or the retention chapter, which will delete from several.
+
+## 8. EIR-WS-06 IS STILL MET BY TWO CLOSE CODES OF SIX — CARRIED FROM 3.22, RE-MEASURED, OPEN
+
+Chapter 3.22 left this at *"two of six"* in the error reference. **Re-measured across the
+eight documents rather than carried**, and the count is unchanged — this chapter added no
+close code, so the ratio held while nothing improved:
+
+    4001  invalid or expired token      docs/04-srs.md              x1
+    4002  protocol violation            docs/08-error-reference.md  x2
+    4003  banned in this environment    nowhere at all
+    4004  connection limit reached      docs/08-error-reference.md  x1
+                                        docs/05-sad.md              x1  (new since 3.22)
+                                        docs/07-tutorial-plan.md    x1
+    4008  quota exhausted               docs/07-tutorial-plan.md    x2
+    4009  server shutdown (drain)       docs/05-sad.md              x1
+
+`CLOSE_CODES` has exactly these six, verified against
+`relay-platform/packages/protocol/src/codes.ts` rather than against the predecessor's list.
+
+**One thing did change and it is not an improvement in the clause's terms.** `4004` picked up
+a second and third mention — chapter 3.22's ADR-23 in the SAD, and its row in the tutorial
+plan — so the code a customer is least likely to hit is now the best documented, while
+**quota exhaustion still appears in no published document** (`docs/07-tutorial-plan.md` is
+deliberately excluded from `sync-docs.sh`) and `4003` appears in none of the eight.
+
+The clause names four classes: authentication failure, quota exhaustion, server shutdown,
+protocol violation. The error reference documents **one** of the four. That number has not
+moved since 3.22 measured it.
+
+**Owner: the next chapter that adds or renames a close code**, and the remedy 3.22 wrote is
+still the right one — teach `check-error-codes.mjs` to read `CLOSE_CODES` beside `ERROR_CODES`
+and require each to be named in `docs/08-error-reference.md`, then write the four sections
+that make it green. **Do not close it with a `## 4001` heading**: that script's orphan check
+fails on any `## ` heading that is not a member of `ERROR_CODES`, with no exemption. The
+convention is chapter 3.21's — the close code lives inside the `**Status:**` line of the error
+code that carries it.
+
+**Why this chapter did not close it.** It added two ERROR codes and no close code, so the
+work is entirely somebody else's clause, and the four sections it would owe are about
+authentication, quota, drain and protocol violation — none of which this chapter touched.
+Recorded rather than done, with the numbers re-taken so the next reader inherits a
+measurement rather than a claim.

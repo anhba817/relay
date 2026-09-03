@@ -910,3 +910,72 @@ so an endpoint subscribed to creations is the default a forgetful test would get
 delivery rows name the first and not the second. FR-WHK-02 spells four separate names rather
 than one `message.*` with a discriminator precisely so that filter exists, and a test with one
 endpoint cannot see it.
+
+PHASE 10 — THE DOCUMENTS. FOUR PUBLISHED SENTENCES WERE WRONG, THREE IN ONE DIAGRAM
+
+`check:errors` IS GREEN: 20 codes, 20 sections. Red on purpose since Phase 2, and it named
+TWO codes rather than the one T017a predicted, because `message_deleted` was decided during
+Phase 5's implementation.
+
+SAD §342's DELETION SEQUENCE DIAGRAM, WHICH NO CHECKER READS
+
+    S->>A: DELETE /v1/messages/{id} (API key)     the route is on the channel's message
+                                                   resource, and it accepts the AUTHOR's
+                                                   token too (FR-013 of 3.23)
+    A->>P: INSERT audit_log + outbox event        THERE IS NO audit_log TABLE, in §6.1 or
+                                                   anywhere in the schema
+    the paragraph below it                         counts four consumers of the write path
+                                                   and one of them — "the audit trail
+                                                   (FR-MOD-03)" — is not built
+
+Three wrong things in nine lines of a document that has been published since the first
+draft, and the reason they survived is the one CLAUDE.md records: **no checker reads prose,
+and a `mermaid` block is prose.** `check:figures` validates that figures parse and are
+referenced; it does not know what a table is called.
+
+Amended with an errata block rather than silently rewritten, and the fourth thing added:
+the deletion is idempotent, so nothing downstream in that diagram fires twice.
+
+WHAT `messages.metadata` HOLDS, WHICH §6.1 DOCUMENTED FOR NONE OF THREE TABLES
+
+Three tables in §6.1 declare `metadata JSONB NOT NULL DEFAULT '{}'` and the document said
+what none of them holds. `messages` now has exactly one key and it is written down: the
+shape, that writers merge rather than replace, that no read path exposes it, and where the
+boundary with FR-MOD-03's audit log falls.
+
+THE READ-PATH STATEMENT (FR-017), DERIVED FROM THE CODE AND NOT FROM THE TASK LIST
+
+Four paths, read one at a time before writing them, because FR-017a exists for exactly the
+reason that a list goes stale:
+
+    REST history        returns the tombstone in position, text: null
+    resume backfill     drops it; the client sees a gap it repairs through history
+    channel listing     previews a null text at its own sequence, still one unread
+    truncation flag     computed from ROWS READ, not frames delivered
+
+The fourth is not a per-state answer like the first three, which is why the requirement
+counted three until analysis pass 4 measured a fourth.
+
+**And the edit's equivalent is one line**, which is worth saying because a reader will look
+for a symmetrical table: every read path returns the CURRENT text, because the superseded
+text lives in `message_edits` and only `GET …/:messageId/edits` touches that table.
+
+ADR-07's LOSS ARGUMENT NARROWED A SECOND TIME, DIFFERENTLY
+
+*"The client's cursor + sequence-gap detection recovers anything missed."* Chapter 3.20
+narrowed it once, for a revocation, which has no sequence. A revision narrows it the other
+way: an edit and a deletion **have** a sequence, and it is the sequence of a message the
+client may already hold — so the cursor cannot address them, because a sequence orders
+creations and an edit creates nothing.
+
+The three alternatives are in the amendment with what each costs: Slack (this shape),
+Matrix (an append-only timeline, growing with edits), IMAP CONDSTORE (a `MODSEQ` beside the
+sequence, a second counter every mutation maintains).
+
+EIR-WS-06 RE-MEASURED RATHER THAN CARRIED (T077)
+
+Still two close codes of six in the error reference, and the clause's four classes still
+have **one** documented. The one thing that changed is not an improvement: `4004` picked up
+two more mentions in Phase 3's ADR-23 and the tutorial-plan row, so the code a customer is
+least likely to hit is now the best documented, while quota exhaustion appears in no
+published document and `4003` appears in none of the eight. `gaps.md` item 8.
