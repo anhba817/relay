@@ -177,7 +177,7 @@ by three chapters: a kind that cannot share a payload type cannot share a subjec
 - [X] T049 [US2] Write the deleted-newest-message test in `relay-platform/services/api/src/db/repository.itest.ts`: deleting the newest message leaves the listing's preview reporting a null text at the same sequence, not the message before it.
 - [X] T049b [US2] Re-check `specs/041-chapter-3-23/gaps.md` item 3 — the untested concurrent edit and deletion — **against the shipped routes** rather than against the plan, and correct it if the transaction shape turned out differently. The item was written during analysis from the intended design.
 - [X] T049c [US2] Run the isolation gauntlet — `relay-platform/services/api/src/isolation/gauntlet.itest.ts` — and confirm all three new routes are attacked and hold. **The fixtures already seed a message per tenant** (`fixtures.ts:66`, exposed at `:85`, and its comment says *"A message the member wrote, so a read attack has something to fail to find"*), so a foreign-id attack on a `:messageId` route is real rather than a 404 for the wrong reason. **Nothing to build; confirm it ran.**
-- [ ] T050 [US2] Commit phase 6 in `relay-platform`, naming FR-006 (3.23), FR-007 (3.23), FR-009 (3.23), FR-010 (3.23), FR-011 (3.23), SC-003 (3.23), SC-004 (3.23), SC-007 (3.23). Gates first.
+- [X] T050 [US2] Commit phase 6 in `relay-platform`, naming FR-006 (3.23), FR-007 (3.23), FR-009 (3.23), FR-010 (3.23), FR-011 (3.23), SC-003 (3.23), SC-004 (3.23), SC-007 (3.23). Gates first.
 
 ---
 
