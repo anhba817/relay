@@ -237,7 +237,7 @@ by three chapters: a kind that cannot share a payload type cannot share a subjec
 - [X] T076 Run `pnpm -s sync:docs` from `relay-tutorial` **again** — phase 3 already ran it for ADR-24 rather than leave `check:docs` red for eight phases, and it is idempotent. **No task in chapter 3.22 named this step and `check:docs` caught it** — the mirror is machine-written and drifts the moment a canonical document is edited.
 - [X] T076a Write the read-path statement in `docs/05-sad.md` §6.3 or beside it (FR-017 (3.23), FR-017a (3.23), SC-009 (3.23)), **derived from the code at the moment of writing rather than from this task list**: history passes a tombstone through, resume drops it, the listing reports it with a null text and still counts it, and the backfill's `truncated` flag is computed from rows read rather than frames delivered. **Re-read all four before writing them** — the requirement counted three until analysis pass 4 measured a fourth, and the whole point of FR-017a (3.23) is that a list goes stale and the code does not.
 - [X] T077 Record EIR-WS-06's state in `specs/041-chapter-3-23/gaps.md`, re-measured rather than carried: chapter 3.22 left the error reference documenting two close codes of six.
-- [ ] T078 Commit phase 10 in `relay`, `relay-tutorial`, naming FR-017 (3.23), SC-009 (3.23). Gates first, `pnpm build` before `check:errors` because that gate reads the built `dist`.
+- [X] T078 Commit phase 10 in `relay`, `relay-tutorial`, naming FR-017 (3.23), SC-009 (3.23). Gates first, `pnpm build` before `check:errors` because that gate reads the built `dist`.
 
 ---
 
