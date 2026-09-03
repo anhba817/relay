@@ -164,6 +164,18 @@ a `specs/` ledger.
 sentence, and *"Thirty-seven new tests read one at a time"* is one. Adding the fragment costs a
 line and makes the next chapter's inheritance impossible rather than unlikely.
 
+**CLOSED IN PHASE 8, AND THE CONVENTION IS NOW ON RECORD.** The line was amended in place with
+a bracketed note naming chapter 3.23 as the amender and saying what it said before — not
+silently overwritten. That is the convention this item said did not exist: **a closed ledger's
+factual error is corrected by annotation, so the correction is auditable and the original claim
+is still readable.** A published chapter would take an errata note in its own prose; a `specs/`
+record takes this.
+
+**The other half stands.** `part3-ch22` is tagged and pushed in three repositories, so the tag
+points at a commit whose `baseline.txt` still says thirty-seven. Nothing rewrites history to
+fix that, and nothing should — the amendment lands on `main` after the tag, which is where the
+next reader is.
+
 ## 6. drizzle-kit's SNAPSHOT IS SIX MIGRATIONS BEHIND THE DIRECTORY — NEW, OPEN
 
 `services/api/migrations/meta/` holds snapshots through `0007_snapshot.json` while the

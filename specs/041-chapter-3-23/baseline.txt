@@ -762,3 +762,98 @@ That is the right place to stop: inventing a read surface would decide, with no 
 asking, who may learn that an operator removed somebody's message. But it means **the only
 way to answer "who deleted this" today is a database query**, and the test asserts the column
 rather than an answer anybody can get. Recorded in the item rather than fixed.
+
+PHASE 8 — THE RESUME BOUND. FOUR TESTS COULD NOT BE WRITTEN WHERE THE PLAN PUT THEM
+
+T057a through T061 named `relay-platform/services/gateway/src/resume.itest.ts` and gave a
+reason: *"That file hardcodes `environment_id: "env-1"` and the user `"tuan"` across fourteen
+places, and every test in it only ever READS messages. T058 to T061 edit and delete them."*
+
+**There are no messages in that file to edit.** It boots the gateway against a **stubbed**
+api — `boot(api: Omit<ApiClient, "reportUsage">)` — so `environment_id: "env-1"` and
+`user: "tuan"` are stub RETURN VALUES, not rows. There is no database behind it, by design:
+the gateway has no database (ADR-05) and that suite's subject is the fabric.
+
+T057a was therefore a fixture change to prevent a corruption that cannot happen. It is
+marked done as a no-op with the reason, rather than performed.
+
+**Where the tests belong:** `services/api/src/internal/backfill.itest.ts`, which has a real
+environment, a real repository and real rows, and whose subject is exactly the mapping FR-016
+is about. T058, T059, T059a, T060 and T061 are there. Six tests became seven, and
+`backfill.itest.ts` went from 8 to 14.
+
+**The gateway kept one test**, which is the only half it can answer: it replays what it was
+handed, verbatim, as `message.created` — and emits **no** `message.updated` or
+`message.deleted` during a resume, which is FR-016a's decision showing on the wire.
+
+WHAT THE BACKFILL TURNED OUT TO ALREADY DO
+
+    an edit above the cursor      replays with its CURRENT text, because the backfill reads
+                                  rows rather than replaying a log. No code was written for
+                                  this; the superseded text lives in `message_edits`, which
+                                  no read path on that route touches.
+    a deletion above the cursor   dropped by `toFrame`, which has dropped null-text rows
+                                  since chapter 2.7. **This is the first test with a real
+                                  writer behind that line** — the senderless-row test beside
+                                  it plants its fixture by hand precisely because nothing
+                                  could write one.
+    truncation                    reported as the read found it. A page of BACKFILL_LIMIT+1
+                                  rows with one deleted returns LIMIT-1 frames and still
+                                  says `truncated: true`. The decision is chapter 2.7's and
+                                  the exercise is this chapter's: no writer existed, so the
+                                  combination had never occurred.
+    an edit below the cursor      no frame AND NO GAP. The second half is what makes this
+                                  invisible: sequence numbers above the cursor stay
+                                  contiguous, so the SDK's gap detector — the mechanism every
+                                  other missed frame is repaired by — sees nothing to repair.
+
+THE BOUND, AND WHAT THREE OTHER SYSTEMS DO (T063)
+
+    Slack       no event replay. `conversations.history` returns CURRENT state, and a client
+                that was away re-reads. `message_changed` and `message_deleted` exist only
+                as live events on the socket.
+    Matrix      the other shape: an append-only timeline where a redaction is an event of
+                its own, so a resuming client receives the redaction and applies it. Costs
+                a timeline that grows with edits rather than with messages.
+    IMAP        CONDSTORE/QRESYNC puts a `MODSEQ` beside the sequence, so a client asks
+                "what changed since modseq N" — a second monotonic counter per mailbox,
+                maintained on every mutation.
+
+**This platform is already the first shape**, and FR-016b asks for that to be documented as a
+property of a cursor rather than as a limitation. The cursor is a channel sequence; a sequence
+orders CREATIONS. An edit does not create anything, so there is no sequence at which it
+happened, and a cursor cannot address it. Adding one is Matrix's design or IMAP's, both of
+which add a per-channel counter that every mutation has to maintain.
+
+The user's decision, asked and answered during specification: **"Let's follow Slack."**
+
+TWO PUBLISHED SENTENCES STOPPED BEING TRUE AND BOTH ARE NOW CORRECTED (T062)
+
+    backfill.controller.ts:83   *"When deletes arrive in Part 4 they get `message.deleted`,
+                                and resume will carry that frame instead."* Deletes arrived
+                                in this chapter and resume does NOT carry it. Written before
+                                the decision existed.
+    repository.itest.ts:425     *"FR-MSG-08 … IS NOT IMPLEMENTED"*, present tense, above the
+                                tests that plant a tombstone by hand. This chapter built the
+                                writer.
+
+**The hand-planted fixtures were NOT changed to use the writer**, and that is deliberate: a
+planted fixture and a written one are two different subjects, and this chapter's own
+`deleteMessage` tests assert the two agree column for column. Changing them would have moved
+both halves of the pair and left nothing comparing them — CLAUDE.md's T044 finding, in a new
+place.
+
+CHAPTER 3.22's BASELINE WAS AMENDED, BY ANNOTATION
+
+`specs/040-chapter-3-22/baseline.txt` said *"Thirty-seven new tests read one at a time"* where
+that chapter's `chapter-notes.md` and its own last commit before tagging both said forty. This
+chapter inherited the wrong number and cited it for eleven analysis passes.
+
+Amended in place **with a bracketed note naming this chapter as the amender and quoting what
+it said before**, rather than silently overwritten. That is the convention `gaps.md` item 5
+said did not exist: a closed ledger's factual error is corrected by annotation, so the
+correction is auditable and the original claim is still readable. `part3-ch22` is tagged and
+pushed, so the tag still points at the wrong number — the amendment lands on `main`, which is
+where the next reader is.
+
+`check-prose.py` IS GREEN FOR THE FIRST TIME: five claims, none still published.

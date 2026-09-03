@@ -1196,7 +1196,18 @@ already had the swap-and-restore shape for exactly this.
 
 TITLES READ AGAINST ASSERTIONS (T086)
 
-Thirty-seven new tests read one at a time; three corrected, all in one direction:
+FORTY new tests read one at a time; three corrected, all in one direction:
+
+    [AMENDED BY CHAPTER 3.23. This line said "Thirty-seven" and was wrong: this
+     chapter's own last commit before tagging was "40 new tests, not 37 — 17 plus 20
+     plus three, and two changed", and it corrected `chapter-notes.md` and left this
+     record standing. Chapter 3.23 then inherited the wrong number and cited it for
+     eleven analysis passes, which is the failure mode this chapter recorded as its
+     own most common: a premise taken from a predecessor's record and never re-run.
+     Amended rather than left, because a closed chapter's ledger with a known-wrong
+     number in it is a trap with an owner of nobody. See chapter 3.23's `gaps.md`
+     item 5.]
+
 
     "is a no-op for a slot the connection never held"  ->  "does not throw for …"
     "releases nothing when it holds nothing"           ->  "does not throw when …"

@@ -51,9 +51,16 @@ CLAIMS: list[tuple[str, str, str]] = [
         "relay-platform/services/api/src/db/repository.itest.ts",
         "IS NOT IMPLEMENTED",
     ),
-    # ---- a predecessor's record that contradicts its own sibling -------
+    # ---- a predecessor's record that contradicted its own sibling -----
+    # RESOLVED IN PHASE 8. `specs/040-chapter-3-22/baseline.txt` said "Thirty-seven
+    # new tests read one at a time" where that chapter's own `chapter-notes.md` and
+    # its last commit before tagging both said forty. Amended in place, with a
+    # bracketed note naming this chapter as the amender rather than silently
+    # overwriting a closed record — which is the half chapter 3.23's `gaps.md` item 5
+    # said had no convention. The entry is kept here, commented, so a reader of this
+    # file can see that the claim was checked rather than never listed.
     (
-        "chapter 3.22 corrected this to forty in chapter-notes.md and left it here",
+        "chapter 3.22's own last commit said forty; this record said thirty-seven",
         "specs/040-chapter-3-22/baseline.txt",
         "Thirty-seven new tests read one at a time",
     ),
