@@ -168,3 +168,69 @@ PHASE 1 GATES
     sweep.py        exit 0   no superseded claim, no placeholder, no count disagreement
     check-prose.py  exit 1   6 claims, 6 still present — RED ON PURPOSE until their phases
     typecheck       exit 0
+
+
+PHASE 2 — THE PROTOCOL, AND TWO PINNED-PLACE PREDICTIONS THAT BOTH HELD
+
+`message.deleted` GETS ITS OWN PAYLOAD (T013)
+
+    id, channel, seq, user, deleted_at   and NO text field
+
+`messageSchema` is untouched. Widening its `text` to nullable would make a null legal on a
+CREATION — which the send path deliberately refuses — and would edit a contract published
+since chapter 1.3. **The event that has no message is the one that stops carrying one.**
+
+An empty string was the third option and is worse than both: a client could not tell a
+deleted message from one somebody sent blank, so the platform would be asserting something
+false rather than declining to say it.
+
+`MessageDeleted` is exported beside `Message`, so a producer does not re-declare the shape
+inline and the schema stays the single statement of it.
+
+THE PINNED PLACES, COUNTED BEFORE AND MEASURED AFTER (T014, T017)
+
+    frames.test.ts predicted   1   the `valid` fixture entry at :30
+    frames.test.ts measured    1   plus one mechanical import line
+      NOT moved: toHaveLength(11) at :150 and the inbound-set test at :157 — the union's
+      MEMBERSHIP is unchanged, so both stay green, which is correct and is why analysis
+      pass 3 had to correct the task that named them as pinned places
+
+    codes.test.ts  predicted   1   counted before editing: the file names a total once
+    codes.test.ts  measured    1   toHaveLength(18) -> 19
+
+**Chapter 3.22 predicted two and found four for its close code**, which is why both numbers
+here were counted rather than assumed. Both held.
+
+`not_message_author`, AND WHY NOT `forbidden` (T017a)
+
+`docs/08-error-reference.md`'s entry for the generic 403 rules itself out twice: it calls
+itself *"the generic case: where a more specific code exists … that one is sent instead"*, and
+its client action is *"nothing the client can retry. This is a change of credential or of
+permission."* **Authorship is neither.** No credential grants it and no permission change
+makes a message yours.
+
+One code for both refusals — an end user editing somebody else's message and a tenant key
+editing anybody's have the same cause and the same answer. `codes.ts` had already made this
+argument twice, for `wrong_credential_type` and `wrong_credential_service`; this is the third
+time and the first where the reason is not about credentials at all.
+
+**Left undecided the default was `forbidden`**, because `ProtocolErrorFilter` maps a bare 403
+to it. Analysis pass 3 found the task whose condition nobody had evaluated.
+
+`check:errors` IS RED ON PURPOSE UNTIL PHASE 10 (T017c)
+
+    check-error-codes: these codes have no section in the reference, so their docs_url 404s:
+      not_message_author
+
+**It reads the BUILT `packages/protocol/dist/codes.js`**, so a stale build makes it green for
+the wrong reason — `pnpm build` ran before this reading. Chapter 3.22 held the same
+deliberate red from its Phase 3 to its Phase 9.
+
+AND A TASK WAS IN THE WRONG PHASE
+
+T017a, T017b and T017c were sitting in **Phase 3**, under the fabric heading. Analysis pass
+3 created them and anchored the insert on Phase 3's first task instead of Phase 2's commit,
+so the error code would have been committed under a heading about subject grammars, after
+Phase 2 had closed. Eight analysis passes did not catch it because **no check compares a
+task's content with its phase** — the id sequence was legal, the file path was named, the
+requirement was cited. Moved before T018.
