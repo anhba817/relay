@@ -245,14 +245,14 @@ by three chapters: a kind that cannot share a payload type cannot share a subjec
 
 - [X] T079 Count what the chapter **teaches** and what it must **fence**, as two columns in `specs/041-chapter-3-23/chapter-notes.md`, and never ask either number to do the other's job.
 - [X] T080 Estimate the word count in `specs/041-chapter-3-23/chapter-notes.md` from the number of **arguments**, and say which. Chapter 3.22 estimated 2,400 from five arguments and wrote 2,914, because three of its five argued against something already published. **This chapter argues against nothing**, so the rate should fall — predict it and check.
-- [ ] T081 Write the chapter page at `relay-tutorial/app/(en)/part-3/chapter-23/<slug>/page.mdx`. **MDX is not markdown**: an indented block containing braces is a JSX expression.
-- [ ] T082 [P] Write `relay-tutorial/app/(en)/part-3/chapter-23/<slug>/figures.ts` — the message's life as a state diagram, the three read paths and what each does with a tombstone, and the cursor with its blind side.
+- [X] T081 Write the chapter page at `relay-tutorial/app/(en)/part-3/chapter-23/<slug>/page.mdx`. **MDX is not markdown**: an indented block containing braces is a JSX expression.
+- [X] T082 [P] Write `relay-tutorial/app/(en)/part-3/chapter-23/<slug>/figures.ts` — the message's life as a state diagram, the three read paths and what each does with a tombstone, and the cursor with its blind side.
 - [X] T083 Check the fence exposure of every file this chapter touches and record it per locale in `specs/041-chapter-3-23/baseline.txt`. **A file whose chain lives entirely in the appendix cannot be fenced by a chapter** — chapter 3.22 lost half a phase to that, and chapter 3.19 had written the rule down two chapters earlier.
 - [X] T084 Generate the fences with the predecessor `git rev-parse part3-ch22^{commit}`, **a commit and not the tag**, and **against the working tree rather than `HEAD`** if anything is uncommitted — chapter 3.22 shipped a fence showing a test title the repository no longer had.
-- [ ] T085 Translate the page to `relay-tutorial/app/(vi)/vi/part-3/chapter-23/<slug>/page.mdx` **by splitting on the fence regex**, so the fences are byte-identical by construction rather than by review.
-- [ ] T086 [P] Mirror `figures.ts` into the `(vi)` route.
-- [ ] T087 Register the chapter in `relay-tutorial/lib/tutorial.ts` with `status: "published"` and `translatedIn: ["vi"]`. **Not the sitemap**, which derives every entry from that registry.
-- [ ] T088 Run `check:fences` and `check:figures` from `relay-tutorial` with exit codes captured, and expect the fenced-file count to rise from 237 and the figure count from 242.
+- [X] T085 Translate the page to `relay-tutorial/app/(vi)/vi/part-3/chapter-23/<slug>/page.mdx` **by splitting on the fence regex**, so the fences are byte-identical by construction rather than by review.
+- [X] T086 [P] Mirror `figures.ts` into the `(vi)` route.
+- [X] T087 Register the chapter in `relay-tutorial/lib/tutorial.ts` with `status: "published"` and `translatedIn: ["vi"]`. **Not the sitemap**, which derives every entry from that registry.
+- [X] T088 Run `check:fences` and `check:figures` from `relay-tutorial` with exit codes captured, and expect the fenced-file count to rise from 237 and the figure count from 242.
 - [ ] T089 Commit phase 11 in `relay-tutorial` and `relay-platform`. Gates first, in both.
 
 ---

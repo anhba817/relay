@@ -87,3 +87,59 @@ than 3.22's three of five, so the rate should fall between 3.22's 583 words/argu
     estimate  2,400 - 2,700 words, from six arguments at ~420 each
 
 Recorded before writing so the check is a check.
+
+## WHAT THE CHAPTER ACTUALLY CAME TO
+
+    prose words, en    3,202     predicted 2,400 - 2,700
+    prose words, vi    4,148     Vietnamese runs longer; every chapter's does
+    fenced files         240     predicted "rises from 237" — +3, the new module,
+                                 its test, and the migration
+    figures              254     +8, four per locale
+    page lines, en     4,652
+    page lines, vi     4,661
+
+**THE WORD ESTIMATE WAS 19% TO 33% LOW, AND THE HYPOTHESIS BEHIND IT WAS WRONG.**
+
+The prediction reasoned that this chapter argues against something published in only two of
+its six arguments, where 3.22 did so in three of five, so the per-argument rate should fall
+below 3.22's 583. It did not fall much:
+
+    3.22   five arguments,  2,914 words   583 per argument
+    3.23   six arguments,   3,202 words   534 per argument
+
+**534, not the ~420 predicted.** The "arguing against published material costs more" reading
+holds directionally and is far weaker than the estimate assumed — a 9% drop where the model
+predicted 28%. What the two chapters actually share is a floor of roughly 530 to 580 words per
+argument, whatever the argument is about, and the honest reading is that **an argument costs
+what it costs**: setting up the alternative, saying why it was refused, and showing the
+evidence takes about the same space whether the alternative was somebody else's or nobody's.
+
+The next chapter should estimate at **530 words per argument** and stop adjusting for what the
+argument is against.
+
+## THE EXPECTED FIGURE COUNT WAS STALE BY FOUR
+
+The fence-and-figure task said to expect the figure count to rise from **242**. Measured at `part3-ch22`:
+**246**. The fenced-file baseline in the same sentence — 237 — was right.
+
+Not worth chasing where the four came from; worth recording that **a number carried into a
+task from a predecessor's record was wrong for the fourth time in this chapter**, and that the
+task said "rise from" rather than "be", so it passed anyway. A prediction stated as a direction
+survives a stale baseline; one stated as a value does not.
+
+## THE VIETNAMESE MIRROR HAD TO REUSE THE ENGLISH FENCES, NOT REGENERATE THEM
+
+The first attempt ran the same generator against the tree for both locales and produced three
+`[APPLY]` failures plus a `[MIRROR]` one:
+
+    diff for packages/protocol/src/revision.ts with no earlier fence to amend
+
+**Because the English page had already been written.** The generator asks "does any chapter
+already fence this path?" to decide between a whole-file fence and a diff — and by the time it
+ran for Vietnamese, the answer for `revision.ts` was yes: the English chapter fenced it. So it
+emitted a diff of the file against itself, with nothing to amend.
+
+The fix is what the translation task asked for in the first place — **split on the fence regex and reuse the
+English blocks verbatim** — which makes the mirror byte-identical by construction rather than
+by review. Recorded because the generator is the obvious thing to reach for twice, and the
+second reach is wrong for a reason that only shows up after the first one succeeds.
