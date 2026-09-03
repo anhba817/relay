@@ -207,3 +207,26 @@ per-chapter copy is what makes an instrument free to change mid-chapter — this
 it twice and neither change could have broken another chapter's record. That is a real
 property and it is the only argument the copies have ever had; it is written down here so the
 fifth chapter can weigh it instead of inheriting it.
+
+## THE ONE THAT IS NOT NUMBERED, BECAUSE EIGHT CHAPTERS HAVE NUMBERED IT
+
+`specs/036-chapter-3-18/reader-protocol.md` — forty-five minutes, six questions, a second
+person. Named by chapters 3.14, 3.15, 3.16, 3.17, 3.18, 3.19, 3.20 and 3.21, and closed by
+none of them. **This chapter cannot close it either, and the reason is not scheduling: no
+command in this repository discharges it.** Every check here compares bytes.
+
+What it would have caught in this chapter, had anybody run it:
+
+- **A hand-off that assigned a decision already published.** A reader following the chapter
+  from the previous one would have gone looking for the decision and found it in the SAD.
+- **Three task premises inherited from a predecessor's record.** Each was one `grep` from
+  being right, and each survived fifteen analysis passes because analysis reads the same
+  documents that carried the claim.
+- **The `(excerpt)` hole.** Two files this chapter edits are verified by nothing, and a
+  person following the chapter would notice that the code shown and the code running are
+  not compared anywhere.
+
+**Owner: a person, and the ask is forty-five minutes.** The three most expensive findings in
+this chapter were a document contradicting itself, a comment whose arithmetic did not produce
+its own constant, and a hypothesis eliminated by a test that could not see it. None of the
+three is a byte comparison.

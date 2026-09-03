@@ -1083,3 +1083,133 @@ GATES
     check:figures  0    242 figures (was 238)
     check:docs     0
     tutorial build 0    both routes rendered
+
+
+PHASE 11 — CLOSE-OUT
+
+THE TWENTY-RUN BATTERY: 17 GREEN, MEAN 228.65 s, BUDGET 240 (SC-010 MET)
+
+    green runs      17 of 20
+    mean            228.65 s   over the seventeen
+    stdev            0.64
+    min / max       227.83 / 230.31
+    headroom        11.35 s
+
+    45 files, 748 tests    test-harness 1/17 · api 29/510 · dispatcher 1/16
+                           gateway 11/195 · e2e 3/10
+
+**The mean is chapter 3.21's to two hundredths** — 228.65 against 228.63 — with 21 more
+tests in the lane and one more file. That is the lane costing per SUITE rather than per
+test, exactly as recorded: this chapter added no file that spawns an api, so the spawn count
+is still seven.
+
+THREE FAILURES, AND NONE OF THEM IS THIS CHAPTER'S CODE
+
+    run 1   103.89 s   api      cannot fail a send when the mail server is gone
+    run 11  210.41 s   gateway  sends nothing at all after the signal, until another
+                                signal is sent
+    run 17  103.98 s   api      counts down across successive responses
+
+**A RED RUN IS SHORT, AND THAT IS TURBO RATHER THAN THE TEST.** Runs 1 and 17 stopped at
+about 104 seconds because the api package failed and turbo abandoned the remaining packages
+— the gateway's suite never ran in either. So a red run's duration says where the failure
+was, not how long the lane takes, and the mean above is over the green runs only. Nothing in
+the previous chapters' records says this, and reading a 104-second run as "fast" would be
+the wrong conclusion.
+
+Run 1's mechanism, read rather than assumed: `expected 17 to be +0` from
+`expect(await down.drainOnce()).toBe(0)` in `quotas.itest.ts`. That relay is built with
+`batchSize: 10_000` and drains **every** pending `quota_notifications` row in the database,
+not the environment's — so its return value is however many rows the package's other tests
+had left un-drained at that instant. Cross-test interference inside the api package, in a
+file this chapter does not touch.
+
+Run 11 is `typing.itest.ts`, chapter 3.21's debounce test. Run 17 is a rate-limit
+remaining-count test. Neither file is edited by this chapter.
+
+**17 of 20 IS NOT EVIDENCE OF A HEALTHY LANE, AND 20 OF 20 WOULD NOT HAVE BEEN EITHER.**
+Twenty green rejects a per-run failure rate above 13.91% at 95% confidence and nothing finer.
+The observed rate here is 15%, which is inside chapter 3.20's measured 17.5% across forty
+runs and tells the two apart not at all.
+
+THE CREDENTIAL SCAN (T091), PATTERNS AND HITS
+
+Scanned: the whole chapter diff across all three repositories, 13,840 lines —
+`git diff 0ecb21f` in the platform, `git diff part3-ch21` in the tutorial, and
+`git diff part3-ch21 -- specs docs CLAUDE.md .specify` in the root.
+
+    rk_[A-Za-z0-9_]{8,}                 4    classified below
+    AKIA[0-9A-Z]{16}                    0
+    BEGIN [A-Z ]*PRIVATE KEY            0
+    password                            0
+    secret\s*[:=]                       3    prose: "the gateway holds no signing secret"
+    Bearer [A-Za-z0-9._-]{20,}          0
+    postgres://[^ ]*:[^ @]*@            2    the documented local DSN, port 15432
+    eyJ[A-Za-z0-9_-]{10,}\.             0
+    [A-Za-z0-9+/]{40,}=                 0
+
+The four `rk_` hits are two values, twice each:
+`rk_svc_local_development_credential_0000` and `rk_svc_local_development_gateway_00000` —
+the local service credentials pinned in `quickstart.md`, quoted in this file's lane recipe.
+`RELAY_WEBHOOK_SECRET_KEY=BpDal…` appears twice, same provenance. All local development
+values, all already in the repository before this chapter.
+
+**AND THE FIRST PATTERN I RAN READ ZERO WHERE THE ANSWER WAS FOUR.**
+`rk_[a-z]*_[A-Za-z0-9]{8,}` cannot cross the underscore in `rk_svc_local_development_…`, so
+it matched none of them. That is this project's own recorded failure — a pattern matching
+the examples in front of me rather than the set the rule names — in the one check whose
+whole purpose is to be exhaustive. The widened pattern is what the table above reports.
+
+THE COVERAGE LANE, AND WHAT IT FOUND FIRST
+
+    95 files, 1,213 tests, 448.31 s, exit 0
+    services/gateway/src/connections.ts   100 / 100 / 100 / 100, pinned
+
+The first run was RED, and not for a coverage reason: `expected { kind: 'claimed', slot: 1 }
+to deeply equal { kind: 'claimed', slot: 0 }` in this chapter's own unit test. At the default
+one-millisecond tombstone there are three outcomes and the test pinned one of two:
+
+    the tombstone is still there   `SET NX` fails, `SET IFEQ -` takes it -> slot 0
+    it expired before the walk     `SET NX` succeeds                     -> slot 0
+    it expires BETWEEN the two     both fail, the walk moves on          -> slot 1
+
+The third is a millisecond wide, harmless — a slot skipped, never an over-admit — and the
+assertion had demanded determinism the window cannot give. **Removing that test's 20 ms sleep
+was right and pinning the slot number with it was not**; the two changes arrived together in
+phase 7 and only one of them was justified.
+
+THE RATCHET REMOVED CODE FOR THE FOURTH TIME (T087, T088)
+
+`connections.ts` first measured **96.15 / 82.60 / 100 / 97.67** with four arms uncovered.
+Three came out rather than getting tests:
+
+    two `failable` wrappers in the walk    the second "could not ask" arm needs Redis to
+                                           die BETWEEN two commands — merged into one
+    `renew` re-wrapping the walk's         `full` and `unenforced` mean the same there as
+    outcomes                               here — `return again`, and `full` now carries
+                                           `held` for the caller's log line
+    `instanceof Error ? … : String(…)`     `presence.ts:241` uses `String` alone
+
+The fourth was a real gap and got a real test: the `url` default parameter **and** the `??`
+inside it, neither reachable while the lane sets `RELAY_REDIS_URL`. `codes.test.ts:128`
+already had the swap-and-restore shape for exactly this.
+
+TITLES READ AGAINST ASSERTIONS (T086)
+
+Thirty-seven new tests read one at a time; three corrected, all in one direction:
+
+    "is a no-op for a slot the connection never held"  ->  "does not throw for …"
+    "releases nothing when it holds nothing"           ->  "does not throw when …"
+    "closes every module it builds (T042b (3.22))"     ->  "… (chapter 3.22)"
+
+The first two describe the KEYS while `resolves.toBeUndefined()` describes the PROMISE. The
+stronger property is not observable through the module's own surface — a claim walks from
+slot 0, so whatever an unconditional release did to slot 3 cannot be seen from there. The
+third carried a task id into a test title, where it would outlive the task.
+
+THE FILE COUNTS, SETTLED (T089)
+
+    predicted, phase 10    10 taught · 11 fenced · 13 changed (14 after the pin)
+    measured, phase 11     14 changed, `git diff` against the 3.21 tag
+
+The prediction was right, and it was right because it was two numbers rather than one.
