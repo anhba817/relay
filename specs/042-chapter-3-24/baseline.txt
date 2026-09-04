@@ -1362,3 +1362,46 @@ that writes its reference section — so the pattern was known and this instance
 formats `final[n]` and `disk[n]` at `n = -1` when the two lengths differ, so a length mismatch
 prints as a content mismatch at "line 0" with nothing useful on either side. Not this chapter's
 file to fix; worth `gaps.md` at T085.
+
+## PHASE 2 — THE SHAPE
+
+    15 passed (15)   packages/protocol/src/attachments.test.ts   113 ms
+
+`attachments.ts` exports the five names `contracts/attachments.md` publishes, plus
+`refineTextAndAttachments` for T009a's pair rule. Verified reachable from a consumer by
+requiring the built barrel rather than by reading the export line:
+
+    attachmentSchema object   MAX_ATTACHMENTS 10   ATTACHMENT_URL_MAX 2048
+    ATTACHMENT_SCHEMES ["http:","https:"]   refineTextAndAttachments function
+
+**T011's falsification turned THREE tests red, not two, and the third is the probe's fault.**
+Replacing the scheme rule with a bare `z.url()`:
+
+    × refuses javascript:, data:, file: and vbscript:      expected — the four R7 measured
+    × refuses ftp: and a scheme-relative url               expected
+    × accepts a url at exactly the bound and refuses one   NOT the scheme rule
+
+The third went red because the probe replaced the whole chain, `.min(1).max(2048)` included, so
+the length bound went with it. The falsification still proves what it was written to prove —
+the first failure names `javascript:alert(1)` — but the probe was coarser than the claim, and a
+falsification that breaks more than one thing cannot say which one the test was watching.
+
+**The compiler earned its place twice in this phase.**
+
+`refineTextAndAttachments` first took `{ text?: string | null; attachments?: readonly unknown[]
+| null }` and would have rejected both of its callers. This package compiles with
+`exactOptionalPropertyTypes`, under which `attachments?: T[]` means "absent or a T[]" and
+refuses a caller whose own type is `T[] | undefined` — which is what both send schemas infer.
+The error named the incompatibility before either caller existed:
+
+    Type 'undefined' is not assignable to type 'readonly unknown[] | null'
+
+And the scheme rule uses `new URL(...).protocol` rather than a prefix match, because a prefix
+match's behaviour depends on how it is written — `https:/example.test` and `httpsx://…` both
+slip past a naive `startsWith("https:")` — and the parser already knows what a scheme is.
+
+The media arm parses its shape before refusing, and that is load-bearing rather than tidy: the
+discriminator has to MATCH for zod to run the arm's own refinement instead of answering with
+`invalid_union_discriminator`. `attachments.test.ts` pins both the message and the absence of
+that code, because those two assertions are the only thing that tells a two-arm union from a
+one-arm one.
