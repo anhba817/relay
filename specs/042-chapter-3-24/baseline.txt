@@ -1621,3 +1621,54 @@ port collision whose victim is whichever file runs when the previous child has n
 present before this chapter and unrelated to attachments. My "decisive" was the same error
 `CLAUDE.md` warns about in its second paragraph, committed against n=1 per arm while quoting the
 rule about confidence intervals in the same session.
+
+## PHASE 4 — THE WRITER
+
+    53 passed (53)   services/api/src/db/repository.itest.ts
+    51 passed (51)   packages/protocol  (frames + attachments)
+    22 passed (22)   services/gateway/src/session.itest.ts
+     3 passed        the three `field` assertions, first try
+
+### THE PAIR RULE HAD TO GO ON A THIRD SCHEMA, AND THE MEASUREMENT SAID SO
+
+T009a put `refineTextAndAttachments` in `attachments.ts` and T017b/T020 applied it to
+`internalSendRequestSchema` and `sendMessageBodySchema`. `messageSendSchema` — the socket
+frame — did not get it, and FR-019b was still met: the frame parsed, the api refused, the
+client got `invalid_request`. **The rule worked and the LAYER was wrong.** Measured:
+
+    { text: "", attachments: [] }     invalid_request    refused by the api
+    eleven attachments                invalid_frame      refused by the gateway
+
+Two rules about one payload, refused at two layers under two codes, for no reason a caller
+could discover — and the ten-item bound is on `messageSendSchema` precisely so the gateway
+answers it. The refinement now sits on that payload too, so both answer `invalid_frame`.
+
+**Pass 16's rule needs one word changed.** It said every rule inside the shared schema is on
+both doors and every rule added at a controller is on one. This rule was in the shared MODULE
+and applied per-schema, so it reached two of three doors — a third state the rule did not name:
+shared definition, per-caller application, and a caller missed.
+
+### AND THE `field` ASSERTIONS PASSED FIRST TRY, INCLUDING THE NESTED ONE
+
+    neither text nor attachments   field = text
+    eleven attachments             field = attachments
+    a bad kind at index 3          field = attachments.3.kind
+
+The third is the one worth having. `attachments` alone tells a caller with ten links to check
+all ten; the joined path names the one that failed. It works because the api's pipe joins
+zod's `path` array with dots and zod carries the index through a nested array — neither of
+which anybody had verified for a nested case before this.
+
+### TWO ORDERING FACTS THE TASKS DID NOT CARRY
+
+**T023 and T022c were written against read paths phase 5 widens.** Both assert "the round
+trip" and "comes back from history", and `listMessages` returns phase 3's `attachments: []`
+placeholder until T028. Asserting through it in phase 4 fails for the NEXT phase's reason.
+Both now read the column, with the reason at the assertion and a pointer to where the claim
+moves — T029 and T030. It is pass 1's finding in a new place: a test cannot be written where
+the plan put it when the plan put it before the thing it reads.
+
+**And the api child runs from `dist`.** T022c failed with `attachments` NULL in the column
+until `pnpm build` ran — the threading was correct and the running api was three tasks old.
+Chapter 3.23 wrote "`--build` IS NOT OPTIONAL" about compose images and this is the same trap
+through a different door: `startApi()` spawns `services/api/dist/main.js`.
