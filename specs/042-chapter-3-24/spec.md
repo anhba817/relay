@@ -111,6 +111,16 @@ route returns the tombstone with an empty attachment list.
 2. **Given** that same deletion, **When** a connected member receives the deletion event,
    **Then** the event carries no attachment data, for the reason it carries no text.
 
+### What ships first
+
+**The MVP is User Story 1**: a message carries a picture somebody else is hosting, and everyone
+watching sees it. **Two of the three stories are P1 and only one is in the MVP**, so finishing
+it leaves a P1 story unfinished, and that is worth saying rather than inferring from a phase
+list. US2 is P1 because its rules land with the shape — the 10-item bound is enforced at the
+send schema from the moment the field exists, not at the phase named after it — while what US2
+adds on top is the refusals, their bodies, and the `media_id` code. So the MVP is not a build
+that accepts unbounded lists; it is one whose refusals are not yet asserted.
+
 ### Edge Cases
 
 - **A URL that is not a URL.** A caller sends `javascript:alert(1)` or a `data:` URI as an

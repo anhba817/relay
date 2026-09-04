@@ -886,3 +886,62 @@ Clean negatives, three of them verified for the first time rather than asserted:
     ports              15432 Postgres, 6379 Redis, 4222 NATS, 4000/4001 api and gateway.
 
     114 tasks     27 requirements     6 criteria     0 untraced     6 instruments
+
+## Analysis pass 14 — auditing the artifacts that are written to, not reasoned over
+
+Z1  HIGH     `checklists/requirements.md` is `/speckit-implement`'s gate — it halts on an open
+             box — and it had not been re-read since it was written, when the spec held
+             twenty-four requirements against today's 27. Its most specific claim, an
+             enumeration of the implementation details the spec names on purpose, said THREE:
+
+                 declared then and now    messages.attachments
+                                          packages/protocol/src/frames.ts:14
+                                          docs/05-sad.md:608
+                 present, undeclared      docs/05-sad.md:342      wrong on day one
+                 arrived in later passes  data-model.md (x2), message.ack,
+                                          message.created, users.avatar_url
+
+             Eight now, in three classes, all enumerated. Two boxes got a reading instead of a
+             tick: "written for non-technical stakeholders" is checked in the sense this
+             project means it, and "success criteria are technology-agnostic" is checked with
+             SC-003's six read shapes and SC-004's `http`/`https` named as the strain — both
+             stay, because "all read paths" could be satisfied by whichever paths somebody
+             remembered, which is the failure SC-003 exists to prevent.
+
+Z2  MEDIUM   Two P1 stories and an MVP of one, with the spec silent on which. Added "What ships
+             first": the MVP is US1, finishing it leaves a P1 story unfinished, and US2 is P1
+             because its RULES land with the shape — T019 puts the 10-item bound on the send
+             schema in phase 4, not in the phase named after it. So the MVP is not a build that
+             accepts unbounded lists; it is one whose refusals are not yet asserted.
+
+A seventh instrument, beyond the two findings: `check-checklist.py`. Correcting an enumeration
+fixes an instance; this checks the class. Every code-shaped reference in spec.md enumerated,
+the counts stated rather than assumed, no open box. Red three ways on the first try.
+
+**And `sweep.py` could always have caught the count.** It compares a stated figure against the
+measured one — that is how it caught a quoted figure in traceability.md at pass 8. The
+checklist never STATED a figure, so there was nothing to compare. A gate that certifies
+silently cannot be checked, which is the general lesson and why the new file requires the count
+to be written down.
+
+The pass's own numbers, which are bad and worth recording:
+
+    stale-count sweep across every artifact    44 flagged, 0 real
+    plan.md "14 phases" against sweep's 12      false: sweep's pattern requires the em-dash
+                                                and correctly skips two commentary lines;
+                                                my grep was looser and wrong
+
+    Pass 12's classifier left 21 of 52 unlabelled. This pass managed 48 false positives out
+    of 48. The mechanical version of "is this number stale" cannot work here, because these
+    artifacts are full of numbers that were true when written and are meant to stay that way.
+    A detector cannot tell a claim from a memory. baseline.txt's 22 flagged lines are all
+    records of what a pass measured at the time, and traceability.md's four are pass 2's
+    findings and chapter 3.23's history.
+
+For the third pass running, a checker's catch was my own prose about the thing it checks.
+Pass 11: a quoted requirement id tripped check-refs. Pass 12: a quoted placeholder tripped
+sweep. Pass 14: the sentence recording that the checklist once certified twenty-four
+requirements tripped sweep's stated-figure rule. Reworded, never exempted — but the pattern is
+now reliable enough to expect, and the chapter prose will discuss all three at length.
+
+    114 tasks   27 requirements   6 criteria   8 edge cases   9 scenarios   7 instruments
