@@ -644,3 +644,56 @@ checkers.
 
     109 tasks -> 110      27 requirements      6 criteria      0 untraced
     edge cases 7 -> 8     check-prose.py still red on purpose until phase 10
+
+## Analysis pass 10 — run things, don't read them
+
+Pass 9 said reading was exhausted, so this pass ran a falsification, chased every identifier to
+a declaration, and compared what each phase SAYS against the files its tasks TOUCH. Two of the
+three findings were pass 9's own damage.
+
+Q1  HIGH    `sql<Attachment[] | null>` named a TypeScript type that no task created and no
+            contract published. All three uses were pass 9's; the only other `Attachment` in
+            the feature is spec.md:218's Key Entities prose, a domain noun. The guess happened
+            to match the tree's convention, which is why nothing looked wrong.
+
+Q2  HIGH    And that is the cause, not the symptom: `attachments.ts`'s export names were fixed
+            nowhere. T009 said "export the bound and the allowed schemes as named constants" —
+            named, but not which names — and four tasks (T015, T019, T035, T041) referred to
+            those exports BY DESCRIPTION. A description cannot collide with anything, so an
+            invented identifier passes unnoticed. `contracts/attachments.md` now publishes all
+            five: attachmentSchema, Attachment, MAX_ATTACHMENTS, ATTACHMENT_URL_MAX,
+            ATTACHMENT_SCHEMES. The fix was to DECLARE the accidental name, not remove it.
+
+Q3  MEDIUM  plan.md called Phase 3 "the protocol change" while Phase 3's tasks edit
+            `services/api/src/db/repository.ts` and, through the messageSchema construction
+            sites, `messages.controller.ts`. True since T014a was added — pass 9's T015b was
+            the second instance, not the first. sweep.py compares phase COUNT and NUMBERING
+            (lines 184 and 187) and nothing compares a phase's stated subject to its files.
+
+Three clean negatives, each verified rather than read:
+
+    the outbox        T055 says "on neither message.deleted nor the membership events", T057
+                      asserts the deletion payload has no such key, and event.test.ts:225
+                      already pins that key set exactly. event.ts argues MessageDeletedData
+                      must carry no `text` key because it would carry the words somebody asked
+                      to have removed; attachment URLs are as recoverable as text, and the plan
+                      reached that on its own.
+
+    typecheck reach   T014a names `pnpm -s typecheck` as its instrument instead of a count,
+                      which is the better answer. Falsified rather than read from the config:
+                      appended `const __probe: number = "not a number"` to revision.test.ts and
+                      got `revision.test.ts(111,7): error TS2322`, then restored and confirmed
+                      with git status. include: ['src'], no exclude, tests live in src/ — so
+                      the 8 test files referencing messageSchema are covered too.
+
+    phase attribution T015 and T017 only CITE integrate.itest.ts and session.ts as evidence.
+                      Only T015b actually edits outside the protocol package.
+
+`check-refs.py` refused a task id in plan.md's new prose — the SECOND time in two passes I
+wrote one outside tasks.md while explaining a task. The rule is right both times and the fix
+both times was to describe the task. Worth naming as a habit rather than an accident: prose
+that explains a task wants to cite it, and this checker exists because those citations outlive
+the ids.
+
+    110 tasks     27 requirements     6 criteria     0 untraced
+    check-refs 0  sweep 0  regen 0 untraced  check-prose still red until phase 10

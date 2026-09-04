@@ -12,6 +12,24 @@ rolling deploy fails loudly on the other instead of vanishing.
 
 A `discriminatedUnion` on `type` with one arm today. §4.14 adds `{"type": "media", …}`.
 
+### The names it exports
+
+Five, because every task below imports one of them and a task that describes an export instead
+of naming it cannot collide with anything — which is how `Attachment` came to be used in three
+places before anything created it.
+
+    attachmentSchema      the discriminated union
+    Attachment            z.infer of it, the type the read paths cast the column to
+    MAX_ATTACHMENTS       10        (FR-005)
+    ATTACHMENT_URL_MAX    2048      (FR-023)
+    ATTACHMENT_SCHEMES    the allowed set (FR-004)
+
+The shape follows the convention every other protocol module already keeps — a schema, its
+inferred type, and SCREAMING_CASE constants. `internal.ts:396` is the pattern:
+
+    export type InternalSendResponse = z.infer<typeof internalSendResponseSchema>
+
+
 ## Sending
 
     POST /v1/channels/{channelId}/messages

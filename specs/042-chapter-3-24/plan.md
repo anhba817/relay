@@ -143,7 +143,9 @@ its own output. This one is in the form the instrument reads, checked by running
 
 **Phase 2 — The shape.** `attachments.ts`, its bound, its scheme rule.
 
-**Phase 3 — The wire.** `messageSchema`, the send frame, the internal hop. Blocks every route.
+**Phase 3 — The wire, and the values that satisfy it.** `messageSchema`, the send frame, the
+internal hop — plus the construction sites and the one repository return that a required field
+makes true. Blocks every route.
 
 **Phase 4 — The writer.** The INSERT, and the empty-text rule.
 
@@ -172,6 +174,13 @@ written.
 
 **Phase 3 is the protocol change and it blocks everything downstream.** No route can return an
 attachment the frame cannot express.
+
+It is not confined to `packages/protocol/`, and saying so is the point. A required field is a
+claim about values, so the phase that adds one also fixes every place that builds such a value:
+`messages.controller.ts` among the `messageSchema` construction sites, and `sendMessage`'s two
+return paths.
+Leaving either for a later phase makes this phase's commit red — which is the whole reason the
+pairing exists.
 
 ## Complexity Tracking
 
