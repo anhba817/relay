@@ -1672,3 +1672,100 @@ the plan put it when the plan put it before the thing it reads.
 until `pnpm build` ran — the threading was correct and the running api was three tasks old.
 Chapter 3.23 wrote "`--build` IS NOT OPTIONAL" about compose images and this is the same trap
 through a different door: `startApi()` spawns `services/api/dist/main.js`.
+
+## PHASE 5 — AND A RELAXATION THAT CROSSED INTO ANOTHER ROUTE
+
+**The edit route's text bound was the send's, by reference.**
+
+    export const editMessageBodySchema = z.strictObject({
+      text: sendMessageBodySchema.shape.text,      <- until chapter 3.24
+    });
+
+FR-019 removed `.min(1)` from the send so an attachments-only message could carry no
+caption. The edit inherited the relaxation through that reference — and **an edit has no
+attachments field**, so `refineTextAndAttachments`, which restores the send's floor, cannot
+restore this one. `PATCH` with `text: ""` became a 200.
+
+**Chapter 3.23's own test caught it**: "an empty text is a 400 through the protocol envelope
+(FR-001)", `expected 200 to be 400`. Nothing in this chapter's 118 tasks predicted it, twenty-one
+analysis passes did not find it, and the compiler cannot see it — the types are identical either
+way. A test written a chapter ago for a different reason is what stood between this and the wire.
+
+The bound is now spelled out with the argument at the field. **Two schemas that happen to agree
+are a defect this chapter has recorded twice; two schemas that must DIFFER cannot share a
+reference at all** — and that is the sharper form of the rule.
+
+### AND THE INSERT WAS NOT THE RETURN, EXACTLY AS PASS 9 SAID
+
+`sendMessage`'s insert branch still returned `attachments: []` after T022 wrote the column, so
+the 201 response and both fan-out payloads read an empty list from a row that held two. Analysis
+pass 9 found precisely this gap in the plan — "T022 writes the INSERT; it says nothing about the
+return" — and the fix is the line that pass predicted, in the place it predicted.
+
+    T029 failed:  expected [] to deeply equal [ Array(2) ]
+
+### TWO SMALLER THINGS
+
+`T032a` compared raw bodies and failed on `request_id`, which names the request rather than the
+resource and differs by construction. Two siblings in the same file already strip exactly that
+one field — `:435` and chapter 3.12's oracle — and I wrote a third comparison without it.
+
+The suite's helpers are `credential`, `privateChannelId` and `tokenFor`; I wrote `key`,
+`createChannel` and `mintUserToken` from memory and the compiler named all four.
+
+### THE THREE FALSIFICATIONS, AND ONE PREMISE THAT WAS WRONG
+
+**T028c asked for two reds and got one red and one green — and the green is the finding.**
+Its text says "Falsify T028b AND T030: replace the attachments on the gateway's publish payload
+with `[]`, watch both go red."
+
+    T028b   socket to socket    RED     the gateway builds that payload
+    T030    REST to socket      GREEN   the API builds that one
+
+T030 cannot go red from a change to `session.ts`, because a REST send's fan-out payload is
+constructed in `messages.controller.ts`. **T028a records exactly this** — "the api constructs
+the fan-out payload for a REST send and the gateway constructs it for a socket send" — and
+T028c's own text did not carry it. So the falsification proves something better than it asked:
+the two builders are genuinely independent, and a change to either is invisible to the other's
+test. T028c's text is corrected to expect one red and one green, with the reason.
+
+**T032 went red in three places, not one.** Removing `?? []` from `listMessages`' map broke
+T031, T030a's empty-list case, and T023's NULL case — so three tests hold that mapping rather
+than the one the task named. And the probe would not apply at first: `?? []` appears TWICE in
+`repository.ts`, once in `listMessages` and once in `getMessageByIdempotencyKey`, and the
+assertion in the probe script refused rather than patching whichever it found first.
+
+**T032b stayed green, which was the prediction.** With `attachments` removed from
+`listMessages`' column list entirely, T032a — the isolation test — passed. That is the whole
+point of pass 19's finding: the attachment adds no second surface BY CONSTRUCTION, because
+`channelVisibleTo` gates before the read, so a test asserting a non-member sees nothing cannot
+fail for an attachments reason. The test keeps its job — the byte-identical answer is chapter
+3.15's property — and it is no longer credited with the attachment claim.
+
+### AND THE MEMBERSHIP TRAP, 630 LINES ABOVE THE TEST THAT HIT IT
+
+T028b failed first with `no message.created on the watcher; saw connection.ack`.
+`session.itest.ts:168` records that failure in its own words, written for chapter 3.23's T033:
+
+    BOTH ARE MEMBERS, and that is what the first run of T033 got wrong: `mintToken` mints a
+    token for any identifier, so two sockets opened fine and neither was delivered to. The
+    failure read "no the creation; saw connection.ack" — a membership problem wearing a
+    delivery problem's message.
+
+Same file, same message, one chapter later, 630 lines apart. The comment could not stop it for
+the same reason 3.23's forged-frame warning could not: **a rule in a comment is not applied by
+anything.**
+
+### T033 — THROUGH THE SHIPPED BINARY, AND IT PASSED FIRST RUN
+
+    16 passed (16)   packages/outsider   against docker compose --profile services --build
+
+`packages/outsider/src/integrate.itest.ts` is the only instrument here that boots what
+customers run and drives it as they do: Node's global `WebSocket`, no workspace import, the
+REST credential a customer's server holds. Chapter 3.23's plan scheduled a title audit over
+this file and no task wrote to it. This chapter writes, and two attachments reach a socket in
+order through the built images.
+
+**`--build` was not optional and it was not the trap this time**, because the compose stack was
+brought up with it deliberately. That is the one instance in this session where reading 3.23's
+record ahead of the command saved the debugging pass rather than costing one.
