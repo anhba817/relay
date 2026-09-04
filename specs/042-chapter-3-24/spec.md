@@ -116,11 +116,15 @@ route returns the tombstone with an empty attachment list.
 - **An edit that changes attachments.** FR-MSG-07 says an edit changes message *text*.
   Chapter 3.23's edit route takes a body of one field and its history table stores
   `prior_text`. Whether attachments can be edited at all is a decision this chapter inherits.
-- **A duplicate URL.** The same link attached twice to one message: two attachments or one?
+- **A duplicate URL.** The same link attached twice to one message: **two attachments**
+  (FR-021). Nothing deduplicates, for the reason chapter 3.23 gave about comparing texts.
 - **The idempotent retry.** A repeated send with the same idempotency key returns the original
   message; its attachments must come back with it and must not be re-inserted.
 - **A tombstone recovered by an old idempotency key**, which chapter 3.18 already guards for
-  text, now has an attachment list too.
+  text, now has an attachment list too. Both guards read `text !== null` and an
+  attachments-only message carries `""`, so they hold — **and that is a claim about two lines
+  of code that this chapter changes the meaning of**, which is what a test is for rather than a
+  reading.
 
 ## Requirements *(mandatory)*
 
@@ -176,6 +180,14 @@ route returns the tombstone with an empty attachment list.
   bound is conditional on there being something to carry, not unconditional.
 - **FR-020**: The attachment shape MUST leave room for §4.14's `media_id` arm without a
   breaking change to any published payload.
+- **FR-021**: The same URL attached twice to one message MUST be stored and returned twice.
+  The platform MUST NOT deduplicate attachments. **Two identical links are two attachments**
+  for the same reason FR-021 of chapter 3.23 gives about texts: every definition of sameness —
+  a trailing slash, a case-different host, a query parameter in another order — is a decision a
+  customer would have to be told about, and the caller's list is the caller's.
+- **FR-022**: The attachments field on a message payload MUST be present on every payload that
+  carries a message, never optional, so that a reader needs no special case on the wire either.
+  A message with none carries an empty list.
 
 ### Key Entities
 

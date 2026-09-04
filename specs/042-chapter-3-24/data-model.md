@@ -34,7 +34,10 @@ attachment *references*. Collapsing the two would make `kind: "media"` a categor
 leave Part 4 with no room.
 
 **Ordered, and the order is the caller's.** FR-006 says attachments come back in the order
-they were sent, on every path. A JSON array carries that for free; nothing sorts them.
+they were sent, on every path — the history route, the resume replay, and both socket paths. A
+JSON array carries that for free; nothing sorts them and **nothing deduplicates them** (FR-021):
+the same URL attached twice is two attachments, because every definition of sameness is a
+decision a customer would have to be told about.
 
 **No id of its own.** An attachment is not addressable: no route fetches one, deletes one, or
 updates one. Giving it an id would be inventing a resource nothing asks for — and chapter

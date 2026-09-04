@@ -17,7 +17,11 @@ A `discriminatedUnion` on `type` with one arm today. §4.14 adds `{"type": "medi
     POST /v1/channels/{channelId}/messages
     body: { "text": "…", "attachments": [ … ], "metadata": …, "idempotency_key": …, "user": … }
 
-- **`attachments` is optional.** Absent and `[]` mean the same thing and both store `NULL`.
+- **`attachments` is optional ON THE SEND BODY.** Absent and `[]` mean the same thing and both
+  store `NULL`. It is **required on every payload the platform returns** (FR-022) — the
+  asymmetry is deliberate: a caller should not have to send an empty list, and a reader should
+  not have to check for an absent one.
+- **The same URL twice is two attachments** (FR-021). Nothing deduplicates.
 - **201** the message, with `attachments` echoed in the order sent.
 - **400** `invalid_request` with `field` naming the offender:
   - more than 10 (FR-005)
@@ -55,8 +59,19 @@ without them reads `[]`. A tombstone reads `[]` (FR-012).
 
 ## The wire
 
-`message.created` and `message.updated` carry `attachments` on their `messageSchema` payload.
-`message.deleted` does not, and its payload has no place for one — chapter 3.23 gave it an
+`message.created` and `message.updated` carry `attachments` on their `messageSchema` payload,
+**required rather than optional** (FR-022): a message with none carries `[]`, and a producer
+that forgets fails at the schema instead of shipping a payload a reader has to special-case.
+
+**That costs a rolling deploy and the cost is stated rather than discovered.**
+`messageCreatedSchema.shape.payload` is what `services/gateway/src/fanout.ts` parses arrivals
+with, so while a deploy is half-done an old instance publishes a payload with no attachments
+and a new instance **drops the frame**. ADR-24 chose exactly that behaviour for the revision
+fabric — a field added on one side fails loudly on the other — and it is acceptable here for
+the reason ADR-07 gives: a dropped fabric frame is not a lost message, because the cursor
+recovers it.
+
+`message.deleted` carries none, and its payload has no place for one — chapter 3.23 gave it an
 identity with no text for the same reason (FR-013).
 
 **Resume carries them** (FR-010). The backfill returns rows as they are now, so a client that

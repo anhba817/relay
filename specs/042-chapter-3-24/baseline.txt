@@ -196,3 +196,69 @@ claim and failed again.
 teaching it the difference mid-pass is how a checker learns to accept the thing it was pointed
 at — chapter 3.23 did exactly that once and recorded it. The blind spot is here instead: a
 count inside quotation marks reads as a count.
+
+WHAT THE SECOND ANALYSIS PASS FOUND — THE EDGE CASES AND THE FRAME
+
+**Coverage read 100% for the second pass running and the pass found five things.** Two of the
+spec's seven edge cases had **no task at all**, which no id-matching instrument can see:
+**edge cases carry no identifiers.** `check-refs.py` traces `FR-` and `SC-` and says so in its
+own last line; a paragraph under "Edge Cases" is invisible to it.
+
+    A duplicate URL                          asked in the spec, answered NOWHERE
+    A tombstone recovered by an old key      named in the spec, no task
+
+The first is the shape chapter 3.23 amended a contract for: *"A contract with a choice still in
+it is not a contract."* Both are now requirements with tests — FR-021 (3.24) and an assertion on
+the two guards.
+
+OPTIONAL OR REQUIRED ON THE FRAME WAS UNDECIDED, AND IT DECIDES FR-007 (3.24)
+
+The task list said "add `attachments` to `messageSchema`" and stopped. **Optional lets the wire
+omit the key on the one path a client cannot re-read**; required means the compiler names every
+producer that forgets. Decided as **required** (FR-022 (3.24)), and the cost is written down
+rather than discovered:
+
+    `messageCreatedSchema.shape.payload` is what `services/gateway/src/fanout.ts` parses
+    arrivals with. Mid-deploy, an old instance publishes a payload with no attachments and a
+    new instance DROPS THE FRAME.
+
+That is ADR-24's own argument — a field added on one side of a rolling deploy fails loudly on
+the other — and it is acceptable for the reason ADR-07 gives: a dropped fabric frame is not a
+lost message, because the cursor recovers it. **The chapter says this; a deploy does not have
+to teach it.**
+
+FR-006 (3.24) SAID "EVERY PATH" AND THREE PATHS DID NOT ASSERT IT
+
+Order was asserted at the repository and through the history route. The resume test and both
+socket tests said "with attachments" and not "in order" — and a single-attachment fixture
+cannot see an order at all. All three now send two.
+
+`listMessages` IS TWO QUERIES AND BOTH WERE COVERED BY ACCIDENT
+
+`repository.ts:5261` and `:5278` — a ternary over a `desc` page and an `asc` one, sharing a
+`columns` object. T029 exercises the backward branch and T052 the forward one, **and nothing
+said so**, so a change to either test would silently drop a branch.
+
+Chapter 3.23 recorded this exact trap with the evidence: adding `isNotNull(messages.text)` to
+the forward branch alone left the suite green, because the test that should have caught it
+called the function with no cursor. T030a is that chapter's labelled-loop test, here.
+
+A NEGATIVE CHECK, RECORDED BECAUSE IT WAS RUN
+
+**No production code tests `text` for truthiness.** Fourteen places test it for null; a grep for
+`if (x.text)`, `!x.text` and `x.text ||` across `services` and `packages` returns nothing.
+
+That matters because FR-019 (3.24) makes `""` a legitimate message body and `""` is falsy — **a
+single truthiness test anywhere would treat every attachments-only message as a tombstone.** It
+is clean, and it is recorded as checked rather than assumed, because the next chapter to add
+one will not know to look.
+
+WHAT ELSE WAS CHECKED AND IS CLEAN
+
+    repo.backfill                delegates to `listMessages` rather than owning a query, so
+                                 the mapping is the only backfill change
+    every `.from(messages)`      eight SELECTs, all eight accounted for by a task or by
+                                 T053's "unchanged" record
+    the webhook reach            stated in `contracts/attachments.md`, not assumed
+    phase ordering               no task in an earlier phase depends on a later one
+    `[P]` markers                no clash beyond the stated `baseline.txt` exception
