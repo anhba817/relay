@@ -322,15 +322,38 @@ predecessor's, which describe earlier states and must not be touched.
 **T004 must pass against unchanged code or the plan changes.** That is Phase 1's whole point.
 
 **Parallel opportunities, and there are fewer than the phase count suggests.** `[P]` means a
-different file, and this chapter's tests concentrate in four: `messages.itest.ts` carries
-eleven tasks across four phases, `repository.itest.ts` four, `repository.ts` five, and
-`event.ts` and `event.test.ts` two each. Every one of those runs in sequence.
+different file, and this chapter's work concentrates in five. **Measured at analysis pass 20,
+after analysis grew the list by twenty-five entries** — with the command, because a count without one has
+been wrong every time in this feature:
 
-What genuinely parallelises: T002 and T003 in Phase 1, two different files; T037 and T038 in
-Phase 6, though both land in `messages.itest.ts` and must therefore go in sequence — **noted
-here as a correction to the marker rather than left to be discovered**; T062 through T065 in
-Phase 10, four different documents; T071 and T075 in Phase 11, the figures and their mirror;
-T082 and T083 in Phase 12, two different records.
+    grep -oE '^- \[[ X]\] T[0-9]+[a-z]? ' tasks.md   # then group by the file paths on each line
+
+        tasks  spanning  file
+           17         5  services/api/src/messages/messages.itest.ts
+            9         5  services/gateway/src/session.itest.ts
+            8         6  services/api/src/db/repository.ts
+            6         5  services/api/src/messages/messages.controller.ts
+            6         5  services/api/src/db/repository.itest.ts
+            3         1  services/api/src/outbox/event.test.ts
+            1         1  services/api/src/outbox/event.ts
+
+Every one of those runs in sequence. **The previous version of this paragraph said four files
+and got all five of its numbers wrong** — eleven, four, five, two and two. Four were understated,
+which task growth explains; `event.ts` was OVERSTATED, two against one, and growth cannot lower
+a count. And `session.itest.ts`, the second-heaviest file here, was not in the list at all, so a
+reader planning from this section would have scheduled nine tasks across five phases as parallel
+work.
+
+**What genuinely parallelises — all 17 `[P]` markers, not the twelve this paragraph used to
+name.** T002, T003 and T007 in Phase 1; T010 in Phase 2; T015 and T016 in Phase 3; T023 in
+Phase 4; T057 and T058 in Phase 9; T062 through T065 in Phase 10, four different documents;
+T071 and T075 in Phase 11, the figures and their mirror; T082 and T083 in Phase 12, two
+different records.
+
+**T037 and T038 are NOT among them**, and the old version of this paragraph listed them here
+before withdrawing them two clauses later. They carry no `[P]`, both edit
+`relay-platform/services/api/src/messages/messages.itest.ts`, and they run in sequence. The
+correction below is where they belong.
 
 **Four `[P]` markers were written and stripped before this file shipped.** T037 and T038 both
 edit `relay-platform/services/api/src/messages/messages.itest.ts`, and `[P]` means a different

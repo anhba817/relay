@@ -1245,3 +1245,54 @@ and it is the only one that verified — per file, not just in total. That is a 
 for the rule than any of the findings that produced it.
 
     117 tasks -> 118     27 requirements     6 criteria     0 untraced     7 instruments
+
+## Analysis pass 20 — the section /speckit-implement reads to decide execution order
+
+"Dependencies and execution order" was written at planning time and never re-read. The task
+list grew from ninety-three entries to a hundred and eighteen in between, twenty-six of them
+lettered tasks added by analysis.
+
+AN1  HIGH    **All five per-file task counts were wrong, and the list omitted the second-largest
+             bottleneck** — in a section whose only purpose is naming what cannot run in
+             parallel.
+
+                 tasks  spanning  file                              claimed
+                    17         5  messages.itest.ts                 eleven, across four
+                     9         5  session.itest.ts                  NOT IN THE LIST
+                     8         6  repository.ts                     five
+                     6         5  messages.controller.ts            not in the list
+                     6         5  repository.itest.ts               four
+                     3         1  outbox/event.test.ts              two
+                     1         1  outbox/event.ts                   two — OVERSTATED
+
+             The direction matters. Four understated counts are what growth explains.
+             `event.ts` at one against a claimed two is not: growth cannot lower a count, so
+             that number was wrong when written or a task moved and the sentence did not.
+
+             `session.itest.ts` is the substantive half. Nine tasks across five phases, second
+             heaviest in the chapter, absent from a list that exists to say what serialises — a
+             reader planning from this section would have scheduled all nine as parallel work.
+
+AN2  MEDIUM  The prose named twelve of the seventeen `[P]` markers, missing T007, T010, T015,
+             T016, T023, T057 and T058 — and named T037 and T038, which carry no marker, inside
+             the list of "what genuinely parallelises", two clauses before withdrawing them.
+             Both now fixed, and the paragraph carries the command that produced its numbers.
+
+The clean negative, re-measured: **[P] collisions are still zero.** No two `[P]` tasks in the
+same phase share a file, and that held across all twenty-six added tasks — pass 13 measured
+zero at 109 entries and it is zero at 118. The markers are sound; the prose about them drifted.
+
+**Five for five.** Every list in this feature written from memory and left without its command
+has been wrong when measured: the checklist's implementation references (pass 14), T043's six
+read shapes (17), the construction sites (18), the fence-column files (18), and now the
+per-file task counts. The single exception is R3's 70, which shipped with its counting
+definition and reproduced per file.
+
+And sweep.py fired on my own remediation prose for the FOURTH time this run — twice in one
+paragraph, on "grew from 93 tasks to 118" and on a table column reading "5 phases". Pass 11 was
+a quoted requirement id, pass 12 a quoted placeholder, pass 14 a superseded count, pass 20 a
+historical count and a per-file figure. **This is now predictable rather than surprising**:
+writing about a count reproduces the shape of a count claim, and the checker cannot tell them
+apart. Reworded every time, exempted never.
+
+    118 tasks     27 requirements     6 criteria     0 untraced     17 [P] · 0 collisions
