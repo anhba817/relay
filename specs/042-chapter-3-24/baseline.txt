@@ -819,3 +819,70 @@ Passes 9 through 12 have one through-line: every finding was the difference betw
 being PRESENT and being RIGHT — the return value (9), the type (10), the payload (11), the
 assertion (12). T028c is the cheap general instrument for all four, which is why it went in
 despite being the lowest-severity row of the pass.
+
+## Analysis pass 13 — the two artifacts twelve passes never opened
+
+X1  HIGH     `quickstart.md`'s P3a named all three points the socket path drops attachments,
+             one of them "session.ts's outbound builder". Pass 11 found that third point and
+             reported it CRITICAL. The diagnosis was in the validation guide before pass 1 ran.
+
+             Passes 1 through 12 compared spec.md, plan.md and tasks.md with each other and
+             read quickstart.md as an OUTPUT. It is not an output. It is the only artifact
+             written to describe what a person does, which is why it named a failure that
+             identifier-comparing passes could not see.
+
+             Nothing to fix — T027a closed it. Added `check-quickstart.py`, the sixth
+             instrument: every production file the guide names is covered by a task or DECLARED
+             as a warning, and every success criterion is named by a scenario's **Expected**
+             line.
+
+X2  MEDIUM   P3's expected outcome said "one attachment" and pass 12 had changed T033 — the
+             suite P3 actually runs — to two in order. My own damage: the task was edited and
+             the document that runs it was not. P3 now says two, and why.
+
+X3  MEDIUM   The guide cited 0 of 6 success criteria and 3 of 27 requirements, so a person
+             running it could not tell what they had proven. **SC-005 had no scenario at all**
+             — its only trace was four words inside P1's expected outcome, "resume replays it".
+             Added P7, the reconnecting client. That is the criterion least convenient to check
+             by hand, which is the usual reason a gap survives.
+
+             Six scenarios now name their criterion on the **Expected** line. P1 names none on
+             purpose and says so: it validates the ground every criterion stands on.
+
+A count found on the way: T001 read "Five instruments, not four" and T008, the commit task in
+its own phase, still read "the four instruments". T001 had been corrected and its sibling never
+re-read. Both now say six.
+
+The new checker went red two ways out of three on the first try, and the failure was the
+interesting one. Its criteria check searched the whole file, so a criterion merely DISCUSSED
+counted as asserted — the probe that was supposed to prove it red stayed green, because P7's
+own prose names SC-005 twice. Narrowed to the **Expected** lines, the probe works:
+
+    unowed file named in the guide          red
+    criterion off the Expected line         red   (green before the narrowing)
+    exemption for a mention that is gone    red
+
+Clean negatives, three of them verified for the first time rather than asserted:
+
+    the constitution   I have reported "no conflicts" for twelve passes and this is the first
+                       pass that opened the file. Principle III: "The analytical store MUST NOT
+                       contain message text." The analytics path publishes webhook ATTEMPT
+                       records only — delivery_id, endpoint_id, event_id, attempt, latency_ms,
+                       outcome — and no message payload at all. 3.24 adds nothing to it and
+                       T058 records that §4.14's attachment_count is Part 4's. Not at risk, and
+                       now that is a measurement.
+
+    the implement gate `checklists/requirements.md` is 16 of 16. /speckit-implement halts on an
+                       incomplete checklist and will not halt here.
+
+    SC-002 both halves T035 asserts the refusal AND the unchanged sequence — the failure mode
+                       pass 12 found in SC-001 does not repeat in SC-002.
+
+    a false positive   My first crude cross-read flagged `connections.test.ts` as uncovered. It
+                       is a lane warning citing 3.23's gaps item 9. That false positive is why
+                       the new checker takes DECLARED exemptions with reasons rather than
+                       guessing, and why it fails on a stale one.
+
+    ports              15432 Postgres, 6379 Redis, 4222 NATS, 4000/4001 api and gateway.
+
+    114 tasks     27 requirements     6 criteria     0 untraced     6 instruments

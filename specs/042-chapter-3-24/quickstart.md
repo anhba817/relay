@@ -40,7 +40,8 @@ psql: INSERT INTO messages (id, channel_id, sequence, user_id, text, created_at)
 ```
 
 **Expected**: history returns it, the listing previews it, resume replays it, and no path
-mistakes it for a tombstone.
+mistakes it for a tombstone. This scenario validates no criterion — it validates the ground
+every criterion stands on, which is why it runs first and against unchanged code.
 
 **If it fails, the empty-string decision is wrong** and the plan changes before any code is
 written. This is chapter 3.23's reader test in a new subject: written against unchanged code,
@@ -52,7 +53,7 @@ proving the ground the design stands on.
 pnpm --filter @relay/protocol test
 ```
 
-**Expected**: `javascript:alert(1)`, `data:image/png;base64,…`, `file:///etc/passwd` and
+**Expected** (SC-004): `javascript:alert(1)`, `data:image/png;base64,…`, `file:///etc/passwd` and
 `vbscript:msgbox(1)` are all refused; `http://` and `https://` are accepted. **Run these
 against the real validator rather than trusting `z.url()`** — R7 measured that it accepts
 every one of them.
@@ -68,8 +69,10 @@ export RELAY_API_URL=http://localhost:4000 RELAY_WS_URL=ws://localhost:4001
 pnpm --filter @relay/outsider test:integration
 ```
 
-**Expected**: a message sent over REST with one attachment reaches an open socket with that
-attachment, and history returns it.
+**Expected** (SC-001): a message sent over REST with **two** attachments reaches an open socket
+with both, in the order they were sent, and the history route returns the same two in the same
+order. **Two, not one** — a single attachment cannot show an order, and the suite this command
+runs asserts the order.
 
 **`--build` IS NOT OPTIONAL.** `docker compose --profile services up -d --wait` reuses the
 image, so a route or a field added since the last build is invisible and looks exactly like a
@@ -80,7 +83,8 @@ feature that does not work. Chapter 3.23 lost a debugging pass to that.
 Open a socket with a minted token, send `message.send` with two attachments, and watch a second
 member's socket.
 
-**Expected**: the message commits with both attachments in order, a second member receives them
+**Expected** (SC-001, the socket half): the message commits with both attachments in order, a
+second member receives them
 on `message.created`, and the sender's `message.ack` carries **only `seq`** — the ack has never
 carried a message and this chapter does not widen it.
 
@@ -111,7 +115,7 @@ curl -sS -X POST "$API/v1/channels/$CH/messages" -H "authorization: Bearer $TOKE
   -d '{"text":"eleven","attachments":[…11 of them…]}' -o /dev/null -w '%{http_code}\n'
 ```
 
-**Expected**: `400`, a body naming `attachments`, and **`channels.last_sequence` unchanged**
+**Expected** (SC-002): `400`, a body naming `attachments`, and **`channels.last_sequence` unchanged**
 afterwards — the second half is the assertion, because a 400 raised after the write passes the
 first, and the sequence is the column chapter 2.2 made the authority.
 
@@ -119,7 +123,8 @@ first, and the sequence is the column chapter 2.2 made the authority.
 
 Send with attachments, delete, read history.
 
-**Expected**: the message is present in its original position with `text: null` and
+**Expected** (SC-003, one of its six read paths): the message is present in its original
+position with `text: null` and
 `attachments: []`. Chapter 3.23's deletion already nulls the column; this checks that the read
 path turns the null into an empty list rather than an absent field.
 
@@ -127,9 +132,27 @@ path turns the null into an empty list rather than an absent field.
 
 Send with two attachments, edit the text, read it back.
 
-**Expected**: the new text, the same two attachments, in the same order. **The failure this
+**Expected** (SC-006): the new text, the same two attachments, in the same order. **The failure this
 catches is silent** — an `UPDATE … SET text = ?, attachments = ?` written without care drops
 the photograph and returns 200.
+
+## P7 — the client that was not there
+
+Connect a member, note the last `seq` it saw, **disconnect it**, send a message with two
+attachments from another member, then reconnect with `resume` from that `seq`.
+
+```
+pnpm --filter @relay/api test:integration -- backfill.itest.ts
+```
+
+**Expected** (SC-005): the replay carries the missed message with both attachments **in the
+order they were sent**. The backfill is a different code path from delivery — it maps rows out
+of the database rather than passing a payload along — so a field threaded correctly through
+every live path can still be missing here.
+
+**This scenario did not exist until analysis pass 13**, and SC-005 was the only criterion with
+nothing a person could run. A reconnecting client is also the least convenient thing here to
+check by hand, which is the usual reason a gap survives.
 
 ## Gates, and how to run them so they mean something
 
