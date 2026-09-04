@@ -197,6 +197,12 @@ route returns the tombstone with an empty attachment list.
 - **FR-022**: The attachments field on a message payload MUST be present on every payload that
   carries a message, never optional, so that a reader needs no special case on the wire either.
   A message with none carries an empty list.
+- **FR-023**: An attachment URL MUST be refused above 2,048 characters. **FR-MSG-11 states no
+  length**, so this is the chapter's own bound and it takes the platform's only precedent for a
+  stored URL: `users.avatar_url` has been capped at 2,048 since chapter 3.16. A second number
+  for the same kind of value would be two limits a customer has to remember. **A refusal no
+  requirement authorises is what this clause exists to prevent** — the bound was in the data
+  model, the contract and a test assertion for seven analysis passes with no clause behind it.
 
 ### Key Entities
 

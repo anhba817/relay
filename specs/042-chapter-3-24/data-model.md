@@ -47,8 +47,8 @@ publish.
 ## Bounds
 
     at most 10 per message         FR-005, the clause's number
-    url at most 2048 characters    matching `avatar_url`'s bound, the platform's only
-                                   precedent for a stored URL
+    url at most 2,048 characters   FR-023, taking `users.avatar_url`'s bound — the
+                                   platform's only precedent for a stored URL
     scheme http or https only      FR-004 — and R7 measured that `z.url()` alone accepts
                                    `javascript:`, `data:`, `file:` and `vbscript:`
 
@@ -59,7 +59,7 @@ of the three budgets constrains the others.
 
     text          8,000 characters      FR-MSG-01
     metadata      4 KB                  FR-MSG-01
-    attachments   10 x 2,048 = 20,480   FR-005, and the per-item bound
+    attachments   10 x 2,048 = 20,480   FR-005 and FR-023
                                         ────────
     about 28,500 characters before framing
 

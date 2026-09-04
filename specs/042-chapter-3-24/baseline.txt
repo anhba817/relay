@@ -497,3 +497,40 @@ THREE NEGATIVE CHECKS, RECORDED BECAUSE THEY WERE RUN
                            `data-model.md:79`, both saying an edit leaves attachments alone.
     T041's code claim      `session.ts:1446` sends `invalid_frame` for a schema failure,
                            which is what pass 5 wrote into that task. Verified, not carried.
+
+WHAT THE SEVENTH ANALYSIS PASS FOUND — A REFUSAL NO REQUIREMENT AUTHORISED
+
+**Seventh pass, seventh 100%, and the second CRITICAL of the seven.** The question none of the
+first six asked: **does every number the tasks assert have a clause behind it?**
+
+    10 / ten     FR-005 and FR-MSG-11        authorised
+    8,000        FR-MSG-01                    inherited, not this chapter's
+    4 KB         FR-MSG-01                    inherited
+    20,480       arithmetic of two bounds     stated in the data model by pass 3
+    2048         NOTHING                      <- this chapter's own invention
+
+The 2,048-character URL bound was in `data-model.md`, in `contracts/attachments.md`, in research
+R6 and **asserted by T010** — with no `FR-` anywhere. FR-MSG-11 states no URL length.
+Constitution VI: *"new behavior without a requirement gets a requirement first."*
+
+**The number is right and that is not the point.** `users.avatar_url` has been capped at 2,048
+since chapter 3.16 and matching it beats inventing a second limit for the same kind of value.
+The defect is that a test would have enforced a refusal nothing authorised, and **six passes
+went by without asking.** FR-023 states it now, with the precedent as its argument.
+
+**Why no instrument could see it.** `check-refs.py` traces identifiers, and a literal carries
+none. `sweep.py` compares counts between documents, and 2,048 appeared consistently in every
+document that mentioned it — **consistency is what made it invisible.** The three documents
+agreed with each other and none of them agreed with a requirement.
+
+AND THE CHAPTER ENLARGES A KNOWN CONSTITUTION GAP BY ONE BRANCH
+
+Constitution VI requires 100% branch coverage for **message ordering, idempotency and tenant
+isolation**. `services/api/src/db/repository.ts` holds all three and is pinned at **92**,
+deliberately: that config's own comment says the per-file numbers *"are deliberately not the
+100% the constitution asks for, because a threshold nothing can pass"* is worse than a ratchet.
+
+This chapter adds one idempotency branch — the retry replay's attachments. **The gap is older
+than this chapter and is one branch larger because of it.** T080 says so; it is a sentence in
+the record rather than a number to chase, and pretending otherwise would be the chapter
+claiming to close something it does not.

@@ -30,7 +30,7 @@ A `discriminatedUnion` on `type` with one arm today. §4.14 adds `{"type": "medi
       more than 10 (FR-005)                          field = attachments
       a `kind` outside the three (FR-002)            field = attachments.3.kind
       a scheme that is not http/https (FR-004)       field = attachments.3.url
-      a URL longer than 2048 characters              field = attachments.3.url
+      a URL longer than 2,048 characters (FR-023)     field = attachments.3.url
       `text` empty AND no attachments (FR-019b)      field = text
 
   **The last one is only true because the refinement sets `path: ["text"]`.** An object-level

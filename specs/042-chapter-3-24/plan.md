@@ -50,7 +50,7 @@ research resolved the rest against the tree — see [research.md](./research.md)
 | **III — Two data paths** | `attachment_count` on the analytical side is Part 4's and stays there. FR-017 asks only that the count be derivable, which an ordered list makes true by construction. NFR-SEC-06 and `recorder.ts:25` keep the URL out of the platform's own logs, for the reason they keep the text out. | **PASS** |
 | **IV — Single writer** | One writer: `sendMessage`'s INSERT. The edit does not touch attachments (R9) and the deletion nulls them, which already exists. | **PASS** |
 | **V — API-first** | A new field on published payloads, documented before it ships, with `docs/08-error-reference.md` gaining whatever refusal FR-003a needs. | **PASS** |
-| **VI — Requirement-driven** | 26 requirements, six criteria, every one traced before implementation. The isolation suite attacks the three routes on every build already. | **PASS** |
+| **VI — Requirement-driven** | 27 requirements, six criteria, every one traced before implementation. The isolation suite attacks the three routes on every build already. | **PASS** |
 | **VII — Boring by design** | No new service, no new dependency, no new language, no new table. The one decision that could need an ADR is whether widening `messageSchema` supersedes chapter 3.23's refusal to widen it — see below. | **PASS, with one ADR expected** |
 
 **AN ADR IS EXPECTED AND THE PLAN SAYS SO IN ADVANCE.** Chapter 3.23's plan said no ADR was
@@ -66,7 +66,7 @@ acts — then the plan was wrong here instead, and that is worth writing down ei
 
 ```
 specs/042-chapter-3-24/
-├── spec.md              26 requirements, 6 criteria, 3 stories
+├── spec.md              27 requirements, 6 criteria, 3 stories
 ├── plan.md              this file
 ├── research.md          R1-R10, every number taken from the tree
 ├── data-model.md        the attachment shape and where it lives
