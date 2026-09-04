@@ -1769,3 +1769,71 @@ order through the built images.
 **`--build` was not optional and it was not the trap this time**, because the compose stack was
 brought up with it deliberately. That is the one instance in this session where reading 3.23's
 record ahead of the command saved the debugging pass rather than costing one.
+
+## PHASE 6 — THE BOUND, THE SCHEMES, AND A REFUSAL THAT NEEDED ITS OWN CODE
+
+    63 passed (63)   services/api/src/messages/messages.itest.ts
+    26 passed (26)   services/gateway/src/session.itest.ts
+    11 passed (11)   packages/protocol/src/codes.test.ts
+
+### T007's PREDICTION OF FOUR PINNED PLACES WAS EXACTLY RIGHT
+
+    packages/protocol/src/codes.ts          the registry entry and its argument
+    packages/protocol/src/codes.test.ts     the count, 20 -> 21, plus three assertions
+    docs/08-error-reference.md              the published reference — phase 10 (T063)
+    relay-tutorial/content/docs/…           its mirror, written by `sync:docs`
+
+Two are done and two are phase 10's, which is why `check:errors` is now RED and says so:
+
+    check-error-codes: these codes have no section in the reference, so their docs_url 404s:
+      media_not_available
+
+The quickstart predicted that in its own words — "red on purpose from the phase that adds
+`media_not_available` until the phase that writes its reference section" — so this is the
+second gate red by design, alongside `check:fences`. Both are now checked against what they
+are EXPECTED to say rather than for green.
+
+### A CONTROLLER CHECK THAT COULD NEVER FIRE, AND THE BETTER ANSWER UNDERNEATH IT
+
+T039 asks for `media_not_available` on a `{"type":"media"}` attachment. My first version
+checked the raw body in the send handler — and wrote a comment reasoning that the pipe "runs on
+the parameter and this runs in the body, so by the time control arrives the schema has already
+rejected any media arm." **That sentence is its own refutation**: `@Body(new
+ZodValidationPipe(...))` throws, so control never arrives at all. The test said
+`expected 400 to be 422` and the reasoning was in the comment above the dead code.
+
+The fix is better than the workaround. **The schema names its own refusal**: the media arm
+carries `params: { protocolCode: "media_not_available", status: 422 }` and the pipe honours it.
+One mechanism, both doors — REST gets the code and the status, the socket gets the sentence
+through `invalid_frame`, and neither needs the other to know about media.
+
+`params` IS ON THE ISSUE AT RUNTIME AND NOT ON ITS TYPE. Measured against the pinned zod 4.4.3
+rather than assumed:
+
+    issue keys: code, path, params, message      `$ZodIssue` declares code, path, message
+
+Narrowed through `unknown` with an `in` check, so a zod upgrade that drops the field degrades
+to the default refusal instead of throwing.
+
+### AND THE FIELD IS `attachments.0`, NOT `attachments.0.type`
+
+The refinement refuses the ARM, so zod's path stops at the object. That is also the honest
+answer: nothing is wrong with the `type` key — the whole attachment names a transport the
+platform cannot serve yet, and a caller with ten links is told which one.
+
+### T041a — A KEY PUBLISHED SINCE CHAPTER 1.3, SET FOR THE FIRST TIME
+
+`errorFrameSchema` has declared `field` since 1.3 and no gateway path had ever set it.
+`sendError` takes one now and the frame-refusal site passes zod's joined path, so eleven
+attachments over the socket answer `invalid_frame` with `field: "payload.attachments"`.
+Chapter 3.14 ended this habit for the api and its comment cites THIS schema while fixing only
+its own side.
+
+### THE COMPOSE STACK WENT DOWN MID-PHASE
+
+`ECONNREFUSED 127.0.0.1:15432` in the middle of a test run, with every container reading
+`Exited` and `relay-api-1` at exit code 1. Chapter 3.23 recorded the same thing twice and
+`gaps.md` item 9 is about the lane's exit code no longer answering the question it was built to
+answer. Brought back with `docker compose up -d --wait`; nothing was lost because the failure
+was loud. A stack that goes down between two commands is the reason the lane's greenness is
+only ever a statement about the moment it ran.
