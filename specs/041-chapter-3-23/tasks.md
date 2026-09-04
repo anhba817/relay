@@ -274,7 +274,7 @@ predecessor's, which describe earlier states and must not be touched.
 - [X] T098 Record the battery in `specs/041-chapter-3-23/baseline.txt` (SC-010 (3.23)) with the mean over the **green** runs, the stdev, and every failure's file and message. **A red run is short because turbo abandons the remaining packages** — chapter 3.22 measured 104 s against a 229 s green mean, with the gateway suite never running.
 - [X] T099 **Run all gates LAST**, after every record is written: `check:fences`, `check:docs`, `check:figures`, `check:srs`, `check:errors` from `relay-tutorial`, plus this chapter's three Python instruments. Capture every exit code into a variable; **do not pipe into `tail`**.
 - [X] T100 Commit the close-out records in `specs/041-chapter-3-23/` **before anything is tagged**.
-- [ ] T101 Tag `part3-ch23` in all three repositories with `git tag -a`, **submodules first**, and verify with `git ls-tree part3-ch23^{commit} relay-platform relay-tutorial` that the root's tree names exactly the two submodule tag commits.
+- [X] T101 Tag `part3-ch23` in all three repositories with `git tag -a`, **submodules first**, and verify with `git ls-tree part3-ch23^{commit} relay-platform relay-tutorial` that the root's tree names exactly the two submodule tag commits.
 - [X] T102 Trim `CLAUDE.md`. It is 231 lines after chapter 3.22's trim and is loaded into every session.
 - [X] T103 Hand `specs/036-chapter-3-18/reader-protocol.md` to a second person. **Named by nine chapters and closed by none.** No command in this repository discharges it.
 
