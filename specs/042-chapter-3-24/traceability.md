@@ -26,7 +26,7 @@ carries them, and it is regenerated rather than edited.
 | FR-001 | The system MUST accept up to 10 attachments on a message send. | T015a, T019, T021, T022, T023, T022a, T022b, T022c, T025, T026, T029, T034 |
 | FR-002 | An attachment MUST declare a kind of `image`, `audio` or `video`, and a kind outside that set… | T009, T013, T037, T042 |
 | FR-003 | An attachment MUST carry an external URL. A `media_id` attachment MUST be refused with a code… | T009, T013, T039, T042 |
-| FR-003a | The refusal in FR-003 MUST say that hosted media is not available rather than that the field … | T039, T040, T042 |
+| FR-003a | The refusal in FR-003 MUST say that hosted media is not available rather than that the field … | T039, T039a, T040, T042 |
 | FR-003b | The attachment shape MUST be a discriminated union on a kind field from the first version, so… | T009, T013 |
 | FR-004 | An attachment URL MUST be refused unless its scheme is `http` or `https`. | T011, T013, T038, T042 |
 | FR-005 | A send carrying more than 10 attachments MUST be refused, and MUST write no message row. | T019, T022c, T025, T035, T036, T041, T042 |
@@ -101,5 +101,5 @@ above it. Chapter 3.23 found three tasks under a heading that belonged to the ph
 **Every task that names an id appears above.** A task naming none is setup, a commit, a gate
 run or a record — the tasks a coverage map cannot speak about.
 
-    107 tasks · 26 requirements · 6 criteria
+    108 tasks · 26 requirements · 6 criteria
     0 ids with no verifying task

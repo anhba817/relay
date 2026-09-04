@@ -37,6 +37,14 @@ a customer reading the clause will send one. `invalid_request` sends them to che
 syntax, which is correct. The status follows `webhooks.service.ts`'s precedent for a body
 that parses and cannot be honoured.
 
+**AND IT MUST BE THROWN WITH `protocolError`, WHICH IS NOT A DETAIL.** `ProtocolErrorFilter`
+derives a code from the status for **400, 401, 403 and 404 only**; everything else falls to
+`internal_error`, and a code survives only when the thrower names it. A
+`throw new UnprocessableEntityException("…")` here would ship `code: "internal_error"` with a
+422 and a `docs_url` pointing at `#internal_error` — the lie chapter 2.2 fixed for 400, 3.2 for
+403 and 3.10 for 402. **The five 422s already in `webhooks.service.ts` are throwing it today**;
+this contract does not add a sixth.
+
 **The same rules on the socket's send frame** (`message.send`) and on the internal hop
 (`POST /internal/messages`), because a message sent through a socket and a message sent
 through REST must be the same message.

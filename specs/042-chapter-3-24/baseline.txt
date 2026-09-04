@@ -387,3 +387,59 @@ the artifact a reader runs, so it goes stale in the one place staleness is most 
 
 And P4's expectation moved from "the channel's message count" to **`channels.last_sequence`**,
 matching the acceptance scenario and the task after pass 3 corrected both.
+
+WHAT THE FIFTH ANALYSIS PASS FOUND — REGISTERING A CODE IS NOT PUTTING IT ON THE WIRE
+
+**Fifth pass, fifth time coverage read 100%, three findings and no CRITICAL.** The yield is
+falling and that is not read as a signal: chapter 3.16's twelfth pass recommended stopping and
+its thirteenth, fourteenth and fifteenth each found a CRITICAL.
+
+What did change is the KIND of finding. Passes 1 to 4 found things wrong inside this chapter's
+own artifacts. This one found a defect in a shipped file the chapter merely walks past — which
+is the shape a chapter starts producing once its own documents have stopped being the weakest
+thing in the room.
+
+THE 422 THIS CHAPTER ADDS WOULD HAVE CALLED ITSELF AN INTERNAL ERROR
+
+`contracts/edit-and-delete.md`'s successor specifies **422 `media_not_available`**, and T039
+said "a new error code in `codes.ts`" — which registers it and does not throw it.
+`ProtocolErrorFilter`'s ladder, read rather than remembered:
+
+    400 -> invalid_request      401 -> unauthorized
+    403 -> forbidden            404 -> not_found
+    everything else -> internal_error
+
+    code = named !== null && named in ERROR_CODES ? named : ladder
+
+**The mechanism supports a 422 with its own code. The mechanism is the THROWER'S.** A
+`throw new UnprocessableEntityException("…")` ships `code: "internal_error"` with a 422 status
+and a `docs_url` pointing at `#internal_error`.
+
+**`check:errors` cannot see this.** It reads the built `dist/codes.js` and the reference
+document; it says the code exists and has a section. Whether any thrower names it is invisible
+to it, which is why T039 now names `protocolError` and T039a asserts the response **body**
+rather than its status.
+
+AND FIVE OF THEM ARE ALREADY SHIPPED
+
+    services/api/src/webhooks/webhooks.service.ts:88, 193, 196, 202, 210
+
+Five bare `UnprocessableEntityException`s, none naming a code, all emitting `internal_error`
+with a 422 — the lie chapter 2.2 fixed for 400, chapter 3.2 for 403 and chapter 3.10 for 402,
+**still live for 422 across four chapters.** `webhooks.itest.ts:90` asserts the status and the
+message text, so nothing catches it.
+
+**Not this chapter's file.** `gaps.md` gets it with the five line numbers and the fix named:
+`protocolError` at five call sites and one new code.
+
+`field` WAS ASSERTED WITHOUT ANYONE SAYING WHAT IT SHOULD READ
+
+EIR-API-04 makes `field` the thing an integrator acts on, and attachments are an **array of a
+discriminated union** — so a zod failure path is `attachments.3.url` or `attachments.3.kind`,
+and a caller sending ten needs to know which one. Three tasks asserted "naming the field" and
+none said what it should say.
+
+    T035   the bound is on the ARRAY, so `field` reads `attachments`
+    T038   put the bad scheme at index 3, so the path is not `attachments.0`, and
+           pin whatever joins zod's path array — one decision, made here rather
+           than per call site
