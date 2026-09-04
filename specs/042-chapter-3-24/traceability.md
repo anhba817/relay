@@ -102,5 +102,5 @@ above it. Chapter 3.23 found three tasks under a heading that belonged to the ph
 **Every task that names an id appears above.** A task naming none is setup, a commit, a gate
 run or a record — the tasks a coverage map cannot speak about.
 
-    117 tasks · 27 requirements · 6 criteria
+    118 tasks · 27 requirements · 6 criteria
     0 ids with no verifying task

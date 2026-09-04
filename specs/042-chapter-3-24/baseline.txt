@@ -1190,3 +1190,58 @@ plan.md's table and the fence-column note now both carry theirs. sweep.py's chec
 pass 17, is the same idea enforced rather than written down.
 
     117 tasks     27 requirements     6 criteria     0 untraced     7 instruments
+
+## Analysis pass 19 — the three planning-time measurements nothing will re-check
+
+Pass 18's rule was that a list is worth the command that produced it. This pass tested the rule
+against the claims marked [X] DONE DURING PLANNING.
+
+AL1  HIGH    **T032a reproduces the pair test chapter 3.23 proved empty, and cites 3.23's
+             falsification as its warrant.** What that falsification actually proved: removing
+             `channelVisibleTo` from the edit path left the foreign-versus-missing pair green,
+             because both bodies read identically either way.
+
+             T032a's claim is structural, not tested. `channelVisibleTo` runs as a GATE before
+             the read — messages.service.ts:208, argued at :178 as "THE VISIBILITY CHECK FIRST,
+             AND IT IS THE SAME ONE `history` uses" — the refusal is a 404, and no attachment
+             column ever enters the path. Remove attachments from `listMessages` entirely and
+             T032a stays green.
+
+             The test stays: it guards the byte-identical answer, which is chapter 3.15's
+             property and worth a regression. What it loses is credit for the attachment claim.
+             T032b is the falsification whose EXPECTED OUTCOME IS GREEN, recorded as evidence of
+             insensitivity — 3.23 spent a phase on one of those and wrote down why. If it goes
+             red instead, the premise is wrong and the attachment reaches a surface the gate
+             does not cover, which is the larger finding.
+
+AL2  MEDIUM  T006 said a stray route is "caught by the number rather than by a reading". The
+             number catches nothing: **no test pins 45.** The mechanism is
+             `isolation/targets.itest.ts`, which walks the live router and asserts "classifies
+             every derived target exactly once" — a new route lands in the derived list with no
+             `CLASSIFICATIONS` entry, so `unclassified` stops being empty — plus its converse
+             for removals. Membership in both directions, and the count is incidental. It
+             matters because this chapter teaches that file.
+
+Three measurements re-verified, and the result is the strongest thing in this pass:
+
+    T005 / R3's 70    REPRODUCED PER FILE, all ten, from R3's own stated definition —
+                      "occurrences of the identifier `text` on non-comment lines, in the ten
+                      files that build or carry a message payload":
+
+                          2 frames.ts   2 internal.ts   3 messages.schema.ts
+                          5 messages.service   9 messages.controller   2 internal.controller
+                          3 backfill.controller   36 repository.ts   3 outbox/event.ts
+                          5 session.ts                                       total 70
+
+    T006's 45         EXACT. `grep -c "path:"` on isolation/targets.ts returns 45.
+
+    T006's premise    HOLDS. No task adds a route — zero @Get/@Post/@Patch/@Delete in the task
+                      list — and all six frame names it touches already exist.
+
+**Four for four now.** Passes 17 and 18 found four named sets built from memory or a grep and
+every one was wrong: T043's six read shapes, the construction sites, and the fence-column files
+twice. R3's 70 is the only list in this chapter built with its counting definition written down,
+and it is the only one that verified — per file, not just in total. That is a better argument
+for the rule than any of the findings that produced it.
+
+    117 tasks -> 118     27 requirements     6 criteria     0 untraced     7 instruments
