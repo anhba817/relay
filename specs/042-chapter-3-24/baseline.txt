@@ -1133,3 +1133,60 @@ generalised it: this pass's question was a list's MEMBERSHIP, and no check exist
 this pass wrote one. One line of inquiry had closed, not the artifacts.
 
     117 tasks     27 requirements     6 criteria     0 untraced     7 instruments
+
+## Analysis pass 18 — asking the compiler about a list I wrote from a grep
+
+Pass 11 built plan.md's construction-site table with a grep and no pass had checked it since.
+This one ran the required-field change as a probe, captured what the compiler said, restored
+`frames.ts` and rebuilt `dist`. Four findings, and all four were in lists I wrote.
+
+AJ1  HIGH   **T014a's named instrument answers "nothing to do" in the obvious order.**
+            `tsconfig.base.json` sets `"noEmit": true`, so `tsc -p` typechecks and emits
+            nothing; the emitting config is `tsconfig.build.json`. The api and gateway resolve
+            `@relay/protocol` through its `exports.types`, which points at `dist`. So a change
+            to `packages/protocol/src` is invisible to them until the package is built.
+
+            My first probe ran against a dist dated Sep 3 against a src dated Sep 4 and
+            returned zero errors, and I believed it. Same shape as `check:errors`, which this
+            chapter already warns about for exactly this reason. T014a now says build first.
+
+AJ2  HIGH   **The compiler names 4 of the 7 sites, and the other three are a different kind of
+            thing.** Two are the routes' RETURN values, typed by the controller rather than the
+            frame; one is `MessageCreatedData`, a hand-written interface. They still need
+            attachments — nothing will name them. plan.md's table now has two sections, and the
+            three commands that produce the first one sit above it.
+
+                compiler-visible   messages.controller.ts:236, :334
+                                   backfill.controller.ts:109, session.ts:1534
+                by hand            messages.controller.ts:252, :356, outbox/event.ts
+
+AJ3  MEDIUM Every line number in that table was off by one — 237/236, 335/334, 1535/1534,
+            110/109 — because pass 11's grep matched each literal's SECOND line, the `id:` or
+            `channel:` after the opening brace.
+
+AJ4  HIGH   **The fence-column list was wrong in both directions**, and it drives check:fences.
+            It claimed `isolation.itest.ts` and `typing.itest.ts`, which the compiler does not
+            name, and missed `publisher.test.ts` — 14 of the 32 errors, the largest single file
+            — plus `presence.itest.ts` and `session.itest.ts`. Nine files, 28 test-site
+            literals; pass 4 costed it at eighteen across eight and pass 6 repeated the figure.
+
+**Three failed attempts before one measurement, and each is a trap this repository documents.**
+
+    stale dist          probed, typechecked, got zero, believed it. Became AJ1.
+    filtered the codes  grepped for TS2739|TS2741|TS2345|TS2322 and reported "no errors" — a
+                        filter narrower than its subject, which is what pass 17 caught in my
+                        own brand-new checker.
+    truncated output    `head -30` cut the api's list before `messages/`, so I concluded
+                        messages.controller.ts was unflagged and started theorising about why.
+
+**The general rule this pass earns.** Passes 4, 6, 11 and 17 each produced a named set whose
+count read as settled and whose membership was wrong: the fence-column files twice, the
+construction sites, and T043's six read shapes. Every one came from a grep or from memory.
+
+    A LIST HERE IS WORTH EXACTLY THE COMMAND THAT PRODUCED IT, AND THE COMMAND BELONGS
+    NEXT TO THE LIST.
+
+plan.md's table and the fence-column note now both carry theirs. sweep.py's check 6, added at
+pass 17, is the same idea enforced rather than written down.
+
+    117 tasks     27 requirements     6 criteria     0 untraced     7 instruments

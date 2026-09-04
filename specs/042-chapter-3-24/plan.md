@@ -184,23 +184,40 @@ pairing exists.
 
 ## Every place that builds a message payload
 
-Making `messageSchema.attachments` required means the compiler names every construction site,
-and one task fills them all. It fills them with an **empty array** — which compiles, parses,
-and delivers nothing. So each site needs a second task that makes the value real, and this is
-the list, because three passes in a row rediscovered one missing entry at a time.
+Making `messageSchema.attachments` required means the compiler names the sites it types, and
+one task fills them. It fills them with an **empty array** — which compiles, parses, and
+delivers nothing. So each site needs a second task that makes the value real.
 
-    messages.controller.ts:237   REST publish   message.created    phase 5
-    messages.controller.ts:252   REST 201 response                  phase 5
-    session.ts:1535              gateway publish  message.created   phase 5
-    messages.controller.ts:335   REST publish   message.updated     phase 7
-    messages.controller.ts:356   REST edit 200 response              phase 7
-    backfill.controller.ts:110   resume backfill                    phase 8
-    outbox/event.ts              MessageCreatedData                 phase 9
+**Two classes, and mixing them is what made this list wrong twice.** Four sites are payloads
+the frame types, so the compiler owns them. Three carry the same field for a different reason,
+so a person does. The command that produced this list, and the only one that can re-produce it:
 
-`fanout.ts:51` and `publisher.ts:52` both type their argument as `Message`, so the compiler
-reaches the two publish sites; the responses are typed by the route's own return. What the
-compiler cannot see is the difference between a filled field and a **correctly** filled one,
-which is why every row above also needs an assertion naming the wire rather than the database.
+    pnpm --filter @relay/protocol build          # NOT OPTIONAL — see below
+    npx tsc -p services/api/tsconfig.json --noEmit
+    npx tsc -p services/gateway/tsconfig.json --noEmit
+
+    compiler-visible — 4 sites, and it names them
+      messages.controller.ts:236   REST publish   message.created    phase 5
+      messages.controller.ts:334   REST publish   message.updated    phase 7
+      backfill.controller.ts:109   resume backfill                   phase 8
+      session.ts:1534              gateway publish  message.created  phase 5
+
+    by hand — 3 sites, and nothing will name them
+      messages.controller.ts:252   REST 201 response      typed by the route, not the frame
+      messages.controller.ts:356   REST edit 200 response typed by the route, not the frame
+      outbox/event.ts              MessageCreatedData     a hand-written interface
+
+**The build is not optional and this is the second tool in the chapter with that property.**
+`tsconfig.base.json` sets `"noEmit": true`, so `tsc -p` typechecks and emits nothing; the
+emitting config is `tsconfig.build.json`. The api and gateway resolve `@relay/protocol` through
+its `exports.types`, which points at `dist`. So a change to `packages/protocol/src` is invisible
+to them until the package is built, and the typecheck answers **"nothing to do"** in the obvious
+order. `check:errors` has the same shape and the chapter already warns about that one.
+
+`fanout.ts:51` and `publisher.ts:52` both type their argument as `Message`, which is why the
+compiler reaches the two publish sites. What it cannot see is the difference between a filled
+field and a **correctly** filled one, so every row above also needs an assertion naming the wire
+rather than the database.
 
 `fanout.ts:150` and `publisher.ts:159` re-publish what they were handed and construct nothing.
 

@@ -59,7 +59,7 @@ express, and `messageSchema` is a `strictObject`.
   **And decide whether this needs an ADR against chapter 3.23's ADR-24**, which refused to widen the same object's `text`. The plan predicts one; the argument to make or refuse is that adding a field and loosening an existing one's type are different acts. **A prediction that turns out wrong is worth recording either way.**
 
   `messages.controller.ts:228`'s guard comment says a tombstone *"could not be published anyway"* because `messageSchema.text` is `z.string()`. That stays true — this task adds a field and does not touch `text` — and it is now a sentence beside an edit, which is how the four this chapter's predecessor had to correct got there.
-- [ ] T014a Set `attachments` at **every** place that constructs a `messageSchema` payload, immediately after T014 and **in this phase** (FR-022 (3.24)). `pnpm -s typecheck` lists them; the compiler is the instrument, not a reading.
+- [ ] T014a Set `attachments` at **every** place that constructs a `messageSchema` payload, immediately after T014 and **in this phase** (FR-022 (3.24)). **Build the protocol package first, then typecheck** — `pnpm --filter @relay/protocol build`, then `npx tsc -p services/api/tsconfig.json --noEmit` and the same for the gateway. The compiler is the instrument, not a reading, **and it answers "nothing to do" in the obvious order**: `tsconfig.base.json` sets `"noEmit": true` so `tsc -p` emits nothing, the emitting config is `tsconfig.build.json`, and the consumers resolve `@relay/protocol` through its `exports.types` at `dist`. Analysis pass 18 ran this probe against a `dist` a day old and believed the zero. Same shape as `check:errors`, which the chapter already warns about. **It names 4 of the 7 sites `plan.md` lists** — the other three are not `messageSchema` payloads and no command will name them.
 
   **THIS IS WHY IT IS HERE AND NOT LATER.** T014 makes the field required, so from that line until this one **`typecheck` is red across the whole workspace** — and T018 and T025 both say "Gates first". The first draft put this in Phase 5, which would have committed two phases with a broken typecheck. Every chapter in this series commits each phase green.
 
@@ -251,9 +251,20 @@ what stops a later reader treating an omission as a bug.
 
 - [ ] T068 Count what the chapter **teaches** and what it must **fence**, as two columns in `specs/042-chapter-3-24/chapter-notes.md`, and never ask either number to do the other's job.
 
-  **SEVEN FILES JOIN THE FENCE COLUMN AND NONE OF THEM IS TAUGHT**, because making the frame's field required means every construction sets it: `services/gateway/src/session.test.ts`, `isolation.itest.ts`, `connections.itest.ts`, `typing.itest.ts`, `resume.test.ts`, `resume.itest.ts` and `fanout.itest.ts` are all in an earlier chapter's chain. The eighth, `services/api/src/fanout/fanout.itest.ts`, is fenced by nobody and stays that way.
+  **NINE FILES JOIN THE FENCE COLUMN AND NONE OF THEM IS TAUGHT**, because making the frame's field required means every construction the compiler types must set it. Measured, not listed from memory — the same probe as T014a, after the build:
 
-  **That is a cost of the required-field decision that no earlier pass counted.** Analysis pass 4 costed it in `typecheck` terms — eighteen literals across eight files — and pass 6 costed it here. Chapter 3.23 recorded the same shape from the other side: fencing a file a chapter does not discuss adds lines the chapter never explains, and it declined to fence three for exactly that reason. **These seven have no such choice**: their chains exist, so a changed line must appear or `check:fences` goes red.
+        14  services/api/src/fanout/publisher.test.ts        fenced by nobody
+         4  services/gateway/src/connections.itest.ts
+         3  services/gateway/src/session.itest.ts
+         2  services/gateway/src/resume.test.ts
+         1  services/gateway/src/session.test.ts
+         1  services/gateway/src/resume.itest.ts
+         1  services/gateway/src/presence.itest.ts
+         1  services/gateway/src/fanout.itest.ts
+         1  services/api/src/fanout/fanout.itest.ts          fenced by nobody
+
+  **This list was wrong in both directions until analysis pass 18 measured it.** It claimed `isolation.itest.ts` and `typing.itest.ts`, which the compiler does not name, and missed `publisher.test.ts` — 14 of the 32 errors, the largest single file — along with `presence.itest.ts` and `session.itest.ts`. **28 literals across nine files**, where analysis pass 4 costed it at eighteen across eight.
+  **That is a cost of the required-field decision that no earlier pass counted, and the two passes that tried both got it wrong.** Chapter 3.23 recorded the same shape from the other side: fencing a file a chapter does not discuss adds lines the chapter never explains, and it declined to fence three for exactly that reason. **Seven of these nine have no such choice**: their chains exist, so a changed line must appear or `check:fences` goes red. The two marked *fenced by nobody* stay that way.
 - [ ] T069 Estimate the word count in `specs/042-chapter-3-24/chapter-notes.md` from the number of **arguments**, and say which. **Estimate at 545 words per argument and stop adjusting for what the argument is against** — chapter 3.23 predicted 420 on the theory that arguing against published material costs more, and came in at 545 against 3.22's 583.
 - [ ] T070 Write the chapter page at `relay-tutorial/app/(en)/part-3/chapter-24/<slug>/page.mdx`. **MDX is not markdown**: an indented block containing braces is a JSX expression.
 - [ ] T071 [P] Write `relay-tutorial/app/(en)/part-3/chapter-24/<slug>/figures.ts` — the attachment shape with its future arm, the six read shapes and which two change, and what a tombstone leaves behind.
