@@ -9,6 +9,34 @@ publishes it as `attachments JSONB` and says nothing more, so unlike chapter 3.2
 `message_edits` there is no published DDL to reproduce — and nothing to get wrong by not
 reading it.
 
+## What the reader gets, which is `unknown`
+
+    messages.attachments   jsonb("attachments")   no .$type<>()   schema.ts:378
+
+Drizzle infers a bare `jsonb()` as `unknown` on select. The compiler was asked rather than
+assumed — a probe assigning `typeof messages.$inferSelect["attachments"]` to a `string[]`:
+
+    error TS2322: Type 'unknown' is not assignable to type 'string[]'.
+
+So no read path can hand this column to a `messageSchema` payload without first saying what it
+is, and there are three ways to say it. The tree has already chosen twice:
+
+    repository.ts:2788   metadata: row.metadata as Record<string, unknown>
+    repository.ts:2859   metadata: sql<Record<string, unknown>>`${channels.metadata}`
+
+`schema.ts` contains **zero** `.$type<>()` calls. This chapter adds none and uses the `sql<…>`
+form at each read site:
+
+    attachments: sql<Attachment[] | null>`${messages.attachments}`
+
+The reason is not consistency for its own sake. `.$type<>()` is one claim covering every reader
+of the schema, present and future; `sql<…>` is one claim per read site. **Neither validates
+anything** — both are casts, and Postgres enforces no shape on a JSONB column. Putting the
+claim at the read site keeps the number of unchecked assertions equal to the number of places
+that actually read, which is three: `sendMessage`'s two return paths and
+`getMessageByIdempotencyKey`'s select, both widened in phase 3, and the resume backfill's
+mapping in phase 8.
+
 **NULL and `[]` are different values and this chapter decides what each means.**
 
     NULL   the message has no attachments, or is a tombstone whose attachments were unlinked

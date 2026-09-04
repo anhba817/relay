@@ -580,3 +580,67 @@ message*. Both belong here and now say which is which.
 The heading was the last thing in the feature still saying five: **pass 3 rewrote SC-003 to
 assert "each of the six"**, so a requirement had been depending on a number a research note's own
 title contradicted for five passes.
+
+## Analysis pass 9 — will 109 tasks compile in the order given?
+
+The first pass to answer with a compiler instead of a reading. Two of its three findings are
+things `tsc` or `zod` reports, which is why eight reading passes went past them.
+
+P1  CRITICAL  No task added `attachments` to `sendMessage`'s RETURN value. T022 wrote the
+              INSERT; `repository.ts:457` and `:278` return five keys and that is not one of
+              them. T015a, T026 and T028b all assumed the key was there — T015a's own text
+              reasons from "the moment `sendMessage` returns an attachments key", a change
+              nothing in 109 tasks made. Fixed by T015b, in phase 3 beside T015a, mirroring
+              the T014/T014a pairing.
+
+              Measured against the pinned zod 4.4.3, all three combinations:
+
+                  schema has no field   value carries key    false   (T015a's documented mode)
+                  field REQUIRED        key absent           false   (nobody had named this)
+                  field optional        key absent           true    (green, and FR-022 broken)
+
+              `api-client.ts:248` parses with this schema; `parse` throws and the socket
+              closes 1011. The middle row is every socket send killing its client.
+
+              A second edge: T049 gave the `duplicate: true` branch its attachments in phase 8
+              while the primary branch had no task at all — a retried send would have carried
+              them and a first send would not. T049's select change moved to T015b, because a
+              required field cannot wait five phases; T049 keeps the check and the `user`
+              omission record.
+
+P2  HIGH      `attachments: jsonb("attachments")` carries no `.$type<>()`, so its inferred
+              select type is `unknown`. Asked directly rather than assumed:
+
+                  error TS2322: Type 'unknown' is not assignable to type 'string[]'.
+
+              109 tasks touched `db/schema.ts` zero times and no artifact said what type the
+              read paths get. `schema.ts` has zero `.$type<>()` calls and the tree has already
+              chosen twice for `metadata` — `as` at the row (repository.ts:2788) and `sql<T>`
+              in the select (:2859). The chapter uses `sql<Attachment[] | null>` at each of the
+              three read sites, and `data-model.md` now says why: both forms are casts, neither
+              validates, and per-site claims keep the count of unchecked assertions equal to
+              the count of readers.
+
+P3  MEDIUM    Seven edge cases, all about input. None covered a STORED value that today's rules
+              would refuse. Decided rather than left open: the read paths do not re-validate,
+              and the cost is where the failure lands — the gateway's strict parse, as a 1011
+              close, not as anything naming the row. T004 plants rows with raw SQL, so the case
+              is reachable inside this chapter's own suite; T004 now says to plant a valid one.
+
+Four checks that came back clean, recorded because they are the ones that should have caught
+this class and did not:
+
+    [P] markers            0 pairs share a file within a phase
+    new-file ordering      attachments.ts (T009) and .test.ts (T010) precede every later use
+    module wiring          T012 adds it to protocol/src/index.ts — no repeat of 3.21's main.ts
+    migrations             0 tasks, correctly: the column is in 0000_core_tables.sql
+
+Two instrument failures during remediation, both mine and both right. `check-refs.py` refused
+`data-model.md`'s new section for citing T015b and T051: task ids belong in tasks.md, which is
+3.23's own rule about ids outliving tasks — and passes 8 and 9 had both just renumbered tasks.
+Described the phases instead of adding a FOREIGN exemption. And I ran `sweep.py` before
+`regen-traceability.py`, so it reported a count I had already changed: regen first, then the
+checkers.
+
+    109 tasks -> 110      27 requirements      6 criteria      0 untraced
+    edge cases 7 -> 8     check-prose.py still red on purpose until phase 10

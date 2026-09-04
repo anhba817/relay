@@ -135,6 +135,15 @@ route returns the tombstone with an empty attachment list.
   of code that this chapter changes the meaning of**, which is what a test is for rather than a
   reading.
 
+- **A stored value that today's rules would refuse.** A row whose attachments were written
+  before FR-023 (3.24)'s 2,048-character bound, or planted by hand in a test fixture. **The read
+  paths do not re-validate** — the column is written only through the validated send path, and
+  a cast at the read site is not a check (`data-model.md`, "What the reader gets"). The cost of
+  that decision is where the failure lands: an invalid stored array is refused by the gateway's
+  strict parse of the api's response, which throws and closes the socket **1011**, not by
+  anything that names the row. Every other edge case here guards the door; this one is about
+  the cupboard, and the decision is to trust it.
+
 ## Requirements *(mandatory)*
 
 ### Functional Requirements

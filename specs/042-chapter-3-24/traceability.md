@@ -23,7 +23,7 @@ carries them, and it is regenerated rather than edited.
 
 | Requirement | What it asks | Verified by |
 |---|---|---|
-| FR-001 | The system MUST accept up to 10 attachments on a message send. | T015a, T019, T021, T022, T023, T022a, T022b, T022c, T025, T026, T029, T034 |
+| FR-001 | The system MUST accept up to 10 attachments on a message send. | T015a, T015b, T019, T021, T022, T023, T022a, T022b, T022c, T025, T026, T029, T034 |
 | FR-002 | An attachment MUST declare a kind of `image`, `audio` or `video`, and a kind outside that set… | T009, T013, T037, T042 |
 | FR-003 | An attachment MUST carry an external URL. A `media_id` attachment MUST be refused with a code… | T009, T013, T039, T042 |
 | FR-003a | The refusal in FR-003 MUST say that hosted media is not available rather than that the field … | T039, T039a, T040, T042 |
@@ -48,7 +48,7 @@ carries them, and it is regenerated rather than edited.
 | FR-019b | A message with no text and no attachments MUST still be refused. Relaxing the bound is condit… | T020, T020b, T025 |
 | FR-020 | The attachment shape MUST leave room for §4.14's `media_id` arm without a breaking change to … | T009 |
 | FR-021 | The same URL attached twice to one message MUST be stored and returned twice. The platform MU… | T036a |
-| FR-022 | The attachments field on a message payload MUST be present on every payload that carries a me… | T014, T014a, T027 |
+| FR-022 | The attachments field on a message payload MUST be present on every payload that carries a me… | T014, T014a, T015a, T015b, T027 |
 | FR-023 | An attachment URL MUST be refused above 2,048 characters. **FR-MSG-11 states no length**, so … | T009, T010 |
 
 ## 2. Success criterion → the tasks that verify it
@@ -102,5 +102,5 @@ above it. Chapter 3.23 found three tasks under a heading that belonged to the ph
 **Every task that names an id appears above.** A task naming none is setup, a commit, a gate
 run or a record — the tasks a coverage map cannot speak about.
 
-    109 tasks · 27 requirements · 6 criteria
+    110 tasks · 27 requirements · 6 criteria
     0 ids with no verifying task
