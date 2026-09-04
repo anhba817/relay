@@ -182,6 +182,28 @@ return paths.
 Leaving either for a later phase makes this phase's commit red — which is the whole reason the
 pairing exists.
 
+## Every place that builds a message payload
+
+Making `messageSchema.attachments` required means the compiler names every construction site,
+and one task fills them all. It fills them with an **empty array** — which compiles, parses,
+and delivers nothing. So each site needs a second task that makes the value real, and this is
+the list, because three passes in a row rediscovered one missing entry at a time.
+
+    messages.controller.ts:237   REST publish   message.created    phase 5
+    messages.controller.ts:252   REST 201 response                  phase 5
+    session.ts:1535              gateway publish  message.created   phase 5
+    messages.controller.ts:335   REST publish   message.updated     phase 7
+    messages.controller.ts:356   REST edit 200 response              phase 7
+    backfill.controller.ts:110   resume backfill                    phase 8
+    outbox/event.ts              MessageCreatedData                 phase 9
+
+`fanout.ts:51` and `publisher.ts:52` both type their argument as `Message`, so the compiler
+reaches the two publish sites; the responses are typed by the route's own return. What the
+compiler cannot see is the difference between a filled field and a **correctly** filled one,
+which is why every row above also needs an assertion naming the wire rather than the database.
+
+`fanout.ts:150` and `publisher.ts:159` re-publish what they were handed and construct nothing.
+
 ## Complexity Tracking
 
 | Thing | Why it is not simpler | Rejected |

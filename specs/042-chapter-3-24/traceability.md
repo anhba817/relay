@@ -32,14 +32,14 @@ carries them, and it is regenerated rather than edited.
 | FR-005 | A send carrying more than 10 attachments MUST be refused, and MUST write no message row. | T010, T019, T022c, T025, T035, T036, T041, T042 |
 | FR-006 | Attachments MUST be returned in the order they were submitted, on every path that returns a m… | T022, T023, T022c, T025, T028b, T030a, T052 |
 | FR-007 | A message with no attachments MUST be returned with an empty list rather than an absent field… | T028, T031, T034 |
-| FR-008 | Attachments MUST be delivered to connected members in the same frame as the message they belo… | T014, T018, T027, T028a, T028b, T030, T029a, T034 |
+| FR-008 | Attachments MUST be delivered to connected members in the same frame as the message they belo… | T014, T018, T027, T027a, T028a, T028b, T030, T029a, T034 |
 | FR-009 | History responses MUST include each message's attachments. | T028, T029, T030a, T034 |
 | FR-010 | The resume backfill MUST include attachments, so a client that was away and a client that sta… | T051, T052, T054 |
 | FR-011 | A recognised idempotent retry MUST return the original message's attachments and MUST NOT wri… | T049, T050, T050a, T054 |
 | FR-012 | Deleting a message MUST unlink its attachments, and the tombstone MUST be returned with an em… | T043, T048, T050a, T054 |
 | FR-013 | The deletion event MUST NOT carry attachment data, for the same reason it carries no text. | T016, T044, T048 |
 | FR-014 | An attachment MUST NOT be readable by a caller who cannot read the message it belongs to. | T032a |
-| FR-015 | The message payload used by creation and edit events MUST carry attachments identically, so a… | T014, T018, T057, T060 |
+| FR-015 | The message payload used by creation and edit events MUST carry attachments identically, so a… | T014, T018, T046a, T046b, T055, T057, T060 |
 | FR-016 | Whether an edit may change attachments MUST be decided and stated. If it may not, an edit MUS… | T045, T047, T048 |
 | FR-017 | The number of attachments on a message MUST be derivable from what this chapter writes, so §4… | T023, T058, T060 |
 | FR-018 | The comment at `packages/protocol/src/frames.ts:14` scheduling attachments for Part 4 MUST be… | T002, T061, T067 |
@@ -48,7 +48,7 @@ carries them, and it is regenerated rather than edited.
 | FR-019b | A message with no text and no attachments MUST still be refused. Relaxing the bound is condit… | T020, T020b, T025 |
 | FR-020 | The attachment shape MUST leave room for §4.14's `media_id` arm without a breaking change to … | T009 |
 | FR-021 | The same URL attached twice to one message MUST be stored and returned twice. The platform MU… | T036a |
-| FR-022 | The attachments field on a message payload MUST be present on every payload that carries a me… | T014, T014a, T015a, T015b, T027 |
+| FR-022 | The attachments field on a message payload MUST be present on every payload that carries a me… | T014, T014a, T015a, T015b, T027, T027a, T046a |
 | FR-023 | An attachment URL MUST be refused above 2,048 characters. **FR-MSG-11 states no length**, so … | T009, T010 |
 
 ## 2. Success criterion → the tasks that verify it
@@ -102,5 +102,5 @@ above it. Chapter 3.23 found three tasks under a heading that belonged to the ph
 **Every task that names an id appears above.** A task naming none is setup, a commit, a gate
 run or a record — the tasks a coverage map cannot speak about.
 
-    110 tasks · 27 requirements · 6 criteria
+    113 tasks · 27 requirements · 6 criteria
     0 ids with no verifying task

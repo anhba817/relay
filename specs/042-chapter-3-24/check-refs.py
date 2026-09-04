@@ -279,6 +279,27 @@ def main() -> int:
                 else f"{ident} is cited by no task at all"
             )
 
+    # And the OTHER direction, which was missing for eleven passes: an id a task cites
+    # that spec.md never declared. The loop above walks spec.md's ids and asks whether a
+    # task names each — so it reports "every one traced" while a task rests its whole
+    # argument on `FR-008a (3.24)`, a requirement belonging to the PREVIOUS chapter. A
+    # coverage check that runs one way measures reach, not correctness.
+    if tasks_p.exists() and spec_p.exists():
+        declared = set(
+            re.findall(r"^- \*\*((?:FR|SC)-\d+[a-z]?)\*\*", spec_p.read_text(), re.M)
+        )
+        body = tasks_p.read_text()
+        seen: dict[str, int] = {}
+        pattern = r"\b((?:FR|SC)-\d+[a-z]?) \(" + re.escape(CHAPTER) + r"\)"
+        for m in re.finditer(pattern, body):
+            if m.group(1) not in declared:
+                seen.setdefault(m.group(1), body.count("\n", 0, m.start()) + 1)
+        for ident, line in sorted(seen.items()):
+            problems.append(
+                f"tasks.md:{line} cites {ident} ({CHAPTER}) and spec.md declares no "
+                f"{ident} — cite this chapter's own requirement, or fix the suffix"
+            )
+
     if problems:
         print(f"check-refs: {len(problems)} problem(s)")
         for p in problems:

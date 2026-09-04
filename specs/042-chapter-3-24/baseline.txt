@@ -697,3 +697,68 @@ the ids.
 
     110 tasks     27 requirements     6 criteria     0 untraced
     check-refs 0  sweep 0  regen 0 untraced  check-prose still red until phase 10
+
+## Analysis pass 11 — which task makes each value REAL?
+
+Pass 10 recommended stopping and going to implementation. Pass 11 found a CRITICAL that no
+build would have found, because all three of its sites COMPILE.
+
+S1  CRITICAL  Making `messageSchema.attachments` required means the compiler names every
+              construction site, and T014a fills them — with an EMPTY ARRAY. Each site then
+              needs a second task to make the value real, and three had none:
+
+                  session.ts:1535              gateway publish   message.created
+                  messages.controller.ts:335   REST publish      message.updated
+                  messages.controller.ts:356   REST edit 200 response
+
+              T027 does exactly this job for the REST creation publish, so the socket twin's
+              absence is visible only if someone asks for the pair. T022a is the near miss: it
+              threads the INBOUND destructure at session.ts:1512 and names this failure class
+              in its own text — "nothing carries it further" — then stops 23 lines short of the
+              outbound construction.
+
+              The edit half was worse: FR-015 requires the edit event to carry attachments and
+              only its outbox half (T055/T057) was covered. T045 asserts the DATABASE keeps
+              attachments through an edit; nothing asserted the wire reports them, and an empty
+              array passes T045.
+
+              Fixed by T027a, T046a, T046b — and by putting the seven-site enumeration in
+              plan.md, because this is the THIRD consecutive pass to rediscover one missing
+              entry: pass 9's sendMessage return, pass 10's undeclared type, pass 11's three.
+              Finding them one per pass is the actual defect.
+
+S2  HIGH      T055 rested on `FR-008a` suffixed to this chapter. This chapter declares no such
+              id: it is chapter 3.23's, at 041-chapter-3-23/spec.md:195, and reads "The message
+              payload used by creation and edit events MUST be left unchanged" — 3.23 promising
+              not to touch the payload that 3.24 deliberately changes. The right authority was
+              in this chapter's own spec the whole time: FR-015, "MUST carry attachments".
+              Conclusion right, authority wrong, eleven passes.
+
+S3  MEDIUM    And the reason S2 survived: check-refs.py's requirement loop runs spec -> tasks
+              only. It walks the ids spec.md declares and asks whether a task cites each, so it
+              printed "every one traced" while a task's whole argument rested on an id from the
+              previous chapter. One dangling out of 34 cited.
+
+              Added the reverse direction, tested red three ways (FR-099, SC-042, FR-015a) and
+              controlled three ways (a (3.23) suffix, an FR-MSG- style id, and a real id must
+              all stay silent). The first control run reported a false FIRED because I measured
+              the EXIT CODE and the probe task id T998 broke the sequence check instead — a
+              checker verified by exit code answers about every check at once. Re-measured on
+              the new check's own output.
+
+              Its first real catch was my own prose: the sentence explaining the bad citation
+              quoted the suffixed form and tripped it. Reworded rather than exempted.
+
+Clean negatives, verified:
+
+    FR-019's premise holds. Every text predicate in the tree tests null explicitly —
+    backfill.controller.ts:107, messages.controller.ts:234, repository.ts:4485 and :4668,
+    session.ts:1533. No truthiness anywhere, so "" is never read as a tombstone. That is
+    T004's whole question and it should pass.
+
+    T053 asserts rather than records: it names the four unchanged read shapes AND pins the
+    channel preview. An attachments-only message previews as "" and that was decided.
+
+    fanout.ts:150 and publisher.ts:159 re-publish what they are handed and construct nothing.
+
+    110 tasks -> 113     27 requirements     6 criteria     0 untraced     0 dangling
