@@ -125,3 +125,74 @@ payload.
 **The pinned-places prediction for a new error code: FOUR.** Chapter 3.22 predicted two and
 found four; 3.23 predicted four for the outbox types and found five and a half. The prediction
 is the point, not the number.
+
+WHAT THE FIRST ANALYSIS PASS FOUND, AND IT WAS ONE DEFECT SEEN FROM SIX ANGLES
+
+**Coverage read 100% before the pass and 100% after.** Every requirement had a task; the tasks
+named the wrong files for one of the two doors a message can enter by. That is the exact limit
+`check-refs.py` states in its own last line — *"ids only — this says nothing about whether the
+prose around them is true"* — and it is why an analysis pass reads the tree rather than the
+documents.
+
+THE SOCKET DOOR DROPPED THE FIELD AT THREE NAMED POINTS
+
+    session.ts:1512            const { channel, text, idem_key } = frame.data.payload
+                               a NAMED destructure. Widening `messageSendSchema` puts the
+                               field on the wire and nothing carries it further.
+    internal.controller.ts:68  { text: body.text, …(idempotency_key) }
+                               a NAMED construction, one hop later.
+    session.ts:1534            the gateway BUILDS the outbound `message.created` payload
+                               field by field after a socket send.
+
+**A message sent over a socket would have committed with no attachments and acked normally**,
+while every REST test stayed green — including the outsider test, which sends over REST. The
+shape is chapter 3.21's inert module: parsed, ignored, invisible to everything that does not
+exercise that exact door. T022a, T022b, T022c, T028a and T028b are what close it.
+
+AND A STRICT RESPONSE SCHEMA MADE IT WORSE THAN A MISSING FIELD
+
+`internalSendResponseSchema` is a `strictObject` without attachments; `api-client.ts:248`
+**parses** the api's reply with it; `internal.controller.ts:84` returns `{ ...message, user }`.
+The moment `sendMessage` returns an attachments key, the spread carries it and the strict parse
+rejects it — **every socket send fails**, not just one carrying an attachment.
+
+**It is latent today for a reason worth knowing.** `MessageRow` has carried `edited_at?` since
+chapter 3.23 and that schema does not list it, and nothing breaks because `sendMessage`'s two
+return paths never set the key. **A field on the type and never on the value is a trap that
+springs the day somebody sets it**, and this chapter is the somebody.
+
+THE PLAN'S OWN PREDICTION IS WHAT MADE THIS CHEAP
+
+The plan listed `services/gateway/src/session.ts` with "no change expected — verify, do not
+assume", because chapter 3.23 found the gateway needing a change nobody predicted. **The
+prediction was wrong in both directions and verifying it took one `sed`** — at analysis time
+rather than at implementation time, which is the whole difference between a note and a phase.
+
+A prediction stated as a value is checkable; the chapter's other predictions are stated the
+same way for the same reason.
+
+TWO PRE-EXISTING DISAGREEMENTS BETWEEN THE DOORS, FOUND BY COMPARING THREE SCHEMAS
+
+    messageSendSchema.payload.text        z.string()                  no min, no max
+    internalSendRequestSchema.text        z.string().min(1).max(8000)
+    sendMessageBodySchema.text            z.string().min(1).max(8000)
+
+A socket client may send 100,000 characters and is refused one hop later by the api. **Not
+fixed here**: that is FR-MSG-01's bound and this is FR-MSG-11's chapter, and narrowing a
+published frame under cover of a different requirement is how a contract changes without
+anybody deciding to. T017a records the decision; `gaps.md` carries it with the one-line fix
+named.
+
+The second disagreement is `idem_key` against `idempotency_key`, which
+`packages/outsider/src/integrate.itest.ts` already records paying for.
+
+AND THE SWEEP CAUGHT THE SENTENCE THAT DESCRIBED THE SWEEP
+
+Regenerating `traceability.md` after the pass fixed a stale task count. The rewritten paragraph
+**quoted the sweep's own failure message**, and the sweep read the quoted figure as a fresh
+claim and failed again.
+
+**Reworded rather than exempted.** A checker cannot tell a claim from a quotation of one, and
+teaching it the difference mid-pass is how a checker learns to accept the thing it was pointed
+at — chapter 3.23 did exactly that once and recorded it. The blind spot is here instead: a
+count inside quotation marks reads as a count.

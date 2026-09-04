@@ -88,23 +88,47 @@ relay-platform/
 │   ├── frames.ts              messageSchema gains a field; messageSendSchema too
 │   ├── attachments.ts         NEW — the shape, its bound, its scheme rule
 │   ├── attachments.test.ts    NEW
-│   └── internal.ts            internalSendRequestSchema, the socket's door
+│   └── internal.ts            internalSendRequestSchema AND internalSendResponseSchema
+│                              — the second is strict and the gateway parses with it
 ├── services/api/src/
 │   ├── messages/messages.schema.ts       the send body's array and its bound
 │   ├── messages/messages.service.ts      threading, and the empty-text rule
 │   ├── messages/messages.controller.ts   the response, and the published frame
-│   ├── internal/internal.controller.ts   the socket's send
+│   ├── internal/internal.controller.ts   the socket's send — builds its call by NAME,
+│   │                                     which the first analysis pass found
 │   ├── internal/backfill.controller.ts   resume carries them
 │   ├── outbox/event.ts                   MessageCreatedData, three event types
 │   └── db/repository.ts                  the INSERT, and five read shapes
 └── services/gateway/src/
-    └── session.ts                        no change expected — verify, do not assume
+    └── session.ts                        THREE changes, not none: the inbound
+                                          destructure, the outbound builder, and
+                                          the tests that see the socket door
 ```
 
-**`services/gateway/src/session.ts` is listed with an expectation attached**, because chapter
-3.23 found the gateway needed a change nobody predicted. The gateway forwards a payload it
-does not construct, so a field added to `messageSchema` should reach a socket without a line
-changing. **That is a prediction, and phase 3 checks it.**
+**`services/gateway/src/session.ts` was listed with an expectation attached** — that the
+gateway forwards a payload it does not construct, so a field added to `messageSchema` should
+reach a socket without a line changing. **The first analysis pass checked it and the prediction
+was wrong in both directions.**
+
+    session.ts:1512   `const { channel, text, idem_key } = frame.data.payload`
+                      a NAMED destructure, so a field added to the inbound frame is
+                      parsed and dropped before it reaches the api
+    session.ts:1534   the gateway BUILDS the outbound `message.created` payload field by
+                      field after a socket send, so a field the api returns is absent from
+                      the frame every member of that channel receives
+
+Only the middle case holds: a `message.created` **arriving** from the fabric is forwarded
+whole. The gateway is a producer on the socket-send path and a forwarder on the fan-out path,
+and the plan had seen one of the two.
+
+**Two more files move with it**, both found the same way. `internal.controller.ts:68` builds
+its call by name, and `internalSendResponseSchema` is a `strictObject` the gateway **parses**
+the api's reply with — so a field on `MessageRow` that reaches `{ ...message }` breaks every
+socket send rather than going missing quietly. That one is latent today only because
+`edited_at` is on the type and never on the value.
+
+**The prediction is what made this cheap.** It named a file and said "verify, do not assume";
+verifying took one `sed` at analysis time instead of a phase at implementation time.
 
 ## Phases
 
