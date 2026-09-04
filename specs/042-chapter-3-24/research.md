@@ -57,7 +57,7 @@ found about their own counts: **a shape that rides beside `text` touches every d
 has.** Four doors write one: the public send, the socket's send through
 `internal.controller.ts`, the idempotent-retry replay, and the resume backfill's mapping.
 
-## R4 — Five read paths return a message and they do not agree on columns
+## R4 — Six read paths return a message and they do not agree on columns
 
     repository.ts:5227  listMessages          id, channel_id, seq, user, text, created_at,
                                               edited_at            <- the history route
@@ -70,7 +70,16 @@ has.** Four doors write one: the public send, the socket's send through
                                               call sites, all in `idempotency.itest.ts`
 
 Plus `listChannelsForUser`'s `last_message`, which is `{sequence, text, user, created_at}` —
-a sixth shape, and the one the channel listing renders.
+the sixth, and the one the channel listing renders. **This heading said "Five" until analysis
+pass 8**, contradicted by its own body one paragraph down, and by then SC-003 had been rewritten
+to assert "each of the six" — so a research note's heading was the only thing in the feature
+still saying five.
+
+**And the six is not the same count as the eight.** `services/api/src/db/repository.ts` holds
+**eight** `.from(messages)` SELECTs; two of them — `upsertUser`'s has-ever-sent scan and
+`messageExistsIn` — read no message body and return no shape. Eight is the search space for
+"did this chapter miss a query"; six is the number of shapes that return a message. Both are in
+`baseline.txt` and they answer different questions.
 
 **FR-006 and FR-009 land on the first two. FR-011 lands on the second**, which is the one
 that already omits a field the others carry.

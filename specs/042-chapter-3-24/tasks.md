@@ -96,7 +96,7 @@ express, and `messageSchema` is a `strictObject`.
       addIssue({ code: "custom", path: ["text"], message: "…" })
 
   `text` rather than `attachments` because supplying a text is the repair a caller who sent neither almost always wants; the message names both.
-- [ ] T020c Assert the refusal's `field` in `relay-platform/services/api/src/messages/messages.itest.ts` (FR-019b (3.24)): a body with no text and no attachments is refused with `field` reading **`text`**, not absent. Measured shapes for the sibling refusals, so the three assertions do not drift apart:
+- [ ] T020b Assert the refusal's `field` in `relay-platform/services/api/src/messages/messages.itest.ts` (FR-019b (3.24)): a body with no text and no attachments is refused with `field` reading **`text`**, not absent. Measured shapes for the sibling refusals, so the three assertions do not drift apart:
 
       neither text nor attachments   field = text            <- only if the path is set
       eleven attachments             field = attachments
@@ -127,7 +127,9 @@ attachment for a client that was not connected.
 - [ ] T028a [US1] Add attachments to the payload the gateway BUILDS after a socket send, at `relay-platform/services/gateway/src/session.ts:1534` (FR-008 (3.24)). **The api constructs the fan-out payload for a REST send and the gateway constructs it for a socket send** — two builders for one frame, and T027 only covers the first. A message sent over a socket would otherwise reach every member with its attachments missing.
 - [ ] T028b [US1] Write the socket-delivery test in `relay-platform/services/gateway/src/session.itest.ts` (FR-008 (3.24), SC-001 (3.24)): a message sent over one member's socket reaches another member's socket **with its attachments, in order** (FR-006 (3.24)). The REST delivery test at T030 cannot see this path.
 - [ ] T029 [US1] Write the route test in `relay-platform/services/api/src/messages/messages.itest.ts` (FR-001 (3.24), FR-009 (3.24), SC-001 (3.24)): send with an attachment, read it back through the history route, assert the kind and the URL.
-- [ ] T030 [US1] Write the delivery test in `relay-platform/services/gateway/src/session.itest.ts` (FR-008 (3.24), SC-001 (3.24)): a connected member receives `message.created` carrying the attachment. **Two members and a count, not a first match** — a `waitFor` that resolves on the first match cannot see a duplicate.
+- [ ] T030 [US1] Write the **REST-send** delivery test in `relay-platform/services/gateway/src/session.itest.ts` (FR-008 (3.24), SC-001 (3.24)): a message sent **over REST** reaches a connected member as `message.created` carrying the attachment. **Two members and a count, not a first match** — a `waitFor` that resolves on the first match cannot see a duplicate.
+
+  **The door is named because it stopped being obvious.** When this task was written there was one door; analysis pass 1 added the socket path and T028b, and "the delivery test" then described two tasks in the same file citing the same requirement and criterion. A reader could have written the same test twice.
 - [ ] T029a [US1] Write the socket-ack test in `relay-platform/services/gateway/src/session.itest.ts` (FR-008 (3.24)): a socket sender's `message.ack` carries **only `seq`**, and the sender learns its attachments landed from the `message.created` frame the fan-out delivers to it like any other member. **Assert the ack's exact key set**, so a later chapter widening `messageAckSchema` has to change this test on purpose.
 
   **The spec's first draft asked for the ack to carry the attachments** and did not say which door it meant. `messageAckSchema`'s payload has been `{ seq }` since chapter 2.2; widening it is a protocol change no requirement asks for. The scenario was narrowed and this test is what keeps the narrowing honest rather than quiet.

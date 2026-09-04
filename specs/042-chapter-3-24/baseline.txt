@@ -534,3 +534,49 @@ This chapter adds one idempotency branch — the retry replay's attachments. **T
 than this chapter and is one branch larger because of it.** T080 says so; it is a sentence in
 the record rather than a number to chase, and pretending otherwise would be the chapter
 claiming to close something it does not.
+
+WHAT THE EIGHTH ANALYSIS PASS FOUND — DAMAGE THE PASSES THEMSELVES DID
+
+**Eighth pass, eighth 100%, three findings and no CRITICAL.** Yield across the eight: 8, 6, 5,
+5, 3, 2, 2, 3.
+
+**All three are damage the seven earlier passes caused**, which is a category none of them could
+have found and the only one that grows with every remediation instead of shrinking.
+
+A HOLE IN THE LETTER SEQUENCE
+
+`T020a` and `T020c` existed and **`T020b` did not.** Pass 3 renamed T020b to T020a when it moved
+the original T020a into Phase 3; pass 6 then added T020c against a sequence that had a gap in it.
+
+`check-refs.py` validates that `Tnnna` extends an existing `Tnnn` and **not that the letters are
+contiguous** — a pattern it never needed until seven passes of insertion. Renamed rather than
+teaching the checker: one rename, and the rule stays about what it was written for.
+
+A TASK THAT WAS UNAMBIGUOUS UNTIL A SIBLING ARRIVED
+
+T030 was "the delivery test" and named no door, which was exact when there was one door.
+**Analysis pass 1 added the socket path and T028b**, and from then on two tasks in the same file
+cited the same requirement and the same criterion and differed only in a door one of them named.
+A reader could have written the same test twice.
+
+**Found by a near-duplicate scan that flagged nine pairs, eight of them false.** The metric
+measured phrasing — *"write the X test in messages.itest.ts"* shares its boilerplate with every
+sibling — rather than subject. **A detector that surfaces nine to find one is the shape this
+repository records as how a real problem hides**, and it is reported at that ratio rather than as
+a clean catch.
+
+THREE NUMBERS FOR THE READ PATHS, ALL THREE RIGHT ABOUT DIFFERENT THINGS
+
+    R4's heading     "Five read paths"     WRONG, and contradicted by its own body
+    R4's body         5 listed + a sixth named in the paragraph below
+    data-model        6 rows in the table
+    baseline          8 `.from(messages)` SELECTs
+
+**The eight is not a fourth version of the same count.** Two of those SELECTs —
+`upsertUser`'s has-ever-sent scan and `messageExistsIn` — read no message body and return no
+shape. Eight answers *did this chapter miss a query*; six answers *how many shapes return a
+message*. Both belong here and now say which is which.
+
+The heading was the last thing in the feature still saying five: **pass 3 rewrote SC-003 to
+assert "each of the six"**, so a requirement had been depending on a number a research note's own
+title contradicted for five passes.
