@@ -97,6 +97,19 @@ its default of 100 MiB applies. Nothing breaks and nothing is near a wall — an
 of `10 × 2,048` is an implication of two bounds that nobody had multiplied. The next field with
 a per-item bound should read this line before choosing one.
 
+**And it multiplies a second time on the way out.** The history query's `limit` is capped at 200
+(`messages.schema.ts:64`), so a page multiplies the per-message ceiling again:
+
+    text        200 x 8,000       1.6 MB   the ceiling today
+    attachments 200 x 20,480      4.1 MB   what this chapter adds
+                                  ──────
+                                  5.7 MB   before framing
+
+Nothing here is near a wall either, and the class of problem pre-dates this chapter — a
+200-message page already permits 1.6 MB and no express body limit guards a *response*. It is on
+the record because the paragraph above tells the next reader to look here, and a reader who
+follows that instruction should find both multiplications rather than one.
+
 ## The message's life, with attachments
 
     (nothing) --send-->  live          text and/or attachments, at least one of them

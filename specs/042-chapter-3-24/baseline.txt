@@ -1296,3 +1296,69 @@ writing about a count reproduces the shape of a count claim, and the checker can
 apart. Reworded every time, exempted never.
 
     118 tasks     27 requirements     6 criteria     0 untraced     17 [P] · 0 collisions
+
+## T004 — THE READER TEST, RUN AGAINST UNCHANGED CODE
+
+**It passes.** FR-019 (3.24)'s empty-string decision stands, and the plan does not change.
+
+    49 passed (49)   src/db/repository.itest.ts   1.45 s
+
+A row planted by raw SQL with `text = ''` and `attachments = NULL` reads back as a LIVE message
+through all four paths the task names:
+
+    listMessages backward          text is ''      not null
+    listMessages forward           text is ''      not null   (afterSeq: 0)
+    listChannelsForUser preview    text is ''      not null
+    editMessage / deleteMessage    the tombstone predicate does not fire — the edit
+                                   SUCCEEDS, which proves the row was writable rather
+                                   than that a refusal was merely skipped
+
+**And the test can fail.** Planting `NULL` instead of `''` turns it red where it should:
+
+    AssertionError: backward: expected null to be '' // Object.is equality
+
+That probe is the whole reason to write the test rather than read the code. The assertions use
+`toBe("")` and `not.toBeNull()` rather than a falsy check, because `expect(text).toBeFalsy()`
+passes on a null too — which is the exact distinction the test exists to make, and the shape
+chapter 3.23 recorded as a control test that was green before its field existed.
+
+Two things the writing turned up:
+
+  The row had to be planted with raw SQL because no write path accepts an empty text yet —
+  `z.string().min(1)` at both doors until phase 4. That is the reader test working as intended:
+  the writer is not involved and must not be.
+
+  `listChannelsForUser` reads `channels.last_sequence`, not the messages table — chapter 3.15's
+  keyset — so a hand-planted row is invisible to the preview until that column moves too. The
+  first version of this test asserted a preview that could not have been there.
+
+## T008 — "GATES FIRST" IS UNSATISFIABLE FOR check:fences FROM PHASE 1
+
+Found by running it, not by reading it. T004 appends 82 lines to
+`services/api/src/db/repository.itest.ts`, and chapter 3.23's page fences that file with a hunk
+that runs to its end. The chain then reconstructs a shorter file than disk holds:
+
+    [HEAD] app/(en)/part-3/chapter-23/the-words-somebody-wants-back/page.mdx:2689
+            services/api/src/db/repository.itest.ts differs at line 0
+            chapters: "<eof>"
+            repo:     "<eof>"
+
+Verified as mine rather than pre-existing: `git stash push` the one file, re-run, exit 0; pop,
+re-run, exit 1.
+
+**This is fence-chain lesson 5 from the other side.** The recorded rule is "an appendix hunk
+anchored on a file's last line forbids any chapter from appending" — here it is a CHAPTER hunk
+with the same anchor, and the chapter doing the appending is the next one.
+
+`check:fences` therefore cannot go green until T073 regenerates the fences in phase 11, so ten
+phase-commit tasks say "Gates first" about a gate that will be red for all of them. The decision
+recorded in T008: **"gates first" means the other four checks plus typecheck, lint and build**,
+and `check:fences` is checked against the exact message above rather than for green. A fence
+failure naming a different file or a different page is a real problem. `check:errors` already
+carries this shape of note — red from the phase that adds `media_not_available` until the phase
+that writes its reference section — so the pattern was known and this instance was not.
+
+**Both message lines print `<eof>`**, which is a defect in the checker's own reporting: it
+formats `final[n]` and `disk[n]` at `n = -1` when the two lengths differ, so a length mismatch
+prints as a content mismatch at "line 0" with nothing useful on either side. Not this chapter's
+file to fix; worth `gaps.md` at T085.
