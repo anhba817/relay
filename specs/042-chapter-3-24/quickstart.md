@@ -1,0 +1,113 @@
+# Quickstart — chapter 3.24, attachments
+
+## The lane environment, pinned where the tasks can see it
+
+Nine variables and one compose line, carried from chapter 3.23's `baseline.txt` and unchanged.
+They apply to `pnpm coverage` as well as `test:integration` — chapter 3.22 spent two full lane
+runs learning that.
+
+    RELAY_POSTGRES_PORT=15432 docker compose up -d --wait
+
+    DATABASE_URL=postgres://relay:relay@localhost:15432/relay
+    RELAY_REDIS_URL=redis://localhost:6379
+    RELAY_NATS_URL=nats://localhost:4222
+    RELAY_INTERNAL_CREDENTIAL=rk_svc_local_development_credential_0000
+    RELAY_INTERNAL_CREDENTIAL_GATEWAY=rk_svc_local_development_gateway_00000
+    RELAY_WEBHOOK_SECRET_KEY=BpDal75yBZp7Fc2GtGS3D1vh7qOKgCWJkF6/d0XWxBU=
+    RELAY_OUTBOX_RELAY=off
+    RELAY_EVENT_CONSUMER=off
+    RELAY_DELIVERY_RELAY=off
+
+All local development values. Before a timing battery:
+`RELAY_POSTGRES_PORT=15432 docker compose stop api gateway dispatcher`, and nothing else runs
+on the machine — including your own tooling.
+
+**VERIFY EVERY EXIT CODE INTO A VARIABLE, NEVER THROUGH A PIPE.** `pnpm -s check:x 2>&1 |
+tail -3; echo $?` reads `tail`'s status. Chapter 3.23 hit that four times knowing about it.
+
+**AND `connections.test.ts` NEEDS A RUNNING REDIS** despite being in the Docker-free lane —
+chapter 3.23's `gaps.md` item 9. If `pnpm test` returns twelve failures about a connection cap
+failing open, the stack is down, not the code.
+
+## P1 — the reader test, before a line of production code
+
+Plant a message with `text = ''` by hand and read it back through every path. **It must come
+back as a live message today**, with no attachment support anywhere.
+
+```
+psql: INSERT INTO messages (id, channel_id, sequence, user_id, text, created_at)
+      VALUES (gen_random_uuid(), :channel, :seq, :user, '', now());
+```
+
+**Expected**: history returns it, the listing previews it, resume replays it, and no path
+mistakes it for a tombstone.
+
+**If it fails, the empty-string decision is wrong** and the plan changes before any code is
+written. This is chapter 3.23's T009 in a new subject: a test written against unchanged code,
+proving the ground the design stands on.
+
+## P2 — the shape refuses what it should
+
+```
+pnpm --filter @relay/protocol test
+```
+
+**Expected**: `javascript:alert(1)`, `data:image/png;base64,…`, `file:///etc/passwd` and
+`vbscript:msgbox(1)` are all refused; `http://` and `https://` are accepted. **Run these
+against the real validator rather than trusting `z.url()`** — R7 measured that it accepts
+every one of them.
+
+## P3 — a message carries a picture, end to end
+
+With the stack up and the api built:
+
+```
+RELAY_POSTGRES_PORT=15432 docker compose --profile services up -d --build --wait
+export RELAY_DEMO_CREDENTIAL=$(node scripts/seed-demo-tenant.mjs)
+export RELAY_API_URL=http://localhost:4000 RELAY_WS_URL=ws://localhost:4001
+pnpm --filter @relay/outsider test:integration
+```
+
+**Expected**: a message sent over REST with one attachment reaches an open socket with that
+attachment, and history returns it.
+
+**`--build` IS NOT OPTIONAL.** `docker compose --profile services up -d --wait` reuses the
+image, so a route or a field added since the last build is invisible and looks exactly like a
+feature that does not work. Chapter 3.23 lost a debugging pass to that.
+
+## P4 — eleven is a refusal and nothing landed
+
+```
+curl -sS -X POST "$API/v1/channels/$CH/messages" -H "authorization: Bearer $TOKEN" \
+  -H 'content-type: application/json' \
+  -d '{"text":"eleven","attachments":[…11 of them…]}' -o /dev/null -w '%{http_code}\n'
+```
+
+**Expected**: `400`, a body naming `attachments`, and the channel's message count unchanged
+afterwards — the second half is the assertion, because a 400 raised after the write passes the
+first.
+
+## P5 — the tombstone forgets them
+
+Send with attachments, delete, read history.
+
+**Expected**: the message is present in its original position with `text: null` and
+`attachments: []`. Chapter 3.23's deletion already nulls the column; this checks that the read
+path turns the null into an empty list rather than an absent field.
+
+## P6 — an edit leaves them alone
+
+Send with two attachments, edit the text, read it back.
+
+**Expected**: the new text, the same two attachments, in the same order. **The failure this
+catches is silent** — an `UPDATE … SET text = ?, attachments = ?` written without care drops
+the photograph and returns 200.
+
+## Gates, and how to run them so they mean something
+
+From `relay-tutorial`: `check:fences`, `check:docs`, `check:figures`, `check:srs`,
+`check:errors`. From `relay-platform`: `typecheck`, `lint`, `build`, `test`.
+
+`check:errors` reads the **built** `packages/protocol/dist/codes.js`, so build before believing
+it — and it will be red on purpose from the phase that adds `media_not_available` until the
+phase that writes its reference section.
