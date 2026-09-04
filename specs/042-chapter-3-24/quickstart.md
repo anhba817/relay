@@ -43,7 +43,7 @@ psql: INSERT INTO messages (id, channel_id, sequence, user_id, text, created_at)
 mistakes it for a tombstone.
 
 **If it fails, the empty-string decision is wrong** and the plan changes before any code is
-written. This is chapter 3.23's T009 in a new subject: a test written against unchanged code,
+written. This is chapter 3.23's reader test in a new subject: written against unchanged code,
 proving the ground the design stands on.
 
 ## P2 — the shape refuses what it should

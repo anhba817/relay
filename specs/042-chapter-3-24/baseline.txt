@@ -1,0 +1,127 @@
+BASELINE — chapter 3.24, the message that is not only text
+
+THE LANE ENVIRONMENT, PINNED WHERE THE TASKS CAN SEE IT
+
+Nine variables and one compose line, carried from chapter 3.23 and unchanged. They apply to
+`pnpm coverage` as well as `test:integration`.
+
+    RELAY_POSTGRES_PORT=15432 docker compose up -d --wait
+
+    DATABASE_URL=postgres://relay:relay@localhost:15432/relay
+    RELAY_REDIS_URL=redis://localhost:6379
+    RELAY_NATS_URL=nats://localhost:4222
+    RELAY_INTERNAL_CREDENTIAL=rk_svc_local_development_credential_0000
+    RELAY_INTERNAL_CREDENTIAL_GATEWAY=rk_svc_local_development_gateway_00000
+    RELAY_WEBHOOK_SECRET_KEY=BpDal75yBZp7Fc2GtGS3D1vh7qOKgCWJkF6/d0XWxBU=
+    RELAY_OUTBOX_RELAY=off
+    RELAY_EVENT_CONSUMER=off
+    RELAY_DELIVERY_RELAY=off
+
+All local development values. Before a timing battery:
+`RELAY_POSTGRES_PORT=15432 docker compose stop api gateway dispatcher`, and nothing else runs
+on the machine — including your own tooling.
+
+VERIFY EVERY EXIT CODE INTO A VARIABLE, NEVER THROUGH A PIPE. And `connections.test.ts` needs a
+running Redis despite being in the Docker-free lane — chapter 3.23's `gaps.md` item 9. Twelve
+failures about a connection cap failing open mean the stack is down, not the code.
+
+THE INSTRUMENTS, AND WHAT THE COPY CARRIED THIS TIME
+
+Four Python instruments, all copied or written during planning rather than in phase 1, because
+the rest of the phase is checked by them.
+
+    check-refs.py    copied from 041, FOREIGN emptied, paths re-pointed
+    sweep.py         copied from 041, paths re-pointed
+    check-prose.py   written fresh, one claim, RED on purpose
+    traceability.md  generated from spec.md and tasks.md, not typed
+
+**THE COPY CARRIED A THIRD STALE FIELD AND IT WAS THE WORST ONE.** Chapter 3.23 recorded two
+— thirty-one `FOREIGN` pairs and a docstring naming the wrong chapter — and its `gaps.md` item
+C8 predicted the class would keep recurring. This one is `check-refs.py`'s citation rule:
+
+    cited = re.escape(ident) + r" \(3\.23\)"
+
+hard-coded, and missed by a `sed` that re-pointed every other mention of 3.23. On its first run
+it reported **all twenty-four requirements and all six criteria as "cited by no task at all"** —
+thirty-four problems, every one false, on a task list that cited each of them.
+
+**A checker that cries wolf on a healthy tree is how a real problem hides**, and thirty-four
+false ones would have buried the three real ones underneath. It now derives the chapter number
+from its own directory name — `042-chapter-3-24` -> `3.24` — so the next copy cannot inherit it.
+
+WHAT THE INSTRUMENTS FOUND AT PLAN TIME, BEFORE ANY CODE
+
+Six problems survived the version fix, and three were real coverage gaps:
+
+    FR-014   an attachment MUST NOT be readable by a caller who cannot read its message.
+             CITED BY NO TASK. Now T032a, an isolation test through a private channel of
+             the same tenant — the only shape chapter 3.23's falsification proved is
+             observable.
+    FR-020   the shape MUST leave room for §4.14's arm. CITED BY NO TASK. Now on T009.
+    SC-006   every read path's behaviour stated in the architecture document. CITED ONLY
+             BY A COMMIT TASK, which is not verification. Now on T063.
+
+Two more were task ids leaking into prose — `plan.md` and `quickstart.md` both said
+"chapter 3.23's T009" — and one was the missing map.
+
+    34 problems -> 6 -> 0
+
+AND THE SWEEP COULD NOT SEE THE PLAN'S PHASES, AGAIN
+
+`sweep.py` reads `**Phase N — …` and the plan listed its twelve phases inside a code block, so
+the plan-against-tasks comparison **did not run**. It printed:
+
+    plan.md: no phase headings matched either form — the extractor is wrong, not the document
+
+**Chapter 3.23 hit this exact failure and found it at analysis pass 8**, after the comparison
+had silently not run for eight passes. Its record says the extractor's message was rewritten to
+say which form it wanted. That message is what made this a thirty-second fix at plan time
+instead of a finding at pass 8.
+
+The plan's phases are now headings the instrument reads, checked by running it.
+
+FOUR `[P]` MARKERS WERE WRITTEN AND STRIPPED
+
+`[P]` means a different file. Found by listing every parallel task's paths and looking for a
+name appearing twice — a five-line check, and reading the markers one at a time finds none of
+them:
+
+    T011  edits attachments.test.ts, which T010 writes
+    T024  edits repository.itest.ts, which T023 writes
+    T037  edits messages.itest.ts, which T035 and T036 write
+    T038  the same file again
+
+**T003, T007, T053 and T058 keep theirs** and all four append to this file. Same exception
+chapter 3.23 made and stated: appending a paragraph to a record is not the hazard two edits to
+a test file are.
+
+Nine tasks also said "in the same file" instead of naming one. A relative reference makes a
+task unexecutable on its own, which is the property the list exists to have.
+
+COUNTS TAKEN BEFORE ANY CODE, WITH THEIR DEFINITIONS
+
+**Definition, stated because chapter 3.23 lost a re-count to not having one**: occurrences of
+the identifier `text` on **non-comment** lines, in the ten files that build or carry a message
+payload.
+
+    packages/protocol/src/frames.ts                             2
+    packages/protocol/src/internal.ts                           2
+    services/api/src/messages/messages.schema.ts                3
+    services/api/src/messages/messages.service.ts               5
+    services/api/src/messages/messages.controller.ts            9
+    services/api/src/internal/internal.controller.ts            2
+    services/api/src/internal/backfill.controller.ts            3
+    services/api/src/db/repository.ts                          36
+    services/api/src/outbox/event.ts                            3
+    services/gateway/src/session.ts                             5
+                                                        total  70
+
+    isolation targets, paths declared                          45   must not move: this
+                                                                    chapter adds no route
+    ERROR_CODES, current total                                 20   one new code expected
+    fenced files at part3-ch23                                240
+    figures at part3-ch23                                     254
+
+**The pinned-places prediction for a new error code: FOUR.** Chapter 3.22 predicted two and
+found four; 3.23 predicted four for the outbox types and found five and a half. The prediction
+is the point, not the number.

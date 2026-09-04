@@ -94,6 +94,19 @@ ID_CLASSES = {
 # beside the number it extends and does not advance the count.
 TASK = re.compile(r"^- \[[ xX]\] (T\d{3}[a-z]?)( \[P\])?( \[US\d\])? (.+)$")
 ANY_TASK_LINE = re.compile(r"^- \[[ xX]\]")
+# THE CHAPTER NUMBER IS DERIVED FROM THE DIRECTORY, NOT TYPED.
+#
+# The copy this chapter inherited still carried `\(3\.23\)` hard-coded in the citation
+# rule after every other mention of 3.23 had been re-pointed — so it reported all
+# twenty-four requirements as "cited by no task at all" on its first run. That is the
+# THIRD field in this file to arrive stale from a copy, after the FOREIGN set and the
+# docstring, and chapter 3.23's `gaps.md` item C8 predicted exactly this class.
+#
+# Deriving it means the next copy cannot get it wrong: `042-chapter-3-24` -> `3.24`.
+_here = pathlib.Path(__file__).resolve().parent.name
+_m = re.search(r"chapter-(\d+)-(\d+)$", _here)
+CHAPTER = f"{_m.group(1)}.{_m.group(2)}" if _m else "?.?"
+
 PATHISH = re.compile(r"[\w./<>-]+\.(ts|mts|md|txt|mdx|json|yaml)\b|`docs/|`pnpm |`git |`docker |`python3 |`grep |`sed |specs/|`relay-platform`|`relay-tutorial`")
 # THE SUFFIX. This read `T(\d{3})(?![A-Za-z0-9])` and so could not see `T107a`,
 # `T012a`, `T031b` or `T047c` — real ids in this chapter's own task list, which
@@ -257,7 +270,7 @@ def main() -> int:
         working = [ln for ln in body.split("\n")
                    if ln.startswith("- [") and "Commit phase" not in ln]
         for ident in re.findall(r"^- \*\*((?:FR|SC)-\d+[a-z]?)\*\*", spec_body, re.M):
-            cited = re.escape(ident) + r" \(3\.23\)"
+            cited = re.escape(ident) + r" \(" + re.escape(CHAPTER) + r"\)"
             if any(re.search(cited, ln) for ln in working):
                 continue
             problems.append(

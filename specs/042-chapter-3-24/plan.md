@@ -108,22 +108,40 @@ changing. **That is a prediction, and phase 3 checks it.**
 
 ## Phases
 
-    1   Premises, instruments, and the reader test        blocks everything
-    2   The shape: `attachments.ts`, its bound, its scheme rule
-    3   The wire: `messageSchema`, the send frame, the internal hop
-    4   The writer: the INSERT, and the empty-text rule
-    5   US1 — a message carries a picture (MVP)
-    6   US2 — ten is a limit and eleven is a refusal
-    7   US3 — the moderator, the tombstone, and what an edit leaves alone
-    8   The read paths: history, resume, the retry replay, the listing
-    9   The events: three types, one shape
-    10  The documents, and the comment that schedules P2 for Part 4
-    11  The chapter
-    12  Close-out
+**Written as headings `sweep.py` can read, and that is not a formatting choice.** Chapter
+3.23's plan listed its phases inside a code block; the sweep's extractor looks for
+`**Phase N — …`, found nothing, and **the plan-against-tasks comparison never ran** — for
+eight analysis passes, silently, while the sweep printed a green line about everything else.
+That chapter found it at pass 8 and recorded that its verification pattern had been fitted to
+its own output. This one is in the form the instrument reads, checked by running it.
 
-**Phase 1 carries a test that must pass against unchanged code.** Chapter 3.23's T009 proved
-its read path was already correct before a writer existed, and that test is what kept a later
-phase from "fixing" something that worked. The equivalent here: **assert that a message with
+**Phase 1 — Premises, instruments, and the reader test.** Blocks everything.
+
+**Phase 2 — The shape.** `attachments.ts`, its bound, its scheme rule.
+
+**Phase 3 — The wire.** `messageSchema`, the send frame, the internal hop. Blocks every route.
+
+**Phase 4 — The writer.** The INSERT, and the empty-text rule.
+
+**Phase 5 — User Story 1.** A message carries a picture somebody else is hosting. **MVP.**
+
+**Phase 6 — User Story 2.** Ten is a limit and eleven is a refusal.
+
+**Phase 7 — User Story 3.** The moderator, the tombstone, and what an edit leaves alone.
+
+**Phase 8 — The read paths.** History, resume, the retry replay, and the four that do not change.
+
+**Phase 9 — The events.** Three types, one shape.
+
+**Phase 10 — The documents**, and the comment that schedules a P2 clause for Part 4.
+
+**Phase 11 — The chapter.**
+
+**Phase 12 — Close-out.** Gates last.
+
+**Phase 1 carries a test that must pass against unchanged code.** Chapter 3.23 proved its
+tombstone read path was already correct before any writer existed, and that test is what kept
+a later phase from "fixing" something that worked. The equivalent here: **assert that a message with
 `text = ""` is returned by every read path as a live message today**, with the row planted by
 hand. If it fails, the empty-string decision is wrong and the plan changes before any code is
 written.
