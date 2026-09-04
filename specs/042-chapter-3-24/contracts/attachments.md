@@ -10,7 +10,21 @@
 `membershipFabricSchema` and `revisionFabricSchema` both make: a field added on one side of a
 rolling deploy fails loudly on the other instead of vanishing.
 
-A `discriminatedUnion` on `type` with one arm today. §4.14 adds `{"type": "media", …}`.
+A `discriminatedUnion` on `type` with **two** arms. The second refuses:
+
+```
+{ "type": "media", … }   ->  refused, saying hosted media is not available (FR-003a)
+```
+
+It exists now so the refusal is the same at **both doors**. The socket's frame validation runs
+in the gateway, which answers `invalid_frame` and forwards the failing arm's message; the REST
+door answers `media_not_available`. Two codes, one sentence, and a customer reading FR-MSG-11's
+`media_id` clause gets told what is actually true either way.
+
+§4.14 replaces that arm's body rather than adding an arm. **FR-003b says "adds an arm rather
+than changes one", and this is the one word of it this shape costs** — a refusing arm becoming
+an accepting one is a smaller change than introducing a discriminator, which is what FR-003b
+exists to prevent.
 
 ### The names it exports
 

@@ -1012,3 +1012,59 @@ Two process notes, both mine:
   and 15, and that is the question to keep asking rather than the artifact to keep reading.
 
     114 tasks -> 115     27 requirements     6 criteria     0 untraced     7 instruments
+
+## Analysis pass 16 — the same question, run over every rule
+
+Pass 15's finding came from following one requirement through both doors. This pass ran that
+over all eight rules the chapter adds. Six were on both doors; two were not.
+
+AD1  HIGH     FR-003a is the requirement whose entire point is the sentence a customer reads —
+              "the refusal MUST say that hosted media is not available rather than that the
+              field is invalid, because a customer reading the clause will send one" — and it
+              was met on the REST door only. Measured against the pinned zod 4.4.3:
+
+                  one arm   issues[0].message  "Invalid discriminator value. Expected 'url'"
+                  two arms  issues[0].message  "hosted media is not available yet"
+
+              The first is *that the field is invalid*, which FR-003a forbids by name. The fix
+              is one extra arm that always refuses, because `session.ts:1447` already forwards
+              `frame.error.issues[0]?.message` beside `invalid_frame`. T009 now builds two arms,
+              T040a asserts the socket message, and T039 records what the socket cannot do: its
+              CODE stays `invalid_frame`, because `sendError` fixes the code at the call site.
+
+              **It costs one word of FR-003b**, which said §4.14 "adds an arm rather than
+              changes one". A refusing arm becoming an accepting one is a change to an arm.
+              FR-003b now names the exception and what it still protects: a later chapter
+              introducing the discriminator, which remains impossible.
+
+AD2  MEDIUM   `packages/protocol/src/frames.ts:182` has declared `field` optional on the socket
+              error frame since chapter 1.3, and **no gateway code path has ever set it** —
+              `sendError(socket, code, message, requestId)` has no parameter for it, and a grep
+              for `field:` across `services/gateway/src` outside tests returns nothing.
+
+              Chapter 3.14 ended exactly this habit for the api, and its own comment cites the
+              socket's schema while fixing only the pipe: "EIR-API-04's error shape has carried
+              a `field` since chapter 1.3 and `errorFrameSchema` declares it — and nothing in
+              the api had ever set it… a field in the contract that the code never filled."
+
+              It lands here because this chapter asserts a field-level refusal on one door
+              (T020b) and proves the other refuses the same input (T041). T041a adds the
+              parameter and passes zod's joined path, omitting the key on an empty path as the
+              pipe does — which also means it does NOT rescue T040a, whose refusal is a
+              top-level refinement with no path.
+
+The six that were already on both doors, and why:
+
+    FR-004   scheme rule      inside attachmentSchema — shared by construction
+    FR-023   2,048 URL bound  inside attachmentSchema — shared
+    FR-005   10-item bound    T015 has both doors import the bound; T041 tests both
+    FR-019   empty text       T017b and T020
+    FR-019b  the refusal      T009a, added at pass 15
+    FR-021   no dedup         the absence of a rule, so neither door has one
+
+**The pattern is exact: every rule that lives inside the shared schema is on both doors, and
+every rule added at a controller is on one.** That is the thing to check, not the requirement
+list — and T041 is the model for the rules that cannot be shared, because it names the layer,
+both codes, and what a weaker assertion would miss.
+
+    115 tasks -> 117     27 requirements     6 criteria     0 untraced     7 instruments

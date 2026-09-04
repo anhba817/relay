@@ -167,7 +167,11 @@ that accepts unbounded lists; it is one whose refusals are not yet asserted.
   that the field is invalid, because `media_id` is a published part of FR-MSG-11 and a
   customer reading the clause will send one.
 - **FR-003b**: The attachment shape MUST be a discriminated union on a kind field from the
-  first version, so §4.14 adds an arm rather than changes one. **This is the same rule
+  first version, so §4.14 adds an arm rather than changes one. **One exception, taken
+  deliberately**: the `media` arm exists from this chapter and refuses, because that is what
+  puts FR-003a's message on both doors rather than only the REST one. §4.14 replaces its body.
+  What FR-003b protects against is a later chapter introducing the discriminator, and that
+  still cannot happen. **This is the same rule
   chapter 3.23 reached for its subject grammars**: a kind that cannot share a payload type
   cannot share a shape, and a `media_id` attachment carries no URL.
 - **FR-004**: An attachment URL MUST be refused unless its scheme is `http` or `https`.
