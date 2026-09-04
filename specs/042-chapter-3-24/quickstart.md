@@ -75,6 +75,34 @@ attachment, and history returns it.
 image, so a route or a field added since the last build is invisible and looks exactly like a
 feature that does not work. Chapter 3.23 lost a debugging pass to that.
 
+## P3a — the same message over a SOCKET, which is the door that drops it
+
+Open a socket with a minted token, send `message.send` with two attachments, and watch a second
+member's socket.
+
+**Expected**: the message commits with both attachments in order, a second member receives them
+on `message.created`, and the sender's `message.ack` carries **only `seq`** — the ack has never
+carried a message and this chapter does not widen it.
+
+**THIS IS THE SCENARIO THE FIRST DRAFT OF THIS FILE DID NOT HAVE**, and it is the one that
+matters. The socket path drops attachments at three named points unless every one is threaded —
+`session.ts`'s inbound destructure, `internal.controller.ts`'s named call, and `session.ts`'s
+outbound builder. **Every other scenario here walks the REST door**, which was never at risk.
+
+## P3b — a photograph with no caption, and the same link twice
+
+```
+{"text": "", "attachments": [{"type":"url","kind":"image","url":"https://example.test/a.png"},
+                             {"type":"url","kind":"image","url":"https://example.test/a.png"}]}
+```
+
+**Expected**: 201. An attachments-only message is accepted (FR-019) and stored with `text = ""`
+rather than a null, so chapter 3.23's tombstone predicate is untouched. **The same URL twice is
+two attachments** (FR-021) — nothing deduplicates.
+
+**And the control**: `{"text": "", "attachments": []}` is refused (FR-019b). The bound relaxes
+because there is something else to carry, not unconditionally.
+
 ## P4 — eleven is a refusal and nothing landed
 
 ```
@@ -83,9 +111,9 @@ curl -sS -X POST "$API/v1/channels/$CH/messages" -H "authorization: Bearer $TOKE
   -d '{"text":"eleven","attachments":[…11 of them…]}' -o /dev/null -w '%{http_code}\n'
 ```
 
-**Expected**: `400`, a body naming `attachments`, and the channel's message count unchanged
+**Expected**: `400`, a body naming `attachments`, and **`channels.last_sequence` unchanged**
 afterwards — the second half is the assertion, because a 400 raised after the write passes the
-first.
+first, and the sequence is the column chapter 2.2 made the authority.
 
 ## P5 — the tombstone forgets them
 

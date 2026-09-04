@@ -334,3 +334,56 @@ duplicated footer block. **`sweep.py` caught all three**, which is the system wo
 
 `regen-traceability.py` carries the prose forward and regenerates only the tables. **Five
 instruments, not four.**
+
+WHAT THE FOURTH ANALYSIS PASS FOUND — THE COST OF A DECISION THE SECOND PASS MADE
+
+**Fourth pass, fourth time coverage read 100%, and the first CRITICAL of the four.** It exists
+because pass 2 changed something and no pass had read that decision against its consequences.
+This is why chapter 3.16's twelfth pass recommended stopping and its thirteenth, fourteenth and
+fifteenth each found a CRITICAL.
+
+TWO PHASES COULD NOT HAVE PASSED THEIR GATES
+
+    Phase 3   T014    messageSchema.attachments becomes REQUIRED
+              T018    "Commit phase 3 … Gates first."          <- typecheck RED
+    Phase 4   T025    "Commit phase 4 … Gates first."          <- typecheck RED
+    Phase 5   T027a   set the field at every construction      <- green again
+
+**Fifteen files import the `Message` type and eight build a literal — eighteen in all**:
+`session.test.ts`, `isolation.itest.ts`, `connections.itest.ts`, `typing.itest.ts`,
+`resume.test.ts`, `resume.itest.ts`, and both `fanout.itest.ts`. Every one stops compiling the
+moment the field lands and stays broken across two phase commits.
+
+Moved to **T014a in Phase 3**, immediately after the task that creates the problem.
+
+**Pass 2 created this defect and argued the decision well.** "The compiler names every producer
+that forgets" was written as a benefit; it is also a cost, and the cost was not counted. A
+decision's argument being right does not put its consequences in the right phase.
+
+A NUMBER WAS BORROWED FROM A RESEARCH NOTE THAT COUNTS SOMETHING ELSE
+
+T027a said *"Research R3 counted five construction points."* **R3 counts four DOORS that write
+a message** — the public send, the socket's send, the retry replay, the backfill's mapping —
+which is a different set from the places that construct the payload TYPE. The task inherited the
+figure and applied it to a larger set.
+
+**Fourth premise this chapter has inherited without re-running it**, after the stale figure
+count, the `\(3\.23\)` version marker, and the sweep's phase-heading form. The task now says the
+compiler lists them and records what it says.
+
+THE QUICKSTART HAD ONE MENTION OF "SOCKET" AND NO SOCKET SCENARIO
+
+Passes 1 through 3 added six socket tasks — the door that drops the field at three named points
+— and the quickstart still walked only the REST door, which was never at risk. It also had
+**zero** mentions of the empty-text and duplicate-URL decisions, both of which became
+requirements after it was written: one settled by the reader during specification, one by
+analysis pass 2.
+
+    P3a   the same message over a socket, and an ack that carries only `seq`
+    P3b   a photograph with no caption, and the same link twice
+
+**A quickstart written before three analysis passes is a document about an earlier plan.** It is
+the artifact a reader runs, so it goes stale in the one place staleness is most visible.
+
+And P4's expectation moved from "the channel's message count" to **`channels.last_sequence`**,
+matching the acceptance scenario and the task after pass 3 corrected both.

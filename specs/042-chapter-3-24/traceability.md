@@ -48,7 +48,7 @@ carries them, and it is regenerated rather than edited.
 | FR-019b | A message with no text and no attachments MUST still be refused. Relaxing the bound is condit… | T020, T025 |
 | FR-020 | The attachment shape MUST leave room for §4.14's `media_id` arm without a breaking change to … | T009 |
 | FR-021 | The same URL attached twice to one message MUST be stored and returned twice. The platform MU… | T036a |
-| FR-022 | The attachments field on a message payload MUST be present on every payload that carries a me… | T014, T027 |
+| FR-022 | The attachments field on a message payload MUST be present on every payload that carries a me… | T014, T014a, T027 |
 
 ## 2. Success criterion → the tasks that verify it
 
