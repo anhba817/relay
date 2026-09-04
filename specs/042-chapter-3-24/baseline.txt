@@ -1837,3 +1837,54 @@ its own side.
 answer. Brought back with `docker compose up -d --wait`; nothing was lost because the failure
 was loud. A stack that goes down between two commands is the reason the lane's greenness is
 only ever a statement about the moment it ran.
+
+## PHASE 7 — THE TOMBSTONE AND THE EDIT
+
+    67 passed (67)   services/api/src/messages/messages.itest.ts
+    27 passed (27)   services/gateway/src/session.itest.ts
+
+### T053's FOUR UNCHANGED READ SHAPES ARE NOW THREE, AS PHASE 3 PREDICTED
+
+`editMessage`'s internal read gained the column. The reason is FR-015 rather than FR-016: an
+edit does not CHANGE attachments — T045 and T046 prove that from both sides — but the
+`message.updated` event and the 200 response must carry the ones the message already has, and
+neither can invent them. Phase 3 wrote this prediction at the site when it put the placeholder
+there, and T053 says to re-check its list against the tree rather than copy it.
+
+    unchanged, still     listMessagesRaw      listChannelsForUser.last_message
+                         deleteMessage's internal read
+    changed at phase 7   editMessage's internal read
+
+### A TEST WRITTEN AGAINST A LATER PHASE, FOR THE THIRD TIME
+
+T046b asserted the `message.updated` OUTBOX row's attachments, and `MessageCreatedData` does
+not gain that field until T055 in phase 9. It failed with `Cannot read properties of undefined
+(reading 'map')` — the next phase's reason.
+
+    T023    asserted through `listMessages` before T028 widened it       phase 4
+    T022c   asserted through the history route, same cause               phase 4
+    T046b   asserted through the outbox payload before T055 widens it    phase 7
+
+Retargeted to what phase 7 delivers — the edit's own answer and the read agreeing with it — and
+it names T057 as where FR-015's event half belongs. **Three instances is a pattern, not three
+accidents**: a task that says "and the event carries it" is a task whose phase depends on when
+the event's type changes, and the plan ordered by subject rather than by dependency.
+
+### THE drizzle-orm BAN, HIT AGAIN
+
+T046b's first version imported `sql` from `drizzle-orm` to read the outbox. The lint rule
+forbids that outside `db/` — constitution I — and `messages.itest.ts` already contains the
+workaround with its own explanation, at `outboxCount`:
+
+    A PLAIN STRING AND NOT drizzle's `sql` TEMPLATE, because the lint rule forbids importing
+    `drizzle-orm` outside `db/` … chapter 3.23's T069a restored the ban for integration tests
+
+Recorded in the same file, hit anyway. Then the plain-string version shadowed the route's `res`
+and the compiler said so twice.
+
+### AND T044's FIRST HOME WAS THE WRONG DESCRIBE
+
+`record is not defined` — the deletion test landed beside T041 in the credentials describe,
+which has `firstFrame` and not `record`/`waitFor`/`twoAttachments`. Moved next to T028b in the
+fan-out describe, which owns all three. A test's helpers are part of where it belongs, and
+"beside the task before it" is not the same as "in the suite that can run it".
