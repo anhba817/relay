@@ -90,6 +90,17 @@ express, and `messageSchema` is a `strictObject`.
 
 - [ ] T019 Add `attachments` to the send body in `relay-platform/services/api/src/messages/messages.schema.ts` (FR-001 (3.24), FR-005 (3.24)), optional, bounded by the constant `attachments.ts` exports.
 - [ ] T020 Relax the text bound in `relay-platform/services/api/src/messages/messages.schema.ts` (FR-019 (3.24), FR-019b (3.24)): text may be empty **when at least one attachment is present**, and a body with neither is still refused. **A `superRefine` or equivalent, not two schemas** — the rule is about the pair, and expressing it as two schemas puts the decision in whichever one the caller happened to hit.
+
+  **AND `ctx.addIssue` MUST CARRY `path: ["text"]`.** Measured against the repository's own zod: an object-level refinement produces `path = []`, and `zod-validation.pipe.ts:33` omits `field` when the path is empty — correctly, by its own comment, because a whole-body failure has no field to name. **FR-019b's failure is about two named fields**, so without a path this is the one refusal in the chapter that cannot tell a caller which key to fix, and EIR-API-04 makes `field` the thing an integrator acts on.
+
+      addIssue({ code: "custom", path: ["text"], message: "…" })
+
+  `text` rather than `attachments` because supplying a text is the repair a caller who sent neither almost always wants; the message names both.
+- [ ] T020c Assert the refusal's `field` in `relay-platform/services/api/src/messages/messages.itest.ts` (FR-019b (3.24)): a body with no text and no attachments is refused with `field` reading **`text`**, not absent. Measured shapes for the sibling refusals, so the three assertions do not drift apart:
+
+      neither text nor attachments   field = text            <- only if the path is set
+      eleven attachments             field = attachments
+      a bad kind at index 3          field = attachments.3.kind
 - [ ] T020a Write the both-doors test for the empty text in `relay-platform/services/gateway/src/session.itest.ts` (FR-019 (3.24)): an attachments-only message sent **over the socket** is accepted. **A rule expressed in two schemas is two rules**, and the two doors already disagree about `idem_key` and about the text bound itself — see the record in `specs/042-chapter-3-24/baseline.txt`.
 - [ ] T021 Thread attachments through `relay-platform/services/api/src/messages/messages.service.ts` to the repository (FR-001 (3.24)).
 - [ ] T022 Write attachments in `sendMessage`'s INSERT in `relay-platform/services/api/src/db/repository.ts` (FR-001 (3.24), FR-006 (3.24)): the array as sent, in order, or `NULL` when there are none. **`NULL` and `[]` are different values** and `data-model.md` says which the column stores — every row written before this chapter is `NULL` and stays valid without a backfill.
@@ -220,6 +231,10 @@ what stops a later reader treating an omission as a bug.
 ## Phase 11: The chapter
 
 - [ ] T068 Count what the chapter **teaches** and what it must **fence**, as two columns in `specs/042-chapter-3-24/chapter-notes.md`, and never ask either number to do the other's job.
+
+  **SEVEN FILES JOIN THE FENCE COLUMN AND NONE OF THEM IS TAUGHT**, because making the frame's field required means every construction sets it: `services/gateway/src/session.test.ts`, `isolation.itest.ts`, `connections.itest.ts`, `typing.itest.ts`, `resume.test.ts`, `resume.itest.ts` and `fanout.itest.ts` are all in an earlier chapter's chain. The eighth, `services/api/src/fanout/fanout.itest.ts`, is fenced by nobody and stays that way.
+
+  **That is a cost of the required-field decision that no earlier pass counted.** Analysis pass 4 costed it in `typecheck` terms — eighteen literals across eight files — and pass 6 costed it here. Chapter 3.23 recorded the same shape from the other side: fencing a file a chapter does not discuss adds lines the chapter never explains, and it declined to fence three for exactly that reason. **These seven have no such choice**: their chains exist, so a changed line must appear or `check:fences` goes red.
 - [ ] T069 Estimate the word count in `specs/042-chapter-3-24/chapter-notes.md` from the number of **arguments**, and say which. **Estimate at 545 words per argument and stop adjusting for what the argument is against** — chapter 3.23 predicted 420 on the theory that arguing against published material costs more, and came in at 545 against 3.22's 583.
 - [ ] T070 Write the chapter page at `relay-tutorial/app/(en)/part-3/chapter-24/<slug>/page.mdx`. **MDX is not markdown**: an indented block containing braces is a JSX expression.
 - [ ] T071 [P] Write `relay-tutorial/app/(en)/part-3/chapter-24/<slug>/figures.ts` — the attachment shape with its future arm, the six read shapes and which two change, and what a tombstone leaves behind.

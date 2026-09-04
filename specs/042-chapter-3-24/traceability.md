@@ -45,7 +45,7 @@ carries them, and it is regenerated rather than edited.
 | FR-018 | The comment at `packages/protocol/src/frames.ts:14` scheduling attachments for Part 4 MUST be… | T002, T061, T067 |
 | FR-019 | A message whose text is empty MUST be accepted when it carries at least one attachment, and M… | T004, T017b, T020, T020a, T024, T025 |
 | FR-019a | An attachments-only message MUST stay distinguishable from a tombstone on every read path. `t… | T024, T025 |
-| FR-019b | A message with no text and no attachments MUST still be refused. Relaxing the bound is condit… | T020, T025 |
+| FR-019b | A message with no text and no attachments MUST still be refused. Relaxing the bound is condit… | T020, T020c, T025 |
 | FR-020 | The attachment shape MUST leave room for §4.14's `media_id` arm without a breaking change to … | T009 |
 | FR-021 | The same URL attached twice to one message MUST be stored and returned twice. The platform MU… | T036a |
 | FR-022 | The attachments field on a message payload MUST be present on every payload that carries a me… | T014, T014a, T027 |
@@ -101,5 +101,5 @@ above it. Chapter 3.23 found three tasks under a heading that belonged to the ph
 **Every task that names an id appears above.** A task naming none is setup, a commit, a gate
 run or a record — the tasks a coverage map cannot speak about.
 
-    108 tasks · 26 requirements · 6 criteria
+    109 tasks · 26 requirements · 6 criteria
     0 ids with no verifying task

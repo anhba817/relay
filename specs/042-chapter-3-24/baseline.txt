@@ -443,3 +443,57 @@ none said what it should say.
     T038   put the bad scheme at index 3, so the path is not `attachments.0`, and
            pin whatever joins zod's path array — one decision, made here rather
            than per call site
+
+WHAT THE SIXTH ANALYSIS PASS FOUND — TWO MORE COSTS OF ONE DECISION
+
+**Sixth pass, sixth 100%, two findings and no CRITICAL.** Yield across the six: 8, 6, 5, 5, 3,
+2. The findings have moved from *the artifacts are wrong* to *a decision's consequences were
+not costed*, and **both of this pass's findings are consequences of the same decision pass 2
+made.** Not read as a stopping signal — chapter 3.16's twelfth pass said the same and its next
+three each found a CRITICAL — but the seam is narrower than the early passes worked.
+
+THE ONE REFUSAL THAT COULD NOT SAY WHICH FIELD TO FIX
+
+Measured against the repository's own zod, through the pipe that actually maps the error:
+
+    an object-level superRefine     path=[]                    -> field ABSENT
+    the array bound                 path=[attachments]         -> field "attachments"
+    a bad kind at index 3           path=[attachments.3.kind]  -> field "attachments.3.kind"
+
+`zod-validation.pipe.ts:33` omits `field` when the path is empty, and its own comment says why:
+*"An empty path means the whole body failed… there is no field to name."* Correct for a
+non-object body. **FR-019b's failure is about two named keys**, and `ctx.addIssue` accepts a
+path, so T020 now sets `path: ["text"]` and T020c asserts it.
+
+**The other two rows confirm pass 5's fix by measurement** rather than by reading — T035's
+expected `attachments` and T038's `attachments.3.kind` are exactly what the pipe produces.
+
+SEVEN FENCED FILES JOIN THE CHAPTER BECAUSE OF THE REQUIRED FIELD
+
+    FENCED    services/gateway/src/session.test.ts
+    FENCED    services/gateway/src/isolation.itest.ts
+    FENCED    services/gateway/src/connections.itest.ts
+    FENCED    services/gateway/src/typing.itest.ts
+    FENCED    services/gateway/src/resume.test.ts
+    FENCED    services/gateway/src/resume.itest.ts
+    FENCED    services/gateway/src/fanout.itest.ts
+    unfenced  services/api/src/fanout/fanout.itest.ts
+
+Seven of the eight files that must gain `attachments: []` are in an earlier chapter's chain, so
+a changed line must appear in this chapter's fences or `check:fences` goes red — **and the
+chapter teaches none of them.**
+
+**Pass 4 costed the required-field decision in `typecheck` terms — eighteen literals across
+eight files — and stopped there.** Chapter 3.23 recorded the same shape from the other side and
+declined to fence three files it did not discuss; these seven have no such choice, because
+their chains already exist.
+
+THREE NEGATIVE CHECKS, RECORDED BECAUSE THEY WERE RUN
+
+    the e2e package        `harness.ts` and `tuan.itest.ts` import the `Message` type and
+                           only ANNOTATE parsed JSON with it — no literal. T014a's list of
+                           eight is right and e2e's absence is correct rather than an omission.
+    FR-016 "stated"        satisfied at `contracts/attachments.md:107` and
+                           `data-model.md:79`, both saying an edit leaves attachments alone.
+    T041's code claim      `session.ts:1446` sends `invalid_frame` for a schema failure,
+                           which is what pass 5 wrote into that task. Verified, not carried.

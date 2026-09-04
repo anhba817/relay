@@ -23,12 +23,19 @@ A `discriminatedUnion` on `type` with one arm today. §4.14 adds `{"type": "medi
   not have to check for an absent one.
 - **The same URL twice is two attachments** (FR-021). Nothing deduplicates.
 - **201** the message, with `attachments` echoed in the order sent.
-- **400** `invalid_request` with `field` naming the offender:
-  - more than 10 (FR-005)
-  - a `kind` outside the three (FR-002)
-  - a URL whose scheme is not `http` or `https` (FR-004)
-  - a URL longer than 2048 characters
-  - `text` empty **and** no attachments (FR-019b)
+- **400** `invalid_request` with `field` naming the offender. **The shapes are measured, not
+  guessed** — `zod-validation.pipe.ts` joins zod's path array with dots and omits the key when
+  the path is empty:
+
+      more than 10 (FR-005)                          field = attachments
+      a `kind` outside the three (FR-002)            field = attachments.3.kind
+      a scheme that is not http/https (FR-004)       field = attachments.3.url
+      a URL longer than 2048 characters              field = attachments.3.url
+      `text` empty AND no attachments (FR-019b)      field = text
+
+  **The last one is only true because the refinement sets `path: ["text"]`.** An object-level
+  refinement produces an empty path and the pipe then omits `field` entirely — correct for a
+  whole-body failure and wrong for this one, which is about two named keys.
 - **422** `media_not_available` — a `{"type": "media"}` attachment (FR-003, FR-003a).
 
 **Why 422 and its own code rather than a 400 naming the field.** A `media_id` attachment is
