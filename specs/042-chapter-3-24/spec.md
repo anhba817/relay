@@ -52,11 +52,20 @@ attachment for a client that was not connected.
 **Acceptance Scenarios**:
 
 1. **Given** a channel with two connected members, **When** one sends a message with an
-   attachment of kind `image` and an external URL, **Then** the other member's socket receives
-   the message with that attachment, and the sender's acknowledgement carries it too.
-2. **Given** a message sent with two attachments, **When** any member reads channel history,
+   attachment of kind `image` and an external URL over REST, **Then** the other member's socket
+   receives the message with that attachment, and **the REST response carries it too**.
+2. **Given** the same send made over a socket instead, **When** it commits, **Then** the
+   sender's `message.ack` carries **only the sequence number**, as it has since chapter 2.2 —
+   and the sender learns its attachments landed from the `message.created` frame the fan-out
+   delivers to it like any other member.
+
+   **This scenario exists because the first draft asked for something the protocol cannot do.**
+   It said "the sender's acknowledgement carries it too" without naming a door.
+   `messageAckSchema`'s payload is `{ seq }` and has never carried a message; widening it is a
+   protocol change no requirement asks for, and the socket sender already holds what it sent.
+3. **Given** a message sent with two attachments, **When** any member reads channel history,
    **Then** both attachments are returned in the order they were sent.
-3. **Given** a message sent with no attachments, **When** it is read back, **Then** the
+4. **Given** a message sent with no attachments, **When** it is read back, **Then** the
    attachment list is empty rather than absent, so a client needs no special case.
 
 ### User Story 2 - Ten is a limit and eleven is a refusal (Priority: P1)
@@ -205,8 +214,10 @@ route returns the tombstone with an empty attachment list.
   reads it from history an hour later, see the same attachments in the same order.
 - **SC-002**: A send with eleven attachments is refused, and the channel's message count is
   unchanged afterwards.
-- **SC-003**: A deleted message's attachments are unreachable through every read path the
-  platform exposes, counted and named rather than asserted for the ones somebody remembered.
+- **SC-003**: A deleted message's attachments are unreachable through **each of the six read
+  shapes** `data-model.md` enumerates, named one at a time rather than asserted for the ones
+  somebody remembered. Six is the count this chapter's research took from the code; a seventh
+  appearing is the finding, not an inconvenience.
 - **SC-004**: An attachment whose URL uses a scheme other than `http` or `https` never reaches
   a client.
 - **SC-005**: A client that was disconnected across a send with attachments, and follows the

@@ -32,7 +32,7 @@ carries them, and it is regenerated rather than edited.
 | FR-005 | A send carrying more than 10 attachments MUST be refused, and MUST write no message row. | T019, T022c, T025, T035, T036, T041, T042 |
 | FR-006 | Attachments MUST be returned in the order they were submitted, on every path that returns a m… | T022, T023, T022c, T025, T028b, T030a, T052 |
 | FR-007 | A message with no attachments MUST be returned with an empty list rather than an absent field… | T028, T031, T034 |
-| FR-008 | Attachments MUST be delivered to connected members in the same frame as the message they belo… | T014, T018, T027, T028a, T028b, T030, T034 |
+| FR-008 | Attachments MUST be delivered to connected members in the same frame as the message they belo… | T014, T018, T027, T028a, T028b, T030, T029a, T034 |
 | FR-009 | History responses MUST include each message's attachments. | T028, T029, T030a, T034 |
 | FR-010 | The resume backfill MUST include attachments, so a client that was away and a client that sta… | T051, T052, T054 |
 | FR-011 | A recognised idempotent retry MUST return the original message's attachments and MUST NOT wri… | T049, T050, T050a, T054 |
@@ -43,7 +43,7 @@ carries them, and it is regenerated rather than edited.
 | FR-016 | Whether an edit may change attachments MUST be decided and stated. If it may not, an edit MUS… | T045, T047, T048 |
 | FR-017 | The number of attachments on a message MUST be derivable from what this chapter writes, so §4… | T023, T058, T060 |
 | FR-018 | The comment at `packages/protocol/src/frames.ts:14` scheduling attachments for Part 4 MUST be… | T002, T061, T067 |
-| FR-019 | A message whose text is empty MUST be accepted when it carries at least one attachment, and M… | T004, T020, T020a, T020b, T024, T025 |
+| FR-019 | A message whose text is empty MUST be accepted when it carries at least one attachment, and M… | T004, T017b, T020, T020a, T024, T025 |
 | FR-019a | An attachments-only message MUST stay distinguishable from a tombstone on every read path. `t… | T024, T025 |
 | FR-019b | A message with no text and no attachments MUST still be refused. Relaxing the bound is condit… | T020, T025 |
 | FR-020 | The attachment shape MUST leave room for §4.14's `media_id` arm without a breaking change to … | T009 |
@@ -56,7 +56,7 @@ carries them, and it is regenerated rather than edited.
 |---|---|---|
 | SC-001 | A member connected when a message with attachments is sent, and a member who reads it from hi… | T028b, T029, T030, T033, T034 |
 | SC-002 | A send with eleven attachments is refused, and the channel's message count is unchanged after… | T035, T042 |
-| SC-003 | A deleted message's attachments are unreachable through every read path the platform exposes,… | T043, T048 |
+| SC-003 | A deleted message's attachments are unreachable through **each of the six read shapes** `data… | T043, T048 |
 | SC-004 | An attachment whose URL uses a scheme other than `http` or `https` never reaches a client. | T038, T042 |
 | SC-005 | A client that was disconnected across a send with attachments, and follows the documented rep… | T052, T054 |
 | SC-006 | Every read path's behaviour with respect to attachments is stated in the architecture documen… | T063, T067 |
@@ -77,6 +77,12 @@ case as an assertion on two guards this chapter changes the meaning of. FR-022 (
 whether the frame's field is optional — it is not — and FR-006 (3.24) gained order assertions
 on the resume and socket paths, where it had said only "with attachments".
 
+**Pass 3 — the scenarios and the protocol's own limits.** One acceptance scenario asked for
+something the protocol cannot do: the sender's acknowledgement carrying attachments, on a
+`message.ack` whose payload has been `{ seq }` since chapter 2.2. Narrowed to the REST door and
+given a test that keeps the narrowing honest. Seven of eight scenarios had a task; scenarios
+carry no identifiers either.
+
 **FR-017 (3.24) moved from a record task to a test** in pass 1. It had been cited by a task
 that writes a paragraph, which is the shape `check-refs.py` refuses for commit tasks and did
 not catch one step to the left.
@@ -95,5 +101,5 @@ above it. Chapter 3.23 found three tasks under a heading that belonged to the ph
 **Every task that names an id appears above.** A task naming none is setup, a commit, a gate
 run or a record — the tasks a coverage map cannot speak about.
 
-    106 tasks · 26 requirements · 6 criteria
+    107 tasks · 26 requirements · 6 criteria
     0 ids with no verifying task

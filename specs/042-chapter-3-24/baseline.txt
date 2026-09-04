@@ -262,3 +262,75 @@ WHAT ELSE WAS CHECKED AND IS CLEAN
     the webhook reach            stated in `contracts/attachments.md`, not assumed
     phase ordering               no task in an earlier phase depends on a later one
     `[P]` markers                no clash beyond the stated `baseline.txt` exception
+
+WHAT THE THIRD ANALYSIS PASS FOUND — THE SCENARIOS AND THE PROTOCOL'S OWN LIMITS
+
+**Third pass, third time coverage read 100%, five more findings.** The pattern is stable enough
+to name: **everything the instruments can count is complete, and everything they cannot count
+is where the findings are.** Scenarios and edge cases carry no identifiers; arithmetic and
+phase-versus-content carry none either.
+
+AN ACCEPTANCE SCENARIO ASKED FOR SOMETHING THE PROTOCOL CANNOT DO
+
+US1 scenario 1 said *"the sender's acknowledgement carries it too"* and did not name a door.
+
+    REST    the ack is the 201 body — T026 covers it
+    socket  the ack is `message.ack`, whose payload is `{ seq }` and has been since
+            chapter 2.2. It has never carried a message.
+
+Widening `messageAckSchema` is a protocol change no requirement asks for, and **the socket
+sender already holds what it sent** — it learns the attachments landed from the
+`message.created` frame the fan-out delivers to it like any other member. The scenario is
+narrowed to REST, a second scenario states the socket's honest behaviour, and T029a asserts the
+ack's **exact key set** so a later chapter widening it has to change a test on purpose.
+
+**Seven of eight scenarios had a task.** The eighth was not missing — it was unsatisfiable.
+
+A SCENARIO AND ITS TASK NAMED TWO DIFFERENT COLUMNS
+
+US2 scenario 1: *"the channel's **sequence** does not advance."*
+T035 as written: *"the channel's **message count** is unchanged."*
+
+Both are true of a refused send, and they are claims about different things.
+`channels.last_sequence` is what chapter 2.2 made the sequencing authority and what the
+scenario names; a row count is weaker and about something else. T035 asserts the column now.
+
+A TASK EDITED A PHASE-3 FILE FROM PHASE 4
+
+T020a relaxed the text bound in `packages/protocol/src/internal.ts` — a **wire** file — while
+Phase 3 is "The wire" and its commit claims the wire is done. The protocol would have been
+committed half-relaxed and edited again a phase later. Renumbered **T017b** and moved into
+Phase 3 beside T015a.
+
+**Nothing compares a task's content with the heading above it.** Chapter 3.23 found three tasks
+under the wrong heading and eight analysis passes had not caught it; this is the check being a
+person reading two columns against each other.
+
+THE FIRST FIELD THAT MULTIPLIES, AND NOBODY HAD DONE THE ARITHMETIC
+
+    text          8,000 characters
+    metadata      4 KB
+    attachments   10 x 2,048 = 20,480       <- two bounds nobody multiplied
+                  ────────
+                  about 28,500 before framing
+
+Against express's default JSON limit of **100 KB**, which this api does not override, and a
+`ws` server created as `new WebSocketServer({ noServer: true })` with **no `maxPayload`**, so
+its default of 100 MiB applies. **Nothing breaks and nothing is near a wall.** The total is now
+in `data-model.md` beside the per-item bound, because the next field with a per-item bound
+should read it before choosing one.
+
+SC-003's OWN DISTINGUISHING CLAUSE WAS UNVERIFIED
+
+It asks for the read paths *"counted and named rather than asserted for the ones somebody
+remembered"* — and T043 asserted one. The count existed: `data-model.md` says R4 counted six.
+SC-003 now names the number and T043 asserts against each of the six.
+
+AND THE MAP'S REGENERATOR IS A FILE NOW
+
+`traceability.md` was retyped by hand after each of the first three passes and had a different
+bug each time — a stale task count, a quoted figure the sweep read as a fresh claim, and a
+duplicated footer block. **`sweep.py` caught all three**, which is the system working.
+
+`regen-traceability.py` carries the prose forward and regenerates only the tables. **Five
+instruments, not four.**

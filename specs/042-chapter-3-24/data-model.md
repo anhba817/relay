@@ -52,9 +52,22 @@ publish.
     scheme http or https only      FR-004 — and R7 measured that `z.url()` alone accepts
                                    `javascript:`, `data:`, `file:` and `vbscript:`
 
-**The 4 KB metadata bound (FR-MSG-01) is not shared.** Attachments are not metadata. Ten URLs
-at 2048 characters is 20 KB, which is larger than the metadata budget and smaller than the
-8,000-character text budget, and none of the three constrains the others.
+**The 4 KB metadata bound (FR-MSG-01) is not shared.** Attachments are not metadata, and none
+of the three budgets constrains the others.
+
+**The total a send can now carry, stated because this is the first field that multiplies:**
+
+    text          8,000 characters      FR-MSG-01
+    metadata      4 KB                  FR-MSG-01
+    attachments   10 x 2,048 = 20,480   FR-005, and the per-item bound
+                                        ────────
+    about 28,500 characters before framing
+
+**Against express's default JSON body limit of 100 KB**, which this api does not override, and
+a `ws` server created as `new WebSocketServer({ noServer: true })` with **no `maxPayload`**, so
+its default of 100 MiB applies. Nothing breaks and nothing is near a wall — and the arithmetic
+of `10 × 2,048` is an implication of two bounds that nobody had multiplied. The next field with
+a per-item bound should read this line before choosing one.
 
 ## The message's life, with attachments
 
