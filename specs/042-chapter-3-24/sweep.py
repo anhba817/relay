@@ -26,6 +26,12 @@ WHAT IT CHECKS
      checked WITHOUT the prose heuristic below — the third red test found that
      the heuristic swallowed a real hit
   5. no placeholders
+  6. every read shape named in data-model.md's table is named by the task that
+     cites SC-003 — MEMBERSHIP, not the count. Sixteen passes compared the count
+     and it was right in five artifacts; the task's list held five shapes labelled
+     as six, because `listMessages` serves history AND resume and reads as two
+     things. Nothing here could see that: the enumeration is a markdown table and
+     the assertions were prose using informal labels.
 
 WHAT IT DOES NOT CHECK. Ids and traceability — `check-refs.py` owns those, and a
 fifth red test confirmed the division: renaming a traced requirement id here
@@ -222,6 +228,64 @@ def main():
                     problems.append(
                         f"{name}:{n} says {m.group(1)} {label}, measured {actual}"
                     )
+
+    # 6 — the read shapes, by MEMBERSHIP. data-model.md's table is the authority;
+    # the task citing SC-003 must name every row of it. A count check cannot see a
+    # list that holds one shape twice and drops another, which is what pass 17 found.
+    dm = docs.get("data-model.md", "")
+    shapes = re.findall(r"^\| `([^`]+)`", dm, re.M)
+    stated = re.search(r"R4 counted (\w+)", dm)
+    WORDS = {"four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8}
+    want = WORDS.get(stated.group(1).lower()) if stated else None
+    if not shapes:
+        problems.append(
+            "data-model.md: no read-shape table rows matched — has the table moved? "
+            "A pattern that silently matches nothing is how a class goes unchecked"
+        )
+    elif want is None:
+        problems.append(
+            "data-model.md: the read-path table does not say how many shapes R4 counted, "
+            "so this check cannot tell a dropped row from a shorter table"
+        )
+    elif len(shapes) != want:
+        # Matching MOST of a class is how a class goes unchecked: un-backticking one
+        # row would drop it from the membership check with five rows still matching,
+        # and pass 17's third red probe did exactly that and stayed green.
+        problems.append(
+            f"data-model.md says R4 counted {want} read shapes and the table's pattern "
+            f"matched {len(shapes)} — a row the pattern cannot see is a shape nothing "
+            f"requires the tests to name"
+        )
+    else:
+        # Collect the whole task BLOCK, not the line. A task here can run to an
+        # indented table under its first line, and the first version of this check
+        # read single lines — so it reported all six missing from a task that names
+        # all six. A checker whose reach is narrower than its subject reports the
+        # subject as absent.
+        blocks, cur = [], None
+        for ln in docs["tasks.md"].split("\n"):
+            if re.match(r"- \[[ Xx]\] T\d", ln):
+                if cur is not None:
+                    blocks.append("\n".join(cur))
+                cur = [ln]
+            elif cur is not None:
+                if ln.startswith("#") or re.match(r"\*\*[A-Z]", ln):
+                    blocks.append("\n".join(cur))
+                    cur = None
+                else:
+                    cur.append(ln)
+        if cur is not None:
+            blocks.append("\n".join(cur))
+        body = "\n".join(b for b in blocks
+                          if "SC-003 (" in b and "Commit phase" not in b)
+        for shape in shapes:
+            bare = shape.split(".")[0]
+            if shape not in body and bare not in body:
+                problems.append(
+                    f"data-model.md names the read shape `{shape}` and no task citing "
+                    f"SC-003 names it — SC-003 asks for them one at a time, and a count "
+                    f"of six proves nothing about which six"
+                )
 
     head = " · ".join(f"{v} {k}" for k, v in measured.items())
     print(f"sweep: {head} · stories and MVP aligned across plan and tasks")

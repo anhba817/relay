@@ -188,8 +188,13 @@ that accepts unbounded lists; it is one whose refusals are not yet asserted.
   client that stayed connected hold the same message.
 - **FR-011**: A recognised idempotent retry MUST return the original message's attachments and
   MUST NOT write them a second time.
-- **FR-012**: Deleting a message MUST unlink its attachments, and the tombstone MUST be
-  returned with an empty attachment list on every read path.
+- **FR-012**: Deleting a message MUST unlink its attachments. On every read path that
+  returns attachments, the tombstone MUST be returned with an **empty list**; on the paths
+  that return no attachments field at all, the field MUST stay absent. **Both are
+  "unreachable", and absence is the stronger of the two** — `data-model.md` says four of the
+  six read shapes do not carry the column and this chapter does not add it to them, so a
+  requirement demanding an empty list from all six would demand the column be added to a
+  test-only helper and to a channel preview that shows what was said.
 - **FR-013**: The deletion event MUST NOT carry attachment data, for the same reason it
   carries no text.
 - **FR-014**: An attachment MUST NOT be readable by a caller who cannot read the message it

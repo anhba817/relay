@@ -1068,3 +1068,68 @@ list — and T041 is the model for the rules that cannot be shared, because it n
 both codes, and what a weaker assertion would miss.
 
     115 tasks -> 117     27 requirements     6 criteria     0 untraced     7 instruments
+
+## Analysis pass 17 — the count was right in five artifacts and the membership was wrong
+
+The question: who actually asserts SC-003's six read shapes, and are they the same six?
+
+AG1  HIGH   FR-012 said the tombstone "MUST be returned with an empty attachment list on every
+            read path", and four of the six read no attachments at all — `listMessagesRaw` is
+            `id, text, seq`, `last_message` is `sequence, text, user, created_at`, and this
+            chapter deliberately adds the column to neither. The requirement demanded that a
+            test-only helper and a channel preview grow a column its own data model says they
+            keep. Narrowed: an empty list where the field exists, absence where it does not,
+            and **absence is the stronger of the two**.
+
+AG2  HIGH   T043's six were five. It named "the history route, the resume backfill, the retry
+            replay, the channel listing's preview, and the two internal reads" — and
+            `data-model.md` annotates `listMessages` as "(history, resume)", so the first two
+            are one shape counted twice. `listMessagesRaw` was missing entirely.
+
+            The authoritative six, confirmed two ways — R4's enumeration, and eight
+            `.from(messages)` selects minus the two that read no message body:
+
+                listMessages                       history AND resume     changes
+                getMessageByIdempotencyKey         the retry replay       changes
+                editMessage's internal read                               unchanged
+                deleteMessage's internal read                             unchanged
+                listMessagesRaw                    test-only, 5 sites     unchanged
+                listChannelsForUser.last_message   the preview            unchanged
+
+            The resume backfill is not a seventh: `toFrame` maps a row it is handed. Asserting
+            its tombstone case is worth doing as a SEVENTH ASSERTION and not as one of the six.
+
+AG3  MEDIUM T043 and T053 asserted opposite things about the same shape — `attachments: []` on
+            each of the six against "the preview carries no attachments field". Both are right
+            once AG1 splits the two cases, and both tasks now say so.
+
+**Why sixteen passes missed it.** The count was six in spec.md, research.md, data-model.md,
+plan.md and tasks.md — pass 9 even corrected R4's heading from five to six. Membership was
+never compared, because nothing could: the enumeration is a markdown table and the assertions
+were prose using informal labels ("the two internal reads") that no identifier match connects
+to `editMessage` and `deleteMessage`. Same shape as 3.23's worst finding — every checker here
+compares identifiers, and this was a clause. Here the clause was a list.
+
+So T043 now names all six by identifier and `sweep.py` gained check 6: every read shape in
+data-model.md's table is named by the task citing SC-003. **Membership, not the count** — and
+it went into sweep.py rather than an eighth file, because C8 tracks instrument sprawl and this
+belongs with the cross-artifact family anyway.
+
+Two holes found while red-testing it, both real:
+
+    the first version read single LINES, and T043's list is an indented block under its first
+    line, so it reported all six missing from a task that names all six. Now it collects the
+    task block.
+
+    the third red probe STAYED GREEN. Un-backticking one table row dropped that shape from the
+    check with five rows still matching — matching most of a class, which is how a class goes
+    unchecked. Fixed by pinning the row count to the number the table itself states, so a row
+    the pattern cannot see is now a failure. Four probes red: an informally-named shape, a new
+    shape in the table, an un-backticked row, and a table that states no count.
+
+And a correction to what I wrote at pass 16. I said the doors question had been "turned into a
+check" and offered that as a reason to stop. That was true of the doors question and I
+generalised it: this pass's question was a list's MEMBERSHIP, and no check existed for it until
+this pass wrote one. One line of inquiry had closed, not the artifacts.
+
+    117 tasks     27 requirements     6 criteria     0 untraced     7 instruments

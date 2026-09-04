@@ -36,7 +36,7 @@ carries them, and it is regenerated rather than edited.
 | FR-009 | History responses MUST include each message's attachments. | T028, T029, T030a, T034 |
 | FR-010 | The resume backfill MUST include attachments, so a client that was away and a client that sta… | T051, T052, T054 |
 | FR-011 | A recognised idempotent retry MUST return the original message's attachments and MUST NOT wri… | T049, T050, T050a, T054 |
-| FR-012 | Deleting a message MUST unlink its attachments, and the tombstone MUST be returned with an em… | T043, T048, T050a, T054 |
+| FR-012 | Deleting a message MUST unlink its attachments. On every read path that returns attachments, … | T043, T048, T050a, T054 |
 | FR-013 | The deletion event MUST NOT carry attachment data, for the same reason it carries no text. | T016, T044, T048 |
 | FR-014 | An attachment MUST NOT be readable by a caller who cannot read the message it belongs to. | T032a |
 | FR-015 | The message payload used by creation and edit events MUST carry attachments identically, so a… | T014, T018, T046a, T046b, T055, T057, T060 |
