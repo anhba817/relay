@@ -945,3 +945,70 @@ requirements tripped sweep's stated-figure rule. Reworded, never exempted — bu
 now reliable enough to expect, and the chapter prose will discuss all three at length.
 
     114 tasks   27 requirements   6 criteria   8 edge cases   9 scenarios   7 instruments
+
+## Analysis pass 15 — one requirement, followed through both doors
+
+AB1  CRITICAL  FR-019b is a MUST — "a message with no text and no attachments MUST still be
+               refused" — and it had coverage on ONE door of two.
+
+                   messages.controller.ts:111   ZodValidationPipe(sendMessageBodySchema)
+                   internal.controller.ts:58    ZodValidationPipe(internalSendRequestSchema)
+
+               `messages.schema.ts` is imported by exactly one file and the socket path —
+               gateway, internal route, sendMessage — never sees it. T020 put the pair rule
+               there as a superRefine. T017b relaxed `internalSendRequestSchema`'s `min(1)`
+               with no pair rule, and its own text correctly argues that leaving `min(1)` would
+               meet FR-019 on one door only. So the chapter reasoned carefully about the
+               PERMISSION and left the REFUSAL behind: after T017b, `{"text": "",
+               "attachments": []}` over the socket commits.
+
+               T020a tested only that the socket ACCEPTS an attachments-only message — the half
+               that passes the moment the bound is relaxed.
+
+               Fixed by giving the rule one home: T009a exports it from `attachments.ts`, which
+               both doors already import for the bound, and T020 and T017b apply it rather than
+               express it. T020a now tests both halves. T020a's own words were the argument all
+               along: **"A rule expressed in two schemas is two rules."**
+
+               The three doors' text bounds, for the record:
+
+                   messages.schema.ts:8    z.string().min(1).max(8000)   REST, bounded
+                   internal.ts:19          z.string().min(1).max(8000)   internal hop, bounded
+                   frames.ts:20            z.string()                    socket frame, unbounded
+
+AB2  HIGH      This chapter doubled a gap open for five chapters and no task said so. 3.23's C8
+               tracks per-chapter instruments with no owner:
+
+                   3.20  2      3.21  3      3.22  3      3.23  3      3.24  SIX
+
+               regen-traceability.py at pass 3, check-quickstart.py at 13, check-checklist.py
+               at 14. Against 3.23's copies, check-refs.py differs by 50 lines (pass 11's
+               reverse-direction check is the substantive gain), sweep.py by 2, check-prose.py
+               by 108 — mostly its per-chapter claim list, by design. `specs/_instruments/`
+               was never created, so this chapter chose "accept the re-derivation" twice
+               without recording the choice. T085 now names C8, the number, and the debt.
+
+AB3  MEDIUM    C8 says "a fourth instrument" and "all four were improved", then lists three,
+               and 3.23's tree holds three .py files. T085 already says to re-check status
+               against the tree rather than copy it; it now names C8's count as one to
+               re-measure.
+
+A fourth thing, found while looking for AB1's fix. `messages.controller.ts:77` says validation
+is "the same schema family as @relay/protocol, so the REST body and the WebSocket frame payload
+CANNOT DRIFT". They are two schemas validated at two controllers and they have drifted three
+times: `idem_key` against `idempotency_key`, the text bound, and FR-019b's pair rule, which
+this chapter had to be told to carry across. It is now check-prose.py's second entry, and T002
+says two entries instead of one. **No checker reads prose**, and the comment has outlived its
+truth in a file this chapter fences.
+
+Two process notes, both mine:
+
+  I ran sweep.py before regen-traceability.py again, so it reported a task count I had already
+  changed. Pass 10 found that and pass 10 wrote it down in this file. Second occurrence.
+
+  Against my own last two reports: after pass 14 I said the remaining artifacts were records
+  and the yield had genuinely dropped. Pass 15 found a CRITICAL by taking one requirement and
+  following it through both doors. The two doors have now produced findings at passes 11, 12
+  and 15, and that is the question to keep asking rather than the artifact to keep reading.
+
+    114 tasks -> 115     27 requirements     6 criteria     0 untraced     7 instruments

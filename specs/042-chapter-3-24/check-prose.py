@@ -25,6 +25,12 @@ CLAIMS: list[tuple[str, str, str]] = [
         "relay-platform/packages/protocol/src/frames.ts",
         "fields arrive with Part 2/4",
     ),
+    (
+        "the two send doors have drifted three times — idem_key vs idempotency_key, the text "
+        "bound, and FR-019b's pair rule — so 'cannot drift' is a claim the tree refutes",
+        "relay-platform/services/api/src/messages/messages.controller.ts",
+        "cannot drift",
+    ),
 ]
 
 
