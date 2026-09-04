@@ -30,7 +30,7 @@ carries them, and it is regenerated rather than edited.
 | FR-003b | The attachment shape MUST be a discriminated union on a kind field from the first version, so… | T009, T013 |
 | FR-004 | An attachment URL MUST be refused unless its scheme is `http` or `https`. | T010, T011, T013, T038, T042 |
 | FR-005 | A send carrying more than 10 attachments MUST be refused, and MUST write no message row. | T010, T019, T022c, T025, T035, T036, T041, T042 |
-| FR-006 | Attachments MUST be returned in the order they were submitted, on every path that returns a m… | T022, T023, T022c, T025, T028b, T030a, T052 |
+| FR-006 | Attachments MUST be returned in the order they were submitted, on every path that returns a m… | T022, T023, T022c, T025, T028b, T029, T030a, T052, T057 |
 | FR-007 | A message with no attachments MUST be returned with an empty list rather than an absent field… | T028, T031, T034 |
 | FR-008 | Attachments MUST be delivered to connected members in the same frame as the message they belo… | T014, T018, T027, T027a, T028a, T028b, T030, T029a, T034 |
 | FR-009 | History responses MUST include each message's attachments. | T028, T029, T030a, T034 |
@@ -102,5 +102,5 @@ above it. Chapter 3.23 found three tasks under a heading that belonged to the ph
 **Every task that names an id appears above.** A task naming none is setup, a commit, a gate
 run or a record — the tasks a coverage map cannot speak about.
 
-    113 tasks · 27 requirements · 6 criteria
+    114 tasks · 27 requirements · 6 criteria
     0 ids with no verifying task

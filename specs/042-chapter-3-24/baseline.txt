@@ -762,3 +762,60 @@ Clean negatives, verified:
     fanout.ts:150 and publisher.ts:159 re-publish what they are handed and construct nothing.
 
     110 tasks -> 113     27 requirements     6 criteria     0 untraced     0 dangling
+
+## Analysis pass 12 — which assertions pass with the field present but empty?
+
+The question pass 11 ended on. Three findings, all in the assertions rather than the code.
+
+V1  HIGH    SC-001 reads "see the same attachments in the same order" and three of its four
+            working tests sent ONE attachment:
+
+                T028b   "with its attachments, in order"        the only one that could see order
+                T029    "send with an attachment"               ONE
+                T030    "carrying the attachment"               ONE
+                T033    "hears it with the attachment"          ONE
+
+            The plan already carried the refutation. T052 argues for its own two-attachment
+            design in these words: "a single-attachment test cannot see an order at all." The
+            same sentence applies to three siblings and nobody had turned it on them.
+
+            Worse than the cardinality: SC-001 is a claim that TWO READERS AGREE — a connected
+            member and someone reading history an hour later — and no test compared them. T029
+            read history alone; T030 and T033 watched the socket alone. Three tests each proving
+            half of a criterion about sameness. T030 now compares the frame's list against the
+            history route's for the same message, as ordered lists, because it is the only task
+            positioned to hold both.
+
+V2  MEDIUM  FR-006 quantifies over paths — "on every path that returns a message" — and order
+            was asserted on five of seven. The REST history read had a single-attachment test;
+            the outbox payload had T057, which compares KEY SETS and cited FR-015 only.
+
+            T057's key-set comparison is correct for FR-015, whose words are "identically, so a
+            consumer needs one shape for both" — a shape claim, and key sets are how you check a
+            shape. It simply cannot see order, and two payloads both carrying `[]` have
+            identical key sets. T057 now asserts values and order beside it, and cites FR-006.
+
+V3  MEDIUM  Three falsifications in the chapter (T011 the scheme rule, T032 the `?? []` mapping,
+            T046 the edit SET list) and NONE aimed at a payload. Chapter 3.23 ran nineteen.
+            Added T028c: empty the gateway publish's attachments, watch T028b and T030 go red,
+            put it back. It is the general answer to the whole class — a field that is present
+            and empty compiles, parses, delivers, and satisfies every assertion about its key.
+
+The mechanical version of this pass did not work, and that is the finding about the finding. A
+keyword classifier over 52 test tasks came back with no label at all for 21 of them, T004, T029 and T033
+included, so its labels were worth nothing and the candidates had to be read. Its unknown
+marker was three question marks, which `sweep.py` then refused as a placeholder — correctly,
+and only after I had committed on its red exit code, because I printed the code instead of
+gating on it. "Carries the
+attachment" and "carries the attachment in order" differ by three words and by everything.
+
+    after:  FR-006 order asserted on all seven paths (T025 is the phase commit and carries no
+            assertion, correctly)
+            SC-001 tests: T029, T030, T033 send two; T028b compares order; T034 is the commit
+
+    113 tasks -> 114     27 requirements     6 criteria     0 untraced     0 dangling
+
+Passes 9 through 12 have one through-line: every finding was the difference between a field
+being PRESENT and being RIGHT — the return value (9), the type (10), the payload (11), the
+assertion (12). T028c is the cheap general instrument for all four, which is why it went in
+despite being the lowest-severity row of the pass.
