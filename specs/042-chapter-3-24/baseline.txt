@@ -1405,3 +1405,219 @@ discriminator has to MATCH for zod to run the arm's own refinement instead of an
 `invalid_union_discriminator`. `attachments.test.ts` pins both the message and the absence of
 that code, because those two assertions are the only thing that tells a two-arm union from a
 one-arm one.
+
+## PHASE 3 — THE WIRE, AND THE VALUES THAT SATISFY IT
+
+### T014a — the compiler's list, and pass 18's prediction held
+
+`pnpm --filter @relay/protocol build`, then `tsc --noEmit` in each consumer:
+
+    33 errors      4 production      29 in tests across 9 files
+
+    production
+      messages.controller.ts:236   REST publish   message.created
+      messages.controller.ts:334   REST publish   message.updated
+      backfill.controller.ts:109   the resume mapping
+      session.ts:1534              the gateway's publish
+
+Pass 18 measured this with a probe and predicted the same four files at the same four lines.
+It predicted 28 test-site errors across nine files and the real change produces 29 — the extra
+one is in `session.test.ts`, whose second construction the probe's simpler attachment type did
+not reach.
+
+**And the required field named six more sites the probe never saw**, all in `repository.ts`,
+because `MessageRow` gained a required `attachments` and the probe only touched the frame:
+
+    editMessage's read      deleteMessage's read (x2)      getMessageByIdempotencyKey
+    listMessages' map       and the insert branch's return
+
+### `MessageRow.attachments` is REQUIRED, and `edited_at?` next to it is why
+
+That interface's own comment explains why `edited_at` is optional: write paths would each have
+to spell `edited_at: null`. **That convenience is exactly what made `internalSendResponseSchema`
+a break waiting to happen** — a field the type lets you omit is a field the gateway's strict
+parse refuses at runtime, with no compiler anywhere in between. Required here means `tsc` names
+every path instead, and it named six.
+
+`Attachment[]` and not `Attachment[] | null`, so the null lives only in the column: FR-007 says
+a message with none is RETURNED with an empty list, and the `?? []` that makes that true belongs
+at the read, once.
+
+### A tension phase 3 surfaced and phase 7 has to resolve
+
+`editMessage`'s internal read now returns `attachments: []`, and T046a needs the
+`message.updated` event to carry the message's EXISTING list — so that read gains the column in
+phase 7. **T053 lists it among the four read shapes that "do not change", and after phase 7 that
+will be three.** The comment at the site says so; T053's own text is what needs correcting when
+the phase arrives, and it says to re-check against the tree rather than copy.
+
+### Four patterns of mine were narrower than their subject, in one phase
+
+    npx tsc from the repo root   fetched the joke package and exited 0. The root has no
+                                 TypeScript; only relay-platform does.
+    grep -oE '^[a-z]...\.ts\('   plus `head -12` hid six repository.ts errors behind
+                                 fourteen from publisher.test.ts. THIRD truncation this
+                                 session; stop piping error lists through head.
+    ^(\s+)text:\s                missed four constructions using SHORTHAND `text,`, which
+                                 is how the last two errors survived three passes of
+                                 patching.
+    the same regex, per site     computed insert positions against original line numbers
+                                 while inserting into a shifting list, which worked only
+                                 because the inserts were applied in reverse.
+
+### THE COMPILER NAMED 33 SITES AND THE TEST LANES FOUND FOUR MORE
+
+T014a's instrument is `tsc`, and `tsc` cannot see a fixture handed to `.parse()` — that method
+takes `unknown`, so no schema requirement reaches the call site. Four pinned key sets and one
+fixture were invisible to it and turned up only by running the suites:
+
+    packages/protocol/src/revision.test.ts       the fixture AND 3.23's edit-payload pin
+    services/api/src/fanout/publisher.test.ts    the unit lane's delivery pin
+    services/api/src/fanout/fanout.itest.ts      the integration lane's, same test title
+
+**T016's own note predicted the shape of this** — "chapter 3.23 changed that payload and turned
+two direction tests red in two files" — and the count this chapter hit is four pins in three
+files, across two lanes. The typecheck-then-unit-then-integration order is what found them, and
+each lane found something the one before it could not:
+
+    typecheck    33 construction sites, 4 of them production
+    unit         2 pinned key sets and 1 fixture, all past `.parse(unknown)`
+    integration  1 more pin, in a file whose unit twin shares its test title
+
+`messageSchema` also had **no exact key-set assertion at all** before this phase — the one
+published payload a silent addition could reach. T016 added it, at seven keys, plus the negative
+case: a payload omitting `attachments` must be refused, which is the half that would pass if the
+field were optional.
+
+### THE TWO FILES CHAPTER 3.23 NAMED, AND 3.24 BROKE THEM ANYWAY
+
+`isolation.itest.ts` builds a forged outbound frame and asserts the gateway refuses it for its
+DIRECTION — `unknown_frame_type`. Phase 3 turned that into `invalid_frame`, which is a refusal
+one phase earlier and says nothing about direction. The test file explains the failure in its
+own words, written by the predecessor:
+
+    CHAPTER 3.23 SPLIT THIS CASE OFF. `message.deleted` shared the `Message` above until
+    this chapter gave the frame a payload with no text and a `deleted_at`. The forged frame
+    then failed the SHAPE check and the refusal came back `invalid_frame` instead of
+    `unknown_frame_type`. … the same finding, in the second of the two files that build a
+    forged frame this way, and `session.itest.ts` is the other.
+
+**Both files, named in advance, and it happened again.** The reason is mechanical:
+`sample(type, channel, user): unknown` returns `unknown`, and `typing.itest.ts`'s two
+constructions go through `JSON.stringify`. Neither is visible to `tsc` at any strictness. The
+warning was in the right place and could not be enforced from there.
+
+    typecheck   33 sites, 4 production
+    unit lane   +3   two pinned key sets and a fixture, all past `.parse(unknown)`
+    integration +6   one more pin, two forged frames, two JSON.stringify payloads
+
+### AND ONE FAILURE OF MINE THAT WAS NOT A DEFECT
+
+Running `isolation.itest.ts` and `typing.itest.ts` in ONE vitest invocation produced
+`Hook timed out in 10000ms` and reported the whole suite failed. Alone, `isolation.itest.ts`
+passes 28 of 28. Two suites in one invocation run in parallel and both boot an api child —
+which is exactly why the lane script uses `--concurrency=1`, recorded in `CLAUDE.md` as "the
+lane costs per SUITE, not per test". I read a green suite as red for one command.
+
+### AND THE PATTERN THAT WAS TOO BROAD, WHICH COST TWO GREEN TESTS
+
+`tsc` named three construction sites in `session.itest.ts`. My insert regex matched **five** —
+two of them inside a REST request body:
+
+    {"code":"invalid_request","message":"Unrecognized key: \"attachments\""}: expected 400 to be 201
+
+`sendMessageBodySchema` is a `strictObject` and does not take the field until phase 4 (T019), so
+adding it to a request body is a 400. The two tests that broke — "delivers a message SENT OVER
+REST to an open socket" and "stops delivering to a member who was REMOVED while connected" —
+were red for a reason that had nothing to do with what phase 3 changed.
+
+**Four narrow patterns and one broad one, in the same phase.** The narrow ones hid work; the
+broad one invented it. Both come from the same habit of patching by regex against a list the
+compiler produced, instead of patching the list the compiler produced.
+
+    the compiler's list      3 sites in this file
+    my regex's list          5, and the extra two were REQUEST bodies
+    what told me             the integration lane, at 2m31s per run
+
+Checked the other eight files for the same over-patch by looking for an inserted line within
+eight lines of `method: "POST"` or `body: JSON.stringify` — none.
+
+### AND ONE FAILURE THAT WAS NEITHER MINE NOR THE CODE'S
+
+The full lane's second run reached 562 in the api, 202 in the gateway, 16 in the dispatcher and
+17 in the harness, then failed one e2e test:
+
+    packages/e2e src/webhooks.itest.ts
+      invariant 14: an end user is served while the dispatcher does not exist
+      TypeError: fetch failed
+      Caused by: Error: connect ECONNREFUSED 127.0.0.1:4100
+
+The same test passes 1 of 1 run alone. **This is chapter 3.23's recorded failure class exactly**
+— an api child not listening, `ECONNREFUSED` inside the suite's own port range, on a test whose
+subject (webhooks and the dispatcher) has nothing to do with this chapter. 3.23 saw it twice in
+a twenty-run battery and could not name a cause, because `gaps.md` item C6's nine files discard
+their child's output.
+
+**One measurement 3.23 did not have**: the suite passes in isolation and fails in the lane, so
+the cause is contention or a port collision during a full run rather than anything in the test
+or the code it exercises. That narrows C6 without closing it, and it is the kind of thing the
+twenty-run battery at T086 exists to put a rate on rather than a story.
+
+Turbo had this task CACHED green in the two earlier runs — "9 successful, 10 total" against the
+earlier "7 successful, 9 total" — so the failure appeared when a dependency change invalidated
+the cache, not when the code changed.
+
+## THE e2e FAILURE, DIAGNOSED — AND `gaps.md` C6 ANSWERED IN ONE FILE OF TEN
+
+Chapter 3.23 recorded two battery failures it could not explain: an api child gone mid-run,
+`ECONNREFUSED` inside the suite's own port range, and "`EADDRINUSE` greps to zero and **that
+zero proves nothing** — such a line would sit in an unread pipe." This chapter read the pipe.
+
+    service output; child output follows:
+    --- api ---
+    Error: listen EADDRINUSE: address already in use :::4100
+        at Server.setupListenHandle [as _listen2] (node:net:1941:16)
+        ...
+      code: 'EADDRINUSE', errno: -98, syscall: 'listen', address: '::', port: 4100
+
+**The `ECONNREFUSED` a test reports is the SECOND error.** The child died binding a port
+another child still holds, the health check then found nothing listening, and only the second
+error ever reached a human. 3.23 guessed exactly this and could not prove it.
+
+**Why it was readable here and nowhere else.** `packages/e2e/src/harness.ts` does what C6's nine
+files do not: `capture()` retains every line, `dump()` formats the last twelve per child, and
+`serviceOutput()` exposes it. Of the three e2e files, **exactly one calls it** —
+`tuan.itest.ts:60`, wrapping its own failure. The other two, `webhooks.itest.ts` and
+`quotas.itest.ts`, fail with `ECONNREFUSED` and nothing else.
+
+    the capture exists          harness.ts:342
+    the formatter exists        harness.ts:352
+    it is offered to callers    harness.ts:486  serviceOutput()
+    callers that use it         ONE, tuan.itest.ts:60
+
+So C6 is not "nobody captures the output" — it is **"the output is captured, formatted, offered,
+and one caller in ten takes it."** That is a smaller and much cheaper gap than five chapters of
+`gaps.md` have assumed, and the fix is a `catch` in two files.
+
+### AND THE CAUSE IS THE FIXED PORT, WHICH IS C2
+
+`harness.ts:411` is `Number(process.env.RELAY_E2E_API_PORT ?? 4100)` and the lane sets no such
+variable. All three e2e files boot a harness on **4100/4101/4102**, `fileParallelism: false`
+serialises the files, and a previous file's api has not always released 4100 by the time the
+next one binds it. Two orphaned api children were still listening on 4999 and 4907 after my
+runs, which is the same non-reaping in a different range.
+
+### WHAT I GOT WRONG ON THE WAY, AND IT MATTERS
+
+I ran the e2e package once at HEAD and once with phase 3, saw 10 passed against 1 failed, and
+called it **decisive**. It was one run per arm. Then:
+
+    with phase 3   6 runs, 6 failed — on THREE DIFFERENT FILES
+                   tuan, webhooks, quotas, tuan, webhooks, tuan
+    at HEAD        run 1 FAILED too (1 failed | 9 skipped)
+
+**A cause does not move between files, and HEAD is not clean either.** The correct reading is a
+port collision whose victim is whichever file runs when the previous child has not let go —
+present before this chapter and unrelated to attachments. My "decisive" was the same error
+`CLAUDE.md` warns about in its second paragraph, committed against n=1 per arm while quoting the
+rule about confidence intervals in the same session.
