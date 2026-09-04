@@ -264,3 +264,171 @@ work is entirely somebody else's clause, and the four sections it would owe are 
 authentication, quota, drain and protocol violation — none of which this chapter touched.
 Recorded rather than done, with the numbers re-taken so the next reader inherits a
 measurement rather than a claim.
+
+## 9. A `.test.ts` IN THE DOCKER-FREE LANE NEEDS A RUNNING REDIS — NEW, OPEN
+
+`relay-platform/services/gateway/src/connections.test.ts` calls `createConnections({ url: REDIS })`
+against a real broker at six call sites. It is a `.test.ts`, so it runs in the lane chapter 2.1
+built specifically to need no containers — the two-lane gate whose whole point is that `pnpm test`
+is honest on a laptop with nothing running.
+
+**Found by accident.** The compose stack went down mid-session, and `pnpm -s test` came back with
+twelve failures reading `expected { kind: 'unenforced' } to deeply equal { kind: 'claimed' }` —
+the connection cap failing open, correctly, because it could not reach Redis. The suite had been
+green all session because a stack was up for other reasons.
+
+**What it costs is not a broken test, it is a broken CLAIM.** The unit lane's exit code no longer
+answers *"does this code work without infrastructure"*; it answers *"does this code work here,
+today"*. A contributor with no Docker sees twelve failures that are not their fault, and a CI job
+that skips containers for speed reports a defect that does not exist.
+
+The fix is a rename — `connections.test.ts` -> `connections.itest.ts` — plus whatever the coverage
+config pins by filename, and it is **not this chapter's to make**: chapter 3.22 wrote that file
+and this chapter only ran it. Renaming it here would also move a file three chapters' fences
+carry, for a reason the chapter does not teach.
+
+**Owner: chapter 3.22's file, so the next chapter to touch the connection cap** — or whoever next
+finds the unit lane red on a machine with no containers, which is how this one was found.
+
+---
+
+# CARRIED FROM CHAPTER 3.22, RE-CHECKED AGAINST THE TREE
+
+Eight items closed with `part3-ch22`. **Each was re-measured here rather than copied**, which
+is the discipline chapter 3.22 named as its own most common defect — a premise inherited from
+a predecessor's record and never re-run. Three of the eight were addressed to this chapter.
+
+## C1 (3.22 item 1) — EIR-WS-06 — **carried, and it is item 8 above with fresh numbers.**
+
+Still two close codes of six documented, still one of the clause's four classes. Re-measured
+across the eight documents rather than carried; `4004` gained two mentions and nothing else
+moved.
+
+## C2 (3.22 item 2) — the port collision a test could not see — **OPEN, unchanged.**
+
+`main.test.ts` still binds port 0 and reads the assigned port back, which is what makes it
+unable to see a collision on the configured one. Nothing in this chapter touches `main.ts` or
+the port, so there is nothing here to re-measure and no reason the item would have moved.
+
+## C3 (3.22 item 3) — an excerpt-only file is never verified — **OPEN, and this chapter did not widen it.**
+
+`check-fence-chain.mjs:43` still skips a title containing `(excerpt)` or `.naive.`, and
+`limits.itest.ts` and `session.itest.ts` are still the two files whose chains are excerpt-only.
+**This chapter added no `(excerpt)` fence**, so the count is two, as 3.22 left it.
+
+Worth noting for the next chapter: `session.itest.ts` is one of the three files this chapter
+changed that no chapter fences, so its excerpt-only chain and this chapter's 200-line addition
+to it never met.
+
+## C4 (3.22 item 4) — `main.test.ts` checks that a module is CLOSED, not that it is PASSED — **OPEN, and addressed to this chapter.**
+
+Re-read. The check is still about `close()`, and its own comment at `main.test.ts:81` says
+what it cannot see: *"NOT awaiting it is what nothing could see."* A module built and never
+handed to `attachSessions` still passes it.
+
+**This chapter did not fix it, and it did the thing the item recommends instead**: the outsider
+suite gained a test that drives an edit through the shipped binary end to end
+(`packages/outsider/src/integrate.itest.ts`). That is the instrument that caught 3.21's inert
+module, and it is the only one that would catch a fabric callback registered on a module
+nobody passed. **A structural check would still be better** — the outsider test catches this
+chapter's wiring, not the next chapter's.
+
+## C5 (3.22 item 5) — the retry-log bound is a five-module decision — **OPEN, unchanged, and untouched here.**
+
+## C6 (3.22 item 6) — five files discard their child's output — **OPEN, re-measured, and the number is now NINE.**
+
+3.22 named five and recorded the decision not to fix them, with a measured cost: twelve
+regenerated diffs across four chapters' fences. Re-counted here, `grep` finds **nine** files
+spawning a child with its output discarded:
+
+    pipe and never read     services/gateway/src/isolation.itest.ts
+                            services/gateway/src/limits.itest.ts
+                            services/gateway/src/public-surface.itest.ts
+                            services/gateway/src/session.itest.ts
+    stdio: "ignore"         services/gateway/src/membership.itest.ts
+                            services/gateway/src/presence.itest.ts
+                            services/gateway/src/meter.itest.ts
+                            services/api/src/consumer/consumer.itest.ts
+                            services/api/src/outbox/outbox.itest.ts
+
+**Five was the gateway's count, not the repository's.** The api has two of its own that 3.22's
+list never reached, and `meter.itest.ts` and `session.itest.ts` are gateway files it missed —
+`session.itest.ts` reads its child's output only for the health-check failure message, and
+discards it for every other failure.
+
+This chapter paid the cost three times and knows the shape of it.
+
+The coverage run that opened Phase 12 failed on `presence.itest.ts` — one of the
+`stdio: "ignore"` five — with
+`expected [ { type: 'presence.changed', …(1) } ] to deeply equal []`, and **the api child's
+log was gone.** Two clean re-runs said flake, which is a conclusion reached by repetition
+rather than by evidence.
+
+**Then the close-out battery failed twice, on the same five tests both times**, with the
+delivery describe's api child gone mid-describe — `ECONNREFUSED 127.0.0.1:4502` in run 2 and
+`:4410` in run 20. `session.itest.ts` PIPES its child's output and reads it **only** to build
+the health-check failure message, so 796 api log lines survive in each red log and not one of
+them is from the child that died. `EADDRINUSE`, `FATAL`, `uncaught` and `ERR_SERVER` all
+return zero, **and that zero proves nothing**: such a line would sit in an unread pipe.
+
+An identical failure twice in twenty runs is not what a flake looks like, and this item is the
+reason nobody can say what it is. `baseline.txt` carries the arithmetic — that file draws a
+random port from one 200-slot range four times per run, which self-collides 2.96% of the time —
+as a hypothesis, because a fix chosen from absent evidence is a guess.
+
+**This battery is the occasion this item was waiting for.**
+
+**Owner: unchanged — whoever next has a red run they cannot explain.** The list is longer than
+3.22 thought, which makes the fix bigger and the argument for it stronger.
+
+## C7 (3.22 item 7) — coverage cannot see an omission — **ANSWERED IN PART, and this chapter tested the answer.**
+
+`**/main.ts` is still excluded from the ratchet, so the shape of 3.21's defect is still
+invisible to coverage. What 3.22 added was the outsider suite as the instrument that CAN see
+it, and this chapter is the first to use it for a feature rather than a fix: the edit's
+end-to-end test. It found nothing wrong with the wiring, which is the outcome an instrument
+should mostly produce.
+
+## C8 (3.22 item 8) — `sweep.py` and `check-refs.py` have no owner — **OPEN, for the FIFTH chapter, and this chapter made it worse.**
+
+Three per-chapter copies now exist — `039-`, `040-`, `041-` — and this chapter added
+`check-prose.py`, a **fourth** instrument with the same no-owner problem. All four were
+improved during this chapter (`check-refs.py` gained a criterion-tracing rule and had a
+message corrected; `sweep.py` had a heading pattern fixed; `check-prose.py` was written and
+then had an entry deleted for crying wolf), and none of those improvements will reach chapter
+3.24 unless somebody copies the right one forward.
+
+**The copy-forward is where the rot is**: this chapter's copy arrived with 31 stale `FOREIGN`
+pairs from 3.22 and a docstring saying "chapter 3.21". Both were caught by running the thing;
+neither would have been caught by reading it.
+
+**Owner: still nobody, and the honest recommendation is unchanged** — move the four into a
+shared `specs/_instruments/` with the per-feature configuration passed in, or accept that each
+chapter re-derives the improvements it happens to need.
+
+## THE ONE THAT IS NOT NUMBERED, BECAUSE TEN CHAPTERS HAVE NUMBERED IT
+
+`specs/036-chapter-3-18/reader-protocol.md` — 45 minutes, six questions, one person who has not
+read the chapter. **Chapters 3.14 through 3.23 have each named it and none has closed it**, and
+this chapter is the tenth.
+
+It cannot be closed from inside a session. Every check in this repository compares bytes:
+`check:fences` compares a fence with a file, `check:figures` compares a prop name with a
+component's, `check-prose.py` compares a fragment with a tree, and this chapter's four Python
+instruments compare identifiers with identifiers. **Not one of them can answer whether a
+paragraph is understandable to somebody who does not already know the answer.**
+
+What this chapter would most want asked, if somebody did run it:
+
+    1  Read "The fifth subject grammar" and say, without scrolling, why the edit could not
+       ride the existing subject. If the answer is "because a tombstone has no text", the
+       section buried its own point — that is the DELETION's reason, and the edit's is
+       different and stranger.
+    2  Read "The cursor's blind side". Say what a client should do about it. If the answer
+       is "nothing, it is a bug", FR-016b failed: the bound is meant to read as a property
+       of a cursor, not as an apology.
+    3  Look at the message-life figure and say what happens to the sequence number. Every
+       transition keeps it, and that one fact carries both FR-011 and FR-016a.
+
+**An instrument that is easy to run tells you what it measures, not what you wanted to know**,
+and ten chapters of that sentence have not produced the forty-five minutes.

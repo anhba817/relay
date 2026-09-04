@@ -979,3 +979,146 @@ have **one** documented. The one thing that changed is not an improvement: `4004
 two more mentions in Phase 3's ADR-23 and the tutorial-plan row, so the code a customer is
 least likely to hit is now the best documented, while quota exhaustion appears in no
 published document and `4003` appears in none of the eight. `gaps.md` item 8.
+
+THE CREDENTIAL SCAN (T095) — FIFTEEN PATTERNS, EVERY HIT CLASSIFIED
+
+Run over the whole chapter's diff in all three repositories, 17,752 lines. Fifteen patterns,
+each deliberately wider than the shape in front of it — chapter 3.22's first `rk_` pattern
+could not cross an underscore and read **zero** where the answer was four, so both the wide
+and the narrow version of that one are here and the narrow one is kept to show what it misses:
+
+    relay key, any body including underscores   rk_[A-Za-z0-9_]{8,}                      0
+    relay key, chapter 3.22's broken pattern    rk_[a-z]*_[A-Za-z0-9]{8,}                0
+    openai-style                                sk-[A-Za-z0-9_-]{8,}                     0
+    aws access key                              AKIA[0-9A-Z]{12,}                        0
+    aws secret-shaped                           (?i)aws.{0,20}[=:]\s*[A-Za-z0-9/+]{30,}  0
+    github token                                gh[pousr]_[A-Za-z0-9]{16,}               0
+    slack token                                 xox[abprs]-[A-Za-z0-9-]{10,}             0
+    jwt, three parts                            eyJ…\.[A-Za-z0-9_-]{10,}                 0
+    jwt header alone                            eyJ[A-Za-z0-9_-]{10,}                    0
+    private key block                           -----BEGIN [A-Z ]*PRIVATE KEY            0
+    assignment to a secret-ish name             (?i)(secret|password|token|api[_-]?key|
+                                                credential)\s*[:=]\s*["'][^"']{6,}       0
+    a store url carrying a password             (postgres|redis|nats|amqp)://…:…@        0
+    any url carrying credentials                ://[\w.-]+:[^@/ ]{4,}@                   0
+    base64-shaped blob, 32+                     [A-Za-z0-9+/]{32,}={0,2}               153
+    hex blob, 32+                               \b[0-9a-f]{32,}\b                        1
+
+**EVERY ONE OF THE 154 HITS CLASSIFIED, not summarised.** 153 of the base64 hits are file-path
+fragments — `services/api/src/messages/messages`, `platform/services/gateway/src/resume` and
+so on — matched because a long path with no separator the pattern excludes looks exactly like
+base64. Filtering those leaves **one**, and it is the same string the hex pattern found:
+
+    23a85c5e3d5f6d0dc1d80fd41b9701daa450bf56
+
+which is `git rev-parse part3-ch22^{commit}`, quoted in `chapter-notes.md` as this chapter's
+fence predecessor. A commit id.
+
+**The two lane credentials this chapter's commands use** —
+`rk_svc_local_development_credential_0000` and `rk_svc_local_development_gateway_00000` — are
+in `baseline.txt` and `quickstart.md`, which predate this chapter, and are local development
+values pinned there deliberately. **They do not appear in this chapter's diff**, which is what
+the first pattern above checks and what 3.22's broken pattern would have missed.
+
+Not "clean": fifteen patterns, 154 hits, 153 paths and one commit id.
+
+THE TWENTY-RUN BATTERY (T097, T098, SC-010)
+
+    18 of 20 green
+    mean over the GREEN runs   228.80 s
+    stdev                        0.72 s
+    min / max            228.0 / 230.9 s
+    budget                       240 s  ->  9.07 s spare at the worst run
+
+**THE MEAN IS OVER THE EIGHTEEN GREEN RUNS AND THAT IS NOT A ROUNDING CHOICE.** Both reds
+finished in **149.8 s and 150.1 s**, because turbo abandons the remaining packages the moment
+one fails — so a red duration says WHERE the failure was, not how long the lane takes.
+Averaging all twenty would report 221 s and a lane 8 s faster than it is.
+
+Compared with the predecessor, on the same machine and the same budget:
+
+    3.21   19/20 green   228.63 s   stdev 0.68
+    3.22   17/20 green   228.65 s   stdev 0.64
+    3.23   18/20 green   228.80 s   stdev 0.72
+
+**This chapter added 84 tests and 0.15 s.** The lane costs per SUITE, not per test — it runs
+`--concurrency=1` and the cost is api boots — and this chapter added tests to fourteen existing
+files and started no new suite.
+
+BOTH FAILURES ARE THE SAME FIVE TESTS, WHICH IS NOT WHAT A FLAKE LOOKS LIKE
+
+    run 2   149.8 s   session.itest.ts  "the socket's delivery, with a fan-out attached"
+                        stops delivering to a member who was REMOVED while connected
+                        delivers nothing from a PRIVATE channel to a non-member's socket
+                        accepts typing.send and answers with nothing at all
+                        refuses every non-inbound type with unknown_frame_type and 4002
+                        refuses a typing.send whose payload names a user
+                      TypeError: fetch failed / ECONNREFUSED 127.0.0.1:4502
+                      + typing.itest.ts "only 0 of 1 typing frames; saw connection.ack"
+    run 20  150.1 s   session.itest.ts, the SAME five tests, same describe
+                      TypeError: fetch failed / ECONNREFUSED 127.0.0.1:4410
+
+The api child that describe spawned was gone mid-describe: earlier tests in the same describe
+passed, then every `fetch` was refused. **4502 and 4410 are both inside that file's own
+4400-4599 range**, and the delivery describe is the third of four `startApi()` calls in it.
+
+**AND THE CAUSE IS UNDETERMINABLE, WHICH IS THE POINT.** The log holds 796 api lines and not
+one of them is from the child that died — `session.itest.ts` pipes its child's stdout and
+stderr and reads them **only** to build the health-check failure message. `EADDRINUSE`,
+`FATAL`, `uncaught` and `ERR_SERVER` all return **zero** across both red logs, and that zero
+is not evidence of their absence: an EADDRINUSE on that child's stderr would sit in an unread
+pipe.
+
+This is `gaps.md` item C6 — the nine files that discard their child's output — arriving in the
+battery that closes the chapter which recorded it, twice, with a measured rate.
+
+A HYPOTHESIS WITH ARITHMETIC, HELD AS A HYPOTHESIS
+
+`session.itest.ts` draws `4400 + Math.floor(Math.random() * 200)` **four times per run**, once
+per describe. Four independent draws from 200 slots collide with probability
+
+    1 - (200 * 199 * 198 * 197) / 200^4  =  2.96% per run
+
+which over twenty runs gives a 45% chance of at least one collision — the right order of
+magnitude for 2 in 20. That file's own comment at :118 anticipated the CROSS-FILE version of
+this and fixed it by randomising, without noticing that the same file then drew four times
+from one range. `isolation.itest.ts` already has the construction that cannot self-collide:
+`4900 + ((Math.floor(Math.random() * 100) * 2 + children++) % 200)`.
+
+**Two ranges also overlap across files**: `presence.itest.ts` takes 4700-4899 and
+`meter.itest.ts`'s api takes 4710-4769, entirely inside it, and vitest runs files in parallel.
+
+**NOT ACTED ON, AND NOT CLAIMED AS THE DIAGNOSIS.** No EADDRINUSE was observed, and it could
+not have been. The arithmetic fits and the evidence is absent, which is exactly the state item
+C6 predicts and exactly the state a fix would be guessing from. Recorded with the numbers so
+the next person starts from arithmetic rather than from zero — and `gaps.md` item C6 now names
+this battery as the occasion it was waiting for.
+
+WHAT 18 OF 20 ACTUALLY LICENSES
+
+    observed rate                 10.00%
+    95% Clopper-Pearson CI        [1.23%, 31.70%]
+    a TRUE 5% rate gives >=2 failures in 20     26.4% of the time
+    a TRUE 10% rate gives 0 failures in 20      12.2% of the time
+
+So this battery is consistent with anything from 1% to 32%, and **twenty runs cannot separate
+a 5% lane from a 10% one.** Chapter 3.20 needed forty runs to put 17.5% on the record and said
+so; this chapter has twenty and says the same thing with wider bars. **"Eighteen of twenty" is
+not a quality bar, it is a measurement with a confidence interval, and the interval is the
+part worth carrying.**
+
+THE SCAN, RE-RUN OVER THE CLOSE-OUT DIFF — AND IT MATCHED ITS OWN PARAGRAPH
+
+Every pattern re-run after the battery, over everything close-out changed. Two hits, both
+classified:
+
+    rk_[A-Za-z0-9_]{8,}                1   `baseline.txt`'s own sentence naming the two
+                                           lane credentials, in the paragraph that records
+                                           this scan. The pattern found the description of
+                                           itself, which is the correct behaviour and worth
+                                           writing down: **a scan that says "1 hit" and a
+                                           reader who stops there would report a leak.**
+    base64 32+, path fragments removed 1   `23a85c5e…`, the fence predecessor commit id
+
+Everything else zero, including the eleven patterns for credentials this platform does not
+issue. Not "clean": fifteen patterns, two hits, both named.

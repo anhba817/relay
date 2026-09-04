@@ -116,3 +116,58 @@ the difference is not academic:
 
 The close-out re-derivation maps the same requirements against the **shipped tree** rather
 than against this plan, and that is the pass that can say whether any of it is true.
+
+---
+
+## 5. Re-derived at close-out, against the shipped tree
+
+**Both directions, and every quoted test title checked as an exact string** rather than by
+eye. The generator that built sections 1 to 4 reads `spec.md` and `tasks.md`; this section
+reads the **repository**, which is the only thing that can say whether a task that claims to
+verify a requirement produced a test that exists.
+
+Every requirement's named task is done, and the tests those tasks wrote are in the tree:
+
+    84 new tests across 14 files, counted from `git diff` against part3-ch22^{commit}
+
+    packages/protocol/src/frames.test.ts               3
+    packages/protocol/src/codes.test.ts                1
+    packages/protocol/src/revision.test.ts             7
+    services/api/src/db/repository.itest.ts           19
+    services/api/src/messages/messages.itest.ts       26
+    services/api/src/outbox/event.test.ts              8
+    services/api/src/webhooks/deliveries.itest.ts      1
+    services/api/src/internal/backfill.itest.ts        5
+    services/api/src/fanout/publisher.test.ts          3
+    services/gateway/src/session.test.ts               4
+    services/gateway/src/session.itest.ts              2
+    services/gateway/src/resume.itest.ts               1
+    services/gateway/src/fanout.itest.ts               4
+    packages/outsider/src/integrate.itest.ts           1
+
+**THE MAP NAMED ELEVEN FILES AND THE TREE HAS FOURTEEN.** Section 2's task list was written
+during planning, and three files it never mentions carry tests: `revision.test.ts` (the fifth
+grammar did not exist when the map was written), `backfill.itest.ts` (US4's tests moved there
+from the gateway, which has no database) and `publisher.test.ts`. One file the map DOES name —
+`packages/protocol/src/fanout.test.ts` — gained no test at all, because the subject function
+went into a module of its own.
+
+**Four rows point at tasks whose file moved**, and the map is left as generated rather than
+edited, with the moves recorded here:
+
+    FR-016, FR-016a   T058-T061 name `services/gateway/src/resume.itest.ts`.
+                      Five of the six tests are in
+                      `services/api/src/internal/backfill.itest.ts`; one is in the
+                      gateway file, and it is the only half that file can answer.
+    FR-019            T065-T067 name phase 9. The types, the union branches and both
+                      builders shipped in phase 6, because ADR-06 puts the outbox
+                      insert inside the transaction that writes the tombstone.
+    FR-023, FR-023a   T033b-T033h name `messages.controller.ts` and they are there,
+                      but the read they call — `listMessageEdits` — is in the
+                      repository, which no row names.
+    SC-008            T049a names `session.test.ts` and is there. Its FIRST home in
+                      the task list was `frames.test.ts`, where it cannot be written.
+
+**What is still not established by this file**, unchanged from what section 4 says: that a
+named test verifies the thing it is named against. Section 5 adds only that the test exists
+and that its title says what its assertion checks — 84 read one at a time, six retitled.

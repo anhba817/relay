@@ -90,13 +90,15 @@ Recorded before writing so the check is a check.
 
 ## WHAT THE CHAPTER ACTUALLY CAME TO
 
-    prose words, en    3,202     predicted 2,400 - 2,700
-    prose words, vi    4,148     Vietnamese runs longer; every chapter's does
+    prose words, en    3,269     predicted 2,400 - 2,700
+    prose words, vi    4,236     Vietnamese runs longer; every chapter's does
     fenced files         240     predicted "rises from 237" — +3, the new module,
                                  its test, and the migration
+    fences in the page    34     33 at the end of the chapter phase, and a 34th after
+                                 close-out edited `vitest.coverage.config.mts`
     figures              254     +8, four per locale
-    page lines, en     4,652
-    page lines, vi     4,661
+    page lines, en     4797
+    page lines, vi     4803
 
 **THE WORD ESTIMATE WAS 19% TO 33% LOW, AND THE HYPOTHESIS BEHIND IT WAS WRONG.**
 
@@ -105,16 +107,16 @@ its six arguments, where 3.22 did so in three of five, so the per-argument rate 
 below 3.22's 583. It did not fall much:
 
     3.22   five arguments,  2,914 words   583 per argument
-    3.23   six arguments,   3,202 words   534 per argument
+    3.23   six arguments,   3,269 words   545 per argument
 
-**534, not the ~420 predicted.** The "arguing against published material costs more" reading
+**545, not the ~420 predicted.** The "arguing against published material costs more" reading
 holds directionally and is far weaker than the estimate assumed — a 9% drop where the model
-predicted 28%. What the two chapters actually share is a floor of roughly 530 to 580 words per
+predicted 28%. What the two chapters actually share is a floor of roughly 545 to 580 words per
 argument, whatever the argument is about, and the honest reading is that **an argument costs
 what it costs**: setting up the alternative, saying why it was refused, and showing the
 evidence takes about the same space whether the alternative was somebody else's or nobody's.
 
-The next chapter should estimate at **530 words per argument** and stop adjusting for what the
+The next chapter should estimate at **545 words per argument** and stop adjusting for what the
 argument is against.
 
 ## THE EXPECTED FIGURE COUNT WAS STALE BY FOUR
@@ -143,3 +145,20 @@ The fix is what the translation task asked for in the first place — **split on
 English blocks verbatim** — which makes the mirror byte-identical by construction rather than
 by review. Recorded because the generator is the obvious thing to reach for twice, and the
 second reach is wrong for a reason that only shows up after the first one succeeds.
+
+## THE FILE COUNT MOVED IN CLOSE-OUT, AND THAT IS WHAT PHASE 12'S WARNING IS ABOUT
+
+    at the end of the chapter phase   36 files, 33 fences
+    re-derived at close-out           37 files, 34 fences
+
+`vitest.coverage.config.mts` joined because the ratchet fired, and it is a fenced file — so
+this chapter's diff for it had to be generated and a thirty-fourth fence added to both
+locales. **Phase 12's own header says this in advance**, which is the reason it was cheap
+rather than a surprise: *"any late edit forces this chapter's diff for that file to be
+regenerated before the gates run — not a predecessor's."*
+
+Six test files also changed during close-out, when the title audit stripped 52 task ids out of
+test names. Those regenerate the same way, and the generator's idempotence fix is what made
+the second regeneration a one-line command.
+
+    37 files changed, 3,976 insertions, 72 deletions
