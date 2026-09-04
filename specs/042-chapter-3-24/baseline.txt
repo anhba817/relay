@@ -1888,3 +1888,44 @@ and the compiler said so twice.
 which has `firstFrame` and not `record`/`waitFor`/`twoAttachments`. Moved next to T028b in the
 fan-out describe, which owns all three. A test's helpers are part of where it belongs, and
 "beside the task before it" is not the same as "in the suite that can run it".
+
+## PHASE 8 — THE READ PATHS, AND T053's LIST RE-MEASURED
+
+    57 passed (57)   services/api/src/db/repository.itest.ts
+    22 passed (22)   backfill.itest.ts and idempotency.itest.ts
+     7 passed (7)    idempotency.itest.ts alone, with T050a
+
+### THE SIX READ SHAPES, RE-CHECKED AGAINST THE TREE RATHER THAN COPIED
+
+T053's task text says four do not change. **It is three**, and the fourth moved for a reason
+the plan could not have known when it was written:
+
+    listMessages                       CHANGED  phase 5, T028
+    getMessageByIdempotencyKey         CHANGED  phase 3, T015b — pulled forward because
+                                                `internalSendResponseSchema`'s required
+                                                field feeds off it by spread
+    editMessage's internal read        CHANGED  phase 7, T046a — FR-015 needs the edit
+                                                event to carry what the message has
+    deleteMessage's internal read      unchanged
+    listMessagesRaw                    unchanged  id, seq, text — asserted as an exact set
+    listChannelsForUser.last_message   unchanged  asserted absent
+
+Two of the three moves happened in a phase EARLIER than the one that owns the read, because a
+required field upstream forces the read that feeds it. That is the same ordering fact this
+chapter has now recorded three times from the other direction — a test written against a later
+phase — and it is the same cause seen from the writer's side.
+
+### T051 NEEDED NO `?? []`, AND THAT IS THE POINT OF PUTTING IT IN THE MAP
+
+The backfill's `toFrame` maps a `MessageWithSender`, which extends `MessageRow`, whose
+`attachments` is a required `Attachment[]`. `listMessages`' map already converted the NULL, so
+by the time a row reaches the replay there is nothing left to convert. One conversion, at the
+read — which is what T028's own comment argued for and what T032 proved three tests depend on.
+
+### T050a's TWO GUARDS
+
+A send that recovers a tombstone through an old idempotency key returns `text: null` and
+`attachments: []`, and publishes nothing. Both publish sites read `text !== null` —
+`messages.controller.ts:234` and `session.ts:1552` — so the guard chapter 3.18 wrote for text
+carries the attachment list with it for free. The test asserts the premise as well as the
+result, because a guard that stops firing is a deleted message reappearing on every screen.
