@@ -163,6 +163,24 @@ Re-run against the Phase 1 artifacts rather than against the summary.
 | **VI. Test-verified** | Seven quickstart scenarios, each mapped to a success criterion, and two of them say to test the new gate **red** before believing it. | **Pass.** |
 | **VII. Boring by design** | One new runtime file, `scripts/reset-lane.mjs`. No new package, service, table or route. | **Pass.** |
 
+**The port strategy was re-decided in analysis pass 2 and kept.** Registering the e2e lane in
+the hand-maintained port map and fixing only the teardown is cheaper: it closes 10 of the last
+battery's 11 failures, changes no production file, and falsifies no published transcript.
+It was rejected.
+
+The map is a list maintained by hand that has already been wrong twice — chapter 3.21's
+`gaps.md` item 4 found two missing entries, and it is still missing `packages/e2e` today, which
+is how a lane came to hold three fixed ports inside a range registered to another file. **A
+second list that must agree with reality is the defect this feature exists to remove** (FR-008,
+and the `WEBHOOK_EVENT_TYPES` design in `data-model.md`). Binding port 0 and reading the
+assignment back is the only strategy that cannot collide, and this repository has already
+written that down: `main.test.ts:19` does it, and `gaps.md` 3.24-4 says a fixed port collides
+always under contention while a random one collides sometimes.
+
+**What that costs is paid explicitly rather than absorbed**: T008a registers the lane in the map
+before T009 changes it, and T018a amends the published prose — a milestone transcript and a
+published port map — that no gate can check.
+
 **One design decision is worth naming because it looks like a violation and is not.**
 `main.ts` in two services changes so the child logs the port it bound rather than the port it
 requested. Editing production entry points for a test harness's benefit would be the wrong
