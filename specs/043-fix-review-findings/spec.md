@@ -38,7 +38,9 @@ Two things were checked before this specification was written, and one of them c
 A contributor runs the integration lane and gets a result that reflects the product rather
 than the order the test runner happened to choose or how much debris previous runs left in
 the broker. A contributor with no containers running runs the unit lane and gets a result
-that reflects the product rather than the absence of Redis.
+that reflects the product rather than the absence of Redis. **And where the platform makes a
+claim about concurrent writes, the lane can see whether it holds** — a lane that reports the
+product has to be able to reach the product's harder states, not only its quiet ones.
 
 **Why this priority**: Every other story's evidence is this lane's exit code. The most
 recent measurement is 9 green of 20, where 10 of the 11 failures are one harness defect and
@@ -47,7 +49,9 @@ with an instrument known to be wrong.
 
 **Independent Test**: Run twenty consecutive integration runs from a cleared lane with the
 runner's result cache deleted first, and count failures attributable to harness resource
-collisions. Run the unit lane with every container stopped and check the exit code.
+collisions. Run the unit lane with every container stopped and check the exit code. Force a
+concurrent edit and deletion of one message from two clients and check that both orderings
+end in a tombstone.
 
 **Acceptance Scenarios**:
 
@@ -62,6 +66,9 @@ collisions. Run the unit lane with every container stopped and check the exit co
    the run has left no durable consumers behind.
 5. **Given** a lane in any accumulated state, **When** an operator asks to reset it, **Then**
    one documented command clears the broker and the stale delivery rows.
+6. **Given** an edit and a deletion of one message driven from two separate clients, **When**
+   they interleave in either order, **Then** the message ends as a tombstone, and a test
+   asserts it rather than the claim resting on reasoning.
 
 ---
 
@@ -200,11 +207,19 @@ page. The grouping is the index; the numbers are only keys.
   and every lane that binds a port MUST appear in that record. **The record is currently wrong
   by omission**: it registers a range to one file and does not mention the lane that hard-codes
   three ports inside it.
+
+
+#### Cross-cutting (every story)
+
 - **FR-027**: Published material this feature falsifies MUST be amended in the same phase that
   falsifies it. This covers material no gate can check — a transcript of a run, a table of port
   allocations, a paragraph describing behaviour — and it applies per story rather than once at
   the end, because the phase that breaks a claim is the phase that knows it.
 
+**Filed here rather than under a story, because three stories deliver it** — T018a in US1,
+T030 in US2 and T043 in US3. A requirement carrying one story's label while three stories
+discharge it is a label that misleads, which analysis pass 1 found for FR-024 and pass 3
+reintroduced here.
 
 #### Public boundary (Story 2)
 

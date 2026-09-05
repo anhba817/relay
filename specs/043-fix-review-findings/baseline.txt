@@ -33,8 +33,27 @@ findings ABOUT the analysis and would not survive to close-out otherwise.
           actually true?                                     3      3
       6   what does this look like to a reader who has
           seen none of these reports?                        4      4
+      7   are the four stories the right four?               3      3
     ----  ---------------------------------------------  -----  -----
-                                                           34     32
+                                                           37     35
+
+**PASS 7 IS THE FIRST WHOSE MAIN RESULT IS PARTLY NEGATIVE.** Four decomposition hypotheses
+went in and two died on reading the goal statements: FR-023 is not misfiled in Story 4,
+whose goal names "the migration directory"; the close-code work is not misfiled in Story 3,
+whose goal names looking up a close code. **A goal sentence earned its keep by refusing a
+finding**, which is the only thing goal sentences are for.
+
+What survived: FR-027 carried Story 1's label while three stories deliver it — **the same
+defect pass 1 found in FR-024, reintroduced by pass 3**, because a requirement appended
+during an edit gets filed wherever the edit was. And Story 1's independent test could not
+see FR-007, one of its own twelve requirements; the story's goal and test were widened
+rather than the requirement re-homed, which is the cheaper of the two repairs and is
+recorded here as a choice.
+
+**And the smallest useful increment was buried.** T010 alone — await child exit instead of
+sleeping 200 ms — closes 10 of the last battery's 11 failures, in one file, with no
+production code and no published prose falsified. It sat inside a twelve-requirement story
+whose MVP claim was the story, not the line.
 
 Two remain open by decision, both LOW: a near-duplicate pair (FR-006 stated from two
 ends) and a missing "revert each probe" line in the gate-testing task.
