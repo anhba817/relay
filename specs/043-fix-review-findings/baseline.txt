@@ -417,3 +417,33 @@ passed it.
 **No CRITICAL or HIGH issue survives either sweep.** Two LOW remain open by decision: a
 near-duplicate pair (FR-006 stated from two ends) and a missing "revert each probe" line in the
 gate-testing task.
+
+## IMPLEMENTATION
+
+### PHASE 1 — SETUP
+
+**T001 / T001a — the six instruments.** Copied forward during analysis pass 9 rather than here,
+and configured across passes 9 to 11. All six exit 0. What the copy-forward arrived with, in the
+order it was found: `check-refs.py`'s path pattern could see neither `.mjs` nor `.py`, in a
+feature that adds two of the first and references six of the second; `regen-traceability.py` had
+`CHAPTER = "3.24"` hard-coded, the predecessor's number, while its neighbour derived the same
+value from the directory name; `traceability.md` did not exist at all; `sweep.py` expected a
+read-path table this feature's data model has no subject for; and `check-quickstart.py` carried an
+exemption for a file this feature never mentions. **Five separate staleness defects in six files.**
+
+**T002 — the lane environment**, nine variables pinned at the top of this file.
+
+**T003 — the lane's state before anything is cleared.**
+
+    DELIVERIES        912 messages     22 consumers
+    EVENTS          1,706 messages     23 consumers
+    ANALYTICS          28 messages      0 consumers
+
+    environments   61,870
+    messages      291,584
+    outbox        564,064
+    deliveries     46,229
+
+The twenty-run battery of chapter 3.24's close-out left 19 of those 45 durable consumers and
+about 4,700 of those environments. **This is the before half of a measurement**; the after half
+is T062's battery, and neither number means anything without the other.
