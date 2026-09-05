@@ -147,6 +147,12 @@ red, three ways.
 - **A checker reports the FIRST failure per file.** `check-fence-chain`'s "3 problems" was three
   files, not three lines.
 - **No checker reads prose**, and a `mermaid` block is prose.
+- **A GATE LIST IS ITSELF A CLASS LIST, AND 3.24's WAS INCOMPLETE.** It named five `check:*`
+  scripts and no `typecheck`, `lint` or `build`, so the chapter tagged three repositories on a
+  tree where `pnpm lint` exits 1. **Fourteen gates, not eleven.** And an underscore prefix
+  exempts nothing here: this eslint config sets no `varsIgnorePattern`.
+- **A summary line is the thing to trust least.** `fail=1` inside a `for … done | sort` pipeline
+  runs in a subshell and dies with it — printed "ALL GATES: GREEN" over a red one.
 
 ## TESTS THAT PASS WHILE PROVING NOTHING
 
