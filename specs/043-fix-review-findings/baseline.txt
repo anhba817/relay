@@ -46,8 +46,10 @@ findings ABOUT the analysis and would not survive to close-out otherwise.
           and whose claims live in that gap?                 3      3
      13   can each of the fifteen files this feature
           edits actually receive an amendment?               3      3
+     14   do the cited lines SAY what is claimed, and
+          what did pass 13's sweep not read?                 2      2
     ----  ---------------------------------------------  -----  -----
-                                                           58     56
+                                                           60     58
 
 **PASS 7 IS THE FIRST WHOSE MAIN RESULT IS PARTLY NEGATIVE.** Four decomposition hypotheses
 went in and two died on reading the goal statements: FR-023 is not misfiled in Story 4,
@@ -285,7 +287,7 @@ their counts alone, and moved them into a task.
     check-quickstart   1 of 14   genuine: an exemption for a file this quickstart no
                                  longer mentions.
 
-**`check-quickstart.py:68` says why the rule is what it is**, in its own comment: *"Only an
+**`check-quickstart.py:72` says why the rule is what it is**, in its own comment: *"Only an
 **Expected** line counts. A first version searched the whole file"* — it was deliberately
 narrowed, because a mention anywhere is not proof. A heading says which criterion a scenario is
 about; the Expected line says what would count as passing. Pass 9 added SC-012 and SC-013 to
@@ -389,6 +391,29 @@ Run after pass 13's fixes, over the class of claim that had just failed:
     the review's 21 rows                                  13 covered · 8 deferred · 0 dropped
     fourteen gates                                        14 green
 
-**No CRITICAL or HIGH issue survives the sweep.** Two LOW remain open by decision: a
+**THAT SWEEP HAD A HOLE AND PASS 14 FOUND IT.** Its reach was
+`specs/043-fix-review-findings/*.md`, and **this file is `.txt`** — so the sweep that certified
+the feature never opened the record holding its measurements, the blind-spot table, the
+thirteen-pass history and the port decision. `CLAUDE.md` records that exact failure: *"a checker
+that overstates its reach is a checker that lies. `check-refs.py` walks `*.md` only and printed
+'no undeclared task ids outside tasks.md'; `baseline.txt` is `.txt`."* I read that sentence,
+wrote a sweep, and reproduced it one pass later. **Name the extension, not "the artifacts".**
+
+    REACH, RE-RUN AND STATED: 20 files, suffixes .md .py .txt
+
+    citations resolving by path prefix                   18 · 0 dangling
+    citations written as a bare basename                 13 · resolved by index
+    of those 31, lines whose CONTENT matches the claim   30
+    the one that did not                                 baseline.txt cited
+                                                         check-quickstart.py:68; the comment
+                                                         is at 72, moved by pass 11's own edit
+                                                         to that file in that same pass
+
+**Pass 13 checked that a citation RESOLVES. Pass 14 checked that the line SAYS what is
+claimed** — the difference between reading the identifier and reading the clause, which is this
+repository's second-ranked mechanism, applied to my own sweep. Line 68 is non-empty, so pass 13
+passed it.
+
+**No CRITICAL or HIGH issue survives either sweep.** Two LOW remain open by decision: a
 near-duplicate pair (FR-006 stated from two ends) and a missing "revert each probe" line in the
 gate-testing task.
