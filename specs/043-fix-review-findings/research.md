@@ -56,21 +56,36 @@ other than the requested value, the log would say otherwise.
 each to classify. The container-free file keeps the ones that need no broker; the rest join
 the existing `connections.itest.ts`.
 
-| Test | Needs | Evidence |
-|---|---|---|
-| `returns unenforced rather than zero when Redis is unreachable (FR-016)` | **no broker** | Points at `redis://127.0.0.1:6399` — its own comment says *"a port nothing listens on, so every command rejects."* It is already a unit test. |
-| `states the maximum in exactly one place (FR-002)` | **no broker** | Reads `connections.ts` off disk with `readFileSync` and counts occurrences. Touches no client. |
-| `builds without a url, from the environment or from the default` | **measure** | Asserts construction branches, then calls `claim()` against the default URL. It may pass either way, which is its own problem. |
-| `does not throw for a slot the connection never held` | **measure** | May short-circuit before any command. |
-| `does not throw when it holds nothing` | **measure** | Same. |
-| the remaining twelve | **broker** | Each asserts registry behaviour: claiming, renewing, releasing, tombstones, heartbeat bounds. |
+**MEASURED IN ANALYSIS PASS 4, and the reasoned version above was wrong twice.** Run the file
+with `RELAY_REDIS_URL=redis://127.0.0.1:6399`:
 
-**AMENDED IN ANALYSIS PASS 2: the classification method above is confounded.** The describe
-holding all seventeen runs a `beforeEach` at `connections.test.ts:41` that builds a registry
-against `REDIS` for every test in it, including the two that provably need no broker. Running
-the file with containers stopped can therefore report failures that say nothing about the tests.
-Classify with the hook stubbed as well as by reading each body — and the two that stay must
-leave that describe, or the container-free lane keeps a Redis client it has no use for.
+    Tests  12 failed | 5 passed  (17)
+
+| Test | Needs | How it was settled |
+|---|---|---|
+| `returns unenforced rather than zero when Redis is unreachable (FR-016)` | **no broker** | predicted, and confirmed |
+| `states the maximum in exactly one place (FR-002)` | **no broker** | predicted, and confirmed |
+| `does not throw for a slot the connection never held` | **no broker** | was "measure" — passes |
+| `does not throw when it holds nothing` | **no broker** | was "measure" — passes |
+| `keeps the heartbeat strictly inside the bound, three to one (FR-009)` | **no broker** | **predicted to need one, and does not** |
+| `builds without a url, from the environment or from the default` | **broker** | was "measure" — fails |
+| the remaining eleven | **broker** | each fails without one |
+
+**Two container-free tests were predicted and five exist.** The heartbeat test was filed under
+"each asserts registry behaviour" on the strength of its title; it asserts a timing bound and
+never reaches the broker.
+
+**ANALYSIS PASS 2 CLAIMED THE METHOD WAS CONFOUNDED. PASS 4 RAN IT AND IT IS NOT.** That
+amendment said the `beforeEach` at `connections.test.ts:41` builds a registry against `REDIS`
+for every test in the describe, so a run with containers stopped could report failures that say
+nothing about the tests. **`createConnections` does not connect eagerly.** Against a dead port
+the hook builds its registry, `afterAll` closes it, and every test that needs no broker still
+passes — which is how the table above got measured at all.
+
+The original claim is left standing here rather than deleted, so the correction is auditable:
+it was reasoned from reading a hook and refuted by running one command. **The half that
+survives is smaller and is not about breakage**: the tests that stay should still leave that
+describe, because a container-free lane holding a Redis client it never uses is untidy.
 
 **Rationale**: the file's own comment at line 18 argues that a real broker is the correctness
 case, and that argument is right about the twelve. It is not an argument about which lane the
@@ -100,13 +115,20 @@ for a frame that fails schema validation.
 **Decision**: measured, and the two answers are opposite.
 
     avatar_url scheme     (null) 387,091      https 586      anything else 0
-    webhook event_types   channel.created  741 subscriptions
+
+    webhook event_types, all 32,606 type-rows across four distinct types
+      message.created   31,757     channel.created     741   (declared, not emitted)
+      message.deleted        54     message.updated      54
+
+    refused by the rule this feature chose (the declared eight)        0
+    refused by the rule the review recommends (the emitted five)     741   = 2.3%
 
 **The avatar rule rejects nothing that exists.** The migration concern the review raises is
 sound as a principle and empty in this database.
 
-**The event-type rule as the review states it would reject 741 rows**, and this is the
-finding that changes the design. See R5.
+**The event-type rule as the review states it would reject 741 rows and this feature's rejects
+none**, and that comparison is the finding that changes the design — not the 741 on its own.
+Every type any customer has subscribed to is one FR-WHK-02 declares. See R5.
 
 **Caveat carried deliberately**: this is the lane database, not a customer's. It is the only
 population available, and a rule that is safe here can still be unsafe elsewhere — which is
