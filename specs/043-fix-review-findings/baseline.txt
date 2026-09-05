@@ -36,8 +36,10 @@ findings ABOUT the analysis and would not survive to close-out otherwise.
       7   are the four stories the right four?               3      3
       8   is the review — the feature's INPUT — fully
           consumed?                                          3      3
+      9   what do THIS REPOSITORY'S OWN INSTRUMENTS say
+          about this feature?                                6      6
     ----  ---------------------------------------------  -----  -----
-                                                           40     38
+                                                           46     44
 
 **PASS 7 IS THE FIRST WHOSE MAIN RESULT IS PARTLY NEGATIVE.** Four decomposition hypotheses
 went in and two died on reading the goal statements: FR-023 is not misfiled in Story 4,
@@ -185,3 +187,37 @@ finding", which reaches ten of twenty-one rows — the review's second table cal
 concerns not named in a requirement" and listed four. That second one is the defect chapter
 3.24 recorded against its own C8 — *"it says 'a fourth instrument' and 'all four were
 improved', then lists three"* — committed in the feature whose `baseline.txt` cites it.
+
+
+### PASS 9 — NINE PASSES CHECKED THIS FEATURE WITH TOOLS POINTED AT THE PREDECESSOR
+
+The six Python instruments were copied forward by a task that runs during implementation, so
+every pass until the ninth ran `specs/042-chapter-3-24/check-refs.py` — which reads 042. **The
+first time any of them read 043, five of the five that produce findings failed.**
+
+    check-refs        61 problems      check-quickstart  14 problems
+    sweep              structural      check-checklist   10 problems
+    check-prose        clean
+
+**`regen-traceability.py` had `CHAPTER = "3.24"` HARD-CODED** — the predecessor's number,
+carried in by the copy and invisible to anyone reading the file. `check-refs.py` beside it
+derives the same value from its own directory name and always has. Both now derive it, and both
+fall back to matching a bare id when the directory names no chapter, because `(3.24)`
+disambiguates ids ACROSS chapters and there is nothing to disambiguate inside one feature.
+
+**`traceability.md` did not exist**, and `check-refs.py`'s first line says
+`traceability.md is missing, so nothing is traced`. Nine passes never saw that line.
+
+**AND "100% COVERAGE" WAS A READING, NOT A MEASUREMENT.** Every pass from the first reported it,
+derived by mapping tasks to requirements by eye. The first mechanical count found **12 of 33
+requirements and 3 of 13 criteria cited by id in a task line**. Fifty citations later it is 33
+of 33 and 13 of 13, 0 untraced — and the gap between those two numbers is the difference between
+a claim and a check.
+
+**One more substring bug, mine, in the script that added the citations.** It skipped `FR-023`
+because the substring was already present inside `FR-023a` — the same class `check-refs.py`'s own
+comment records about `T(\d{3})` failing to see `T107a`.
+
+**Three instruments still carry 042's configuration** and are named in T001: `check-quickstart`'s
+OWED lists, `check-checklist`'s file enumeration, and `sweep`'s expectation of `### Phase N`
+headings in a plan that has none.
