@@ -2583,3 +2583,35 @@ The coverage ratchet edited `vitest.coverage.config.mts`, and that file's fence 
 `relay-tutorial/fences/post-series.md`, so the tutorial gained a file too. **Chapter 3.23 wrote
 this down — 33 became 34, same cause — and phase 12's own header repeats it.** It happened
 anyway. The counting is cheap; the belief that it will not move is what costs.
+
+### THE GATE LIST WAS INCOMPLETE, AND THE TAG WAS RED WHEN IT WAS WRITTEN
+
+**`typecheck` and `lint` are not in the close-out gate task.** It names five `check:*` scripts
+from `relay-tutorial` and this chapter's Python instruments, and nothing that compiles or lints
+`relay-platform`. Eleven gates passed, the chapter was tagged in three repositories, and then:
+
+    pnpm typecheck   exit 0
+    pnpm lint        exit 1
+      services/api/src/outbox/event.test.ts
+        447:28  error  '_omitted' is assigned a value but never used
+                       @typescript-eslint/no-unused-vars
+
+Written by the close-out's own defect fix, in the test that proves the fix. The repository's
+eslint config sets **no** `varsIgnorePattern`, so an underscore prefix exempts nothing — a
+convention assumed from other projects rather than read from this one.
+
+Replaced with an explicit delete, which is also the more honest spelling of what the test means:
+
+    const before: Record<string, unknown> = { ...MESSAGE };
+    delete before["attachments"];
+
+`{ ...MESSAGE, attachments: undefined }` would have been the obvious alternative and it tests the
+wrong thing — `.default([])` fires on an ABSENT key, and a key present with an `undefined` value
+is a different object. **That distinction is what this chapter is about**, so the test had better
+not blur it.
+
+**The tags were moved rather than left standing on a red commit.** Nothing is pushed, so the
+three tags are local and moving them costs nothing; leaving them would have meant `part3-ch24`
+naming a tree that fails `pnpm lint`. **A tag is a claim that the gates were green, and the gate
+list has to be the whole list.** Add `typecheck` and `lint` to it — the next chapter inherits the
+task text, not this paragraph.
