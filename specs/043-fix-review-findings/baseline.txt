@@ -598,3 +598,45 @@ a third — vitest reported `Calling the test function inside another test funct
 allowed`. Patching that produced a surplus brace. The file was restored from git and re-split
 with a brace-counting extractor, which is what should have been used first. **A line-range
 extractor that does not count braces is a text tool pretending to be a parser.**
+
+**T017 — the test found a defect the record said was not there.**
+
+`gaps.md` 3.23-3 has carried concurrent edit-and-delete as untested since chapter 3.23, and
+asserted: *"Both interleavings end in a tombstone, which is what makes this a gap rather than a
+defect: there is no order of the two that leaves a message saying something nobody wrote."*
+
+**That claim is false.** The test it asked for failed in **three runs of five**, at attempts 3, 8
+and 3, and left **four rows in the lane with `deleted_at` set and `text` present**:
+
+    text          deleted  edited
+    corrected 3   t        t
+    corrected 3   t        t
+    corrected 8   t        t
+
+A row one filter calls deleted and another calls alive, and a deletion that returned
+successfully undone by an edit already in flight.
+
+**The mechanism**, at `repository.ts:4535` and `:4541`: the edit reads the row, throws
+`MessageDeletedError` if `text` is null, and then updates `WHERE id = ?` with no condition. A
+deletion committing between the two sets `text = NULL, deleted_at = now()`; the edit overwrites
+`text` and leaves `deleted_at` standing.
+
+**Fixed with a compare-and-set**, on the user's decision, not a row lock:
+
+    .where(and(eq(messages.id, messageId), isNull(messages.deletedAt)))
+    if (!updated) throw new MessageDeletedError(messageId);
+
+`SELECT … FOR UPDATE` in both methods — what 3.23-3 proposes — would also close it and would
+serialise a pair `assertWithinQuota` deliberately declined to serialise on the send path. A
+conditional UPDATE costs nothing when there is no race and refuses exactly when there is one.
+
+    after the fix: 5 runs green · 50 further races · 0 new incoherent rows
+
+**AND ONE ASSERTION WAS WITHDRAWN FOR BEING FLAKY IN THE OTHER DIRECTION.** The concurrent test
+counts how often the deletion won, and asserting that count above zero failed in one run of
+three — ten attempts can legitimately all resolve edit-first. **A race cannot be commanded, so
+the test does not claim it happened**; what carries the guard is a fourth test that reproduces
+the state deterministically — delete, then issue exactly the statement `editMessage` issues, and
+assert zero rows affected.
+
+    repository.itest.ts: 61 passed
