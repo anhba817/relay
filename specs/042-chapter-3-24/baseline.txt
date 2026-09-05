@@ -2354,3 +2354,70 @@ an ABSENT key must not become tolerance for a wrong value.
 file**: the api's own suite runs `RELAY_EVENT_CONSUMER=off`, so nothing exercises the consumer.
 That is the sentence chapter 3.23 wrote after the same file destroyed a `channel.member_added`.
 **The lane that can see it is the coverage lane, and the coverage lane is a close-out task.**
+
+### T080 — THE COVERAGE LANE, THIRD ATTEMPT, GREEN
+
+    97 test files · 1,357 tests · 455.04 s · exit 0
+    statements  93.04%  (2995/3219)      functions  92.54%  (670/724)
+    branches    87.67%  (1551/1769)      lines      94.25%  (2775/2944)
+
+Chapter 3.23's record is 96 files / 1,296 tests / 462 s. **Sixty-one net new tests and seven
+seconds faster** — and the seven seconds are not an improvement anybody engineered. The first
+attempt of this same lane ran `consumer.itest.ts` in 484 s and this one ran it in 101 s, because
+the lane database and the broker had been cleared in between.
+
+Per-file, for the four paths the ratchet task names:
+
+    packages/protocol/src/attachments.ts             100 / 100 / 100 / 100
+    services/api/src/messages/messages.schema.ts     100 / 100 / 100 / 100
+    services/api/src/messages/messages.controller.ts  97.95 / 92.85 / 100 / 97.91
+    services/api/src/db/repository.ts                 97.63 / 92.80 / 100 / 99.24
+
+**Both files at 100 are absent from the text reporter's table**, which is the reason the task
+says to read `coverage-summary.json`. Pinned at 100 on all four in
+`vitest.coverage.config.mts`; `repository.ts` and `messages.controller.ts` keep the numbers
+chapters 3.17 and 3.23 earned, with 0.80 and 0.85 of branch headroom.
+
+### T081 — THE RATCHET DELETED NOTHING, AND FOUND SOMETHING ABOUT ITSELF
+
+Four uncovered sites across the named files. **Every one has a reason, and none of them is
+"nobody wrote the test":**
+
+    messages.controller.ts:72-73   `req.requestId ?? "unknown"` and
+                                   `req.principal?.environmentId ?? "unknown"`
+    messages.controller.ts:311     `if (actingExternalId === undefined) throw`
+    zod-validation.pipe.ts:57-64   the `issue !== undefined` guards
+
+- The two `??` arms are **where the ratchet already acted, one chapter ago**: 3.23 added two
+  publish sites each carrying its own copy, six uncovered arms where there had been two, and
+  the fix was one `publishContext` function rather than a test. The fallbacks stay because
+  `RequestWithPrincipal` declares both fields optional, so the compiler requires them, and
+  because a log line that says `unknown` is findable where one that says `undefined` reads as a
+  bug in the logger.
+- The `throw` at 311 is a deliberate narrowing with its argument written above it: the guard
+  already refused anything but a user token, and a throw states the assumption where a later
+  change to the decorator invalidates it, which `!` does not.
+- The pipe's guards are compiler-required. `tsconfig.base.json` sets
+  `noUncheckedIndexedAccess: true`, so `result.error.issues[0]` is `$ZodIssue | undefined` and
+  the `?.` is not a choice.
+
+**AND THE INSTRUMENT ANSWERS A DIFFERENT QUESTION THAN THE ONE THE RATCHET ASKS.**
+`attachments.ts` measures 100% branches. Its pair rule reads:
+
+    const hasText = typeof value.text === "string" && value.text.length > 0;
+
+and v8 records that line as `[7, 7]`. **Those are operand EVALUATION counts, not outcome
+counts.** The `typeof` check has never once been false — every schema that calls the refinement
+declares `text` as `z.string()`, so a non-string cannot reach it — and the file still reads 100.
+The next line, `Array.isArray(value.attachments) && value.attachments.length > 0`, measures
+`[7, 2]`: the right operand was skipped five times by short-circuit and the arm is still
+"covered".
+
+So the guard stays, for a reason that is not coverage: `refineTextAndAttachments` takes
+`text?: string | null | undefined` deliberately — `exactOptionalPropertyTypes` makes
+`attachments?: T[]` refuse both callers, whose own inferred type is `T[] | undefined` — and
+under that signature the compiler requires the narrowing.
+
+**The lesson is about constitution VI's 100%-branch clause.** A file at 100% branches is not a
+file whose every arm has run, wherever a `&&` or a `||` is involved. Recorded in the pin's own
+comment so the next reader of that number meets the caveat with it.
