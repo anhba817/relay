@@ -40,8 +40,10 @@ findings ABOUT the analysis and would not survive to close-out otherwise.
           about this feature?                                6      6
      10   what do the FOURTEEN GATES T005 asserts say,
           run together for the first time?                   3      3
+     11   pass 10 derived a rule and did not apply it —
+          what do the deferred complaints actually say?      3      3
     ----  ---------------------------------------------  -----  -----
-                                                           49     47
+                                                           52     50
 
 **PASS 7 IS THE FIRST WHOSE MAIN RESULT IS PARTLY NEGATIVE.** Four decomposition hypotheses
 went in and two died on reading the goal statements: FR-023 is not misfiled in Story 4,
@@ -260,3 +262,38 @@ level up.
 **That is the second design defect introduced by an analysis pass** — pass 3 added a requirement
 with no task, pass 6 added a gate with no reachable path. Both came from adding a rule where the
 editing was already happening rather than where the rule belongs.
+
+
+### PASS 11 — I WROTE THE RULE DOWN AND BROKE IT IN THE SAME PASS
+
+Pass 10 read `sweep`'s complaint, found the plan named no phases against the task list's seven,
+fixed it, and recorded the lesson here: **an instrument complaining about its own configuration
+and an instrument finding a gap look identical until you read the complaint.** It then filed
+twenty-four complaints from the other two instruments as the predecessor's configuration, from
+their counts alone, and moved them into a task.
+
+**Twenty-three of the twenty-four were real.**
+
+    check-checklist    9 of 9    every file spec.md names must be enumerated with its class,
+                                 and the count certified. Eight were missing.
+    check-quickstart  13 of 14   an id counts only in a scenario's `**Expected**` line.
+                                 Thirteen sat in scenario headings instead.
+    check-quickstart   1 of 14   genuine: an exemption for a file this quickstart no
+                                 longer mentions.
+
+**`check-quickstart.py:68` says why the rule is what it is**, in its own comment: *"Only an
+**Expected** line counts. A first version searched the whole file"* — it was deliberately
+narrowed, because a mention anywhere is not proof. A heading says which criterion a scenario is
+about; the Expected line says what would count as passing. Pass 9 added SC-012 and SC-013 to
+headings and called them covered.
+
+**One criterion needed an Expected line for something no tool can run.** SC-010 — every
+statement in the review matches what it cites — is checked by a person reading two paragraphs.
+It now has an expectation anyway: *a criterion nothing can automate still needs a stated
+expectation, or the reader knows what to read and not what would count as wrong.*
+
+**T001a shrank from a configuration task to a re-run.** It was created in pass 10 to own work
+that turned out to be one stale exemption; the rest was this feature's own documents being
+incomplete, reported accurately, on every run since pass 9.
+
+**All fourteen gates are green for the first time.**

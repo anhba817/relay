@@ -43,7 +43,7 @@ alternated green and red for fifteen consecutive runs because of it.
 
     for i in $(seq 1 20); do pnpm -s test:integration >/tmp/run-$i.log 2>&1; echo "$i $?"; done
 
-**Expected**: twenty zeros.
+**Expected** (SC-001): twenty zeros.
 
 **Failing means** something specific, and the signature changed with the feature. The e2e lane
 no longer holds 4100–4102; it binds port 0 and reads the assignment back. So:
@@ -61,14 +61,14 @@ no longer holds 4100–4102; it binds port 0 and reads the assignment back. So:
     docker compose down
     pnpm -s test
 
-**Expected**: exit 0. Today this reports twelve failures that are correct behaviour — the
+**Expected** (SC-002): exit 0. Today this reports twelve failures that are correct behaviour — the
 connection cap failing open because it cannot reach Redis.
 
 **Then the broker, before and after one run:**
 
     node scripts/stream-info.mjs
 
-**Expected**: no durable consumer outlives the run. Ones a service creates in normal operation
+**Expected** (SC-003): no durable consumer outlives the run. Ones a service creates in normal operation
 are not test debris and are counted separately.
 
 **Then the budget** (SC-012). Read the `@relay/e2e` duration line and the run's total against
@@ -76,7 +76,7 @@ what was recorded before the change:
 
     grep -h "Duration" /tmp/run-1.log | grep e2e
 
-**Expected**: the integration total inside 240 s. **Failing means a decision, not a retry** —
+**Expected** (SC-012): the integration total inside 240 s. **Failing means a decision, not a retry** —
 raise the budget with this measurement attached, boot once instead of twice in
 `harness.itest.ts`, or bound the teardown wait lower. The budget does not move to match
 whatever the lane now costs.
@@ -95,14 +95,14 @@ Send the same over-long text three ways and compare the refusals.
     # socket — send the same payload as a message.send frame
     # internal — the door the gateway uses, same body shape
 
-**Expected**: all three refuse. The socket refusal carries `field` and arrives without an
+**Expected** (SC-004): all three refuse. The socket refusal carries `field` and arrives without an
 internal request being made.
 
 **And the definition is single:**
 
     grep -rn "8000\|8_000" packages/protocol/src services/api/src --include=*.ts | grep -v test
 
-**Expected**: one definition and three imports, not three literals.
+**Expected** (SC-004): one definition and three imports, not three literals.
 
 ---
 
@@ -114,7 +114,7 @@ internal request being made.
         -d "{\"avatar_url\":\"$s\"}"
     done
 
-**Expected**: `422` for the first four, `200` for the last. Each refusal names `avatar_url`.
+**Expected** (SC-005): `422` for the first four, `200` for the last. Each refusal names `avatar_url`.
 
 **The stored population, recorded before shipping** (FR-013):
 
@@ -130,7 +130,7 @@ along.
     curl -s -X POST "$API/v1/webhooks/endpoints" -H "authorization: Bearer $CREDENTIAL" \
       -H 'content-type: application/json' -d '{"url":"not-a-url","event_types":["message.created"]}' | jq .code
 
-**Expected**: a code naming the cause. **Failing means** `internal_error`, which is what all
+**Expected** (SC-006): a code naming the cause. **Failing means** `internal_error`, which is what all
 five of these return today.
 
 Repeat for: a non-HTTPS URL, a private address, an empty `event_types`, and one endpoint past
@@ -146,7 +146,7 @@ the limit.
     # declared but not yet emitted — accepted, and it says so
     …-d '{"url":"https://e.example/h","event_types":["channel.created"]}' | jq '.'
 
-**Expected**: the first is `422` naming the accepted set. The second succeeds and says the
+**Expected** (SC-008): the first is `422` naming the accepted set. The second succeeds and says the
 type is not emitted yet.
 
 **This is the scenario most likely to be got wrong**, because the obvious implementation —
@@ -161,7 +161,7 @@ stored subscriptions name `channel.created`. See `contracts/rest-webhook-endpoin
 
     cd ../relay-tutorial && pnpm -s check:errors
 
-**Expected**: exit 0, and the run reports the close-code comparison as well as the error-code
+**Expected** (SC-007): exit 0, and the run reports the close-code comparison as well as the error-code
 one.
 
 **Test the gate red before believing it.** Remove one close code's text from
@@ -177,7 +177,7 @@ See `contracts/close-codes.md`.
 
     cd relay-tutorial && pnpm -s check:docs
 
-**Expected**: the revision-order gate passes. Then break it deliberately — move version 1.5
+**Expected** (SC-009, SC-011): the revision-order gate passes. Then break it deliberately — move version 1.5
 above 1.4 in `docs/04-srs.md` — and confirm it fails.
 
 **Read, by a person, not by a checker:**
@@ -187,10 +187,14 @@ above 1.4 in `docs/04-srs.md` — and confirm it fails.
 - FR-RTM-10 against ADR-20's stated bound, and FR-RTM-09 against ADR-23's fail-open
   behaviour. Each amended clause must describe what the platform does and no more (FR-025c).
 
+**Expected** (SC-010): every statement in the review matches the code or document it cites.
+**A criterion nothing can automate still needs a stated expectation** — otherwise the reader
+knows what to read and not what would count as wrong.
+
 **Then the review itself** (SC-013). Open
 `docs/09-platform-implementation-review-2026-09-03.md` and count the rows carrying an outcome.
 
-**Expected**: twenty-one — ten current findings, three roadmap rows, and eight in "Part 3
+**Expected** (SC-013): twenty-one — ten current findings, three roadmap rows, and eight in "Part 3
 SRS/SAD/ADR amendment assessment". Each says closed and by what, or open and whose.
 
 **No checker can do any of this.** Every gate in this repository compares bytes.

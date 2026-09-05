@@ -29,8 +29,12 @@ HERE = Path(__file__).resolve().parent
 
 # Files quickstart.md names as WARNINGS rather than as work this chapter does. Each entry
 # carries the reason, because an exemption without one is how a real gap gets filed.
-MENTIONED_NOT_OWED = {
-    "connections.test.ts": "lane warning: needs a running Redis, chapter 3.23 gaps item 9",
+MENTIONED_NOT_OWED: dict[str, str] = {
+    # EMPTY, AND THAT IS THIS FEATURE'S ANSWER (analysis pass 11). The predecessor exempted
+    # `connections.test.ts` as a lane warning its quickstart mentioned without owing a
+    # scenario. This feature's quickstart does not mention it, and an exemption for a mention
+    # that does not exist is a rule nobody can trip — which the instrument reports, correctly,
+    # as a problem of its own.
 }
 
 

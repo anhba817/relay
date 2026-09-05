@@ -53,6 +53,29 @@ became eight requirements:
 edit apart, so the requirement fixes the measured behaviour as the upper bound on what an
 amended clause may permit.
 
+### The implementation references the specification names on purpose
+
+**Certified against 34 requirements and 13 success criteria.** Eight code-shaped references
+appear in `spec.md`, each deliberately, and each belongs to one of three classes. A
+specification for business stakeholders that names a file is making a claim about the tree, and
+the class says which kind:
+
+| Reference | Class | Why the spec names it |
+|---|---|---|
+| `codes.ts` | the error registry | new webhook codes and the close-code set live there |
+| `internal.ts` | a send door | one of the three the message-length rule must reach |
+| `repository.ts` | the quota path | cited to correct the review's bot finding, not to change it |
+| `relay-tutorial/fences/post-series.md` | published listings | every platform change carries an amendment there |
+| `docs/09-platform-implementation-review-2026-09-03.md` | the input | the document this feature is named after |
+| `docs/07-tutorial-plan.md` | the schedule | where the deferred roadmap rows actually live |
+| `specs/041-chapter-3-23/gaps.md` | a predecessor's record | holds the items this feature closes |
+| `specs/042-chapter-3-24/gaps.md` | a predecessor's record | same, one chapter later |
+
+**This enumeration was missing for eleven analysis passes**, and `check-checklist.py` reported
+all eight on every run from pass 9 onward. Pass 10 read one instrument's complaint carefully and
+filed the other two as the predecessor's configuration without reading them. Twenty-three of
+those twenty-four complaints were real.
+
 ### What ten analysis passes added after this checklist was first written
 
     FR-006a  the container-free lane must still exercise something
