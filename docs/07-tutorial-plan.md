@@ -134,7 +134,7 @@ premise. Every chapter here pairs a capability with the failure it prevents.
 | 2.7 | The tunnel | Resume protocol: cursors, backfill, subscribe-before-backfill buffer | The duplicate/gap race in §5.2 of the SAD — the tutorial's flagship bug |
 | 2.8 | **Milestone: the Tuan test** | An integration suite scripting journey 4 end-to-end: kill the socket mid-send, reconnect, assert exactly-once + order | This chapter *is* the SRS Phase 1 exit criterion |
 
-### Part 3 — Becoming a platform (21 chapters)
+### Part 3 — Becoming a platform (24 chapters)
 
 SRS Phase 2. The chapters that turn "a chat backend" into "infrastructure someone else can
 build on."
@@ -144,6 +144,12 @@ closed. Every one of the nine extra chapters came from the same cause: a chapter
 its word ceiling and split rather than compress. 3.12 was specified as one chapter and shipped
 as three; 3.15 was specified as one and shipped as two. The count is now derived from the rows
 below rather than carried in the heading.
+
+**And it was not, three times running.** The heading said 21 through chapters 3.22, 3.23 and
+3.24, each of which added a row without moving it — in a paragraph whose own last sentence says
+the count comes from the rows. Corrected to 24 at 3.24's close-out. **A number in a heading is
+carried; a number derived from rows underneath it has to be re-derived by somebody**, and
+saying which one you intend does not make it happen.
 
 | Ch | Title | Built |
 |---|---|---|

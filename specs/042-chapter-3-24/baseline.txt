@@ -2421,3 +2421,122 @@ under that signature the compiler requires the narrowing.
 **The lesson is about constitution VI's 100%-branch clause.** A file at 100% branches is not a
 file whose every arm has run, wherever a `&&` or a `||` is involved. Recorded in the pin's own
 comment so the next reader of that number meets the caveat with it.
+
+### T086/T087 — THE TWENTY-RUN BATTERY: 9 GREEN, 11 RED, AND THE FRACTION IS THE LEAST OF IT
+
+    run  seconds  exit        run  seconds  exit
+      1   227.94     1         11   234.34     0
+      2   230.09     1         12   233.10     1
+      3   233.79     0         13   234.35     0
+      4   230.06     1         14   233.10     1
+      5   234.17     0         15   234.61     0
+      6   233.24     1         16   230.71     1
+      7   230.71     0         17   234.15     0
+      8   233.67     1         18   151.39     1
+      9   230.85     0         19   232.78     1
+     10   230.22     1         20   230.73     0
+
+    green runs        9        mean 233.08 s   stdev 1.75   min 230.71   max 234.61
+    budget          240 s      every green run inside it, with 5.4 s of headroom
+    all twenty                 mean 228.20 s   stdev 18.18  — the stdev is run 18
+
+**Chapter 3.23's green mean was 228.80 s with stdev 0.72. These two numbers are not
+comparable**, and the reason is in this file: the lane database held 57,137 environments and
+503,058 outbox rows when this battery started, against whatever it held in December. A mean
+taken on a different instrument is a different measurement.
+
+#### The failure rate has a confidence interval, and it does not apply
+
+    11 red of 20     Clopper-Pearson 95%     [31.53%, 76.94%]
+
+**That interval is arithmetically correct and substantively meaningless**, because
+Clopper-Pearson assumes twenty independent Bernoulli trials and these twenty are
+anti-correlated by construction. Read the exit column downward: from run 3 to run 17 it
+alternates without a single break — G R G R G R G R G R G R G R G. Fifteen alternations in a
+row is 2 x 0.5^14, about one chance in eight thousand.
+
+**Chapter 3.23's lesson was "carry the interval, not the fraction". The interval carries an
+assumption, and this battery violates it.** A battery whose runs share state is not a sample of
+anything; the number to carry is the mechanism.
+
+#### The mechanism, falsified three ways rather than argued
+
+Ten of the eleven failures are one thing, and every one reads:
+
+    TypeError: fetch failed
+     ❯ token src/harness.ts:466:17
+     ❯ Object.seedConversation src/harness.ts:503:11
+    Caused by: Error: connect ECONNREFUSED 127.0.0.1:4100
+
+**The failure is at `seedConversation`, not at `boot()` — which means the health check PASSED.**
+`packages/e2e/src/harness.ts:534`'s `stop()` SIGTERMs its children and sleeps a flat 200 ms
+without awaiting `exit`. The next suite spawns its own api on the same fixed 4100, that child
+dies of `EADDRINUSE` into a pipe nobody reads, and `waitForHealth` polls the URL and gets a 200
+**from the predecessor that is still dying**. Every red run prints `api up on 4100` three times,
+exactly like every green one. The predecessor then finishes exiting and the first real request
+gets `ECONNREFUSED`.
+
+Three controlled runs of the e2e package alone, each with the file order forced by writing
+`packages/e2e/node_modules/.vite/vitest/<hash>/results.json`:
+
+    A  quotas -> tuan -> webhooks     webhooks 3rd    RED   ECONNREFUSED 4100
+    B  quotas -> webhooks -> tuan     webhooks 2nd    GREEN all three passed
+    C  tuan -> quotas -> webhooks     quotas   2nd    RED   ECONNREFUSED 4100
+
+**B rules out "webhooks is broken" and "the third one fails" — tuan ran third and passed. C
+rules out "the victim is webhooks" — quotas failed instead, in second place.** What A and C
+share, and B does not, is that a suite `boot()`s immediately after `tuan.itest.ts` stopped.
+
+`tuan.itest.ts:45` is the only suite that calls `boot({ gateways: 2 })`. Three children instead
+of two, and `stop()` gives all of them the same 200 ms.
+
+**C's first attempt was confounded and is recorded here because the confound is the finding
+twice over.** Run back to back seconds after B, `tuan` itself failed in FIRST position with
+`ECONNREFUSED 127.0.0.1:4101` — B's own tuan gateways were still holding the port. So the debt
+is not paid at the end of a run; **it is paid by whatever boots next, in this run or the next
+one.** C was re-run with `ss -ltnp` confirming 4100-4102 free, and then behaved exactly as
+predicted.
+
+#### Why the battery alternates
+
+`node_modules/.vite/vitest/<hash>/results.json` stores `{duration, failed}` per file, and the
+sequencer runs previously-failed files first, then the rest by duration descending. Three for
+three in the battery:
+
+    run  1 failed quotas    -> run  2 ordered quotas first
+    run  2 failed webhooks  -> run  3 ordered webhooks first
+    run 19 failed webhooks  -> run 20 ordered webhooks first
+
+Moving the failed file to the front pushes `tuan` into the last slot, where nothing follows it
+inside that run — so the run goes green, the cache reverts to duration order, and the next run
+puts a suite behind `tuan` again. **The lane's failure rate is a function of a JSON file in
+`node_modules`**, and the state that file was left in after run 20 predicted run A's failure
+before it ran.
+
+#### The eleventh failure, which is the one nobody can explain
+
+Run 18, 151.39 s — short because turbo abandons the remaining packages:
+
+    FAIL  src/limits.itest.ts > one counter, two services (chapter 3.8)
+    Error: api never became healthy
+     ❯ waitForHealth src/limits.itest.ts:103:38
+
+`services/gateway/src/limits.itest.ts` is one of the six files that discard their child's output
+entirely (`gaps.md` 3.22-6). **The api child that never became healthy wrote its reason to
+`stdio: "ignore"`.** One of twenty, Clopper-Pearson [0.13%, 24.87%], and the same family as
+chapter 3.23's two reds — which is to say still undiagnosable, for the same recorded reason.
+
+#### What twenty runs did to the lane
+
+                        before      after      per run
+    environments        57,137     61,854         +236
+    messages           260,299    291,559       +1,563
+    outbox             503,058    564,011       +3,048
+    webhook_deliveries  35,928     46,229         +515
+    DELIVERIES stream      105 msgs / 3 consumers -> 912 / 22
+    EVENTS stream           54 msgs / 3 consumers -> 1,706 / 23
+
+**Nineteen new durable consumers in twenty runs** — `dispatcher.itest.ts`'s `afterAll` deletes
+none of them, which is `gaps.md` 3.24-5 measured rather than argued. And the coverage lane that
+preceded this battery leaked an api child that was still listening on port 4793 a hundred
+minutes later.

@@ -97,9 +97,12 @@ red since chapter 3.5.
 new code in `codes.ts` and one section in `docs/08-error-reference.md`. **Owner: a webhooks
 chapter.**
 
-## 3.24-4. THE e2e HARNESS RELEASES ITS PORTS ON A TIMER — NEW, OPEN
+## 3.24-4. THE e2e HARNESS RELEASES ITS PORTS ON A TIMER — NEW, OPEN, AND MEASURED AT 10 OF 20
 
-This is the item the pipe was hiding.
+This is the item the pipe was hiding, and the close-out battery turned it from a hazard into a
+number: **ten of this chapter's twenty battery runs failed on it.** `baseline.txt` carries the
+run table, the three controlled experiments that isolate the cause, and the reason the failure
+rate alternates. The mechanism below is what those experiments demonstrated.
 
     packages/e2e/src/harness.ts:411   const apiPort = Number(process.env.RELAY_E2E_API_PORT ?? 4100)
     packages/e2e/src/harness.ts:427   const port = apiPort + 1 + i          // gateways: 4101, 4102
@@ -110,9 +113,28 @@ This is the item the pipe was hiding.
 
 `stop()` signals and sleeps. It never waits for `exit`. The lane's three suites — `quotas`,
 `tuan`, `webhooks` — each `boot()` and each `stop()`, and `vitest.integration.config.mts` sets
-`fileParallelism: false`, so they run one after another **on the same three fixed ports**. An api
-child that needs more than 200 ms to close its listeners — a slow pool drain, a machine under
-coverage instrumentation — is still holding 4100 when the next file's child tries to bind it.
+`fileParallelism: false`, so they run one after another **on the same three fixed ports**.
+
+**The debtor is `tuan.itest.ts` and the victim is whoever boots next.** `tuan.itest.ts:45` is the
+only suite that calls `boot({ gateways: 2 })` — three children rather than two, all given the
+same flat 200 ms. Three forced-order runs say so without arguing it:
+
+    quotas -> tuan -> webhooks     webhooks 3rd    RED
+    quotas -> webhooks -> tuan     webhooks 2nd    GREEN
+    tuan -> quotas -> webhooks     quotas   2nd    RED
+
+The middle row rules out *"the third one fails"* — `tuan` ran third and passed. The last rules
+out *"webhooks is the broken suite"* — `quotas` failed instead. Position and identity are both
+irrelevant; **following `tuan` is the whole of it.**
+
+**And the debt is not settled when the run ends.** The first attempt at the third row was run
+seconds after the second and `tuan` failed in FIRST position on `4101`, still held by the
+previous run's gateways. It is paid by whatever boots next — this run or the next one.
+
+**The health check cannot tell the child it started from the child it is replacing.** `boot()`
+polls `http://127.0.0.1:4100/healthz` and a dying predecessor answers 200, so every red run
+prints `api up on 4100` three times, exactly as a green one does. The failure surfaces later, at
+the first real request, as `ECONNREFUSED`.
 
 **The evidence is a line that exists and nobody reads:**
 
@@ -128,6 +150,12 @@ listened.
 `session.itest.ts`'s own 4400–4599 range, in a different lane — but it is the same shape, found
 in the one place where somebody had already written the capture and only one caller used it.
 `3.22-6` below is the item that says why the shape stays invisible.
+
+**Why 3.23's battery did not show it is an open question and not a claim.** `harness.ts` has not
+changed since chapter 2.8. The two differences this chapter can name are the lane database, which
+is far larger now and lengthens an api's shutdown, and the sequencer cache's starting state,
+which decides whether anything runs behind `tuan` at all. **Neither was recorded for 3.23**, so
+the honest position is that a battery result is not comparable across chapters unless both are.
 
 **Owner: whoever next has a red e2e run.** The first line of the fix is to await `exit` in
 `stop()` with a timeout instead of sleeping 200 ms. **The second is not "do what the gateway lane
