@@ -2540,3 +2540,46 @@ chapter 3.23's two reds — which is to say still undiagnosable, for the same re
 none of them, which is `gaps.md` 3.24-5 measured rather than argued. And the coverage lane that
 preceded this battery leaked an api child that was still listening on port 4793 a hundred
 minutes later.
+
+### T088 — ELEVEN GATES, NOT FOUR, AND THE FIRST RUN REPORTED GREEN WHILE ONE WAS RED
+
+    check:fences  check:docs  check:figures  check:srs  check:errors        all 0
+    check-refs  sweep  check-prose  check-quickstart  check-checklist       all 0
+    regen-traceability                                                          0
+    pnpm build (before check:errors, which reads the BUILT dist)                 0
+
+**The task says "this chapter's four Python instruments" and there are six.** `check-quickstart.py`
+arrived in analysis pass 13 and `check-checklist.py` in pass 14, after the task list was written.
+A task's own premise goes stale inside the chapter that wrote it.
+
+**AND THE FIRST PASS PRINTED "ALL GATES: GREEN" WHILE `check:fences` HAD EXITED 1.** The loop
+assigned `fail=1` inside a `for … done | sort` pipeline, which bash runs in a subshell, so the
+assignment died with it. **This is the failure the task's own sentence is about** — *capture every
+exit code into a variable; do not pipe into `tail`* — committed in the task that says not to, one
+pipe stage over from the one it names. The summary line is the thing that has to be trusted least,
+because it is the thing nobody re-derives.
+
+**What `check:fences` had caught is the phase-12 hazard for the THIRD time in this close-out.**
+The ratchet pins added to `vitest.coverage.config.mts` broke that file's chain — and its chain does
+not end in a chapter, it ends in `relay-tutorial/fences/post-series.md`, which applies after the
+last chapter. The fix is an appendix hunk, not a chapter fence: *a chapter cannot do the appendix's
+work, and vice versa.* Regenerated at `-U3` after checking the anchor is unique (one occurrence of
+`"services/api/src/webhooks/disable.ts": {`), and the chain replays:
+
+    check-fence-chain: 241 fenced files replay onto relay-platform across 41 chapters
+                       (41 translated, fences mirrored, 1 retired, plus post-series amendments)
+
+Three edits in phase 12 broke fences: the title audit (three files), the outbox reader fix
+(`event.ts`, which then needed `-U6` because its two branches are deliberately identical), and
+the coverage pins (the appendix). **The rule is not "run it after the ratchet". It is "run it after
+every source edit, and the chain may not end where the chapter does."**
+
+### THE FILE COUNT MOVED AT THE TAG, FOR THE REASON THE PREDECESSOR RECORDED
+
+    counted mid-phase-12     36 platform ·  8 tutorial · 24 root   = 68
+    re-derived at the tag    37 platform ·  9 tutorial · 25 root   = 71
+
+The coverage ratchet edited `vitest.coverage.config.mts`, and that file's fence chain ends in
+`relay-tutorial/fences/post-series.md`, so the tutorial gained a file too. **Chapter 3.23 wrote
+this down — 33 became 34, same cause — and phase 12's own header repeats it.** It happened
+anyway. The counting is cheap; the belief that it will not move is what costs.
