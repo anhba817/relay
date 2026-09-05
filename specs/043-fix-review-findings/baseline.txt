@@ -44,8 +44,10 @@ findings ABOUT the analysis and would not survive to close-out otherwise.
           what do the deferred complaints actually say?      3      3
      12   what do the fourteen GREEN gates not check,
           and whose claims live in that gap?                 3      3
+     13   can each of the fifteen files this feature
+          edits actually receive an amendment?               3      3
     ----  ---------------------------------------------  -----  -----
-                                                           55     53
+                                                           58     56
 
 **PASS 7 IS THE FIRST WHOSE MAIN RESULT IS PARTLY NEGATIVE.** Four decomposition hypotheses
 went in and two died on reading the goal statements: FR-023 is not misfiled in Story 4,
@@ -346,3 +348,47 @@ The three questions this feature would most want asked, if somebody ran it:
     3  Look at the port decision in `plan.md` and say whether it is a measurement or a
        judgement. It is a judgement, it says so, and it was a measurement until analysis
        pass 5 read one line of `package.json`.
+
+
+### PASS 13 — FOURTEEN OF THE FIFTEEN CAN TAKE AN AMENDMENT. ONE CANNOT.
+
+    harness.ts            7 chapters + 1 appendix    dispatcher.itest.ts   3 + 1
+    session.ts           16                          repository.itest.ts   9
+    internal.ts          11                          codes.ts             10
+    gateway/main.ts      11                          api/main.ts           6
+    frames.ts             5                          messages.schema.ts    6
+    connections.itest.ts  2                          connections.test.ts   1
+    users.schema.ts       2                          webhooks.service.ts   2
+    limits.itest.ts       0 real, 0 appendix   <-  EXCERPT-ONLY
+
+`services/gateway/src/limits.itest.ts` is published once, as
+`title="services/gateway/src/limits.itest.ts (excerpt)"`, and `check-fence-chain.mjs:42` skips
+any title containing `(excerpt)`. **T008a said "This file is fenced by chapter 3.13, so it takes
+an amendment hunk in T018."** It is not fenced. The edit costs no amendment and no gate can see
+it — which is `gaps.md` 3.22-3's whole point, and this feature edits one of the ten files that
+item names.
+
+**The port map is published TWICE in chapter 3.13** — as an `(excerpt)` fence at line 1509 and as
+a plain text block at 1542. **An excerpt fence falls between this feature's two mechanisms**: a
+prose sweep does not think to look inside a fence, and the chain check skips anything excerpted.
+T018a now amends both.
+
+**THAT IS THE THIRD FINDING CREATED BY AN ANALYSIS PASS RATHER THAN FOUND BY ONE**, and all three
+have one cause: a claim added where the editing was happening rather than where the measurement
+was. Pass 3 added a requirement with no task. Pass 6 added a gate with no reachable path. Pass 10
+added a fence claim from memory — of a file **pass 8 had already measured and listed by name** as
+excerpt-only, two passes earlier.
+
+### THE SWEEP — FOR CRITICAL AND HIGH, ACROSS EVERYTHING
+
+Run after pass 13's fixes, over the class of claim that had just failed:
+
+    line-number citations resolved against the tree      17 checked · 0 stale
+    fence-chain claims re-derived from the pages          6 checked · 0 mismatched
+    asserted counts re-derived                            FR 34 · SC 13 · tasks 72 · all agree
+    the review's 21 rows                                  13 covered · 8 deferred · 0 dropped
+    fourteen gates                                        14 green
+
+**No CRITICAL or HIGH issue survives the sweep.** Two LOW remain open by decision: a
+near-duplicate pair (FR-006 stated from two ends) and a missing "revert each probe" line in the
+gate-testing task.

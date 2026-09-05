@@ -26,8 +26,9 @@ the review recommends wrong:
   principle and empty here.
 
 Part 3 is closed, so no chapter teaches this work. Fifteen existing platform files change and
-every one is fenced by a published chapter, so each carries an amendment hunk in
-`relay-tutorial/fences/post-series.md`. The tutorial's own scripts are fenced by nothing,
+**fourteen are fenced by a published chapter**, so each of those carries an amendment hunk in
+`relay-tutorial/fences/post-series.md`. The fifteenth, `services/gateway/src/limits.itest.ts`, is
+published only as an `(excerpt)` — no chain, no hunk, and no gate that can see the edit. The tutorial's own scripts are fenced by nothing,
 which is where the two new gates go.
 
 ## Technical Context
