@@ -32,6 +32,18 @@ other than a failure message.
 pipe read only on the health-check path; probe-then-pass — racy, and the race is exactly the
 bug being fixed.
 
+**AMENDED IN ANALYSIS PASS 2, and the amendment strengthens the decision rather than changing
+it.** This entry chose `PORT=0` without knowing that `services/gateway/src/limits.itest.ts:16`
+publishes the lane's port map, registers **4100–4300** to itself, and does not list
+`packages/e2e` at all — `grep -c e2e` on that file returns zero. So the harness's three fixed
+ports sit unregistered inside another file's range, and turbo runs the two packages at once.
+
+The cheaper repair — register the lane in the map and fix only the teardown — was considered and
+rejected. That map is maintained by hand and has already been wrong twice: chapter 3.21's
+`gaps.md` item 4 found two missing entries, and it is missing a third today. **A second list
+that must agree with reality is the defect this feature exists to remove.** `PORT=0` needs no
+list.
+
 **Secondary benefit worth naming**: logging the port you bound rather than the one you
 requested is a correctness fix in its own right. Today, if `listen` ever bound something
 other than the requested value, the log would say otherwise.
@@ -52,6 +64,13 @@ the existing `connections.itest.ts`.
 | `does not throw for a slot the connection never held` | **measure** | May short-circuit before any command. |
 | `does not throw when it holds nothing` | **measure** | Same. |
 | the remaining twelve | **broker** | Each asserts registry behaviour: claiming, renewing, releasing, tombstones, heartbeat bounds. |
+
+**AMENDED IN ANALYSIS PASS 2: the classification method above is confounded.** The describe
+holding all seventeen runs a `beforeEach` at `connections.test.ts:41` that builds a registry
+against `REDIS` for every test in it, including the two that provably need no broker. Running
+the file with containers stopped can therefore report failures that say nothing about the tests.
+Classify with the hook stubbed as well as by reading each body — and the two that stay must
+leave that describe, or the container-free lane keeps a Redis client it has no use for.
 
 **Rationale**: the file's own comment at line 18 argues that a real broker is the correctness
 case, and that argument is right about the twelve. It is not an argument about which lane the

@@ -25,7 +25,7 @@ the review recommends wrong:
   is either null (387,091) or `https` (586). The migration risk the review raises is real in
   principle and empty here.
 
-Part 3 is closed, so no chapter teaches this work. Fourteen existing platform files change and
+Part 3 is closed, so no chapter teaches this work. Fifteen existing platform files change and
 every one is fenced by a published chapter, so each carries an amendment hunk in
 `relay-tutorial/fences/post-series.md`. The tutorial's own scripts are fenced by nothing,
 which is where the two new gates go.
@@ -55,10 +55,12 @@ compose stack. A third config, `vitest.coverage.config.mts`, runs both for the r
 change costs an amendment hunk. The two clause amendments may not permit more than the
 platform already does (FR-025c).
 
-**Scale/Scope**: **16 files, estimated, and the estimate is expected to move.** Thirteen
-existing platform files change; two are new (`packages/e2e/src/harness.itest.ts` and
-`relay-platform/scripts/reset-lane.mjs`); and the coverage ratchet edits
-`vitest.coverage.config.mts` at close-out, which is the fourteenth existing one. Chapter 3.23's
+**Scale/Scope**: **17 files, estimated, and it has already moved once.** Thirteen existing
+platform files change; two are new (`packages/e2e/src/harness.itest.ts` and
+`relay-platform/scripts/reset-lane.mjs`); the coverage ratchet edits
+`vitest.coverage.config.mts` at close-out, which is the fourteenth existing one; and analysis
+pass 2 added `services/gateway/src/limits.itest.ts`, the fifteenth, because it owns the port map
+this feature changes. Chapter 3.23's
 count moved from 33 to 34 during close-out and chapter 3.24's from 36 to 37, both for that same
 reason. No new service, no new table, no new route.
 
@@ -125,6 +127,7 @@ relay-platform/
     │   ├── users/users.schema.ts             FR-011, FR-012   avatar scheme
     │   └── webhooks/webhooks.service.ts      FR-014, FR-016   coded refusals
     ├── gateway/src/
+    │   ├── limits.itest.ts                   FR-026           owns the lane's port map
     │   ├── main.ts                           FR-002           log the bound port
     │   ├── session.ts                        FR-009, FR-010   refuse at the socket
     │   ├── connections.test.ts               FR-024           the container-free half

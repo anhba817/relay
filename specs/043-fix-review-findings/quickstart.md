@@ -43,8 +43,18 @@ alternated green and red for fifteen consecutive runs because of it.
 
     for i in $(seq 1 20); do pnpm -s test:integration >/tmp/run-$i.log 2>&1; echo "$i $?"; done
 
-**Expected**: twenty zeros. **Failing means**: read the log for `ECONNREFUSED` against a port
-in the 4100 range and for `EADDRINUSE`; both were the signature this feature removes.
+**Expected**: twenty zeros.
+
+**Failing means** something specific, and the signature changed with the feature. The e2e lane
+no longer holds 4100–4102; it binds port 0 and reads the assignment back. So:
+
+- an `ECONNREFUSED` or `EADDRINUSE` against **4100, 4101 or 4102** means the harness change did
+  not take — a child is still being handed a fixed port from somewhere.
+- an `EADDRINUSE` on a port in **4310–5600** is the gateway and dispatcher lanes' own map, not
+  this feature's; `services/gateway/src/limits.itest.ts` carries that map and the known overlap
+  inside it.
+- a health check that passes and a later request that is refused is the **old** teardown defect
+  and means `stop()` is still returning before its children have exited.
 
 **Then the container-free lane, with nothing running:**
 

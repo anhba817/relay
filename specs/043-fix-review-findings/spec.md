@@ -188,6 +188,14 @@ check that no tool contradicts the answer.
   containers, and every assertion that does not MUST remain in the container-free lane.
 - **FR-024a**: The split MUST be decided per assertion, and each assertion that moves MUST keep
   the behaviour it asserted.
+- **FR-026**: The lane's port allocation MUST be recorded where the next reader looks for it,
+  and every lane that binds a port MUST appear in that record. **The record is currently wrong
+  by omission**: it registers a range to one file and does not mention the lane that hard-codes
+  three ports inside it.
+- **FR-027**: Published material this feature falsifies MUST be amended in the same phase that
+  falsifies it. This covers material no gate can check — a transcript of a run, a table of port
+  allocations, a paragraph describing behaviour — and it applies per story rather than once at
+  the end, because the phase that breaks a claim is the phase that knows it.
 
 
 #### Public boundary (Story 2)
@@ -272,6 +280,9 @@ check that no tool contradicts the answer.
 - **SC-010**: Every statement in the review matches the code or document it cites.
 - **SC-011**: No published requirement describes behaviour the platform does not have, measured
   by reading each amended clause against the behaviour it now states.
+- **SC-013**: Every finding in the review is marked with what happened to it — closed, and by
+  what; or open, and whose it is. **A reader of the review learns the feature's outcome from the
+  review**, not by cross-referencing a task list.
 - **SC-012**: The integration lane completes inside its published budget after the changes, or
   the budget is raised with the measurement that justifies it. **The changes cost time**: a
   teardown that waits for a process to exit is slower than one that sleeps a fixed 200 ms, and a
