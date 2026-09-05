@@ -89,8 +89,9 @@ says the platform broke.
 chapter's own 422 names `media_not_available` through `protocolError(code, message, 422)` instead
 of throwing the bare exception.
 
-**Nothing catches it.** `webhooks.itest.ts:90` asserts the status and the message text. A test
-that asserted the code would have been red since chapter 3.5.
+**Nothing catches it.** `services/api/src/webhooks/webhooks.itest.ts:90` asserts `422` and then
+that the body contains the limit — never the code. A test that asserted the code would have been
+red since chapter 3.5.
 
 **Not this chapter's file, and the remedy is small**: `protocolError` at five call sites plus one
 new code in `codes.ts` and one section in `docs/08-error-reference.md`. **Owner: a webhooks
@@ -135,7 +136,7 @@ been is the item below.
 
 ## 3.24-5. THE INTEGRATION LANE ACCUMULATES STATE UNTIL IT CANNOT PASS — NEW, OPEN
 
-Found by running the coverage lane for T080 and getting fifteen failures, every one of them a
+Found by running the close-out's coverage lane and getting fifteen failures, every one of them a
 delivery that never arrived. **The lane was not broken by this chapter; it had been filling up
 for nine days.**
 
@@ -170,7 +171,7 @@ DELETE touched a sentinel row left behind by `messages.itest.ts`. **That refusal
 working, and it is also a fourth kind of debris**: bait planted per file and outliving the run
 that planted it.
 
-**Why it matters to the next close-out and not just this one.** T086's battery is twenty
+**Why it matters to the next close-out and not just this one.** The close-out battery is twenty
 consecutive integration runs. Each one adds deliveries and durables, so the lane the twentieth run
 measures is not the lane the first one measured. A mean taken across a battery that degrades as it
 proceeds is a mean over a moving instrument.
@@ -330,7 +331,7 @@ The check at `main.test.ts:109` is still `shutdown.includes(\`await ${String(nam
 A module built and never handed to `attachSessions` still passes it.
 
 `packages/outsider/src/integrate.itest.ts` — the only instrument that boots the shipped binary —
-gained this chapter's end-to-end assertion, and the title audit (T079) found that the task list
+gained this chapter's end-to-end assertion, and the title audit found that the task list
 had scheduled an audit over that file while no task wrote a test into it. **It does now.** A
 structural check would still be better, for the reason 3.23 gave: the outsider suite catches this
 chapter's wiring, not the next chapter's.
@@ -395,7 +396,7 @@ counting both sides:
 
     check-refs.py    50        sweep.py    65        check-prose.py    110
 
-**And two of those three numbers moved after they were written down.** Task T085 recorded
+**And two of those three numbers moved after they were written down.** This chapter's own task list recorded
 `sweep.py` at 2 differing lines, measured during analysis; the tree says 65, because a 58-line
 rule was added to it during implementation. A copy-forward gap is not a fixed quantity measured
 once — **it grows for the whole chapter, so any number taken before close-out understates it.**

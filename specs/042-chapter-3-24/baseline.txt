@@ -2284,3 +2284,28 @@ naming its table.
 message in either suite. A lane that can be wedged by its own successful runs, and that reports
 the wedge as an assertion failure, is a lane whose exit code answers a different question on
 day nine than it did on day one.
+
+### THE PHASE-12 HAZARD FIRED, AND IT WAS NOT THE COVERAGE RATCHET
+
+`chapter-notes.md` says 3.23's file count moved from 33 to 34 during close-out because the
+coverage ratchet edited a fenced file, and names phase 12 as where that can happen again.
+**It happened here one task earlier and from a different direction**: the title audit stripped
+33 task ids from test titles, and three of the files it edited are files this chapter fences.
+
+    services/api/src/db/repository.itest.ts     differs at line 1130
+    services/api/src/messages/messages.itest.ts differs at line  132
+    services/api/src/internal/backfill.itest.ts differs at line  115
+
+`check-fence-chain` reports the FIRST difference per file and stops, so "3 problems" understated
+it — every stripped title inside those three fences was stale, and the T043 rewrite had also
+replaced a thirteen-line block with an eight-line one, which moves the hunk header's counts.
+**A line-for-line patch of the fence bodies would have produced a hunk that does not apply.**
+
+Regenerated with `git diff --unified=3` against the predecessor commit, into both language
+pages, and re-checked:
+
+    check-fence-chain: 241 fenced files replay onto relay-platform across 41 chapters
+                       (41 translated, fences mirrored, 1 retired)
+
+**Run `check:fences` after ANY task that edits a source file in phase 12**, not only after the
+ratchet. The audit that removes a task id from a title is a source edit like any other.
