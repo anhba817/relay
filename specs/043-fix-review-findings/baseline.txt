@@ -640,3 +640,43 @@ the state deterministically — delete, then issue exactly the statement `editMe
 assert zero rows affected.
 
     repository.itest.ts: 61 passed
+
+**T018 — nine amendment hunks, and the tenth file has nothing to amend.**
+
+    eslint.config.mjs                            6 lines   the DRIVER_EXEMPT_TESTS entry
+    services/api/src/main.ts                    12         the bound port
+    services/gateway/src/main.ts                 8         the same
+    services/api/src/db/repository.ts           25         the compare-and-set
+    services/api/src/db/repository.itest.ts    126         the four race tests
+    packages/e2e/src/harness.ts                 90         port 0, and a teardown that waits
+    services/dispatcher/src/dispatcher.itest.ts  21        the durables it deletes
+    services/gateway/src/connections.test.ts   276         twelve left, five stayed
+    services/gateway/src/connections.itest.ts  245         the twelve that arrived
+
+**`services/gateway/src/limits.itest.ts` is not in that list and `check-fence-chain` never
+mentioned it**, which is analysis pass 13's finding confirmed by the tool: the file is published
+only as an `(excerpt)`, so no chain collects it and the port-map edit is invisible to every gate.
+`gaps.md` 3.22-3 in practice rather than in principle.
+
+**T018a — the published prose, and only two of thirteen hits needed amending.**
+
+`grep` for `4100|4101|4102` returns thirteen lines across seven pages. **Five are historical
+chain states** — `const apiPort = Number(process.env.RELAY_E2E_API_PORT ?? 4100)` inside titled
+fences in chapters 2.8, 3.02, 3.03, 3.04 and 3.05 — and those are correct as they stand: a
+chapter's fence shows the file as it was at that chapter, and the appendix hunk is what brings it
+to current. Changing them would break the chain, not repair it. One more is `limits.itest.ts`'s
+own random draw, untouched. Four `200 ms` mentions turned out to be connection-slot expiry.
+
+What did need it:
+
+- **`part-2/chapter-08:909-917`** — the milestone's transcript, an **untitled** ` ```text ` fence,
+  so `check-fence-chain.mjs:77` never collects it and nothing compares it to anything. Re-taken
+  with ephemeral ports, plus a sentence saying the numbers will differ and the order is what
+  matters. Mirrored into Vietnamese.
+- **`part-3/chapter-13:1542`** — the published port map, a plain text block, now carrying the e2e
+  lane's row. Mirrored into Vietnamese, where the map's columns are translated and the anchor is
+  a different string.
+
+**Two artifacts, two mechanisms, and an excerpt fence falls between them** — a prose sweep does
+not look inside a fence and the chain check skips anything excerpted. That is why the transcript
+needed finding by `grep` rather than by a gate.
