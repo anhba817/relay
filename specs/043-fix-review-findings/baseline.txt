@@ -561,3 +561,40 @@ the suite was written; what uses `DeliverPolicy.All` is `services/dispatcher/src
 the PRODUCTION default, which is correct there and not this feature's business. **Checking a
 task's premise costs less than executing it** — the third of this repository's ranked mechanisms,
 and the second time this feature has hit it.
+
+**T014 — `reset-lane.mjs`, and the guard is a flag rather than a heuristic.**
+
+    node scripts/reset-lane.mjs                          exit 2, and says what it would do
+    node scripts/reset-lane.mjs --yes-this-is-my-test-lane
+      ANALYTICS 28 -> 0 · DELIVERIES 29 -> 0 · EVENTS 5 -> 0
+      organisations named demo: 1 before, 1 after
+
+The obvious alternative was to inspect `DATABASE_URL` and refuse anything that does not look
+like the lane. **Every heuristic for that is wrong on somebody's machine** — port 15432, a
+database named `relay`, a localhost host — and a guard wrong in the permissive direction deletes
+a customer's rows. "Looks like the lane" is not checkable; "you typed the flag" is.
+
+Both properties are asserted in `packages/test-harness/src/reset-lane.itest.ts`, and the
+constitution's own lint rule refused it: raw `pg` is forbidden outside the repository layer.
+`packages/test-harness/**` is exempt and `.itest.ts` files are **not**, because a later config
+block overrides that — the config says so in a comment and points at `DRIVER_EXEMPT_TESTS`,
+which is where the exemption went, with its reason.
+
+**T015 — the split, re-measured before acting.** `12 failed | 5 passed` against a dead broker,
+matching what analysis pass 4 measured. The task says to re-run the command because a
+measurement taken in analysis is stale by implementation; it was not, this time.
+
+**T016 — twelve moved, five stayed.**
+
+    connections.test.ts    5 tests, no shared hook, 5 passed against a DEAD broker
+    connections.itest.ts   32 tests (20 + 12), all passed
+    pnpm test              exit 0 with ZERO containers running — 510 tests, 7 packages
+
+**That last line is what `gaps.md` 3.23-9 said the lane could no longer claim.**
+
+**The extraction went wrong twice and both were caught by running it.** The first cut test
+blocks on the next test's start line, which dropped a closing brace and nested two tests inside
+a third — vitest reported `Calling the test function inside another test function is not
+allowed`. Patching that produced a surplus brace. The file was restored from git and re-split
+with a brace-counting extractor, which is what should have been used first. **A line-range
+extractor that does not count braces is a text tool pretending to be a parser.**
