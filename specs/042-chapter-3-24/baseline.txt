@@ -1929,3 +1929,64 @@ A send that recovers a tombstone through an old idempotency key returns `text: n
 `messages.controller.ts:234` and `session.ts:1552` — so the guard chapter 3.18 wrote for text
 carries the attachment list with it for free. The test asserts the premise as well as the
 result, because a guard that stops firing is a deleted message reappearing on every screen.
+
+## PHASE 9 — THE EVENTS
+
+    27 passed (27)   services/api/src/outbox/event.test.ts
+
+### THE REQUIRED FIELD CAUGHT THE THING T056 WAS WRITTEN TO PREVENT
+
+Adding `attachments` to `MessageCreatedData` produced nine errors, and one of them was the
+consumer's own parse branch:
+
+    services/api/src/consumer/runtime.ts(166,31): error TS2322: Type '{ type: "message.created";
+      data: { id; channel_id; seq; user; text; created_at } … }' is not assignable to
+      type 'OutboxEvent | null'
+
+T056's text says why that matters: **`consumer/runtime.ts` answers a failed parse with
+`message.term()`, which stops redelivery for good — so a branch not widened is a row DESTROYED
+rather than retried.** The compiler named it before it could destroy anything, which is the
+argument for the field being required rather than optional in one line of evidence.
+
+`outboxEventSchema` restates the creation and edit shapes rather than sharing one variable, and
+its own comment says why: FR-008a is the requirement that they NOT drift, which is only
+meaningful if a change to one is visible in the other's absence. Both branches were widened by
+hand for that reason.
+
+### T057 — KEY SETS ANSWER FR-015 AND CANNOT ANSWER FR-006
+
+The existing FR-008a assertion compares the edit payload's keys against a literal. Two
+additions:
+
+    the two sets are compared to EACH OTHER       comparing each to a literal leaves them
+                                                  free to drift together
+    the attachments themselves, in order, on both key sets cannot see values, and two
+                                                  payloads carrying `[]` have identical keys
+
+Pass 12 found that gap by reading; this phase closed it by writing the assertion the reading
+predicted.
+
+### T059 — NO ATTACHMENT URL REACHES THE PLATFORM'S LOGS
+
+Measured rather than asserted, across the api and the gateway:
+
+    87    log call sites (`log`/`logger` `.log|.info|.warn|.error|.debug`, non-test)
+     0    of those naming `attachments`, a message `text`, or a `.url` in the payload
+
+`recorder.ts` is the one that would be tempting, and it already carries the rule in its own
+words: *"Identifiers and counts only — never `event.data.text`. A tenant's message body has no
+business in the platform's own logs (NFR-SEC-06)."* An attachment URL is a tenant's content by
+the same argument, and nothing had to change to keep it out.
+
+### AND A HELPER FROM THE WRONG SCOPE, FOR THE THIRD TIME
+
+`build is not defined` — T057's comparison reached for a creation builder two describes up.
+Given the describe its own `created()` rather than exporting the other one.
+
+    T029    `key`, `createChannel`, `mintUserToken`   the suite has `credential`,
+                                                      `privateChannelId`, `tokenFor`
+    T044    `record`, `waitFor`, `twoAttachments`     they live in the fan-out describe
+    T057    `build`                                   two describes up
+
+Three times, and the compiler caught all three before any of them ran. What it cannot catch is
+the reverse — a helper that exists in scope and does something subtly different.
