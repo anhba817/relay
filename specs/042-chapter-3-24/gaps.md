@@ -204,9 +204,10 @@ cannot clear it.
 
 # CARRIED FROM CHAPTER 3.23, RE-MEASURED AGAINST THE TREE
 
-Nine items closed with `part3-ch23`. **Each was re-run here rather than copied.** Two of the nine
-came back with a different number than the record carries, and one of those two was already wrong
-on the day it was written.
+Nine items closed with `part3-ch23`. **Each was re-run here rather than copied.** Eight came back
+as recorded. **The ninth was already wrong on the day it was written** — and so were two of the
+eight below it, which makes three misses in seventeen carried items and not one of them a
+regression.
 
 ## 3.23-1 — a customer can subscribe to an event type that does not exist — **OPEN, unchanged.**
 
