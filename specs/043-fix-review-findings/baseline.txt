@@ -483,3 +483,41 @@ contradicted the recorded mechanism. It does not: vitest's non-TTY reporter prin
 and not passing ones, so "first in the output" is not "first in the run". **A partial output read
 as a complete one**, which is the same mistake analysis pass 11 recorded about not reading output
 already in hand.
+
+### PHASE 3 — USER STORY 1, THE LANE
+
+**T007 / T008 — both entry points log the port they BOUND.** Each read
+`Number(process.env.PORT ?? 4000)` — the request — so under `PORT=0` each logged `0` while the
+server listened elsewhere. Proven after the change:
+
+    api      "msg":"listening","port":35179
+    gateway  "msg":"listening","port":42967
+
+**T008a — the e2e lane is on the port map**, with an instruction not to give it a band: the next
+reader's instinct is to allocate one, and a fixed band is what it just stopped having.
+
+**T009 — every child binds port 0** and the harness reads the assignment out of the child's own
+log line, from the buffer `capture` already filled and only ever used for a failure message.
+`RELAY_E2E_API_PORT` and the 4100 behind it are gone, and gateway ports are no longer derived as
+`apiPort + 1 + i` — an ephemeral port is no basis for arithmetic.
+
+**T010 — `stop()` waits, and the WAIT IS BOUNDED ON A MEASUREMENT.**
+
+    baseline, sleep 200 ms and move on      6.72 s   alternating green / red
+    await full graceful exit               37.28 s   20 of 20 green
+    1 s grace, then SIGKILL                10.38 s   10 of 10 green
+
+**Awaiting the graceful exit worked and cost 30.56 s**, on a lane with 5.39 s of budget headroom.
+So the first fix passed its own test and would have failed SC-012.
+
+The measurement that decided it: the api takes **5,035 ms** to exit on SIGTERM, and **its
+listener stays open for all of it** — the port frees at 5,037 ms and the process exits at
+5,034 ms. There is no early release to wait for. What the harness needs is the port, not a clean
+drain, and a second is enough for a child to flush the lines `dump()` reports on failure.
+
+**This is T019a's decision taken early and on evidence** — of its three options, "bound the
+teardown wait lower" is the one the numbers chose. The other two were "raise the budget" and
+"boot once instead of twice", and neither was needed.
+
+**Result: 20 of 20 green on the first fix, 10 of 10 on the bounded one**, against a baseline that
+alternated green and red twice in a row and against chapter 3.24's battery of 9 green in 20.
