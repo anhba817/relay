@@ -38,8 +38,10 @@ findings ABOUT the analysis and would not survive to close-out otherwise.
           consumed?                                          3      3
       9   what do THIS REPOSITORY'S OWN INSTRUMENTS say
           about this feature?                                6      6
+     10   what do the FOURTEEN GATES T005 asserts say,
+          run together for the first time?                   3      3
     ----  ---------------------------------------------  -----  -----
-                                                           46     44
+                                                           49     47
 
 **PASS 7 IS THE FIRST WHOSE MAIN RESULT IS PARTLY NEGATIVE.** Four decomposition hypotheses
 went in and two died on reading the goal statements: FR-023 is not misfiled in Story 4,
@@ -221,3 +223,40 @@ comment records about `T(\d{3})` failing to see `T107a`.
 **Three instruments still carry 042's configuration** and are named in T001: `check-quickstart`'s
 OWED lists, `check-checklist`'s file enumeration, and `sweep`'s expectation of `### Phase N`
 headings in a plan that has none.
+
+
+### PASS 10 — THE BASELINE T005 ASSERTS, RUN FOR THE FIRST TIME
+
+Nine passes reported gates green by running the three that were convenient. The fourteen T005
+names had never been run together.
+
+    platform  typecheck 0 · lint 0 · build 0
+    tutorial  check:fences 0 · check:docs 0 · check:figures 0 · check:srs 0 · check:errors 0
+    feature   check-refs 1 · sweep 1 · check-prose 0 · check-quickstart 1 · check-checklist 1
+              regen-traceability 0
+
+**Eleven repository gates green, three feature instruments red on the predecessor's
+configuration** — and `check-quickstart` and `check-checklist` appeared nowhere in the task list
+except inside T001, which described the work and assigned it to nobody. T001a now owns it.
+
+**One of the three was not configuration at all.** `sweep` reported `phase count: plan 0, tasks
+7`: the plan named no phases while the task list ran seven, so nothing could compare them. The
+plan now names all seven. **An instrument complaining about its own configuration and an
+instrument finding a gap look identical until you read the complaint.**
+
+**`check-refs.py` could not see a `.py` path**, in a feature whose tasks reference six Python
+instruments — the same blind spot as `.mjs` one pass earlier, found the same way, by arguing
+with a false positive. `py` and `sh` are now in the pattern.
+
+**AND THE FEATURE'S OWN GATE COULD NOT HAVE WORKED.** FR-021, as analysis pass 6 amended it,
+required a gate in `relay-tutorial/scripts/` to read this feature's success criteria.
+`relay-tutorial` is its own git repository, nothing in it reads `../specs`, and `sync-docs.sh`'s
+precedent for `../docs` errors out when the parent is absent — and a feature directory is
+transient, so a gate pointed at one dies when the feature closes. Split into FR-021 for the
+published ledger and FR-021a for this feature's own criteria: **each gate in the repository that
+owns the file it reads**, which is the doctrine "a chapter cannot do the appendix's work" one
+level up.
+
+**That is the second design defect introduced by an analysis pass** — pass 3 added a requirement
+with no task, pass 6 added a gate with no reachable path. Both came from adding a rule where the
+editing was already happening rather than where the rule belongs.

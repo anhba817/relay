@@ -205,6 +205,29 @@ trade — but the change is a correctness fix on its own terms, under the observ
 a log line that reports a requested value as though it were the assigned one is wrong whether
 or not a test reads it.
 
+## Phases
+
+The task list runs seven. They are here because a plan that does not name its phases cannot be
+compared with the task list that uses them — `sweep.py` reports `phase count: plan 0, tasks 7`
+and it is right.
+
+**Phase 1 — Setup.** Instruments forward, a record to write into, a lane whose state is known.
+
+**Phase 2 — Foundational.** Establish that the tree is green before anything is edited, so a
+later red is attributable.
+
+**Phase 3 — User Story 1, the test lanes.** 🎯 MVP. The evidence every other story rests on.
+
+**Phase 4 — User Story 2, the public boundary.** The review's two High findings.
+
+**Phase 5 — User Story 3, customer-caused refusals.** Coded refusals, event types, close codes.
+
+**Phase 6 — User Story 4, the records.** The ledger, the review, the migration decision, two
+clause amendments.
+
+**Phase 7 — Polish and close-out.** Coverage, ratchet, gaps, battery, gates, and the records
+that outlive the feature. Scoped to the stories that shipped.
+
 ## Complexity Tracking
 
 No constitution violations, before or after design. This table is empty by design.

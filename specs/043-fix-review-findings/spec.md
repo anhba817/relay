@@ -253,10 +253,13 @@ it is a label that misleads, which analysis pass 1 found for FR-024 and pass 3 r
 #### Records (Story 4)
 
 - **FR-020**: The specification's revision history MUST list entries in ascending version order.
-- **FR-021**: A gate MUST fail when a revision entry is out of order, **and it MUST read this
-  feature's own success criteria as well as the specification's revision ledger.** This list was
-  written out of order while the gate against out-of-order lists was being specified; a rule
-  worth enforcing on a published document is worth enforcing on the document demanding it.
+- **FR-021**: A gate MUST fail when the specification's revision ledger is out of order.
+- **FR-021a**: A gate MUST fail when this feature's own success criteria are out of order. This
+  list was written out of order while the gate against out-of-order lists was being specified,
+  so the rule is worth enforcing on the document demanding it. **Two gates, not one**: each
+  reads a file in the repository that owns it. A gate in the tutorial repository reaching across
+  into a feature directory of the parent would depend on a checkout layout it cannot assume and
+  on a path that dies when this feature closes.
 - **FR-022**: The review's finding about bot sends and quota exhaustion MUST be corrected to
   state what the code does.
 - **FR-023**: The repository MUST state that migrations are hand-written and reviewed against

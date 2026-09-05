@@ -32,7 +32,8 @@ sections 1 and 2; edit the task line that should cite the id and regenerate.
 | FR-018 | Every close code the platform can send MUST be documented in the published error reference, d… | T039 |
 | FR-019 | A gate MUST fail when a close code exists in the platform and not in the published error refe… | T040, T041 |
 | FR-020 | The specification's revision history MUST list entries in ascending version order. | T045, T054 |
-| FR-021 | A gate MUST fail when a revision entry is out of order, **and it MUST read this feature's own… | T046, T047 |
+| FR-021 | A gate MUST fail when the specification's revision ledger is out of order. | T046, T047 |
+| FR-021a | A gate MUST fail when this feature's own success criteria are out of order. This list was wri… | T046a, T047 |
 | FR-022 | The review's finding about bot sends and quota exhaustion MUST be corrected to state what the… | T048 |
 | FR-023 | The repository MUST state that migrations are hand-written and reviewed against the published… | T050 |
 | FR-023a | A check MUST fail if the retired generator's snapshot directory or its build step returns. | T050 |
@@ -68,9 +69,11 @@ directory, so that line had never been printed about this feature.
 
 **And the coverage claim it replaces was a reading, not a measurement.** Passes 1 through 8
 each reported 100% coverage, derived by mapping tasks to requirements by eye. The first
-mechanical count found **12 of 33 requirements and 3 of 13 criteria cited by id** in a task
-line. The rest were covered in fact and invisible to any tool. The tables above are what a
-tool can see.
+mechanical count, taken at pass 9 against the thirty-three requirements the spec held then,
+found **twelve cited by id in a task line, and three of thirteen criteria**. The rest were
+covered in fact and invisible to any tool. The tables above are what a tool can see, and the
+footer below is the current count rather than that one — **a historical measurement written as
+a bare number goes stale the next time the number moves**, which it did one pass later.
 
-    70 tasks · 33 requirements · 13 criteria
+    72 tasks · 34 requirements · 13 criteria
     0 ids with no verifying task

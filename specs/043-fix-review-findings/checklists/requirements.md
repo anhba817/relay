@@ -31,8 +31,17 @@
 
 ## Notes
 
-All items pass. The three [NEEDS CLARIFICATION] markers at FR-023, FR-024 and FR-025 were
-answered and became eight requirements:
+**Re-derived at the end of analysis pass 10, not at specification time.** This file said "All
+items pass" about a specification that had since gained three requirements and two criteria
+across ten analysis passes, and still described three `[NEEDS CLARIFICATION]` markers as the
+live state. A checklist that certifies a document it has not read is the defect it exists to
+catch.
+
+**Current counts**: 34 functional requirements, 13 success criteria, 72 tasks, traceability
+0 untraced.
+
+The three markers at FR-023, FR-024 and FR-025 were answered in the specification phase and
+became eight requirements:
 
 | Was | Answer | Now |
 |---|---|---|
@@ -40,25 +49,19 @@ answered and became eight requirements:
 | FR-024 | Split per assertion rather than move or stub the whole file | FR-024, FR-024a |
 | FR-025 | Amend the two clauses to state what the platform does | FR-025, FR-025a, FR-025b, FR-025c |
 
-**FR-025c is the guard the answer needed.** "Amend the clause" and "weaken the clause" are
-one edit apart, so the requirement fixes the measured behaviour as the upper bound on what
-an amended clause may permit. Without it, this feature could satisfy itself by writing a
-looser promise than the platform already keeps.
+**FR-025c is the guard that answer needed.** "Amend the clause" and "weaken the clause" are one
+edit apart, so the requirement fixes the measured behaviour as the upper bound on what an
+amended clause may permit.
 
-### Two iterations of the content check, and what the first one failed
+### What ten analysis passes added after this checklist was first written
 
-The first draft failed **"No implementation details"** in three places and they were
-corrected rather than argued:
+    FR-006a  the container-free lane must still exercise something
+    FR-021a  the ordering gate reads this feature's own criteria too
+    FR-026   the lane's port allocation is recorded where the next reader looks
+    FR-027   published material this feature falsifies is amended, per story
+    SC-012   the integration lane stays inside its budget, or the budget moves with a reason
+    SC-013   every one of the review's twenty-one rows carries an outcome
 
-- Requirements named files and functions (`assertWithinQuota`, `harness.ts`,
-  `connections.test.ts`). Moved to the Context and Edge Cases sections, where a reader needs
-  them to follow the argument, and out of the requirements, which have to be testable
-  against behaviour.
-- Success criteria named the test runner's cache file. Restated as "the runner's result
-  cache removed", which is the condition rather than the mechanism.
-- FR-019 said "extend the existing documentation checker". Restated as "a gate MUST fail",
-  which is the requirement; which checker grows is the plan's decision.
-
-The first draft also failed **"Scope is clearly bounded"**: it carried the review's thirteen
-roadmap and amendment items with no statement of whether they were in. Each is now either a
-requirement or a named assumption with a reason.
+**Two of those six were added with no task behind them** and caught one pass later. The
+requirement-to-task direction was checked from the first pass; the task-to-requirement
+direction was not checked until pass 3, and neither was checked mechanically until pass 9.

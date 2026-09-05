@@ -107,7 +107,7 @@ _here = pathlib.Path(__file__).resolve().parent.name
 _m = re.search(r"chapter-(\d+)-(\d+)$", _here)
 CHAPTER = f"{_m.group(1)}.{_m.group(2)}" if _m else "?.?"
 
-PATHISH = re.compile(r"[\w./<>-]+\.(ts|mts|mjs|md|txt|mdx|json|yaml)\b|`docs/|`pnpm |`git |`docker |`python3 |`grep |`sed |specs/|`relay-platform`|`relay-tutorial`")
+PATHISH = re.compile(r"[\w./<>-]+\.(ts|mts|mjs|py|sh|md|txt|mdx|json|yaml)\b|`docs/|`pnpm |`git |`docker |`python3 |`grep |`sed |specs/|`relay-platform`|`relay-tutorial`")
 # THE SUFFIX. This read `T(\d{3})(?![A-Za-z0-9])` and so could not see `T107a`,
 # `T012a`, `T031b` or `T047c` — real ids in this chapter's own task list, which
 # `TASK` twenty lines up accepts as `T\d{3}[a-z]?`. **Two patterns in one file

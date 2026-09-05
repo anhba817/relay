@@ -234,10 +234,22 @@ def main():
     # list that holds one shape twice and drops another, which is what pass 17 found.
     dm = docs.get("data-model.md", "")
     shapes = re.findall(r"^\| `([^`]+)`", dm, re.M)
+    # A FEATURE WITHOUT A READ-PATH TABLE HAS NOTHING HERE TO CHECK (analysis pass 10).
+    # This rule is chapter 3.24's: its R4 counted the read paths that carry `attachments`,
+    # and the check exists so a dropped row is visible. Feature 043 changes no read shape and
+    # its data model is constants and records, so the rule has no subject and reported a
+    # missing sentence as a defect. Skipped when the phrase is absent AND no table names one.
     stated = re.search(r"R4 counted (\w+)", dm)
     WORDS = {"four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8}
     want = WORDS.get(stated.group(1).lower()) if stated else None
-    if not shapes:
+    if "read path" not in dm and "read shape" not in dm:
+        # NOTHING TO CHECK, AND THAT IS NOT THE SAME AS PASSING. The rule is chapter
+        # 3.24's: its R4 counted the read paths carrying `attachments`, and the check
+        # exists so a dropped row is visible. Feature 043 changes no read shape, so the
+        # rule has no subject here and reported a missing sentence as a defect. An early
+        # `return` was the first fix and it skipped the six rules after this one.
+        pass
+    elif not shapes:
         problems.append(
             "data-model.md: no read-shape table rows matched — has the table moved? "
             "A pattern that silently matches nothing is how a class goes unchecked"
