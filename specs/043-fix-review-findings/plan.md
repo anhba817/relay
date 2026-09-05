@@ -190,12 +190,13 @@ already does it, and `gaps.md` 3.24-4 records that a fixed port collides always 
 while a random one collides sometimes.
 
 **This is now a judgement rather than a forced move.** Reverting to the cheaper repair means
-dropping T007, T008, T009 and T018a and keeping T010 — one paragraph here and four task lines,
-with no other artifact affected.
+dropping the two entry-point changes, the harness's port change and the published-prose sweep,
+and keeping the teardown fix — one paragraph here and four task lines, with no other artifact
+affected.
 
-**What that costs is paid explicitly rather than absorbed**: T008a registers the lane in the map
-before T009 changes it, and T018a amends the published prose — a milestone transcript and a
-published port map — that no gate can check.
+**What that costs is paid explicitly rather than absorbed**: the lane is registered in the map
+before the harness changes it, and the published prose it falsifies — a milestone transcript and
+a published port map — is amended, which no gate can check.
 
 **One design decision is worth naming because it looks like a violation and is not.**
 `main.ts` in two services changes so the child logs the port it bound rather than the port it

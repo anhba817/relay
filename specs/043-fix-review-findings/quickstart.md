@@ -27,7 +27,7 @@ they are in the record deliberately.
 
 ---
 
-## Scenario 1 — the lane is trustworthy (SC-001, SC-002, SC-003)
+## Scenario 1 — the lane is trustworthy (SC-001, SC-002, SC-003, SC-012)
 
 **Start from a cleared lane, and clear it with the command this feature adds:**
 
@@ -68,7 +68,18 @@ connection cap failing open because it cannot reach Redis.
 
     node scripts/stream-info.mjs
 
-**Expected**: the durable-consumer count is the same before and after.
+**Expected**: no durable consumer outlives the run. Ones a service creates in normal operation
+are not test debris and are counted separately.
+
+**Then the budget** (SC-012). Read the `@relay/e2e` duration line and the run's total against
+what was recorded before the change:
+
+    grep -h "Duration" /tmp/run-1.log | grep e2e
+
+**Expected**: the integration total inside 240 s. **Failing means a decision, not a retry** —
+raise the budget with this measurement attached, boot once instead of twice in
+`harness.itest.ts`, or bound the teardown wait lower. The budget does not move to match
+whatever the lane now costs.
 
 ---
 
@@ -162,7 +173,7 @@ See `contracts/close-codes.md`.
 
 ---
 
-## Scenario 7 — the records read true (SC-009, SC-010, SC-011)
+## Scenario 7 — the records read true (SC-009, SC-010, SC-011, SC-013)
 
     cd relay-tutorial && pnpm -s check:docs
 
@@ -176,7 +187,13 @@ above 1.4 in `docs/04-srs.md` — and confirm it fails.
 - FR-RTM-10 against ADR-20's stated bound, and FR-RTM-09 against ADR-23's fail-open
   behaviour. Each amended clause must describe what the platform does and no more (FR-025c).
 
-**No checker can do this one.** Every gate in this repository compares bytes.
+**Then the review itself** (SC-013). Open
+`docs/09-platform-implementation-review-2026-09-03.md` and count the rows carrying an outcome.
+
+**Expected**: twenty-one — ten current findings, three roadmap rows, and eight in "Part 3
+SRS/SAD/ADR amendment assessment". Each says closed and by what, or open and whose.
+
+**No checker can do any of this.** Every gate in this repository compares bytes.
 
 ---
 

@@ -216,10 +216,10 @@ page. The grouping is the index; the numbers are only keys.
   allocations, a paragraph describing behaviour — and it applies per story rather than once at
   the end, because the phase that breaks a claim is the phase that knows it.
 
-**Filed here rather than under a story, because three stories deliver it** — T018a in US1,
-T030 in US2 and T043 in US3. A requirement carrying one story's label while three stories
-discharge it is a label that misleads, which analysis pass 1 found for FR-024 and pass 3
-reintroduced here.
+**Filed here rather than under a story, because three stories deliver it** — the port-and-prose
+sweep in Verification, and the amendment step at the end of the public-boundary and
+customer-refusal stories. A requirement carrying one story's label while three stories discharge
+it is a label that misleads, which analysis pass 1 found for FR-024 and pass 3 reintroduced.
 
 #### Public boundary (Story 2)
 
