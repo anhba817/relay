@@ -129,10 +129,13 @@ listened.
 in the one place where somebody had already written the capture and only one caller used it.
 `3.22-6` below is the item that says why the shape stays invisible.
 
-**Owner: whoever next has a red e2e run.** The fix is two lines: await `exit` in `stop()` with a
-timeout, and derive the port from the worker id the way the gateway lane already does. Neither
-needs a decision; both need somebody to be looking at the right file, and the reason nobody has
-been is the item below.
+**Owner: whoever next has a red e2e run.** The first line of the fix is to await `exit` in
+`stop()` with a timeout instead of sleeping 200 ms. **The second is not "do what the gateway lane
+does"** — `session.itest.ts:133` draws `4400 + Math.floor(Math.random() * 200)`, four times a run,
+which chapter 3.23's `baseline.txt` measured as self-colliding 2.96% of the time. A fixed port
+collides always under contention and a random one collides sometimes; **only binding port 0 and
+reading the assignment back cannot collide at all**, which is what `main.test.ts:19` does and what
+`3.22-2` below says nothing tests. The reason nobody has fixed either is the item after that one.
 
 ## 3.24-5. THE INTEGRATION LANE ACCUMULATES STATE UNTIL IT CANNOT PASS — NEW, OPEN
 
