@@ -137,8 +137,14 @@ been is the item below.
 ## 3.24-5. THE INTEGRATION LANE ACCUMULATES STATE UNTIL IT CANNOT PASS — NEW, OPEN
 
 Found by running the close-out's coverage lane and getting fifteen failures, every one of them a
-delivery that never arrived. **The lane was not broken by this chapter; it had been filling up
-for nine days.**
+delivery that never arrived. **Fifteen failures, two causes** — and the first hypothesis explained
+both, which is why it had to be tested rather than believed. The nine in
+`services/dispatcher/src/dispatcher.itest.ts` are this item. The six in
+`services/api/src/consumer/consumer.itest.ts` are a defect this chapter introduced, and clearing
+the broker reproduced them **identically** — the same six tests, 484189 ms against 484245 ms —
+which is what said they were not environmental. `baseline.txt` carries that half.
+
+**This half was not broken by this chapter; it had been filling up for nine days.**
 
     DELIVERIES stream          56,193 messages       216 consumers
     EVENTS stream              18,778 messages         1 consumer
@@ -176,10 +182,20 @@ consecutive integration runs. Each one adds deliveries and durables, so the lane
 measures is not the lane the first one measured. A mean taken across a battery that degrades as it
 proceeds is a mean over a moving instrument.
 
-**Owner: whoever owns the lane, which is nobody.** Three fixes, cheapest first: give
-`dispatcher.itest.ts`'s durables `DeliverPolicy.New`; delete the durable in `afterAll` rather than
-only tracking it in `spawnedDurables`; and add the reset the repository does not have —
-`scripts/` can read this state (`stream-info.mjs`) and cannot clear it.
+**The fix for the biggest half is already written, in the file next door.**
+`services/api/src/consumer/consumer.itest.ts:201` deletes its durables in `afterAll`, and its own
+comment says why: *"without this, every run of this suite left another handful behind on a shared
+broker, and `stream-info.mjs` found twelve of them the first time it looked."* Chapter 3.4 learned
+that at twelve. `services/dispatcher/src/dispatcher.itest.ts:407`'s `afterAll` stops the
+dispatcher, drains the connection, kills the child and closes two endpoints — and deletes neither
+`itest-expand-${run}` nor `itest-deliver-${run}`. **That is where 215 of the 216 came from**, and
+the lesson was available in a sibling file for twenty chapters.
+
+**Owner: whoever owns the lane, which is nobody.** Three fixes, cheapest first: delete the two
+durables in `dispatcher.itest.ts`'s `afterAll`, the way `consumer.itest.ts` already does; give
+that suite's durables `DeliverPolicy.New`, so a dirty stream cannot starve a fresh run; and add
+the reset the repository does not have — `scripts/` can read this state (`stream-info.mjs`) and
+cannot clear it.
 
 ---
 

@@ -2309,3 +2309,48 @@ pages, and re-checked:
 
 **Run `check:fences` after ANY task that edits a source file in phase 12**, not only after the
 ratchet. The audit that removes a task id from a title is a source edit like any other.
+
+### THE ARGUMENT THAT WAS RIGHT ABOUT THE PRODUCER AND INVERTED ABOUT THE READER
+
+The coverage lane's second attempt, on a broker with three empty streams and no orphaned
+consumers, reproduced `consumer.itest.ts`'s six failures **identically** — the same six tests,
+484189 ms against 484245 ms. **An identical failure on a cleaned environment is not the
+environment.**
+
+`services/api/src/outbox/event.ts` gave both message branches of `outboxEventSchema` a REQUIRED
+`attachments` array, and `MessageCreatedData` above it carries this argument for it:
+
+    NOT OPTIONAL. `consumer/runtime.ts` answers a failed parse with `message.term()`,
+    which stops redelivery for good — so a branch that has not been widened is a row
+    destroyed rather than retried, and an optional field hides the day that happens.
+
+**That sentence is correct about the interface and inverts about the schema.** The interface types
+what this api BUILDS: required is what makes the compiler name every branch a new field must
+reach. The schema reads bytes off a durable queue, and on the deploy that ships this chapter some
+of those bytes were written by the binary that ran before it. A required field there answers such
+a message with `message.term()` — **every in-flight `message.created` and `message.updated`
+destroyed, not retried**, which is precisely the failure the file's own header describes and the
+reason that header exists.
+
+The fixtures that caught it are two files that build the payload the old binary built:
+
+    services/api/src/consumer/consumer.itest.ts:46   data: { id, channel_id, seq, user, text, created_at }
+    scripts/consumer-walk.mjs:75                     the same six keys
+
+Neither was updated in eleven phases, and **neither should have been** — between them they are the
+only thing in the repository that spells a pre-3.24 event, and they are why this was found before
+the tag rather than after a deploy.
+
+**Fixed by `.default([])` on both branches**, with the producer's interface left required. Two
+tests were added to `event.test.ts`: a `message.created` and a `message.updated` with the key
+absent parse and yield `[]`, and an `attachments: "none"` is still refused — because tolerance for
+an ABSENT key must not become tolerance for a wrong value.
+
+    services/api/src/outbox/event.test.ts       30 passed
+    services/api/src/consumer/consumer.itest.ts 10 passed   484 s -> 101 s
+    services/dispatcher/src/dispatcher.itest.ts 16 passed    73 s
+
+**Eleven analysis passes and eleven phases did not find it, and the reason is written in the same
+file**: the api's own suite runs `RELAY_EVENT_CONSUMER=off`, so nothing exercises the consumer.
+That is the sentence chapter 3.23 wrote after the same file destroyed a `channel.member_added`.
+**The lane that can see it is the coverage lane, and the coverage lane is a close-out task.**

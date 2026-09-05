@@ -41,7 +41,8 @@ estimated from arguments and came in 21% over at 583 each; 3.23 predicted 420 on
 that arguing against published material costs more, and came in at 545 — a 9% drop where the
 model predicted 28%. The instruction is to use 545 and stop modelling the subject.
 
-**Nine arguments**, and naming them is the point:
+**Ten arguments.** Nine were planned and the tenth was found by the close-out's coverage lane,
+after the estimate and after the prose. Naming them is the point:
 
      1  A required field is worth four production sites and 29 test ones — and the three it
         cannot name are the ones that cost the most, because `parse` takes `unknown`.
@@ -57,7 +58,27 @@ model predicted 28%. The instruction is to use 545 and stop modelling the subjec
      8  A deletion's payload carries no attachment field for the reason it carries no text.
      9  Two doors, two codes, one bound — and a test that asserts only "it was refused"
         cannot tell a working bound from a dropped field.
+    10  Required is a claim about what you WRITE. A reader of anything durable cannot
+        require a field its writer did not have — and applying argument 1 to the outbox
+        read schema answered every in-flight event with `message.term()`.
 
     9 x 545 = 4,905 words, and the estimate is that number rather than a range.
 
 3.23 came in at 3,269 words for six arguments (545 each). This chapter has nine.
+
+**MEASURED AT CLOSE-OUT: 2,776 words, and the estimate was 77% high.**
+
+    estimated   9 arguments x 545      4,905
+    written    10 arguments             2,776       278 per argument
+
+**The rate is not a constant, and three chapters of pretending it is have now produced a 21%
+overshoot, a 9% miss and a 77% one.** What separates them is what the argument is made OF.
+3.22 and 3.23 argued from published documents and from reasoning, and prose is the only way to
+carry either. This chapter's evidence is compiler output, a diff and a test name — 33 errors
+listed, a fence replayed, six tests named — and a reader who can see the list does not need the
+paragraph that describes it.
+
+**So estimate 545 per argument made of prose and roughly 280 per argument made of artifacts**,
+and say which kind each argument is when the estimate is written. The tenth argument is worth
+noting here for a different reason: it arrived after the prose was finished and after this
+estimate was taken, because the instrument that found it is a close-out task.
