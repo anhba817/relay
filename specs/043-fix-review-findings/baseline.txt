@@ -521,3 +521,43 @@ teardown wait lower" is the one the numbers chose. The other two were "raise the
 
 **Result: 20 of 20 green on the first fix, 10 of 10 on the bounded one**, against a baseline that
 alternated green and red twice in a row and against chapter 3.24's battery of 9 green in 20.
+
+**T011 — the boot-stop-boot test, and its first version proved nothing.**
+
+Written as: boot, stop, boot again, and check the second system answers a real request —
+because `boot()` ends in a health check and a dying predecessor answers one perfectly well.
+Every red run of chapter 3.24's battery printed `api up on 4100` exactly like a green one.
+
+**Then it was red-probed against the old teardown and stayed GREEN.** With `PORT=0` the second
+boot gets a different port, so there is nothing left to collide with: the test was asserting
+T009's change and not T010's, under a name that claimed otherwise.
+
+The assertion that fixes it probes the port the FIRST system held, immediately after `stop()`
+returns:
+
+    await expect(fetch(`${firstUrl}/healthz`)).rejects.toThrow();
+
+Red probe against the 200 ms sleep, second attempt:
+
+    AssertionError: promise resolved "Response { status: 200, statusText: 'OK' … }"
+
+**The api was still answering after `stop()` had returned**, which is the defect stated as an
+assertion. `stop()` promises its children are gone; that is the property, and the port is how a
+test can see it.
+
+**T012 — the dispatcher suite deletes the durables it names.** It created
+`itest-expand-<8 hex>` and `itest-deliver-<8 hex>` per run and deleted neither.
+`consumer.itest.ts:201` has done exactly this since chapter 3.4, and its comment says why:
+*"without this, every run of this suite left another handful behind on a shared broker, and
+`stream-info.mjs` found twelve of them the first time it looked."* **The fix was written in the
+file next door for twenty chapters and never applied here** — chapter 3.24's close-out counted
+216 consumers on DELIVERIES, 215 of them this file's.
+
+    dispatcher suite: 16 passed · durable consumers before 0, after 0
+
+**T013 — the premise was wrong and the task is a no-op.** It asks for `DeliverPolicy.New` on
+this suite's own durables. `dispatcher.itest.ts:393` and `:629` already pass it, and have since
+the suite was written; what uses `DeliverPolicy.All` is `services/dispatcher/src/main.ts:86`,
+the PRODUCTION default, which is correct there and not this feature's business. **Checking a
+task's premise costs less than executing it** — the third of this repository's ranked mechanisms,
+and the second time this feature has hit it.
