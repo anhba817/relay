@@ -1990,3 +1990,46 @@ Given the describe its own `created()` rather than exporting the other one.
 
 Three times, and the compiler caught all three before any of them ran. What it cannot catch is
 the reverse — a helper that exists in scope and does something subtly different.
+
+## PHASE 10 — THE DOCUMENTS, AND TWO GATES CLOSED
+
+    check-prose   exit 0 — GREEN for the first time this chapter, red since planning
+    check:errors  exit 0 — GREEN, red on purpose since phase 6
+    21 codes, 21 sections, each with a cause and a client action
+
+### T061 CLOSED BOTH PROSE CLAIMS, NOT ONE
+
+The task names `frames.ts`, whose comment scheduled attachments for Part 4 while FR-MSG-11 is
+P2 — a sentence wrong for two parts, in the file that publishes the contract, and no checker
+reads prose. Its replacement also separates two facts the old one ran together: editing and
+deletion are absent from `messageSchema` for a different reason than metadata, because 3.23
+gave them their own frames rather than fields.
+
+The second claim was pass 15's, in `messages.controller.ts`: *"the same schema family … so the
+REST body and the WebSocket frame payload cannot drift."* Phase 4 disproved it a third time.
+The replacement says what is actually true — **what keeps them together is a shared DEFINITION
+each applies, not a family resemblance** — which is the sentence this chapter earned by putting
+`refineTextAndAttachments` on three schemas.
+
+### T062 — THE SUBSTANCE WITHOUT THE MARKER
+
+The section had a cause, a client action and 900 characters of argument, and the gate refused
+it: `media_not_available does not say what a client should do`. It looks for the literal
+`**What to do:**`. I wrote the advice as prose and the machine-readable half was missing —
+which is precisely what a gate over a published reference is for, and a good demonstration
+that "I said it" and "the format says it" are different claims.
+
+### T063 — THE SAD's SECOND OMISSION IN THE SAME TABLE
+
+§6.1 declares `attachments JSONB` and the document said nothing about it — one column across
+from `metadata`, which chapter 3.23 filled for the same reason. The new note carries the
+NULL-versus-`[]` decision, the no-bytes-cross-compute premise, the two bounds and their
+product, and **a table of what each of the six read paths does with the column**, which is
+SC-006 in the form the criterion asks for.
+
+### AND THE MIRROR DOES NOT CARRY EVERYTHING, WHICH T065 PREDICTED
+
+`pnpm sync:docs` synced 04, 05, 06 and 08. `07-tutorial-plan.md` is NOT mirrored, and T065's
+own text says so — "`sync-docs.sh` does NOT publish that file, its own comment explains why at
+length." Verified rather than assumed: the three edited documents are byte-identical to their
+mirrors and the fourth is deliberately absent.
