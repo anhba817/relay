@@ -42,8 +42,10 @@ findings ABOUT the analysis and would not survive to close-out otherwise.
           run together for the first time?                   3      3
      11   pass 10 derived a rule and did not apply it —
           what do the deferred complaints actually say?      3      3
+     12   what do the fourteen GREEN gates not check,
+          and whose claims live in that gap?                 3      3
     ----  ---------------------------------------------  -----  -----
-                                                           52     50
+                                                           55     53
 
 **PASS 7 IS THE FIRST WHOSE MAIN RESULT IS PARTLY NEGATIVE.** Four decomposition hypotheses
 went in and two died on reading the goal statements: FR-023 is not misfiled in Story 4,
@@ -297,3 +299,50 @@ that turned out to be one stale exemption; the rest was this feature's own docum
 incomplete, reported accurately, on every run since pass 9.
 
 **All fourteen gates are green for the first time.**
+
+### WHAT FOURTEEN GREEN GATES DO NOT CHECK
+
+Every instrument here prints its own limit on its last line, every run, and that line is
+discarded every time. **The union has never been written down**, and the union is the thing a
+reader of fourteen zeros most needs:
+
+    check-refs          ids exist and are sequential      NOT whether the prose is true
+    sweep               counts and headings agree         NOT whether the prose is TRUE
+    check-prose         superseded sentences are gone     NOT whether replacements are true
+    check-quickstart    every criterion is named          NOT whether the expectation is true
+    check-checklist     every reference is enumerated     NOT whether a ticked box is true
+    regen-traceability  every id is cited                 NOT whether the mapping is right
+    check-fence-chain   241 titled fences replay          NOT the 146 untitled ones
+    check-docs-drift    7 mirrored docs match             NOT the other documents
+    check:srs           245 ids unique by class           NOT what any clause says
+    check-error-codes   21 codes have 21 sections         NOT whether a section is correct
+    check-figures       264 diagrams parse                NOT whether a diagram is right
+
+**Not one of them reads a claim.** Twelve analysis passes drove this feature to fourteen zeros,
+and what those zeros say is that the bytes agree.
+
+Two of this feature's requirements sit entirely inside that union and both say so: FR-025c —
+neither amended clause may permit more than the platform already does — and SC-010, every
+statement in the review matching what it cites. Each is discharged by a person reading two
+paragraphs, and SC-010 now carries an `**Expected**` line for exactly that reason: **a criterion
+nothing can automate still needs a stated expectation, or the reader knows what to read and not
+what would count as wrong.**
+
+**AND THAT IS THE ARGUMENT FOR THE ITEM THIS FEATURE ALMOST DROPPED.**
+`specs/036-chapter-3-18/reader-protocol.md` — 45 minutes, six questions, one person who has not
+read the work. Chapters 3.14 through 3.24 each carried it forward and none closed it. T060 said
+to carry "five items and the seventeen before them", which is 22, and the predecessor's file
+holds 23. **The twenty-third would have been lost to arithmetic rather than to a decision**,
+which is how an item with no owner finally disappears.
+
+The three questions this feature would most want asked, if somebody ran it:
+
+    1  Read the webhook contract and say what happens if a customer subscribes to
+       `channel.created`. If the answer is "it is refused", the contract buried its point —
+       741 stored subscriptions name it and the whole design turns on accepting them.
+    2  Read FR-006 and FR-006a together and say what would satisfy the first and violate the
+       second. If that is not immediately obvious, the pair is doing no work: FR-006 alone is
+       satisfiable by emptying the lane.
+    3  Look at the port decision in `plan.md` and say whether it is a measurement or a
+       judgement. It is a judgement, it says so, and it was a measurement until analysis
+       pass 5 read one line of `package.json`.
