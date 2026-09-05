@@ -2113,3 +2113,174 @@ and `code`, and the caption IS the accessible text, which is why there is no `al
 `check:figures` said so in those words: *"diagram passed as `src`, which Figure ignores"*.
 The count still rose correctly to 264, because the gate counts declarations rather than
 working ones.
+
+## PHASE 12 — CLOSE-OUT
+
+### T079 — THE TITLE AUDIT FOUND 33 TASK IDS AND ONE FALSE TITLE
+
+    56 new tests across nine files
+    33 task-id mentions in titles, stripped        24 `it(` titles and 7 `describe(` ones
+    44 requirement ids in titles, kept             those are right and task ids are not
+     1 title claiming more than its assertion
+
+**Chapter 3.22 corrected one and wrote the rule down. Chapter 3.23 wrote fifty-two and its
+own audit stripped them. This chapter wrote thirty-three.** Three chapters in a row have
+written the defect the record warns about, in the same place, and caught it in the same task.
+The rule is not the problem — a task id reads like useful provenance while the task exists,
+and the audit is the only thing that has ever removed one.
+
+### AND THE FALSE TITLE WAS HIDING A ROUTE THAT DOES NOT EXIST
+
+The tombstone test was titled *"returns a tombstone with no attachments on every read that
+carries them"* and asserted **one** of three carriers — inside two conditionals:
+
+    if (listing.status === 200) {
+      if (row?.last_message !== undefined) {
+        expect(row.last_message).not.toHaveProperty("attachments");
+
+Removing the conditionals turned it red: `expected 404 to be 200`. **There is no
+`GET /v1/channels` route.** `channels.controller.ts` exposes `GET /v1/channels/:channelId` and
+nothing that lists them, so the preview is not reachable over REST at all — and the `if` had
+turned a request to a non-existent route into an assertion that silently did not run.
+
+A universal claim over a conditional assertion of one case in three. The title is now what the
+test does, the conditionals are gone, and the missing route is recorded at the site.
+
+### T084 — THE CREDENTIAL SCAN, PATTERNS AND CLASSIFICATIONS
+
+Nine patterns, widened past the examples in front of them rather than fitted to them:
+
+    rk_[a-z]{2,}_[A-Za-z0-9_]{8,}        this platform's own key shape, any service prefix
+    sk-[A-Za-z0-9]{16,}                  the OpenAI/Stripe shape
+    AKIA[0-9A-Z]{16}                     AWS access key ids
+    ghp_[A-Za-z0-9]{20,}                 GitHub personal tokens
+    -----BEGIN [A-Z ]*PRIVATE KEY        any PEM private key, any algorithm
+    [A-Za-z0-9+/]{40,}={0,2}             anything base64-shaped and long
+    password\s*[:=]\s*["'][^"']{6,}      an assigned literal, not the word
+    secret\s*[:=]\s*["'][^"']{6,}        the same
+    Bearer\s+[A-Za-z0-9._-]{20,}         a token in a header
+
+    relay-platform    0 hits across all nine
+    relay-tutorial    0 hits across all nine
+    relay (root)     50 hits, every one classified below
+
+**Every root hit, classified:**
+
+     4  `rk_svc_local_development_credential_0000`, `…gateway_00000` — the lane credentials
+        pinned in `quickstart.md` and `baseline.txt` since planning. Local development
+        values, seeded by the compose stack, and deliberately in the record so a reader can
+        run the chapter.
+     2  `RELAY_WEBHOOK_SECRET_KEY=BpDal75yBZp7…` — the same, and the same reason.
+    44  long file paths. `[A-Za-z0-9+/]{40,}` matches a path with a run of forty characters
+        and no other separator, and `services/api/src/messages/messages.controller.ts` is
+        one. **A false positive rate of 44 in 46 on that pattern**, which is the pattern
+        doing its job: narrowing it to exclude paths would be fitting it to this diff.
+
+**And the scan matched its own paragraph.** Writing the pattern list into this file put nine
+regexes into the next diff, so the next chapter's scan will hit them — which is expected and
+worth saying, because a scan whose own record trips it looks like a finding for one command.
+
+**One process note.** The first run of this scan looped over `relay-platform` and
+`relay-tutorial` and **skipped the root repository entirely** — where all 50 hits are. A scan
+that covers two of three repositories and reports "0 hits" is the shape of a clean result. The
+loop was written from the two submodules because that is where the code is, and the records
+are where the credentials are.
+
+Also: `grep -E '-----BEGIN …'` is parsed as options, not a pattern. It needs `-e`, and without
+it the command errors and prints nothing — which reads like zero hits in a table of zeros.
+
+### T083 — THE QUOTED-TITLE CHECK HAS NO SUBJECT, AND THAT IS THE FINDING
+
+The task says to re-derive traceability "checking **every quoted test title as an exact
+string** rather than by eye." Measured:
+
+    041-chapter-3-23/traceability.md   173 lines, 0 quoted strings of 20+ characters
+    042-chapter-3-24/traceability.md   106 lines, 0
+
+**Neither chapter's traceability file quotes a test title.** The instruction describes a
+hazard that was real when somebody hand-wrote a map — 3.23's own record says the map was
+retyped three times with three different bugs before `regen-traceability.py` existed — and the
+generator that replaced it emits ids and counts, never prose. So the check passes vacuously,
+and a task that passes vacuously reads exactly like a task that passed.
+
+What IS verified, in both directions:
+
+    every requirement and criterion in spec.md has a task    27 + 6, 0 untraced
+    every task-cited id exists in spec.md                    the reverse loop pass 11 added
+    118 tasks, ids sequential, letters contiguous            no undeclared ids outside tasks.md
+
+The instruction should name the generator rather than a hand-written map. Recorded here rather
+than edited into the task, because the task is what the next chapter copies forward.
+
+### T085 — THE CARRIED ITEMS, RE-MEASURED, AND THREE NUMBERS CAME BACK DIFFERENT
+
+`gaps.md` carries chapter 3.23's nine and chapter 3.22's eight. Each was re-run against the
+tree. **Fourteen of the seventeen came back exactly as recorded.** The three that did not:
+
+    3.23-6  drizzle-kit's snapshot     recorded SIX behind, tree says SEVEN
+    3.22-3  excerpt-only chains        recorded TWO files, tree says TEN
+    3.22-6  children whose output      recorded NINE files, tree says ELEVEN
+            is discarded
+
+**None of the three is a regression, and that is the uncomfortable part** — every one was
+already wrong on the day it was written.
+
+- `3.23-6` was measured before that chapter added `0014_message_edits.sql`. The item said the
+  directory ended at `0013_bot_users.sql`; the chapter that owned the item put a file after it
+  and tagged without re-reading. **A measurement taken mid-chapter is stale by close-out.**
+- `3.22-3` said two files and named the two the gateway teaches. Splitting every English
+  chapter's fence titles into real chains and excerpt-only ones gives ten real repository
+  paths, and **this chapter edited three of them** (`fanout.itest.ts`, `idempotency.itest.ts`,
+  `session.itest.ts`).
+- `3.22-6` said five, `3.23` re-counted nine by grepping for a spawn with discarded output.
+  Counting what each of the eleven does with what it captures splits them three ways, and the
+  middle group — captured, surfaced on exactly one failure path — is the one that produced
+  this chapter's `3.24-4`.
+
+**Two was the gateway's count, not the repository's, in both `3.22-3` and `3.22-6`.** The same
+error, in the same document, one item apart, and neither was caught by carrying the item
+forward twice.
+
+### T080 — THE COVERAGE LANE WENT RED BEFORE IT MEASURED ANYTHING
+
+First attempt: fifteen failures across `consumer.itest.ts` (6 of 10) and `dispatcher.itest.ts`
+(9 of 16), and **no `coverage-summary.json` at all**, because the run writes no report when a
+test fails. `consumer.itest.ts` alone took 484 s — chapter 3.23's record for the WHOLE lane is
+462 s.
+
+Every failure said the same thing in different words: a message was published and never
+arrived. `expected 0 to be greater than 0`, `expected [] to have a length of 1`, and one
+120-second timeout.
+
+**The machine was idle** — load average 0.35, one vitest worker, one api child — so it was not
+contention, and `find services/api/src packages/protocol/src -newer services/api/dist/main.js`
+returned nothing, so it was not a stale `dist`. Asking the broker answered it in one command:
+
+    DELIVERIES        56,193 messages    216 consumers
+    EVENTS            18,778 messages      1 consumer
+    dispatcher-deliver   pending 38,599   ack_pending 100 (= MAX_ACK_PENDING)
+    itest-deliver-*      pending ~56,000 each, 215 of them
+    webhook_deliveries   pending 28,650 · dead 27,563 · delivered 7,091
+                         27,847 due now, oldest row 2026-08-27
+
+Nine days of test runs. `gaps.md` item `3.24-5` carries the three mechanisms and the owners.
+Cleared with the user's approval, and the second attempt ran on:
+
+    ANALYTICS      0 -> 0 messages,   0/0   consumers removed
+    DELIVERIES  56,193 -> 0 messages, 216/216 consumers removed
+    EVENTS      18,778 -> 0 messages,   1/1 consumer removed
+    webhook_deliveries   DELETE 28,650   (state='pending' AND created_at < now() - 30 min)
+
+**Feature 030's guard refused the DELETE the first time**, naming a sentinel row planted by
+`services/api/src/messages/messages.itest.ts` that belongs to no test. That is the guard doing
+exactly what it was built for, and it is also a measurement nobody asked for: **bait outlives
+the run that plants it.** The statement went through under `SET relay.allow_global =
+'webhook_deliveries'`, which is the exemption's intended use — a deliberate global operation
+naming its table.
+
+**The lesson is about the instrument, not the broker.** The test's failure message is
+`expected 0 to be greater than 0`. Nothing in the output of a red run points at the stream, and
+`scripts/stream-info.mjs` — which reads exactly this state — is not mentioned by any failure
+message in either suite. A lane that can be wedged by its own successful runs, and that reports
+the wedge as an assertion failure, is a lane whose exit code answers a different question on
+day nine than it did on day one.
