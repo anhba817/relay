@@ -2033,3 +2033,83 @@ SC-006 in the form the criterion asks for.
 own text says so — "`sync-docs.sh` does NOT publish that file, its own comment explains why at
 length." Verified rather than assumed: the three edited documents are byte-identical to their
 mirrors and the fourth is deliberately absent.
+
+## PHASE 11 — THE FENCE EXPOSURE, MEASURED BEFORE GENERATING (T072)
+
+    files this chapter touched          36
+    of those, already fenced somewhere  29   <- these must appear, or check:fences stays red
+    touched and unfenced                 7   <- a choice, listed in chapter-notes.md
+
+    chain references in (en)            193 across the 29
+    chain references in (vi)            193   — the locales agree, which is what T074's
+                                              verbatim-reuse rule is there to keep true
+    files whose chain lives ONLY in an appendix   0
+
+**Zero is the number that matters.** The fence-chain rule says a file whose chain lives
+entirely in the appendix cannot be fenced by a chapter — none here is in that state, so every
+one of the 29 can take a diff hunk from this chapter's page.
+
+**And the two locales carry the same 193 references.** T074 builds the Vietnamese page by
+splitting the English one on the fence regex and reusing the blocks verbatim, which is the only
+way that stays true: regenerating against the tree would produce a diff against a file the
+English page has already fenced.
+
+## PHASE 11 — THE CHAPTER
+
+    241 fenced files across 41 chapters, 41 translated, fences mirrored   (was 240/40)
+    264 figures, every diagram passed as `code`                           (was 254)
+    2,498 words against an estimate of 4,905 — 49% UNDER
+
+### THE WORD ESTIMATE MISSED BY HALF, AND THE MODEL IS THE THING TO FIX
+
+    3.22    estimated from arguments, came in 21% OVER at 583 each
+    3.23    predicted 420 on a theory about subject matter, came in at 545
+    3.24    predicted 545 x 9 arguments = 4,905, came in at 2,498 — 278 each
+
+Chapter 3.23's instruction was "estimate at 545 per argument and stop adjusting for what the
+argument is against." This chapter followed it and missed by half in the other direction.
+
+**The variable the model does not have is how much of an argument is CODE.** 3.23's six
+arguments were about a grammar and a predicate — prose carries them. This chapter's nine are
+about a compiler's output, a lane's output, and a diff: the tally of 33 errors, the three
+schema names, the three drop points, the four falsification results. Each is a few lines of
+fence or a table and a sentence of consequence, where 3.23 needed a paragraph of argument to
+reach the same place.
+
+**545 per argument is a prose rate, and it should be applied to prose arguments.** The honest
+form of the model has two rates and this chapter has not measured the second one — one
+data point is not a rate. What can be recorded is the observation: an argument whose evidence
+is a command's output is roughly half the words of one whose evidence is reasoning.
+
+### THE FENCE CHAIN'S FIRST RULE, HIT EXACTLY
+
+    [APPLY] hunk pre-image matched 2 times (need exactly 1)
+            — starts "      seq: z.number().int().positive(),"
+
+`outboxEventSchema` restates the creation and edit branches identically ON PURPOSE — FR-008a
+is the requirement that they not drift, and the comment says a shared variable would hide a
+change to one. So a `-U3` diff of the two branches produces a hunk whose three lines of
+context appear twice. **Three lines of context suffice when uniqueness is CHECKED**, and it
+was: regenerated at `-U6` after verifying every hunk's pre-image appears exactly once in the
+predecessor's file.
+
+### AND THE MIRROR BROKE ON A MISSING NEWLINE
+
+    ```Hai mươi mốt file còn lại là cái giá của quyết định…
+
+The Vietnamese page is assembled by splitting the English one on the fence regex and
+substituting only the prose segments, so the fences are byte-identical BY CONSTRUCTION. One
+substituted segment lost its leading `\n\n` and welded itself onto the preceding fence's
+closing backticks — which the checker caught as *"fence list differs"* rather than as a
+malformed fence, one level away from the cause.
+
+The English part's own prefix was the answer: `'\n\nThe remain'`. Reading what the original
+segment started with cost one command; guessing at the cause cost two.
+
+### `Figure` TAKES `code`, NOT `src`
+
+Ten figures written with `src=` and `alt=`, which the component ignores — it takes `caption`
+and `code`, and the caption IS the accessible text, which is why there is no `alt`.
+`check:figures` said so in those words: *"diagram passed as `src`, which Figure ignores"*.
+The count still rose correctly to 264, because the gate counts declarations rather than
+working ones.
