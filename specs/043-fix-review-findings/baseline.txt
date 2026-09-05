@@ -34,8 +34,10 @@ findings ABOUT the analysis and would not survive to close-out otherwise.
       6   what does this look like to a reader who has
           seen none of these reports?                        4      4
       7   are the four stories the right four?               3      3
+      8   is the review — the feature's INPUT — fully
+          consumed?                                          3      3
     ----  ---------------------------------------------  -----  -----
-                                                           37     35
+                                                           40     38
 
 **PASS 7 IS THE FIRST WHOSE MAIN RESULT IS PARTLY NEGATIVE.** Four decomposition hypotheses
 went in and two died on reading the goal statements: FR-023 is not misfiled in Story 4,
@@ -150,3 +152,36 @@ publishes its proof of a working run as a bare ```text transcript — `api up on
 numbers ephemeral. **The milestone's own evidence is outside every gate here.** T018a is
 the only thing that amends it, and T018a exists because pass 2 grepped for `4100` rather
 than trusting the chain.
+
+
+### PASS 8 — THE INPUT MAP NOBODY HAD DRAWN, AND A CLASS NOBODY HAD COUNTED
+
+Seven passes checked this feature's internals. The eighth checked what it was built from.
+
+    review group          items   covered by a requirement   deferred by a named assumption
+    ------------------    -----   ------------------------   ------------------------------
+    current findings         10                          9   1  audit log -> chapter 4.7
+    roadmap rows              3                          0   3  Part 4 and later
+    amendment concerns        8                          4   4
+    ------------------    -----   ------------------------   ------------------------------
+                             21                         13   8
+
+**Nothing is silently dropped**, and that is the first clean result eight passes have
+produced about anything structural.
+
+**146 OF 904 PUBLISHED CODE FENCES ARE OUTSIDE EVERY GATE.** `check-fence-chain.mjs:77`
+collects a fence only if it matches `title="…"`. Across the 41 English chapter pages: 758
+titled and **146 untitled**, and an untitled fence is never collected and never compared to
+anything. `gaps.md` 3.22-3 records excerpt-only chains, which are skipped *by* title; this is
+one step further out and had never been counted.
+
+Six passes discussed `part-2/chapter-08`'s milestone transcript as a one-off. It is 0.7% of a
+class, and it was only ever noticed because pass 2 grepped for a port number rather than
+trusting the chain. **T018a repairs one of the 146. T060 now opens the class as a gap.**
+
+**And two counts of the review were wrong in the artifacts that count it.** `T060a` said "every
+finding", which reaches ten of twenty-one rows — the review's second table calls its rows
+*concerns*, and this feature closes four of them. The assumption block said "the five amendment
+concerns not named in a requirement" and listed four. That second one is the defect chapter
+3.24 recorded against its own C8 — *"it says 'a fourth instrument' and 'all four were
+improved', then lists three"* — committed in the feature whose `baseline.txt` cites it.

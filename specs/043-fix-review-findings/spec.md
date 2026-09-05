@@ -315,9 +315,11 @@ reintroduced here.
   teardown that waits for a process to exit is slower than one that sleeps a fixed 200 ms, and a
   suite that boots twice to prove the teardown works is a suite the lane did not run before. The
   most recent battery's slowest green run left 5.39 seconds of headroom.
-- **SC-013**: Every finding in the review is marked with what happened to it — closed, and by
-  what; or open, and whose it is. **A reader of the review learns the feature's outcome from the
-  review**, not by cross-referencing a task list.
+- **SC-013**: Every row of the review is marked with what happened to it — closed, and by what;
+  or open, and whose it is. **All twenty-one**: ten current findings, three roadmap rows, and the
+  eight the review files under "Part 3 SRS/SAD/ADR amendment assessment", which it calls
+  *concerns* rather than findings and which this feature closes four of. **A reader of the review
+  learns the feature's outcome from the review**, not by cross-referencing a task list.
 
 ## Assumptions
 
@@ -333,7 +335,8 @@ reintroduced here.
 - **Concurrent edit and delete keep their current behaviour.** Both orderings end in a
   tombstone, which the existing record already establishes; what is missing is the test, and
   FR-007 asks only for the test.
-- **The five amendment concerns not named in a requirement are deferred with a reason**: the
+- **The four amendment concerns not named in a requirement are deferred with a reason** —
+  eight in the review, four answered by FR-020, FR-021, FR-022, FR-025 and FR-025a, four here: the
   client-side typing expiry needs a published client contract that does not exist yet; missed
   revisions need a repair trigger that is a protocol change; consolidating the real-time
   subject grammars needs a scale measurement that has never been taken; and the duplication of
