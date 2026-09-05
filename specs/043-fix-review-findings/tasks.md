@@ -11,6 +11,13 @@ acceptance scenario in the spec is written as something to run.
 but every claim they make is measured by the lane US1 repairs, so shipping US2 first means
 validating it with an instrument known to be wrong.
 
+**EVERY NUMBER IN THIS FILE WAS MEASURED DURING ANALYSIS, AND THE LANE MOVES.** The 741
+subscriptions, the zero rejectable avatar rows, the 12-and-5 split, the 5.39 seconds of budget
+headroom, the 7.41 s the e2e package costs — each was taken with a command that is written
+beside it, and this session's battery moved the row counts twice while the analysis was running.
+**Re-run the command before acting on the number.** A premise inherited from a record and never
+re-run is the defect this repository has caught in three of its own chapters.
+
 ## Format: `[ID] [P?] [Story] Description`
 
 - **[P]**: different file, no dependency on an incomplete task
@@ -27,6 +34,8 @@ from the repository root.
 ## Phase 1: Setup
 
 **Purpose**: a record to write into, instruments that work, and a lane whose state is known.
+**Re-take every measurement this phase records** — the numbers in T003 and T006a were taken
+during analysis, on a lane that has since run a twenty-run battery.
 
 - [ ] T001 Copy `check-refs.py`, `sweep.py`, `check-prose.py`, `check-quickstart.py`, `check-checklist.py` and `regen-traceability.py` from `specs/042-chapter-3-24/` into `specs/043-fix-review-findings/` and run each one. **Expect every copy to arrive stale** — chapter 3.23's arrived with 31 stale pairs from its predecessor and a docstring naming the wrong chapter, and both were found by running them rather than by reading them. `gaps.md` 3.22-8 has recorded this copy-forward with no owner for five chapters; this is the sixth.
 - [ ] T002 [P] Create `specs/043-fix-review-findings/baseline.txt` and pin the nine lane environment variables in it, copied from `specs/042-chapter-3-24/quickstart.md`. Tasks that spawn a service read them from here.
@@ -79,6 +88,9 @@ removed, and the container-free lane with every container stopped.
 
 **Independent test**: send the same over-long text three ways; attempt each of four schemes.
 
+**Re-take T028's measurement before relying on it.** Analysis measured zero stored avatar values
+the new rule would reject; that is a fact about this database on that day.
+
 - [ ] T020 [US2] Export `MESSAGE_TEXT_MAX` from `relay-platform/packages/protocol/src/frames.ts`, beside `messageSchema`. **Not from `attachments.ts`**, whose six exports are all about attachments — a message-text bound on that shelf is the drift this task exists to remove. `internal.ts` already imports `messageSchema` from `./frames.js`, so the direction exists and no cycle is created. The value is 8000, which is what the REST and internal doors already carry.
 - [ ] T021 [US2] Import it in `packages/protocol/src/frames.ts:34`, which today declares `z.string()` with no bound at all.
 - [ ] T022 [P] [US2] Import it in `packages/protocol/src/internal.ts:32`, replacing the literal.
@@ -101,6 +113,9 @@ removed, and the container-free lane with every container stopped.
 **Goal**: every refusal a customer can cause names the cause, and every close code has a page.
 
 **Independent test**: read the `code` in each response body, not the status. Look up each close code.
+
+**Re-take T037's measurement before relying on it.** Analysis measured 741 subscriptions to
+`channel.created` out of 32,606 type-rows, and the whole design rests on that comparison.
 
 - [ ] T032 [US3] Add `WEBHOOK_EVENT_TYPES` — the eight types FR-WHK-02 declares, each marked with whether the platform emits it. **Derive `OUTBOX_EVENT_TYPES` from it rather than maintaining both.** Two lists that must agree and are maintained separately is what `gaps.md` 3.23-4 records about `targets.ts`, and what `eslint.config.mjs`'s own comment says *MUST AGREE* with nothing comparing them.
 - [ ] T033 [US3] Make adding a type to `WEBHOOK_EVENT_TYPES` without deciding `emitted` a compile error, and add a test asserting the exact declared set and its count. Chapter 3.24 added two error codes where its plan expected one, and `codes.test.ts`'s exact-count assertion is what caught it.

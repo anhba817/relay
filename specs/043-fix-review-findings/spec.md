@@ -169,6 +169,10 @@ check that no tool contradicts the answer.
 
 ### Functional Requirements
 
+**Grouped by story, not by number.** FR-024, FR-024a, FR-026 and FR-027 sit in the Verification
+block because that is the story that delivers them, so the identifiers do not ascend down the
+page. The grouping is the index; the numbers are only keys.
+
 #### Verification (Story 1)
 
 - **FR-001**: The end-to-end harness MUST wait for each child process to exit, within a
@@ -234,7 +238,10 @@ check that no tool contradicts the answer.
 #### Records (Story 4)
 
 - **FR-020**: The specification's revision history MUST list entries in ascending version order.
-- **FR-021**: A gate MUST fail when a revision entry is out of order.
+- **FR-021**: A gate MUST fail when a revision entry is out of order, **and it MUST read this
+  feature's own success criteria as well as the specification's revision ledger.** This list was
+  written out of order while the gate against out-of-order lists was being specified; a rule
+  worth enforcing on a published document is worth enforcing on the document demanding it.
 - **FR-022**: The review's finding about bot sends and quota exhaustion MUST be corrected to
   state what the code does.
 - **FR-023**: The repository MUST state that migrations are hand-written and reviewed against
@@ -288,14 +295,14 @@ check that no tool contradicts the answer.
 - **SC-010**: Every statement in the review matches the code or document it cites.
 - **SC-011**: No published requirement describes behaviour the platform does not have, measured
   by reading each amended clause against the behaviour it now states.
-- **SC-013**: Every finding in the review is marked with what happened to it — closed, and by
-  what; or open, and whose it is. **A reader of the review learns the feature's outcome from the
-  review**, not by cross-referencing a task list.
 - **SC-012**: The integration lane completes inside its published budget after the changes, or
   the budget is raised with the measurement that justifies it. **The changes cost time**: a
   teardown that waits for a process to exit is slower than one that sleeps a fixed 200 ms, and a
   suite that boots twice to prove the teardown works is a suite the lane did not run before. The
   most recent battery's slowest green run left 5.39 seconds of headroom.
+- **SC-013**: Every finding in the review is marked with what happened to it — closed, and by
+  what; or open, and whose it is. **A reader of the review learns the feature's outcome from the
+  review**, not by cross-referencing a task list.
 
 ## Assumptions
 

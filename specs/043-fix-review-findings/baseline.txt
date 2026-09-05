@@ -1,0 +1,133 @@
+FEATURE 043 — FIX THE REVIEW'S FINDINGS
+=======================================
+
+THE LANE ENVIRONMENT, PINNED WHERE THE TASKS CAN SEE IT
+-------------------------------------------------------
+
+    DATABASE_URL=postgres://relay:relay@localhost:15432/relay
+    RELAY_REDIS_URL=redis://localhost:6379
+    RELAY_NATS_URL=nats://localhost:4222
+    RELAY_INTERNAL_CREDENTIAL=rk_svc_local_development_credential_0000
+    RELAY_INTERNAL_CREDENTIAL_GATEWAY=rk_svc_local_development_gateway_00000
+    RELAY_WEBHOOK_SECRET_KEY=BpDal75yBZp7Fc2GtGS3D1vh7qOKgCWJkF6/d0XWxBU=
+    RELAY_OUTBOX_RELAY=off  RELAY_EVENT_CONSUMER=off  RELAY_DELIVERY_RELAY=off
+
+Local development values, pinned since chapter 3.24's `quickstart.md` and in the record
+deliberately.
+
+
+### THE ANALYSIS PASSES — SIX OF THEM, THIRTY-FOUR FINDINGS, AND TWO THAT WERE WRONG
+
+Written during analysis rather than at close-out, because two of these entries are
+findings ABOUT the analysis and would not survive to close-out otherwise.
+
+    pass  asked                                          found  fixed
+    ----  ---------------------------------------------  -----  -----
+      1   do the artifacts agree with each other and
+          with the tree?                                    11      9
+      2   can the 69 tasks be executed in this order,
+          and what do they break that nothing mentions?      6      6
+      3   what did passes 1 and 2 themselves falsify?        6      6
+      4   what happens if the premises are RUN?              4      4
+      5   are the two read-only inferences from pass 2
+          actually true?                                     3      3
+      6   what does this look like to a reader who has
+          seen none of these reports?                        4      4
+    ----  ---------------------------------------------  -----  -----
+                                                           34     32
+
+Two remain open by decision, both LOW: a near-duplicate pair (FR-006 stated from two
+ends) and a missing "revert each probe" line in the gate-testing task.
+
+**THE TWO FINDINGS THAT WERE WRONG ARE THE MOST USEFUL ENTRIES HERE**, and they share a
+cause.
+
+**Pass 2 said the `beforeEach` confounds the container-free classification.** It reasoned
+from reading `connections.test.ts:41`: a hook that builds a registry against `REDIS` for
+every test in the describe must break the tests that need no broker. Pass 3 wrote that
+into `research.md` R2 and into two tasks. **Pass 4 ran it.** With
+`RELAY_REDIS_URL=redis://127.0.0.1:6399`, the hook builds its registry, `afterAll` closes
+it, and every no-broker test passes — `createConnections` does not connect eagerly. The
+amendment stood in the research document for one full pass asserting something false
+about the codebase.
+
+**Pass 2 said the e2e lane's fixed ports actively collide with `limits.itest.ts`.** The
+map at `limits.itest.ts:16` registers 4100-4300 to that file; the harness hard-codes
+4100-4102 and appears nowhere in the map. Pass 2 added "turbo runs the two packages at
+once" and derived `P = 3/200 per run`, and hinted it explained the battery's one
+unexplained failure. **Pass 5 read one line of `package.json`.**
+
+    "test:integration": "turbo run test:integration --concurrency=1 --filter=!@relay/outsider"
+
+`--concurrency=1`. The two packages never run together. The overlap is real and LATENT;
+the probability does not apply; the hint about run 18 is withdrawn and that failure still
+has no supported cause. **`--concurrency=1` is written in `CLAUDE.md`** — it was read as a
+fact about suites inside a package and never applied to packages. Within-package
+parallelism is real (`presence.itest.ts` and `meter.itest.ts` collide for exactly that
+reason); cross-package parallelism does not exist here.
+
+**The failure mode both share: reading a file where one command would have answered it.**
+Three passes of reading produced twenty-three findings; the first pass that executed
+anything found that one of them was false.
+
+
+### MEASUREMENTS TAKEN DURING ANALYSIS — RE-TAKE THEM BEFORE ACTING
+
+Each was taken on a lane that has since run a twenty-run battery and three coverage runs.
+
+    avatar_url schemes stored     (null) 387,091 · https 586 · anything else 0
+                                  psql -Atc "select coalesce(split_part(avatar_url,':',1),
+                                  '(null)'), count(*) from users group by 1"
+
+    webhook event types           32,606 type-rows, four distinct, all DECLARED by FR-WHK-02
+                                  message.created 31,757 · channel.created 741
+                                  message.deleted 54 · message.updated 54
+                                  refused by the chosen rule (declared eight):     0
+                                  refused by the review's rule (emitted five):   741 = 2.3%
+
+    connections.test.ts split     12 failed | 5 passed against a dead broker
+                                  RELAY_REDIS_URL=redis://127.0.0.1:6399 vitest run
+                                    src/connections.test.ts
+                                  no broker: does not throw for a slot never held ·
+                                  does not throw when it holds nothing · returns unenforced
+                                  when Redis is unreachable · keeps the heartbeat inside the
+                                  bound · states the maximum in exactly one place
+
+    the lane's budget             240 s, slowest green run of the last battery 234.61 s,
+                                  headroom 5.39 s; the e2e package costs 7.41 s across
+                                  three suites and three boot/stop cycles
+
+**Research predicted two container-free tests and there are five.** The heartbeat test was
+filed under "each asserts registry behaviour" on the strength of its title; it asserts a
+timing bound and never reaches the broker. **A title is not an inventory of what a test
+touches** — the same defect as a task id in a test title, one category over.
+
+
+### THE DECISION THAT IS A JUDGEMENT AND NOT A MEASUREMENT
+
+`PORT=0` over the cheaper repair. With the overlap latent, keeping the fixed ports and
+fixing only the teardown closes every failure the last battery produced, touches no
+production file, and falsifies no published transcript.
+
+What keeps `PORT=0` is the argument FR-008 makes about three literals: the port map is
+maintained by hand and has been wrong twice — chapter 3.21's `gaps.md` item 4 found two
+missing entries and it is missing `packages/e2e` today — and a range that is safe only
+because of a flag in another package's script is a range somebody re-checks every time
+that flag moves.
+
+**Reverting costs one paragraph in `plan.md` and four task lines**: drop T007, T008, T009
+and T018a, keep T010.
+
+
+### WHAT NO GATE IN THIS REPOSITORY CAN CHECK
+
+`check-fence-chain.mjs:77` collects a fence only if it matches
+
+    /^```(\w+) title="([^"]+)"\s*$/
+
+so a fence with no title is never compared to anything. `part-2/chapter-08`'s milestone
+publishes its proof of a working run as a bare ```text transcript — `api up on 4100`,
+`gateway 1 up on 4101`, `ws://127.0.0.1:4102` — and this feature makes every one of those
+numbers ephemeral. **The milestone's own evidence is outside every gate here.** T018a is
+the only thing that amends it, and T018a exists because pass 2 grepped for `4100` rather
+than trusting the chain.
