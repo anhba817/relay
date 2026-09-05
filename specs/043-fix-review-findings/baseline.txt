@@ -447,3 +447,39 @@ exemption for a file this feature never mentions. **Five separate staleness defe
 The twenty-run battery of chapter 3.24's close-out left 19 of those 45 durable consumers and
 about 4,700 of those environments. **This is the before half of a measurement**; the after half
 is T062's battery, and neither number means anything without the other.
+
+### PHASE 2 — THE GREEN BASELINE, ESTABLISHED
+
+**T005 — fourteen gates, all zero.**
+
+    platform   typecheck 0 · lint 0 · build 0
+    tutorial   check:fences 0 · check:docs 0 · check:figures 0 · check:srs 0 · check:errors 0
+    feature    check-refs 0 · sweep 0 · check-prose 0 · check-quickstart 0 ·
+               check-checklist 0 · regen-traceability 0
+
+**And the first attempt at reporting that was wrong in the way the task warns about.** The loop
+assigned `fail=1` inside a `for … done | sort`, which bash runs in a subshell, so the flag died
+with it. Every exit code was zero, so the printed answer was right by accident. **Third time in
+this session, in the task whose own text says not to.** Re-run with the check outside the
+pipeline.
+
+**T006 — two of the fifteen target files already carry an appendix hunk**: `harness.ts` and
+`dispatcher.itest.ts`. A second hunk for either is appended after the first, never merged into
+it. Twelve more will need a first hunk; `limits.itest.ts` needs none and can take none.
+
+**T006a — what the e2e package costs before US1 touches it.**
+
+    3 suites · 6.72 s · 3 boot/stop cycles
+    budget headroom, from chapter 3.24's battery: 240 - 234.61 = 5.39 s at the worst green run
+
+**The defect reproduced at the baseline, twice, alternating.** Two consecutive runs of the
+package alone: green, then red, with `webhooks.itest.ts` failing at `seedConversation` with
+`ECONNREFUSED 127.0.0.1:4100` after `quotas` and `tuan` — the order the sequencer produces after
+a green run, and the case `gaps.md` 3.24-4 describes.
+
+**One reading in this phase was retracted.** The first measurement run reported the same failure
+and I said webhooks had run first, with no predecessor to collide with — which would have
+contradicted the recorded mechanism. It does not: vitest's non-TTY reporter prints failing files
+and not passing ones, so "first in the output" is not "first in the run". **A partial output read
+as a complete one**, which is the same mistake analysis pass 11 recorded about not reading output
+already in hand.
