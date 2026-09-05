@@ -32,17 +32,30 @@ other than a failure message.
 pipe read only on the health-check path; probe-then-pass — racy, and the race is exactly the
 bug being fixed.
 
-**AMENDED IN ANALYSIS PASS 2, and the amendment strengthens the decision rather than changing
-it.** This entry chose `PORT=0` without knowing that `services/gateway/src/limits.itest.ts:16`
+**AMENDED IN ANALYSIS PASS 2 — AND HALF OF THIS AMENDMENT IS FALSE; SEE THE PASS 5 NOTE BELOW.**
+Pass 2 believed it strengthened the decision. This entry chose `PORT=0` without knowing that `services/gateway/src/limits.itest.ts:16`
 publishes the lane's port map, registers **4100–4300** to itself, and does not list
 `packages/e2e` at all — `grep -c e2e` on that file returns zero. So the harness's three fixed
 ports sit unregistered inside another file's range, and turbo runs the two packages at once.
 
+**PASS 5 RAN IT, AND THE SENTENCE ABOVE ABOUT TURBO IS WRONG.** `relay-platform/package.json:15`
+runs `turbo run test:integration --concurrency=1`, so `@relay/gateway` and `@relay/e2e` never
+execute at the same time. **The overlap is latent, not active**: the harness's ports do sit
+unregistered inside another file's range, and nothing in the integration lane can make the two
+meet. The `P ≈ 3/200 per run` that followed from it does not apply, and the suggestion that this
+explains the battery's `limits.itest.ts` failure is withdrawn — that failure has no supported
+cause, which is what `gaps.md` 3.22-6 says about a file that discards its child's output.
+
+`--concurrency=1` is written in `CLAUDE.md`. It was read as a fact about suites inside a package
+and never applied to packages. **Within-package parallelism is real** — `presence.itest.ts` and
+`meter.itest.ts` collide for exactly that reason, and the gateway's config sets no
+`fileParallelism` — **and cross-package parallelism does not exist here.**
+
 The cheaper repair — register the lane in the map and fix only the teardown — was considered and
-rejected. That map is maintained by hand and has already been wrong twice: chapter 3.21's
-`gaps.md` item 4 found two missing entries, and it is missing a third today. **A second list
-that must agree with reality is the defect this feature exists to remove.** `PORT=0` needs no
-list.
+rejected, and after pass 5 that rejection rests on one argument rather than two. The surviving
+one: that map is maintained by hand and has already been wrong twice — chapter 3.21's `gaps.md`
+item 4 found two missing entries, and it is missing a third today. **A second list that must
+agree with reality is the defect this feature exists to remove.** `PORT=0` needs no list.
 
 **Secondary benefit worth naming**: logging the port you bound rather than the one you
 requested is a correctness fix in its own right. Today, if `listen` ever bound something

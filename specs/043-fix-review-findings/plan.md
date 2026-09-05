@@ -171,14 +171,27 @@ the hand-maintained port map and fixing only the teardown is cheaper: it closes 
 battery's 11 failures, changes no production file, and falsifies no published transcript.
 It was rejected.
 
+**Pass 5 then took half the argument away, and the decision is kept on the other half.** That
+paragraph originally said the overlap was live because turbo runs the two packages at once. It
+does not: `package.json:15` passes `--concurrency=1`, so `@relay/gateway` and `@relay/e2e` never
+run together and nothing in the integration lane can make the harness's ports meet
+`limits.itest.ts`'s range. **The overlap is latent.** With it latent, the cheaper repair closes
+every failure the last battery actually produced.
+
+What survives is not a measurement, it is the same argument FR-008 makes about three literals.
 The map is a list maintained by hand that has already been wrong twice — chapter 3.21's
 `gaps.md` item 4 found two missing entries, and it is still missing `packages/e2e` today, which
 is how a lane came to hold three fixed ports inside a range registered to another file. **A
 second list that must agree with reality is the defect this feature exists to remove** (FR-008,
-and the `WEBHOOK_EVENT_TYPES` design in `data-model.md`). Binding port 0 and reading the
-assignment back is the only strategy that cannot collide, and this repository has already
-written that down: `main.test.ts:19` does it, and `gaps.md` 3.24-4 says a fixed port collides
-always under contention while a random one collides sometimes.
+and the `WEBHOOK_EVENT_TYPES` design in `data-model.md`). A range that is safe only because of a
+flag in another package's script is a range somebody re-checks every time that flag moves.
+Binding port 0 and reading the assignment back needs no list and no flag: `main.test.ts:19`
+already does it, and `gaps.md` 3.24-4 records that a fixed port collides always under contention
+while a random one collides sometimes.
+
+**This is now a judgement rather than a forced move.** Reverting to the cheaper repair means
+dropping T007, T008, T009 and T018a and keeping T010 — one paragraph here and four task lines,
+with no other artifact affected.
 
 **What that costs is paid explicitly rather than absorbed**: T008a registers the lane in the map
 before T009 changes it, and T018a amends the published prose — a milestone transcript and a

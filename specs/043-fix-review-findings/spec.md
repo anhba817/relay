@@ -182,6 +182,10 @@ check that no tool contradicts the answer.
 - **FR-005**: The repository MUST provide one documented command that returns the test lane to
   an empty state.
 - **FR-006**: Every test in the container-free lane MUST pass with no containers running.
+- **FR-006a**: The container-free lane MUST still exercise the logic that needs no broker.
+  **FR-006 alone is satisfiable by emptying the lane** — moving every test out makes it pass —
+  so the assertions that need no broker stay, and the coverage the moved assertions provided
+  must still be provided from somewhere.
 - **FR-007**: Concurrent editing and deletion of one message MUST have a test that forces the
   interleaving and asserts the outcome.
 - **FR-024**: Every assertion that needs a running broker MUST live in the lane that runs with
@@ -263,7 +267,11 @@ check that no tool contradicts the answer.
 - **SC-001**: Twenty consecutive integration runs, started from a cleared lane with the
   runner's result cache removed, produce zero failures caused by port collisions or by state
   left behind by earlier runs.
-- **SC-002**: The container-free lane exits zero on a machine with no containers running.
+- **SC-002**: The container-free lane exits zero on a machine with no containers running, **and
+  the file that moves keeps the five assertions measured to need no broker**: a slot released
+  that was never held, a release with nothing held, the unenforced answer when the registry
+  cannot be reached, the heartbeat bound, and the single-definition check. Any file whose
+  coverage pin was met before MUST still meet it.
 - **SC-003**: An integration run creates no durable subscription that outlives it. Durables a
   service creates in normal operation are not test debris and are counted separately.
 - **SC-004**: A client sending over-long message text is refused at every entry point, and the
