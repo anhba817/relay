@@ -6,6 +6,13 @@ seventeen carried, each re-measured**), then `traceability.md` and `baseline.txt
 (`media_not_available`) is 4.5 and 4.6, the queryable attempt log is 4.2, FR-MOD-03's audit log
 is 4.7.
 
+<!-- SPECKIT START -->
+**ACTIVE FEATURE:** `specs/043-fix-review-findings/` — fixing the ten findings in
+`docs/09-platform-implementation-review-2026-09-03.md`. Plan:
+`specs/043-fix-review-findings/plan.md`. It publishes no chapter, so every platform change
+carries an amendment hunk in `relay-tutorial/fences/post-series.md`.
+<!-- SPECKIT END -->
+
     3.24 "the message that is not only text"
                                             2,776 words, 30 fenced, 5 figures
                                             37 platform files, 61 net new tests in 22 files
