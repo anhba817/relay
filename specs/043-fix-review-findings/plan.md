@@ -25,8 +25,8 @@ the review recommends wrong:
   is either null (387,091) or `https` (586). The migration risk the review raises is real in
   principle and empty here.
 
-Part 3 is closed, so no chapter teaches this work. Thirteen platform files change and every
-one is fenced by a published chapter, so each carries an amendment hunk in
+Part 3 is closed, so no chapter teaches this work. Fourteen existing platform files change and
+every one is fenced by a published chapter, so each carries an amendment hunk in
 `relay-tutorial/fences/post-series.md`. The tutorial's own scripts are fenced by nothing,
 which is where the two new gates go.
 
@@ -55,8 +55,12 @@ compose stack. A third config, `vitest.coverage.config.mts`, runs both for the r
 change costs an amendment hunk. The two clause amendments may not permit more than the
 platform already does (FR-025c).
 
-**Scale/Scope**: 13 platform files, 2 published documents, 2 new gates, 13 amendment hunks.
-No new service, no new table, no new route.
+**Scale/Scope**: **16 files, estimated, and the estimate is expected to move.** Thirteen
+existing platform files change; two are new (`packages/e2e/src/harness.itest.ts` and
+`relay-platform/scripts/reset-lane.mjs`); and the coverage ratchet edits
+`vitest.coverage.config.mts` at close-out, which is the fourteenth existing one. Chapter 3.23's
+count moved from 33 to 34 during close-out and chapter 3.24's from 36 to 37, both for that same
+reason. No new service, no new table, no new route.
 
 ## Constitution Check
 

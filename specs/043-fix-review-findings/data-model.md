@@ -16,8 +16,14 @@ The maximum length of a message's text, in characters.
 | Property | Value |
 |---|---|
 | Value | 8000 — the number the REST and internal doors already carry |
-| Home | `packages/protocol/src`, beside `MAX_ATTACHMENTS` and `ATTACHMENT_URL_MAX` |
+| Home | `packages/protocol/src/frames.ts`, beside `messageSchema` |
 | Consumers | `frames.ts` (socket), `internal.ts` (internal), `messages.schema.ts` (REST) |
+
+**Why `frames.ts` and not `attachments.ts`.** The obvious shelf is beside `MAX_ATTACHMENTS` and
+`ATTACHMENT_URL_MAX` — and every one of `attachments.ts`'s six exports is about attachments, so a
+message-text bound there is the category error this feature exists to remove. `frames.ts`
+publishes `messageSchema`, `internal.ts` already imports from it, and `attachments.ts →
+frames.ts → internal.ts` is the existing direction, so the constant creates no cycle.
 
 **Why it is an entity at all.** Today the value is a literal in two of the three doors and
 absent from the third. The chapter 3.24 record names the shape this repeats: *"two schemas

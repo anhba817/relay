@@ -184,6 +184,11 @@ check that no tool contradicts the answer.
 - **FR-006**: Every test in the container-free lane MUST pass with no containers running.
 - **FR-007**: Concurrent editing and deletion of one message MUST have a test that forces the
   interleaving and asserts the outcome.
+- **FR-024**: Every assertion that needs a running broker MUST live in the lane that runs with
+  containers, and every assertion that does not MUST remain in the container-free lane.
+- **FR-024a**: The split MUST be decided per assertion, and each assertion that moves MUST keep
+  the behaviour it asserted.
+
 
 #### Public boundary (Story 2)
 
@@ -222,12 +227,8 @@ check that no tool contradicts the answer.
   state what the code does.
 - **FR-023**: The repository MUST state that migrations are hand-written and reviewed against
   the published schema, and MUST NOT retain a generator whose output contradicts that statement.
-- **FR-023a**: Running the retired generator's command MUST NOT be possible without a contributor
-  noticing it has been retired.
-- **FR-024**: Every assertion that needs a running broker MUST live in the lane that runs with
-  containers, and every assertion that does not MUST remain in the container-free lane.
-- **FR-024a**: The split MUST be decided per assertion, and each assertion that moves MUST keep
-  the behaviour it asserted.
+- **FR-023a**: A check MUST fail if the retired generator's snapshot directory or its build step
+  returns.
 - **FR-025**: The published requirement for membership revocation MUST state the bound that
   applies when the real-time fabric is unavailable, and that bound MUST match what the platform
   does.
@@ -255,8 +256,8 @@ check that no tool contradicts the answer.
   runner's result cache removed, produce zero failures caused by port collisions or by state
   left behind by earlier runs.
 - **SC-002**: The container-free lane exits zero on a machine with no containers running.
-- **SC-003**: An integration run leaves the broker with the same number of durable subscriptions
-  it started with.
+- **SC-003**: An integration run creates no durable subscription that outlives it. Durables a
+  service creates in normal operation are not test debris and are counted separately.
 - **SC-004**: A client sending over-long message text is refused at every entry point, and the
   maximum appears in exactly one place in the published contract.
 - **SC-005**: No avatar URL with a scheme other than `http` or `https` can be stored.
@@ -271,6 +272,11 @@ check that no tool contradicts the answer.
 - **SC-010**: Every statement in the review matches the code or document it cites.
 - **SC-011**: No published requirement describes behaviour the platform does not have, measured
   by reading each amended clause against the behaviour it now states.
+- **SC-012**: The integration lane completes inside its published budget after the changes, or
+  the budget is raised with the measurement that justifies it. **The changes cost time**: a
+  teardown that waits for a process to exit is slower than one that sleeps a fixed 200 ms, and a
+  suite that boots twice to prove the teardown works is a suite the lane did not run before. The
+  most recent battery's slowest green run left 5.39 seconds of headroom.
 
 ## Assumptions
 
