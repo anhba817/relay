@@ -299,9 +299,85 @@ no hunk. That is a trap, not a convenience.
 
 - [ ] T026 Run the coverage lane with the pinned variables and read `coverage/coverage-summary.json`, **not the text table** — the text reporter omits a file at 100% on all four metrics, which is the set this feature needs to see.
 - [ ] T027 Re-pin the changed files in `relay-platform/vitest.coverage.config.mts`, and **prove the pins are live**: a per-file threshold whose key matches no file is ignored silently and protects nothing. Demand 101% of a file at 100% and confirm vitest names the key.
-- [ ] T028 [P] Read every new test's title against its assertion, one at a time, in the three files this feature adds tests to — named rather than described: `relay-platform/services/api/src/db/repository.itest.ts`, `relay-platform/packages/protocol/src/frames.test.ts`, `relay-platform/services/gateway/src/session.itest.ts`. **Expect the count to be wrong** — chapter 3.24's task named nine files and the tree held twenty-two. **Strip any task id from a title** — requirement ids belong there, task ids do not. Feature 043's own audit caught two titles that overclaimed.
-- [ ] T029 [P] Run the credential scan over this feature's diff across **all three repositories**, and record every pattern searched and every hit classified in `baseline.txt`. Never report only "clean".
-- [ ] T030 Write `specs/044-revision-watermark/gaps.md`, carrying feature 043's twenty-four items **re-measured against the tree rather than copied** — three of 043's closed on re-measurement without anyone working on them. Close nothing that this feature did not close.
+- [X] T028 [P] Read every new test's title against its assertion, one at a time. **Expect the count to be wrong.** **Strip any task id from a title** — requirement ids belong there, task ids do not. (SC-003)
+
+  **THREE FILES NAMED, FOUR IN THE TREE, FIFTEEN TITLES.** The fourth is `resume.itest.ts`,
+  which the task could not have known about because T017 moved the cursor cases there after this
+  task was written. Fourth feature running to name the wrong file count.
+
+  **FOUR TITLES OVERCLAIMED, AND THE WORST ONE WAS MINE FROM AN HOUR EARLIER:**
+
+  | Title | What it claimed | What it asserted |
+  |---|---|---|
+  | `describe(… FR-004, FR-007, FR-009)` in `frames.test.ts` | FR-004, that a client is told the count for every channel | a schema file cannot see a client. **FR-004 stripped** |
+  | `carries the count on channelsForUser, for both of that query's callers (FR-014)` | both callers, and FR-014's no-extra-query rule | one call to the repository. **Both claims dropped** |
+  | `refuses a negative count and a fractional one` | two cases | three — it also refuses a string. **Retitled** |
+  | `exports the count schema on its own, so the internal hop validates the same rule` | that the internal hop uses it | that the export parses. **The "so" clause dropped** |
+
+  **AND FR-003 WAS CITED BY TWO TITLES AND ASSERTED BY NEITHER.** The audit's own remedy was a
+  test called `does not rise for a revision that was REFUSED (FR-003)` — delete a message, edit
+  it, confirm the count did not move. It passed. **It also proves nothing about FR-003**: the
+  edit path refuses a deleted message twice, on the read and on the compare-and-set, and *both
+  refusals happen before the counter's statement*. The bump never executes, so the test passes
+  identically with the bump outside the transaction — which is the one thing FR-003 forbids.
+  A vacuous test written by the pass that exists to find vacuous tests, caught by reading the
+  repository rather than the test.
+
+  Two changes came out of it: the behavioural test keeps its real property under an honest title
+  (`does not rise for an edit refused before it is applied`), and FR-003 gets a source-reading
+  test — the instrument `main.test.ts` already uses for producers nothing else can see. It scans
+  `repository.ts` for both `revisionSequence` bumps and asserts each runs on `tx` and not on
+  `this.db`. **Forced red**: moving one bump onto the pool gives
+  `the bump at 200649 must run on the transaction`. 68 tests green after restore.
+
+  **Six task ids survive in test titles elsewhere in the tree** — `T018`, `T052`, `T078`,
+  `T031/T031b`, `T036`, `T086` — in files this feature does not touch, left from chapters that
+  stripped their own. Measured and filed in `gaps.md` rather than fixed here: editing six
+  unrelated suites during a close-out is a change nobody asked for and nothing would re-verify.
+
+- [X] T029 [P] Run the credential scan over this feature's diff across **all three repositories**, and record every pattern searched and every hit classified in `baseline.txt`. Never report only "clean".
+
+  Sixteen patterns over 5,092 added lines. Eight distinct hits, every one classified in
+  `baseline.txt`: four are the lane's pinned local development values carried unchanged from
+  feature 043, three are variable names whose values are those four, and three are false
+  positives where a source path with no dots or dashes is 40+ characters of the base64 alphabet.
+  Nothing new introduced.
+
+  **THE FIRST RUN LIED, AND THE REASON IS THE FINDING.** `grep` on this machine is **ugrep
+  7.8.4**, and under it `(postgres|redis)://[^:/@]+:[^@/]+@` matches nothing while the same
+  pattern without the group matches — so the DSN pattern reported **0 hits on a corpus
+  containing that DSN twice**. A second pattern reported 0 because it required a closing quote
+  the material does not have. Two of sixteen silently clean on material that was present.
+
+  The re-run gives **every pattern a positive control** and reports a pattern that fails its own
+  example as BROKEN rather than as zero. That is what makes a 0 a claim about the corpus instead
+  of a claim about the tool — and it is the third instrument this feature caught overstating its
+  reach, after `check-fence-chain`'s ambiguous pre-image and a test that could not fail.
+
+- [X] T030 Write `specs/044-revision-watermark/gaps.md`, carrying feature 043's items **re-measured against the tree rather than copied** — three of 043's closed on re-measurement without anyone working on them. Close nothing that this feature did not close.
+
+  **CLOSED BY THIS FEATURE: NONE**, stated plainly rather than left to be inferred from a short
+  list. Two things it fixed were its own defects, not carried gaps, and they are recorded against
+  the tasks that found them.
+
+  **The re-measurement earned its cost three times:**
+
+  - **3.23-4 nearly closed on a lookalike.** `packages/test-harness/src/lists-agree.test.ts`
+    exists and asserts two exemption lists agree — and the pair it asserts is
+    `DRAIN_EXEMPT_TESTS`, not the `DRIVER_EXEMPT_TESTS` the item is about, which still has no
+    agreement test. A filename-level check would have closed it. Reading the assertions kept it
+    open, and found that the template for the fix is one `describe` away from the list needing it.
+  - **C3 measured fifteen and is thirteen.** Two titles carry a prose suffix and both base files
+    are chained elsewhere. This count has been wrong four times out of five and every error was in
+    parsing the title, never in the tree.
+  - **C6 re-confirmed at zero** rather than carried, because a closed item that quietly reopens is
+    what a ledger is for.
+
+  **Two new items**, both found by this feature and neither about the feature: `grep` on this
+  machine is ugrep and disagrees with GNU grep on a construct a credential scan used (044-1), and
+  six task ids survive in test titles in files no audit has reached (044-2). C8 is open for the
+  eighth feature and the unnumbered one for the thirteenth.
+
 - [ ] T031 Run the twenty-run battery of `pnpm test:integration` from a cleared lane with the sequencer caches removed — including the **root** `node_modules/.vite/vitest`, which a `packages/*` and `services/*` glob misses. **Nothing else runs on the machine.**
 - [ ] T032 Re-measure SC-004 and SC-005 against T002's baselines using `relay-platform/scripts/scale/load.mjs`, and record both in `specs/044-revision-watermark/baseline.txt`. **If either moved more than 10%, record which of three was chosen and why**: accept it with the measurement attached, move the cost off the handshake, or drop the feature's shape. Do not let the baseline quietly become whatever the lane now costs.
 - [ ] T033 Run all fourteen gates last — `pnpm typecheck`, `pnpm lint`, `pnpm build` in `relay-platform`; `pnpm check:fences`, `check:docs`, `check:figures`, `check:srs`, `check:errors` in `relay-tutorial`; and this feature's instruments in `specs/044-revision-watermark/` — with every exit code written to a file outside any pipeline.

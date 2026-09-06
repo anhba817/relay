@@ -167,3 +167,71 @@ unamended and the gate would have failed there for a reason belonging two phases
 boundary, which is the same shape as the two findings pass 2 made: a phase that cannot end
 green, and a package that had to be built. **The gate list is a class list, and a phase without
 an amendment task is a member nobody enumerated.**
+
+
+================================================================================
+T029 — CREDENTIAL SCAN, ALL THREE REPOSITORIES (2026-09-06)
+================================================================================
+
+Corpus: every ADDED line of feature 044's diff in all three repositories, from the
+commit before `docs(044): specify the revision watermark` and the submodule pointers
+that commit recorded — root at 2dcf684, relay-platform at c427e3b, relay-tutorial at
+0a19dd2. 5,092 added lines.
+
+SIXTEEN PATTERNS, EACH WITH A POSITIVE CONTROL. All sixteen matched their control, so
+a zero below means the corpus is clean of that pattern and not that the pattern is
+broken.
+
+  PATTERN                     HITS  CLASSIFICATION
+  relay key prefix               2  local development values, deliberately in the record
+  stripe-style live/test         0  clean
+  AWS access key id              0  clean
+  private key header             0  clean
+  JWT literal                    0  clean
+  gh/slack/npm token             0  clean
+  password assignment            0  clean
+  secret assignment              0  clean
+  token assignment               0  clean
+  bearer literal                 0  clean
+  dsn with password              1  local development value, deliberately in the record
+  base64 blob >= 40              4  1 local development value + 3 FALSE POSITIVES
+  hex secret >= 32               0  clean
+  RELAY_ secret/key/cred         3  variable NAMES, no values
+  generic api_key                0  clean
+  ssh/pem file ref               0  clean
+
+EVERY HIT, CLASSIFIED — no hit is left as "probably fine":
+
+  rk_svc_local_development_credential_0000     quickstart.md Prerequisites. The lane's
+  rk_svc_local_development_gateway_00000       fixed development credentials, pinned
+  postgres://relay:relay@localhost:15432       where the tasks can see them. Not secrets
+  BpDal75yBZp7Fc2GtGS3D1vh7qOKgCWJkF6/d0XWxBU= and not new — carried unchanged from
+                                               feature 043's baseline.
+
+  RELAY_INTERNAL_CREDENTIAL                    Variable names only. The scan hits the
+  RELAY_INTERNAL_CREDENTIAL_GATEWAY            identifier, and the values it names are
+  RELAY_WEBHOOK_SECRET_KEY                     the four rows above.
+
+  platform/services/api/src/internal/memberships   FALSE POSITIVES. `/` is in the base64
+  platform/services/api/src/internal/session       alphabet, so a path with no dots or
+  platform/services/api/src/messages/messages      dashes is 40+ base64 characters. Kept
+                                                   in the record rather than filtered out:
+                                                   a pattern's false positives are part
+                                                   of what it means.
+
+  Nothing new introduced by feature 044.
+
+THE SCAN WAS RUN TWICE AND THE FIRST RUN LIED. `grep` on this machine is **ugrep
+7.8.4**, not GNU grep, and under it a grouped alternation followed by two negated
+character classes — `(postgres|redis)://[^:/@]+:[^@/]+@` — matched NOTHING, while the
+identical pattern without the group matched. It reported the DSN pattern as 0 hits on a
+corpus containing that DSN twice. A second pattern reported 0 for a different reason:
+it required a closing quote after the base64 blob, and `RELAY_WEBHOOK_SECRET_KEY=…` has
+none.
+
+Two of sixteen patterns silently reported clean on material that was present. **A
+credential scan that cannot fail is worse than no scan**, because it is filed as
+evidence. The re-run is in Python with a positive control per pattern, and the control
+is the point: a pattern that does not match its own example is reported as BROKEN rather
+than as zero. That check is what turns "0 hits" into a claim about the corpus.
+
