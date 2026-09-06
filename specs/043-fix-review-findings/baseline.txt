@@ -893,3 +893,43 @@ about its own moment.
 
 The one prose sentence either sweep flagged — chapter 16's *"`avatar_url` is validated as a
 URL and not as a string"* — is still true and was left alone.
+
+
+### T059 — THE CREDENTIAL SCAN, ALL THREE REPOSITORIES
+
+Eight patterns over **8,800 added lines** across the root, `relay-platform` and
+`relay-tutorial`. Every hit classified; none is a leak.
+
+    pattern                            hits   what they are
+    --------------------------------   ----   ------------------------------------------
+    rk_svc_                               4   the two compose defaults, twice each
+    rk_live_                              0
+    rk_dev_                               0
+    RELAY_INTERNAL_CREDENTIAL             5   the variable NAME, in the pinned lane block
+    RELAY_WEBHOOK_SECRET_KEY              2   the variable name with the dev key
+    Bearer ey                             0
+    [0-9a-f]{32,}                         2   submodule commit SHAs
+    [A-Za-z0-9+/]{40,}={0,2}              9   2 SHAs, 2 dev key, 5 long file paths
+
+**All ten credential-shaped hits are in two files**: `baseline.txt` and `quickstart.md`,
+both carrying the same pinned lane environment. That is deliberate and predates this
+feature — `quickstart.md` has pinned it since chapter 3.24, and a lane whose variables are
+undocumented reads red as a regression rather than as a misconfiguration.
+
+**The two `rk_svc_` values are the compose DEFAULTS**, which `compose.yaml` declares dev-only
+three lines above them and chapter 3.5 already publishes. They are placeholders a deployment
+overrides. Publishing them is a decision on the record, not an oversight.
+
+**`RELAY_WEBHOOK_SECRET_KEY`'s value is a local development key** for the same lane, pinned
+for the same reason. It signs nothing outside this machine's containers.
+
+**The five base64 false positives are file paths.** `platform/services/api/src/messages/messages`
+is 44 characters of `[A-Za-z0-9+/]`, because `/` is in the alphabet. A scan that reported
+"9 base64-shaped strings" and stopped would have been technically true and useless — which
+is the reason this record lists every hit rather than a verdict.
+
+**The two 40-hex strings are submodule pointers**, `git diff`'s own output for a submodule
+bump. Provenance, not secrets.
+
+**No signing secret, encryption key or real internal credential appears in this feature's
+diff.**
