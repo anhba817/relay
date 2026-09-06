@@ -61,6 +61,11 @@ Measured across all **32,606** event-type rows stored today, in four distinct ty
     message.created   31,757        channel.created     741   declared, not emitted
     message.deleted        54        message.updated      54
 
+**RE-MEASURED AT IMPLEMENTATION, 2026-09-06**: 36,887 event-type rows across 36,799
+endpoints, of which **838** name `channel.created` — the lane grew, the shape did not. The
+count above is the design-time measurement and is kept as taken; `baseline.txt` carries the
+one the rule actually shipped against.
+
 **Every type any customer has subscribed to is one FR-WHK-02 declares.** So the rule above
 refuses **nothing** that exists, and the rule the review recommends refuses **741 — 2.3% of
 stored subscriptions**. That comparison is what changed this contract; the 741 on its own is a

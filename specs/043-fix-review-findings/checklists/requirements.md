@@ -65,7 +65,7 @@ amended clause may permit.
 
 ### The implementation references the specification names on purpose
 
-**Certified against 34 requirements and 13 success criteria.** Eight code-shaped references
+**Certified against 34 requirements and 13 success criteria.** Ten code-shaped references
 appear in `spec.md`, each deliberately, and each belongs to one of three classes. A
 specification for business stakeholders that names a file is making a claim about the tree, and
 the class says which kind:
@@ -78,6 +78,8 @@ the class says which kind:
 | `relay-tutorial/fences/post-series.md` | published listings | every platform change carries an amendment there |
 | `docs/09-platform-implementation-review-2026-09-03.md` | the input | the document this feature is named after |
 | `docs/07-tutorial-plan.md` | the schedule | where the deferred roadmap rows actually live |
+| `channel.created` | an event type | declared by FR-WHK-02, unbuilt, and named by 838 stored subscriptions |
+| `mesage.updated` | a typo, deliberately | the misspelling the webhook finding is actually about |
 | `specs/041-chapter-3-23/gaps.md` | a predecessor's record | holds the items this feature closes |
 | `specs/042-chapter-3-24/gaps.md` | a predecessor's record | same, one chapter later |
 
