@@ -186,7 +186,7 @@ way**: a battery, a gate set and a files-changed count do not divide by story.
 - [X] T062 Run the twenty-run battery of `pnpm test:integration` from a cleared lane with the sequencer caches removed. **Nothing else runs on the machine, including your own tooling.**
 - [X] T063 Record the battery in `baseline.txt` with the mean over the green runs, the stdev, and every failure's file and message. **Report the mechanism, not the fraction and not only the interval** — a Clopper-Pearson interval assumes independent trials, and chapter 3.24's twenty runs alternated green and red for fifteen consecutive runs because the test runner reorders on failure.
 - [X] T064 Run all fourteen gates last — `typecheck`, `lint`, `build` in `relay-platform`; `check:fences`, `check:docs`, `check:figures`, `check:srs`, `check:errors` in `relay-tutorial`; and this feature's six instruments in `specs/043-fix-review-findings/` — with every exit code captured into a variable outside any pipeline.
-- [ ] T065 Commit the close-out records, then trim `CLAUDE.md` and update the `SPECKIT` block to point past this feature.
+- [X] T065 Commit the close-out records, then trim `CLAUDE.md` and update the `SPECKIT` block to point past this feature.
 
 ---
 

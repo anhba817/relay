@@ -1,215 +1,230 @@
-**CHAPTER 3.24 IS CLOSED**, tagged `part3-ch24` in all three repositories. Its record is
-`specs/042-chapter-3-24/` — `chapter-notes.md` first, then `gaps.md` (**five items plus
-seventeen carried, each re-measured**), then `traceability.md` and `baseline.txt`.
+**FEATURE 043 IS CLOSED.** Its record is `specs/043-fix-review-findings/` — `gaps.md` first
+(**24 items: 23 carried and re-measured, 1 new**), then `baseline.txt`, `traceability.md`
+and `tasks.md`. It publishes no chapter, so every platform change carries an amendment hunk
+in `relay-tutorial/fences/post-series.md`.
 
-**3.24 IS THE LAST CHAPTER OF PART 3.** Everything it deferred is Part 4's: hosted media
-(`media_not_available`) is 4.5 and 4.6, the queryable attempt log is 4.2, FR-MOD-03's audit log
-is 4.7.
+**PART 3 IS CLOSED AND 3.24 WAS ITS LAST CHAPTER.** Everything deferred is Part 4's: hosted
+media (`media_not_available`) is 4.5 and 4.6, the queryable attempt log is 4.2, FR-MOD-03's
+audit log is 4.7.
 
 <!-- SPECKIT START -->
-**ACTIVE FEATURE:** `specs/043-fix-review-findings/` — fixing the ten findings in
-`docs/09-platform-implementation-review-2026-09-03.md`. Plan:
-`specs/043-fix-review-findings/plan.md`. It publishes no chapter, so every platform change
-carries an amendment hunk in `relay-tutorial/fences/post-series.md`.
+**NO ACTIVE FEATURE.** The last was `specs/043-fix-review-findings/`, which closed all ten
+findings in `docs/09-platform-implementation-review-2026-09-03.md`. That review's twenty-one
+rows now each carry an outcome — 13 closed, 8 open with an owner named.
 <!-- SPECKIT END -->
 
-    3.24 "the message that is not only text"
-                                            2,776 words, 30 fenced, 5 figures
-                                            37 platform files, 61 net new tests in 22 files
-    9 of 20 battery runs green · mean 233.08 s over the GREEN runs, stdev 1.75, budget 240
-    coverage 97 files / 1,357 tests / 455 s, exit 0 · 241 fenced files, 41 chapters
+    043 "fix the review's findings"
+                                            58 files (47 platform, 11 tutorial)
+                                            20 of 20 battery runs green
+    mean 225.35 s, stdev 0.99, budget 240 · headroom 14.65 s
+    coverage 99 files / 1,379 tests / 439 s, exit 0 · 240 fenced files, 41 chapters
+    unit lane 512 tests / 56 files with every container stopped
 
-**AN ARGUMENT THAT IS RIGHT ABOUT THE PRODUCER CAN INVERT ABOUT THE READER.** This chapter's
-thesis is *make the field required, not optional* — correct for `messageSchema`, which the
-platform BUILDS, because required is what makes the compiler name every construction site. The
-same sentence was carried into `outboxEventSchema`, which the consumer READS off a durable
-queue, and there it means every in-flight `message.created` written by the previous binary is
-answered with `message.term()` — destroyed, not retried. **Required is a claim about what you
-write. A reader of anything durable cannot require a field its writer did not have.**
+## THE ONE THAT KEEPS EARNING ITS PLACE
 
-**IT TOOK THE CLOSE-OUT COVERAGE LANE TO FIND IT**, after twenty-one analysis passes and eleven
-phases, and `event.ts`'s own header says why: the api's suite runs `RELAY_EVENT_CONSUMER=off`,
-so nothing in it exercises the consumer. What caught it are two fixtures nobody updated —
-`consumer.itest.ts:46` and `scripts/consumer-walk.mjs:75` — which between them are the only
-place in the repository that still spells a pre-3.24 event. **Do not "fix" a fixture that is red
-because it describes the past.**
+**AN ARGUMENT THAT IS RIGHT ABOUT THE PRODUCER CAN INVERT ABOUT THE READER.** Chapter 3.24
+made `messageSchema.attachments` required, which is correct for a schema the platform
+BUILDS — required is what makes the compiler name every construction site. The same sentence
+carried into `outboxEventSchema`, which READS off a durable queue, meant every in-flight
+`message.created` written by the previous binary was answered with `message.term()`.
 
-## THE BATTERY: 9 OF 20, AND THE FRACTION IS THE LEAST OF IT
+**Feature 043 was told to do it again and did not.** The task for the message-length bound
+named `frames.ts:34` — `messageSchema`, the outbound message read off stored rows. The socket
+door with no bound was fifty lines below. Bounding the reader would have been the same defect
+with a different field, and there is now a test asserting `messageSchema` stays unbounded
+*deliberately*, because the task pointed at it by line number.
 
-**"CARRY THE INTERVAL, NOT THE FRACTION" IS NOT ENOUGH — THE INTERVAL CARRIES AN ASSUMPTION.**
-11 red of 20 gives a Clopper-Pearson 95% interval of [31.53%, 76.94%], which assumes twenty
-independent trials. Read the exit column down: from run 3 to run 17 it alternates without a
-break, G R G R G R G R G R G R G R G. Fifteen alternations is one chance in eight thousand.
-**A battery whose runs share state is not a sample of anything. Carry the mechanism.**
+**Required is a claim about what you write. A reader of anything durable cannot require a
+field its writer did not have.**
 
-**TEN OF THE ELEVEN REDS ARE ONE DEFECT, ISOLATED BY FORCING THE FILE ORDER.** `harness.ts:534`
-SIGTERMs its children and sleeps a flat 200 ms without awaiting `exit`; `tuan.itest.ts:45` is
-the only suite that boots two gateways, so it needs longer. Three runs:
+## MEASURE THE CARRIED LEDGER; DO NOT COPY IT
 
-    quotas -> tuan -> webhooks     webhooks 3rd   RED      rules out nothing yet
-    quotas -> webhooks -> tuan     webhooks 2nd   GREEN    rules out "the third fails"
-    tuan -> quotas -> webhooks     quotas   2nd   RED      rules out "webhooks is broken"
+Four of 043's twenty-three carried gap items were wrong when re-measured — files discarding a
+child's output was recorded as ELEVEN and measured ZERO, excerpt-only chains TEN and measured
+THIRTEEN — and **three closed without anyone working on them**. The `stdio: "ignore"` class
+went because retiring the port bands REQUIRED reading each child's `listening` line, and a
+child whose output is discarded cannot report one. **The diagnostic argument had been made for
+years; the mechanical need is what did it.** Detail in `specs/043-fix-review-findings/gaps.md`.
 
-**The victim is whoever boots next after `tuan` stops — this run or the next one.** And the
-health check cannot tell the child it started from the child it is replacing: `waitForHealth`
-polls a URL, the dying predecessor answers 200, and every red run prints `api up on 4100`
-exactly like a green one. The `EADDRINUSE` goes to an unread pipe.
+## A HAND-MAINTAINED TABLE CANNOT BE CHECKED
 
-**THE ALTERNATION IS THE TEST RUNNER.** `node_modules/.vite/vitest/<hash>/results.json` stores
-`{duration, failed}` per file; the sequencer runs previously-failed files first, which pushes
-`tuan` into the last slot, which makes the next run green, which restores duration order.
-**The lane's failure rate is a function of a JSON file in `node_modules`** — and the state it
-was left in after run 20 predicted the next failure before it ran.
+Nine api ports were drawn from hand-allocated bands across eight files, listed in a map at the
+top of `limits.itest.ts`. **Two bands contained a service the lane itself runs** — 5432
+(Postgres) inside `membership`'s 5400-5599, and 4222 (NATS) inside `limits`' 4100-4299.
 
-**THE ELEVENTH RED IS THE ONE NOBODY CAN EXPLAIN**, and for the recorded reason:
-`limits.itest.ts` said *"api never became healthy"* and the child wrote why to `stdio: "ignore"`.
-Same family as chapter 3.23's two.
+The failure is silent both ways: the child cannot bind, `stdio: "ignore"` eats the
+`EADDRINUSE`, and the health check gets its answer from whatever *does* hold the port. Every
+test in the file then fails against Postgres with `other side closed` and no port named
+anywhere.
 
-## A LANE THAT ACCUMULATES ANSWERS A DIFFERENT QUESTION EVERY WEEK
+**That is chapter 3.24's eleventh red, the one its record called unexplainable.** It was
+`limits.itest.ts` saying "api never became healthy". 4222 is in its band.
 
-**AN IDENTICAL FAILURE ON A CLEANED ENVIRONMENT IS NOT THE ENVIRONMENT.** The first coverage run
-went red with fifteen failures and one hypothesis explained all of them: 56,193 messages and 216
-durable consumers on `DELIVERIES`. Clearing it fixed the nine dispatcher failures and reproduced
-the six consumer ones **exactly** — 484189 ms against 484245 ms. Two causes, and the cheap one
-was tested rather than believed.
+All nine retired for `PORT=0`, with the port read back from the child's own log line. The map
+is deleted rather than corrected — it had to avoid every other band and every service port on
+every contributor's machine, and stay right as both moved.
 
-**THE LANE FILLS UP UNTIL IT CANNOT PASS AND REPORTS IT AS AN ASSERTION FAILURE.**
-`dispatcher-deliver` pinned at `MAX_ACK_PENDING` on rows long deleted; 215 `itest-deliver-*`
-durables each replaying 56,000 messages, because `main.ts:86` uses `DeliverPolicy.All`; and
-`publishDue()` calls the PRODUCTION relay, so purging the stream refills it from stale rows. The
-test says `expected 0 to be greater than 0`. **Ask the broker** — `scripts/stream-info.mjs` reads
-exactly this and no failure message mentions it. Twenty battery runs added 4,717 environments,
-60,953 outbox rows and 19 orphaned durables. **Clear it before a close-out measurement**, or the
-number is taken on a different instrument than the last chapter used.
+## A TEST OF A SCRIPT MUST ASSERT WHAT THE SCRIPT DID
 
-## MEASUREMENTS WORTH NOT RE-TAKING
+`reset-lane.itest.ts` was wrong twice, the same way both times, and both were assertions about
+the TABLE rather than about the script's effect:
+
+- it counted rows "due now", which a run that just finished violates legitimately;
+- it counted staleness against `now()`, re-evaluated ~115 ms after the script's own `now()`.
+  Rows aging across the 30-minute mark in between failed runs 16 and 20 of a battery. Measured
+  live: 0.2 rows crossed per second.
+
+**The window did not exist until the lane had been up longer than `STALE_AFTER`**, so the
+first seven runs were structurally safe and it read as a late-onset flake. Pinning one instant
+before the script runs fixes it; a planted row that crosses 400 ms out counts 0 against the
+pinned instant and 1 against a re-evaluated one.
+
+## OTHER THINGS 043 PAID FOR
+
+**EXIT 0 DOES NOT PROVE A PER-FILE THRESHOLD MATCHED.** A coverage pin whose key matches no
+file is ignored silently — it passes forever and protects nothing. Demanding 101% of a file at
+100% is what proves the key resolves; vitest then names it.
+
+**A RED PROBE WRITES TO THE LANE.** Reverting the avatar rule to check the tests could see its
+absence left two `javascript:alert(1)` rows stored, accepted with a 200 — and the next
+measurement read them as pre-existing data contradicting the plan. The probe demonstrated the
+defect more sharply than the test did, and it has to be cleaned up before anything is counted.
+
+**AN ASSERTION SCOPED WIDER THAN THE THING IT TESTS FAILS FOR SOMEBODY ELSE'S REASON.**
+`presence.itest.ts` asserted `select count(*) from outbox` was unchanged while vitest ran
+`membership.itest.ts` in parallel — `expected 614255 to be 614250`, nothing in it suggesting
+a neighbour. `limits.itest.ts` asserted a total inside a wall-clock minute bucket
+(`floor(now / 60_000)`), so ten sends across the boundary wrote two keys and read one:
+`expected 7 to be 10`, which reads exactly like a limiter dropping increments. **The first
+fix there was worse than the fault** — sleeping to the next boundary blew the test's 5-second
+timeout the moment the guard fired.
+
+**WHEN MEASUREMENT FALSIFIES A CLAUSE, AMEND IT.** Done three times: FR-RTM-09 and FR-RTM-10
+in the SRS (revision 1.8), and **this feature's own FR-016**, which said to refuse a type "the
+platform does not emit" and would have refused 838 stored subscriptions to a declared,
+published, unbuilt event type. The governance clause requires amendment rather than silent
+divergence, and that applies to a feature's own specification.
+
+**A PLAN COUNTS THE FIX AND NOT THE VERIFICATION.** 17 files estimated, 58 changed, and every
+unplanned one came from RUNNING something rather than reading it. None of that is visible to a
+plan; all of it is visible to twenty runs.
+
+## THE LANE, AND WHAT IT STILL CANNOT TELL YOU
 
 **The test lane is the instrument closest to hand and the least representative thing here.**
+Ordering by `max(messages.created_at)` costs 0.87 ms on the lane and 159 ms at a million
+rows — 145x from an indexed column — and the lane's largest membership set is FIVE channels,
+so it cannot see any of that.
 
-    ordering by max(messages.created_at)     0.87 ms on the lane   159 ms at 1,000,000
-    an indexed channels.last_activity_at     1.1 ms                145x apart
-    the lane's largest membership set        FIVE channels — it cannot see any of this
+**It costs per SUITE, not per test** (`--concurrency=1`), and **it costs more every week**:
+`consumer.itest.ts` took 484 s on a dirty broker and 101 s on a clean one. 3.23's 228.80 s,
+3.24's 233.08 s and 043's 225.35 s are **not comparable**, and neither will be to the next.
 
-**The lane costs per SUITE, not per test** — `--concurrency=1`, so cost scales with api boots.
-**And it costs more every week**: `consumer.itest.ts` took 484 s on a dirty broker and 101 s on
-a clean one. Chapter 3.23's 228.80 s mean and this chapter's 233.08 s are **not comparable**,
-and neither will be to the next.
+**The broker no longer accumulates, and part of that is circular.** `reset-lane.itest.ts` runs
+the real script and `@relay/test-harness` sorts first, so every run begins by purging. That is
+"the lane self-cleans", not "the fix stopped the accumulation" — and it is safe only because
+`--concurrency=1`. Postgres rows still accumulate: 12,000 environments and 160,000 outbox rows
+in twenty runs.
 
 **A FILE AT 100% BRANCHES IS NOT A FILE WHOSE EVERY ARM HAS RUN.** v8 records a `binary-expr`
-arm as covered when the operand was EVALUATED, not when it went both ways:
-`typeof value.text === "string" && value.text.length > 0` measures `[7, 7]` and the `typeof`
-check has never once been false. Constitution VI's 100%-branch clause is stated in that number.
+arm as covered when the operand was EVALUATED, not when it went both ways. Constitution VI's
+100%-branch clause is stated in that number.
 
-**AN ARGUMENT COSTS 545 WORDS IF IT IS MADE OF PROSE AND ABOUT 280 IF IT IS MADE OF ARTIFACTS.**
-Three chapters at a flat 545: +21%, -9%, **+77%**. 3.22 and 3.23 argued from published documents
-and from reasoning; 3.24's evidence is compiler output, a diff and a test name, and a reader who
-can see the list does not need the paragraph describing it. **Say which kind each argument is
-when the estimate is written.**
+**AN ARGUMENT COSTS 545 WORDS IF IT IS MADE OF PROSE AND ABOUT 280 IF IT IS MADE OF
+ARTIFACTS.** Say which kind each argument is when the estimate is written.
 
 ## THE THREE MECHANISMS THAT FIND THINGS, RANKED BY YIELD
 
-1. **Ask the repository — or the broker, or the database — a question with a yes-or-no answer.**
-   `curl localhost:8222/jsz?consumers=1` answered in one command what two hypotheses could not.
-2. **Read the clauses, not the identifiers.** Enumerating ids answers *is this number free*; it
-   never answers *does a clause already say this*.
+1. **Ask the repository — or the broker, or the database — a question with a yes-or-no
+   answer.** `curl localhost:8222/jsz?consumers=1` answered in one command what two hypotheses
+   could not. 043's decisive numbers were all queries: 838 subscriptions, 0 avatar rows, 15
+   SQL files against 8 snapshots, 0.2 rows per second.
+2. **Read the clauses, not the identifiers.**
 3. **Check a task's premise before executing it**, and run the command a task tells someone to
-   run, in the pass that writes it.
+   run. 043 found four tasks whose premise was wrong, including one that would have caused a
+   defect.
 
-**AND WHEN A MECHANISM IS PROPOSED, FORCE IT.** Three runs with a hand-written sequencer cache
-cost eight minutes and turned "probably the ports" into a demonstrated cause with two rival
-explanations eliminated. **A confounded experiment is worth recording too**: the first attempt
-ran seconds after its predecessor and failed for the reason the experiment was about.
-
-## OTHER THINGS THAT COST A CHAPTER TO LEARN
-
-**TWO SCHEMAS THAT MUST DIFFER CANNOT SHARE A REFERENCE AT ALL.** `editMessageBodySchema.text`
-was `sendMessageBodySchema.shape.text`; relaxing the send's `.min(1)` silently relaxed the
-edit's, and an edit has no attachments field to restore its floor. The compiler cannot see it —
-the types are identical either way.
-
-**THREE CARRIED GAP ITEMS WERE WRONG ON THE DAY THEY WERE WRITTEN.** Seventeen re-measured, three
-misses, none a regression: the drizzle snapshot was six behind and is seven, because the chapter
-measured before adding its OWN migration; excerpt-only fence chains were two and are ten;
-children discarding their output were nine and are eleven. **Two was the gateway's count, not the
-repository's, twice, one item apart.** A measurement taken mid-chapter is stale by close-out.
-
-**A NUMBER IN A HEADING IS CARRIED; A NUMBER DERIVED FROM ROWS HAS TO BE RE-DERIVED BY SOMEBODY.**
-`docs/07-tutorial-plan.md` said Part 3 had 21 chapters over a table of 24, through 3.22, 3.23 and
-3.24 — in a paragraph whose own last sentence says the count comes from the rows.
-
-**A TASK ID IN A TEST TITLE OUTLIVES THE TASK.** 3.22 wrote one, 3.23 fifty-two, 3.24 thirty-three
-and its own audit stripped them. Requirement ids belong there; task ids do not.
+**AND WHEN A MECHANISM IS PROPOSED, FORCE IT.** Eight gateway-suite runs at 35 s each found
+two flakes in five minutes that a 78-minute battery would have found once.
 
 ## A CHECKER'S BLIND SPOT IS WORSE THAN ITS ABSENCE
 
-Write the class list explicitly and make the checker **fail on an unknown member**. Then test it
-red, three ways.
+Write the class list explicitly and make the checker **fail on an unknown member**. Then test
+it red, three ways.
 
-- **The derived target list fails on the build that adds a route** — still the highest-yield
-  check here.
-- **`codes.test.ts` asserts the exact close-code set and the exact count.**
+- **`check-revision-order.mjs`** (new): fails on a descent, an unparseable version, and a
+  renamed heading — and `1.10` correctly sorts above `1.9`, which string comparison does not.
+- **`check-error-codes.mjs`** now compares `CLOSE_CODES` in both directions. A renamed code
+  fires both at once.
+- **`check-fence-chain.mjs` can retire a file now.** `replay` has understood `(deleted)` since
+  3.2; the appendix loop never did, so after Part 3 closed nothing could retire a published
+  file.
 - **`check:errors` reads the BUILT `dist`.** Build before believing it.
-- **A checker that overstates its reach is a checker that lies.** `check-refs.py` walks `*.md`
-  only; `baseline.txt` is `.txt`.
-- **A checker reports the FIRST failure per file.** `check-fence-chain`'s "3 problems" was three
-  files, not three lines.
+- **A checker reports the FIRST failure per file.**
 - **No checker reads prose**, and a `mermaid` block is prose.
-- **A GATE LIST IS ITSELF A CLASS LIST, AND 3.24's WAS INCOMPLETE.** It named five `check:*`
-  scripts and no `typecheck`, `lint` or `build`, so the chapter tagged three repositories on a
-  tree where `pnpm lint` exits 1. **Fourteen gates, not eleven.** And an underscore prefix
-  exempts nothing here: this eslint config sets no `varsIgnorePattern`.
-- **A summary line is the thing to trust least.** `fail=1` inside a `for … done | sort` pipeline
-  runs in a subshell and dies with it — printed "ALL GATES: GREEN" over a red one.
+- **AN UNTITLED FENCE IS NEVER COMPARED TO ANYTHING.** `check-fence-chain.mjs:77` collects a
+  fence only when it matches `title="…"`. **146 of 904 — 16% — are outside every gate.** This
+  is one step further out than the excerpt-only class, which is skipped *by* a title somebody
+  wrote. Nobody decided this one. `gaps.md` 043-1 opens it.
+- **FOURTEEN GATES, NOT ELEVEN**, and capture every exit code OUTSIDE a pipeline. `fail=1`
+  inside `for … | sort` runs in a subshell and dies with it. **043 reproduced that mistake
+  three times**, once in a task whose own text warns about it.
 
 ## TESTS THAT PASS WHILE PROVING NOTHING
 
 Ask, of every test on a failure path: **what would have to be false for this to fail?**
 
+- **A health check that has never passed.** `membership` and `presence` probed `/health`; this
+  api serves `/healthz`. Both loops ran 100 failed probes and returned the URL anyway — a flat
+  ten-second sleep reporting success. **Neither fault could surface while the other was there
+  to absorb it.**
+- **`webhooks.itest.ts` asserted status and message text** and passed while the body said
+  `internal_error`. Only the code could have caught it, which is why it survived from 3.5.
 - **A repository test proves a check exists; only a route test proves it fires.**
-- **A conditional assertion is an assertion that may not run.** A test guarded by
-  `if (status === 200)` against a route that answers 404 asserted nothing for a phase — and
-  `GET /v1/channels` is not a route.
-- **An indistinguishability pair can pass because both halves changed together.**
-- **`?? null` cannot tell an absent key from a null one.**
-- **An unbounded wait turns a red test into a forty-second one.**
-- **Two 204s prove nothing.** Idempotence is about what the second call DID; the assertion that
-  carries it is the outbox row count.
+- **A conditional assertion is an assertion that may not run.**
+- **Two 204s prove nothing.** Idempotence is about what the second call DID.
+- **A title that overclaims is the same defect.** 043's audit caught two of its own: one
+  claimed a derivation nothing in the body can observe, one said "every refusal" while leaving
+  one asserted by status alone.
 
 ## THE FENCE CHAIN
 
-1. **Three lines of context suffice when uniqueness is CHECKED** — and `event.ts`'s two
-   deliberately identical branches fail that check at `-U3`. Regenerate at `-U6`.
+1. **Three lines of context suffice when uniqueness is CHECKED.** Regenerate at `-U6` when the
+   pre-image matches twice — 043 hit this once.
 2. **The predecessor is a commit, not a tag.**
-3. **A chapter cannot do the appendix's work, and vice versa.** Generate against the working
-   tree, not `HEAD`.
-4. **A `diff` hunk says A way to get from one file to another, not THE way.**
-5. **An appendix hunk anchored on a file's last line forbids any chapter from appending.**
-6. **A diff body inside a ```ts fence is read as a whole file.**
-7. **An excerpt-only file is never verified against the repository at all** — TEN of them, not
-   two. This chapter edited three.
-8. **A file whose chain lives entirely in the appendix cannot be fenced by a chapter.**
-9. **The generator is not idempotent unless it excludes the chapter's own pages.**
-10. **Run `check:fences` after ANY source edit in phase 12, not only the ratchet.** The title
-    audit invalidated three fences and the outbox fix a fourth. **A line-for-line patch of a
-    fence body is not enough when the change alters the hunk's line counts.**
+3. **A `diff` hunk says A way to get from one file to another, not THE way.**
+4. **An appendix hunk anchored on a file's last line forbids any chapter from appending**,
+   and a diff body inside a ```ts fence is read as a whole file — the appendix takes `diff`.
+5. **An excerpt-only file is never verified — THIRTEEN of them.** 043 edited three, and no
+   gate could see any of those edits.
+6. **Run `check:fences` after ANY source edit**, not only the ratchet.
 
 **AND MDX IS NOT MARKDOWN.** An indented `400  {"code": …}` block is literal text in markdown
 and a JSX expression in MDX.
 
-## THE CHAPTER CYCLE THIS PROJECT USES
+## THE CYCLE THIS PROJECT USES
 
-`/speckit-specify` -> `/speckit-plan` -> `/speckit-tasks` -> `/speckit-analyze` (repeatedly) ->
-`/speckit-implement` (once per phase). 3.24 ran **twenty-one** analyze passes, 3.23 eleven, 3.22
-fifteen. **Do not stop on falling yield** — and note that twenty-one passes did not find the
-outbox reader, because no pass runs the consumer.
+`/speckit-specify` → `/speckit-plan` → `/speckit-tasks` → `/speckit-analyze` (repeatedly) →
+`/speckit-implement` (once per phase). 3.24 ran twenty-one analyze passes, 3.23 eleven, 043
+fourteen. **Do not stop on falling yield** — and note that no number of passes finds a defect
+in code no lane runs.
 
 **Commit each phase.** `git checkout` on a file with uncommitted work destroyed it twice.
-**A phase that adds raw SQL must run the suite that executes it.**
-**Pin the lane environment where the tasks can see it** (`baseline.txt`).
+**Pin the lane environment where the tasks can see it** (`baseline.txt`), and bring the stack
+up with `RELAY_POSTGRES_PORT=15432` — this machine's own Postgres holds 5432.
 **Nothing else runs on the machine during a timing battery.**
 
-**USE A PERSON.** Chapters 3.14 through 3.24 have each named this gap and none has closed it.
-`specs/036-chapter-3-18/reader-protocol.md`, 45 minutes, six questions. Every check in this
-repository compares bytes — six Python instruments now, and not one can answer whether a
-paragraph is understandable to somebody who does not already know the answer. **An instrument
-that is easy to run tells you what it measures, not what you wanted to know.**
+**USE A PERSON.** Chapters 3.14 through 3.24 each named this gap, and 043 is the twelfth
+record to name it and not close it. `specs/036-chapter-3-18/reader-protocol.md`: 45 minutes,
+six questions, one person who has not read the work.
+
+Every check in these three repositories compares bytes. Six Python instruments, five `check:*`
+scripts, and a compile-time assertion added this week — and not one can say whether a
+paragraph is understandable to somebody who does not already know the answer. Each says so in
+its own last line:
+
+    check-refs: ids only — this says nothing about whether the prose around them is true
+    sweep: this says nothing about whether the prose is TRUE
+    check-checklist: presence only — it cannot tell whether a ticked box is true
+
+**An instrument that is easy to run tells you what it measures, not what you wanted to know.**
