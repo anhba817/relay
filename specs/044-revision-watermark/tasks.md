@@ -49,10 +49,28 @@ no hunk. That is a trap, not a convenience.
 
 **Independent test**: connect, note a message; disconnect; edit it; reconnect and confirm the ack reports a higher count for that channel than the client presented.
 
-- [ ] T011 [US1] Add `revisionCountSchema` and the ack's `revisions` field to `relay-platform/packages/protocol/src/frames.ts`. **Not `cursorSchema`** — it is `.positive()` and every unrevised channel is **zero**, so reusing it makes an unrevised channel unrepresentable and collapses the two states FR-007 turns on (research R4). **This task comes first in the phase because both consumers import from here**; defining the shape twice is the two-lists defect T009 warns about, one file apart. (FR-004)
-- [ ] T012 [US1] Add `channel_revisions` to `internalSessionResponseSchema` in `relay-platform/packages/protocol/src/internal.ts`, **importing `revisionCountSchema` from `./frames.js`** rather than spelling the record shape again — that import direction already exists for `messageSchema` and `MESSAGE_TEXT_MAX`. Give it `.default({})`, following `banned`'s precedent in this same schema: an api built before this feature still satisfies it during a rolling deploy, and the gateway then behaves as it does today. (FR-004, FR-014)
-- [ ] T012a [US1] Build the protocol package — `pnpm --filter @relay/protocol build` — **before anything consumes the new fields**. `packages/protocol/package.json` exports `./dist/index.d.ts` and `./dist/index.js` with no tsconfig path mapping to source, so T011 and T012's schema changes are **invisible to the api and the gateway until this runs**, and the three tasks below would fail for a reason that is not theirs. Then `tsc --noEmit` in both consumers: the compiler's list of call sites is the inventory, not a grep. (FR-004, FR-014)
-- [ ] T013 [US1] Fill `channel_revisions` in `relay-platform/services/api/src/internal/session.controller.ts`, at the `channel_ids:` field, from T009's rows. **Cited by field and not by line**: T009 changes `channelsForUser`'s return shape in an earlier phase, so a line number recorded now is stale before this task runs — feature 043 had a task name the wrong line and it would have caused a defect. `channel_ids` keeps its shape: eleven chapters publish that field and widening it into objects would edit all of them for a field they do not read. (FR-004)
+- [X] T011 [US1] Add `revisionCountSchema` and the ack's `revisions` field to `relay-platform/packages/protocol/src/frames.ts`. **Not `cursorSchema`** — it is `.positive()` and every unrevised channel is **zero**, so reusing it makes an unrevised channel unrepresentable and collapses the two states FR-007 turns on (research R4). **This task comes first in the phase because both consumers import from here**; defining the shape twice is the two-lists defect T009 warns about, one file apart. (FR-004)
+  Verified in the tree: `revisionCountSchema` declared and `revisions: revisionCountSchema` on
+  `connectionAckSchema.payload` — **required**, which is right for a frame the platform builds and
+  is the inverse of chapter 3.24's `outboxEventSchema` mistake. It turned three fixtures red on the
+  spot, which is the compiler naming every construction site.
+
+- [X] T012 [US1] Add `channel_revisions` to `internalSessionResponseSchema` in `relay-platform/packages/protocol/src/internal.ts`, **importing `revisionCountSchema` from `./frames.js`** rather than spelling the record shape again — that import direction already exists for `messageSchema` and `MESSAGE_TEXT_MAX`. Give it `.default({})`, following `banned`'s precedent in this same schema: an api built before this feature still satisfies it during a rolling deploy, and the gateway then behaves as it does today. (FR-004, FR-014)
+  On `internalSessionResponseSchema` at `internal.ts:204`, importing `revisionCountSchema` rather
+  than respelling the record, with `.default({})`. **Not** on `internalMembershipsResponseSchema` —
+  that route is a backstop answering "is this user still a member", and a count there would be a
+  second place for the same number to be read from and disagree.
+
+- [X] T012a [US1] Build the protocol package — `pnpm --filter @relay/protocol build` — **before anything consumes the new fields**. `packages/protocol/package.json` exports `./dist/index.d.ts` and `./dist/index.js` with no tsconfig path mapping to source, so T011 and T012's schema changes are **invisible to the api and the gateway until this runs**, and the three tasks below would fail for a reason that is not theirs. Then `tsc --noEmit` in both consumers: the compiler's list of call sites is the inventory, not a grep. (FR-004, FR-014)
+  `packages/protocol/dist/frames.js` carries the schema, so the api and the gateway can see it.
+  This task exists because the package exports `./dist` with no path mapping to source, and the
+  second analysis pass found three tasks that would otherwise have failed for a reason that was
+  not theirs.
+
+- [X] T013 [US1] Fill `channel_revisions` in `relay-platform/services/api/src/internal/session.controller.ts`, at the `channel_ids:` field, from T009's rows. **Cited by field and not by line**: T009 changes `channelsForUser`'s return shape in an earlier phase, so a line number recorded now is stale before this task runs — feature 043 had a task name the wrong line and it would have caused a defect. `channel_ids` keeps its shape: eleven chapters publish that field and widening it into objects would edit all of them for a field they do not read. (FR-004)
+  Filled from the hoisted `memberships` array, which is the same rows `channel_ids` maps — one
+  query feeding two fields, because at 10,000 connections a second call here is 10,000 extra reads.
+
 - [X] T014 [US1] **No request parameter — decided, built and reverted.** A draft had the client present its counts on the upgrade URL so the gateway could compare; `parseRevisions` was written in `relay-platform/services/gateway/src/resume.ts` and then removed, because the ack carries every count and the client can compare against its own. The file records why where the function stood. **A parameter the server parses and never acts on is a contract it can never remove**, and the rsplit rule that made a third cursor field impossible stays intact. (FR-005)
 - [X] T015 [US1] Fill the ack's `revisions` in `relay-platform/services/gateway/src/session.ts` from the session response's `channel_revisions`. **The gateway reports; it does not compare** — it never learns what a client holds, so it cannot be wrong about it. Report **every** channel the user belongs to, including zeros and channels the client asked nothing about — a client needing no repair still needs a baseline to store. A presented count higher than the platform's is treated as no repair and **must not refuse the connection**: refusing over a number the client supplied is a denial of service the client controls. **Reporting every channel is FR-007a**: a client told nothing about a channel has no baseline to store, and its next reconnect is the first one again. (FR-006, FR-007a, FR-008, FR-009)
   **Measured on the implementation, not asserted**: the premise probe re-run against the built
@@ -297,8 +315,54 @@ no hunk. That is a trap, not a convenience.
 
 ## Phase 6: Polish and close-out
 
-- [ ] T026 Run the coverage lane with the pinned variables and read `coverage/coverage-summary.json`, **not the text table** — the text reporter omits a file at 100% on all four metrics, which is the set this feature needs to see.
-- [ ] T027 Re-pin the changed files in `relay-platform/vitest.coverage.config.mts`, and **prove the pins are live**: a per-file threshold whose key matches no file is ignored silently and protects nothing. Demand 101% of a file at 100% and confirm vitest names the key.
+- [X] T026 Run the coverage lane with the pinned variables and read `coverage/coverage-summary.json`, **not the text table** — the text reporter omits a file at 100% on all four metrics, which is the set this feature needs to see.
+
+  **exit 0, 447 s, 99 files, 1,396 tests** — against chapter 3.24's 455 s, 97 files, 1,357 tests,
+  and the two durations are **not comparable**: `consumer.itest.ts` alone has ranged from 101 s to
+  484 s depending on how full the broker was. The lane was cleared first (`reset-lane.mjs`:
+  DELIVERIES 40 -> 0, EVENTS 96 -> 0, 0 orphaned durables, 7,515 stale webhook rows), and the
+  state it was NOT cleared to is in `baseline.txt` too — 76,980 environments and 791,520 outbox
+  rows that `reset-lane.mjs` does not touch by design.
+
+  Totals: **93.18% statements, 87.84% branches, 92.61% functions, 94.43% lines** over 104 measured
+  files. The ten files this feature changed are tabulated in `baseline.txt`. Read from the JSON,
+  and the JSON was the right call: `frames.ts`, `auth.ts` and `memberships.controller.ts` are all
+  at 100 on all four and the text reporter would have shown none of them.
+
+- [X] T027 Re-pin the changed files in `relay-platform/vitest.coverage.config.mts`, and **prove the pins are live**: a per-file threshold whose key matches no file is ignored silently and protects nothing. Demand 101% of a file at 100% and confirm vitest names the key.
+
+  43 pinned keys -> **48**. Four of this feature's files were already pinned and all four still
+  meet their floors; five had no pin and now do, at values measured rather than rounded.
+
+  **BOTH HALVES OF THE PROBE RAN IN ONE RUN, AND BOTH ANSWERED:**
+
+      "services/gateway/src/auth.ts"  statements: 101
+        -> ERROR: Coverage for statements (100%) does not meet
+           "services/gateway/src/auth.ts" threshold (101%)          THE PIN IS LIVE
+
+      "services/gateway/src/this-file-does-not-exist.ts"  everything: 101
+        -> nothing. No error, no warning, no mention.               SILENT, AS WARNED
+
+  **AND THE PROBE RUN FOUND SOMETHING NOBODY WAS LOOKING FOR.** It failed a second threshold:
+  `session.ts` functions measured **85.36%** where the run twenty minutes earlier measured
+  **87.80%** — on identical code, with the other three metrics moving by a third of a point and
+  every other pinned file byte-identical across both runs. A 2.44-point swing is about one
+  function of forty, so something in that suite is timing-dependent.
+
+  A floor at the measured value would have gone red on the next run for no change to the code,
+  and the fix would then have been to lower it — **a ratchet that teaches people to lower
+  ratchets**. `session.ts` is pinned below the lower observation by roughly the observed swing,
+  with both numbers in the config so the next feature does not rediscover them. The instability
+  is filed as a `C7` case.
+
+  **`services/api/src/db/schema.ts` is deliberately left unpinned**, and the reason is in the
+  config rather than in its absence: 59.15% statements and 40.81% functions look alarming and are
+  drizzle table declarations whose "functions" are index-building callbacks that run only when a
+  query touches that table. A floor there would ratchet on which tables the suite happens to
+  query.
+
+  Final run: **exit 0**, no threshold errors, 99 files, 1,396 tests.
+
 - [X] T028 [P] Read every new test's title against its assertion, one at a time. **Expect the count to be wrong.** **Strip any task id from a title** — requirement ids belong there, task ids do not. (SC-003)
 
   **THREE FILES NAMED, FOUR IN THE TREE, FIFTEEN TITLES.** The fourth is `resume.itest.ts`,

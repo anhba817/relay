@@ -235,3 +235,63 @@ evidence. The re-run is in Python with a positive control per pattern, and the c
 is the point: a pattern that does not match its own example is reported as BROKEN rather
 than as zero. That check is what turns "0 hits" into a claim about the corpus.
 
+
+================================================================================
+T026/T027 — COVERAGE AND THE RATCHET (2026-09-06)
+================================================================================
+
+Lane cleared first (reset-lane.mjs). The state it does NOT clear, recorded because a
+duration measured on a full broker is taken on a different instrument:
+  environments 76,980 · outbox 791,520 · messages 392,517 · channels 93,319
+
+  exit 0   447 s   99 test files   1,396 tests   104 files measured
+  TOTAL    statements 93.18%   branches 87.84%   functions 92.61%   lines 94.43%
+
+  Chapter 3.24 read 455 s / 97 files / 1,357 tests. THE DURATIONS ARE NOT COMPARABLE —
+  consumer.itest.ts alone has ranged 101 s to 484 s on broker fullness alone.
+
+THE TEN FILES THIS FEATURE CHANGED, from coverage-summary.json (not the text table,
+which omits every file at 100 on all four — three of these):
+
+  FILE                                          stmt   brch   func   line   pinned
+  packages/protocol/src/frames.ts                100    100    100    100   yes, met
+  packages/protocol/src/internal.ts             91.3  85.71     60  92.68   NEW
+  services/api/src/db/schema.ts                59.15    100  40.81  59.15   deliberately not
+  services/api/src/db/repository.ts            97.47  92.61    100  99.25   yes, met
+  services/api/src/internal/session.controller  83.33   62.5    100  83.33   NEW
+  services/api/src/internal/memberships.contro   100    100    100    100   yes, met
+  services/gateway/src/auth.ts                   100    100    100    100   NEW
+  services/gateway/src/registry.ts             88.88    100   87.5   87.5   NEW
+  services/gateway/src/session.ts              93.85  91.12   87.8   94.4   NEW, see below
+  services/gateway/src/resume.ts                 100     95    100    100   yes, met
+
+  43 pinned keys -> 48.
+
+THE PINS WERE PROVED LIVE, AND THE PROOF FOUND A THIRD THING:
+
+  "services/gateway/src/auth.ts" statements: 101
+    -> ERROR: Coverage for statements (100%) does not meet
+       "services/gateway/src/auth.ts" threshold (101%)              LIVE
+
+  "services/gateway/src/this-file-does-not-exist.ts" everything: 101
+    -> nothing at all                                              SILENT, AS WARNED
+
+  session.ts functions   run 1: 87.80%   run 2: 85.36%   delta -2.44
+  session.ts statements  run 1: 93.85%   run 2: 93.52%   delta -0.33
+  session.ts lines       run 1: 94.40%   run 2: 94.05%   delta -0.35
+  repository.ts stmt     run 1: 97.47%   run 2: 97.64%   delta +0.17
+  repository.ts branches run 1: 92.61%   run 2: 92.84%   delta +0.23
+  every other pinned file: byte-identical across both runs
+
+  IDENTICAL CODE, TWENTY MINUTES APART. About one function of forty in session.ts is
+  timing-dependent. A floor at the measured value would go red on the next run for no
+  change to the code, and the fix would then be to lower it — a ratchet that teaches
+  people to lower ratchets. session.ts is pinned below the lower observation by roughly
+  the observed swing, with both numbers in the config. Filed as a C7 case in gaps.md.
+
+  services/api/src/db/schema.ts is deliberately unpinned: its "functions" are drizzle
+  index-building callbacks that run only when a query touches that table, so a floor
+  would ratchet on which tables the suite happens to query.
+
+  Final ratchet run: exit 0, no threshold errors.
+
