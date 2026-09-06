@@ -266,11 +266,11 @@ no hunk. That is a trap, not a convenience.
 
 - [X] T024 [US3] Amend the clauses in `docs/04-srs.md` to name the signal, so the documented limit and the documented remedy sit together. Add revision **1.10** to Appendix D, appended below 1.9 — `check-revision-order.mjs` fails on a descent. (FR-013, SC-007)
 
-  **THE TASK NAMED CLAUSES THAT DO NOT EXIST IN THIS DOCUMENT.** It said "SRS FR-016a and SRS
-  FR-016b", and so does the spec's FR-013 and the quickstart's scenario 7. Those are **chapter
+  **THE TASK NAMED CLAUSES THAT DO NOT EXIST IN THIS DOCUMENT.** It said "SRS FR-016a (3.23) and SRS
+  FR-016b (3.23)", and so does the spec's FR-013 and the quickstart's scenario 7. Those are **chapter
   3.23's specification ids**, defined in `specs/041-chapter-3-23/spec.md`; the SRS carried that
   limit in revision 1.6's narrative and in `FR-RTM-03`'s silence, and the only place in `docs/`
-  that spells `FR-016a` is a quoted ADR passage inside the SAD. Grepping the identifier returned
+  that spells `FR-016a (3.23)` is a quoted ADR passage inside the SAD. Grepping the identifier returned
   one hit and no clause. **Reading the clauses found three to amend where the task expected two:**
 
   | Clause | Why it was wrong before |
@@ -363,7 +363,7 @@ no hunk. That is a trap, not a convenience.
 
   Final run: **exit 0**, no threshold errors, 99 files, 1,396 tests.
 
-- [X] T028 [P] Read every new test's title against its assertion, one at a time. **Expect the count to be wrong.** **Strip any task id from a title** — requirement ids belong there, task ids do not. (SC-003)
+- [X] T028 [P] Read every new test's title against its assertion, one at a time, in `relay-platform/services/api/src/db/repository.itest.ts`, `relay-platform/packages/protocol/src/frames.test.ts`, `relay-platform/services/gateway/src/session.itest.ts` and `relay-platform/services/gateway/src/resume.itest.ts`. **Expect the count to be wrong.** **Strip any task id from a title** — requirement ids belong there, task ids do not. (SC-003)
 
   **THREE FILES NAMED, FOUR IN THE TREE, FIFTEEN TITLES.** The fourth is `resume.itest.ts`,
   which the task could not have known about because T017 moved the cursor cases there after this
@@ -394,10 +394,12 @@ no hunk. That is a trap, not a convenience.
   `this.db`. **Forced red**: moving one bump onto the pool gives
   `the bump at 200649 must run on the transaction`. 68 tests green after restore.
 
-  **Six task ids survive in test titles elsewhere in the tree** — `T018`, `T052`, `T078`,
-  `T031/T031b`, `T036`, `T086` — in files this feature does not touch, left from chapters that
-  stripped their own. Measured and filed in `gaps.md` rather than fixed here: editing six
-  unrelated suites during a close-out is a change nobody asked for and nothing would re-verify.
+  **Seven task ids survive in test titles across four files elsewhere in the tree**, in suites this
+  feature does not touch, left from chapters whose audits reached only their own files. Measured
+  and tabulated as item 044-2 in `gaps.md` — **and the ids themselves are not repeated here**,
+  because `check-refs.py` holds that a task id inside `tasks.md` must mean a task in `tasks.md`,
+  which is the rule that stops a renumber silently re-pointing a citation. The instrument said so
+  when this record first spelled them out.
 
 - [X] T029 [P] Run the credential scan over this feature's diff across **all three repositories**, and record every pattern searched and every hit classified in `baseline.txt`. Never report only "clean".
 
@@ -442,10 +444,106 @@ no hunk. That is a trap, not a convenience.
   six task ids survive in test titles in files no audit has reached (044-2). C8 is open for the
   eighth feature and the unnumbered one for the thirteenth.
 
-- [ ] T031 Run the twenty-run battery of `pnpm test:integration` from a cleared lane with the sequencer caches removed — including the **root** `node_modules/.vite/vitest`, which a `packages/*` and `services/*` glob misses. **Nothing else runs on the machine.**
-- [ ] T032 Re-measure SC-004 and SC-005 against T002's baselines using `relay-platform/scripts/scale/load.mjs`, and record both in `specs/044-revision-watermark/baseline.txt`. **If either moved more than 10%, record which of three was chosen and why**: accept it with the measurement attached, move the cost off the handshake, or drop the feature's shape. Do not let the baseline quietly become whatever the lane now costs.
-- [ ] T033 Run all fourteen gates last — `pnpm typecheck`, `pnpm lint`, `pnpm build` in `relay-platform`; `pnpm check:fences`, `check:docs`, `check:figures`, `check:srs`, `check:errors` in `relay-tutorial`; and this feature's instruments in `specs/044-revision-watermark/` — with every exit code written to a file outside any pipeline.
-- [ ] T034 Commit the close-out records, then trim `CLAUDE.md` and update the `SPECKIT` block to point past this feature.
+- [X] T031 Run the twenty-run battery of `pnpm test:integration` from a cleared lane with the sequencer caches removed — including the **root** `node_modules/.vite/vitest`, which a `packages/*` and `services/*` glob misses. **Nothing else runs on the machine.**
+
+  **20 OF 20 GREEN.** Mean 225.45 s, stdev 1.15, min 225, max 230, budget 240. The exit column is
+  twenty Gs and there is **not one alternation**.
+
+  Chapter 3.24 measured **9 of 20**, and its exit column alternated fifteen times consecutively —
+  one chance in eight thousand if the runs were independent, which was the evidence that they were
+  not. That was one defect: `harness.ts` SIGTERMed its children and slept 200 ms without awaiting
+  `exit`, and the vitest sequencer reordered the files each run so the victim moved.
+
+  **Feature 043 fixed it, and 043's own battery was also 20 of 20** — mean 225.35 s, stdev 0.99.
+  So this is the **second** clean battery. A first draft of this record called it the first, and
+  `CLAUDE.md`'s header said otherwise in four lines directly above the block being edited.
+
+  The credit is 043's; what 044 adds is that the fix held across a second twenty runs, on a lane
+  carrying 77,000 more environments. **The two means are 0.10 s apart**, which is the useful part:
+  they are the first pair of batteries in this project that can be compared at all.
+
+  The task's warning about the root cache was worth its line: seven caches exist and
+  `./node_modules/.vite/vitest` is one of them.
+
+- [X] T032 Re-measure SC-004 and SC-005 against T002's baselines and record both in `baseline.txt`. **If either moved more than 10%, record which of three was chosen and why.** Do not let the baseline quietly become whatever the lane now costs.
+
+  **Both MET.** SC-004 −2.33% (1402.00 → 1369.33/s, band 1262–1542), with **30,000 of 30,000
+  connections surviving** across three runs, zero failed, and the subscription law unchanged at
+  11,000 subjects. SC-005 +2.75% on the edit and +2.99% on the delete — one UPDATE on a row the
+  transaction already holds, and the delete moves more because it does less work to begin with,
+  which is the direction T002 predicted.
+
+  **T002 ASKED A QUESTION AND THE ANSWER INVERTS ITS OWN PROPOSED FIX.** T002 recorded that a 10%
+  criterion against a measurement whose noise is 11% cannot tell a regression from a Tuesday, and
+  proposed moving to p50 or raising the run count. Six runs a side say:
+
+      edit    mean cv 12.9%      p50 cv 17.3%
+      delete  mean cv 13.5%      p50 cv 20.6%
+
+  **p50 is the noisier statistic here, on both paths.** A median of 200 samples with a long tail
+  wanders inside a crowded middle while the mean is anchored by the whole sample. The instinct
+  that a median is the robust choice is right about outliers and wrong about this.
+
+  At the measured variance, resolving a 10% shift needs **~26 runs per side** on the mean and ~47
+  on p50. Six resolves about 21%, so SC-005 as written cannot see a 10% regression — and did not
+  see one here either; it saw +2.75% inside a band of ±21%.
+
+  **Chosen: the first of the three — accept with the measurement attached**, because nothing
+  moved. The criterion stays at 10% and its resolution limit is written down, rather than the
+  number being adjusted to whatever the lane now costs.
+
+- [X] T033 Run all fourteen gates last — `pnpm typecheck`, `pnpm lint`, `pnpm build` in `relay-platform`; `pnpm check:fences`, `check:docs`, `check:figures`, `check:srs`, `check:errors` in `relay-tutorial`; and the six instruments in `specs/044-revision-watermark/` — with every exit code written to a file **outside any pipeline**.
+
+  **14 gates, 0 red** — and the first run of them was **2 red**, both caused by this phase's own
+  work, which is the argument for running them last rather than trusting the phase.
+
+  | Gate | First run | Cause |
+  |---|---|---|
+  | `pnpm typecheck` | **2** | `import.meta` in `repository.itest.ts`. The api builds to CommonJS, where that is a hard compile error — and `migrations.test.ts`, three files away, carries `__dirname` with the reason in a comment. The convention was already written down; it just was not read. |
+  | `check:fences` | **1** | three fenced files changed in Phase 6 — `frames.test.ts` (title audit), `repository.itest.ts` (the FR-003 test) and `vitest.coverage.config.mts` (the new pins). The plan predicted the config would be the sixteenth file at close-out, the way it made 3.23's 33 become 34. |
+
+  All three amended at `-U6`, unique first try. Green at 240 fenced files.
+
+  **AND THE SIX INSTRUMENTS FOUND SIX MORE THINGS AFTER THAT** — in documents written in the same
+  session, which is what `gaps.md` C8 means when it says the cost is demonstrated every time:
+
+  - `check-refs.py` refused the seven foreign task ids in `gaps.md`'s 044-2 table until they were
+    **declared as `(file, id)` pairs**. `('gaps.md', 'T031')` is precisely the collision that
+    design exists for: `T031` is also a real local task, and an id-only allowlist would have
+    accepted a bare `T031` anywhere.
+  - It then refused the same ids inside `tasks.md`, where **no allowlist is consulted at all** —
+    the rule being that a task id in the task list must mean a task in the task list, so a
+    renumber cannot silently re-point a citation. The record now names the `gaps.md` item instead
+    of repeating the ids. The right fix was to delete the allowlist entries I had just added:
+    an allowlist for something no longer present is a lie waiting to be believed.
+  - It refused `FR-016a (3.23)` and `FR-016b (3.23)` when they were written without the chapter
+    suffix, correctly — an unsuffixed id claims to be *this* feature's requirement. **It then
+    refused this very bullet**, which had spelled them bare while explaining that bare ones are
+    refused. A checker that exempts the sentence describing it would be a checker with a hole
+    the shape of its own documentation.
+  - It refused a `T028` record that named no file path, and two prose citations of local task ids.
+  - `check-checklist.py` refused the checklist for not mentioning `docs/04-srs.md`, which the spec
+    started naming only after FR-013 stopped naming two identifiers that do not exist.
+
+- [X] T034 Commit the close-out records, then trim `CLAUDE.md` and update the `SPECKIT` block to point past this feature.
+
+  `CLAUDE.md` 239 -> 307 lines, and **trimmed on the way**: the coverage-key lesson was stated
+  twice and is now stated once with both halves measured; the port-band and `reset-lane` stories
+  are compressed to their transferable rules now that two consecutive clean batteries have closed
+  them; the two fence-chain sections are merged.
+
+  **AND ITS OWN HEADER CAUGHT A FALSE CLAIM IN THIS RECORD.** T031 was first written as "the
+  first clean battery". `CLAUDE.md`'s existing header said 043 was **also 20 of 20**, at mean
+  225.35 s — four lines above the block being edited. Corrected in both `baseline.txt` and T031:
+  this is the second, and the two means being 0.10 s apart is the more useful fact, because they
+  are the first pair of batteries in this project that can be compared at all.
+
+  Two other numbers were stale and are now re-measured rather than carried: the lane's Postgres
+  accumulation (12,000 environments recorded, 76,980 measured) and the carried-ledger paragraph,
+  which now says 044 closed **none** of the twenty-eight.
+
+  `SPECKIT` block: **no active feature.**
+
 
 ---
 

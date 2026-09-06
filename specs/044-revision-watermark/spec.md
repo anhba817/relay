@@ -196,7 +196,7 @@ reading platform source.
   client does when it rises.
 - **FR-013**: The SRS clauses that describe the reconnect and the ack MUST be amended to name the
   signal, so the documented limit and the documented remedy are in the same place.
-  **This requirement named two clauses that do not exist** until T024 ran: it said "SRS FR-016a
+  **This requirement named two clauses that do not exist**, as the amendment task discovered: it said "SRS FR-016a
   and SRS FR-016b", which are chapter 3.23's *specification* ids and appear nowhere in
   `docs/04-srs.md`. The SRS carried the limit in revision 1.6's narrative and in `FR-RTM-03`'s
   silence. Three clauses were amended — `EIR-WS-03`, `FR-RTM-03` and `FR-RTM-05` — and the

@@ -60,6 +60,24 @@ FOREIGN: set[tuple[str, str]] = {
     # this comment is the record that clearing it is a step rather than an oversight.
     #
     # Filled one pair at a time as a record names what a task does.
+    #
+    # FEATURE 044. Seven pairs, and all seven are the SAME finding rather than seven
+    # references: `gaps.md` item 044-2 and the `tasks.md` record behind it TABULATE the
+    # task ids still embedded in test titles elsewhere in the tree. The ids are the
+    # subject matter — the item is that they exist — so they are quoted data, not
+    # citations, and there is nowhere else they could live.
+    #
+    # ('gaps.md', 'T031') IS THE COLLISION THIS FILE'S PAIRS WERE BUILT FOR. `T031` is
+    # also a real local task (the twenty-run battery). An id-only allowlist would have
+    # accepted a bare `T031` anywhere; the pair accepts it only in `gaps.md`, where it
+    # means `gauntlet.itest.ts`'s title and nothing else.
+    ("gaps.md", "T018"),
+    ("gaps.md", "T031"),
+    ("gaps.md", "T031b"),
+    ("gaps.md", "T036"),
+    ("gaps.md", "T052"),
+    ("gaps.md", "T078"),
+    ("gaps.md", "T086"),
 }
 
 

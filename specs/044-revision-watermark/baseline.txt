@@ -295,3 +295,114 @@ THE PINS WERE PROVED LIVE, AND THE PROOF FOUND A THIRD THING:
 
   Final ratchet run: exit 0, no threshold errors.
 
+
+================================================================================
+T031 — THE TWENTY-RUN BATTERY (2026-09-06)
+================================================================================
+
+Lane cleared, ALL SEVEN sequencer caches removed. The root one is the point:
+
+    ./node_modules/.vite/vitest              <-- a packages/*,services/* glob MISSES this
+    ./packages/e2e/node_modules/.vite/vitest
+    ./packages/protocol/node_modules/.vite/vitest
+    ./packages/test-harness/node_modules/.vite/vitest
+    ./services/api/node_modules/.vite/vitest
+    ./services/dispatcher/node_modules/.vite/vitest
+    ./services/gateway/node_modules/.vite/vitest
+
+    run  exit  seconds        run  exit  seconds
+    01     0     230          11     0     225
+    02     0     225          12     0     225
+    03     0     225          13     0     225
+    04     0     225          14     0     226
+    05     0     225          15     0     225
+    06     0     225          16     0     225
+    07     0     225          17     0     226
+    08     0     225          18     0     225
+    09     0     226          19     0     225
+    10     0     225          20     0     226
+
+    20 of 20 GREEN.  mean 225.45 s   stdev 1.15   min 225   max 230   budget 240
+    exit column: G G G G G G G G G G G G G G G G G G G G
+    alternations between consecutive runs: ZERO
+
+CHAPTER 3.24 MEASURED 9 OF 20, AND ITS EXIT COLUMN ALTERNATED FIFTEEN TIMES IN A ROW.
+That was one defect: `harness.ts` SIGTERMed its children and slept a flat 200 ms without
+awaiting `exit`, so whoever booted next inherited a held port, and the vitest sequencer's
+`results.json` reordered the files each run and made the failure alternate.
+
+**FEATURE 043 FIXED IT, AND 043's OWN BATTERY WAS ALSO 20 OF 20.** Every suite now spawns
+with `PORT: "0"` and reads its port from the child's own `listening` line, so there is no
+band to collide in and no health check that can answer from a dying predecessor.
+
+    043    20 of 20    mean 225.35 s   stdev 0.99
+    044    20 of 20    mean 225.45 s   stdev 1.15
+    3.24    9 of 20    mean 233.08 s   stdev 1.75 (over the GREEN runs only)
+
+**So this is the SECOND clean battery, not the first** — a first draft of this paragraph
+claimed otherwise and `CLAUDE.md`'s own header, four lines long, said 043 had already done
+it. The credit is 043's either way; what 044 adds is that the fix held across a second
+twenty runs, on a lane carrying 77,000 more environments than 043's did.
+
+**The two means are 0.10 s apart** on a 240 s budget, which is the useful part: a lane that
+is not fighting itself gives a duration that means something across features, and these two
+are the first pair in this project that can be compared at all.
+
+
+================================================================================
+T032 — SC-004 AND SC-005 RE-MEASURED AGAINST T002 (2026-09-06)
+================================================================================
+
+**SC-004 — the reconnect rate.** Three runs, 10,000 connections, same seed (200 channels,
+10,000 users, one connection each), nothing else running.
+
+    before (T002)   1415 · 1419 · 1372     mean 1402.00/s   stdev 26.06
+    after  (T032)   1446 · 1400 · 1262     mean 1369.33/s   stdev 95.76
+    delta -2.33%              band +/-10% = 1262 - 1542/s        MET
+
+    30,000 of 30,000 connections survived across the three runs. 0 failed, 0 closed, no
+    close codes, no server errors. Gateway RSS 263-271 MB, 17-18 kB per connection,
+    11,000 Redis subjects every run — the subscription law unchanged by this feature.
+
+**SC-005 — what a revision costs.** SIX runs of 200 edits and 200 deletes each, over HTTP.
+T002 took two and said two was not enough; this is why.
+
+                     before    after    delta    after stdev
+    edit   mean      10.86    11.16   +2.75%    1.43 = 12.9% of the mean
+           p50       10.62    10.83   +1.91%    1.88 = 17.3%
+    delete mean       4.24     4.37   +2.99%    0.59 = 13.5%
+           p50        3.97     4.12   +3.74%    0.85 = 20.6%
+
+    Both MET. One extra UPDATE on a row the transaction already holds, costing under 3%.
+
+**THE DECISION T002 ASKED FOR, AND IT IS NOT THE ONE T002 EXPECTED.**
+
+T002 recorded that a 10% criterion against a measurement whose own noise is 11% cannot
+distinguish a regression from a Tuesday, and proposed two remedies: move the criterion to
+p50, or raise the run count.
+
+**Moving to p50 would make it WORSE.** Measured over six runs, p50 is noisier than the
+mean on both paths — 17.3% against 12.9% for the edit, 20.6% against 13.5% for the delete.
+That is what a p50 of 200 samples does when the distribution has a long tail: the median
+moves around inside a crowded middle while the mean is anchored by the whole sample. The
+intuition that a median is the robust statistic is right about outliers and wrong about
+this.
+
+**What it would actually take**, at the variance now measured:
+
+    edit mean   cv 12.9%   ~26 runs per side to resolve a 10% shift at 95%/80%
+    edit p50    cv 17.3%   ~47 runs per side
+
+Six runs per side resolves about 21%. So SC-005 as written **cannot see a 10% regression**,
+and it did not see one here either — what it saw is +2.75% inside a band of +/-21%.
+
+**CHOSEN: accept, with the measurement attached** — which is the first of T032's three
+options and the only honest one, because nothing moved. The cost is one UPDATE inside a
+transaction that already writes two rows, the direction is the one predicted at T002 (the
+delete's percentage moves more than the edit's, 2.99% against 2.75%, because the delete
+does less work to begin with), and every connection survived.
+
+**The criterion is left at 10% and its resolution limit is recorded rather than the number
+being quietly adjusted to whatever the lane now costs.** Anybody who wants SC-005 to bite
+needs 26 runs a side, not a different statistic.
+

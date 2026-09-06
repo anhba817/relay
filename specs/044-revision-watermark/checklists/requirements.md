@@ -124,7 +124,8 @@ tree. Each is deliberate:
 
 | Reference | Class | Why the spec names it |
 |---|---|---|
-| `FR-016a`, `FR-016b` | published clauses | they define the limit this feature supplies the remedy for; FR-013 amends them |
+| `FR-016a`, `FR-016b` | a predecessor's spec ids | they define the limit this feature supplies the remedy for. **They are chapter 3.23's specification ids, not SRS clauses**, which is a correction this checklist did not make until the amendment was attempted — see below |
+| `docs/04-srs.md` | the document amended | FR-013 amends clauses in it, and once the clauses turned out not to be `FR-016a` and `FR-016b` the spec had to name the document instead of two identifiers |
 | `docs/11-scalability-measurement-2026-09-06.md` | a measurement | supplies the 3m20s window and SC-004's rate baseline |
 | SRS revision 1.9 | the record | where the connect-limit finding was filed, named in Out of Scope |
 
@@ -144,3 +145,23 @@ requirements exist because of it:
 The Context section's second bullet — that the edit and delete paths do not touch the channel row
 while the send path does — is why the cost is stated as one write per revision rather than
 assumed to be free.
+
+### What the close-out found, and why it is in a quality checklist
+
+**Every box above was ticked, twice, before the amendment was attempted.** The spec, the plan,
+the tasks and the quickstart all said the feature would amend "SRS FR-016a and SRS FR-016b".
+Those identifiers are **chapter 3.23's specification ids**. They appear nowhere in
+`docs/04-srs.md`; the only place in `docs/` that spells `FR-016a` is a quoted ADR passage inside
+the SAD. Three analysis passes read those documents against each other and every one of them
+saw two artifacts agreeing, because they agreed with each other and not with the tree.
+
+**"Requirements are testable and unambiguous" passed on a requirement naming a clause that does
+not exist**, and it kept passing right up to the moment somebody ran `grep`. What found it was
+not a checker and not a reading: it was **executing the task** — opening the SRS to make the
+edit, and discovering there was nothing there to edit. Reading the clauses rather than the
+identifiers then turned up **three** clauses to amend where the requirement named two.
+
+`check-refs.py` catches this class now, in one direction: it fails a citation of `FR-016a` with
+no chapter suffix, because an unsuffixed id is a claim about *this* feature's requirements. It
+cannot check the other direction — whether a suffixed foreign id names anything real — and
+nothing here can.

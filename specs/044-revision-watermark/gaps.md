@@ -146,7 +146,8 @@ and this is the thirteenth. It did not close it either.
 read the work.
 
 **And this feature has the sharpest evidence yet for why the substitute does not work.** SC-006
-asks whether a client developer can implement the repair from the published text alone. T025 ran
+asks whether a client developer can implement the repair from the published text alone. The
+close-out reading pass ran
 the closest available approximation — read §5.2 and the three clauses with the spec and the source
 closed — and it found a real hole: the *higher-than-reported* case had no client instruction at
 all, only the platform's half of it.

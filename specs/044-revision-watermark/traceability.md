@@ -12,16 +12,16 @@ identifier nothing verifies, which is the one thing this file exists to make vis
 | FR-002 | The count MUST rise by exactly one per revision, and MUST NOT fall. | T007, T008 |
 | FR-003 | The count MUST rise within the same transaction that applies the revision, so a revision that… | T007, T008 |
 | FR-004 | A reconnecting client MUST be told the current count for every channel it belongs to. | T011, T012, T012a, T013 |
-| FR-005 | A reconnecting client MUST be able to present the counts it holds, per channel. | T014 |
-| FR-006 | A client presenting a count lower than the platform's for a channel MUST be able to determine… | T015 |
-| FR-007 | A client that presents no count for a channel MUST NOT be told a repair is needed for that ch… | T011, T016, T017, T020 |
+| FR-005 | The reconnect response MUST carry enough for a client to decide, per channel and without a fu… | T014 |
+| FR-006 | A client holding a count lower than the reported one for a channel MUST be able to determine … | T015 |
+| FR-007 | The published client contract MUST state that a client holding no count for a channel repairs… | T011, T016, T020 |
 | FR-007a | The platform MUST still report its current count for such a channel. A client told nothing ab… | T015, T020 |
-| FR-008 | A client presenting a count higher than the platform's MUST be treated as needing no repair, … | T015 |
+| FR-008 | The published client contract MUST state that a client holding a count higher than the report… | T015 |
 | FR-009 | The signal MUST be per channel. A single connection-wide indicator does not satisfy FR-006, b… | T015 |
 | FR-010 | The count MUST be comparable without reference to a clock, so that a client and the platform … | T005 |
 | FR-011 | Sending a message MUST NOT raise the count. A new message is delivered by the ordinary replay… | T010 |
 | FR-012 | The published protocol documentation MUST state what the count means and what a client does w… | T023 |
-| FR-013 | SRS FR-016a's and SRS FR-016b's clauses MUST be amended to name the signal, so the documented… | T024 |
+| FR-013 | The SRS clauses that describe the reconnect and the ack MUST be amended to name the signal, s… | T024 |
 | FR-014 | The reconnect path MUST NOT require a per-channel query per connection to produce the counts.… | T009, T012, T012a |
 | FR-015 | Every changed file that a published chapter reproduces MUST carry a corresponding amendment i… | T010a, T018, T022 |
 
@@ -31,7 +31,7 @@ identifier nothing verifies, which is the one thing this file exists to make vis
 |---|---|---|
 | SC-001 | A client that missed a revision while disconnected can determine, from its reconnect alone, w… | T019 |
 | SC-002 | A client that missed no revisions is told to repair nothing, in 100% of cases. No client perf… | T019, T021 |
-| SC-003 | The signal reports how many revisions were missed per channel, not merely that some were. | T021 |
+| SC-003 | The signal reports how many revisions were missed per channel, not merely that some were. | T021, T028 |
 | SC-004 | Reconnecting 10,000 clients stays within 10% of the rate measured on the same lane immediatel… | T002, T032 |
 | SC-005 | Applying a revision stays within 10% of its current cost. | T002, T032 |
 | SC-006 | A developer can implement the repair from the published documentation alone, without reading … | T025 |
