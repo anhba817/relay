@@ -835,3 +835,61 @@ would licence rewriting published chapters at will.**
 
 Recorded rather than acted on, so the next person sweeping this claim knows it was read
 and left deliberately.
+
+
+### T037 — STORED WEBHOOK SUBSCRIPTIONS, RE-MEASURED 2026-09-06 (FR-017)
+
+    message.created        35,873
+    channel.created           838
+    message.deleted            88
+    message.updated            88
+    ----------------------------------
+    type-rows total        36,887   across 36,799 endpoints
+    declared               36,887   (all of them)
+    declared, NOT emitted     838   every one of them `channel.created`
+    not declared at all         0
+
+**The rule as shipped rejects zero rows. The rule the review recommends would reject 838.**
+
+That is the whole argument in two numbers. `docs/09-…` and `specs/041-chapter-3-23/gaps.md`
+item 1 both say to compare `event_types` with `OUTBOX_EVENT_TYPES`, which holds the five
+types the platform EMITS. FR-WHK-02 declares eight. The 838 rows name `channel.created` —
+declared, published, and not yet built — so refusing them would break customers who
+subscribed to a documented event type and are waiting for the feature.
+
+Research measured 741 on an earlier day; the lane has grown to 838 and the conclusion is
+unchanged. **Both are measurements of this database on their day**, and a customer's is
+not this one — the count that matters to them is their own, which is why FR-017 asks for
+the number and not for a promise.
+
+**And zero rows name nothing declared**, so the typo the finding is actually about —
+`mesage.updated` — does not exist in this lane. It is refused by the new rule and no
+existing row was relying on the absence of that check.
+
+**FR-016 WAS AMENDED RATHER THAN IMPLEMENTED AS WRITTEN.** It said a subscription must be
+refused if it names a type the platform "does not emit", which is the review's wording and
+would refuse the 838. It now says "does not declare", and a declared-but-unemitted type is
+accepted. The governance clause requires a conflict to be resolved by amendment rather than
+ignored, and this feature has now done that three times — twice in the SRS, once in its own
+specification.
+
+
+### T043 — US3's PUBLISHED-PROSE SWEEP (FR-027), AND IT ALSO AMENDED NOTHING
+
+`OUTBOX_EVENT_TYPES` appears six times across three chapter pages, exactly as the task
+predicted — and **every one is inside a titled fence**, so all six are chain states the
+appendix's hunks carry forward. Zero prose sentences mention it, and zero mention what a
+subscription's `event_types` is validated against.
+
+    OUTBOX_EVENT_TYPES, chapter 20 / 23 / 24     3 + 2 + 1 = 6 hits
+    the same, OUTSIDE a fence                    0
+    prose about event_types validation           0
+
+Two sweeps now, US2's and this one, and both amended nothing. That is worth stating plainly
+rather than leaving as silence: **the chapters describe what the code did on the day they
+were published, and this feature's changes live in the appendix.** A sweep that found
+something would mean a chapter had made a claim about the platform's present rather than
+about its own moment.
+
+The one prose sentence either sweep flagged — chapter 16's *"`avatar_url` is validated as a
+URL and not as a string"* — is still true and was left alone.

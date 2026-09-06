@@ -27,7 +27,7 @@ sections 1 and 2; edit the task line that should cite the id and regenerate.
 | FR-013 | The count of stored rows that the new avatar rule would reject MUST be measured and recorded … | T028 |
 | FR-014 | Every webhook configuration refusal caused by customer input MUST carry an error code that id… | T034, T035 |
 | FR-015 | Each new error code MUST have a section in the published error reference reachable from the c… | T038 |
-| FR-016 | A webhook subscription MUST be refused if it names an event type the platform does not emit, … | T032, T033, T036 |
+| FR-016 | A webhook subscription MUST be refused if it names an event type the platform does not **decl… | T032, T033, T036 |
 | FR-017 | The count of stored subscriptions that the new event-type rule would reject MUST be measured … | T037 |
 | FR-018 | Every close code the platform can send MUST be documented in the published error reference, d… | T039 |
 | FR-019 | A gate MUST fail when a close code exists in the platform and not in the published error refe… | T040, T041 |

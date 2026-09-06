@@ -118,8 +118,9 @@ close code in the published error reference.
 1. **Given** a webhook endpoint configuration that is malformed, non-HTTPS, private-address,
    or carries an empty event set, **When** it is submitted, **Then** the response body names
    a specific error code rather than reporting that Relay failed.
-2. **Given** a webhook subscription naming an event type Relay does not emit, **When** it is
-   submitted, **Then** it is refused and the response names the accepted set.
+2. **Given** a webhook subscription naming an event type Relay does not **declare**, **When**
+   it is submitted, **Then** it is refused and the response names the accepted set; and a
+   **declared** type Relay does not yet emit is accepted.
 3. **Given** every close code the platform can send, **When** a customer looks it up in the
    published error reference, **Then** each one is documented and distinguishable by cause.
 4. **Given** a new close code added later, **When** the documentation gate runs, **Then** it
@@ -242,7 +243,14 @@ it is a label that misleads, which analysis pass 1 found for FR-024 and pass 3 r
 - **FR-015**: Each new error code MUST have a section in the published error reference reachable
   from the code's documentation link.
 - **FR-016**: A webhook subscription MUST be refused if it names an event type the platform does
-  not emit, and the refusal MUST name the accepted set.
+  not **declare**, and the refusal MUST name the accepted set. A **declared** type the platform
+  does not yet emit MUST be accepted.
+  **Amended during implementation, from "does not emit".** The original wording came from the
+  review's recommendation and research falsified its premise: 741 stored subscriptions name
+  `channel.created`, which the requirements declare and the platform has not built. Refusing on
+  "does not emit" would refuse those rows, and those customers made no mistake — they subscribed
+  to a published event type and are waiting for the feature. The typo the finding is actually
+  about (`mesage.updated`) is outside the declared set and is still refused.
 - **FR-017**: The count of stored subscriptions that the new event-type rule would reject MUST
   be measured and recorded before the rule ships.
 - **FR-018**: Every close code the platform can send MUST be documented in the published error
