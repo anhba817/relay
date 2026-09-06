@@ -39,11 +39,16 @@ catch.
 
 **Current counts**: 34 functional requirements, 13 success criteria, 78 tasks, traceability
 0 untraced. **Re-derived, not carried** — it read 72 until `sweep.py` measured it during
-US1's verification. The six added since are `T019b`-`T019e` and `T050a`-`T050b`, every one
-of them work this feature found while testing its own fixes rather than work it planned:
-eight more spawn helpers on hand-allocated ports, two health probes on a route the api
-has never served, a budget test straddling a wall-clock minute, and a fence checker that
-could amend a published file but never retire one.
+US1's verification. Six were added since, every one of them work this feature found while
+testing its own fixes rather than work it planned: eight more spawn helpers on
+hand-allocated ports, two health probes on a route the api has never served, a budget test
+straddling a wall-clock minute, and a fence checker that could amend a published file but
+never retire one.
+
+**The ids are deliberately not named here**, and `check-refs.py` is why — it caught this
+paragraph citing two of them on the run that added it. A task id in another artifact
+survives a renumber as a valid id attached to unrelated work, so the rule is that task ids
+live in `tasks.md` and everything else describes the task.
 
 The three markers at FR-023, FR-024 and FR-025 were answered in the specification phase and
 became eight requirements:
