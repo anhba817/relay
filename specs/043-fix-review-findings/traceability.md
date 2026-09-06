@@ -7,18 +7,18 @@ sections 1 and 2; edit the task line that should cite the id and regenerate.
 
 | Requirement | What it asks | Verified by |
 |---|---|---|
-| FR-001 | The end-to-end harness MUST wait for each child process to exit, within a bounded timeout, be… | T010, T011 |
-| FR-002 | The end-to-end harness MUST obtain a port that no other process holds, rather than a fixed nu… | T007, T008, T009 |
+| FR-001 | The end-to-end harness MUST wait for each child process to exit, within a bounded timeout, be… | T010, T011, T019b |
+| FR-002 | The end-to-end harness MUST obtain a port that no other process holds, rather than a fixed nu… | T007, T008, T009, T019b, T019c |
 | FR-003 | Every integration suite that creates a durable subscription MUST delete it when the suite fin… | T012 |
 | FR-004 | An integration suite MUST NOT be prevented from observing its own published events by message… | T013 |
 | FR-005 | The repository MUST provide one documented command that returns the test lane to an empty state. | T014 |
-| FR-006 | Every test in the container-free lane MUST pass with no containers running. | T016, T019 |
+| FR-006 | Every test in the container-free lane MUST pass with no containers running. | T016, T019e, T019 |
 | FR-006a | The container-free lane MUST still exercise the logic that needs no broker. **FR-006 alone is… | T016 |
 | FR-007 | Concurrent editing and deletion of one message MUST have a test that forces the interleaving … | T017 |
 | FR-024 | Every assertion that needs a running broker MUST live in the lane that runs with containers, … | T016 |
 | FR-024a | The split MUST be decided per assertion, and each assertion that moves MUST keep the behaviou… | T015, T016 |
-| FR-026 | The lane's port allocation MUST be recorded where the next reader looks for it, and every lan… | T008a |
-| FR-027 | Published material this feature falsifies MUST be amended in the same phase that falsifies it… | T018a, T030, T043 |
+| FR-026 | The lane's port allocation MUST be recorded where the next reader looks for it, and every lan… | T008a, T019b |
+| FR-027 | Published material this feature falsifies MUST be amended in the same phase that falsifies it… | T018a, T019d, T030, T043, T050a, T050b |
 | FR-008 | The maximum message text length MUST be defined once and applied by every entry point that ac… | T020, T021, T022, T023, T025 |
 | FR-009 | A message whose text exceeds the maximum MUST be refused at the entry point that received it,… | T024 |
 | FR-010 | A refusal for over-long text MUST carry a registered error code and name the field. | T024, T026 |
@@ -75,5 +75,5 @@ covered in fact and invisible to any tool. The tables above are what a tool can 
 footer below is the current count rather than that one — **a historical measurement written as
 a bare number goes stale the next time the number moves**, which it did one pass later.
 
-    72 tasks · 34 requirements · 13 criteria
+    78 tasks · 34 requirements · 13 criteria
     0 ids with no verifying task

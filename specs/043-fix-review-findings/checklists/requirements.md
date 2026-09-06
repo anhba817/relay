@@ -37,8 +37,13 @@ across ten analysis passes, and still described three `[NEEDS CLARIFICATION]` ma
 live state. A checklist that certifies a document it has not read is the defect it exists to
 catch.
 
-**Current counts**: 34 functional requirements, 13 success criteria, 72 tasks, traceability
-0 untraced.
+**Current counts**: 34 functional requirements, 13 success criteria, 78 tasks, traceability
+0 untraced. **Re-derived, not carried** — it read 72 until `sweep.py` measured it during
+US1's verification. The six added since are `T019b`-`T019e` and `T050a`-`T050b`, every one
+of them work this feature found while testing its own fixes rather than work it planned:
+eight more spawn helpers on hand-allocated ports, two health probes on a route the api
+has never served, a budget test straddling a wall-clock minute, and a fence checker that
+could amend a published file but never retire one.
 
 The three markers at FR-023, FR-024 and FR-025 were answered in the specification phase and
 became eight requirements:
