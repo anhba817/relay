@@ -1,0 +1,99 @@
+FEATURE 044 — A RECONNECTING CLIENT CAN TELL IT MISSED A REVISION
+=================================================================
+
+T001 — THE LANE ENVIRONMENT, PINNED WHERE THE TASKS CAN SEE IT
+---------------------------------------------------------------
+
+    RELAY_POSTGRES_PORT=15432
+    DATABASE_URL=postgres://relay:relay@localhost:15432/relay
+    RELAY_REDIS_URL=redis://localhost:6379
+    RELAY_NATS_URL=nats://localhost:4222
+    RELAY_INTERNAL_CREDENTIAL=rk_svc_local_development_credential_0000
+    RELAY_INTERNAL_CREDENTIAL_GATEWAY=rk_svc_local_development_gateway_00000
+    RELAY_WEBHOOK_SECRET_KEY=BpDal75yBZp7Fc2GtGS3D1vh7qOKgCWJkF6/d0XWxBU=
+    RELAY_OUTBOX_RELAY=off  RELAY_EVENT_CONSUMER=off  RELAY_DELIVERY_RELAY=off
+
+Local development values, pinned since chapter 3.24's quickstart and in the record
+deliberately. **This machine's own Postgres holds 5432**, so the compose call needs
+RELAY_POSTGRES_PORT=15432 or it binds the wrong port and the lane reads as broken.
+
+AND AN END-USER TOKEN FOR ANYTHING THAT SENDS OR EDITS. Analysis pass 3 found the hard way
+that an application credential may send only as a bot (sender_not_permitted) and that the
+edit route refuses an API key outright (wrong_credential_type). Mint one at
+POST /auth/dev-token before following any scenario in quickstart.md.
+
+
+T003 — WHICH CHANGED FILES ARE FENCED, IN TWO COLUMNS
+-----------------------------------------------------
+
+Chapters teach a file; the appendix amends it. A single total conflates them, and this
+feature's plan and research quote the chapter-only figures.
+
+    file                            chapters   appendix
+    -----------------------------   --------   --------
+    packages/protocol/src/frames.ts         5          1
+    packages/protocol/src/internal.ts      11          1
+    packages/protocol/src/frames.test.ts    5          1
+    services/api/src/db/schema.ts          16          1
+    services/api/src/db/repository.ts      23          1
+    services/api/src/db/repository.itest.ts 9          1
+    services/api/src/internal/session.controller.ts     6    0
+    services/api/src/internal/memberships.controller.ts 1    0
+    services/gateway/src/resume.ts          2          0
+    services/gateway/src/session.ts        16          0
+    vitest.coverage.config.mts              9          1
+    services/gateway/src/session.itest.ts   0          0   EXCERPT-ONLY
+
+**Eleven of twelve carry an amendment hunk. session.itest.ts carries none and no gate can
+see an edit to it** — it is published only as `(excerpt)`, one of thirteen such files.
+
+**AND vitest.coverage.config.mts IS PUBLISHED, which this feature nearly missed.** An
+earlier measurement searched for the title `relay-platform/vitest.coverage.config.mts` and
+found nothing; the fence's title carries no path prefix, so the file read as unpublished
+when nine chapters and the appendix reproduce it. T027 re-pins that file at close-out, so
+the miss would have surfaced as a fence failure after the ratchet edit rather than before.
+**A grep that returns zero is not the same as a fact.**
+
+
+T004 — THE GREEN BASELINE: FOURTEEN GATES, ALL ZERO
+----------------------------------------------------
+
+    platform   typecheck 0 · lint 0 · build 0
+    tutorial   check:fences 0 · check:docs 0 · check:figures 0 · check:srs 0 · check:errors 0
+    feature    check-refs 0 · sweep 0 · check-prose 0 · check-quickstart 0 ·
+               check-checklist 0 · regen-traceability 0
+
+Exit codes written to a file, never accumulated in a shell variable: `fail=1` inside a
+`for … | sort` pipeline runs in a subshell and dies with it, and this repository has printed
+"ALL GATES: GREEN" over a red one that way.
+
+**THE FIRST RUN FOUND EIGHT GATES, NOT FOURTEEN.** The six instruments in this directory did
+not exist — `tasks.md` named fourteen because feature 043 had fourteen. They were copied from
+043 and re-pointed, which is gaps item C8 being paid for the seventh time: per-feature
+instruments with no owner, copied forward, carrying the predecessor's configuration.
+
+**AND THEY FOUND FIVE DEFECTS THAT THREE ANALYSIS PASSES MISSED.**
+
+    traceability.md absent entirely            regen-traceability, FileNotFoundError
+    three tasks naming no file path            check-refs
+    task ids cited in plan.md and the checklist check-refs
+    criteria named only in scenario headings   check-quickstart
+    the checklist not recording its own count   check-checklist
+    the plan naming no phases against six       sweep
+
+**The third one is the instructive one.** An earlier hand-rolled validation asked whether each
+task line contained a backticked token and reported 35 of 35 clean. `check-refs.py` asks
+whether it names a path or a command, and found three that do not — `T008` said "in the same
+file", which reads fine when following along and names nothing to a reader who arrives at that
+line first. **A looser check that agrees with you is worth less than a stricter one that does
+not.**
+
+Two instrument changes were made rather than suppressed:
+
+  - `check-refs.py` now understands `SRS FR-016a` as another document's clause. This feature is
+    built on two SRS clauses and cites them throughout; without it every citation reported as an
+    undeclared requirement. The prefix is required rather than optional — a bare `FR-016a` is
+    still a defect, because this spec's own numbering reaches FR-015 and the next id collides.
+  - `plan.md` gained a Phases section. `sweep.py` compared plan against tasks and found six
+    phases against zero; a plan that leaves its reader to derive the shape from the task list is
+    one the task list cannot be checked against.

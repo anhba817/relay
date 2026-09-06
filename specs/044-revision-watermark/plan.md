@@ -140,7 +140,7 @@ docs/05-sad.md                             FR-012    §5.2, where the resume pro
 ```
 
 **Fifteen platform files and two documents, and the estimate has already moved twice.** It
-read twelve until analysis: the second pass widened T009 to repair **both** callers of
+read twelve until analysis: the second pass widened the repository task to repair **both** callers of
 `channelsForUser` rather than one, which added `session.controller.ts` and
 `memberships.controller.ts`; the third found `docs/05-sad.md` missing and
 `limits.itest.ts` listed here without any task touching it.
@@ -151,10 +151,35 @@ become 34 and 3.24's 36 become 37.
 not the verification. This one has moved 12 → 15 before a line of code was written, which is
 the same effect arriving earlier.
 
-**Which of them are fenced was measured** (`tasks.md` T003 records it in two columns): eight of
+**Which of them are fenced was measured**, and `baseline.txt` records it in two columns: eight of
 nine changed platform files are fenced — `repository.ts` by 23 chapters, `internal.ts` by 11 —
 and **`session.itest.ts` is published only as `(excerpt)`**, so an edit to it is invisible to
 `check:fences` and carries no hunk. Thirteen files are in that state repository-wide.
+
+## Phases
+
+The plan named no phases until `sweep.py` compared it with `tasks.md` and found six against
+zero. A plan that leaves its reader to derive the shape from the task list is one the task list
+cannot be checked against.
+
+**Phase 1 — Setup.** The lane, the two performance baselines, the fence audit in two columns,
+and the gate set. Nothing here changes code, and the baselines have to exist before it does.
+
+**Phase 2 — Foundational: the counter.** The migration, the column, both revision transactions,
+and the membership query that carries the count. Blocking: every story reads this column. It
+ends green only if both callers of the widened query are repaired in the same phase.
+
+**Phase 3 — User Story 1: the signal.** Protocol shape first, then the internal response, then
+the build that makes both visible, then the two consumers. The build is not optional — the
+package resolves through `dist`.
+
+**Phase 4 — User Story 2: bounded repair.** Mostly verification of US1's design, plus the
+channel a client joined during its absence.
+
+**Phase 5 — User Story 3: the published obligation.** SAD §5.2 and the two SRS clauses.
+
+**Phase 6 — Polish and close-out.** Coverage, the ratchet, the battery, the gaps ledger, and
+the records.
 
 ## Complexity Tracking
 

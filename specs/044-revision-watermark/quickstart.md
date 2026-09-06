@@ -53,7 +53,7 @@ body was read.
     # delete that message → +1
     # edit again          → +1
 
-**Expected**: three revisions, three increments, and a send that moves nothing. **Failing
+**Expected** (SC-003, SC-005): three revisions, three increments, and a send that moves nothing. **Failing
 means** either the counter is on the wrong path or a send is being counted, which turns every
 active channel into a repair on every reconnect.
 
@@ -64,7 +64,7 @@ active channel into a repair on every reconnect.
 Connect, note a message and the channel's count from the ack. Disconnect. Edit that message
 **with `$TOKEN`, not `$CREDENTIAL`**. Reconnect presenting the stored cursor and count.
 
-**Expected**: `connection.ack.payload.revisions[<channel>]` is higher than the count presented.
+**Expected** (SC-001): `connection.ack.payload.revisions[<channel>]` is higher than the count presented.
 The client can name the channel to repair from the ack alone, with no further request.
 
 ---
@@ -73,7 +73,7 @@ The client can name the channel to repair from the ack alone, with no further re
 
 The same flow with no revision during the absence.
 
-**Expected**: the reported count equals the presented one, for every channel. **This is the
+**Expected** (SC-002): the reported count equals the presented one, for every channel. **This is the
 criterion that fails loudly if the counter is bumped by a send** — scenario 1 catches the cause,
 this catches the symptom a customer would see.
 
@@ -83,7 +83,7 @@ this catches the symptom a customer would see.
 
 Reconnect with `cursor` and **no** `rev` parameter, against channels that have revisions.
 
-**Expected**: counts reported, no repair signalled. **Failing means** every un-upgraded client
+**Expected** (SC-001, SC-002): counts reported, no repair signalled. **Failing means** every un-upgraded client
 repairs every channel on every reconnect — during the deploy window, when the whole fleet is
 reconnecting at once. This is the scenario most likely to be got wrong, because reading FR-007
 literally produces it.
@@ -94,7 +94,7 @@ literally produces it.
 
     ?cursor=<channel_id>:42&rev=<channel_id>:7
 
-**Expected**: the cursor resolves to sequence 42, not 7, and the channel id is not truncated.
+**Expected** (SC-001): the cursor resolves to sequence 42, not 7, and the channel id is not truncated.
 
 **Test with a channel id containing a colon** if one can be produced, because that is what the
 rsplit rule exists for and what a third cursor field would have broken silently — producing
@@ -108,7 +108,7 @@ plausible sequences rather than an error.
     SCALE_SEED=/tmp/seed.json SCALE_CONNECTIONS=10000 node scripts/scale/load.mjs
     # then again after
 
-**Expected**: within 10% of the baseline re-measured on this lane. The figures in
+**Expected** (SC-004, SC-005): within 10% of the baseline re-measured on this lane. The figures in
 `docs/11-scalability-measurement-2026-09-06.md` — 1,125-1,675/s — are that machine's on that
 day; **re-measure rather than comparing to them.**
 
@@ -120,7 +120,7 @@ day; **re-measure rather than comparing to them.**
 
 Read SRS FR-016a and SRS FR-016b in `docs/04-srs.md`.
 
-**Expected**: both describe the limit and name the signal that reports it. A reader who finds
+**Expected** (SC-006, SC-007): both describe the limit and name the signal that reports it. A reader who finds
 the limit finds the remedy in the same place.
 
 ---
