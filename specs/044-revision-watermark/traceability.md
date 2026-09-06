@@ -23,7 +23,7 @@ identifier nothing verifies, which is the one thing this file exists to make vis
 | FR-012 | The published protocol documentation MUST state what the count means and what a client does w… | T023 |
 | FR-013 | SRS FR-016a's and SRS FR-016b's clauses MUST be amended to name the signal, so the documented… | T024 |
 | FR-014 | The reconnect path MUST NOT require a per-channel query per connection to produce the counts.… | T009, T012, T012a |
-| FR-015 | Every changed file that a published chapter reproduces MUST carry a corresponding amendment i… | T018, T022 |
+| FR-015 | Every changed file that a published chapter reproduces MUST carry a corresponding amendment i… | T010a, T018, T022 |
 
 ## 2. Success criterion → the tasks that verify it
 
@@ -62,5 +62,5 @@ contained a backticked token and got 35 of 35; `check-refs.py` asks whether it n
 command and got 32. `T008` said "in the same file", which reads fine to a person following along
 and names nothing to a reader who arrives at that line first.
 
-    35 tasks · 16 requirements · 7 criteria
+    36 tasks · 16 requirements · 7 criteria
     0 ids with no verifying task

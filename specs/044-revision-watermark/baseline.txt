@@ -138,3 +138,32 @@ measurement whose own noise is 11% cannot distinguish a regression from a Tuesda
 honest thing is to say so now rather than to discover it at close-out. T032 re-measures with
 more runs, and if the noise still swamps the threshold the criterion moves to the p50 or the
 run count goes up — recorded as a decision, not adjusted quietly.
+
+
+PHASE 2 — THE COUNTER
+----------------------
+
+Migration `0015`, the column, both revision transactions, and the membership query.
+`repository.itest.ts` 61 -> 66 tests; the api suite 604 -> 609, all green.
+
+**BOTH RED PROBES RUN, AND ONE OF THEM WAS BROKEN FIRST.**
+
+    delete bump removed        `expected 1 to be 2`                     fires
+    bump added to the send     5 tests fail, FR-011's by name           fires
+
+The send probe passed on its first attempt, which read as a weak test and was a weak PROBE:
+its regex matched `lastActivityAt:` at line 3858 — a SELECT projection in another method —
+rather than `sendMessage`'s own UPDATE at 4299. Injected into the right statement it fails
+five tests. **A probe that does not go red is a claim about the probe until you look at where
+it landed.**
+
+**T010a DID NOT EXIST AND WAS ADDED HERE.** `check:fences` at the phase boundary reported five
+fenced files changed with no amendment: `schema.ts`, `repository.ts`, `repository.itest.ts`,
+`session.controller.ts`, `memberships.controller.ts`. T018 appends hunks for US1's phase and
+T022 for US2's; nothing covered Phase 2. Without it those five would have reached US1
+unamended and the gate would have failed there for a reason belonging two phases back.
+
+**Three analysis passes did not find it.** It is visible only by running the gate at a phase
+boundary, which is the same shape as the two findings pass 2 made: a phase that cannot end
+green, and a package that had to be built. **The gate list is a class list, and a phase without
+an amendment task is a member nobody enumerated.**
