@@ -24,11 +24,30 @@ Local development values, in the record deliberately.
     node scripts/reset-lane.mjs --yes-this-is-my-test-lane
     pnpm build
 
+**AND AN END-USER TOKEN, WHICH THE SCENARIOS BELOW ALL NEED.** Every scenario here sends or
+edits a message, and **neither can be done with the API key**:
+
+    # an application credential may send only as a BOT user
+    POST /v1/channels/<id>/messages   with the API key   →  422 sender_not_permitted
+    # and the edit route refuses an API key outright
+    PATCH /v1/channels/<id>/messages/<id>                →  403 wrong_credential_type
+
+So mint a token for a real user first, and use it for both:
+
+    TOKEN=$(curl -s -X POST "$API/auth/dev-token" \
+      -H "authorization: Bearer $CREDENTIAL" -H 'content-type: application/json' \
+      -d '{"user":"<external_id>","ttl_seconds":3600}' | jq -r .token)
+
+**This is recorded because following the earlier draft of this guide failed twice** — once on
+each rule, in that order — and neither refusal named the credential the route wanted until the
+body was read.
+
 ---
 
 ## Scenario 1 — the counter rises once per revision, and not on a send (SC-003, FR-002, FR-011)
 
     psql "$DATABASE_URL" -Atc "select revision_sequence from channels where id = '<channel>'"
+    # every send and edit below uses $TOKEN — see Prerequisites
     # send a message      → unchanged
     # edit that message   → +1
     # delete that message → +1
@@ -42,8 +61,8 @@ active channel into a repair on every reconnect.
 
 ## Scenario 2 — a client that missed a revision is told which channel (SC-001, FR-006)
 
-Connect, note a message and the channel's count from the ack. Disconnect. Edit that message.
-Reconnect presenting the stored cursor and count.
+Connect, note a message and the channel's count from the ack. Disconnect. Edit that message
+**with `$TOKEN`, not `$CREDENTIAL`**. Reconnect presenting the stored cursor and count.
 
 **Expected**: `connection.ack.payload.revisions[<channel>]` is higher than the count presented.
 The client can name the channel to repair from the ack alone, with no further request.

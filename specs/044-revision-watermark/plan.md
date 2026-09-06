@@ -117,29 +117,44 @@ Three repositories. The root holds the records; `relay-platform` holds the code;
 ```text
 relay-platform/
 ├── packages/protocol/src/
-│   ├── frames.ts                          FR-004    the ack's new field
-│   └── internal.ts                        FR-014    the counts ride /internal/session
+│   ├── frames.ts                          FR-004    revisionCountSchema, the ack's field
+│   ├── internal.ts                        FR-014    the counts ride /internal/session
+│   └── frames.test.ts                                the ack accepts zero; cursorSchema does not
 └── services/
     ├── api/
     │   ├── migrations/0015_*.sql          FR-001    the column
-    │   └── src/db/
-    │       ├── schema.ts                  FR-001    the column, in the model
-    │       └── repository.ts              FR-002/3  two transactions, one statement each
+    │   └── src/
+    │       ├── db/schema.ts               FR-001    the column, in the model
+    │       ├── db/repository.ts           FR-002/3  two transactions, one statement each
+    │       ├── db/repository.itest.ts               the counter's tests
+    │       └── internal/
+    │           ├── session.controller.ts  FR-004    fills channel_revisions
+    │           └── memberships.controller.ts        maps the widened rows back to ids
     └── gateway/src/
         ├── resume.ts                      FR-005    the `rev` parameter
-        └── session.ts                     FR-006    compare, and fill the ack
+        ├── session.ts                     FR-006    compare, and fill the ack
+        └── session.itest.ts                         the four cursor/rev combinations
 
 docs/04-srs.md                             FR-013    amend SRS FR-016a and SRS FR-016b
+docs/05-sad.md                             FR-012    §5.2, where the resume protocol is described
 ```
 
-**Twelve files estimated**: two protocol, one migration, two api, two gateway, one SRS, and
-four test files. `vitest.coverage.config.mts` makes thirteen at close-out, the way it made
-chapter 3.23's 33 become 34 and 3.24's 36 become 37.
+**Fifteen platform files and two documents, and the estimate has already moved twice.** It
+read twelve until analysis: the second pass widened T009 to repair **both** callers of
+`channelsForUser` rather than one, which added `session.controller.ts` and
+`memberships.controller.ts`; the third found `docs/05-sad.md` missing and
+`limits.itest.ts` listed here without any task touching it.
+`vitest.coverage.config.mts` makes sixteen at close-out, the way it made chapter 3.23's 33
+become 34 and 3.24's 36 become 37.
 
-**Which of them are fenced is not yet known.** Feature 043 found that `limits.itest.ts` and
-`session.itest.ts` are published only as `(excerpt)` — thirteen such files — so an edit to
-either is invisible to `check:fences` and carries no hunk. `repository.ts` is fenced by 23
-chapters and `internal.ts` by 11. The task list resolves this per file rather than assuming.
+**Feature 043 estimated seventeen and changed fifty-eight**, because a plan counts the fix and
+not the verification. This one has moved 12 → 15 before a line of code was written, which is
+the same effect arriving earlier.
+
+**Which of them are fenced was measured** (`tasks.md` T003 records it in two columns): eight of
+nine changed platform files are fenced — `repository.ts` by 23 chapters, `internal.ts` by 11 —
+and **`session.itest.ts` is published only as `(excerpt)`**, so an edit to it is invisible to
+`check:fences` and carries no hunk. Thirteen files are in that state repository-wide.
 
 ## Complexity Tracking
 

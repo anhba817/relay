@@ -77,6 +77,29 @@ separately.
 first pass's remediation had already performed, leaving a task whose work was silently done.
 Feature 043 recorded four such; a remediation is a change like any other and wants re-checking.
 
+### What the third pass changed
+
+The first two passes read. The third **ran the premise**, which nobody had: everything in these
+documents rested on a comment in `session.ts` saying a revision below the cursor reaches no one.
+
+**It is true, and now measured.** A message at sequence 1, edited while a client holding cursor 2
+was away, produced on reconnect: one frame (the ack), zero sequences, and no delivery of the
+edit. Live delivery worked as a control and the edit returned 200, so the silence is the defect
+rather than a broken probe. The spec's edge case held too — a message edited *above* the cursor
+came back on the replay carrying its new text.
+
+**The probe failed three times before it ran**, and each failure is now in the record:
+
+| Attempt | Refusal | What it means |
+|---|---|---|
+| send with the API key | `sender_not_permitted` | an application credential may send only as a bot |
+| edit with the API key | `wrong_credential_type` | the edit route wants an end-user token |
+| read `.sequence` | undefined | the field is `seq` |
+
+**The quickstart could not be followed by the person who wrote it.** Three tasks now name the
+credential rules and the guide mints a token in its Prerequisites. **A validation guide nobody
+has executed is a document, not a guide.**
+
 ### Why there are no clarification markers
 
 Four choices looked like questions and each had an answer already in the tree:
