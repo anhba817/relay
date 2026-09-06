@@ -99,7 +99,7 @@ day; **re-measure rather than comparing to them.**
 
 ## Scenario 7 — the clauses name the remedy (SC-007, FR-013)
 
-Read FR-016a and FR-016b in `docs/04-srs.md`.
+Read SRS FR-016a and SRS FR-016b in `docs/04-srs.md`.
 
 **Expected**: both describe the limit and name the signal that reports it. A reader who finds
 the limit finds the remedy in the same place.

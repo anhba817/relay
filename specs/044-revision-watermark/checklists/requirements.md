@@ -31,9 +31,30 @@
 
 ## Notes
 
-**Counts at validation**: 14 functional requirements, 7 success criteria, 3 user stories, 6 edge
-cases. Zero `[NEEDS CLARIFICATION]` markers — every fork had a defensible default, and the
+**Counts at validation**: 16 functional requirements, 7 success criteria, 3 user stories, 6 edge cases. **Re-derived after analysis, not carried** — it read 14 until the first analysis pass, which added FR-007a and FR-015 and rewrote FR-007. Zero `[NEEDS CLARIFICATION]` markers — every fork had a defensible default, and the
 defaults are in Assumptions where they can be argued with.
+
+### What the first analysis pass changed, and what that says about this checklist
+
+**Every box below was ticked before the pass, and the pass found a conflicting requirement.**
+FR-007 said an absent count is "treated as presenting zero"; US2's third acceptance scenario
+requires a channel joined during an absence — for which a client presents no count — not to be
+reported as needing repair. Zero compares as lower than any revised channel, so the requirement
+and the scenario gave opposite answers, and **"requirements are testable and unambiguous" passed
+anyway** because each reads fine alone.
+
+Three things came out of it:
+
+| | |
+|---|---|
+| **FR-007 rewritten** | one rule covering all three absences: first connection, pre-upgrade client, per-channel |
+| **FR-007a added** | the platform still reports a count for such a channel, or the client never gets a baseline |
+| **FR-015 added** | two tasks were doing the appendix amendments with no requirement behind them |
+
+**A checklist item that can pass while two documents contradict each other is measuring
+presence, not agreement** — which is what `check-checklist.py` says of itself in its own last
+line. The pass that found this read the requirement against the scenario, which no instrument
+here does.
 
 ### Why there are no clarification markers
 

@@ -8,7 +8,7 @@
 
 A per-channel revision counter, raised inside the transaction that applies an edit or a
 deletion, reported at reconnect so a client can tell which of its channels hold revisions it
-has not seen. FR-016a already says the stale copy is repairable by re-reading history; nothing
+has not seen. SRS FR-016a already says the stale copy is repairable by re-reading history; nothing
 tells a client to do it.
 
 **Four measurements taken during research decided the design, and two of them changed it:**
@@ -53,10 +53,12 @@ stack. A third config, `vitest.coverage.config.mts`, runs both for the ratchet.
 
 **Project Type**: pnpm workspace of nine packages under Turborepo (ADR-17)
 
-**Performance Goals**: SC-004 — reconnecting 10,000 clients stays within 10% of the rate
-measured in `docs/11-scalability-measurement-2026-09-06.md` (1,125-1,675/s). SC-005 — a
-revision stays within 10% of its current cost. Both are re-measured on this lane, not against
-those absolute figures.
+**Performance Goals**: SC-004 — reconnecting 10,000 clients stays within 10% of a baseline
+**taken on this lane immediately before the first code change**, not quoted from
+`docs/11-scalability-measurement-2026-09-06.md`. SC-005 — a revision stays within 10% of its
+current cost, measured the same way. Those published figures came from one gateway on a 28-core
+host with the load generator beside it; a criterion that names them is one nobody can check
+anywhere else.
 
 **Constraints**: the gateway holds no database and must not gain one. The counts must reach it
 on a call it already makes. Part 3 is closed, so every changed platform file that a chapter
@@ -86,7 +88,7 @@ cannot see: the count excludes whatever the lane finds when the battery runs.
   hand-reviewed SQL."* Migration `0015` is written by hand because feature 043 retired the
   generator and `migrations.test.ts` now fails if it returns.
 - **Governance**: *"where it conflicts with the SRS or SAD, the conflict MUST be resolved
-  explicitly by amendment rather than ignored."* FR-013's amendment of FR-016a and FR-016b is
+  explicitly by amendment rather than ignored."* FR-013's amendment of SRS FR-016a and SRS FR-016b is
   that procedure, not a concession to it.
 
 **No violations. Complexity Tracking is empty.**
@@ -127,7 +129,7 @@ relay-platform/
         ├── resume.ts                      FR-005    the `rev` parameter
         └── session.ts                     FR-006    compare, and fill the ack
 
-docs/04-srs.md                             FR-013    amend FR-016a and FR-016b
+docs/04-srs.md                             FR-013    amend SRS FR-016a and SRS FR-016b
 ```
 
 **Twelve files estimated**: two protocol, one migration, two api, two gateway, one SRS, and

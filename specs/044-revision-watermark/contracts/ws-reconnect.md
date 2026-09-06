@@ -20,6 +20,11 @@ contain one.
 | present | present | an upgraded client | per channel, where the platform's count is higher |
 | absent | present | a client sending counts without cursors | treated as a first connection; `rev` ignored |
 
+**A `rev` that omits one channel is the same rule, one level down.** A client that sends counts
+for the channels it holds and nothing for a channel it joined during its absence gets no repair
+signalled for that channel — it held nothing there to be stale, and the channel's messages arrive
+by the ordinary replay. FR-007 covers all three absences as one rule.
+
 **The second row is the one to get right.** Treating an absent `rev` as zero would tell every
 un-upgraded client that every channel with any revision needs repair — on every reconnect, and
 most loudly during the deploy window when the fleet is reconnecting anyway.
@@ -73,10 +78,10 @@ establishes a baseline for the channels it did not repair.
 
 Resume is ordered by the channel sequence, and a revision carries the sequence of the message it
 changes rather than a new one. A message revised **below** the client's cursor is in neither the
-replay nor the live stream, and **consumes no sequence, so no gap appears** — FR-016b names that
+replay nor the live stream, and **consumes no sequence, so no gap appears** — SRS FR-016b names that
 as tripping no existing client-side detector.
 
-FR-016a already says the stale copy is repairable by re-reading history. This is the signal that
+SRS FR-016a already says the stale copy is repairable by re-reading history. This is the signal that
 tells a client when to.
 
 **Measured window**: the default connect limit is 3,000 per minute against a gateway that

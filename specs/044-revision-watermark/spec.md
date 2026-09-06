@@ -18,11 +18,16 @@ appears**.
 
 Two published clauses already describe this exactly:
 
-- **FR-016a** says a message older than the cursor that was edited or deleted during the
+- **SRS FR-016a** says a message older than the cursor that was edited or deleted during the
   absence must not be replayed, and the client's stale copy "MUST be repairable by re-reading
   that range of history."
-- **FR-016b** says that limit must be documented rather than discovered, "including the fact
+- **SRS FR-016b** says that limit must be documented rather than discovered, "including the fact
   that it produces no sequence gap and therefore trips no existing client-side detector."
+
+**The `SRS` prefix is not decoration.** This specification's own requirements run to FR-015, so
+the next one it adds is FR-016 — the number of the clause it is built on. Two documents using one
+identifier is what `check-srs-ids.sh` exists to catch inside the SRS, and nothing checks it
+across documents. Qualified here before the collision rather than after.
 
 **The repair exists and is documented. Nothing tells a client to perform it.** A client has no
 reason to re-read history, so it does not, and it renders text that changed while it was away
@@ -104,7 +109,7 @@ Someone building against the public contract can read what the signal means and 
 about it, without inferring it from behaviour.
 
 **Why this priority**: The obligation is the client's, and an obligation nobody published is one
-nobody meets. FR-016b already requires the limit to be documented; this extends that to the
+nobody meets. SRS FR-016b already requires the limit to be documented; this extends that to the
 remedy. It ships last because the signal has to exist before it can be described, and it is
 separable work.
 
@@ -123,8 +128,9 @@ reading platform source.
 ### Edge Cases
 
 - **A channel that has never been revised.** Reports a count of zero, which every client can
-  compare against. Absent and zero must not be distinguishable in effect — a client that stores
-  nothing is treated as holding zero.
+  compare against. **A count of zero and an absent count are not the same thing** (FR-007): zero
+  is a channel the platform has never revised, absent is a channel this client holds nothing in.
+  Zero can signal a repair once the channel is revised; absent never does.
 - **A client that presents a count higher than the platform's.** Impossible unless a client
   fabricates one or a channel's history is rebuilt. Treated as "no repair needed" rather than as
   an error: a wrong repair signal is worse than a missing one, and refusing the connection over
@@ -155,8 +161,19 @@ reading platform source.
 - **FR-005**: A reconnecting client MUST be able to present the counts it holds, per channel.
 - **FR-006**: A client presenting a count lower than the platform's for a channel MUST be able to
   determine that from the reconnect response alone, without a further request.
-- **FR-007**: A client presenting no count MUST be treated as presenting zero, and MUST NOT be
-  told a repair is needed on a first connection.
+- **FR-007**: A client that presents no count for a channel MUST NOT be told a repair is needed
+  for that channel. **This covers three cases and they are one rule**: a first connection
+  presents nothing at all; a client built before this feature presents a cursor and no counts;
+  and a participating client presents no count for a channel it joined during its absence. In
+  each the client holds nothing in that channel that a count could show to be stale.
+  **The earlier wording — "treated as presenting zero" — produced the opposite answer in two of
+  the three.** Zero compares as lower than any channel with a revision, so it signalled a repair
+  to every un-upgraded client on every reconnect, and to every client for every channel it had
+  just joined. Both were found by analysis rather than by a test, because no test asserted the
+  case the wording got wrong.
+- **FR-007a**: The platform MUST still report its current count for such a channel. A client
+  told nothing about a channel has no baseline to store, and its next reconnect is the first one
+  again.
 - **FR-008**: A client presenting a count higher than the platform's MUST be treated as needing
   no repair, and MUST NOT be refused.
 - **FR-009**: The signal MUST be per channel. A single connection-wide indicator does not satisfy
@@ -168,19 +185,25 @@ reading platform source.
   report a repair after every absence.
 - **FR-012**: The published protocol documentation MUST state what the count means and what a
   client does when it rises.
-- **FR-013**: FR-016a's and FR-016b's clauses MUST be amended to name the signal, so the
+- **FR-013**: SRS FR-016a's and SRS FR-016b's clauses MUST be amended to name the signal, so the
   documented limit and the documented remedy are in the same place.
 - **FR-014**: The reconnect path MUST NOT require a per-channel query per connection to produce
   the counts. At 10,000 connections a per-channel read per handshake is the cost this feature
   cannot pay.
+- **FR-015**: Every changed file that a published chapter reproduces MUST carry a corresponding
+  amendment in the appendix, and the gate that replays those reproductions MUST pass after each
+  change. Part 3 is closed, so no chapter teaches this work and the appendix is the only place a
+  change can be recorded. **Two tasks did this work with no requirement behind them** until
+  analysis noticed — the same shape as a requirement with no task, and as hard to see.
 
 ### Key Entities
 
 - **Channel revision count** — a per-channel, monotonically increasing whole number. Rises once
   per edit and once per deletion of any message in that channel. Never falls, never resets, and
   carries no meaning beyond "how many revisions this channel has seen".
-- **Client-held count** — what a client last saw for a channel, presented on reconnect. Absent is
-  equivalent to zero.
+- **Client-held count** — what a client last saw for a channel, presented on reconnect. **Absent
+  is not zero** (FR-007): absent means the client holds nothing in that channel to repair, and no
+  repair is signalled for it.
 
 ## Success Criteria *(mandatory)*
 
@@ -193,9 +216,10 @@ reading platform source.
   client performs a repair read it did not need.
 - **SC-003**: The signal reports how many revisions were missed per channel, not merely that some
   were.
-- **SC-004**: Reconnecting 10,000 clients stays within 10% of the rate measured before this
-  feature — 1,125 to 1,675 connections per second — so the signal costs nothing a reconnection
-  storm can feel.
+- **SC-004**: Reconnecting 10,000 clients stays within 10% of the rate measured on the same lane
+  immediately before this feature's first code change, so the signal costs nothing a reconnection
+  storm can feel. **The baseline is taken, not quoted** — figures published from another machine
+  on another day are not a criterion anything can be checked against.
 - **SC-005**: Applying a revision stays within 10% of its current cost.
 - **SC-006**: A developer can implement the repair from the published documentation alone,
   without reading platform source.
@@ -204,7 +228,7 @@ reading platform source.
 
 ## Assumptions
 
-- **The repair itself stays the client's**, as FR-016a already says. This feature builds the
+- **The repair itself stays the client's**, as SRS FR-016a already says. This feature builds the
   trigger, not the repair: no revision is replayed and no reconciliation is pushed. Including
   revisions in the replay is a larger change with a cap to size, and it would need this signal as
   its overflow indicator regardless — so it is deliberately out of scope and better informed once
@@ -214,7 +238,7 @@ reading platform source.
 - **Per channel rather than per message.** Per-message precision would let a client repair
   exactly the messages that changed and needs an index on revision time to produce, which is the
   cost the larger change carries. Per-channel is one number and bounds the repair to a channel's
-  history, which FR-016a already names as the repair.
+  history, which SRS FR-016a already names as the repair.
 - **The count is public.** It appears in a response a customer's client reads, so it is contract,
   not diagnostics, and it cannot be renamed later without a version.
 - **Existing channels start at zero** rather than at a count reconstructed from history. Their
