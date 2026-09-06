@@ -171,9 +171,64 @@ no hunk. That is a trap, not a convenience.
 
 **Most of this is verification of US1's design rather than new code**, because FR-009 puts the per-channel shape in US1's build. That is stated rather than hidden: a phase whose tasks are mostly tests is honest when the design already carries the property, and dishonest when it is used to look busy.
 
-- [ ] T020 [US2] Handle the channel joined during the absence in `relay-platform/services/gateway/src/session.ts`: the client held nothing in it, so it must not be reported as needing repair even though the platform's count exceeds the absent one. Its messages arrive by the ordinary replay. **This is FR-007's third absence** and the reason FR-007 was rewritten: the earlier "treated as presenting zero" signalled a repair here. (FR-007, FR-007a)
-- [ ] T021 [US2] Write the boundedness tests in `relay-platform/services/gateway/src/session.itest.ts`: revisions in one channel of several raise only that channel's count; three revisions produce a difference of exactly three; a newly joined channel signals no repair. Same credential rules as T017. (SC-002, SC-003)
-- [ ] T022 [US2] Append amendment hunks to `relay-tutorial/fences/post-series.md` for anything this phase changed, and re-run `check:fences`. (FR-015)
+- [X] T020 [US2] Handle the channel joined during the absence in `relay-platform/services/gateway/src/session.ts`. **This is FR-007's third absence** and the reason FR-007 was rewritten: the earlier "treated as presenting zero" signalled a repair here. (FR-007, FR-007a)
+
+  **NO CODE. The case cannot arise, and that is the outcome rather than the excuse.** This task
+  was written against the draft in which the gateway compared the client's counts with its own;
+  a channel absent from the client's list read as zero, zero is lower than any revised channel,
+  and the client was sent to repair something it held nothing of. The gateway now compares
+  nothing, so there is no branch that could get this wrong and none was added. **A design in
+  which a case does not exist beats a branch that handles it** — the branch is a thing that can
+  rot, and the third absence is exactly the one no test was asserting when the wording was wrong.
+
+  Verified twice rather than reasoned about once: `resume.itest.ts` asserts that the counts are
+  reported WHOLE and never scoped to the presented cursor, and T021's fixture joins a channel
+  mid-absence and finds it reported with the revision that happened before the client arrived.
+
+  **And the one way FR-007a could still be violated was checked at its source.** If the api's
+  `channel_revisions` could omit a channel that `channel_ids` names, a client would get no
+  baseline for it. Both are built from the same `memberships` array in `session.controller.ts` —
+  one query, two `.map`s — so the key sets are identical by construction and not by agreement.
+
+- [X] T021 [US2] Write the boundedness tests in `relay-platform/services/gateway/src/session.itest.ts`: revisions in one channel of several raise only that channel's count; three revisions produce a difference of exactly three; a newly joined channel signals no repair. Same credential rules as T017. (SC-002, SC-003)
+
+  **A ONE-CHANNEL FIXTURE CAN STATE BOUNDEDNESS AND CANNOT FAIL IT.** "Only the revised channel
+  rose" is trivially true when there is one channel, and a gateway that raised every channel's
+  count would pass. So `boot` now returns a seeding handle and the test makes its own second and
+  third channels, rather than adding channels to a fixture twenty-nine other tests would then be
+  connecting through for no reason of their own.
+
+  All three claims in one test, because they share an expensive setup: `+3` on the revised
+  channel, unchanged on the quiet one, and the channel joined mid-absence reported at `1` —
+  carrying a revision that happened before this client could ever have seen it, with no count
+  held to compare it against.
+
+  **THE FIRST TWO ATTEMPTS TO FORCE IT RED WERE INVALID, AND THE SECOND ONE EXPLAINS WHY.**
+  Boundedness rests on `.where(eq(channels.id, channelId))`, so a probe has to widen that
+  predicate — and both a dropped `WHERE` and a deliberately inverted one came back **500**, which
+  says nothing about boundedness. Asked directly, the database answered:
+
+      global-operation guard: this statement modified sentinel row public.channels …
+      which belongs to no test — the bait planted by packages/test-harness/src/guard.itest.ts
+
+  **The platform already refuses the defect this probe was trying to introduce.** A wrongly-scoped
+  bump on `channels` is not merely untested here, it is caught by the bait — which is a stronger
+  guarantee than the assertion, and the reason the assertion could not be made to fail that way.
+
+  The exactly-three claim was then forced properly, by bumping the counter by two: `expected 6 to
+  be 3`, with the end-to-end test's `expected 6 to be 5` behind it. Restored, rebuilt, 30 green.
+
+- [X] T022 [US2] Append amendment hunks to `relay-tutorial/fences/post-series.md` for anything this phase changed, and re-run `check:fences`. (FR-015)
+
+  **None needed, and the reason is measured rather than assumed.** This phase changed exactly one
+  file, `session.itest.ts`, which is published only as `title="… (excerpt)"` — one of thirteen
+  such files repository-wide. `check:fences` skips those titles by name, so an edit to it is
+  invisible to the gate and carries no hunk. Re-run anyway and green at 240 files: **a task that
+  reports "nothing to do" without running the checker is a task that has not checked.**
+
+  Worth keeping in view for close-out: this is the same property that makes `session.itest.ts`
+  the least-guarded file this feature touched. It now holds the only end-to-end proof that the
+  column, the api and the ack are connected, and no gate would notice if it drifted.
 
 **Checkpoint**: US2 is independent of US3.
 
