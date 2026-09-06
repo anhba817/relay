@@ -680,3 +680,32 @@ What did need it:
 **Two artifacts, two mechanisms, and an excerpt fence falls between them** — a prose sweep does
 not look inside a fence and the chain check skips anything excerpted. That is why the transcript
 needed finding by `grep` rather than by a gate.
+
+
+### T053 — THE TWO AMENDED CLAUSES, READ AGAINST THE MEASURED BEHAVIOUR (FR-025c)
+
+No instrument here can run this check. Every gate in these three repositories compares
+bytes, and "amend the clause" and "weaken the clause" are one edit apart. So both were
+written from the measurement and then read back against it, by hand.
+
+    clause      what the platform does                       what the clause now says
+    ---------   ------------------------------------------   ------------------------------
+    FR-RTM-09   registry reachable -> cap of five enforced    "best-effort"; may exceed five
+                registry unreachable -> admit and log that    only while the registry is
+                five was not checked (ADR-23, principle IV)   unreachable
+    FR-RTM-10   fabric healthy -> revocation within 5 s       5 s unchanged; under fabric
+                fabric lost -> per-connection re-read every   loss, "within 60 seconds"
+                60 s (DEFAULT_REREAD_INTERVAL_MS, asserted
+                at membership.test.ts:16); ADR-20 derives
+                60 s and names the 55 s excess
+
+**Neither amendment permits more than the platform already does.** FR-RTM-09 does not
+license exceeding five when the registry IS reachable, and FR-RTM-10 leaves the healthy-path
+five-second bound exactly as it was. Each degraded-mode sentence is scoped to the condition
+that produces it, which is the difference between recording a bound and removing one.
+
+**And the numbers came from the tree, not from the ADRs.** ADR-20 states sixty seconds and
+ADR-23 states fail-open; both were checked against `connections.ts` and
+`membership.test.ts:16` before being carried into a clause, because an ADR is a record of a
+decision and this feature has already found three records that were wrong on the day they
+were written.
