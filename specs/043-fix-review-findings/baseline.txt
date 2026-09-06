@@ -933,3 +933,83 @@ bump. Provenance, not secrets.
 
 **No signing secret, encryption key or real internal credential appears in this feature's
 diff.**
+
+
+### T055-T057 — THE COVERAGE LANE AND THE RATCHET
+
+    99 files · 1,379 tests · 439 s · exit 0
+    TOTAL   lines 94.39%   statements 93.17%   functions 92.45%   branches 87.90%
+
+Chapter 3.24's close-out measured 97 files / 1,357 tests / 455 s. Two files and
+twenty-two tests more, sixteen seconds faster — and **the two measurements are not
+comparable**, for the reason that chapter's own record gives: this lane costs more every
+week, and it was run here on a freshly cleared broker.
+
+**Read from `coverage-summary.json`, not the text table.** The text reporter omits a file
+at 100% on all four metrics, which is exactly the set this feature needed to see.
+
+    file                                     lines   branch  funcs
+    packages/protocol/src/frames.ts            100      100    100
+    services/api/src/messages/messages.schema  100      100    100
+    services/api/src/users/users.schema.ts     100      100    100
+    services/api/src/webhooks/webhooks.servic  100      100    100
+    services/api/src/outbox/event.ts           100      100    100
+    services/api/src/db/repository.ts        99.25    92.84    100
+    packages/protocol/src/internal.ts        92.68    85.71     60
+    packages/protocol/src/codes.ts           83.33      100     50
+    services/api/src/db/migrate.ts           38.46     37.50  66.66
+
+**T056 found no arm to delete.** The rule is to ask whether uncovered code should be
+removed before asking for a test, and every file this feature substantially changed came
+back at 100 on all four metrics — so there was no arm to put the question to. The three
+below 100 were touched trivially: `internal.ts` had one literal replaced by an import,
+`codes.ts` gained six registry entries, which are data, and `migrate.ts` had a comment
+corrected. Their numbers are where they were.
+
+**`migrate.ts` at 38.46% is worth naming rather than leaving in a table.** It is the
+migration runner, executed by `globalSetup` before instrumentation attaches, so the lane
+runs it constantly and records almost none of it. That is a measurement artefact and not a
+gap — and it is the same shape as `event.ts`'s consumer, which the api suite cannot see
+because it runs `RELAY_EVENT_CONSUMER=off`.
+
+**Three files newly pinned, two deliberately not.** `frames.ts`, `webhooks.service.ts` and
+`event.ts` are pinned at 100 on every metric because that is what they measured.
+`internal.ts` and `codes.ts` are named in the config as unpinned, with their numbers, so the
+omission is a decision on the record rather than a file that quietly fell off the list.
+
+**AND 100% BRANCHES STILL DOES NOT MEAN EVERY ARM RAN.** v8 records a `binary-expr` arm as
+covered when the operand was EVALUATED, not when it went both ways. Constitution VI's
+100%-branch clause is stated in that number, and five files above are at 100 in it.
+
+
+### T061 — THE FILES-CHANGED COUNT, RE-DERIVED
+
+    relay-platform    47   4 added · 10 deleted · 33 modified
+    relay-tutorial    11
+                      --
+                      58
+
+**The plan estimated 17 and said so twice.** "Thirteen existing platform files change; two
+are new; the coverage ratchet is the fourteenth" — with a note that the number had already
+moved once during analysis, from 15 to 17. It moved again, by a factor of three.
+
+**Where the other thirty went**, because a miss this size is only useful if it can be
+attributed:
+
+    the port bands nobody planned        8   seven gateway files and the dispatcher
+    the migration generator's retirement 11   nine snapshots, a journal, a config
+    flakes found while verifying          3   two health probes, a budget window, a global count
+    dependency bookkeeping                2   package.json and pnpm-lock.yaml
+    the coverage ratchet                  1   the fourteenth the plan did predict
+    tests for the above                   5
+
+**The pattern is that the plan counted the FIX and not the VERIFICATION.** Every one of the
+unplanned files came from running something rather than from reading something: the port
+bands surfaced when a battery went red, the health probes when a fixed harness stopped
+sleeping through its own failure, the budget window when the suite got faster, the global
+outbox count when two files ran in parallel. **None of them is visible to a plan, and all of
+them are visible to twenty runs.**
+
+Chapter 3.23's count moved from 33 to 34 and chapter 3.24's from 36 to 37, both for the
+coverage ratchet alone. This feature's moved from 17 to 58, and the ratchet was the only part
+either predecessor's shape predicted.
