@@ -1090,3 +1090,23 @@ The budget did not move and did not need to. The feature added a suite that boot
 a teardown that awaits `exit` — +5.4 s — and removed two ten-second sleeps that were health
 loops probing a route this api has never served. **The headroom nearly tripled while the work
 got bigger**, which is the opposite of the outcome T019a was written to guard against.
+
+
+### T064 — FOURTEEN GATES, ALL ZERO
+
+    platform    typecheck 0 · lint 0 · build 0
+    tutorial    check:fences 0 · check:docs 0 · check:figures 0 · check:srs 0 · check:errors 0
+    feature     check-refs 0 · sweep 0 · check-prose 0 · check-quickstart 0 ·
+                check-checklist 0 · regen-traceability 0
+
+**Fourteen, not eleven.** Chapter 3.24's gate list named five `check:*` scripts and no
+`typecheck`, `lint` or `build`, so that chapter tagged three repositories on a tree where
+`pnpm lint` exited 1. A gate list is itself a class list.
+
+**Every exit code was written to a file, not accumulated in a shell variable.** `fail=1`
+inside a `for … | sort` pipeline runs in a subshell and dies with it — this repository has
+printed "ALL GATES: GREEN" over a red one that way, and this feature reproduced the same
+mistake three times in its own scripts, including once in a task whose text warns about it.
+
+`check:docs` now runs two things: the drift check and `check-revision-order.mjs`, which this
+feature added and tested red four ways.
