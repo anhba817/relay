@@ -56,6 +56,27 @@ presence, not agreement** — which is what `check-checklist.py` says of itself 
 line. The pass that found this read the requirement against the scenario, which no instrument
 here does.
 
+### What the second pass changed
+
+The first pass read the artifacts against each other. The second asked what the compiler sees at
+each task boundary, and found two the first could not:
+
+- **A phase that could not end green.** T009 changed a function's return shape and repaired one of
+  its two callers; the other's repair was in the next phase, so typecheck failed exactly where the
+  strategy says to commit.
+- **A package that had to be built.** `@relay/protocol` exports `./dist` with no path mapping to
+  source, so two schema changes were invisible to their three consumers until a build ran — and
+  the only build was the final gate. Three tasks would have failed for a reason that was not
+  theirs.
+
+Neither is visible by reading requirements against tasks. **Both are visible by asking what
+happens when the tasks are run in order**, which is a different question and wants asking
+separately.
+
+**And one finding was made by the first pass's own fix.** T016 asked for an amendment that the
+first pass's remediation had already performed, leaving a task whose work was silently done.
+Feature 043 recorded four such; a remediation is a change like any other and wants re-checking.
+
 ### Why there are no clarification markers
 
 Four choices looked like questions and each had an answer already in the tree:
