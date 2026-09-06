@@ -8,9 +8,18 @@ media (`media_not_available`) is 4.5 and 4.6, the queryable attempt log is 4.2, 
 audit log is 4.7.
 
 <!-- SPECKIT START -->
-**NO ACTIVE FEATURE.** The last was `specs/043-fix-review-findings/`, which closed all ten
-findings in `docs/09-platform-implementation-review-2026-09-03.md`. That review's twenty-one
-rows now each carry an outcome — 13 closed, 8 open with an owner named.
+**ACTIVE FEATURE:** `specs/044-revision-watermark/` — a per-channel revision counter so a
+reconnecting client can tell which of its channels hold edits or deletions it never saw. Plan:
+`specs/044-revision-watermark/plan.md`.
+
+FR-016a already says the stale copy is repairable by re-reading history and FR-016b says the
+limit must be documented; **nothing tells a client to perform the repair**. The window is
+routine rather than exotic — a rolling restart leaves the last client to reconnect 3m20s
+behind, because `DEFAULT_LIMITS.connect` is 3,000/min against a gateway that accepts 1,125-1,675
+per second (`docs/11-scalability-measurement-2026-09-06.md`).
+
+It publishes no chapter, so every changed platform file that a chapter fences carries an
+amendment hunk in `relay-tutorial/fences/post-series.md`.
 <!-- SPECKIT END -->
 
     043 "fix the review's findings"
