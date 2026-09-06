@@ -31,6 +31,16 @@ feature.
 `includes` against `OUTBOX_EVENT_TYPES` at create and update time — and **it goes red for any
 customer already storing a bad value**, which is why it is a decision rather than a drive-by.
 
+**[RE-POINTED — feature 043, 2026-09-06]** The remedy above is wrong, and the finding is
+not. Validating against `OUTBOX_EVENT_TYPES` compares a customer's subscription with the
+five types the platform EMITS, and FR-WHK-02 DECLARES eight. Feature 043's research
+measured 741 stored subscriptions naming `channel.created` — declared, not yet built — so
+that remedy would refuse rows belonging to customers who made no mistake, which is the
+"goes red for any customer already storing a bad value" this item predicted without
+identifying the cause. **Validate against the declared eight**, and answer a
+declared-but-unemitted type by saying which it is rather than refusing it. A typo still
+fails, which is the whole of the finding.
+
 ## 2. FR-MOD-03's AUDIT LOG IS WIDENED BY THIS CHAPTER AND NOT BUILT — NEW, OPEN
 
 FR-MOD-02 permits a tenant API key to delete any message irrespective of author, and this

@@ -305,6 +305,39 @@ def main() -> int:
                 f"{ident} — cite this chapter's own requirement, or fix the suffix"
             )
 
+    # FR-021a. THE SUCCESS CRITERIA ASCEND, and this rule is here rather than in
+    # `relay-tutorial/scripts/` on purpose. That repository is its own git repo, nothing
+    # in it reads `../specs`, and `sync-docs.sh`'s precedent for `../docs` errors out
+    # when the parent is absent. A feature directory is transient; a gate pointed at one
+    # dies with it. So the tutorial's gate reads the SRS, and this one reads this spec.
+    #
+    # THE DEFECT IT MIRRORS IS REAL AND RECENT. `docs/04-srs.md` Appendix D read
+    # 1.0 … 1.4, 1.7, 1.6, 1.5 — three chapters each inserting above their predecessor,
+    # each running a full green gate list. Nothing anywhere read a document's ORDER.
+    #
+    # A CRITERION THIS CANNOT ORDER IS A FAILURE, not a skip. Suffixed ids sit beside
+    # the number they extend, the same convention the task-id rule above uses, so the
+    # key is (number, suffix) and `SC-012a` follows `SC-012` rather than replacing it.
+    if spec_p.exists():
+        spec_body = spec_p.read_text()
+        ordered: list[tuple[int, str, str, int]] = []
+        for m in re.finditer(r"^- \*\*(SC-(\d+)([a-z]?))\*\*", spec_body, re.M):
+            ident, num, suffix = m.group(1), int(m.group(2)), m.group(3)
+            ordered.append((num, suffix, ident, spec_body.count("\n", 0, m.start()) + 1))
+        if not ordered:
+            problems.append(
+                "spec.md declares no `- **SC-000**:` success criteria — this gate reads "
+                "that shape, and a shape change would make it pass forever"
+            )
+        # EVERY DESCENT, NOT THE FIRST. A checker that stops at one fault makes somebody
+        # run it once per fix; `check-fence-chain`'s "3 problems" was three files.
+        for (pn, ps, pid, _), (cn, cs, cid, cline) in zip(ordered, ordered[1:]):
+            if (cn, cs) <= (pn, ps):
+                problems.append(
+                    f"spec.md:{cline} {cid} follows {pid} — success criteria must "
+                    f"ascend, newest last"
+                )
+
     if problems:
         print(f"check-refs: {len(problems)} problem(s)")
         for p in problems:

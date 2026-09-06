@@ -245,6 +245,12 @@ types.length > 0`. Membership against `OUTBOX_EVENT_TYPES` is still never checke
 changed what `message.created` carries, not which types exist. So the ratio 3.23 recorded, five
 of FR-WHK-02's eight emitted, holds exactly.
 
+**[RE-POINTED — feature 043, 2026-09-06]** `OUTBOX_EVENT_TYPES` is the wrong comparand,
+and this entry inherits that from chapter 3.23's item 1 rather than introducing it. The
+ratio recorded above — five of FR-WHK-02's eight emitted — is exactly why: the other three
+are declared and unbuilt, and 741 stored subscriptions name one of them. Validate against
+the DECLARED eight. See feature 043's `spec.md`.
+
 ## 3.23-2 — FR-MOD-03's audit log — **OPEN, unchanged, and untouched here.**
 
 This chapter adds no moderation action and no read path over `metadata.deleted_by`.
