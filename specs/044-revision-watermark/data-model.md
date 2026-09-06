@@ -47,7 +47,9 @@ none is added — a reset would silently tell every client it was up to date.
 
 ## Transport shapes
 
-The count is carried in three places and stored in one. None of these is a new entity; each is
+The count is carried in two places and stored in one. **A draft carried it in three** — the
+client presented its own on the upgrade URL — and that parameter was removed because nothing
+ever read it. None of these is a new entity; each is
 a field on a payload that already exists.
 
 ### `/internal/session` response — api to gateway
@@ -62,15 +64,6 @@ missing key as zero.
 **`.default({})` for the deploy window**, following `banned`'s precedent in the same schema: an
 api built before this feature still satisfies the schema during a rolling deploy, and the
 gateway then behaves as it does today.
-
-### `?rev=<channel_id>:<count>` — client to gateway, on the upgrade URL
-
-Repeated, one per channel the client holds a count for. Parsed with the same rsplit rule as
-`cursor`, for the reason `resume.ts` already gives: a colon inside a channel id must not
-truncate it.
-
-**Absent is not zero.** Absent means "this client does not participate", which R3 distinguishes
-from a first connection and from a count of zero.
 
 ### `connection.ack.payload.revisions` — gateway to client
 
@@ -90,7 +83,8 @@ that needed none with nothing to store, and it would never establish a baseline.
 - **No per-message revision record for transport.** `message_edits` already stores the edit
   history and this feature does not read it. Per-message precision is the larger change the
   spec excludes by name.
-- **No client-side state in the platform.** The count a client holds lives with the client. The
-  platform stores its own and compares on request.
+- **No client-side state in the platform, and no comparison either.** The count a client holds
+  lives with the client, and the client does the comparing. The platform stores its own count
+  and reports it — it never learns what a client holds, so it can never be wrong about it.
 - **No index.** The count is read by primary key on a row the membership query already joins.
   An index would serve no query that exists.

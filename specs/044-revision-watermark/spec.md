@@ -158,24 +158,33 @@ reading platform source.
   revision that did not commit.
 - **FR-004**: A reconnecting client MUST be told the current count for every channel it belongs
   to.
-- **FR-005**: A reconnecting client MUST be able to present the counts it holds, per channel.
-- **FR-006**: A client presenting a count lower than the platform's for a channel MUST be able to
-  determine that from the reconnect response alone, without a further request.
-- **FR-007**: A client that presents no count for a channel MUST NOT be told a repair is needed
-  for that channel. **This covers three cases and they are one rule**: a first connection
-  presents nothing at all; a client built before this feature presents a cursor and no counts;
-  and a participating client presents no count for a channel it joined during its absence. In
-  each the client holds nothing in that channel that a count could show to be stale.
-  **The earlier wording — "treated as presenting zero" — produced the opposite answer in two of
-  the three.** Zero compares as lower than any channel with a revision, so it signalled a repair
-  to every un-upgraded client on every reconnect, and to every client for every channel it had
-  just joined. Both were found by analysis rather than by a test, because no test asserted the
-  case the wording got wrong.
+- **FR-005**: The reconnect response MUST carry enough for a client to decide, per channel and
+  without a further request, whether it holds something stale. **A client sends nothing to
+  obtain this.** A draft required it to present the counts it held so the platform could
+  compare; that parameter was built and removed, because the response already carries every
+  count and the client can compare against its own. A parameter the server parses and never
+  acts on is a contract it can never remove.
+- **FR-006**: A client holding a count lower than the reported one for a channel MUST be able to
+  determine that from the reconnect response alone.
+- **FR-007**: The published client contract MUST state that a client holding no count for a
+  channel repairs nothing for it and stores the reported count. **This covers three cases and
+  they are one rule**: a first connection holds nothing at all; a client built before this
+  feature holds nothing because it never stored any; and a participating client holds nothing
+  for a channel it joined during its absence. In each the client holds nothing in that channel
+  that a count could show to be stale.
+  **An earlier draft made this the platform's job and got it wrong in two of the three.** It
+  said an absent count was "treated as presenting zero", and zero compares as lower than any
+  revised channel — so it signalled a repair to every un-upgraded client on every reconnect,
+  and to every client for every channel it had just joined. Both were found by analysis rather
+  than by a test, because no test asserted the case the wording got wrong. **The platform now
+  signals nothing at all, which is why the rule moved to the contract the client reads.**
 - **FR-007a**: The platform MUST still report its current count for such a channel. A client
   told nothing about a channel has no baseline to store, and its next reconnect is the first one
   again.
-- **FR-008**: A client presenting a count higher than the platform's MUST be treated as needing
-  no repair, and MUST NOT be refused.
+- **FR-008**: The published client contract MUST state that a client holding a count higher than
+  the reported one repairs nothing. The platform refuses nothing over a count — it reports and
+  the client decides, so a fabricated or stale client-side number cannot become a denial of
+  service the client controls.
 - **FR-009**: The signal MUST be per channel. A single connection-wide indicator does not satisfy
   FR-006, because it cannot say which channel to repair.
 - **FR-010**: The count MUST be comparable without reference to a clock, so that a client and the

@@ -21,7 +21,9 @@ tells a client to do it.
 - **The resume cursor cannot carry a third field.** `resume.ts:62` splits on the LAST colon,
   deliberately — *"channel ids are opaque to the gateway and a colon inside one must not
   silently truncate it."* A `<channel>:<seq>:<rev>` cursor would parse `rev` as the sequence.
-  The counts ride a parallel `rev` parameter with the same rsplit rule.
+  A parallel `rev` parameter was the answer, was built, and was **removed**: the ack carries
+  every count, so the client compares against its own and sends nothing. The rsplit rule stays
+  intact by not being extended.
 - **`cursorSchema` cannot express this.** It is
   `z.record(z.string(), z.number().int().positive())`, and every channel that has never been
   revised has a count of **zero**. Reusing it would make an unrevised channel unrepresentable
@@ -131,7 +133,7 @@ relay-platform/
     │           ├── session.controller.ts  FR-004    fills channel_revisions
     │           └── memberships.controller.ts        maps the widened rows back to ids
     └── gateway/src/
-        ├── resume.ts                      FR-005    the `rev` parameter
+        ├── resume.ts                      FR-005    where the `rev` parameter is NOT
         ├── session.ts                     FR-006    compare, and fill the ack
         └── session.itest.ts                         the four cursor/rev combinations
 

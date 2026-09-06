@@ -5,35 +5,31 @@ than diagnostics and cannot be renamed later without a version.
 
 ---
 
-## Request — the upgrade URL
+## Request — the upgrade URL, unchanged
 
-    ws://…/v1/ws?token=<token>&cursor=<channel_id>:<seq>&rev=<channel_id>:<count>
+    ws://…/v1/ws?token=<token>&cursor=<channel_id>:<seq>
 
-`cursor` is unchanged. `rev` is new, repeated once per channel the client holds a count for,
-and parsed by the same rule: **split on the LAST colon**, because a channel id is opaque and may
-contain one.
+**A client sends nothing new.** A draft added `?rev=<channel_id>:<count>` so the platform could
+compare and answer with the stale channels; it was built and removed, because the ack already
+carries every count and a client can compare against its own. **A parameter the server parses
+and never acts on is a contract it can never remove.**
 
-| `cursor` | `rev` | Meaning | Repair signalled |
-|---|---|---|---|
-| absent | absent | a first connection | no |
-| present | absent | a client that predates this feature | **no** |
-| present | present | an upgraded client | per channel, where the platform's count is higher |
-| absent | present | a client sending counts without cursors | treated as a first connection; `rev` ignored |
+The cursor format is untouched, which also means the rsplit rule stays intact: `parseCursors`
+splits on the LAST colon because a channel id is opaque and may contain one, and a
+`<channel>:<seq>:<rev>` entry would have parsed `rev` as the sequence — every resume silently
+resuming from the wrong place, producing plausible numbers rather than an error.
 
-**A `rev` that omits one channel is the same rule, one level down.** A client that sends counts
-for the channels it holds and nothing for a channel it joined during its absence gets no repair
-signalled for that channel — it held nothing there to be stale, and the channel's messages arrive
-by the ordinary replay. FR-007 covers all three absences as one rule.
+| Client | What it holds | What happens |
+|---|---|---|
+| a first connection | nothing | receives every count, stores them, repairs nothing |
+| built before this feature | nothing | ignores the new field entirely; behaviour unchanged |
+| upgraded, all counts match | its stored counts | repairs nothing |
+| upgraded, one count lower | its stored counts | re-reads that channel's history |
+| upgraded, no count for a channel it just joined | nothing for that channel | repairs nothing, stores the reported count |
+| upgraded, a count higher than reported | a stale or invented number | repairs nothing; the platform refuses nothing |
 
-**The second row is the one to get right.** Treating an absent `rev` as zero would tell every
-un-upgraded client that every channel with any revision needs repair — on every reconnect, and
-most loudly during the deploy window when the fleet is reconnecting anyway.
-
-**A malformed `rev` degrades rather than refuses**, matching `cursor`'s existing contract: a
-client whose stored state got corrupted can recover by refetching, and a client closed at the
-door can only reconnect and be closed again.
-
----
+**The last two rows are one rule** and the platform enforces neither: it reports, the client
+decides. That is why the rule lives in this document rather than in the gateway.
 
 ## Response — `connection.ack`
 

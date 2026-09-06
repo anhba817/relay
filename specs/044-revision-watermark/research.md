@@ -36,7 +36,7 @@ would change a field eleven chapters publish, for no gain.
 
 ## R2 — Can the resume cursor carry the count as a third field?
 
-**Decision: no. A parallel `rev` query parameter, with the same parsing rule.**
+**Decision: no — and in the end the client presents no count at all.**
 
 **Rationale.** `resume.ts:60-63` splits each cursor on the LAST colon, and says why:
 
@@ -47,9 +47,21 @@ A `<channel_id>:<seq>:<rev>` entry would rsplit into channel `"<channel_id>:<seq
 `rev`. **Every resume would silently resume from the wrong place** — the worst kind of failure,
 because it produces plausible numbers rather than an error.
 
-So counts ride `?rev=<channel_id>:<count>`, repeated, parsed by the same rsplit. The cursor
-format is untouched, which also means a client that sends cursors and no `rev` parses exactly
-as it does today.
+**THIS ANSWER WAS REVISED AFTER IT WAS BUILT.** The original read: *"So counts ride
+`?rev=<channel_id>:<count>`, repeated, parsed by the same rsplit."* That was implemented —
+`parseRevisions` was written — and then removed, because the question above is the wrong one.
+The cursor cannot carry the count, but neither can anything else the client sends, for a reason
+that has nothing to do with parsing: **the ack already carries every count, so a client can
+compare against its own without telling the platform anything.**
+
+Once the client compares, the parameter buys nothing and costs a contract clause. A parameter
+the server parses and never acts on can never be removed, and one the server DOES act on hands
+the client a number the platform will make decisions with — which is how a fabricated count
+becomes a denial of service the client controls.
+
+**So the cursor format is untouched and the upgrade URL gains nothing.** The rsplit rule stays
+intact by not being tested rather than by being extended, which is the stronger outcome: there is
+no second parser to keep in agreement with the first.
 
 **Alternatives considered.** Changing the cursor format to a JSON blob — rejected: it breaks
 every existing client for a field they do not use. A first-colon split — rejected: it is the

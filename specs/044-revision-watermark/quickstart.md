@@ -47,15 +47,24 @@ body was read.
 ## Scenario 1 — the counter rises once per revision, and not on a send (SC-003, FR-002, FR-011)
 
     psql "$DATABASE_URL" -Atc "select revision_sequence from channels where id = '<channel>'"
-    # every send and edit below uses $TOKEN — see Prerequisites
+    # every send and edit below uses $TOKEN — see Prerequisites; the DELETE takes $CREDENTIAL
     # send a message      → unchanged
     # edit that message   → +1
+    # edit it again       → +1
     # delete that message → +1
-    # edit again          → +1
 
-**Expected** (SC-003, SC-005): three revisions, three increments, and a send that moves nothing. **Failing
-means** either the counter is on the wrong path or a send is being counted, which turns every
-active channel into a repair on every reconnect.
+**Expected** (SC-003, SC-005): three revisions, three increments, and a send that moves nothing.
+**Failing means** either the counter is on the wrong path or a send is being counted, which turns
+every active channel into a repair on every reconnect.
+
+**THE ORDER MATTERS AND THIS GUIDE HAD IT WRONG.** It read `send → edit → delete → edit again`,
+and the fourth step cannot be run: editing a deleted message answers **403**. The order above is
+the one that was executed. Second time a scenario in this file could not be followed by the
+person who wrote it — the first was the credential rules now in Prerequisites.
+
+**And the refusal is worth one more look while you are there**: after the 403 the count stays put.
+FR-003 puts the increment inside the transaction that applies the revision, so a revision that
+does not commit raises nothing. Run the refused edit deliberately and read the column again.
 
 ---
 
@@ -81,24 +90,35 @@ this catches the symptom a customer would see.
 
 ## Scenario 4 — a pre-upgrade client is not sent on a repair (research R3)
 
-Reconnect with `cursor` and **no** `rev` parameter, against channels that have revisions.
+Reconnect with `cursor` against channels that have revisions, and **read the ack as a client
+that does not know the field exists**.
 
-**Expected** (SC-001, SC-002): counts reported, no repair signalled. **Failing means** every un-upgraded client
-repairs every channel on every reconnect — during the deploy window, when the whole fleet is
-reconnecting at once. This is the scenario most likely to be got wrong, because reading FR-007
-literally produces it.
+**Expected** (SC-001, SC-002): the ack carries `revisions` and the connection is otherwise
+identical to today's — same `cursor`, same `resume_ok`, same backfill. A client built before this
+feature ignores an unknown key and behaves exactly as it did.
+
+**Failing means** every un-upgraded client repairs every channel on every reconnect — during the
+deploy window, when the whole fleet is reconnecting at once. **This scenario changed shape.** It
+used to say "reconnect with no `rev` parameter", because the platform was going to compare the
+client's counts against its own and an absent count read as zero. Zero compares as lower than any
+revised channel, so a literal reading of that design signalled a repair to every client that had
+never stored a count. The platform now compares nothing, so the case cannot arise — which is a
+better outcome than a branch that handles it.
 
 ---
 
-## Scenario 5 — the cursor still parses (research R2)
+## Scenario 5 — the cursor still parses, and gained no third field (research R2)
 
-    ?cursor=<channel_id>:42&rev=<channel_id>:7
+    ?cursor=<channel_id>:42
 
-**Expected** (SC-001): the cursor resolves to sequence 42, not 7, and the channel id is not truncated.
+**Expected** (SC-001): the cursor resolves to sequence 42 and the channel id is not truncated —
+unchanged from before this feature, which is the whole assertion. **Confirm no second parameter
+is read**: `grep -n "searchParams" services/gateway/src/resume.ts` should show the cursor and
+nothing else.
 
-**Test with a channel id containing a colon** if one can be produced, because that is what the
-rsplit rule exists for and what a third cursor field would have broken silently — producing
-plausible sequences rather than an error.
+**Test with a channel id containing a colon** if one can be produced. That is what the rsplit
+rule exists for, and what a third cursor field would have broken silently — producing plausible
+sequences rather than an error. The rule is now protected by there being nothing new to parse.
 
 ---
 
