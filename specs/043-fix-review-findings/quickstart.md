@@ -102,7 +102,19 @@ internal request being made.
 
     grep -rn "8000\|8_000" packages/protocol/src services/api/src --include=*.ts | grep -v test
 
-**Expected** (SC-004): one definition and three imports, not three literals.
+**Expected** (SC-004): exactly one `export const MESSAGE_TEXT_MAX = 8000`, and no other
+`8000` that is a length bound.
+
+**Two hits are not bounds and the grep cannot tell**: a sentence in `frames.ts`'s own
+comment explaining what was fixed, and `isolation/fixtures.ts:109`, which builds a UUID
+whose variant nibble happens to be `8000`. Read the hits; do not count them. A grep that
+is expected to return exactly one line is a grep somebody will "fix" by tightening the
+pattern until it does.
+
+The definition's consumers are the thing to check, and there are **four** — the socket
+door, the internal door, the REST send body and the edit body:
+
+    grep -rn "MESSAGE_TEXT_MAX" packages/protocol/src services/api/src --include=*.ts
 
 ---
 
@@ -114,7 +126,18 @@ internal request being made.
         -d "{\"avatar_url\":\"$s\"}"
     done
 
-**Expected** (SC-005): `422` for the first four, `200` for the last. Each refusal names `avatar_url`.
+**Expected** (SC-005): `400` for the first four, `200` for the last. Each refusal names
+`avatar_url` in the body's `field`.
+
+**This said `422` until it was run, and `400` is the right answer.** The scheme rule lives in
+`users.schema.ts`, so a bad scheme fails schema validation — which is `invalid_request`, a
+400, exactly like every other malformed field on this API. 422 is what US3's webhook
+refusals use, and those are different: the body is well-formed and the request is
+semantically unprocessable. Writing `422` here would have made the avatar refusal the only
+schema violation in the platform with its own status.
+
+`ProtocolErrorFilter` derives `invalid_request` from 400 directly, which is why this needs
+no new error code while the webhook cases each need one.
 
 **The stored population, recorded before shipping** (FR-013):
 

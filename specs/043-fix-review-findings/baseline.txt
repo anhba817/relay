@@ -775,3 +775,63 @@ file. The gateway package went 45.68 s -> 35.67 s.
 options T019a offered were for a problem that turned out not to exist, and recording that
 matters more than the number: the budget is still 240 because the lane got faster, not
 because anyone decided it should be.
+
+
+### T028 — WHAT THE AVATAR RULE WOULD REJECT IN THIS DATABASE, 2026-09-06
+
+    avatar_url is null                442,589
+    https                                 670
+    http                                    4
+    anything else                           0
+
+**Zero rows would be rejected.** Research measured 387,091 null and 586 https on an
+earlier day and reached the same conclusion; the lane has grown since and the answer has
+not changed. **This is a measurement of THIS database on THIS day** — the migration risk
+the review raises is real in principle and empty here, and a customer's database is not
+this one.
+
+**The `http` column is the reason the rule is a list and not `https:` alone.** Four rows
+use plain http. FR-012 names both schemes, and a rule written as "must be https" would
+have refused four existing rows to no benefit — the threat is an executable scheme, not
+an unencrypted one.
+
+**THE MEASUREMENT WAS CONTAMINATED ONCE, BY THIS FEATURE'S OWN RED PROBE.** The first
+reading said `2 other`, both `javascript:alert(1)`, on users named `schemer` and
+`bulk-schemer` — rows written minutes earlier while the scheme rule was reverted to prove
+the tests could detect its absence. **The probe did not merely fail an assertion; it
+persisted two executable URLs**, which is a sharper demonstration of the defect than the
+red test was. They were removed before this table was taken.
+
+Only one of the four bad schemes landed, and that is the assertion doing its job:
+`expect(res.status).toBe(400)` throws on the first iteration, so the loop never reached
+`data:`, `file:` or `vbscript:`.
+
+**A red probe writes to the lane.** Any measurement taken after one has to account for
+what the probe left behind, and this one did not until the number disagreed with research.
+
+
+### T030 — US2's PUBLISHED-PROSE SWEEP (FR-027), AND IT AMENDED NOTHING
+
+No gate reads prose, so this was done by hand and the result is "nothing to change" —
+which is worth recording, because an empty sweep and a sweep nobody ran look identical.
+
+**The message-length bound: 12 hits across 6 pages, every one inside a titled fence.**
+Those are chain states — the text a chapter published on the day it published it — and the
+appendix's hunks carry them forward. Amending them would break the replay. Zero prose
+sentences in the 41 English pages mention 8,000 or the bound at all.
+
+    grep for the bound OUTSIDE fences, across every page.mdx     0 lines
+
+This is the same distinction T018a drew for the port numbers, where five of thirteen hits
+were historical chain states and correct as they stood.
+
+**`avatar_url`: 2 prose sentences, and neither is falsified.**
+`part-3/chapter-16/what-a-user-sees/page.mdx:1952` says *"`avatar_url` is validated as a
+URL and not as a string"*. That was true when it was written and is still true; this
+feature added a scheme rule ON TOP of the URL validation rather than replacing it. The
+sentence is now less complete than it was, which FR-027 does not cover — **it says amend
+what this feature FALSIFIES, and stretching it to "anything a reader might want updated"
+would licence rewriting published chapters at will.**
+
+Recorded rather than acted on, so the next person sweeping this claim knows it was read
+and left deliberately.
