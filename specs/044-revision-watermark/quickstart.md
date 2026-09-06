@@ -138,10 +138,39 @@ day; **re-measure rather than comparing to them.**
 
 ## Scenario 7 — the clauses name the remedy (SC-007, FR-013)
 
-Read SRS FR-016a and SRS FR-016b in `docs/04-srs.md`.
+Read **EIR-WS-03**, **FR-RTM-03** and **FR-RTM-05** in `docs/04-srs.md`, and §5.2 of
+`docs/05-sad.md`.
 
-**Expected** (SC-006, SC-007): both describe the limit and name the signal that reports it. A reader who finds
-the limit finds the remedy in the same place.
+**Expected** (SC-006, SC-007): the clause that describes what resume delivers also states what it
+cannot, and names the count as the remedy; the clause that enumerates the ack's fields includes
+it; and §5.2 gives a client the whole comparison rule in a table.
+
+**THIS SCENARIO NAMED CLAUSES THAT DO NOT EXIST.** It said "SRS FR-016a and FR-016b", which are
+chapter 3.23's *specification* ids — the SRS never used them. Reading the clauses rather than
+the identifiers found three to amend where two were expected. Check a task's premise before
+executing it, and check a scenario's before running it.
+
+---
+
+## Scenario 7a — implement the client from the published text alone (SC-006)
+
+Read §5.2 and the three clauses **with the spec, the contracts and the source closed**, and write
+down the client algorithm: which field, what shape, which channels appear, what to compare, what
+to do in each outcome, and when to store.
+
+**Expected**: every question answered without opening anything else.
+
+**It was not, the first time.** The pass found that the *higher-than-reported* case had no client
+instruction at all — the text said the platform refuses nothing, which is the platform's half of
+FR-008 and not the client's. Two smaller gaps came with it: the history re-read named no
+endpoint, and "the difference is how many" did not say how many *of what*. All three are now in
+the table in §5.2.
+
+**And this is not SC-006.** SC-006 asks whether the text is implementable by somebody who does
+not already know the answer, and the person doing this pass wrote the feature. What this exercise
+can find is *absent* information; it cannot find information that is present and unclear. That
+needs a reader — `specs/036-chapter-3-18/reader-protocol.md`, 45 minutes, six questions — and
+chapters 3.14 through 3.24 have each named this gap and none has closed it. **See `gaps.md`.**
 
 ---
 

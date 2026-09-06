@@ -18,10 +18,10 @@ appears**.
 
 Two published clauses already describe this exactly:
 
-- **SRS FR-016a** says a message older than the cursor that was edited or deleted during the
+- **chapter 3.23's FR-016a** says a message older than the cursor that was edited or deleted during the
   absence must not be replayed, and the client's stale copy "MUST be repairable by re-reading
   that range of history."
-- **SRS FR-016b** says that limit must be documented rather than discovered, "including the fact
+- **chapter 3.23's FR-016b** says that limit must be documented rather than discovered, "including the fact
   that it produces no sequence gap and therefore trips no existing client-side detector."
 
 **The `SRS` prefix is not decoration.** This specification's own requirements run to FR-015, so
@@ -109,7 +109,7 @@ Someone building against the public contract can read what the signal means and 
 about it, without inferring it from behaviour.
 
 **Why this priority**: The obligation is the client's, and an obligation nobody published is one
-nobody meets. SRS FR-016b already requires the limit to be documented; this extends that to the
+nobody meets. chapter 3.23's FR-016b already requires the limit to be documented; this extends that to the
 remedy. It ships last because the signal has to exist before it can be described, and it is
 separable work.
 
@@ -194,8 +194,13 @@ reading platform source.
   report a repair after every absence.
 - **FR-012**: The published protocol documentation MUST state what the count means and what a
   client does when it rises.
-- **FR-013**: SRS FR-016a's and SRS FR-016b's clauses MUST be amended to name the signal, so the
-  documented limit and the documented remedy are in the same place.
+- **FR-013**: The SRS clauses that describe the reconnect and the ack MUST be amended to name the
+  signal, so the documented limit and the documented remedy are in the same place.
+  **This requirement named two clauses that do not exist** until T024 ran: it said "SRS FR-016a
+  and SRS FR-016b", which are chapter 3.23's *specification* ids and appear nowhere in
+  `docs/04-srs.md`. The SRS carried the limit in revision 1.6's narrative and in `FR-RTM-03`'s
+  silence. Three clauses were amended — `EIR-WS-03`, `FR-RTM-03` and `FR-RTM-05` — and the
+  requirement now names what it means rather than an identifier it cannot resolve.
 - **FR-014**: The reconnect path MUST NOT require a per-channel query per connection to produce
   the counts. At 10,000 connections a per-channel read per handshake is the cost this feature
   cannot pay.
@@ -237,7 +242,7 @@ reading platform source.
 
 ## Assumptions
 
-- **The repair itself stays the client's**, as SRS FR-016a already says. This feature builds the
+- **The repair itself stays the client's**, as chapter 3.23's FR-016a already says. This feature builds the
   trigger, not the repair: no revision is replayed and no reconciliation is pushed. Including
   revisions in the replay is a larger change with a cap to size, and it would need this signal as
   its overflow indicator regardless — so it is deliberately out of scope and better informed once
@@ -247,7 +252,7 @@ reading platform source.
 - **Per channel rather than per message.** Per-message precision would let a client repair
   exactly the messages that changed and needs an index on revision time to produce, which is the
   cost the larger change carries. Per-channel is one number and bounds the repair to a channel's
-  history, which SRS FR-016a already names as the repair.
+  history, which chapter 3.23's FR-016a already names as the repair.
 - **The count is public.** It appears in a response a customer's client reads, so it is contract,
   not diagnostics, and it cannot be renamed later without a version.
 - **Existing channels start at zero** rather than at a count reconstructed from history. Their

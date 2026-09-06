@@ -238,9 +238,58 @@ no hunk. That is a trap, not a convenience.
 
 **Goal**: the contract is published, not inferred.
 
-- [ ] T023 [US3] Document the count in `docs/05-sad.md` §5.2, the runtime view that already carries `connection.ack {resume_ok}` in its sequence diagram. **There is no public protocol reference to put this in** — the implementation review lists one as absent and it is Part 4's — so §5.2 is the nearest published home, and this task records that choice rather than leaving a reader to wonder why it is in the SAD. (FR-012)
-- [ ] T024 [US3] Amend **SRS FR-016a and SRS FR-016b** in `docs/04-srs.md` to name the signal, so the documented limit and the documented remedy sit together. Add revision **1.10** to Appendix D, appended below 1.9 — `check-revision-order.mjs` fails on a descent. (FR-013, SC-007)
-- [ ] T025 [US3] Verify `quickstart.md` scenario 7, and **read the amended §5.2 and the two clauses as somebody who has not seen this feature** — SC-006 asks whether the repair can be implemented from the published text alone, and no instrument in these repositories can answer that. `specs/036-chapter-3-18/reader-protocol.md` is the procedure. Then re-run `check:docs`: `docs/04-srs.md` and `docs/05-sad.md` are both mirrored into `relay-tutorial/content/docs/`, so `pnpm sync:docs` must run or the drift check fails.
+- [X] T023 [US3] Document the count in `docs/05-sad.md` §5.2, the runtime view that already carries `connection.ack {resume_ok}` in its sequence diagram. **There is no public protocol reference to put this in** — the implementation review lists one as absent and it is Part 4's — so §5.2 is the nearest published home, and this task records that choice rather than leaving a reader to wonder why it is in the SAD. (FR-012)
+
+  The sequence diagram's ack line became `connection.ack {resume_ok, revisions}`, and the prose
+  after it states the limit, the field, the comparison table, and the two things the platform
+  deliberately does not do. `check:figures` green at 264 figures — **a mermaid block is prose to
+  every checker here**, so the diagram edit was verified by running the figure check rather than
+  by assuming a diagram is inert.
+
+- [X] T024 [US3] Amend the clauses in `docs/04-srs.md` to name the signal, so the documented limit and the documented remedy sit together. Add revision **1.10** to Appendix D, appended below 1.9 — `check-revision-order.mjs` fails on a descent. (FR-013, SC-007)
+
+  **THE TASK NAMED CLAUSES THAT DO NOT EXIST IN THIS DOCUMENT.** It said "SRS FR-016a and SRS
+  FR-016b", and so does the spec's FR-013 and the quickstart's scenario 7. Those are **chapter
+  3.23's specification ids**, defined in `specs/041-chapter-3-23/spec.md`; the SRS carried that
+  limit in revision 1.6's narrative and in `FR-RTM-03`'s silence, and the only place in `docs/`
+  that spells `FR-016a` is a quoted ADR passage inside the SAD. Grepping the identifier returned
+  one hit and no clause. **Reading the clauses found three to amend where the task expected two:**
+
+  | Clause | Why it was wrong before |
+  |---|---|
+  | `EIR-WS-03` | it enumerates the ack's contents — identity and cursor — and the enumeration was incomplete |
+  | `FR-RTM-03` | it describes what resume delivers and said nothing about what it cannot |
+  | `FR-RTM-05` | it lists edit and deletion among the events emitted, without saying they reach only clients connected at the time |
+
+  Revision **1.10** appended, and `check-revision-order` reads 11 revisions ascending 1.0 to 1.10
+  — worth confirming rather than assuming, because a string comparison would have put 1.10 below
+  1.9. `check:srs` green at 245 clause rows, 245 unique identifiers.
+
+- [X] T025 [US3] Verify `quickstart.md` scenario 7, and **read the amended §5.2 and the clauses as somebody who has not seen this feature** — SC-006 asks whether the repair can be implemented from the published text alone. Then re-run `check:docs`: `docs/04-srs.md` and `docs/05-sad.md` are both mirrored into `relay-tutorial/content/docs/`, so `pnpm sync:docs` must run or the drift check fails.
+
+  **THE READING PASS FOUND A REQUIREMENT THE PUBLISHED TEXT DID NOT SATISFY.** With the spec and
+  the source closed, the published text answered which field, what shape, which channels appear,
+  what to compare against, what to do when the count is higher or equal, and when to store — and
+  **had no instruction at all for a count that is lower than the one the client holds.** What it
+  said was that the *platform* refuses nothing over such a count, which is the platform's half of
+  FR-008 and not the client's. A developer whose local number is stale, restored from a backup, or
+  simply wrong had nothing to follow. Two smaller gaps came out of the same pass: the history
+  re-read named no endpoint, and "the difference is how many" never said how many *of what* —
+  three revisions may be three edits of one message. §5.2 now carries a three-row table and both
+  clarifications.
+
+  **This does not discharge SC-006, and saying it did would be the easy lie.** The exercise finds
+  information that is ABSENT. It cannot find information that is present and unclear, because the
+  person running it wrote the feature and cannot unknow the answer. SC-006 asks whether somebody
+  who does not already know can implement from the text, and no instrument in these repositories
+  answers that — six Python checkers, and every one of them compares bytes. It needs a person:
+  `specs/036-chapter-3-18/reader-protocol.md`, 45 minutes, six questions. Chapters 3.14 through
+  3.24 have each named this gap and none has closed it; this feature does not close it either,
+  and it goes to `gaps.md` re-measured rather than carried.
+
+  `sync:docs` run, `check:docs` green — drift check and revision order both — and `check:srs`
+  green. Quickstart scenario 7 rewritten to name the clauses that exist, and scenario 7a added
+  for the reading pass itself.
 
 **Checkpoint**: all three stories complete.
 
