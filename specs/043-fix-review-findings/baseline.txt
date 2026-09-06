@@ -1013,3 +1013,14 @@ them are visible to twenty runs.**
 Chapter 3.23's count moved from 33 to 34 and chapter 3.24's from 36 to 37, both for the
 coverage ratchet alone. This feature's moved from 17 to 58, and the ratchet was the only part
 either predecessor's shape predicted.
+
+**THE NEW PINS WERE TESTED RED, BECAUSE EXIT 0 DOES NOT PROVE A PIN MATCHED.** A per-file
+threshold whose key does not match any file is ignored silently — it would pass forever and
+protect nothing, which is the same shape as a checker with a blind spot. Demanding 101%
+statements of `frames.ts` produced:
+
+    ERROR: Coverage for statements (100%) does not meet
+           "packages/protocol/src/frames.ts" threshold (101%)
+
+vitest names the key, so the key resolves. The probe cost one 442-second run and is the only
+thing that distinguishes a live pin from a typo.
