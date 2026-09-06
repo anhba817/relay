@@ -709,3 +709,69 @@ ADR-23 states fail-open; both were checked against `connections.ts` and
 `membership.test.ts:16` before being carried into a clause, because an ADR is a record of a
 decision and this feature has already found three records that were wrong on the day they
 were written.
+
+
+### T019 — THE TWENTY-RUN BATTERY, AFTER US1
+
+Cleared lane (`reset-lane.mjs`), sequencer caches removed, nothing else on the machine.
+
+    run  exit  secs   durables left   failing file
+    ---  ----  ----   -------------   ---------------------------
+    01     0   224          0         —
+    02-15  0   225-226      0         —
+    16     1     1          0         reset-lane.itest.ts
+    17-19  0   225-226      0         —
+    20     1     2          0         reset-lane.itest.ts
+
+    18 green of 20 · mean 225.28 s over the green runs · stdev 0.57 · budget 240
+
+**READ THE EXIT COLUMN DOWN: GGGGGGGGGGGGGGGRGGGR.** Chapter 3.24's battery alternated
+G R G R for fifteen consecutive runs, and the mechanism was
+`node_modules/.vite/vitest/<hash>/results.json` — the sequencer runs previously-failed
+files first, which moved `tuan` and made the next run green. That alternation is gone
+because nothing fails in a way that reorders anything. **The stdev is the other half of
+the same story**: 0.57 s across eighteen runs against 3.24's 1.75 s, on a lane whose
+per-file order no longer changes between runs.
+
+**BOTH REDS ARE ONE DEFECT, AND IT IS THIS FEATURE'S OWN TEST** — not a port collision,
+not broker accumulation. `reset-lane.mjs` deletes `created_at < now() - interval '30
+minutes'`; `reset-lane.itest.ts` then counted the same clause ~115 ms later. Both say
+"30 minutes ago" and they mean different instants, so a row that aged across the mark in
+between is one the script correctly did not delete and the test called a failure.
+
+    rows crossing the 30-minute mark   0.2 per second (measured live at run 16)
+    the DELETE -> COUNT gap            ~115 ms
+    observed                           2 of 20
+
+**It could not fire before run 8**, because the window does not exist until the lane has
+been up longer than `STALE_AFTER` — which is why it reads as a late-onset flake and is
+not one. Reproduced deliberately by planting a row that crosses the mark 400 ms out: the
+same row counts **0** against a pinned instant and **1** against a re-evaluated `now()`.
+Fixed by capturing `now()` once before the script runs.
+
+**SC-002 and SC-003 hold: zero failures attributable to a port collision or to broker
+state, and zero durable consumers outlived any of the twenty runs.** SC-001's twenty
+consecutive green is T062's to record, on the fixed test.
+
+### T019a — THE BUDGET, AGAINST T006a
+
+                            T006a (before)   after US1      change
+    e2e package                    7.41 s     12.79 s       +5.38
+    integration total            234.61 s    225.28 s       -9.33
+    headroom against 240 s         5.39 s     14.72 s       +9.33
+
+**The budget did not move, and it did not need to.** T019a listed three choices for an
+overrun — raise the budget, boot once instead of twice, bound the teardown lower — and
+none was taken, because the total FELL.
+
+**The e2e package did cost what the task predicted**, +5.38 s for `harness.itest.ts`'s
+second boot and a teardown that awaits `exit` instead of sleeping 200 ms. Five api boots
+per run. That spend was more than repaid elsewhere: `membership.itest.ts` and
+`presence.itest.ts` each held a health loop that probed `/health`, a route this api has
+never served, and returned after a hundred failures anyway — a flat ten-second sleep per
+file. The gateway package went 45.68 s -> 35.67 s.
+
+**So the headroom nearly tripled while the feature added a suite.** Two of the three
+options T019a offered were for a problem that turned out not to exist, and recording that
+matters more than the number: the budget is still 240 because the lane got faster, not
+because anyone decided it should be.
