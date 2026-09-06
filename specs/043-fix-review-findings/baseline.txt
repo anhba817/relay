@@ -1024,3 +1024,69 @@ statements of `frames.ts` produced:
 
 vitest names the key, so the key resolves. The probe cost one 442-second run and is the only
 thing that distinguishes a live pin from a typo.
+
+
+### T062-T063 — THE CLOSE-OUT BATTERY: TWENTY OF TWENTY
+
+Cleared lane, every sequencer cache removed, nothing else on the machine.
+
+    20 runs · 20 green · 0 red
+    green mean 225.35 s · stdev 0.99 · budget 240 · headroom 14.65 s
+    exit column   GGGGGGGGGGGGGGGGGGGG
+    durable consumers outliving a run, summed over twenty runs:  0
+
+**REPORT THE MECHANISM, NOT THE FRACTION.** 20/20 is a number a reader can check against
+nothing. What it means is visible in the column above and in the standard deviation.
+
+Chapter 3.24's battery read G R G R G R G R G R G R G R G — fifteen alternations, one chance
+in eight thousand if the runs were independent, and they were not: the sequencer stores
+`{duration, failed}` per file in `node_modules/.vite/vitest/<hash>/results.json` and runs
+previously-failed files first, which moved `tuan` into the last slot and made the next run
+green. **The lane's failure rate was a function of a JSON file.** That alternation cannot
+occur here, because nothing failed for the cache to record.
+
+**The stdev is the same fact from the other side.** 0.99 s across twenty runs, against
+chapter 3.24's 1.75 s across nine green ones. A lane whose per-file order no longer changes
+between runs has almost nothing left to vary.
+
+**One sequencer cache was nearly missed.** The clearing glob covered `packages/*` and
+`services/*` and the root `node_modules/.vite/vitest` is neither — it belongs to the coverage
+lane, which runs from the root. It did not affect this battery, whose runs are per-package,
+but the instruction says remove the caches and the glob did not.
+
+### WHAT THE LANE ACCUMULATED, AND WHAT IT NO LONGER DOES
+
+    before          64,653 env · 599,530 outbox
+    after 20 runs   76,627 env · 759,828 outbox · 53,835 deliveries
+    broker after         0 consumers · 149 messages
+
+**Postgres rows still accumulate and that is untouched by this feature.** Twelve thousand
+environments and 160,000 outbox rows in twenty runs. Nothing here reaps them, and the queryable
+attempt log that would is Part 4's.
+
+**The broker no longer accumulates anything.** Chapter 3.24's close-out found 56,193 messages
+and 216 durable consumers on DELIVERIES, which is what starved the dispatcher lane and made
+`consumer.itest.ts` take 484 s instead of 101 s. Twenty runs here left **zero** durables and
+149 messages.
+
+**Part of that is the reset script and part of it is circular, and the record has to say
+which.** `reset-lane.itest.ts` runs the real script, and `@relay/test-harness` sorts first in
+the turbo order, so **every run begins by purging the broker.** The lane cannot accumulate
+across runs because run N+1 clears it. That is a legitimate answer to SC-002 and it is "the
+lane self-cleans", not "the fix stopped the accumulation" — and the Postgres numbers above are
+what an uncleaned resource looks like by comparison.
+
+**It is safe only because `--concurrency=1`.** A test that purges every stream and deletes
+every durable would destroy any suite running beside it. That flag lives in `package.json`
+for an unrelated reason and is now load-bearing for this test.
+
+### T019a's BUDGET, RE-CONFIRMED AT CLOSE-OUT
+
+    e2e package     12.82 - 13.29 s across the battery   (T006a baseline: 7.41 s)
+    integration     225.35 s mean                        (T006a baseline: 234.61 s)
+    headroom        14.65 s of 240                       (T006a baseline: 5.39 s)
+
+The budget did not move and did not need to. The feature added a suite that boots twice and
+a teardown that awaits `exit` — +5.4 s — and removed two ten-second sleeps that were health
+loops probing a route this api has never served. **The headroom nearly tripled while the work
+got bigger**, which is the opposite of the outcome T019a was written to guard against.
