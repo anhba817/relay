@@ -419,3 +419,49 @@ order includes new 20, 21, 22, 23, 24.
 
     `deliveries.itest.ts`, `dispatcher.itest.ts` and `integrate.itest.ts` are not
     that shape and need the fold, or the fence dropped from the early chapter.
+
+================================================================================
+FOUR MECHANISMS, ONE STRUCTURAL REASON THEY ALL FAIL
+================================================================================
+
+  1. RE-HUNK the existing fences              3 of 39 paths clean          (R2)
+  2. ATTRIBUTION-AND-FILTER                   52 parse errors on
+     the final file minus later clusters      repository.ts, 59 on
+                                              session.ts                   (R4)
+  3. THREE-WAY MERGE of per-chapter deltas    29 conflicts, 8 of them not
+                                              merge problems at all
+  4. RUNNING MAXIMUM over re-sorted snapshots 0 conflicts, lands exactly,
+                                              109 states show unread work
+
+THE REASON IS THE SAME EVERY TIME: the reorder requires UN-INTERLEAVING CODE THAT
+WAS WRITTEN INTERLEAVED, and only mechanism 2 even attempts it.
+
+Measured on the snapshots. Movements VI and VII — webhooks, retry, mail, limits,
+quotas, metering — were old 3.05 to 3.11 and are new 19 to 24. What they added to
+the four most-fenced files is present in every state from old 3.12 onward, which
+is new position 4:
+
+    services/api/src/db/repository.ts    2,192 of 3,269 lines   67%
+    packages/protocol/src/internal.ts      243 of   398 lines   61%
+    services/api/src/db/schema.ts          501 of   862 lines   58%
+    services/gateway/src/session.ts        237 of   689 lines   34%
+
+A reader at new chapter 8 opens `repository.ts` and two thirds of it is code for
+chapters 19 to 24. Mechanism 4 produces a perfect chain and an impossible book.
+
+R3 ALREADY MEASURED THE CAUSE AND REJECTED THE ONLY FIX. It attributed every line
+of the four heavily-fenced files and found `repository.ts` is 124 interleaved
+cluster runs across 7 clusters; it concluded "a book's teaching order is not a
+good reason to reorganise a repository layer" and declined to reorganise the
+platform.
+
+THAT CONCLUSION WAS REACHED WHEN THE ALTERNATIVE LOOKED CHEAP. The alternative is
+now "Part 3 cannot be reordered at all", and R3's own permission — the user's
+offer to reset and re-tag `relay-platform` — is still on the table. A 5,533-line
+repository class carrying seven subjects is also the thing the book would be
+better off not teaching.
+
+WHAT IS AND IS NOT AFFECTED. 206 of 242 paths keep their chapter order and need
+nothing. The whole problem is 36 paths, and it is concentrated in four files.
+`repository.itest.ts` shows the shape of the good case: 0 lines added by old
+3.05-3.11, because a test file for one subject is not interleaved with six others.
