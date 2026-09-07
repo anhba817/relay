@@ -35,23 +35,51 @@ def main() -> int:
             + (f" — duplicated: {dupes}" if dupes else f" — got {sorted(news)}")
         )
 
+    # THE TREE ON DISK CARRIES THE *NEW* ORDINALS ONCE T019 HAS RUN, and this compared
+    # against `old`. That was right while the tree still held 1..24 and became backwards
+    # the moment the directories were renamed — the checker then reported chapter 25 as
+    # "absent from the map" while the map is exactly where 25 comes from. Third instrument
+    # in this feature whose premise expired under it: `classify-refs`'s corpus was
+    # narrower than its claim, `check-excerpt-files` compared excerpts to the wrong state,
+    # and this one outlived the numbering it was written against.
+    #
+    # BOTH DIRECTIONS, because only one of them is loud. A mapped chapter with no page is
+    # a dead sidebar link; a page in no mapping is a chapter this feature forgot to place.
+    news = sorted(c["new"] for c in chapters)
     olds = [c["old"] for c in chapters]
     published = sorted(
         int(re.search(r"chapter-(\d+)", str(p)).group(1))
         for p in (TUT / "app" / "(en)" / "part-3").rglob("page.mdx")
     )
-    missing = [o for o in published if o not in olds]
-    if missing:
-        problems.append(f"published chapters absent from the map: {missing}")
-    invented = [o for o in set(olds) if o not in published]
-    if invented:
-        problems.append(f"map names chapters that are not published: {invented}")
+    for n in [n for n in published if n not in news]:
+        problems.append(f"published chapter {n} is in no mapping — placed by nothing")
+    for n in [n for n in news if n not in published]:
+        problems.append(f"mapped chapter {n} has no page on disk — a dead sidebar link")
+    # THIS COMPARED THE MAP'S `old` VALUES AGAINST DISK, which cannot work once the
+    # directories are renamed: `old` now describes history and nothing on disk carries an
+    # old number. What is still worth asserting is that the map accounts for every chapter
+    # that existed BEFORE — 1..24, the count Part 3 closed with — so a source chapter
+    # cannot be dropped on the way through.
+    before = set(range(1, 25))
+    if set(olds) != before:
+        problems.append(
+            f"the map does not account for every pre-renumber chapter — "
+            f"missing {sorted(before - set(olds))}, invented {sorted(set(olds) - before)}"
+        )
 
     split = m["split"]["old"]
-    twice = [o for o in set(olds) if olds.count(o) > 1]
-    if twice != [split]:
+    # COUNT THE OCCURRENCES, DO NOT JUST COLLECT THE REPEATERS. This read
+    # `twice = [o for o in set(olds) if olds.count(o) > 1]` and compared that list to
+    # `[split]`, which is satisfied by the split appearing THREE times as happily as
+    # twice — a probe that gave chapter 14 a third entry went red on a different
+    # assertion entirely and this one stayed silent.
+    from collections import Counter
+    counts = Counter(olds)
+    wrong = {o: n for o, n in counts.items() if n != (2 if o == split else 1)}
+    if wrong:
         problems.append(
-            f"exactly one chapter may appear twice (the split, {split}) — appearing twice: {twice}"
+            f"the split chapter ({split}) must appear exactly twice and every other "
+            f"exactly once — got {dict(sorted(wrong.items()))}"
         )
 
     for c in chapters:
