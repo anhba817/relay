@@ -42,6 +42,7 @@ const ORDER = arg("--order", "current");
 const SNAP = arg("--snapshots", join(tmpdir(), "relay-045-snapshots"));
 const OUT = arg("--out", null);
 const TYPECHECK = argv.includes("--typecheck-each");
+const CONFLICT_OUT = arg("--conflict-out", null);
 /** Run the merge even where the order did not change.
  *
  * WITHOUT THIS THE CONTROL PROVES NOTHING. `--order current` leaves every path's
@@ -220,6 +221,22 @@ for (const [path, chapters] of [...paths].sort()) {
       const r = git(["cherry-pick", "-X", "patience", sha.get(key)], repo);
       if (r.status !== 0) {
         conflicts.push({ path, at: key });
+        // PRESERVE THE CONFLICT SO IT CAN BE RESOLVED. Aborting and moving on gives a
+        // count and nothing to work with; 32 paths cannot be resolved from a list of
+        // names. Written out as the marked-up file plus the three inputs a three-way
+        // merge actually has, because "pick a side" is rarely the answer and the base
+        // is what says which side introduced what.
+        if (CONFLICT_OUT) {
+          const dir = join(CONFLICT_OUT, path.replace(/\//g, "__"));
+          mkdirSync(dir, { recursive: true });
+          writeFileSync(join(dir, "MARKED"), readFileSync(file, "utf8"));
+          for (const [name, spec] of [["base", ":1:F"], ["ours", ":2:F"], ["theirs", ":3:F"]]) {
+            const g = spawnSync("git", ["show", spec], { cwd: repo, encoding: "utf8" });
+            if (g.status === 0) writeFileSync(join(dir, name), g.stdout);
+          }
+          writeFileSync(join(dir, "META.json"), JSON.stringify(
+            { path, conflictAt: key, publishedOrder: inPublished, targetOrder: inTarget }, null, 2));
+        }
         git(["cherry-pick", "--abort"], repo);
         ok = false;
         break;

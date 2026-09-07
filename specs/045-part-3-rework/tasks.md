@@ -333,8 +333,13 @@ walks through a diff.
   function is not equivalent to it. Rewritten to detect each damage class by its own
   signature in the tree, where no oracle is needed.
 
-- [~] T015 [US3] Verify: zero ordinals in fenced source, `check:fences` green at 240 files, and `pnpm typecheck`, `lint`, `build` green in `relay-platform`. **A comment edit that breaks a build is still a broken build.** (SC-002, FR-013)
-  **PARTLY DONE, AND THE HELD PART IS NAMED.** Zero ordinals in fenced source (300-file
+- [X] T015 [US3] Verify: zero ordinals in fenced source, `check:fences` green at 240 files, and `pnpm typecheck`, `lint`, `build` green in `relay-platform`. **A comment edit that breaks a build is still a broken build.** (SC-002, FR-013)
+  **CLOSED.** `pnpm run typecheck`, `lint` and `build` all exit 0 (7 s, 4 s, cached)
+  once the toolchain was restored — `node_modules` had gone from both repos and pnpm's own
+  `@pnpm/exe` was missing, so every script exited 127 for a while. The new pnpm rejects
+  `-s`; `pnpm run <script>` is the form that works.
+
+  **WHAT WAS HELD, AND WHY IT WAS RECORDED RATHER THAN ASSUMED.** Zero ordinals in fenced source (300-file
   corpus, 1 kept on purpose) and `check:fences` green at 240 files are both confirmed.
   `pnpm typecheck`, `lint` and `build` were green at commit `42cd22b`; the two commits after
   it — `ba7b8aa` restoring the quotation and `309ffdd` the Dockerfile — are comment-only and

@@ -309,3 +309,60 @@ TWO TOOLING FAULTS FOUND GETTING HERE
   before the rename. Afterwards `--order new` compared the new order with itself
   and found nothing to replay. It reads the snapshot's own keys now — a snapshot
   IS the published order — so the tool works on either side of the rename.
+
+--------------------------------------------------------------------------------
+THE 32 CONFLICTS ARE TWO CLASSES, AND ONE OF THEM IS NOT A MERGE PROBLEM
+--------------------------------------------------------------------------------
+
+Classified by which side of the merge is EMPTY, which no count of conflicts or
+conflicted lines reveals:
+
+  18   both sides present — a genuine content overlap between two Part-3
+       chapters that swapped order. Every one has its creator at position 1,
+       because the creator is a Part 1 or Part 2 chapter and those do not move.
+       This is the work the plan predicted and it is resolvable by hand.
+
+  14   THE FILE IS ABSENT ON OUR SIDE. A chapter that CREATES a file has been
+       moved after chapters that MODIFY it. `ours` is 0 lines.
+
+    old 3.05  webhooks       -> new 18, creates 4 files that new 6, 7, 9, 10, 11, 16 edit
+    old 3.12  the gauntlet   -> new 24, creates 8 files and is now LAST in every
+                                one of its chains (3/3, 4/4, 5/5, 5/5, 2/2, 4/4,
+                                8/8, 2/2)
+    old 3.14  the registry   -> new 3, creates 2 files that new 10 and 9 edit
+
+  37 conflict hunks and 7,579 conflicted lines total — a number that makes this
+  look like weeks of merging and describes something else entirely. Nine of the
+  14 have `conflicted lines` within 4 of `file lines`: the WHOLE FILE is the
+  conflict, because there is no file to conflict with.
+
+WHY MERGING CANNOT RESOLVE THE 14. Taking `theirs` at the first conflict only
+relocates it — the creator's own "create this file" delta then meets an add/add
+against the file it was meant to create. Re-sorting the old states does not work
+either: the chain's final state is pinned to the platform file, and a state
+sequence ending on the creator's OLD content makes the file shrink at the last
+chapter. `catalogue.ts` is the clearest case, two chapters long:
+
+    published   3.12 -> 3.23        base 176   ours 0   theirs 221
+    target      3.23 -> 3.12
+
+THIS IS R4'S PREDICTION ARRIVING WITHOUT THE INSTRUMENT IT NAMED. R4 said a
+synthesised state that will not compile means the order violates a real
+dependency, "a finding about the order rather than a bug in the tool". Found by
+asking which side of the merge was empty, before any typecheck ran.
+
+TWO RESOLUTIONS, MEASURED
+
+  (c) THE CREATOR EMITS THE FINISHED FILE and the earlier chapters drop that
+      fence: 14 paths, 10 chapters, 34 (chapter, path) fences dropped. Heaviest
+      losses old 3.23 (7), old 3.15 (6), old 3.16 (6), old 3.17 (5). Mechanically
+      simple and it changes WHAT TEN CHAPTERS TEACH — a chapter that added a
+      target to the gauntlet as it went no longer does, and the tests the
+      revisions chapter wrote against webhook delivery cannot be written before
+      webhooks exists. FR-009 says prose is preserved; this is in tension with it.
+
+  (b) REORDER SO EVERY CREATOR PRECEDES ITS MODIFIERS: webhooks must move to
+      before new 6 and the gauntlet to before new 8. Webhooks currently sits at
+      new 18 and the gauntlet at new 24. THIS UNDOES THE FEATURE'S CENTRAL FIX —
+      webhooks teaching delivery 15 chapters before anything produces an event is
+      the defect 045 exists to correct.
