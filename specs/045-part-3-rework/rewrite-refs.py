@@ -35,7 +35,12 @@ def delete_one(line: str, m: re.Match) -> str:
     # 3.8):` became `// Then its allowance…` — a CONTINUATION line, mid-sentence, given a
     # capital because the deletion happened to be on it. Caught in the dry run before any
     # of the 821 was written.
-    tag = bool(re.match(r"^\s*[/*\s]*" + re.escape(ref) + r"\s*[.:]", line))
+    # THE SAME MARKER SHAPE `refrules` RECOGNISES, or the capital never gets restored.
+    # This tested only `[.:]` while classification had widened to any separator, so
+    # `/** Chapter 3.2, research R8: …` became `/** research R8: …` in lower case.
+    OPENER = r"^\s*(?:it\(|describe\()?[\s\"\'/*]*"
+    tag = bool(re.match(OPENER + re.escape(ref) + r"\s*[.,:;\u2014-]", line)) or \
+          bool(re.match(r"^\s*[/*\s]*" + re.escape(ref) + r"\s+\(", line))
     # A `(3.N)` match carries its own parentheses; removing it plus the space before is
     # the whole edit. Handled first, because the generic paren shape below would look for
     # `((3.N))` and find nothing — 98 references were left untouched that way.
@@ -46,6 +51,8 @@ def delete_one(line: str, m: re.Match) -> str:
         (rf"{re.escape(ref)},\s*", ""),                    # "(chapter 3.21, FR-…)" -> "(FR-…)"
         (rf",\s*{re.escape(ref)}", ""),                    # "(FR-…, chapter 3.21)" -> "(FR-…)"
         (rf"{re.escape(ref)}\s*[:.]\s*", ""),              # "// Chapter 3.8: nor…" -> "// nor…"
+        (rf"{re.escape(ref)}\s+(?=\()", ""),                # "// Chapter 3.8 (FR-…)" -> "// (FR-…)"
+        (rf"{re.escape(ref)}\s*[;\u2014-]\s*", ""),          # "// CHAPTER 3.10 — the cap" -> "// the cap"
         # NO LAST-RESORT STRIP. It used to be `(rf"\s*{re.escape(ref)}", "")`, which
         # removed the reference from anywhere and left the sentence to fend for itself:
         # 16 dangling prepositions and 36 orphaned possessives reached the tree before a
@@ -100,8 +107,8 @@ def main() -> int:
     samples, touched = [], set()
     for d in ("services", "packages"):
         for f in sorted((PLAT / d).rglob("*.ts")):
-            if "node_modules" in str(f):
-                continue
+            if "node_modules" in str(f) or "/dist/" in str(f):
+                continue          # dist/ is build output, gitignored and regenerated
             rel = str(f.relative_to(PLAT))
             if scope and not rel.startswith(scope):
                 continue

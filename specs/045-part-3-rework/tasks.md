@@ -179,7 +179,7 @@ walks through a diff.
   | proximity to a requirement id | called `Chapter 3.8 needed the` a tag because an `ADR-05:` sat earlier on the line |
   | parentheses before possessives | stripped `(3.17's T040b)` to `( T040b)` — 32 of them, possessives and plurals inside brackets |
   | possessives first, verbs later | stripped `(chapter 3.11 added it)` to a hole; treated `it("… as chapter 3.10 shipped them")` as a tag, because `it(` opens a bracket |
-  | a last-resort strip for anything left | **applied to the tree**: 16 dangling prepositions and 36 orphaned possessives — `narrowed by's FR-044` |
+  | a last-resort strip for anything left | **applied to the tree**: 16 dangling prepositions and 36 orphaned possessives — `narrowed by's` where a requirement id had followed |
   | shape order, no last resort, quotes excluded | 712 rewritten, 0 unmatched |
 
   **The fourth was caught by scanning the applied diff for damage signatures**, not by
@@ -226,8 +226,45 @@ walks through a diff.
   done.** Each batch reports found against rewritten. **Read each one; do not run a blind
   substitution** — the table gives the phrase and the sentence decides whether it fits.
 
-- [ ] T012 [US3] **READ and rewrite** the ~70 in `relay-platform` that neither rule fits, located with `grep -rn`: section rules like `// ── chapter 3.18: two instances, one fabric ──`, and temporal claims where "since the rate-limit chapter" reads worse than restating the fact. **Re-measure this class before starting it.** Its size came from reading twelve sentences after two classifiers disagreed by 4.5× — 90 against 407 — and twelve is thin. It is the class that decides how long this phase takes. (FR-008)
-- [ ] T013 [P] [US3] Confirm the 49 **unfenced** `.ts` files under `relay-platform` were covered by T010–T012 and need no fence amendment, with `grep -rn`. They carry 210 of the 1,429 and are the only ones where a rewrite costs nothing downstream. (FR-008)
+- [X] T012 [US3] **READ and rewrite** the ~70 in `relay-platform` that neither rule fits, located with `grep -rn`: section rules like `// ── chapter 3.18: two instances, one fabric ──`, and temporal claims where "since the rate-limit chapter" reads worse than restating the fact. **Re-measure this class before starting it.** Its size came from reading twelve sentences after two classifiers disagreed by 4.5× — 90 against 407 — and twelve is thin. It is the class that decides how long this phase takes. (FR-008)
+  **All 293 done, and only nine needed a person.** The read class was not one job — it was five
+  sub-classes plus a residue, and four of the five were uniform enough for a rule and a damage scan:
+
+  | Sub-class | Count | Rewrite |
+  |---|---|---|
+  | section rules | 32 | the ordinal is navigation; the words after the colon already say what the section is |
+  | a bare `3.N` | 100 | a name reads — `stranded a user online for ever in the presence chapter` |
+  | temporal | 33 | a name reads too. They were routed here because `since chapter 3.9` → `since the mail-transport chapter` implies the mail chapter caused a migrations rule; re-read across all 33, **that one is the outlier** |
+  | the split chapter | 16 | decided per sentence — a mention of the sealed package, the outsider or the exit criterion means the milestone, everything else the registry |
+  | ends the line | 16 | the verb is on the next line, which the single-line test could not see |
+  | **by hand** | 9 | test titles, a `gaps.md` item that was never a chapter reference, and sentences where no rule fits |
+
+  **THE ESTIMATE WAS ~70 AND THE TRUTH WAS 293, THEN 9.** Both numbers are wrong in the useful
+  direction: analysis pass 5 read twelve sentences and inferred the expensive class was small;
+  the classifier said 318; and the answer is that **almost none of it was expensive once the
+  sub-classes were named.** The lesson is not that the estimate was bad — it is that "needs a
+  person" was never one category.
+
+  **FOUR MORE MECHANICAL CLASSES SURFACED WHILE WORKING THROUGH THE RESIDUE**, each found by
+  reading what was left rather than by planning: a parenthetical that spans lines (12), `---` as
+  a section rule alongside `──` (2), `'S` uppercase failing a case-sensitive possessive test (5),
+  and `gaps.md 3.23-4` which is an item id and never was a chapter reference (1).
+
+  **AND THE CLASSIFIER CRASHED ON ITS OWN SUCCESS.** `counts[k]*100//tot` divided by zero the
+  moment the last reference was rewritten — a script that could not report the condition it
+  existed to reach.
+
+- [X] T013 [P] [US3] Confirm the 49 **unfenced** `.ts` files under `relay-platform` were covered by T010–T012 and need no fence amendment, with `grep -rn`. They carry 210 of the 1,429 and are the only ones where a rewrite costs nothing downstream. (FR-008)
+  **The 49 unfenced files were covered by T010–T012 along with everything else.** The rewriters
+  walk `services/` and `packages/` whole and never consulted the fence list, so no separate pass
+  was needed — and `classify-refs.py` reporting **zero references in zero files** is the proof
+  that covers fenced and unfenced alike.
+
+  **AND THE WALK WAS EDITING BUILD OUTPUT.** `rglob("*.ts")` matches `packages/protocol/dist/
+  frames.d.ts`, so the rewriters were rewriting generated declaration files. `dist/` is
+  gitignored and `pnpm build` regenerates it, so nothing was lost — but the three scripts now
+  skip it, and the classifier's count of 1 remaining reference was a `dist/` file until it did.
+
 
   **THE THREE RULES ARE THE SPLIT, NOT THE DIRECTORIES**, and this ordering was the other way round
   until analysis pass 5. Classifying by what a reference *looks like* gave 416 delete / 923 substitute

@@ -31,7 +31,7 @@ BRANCHES = {
 }
 REF = re.compile("|".join(pat for pat, _, _ in BRANCHES.values()))
 ID = re.compile(r"\b(FR|SC|NFR|EIR|ADR|CON|DR|ASM)-[A-Z]*-?\d+[a-z]?\b")
-RULE_LINE = re.compile(r"^\s*//\s*[─=]{2,}")
+RULE_LINE = re.compile(r"^\s*//\s*(?:[─=]{2,}|-{3,})")
 # A REFERENCE AFTER ONE OF THESE CANNOT SIMPLY BE DELETED. "which the route began
 # accepting in chapter 3.15" loses its object and ends on "in"; "narrowed by 3.11's
 # FR-044" becomes "narrowed by's FR-044". Both were applied to the tree once — 52 of
@@ -44,7 +44,7 @@ PREPOSITION = re.compile(
 # about why: the mail chapter has nothing to do with migrations. These take a rewritten
 # sentence, so they route to `read`.
 TEMPORAL = re.compile(r"\b(since|until|before|after|by the time)\s*$", re.I)
-VERSIONISH = re.compile(r'\d\.\d+\.\d|"\d|\bv3\.')
+VERSIONISH = re.compile(r'\d\.\d+\.\d|"\d|\bv3\.|gaps\.md\s+3\.\d')
 SPLIT = 14
 
 
@@ -95,7 +95,9 @@ def classify(line: str, m: re.Match) -> str:
     """
     ref = m.group(0)
     s_, e_ = m.start(), m.end()
-    possessive = line[e_:e_ + 2] == "'s" or ref.endswith("'s")
+    # `'S` IN AN ALL-CAPS RUN IS STILL A POSSESSIVE. `CHAPTER 3.13'S IDEMPOTENT
+    # createUser` read as prose for five references because the test was case-sensitive.
+    possessive = line[e_:e_ + 2].lower() == "'s" or ref.lower().endswith("'s")
     bare = not re.match(r"(?i:chapter)", ref) and not ref.startswith("(")
 
     if RULE_LINE.match(line):
@@ -115,8 +117,18 @@ def classify(line: str, m: re.Match) -> str:
     # ordinal goes and whatever it was listed beside stays.
     if re.match(r"^\s*[/*\s]*" + re.escape(ref) + r"\s*[.:]", line):
         return "delete"
-    if re.match(r"^\s*[/*\s]*" + re.escape(ref) + r",\s*(?:[A-Z]{2,4}-)", line):
-        return "delete"                   # "Chapter 3.23, ADR-24." -> "ADR-24."
+    # ANY SEPARATOR, NOT JUST A FULL STOP OR A COLON. The marker shape is "the comment
+    # opens with an ordinal and then says something", and the something is introduced by
+    # whatever punctuation the author reached for:
+    #     // Chapter 3.8 (FR-AUT-12). The failure is observable HERE
+    #     // CHAPTER 3.19, PHASE 1 — THE FAILING STATE, OBSERVED.
+    #     it("chapter 3.23: an edit on the fabric arrives as message.updated"
+    # Requiring `.` or `:` left 86 of these in the read class, where they are not prose
+    # judgements at all — they are the same tag with different punctuation.
+    OPENER = r"^\s*(?:it\(|describe\()?[\s\"'/*]*"
+    if re.match(OPENER + re.escape(ref) + r"\s*[.,:;\u2014-]", line) or \
+       re.match(r"^\s*[/*\s]*" + re.escape(ref) + r"\s+\(", line):
+        return "delete"
     if ref.startswith("("):
         return "delete"                   # carries its own parentheses; removed whole
 
@@ -130,8 +142,12 @@ def classify(line: str, m: re.Match) -> str:
     # shipped them", () => {` has an opening bracket before and a closing one after, and
     # three references were classified as removable tags on that basis. A tag holds no
     # quote mark.
+    # A PARENTHETICAL THAT SPANS LINES IS STILL A PARENTHETICAL. Twelve references sat in
+    # `/** Write a row for each threshold a usage increase crossed (chapter 3.10,` with the
+    # closing bracket two lines down, and the same-line test could not see them.
     op, cl = line.rfind("(", 0, s_), line.find(")", e_)
-    if op != -1 and cl != -1 and line.find(")", op, s_) == -1 and '"' not in line[op:cl]:
+    unclosed = op != -1 and line.find(")", op, s_) == -1
+    if unclosed and (cl != -1 or line.rstrip().endswith(",")) and '"' not in line[op:cl if cl != -1 else len(line)]:
         return "delete"                   # "(chapter 3.21, FR-RTM-08)" -> "(FR-RTM-08)"
 
     if TEMPORAL.search(line[:s_].rstrip()):

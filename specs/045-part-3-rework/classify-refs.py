@@ -43,8 +43,8 @@ def main() -> int:
     rows = []
     for d in ("services", "packages"):
         for f in sorted((PLAT / d).rglob("*.ts")):
-            if "node_modules" in str(f):
-                continue
+            if "node_modules" in str(f) or "/dist/" in str(f):
+                continue          # dist/ is build output — gitignored and regenerated
             rel = str(f.relative_to(PLAT))
             for n, line in enumerate(f.read_text(encoding="utf-8", errors="replace").splitlines(), 1):
                 for m in REF.finditer(line):
@@ -68,6 +68,13 @@ def main() -> int:
 
     tot = sum(counts.values())
     print(f"classify-refs: {tot} references in {len(files)} files, all 7 controls fired through REF")
+    if not tot:
+        # ZERO IS THE GOAL, AND IT CRASHED ON IT. `counts[k]*100//tot` divided by zero the
+        # moment the last reference was rewritten — a script that cannot report its own
+        # success condition. The controls above still ran, so this zero is a claim about
+        # the corpus and not about a broken pattern.
+        print("  none left — every Part-3 ordinal in platform source now names its subject")
+        return 0
     for k in ("delete", "substitute", "read"):
         print(f"  {k:<11} {counts[k]:>5}  {counts[k]*100//tot:>2}%")
     print("classify-refs: the rule only — whether the phrase reads is nobody's instrument")

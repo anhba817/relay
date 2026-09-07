@@ -68,6 +68,11 @@ FOREIGN: set[tuple[str, str]] = {
     # feature. Declared rather than paraphrased, because changing the quote would change
     # what the example demonstrates.
     ("research.md", "T059"),
+    # ('tasks.md', 'T040b') — the T010 record quotes a real comment from the tree,
+    # `(3.17's T040b, the fifth such incident in two features)`, as the example of a
+    # possessive inside a parenthesis that a bad rule stripped to `( T040b)`. Changing the
+    # quote would change what the example demonstrates.
+    ("tasks.md", "T040b"),
 
 }
 
