@@ -132,3 +132,50 @@ So the control detects a wrong END state, not a wrong intermediate one. An
 intermediate corruption that is later corrected is invisible to it. That is
 defensible — the chain's contract is the end state plus every hunk applying — but
 it is a limit, and it is recorded rather than assumed away.
+
+--------------------------------------------------------------------------------
+PHASE 2 — THE THREE TABLES AND THE THREE CHECKERS
+--------------------------------------------------------------------------------
+
+  subjects.json          25 phrases, drafted and flagged for revision in the file
+  chapter-map.json       25 chapters, 8 movements, ordinals 1..25, split recorded
+  classify-refs.py       1,429 references in 203 files
+  check-map.py           0 problems · red 5 ways
+  check-registry.py      41 declared, 41 on disk · red 3 ways
+  check-fence-parity.py  758 titled + 146 untitled compared · red 3 ways
+
+THE CLASSIFIER DISAGREES WITH THE ESTIMATE IT WAS BUILT FROM.
+
+  analysis pass 5 estimated   ~757 delete / ~605 substitute / ~70 read
+  classify-refs.py measures    791 delete /  523 substitute / 115 read
+
+The classifier is the authority, being the thing that drives the work. Its
+heuristic for "subject of a verb" is looser than the hand estimate's, so the READ
+class is 115 rather than 70 — and that is the class deciding how long Phase 3
+takes. Re-measured before Phase 3 starts, per T012.
+
+ITS CONTROLS FAILED TWO DESIGNS BEFORE THEY WORKED, THE SAME MISTAKE BOTH TIMES.
+REF is a three-branch alternation:
+
+  one control for the whole pattern     break [Cc]hapter    exit 0 — the control
+                                                            string still matched
+                                                            via the possessive
+                                                            branch
+  a compiled pattern per branch         break REF's paren   exit 0 — the controls
+                                                            tested those patterns,
+                                                            not the scanning one
+  REF joined FROM named branches,       all five probes     all exit 1
+  one control string per branch
+
+A CONTROL ANOTHER BRANCH CAN SATISFY IS NOT A CONTROL FOR THE BRANCH IT NAMES.
+Both broken designs looked correct on the page; only the probes told them apart.
+
+AND THE FENCE-PARITY PROBE IS THE PROOF OF PASS 4'S FINDING, run beside the gate
+it supplements:
+
+  drop 4 untitled fences from a VI page   parity exit 1   check:fences exit 0
+  change one untitled fence's language    parity exit 1   check:fences exit 0
+  drop one titled fence                   parity exit 1   check:fences exit 1
+
+The mirror is blind to exactly the damage the Vietnamese task is most likely to
+do, since T032 replaces everything that is not a fence.

@@ -98,12 +98,65 @@ walks through a diff.
 
 **Blocking.** Every later phase reads one of these.
 
-- [ ] T006 Write the subject-name table at `specs/045-part-3-rework/subjects.json`: one entry per Part 3 chapter, keyed by slug, giving the phrase a source comment should use — `webhooks-that-survive-the-customer` → "the webhook dispatcher chapter". **Keyed by slug and not by number**, because the number is the thing being retired. **It serves ~605 references, not 923** — the other ~757 are tags that delete and consult no table.
-- [ ] T007 Write the chapter map at `specs/045-part-3-rework/chapter-map.json` from `contracts/chapter-map.md`. **One record, two consumers** — the published mapping page and the redirects. A hand-maintained pair is the defect the port bands taught this project, and it cost chapter 3.24 an unexplainable eleventh red. (FR-014, SC-008)
-- [ ] T008 [P] Write `specs/045-part-3-rework/classify-refs.py`: emit every one of the 1,429 source references with its file, line, class and proposed rewrite. Three classes, measured in research R5 by **the rewrite each needs** — ~757 delete, ~605 substitute, ~70 read. **Classifying by appearance instead gave 416 / 923 / 90 and was half wrong in the middle column.** **Report the pattern and the corpus with every count**: 1,429 is all `.ts` under `services/` and `packages/`, 1,298 is the subset inside the 183 fenced paths, and the 985 this feature planned against came from a pattern missing a capital `C`. **Give the pattern a positive control and report a pattern that fails its own example as BROKEN rather than as zero**: `grep` here is ugrep 7.8.4, and a grouped alternation followed by two negated classes matches nothing under it. (FR-008, SC-002)
-- [ ] T009a [P] Write `specs/045-part-3-rework/check-registry.py`: `relay-tutorial/lib/tutorial.ts` declares every chapter's number, path, title, `titleVi` and reading time **by hand**, and the sitemap plus six components read it — the sidebar, the chapter shell's previous and next links, the site header, the landing page and the language switcher. Compare it against the filesystem **in both directions** and test it red each way. **Nothing checks this file today**, and it agrees at 41 and 41, which is what makes silent drift possible rather than unlikely. (FR-015, SC-009)
-- [ ] T009b [P] Write `specs/045-part-3-rework/check-fence-parity.py`: count **every** fence in each chapter, titled and untitled, and require the English and Vietnamese pages to agree per chapter. **`check:fences` cannot do this** — `check-fence-chain.mjs:77` collects a fence only when it matches `title="…"`, so it compares 623 per locale in Part 3 and never sees the other **99**. Test it red by deleting one untitled fence from a Vietnamese page. (FR-010, SC-006)
-- [ ] T009 [P] Write `specs/045-part-3-rework/check-map.py`: the map is a bijection over 24 old and 25 new chapters, every slug exists on disk, and **every new ordinal is used exactly once**. Test it red on a duplicate and on a missing slug. (FR-007, FR-014)
+- [X] T006 Write the subject-name table at `specs/045-part-3-rework/subjects.json`: one entry per Part 3 chapter, keyed by slug, giving the phrase a source comment should use — `webhooks-that-survive-the-customer` → "the webhook dispatcher chapter". **Keyed by slug and not by number**, because the number is the thing being retired. **It serves ~605 references, not 923** — the other ~757 are tags that delete and consult no table.
+  **Drafted, not settled**, and flagged for revision inside the file: 25 phrases that land in platform
+  source comments permanently. Each is a definite noun phrase that reads mid-sentence — "the
+  membership-revocation chapter's finding", "the rate-limit chapter built" — because a title would
+  not: *"The words somebody wants back's finding"* is not English. Two entries deliberately do not
+  end in "chapter" (both milestones already have names the book uses in prose), and 3.13 and 3.15
+  take "channel-endpoints" and "channel-control" rather than colliding on "the channel chapter".
+
+- [X] T007 Write the chapter map at `specs/045-part-3-rework/chapter-map.json` from `contracts/chapter-map.md`. **One record, two consumers** — the published mapping page and the redirects. A hand-maintained pair is the defect the port bands taught this project, and it cost chapter 3.24 an unexplainable eleventh red. (FR-014, SC-008)
+  25 chapters, 8 movements, ordinals 1..25 with no gaps. The split is recorded with its boundary —
+  `## The outsider` at line 961 of 1,565, 14 fences above and 7 below — because the scope estimate
+  turns on it and nothing else in the tree records it.
+
+- [X] T008 [P] Write `specs/045-part-3-rework/classify-refs.py`: emit every one of the 1,429 source references with its file, line, class and proposed rewrite. Three classes, measured in research R5 by **the rewrite each needs** — ~757 delete, ~605 substitute, ~70 read. **Classifying by appearance instead gave 416 / 923 / 90 and was half wrong in the middle column.** **Report the pattern and the corpus with every count**: 1,429 is all `.ts` under `services/` and `packages/`, 1,298 is the subset inside the 183 fenced paths, and the 985 this feature planned against came from a pattern missing a capital `C`. **Give the pattern a positive control and report a pattern that fails its own example as BROKEN rather than as zero**: `grep` here is ugrep 7.8.4, and a grouped alternation followed by two negated classes matches nothing under it. (FR-008, SC-002)
+  **1,429 references in 203 files, and the classifier disagrees with the estimate it was built from.**
+  Analysis pass 5 estimated ~757 delete / ~605 substitute / ~70 read. The classifier measures
+  **791 / 523 / 115**. It is now the authority, being the thing that will drive the work, and its
+  heuristic for "subject of a verb" is looser than the hand estimate's — the read class is 115 rather
+  than 70, which is the class that decides how long Phase 3 takes.
+
+  **THE CONTROLS FAILED TWO DESIGNS BEFORE THEY WORKED, AND BOTH FAILURES ARE THE SAME MISTAKE.**
+  `REF` is a three-branch alternation:
+
+  | Design | Probe | Result |
+  |---|---|---|
+  | one control for the whole pattern | break `[Cc]hapter` | **exit 0** — the control string `chapter 3.20's` still matched via the possessive branch |
+  | a separate compiled pattern per branch | break `REF`'s paren branch | **exit 0** — the controls tested those patterns, not the one doing the scanning |
+  | **`REF` built by joining named branches**, one control string per branch | all five | **all exit 1** |
+
+  **A control another branch can satisfy is not a control for the branch it names.** Found by
+  probing, not by reading — the first two designs both looked correct.
+
+- [X] T009a [P] Write `specs/045-part-3-rework/check-registry.py`: `relay-tutorial/lib/tutorial.ts` declares every chapter's number, path, title, `titleVi` and reading time **by hand**, and the sitemap plus six components read it — the sidebar, the chapter shell's previous and next links, the site header, the landing page and the language switcher. Compare it against the filesystem **in both directions** and test it red each way. **Nothing checks this file today**, and it agrees at 41 and 41, which is what makes silent drift possible rather than unlikely. (FR-015, SC-009)
+  **41 declared, 41 on disk, agreeing in both directions** — unguarded rather than broken, which is
+  the condition analysis pass 1 found and the harder one to notice. Tested red three ways: an entry
+  dropped (caught as "on disk and not declared — invisible to the sitemap and sidebar"), a path
+  pointed at a chapter that does not exist, and the `path:` key renamed, which the checker reports as
+  a parse of zero rather than as agreement with everything.
+
+- [X] T009b [P] Write `specs/045-part-3-rework/check-fence-parity.py`: count **every** fence in each chapter, titled and untitled, and require the English and Vietnamese pages to agree per chapter. **`check:fences` cannot do this** — `check-fence-chain.mjs:77` collects a fence only when it matches `title="…"`, so it compares 623 per locale in Part 3 and never sees the other **99**. Test it red by deleting one untitled fence from a Vietnamese page. (FR-010, SC-006)
+  **758 titled and 146 untitled fences compared across 41 chapters, 0 problems.** And the probe is the
+  proof of pass 4's finding, run side by side with the gate it supplements:
+
+  | Damage to a Vietnamese page | `check-fence-parity.py` | `pnpm check:fences` |
+  |---|---|---|
+  | drop all 4 untitled fences | **exit 1** | **exit 0** |
+  | change one untitled fence's language | **exit 1** | **exit 0** |
+  | drop one titled fence | exit 1 | exit 1 |
+
+  **The mirror is blind to exactly the damage the Vietnamese task is most likely to do**, since T032
+  is an instruction to replace everything that is not a fence. Untitled bodies are compared by count
+  and language rather than byte-for-byte, and the file says why: an untitled fence has no title to
+  pair on, so position is the only key and the language sequence already checks it.
+
+- [X] T009 [P] Write `specs/045-part-3-rework/check-map.py`: the map is a bijection over 24 old and 25 new chapters, every slug exists on disk, and **every new ordinal is used exactly once**. Test it red on a duplicate and on a missing slug. (FR-007, FR-014)
+  25 chapters, 8 movements, 0 problems. Tested red five ways: a duplicated ordinal, a slug with no
+  page, an undeclared movement, a dropped chapter, and a second chapter appearing twice where only
+  the split may.
+
 
 **Checkpoint**: the three tables exist and disagree with nothing.
 

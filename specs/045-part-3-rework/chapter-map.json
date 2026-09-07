@@ -1,0 +1,247 @@
+{
+  "_why": [
+    "The old-to-new chapter map. Feature 045, FR-007 and FR-014.",
+    "",
+    "ONE RECORD, THREE CONSUMERS: the published mapping page, the 48 redirects in",
+    "next.config.ts, and the chapter registry in relay-tutorial/lib/tutorial.ts that the",
+    "sitemap and six components read. The plan said two consumers until analysis counted",
+    "them. A hand-maintained list cannot be checked, and neither can a hand-maintained",
+    "count of who reads it.",
+    "",
+    "TWENTY-FOUR BECOMES TWENTY-FIVE. One chapter splits: the error registry is needed by",
+    "every chapter that adds a refusal, and ten chapters currently add codes to a registry",
+    "the reader does not meet until chapter fourteen. The outsider is the SRS Phase 2 exit",
+    "criterion and nothing may follow it.",
+    "",
+    "FOUR CHAPTERS KEEP THEIR NUMBER AND CHANGE MEANING \u2014 3.13, 3.14, 3.15 and 3.16 all",
+    "exist before and after and name different chapters. That is the sharpest argument for",
+    "the named-reference rule: an ordinal that survives a reorder pointing at different",
+    "content is worse than one that breaks."
+  ],
+  "movements": [
+    {
+      "id": "I",
+      "title": "The tenant, the credential, and the vocabulary"
+    },
+    {
+      "id": "II",
+      "title": "One event, written once"
+    },
+    {
+      "id": "III",
+      "title": "The domain a customer can use"
+    },
+    {
+      "id": "IV",
+      "title": "The socket, continued from Part 2"
+    },
+    {
+      "id": "V",
+      "title": "The message, revised"
+    },
+    {
+      "id": "VI",
+      "title": "Someone else's system"
+    },
+    {
+      "id": "VII",
+      "title": "What it costs"
+    },
+    {
+      "id": "VIII",
+      "title": "The verdict"
+    }
+  ],
+  "chapters": [
+    {
+      "old": 1,
+      "new": 1,
+      "movement": "I",
+      "slug": "tenants-all-the-way-down",
+      "title": "Tenants all the way down"
+    },
+    {
+      "old": 2,
+      "new": 2,
+      "movement": "I",
+      "slug": "keys-and-tokens",
+      "title": "Keys and tokens"
+    },
+    {
+      "old": 14,
+      "new": 3,
+      "movement": "I",
+      "slug": "errors-that-resolve",
+      "title": "Errors that resolve"
+    },
+    {
+      "old": 3,
+      "new": 4,
+      "movement": "II",
+      "slug": "the-outbox",
+      "title": "The outbox"
+    },
+    {
+      "old": 4,
+      "new": 5,
+      "movement": "II",
+      "slug": "jetstream-and-the-first-consumer",
+      "title": "JetStream, and the grammar a subject needs"
+    },
+    {
+      "old": 7,
+      "new": 6,
+      "movement": "II",
+      "slug": "commit-and-publish-are-two-instants",
+      "title": "Commit and publish are two instants"
+    },
+    {
+      "old": 13,
+      "new": 7,
+      "movement": "III",
+      "slug": "the-endpoints-and-the-instruments",
+      "title": "The endpoints and the instruments"
+    },
+    {
+      "old": 15,
+      "new": 8,
+      "movement": "III",
+      "slug": "the-channel-a-customer-controls",
+      "title": "The channel a customer controls"
+    },
+    {
+      "old": 16,
+      "new": 9,
+      "movement": "III",
+      "slug": "what-a-user-sees",
+      "title": "What a user sees"
+    },
+    {
+      "old": 17,
+      "new": 10,
+      "movement": "III",
+      "slug": "the-sender-a-message-never-had",
+      "title": "The sender a message never had"
+    },
+    {
+      "old": 18,
+      "new": 11,
+      "movement": "IV",
+      "slug": "the-message-that-never-arrived",
+      "title": "The message that never arrived"
+    },
+    {
+      "old": 19,
+      "new": 12,
+      "movement": "IV",
+      "slug": "who-is-allowed-to-see-it",
+      "title": "Who is allowed to see it"
+    },
+    {
+      "old": 20,
+      "new": 13,
+      "movement": "IV",
+      "slug": "the-membership-that-changed",
+      "title": "The membership that changed"
+    },
+    {
+      "old": 21,
+      "new": 14,
+      "movement": "IV",
+      "slug": "the-frame-nobody-may-send",
+      "title": "The frame nobody may send"
+    },
+    {
+      "old": 22,
+      "new": 15,
+      "movement": "IV",
+      "slug": "the-sixth-connection",
+      "title": "The sixth connection"
+    },
+    {
+      "old": 23,
+      "new": 16,
+      "movement": "V",
+      "slug": "the-words-somebody-wants-back",
+      "title": "The words somebody wants back"
+    },
+    {
+      "old": 24,
+      "new": 17,
+      "movement": "V",
+      "slug": "the-message-that-is-not-only-text",
+      "title": "The message that is not only text"
+    },
+    {
+      "old": 5,
+      "new": 18,
+      "movement": "VI",
+      "slug": "webhooks-that-survive-the-customer",
+      "title": "Webhooks that survive the customer"
+    },
+    {
+      "old": 6,
+      "new": 19,
+      "movement": "VI",
+      "slug": "when-to-stop-trying",
+      "title": "When to stop trying"
+    },
+    {
+      "old": 9,
+      "new": 20,
+      "movement": "VI",
+      "slug": "the-email-nobody-was-sending",
+      "title": "The email nobody was sending"
+    },
+    {
+      "old": 8,
+      "new": 21,
+      "movement": "VII",
+      "slug": "limits-you-can-see-coming",
+      "title": "Limits you can see coming"
+    },
+    {
+      "old": 10,
+      "new": 22,
+      "movement": "VII",
+      "slug": "quotas-and-what-they-cost",
+      "title": "Quotas and what they cost"
+    },
+    {
+      "old": 11,
+      "new": 23,
+      "movement": "VII",
+      "slug": "counting-a-connection",
+      "title": "Counting a connection"
+    },
+    {
+      "old": 12,
+      "new": 24,
+      "movement": "VIII",
+      "slug": "milestone-the-isolation-gauntlet",
+      "title": "Milestone: the isolation gauntlet"
+    },
+    {
+      "old": 14,
+      "new": 25,
+      "movement": "VIII",
+      "slug": "errors-that-resolve-and-an-outsider",
+      "title": "Milestone: an outsider"
+    }
+  ],
+  "split": {
+    "old": 14,
+    "boundary_heading": "## The outsider",
+    "boundary_line": 961,
+    "of_lines": 1565,
+    "fences_before": 14,
+    "fences_after": 7,
+    "_why": [
+      "The scope estimate turned on this and nobody had decided it. Measured both ways the",
+      "answer was 39 paths / 278 fences if the chapter's fences landed early and 44 / 300 if",
+      "late. With the split recorded here it is 42 paths and 289 fences.",
+      "Every fence above line 961 is the error vocabulary; every fence below it is the sealed",
+      "integration package. Nothing straddles."
+    ]
+  }
+}
