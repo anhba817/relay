@@ -1,5 +1,5 @@
 **FEATURE 044 IS CLOSED.** Its record is `specs/044-revision-watermark/` — `gaps.md` first
-(**28 carried and re-measured, 2 new, 0 closed by this feature**), then `baseline.txt`,
+(**28 carried and re-measured, 3 new, 2 closed AFTER the close-out**), then `baseline.txt`,
 `traceability.md` and `tasks.md`. It publishes no chapter, so every platform change carries an
 amendment hunk in `relay-tutorial/fences/post-series.md`.
 
@@ -110,14 +110,30 @@ REQUIRED reading each child's `listening` line, and a child whose output is disc
 report one. **The diagnostic argument had been made for years; the mechanical need is what did
 it.**
 
-**044 RE-MEASURED ALL TWENTY-EIGHT AND CLOSED NONE, WHICH IS ALSO A RESULT** — said plainly in
-`gaps.md` rather than implied by a short list. The re-measurement still paid for itself:
+**044 RE-MEASURED ALL TWENTY-EIGHT AND CLOSED NONE DURING THE FEATURE, WHICH IS ALSO A RESULT** —
+said plainly in `gaps.md` rather than implied by a short list. **Two were then closed afterwards
+as work of their own**, taken against the ledger rather than against a task list, and both paid
+back the re-measurement that kept them open:
 
 **A LOOKALIKE NEARLY CLOSED AN OPEN ITEM.** `packages/test-harness/src/lists-agree.test.ts`
 exists and asserts two exemption lists name the same files — and the pair it asserts is
-`DRAIN_EXEMPT_TESTS`, **not** the `DRIVER_EXEMPT_TESTS` the item is about, which still has none.
-A filename-level check would have closed it. **Read the assertion, not the filename** — and note
-that the template for the fix is one `describe` away from the list that needs it.
+`DRAIN_EXEMPT_TESTS`, **not** the `DRIVER_EXEMPT_TESTS` the item was about. A filename-level check
+would have closed it. **Read the assertion, not the filename.**
+
+**AND THE ITEM'S OWN PREMISE WAS WRONG.** It said the driver list and "the harness's own list"
+agree by somebody remembering. **There is no second list**; what the driver list must agree with
+is the TREE. That made the real defect sharper than the one filed: **the linter checks one
+direction only.** An unlisted file importing `pg` fails loudly; a listed file importing nothing
+restricted passes forever, so the list can only grow and a stale entry holds a standing exemption
+over a file that no longer needs one. Both directions are now asserted, with the restricted module
+names read from the rule rather than restated.
+
+**A TASK ID IN A TEST TITLE OUTLIVES THE TASK, AND A TITLE IS THE PART READ DETACHED FROM ITS
+FILE** — a CI summary has no repository to grep. Seven such ids are gone. Two could not be removed
+alone: one had a comment fifty lines away pointing AT the title by its id, and one was being
+printed to **stdout**. Ids anywhere in test files still number **330 across 46 files**; that is a
+separate, much weaker item (comments are read by somebody who already has the file open) and is
+filed rather than swept.
 
 ## TWO CLOSED STORIES, KEPT FOR THEIR RULES
 

@@ -78,6 +78,16 @@ FOREIGN: set[tuple[str, str]] = {
     ("gaps.md", "T052"),
     ("gaps.md", "T078"),
     ("gaps.md", "T086"),
+    #
+    # AND TWO MORE WHEN 044-2 AND 3.23-4 WERE ACTUALLY FIXED. `T066` is the id that
+    # `membership.itest.ts` used to print to stdout; `T028` is the shape of a
+    # section-rule comment quoted in 044-3 as an example of what is NOT being fixed.
+    # Both are quoted data about ids elsewhere in the tree.
+    #
+    # ('gaps.md', 'T028') IS THE SECOND COLLISION THESE PAIRS EXIST FOR: T028 is also a
+    # real local task, the title audit. The pair accepts it only in `gaps.md`.
+    ("gaps.md", "T028"),
+    ("gaps.md", "T066"),
 }
 
 

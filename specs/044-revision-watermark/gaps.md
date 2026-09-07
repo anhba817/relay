@@ -12,12 +12,68 @@ the assertion rather than the filename.
 
 ---
 
-## CLOSED BY THIS FEATURE — NONE
+## CLOSED BY THIS FEATURE — TWO, BOTH AFTER THE CLOSE-OUT
 
-**Said plainly rather than by omission.** This feature built a signal; it closed no item on the
-ledger it inherited. Two things it *did* fix were its own defects rather than carried gaps —
+The feature itself closed none: it built a signal, and the two things it fixed on the way —
 FR-008's client half missing from the published text, and FR-003 cited by two test titles and
-asserted by neither — and both are recorded against the tasks that found them, not here.
+asserted by neither — were its own defects rather than carried gaps.
+
+**044-2 and 3.23-4 were then taken deliberately, as work of their own**, after the close-out and
+against this ledger rather than against a task list. Both are below with what the fix cost and
+what re-measuring found.
+
+### 044-2. Task ids in test titles — **CLOSED**
+
+Seven ids across six titles in four suites, gone. Each replacement says what the title already
+proved; none points at a plan.
+
+**Two of the seven could not be removed on their own**, and both are the reason this was worth
+doing rather than tidying:
+
+- `fanout.itest.ts` carried a comment fifty lines above the test — *"Raw is kept because T018
+  asserts on the exact key set"* — **a reference pointing at the title by its id**. Removing the
+  id from the title alone would have left a comment citing something no longer findable, which
+  is worse than the id was.
+- `membership.itest.ts` printed `[T066] request-return to notice: … ms` **to standard output**.
+  That is the title problem in its purest form: it lands in CI with no file, no line and no way
+  back to what `T066` asked for.
+
+**AND THE SCOPE IS NARROWER THAN THE RULE.** Counting ids anywhere in test files gives **330
+occurrences of 170 distinct ids across 46 files** — comments, section rules, fixture strings.
+That is a different item and a much weaker one, so it is filed below as 044-3 rather than folded
+into this fix. **A title is read detached from its file; a comment is read by somebody who
+already has the file open**, and that difference is the whole argument for doing one and not the
+other.
+
+The boundary taken: each title fixed, plus every id inside that same test's own body or preamble,
+plus any reference elsewhere pointing at the title being changed. Nothing else.
+
+### 3.23-4. One authorization fact lives in two places — **CLOSED, and the item's premise was wrong**
+
+The item said `DRIVER_EXEMPT_TESTS` and "the harness's own list" agree by somebody remembering.
+**There is no second list.** `EXEMPT_FILES` in `exempt.ts` is the DRAIN counterpart, already
+asserted; the driver list is a single declaration in `eslint.config.mjs`, and what it must agree
+with is **the tree**.
+
+Which makes the real defect sharper than the one filed. **The linter checks one direction only:**
+a file that imports `pg` and is not listed fails loudly; a file that IS listed and imports nothing
+restricted passes forever and says nothing. So the list can only grow, and a stale entry is not
+cosmetic — it holds a standing exemption over a file that no longer needs one, and the next edit
+reintroducing raw access to that file goes through unremarked. This is
+`check-error-codes.mjs`'s lesson in a second place: **compare both directions, and the direction
+nobody enforces is the one that rots.**
+
+`packages/test-harness/src/lists-agree.test.ts` gains a second describe asserting every entry
+exists and still imports something the rule restricts — with the restricted module names **read
+from the rule** rather than restated, because restating them would be this file's own defect one
+file over. Tested red three ways: a stale entry, an entry for a deleted file, and the list
+declared but not wired into any `files:` block. All 16 entries are live today.
+
+**The detector was wrong on its first run and the control is what caught it.** It looked for `pg`
+and `drizzle-orm` and reported **seven of sixteen** entries as stale — because the rule also
+restricts `ioredis`, which those seven gateway suites import. A pattern that fails its own example
+is broken, not evidence. Both controls are now assertions in the test: a file that must read as
+needing the exemption, and one that must read as not.
 
 ---
 
@@ -48,16 +104,17 @@ in `meter.itest.ts` and `membership.itest.ts` and both are comments explaining w
 was abandoned. Re-measured rather than carried, because a closed item that quietly reopens is
 exactly what this ledger exists to catch.
 
-### 3.23-4. One authorization fact lives in two places — **OPEN, and a lookalike nearly closed it.**
+### 3.23-4. One authorization fact lives in two places — **CLOSED after the close-out. This is where the re-measurement happened; the fix is at the top of this file.**
 
 `packages/test-harness/src/lists-agree.test.ts` exists and asserts that two exemption lists name
 the same files — **and the pair it asserts is `DRAIN_EXEMPT_TESTS` against `EXEMPT_FILES`.**
 3.23-4 is about `DRIVER_EXEMPT_TESTS`, which is declared in the same config file, spread into the
 same block list, mentioned in four comments, and has **no agreement test at all**.
 
-A filename-level re-measurement would have closed this item. Reading the assertions kept it open.
-**The template for the fix is already in the repository**, sitting one `describe` away from the
-list that needs it.
+A filename-level re-measurement would have closed this item. Reading the assertions kept it open —
+and the fix then went **into that same file**, one `describe` below the list that misled the
+count. The file's header now says which describe covers which pair, so the next reader does not
+have to make the same mistake to find out.
 
 ### 043-1. An untitled fence is never compared to anything — **OPEN. 146 of 904, unchanged.**
 
@@ -92,7 +149,7 @@ from 042. They will be copied into 045 and drift there.
 
 ---
 
-## NEW — TWO
+## NEW — THREE, ONE OF THEM ALREADY CLOSED
 
 ### 044-1. THE `grep` ON THIS MACHINE IS NOT THE `grep` THE SCRIPTS ASSUME — **NEW, OPEN**
 
@@ -119,7 +176,7 @@ pattern a positive control**, and report a pattern that fails to match its own e
 rather than as zero. That works whatever engine is underneath, and it is the only thing that
 turns a `0` into a claim about the corpus.
 
-### 044-2. SIX TASK IDS SURVIVE IN TEST TITLES — **NEW, OPEN, and it is a small number on purpose**
+### 044-2. Task ids in test titles — **CLOSED after the close-out. Measurement below; fix at the top of this file.**
 
     services/api/src/fanout/fanout.itest.ts        T018
     services/api/src/channels/channels.itest.ts    T052, T078
@@ -127,13 +184,32 @@ turns a `0` into a claim about the corpus.
     services/gateway/src/membership.itest.ts       T036, T086
 
 **A task id in a test title outlives the task.** 3.22 wrote one, 3.23 fifty-two, 3.24 thirty-three
-and stripped its own; these six are the residue from chapters whose audits reached only the files
-they touched. Feature 044 added none.
+and stripped its own; these seven were the residue from chapters whose audits reached only the
+files they touched. Feature 044 added none.
 
-Filed rather than fixed: editing six unrelated suites during a close-out is a change nobody asked
-for, and nothing in this feature's gate set would re-verify it. **It is six lines of work for
-whoever wants it**, and the reason it keeps recurring is that every audit is scoped to one
-feature's files while the rule is repository-wide.
+**The count was right, which is worth recording** — this project's counts of this kind have been
+wrong four times out of five. Seven ids, six titles, four files, confirmed on re-measurement
+before the fix.
+
+### 044-3. TASK IDS EVERYWHERE ELSE IN THE TEST TREE — **NEW, OPEN, and deliberately not fixed**
+
+    ids in test TITLES       0     (was 7 — closed above as 044-2)
+    ids anywhere in tests   330 occurrences, 170 distinct, across 46 files
+
+Comments, section rules, fixture strings. **The same rule applies and the argument is much
+weaker**, which is why this is a separate item rather than a bigger version of 044-2: a comment
+is read by somebody who already has the file open and can `git log` it, while a title arrives in
+a CI summary with nothing attached.
+
+Two shapes inside the 330 are worth more than the rest and would make a decent first pass:
+ids in **section-rule comments** (`// ── T028: read ───`), which are load-bearing navigation and
+name nothing a reader can look up; and ids in **`console.log` output**, of which there are now
+zero, having been the one instance 044-2 caught.
+
+**Filed rather than fixed.** Rewriting 330 comments across 46 suites is a change nobody asked for,
+touching every suite in the platform, that no gate would re-verify — and the fence chain would
+carry an amendment hunk for each fenced one. The cheap version is a rule for new tests plus
+opportunistic cleanup, not a sweep.
 
 ---
 
