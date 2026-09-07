@@ -184,6 +184,31 @@ across snapshots, not 1,429 decisions. The 5% that appear in no snapshot are the
 +chapter`, parsed to integers, so `chapter-25` sorts after `chapter-03` and the renumbering needs no
 zero-padding rule.
 
+### What analysis pass 4 changed
+
+**The criterion could not detect its own requirement's violation.** FR-010 asked that every
+Vietnamese fence be byte-identical to its English counterpart and SC-006 delegated that to the mirror.
+The mirror collects a fence only when it matches `title="…"`: it compares **623** per locale in Part 3
+and is blind to **99** more, which hold console transcripts, worked diagrams and output examples.
+The Vietnamese task is *literally an instruction to replace everything that is not a fence*, so a
+placeholder dropping those 99 would have passed every gate and deleted real content from 24 published
+pages. FR-010 now names untitled fences, SC-006 counts as well as compares, and a parity checker
+exists because the chain cannot do it.
+
+**And 133 metadata paths had no owner** — 61 English, 72 Vietnamese — carrying `alternates.canonical`
+and the `languages` pair. The one task that mentioned them sits in the English reorder phase; the
+Vietnamese phase never did. The mirror cannot see metadata at all.
+
+**The pattern across four passes is now the point.** Every critical has been something the gates do
+not look at: a registry no checker reads, a mechanism whose output nothing had parsed, an appendix the
+tooling stopped short of, and fences the mirror skips by construction. That is written into the plan's
+Testing section as a table rather than left as four separate findings, because **`check:fences` is
+almost the only test this feature has** and a reader needs to know what its green does not cover.
+
+**Two premises checked and withdrawn.** Each locale has its own `figures.ts` — 24 and 24 — so
+directory renames keep the relative imports intact. And the mirror compares fences by index rather
+than by file position, so replacing the prose around a fence is safe as far as it is concerned.
+
 ### The one item that could still be wrong
 
 **FR-009 says prose is preserved, and a moved chapter's prose may not survive the move unchanged.**

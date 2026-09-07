@@ -64,6 +64,22 @@ configuring none.
 chapters after the split — 41 today — and fails byte-exact. The platform's own suites are the control: **they must not change**, and the
 battery's duration is a tripwire on that.
 
+**AND IT IS BLIND TO FOUR THINGS, THREE OF WHICH HAVE ALREADY PRODUCED A CRITICAL.** This matters more
+here than in a normal feature, because `check:fences` is almost the only test this one has:
+
+| What the chain cannot see | Size | Found in |
+|---|---|---|
+| **untitled fences** — it collects a fence only when it matches `title="…"` | 99 per locale in Part 3 | pass 4 |
+| **anything outside a fence** — page metadata, the chapter registry, the sitemap | 133 metadata paths, an 810-line registry | passes 1 and 4 |
+| **the thirteen excerpt-only files**, skipped by name | 99 ordinals among ten of them | stated from the start |
+| **prose** — whether a paragraph still describes the diff beneath it | 289 re-derived fences | stated from the start |
+
+**Every critical this feature has produced was something the gates do not look at**: a registry no
+checker reads, a mechanism whose output nothing had parsed, an appendix the tooling stopped short of,
+and 99 fences the mirror skips by construction. **A green gate set is not evidence about any of the
+four rows above**, and each row now has a check of its own — `check-registry.py`,
+`check-fence-parity.py`, `check-excerpt-files.py`, and a reading task no instrument replaces.
+
 **Target Platform**: unchanged.
 
 **Project Type**: three repositories — records at the root, code in `relay-platform`, the published

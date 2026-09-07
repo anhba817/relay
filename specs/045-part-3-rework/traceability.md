@@ -13,10 +13,10 @@ is prose, and is carried through regeneration.
 | FR-004 | A verification milestone MUST appear after all the work it verifies. | T028, T029 |
 | FR-005 | The error registry MUST appear before the first chapter that adds a code to it. | T018 |
 | FR-006 | The final state of every file the book publishes MUST be byte-identical before and after this… | T014, T021 |
-| FR-007 | Chapters MUST be renumbered to their new reading order, with no gaps and no reordering of the… | T009, T018, T019 |
+| FR-007 | Chapters MUST be renumbered to their new reading order, with no gaps and no reordering of the… | T009, T018, T019, T032a |
 | FR-008 | A reference to a Part 3 chapter from `relay-platform` source MUST name the subject rather tha… | T008, T010, T011, T011a, T011b, T011c, T012, T013, T016 |
 | FR-009 | Every English chapter's prose MUST be preserved. This feature moves and renumbers; it does no… | T018, T023 |
-| FR-010 | **Every English chapter MUST have a Vietnamese page**, carrying a fence list and fence bodies… | T031, T032 |
+| FR-010 | **Every English chapter MUST have a Vietnamese page**, carrying **every code fence — titled o… | T009b, T031 |
 | FR-011 | A Vietnamese placeholder page MUST be visibly marked as awaiting translation, so a reader is … | T033 |
 | FR-016 | The appendix MUST be treated as part of the chain. `relay-tutorial/fences/post-series.md` ame… | T002, T021a |
 | FR-015 | The published navigation MUST follow the renumbering. `relay-tutorial/lib/tutorial.ts` declar… | T009a, T023a |
@@ -33,9 +33,9 @@ is prose, and is carried through regeneration.
 | SC-003 | Every **emitted** webhook event type has a producer introduced in an earlier chapter — five o… | T027 |
 | SC-004 | Every chapter that reuses the transactional outbox or the subject-grammar rule appears after … | T026 |
 | SC-005 | Every fenced file replays byte-exact onto `relay-platform` in the new chapter order, and the … | T004, T021 |
-| SC-006 | Every Vietnamese chapter carries a fence list and bodies byte-identical to its English counte… | T032, T034 |
+| SC-006 | Every Vietnamese chapter carries **every fence** byte-identical to its English counterpart — … | T009b, T034 |
 | SC-007 | The full test battery is green and its duration stays within 10% of the 225.45 s mean measure… | T001, T043 |
-| SC-008 | All 24 old chapter numbers resolve to their new position from a single published page, and ev… | T007, T037, T038, T040 |
+| SC-008 | All 24 old chapter numbers resolve to their new position from a single published page, and ev… | T007, T032a, T037, T038, T040 |
 | SC-009 | The chapter registry and the filesystem agree in **both directions** — every declared path ex… | T009a, T023b |
 | SC-010 | Every existing appendix hunk still applies after the reorder, and the chain including the app… | T021a, T021b |
 
@@ -57,5 +57,5 @@ the plan rather than here: replaying the existing per-chapter deltas in a new or
 paths. The specification implied re-hunking would be enough. It is not, and the 278 fences on those
 paths are re-derived instead.
 
-    54 tasks · 16 requirements · 10 criteria
+    56 tasks · 16 requirements · 10 criteria
     0 ids with no verifying task

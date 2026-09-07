@@ -10,30 +10,31 @@ audit log is 4.7.
 <!-- SPECKIT START -->
 **ACTIVE FEATURE:** `specs/045-part-3-rework/` — Part 3's 24 chapters regrouped into eight
 contiguous subject movements and renumbered to 25, English prose only. Plan:
-`specs/045-part-3-rework/plan.md`. **54 tasks, 8 phases, three analysis passes, one critical each.**
+`specs/045-part-3-rework/plan.md`. **56 tasks, 8 phases, four analysis passes, one critical each.**
 
-**EVERY STAGE OVERTURNED THE ONE BEFORE IT, AND EVERY TIME BY RUNNING SOMETHING.**
+**EVERY CRITICAL WAS SOMETHING THE GATES DO NOT LOOK AT.** That is the whole lesson of this feature
+so far, and it is in `plan.md`'s Testing section as a table because `check:fences` is almost its only
+test:
 
-**Planning** killed the spec's "regenerate the hunks": replaying the existing deltas in a new order
-lands on **3 of 39** paths — 31 conflict, 5 merge cleanly onto a DIFFERENT file.
-**Pass 1** found `lib/tutorial.ts`, 810 hand-maintained lines declaring all 41 chapters, read by the
-sitemap and six components, **guarded by nothing** — a renumbering that skipped it leaves every gate
-green and every link dead.
-**Pass 2** killed the plan's own mechanism: filtering the final file by line attribution gives **52
-parse errors on `repository.ts`, 59 on `session.ts`**. Three-way merge gives **56 states, 0
-failures**.
-**Pass 3** found that **the chain does not end at the last chapter.** `fences/post-series.md` amends
-49 paths — 21 of them order-changing, carrying 48 hunks written against today's end state. The
-tooling stopped at the last chapter and 70 lines showed up in the platform file and in no snapshot.
+    untitled fences        99 per locale — the mirror matches `title="…"` and skips them   pass 4
+    anything outside a fence   133 metadata paths, an 810-line chapter registry            passes 1, 4
+    the 13 excerpt-only files  99 ordinals among ten of them                               from the start
+    prose                      whether a paragraph still describes the diff beneath it     from the start
 
-**A CORRECTION APPLIED TO ONE NUMBER AND NOT ITS NEIGHBOUR SURVIVED TWO PASSES.** The reference count
-went 985 → 1,429 when the pattern gained a capital `C`. The FILE count came from that same lowercase
-pattern and stayed at 166 until pass 3: it is **183**, and the union needing regeneration is **184**,
-not 169. **State the pattern and the corpus with every count** — which SC-002 says, and which the
-specification quoting those two numbers was breaking.
+**Pass 1** — `lib/tutorial.ts`, 810 hand-maintained lines declaring all 41 chapters, read by the
+sitemap and six components, guarded by nothing.
+**Pass 2** — the plan's own mechanism falsified: filtering the final file by line attribution gives
+**52 parse errors on `repository.ts`, 59 on `session.ts`**. Three-way merge gives 56 states, 0
+failures.
+**Pass 3** — the chain does not end at the last chapter: `fences/post-series.md` amends 49 paths, 21
+of them order-changing with 48 hunks the reorder can break.
+**Pass 4** — SC-006 delegated to a mirror blind to 99 of the 722 fences it was meant to protect, in
+the one task that replaces everything which is not a fence.
 
-**AND ONE PREMISE PASSED.** Rewriting a comment propagates mechanically: of 1,221 reference-bearing
-lines, **94% are byte-identical from introduction to final and 0% changed between chapters**.
+**AND A CORRECTION APPLIED TO ONE NUMBER AND NOT ITS NEIGHBOUR SURVIVED TWO PASSES.** The reference
+count went 985 → 1,429 when the pattern gained a capital `C`; the FILE count came from that same
+pattern and stayed at 166 until pass 3 — it is **183**, union **184**. **State the pattern and the
+corpus with every count.**
 <!-- SPECKIT END -->
 
     044 "the revision watermark"

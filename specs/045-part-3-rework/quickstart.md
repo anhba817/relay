@@ -82,16 +82,25 @@ move one of them.
 
 ---
 
-## Scenario 6 — the Vietnamese mirror holds (SC-006)
+## Scenario 6 — the Vietnamese pages kept everything (SC-006)
 
-    cd relay-tutorial && pnpm check:fences     # MIRROR problems are reported here
+    cd relay-tutorial && pnpm check:fences          # the 623 TITLED fences
+    python3 specs/045-part-3-rework/check-fence-parity.py   # and the 99 untitled ones
+    find "app/(vi)/vi/part-3" -name page.mdx | wc -l        # 25
 
-**Expected** (SC-006): **25** Vietnamese chapters present — one per English chapter, not 24, because the
-split creates one that never existed — each with a fence list and fence bodies byte-identical to its
-English counterpart, and placeholder prose between them.
+**Expected** (SC-006): 25 Vietnamese chapters, one per English chapter, each carrying **every** fence
+byte-identical to its English counterpart — 623 titled and **99 untitled** per locale — with
+placeholder prose between them.
 
-**A deleted Vietnamese page passes this scenario and fails the feature.** The mirror check skips
-chapters that do not exist, so absence is silent. Count the pages as well as running the check.
+**THE MIRROR PROVES 623 OF THE 722 AND CANNOT SEE THE REST.** `check-fence-chain.mjs:77` collects a
+fence only when it matches `title="…"`. The other 99 hold console transcripts and worked diagrams, and
+a placeholder that dropped them would pass `check:fences` and silently delete real content from 24
+published pages. That is why this scenario runs three commands and not one.
+
+**Two more things the mirror is blind to, both checked elsewhere.** A **deleted** Vietnamese page
+passes it silently — the checker skips chapters that do not exist — which is why the page count is
+here. And **metadata is outside every fence**, so the 72 hard-coded chapter paths in the Vietnamese
+pages are scenario 9's, not this one's.
 
 ---
 
@@ -127,6 +136,12 @@ proves nothing**, and it is why the scenario exists rather than being folded int
 
 **Expected** (SC-008): 48 redirects — one per *old* chapter per locale — each resolving to one of the
 **50** pages that now exist; and a published mapping page naming all 24 old numbers.
+
+**And the 133 metadata paths**, 61 English and 72 Vietnamese, carried as
+`alternates.canonical` and the `languages` pair inside each page. **Nothing in the gate set reads
+them** — they are outside every fence, so `check:fences` is silent, and they are what `hreflang` and
+the sitemap resolve against. Grep for `part-3/chapter-` under `app/` and confirm every hit names a
+chapter that exists.
 
 **Check the split chapter by hand.** `/part-3/chapter-14/…` was one page and is now two; its redirect
 has to choose, and the mapping page is where the other half is found.

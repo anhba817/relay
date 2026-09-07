@@ -154,11 +154,17 @@ today; the target is zero in fenced files.
   A correction applied to one number and not to its neighbour is how a measurement stays wrong.
 - **FR-009**: Every English chapter's prose MUST be preserved. This feature moves and renumbers; it
   does not compress, merge or rewrite arguments.
-- **FR-010**: **Every English chapter MUST have a Vietnamese page**, carrying a fence list and
-  fence bodies byte-identical to its English counterpart, and placeholder prose. **This clause read
-  "every Vietnamese chapter page MUST continue to exist" and analysis found the hole**: the split
-  creates a Vietnamese page that has never existed, and "continue to exist" is satisfied without
-  creating it. Stated per English chapter so the count follows the map rather than the past.
+- **FR-010**: **Every English chapter MUST have a Vietnamese page**, carrying **every code fence —
+  titled or untitled — byte-identical to its English counterpart**, and placeholder prose.
+  **The word "untitled" is doing real work here.** `check-fence-chain.mjs` collects a fence only when
+  it matches `title="…"`, so the mirror compares 623 fences per locale in Part 3 and is blind to
+  **99 more** — console transcripts, worked diagrams, output examples. A placeholder that dropped
+  those would satisfy the mirror and silently delete 99 code blocks from 24 published pages. **The
+  requirement covers them and the gate cannot**, which is why SC-006 counts fences as well as
+  comparing them.
+  This clause also read "every Vietnamese chapter page MUST continue to exist" until analysis pass 1:
+  the split creates a Vietnamese page that has never existed, and "continue to exist" is satisfied
+  without creating it.
 - **FR-011**: A Vietnamese placeholder page MUST be visibly marked as awaiting translation, so a
   reader is never shown a page that appears translated and is not.
 - **FR-016**: The appendix MUST be treated as part of the chain. `relay-tutorial/fences/post-series.md`
@@ -220,8 +226,11 @@ today; the target is zero in fenced files.
   feature does not compress.
 - **SC-005**: Every fenced file replays byte-exact onto `relay-platform` in the new chapter order,
   and the platform's final state is unchanged except for rewritten comments.
-- **SC-006**: Every Vietnamese chapter carries a fence list and bodies byte-identical to its English
-  counterpart, and the mirror check passes with 24 or more Vietnamese chapters present.
+- **SC-006**: Every Vietnamese chapter carries **every fence** byte-identical to its English
+  counterpart — 623 titled and **99 untitled** per locale in Part 3 — and there are 25 Vietnamese
+  chapters, one per English chapter. **The mirror proves the first 623 and cannot see the other 99**,
+  so the untitled ones are proved by counting fences per chapter per locale and comparing. A
+  criterion that delegates entirely to a gate blind to part of its own subject is not a criterion.
 - **SC-007**: The full test battery is green and its duration stays within 10% of the 225.45 s mean
   measured over twenty runs at feature 044's close-out. **The platform is not supposed to change**,
   so a moved duration is a signal that something did.
