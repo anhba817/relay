@@ -8,7 +8,21 @@ media (`media_not_available`) is 4.5 and 4.6, the queryable attempt log is 4.2, 
 audit log is 4.7.
 
 <!-- SPECKIT START -->
-**NO ACTIVE FEATURE.** 044 closed on 2026-09-06 with all 36 tasks done and 14 of 14 gates green.
+**ACTIVE FEATURE:** `specs/045-part-3-rework/` — Part 3's 24 chapters regrouped into eight
+contiguous subject movements, renumbered to 25, English prose only. Plan:
+`specs/045-part-3-rework/plan.md`.
+
+**PLANNING OVERTURNED THE SPEC'S CENTRAL ASSUMPTION.** Replaying the existing per-chapter deltas in
+a new order lands correctly on **3 of 39** paths, conflicts on 31, and on 5 merges cleanly onto a
+DIFFERENT file — which passes every check until the last one. Four candidate orders were measured
+and the conflict rate is 79-86% for all of them, so the order is chosen on pedagogy. The 278 fences
+on those paths are **re-derived by attribution from the final file**, not re-hunked.
+
+**And the platform cannot be reorganised to make it mechanical**: `repository.ts` holds 124
+interleaved cluster runs across 7 clusters in 5,533 lines.
+
+Vietnamese pages keep byte-identical fences and take placeholder prose — the mirror check compares
+every fence body and skips only chapters that do not exist, so deleting them would be silent.
 <!-- SPECKIT END -->
 
     044 "the revision watermark"

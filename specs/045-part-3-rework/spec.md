@@ -36,7 +36,8 @@ a reference that ages"* records that inserting one chapter invalidated three sou
 which had been wrong since a previous insertion: *"A chapter number in a source comment is a
 reference that ages every time the plan changes, and this file is fenced byte-exact into a published
 chapter, so correcting it costs a fence amendment. The subject does not move; the ordinal does."*
-That rule was applied to three comments. **985 more remain, across 166 fenced files.**
+That rule was applied to three comments. **1,429 more remain, across 166 fenced files and 49
+unfenced ones.**
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -137,8 +138,10 @@ today; the target is zero in fenced files.
 - **FR-007**: Chapters MUST be renumbered to their new reading order, with no gaps and no
   reordering of the numbers relative to the sequence.
 - **FR-008**: A reference to a Part 3 chapter from `relay-platform` source MUST name the subject
-  rather than the ordinal. 985 such references exist across 166 fenced files, and 210 more across 49
-  unfenced files.
+  rather than the ordinal. **1,429 such references exist**, across 166 fenced files and 49 unfenced
+  ones. This clause read 985 until research measured it: the specification's pattern required the
+  word "chapter" and missed 444 references of the form `3.20's`. Amended rather than corrected
+  silently, because a requirement carrying a number nobody re-derived is how a count stays wrong.
 - **FR-009**: Every English chapter's prose MUST be preserved. This feature moves and renumbers; it
   does not compress, merge or rewrite arguments.
 - **FR-010**: Every Vietnamese chapter page MUST continue to exist, MUST carry a fence list and
@@ -172,7 +175,9 @@ today; the target is zero in fenced files.
 
 - **SC-001**: Eight of eight subject clusters are contiguous, against five of eight today.
 - **SC-002**: Zero Part-3 chapter-number references remain in fenced `relay-platform` source,
-  against 985 today.
+  against 1,429 today. **Report the pattern alongside the count**: the first measurement of this
+  number was 985 under a narrower pattern, and a scan whose reach is unstated is a scan nobody can
+  check.
 - **SC-003**: Every webhook event type the book teaches delivery for has a producer introduced in an
   earlier chapter, against three of eight today.
 - **SC-004**: The transactional outbox is explained in full in exactly one chapter, against four.
@@ -217,6 +222,12 @@ and is out of scope here.
 onto the working tree and never reads git history, so reordering chapters does not require rebuilding
 `relay-platform`'s commits. The user has said the repository may be reset and re-tagged; this feature
 does not need it, and says so rather than doing it because it was permitted.
+
+**Reordering does not let the existing fences be reused, and the first draft of this specification
+assumed it did.** Research replayed the per-chapter deltas of all 39 order-changing paths in the new
+order: **3 land correctly, 31 conflict, and 5 merge cleanly onto a different file.** The fences on
+those paths are re-derived from the final file by attribution, not re-hunked — 278 of them. The
+correction is recorded here because the assumption is what made the feature look small.
 
 **The 39-path reorder estimate is a floor, not the scope.** Reordering alone changes the chain order
 of 39 of 207 Part-3 fenced paths. Rewriting comments changes the content of 166. The union is 169 of
