@@ -143,10 +143,15 @@ today; the target is zero in fenced files.
 - **FR-007**: Chapters MUST be renumbered to their new reading order, with no gaps and no
   reordering of the numbers relative to the sequence.
 - **FR-008**: A reference to a Part 3 chapter from `relay-platform` source MUST name the subject
-  rather than the ordinal. **1,429 such references exist**, across 166 fenced files and 49 unfenced
-  ones. This clause read 985 until research measured it: the specification's pattern required the
-  word "chapter" and missed 444 references of the form `3.20's`. Amended rather than corrected
-  silently, because a requirement carrying a number nobody re-derived is how a count stays wrong.
+  rather than the ordinal. **1,429 such references exist across all `.ts` under `services/` and
+  `packages/`; 1,298 of them sit inside 183 fenced paths.** Both numbers are stated with the pattern
+  that produced them — `[Cc]hapter 3.N`, `(3.N)`, `3.N's` — because a count whose reach is unstated
+  is a count nobody can check, which is SC-002's own rule.
+  **This clause has carried three wrong numbers.** It read 985 references until research widened the
+  pattern; the count was corrected to 1,429 and **the file count was left at 166, which came from the
+  same lowercase-only pattern that produced the 985**. Analysis pass 3 found the survivor: with
+  `Chapter` capitalised the fenced-path count is **183**, seventeen more files than planned for.
+  A correction applied to one number and not to its neighbour is how a measurement stays wrong.
 - **FR-009**: Every English chapter's prose MUST be preserved. This feature moves and renumbers; it
   does not compress, merge or rewrite arguments.
 - **FR-010**: **Every English chapter MUST have a Vietnamese page**, carrying a fence list and
@@ -156,6 +161,14 @@ today; the target is zero in fenced files.
   creating it. Stated per English chapter so the count follows the map rather than the past.
 - **FR-011**: A Vietnamese placeholder page MUST be visibly marked as awaiting translation, so a
   reader is never shown a page that appears translated and is not.
+- **FR-016**: The appendix MUST be treated as part of the chain. `relay-tutorial/fences/post-series.md`
+  amends **49** fenced paths after the last chapter — **41** of them also have comment rewrites and
+  **21** also change chain order, carrying **48** hunks between them. Three things follow, and none
+  was stated before analysis pass 3: the replay tooling MUST apply the appendix or the chain never
+  reaches the platform file; for the 21, the target for a *chapter* fence is the state **before** the
+  appendix applies, not the platform file; and the 48 existing hunks were generated against the
+  current chain's end state, so they MUST be re-verified and regenerated where the reorder moves what
+  they apply to.
 - **FR-015**: The published navigation MUST follow the renumbering. `relay-tutorial/lib/tutorial.ts`
   declares every chapter's number, path, title and reading time by hand, and it is read by the
   sitemap and by six components — the sidebar, the chapter shell's previous and next links, the site
@@ -188,10 +201,12 @@ today; the target is zero in fenced files.
 ### Measurable Outcomes
 
 - **SC-001**: Eight of eight subject clusters are contiguous, against five of eight today.
-- **SC-002**: Zero Part-3 chapter-number references remain in fenced `relay-platform` source,
-  against 1,429 today. **Report the pattern alongside the count**: the first measurement of this
-  number was 985 under a narrower pattern, and a scan whose reach is unstated is a scan nobody can
-  check.
+- **SC-002**: Zero Part-3 chapter-number references remain in `relay-platform` source, against
+  **1,429** today across all `.ts` under `services/` and `packages/` — **1,298** of them within the
+  **183** fenced paths. **Report the pattern and the corpus alongside the count.** This criterion
+  said "report the pattern" and the specification then quoted two numbers measured with different
+  patterns over different corpora, which is the failure the rule exists to prevent, committed by the
+  document that states it.
 - **SC-003**: Every **emitted** webhook event type has a producer introduced in an earlier chapter —
   five of the eight declared, and today none of the five does. **This criterion said "every event type
   the book teaches delivery for" and could never be satisfied**: `channel.created`, `user.connected`
@@ -215,6 +230,10 @@ today; the target is zero in fenced files.
 - **SC-009**: The chapter registry and the filesystem agree in **both directions** — every declared
   path exists and every chapter page is declared — checked by an instrument rather than by reading.
   They agree today at 41 and 41, which is what makes silent drift possible rather than unlikely.
+- **SC-010**: Every existing appendix hunk still applies after the reorder, and the chain including
+  the appendix lands byte-exact on `relay-platform`. **The chain does not end at the last chapter**,
+  and a tool that stops there reaches a state that is not the platform's — measured: 70
+  reference-bearing lines appear in no chapter snapshot at all, because the appendix put them there.
 
 ## Assumptions
 
@@ -254,8 +273,8 @@ those paths are re-derived from the final file by attribution, not re-hunked —
 correction is recorded here because the assumption is what made the feature look small.
 
 **The 39-path reorder estimate is a floor, not the scope.** Reordering alone changes the chain order
-of 39 of 207 Part-3 fenced paths. Rewriting comments changes the content of 166. The union is 169 of
-242 fenced files repository-wide, and feature 043 changed 58 files against an estimate of 17. **A
+of 42 of 207 Part-3 fenced paths. Rewriting comments changes the content of 183. The union is
+**184** of 242 fenced files repository-wide, and feature 043 changed 58 files against an estimate of 17. **A
 plan counts the fix and not what the fix drags with it**, so the number above is stated as measured
 today and expected to grow.
 

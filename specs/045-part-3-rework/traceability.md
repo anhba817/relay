@@ -18,6 +18,7 @@ is prose, and is carried through regeneration.
 | FR-009 | Every English chapter's prose MUST be preserved. This feature moves and renumbers; it does no… | T018, T023 |
 | FR-010 | **Every English chapter MUST have a Vietnamese page**, carrying a fence list and fence bodies… | T031, T032 |
 | FR-011 | A Vietnamese placeholder page MUST be visibly marked as awaiting translation, so a reader is … | T033 |
+| FR-016 | The appendix MUST be treated as part of the chain. `relay-tutorial/fences/post-series.md` ame… | T002, T021a |
 | FR-015 | The published navigation MUST follow the renumbering. `relay-tutorial/lib/tutorial.ts` declar… | T009a, T023a |
 | FR-012 | `docs/07-tutorial-plan.md` MUST be amended to the new structure, and the amendment MUST state… | T036 |
 | FR-013 | Every gate MUST be green at close-out, including the fence chain replaying byte-exact across … | T014, T015, T024, T045 |
@@ -28,7 +29,7 @@ is prose, and is carried through regeneration.
 | Criterion | What it asks | Verified by |
 |---|---|---|
 | SC-001 | Eight of eight subject clusters are contiguous, against five of eight today. | T024 |
-| SC-002 | Zero Part-3 chapter-number references remain in fenced `relay-platform` source, against 1,429… | T008, T015 |
+| SC-002 | Zero Part-3 chapter-number references remain in `relay-platform` source, against **1,429** to… | T008, T015 |
 | SC-003 | Every **emitted** webhook event type has a producer introduced in an earlier chapter — five o… | T027 |
 | SC-004 | Every chapter that reuses the transactional outbox or the subject-grammar rule appears after … | T026 |
 | SC-005 | Every fenced file replays byte-exact onto `relay-platform` in the new chapter order, and the … | T004, T021 |
@@ -36,6 +37,7 @@ is prose, and is carried through regeneration.
 | SC-007 | The full test battery is green and its duration stays within 10% of the 225.45 s mean measure… | T001, T043 |
 | SC-008 | All 24 old chapter numbers resolve to their new position from a single published page, and ev… | T007, T037, T038, T040 |
 | SC-009 | The chapter registry and the filesystem agree in **both directions** — every declared path ex… | T009a, T023b |
+| SC-010 | Every existing appendix hunk still applies after the reorder, and the chain including the app… | T021a, T021b |
 
 ## 3. What the analysis passes changed here
 
@@ -55,5 +57,5 @@ the plan rather than here: replaying the existing per-chapter deltas in a new or
 paths. The specification implied re-hunking would be enough. It is not, and the 278 fences on those
 paths are re-derived instead.
 
-    52 tasks · 15 requirements · 9 criteria
+    54 tasks · 16 requirements · 10 criteria
     0 ids with no verifying task

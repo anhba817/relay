@@ -137,6 +137,25 @@ problem and was rejected — a whole-file fence of `repository.ts` is 5,533 line
 chapter. Hand-authoring all 289 fences from nothing was rejected as the default; hand-resolving 31
 merge conflicts is the same work bounded to where the conflict actually is.
 
+### The appendix is part of the chain, and the first tooling forgot it
+
+`fences/post-series.md` applies **after the last chapter** and amends **49** fenced paths. The
+snapshot tool built during analysis stopped at the last chapter, and the omission showed up as **70
+reference-bearing lines present in the platform file and in no snapshot at all** — concentrated in
+`eslint.config.mjs` (6 appendix hunks) and `vitest.coverage.config.mts` (10).
+
+    49  paths the appendix amends
+    41  of those also have comment rewrites
+    21  of those also change chain order, carrying 48 hunks
+
+**For those 21 the target of a chapter fence is not the platform file.** It is the state the appendix
+then amends. A merge that targets the platform file overshoots by exactly the appendix's hunks, and
+`check:fences` would report the failure at the wrong place.
+
+**And the 48 existing hunks were generated against today's end state.** R2 measured 5 paths where
+reordering lands on a different file; where that intersects these 21, the appendix's own pre-images
+stop matching. They are re-verified and regenerated, not assumed.
+
 **What this does not solve.** A merge produces a state, not a narrative. A chapter whose prose walks
 through a diff will need that prose checked against the regenerated diff, and `check:fences` cannot
 see it.

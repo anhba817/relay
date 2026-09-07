@@ -53,7 +53,10 @@ here rather than corrected silently.
 Python 3 for this feature's instruments.
 
 **Primary Dependencies**: `check-fence-chain.mjs`, which is both the gate and — copied and truncated —
-the generator. `next.config.ts` for redirects, currently configuring none.
+the generator. **`fences/post-series.md`, which is part of the chain and which the first tooling
+forgot**: it applies after the last chapter, amends 49 paths, and its omission showed as 70 lines
+present in the platform file and in no snapshot. `next.config.ts` for redirects, currently
+configuring none.
 
 **Storage**: none. This feature changes no schema, no migration, no runtime behaviour.
 
@@ -74,9 +77,14 @@ so a moved duration means something changed that should not have.**
 Vietnamese pages must keep fence lists and bodies byte-identical to English, because the mirror check
 compares them and skips only chapters that do not exist.
 
-**Scale/Scope**: **169 fenced files, 289 fences across 42 re-derived paths, 1,429 source references,
-50 directory renames, 50 canonical URLs, 48 redirects**, plus an 810-line chapter registry no
-requirement named until analysis went looking for what else knows a chapter number. Feature 043 estimated 17 files and changed 58; feature 044 estimated 12, then 15,
+**Scale/Scope**: **184 fenced files, 289 fences across 42 re-derived paths, 1,429 source references
+(1,298 of them inside 183 fenced paths), 48 existing appendix hunks to re-verify, 50 directory
+renames, 50 canonical URLs, 48 redirects**, plus an 810-line chapter registry no requirement named
+until analysis went looking for what else knows a chapter number.
+
+**Every one of those numbers has moved at least once**, and two moved because a correction was
+applied to one figure and not its neighbour: the reference count went 985 → 1,429 when the pattern
+gained a capital `C`, and the file count stayed at 166 until pass 3 applied the same fix — 183. Feature 043 estimated 17 files and changed 58; feature 044 estimated 12, then 15,
 then 17, and closed at 17 with five more found at the gate. **This estimate counts the fix and not
 what the fix drags with it**, and the largest unknown is how many of the 278 re-derived fences carry
 prose that walks through a diff that no longer looks the same.

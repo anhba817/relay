@@ -31,9 +31,9 @@
 
 ## Notes
 
-**Validated against 15 requirements and 9 success criteria.** Counts: 15 functional requirements,
-9 success criteria, 3 user stories, 6 edge cases. **It read 14 and 8 until the first analysis pass**,
-which added FR-015 and SC-009 — and the instruments caught the stale count here one paragraph after
+**Validated against 16 requirements and 10 success criteria.** Counts: 16 functional requirements,
+10 success criteria, 3 user stories, 6 edge cases. **It read 14 and 8 until the analysis passes**,
+which added FR-015 and SC-009, then FR-016 and SC-010 — and the instruments caught the stale count here one paragraph after
 the requirement was added, which is the whole argument for keeping them. Zero `[NEEDS CLARIFICATION]` markers — one fork
 was genuinely the user's and was put to them before the specification was written rather than marked
 inside it.
@@ -100,6 +100,8 @@ deliberate:
 | `specs/044-revision-watermark/gaps.md` | the ledger | the open items this feature inherits, excluded by name in Out of Scope |
 | `relay-platform` | the repository whose comments change | FR-008's 1,429 references live there |
 | `relay-tutorial` | the repository whose gates verify this | `check:fences` is the test for FR-013 |
+| `services/` and `packages/` | the corpus FR-008 counts over | 1,429 references live in the `.ts` under them; 1,298 of those sit inside fenced paths, and stating which corpus a count came from is SC-002's own rule |
+| `relay-tutorial/fences/post-series.md` | the appendix | part of the chain, applied after the last chapter; FR-016 and SC-010 exist because the tooling forgot it |
 | `relay-tutorial/lib/tutorial.ts` | the chapter registry | **named only after analysis pass 1.** 810 hand-maintained lines read by the sitemap and six components; FR-015 and SC-009 exist because nothing checked it |
 
 ### What analysis pass 1 changed
@@ -156,6 +158,31 @@ and so "every" was unreachable by construction:
 Its stated baseline was inverted too — "three of eight today" where `event.ts` marks **five** emitted.
 Now scoped to the emitted five, with the three recorded rather than counted. **A criterion nothing can
 satisfy is worse than a missing one**, because it is traced, ticked and permanently red.
+
+### What analysis pass 3 changed
+
+**The chain does not end at the last chapter, and nothing said so.** `fences/post-series.md` applies
+after every chapter and amends **49** fenced paths — 41 of them comment-changed, **21** of them
+order-changing and carrying **48 hunks**. The tooling built in pass 2 stopped at the last chapter,
+and the omission surfaced as **70 reference-bearing lines present in the platform file and in no
+snapshot at all**. For those 21 paths a chapter fence's target is the state the appendix *then*
+amends, not the platform file, and the 48 existing hunks were written against today's end state. FR-016,
+SC-010 and two new tasks exist because of it.
+
+**A correction was applied to one number and not to the one beside it.** The reference count read 985
+until the pattern gained a capital `C` and became 1,429. The **file** count came from that same
+lowercase pattern and stayed at **166** through two analysis passes. It is **183**. The specification
+was quoting a file count and a reference count measured with different patterns over different
+corpora — while SC-002 itself says *"report the pattern alongside the count"*.
+
+**And one premise passed, which is worth as much as the failures.** The fence-regeneration task
+assumed rewriting a comment propagates mechanically through the chain. Measured: of 1,221 reference-bearing lines, **94% are
+byte-identical from introduction to final and 0% changed between chapters**. The rewrite is a replace
+across snapshots, not 1,429 decisions. The 5% that appear in no snapshot are the appendix's.
+
+**A premise checked and withdrawn**: `check-fence-chain.mjs` orders chapters by `+part * 1000 +
++chapter`, parsed to integers, so `chapter-25` sorts after `chapter-03` and the renumbering needs no
+zero-padding rule.
 
 ### The one item that could still be wrong
 

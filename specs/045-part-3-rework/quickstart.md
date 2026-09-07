@@ -56,7 +56,10 @@ pattern is wrong is exactly the failure this project filed as `gaps.md` 044-1.
 
     cd relay-tutorial && pnpm check:fences
 
-**Expected** (SC-005): 240 fenced files replay across **42** chapters, mirrors intact. 41 today; the split adds one. This is the criterion that
+**Expected** (SC-005, SC-010): 240 fenced files replay across **42** chapters, mirrors intact — 41
+today, the split adds one — **and the appendix's 48 existing hunks all still apply**. `check:fences`
+replays `fences/post-series.md` after the last chapter, so a stale appendix hunk fails here as an
+`APPLY` problem naming the file, not as a mismatch at the end. This is the criterion that
 catches a re-derived chain landing on the wrong file, and it is byte-exact.
 
 **Regenerate at a wider context if a pre-image matches twice.** `-U6` is a default, not a rule:

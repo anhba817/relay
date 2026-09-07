@@ -30,11 +30,12 @@ prints the movement names is a presentation decision for Phase 6, not a requirem
 
 | | |
 |---|---|
-| **What it is** | the sequence of code fences for one file path, replayed in chapter order |
-| **Invariant** | the state after the last fence equals the file in `relay-platform`, byte for byte |
+| **What it is** | the sequence of code fences for one file path, replayed in chapter order **and then through `fences/post-series.md`** |
+| **Invariant** | the state after the last fence — appendix included — equals the file in `relay-platform`, byte for byte |
 | **Kinds** | a plain fence states the whole file at that point; a `diff` fence amends the state before it |
 | **Population** | 242 fenced paths, 904 fences repository-wide; 207 paths and 623 fences in Part 3 |
-| **Changing here** | **169 paths**: 166 because a comment inside them changes, 42 because their chapter order changes, overlapping |
+| **Changing here** | **184 paths**: 183 because a comment inside them changes, 42 because their chapter order changes, overlapping |
+| **Amended by the appendix** | **49 paths**, 41 of them comment-changed and **21 order-changing**, carrying 48 hunks |
 
 **This is the feature's risk, and it is concentrated.** **289 fences sit on 42 order-changing paths**
 once the milestone chapter's split is counted, and `repository.ts` alone carries 23 of them across 17
@@ -68,6 +69,8 @@ means the order violates a real dependency.
     a path fenced once              a plain fence; order-independent
     a path fenced by one movement   order-independent under this feature
     a path fenced across movements  re-derived by merge — this is the 42
+    a path the appendix amends      its chapter fences target the PRE-APPENDIX state, not the
+                                    platform file — 21 of the 42 order-changing paths
     a path published as (excerpt)   never compared to anything; thirteen of these
 
 **The excerpt-only row is the one to watch.** Thirteen files are published only as `title="… (excerpt)"`
@@ -84,8 +87,11 @@ A mention of a chapter, from prose, a source comment, or a record.
 | a plain subject reference | 923 | a name, from the 24-entry table |
 | a positional claim | 90 | a rewritten sentence |
 
-**1,429 in `relay-platform` source**, against the 985 the specification recorded — a narrower pattern
-had missed `3.20's` without the word "chapter".
+**1,429 in `relay-platform` source** — all `.ts` under `services/` and `packages/` — of which
+**1,298** sit inside the **183** fenced paths. The specification recorded 985 and 166; both came from
+a pattern missing a capital `C`, and only the first was corrected until analysis pass 3.
+**State the pattern and the corpus with every count**, which is SC-002's rule and was broken by the
+document that states it.
 
 **After this feature a source comment names no ordinal.** Prose in the book still may: a chapter can
 say "chapter 3.4" about a chapter the reader has open, because prose is republished with the book and
