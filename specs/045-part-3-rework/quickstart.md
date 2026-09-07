@@ -26,7 +26,7 @@ Before anything moves, point the synthesiser at the **current** order and requir
     node scripts/.synth.mjs --order current --out /tmp/rebuilt
     diff -r /tmp/rebuilt relay-tutorial/app/(en)/part-3
 
-**Expected**: no differences. **Failing means the generator cannot rebuild what already exists**, and
+**Expected** (SC-005): no differences. **Failing means the generator cannot rebuild what already exists**, and
 nothing it produces for a new order can be trusted. This scenario is the reason Phase 1 exists.
 
 ---
@@ -56,7 +56,7 @@ pattern is wrong is exactly the failure this project filed as `gaps.md` 044-1.
 
     cd relay-tutorial && pnpm check:fences
 
-**Expected**: 240 fenced files replay across 41 chapters, mirrors intact. This is the criterion that
+**Expected** (SC-005): 240 fenced files replay across 41 chapters, mirrors intact. This is the criterion that
 catches a re-derived chain landing on the wrong file, and it is byte-exact.
 
 **Regenerate at a wider context if a pre-image matches twice.** `-U6` is a default, not a rule:
@@ -69,7 +69,7 @@ catches a re-derived chain landing on the wrong file, and it is byte-exact.
 
     node scripts/.synth.mjs --order new --typecheck-each
 
-**Expected**: every intermediate state typechecks. **Failing is a finding about the order, not a bug
+**Expected** (SC-003, SC-004): every intermediate state typechecks, and every chapter that reuses the outbox or the subject grammar follows the chapter teaching it. **Failing is a finding about the order, not a bug
 in the tool** — a state that does not compile means a chapter teaches code that calls something a
 later chapter introduces, so the proposed order violates a real dependency. Record which pair, and
 move one of them.
@@ -80,7 +80,7 @@ move one of them.
 
     cd relay-tutorial && pnpm check:fences     # MIRROR problems are reported here
 
-**Expected**: 24 Vietnamese chapters present, each with a fence list and fence bodies byte-identical
+**Expected** (SC-006): 24 Vietnamese chapters present, each with a fence list and fence bodies byte-identical
 to its English counterpart, and placeholder prose between them.
 
 **A deleted Vietnamese page passes this scenario and fails the feature.** The mirror check skips
@@ -92,7 +92,7 @@ chapters that do not exist, so absence is silent. Count the pages as well as run
 
     cd relay-platform && pnpm test:integration
 
-**Expected**: green, in **225.45 s ± 10%** — the mean over twenty runs at feature 044's close-out,
+**Expected** (SC-007): green, in **225.45 s ± 10%** — the mean over twenty runs at feature 044's close-out,
 stdev 1.15. This is a tripwire, not a performance target. **Nothing in this feature is supposed to
 change behaviour**, so a moved duration or a red suite means something did.
 
@@ -109,7 +109,7 @@ rewrites inside them are invisible to scenario 4.
 
     python3 specs/045-part-3-rework/check-excerpt-files.py
 
-**Expected**: zero ordinals remain in any of the thirteen. **This is the one place where a green gate
+**Expected** (SC-002): zero ordinals remain in any of the thirteen. **This is the one place where a green gate
 proves nothing**, and it is why the scenario exists rather than being folded into scenario 3.
 
 ---
@@ -118,8 +118,8 @@ proves nothing**, and it is why the scenario exists rather than being folded int
 
     pnpm build && python3 specs/045-part-3-rework/check-redirects.py
 
-**Expected**: 48 redirects, one per chapter per locale, each resolving to a page that exists; and a
-published mapping page naming all 24 old numbers.
+**Expected** (SC-008): 48 redirects, one per chapter per locale, each resolving to a page that exists;
+and a published mapping page naming all 24 old numbers.
 
 **Check the split chapter by hand.** `/part-3/chapter-14/…` was one page and is now two; its redirect
 has to choose, and the mapping page is where the other half is found.

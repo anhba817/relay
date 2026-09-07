@@ -127,9 +127,14 @@ today; the target is zero in fenced files.
 - **FR-002**: A chapter MUST NOT teach a mechanism whose subject is introduced in a later chapter.
   This covers webhook delivery against event producers, commercial controls against the product they
   meter, and each verification milestone against the surface it verifies.
-- **FR-003**: Each cross-cutting pattern MUST be taught once, in the chapter that first needs it,
-  and referred to thereafter. This applies to the transactional outbox, currently explained four
-  times, and to the subject-grammar rule, currently derived five times.
+- **FR-003**: The chapter that teaches a cross-cutting pattern in full MUST precede every chapter
+  that reuses it. This applies to the transactional outbox and to the subject-grammar rule.
+  **This clause was narrowed during task generation, because it contradicted FR-009.** It read
+  "taught once … and referred to thereafter", which means deleting three of the four outbox
+  explanations and four of the five grammar derivations — and that is compression, which FR-009
+  preserves against and Out of Scope excludes by name. A reorder can guarantee the ordering and
+  cannot collapse the repetition. **Consolidating them is deferred to the compression feature**, and
+  is recorded in Out of Scope rather than left as a requirement no task could satisfy.
 - **FR-004**: A verification milestone MUST appear after all the work it verifies.
 - **FR-005**: The error registry MUST appear before the first chapter that adds a code to it.
 - **FR-006**: The final state of every file the book publishes MUST be byte-identical before and
@@ -180,8 +185,10 @@ today; the target is zero in fenced files.
   check.
 - **SC-003**: Every webhook event type the book teaches delivery for has a producer introduced in an
   earlier chapter, against three of eight today.
-- **SC-004**: The transactional outbox is explained in full in exactly one chapter, against four.
-  The subject-grammar rule is derived in exactly one, against five.
+- **SC-004**: Every chapter that reuses the transactional outbox or the subject-grammar rule appears
+  after the chapter that teaches it in full. **Not "exactly one chapter", which this criterion read
+  until it was matched against FR-009** — counting explanations measures compression, and this
+  feature does not compress.
 - **SC-005**: Every fenced file replays byte-exact onto `relay-platform` in the new chapter order,
   and the platform's final state is unchanged except for rewritten comments.
 - **SC-006**: Every Vietnamese chapter carries a fence list and bodies byte-identical to its English
@@ -238,7 +245,9 @@ today and expected to grow.
 ## Out of Scope
 
 - Compressing chapters, merging them, or reducing the 6× size variance between the smallest and
-  largest.
+  largest. **This now explicitly includes collapsing the four outbox explanations into one and the
+  five subject-grammar derivations into one** — both are real defects, both were in FR-003's first
+  draft, and both need prose rewritten rather than moved.
 - Translating the Vietnamese pages. The user has said they will supply translations later.
 - Reordering Parts 0, 1, 2 or 4, or renaming their chapter references.
 - Any change to platform behaviour. Comments are rewritten; code is not.

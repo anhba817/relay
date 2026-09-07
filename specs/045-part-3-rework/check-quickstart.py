@@ -30,12 +30,16 @@ HERE = Path(__file__).resolve().parent
 # Files quickstart.md names as WARNINGS rather than as work this chapter does. Each entry
 # carries the reason, because an exemption without one is how a real gap gets filed.
 MENTIONED_NOT_OWED: dict[str, str] = {
-    # EMPTY, AND THAT IS THIS FEATURE'S ANSWER (analysis pass 11). The predecessor exempted
-    # `connections.test.ts` as a lane warning its quickstart mentioned without owing a
-    # scenario. This feature's quickstart does not mention it, and an exemption for a mention
-    # that does not exist is a rule nobody can trip — which the instrument reports, correctly,
-    # as a problem of its own.
+    # EMPTIED ON COPY, then filled with two — both named by the quickstart as context rather
+    # than as subjects, which is exactly the case this list exists for.
+    "reset-lane.mjs": "named in Prerequisites as the command that clears the lane before the "
+                      "control run. This feature does not change it; scenario 7 needs a clean "
+                      "lane the way every timing measurement here does.",
+    "resume.itest.ts": "named in scenario 4 as the file that proved `-U6` is a default and not "
+                       "a rule — eight session stubs byte-identical past six lines. It is a "
+                       "lesson about hunk width, not a file this feature edits.",
 }
+
 
 
 def main() -> int:

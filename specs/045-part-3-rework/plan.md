@@ -96,34 +96,37 @@ prose that walks through a diff that no longer looks the same.
 ## Phases
 
 **Phase 1 — Setup, and proving the instrument on today's chain.**
-Build the attribution and synthesis tool, then point it at the **current** order and require it to
-reproduce today's chain byte-exact. A generator that cannot rebuild what exists cannot be trusted to
-build what does not. This is the control, and it comes before anything moves.
+Build the attribution and synthesis tools, then point them at the **current** order and require a
+byte-exact reproduction of today's chain. A generator that cannot rebuild what exists cannot be
+trusted to build what does not. This is the control, and it comes before anything moves.
 
 **Phase 2 — Foundational: the three tables.**
-The 24-entry subject-name table, the old-to-new chapter mapping, and the reference classification.
-Blocking: every later phase consumes one of them. The mapping is one file with two consumers, the
-published page and the redirects.
+The 24-entry subject-name table, the old-to-new chapter map, and the reference classification.
+Blocking: every later phase consumes one. The map is one file with two consumers, the published page
+and the redirects.
 
-**Phase 3 — The references, before anything moves.**
-Rewrite all 1,429 source references and regenerate the fences that carry them. **This comes before
-the reorder on purpose**: once no comment names an ordinal, moving chapters cannot invalidate one, and
-the two changes stay separately verifiable. Doing it the other way round entangles them, and no gate
-could then say which broke a chapter.
+**Phase 3 — User Story 3: the references, before anything moves.**
+Rewrite all 1,429 source references and regenerate the fences carrying them. **US3 is P2 and runs
+first on purpose**: once no comment names an ordinal, moving a chapter cannot invalidate one, and the
+two large changes stay separately verifiable.
 
-**Phase 4 — User Story 1 and 2: the reorder.**
-Rename directories, renumber, synthesise every affected chain, regenerate 278 fences. Each synthesised
-state is typechecked — a state that does not compile means the order violates a real dependency, and
-that is a finding about the order rather than a bug in the tool.
+**Phase 4 — User Story 1: the reorder. This is the MVP.**
+Rename, renumber, split the milestone chapter, synthesise the 39 affected chains and regenerate 278
+fences. The defect is closed at the end of this phase.
 
-**Phase 5 — User Story 3's second half, and the Vietnamese placeholders.**
-Prose replaced, fences copied, mirror green at 24 chapters.
+**Phase 5 — User Story 2: proving nothing is taught before its subject exists.**
+Mostly verification of Phase 4's arrangement, and said plainly rather than padded: FR-002 is satisfied
+by the order, not by work done here. What this phase adds is a proof that can fail — every synthesised
+state is typechecked, and a state that will not compile is a finding about the order.
 
-**Phase 6 — The published surfaces.**
-`docs/07-tutorial-plan.md` amended to the new structure with its count derived from its rows, the
-mapping page, the redirects, and the cross-part references from Parts 0, 1, 2 and 4 into Part 3.
+**Phase 6 — The Vietnamese placeholders.**
+Prose replaced, fences copied byte-identical, mirror green at 24 chapters.
 
-**Phase 7 — Polish and close-out.**
+**Phase 7 — The published surfaces.**
+`docs/07-tutorial-plan.md`, the mapping page, the 48 redirects, and the references into Part 3 from
+the parts that do not move.
+
+**Phase 8 — Polish and close-out.**
 Gates, battery, the ledger, `CLAUDE.md`.
 
 ## Project Structure
