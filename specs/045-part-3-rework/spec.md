@@ -149,10 +149,19 @@ today; the target is zero in fenced files.
   silently, because a requirement carrying a number nobody re-derived is how a count stays wrong.
 - **FR-009**: Every English chapter's prose MUST be preserved. This feature moves and renumbers; it
   does not compress, merge or rewrite arguments.
-- **FR-010**: Every Vietnamese chapter page MUST continue to exist, MUST carry a fence list and
-  fence bodies byte-identical to its English counterpart, and MUST carry placeholder prose.
+- **FR-010**: **Every English chapter MUST have a Vietnamese page**, carrying a fence list and
+  fence bodies byte-identical to its English counterpart, and placeholder prose. **This clause read
+  "every Vietnamese chapter page MUST continue to exist" and analysis found the hole**: the split
+  creates a Vietnamese page that has never existed, and "continue to exist" is satisfied without
+  creating it. Stated per English chapter so the count follows the map rather than the past.
 - **FR-011**: A Vietnamese placeholder page MUST be visibly marked as awaiting translation, so a
   reader is never shown a page that appears translated and is not.
+- **FR-015**: The published navigation MUST follow the renumbering. `relay-tutorial/lib/tutorial.ts`
+  declares every chapter's number, path, title and reading time by hand, and it is read by the
+  sitemap and by six components — the sidebar, the chapter shell's previous and next links, the site
+  header, the landing page and the language switcher. **No requirement named it until analysis went
+  looking for what else knows a chapter number**, and nothing compares it to the filesystem, so a
+  renumbering that skipped it would leave every gate green and every link dead.
 - **FR-012**: `docs/07-tutorial-plan.md` MUST be amended to the new structure, and the amendment
   MUST state the chapter count derived from its own rows rather than carried in a heading — a number
   that section records as having been wrong three times running.
@@ -198,6 +207,9 @@ today; the target is zero in fenced files.
   so a moved duration is a signal that something did.
 - **SC-008**: All 24 old chapter numbers resolve to their new position from a single published
   page, and every entry names a chapter that exists.
+- **SC-009**: The chapter registry and the filesystem agree in **both directions** — every declared
+  path exists and every chapter page is declared — checked by an instrument rather than by reading.
+  They agree today at 41 and 41, which is what makes silent drift possible rather than unlikely.
 
 ## Assumptions
 

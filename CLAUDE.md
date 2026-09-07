@@ -9,20 +9,25 @@ audit log is 4.7.
 
 <!-- SPECKIT START -->
 **ACTIVE FEATURE:** `specs/045-part-3-rework/` — Part 3's 24 chapters regrouped into eight
-contiguous subject movements, renumbered to 25, English prose only. Plan:
-`specs/045-part-3-rework/plan.md`.
+contiguous subject movements and renumbered to 25, English prose only. Plan:
+`specs/045-part-3-rework/plan.md`. **52 tasks, 8 phases, one analysis pass so far.**
 
-**PLANNING OVERTURNED THE SPEC'S CENTRAL ASSUMPTION.** Replaying the existing per-chapter deltas in
-a new order lands correctly on **3 of 39** paths, conflicts on 31, and on 5 merges cleanly onto a
-DIFFERENT file — which passes every check until the last one. Four candidate orders were measured
-and the conflict rate is 79-86% for all of them, so the order is chosen on pedagogy. The 278 fences
-on those paths are **re-derived by attribution from the final file**, not re-hunked.
+**PLANNING OVERTURNED THE SPEC AND ANALYSIS OVERTURNED THE PLAN.** Replaying the existing
+per-chapter deltas in a new order lands correctly on **3 of 39** paths — 31 conflict and 5 merge
+cleanly onto a DIFFERENT file, which passes every check until the last one. So the fences are
+**re-derived by attribution from the final file**, not re-hunked.
 
-**And the platform cannot be reorganised to make it mechanical**: `repository.ts` holds 124
-interleaved cluster runs across 7 clusters in 5,533 lines.
+**AND THE HEADLINE SCOPE NUMBER TURNED ON AN UNDECIDED DESIGN QUESTION.** 39 paths / 278 fences
+assumed the milestone chapter moved as a unit; the design splits it, and the answer is 39/278 if
+its fences land early against 44/300 if late. Split decided at its own `## The outsider` heading —
+14 fences to the registry, 7 to the outsider — and re-measured: **42 paths, 289 fences**.
 
-Vietnamese pages keep byte-identical fences and take placeholder prose — the mirror check compares
-every fence body and skips only chapters that do not exist, so deleting them would be silent.
+**THE THING NO GATE COVERED.** `relay-tutorial/lib/tutorial.ts` is 810 hand-maintained lines
+declaring all 41 chapters, read by `app/sitemap.ts` and six components including every chapter's
+previous-and-next links. No requirement named it, no task touched it, nothing compares it to the
+filesystem — a renumbering that skipped it leaves every gate green and every link dead. It agrees
+today at 41 and 41: **unguarded, not broken**, which is the harder condition to notice. Found by
+asking *what else in this tree knows a chapter number*.
 <!-- SPECKIT END -->
 
     044 "the revision watermark"

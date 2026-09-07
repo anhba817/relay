@@ -31,8 +31,10 @@
 
 ## Notes
 
-**Validated against 14 requirements and 8 success criteria.** Counts: 14 functional requirements,
-8 success criteria, 3 user stories, 6 edge cases. Zero `[NEEDS CLARIFICATION]` markers — one fork
+**Validated against 15 requirements and 9 success criteria.** Counts: 15 functional requirements,
+9 success criteria, 3 user stories, 6 edge cases. **It read 14 and 8 until the first analysis pass**,
+which added FR-015 and SC-009 — and the instruments caught the stale count here one paragraph after
+the requirement was added, which is the whole argument for keeping them. Zero `[NEEDS CLARIFICATION]` markers — one fork
 was genuinely the user's and was put to them before the specification was written rather than marked
 inside it.
 
@@ -98,6 +100,32 @@ deliberate:
 | `specs/044-revision-watermark/gaps.md` | the ledger | the open items this feature inherits, excluded by name in Out of Scope |
 | `relay-platform` | the repository whose comments change | FR-008's 1,429 references live there |
 | `relay-tutorial` | the repository whose gates verify this | `check:fences` is the test for FR-013 |
+| `relay-tutorial/lib/tutorial.ts` | the chapter registry | **named only after analysis pass 1.** 810 hand-maintained lines read by the sitemap and six components; FR-015 and SC-009 exist because nothing checked it |
+
+### What analysis pass 1 changed
+
+**Every box above was ticked before the pass, and the pass found a requirement that did not exist.**
+Not a conflict between two clauses this time — an absence. Asking *what else in this tree knows a
+chapter number* turned up `lib/tutorial.ts`: 810 hand-maintained lines declaring all 41 chapters,
+read by `app/sitemap.ts` and six components including the previous-and-next links on every page.
+
+**No requirement named it, no task touched it, and no gate compares it to the filesystem.** A
+renumbering that skipped it would leave `check:fences` green, `check:docs` green, and every
+navigation link in the book dead. It agrees with the tree today at 41 and 41 — **unguarded rather
+than broken**, which is the harder condition to see. FR-015 and SC-009 exist because of it, along with a
+checker in the foundational phase, two tasks in the reorder phase, and quickstart scenario 10.
+
+**And the headline scope number was unknowable.** The plan carried 39 paths / 278 fences, measured
+with the milestone chapter moving as a unit. The design splits it, and the answer is 39/278 if its
+fences land early against 44/300 if late. Both bounds were measured, the split was then decided fence
+by fence at the chapter's own `## The outsider` heading — 14 to the registry, 7 to the outsider,
+nothing straddling — and the re-measured answer is **42 paths and 289 fences**. A number that turns
+on an undecided design question is not an estimate.
+
+**Two draft findings were withdrawn after checking**, which is worth recording because both were
+plausible: `docs/07-tutorial-plan.md` looked like it needed `pnpm sync:docs` before `check:docs`, and
+`check-docs-drift.sh:31` says it is deliberately the one document not mirrored. And the registry
+looked like it might already be stale; it is not.
 
 ### The one item that could still be wrong
 

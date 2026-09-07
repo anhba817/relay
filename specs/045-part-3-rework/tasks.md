@@ -37,6 +37,7 @@ walks through a diff.
 - [ ] T006 Write the subject-name table at `specs/045-part-3-rework/subjects.json`: one entry per Part 3 chapter, keyed by slug, giving the phrase a source comment should use — `webhooks-that-survive-the-customer` → "the webhook dispatcher chapter". **Keyed by slug and not by number**, because the number is the thing being retired.
 - [ ] T007 Write the chapter map at `specs/045-part-3-rework/chapter-map.json` from `contracts/chapter-map.md`. **One record, two consumers** — the published mapping page and the redirects. A hand-maintained pair is the defect the port bands taught this project, and it cost chapter 3.24 an unexplainable eleventh red. (FR-014, SC-008)
 - [ ] T008 [P] Write `specs/045-part-3-rework/classify-refs.py`: emit every one of the 1,429 source references with its file, line, class and proposed rewrite. Three classes, measured in research R5 — 416 beside a requirement id, 923 plain subject references, 90 positional claims. **Give the pattern a positive control and report a pattern that fails its own example as BROKEN rather than as zero**: `grep` here is ugrep 7.8.4, and a grouped alternation followed by two negated classes matches nothing under it. (FR-008, SC-002)
+- [ ] T009a [P] Write `specs/045-part-3-rework/check-registry.py`: `relay-tutorial/lib/tutorial.ts` declares every chapter's number, path, title, `titleVi` and reading time **by hand**, and the sitemap plus six components read it — the sidebar, the chapter shell's previous and next links, the site header, the landing page and the language switcher. Compare it against the filesystem **in both directions** and test it red each way. **Nothing checks this file today**, and it agrees at 41 and 41, which is what makes silent drift possible rather than unlikely. (FR-015, SC-009)
 - [ ] T009 [P] Write `specs/045-part-3-rework/check-map.py`: the map is a bijection over 24 old and 25 new chapters, every slug exists on disk, and **every new ordinal is used exactly once**. Test it red on a duplicate and on a missing slug. (FR-007, FR-014)
 
 **Checkpoint**: the three tables exist and disagree with nothing.
@@ -50,7 +51,14 @@ walks through a diff.
 **Independent test**: count Part-3 chapter-number references in `relay-platform`. 1,429 today; zero in fenced files after.
 
 - [ ] T010 [US3] Rewrite the 416 references that sit beside a requirement id, across the `.ts` files of `relay-platform`: **delete the ordinal and keep the id**. `(chapter 3.21, FR-RTM-08)` becomes `(FR-RTM-08)`. This class loses nothing at all — the durable reference was already there. (FR-008)
-- [ ] T011 [US3] Rewrite the 923 plain subject references from `subjects.json`. **Read each one; do not run a blind substitution.** The table gives the phrase, the sentence decides whether it fits. (FR-008)
+- [ ] T011 [US3] Rewrite the plain subject references in `relay-platform/packages/` from `subjects.json`, and record the count done against the count found. (FR-008)
+- [ ] T011a [US3] Rewrite them in `relay-platform/services/api/src/db/` — `repository.ts` alone holds 129 references, the largest concentration in the tree. (FR-008)
+- [ ] T011b [US3] Rewrite them in the rest of `relay-platform/services/api/`, outside `src/db/repository.ts`, located with `grep -rn`. (FR-008)
+- [ ] T011c [US3] Rewrite them in `relay-platform/services/gateway/` and `services/dispatcher/`, located with `grep -rn`. (FR-008)
+
+  **923 references split four ways, because one task of that size cannot be told part-done from
+  done.** Each batch reports found against rewritten. **Read each one; do not run a blind
+  substitution** — the table gives the phrase and the sentence decides whether it fits.
 - [ ] T012 [US3] Rewrite the 90 positional claims by hand, located by `classify-refs.py` across `relay-platform`. These name a chapter to say *when* something happened, so a subject name does not substitute — the sentence has to be rewritten to state the fact instead of pointing at where it was established. (FR-008)
 - [ ] T013 [P] [US3] Rewrite the 210 references in the 49 **unfenced** `.ts` files under `relay-platform`. Parallel with T010–T012 only if the file sets are confirmed disjoint first — check, do not assume. (FR-008)
 - [ ] T014 [US3] Regenerate the fences for the 166 fenced files whose comments changed, and append amendment hunks to `relay-tutorial/fences/post-series.md`. **`-U6` is a default, not a rule**: regenerate wider when a pre-image matches twice, and verify the hunks apply clean before pasting, not after. `-U8` was worse than `-U6` once and `-U10` fixed it, because widening context merges adjacent hunks. (FR-006, FR-013)
@@ -68,13 +76,15 @@ walks through a diff.
 
 **Independent test**: group every chapter by subject, confirm each group occupies consecutive positions.
 
-- [ ] T018 [US1] Split the milestone chapter per `contracts/chapter-map.md`: the error-registry half becomes new 3.3 under its own slug, the outsider half becomes new 3.25 keeping `errors-that-resolve-and-an-outsider`. **This is the only chapter whose prose is divided**, and the division is where FR-009's "prose is preserved" is most at risk. (FR-005, FR-007)
+- [ ] T018 [US1] Split the milestone chapter per `contracts/chapter-map.md`: the error-registry half becomes new 3.3 under its own slug, the outsider half becomes new 3.25 keeping `errors-that-resolve-and-an-outsider`. **Its 21 fences divide 14 to the registry and 7 to the outsider**, at the chapter's own `## The outsider` heading on line 961 of 1,565 — nothing straddles it, and the assignment is in `contracts/chapter-map.md` because the scope estimate turns on it. **This is the only chapter whose prose is divided**, and the division is where FR-009's "prose is preserved" is most at risk. (FR-005, FR-007)
 - [ ] T019 [US1] Rename the 24 English chapter directories under `relay-tutorial/app/(en)/part-3/` per `chapter-map.json`. **The slug travels with the chapter; only the numeric segment moves.** (FR-007)
 - [ ] T020 [US1] Update `metadata.alternates.canonical` and the `languages` pair in each moved `page.mdx`, which name their own path and do not follow a directory rename.
-- [ ] T021 [US1] Run `synth.mjs --order new` for the 39 order-changing paths and write the 278 regenerated fences into their chapters. **3 of these 39 would replay from the old deltas and 36 would not** — 31 conflict and 5 land on a different file, which is the outcome that passes every check but the last. (FR-006, SC-005)
+- [ ] T021 [US1] Run `synth.mjs --order new` for the **42** order-changing paths and write the **289** regenerated fences into their chapters. **These counts moved during analysis**: 39 and 278 assumed the milestone chapter moved whole, and the answer is 39/278 if its fences land early against 44/300 if late. The split is now decided fence by fence in `contracts/chapter-map.md`. **3 of 39 would replay from the old deltas and 36 would not** — 31 conflict and 5 land on a different file, which is the outcome that passes every check but the last. (FR-006, SC-005)
 - [ ] T022 [US1] Rewrite the 54 forward references in Part 3 prose, across the English `page.mdx` files. A sentence that says "chapter 3.19 will build this" is wrong when 3.19 now precedes it; some become backward references and some become nothing.
-- [ ] T023 [US1] Read every moved chapter's prose against its regenerated diffs. **This is the task no gate can do.** A chapter that walks a reader through a hunk now shows a different hunk, and `check:fences` is satisfied either way. Budget for it: 278 fences across 39 paths, concentrated in `repository.ts` (23 fences), `schema.ts` and `session.ts` (16 each). (FR-009)
-- [ ] T024 [US1] Verify SC-001 with `check-movements.py`: eight of eight, against five of eight today. Then `check:fences` green at 240 files across 42 chapters. (FR-001, SC-001, FR-013)
+- [ ] T023 [US1] Read every moved chapter's prose against its regenerated diffs. **This is the task no gate can do.** A chapter that walks a reader through a hunk now shows a different hunk, and `check:fences` is satisfied either way. Budget for it: 289 fences across 42 paths, concentrated in `repository.ts` (23 fences), `schema.ts` and `session.ts` (16 each). (FR-009)
+- [ ] T023a [US1] Rewrite the 24 Part 3 entries in `relay-tutorial/lib/tutorial.ts` from `chapter-map.json` — number, path and order — and add the 25th for the split chapter, deriving its `readerMinutes` and `readerProduces` from the halves. **No requirement named this file until analysis went looking for what else knows a chapter number**, and skipping it leaves every gate green with a broken sitemap, a broken sidebar and dead previous-and-next links on all 25 chapters. (FR-015)
+- [ ] T023b [US1] Run `check-registry.py` and confirm both directions agree at 42 chapters. (SC-009)
+- [ ] T024 [US1] Verify SC-001 with `check-movements.py`: eight of eight, against five of eight today. Then `check:fences` green at 240 files across **42** chapters — 41 today, plus the one the split adds. (FR-001, SC-001, FR-013)
 - [ ] T025 [US1] Commit all three repositories with `git commit`, `relay-tutorial` and `relay-platform` before the root pointer.
 
 **Checkpoint**: Part 3 reads as eight movements. This is the MVP — the defect is closed.
@@ -101,10 +111,10 @@ walks through a diff.
 
 ## Phase 6: The Vietnamese placeholders
 
-- [ ] T031 Rename the 24 Vietnamese directories under `relay-tutorial/app/(vi)/vi/part-3/chapter-NN/` per `chapter-map.json`, and split the milestone chapter to match.
+- [ ] T031 Rename the 24 Vietnamese directories under `relay-tutorial/app/(vi)/vi/part-3/chapter-NN/` per `chapter-map.json`, and split the milestone chapter to match, giving **25**. (FR-010)
 - [ ] T032 Replace the prose in each `relay-tutorial/app/(vi)/vi/part-3/chapter-NN/*/page.mdx` with a placeholder, **keeping every import, every `metadata` field, every figure and every code fence byte-identical to its English counterpart**. The mirror check compares the fence list first and then each body; a page that drops its fences fails with "fence list differs". (FR-010, SC-006)
 - [ ] T033 Mark each Vietnamese `page.mdx` placeholder visibly as awaiting translation, so a reader is never shown a page that looks translated and is not (FR-011). (FR-011)
-- [ ] T034 Verify the mirror with `pnpm check:fences` **and count the pages** under `relay-tutorial/app/(vi)/vi/part-3/`. A deleted Vietnamese page passes `check:fences` silently, because the checker skips chapters that do not exist — so absence is invisible to the gate that is supposed to catch it. (SC-006)
+- [ ] T034 Verify the mirror with `pnpm check:fences` **and count the pages** under `relay-tutorial/app/(vi)/vi/part-3/` — **25**, one per English chapter. A deleted Vietnamese page passes `check:fences` silently, because the checker skips chapters that do not exist — so absence is invisible to the gate that is supposed to catch it. (SC-006)
 - [ ] T035 Commit `relay-tutorial` with `git -C relay-tutorial commit`, then the root repository's submodule pointer.
 
 ---
@@ -112,10 +122,10 @@ walks through a diff.
 ## Phase 7: The published surfaces
 
 - [ ] T036 Amend Part 3's rows in `docs/07-tutorial-plan.md` to the new structure, and **derive the chapter count from the rows rather than carrying it in the heading**. That heading said seven, then sixteen, then twenty-one through three chapters that each added a row without moving it — in a paragraph whose own last sentence says the count comes from the rows. (FR-012)
-- [ ] T037 [P] Publish the mapping page from `chapter-map.json`, reachable from Part 3's index, naming all 24 old numbers. **Four chapters keep their number and change meaning** — 3.13, 3.14, 3.15 and 3.16 all exist before and after and name different chapters, which is the sharpest thing a returning reader needs told. (FR-014, SC-008)
+- [ ] T037 [P] Publish the mapping page from `chapter-map.json` as its own route under `relay-tutorial/app/`, naming all 24 old numbers, and link it from the series sidebar in `components/reading/series-sidebar.tsx`. **There is no Part 3 index page** — an earlier draft of this task assumed one; navigation is rendered from the registry. **Four chapters keep their number and change meaning** — 3.13, 3.14, 3.15 and 3.16 all exist before and after and name different chapters, which is the sharpest thing a returning reader needs told. (FR-014, SC-008)
 - [ ] T038 [P] Generate the 48 redirects into `relay-tutorial/next.config.ts` from the same `chapter-map.json`, permanent rather than temporary. The split chapter's old URL has to choose a target; `contracts/chapter-map.md` records that it goes to the outsider half and why. (FR-014, SC-008)
 - [ ] T039 Rewrite the references into Part 3 found in every `page.mdx` outside Part 3, English and Vietnamese, with `grep -rn` over `relay-tutorial`. Those parts are not reordered, so their own ordinals are stable — but a Part 2 chapter that says "chapter 3.18 builds this" is now wrong.
-- [ ] T040 Verify every old URL resolves: `pnpm build` then `check-redirects.py`, 48 redirects each landing on a page that exists.
+- [ ] T040 Verify every old URL resolves: `pnpm build` then `check-redirects.py`, 48 redirects each landing on one of the 50 pages that exist. **Check `app/sitemap.ts` in the same pass** — it is the map's third consumer, it is generated from the registry, and the plan called it two consumers until analysis counted them. (SC-008)
 
 ---
 

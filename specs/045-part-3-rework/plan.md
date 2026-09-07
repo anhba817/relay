@@ -6,8 +6,9 @@
 
 ## Summary
 
-Twenty-four chapters regrouped into eight contiguous subject movements, renumbered, with every
-chapter reference in platform source rewritten to name its subject instead of its ordinal. English
+Twenty-four chapters regrouped into eight contiguous subject movements and renumbered to **25** —
+one splits — with every chapter reference in platform source rewritten to name its subject instead
+of its ordinal. English
 prose moves unchanged; Vietnamese pages keep their fences and lose their prose to a placeholder.
 
 **Research overturned the specification's central assumption, and the plan is shaped around the
@@ -15,7 +16,14 @@ correction.** The specification said 39 of 207 fenced paths change chain order a
 hunks could be regenerated. They cannot: replaying the existing per-chapter deltas in the new order
 succeeds on **3 of 39**, conflicts on 31, and on 5 more merges cleanly onto **a different file** —
 the dangerous outcome, because it passes every check until the final comparison. The fences on those
-paths are not re-hunked. They are **re-derived**, and there are 278 of them.
+paths are not re-hunked. They are **re-derived**.
+
+**The count is 42 paths and 289 fences, not the 39 and 278 this plan first carried.** That estimate
+assumed the milestone chapter moved as a unit; the design splits it, and the answer depends on where
+its fences land — 39/278 if early, 44/300 if late. Analysis measured both bounds, the split was then
+decided fence by fence in `contracts/chapter-map.md` at the chapter's own `## The outsider` heading,
+and the number was re-measured. **A scope estimate that turns on an undecided design question is not
+an estimate**, and this one was the headline.
 
 **Four measurements decided the design:**
 
@@ -63,8 +71,9 @@ so a moved duration means something changed that should not have.**
 Vietnamese pages must keep fence lists and bodies byte-identical to English, because the mirror check
 compares them and skips only chapters that do not exist.
 
-**Scale/Scope**: **169 fenced files, 278 fences, 1,429 source references, 48 directory renames, 48
-canonical URLs.** Feature 043 estimated 17 files and changed 58; feature 044 estimated 12, then 15,
+**Scale/Scope**: **169 fenced files, 289 fences across 42 re-derived paths, 1,429 source references,
+50 directory renames, 50 canonical URLs, 48 redirects**, plus an 810-line chapter registry no
+requirement named until analysis went looking for what else knows a chapter number. Feature 043 estimated 17 files and changed 58; feature 044 estimated 12, then 15,
 then 17, and closed at 17 with five more found at the gate. **This estimate counts the fix and not
 what the fix drags with it**, and the largest unknown is how many of the 278 re-derived fences carry
 prose that walks through a diff that no longer looks the same.
@@ -78,7 +87,7 @@ prose that walks through a diff that no longer looks the same.
 | **I. Tenant isolation** | No route, no query, no credential changes. The isolation gauntlet moves position and keeps its derived target list, which extends itself from the running router. | **Pass.** |
 | **II. No acknowledged message is lost** | Nothing on any delivery path changes. | **Pass.** |
 | **III. Two data paths, never crossed** | Untouched. | **Pass.** |
-| **IV. Single writer, single source of truth** | The chapter mapping becomes a single source with two consumers — the published mapping page and the redirect table — rather than a hand-maintained pair. | **Pass, and the feature applies the principle to itself.** |
+| **IV. Single writer, single source of truth** | The chapter mapping becomes a single source with **three** consumers — the published page, the redirects, and the chapter registry the sitemap and six components read. Analysis found the third; the plan had said two. | **Pass, and the feature applies the principle to itself — after failing to apply it to its own consumer list.** |
 | **V. API-first, developer-first** | The whole feature is this principle applied to the documentation a developer reads. | **Pass, and it advances it.** |
 | **VI. Requirement-driven, test-verified** | The fence chain verifies every claim about code. It cannot verify that prose still matches the diff beneath it, and this plan says so rather than implying coverage it does not have. | **Pass, with a stated limit.** |
 | **VII. Boring by design — scope is a commitment** | This is a large change with no functional gain, which is exactly what this principle guards against. Compression is excluded, the platform's behaviour is unchanged, and Parts 0, 1, 2 and 4 are untouched. | **Pass, and the exclusions are the argument.** |
@@ -102,8 +111,9 @@ trusted to build what does not. This is the control, and it comes before anythin
 
 **Phase 2 — Foundational: the three tables.**
 The 24-entry subject-name table, the old-to-new chapter map, and the reference classification.
-Blocking: every later phase consumes one. The map is one file with two consumers, the published page
-and the redirects.
+Blocking: every later phase consumes one. The map is one file with **three** consumers — the
+published page, the redirects, and the chapter registry — and this phase also builds the checker that
+compares that registry against the filesystem in both directions, because nothing does today.
 
 **Phase 3 — User Story 3: the references, before anything moves.**
 Rewrite all 1,429 source references and regenerate the fences carrying them. **US3 is P2 and runs
@@ -149,7 +159,9 @@ specs/045-part-3-rework/
 
 ```text
 relay-tutorial/
-├── app/(en)/part-3/chapter-NN/<slug>/page.mdx     24 directories renamed, prose moved
+├── app/(en)/part-3/chapter-NN/<slug>/page.mdx     25 directories, 24 renamed and 1 new
+├── lib/tutorial.ts                                the chapter registry — 810 lines, hand-kept,
+│                                                  read by the sitemap and six components
 ├── app/(vi)/vi/part-3/chapter-NN/<slug>/page.mdx  24 renamed, prose replaced, fences kept
 ├── fences/post-series.md                          amendments for every re-derived path
 ├── next.config.ts                                 redirects, from the mapping

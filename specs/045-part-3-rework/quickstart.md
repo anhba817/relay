@@ -1,6 +1,6 @@
 # Quickstart — validating the Part 3 rework
 
-Nine scenarios. Each proves one success criterion and each is runnable.
+Ten scenarios. Each proves one success criterion and each is runnable.
 
 ## Prerequisites
 
@@ -56,7 +56,7 @@ pattern is wrong is exactly the failure this project filed as `gaps.md` 044-1.
 
     cd relay-tutorial && pnpm check:fences
 
-**Expected** (SC-005): 240 fenced files replay across 41 chapters, mirrors intact. This is the criterion that
+**Expected** (SC-005): 240 fenced files replay across **42** chapters, mirrors intact. 41 today; the split adds one. This is the criterion that
 catches a re-derived chain landing on the wrong file, and it is byte-exact.
 
 **Regenerate at a wider context if a pre-image matches twice.** `-U6` is a default, not a rule:
@@ -80,8 +80,9 @@ move one of them.
 
     cd relay-tutorial && pnpm check:fences     # MIRROR problems are reported here
 
-**Expected** (SC-006): 24 Vietnamese chapters present, each with a fence list and fence bodies byte-identical
-to its English counterpart, and placeholder prose between them.
+**Expected** (SC-006): **25** Vietnamese chapters present — one per English chapter, not 24, because the
+split creates one that never existed — each with a fence list and fence bodies byte-identical to its
+English counterpart, and placeholder prose between them.
 
 **A deleted Vietnamese page passes this scenario and fails the feature.** The mirror check skips
 chapters that do not exist, so absence is silent. Count the pages as well as running the check.
@@ -118,11 +119,26 @@ proves nothing**, and it is why the scenario exists rather than being folded int
 
     pnpm build && python3 specs/045-part-3-rework/check-redirects.py
 
-**Expected** (SC-008): 48 redirects, one per chapter per locale, each resolving to a page that exists;
-and a published mapping page naming all 24 old numbers.
+**Expected** (SC-008): 48 redirects — one per *old* chapter per locale — each resolving to one of the
+**50** pages that now exist; and a published mapping page naming all 24 old numbers.
 
 **Check the split chapter by hand.** `/part-3/chapter-14/…` was one page and is now two; its redirect
 has to choose, and the mapping page is where the other half is found.
+
+---
+
+## Scenario 10 — the navigation follows the renumbering (SC-009)
+
+    python3 specs/045-part-3-rework/check-registry.py
+
+**Expected** (SC-009): the chapter registry in `lib/tutorial.ts` and the filesystem agree in **both
+directions** at 42 chapters — every declared path exists, every chapter page is declared.
+
+**This scenario exists because no gate covered it and no requirement named it.** The registry is 810
+hand-maintained lines read by the sitemap and six components, including the previous-and-next links on
+every chapter. A renumbering that skipped it would leave `check:fences` green, `check:docs` green and
+every link in the book dead. It agrees today at 41 and 41 — **unguarded, not broken**, which is the
+harder condition to notice.
 
 ---
 

@@ -3,9 +3,11 @@
 The public half of this feature. Every old chapter URL is linked from somewhere this project does not
 control, so the mapping is contract rather than bookkeeping.
 
-**One source, two consumers.** The table below generates the redirects in `next.config.ts` and the
-published mapping page. It is not maintained in two places, because a hand-maintained table cannot be
-checked — this project's own finding from nine api ports drawn from hand-allocated bands.
+**One source, THREE consumers.** The table below generates the redirects in `next.config.ts`, the
+published mapping page, and the chapter registry in `lib/tutorial.ts` that the sitemap and six
+components read. **The plan said two and analysis found the third**, which is the same shape of
+error the table exists to prevent — a hand-maintained list cannot be checked, and neither can a
+hand-maintained count of who reads it.
 
 ---
 
@@ -52,6 +54,22 @@ checked — this project's own finding from nine api ports drawn from hand-alloc
 | 3.24 | VIII | Milestone: the isolation gauntlet | 3.12 |
 | 3.25 | VIII | Milestone: an outsider | **3.14, second half** |
 
+### Where the split falls, fence by fence
+
+**Analysis found that the scope estimate depended on this and nobody had decided it.** The plan's
+39 paths / 278 fences assumed the chapter moved as a unit; measured both ways the answer was 39/278
+if its fences landed early and 44/300 if late. **With the split recorded below it is 42 paths and
+289 fences.**
+
+The boundary is the chapter's own `## The outsider` heading, at line 961 of 1,565. Every fence above
+it is the error vocabulary; every fence below it is the sealed integration package. Nothing
+straddles.
+
+| Half | Fences | Paths |
+|---|---|---|
+| **3.3, the registry** | 14 | `codes.ts`, `codes.test.ts`, `protocol-error.ts`, `protocol-error.filter.ts`, `messages.service.ts`, `session.controller.ts`, `rate-limit.middleware.ts`, `zod-validation.pipe.ts`, `service-kit/index.ts`, `gateway/main.ts`, `gateway/session.ts`, `session.test.ts`, and two excerpt-only files |
+| **3.25, the outsider** | 7 | `packages/outsider/` — `package.json`, `tsconfig.json`, `vitest.integration.config.mts`, `src/integrate.itest.ts` — plus `scripts/seed-demo-tenant.mjs` and two excerpt-only wiring files |
+
 **Twenty-four becomes twenty-five**, because one chapter splits. Its two halves belong at opposite
 ends: the error registry is needed by every chapter that adds a refusal, and ten chapters currently
 add codes to a registry the reader does not meet until chapter fourteen. The outsider is the SRS
@@ -72,7 +90,8 @@ Every old path resolves. The slug travels with the chapter, so only the numeric 
     /vi/part-3/chapter-05/webhooks-that-survive-the-customer
       -> /vi/part-3/chapter-18/webhooks-that-survive-the-customer       308
 
-**48 redirects**, 24 per locale. Permanent rather than temporary: the old numbering is not coming
+**48 redirects**, 24 per locale — one per *old* chapter. The new tree carries **50** canonical URLs,
+25 per locale, because one chapter becomes two. Permanent rather than temporary: the old numbering is not coming
 back, and a search engine that has indexed the series should be told so.
 
 **The split chapter is the one redirect that has to choose.** `/part-3/chapter-14/…` was one page and

@@ -14,10 +14,11 @@ is prose, and is carried through regeneration.
 | FR-005 | The error registry MUST appear before the first chapter that adds a code to it. | T018 |
 | FR-006 | The final state of every file the book publishes MUST be byte-identical before and after this… | T014, T021 |
 | FR-007 | Chapters MUST be renumbered to their new reading order, with no gaps and no reordering of the… | T009, T018, T019 |
-| FR-008 | A reference to a Part 3 chapter from `relay-platform` source MUST name the subject rather tha… | T008, T010, T011, T012, T013 |
+| FR-008 | A reference to a Part 3 chapter from `relay-platform` source MUST name the subject rather tha… | T008, T010, T011, T011a, T011b, T011c, T012, T013 |
 | FR-009 | Every English chapter's prose MUST be preserved. This feature moves and renumbers; it does no… | T018, T023 |
-| FR-010 | Every Vietnamese chapter page MUST continue to exist, MUST carry a fence list and fence bodie… | T032 |
+| FR-010 | **Every English chapter MUST have a Vietnamese page**, carrying a fence list and fence bodies… | T031, T032 |
 | FR-011 | A Vietnamese placeholder page MUST be visibly marked as awaiting translation, so a reader is … | T033 |
+| FR-015 | The published navigation MUST follow the renumbering. `relay-tutorial/lib/tutorial.ts` declar… | T009a, T023a |
 | FR-012 | `docs/07-tutorial-plan.md` MUST be amended to the new structure, and the amendment MUST state… | T036 |
 | FR-013 | Every gate MUST be green at close-out, including the fence chain replaying byte-exact across … | T014, T015, T024, T045 |
 | FR-014 | The mapping from old chapter number to new MUST be recorded where a reader of the published b… | T007, T009, T037, T038 |
@@ -33,7 +34,8 @@ is prose, and is carried through regeneration.
 | SC-005 | Every fenced file replays byte-exact onto `relay-platform` in the new chapter order, and the … | T004, T021 |
 | SC-006 | Every Vietnamese chapter carries a fence list and bodies byte-identical to its English counte… | T032, T034 |
 | SC-007 | The full test battery is green and its duration stays within 10% of the 225.45 s mean measure… | T001, T043 |
-| SC-008 | All 24 old chapter numbers resolve to their new position from a single published page, and ev… | T007, T037, T038 |
+| SC-008 | All 24 old chapter numbers resolve to their new position from a single published page, and ev… | T007, T037, T038, T040 |
+| SC-009 | The chapter registry and the filesystem agree in **both directions** — every declared path ex… | T009a, T023b |
 
 ## 3. What the analysis passes changed here
 
@@ -53,5 +55,5 @@ the plan rather than here: replaying the existing per-chapter deltas in a new or
 paths. The specification implied re-hunking would be enough. It is not, and the 278 fences on those
 paths are re-derived instead.
 
-    46 tasks · 14 requirements · 8 criteria
+    52 tasks · 15 requirements · 9 criteria
     0 ids with no verifying task
