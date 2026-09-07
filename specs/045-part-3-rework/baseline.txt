@@ -1,0 +1,134 @@
+================================================================================
+BASELINE — Part 3, reorganised by subject (feature 045)
+Pinned 2026-09-07 before any file moved.
+================================================================================
+
+THE LANE, pinned where the tasks can see it. Nine variables; the addresses have
+fallbacks and the credentials do not, so their absence reads as a regression
+rather than a misconfiguration. Local development values, in the record
+deliberately.
+
+    RELAY_POSTGRES_PORT=15432          # this machine's own Postgres holds 5432
+    DATABASE_URL=postgres://relay:relay@localhost:15432/relay
+    RELAY_REDIS_URL=redis://localhost:6379
+    RELAY_NATS_URL=nats://localhost:4222
+    RELAY_INTERNAL_CREDENTIAL=rk_svc_local_development_credential_0000
+    RELAY_INTERNAL_CREDENTIAL_GATEWAY=rk_svc_local_development_gateway_00000
+    RELAY_WEBHOOK_SECRET_KEY=BpDal75yBZp7Fc2GtGS3D1vh7qOKgCWJkF6/d0XWxBU=
+    RELAY_OUTBOX_RELAY=off  RELAY_EVENT_CONSUMER=off  RELAY_DELIVERY_RELAY=off
+
+Scenarios 1 through 6 of the quickstart need none of it: this feature changes
+documentation and comments, and the fence chain is a text comparison. Only the
+control run that proves the platform did NOT change needs the stack.
+
+--------------------------------------------------------------------------------
+T001 — ALL FOURTEEN GATES, GREEN, EXIT CODES CAPTURED OUTSIDE ANY PIPELINE
+--------------------------------------------------------------------------------
+
+    relay-platform  pnpm typecheck = 0
+    relay-platform  pnpm lint = 0
+    relay-platform  pnpm build = 0
+    relay-tutorial  pnpm check:fences = 0
+    relay-tutorial  pnpm check:docs = 0
+    relay-tutorial  pnpm check:figures = 0
+    relay-tutorial  pnpm check:srs = 0
+    relay-tutorial  pnpm check:errors = 0
+    instrument      check-checklist.py = 0
+    instrument      check-prose.py = 0
+    instrument      check-quickstart.py = 0
+    instrument      check-refs.py = 0
+    instrument      sweep.py = 0
+    instrument      regen-traceability.py = 0
+
+    red: 0 of 14
+
+`fail=1` inside a `for … | sort` runs in a subshell and dies with it, which has
+printed "ALL GATES: GREEN" over a red one three times in feature 043. Every code
+above was written to a file and counted from the file.
+
+--------------------------------------------------------------------------------
+THE NUMBERS THIS FEATURE IS MEASURED AGAINST
+--------------------------------------------------------------------------------
+
+    EN Part 3 chapters      24
+    VI Part 3 chapters      24
+    EN Part 3 words         447,394
+    titled fences (Part 3)  623
+    untitled fences         99
+    fenced paths repo-wide  242
+    comment-changed paths   183
+    source references       1,429
+    appendix-amended paths  49
+
+  battery mean            225.45 s, stdev 1.15, budget 240 (feature 044, 20 runs)
+  lane rows at 044 close  76,980 environments · 791,520 outbox · 392,517 messages
+
+EVERY ONE OF THOSE HAS MOVED AT LEAST ONCE DURING PLANNING, and two moved
+because a correction was applied to one figure and not its neighbour. The
+reference count read 985 until the pattern gained a capital C; the comment-changed
+path count came from that same pattern and stayed at 166 through two analysis
+passes before it was re-derived as 183. **State the pattern and the corpus with
+every count** — which SC-002 requires and the specification quoting those two
+numbers was breaking.
+
+  reference pattern:  [Cc]hapter 3.N | (3.N) | 3.N's
+  reference corpus:   every .ts under relay-platform/services and /packages
+  path corpus:        titled fences in app/(en) and fences/post-series.md,
+                      title normalised before comparing
+
+--------------------------------------------------------------------------------
+WHAT THE GATES CANNOT SEE, AND WHY IT MATTERS MORE HERE THAN USUALLY
+--------------------------------------------------------------------------------
+
+`check:fences` is almost this feature's only test. Four analysis passes each
+found something it does not look at, and three of the four produced a critical:
+
+  untitled fences           99 per locale — the mirror matches title="…" only
+  anything outside a fence  133 metadata paths, an 810-line chapter registry
+  the 13 excerpt-only files 99 ordinals among ten of them
+  prose                     whether a paragraph still describes its own diff
+
+Each row now has a check of its own. A green gate set is not evidence about any
+of them.
+
+--------------------------------------------------------------------------------
+PHASE 1 — THE CONTROL, AND THE THREE TIMES IT CAUGHT ITS OWN TOOLING
+--------------------------------------------------------------------------------
+
+  snapshot.mjs   240 of 240 post-appendix paths byte-identical to relay-platform
+  replay.mjs     644 states reproduced byte-exact through the merge machinery
+                 242 paths, 0 conflicts, 0 drift, exit 0
+
+THE CONTROL FOUND A BUG IN THE REPLAY TOOL ON ITS FIRST REAL RUN. snapshot.mjs
+dumps the whole chain state after every chapter, so a path appears in every
+chapter directory from its introduction onward. Reading "present" as "fenced by"
+produced empty commits, and `git cherry-pick` refuses an empty commit — the
+forced control came back with a conflict on nearly every path, at chapters as
+early as 1.04. Fixed by counting a key only where its snapshot differs from the
+previous key's. The state count fell 5,020 -> 644; the first figure was inflated
+by unchanged repeats.
+
+AND THE CONTROL ITSELF WAS WRONG TWICE BEFORE IT WAS RIGHT.
+
+  1. `--order current` leaves every sequence untouched, so all 242 paths took a
+     fast path and the control compared snapshots against copies of themselves.
+     5,020 green states, zero lines of merge machinery exercised. `--force-replay`
+     runs the merge regardless.
+
+  2. The drift check then compared against replay's OWN INPUT. A corrupted
+     snapshot was reproduced faithfully and the comparison passed. The target is
+     now the platform file for the 193 paths the appendix does not amend — an
+     independent one — and the pre-appendix snapshot for the 49 it does, counted
+     separately rather than silently trusted.
+
+FOUR PROBES WERE NEEDED TO MAKE THE CONTROL RED, AND THE FOUR ARE THE FINDING:
+
+  perturb a mid-chain snapshot        green — the next delta cancels it
+  perturb an appendix-amended path    green — its target IS the snapshot
+  perturb the last-changing chapter   green — later directories hold the original
+  perturb from that chapter onward    RED, exit 1, DRIFT infra.test.ts
+
+So the control detects a wrong END state, not a wrong intermediate one. An
+intermediate corruption that is later corrected is invisible to it. That is
+defensible — the chain's contract is the end state plus every hunk applying — but
+it is a limit, and it is recorded rather than assumed away.

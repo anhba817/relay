@@ -20,9 +20,31 @@ walks through a diff.
 
 ## Phase 1: Setup — and proving the instrument before trusting it
 
-- [ ] T001 Pin the starting state in `specs/045-part-3-rework/baseline.txt`: all fourteen gates with each exit code captured **outside any pipeline**, plus the numbers this feature is measured against — 24 chapters, 447,394 words, 242 fenced files, 904 fences, 1,429 source references, and the battery's 225.45 s mean with stdev 1.15. **`fail=1` inside a `for … | sort` runs in a subshell and dies with it**, which has printed "ALL GATES: GREEN" over a red one three times in feature 043. (SC-007)
-- [ ] T002 Build the snapshot tool at `specs/045-part-3-rework/snapshot.mjs`: replay the published chain and dump each path's state **after every chapter and again after `relay-tutorial/fences/post-series.md`**. **The appendix is part of the chain and the first tooling forgot it** — the omission showed as 70 reference-bearing lines present in the platform file and in no snapshot, concentrated in `eslint.config.mjs` and `vitest.coverage.config.mts`. (FR-016) **Copy `check-fence-chain.mjs` and truncate it rather than reimplementing the replay** — a generator that replays differently from the checker produces output the checker rejects for reasons neither explains.
-- [ ] T003 Build the replay tool at `specs/045-part-3-rework/replay.mjs`: for each path, commit the snapshots as a git history, cherry-pick them onto the new order, and emit each resulting state plus the fence between consecutive states. Conflicts stop and are reported by path, for hand resolution in T021.
+- [X] T001 Pin the starting state in `specs/045-part-3-rework/baseline.txt`: all fourteen gates with each exit code captured **outside any pipeline**, plus the numbers this feature is measured against — 24 chapters, 447,394 words, 242 fenced files, 904 fences, 1,429 source references, and the battery's 225.45 s mean with stdev 1.15. **`fail=1` inside a `for … | sort` runs in a subshell and dies with it**, which has printed "ALL GATES: GREEN" over a red one three times in feature 043. (SC-007)
+  All fourteen green, every exit code written to a file and counted from the file. The nine measured
+  numbers are pinned in `baseline.txt` and **all nine match the artifacts** — 24 chapters, 447,394
+  words, 623 titled and 99 untitled fences, 242 fenced paths, 183 comment-changed, 1,429 references,
+  49 appendix-amended.
+
+- [X] T002 Build the snapshot tool at `specs/045-part-3-rework/snapshot.mjs`: replay the published chain and dump each path's state **after every chapter and again after `relay-tutorial/fences/post-series.md`**. **The appendix is part of the chain and the first tooling forgot it** — the omission showed as 70 reference-bearing lines present in the platform file and in no snapshot, concentrated in `eslint.config.mjs` and `vitest.coverage.config.mts`. (FR-016) **Copy `check-fence-chain.mjs` and truncate it rather than reimplementing the replay** — a generator that replays differently from the checker produces output the checker rejects for reasons neither explains.
+  **240 of 240 paths in the post-appendix snapshot are byte-identical to `relay-platform`**, which is
+  the proof pass 3's finding demanded: the chain does not end at the last chapter, and a tool that
+  stops there reaches a state that is not the platform's. The script patches
+  `check-fence-chain.mjs` in place and deletes the copy, so there is one replay implementation in
+  this repository rather than two — and it **asserts both injection points match exactly once**,
+  because a silent no-op would produce an empty dump and a control that passes for the wrong reason.
+
+- [X] T003 Build the replay tool at `specs/045-part-3-rework/replay.mjs`: for each path, commit the snapshots as a git history, cherry-pick them onto the new order, and emit each resulting state plus the fence between consecutive states. Conflicts stop and are reported by path, for hand resolution in T021.
+  Built as a three-way merge, per the mechanism analysis pass 2 substituted for line attribution.
+
+  **AND THE CONTROL IMMEDIATELY FOUND A BUG IN IT.** `snapshot.mjs` dumps the whole chain state after
+  every chapter, so a path appears in every chapter directory from its introduction onward — including
+  chapters that never touch it. The first version read "present in the directory" as "fenced by that
+  chapter", which produced empty commits, and **`git cherry-pick` refuses an empty commit**: the
+  forced control came back with a conflict on nearly every path, at chapters as early as 1.04. A key
+  now counts only where its snapshot differs from the previous key's. The state count fell from 5,020
+  to **644**, which is the real number — the first figure was inflated by unchanged repeats.
+
 
   **THIS IS NOT THE MECHANISM THE PLAN FIRST SPECIFIED, AND THE REPLACEMENT WAS MEASURED.** The first
   design filtered the final file by line attribution — *the final file minus every line owned by a
@@ -35,8 +57,38 @@ walks through a diff.
   appendix also amends, a chapter fence must land on the state the appendix then amends — targeting
   the platform file overshoots by exactly those hunks, and `check:fences` reports the failure at the
   wrong place. (FR-016)
-- [ ] T004 **The control, and the reason Phase 1 exists.** Run `replay.mjs --order current` and require byte-exact reproduction of today's `app/(en)/part-3` fences. **A generator that cannot rebuild what already exists cannot be trusted to build what does not**, and every later phase reads its output. **This control has already caught one mechanism**: the attribution design reproduced **17 of 96** states under it, which is how T003's approach came to be replaced before a line of the book moved. (SC-005)
-- [ ] T005 Prove T004's control can fail: perturb one fence body in a Part 3 `page.mdx`, confirm the comparison names that file and that fence, restore. **A control that has never been red is a control nobody has tested** — feature 044 shipped two probes that could not fail, one of them written by the audit that exists to find them.
+- [X] T004 **The control, and the reason Phase 1 exists.** Run `replay.mjs --order current` and require byte-exact reproduction of today's `app/(en)/part-3` fences. **A generator that cannot rebuild what already exists cannot be trusted to build what does not**, and every later phase reads its output. **This control has already caught one mechanism**: the attribution design reproduced **17 of 96** states under it, which is how T003's approach came to be replaced before a line of the book moved. (SC-005)
+  **644 states reproduced byte-exact through the merge machinery.**
+
+  **THE FIRST VERSION OF THIS CONTROL PROVED NOTHING, TWICE.** `--order current` leaves every path's
+  sequence untouched, so all 242 took the fast path and the control compared snapshots against copies
+  of themselves: 5,020 green states and not one line of merge machinery exercised. `--force-replay`
+  now runs the merge regardless, and cherry-picking a history onto itself must reproduce it exactly.
+
+  **Then the target was wrong.** The drift check compared against `SNAP/<last chapter>/<path>` —
+  replay's own input — so a corrupted snapshot was reproduced faithfully and the comparison passed.
+  For the 193 paths the appendix does not amend, the target is now **the platform file**, which is
+  independent of the input. For the 49 it does amend, the chapter chain must stop short of the
+  platform and the snapshot is the only target there is; those are counted separately rather than
+  silently trusted.
+
+- [X] T005 Prove T004's control can fail: perturb one fence body in a Part 3 `page.mdx`, confirm the comparison names that file and that fence, restore. **A control that has never been red is a control nobody has tested** — feature 044 shipped two probes that could not fail, one of them written by the audit that exists to find them.
+  **Red, and it took four attempts to write a probe that could make it red.** Each failure is a fact
+  about what this control detects:
+
+  | Probe | Result | Why |
+  |---|---|---|
+  | perturb one mid-chain snapshot | green | the next delta is computed from the perturbed state back to the unperturbed one, so it cancels |
+  | perturb an appendix-amended path | green | its target is the snapshot by design — the chapter chain must stop short of the platform |
+  | perturb only the last-changing chapter | green | `snapshot.mjs` writes the state into every later directory, so a later copy registers as a change back |
+  | **perturb from that chapter onward** | **exit 1, `DRIFT packages/config/src/infra.test.ts`** | the final state no longer equals the platform |
+
+  **So the control detects a wrong END state, not a wrong intermediate one** — and an intermediate
+  corruption that is later corrected is invisible to it. That is defensible, since the chain's
+  contract is the end state plus every hunk applying, but it is a limit and it is now written down
+  rather than assumed away. **Two probes in feature 044 failed to go red while appearing to test
+  something; here four did, and the four are the finding.**
+
 
 **Checkpoint**: the tool reproduces the present. Nothing has moved.
 
