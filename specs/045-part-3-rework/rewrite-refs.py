@@ -20,7 +20,8 @@ HERE = pathlib.Path(__file__).resolve().parent
 PLAT = HERE.parent.parent / "relay-platform"
 sys.path.insert(0, str(HERE))
 
-from refrules import REF, SPLIT, chapter_of, classify, controls_failing, is_versionish
+import refrules
+from refrules import is_deliberate, REF, SPLIT, chapter_of, classify, controls_failing, is_versionish
 
 NAMES = {c["was"]: c["name"] for c in json.loads((HERE / "subjects.json").read_text())["chapters"]}
 
@@ -38,8 +39,7 @@ def delete_one(line: str, m: re.Match) -> str:
     # THE SAME MARKER SHAPE `refrules` RECOGNISES, or the capital never gets restored.
     # This tested only `[.:]` while classification had widened to any separator, so
     # `/** Chapter 3.2, research R8: …` became `/** research R8: …` in lower case.
-    OPENER = r"^\s*(?:it\(|describe\()?[\s\"\'/*]*"
-    tag = bool(re.match(OPENER + re.escape(ref) + r"\s*[.,:;\u2014-]", line)) or \
+    tag = bool(re.match(refrules.MARKER_OPENER + re.escape(ref) + r"\s*[.,:;\u2014-]", line)) or \
           bool(re.match(r"^\s*[/*\s]*" + re.escape(ref) + r"\s+\(", line))
     # A `(3.N)` match carries its own parentheses; removing it plus the space before is
     # the whole edit. Handled first, because the generic paren shape below would look for
@@ -63,8 +63,7 @@ def delete_one(line: str, m: re.Match) -> str:
         new = re.sub(pat, rep, line, count=1)
         if new != line:
             if tag:
-                return re.sub(r"^(\s*(?://|/\*\*?|\*)\s*)([a-z])",
-                              lambda g: g.group(1) + g.group(2).upper(), new, count=1)
+                return refrules.recapitalise(new)
             return new
     return line
 
@@ -72,27 +71,11 @@ def substitute_one(line: str, m: re.Match) -> str:
     name = NAMES.get(f"3.{chapter_of(m.group(0))}")
     if not name:
         return line
-    ref = m.group(0)
-    if ref.endswith("'s"):
-        new = name + "'s"
-    elif line[m.end():m.end() + 2] == "'s":
-        new = name
-    else:
-        new = name
-    # CAPITALISE ON SENTENCE POSITION, NOT ON THE REFERENCE'S OWN CASE.
-    #
-    # This read `if ref[0].isupper()`, and in a codebase that writes ALL-CAPS for
-    # emphasis that is the wrong signal. `**THIS LINE IS THE ONE CHAPTER 3.21 FORGOT.**`
-    # became `**THIS LINE IS THE ONE The typing chapter FORGOT.**`, and
-    # `and CHAPTER 3.11 STRENGTHENED THAT` became `and The connection-metering chapter
-    # STRENGTHENED THAT`. An upper-case reference mid-sentence is emphasis; only its
-    # position can say whether a capital belongs.
-    before = line[:m.start()].rstrip()
-    opener = re.match(r"^\s*(?://+|/\*\*?|\*)\s*\**$", before)
-    sentence_start = not before or bool(opener) or bool(re.search(r"[.!?]\s*\**$", before))
-    if sentence_start:
-        new = new[0].upper() + new[1:]
-    return line[:m.start()] + new + line[m.end():]
+    # THE PLACEMENT IS `refrules.place_name`, AND IT WAS A COPY HERE. The copy had no
+    # plural cut and no all-caps handling, both of which the read class's version grew —
+    # so `chapters 3.10 and 3.11` and `**THE ONE CHAPTER 3.21 FORGOT**` came out wrong
+    # from this rule and right from that one. Two copies of a rule are two rules.
+    return refrules.place_name(line, m, name)
 
 def main() -> int:
     broken = controls_failing()
@@ -105,9 +88,13 @@ def main() -> int:
     apply = "--apply" in sys.argv
     found = rewritten = 0
     samples, touched = [], set()
-    for d in ("services", "packages"):
-        for f in sorted((PLAT / d).rglob("*.ts")):
-            if "node_modules" in str(f) or "/dist/" in str(f):
+    # ONE CORPUS, DEFINED IN `refrules`. This walked `services` and `packages` for
+    # `*.ts`, which is neither every directory nor every source suffix: it missed
+    # `vitest.coverage.config.mts` (37 references), `eslint.config.mjs` (24), fifteen
+    # `.sql` migrations, `compose.yaml` and ten `scripts/*.mjs` — 154 in 34 files.
+    if True:
+        for f in refrules.platform_files(PLAT):
+            if False:
                 continue          # dist/ is build output, gitignored and regenerated
             rel = str(f.relative_to(PLAT))
             if scope and not rel.startswith(scope):

@@ -21,7 +21,8 @@ import json, pathlib, re, sys
 HERE = pathlib.Path(__file__).resolve().parent
 PLAT = HERE.parent.parent / "relay-platform"
 sys.path.insert(0, str(HERE))
-from refrules import REF, RULE_LINE, SPLIT, TEMPORAL, chapter_of, classify, is_versionish
+import refrules
+from refrules import is_deliberate, REF, RULE_LINE, SPLIT, TEMPORAL, chapter_of, classify, is_versionish
 
 NAMES = {c["was"]: c["name"] for c in json.loads((HERE / "subjects.json").read_text())["chapters"]}
 # The split chapter's two halves. A sentence about the sealed package, the outsider or the
@@ -71,51 +72,22 @@ def rewrite(line: str, m: re.Match, kind: str) -> str:
                 return out
         out = re.sub(re.escape(ref) + r":\s*", "", line, count=1)
         return out if out != line else line
-    new = name + ("'s" if ref.endswith("'s") else "")
-    before_raw = line[:m.start()]
-
-    # A PLURAL "chapters X and Y" LOSES ITS NOUN WHEN EACH ORDINAL BECOMES A NOUN PHRASE.
-    # `which chapters 3.10 and 3.11 added` became `which chapters the quota chapter and the
-    # connection-metering chapter added`. Seven lines in the tree, caught by the damage
-    # scan. The plural goes with the first substitution.
-    plural = re.search(r"\b[Cc]hapters\s+$", before_raw)
-    prefix_cut = plural.start() if plural else m.start()
-
-    # AN ALL-CAPS RUN STAYS ALL-CAPS. `STANDALONE SINCE CHAPTER 3.11` must not become
-    # `SINCE the connection-metering chapter`, and a bare `3.23` carries no case of its own
-    # — so the two words before it are what decide.
-    tail = re.findall(r"[A-Za-z]{2,}", before_raw)[-2:]
-    shouting = ref.isupper() or (tail and all(w.isupper() for w in tail))
-    if shouting:
-        return line[:prefix_cut] + new.upper() + line[m.end():]
-
-    before = before_raw.rstrip()
-    # A BARE `3.N` IS NEVER A SENTENCE START in this codebase — a sentence says
-    # "Chapter 3.N". `// 3.3 and is at the bottom of this file` is a continuation, and
-    # capitalising it on the strength of the `//` gave `// The outbox chapter and is at
-    # the bottom`.
-    # A BARE `3.N` IS USUALLY A CONTINUATION — `// 3.3 and is at the bottom of this file`
-    # follows a sentence that began on the line above, and capitalising it gave
-    # `// The outbox chapter and is at the bottom`. But `// 3.8 added a fifth container`
-    # genuinely opens one. The difference is whether anything but the comment opener sits
-    # in front of it, so that is what decides rather than the class.
-    opener = re.match(r"^\s*(?://+|/\*\*?|\*)\s*\**$", before)
-    first_token = bool(opener) and not re.search(r"[a-z]", before)
-    if not before or first_token or re.search(r"[.!?]\s*\**$", before):
-        new = new[0].upper() + new[1:]
-    end = m.end() + (2 if line[m.end():m.end() + 2] == "'s" and not ref.endswith("'s") else 0)
-    if line[m.end():m.end() + 2] == "'s" and not ref.endswith("'s"):
-        new += "'s"
-    return line[:prefix_cut] + new + line[end:]
+    # Everything but a section rule places a name exactly as the substitute rule does,
+    # and this was the copy the substitute rule diverged from. One implementation now.
+    return refrules.place_name(line, m, name)
 
 def main() -> int:
     kind = sys.argv[sys.argv.index("--kind") + 1]
     apply = "--apply" in sys.argv
     found = done = 0
     samples, touched = [], set()
-    for d in ("services", "packages"):
-        for f in sorted((PLAT / d).rglob("*.ts")):
-            if "node_modules" in str(f) or "/dist/" in str(f):
+    # ONE CORPUS, DEFINED IN `refrules`. This walked `services` and `packages` for
+    # `*.ts`, which is neither every directory nor every source suffix: it missed
+    # `vitest.coverage.config.mts` (37 references), `eslint.config.mjs` (24), fifteen
+    # `.sql` migrations, `compose.yaml` and ten `scripts/*.mjs` — 154 in 34 files.
+    if True:
+        for f in refrules.platform_files(PLAT):
+            if False:
                 continue          # dist/ is build output, gitignored and regenerated
             lines = f.read_text(encoding="utf-8").splitlines(keepends=True)
             changed = False

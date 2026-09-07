@@ -31,7 +31,7 @@ BRANCHES = {
 }
 REF = re.compile("|".join(pat for pat, _, _ in BRANCHES.values()))
 ID = re.compile(r"\b(FR|SC|NFR|EIR|ADR|CON|DR|ASM)-[A-Z]*-?\d+[a-z]?\b")
-RULE_LINE = re.compile(r"^\s*//\s*(?:[─=]{2,}|-{3,})")
+RULE_LINE = re.compile(r"^\s*(?://|--|#)\s*(?:[─=]{2,}|-{3,})")
 # A REFERENCE AFTER ONE OF THESE CANNOT SIMPLY BE DELETED. "which the route began
 # accepting in chapter 3.15" loses its object and ends on "in"; "narrowed by 3.11's
 # FR-044" becomes "narrowed by's FR-044". Both were applied to the tree once — 52 of
@@ -44,7 +44,12 @@ PREPOSITION = re.compile(
 # about why: the mail chapter has nothing to do with migrations. These take a rewritten
 # sentence, so they route to `read`.
 TEMPORAL = re.compile(r"\b(since|until|before|after|by the time)\s*$", re.I)
-VERSIONISH = re.compile(r'\d\.\d+\.\d|"\d|\bv3\.|gaps\.md\s+3\.\d')
+# A MAGNITUDE IS NOT A CHAPTER. `-- century reaches 3.2 billion, which overflows
+# `integer`` was classified as a reference to the credentials chapter. The unit is what
+# separates them, and it always follows.
+VERSIONISH = re.compile(
+    r'\d\.\d+\.\d|"\d|\bv3\.|gaps\.md\s+3\.\d'
+    r'|3\.\d{1,2}\s*(?:billion|million|thousand|bn|m\b|k\b|%|s\b|ms\b|x\b|GB|MB|KB)')
 SPLIT = 14
 
 
@@ -66,12 +71,179 @@ def controls_failing() -> list[str]:
     return bad
 
 
+# ORDINALS KEPT ON PURPOSE, AND THE ONLY ONES.
+#
+# `schema.ts` carries a comment whose SUBJECT is this feature's defect: it quotes what the
+# line used to say and cites the number's movement as the evidence. The substitute rule
+# rewrote inside the quotation, so `This line used to say "the deduplication chapter's
+# cross-tenant gauntlet"` became a false statement about text — it never said that — and
+# `The gauntlet was 3.7 … became 3.8 … is now 3.9` lost the three numbers that ARE the
+# argument.
+#
+# A RULE THAT IS RIGHT ABOUT A REFERENCE IS WRONG ABOUT A QUOTATION OF ONE. Listed by
+# exact text rather than detected, because "is this line talking about ordinals or using
+# one" is not a question a pattern answers, and an exemption nobody can enumerate is an
+# exemption nobody can review.
+DELIBERATE = frozenset({
+    '// NAMED, NOT NUMBERED. This line used to say "chapter 3.7\'s cross-tenant',
+    '// gauntlet". The gauntlet was 3.7 when that was written, became 3.8 when a chapter',
+    '// was inserted ahead of it, and is now 3.9 after a second insertion — and the',
+})
+
+
+def is_deliberate(line: str) -> bool:
+    return line.strip() in {x.strip() for x in DELIBERATE}
+
+
 def is_versionish(line: str, m: re.Match) -> bool:
     return bool(VERSIONISH.search(line[max(0, m.start() - 24):m.end() + 16]))
 
 
+# WHICH FILES ARE "PLATFORM SOURCE". This was `rglob("*.ts")` in three scripts and it
+# misses `.mts`, `.mjs`, `.sql`, `compose.yaml` and every shell script — 154 references in
+# 34 files, including `vitest.coverage.config.mts` (37) and `eslint.config.mjs` (24), both
+# of which the appendix fences. `classify-refs.py` then reported "0 references in 0 files,
+# every Part-3 ordinal in platform source now names its subject" over a corpus that
+# excluded all of them. A CHECKER WHOSE CORPUS IS NARROWER THAN ITS CLAIM says nothing,
+# and it says it in the language of a pass.
+SOURCE_SUFFIXES = (".ts", ".mts", ".cts", ".js", ".mjs", ".cjs", ".sql", ".yaml", ".yml", ".sh")
+SKIP = ("/dist/", "/node_modules/", "/.git/", "/coverage/", "/.turbo/", "/build/")
+
+
+def fenced_paths(tutorial):
+    """Every path a titled fence names — the checker's own definition of the corpus.
+
+    WHY THE SUFFIX LIST IS NOT ENOUGH. `services/api/Dockerfile` has no extension, so it
+    was outside `SOURCE_SUFFIXES` and outside every scan — and it is FENCED, published in
+    chapter 3.5, carrying `# The api (chapter 3.5).`. The fence was rewritten and the
+    platform file was not, which `check:fences` reported as a HEAD mismatch in the
+    opposite direction from every other one. 24 fenced paths sit outside the suffix list;
+    this is the only one that carried a reference, and there was no way to know that
+    without asking.
+    """
+    import re as _re
+    from pathlib import Path as _P
+    tutorial = _P(tutorial)
+    out = set()
+    files = sorted(tutorial.glob("app/(en)/**/page.mdx")) + [tutorial / "fences/post-series.md"]
+    for f in files:
+        if not f.exists():
+            continue
+        for m in _re.finditer(r'^```\w+ title="([^"]+)"', f.read_text(encoding="utf-8"), _re.M):
+            t = m.group(1)
+            if "(excerpt)" in t or ".naive." in t:
+                continue
+            out.add(t.split(",")[0].split(" before ")[0].split(" (deleted)")[0].strip())
+    return out
+
+
+def platform_files(root, tutorial=None):
+    """Every platform file a reference can hide in, in one place.
+
+    The union of two definitions, because neither alone is the corpus: files with a source
+    suffix (which a reader compiles) and files a titled fence names (which a reader
+    types). `tutorial` defaults to the sibling checkout.
+    """
+    from pathlib import Path as _P
+    root = _P(root)
+    tutorial = _P(tutorial) if tutorial else root.parent / "relay-tutorial"
+    fenced = fenced_paths(tutorial)
+    for f in sorted(root.rglob("*")):
+        rel = str(f.relative_to(root))
+        s = "/" + rel
+        if not f.is_file():
+            continue
+        if f.suffix not in SOURCE_SUFFIXES and rel not in fenced:
+            continue
+        if any(k in s + "/" for k in SKIP):
+            continue
+        yield f
+
+
+# A COMMENT OPENER IS NOT ALWAYS `//`. Migrations open with `--` and compose files and
+# shell scripts with `#`, so a reference first on such a line was not seen as a sentence
+# start and came out lower-case: `-- the outbox chapter published events`. This is the
+# same omission as the corpus one, one level down.
+# Named in full because `classify` has a LOCAL `OPENER` that means something else
+# entirely — the text allowed BEFORE a reference, not a whole-line opener.
+COMMENT_OPENER = re.compile(r"^\s*(?://+|/\*\*?|\*|--+|#+)\s*\**$")
+
+
+def recapitalise(line: str) -> str:
+    """Restore the capital a deleted sentence-initial marker took with it.
+
+    THE FOURTH COPY OF THE OPENER SET, and the one that made the other three's fix look
+    like it had not worked. `classify` and `delete_one` were both taught that `--` and
+    `#` open a comment; this regex was not, so `-- Chapter 3.1 — the tenancy hierarchy`
+    was correctly recognised as a tag, correctly stripped, and then left as
+    `-- the tenancy hierarchy` because the capital is restored somewhere else again.
+    """
+    return re.sub(r"^(\s*(?://+|/\*\*?|\*|--+|#+)\s*)([a-z])",
+                  lambda g: g.group(1) + g.group(2).upper(), line, count=1)
+
+
+def place_name(line: str, m: re.Match, name: str) -> str:
+    """Put `name` where the reference `m` was, with the case and plural the site needs.
+
+    ONE IMPLEMENTATION, TWO CALLERS. `substitute_one` and the read class's `rewrite` each
+    carried a copy of this, and the copies had drifted: only `rewrite` cut the dangling
+    plural and only `rewrite` kept an all-caps run in caps, so the substitute rule
+    produced `chapters the quota chapter and the connection-metering chapter` and
+    `**THE ONE the typing chapter FORGOT**` on lines the other rule handled correctly.
+    """
+    ref = m.group(0)
+    new = name + ("'s" if ref.endswith("'s") else "")
+
+    # A PLURAL LOSES ITS NOUN WHEN EACH ORDINAL BECOMES A NOUN PHRASE. `chapters 3.10 and
+    # 3.11 added` -> `chapters the quota chapter and …`. The plural is cut with the first
+    # substitution.
+    before_raw = line[:m.start()]
+    plural = re.search(r"\b[Cc]hapters\s+$", before_raw)
+    prefix_cut = plural.start() if plural else m.start()
+
+    # AND THE CASE TEST MUST READ THE TEXT THAT WILL ACTUALLY PRECEDE THE NAME. It read
+    # `line[:m.start()]`, which still ends in "Chapters" when the plural is being cut, so
+    # `// feature (T008). Chapters 3.15 and 3.16 add` came out lower-case after a period.
+    before = line[:prefix_cut].rstrip()
+
+    # AN UPPER-CASE REFERENCE AT THE START OF A LINE DECIDES NOTHING BY ITSELF, because
+    # this codebase writes `CHAPTER 3.21` for emphasis in a comment that then continues
+    # in ordinary case. With nothing in front of it to read, the words AFTER it are the
+    # signal:
+    #     // CHAPTER 3.21, and the second inbound frame  -> The typing chapter, and …
+    #     // CHAPTER 3.21, AND THIS LINE HAD NO OWNER    -> THE TYPING CHAPTER, AND …
+    # Keying on `ref.isupper()` alone gave `// THE TYPING CHAPTER, and the second …`,
+    # caps colliding with lower case in one clause.
+    tail = re.findall(r"[A-Za-z]{2,}", before)[-2:]
+    ahead = re.findall(r"[A-Za-z]{2,}", line[m.end():])[:2]
+    shouting = (all(w.isupper() for w in tail) if tail
+                else bool(ahead) and all(w.isupper() for w in ahead))
+    if shouting:
+        return line[:prefix_cut] + new.upper() + line[m.end():]
+
+    opener = COMMENT_OPENER.match(before)
+    first_token = bool(opener) and not re.search(r"[a-z]", before)
+    if not before or first_token or re.search(r"[.!?]\s*\**$", before):
+        new = new[0].upper() + new[1:]
+
+    end = m.end()
+    if line[m.end():m.end() + 2] == "'s" and not ref.endswith("'s"):
+        new += "'s"
+        end += 2
+    return line[:prefix_cut] + new + line[end:]
+
+
 def chapter_of(ref: str) -> int:
     return int(re.search(r"3\.(\d{1,2})", ref).group(1))
+
+
+# THE TEXT ALLOWED IN FRONT OF A SENTENCE-INITIAL MARKER. A string, because it is
+# concatenated with an escaped reference. THERE WERE THREE COPIES: `classify`,
+# `delete_one`, and a fourth shape in the read class. Two of them still read
+# `[\s"'/*]` when the third had grown `#` and `-`, so `-- Chapter 3.1 — the tenancy
+# hierarchy` classified as a tag and then came out `-- the tenancy hierarchy`, the
+# capital never restored because the OTHER copy decided that.
+MARKER_OPENER = r"^\s*(?:it\(|describe\()?[\s\"'/*#-]*"
 
 
 def classify(line: str, m: re.Match) -> str:
@@ -109,6 +281,27 @@ def classify(line: str, m: re.Match) -> str:
     if bare:
         return "read"                     # `and 3.20 for presence` — 117, context decides
 
+    # AND `--` AND `#` OPEN A COMMENT TOO. This class held `[\s"'/*]` only, so
+    # `-- Chapter 3.1 — the tenancy hierarchy (FR-TEN-01)` — the header of every one of
+    # fifteen migrations — could not match a sentence-initial marker and fell all the way
+    # through to `read`. Same omission as the corpus and as `COMMENT_OPENER`, three levels
+    # of the same file.
+    # BUT A MARKER FOLLOWED BY A COMMA AND A CONJUNCTION IS THE SUBJECT, NOT A TAG.
+    # `// Chapter 3.17. THE SUBJECT IS A ROW …` stands up without its label; delete it.
+    # `// Chapter 3.22, and NOT for the reason the four above give.` does not — deleting
+    # gives `// And NOT for the reason the four above give.`, a sentence with no subject
+    # at all. The two shapes differ by one character of punctuation, and this test must
+# sit ABOVE the deletions: `^\s*[/*\s]*<ref>\s*[.:]` matched `// Chapter 3.8:` and
+# returned delete three lines before this rule was reached. Four lines in
+    # `eslint.config.mjs` and `vitest.coverage.config.mts`, which are per-chapter
+    # exemption lists where the chapter IS what each entry is about.
+    # AND THE PUNCTUATION IS NOT ALWAYS A COMMA. A colon and a full stop introduce the
+    # same clause — `// Chapter 3.8: and no notification relay either` and
+    # `// Chapter 3.11. So is 402` — so it is the CONJUNCTION that decides, not the mark
+    # in front of it. Restricting this to a comma caught 4 of the 23 in the tree.
+    if re.match(MARKER_OPENER + re.escape(ref) + r"\s*[.,:;—-]\s*(?i:and|but|so|nor|or|yet)\b", line):
+        return "substitute"
+
     # Now the deletions, in shape order. Everything left is `chapter 3.N` or `(3.N)`.
     # A SENTENCE-INITIAL PROVENANCE MARKER, ALONE OR WITH COMPANY.
     # `// Chapter 3.8: nor the relay` and `/** Chapter 3.23, ADR-24. Register the…` are
@@ -125,8 +318,7 @@ def classify(line: str, m: re.Match) -> str:
     #     it("chapter 3.23: an edit on the fabric arrives as message.updated"
     # Requiring `.` or `:` left 86 of these in the read class, where they are not prose
     # judgements at all — they are the same tag with different punctuation.
-    OPENER = r"^\s*(?:it\(|describe\()?[\s\"'/*]*"
-    if re.match(OPENER + re.escape(ref) + r"\s*[.,:;\u2014-]", line) or \
+    if re.match(MARKER_OPENER + re.escape(ref) + r"\s*[.,:;\u2014-]", line) or \
        re.match(r"^\s*[/*\s]*" + re.escape(ref) + r"\s+\(", line):
         return "delete"
     if ref.startswith("("):

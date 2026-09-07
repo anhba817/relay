@@ -89,12 +89,12 @@ if (problems.length) {
 rmSync(out, { recursive: true, force: true });
 mkdirSync(out, { recursive: true });
 writeFileSync(PATCHED, patched);
-try {
-  const r = spawnSync(process.execPath, [PATCHED], {
-    stdio: "inherit",
-    env: { ...process.env, SNAPSHOT_OUT: out },
-  });
-  process.exit(r.status ?? 1);
-} finally {
-  rmSync(PATCHED, { force: true });
-}
+// `process.exit()` SKIPS `finally`, so the cleanup cannot live there. The first version
+// used try/finally and left `scripts/.snapshot-generated.mjs` in the tutorial's working
+// tree — a generated file that then showed up as untracked content in a submodule.
+const r = spawnSync(process.execPath, [PATCHED], {
+  stdio: "inherit",
+  env: { ...process.env, SNAPSHOT_OUT: out },
+});
+rmSync(PATCHED, { force: true });
+process.exit(r.status ?? 1);

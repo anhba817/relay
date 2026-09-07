@@ -27,7 +27,8 @@ import json, pathlib, re, sys
 HERE = pathlib.Path(__file__).resolve().parent
 PLAT = HERE.parent.parent / "relay-platform"
 
-from refrules import REF, ID, RULE_LINE, SPLIT, classify, controls_failing, is_versionish
+import refrules
+from refrules import is_deliberate, REF, ID, RULE_LINE, SPLIT, classify, controls_failing, is_versionish
 
 def main() -> int:
     broken = controls_failing()
@@ -41,12 +42,20 @@ def main() -> int:
     only = sys.argv[sys.argv.index("--rule") + 1] if "--rule" in sys.argv else None
     counts, files = {"delete": 0, "substitute": 0, "read": 0}, {}
     rows = []
-    for d in ("services", "packages"):
-        for f in sorted((PLAT / d).rglob("*.ts")):
-            if "node_modules" in str(f) or "/dist/" in str(f):
+    deliberate = 0
+    # ONE CORPUS, DEFINED IN `refrules`. This walked `services` and `packages` for
+    # `*.ts`, which is neither every directory nor every source suffix: it missed
+    # `vitest.coverage.config.mts` (37 references), `eslint.config.mjs` (24), fifteen
+    # `.sql` migrations, `compose.yaml` and ten `scripts/*.mjs` — 154 in 34 files.
+    if True:
+        for f in refrules.platform_files(PLAT):
+            if False:
                 continue          # dist/ is build output — gitignored and regenerated
             rel = str(f.relative_to(PLAT))
             for n, line in enumerate(f.read_text(encoding="utf-8", errors="replace").splitlines(), 1):
+                if is_deliberate(line):
+                    deliberate += 1
+                    continue
                 for m in REF.finditer(line):
                     if is_versionish(line, m):
                         continue          # a version number, not a chapter
@@ -68,6 +77,8 @@ def main() -> int:
 
     tot = sum(counts.values())
     print(f"classify-refs: {tot} references in {len(files)} files, all 7 controls fired through REF")
+    if deliberate:
+        print(f"  plus {deliberate} kept ON PURPOSE (refrules.DELIBERATE) — a comment whose subject IS an ordinal")
     if not tot:
         # ZERO IS THE GOAL, AND IT CRASHED ON IT. `counts[k]*100//tot` divided by zero the
         # moment the last reference was rewritten — a script that cannot report its own
