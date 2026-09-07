@@ -81,11 +81,15 @@ need a check of their own rather than the chain's.
 
 A mention of a chapter, from prose, a source comment, or a record.
 
-| Class | Count | What it becomes |
+| Rewrite it needs | Count | What it becomes |
 |---|---|---|
-| beside a requirement id | 416 | the ordinal is deleted; the id was always the durable half |
-| a plain subject reference | 923 | a name, from the 24-entry table |
-| a positional claim | 90 | a rewritten sentence |
+| **delete the tag** | ~757 | the parenthetical or the sentence-initial marker goes; where it carried a requirement id, that id stays |
+| **substitute a name** | ~605 | a noun phrase from the 24-entry table |
+| **read and rewrite** | ~70 | a restated sentence — section rules and temporal claims |
+
+**Classified by the rewrite, not by the appearance.** Sorting by shape gave 416 / 923 / 90 and put
+every parenthetical tag without a requirement id into "substitute", where nearly half of them need no
+table entry at all.
 
 **1,429 in `relay-platform` source** — all `.ts` under `services/` and `packages/` — of which
 **1,298** sit inside the **183** fenced paths. The specification recorded 985 and 166; both came from

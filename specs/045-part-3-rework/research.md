@@ -162,24 +162,36 @@ see it.
 
 ## R5 — What does rewriting 1,429 source references actually cost?
 
-**Decision: three classes, and only 6% of them need a person to think.**
+**Decision: three rewrites, and half of them are deletions.**
 
-Every chapter reference in `relay-platform` source was classified by the 70 characters either side:
+Every chapter reference in `relay-platform` source was classified by **the rewrite it needs**, which
+is not the same question as what it looks like:
 
-| Class | Count | Share | Rewrite |
+| Rewrite | Count | Share | What it is |
 |---|---|---|---|
-| sits beside a requirement id — `(chapter 3.21, FR-RTM-08)` | 416 | 29% | **delete the ordinal**, keep the id, which was always the durable half |
-| plain subject reference — `chapter 3.20's finding` | 923 | 64% | substitute from a 24-entry table of chapter subjects |
-| positional claim — `a describe-level teardown cost chapter 3.20` | 90 | 6% | rewrite the sentence by hand |
+| **delete the tag** | ~757 | 53% | a parenthetical provenance note — `(chapter 3.2)`, `(chapter 3.17, T059)` — or a sentence-initial marker, `// Chapter 3.8: nor the notification relay`. The sentence stands without it and **no name is needed** |
+| **substitute a name** | ~605 | 42% | possessives and subjects of verbs — `chapter 3.20's finding`, `chapter 3.18 measured that` — where a noun phrase from the 24-entry table fits |
+| **read and rewrite** | ~70 | 5% | section rules `// ── chapter 3.18: two instances ──`, and temporal claims where "since the rate-limit chapter" reads worse than restating the fact |
 
-The count is 1,429 rather than the specification's 985 because this pass used a wider pattern —
-`3.20's` without the word "chapter" was not matched before. **The number in the specification was
-low, and the correction is in the direction the plan expects.**
+**THIS TABLE READ 416 / 923 / 90 AND THE MIDDLE COLUMN WAS HALF WRONG.** The first classification
+sorted by *appearance* — beside a requirement id, plain subject reference, positional claim — and put
+every parenthetical tag without an id into "substitute". Nearly half of them need no table entry at
+all. `subjects.json` serves ~605 references, not 923.
 
-**The 29% class is the interesting one.** Those comments already carry the reference that does not
-age. Deleting the chapter number from them loses nothing at all.
+### How the counts were arrived at, and how far to trust them
 
----
+**Three classifiers gave three answers.** A keyword classifier put 90 references in the expensive
+class. A structural re-classification put **407** there — a 4.5× disagreement — because it counted
+only possessives as substitutable and dumped every subject-of-a-verb into "read".
+
+**Reading twelve actual sentences resolved it at about 70**, close to the first classifier's 90: nine
+of the twelve were plainly substitutable, one was a mis-classified parenthetical, one a section rule,
+one a temporal claim. **The first estimate was right and its reasoning was not**, which is worth more
+than the number.
+
+**Twelve is a thin sample and the ~70 carries that.** The delete and substitute counts are structural
+and firmer; the expensive class is the one to re-measure when the work starts, because it is the one
+that decides how long this takes.
 
 ## R6 — What shape must a Vietnamese placeholder take?
 

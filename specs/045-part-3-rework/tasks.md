@@ -46,9 +46,9 @@ walks through a diff.
 
 **Blocking.** Every later phase reads one of these.
 
-- [ ] T006 Write the subject-name table at `specs/045-part-3-rework/subjects.json`: one entry per Part 3 chapter, keyed by slug, giving the phrase a source comment should use — `webhooks-that-survive-the-customer` → "the webhook dispatcher chapter". **Keyed by slug and not by number**, because the number is the thing being retired.
+- [ ] T006 Write the subject-name table at `specs/045-part-3-rework/subjects.json`: one entry per Part 3 chapter, keyed by slug, giving the phrase a source comment should use — `webhooks-that-survive-the-customer` → "the webhook dispatcher chapter". **Keyed by slug and not by number**, because the number is the thing being retired. **It serves ~605 references, not 923** — the other ~757 are tags that delete and consult no table.
 - [ ] T007 Write the chapter map at `specs/045-part-3-rework/chapter-map.json` from `contracts/chapter-map.md`. **One record, two consumers** — the published mapping page and the redirects. A hand-maintained pair is the defect the port bands taught this project, and it cost chapter 3.24 an unexplainable eleventh red. (FR-014, SC-008)
-- [ ] T008 [P] Write `specs/045-part-3-rework/classify-refs.py`: emit every one of the 1,429 source references with its file, line, class and proposed rewrite. Three classes, measured in research R5 — 416 beside a requirement id, 923 plain subject references, 90 positional claims. **Report the pattern and the corpus with every count**: 1,429 is all `.ts` under `services/` and `packages/`, 1,298 is the subset inside the 183 fenced paths, and the 985 this feature planned against came from a pattern missing a capital `C`. **Give the pattern a positive control and report a pattern that fails its own example as BROKEN rather than as zero**: `grep` here is ugrep 7.8.4, and a grouped alternation followed by two negated classes matches nothing under it. (FR-008, SC-002)
+- [ ] T008 [P] Write `specs/045-part-3-rework/classify-refs.py`: emit every one of the 1,429 source references with its file, line, class and proposed rewrite. Three classes, measured in research R5 by **the rewrite each needs** — ~757 delete, ~605 substitute, ~70 read. **Classifying by appearance instead gave 416 / 923 / 90 and was half wrong in the middle column.** **Report the pattern and the corpus with every count**: 1,429 is all `.ts` under `services/` and `packages/`, 1,298 is the subset inside the 183 fenced paths, and the 985 this feature planned against came from a pattern missing a capital `C`. **Give the pattern a positive control and report a pattern that fails its own example as BROKEN rather than as zero**: `grep` here is ugrep 7.8.4, and a grouped alternation followed by two negated classes matches nothing under it. (FR-008, SC-002)
 - [ ] T009a [P] Write `specs/045-part-3-rework/check-registry.py`: `relay-tutorial/lib/tutorial.ts` declares every chapter's number, path, title, `titleVi` and reading time **by hand**, and the sitemap plus six components read it — the sidebar, the chapter shell's previous and next links, the site header, the landing page and the language switcher. Compare it against the filesystem **in both directions** and test it red each way. **Nothing checks this file today**, and it agrees at 41 and 41, which is what makes silent drift possible rather than unlikely. (FR-015, SC-009)
 - [ ] T009b [P] Write `specs/045-part-3-rework/check-fence-parity.py`: count **every** fence in each chapter, titled and untitled, and require the English and Vietnamese pages to agree per chapter. **`check:fences` cannot do this** — `check-fence-chain.mjs:77` collects a fence only when it matches `title="…"`, so it compares 623 per locale in Part 3 and never sees the other **99**. Test it red by deleting one untitled fence from a Vietnamese page. (FR-010, SC-006)
 - [ ] T009 [P] Write `specs/045-part-3-rework/check-map.py`: the map is a bijection over 24 old and 25 new chapters, every slug exists on disk, and **every new ordinal is used exactly once**. Test it red on a duplicate and on a missing slug. (FR-007, FR-014)
@@ -63,17 +63,25 @@ walks through a diff.
 
 **Independent test**: count Part-3 chapter-number references in `relay-platform`. 1,429 today; zero in fenced files after.
 
-- [ ] T010 [US3] Rewrite the 416 references that sit beside a requirement id, across the `.ts` files of `relay-platform`: **delete the ordinal and keep the id**. `(chapter 3.21, FR-RTM-08)` becomes `(FR-RTM-08)`. This class loses nothing at all — the durable reference was already there. (FR-008)
-- [ ] T011 [US3] Rewrite the plain subject references in `relay-platform/packages/` from `subjects.json`, and record the count done against the count found. (FR-008)
-- [ ] T011a [US3] Rewrite them in `relay-platform/services/api/src/db/` — `repository.ts` alone holds 129 references, the largest concentration in the tree. (FR-008)
-- [ ] T011b [US3] Rewrite them in the rest of `relay-platform/services/api/`, outside `src/db/repository.ts`, located with `grep -rn`. (FR-008)
-- [ ] T011c [US3] Rewrite them in `relay-platform/services/gateway/` and `services/dispatcher/`, located with `grep -rn`. (FR-008)
+- [ ] T010 [US3] **DELETE the tag** — the ~757 references that are a parenthetical provenance note or a sentence-initial marker, across the `.ts` files of `relay-platform`. `(chapter 3.21, FR-RTM-08)` becomes `(FR-RTM-08)`; `(chapter 3.2)` at the end of a sentence goes; `// Chapter 3.8: nor the notification relay` loses its prefix. **No name is needed and `subjects.json` is not consulted** — the sentence stands without the tag, and where it carried a requirement id that id was always the durable half. (FR-008)
+- [ ] T011 [US3] **SUBSTITUTE a name** in `relay-platform/packages/`, from `subjects.json`, and record found against rewritten. (FR-008)
+- [ ] T011a [US3] Substitute in `relay-platform/services/api/src/db/` — `repository.ts` alone holds 129 references, the largest concentration in the tree. (FR-008)
+- [ ] T011b [US3] Substitute in the rest of `relay-platform/services/api/`, outside `src/db/repository.ts`, located with `grep -rn`. (FR-008)
+- [ ] T011c [US3] Substitute in `relay-platform/services/gateway/` and `services/dispatcher/`, located with `grep -rn`. (FR-008)
 
-  **923 references split four ways, because one task of that size cannot be told part-done from
+  **~605 substitutions split four ways, because one task of that size cannot be told part-done from
   done.** Each batch reports found against rewritten. **Read each one; do not run a blind
   substitution** — the table gives the phrase and the sentence decides whether it fits.
-- [ ] T012 [US3] Rewrite the 90 positional claims by hand, located by `classify-refs.py` across `relay-platform`. These name a chapter to say *when* something happened, so a subject name does not substitute — the sentence has to be rewritten to state the fact instead of pointing at where it was established. (FR-008)
-- [ ] T013 [P] [US3] Rewrite the 210 references in the 49 **unfenced** `.ts` files under `relay-platform`. Parallel with T010–T012 only if the file sets are confirmed disjoint first — check, do not assume. (FR-008)
+
+- [ ] T012 [US3] **READ and rewrite** the ~70 in `relay-platform` that neither rule fits, located with `grep -rn`: section rules like `// ── chapter 3.18: two instances, one fabric ──`, and temporal claims where "since the rate-limit chapter" reads worse than restating the fact. **Re-measure this class before starting it.** Its size came from reading twelve sentences after two classifiers disagreed by 4.5× — 90 against 407 — and twelve is thin. It is the class that decides how long this phase takes. (FR-008)
+- [ ] T013 [P] [US3] Confirm the 49 **unfenced** `.ts` files under `relay-platform` were covered by T010–T012 and need no fence amendment, with `grep -rn`. They carry 210 of the 1,429 and are the only ones where a rewrite costs nothing downstream. (FR-008)
+
+  **THE THREE RULES ARE THE SPLIT, NOT THE DIRECTORIES**, and this ordering was the other way round
+  until analysis pass 5. Classifying by what a reference *looks like* gave 416 delete / 923 substitute
+  / 90 read; classifying by the rewrite it *needs* gives **~757 / ~605 / ~70**. Nearly half of what
+  was called a substitution is a deletion that consults no table. Batches sized by directory mixed all
+  three, so neither the cost nor the reviewer was predictable per batch.
+
 - [ ] T014 [US3] Regenerate the fences for the **183** fenced files whose comments changed, and append amendment hunks to `relay-tutorial/fences/post-series.md`. **`-U6` is a default, not a rule**: regenerate wider when a pre-image matches twice, and verify the hunks apply clean before pasting, not after. `-U8` was worse than `-U6` once and `-U10` fixed it, because widening context merges adjacent hunks. (FR-006, FR-013)
 
   **THE PROPAGATION WAS MEASURED AND IT IS MECHANICAL.** Of 1,221 reference-bearing lines in fenced

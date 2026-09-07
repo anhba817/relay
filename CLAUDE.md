@@ -10,31 +10,33 @@ audit log is 4.7.
 <!-- SPECKIT START -->
 **ACTIVE FEATURE:** `specs/045-part-3-rework/` — Part 3's 24 chapters regrouped into eight
 contiguous subject movements and renumbered to 25, English prose only. Plan:
-`specs/045-part-3-rework/plan.md`. **56 tasks, 8 phases, four analysis passes, one critical each.**
+`specs/045-part-3-rework/plan.md`. **56 tasks, 8 phases, five analysis passes: 2, 1, 1, 1, 0.**
 
-**EVERY CRITICAL WAS SOMETHING THE GATES DO NOT LOOK AT.** That is the whole lesson of this feature
-so far, and it is in `plan.md`'s Testing section as a table because `check:fences` is almost its only
-test:
+**EVERY CRITICAL WAS SOMETHING THE GATES DO NOT LOOK AT**, and `plan.md`'s Testing section carries
+that as a table because `check:fences` is almost this feature's only test:
 
-    untitled fences        99 per locale — the mirror matches `title="…"` and skips them   pass 4
-    anything outside a fence   133 metadata paths, an 810-line chapter registry            passes 1, 4
-    the 13 excerpt-only files  99 ordinals among ten of them                               from the start
-    prose                      whether a paragraph still describes the diff beneath it     from the start
+    untitled fences            99 per locale — the mirror matches `title="…"` and skips them
+    anything outside a fence   133 metadata paths, an 810-line chapter registry, the sitemap
+    the 13 excerpt-only files  99 ordinals among ten of them
+    prose                      whether a paragraph still describes the diff beneath it
 
-**Pass 1** — `lib/tutorial.ts`, 810 hand-maintained lines declaring all 41 chapters, read by the
-sitemap and six components, guarded by nothing.
-**Pass 2** — the plan's own mechanism falsified: filtering the final file by line attribution gives
-**52 parse errors on `repository.ts`, 59 on `session.ts`**. Three-way merge gives 56 states, 0
-failures.
-**Pass 3** — the chain does not end at the last chapter: `fences/post-series.md` amends 49 paths, 21
-of them order-changing with 48 hunks the reorder can break.
-**Pass 4** — SC-006 delegated to a mirror blind to 99 of the 722 fences it was meant to protect, in
-the one task that replaces everything which is not a fence.
+Pass 1 found the registry. Pass 2 falsified the plan's own mechanism — line-attribution synthesis
+gives **52 parse errors on `repository.ts`, 59 on `session.ts`**; three-way merge gives 56 states and
+0. Pass 3 found that the chain does not end at the last chapter: `fences/post-series.md` amends 49
+paths, 21 order-changing with 48 hunks. Pass 4 found SC-006 delegated to a mirror blind to 99 of the
+722 fences it was meant to protect.
 
-**AND A CORRECTION APPLIED TO ONE NUMBER AND NOT ITS NEIGHBOUR SURVIVED TWO PASSES.** The reference
-count went 985 → 1,429 when the pattern gained a capital `C`; the FILE count came from that same
-pattern and stayed at 166 until pass 3 — it is **183**, union **184**. **State the pattern and the
-corpus with every count.**
+**PASS 5 FOUND NO CRITICAL, AND THE SHAPE OF THE ZERO IS THE SIGNAL** — it went looking for a fifth
+blind spot and found a miscategorised estimate instead. **Do not stop on falling yield**, but do read
+what fell.
+
+**CLASSIFY BY THE WORK, NOT BY THE APPEARANCE.** The 1,429 references sorted by shape gave 416
+delete / 923 substitute / 90 read. Sorted by the rewrite each NEEDS: **~757 / ~605 / ~70**. Half of
+what was called a substitution is a tag that deletes and consults no table.
+
+**AND THREE CLASSIFIERS DISAGREED 4.5× ON THE EXPENSIVE CLASS** — 90 against 407. Twelve sentences
+read by hand settled it near 70. **The first estimate was right and its reasoning was not**, which is
+the thing to notice; twelve samples is thin, and the task says so.
 <!-- SPECKIT END -->
 
     044 "the revision watermark"

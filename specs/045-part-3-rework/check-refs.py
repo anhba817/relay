@@ -61,6 +61,13 @@ FOREIGN: set[tuple[str, str]] = {
     # comment is the record that it was taken.
     #
     # Filled one pair at a time as a record names what a task does.
+    #
+    # ('research.md', 'T059') — R5 quotes a real comment from the tree,
+    # `(chapter 3.17, T059)`, as an example of the parenthetical tags that delete. The id
+    # is inside quoted source text and belongs to a predecessor chapter, not to this
+    # feature. Declared rather than paraphrased, because changing the quote would change
+    # what the example demonstrates.
+    ("research.md", "T059"),
 
 }
 

@@ -209,6 +209,30 @@ almost the only test this feature has** and a reader needs to know what its gree
 directory renames keep the relative imports intact. And the mirror compares fences by index rather
 than by file position, so replacing the prose around a fence is safe as far as it is concerned.
 
+### What analysis pass 5 changed — and it found no critical
+
+**The first pass in this feature with nothing critical in it**, which is a result rather than a gap.
+The four before it each found something the gates cannot see; this one went looking for a fifth blind
+spot and found an estimate instead.
+
+**Half the reference work is a different job than planned.** The classes were sorted by what a
+reference *looks like* — beside a requirement id, plain subject reference, positional claim — giving
+416 / 923 / 90. Sorted by **the rewrite each needs** it is **~757 delete / ~605 substitute / ~70
+read**. Nearly half of what was called a substitution is a provenance tag that deletes and consults no
+table. The four batches were split by directory and each mixed all three rules, so neither cost nor
+reviewer was predictable; they are split by rule now.
+
+**Three classifiers, three answers, and only reading settled it.** A keyword classifier put 90
+references in the expensive class, a structural one put **407** — 4.5× apart. Twelve sentences read by
+hand landed near **70**, close to the first. **The original estimate was right and its reasoning was
+not**, and twelve samples is a thin basis for the number now standing, which the task says out loud.
+
+**A premise held and got sized.** This checklist recorded that FR-009 might not survive contact —
+that a moved chapter's opening could refer to what the reader just finished. Measured: **6 of 24
+chapters open by citing the chapter before them, and exactly one of those six gets a different
+predecessor** under the new order. Measured on opening sections only, so mid-chapter phrasing is not
+in that number.
+
 ### The one item that could still be wrong
 
 **FR-009 says prose is preserved, and a moved chapter's prose may not survive the move unchanged.**
