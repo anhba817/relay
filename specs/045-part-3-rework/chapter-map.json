@@ -253,12 +253,33 @@
         {
           "new": 3,
           "slug": "errors-that-resolve",
-          "titled_fences": 14
+          "titled_fences": 14,
+          "paths": [
+            "packages/protocol/src/codes.ts",
+            "services/api/src/protocol-error.ts",
+            "services/api/src/protocol-error.filter.ts",
+            "services/api/src/messages/messages.service.ts",
+            "services/api/src/internal/session.controller.ts",
+            "services/api/src/limits/rate-limit.middleware.ts",
+            "services/gateway/src/session.ts",
+            "services/api/src/messages/zod-validation.pipe.ts",
+            "packages/service-kit/src/index.ts",
+            "services/gateway/src/main.ts",
+            "services/gateway/src/session.test.ts",
+            "packages/protocol/src/codes.test.ts"
+          ]
         },
         {
           "new": 26,
           "slug": "errors-that-resolve-and-an-outsider",
-          "titled_fences": 7
+          "titled_fences": 7,
+          "paths": [
+            "packages/outsider/package.json",
+            "packages/outsider/tsconfig.json",
+            "packages/outsider/vitest.integration.config.mts",
+            "packages/outsider/src/integrate.itest.ts",
+            "scripts/seed-demo-tenant.mjs"
+          ]
         }
       ]
     },

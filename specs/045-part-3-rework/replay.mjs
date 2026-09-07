@@ -101,28 +101,56 @@ function publishedOrderFromTree() {
   return [...new Set(keys.sort((a, b) => a.rank - b.rank).map((k) => k.key))];
 }
 
-/** The target order. `current` needs no map, which is what makes the control runnable
- *  before anything else exists. */
-function targetOrder(published) {
-  if (ORDER === "current") return published;
+/** The target order, and for a SPLIT chapter it depends on the PATH.
+ *
+ * A split chapter's delta does not belong at one position any more. Old 3.12 divides into
+ * the harness at new 4 and the verdict at new 25, and which half a given file belongs to
+ * is recorded in the map as an explicit path list — `catalogue.ts` early,
+ * `catalogue.test.ts` late. Ranking by chapter alone put every one of old 3.12's paths at
+ * whichever half the `Map` happened to keep, which is the last one written.
+ *
+ * The two splits' halves were checked disjoint before this was relied on: zero paths
+ * appear in both.
+ */
+function buildRanks() {
   const mapFile = join(HERE, "chapter-map.json");
-  if (!existsSync(mapFile)) {
-    console.error("replay: --order new needs chapter-map.json (T007)");
-    process.exit(2);
-  }
+  if (ORDER === "current" || !existsSync(mapFile)) return null;
   const map = JSON.parse(readFileSync(mapFile, "utf8"));
-  const part3 = map.chapters
-    .slice()
-    .sort((a, b) => a.new - b.new)
-    .map((c) => `3.${String(c.old).padStart(2, "0")}`);
+  const splits = new Map((map.splits ?? []).map((sp) => [`3.${String(sp.old).padStart(2, "0")}`, sp]));
+  const slots = map.chapters.slice().sort((a, b) => a.new - b.new)
+    .map((c) => ({ new: c.new, key: `3.${String(c.old).padStart(2, "0")}`, slug: c.slug }));
   const before = published.filter((k) => Number(k) < 3);
   const after = published.filter((k) => Number(k) >= 4);
-  return [...before, ...part3, ...after];
+  const order = [...before.map((k) => ({ key: k })), ...slots, ...after.map((k) => ({ key: k }))];
+  const pos = new Map();
+  order.forEach((s, i) => {
+    const id = s.slug ? `${s.key}|${s.slug}` : s.key;
+    pos.set(id, i);
+  });
+  return { pos, splits, slots };
+}
+
+/** Rank of one chapter key for one path. */
+function rankFor(key, path) {
+  if (!RANKS) return published.indexOf(key);
+  const sp = RANKS.splits.get(key);
+  if (sp) {
+    for (const h of sp.halves) {
+      if ((h.paths ?? []).includes(path)) return RANKS.pos.get(`${key}|${h.slug}`);
+    }
+    // A path the split does not mention belongs with the FIRST half, which is the one
+    // that keeps the chapter's production code. Reported so it is never silent.
+    unplaced.add(`${key} ${path}`);
+    return RANKS.pos.get(`${key}|${sp.halves[0].slug}`);
+  }
+  const direct = RANKS.slots.find((s) => s.key === key);
+  if (direct) return RANKS.pos.get(`${key}|${direct.slug}`);
+  return RANKS.pos.get(key) ?? published.indexOf(key);
 }
 
 const published = publishedOrder();
-const target = targetOrder(published);
-const rankOf = new Map(target.map((k, i) => [k, i]));
+const unplaced = new Set();
+const RANKS = buildRanks();
 
 /** Every path the chain touches, with the chapters that actually CHANGE it.
  *
@@ -182,8 +210,7 @@ for (const [path, chapters] of [...paths].sort()) {
   const inPublished = chapters.slice().sort((a, b) => published.indexOf(a) - published.indexOf(b));
   const inTarget = chapters
     .slice()
-    .filter((c) => rankOf.has(c))
-    .sort((a, b) => rankOf.get(a) - rankOf.get(b));
+    .sort((a, b) => rankFor(a, path) - rankFor(b, path));
   if (inPublished.join() === inTarget.join() && !FORCE) {
     unchanged++;
     if (OUT) {
@@ -279,6 +306,10 @@ for (const [path, chapters] of [...paths].sort()) {
 }
 
 console.log(`replay: order=${ORDER}${FORCE ? " (merge forced — the control)" : ""}`);
+if (unplaced.size) {
+  console.log(`  paths a split does not place  ${unplaced.size}`);
+  for (const u of [...unplaced].slice(0, 12)) console.log(`    unplaced  ${u}`);
+}
 console.log(`  paths                        ${paths.size}`);
 console.log(`  chain order unchanged        ${unchanged}`);
 console.log(`  replayed                     ${paths.size - unchanged}`);

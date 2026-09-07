@@ -366,3 +366,56 @@ TWO RESOLUTIONS, MEASURED
       new 18 and the gauntlet at new 24. THIS UNDOES THE FEATURE'S CENTRAL FIX —
       webhooks teaching delivery 15 chapters before anything produces an event is
       the defect 045 exists to correct.
+
+--------------------------------------------------------------------------------
+THE GAUNTLET SPLIT, MEASURED — AND WHAT IT DID NOT FIX
+--------------------------------------------------------------------------------
+
+                          before the split   after
+  paths replayed                42             36
+  CONFLICTS                     32             29
+  ordering violations           14              8
+  landed on a different file      0              0
+
+The gauntlet's eight harness files are resolved: the harness at new 4 precedes
+every one of the 25 chapter-edits that land on them. Content overlaps rose 18 ->
+21, because a chapter at position 4 now touches files that nothing touched that
+early before. Net on the class that matters: 14 -> 8.
+
+THE SPLIT CREATED TWO OF THE EIGHT ITSELF, and they are the sharpest evidence
+that the early/late division is drawn one fence too wide:
+
+  dispatch.controller.ts   created by webhooks (new 19), fenced by the harness (new 4)
+  usage.controller.ts      created by metering  (new 24), fenced by the harness (new 4)
+
+Neither is a harness file. They are the FIXES the gauntlet prescribed — the
+internal surface that answered to the wrong question — and they belong with the
+chapters that own those files or with the verdict at new 25, which follows both.
+The division was taken from a heading boundary, and a heading boundary is not a
+dependency boundary.
+
+THE OTHER SIX ARE THE PRE-EXISTING CLASS, all "creator later":
+
+  3.05 webhooks   -> new 19   webhook-walk.mjs, deliveries.itest.ts,
+                              dispatcher.itest.ts, vitest.coverage.config.mts
+  3.14 registry   -> new  3   integrate.itest.ts   (edited at old 3.17, new 11)
+  3.08 rate limit -> new 22   rate-limit.middleware.ts (edited at old 3.14, new 3)
+
+AND "THE CREATOR EMITS THE FINISHED FILE" IS NOT ONE RULE. Folding the dropped
+editors' work into the creator's state lands on the platform file and is a real
+file at every point, but for `vitest.coverage.config.mts` it shows pins for files
+built in chapters the reader has not reached: the creator sits at new 19 and the
+last dropped editor's old state carries pins for old 3.06-3.24, which in the new
+order includes new 20, 21, 22, 23, 24.
+
+    A FLAT LIST CAN BE FILTERED; NESTED SYNTAX CANNOT. R4 falsified
+    attribution-and-filter on `repository.ts` (52 parse errors) and `session.ts`
+    (59) — and recorded that `app.module.ts`, 21 attribution runs in 71 lines of
+    flat list, gave 0. The coverage config and the eslint config are that shape:
+    independent per-file blocks. For those the state at position i is the final
+    file filtered to the chapters read so far, in the platform file's own
+    ordering, and the final state stays byte-identical because the filter is a
+    subset that reaches the whole.
+
+    `deliveries.itest.ts`, `dispatcher.itest.ts` and `integrate.itest.ts` are not
+    that shape and need the fold, or the fence dropped from the early chapter.
