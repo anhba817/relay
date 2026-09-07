@@ -13,7 +13,7 @@
     "the reader does not meet until chapter fourteen. The outsider is the SRS Phase 2 exit",
     "criterion and nothing may follow it.",
     "",
-    "FOUR CHAPTERS KEEP THEIR NUMBER AND CHANGE MEANING \u2014 3.13, 3.14, 3.15 and 3.16 all",
+    "FOUR CHAPTERS KEEP THEIR NUMBER AND CHANGE MEANING — 3.13, 3.14, 3.15 and 3.16 all",
     "exist before and after and name different chapters. That is the sharpest argument for",
     "the named-reference rule: an ordinal that survives a reorder pointing at different",
     "content is worse than one that breaks."
@@ -21,7 +21,13 @@
   "movements": [
     {
       "id": "I",
-      "title": "The tenant, the credential, and the vocabulary"
+      "title": "The tenant, the credential, and the vocabulary",
+      "chapters": [
+        1,
+        2,
+        3,
+        4
+      ]
     },
     {
       "id": "II",
@@ -75,173 +81,243 @@
       "title": "Errors that resolve"
     },
     {
-      "old": 3,
+      "old": 12,
       "new": 4,
+      "slug": "the-isolation-harness",
+      "movement": "I"
+    },
+    {
+      "old": 3,
+      "new": 5,
       "movement": "II",
       "slug": "the-outbox",
       "title": "The outbox"
     },
     {
       "old": 4,
-      "new": 5,
+      "new": 6,
       "movement": "II",
       "slug": "jetstream-and-the-first-consumer",
       "title": "JetStream, and the grammar a subject needs"
     },
     {
       "old": 7,
-      "new": 6,
+      "new": 7,
       "movement": "II",
       "slug": "commit-and-publish-are-two-instants",
       "title": "Commit and publish are two instants"
     },
     {
       "old": 13,
-      "new": 7,
+      "new": 8,
       "movement": "III",
       "slug": "the-endpoints-and-the-instruments",
       "title": "The endpoints and the instruments"
     },
     {
       "old": 15,
-      "new": 8,
+      "new": 9,
       "movement": "III",
       "slug": "the-channel-a-customer-controls",
       "title": "The channel a customer controls"
     },
     {
       "old": 16,
-      "new": 9,
+      "new": 10,
       "movement": "III",
       "slug": "what-a-user-sees",
       "title": "What a user sees"
     },
     {
       "old": 17,
-      "new": 10,
+      "new": 11,
       "movement": "III",
       "slug": "the-sender-a-message-never-had",
       "title": "The sender a message never had"
     },
     {
       "old": 18,
-      "new": 11,
+      "new": 12,
       "movement": "IV",
       "slug": "the-message-that-never-arrived",
       "title": "The message that never arrived"
     },
     {
       "old": 19,
-      "new": 12,
+      "new": 13,
       "movement": "IV",
       "slug": "who-is-allowed-to-see-it",
       "title": "Who is allowed to see it"
     },
     {
       "old": 20,
-      "new": 13,
+      "new": 14,
       "movement": "IV",
       "slug": "the-membership-that-changed",
       "title": "The membership that changed"
     },
     {
       "old": 21,
-      "new": 14,
+      "new": 15,
       "movement": "IV",
       "slug": "the-frame-nobody-may-send",
       "title": "The frame nobody may send"
     },
     {
       "old": 22,
-      "new": 15,
+      "new": 16,
       "movement": "IV",
       "slug": "the-sixth-connection",
       "title": "The sixth connection"
     },
     {
       "old": 23,
-      "new": 16,
+      "new": 17,
       "movement": "V",
       "slug": "the-words-somebody-wants-back",
       "title": "The words somebody wants back"
     },
     {
       "old": 24,
-      "new": 17,
+      "new": 18,
       "movement": "V",
       "slug": "the-message-that-is-not-only-text",
       "title": "The message that is not only text"
     },
     {
       "old": 5,
-      "new": 18,
+      "new": 19,
       "movement": "VI",
       "slug": "webhooks-that-survive-the-customer",
       "title": "Webhooks that survive the customer"
     },
     {
       "old": 6,
-      "new": 19,
+      "new": 20,
       "movement": "VI",
       "slug": "when-to-stop-trying",
       "title": "When to stop trying"
     },
     {
       "old": 9,
-      "new": 20,
+      "new": 21,
       "movement": "VI",
       "slug": "the-email-nobody-was-sending",
       "title": "The email nobody was sending"
     },
     {
       "old": 8,
-      "new": 21,
+      "new": 22,
       "movement": "VII",
       "slug": "limits-you-can-see-coming",
       "title": "Limits you can see coming"
     },
     {
       "old": 10,
-      "new": 22,
+      "new": 23,
       "movement": "VII",
       "slug": "quotas-and-what-they-cost",
       "title": "Quotas and what they cost"
     },
     {
       "old": 11,
-      "new": 23,
+      "new": 24,
       "movement": "VII",
       "slug": "counting-a-connection",
       "title": "Counting a connection"
     },
     {
       "old": 12,
-      "new": 24,
+      "new": 25,
       "movement": "VIII",
       "slug": "milestone-the-isolation-gauntlet",
       "title": "Milestone: the isolation gauntlet"
     },
     {
       "old": 14,
-      "new": 25,
+      "new": 26,
       "movement": "VIII",
       "slug": "errors-that-resolve-and-an-outsider",
       "title": "Milestone: an outsider"
     }
   ],
-  "split": {
-    "old": 14,
-    "boundary_heading": "## The outsider",
-    "boundary_line": 961,
-    "of_lines": 1565,
-    "fences_before": 14,
-    "fences_after": 7,
-    "_why": [
-      "The scope estimate turned on this and nobody had decided it. Measured both ways the",
-      "answer was 39 paths / 278 fences if the chapter's fences landed early and 44 / 300 if",
-      "late. With the split recorded here it is 42 paths and 289 fences.",
-      "Every fence above line 961 is the error vocabulary; every fence below it is the sealed",
-      "integration package. Nothing straddles."
-    ]
-  }
+  "splits": [
+    {
+      "old": 14,
+      "why": "the error vocabulary and the sealed package share no fence",
+      "boundary": {
+        "en": "## The outsider",
+        "vi": "## Người ngoài"
+      },
+      "halves": [
+        {
+          "new": 3,
+          "slug": "errors-that-resolve",
+          "titled_fences": 14
+        },
+        {
+          "new": 26,
+          "slug": "errors-that-resolve-and-an-outsider",
+          "titled_fences": 7
+        }
+      ]
+    },
+    {
+      "old": 12,
+      "why": [
+        "FORCED BY A DEPENDENCY, NOT CHOSEN FOR BALANCE. The gauntlet creates eight files",
+        "and 25 chapter-edits land on them; moving it to the end of movement VIII put every",
+        "one of those edits before the file existed, and `ours` came back 0 lines on all",
+        "eight. A merge cannot resolve that — taking `theirs` only relocates the conflict to",
+        "the creator's own add/add. The harness must precede its editors and the verdict",
+        "belongs at the end, so the chapter divides at the question that opens the",
+        "retrospective.",
+        "",
+        "THE HALVES FENCE DISJOINT PATHS, which is what makes the division mechanical: the",
+        "early half builds the gauntlet and its production code, the late half adds unit",
+        "tests OF the instruments. `catalogue.ts` early and `catalogue.test.ts` late;",
+        "`targets.ts` early and `targets.test.ts` late. No path appears in both."
+      ],
+      "boundary": {
+        "en": "## Has it ever caught anything?",
+        "vi": "## Nó đã bắt được gì bao giờ chưa?"
+      },
+      "halves": [
+        {
+          "new": 4,
+          "slug": "the-isolation-harness",
+          "titled_fences": 15,
+          "paths": [
+            "services/api/src/isolation/targets.ts",
+            "services/api/src/isolation/targets.itest.ts",
+            "services/api/src/isolation/fixtures.ts",
+            "services/gateway/src/isolation-fixtures.ts",
+            "services/api/src/isolation/attack.ts",
+            "services/api/src/isolation/compare.ts",
+            "services/api/src/messages/messages.itest.ts",
+            "services/api/src/isolation/gauntlet.itest.ts",
+            "services/api/src/auth/credential.guard.ts",
+            "services/api/src/auth/authenticate.middleware.ts",
+            "services/api/src/internal/dispatch.controller.ts",
+            "services/api/src/internal/usage.controller.ts",
+            "services/api/src/db/catalogue.ts",
+            "services/api/src/isolation/tenant-scope.itest.ts",
+            "services/gateway/src/isolation.itest.ts"
+          ]
+        },
+        {
+          "new": 25,
+          "slug": "milestone-the-isolation-gauntlet",
+          "titled_fences": 5,
+          "paths": [
+            "services/api/src/isolation/attack.test.ts",
+            "services/api/src/isolation/targets.test.ts",
+            "services/api/src/db/catalogue.test.ts",
+            "services/api/src/isolation/compare.test.ts",
+            "services/api/src/db/repository.itest.ts"
+          ]
+        }
+      ]
+    }
+  ]
 }

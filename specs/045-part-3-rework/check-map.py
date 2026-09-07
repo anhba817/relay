@@ -67,20 +67,35 @@ def main() -> int:
             f"missing {sorted(before - set(olds))}, invented {sorted(set(olds) - before)}"
         )
 
-    split = m["split"]["old"]
-    # COUNT THE OCCURRENCES, DO NOT JUST COLLECT THE REPEATERS. This read
-    # `twice = [o for o in set(olds) if olds.count(o) > 1]` and compared that list to
-    # `[split]`, which is satisfied by the split appearing THREE times as happily as
-    # twice — a probe that gave chapter 14 a third entry went red on a different
-    # assertion entirely and this one stayed silent.
+    # TWO SPLITS NOW, AND THE SECOND WAS FORCED. This read `m["split"]["old"]` and
+    # asserted exactly one chapter appears twice. The gauntlet had to divide as well —
+    # it creates eight files that 25 later chapter-edits land on, and moving it to the
+    # end put every edit before the file existed. A checker that hard-codes "one split"
+    # is a checker that has to be edited to allow a finding.
+    splits = {sp["old"]: sp for sp in m.get("splits", [])}
+    if not splits:
+        problems.append("no `splits` in the map — the shape changed and an empty parse agrees with anything")
     from collections import Counter
     counts = Counter(olds)
-    wrong = {o: n for o, n in counts.items() if n != (2 if o == split else 1)}
+    want = {o: (2 if o in splits else 1) for o in counts}
+    wrong = {o: n for o, n in counts.items() if n != want[o]}
     if wrong:
         problems.append(
-            f"the split chapter ({split}) must appear exactly twice and every other "
-            f"exactly once — got {dict(sorted(wrong.items()))}"
+            f"a split chapter must appear exactly twice and every other exactly once — "
+            f"splits are {sorted(splits)}, got {dict(sorted(wrong.items()))}"
         )
+    # AND EACH SPLIT MUST NAME ITS BOUNDARY IN BOTH LOCALES. The first one recorded only
+    # the English heading, which matches nothing in the Vietnamese page.
+    for o, sp in sorted(splits.items()):
+        b = sp.get("boundary", {})
+        for loc in ("en", "vi"):
+            if not b.get(loc):
+                problems.append(f"split {o} names no {loc} boundary heading")
+        halves = sp.get("halves", [])
+        if len(halves) != 2:
+            problems.append(f"split {o} has {len(halves)} halves, need 2")
+        if not any(c["new"] == h.get("new") for h in halves for c in chapters):
+            problems.append(f"split {o} names halves that are not in the chapter list")
 
     for c in chapters:
         if c["movement"] not in movements:
@@ -92,7 +107,7 @@ def main() -> int:
     # Every slug must exist in both locales. The split's new slug is the one exception:
     # it does not exist until the chapter is divided, so it is allowed to be absent while
     # its sibling is present.
-    sibling = {c["slug"] for c in chapters if c["old"] == split}
+    sibling = {c["slug"] for c in chapters if c["old"] in splits}
     for c in chapters:
         for locale, base in (("en", TUT / "app" / "(en)" / "part-3"),
                              ("vi", TUT / "app" / "(vi)" / "vi" / "part-3")):
