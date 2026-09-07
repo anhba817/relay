@@ -19,14 +19,19 @@
 //   <out-dir>/<chapter key>/<path>   state after that chapter, e.g. 3.07/services/…
 //   <out-dir>/post-series/<path>     state after the appendix — the platform's own
 
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = dirname(dirname(HERE));
-const TUTORIAL = join(ROOT, "relay-tutorial");
+// OVERRIDABLE, because the snapshot has to be takeable from a WORKTREE at the
+// pre-rename commit. The states this dumps are `replay.mjs`'s only input, and the first
+// run of this feature put them in /tmp — which a reboot then wiped, after the rename had
+// already happened and `snapshot.mjs` had started refusing to run against a red chain.
+// The input to a re-derivation is not scratch data.
+const TUTORIAL = process.env.RELAY_TUTORIAL ?? join(ROOT, "relay-tutorial");
 const CHECKER = join(TUTORIAL, "scripts", "check-fence-chain.mjs");
 const PATCHED = join(TUTORIAL, "scripts", ".snapshot-generated.mjs");
 
@@ -97,4 +102,19 @@ const r = spawnSync(process.execPath, [PATCHED], {
   env: { ...process.env, SNAPSHOT_OUT: out },
 });
 rmSync(PATCHED, { force: true });
+
+// A CAPTURE OF NOTHING IS NOT A SUCCESS, and this exited 0 on one. The checker resolves
+// `relay-platform` as a SIBLING of the tutorial root and, when it is absent, prints
+// "relay-platform not found — skipping" and returns 0. Run against a worktree in a
+// scratch directory that produced an empty snapshot directory and a clean exit — the
+// exact failure the replay would then have reported somewhere else entirely.
+const keys = existsSync(out) ? readdirSync(out) : [];
+if (r.status === 0 && keys.length < 2) {
+  console.error(`snapshot: captured ${keys.length} key(s) — nothing to replay from.`);
+  console.error("  the checker resolves relay-platform as a sibling of the tutorial root;");
+  console.error("  if RELAY_TUTORIAL points into a scratch directory, put a link to");
+  console.error("  relay-platform beside it or the whole run skips and still exits 0.");
+  process.exit(1);
+}
+console.log(`snapshot: ${keys.length} keys -> ${out}`);
 process.exit(r.status ?? 1);

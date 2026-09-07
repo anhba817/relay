@@ -1,0 +1,54 @@
+{
+  "$schema": "https://turborepo.com/schema.json",
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**"]
+    },
+    "dev": {
+      "dependsOn": ["^build"],
+      "cache": false,
+      "persistent": true
+    },
+    "typecheck": {
+      "dependsOn": ["^build"]
+    },
+    "test": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/compose.yaml"]
+    },
+    "test:integration": {
+      "dependsOn": ["^build", "build"],
+      "cache": false,
+      "env": [
+        "DATABASE_URL",
+        "RELAY_POSTGRES_PORT",
+        "RELAY_REDIS_URL",
+        "RELAY_REDIS_PORT",
+        "RELAY_NATS_URL",
+        "RELAY_NATS_PORT",
+        "RELAY_OUTBOX_RELAY",
+        "RELAY_DELIVERY_RELAY",
+        "RELAY_INTERNAL_CREDENTIAL",
+        "RELAY_INTERNAL_CREDENTIAL_GATEWAY",
+        "RELAY_METER_INTERVAL_MS",
+        "RELAY_AUTH_FAILURES_PER_MINUTE",
+        "RELAY_AUTH_KEY_PREFIX",
+        "RELAY_WEBHOOK_SECRET_KEY",
+        "RELAY_EVENT_CONSUMER",
+        "RELAY_NATS_REPLICAS",
+        "RELAY_E2E_API_PORT",
+        "RELAY_SMTP_URL",
+        "RELAY_MAILPIT_URL",
+        "RELAY_NOTIFICATION_RELAY"
+      ]
+    },
+    "//#lint:root": {
+      "inputs": [
+        "**/*.{ts,mts,cts,mjs,js}",
+        "eslint.config.mjs",
+        "package.json"
+      ]
+    }
+  }
+}

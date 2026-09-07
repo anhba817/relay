@@ -250,3 +250,62 @@ comment-only and NOT re-verified. The machine hard-locked twice during this task
 hogged CPU >10000us escalating 7 -> 259 times, hybrid Intel + NVIDIA open module
 595.84 reporting "Cannot find any crtc or sizes" on every boot. Not this feature's
 processes, and turbo spawning tsc per package is the heaviest thing it runs.
+
+
+================================================================================
+PHASE 4, T021 — THE REPLAY, MEASURED AFTER THE RENAME
+================================================================================
+
+  paths                        242
+  chain order unchanged        200
+  replayed                      42     plan said 42
+  CONFLICTS (hand resolution)   32     plan said 31
+  landed on a different file     0     R2 said 5 — BETTER than predicted
+  appendix-amended mismatches    0     across the 49 amended paths
+  states written               422
+
+THE PLAN'S ESTIMATE HELD, WHICH IS NOT THIS PROJECT'S HABIT. 42 paths exactly and
+32 conflicts against 31. The five silent divergences R2 warned about — paths that
+merge clean onto a DIFFERENT file, the worst outcome because they pass every
+mechanical check up to the final comparison — did not appear at all.
+
+AND 241 APPLY FAILURES IS NOT 32 CONFLICTS. `check:fences` reports 277 problems
+(241 APPLY, 36 HEAD) and the plan predicted 31 conflicts; those are different
+units and both are right. An APPLY failure is one HUNK whose pre-image no longer
+matches the shifted state. A conflict is one PATH needing hand resolution during
+re-derivation. Reconciling them before starting was worth more than the minute it
+took, because "the estimate was off by 8x" would have been the wrong conclusion.
+
+WHERE THE CONFLICTS ARE, BY THE CHAPTER THAT COULD NOT BE PICKED (old ordinals):
+
+  old 3.16   11    what-a-user-sees          moves 16 -> 9
+  old 3.15    9    the-channel-a-customer... moves 15 -> 8
+  old 3.07    3    commit-and-publish...     moves  7 -> 6
+  old 3.23    3    the-words-somebody-...    moves 23 -> 16
+  old 3.13    2    the-endpoints-and-the...  moves 13 -> 7
+  old 3.18    2    the-message-that-never... moves 18 -> 11
+  old 3.20    2    the-membership-that-...   moves 20 -> 13
+  old 3.17    1    the-sender-a-message-...  moves 17 -> 10
+
+20 of 32 sit on the two chapters that move furthest earlier. The cluster is the
+error-vocabulary split landing at new 3.3: everything old 14 touched now arrives
+eleven positions sooner, and the chapters that used to precede it do not.
+
+TWO TOOLING FAULTS FOUND GETTING HERE
+
+  THE SNAPSHOT IS AN INPUT, NOT SCRATCH DATA. It was written to /tmp, a reboot
+  wiped it, and by then the rename had happened and `snapshot.mjs` refuses to run
+  against a red chain. Recovered from a git worktree at the pre-rename commit;
+  snapshots now live in `.snapshots/` beside the feature.
+
+  A CAPTURE OF NOTHING EXITED 0. `check-fence-chain.mjs` resolves relay-platform
+  as a SIBLING of the tutorial root; run against a worktree in a scratch directory
+  it printed "relay-platform not found — skipping" and returned 0, so
+  `snapshot.mjs` reported success over an empty directory. It now fails when it
+  captures fewer than two keys, and the worktree is paired with a link to the
+  platform.
+
+  AND `replay.mjs` READ THE PUBLISHED ORDER FROM THE TREE, which is correct only
+  before the rename. Afterwards `--order new` compared the new order with itself
+  and found nothing to replay. It reads the snapshot's own keys now — a snapshot
+  IS the published order — so the tool works on either side of the rename.

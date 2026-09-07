@@ -56,8 +56,36 @@ if (!existsSync(SNAP)) {
   process.exit(2);
 }
 
-/** Published chapter order, read from the tree rather than restated. */
+/** Published chapter order.
+ *
+ * READ FROM THE SNAPSHOT, NOT FROM THE TREE, once the tree has been renamed. This walked
+ * `app/(en)` for `page.mdx` and derived the order from the directory names, which is
+ * correct only while those names still carry the OLD ordinals. After T019 the tree holds
+ * 1..25 in the new arrangement, so `--order new` compared the new order against itself
+ * and found nothing to replay.
+ *
+ * The snapshot's own keys are the published order at capture time — that is what a
+ * snapshot IS — so they are the honest source and they keep this tool usable on either
+ * side of the rename. The tree walk stays as the fallback for a snapshot that predates
+ * the per-key layout.
+ */
 function publishedOrder() {
+  const keys = existsSync(SNAP)
+    ? spawnSync("ls", [SNAP], { encoding: "utf8" }).stdout.split("\n")
+        .filter((k) => /^\d+\.\d+$/.test(k.trim()))
+        .map((k) => k.trim())
+    : [];
+  if (keys.length > 1) {
+    return keys.sort((a, b) => {
+      const [ap, ac] = a.split(".").map(Number);
+      const [bp, bc] = b.split(".").map(Number);
+      return ap * 1000 + ac - (bp * 1000 + bc);
+    });
+  }
+  return publishedOrderFromTree();
+}
+
+function publishedOrderFromTree() {
   const walk = (d) =>
     existsSync(d)
       ? spawnSync("find", [d, "-name", "page.mdx"], { encoding: "utf8" }).stdout

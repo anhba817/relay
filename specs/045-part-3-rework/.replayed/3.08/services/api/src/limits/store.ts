@@ -1,0 +1,166 @@
+import { Redis } from "ioredis";
+
+import { WINDOW_MS } from "./policy";
+
+// The counter store (research R1).
+//
+// THE ONLY MODULE IN THE API PERMITTED TO HOLD A REDIS CLIENT, enforced by
+// `no-restricted-imports` in `eslint.config.mjs` — the same confinement the
+// database driver has, for the same stated reason. The keys are per environment,
+// so an unrestricted client would let any handler read or write another tenant's
+// counter, and constitution I makes that a correctness property rather than a
+// convention.
+//
+// TWO COMMANDS, NO LUA. `INCR` returns the new value atomically on its own, and
+// `EXPIRE` is set only when the increment returns 1 — the first write of a
+// window. A token bucket would need read-timestamp-compute-write, which across
+// instances needs a script, which is a second language in the request path
+// (constitution VII).
+//
+// The TTL does the cleanup: a key dies when its window ends and nothing
+// accumulates. The deduplication chapter's baseline and this chapter's own both found suites
+// broken by shared stores that grew without bound, so a counter that tidies
+// itself is worth the sentence.
+
+export interface CounterStore {
+  /** Count one operation against a key, returning the new count — or `null` when
+   * the store could not be reached.
+   *
+   * NULL IS NOT ZERO AND NOT AN ERROR. It means "we are not counting", and each
+   * caller decides what that is worth: the tenant limiter serves the request
+   * (SAD §6.3, Redis is not a source of truth), and the auth limiter falls back to
+   * counting in memory rather than letting an attacker through (FR-AUT-12). Same
+   * signal, opposite conclusions, which is the chapter's argument in one return
+   * type. */
+  increment(key: string, nowMs: number): Promise<number | null>;
+  /** The current count without adding to it, or `null` when the store could not
+   * be reached. Asking "is this address over the threshold" must not itself push
+   * it over — a limiter whose check is also a write refuses on its own
+   * questions. */
+  get(key: string): Promise<number | null>;
+  close(): Promise<void>;
+}
+
+export const DEFAULT_REDIS_URL = "redis://localhost:6379";
+
+/** The key. `rl:` is the prefix the SAD's cache-keys table names; the operation and the
+ * window's start are appended so one `INCR` reaches the right counter and the key
+ * expires itself.
+ *
+ * That EXTENDS the SAD's three-segment `rl:{env}:{bucket}` rather than matching
+ * it, and the extension is what makes the TTL do the cleanup. */
+export function counterKey(
+  scope: string,
+  operation: string,
+  windowStartMs: number,
+): string {
+  return `rl:${scope}:${operation}:${windowStartMs}`;
+}
+
+/** The auth counter's key, keyed by source address rather than environment.
+ *
+ * A SEPARATE PREFIX, not an `operation` value on the tenant key, because it is
+ * keyed by something else entirely and because the two have opposite failure
+ * behaviour. Sharing a prefix would invite sharing a code path, and the whole
+ * point is that they must not.
+ *
+ * THE PREFIX IS OVERRIDABLE, and that is test isolation rather than
+ * configuration. The integration lane runs files in PARALLEL — only the coverage
+ * config sets `fileParallelism: false` — so every suite asserting a `401` from
+ * loopback lands in one bucket. Raising a threshold survives that; a suite that
+ * needs a LOW threshold needs its own key, or it compares a count filled by other
+ * workers against a deliberately small number and refuses requests that had
+ * nothing to do with it (research R21).
+ *
+ * The same pattern `attempts.itest.ts` uses for its durable name, and for the
+ * same reason. */
+export function authKey(
+  address: string,
+  windowStartMs: number,
+  prefix: string = process.env["RELAY_AUTH_KEY_PREFIX"] ?? "rlauth",
+): string {
+  return `${prefix}:${address}:${windowStartMs}`;
+}
+
+export function createCounterStore(
+  url: string = process.env["RELAY_REDIS_URL"] ?? DEFAULT_REDIS_URL,
+): CounterStore {
+  // `lazyConnect` so constructing the store never blocks start-up.
+  //
+  // THE OFFLINE QUEUE STAYS ON, and the first draft had it off. With it off, the
+  // very first command is rejected because the lazy connection has not been
+  // established yet — so the first request an api instance ever serves reports no
+  // count, degrades, and looks like a Redis outage. The integration suite caught
+  // it as `expected null to be '599'` on the first test and three passes after
+  // it.
+  //
+  // Failing fast on a store that is genuinely down is then `maxRetriesPerRequest:
+  // 0` and a short `connectTimeout`: a queued command rejects as soon as the
+  // connection attempt fails rather than waiting out a retry schedule. A limiter
+  // that waits is worse than one that does not count, because the request it is
+  // holding is a customer's.
+  const redis = new Redis(url, {
+    lazyConnect: true,
+    maxRetriesPerRequest: 0,
+    connectTimeout: 1_000,
+  });
+
+  // FAILING OPEN IS NOT FREE IF IT FAILS SLOWLY, and the first version of this
+  // file was slow. With the store gone, every command waits out its connect
+  // timeout before giving up — so each request paid a second or more, twice,
+  // and the integration test for the degraded path timed out rather than
+  // asserting anything.
+  //
+  // That is worse than it looks. The tenant limiter fails open so a cache outage
+  // does not refuse paid traffic; an outage that instead adds seconds to every
+  // request has refused it in a slower way, and NFR-PRF-02 asks for a p95 under
+  // 150 ms.
+  //
+  // So a known-down store is not retried on the request path. The first failure
+  // opens a window; while it is open every call answers `null` immediately, which
+  // is the same signal the caller already handles. One probe per window is what
+  // notices the store coming back.
+  const DOWN_WINDOW_MS = 5_000;
+  let downUntil = 0;
+
+  const guard = async <T>(op: () => Promise<T>): Promise<T | null> => {
+    if (Date.now() < downUntil) return null;
+    try {
+      const result = await op();
+      downUntil = 0;
+      return result;
+    } catch {
+      downUntil = Date.now() + DOWN_WINDOW_MS;
+      return null;
+    }
+  };
+  // A dead store is an expected state here, not an exception. Without a listener
+  // ioredis emits `error` on an EventEmitter with none attached, which Node turns
+  // into an unhandled exception and the api dies for the thing it was designed to
+  // survive.
+  redis.on("error", () => {});
+
+  return {
+    async increment(key, nowMs) {
+      void nowMs;
+      return guard(async () => {
+        const count = await redis.incr(key);
+        if (count === 1) {
+          await redis.pexpire(key, WINDOW_MS);
+        }
+        return count;
+      });
+    },
+
+    async get(key) {
+      return guard(async () => {
+        const raw = await redis.get(key);
+        return raw === null ? 0 : Number.parseInt(raw, 10);
+      });
+    },
+
+    async close() {
+      redis.disconnect();
+    },
+  };
+}

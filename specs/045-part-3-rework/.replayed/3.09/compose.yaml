@@ -1,0 +1,180 @@
+# The whole local world, one command:  docker compose up -d --wait
+# Four stores, each here by a recorded decision (SAD §9), and — since the webhook
+# dispatcher chapter — the three services themselves. Host ports are env knobs with the
+# standard defaults; the container side never changes.
+#
+# The services are in a PROFILE. `docker compose up -d --wait` still brings up
+# only the stores, which is what every chapter from 1.2 onwards tells a reader to
+# run and what the test lanes expect: the suites start their own api and their
+# own gateways, and a second copy holding the same tables would race them
+# (the outbox chapter's finding 4). `--profile services` runs the platform instead.
+name: relay
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    environment:
+      # Dev-only credentials — this file never ships anywhere.
+      POSTGRES_USER: relay
+      POSTGRES_PASSWORD: relay
+      POSTGRES_DB: relay
+    ports:
+      - "${RELAY_POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "relay", "-d", "relay"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 30s
+
+  redis:
+    image: redis:8-alpine
+    # No volume, on purpose: nothing in Redis is a source of truth.
+    # Fan-out is lossy by design (ADR-07); presence self-heals (ADR-10).
+    ports:
+      - "${RELAY_REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  nats:
+    image: nats:2.12-alpine
+    # JetStream on (-js) with file storage (-sd): the durable event spine
+    # (ADR-02) must survive a restart. -m exposes the monitoring endpoint.
+    command: ["-js", "-sd", "/data", "-m", "8222"]
+    ports:
+      - "${RELAY_NATS_PORT:-4222}:4222"
+      - "${RELAY_NATS_MONITOR_PORT:-8222}:8222"
+    volumes:
+      - nats-data:/data
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:8222/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:25.3
+    # The analytical store rides its own path (CON-01): single node in v1,
+    # schema already cluster-shaped (ADR-08).
+    ports:
+      - "${RELAY_CLICKHOUSE_HTTP_PORT:-8123}:8123"
+      - "${RELAY_CLICKHOUSE_NATIVE_PORT:-9000}:9000"
+    volumes:
+      - clickhouse-data:/var/lib/clickhouse
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:8123/ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 15s
+
+  mailpit:
+    image: axllent/mailpit:v1.28
+    # An SMTP server that accepts everything and delivers nothing,
+    # with an HTTP API for reading what it caught.
+    #
+    # WHY A CONTAINER RATHER THAN A FAKE. FR-WHK-07 says an email must not contain a
+    # signing secret, and the only artefact that can settle that is the message a
+    # server RECEIVED — a stub records what the sender passed, which is the same
+    # object the assertion would be reading, so a mailer that dropped the secret
+    # into a header the stub does not model would pass. Constitution VII asks a
+    # fifth container to justify itself; this is the justification (research R9).
+    #
+    # No volume. Mailpit holds messages in memory, and a test inbox that survived
+    # a restart would be a test inbox that leaks state between runs — the same
+    # reasoning as Redis's, which the entry above records.
+    ports:
+      - "${RELAY_MAILPIT_HTTP_PORT:-8025}:8025"
+      - "${RELAY_MAILPIT_SMTP_PORT:-1025}:1025"
+    healthcheck:
+      # Without one, `docker compose up -d --wait` waits for RUNNING rather than
+      # for READY, and V9 can read the API before it is serving. `infra.test.ts`
+      # says the same thing about the other four.
+      test: ["CMD", "/mailpit", "readyz"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+
+  # --- the services -------------------------------------------------------
+  # Behind `--profile services`, for the reason above.
+
+  api:
+    profiles: ["services"]
+    build:
+      context: .
+      dockerfile: services/api/Dockerfile
+    environment:
+      DATABASE_URL: postgres://relay:relay@postgres:5432/relay
+      RELAY_NATS_URL: nats://nats:4222
+      # Container names, not localhost — the api's own default is
+      # `redis://localhost:6379`, which inside this container is not the Redis
+      # service. And the tenant limiter FAILS OPEN by design (SAD §6.3), so a
+      # missing address would not crash anything: the composed stack would serve
+      # every request unlimited while reporting a limit. The constitution
+      # requires the full stack to start with one command, and this is what makes
+      # that true rather than merely quiet (research R24).
+      #
+      # RELAY_SMTP_URL joins in the transport phase, with the container it names.
+      RELAY_REDIS_URL: redis://redis:6379
+      # Development values. Both are secrets in anything that is not a laptop,
+      # and the api refuses to start in production without the first.
+      RELAY_WEBHOOK_SECRET_KEY: ${RELAY_WEBHOOK_SECRET_KEY:-}
+      RELAY_INTERNAL_CREDENTIAL: ${RELAY_INTERNAL_CREDENTIAL:-rk_svc_local_development_credential_0000}
+      PORT: "4000"
+    ports:
+      - "${RELAY_API_PORT:-4000}:4000"
+    depends_on:
+      postgres: { condition: service_healthy }
+      nats: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:4000/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 20s
+
+  gateway:
+    profiles: ["services"]
+    build:
+      context: .
+      dockerfile: services/gateway/Dockerfile
+    environment:
+      RELAY_API_URL: http://api:4000
+      RELAY_REDIS_URL: redis://redis:6379
+      PORT: "4001"
+    ports:
+      - "${RELAY_GATEWAY_PORT:-4001}:4001"
+    depends_on:
+      api: { condition: service_healthy }
+      redis: { condition: service_healthy }
+
+  dispatcher:
+    profiles: ["services"]
+    build:
+      context: .
+      dockerfile: services/dispatcher/Dockerfile
+    environment:
+      RELAY_API_URL: http://api:4000
+      RELAY_NATS_URL: nats://nats:4222
+      RELAY_INTERNAL_CREDENTIAL: ${RELAY_INTERNAL_CREDENTIAL:-rk_svc_local_development_credential_0000}
+    # So a webhook endpoint running on the DEVELOPER'S machine is reachable from
+    # inside the container. Without it, `scripts/hostile-endpoint.mjs` listens on
+    # the host's loopback and the dispatcher resolves 127.0.0.1 to its own — the
+    # quickstart's V6 step could not be run as written.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      api: { condition: service_healthy }
+      nats: { condition: service_healthy }
+
+volumes:
+  postgres-data:
+  nats-data:
+  clickhouse-data:
