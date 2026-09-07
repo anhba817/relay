@@ -168,11 +168,59 @@ walks through a diff.
 
 **Independent test**: count Part-3 chapter-number references in `relay-platform`. 1,429 today; zero in fenced files after.
 
-- [ ] T010 [US3] **DELETE the tag** — the ~757 references that are a parenthetical provenance note or a sentence-initial marker, across the `.ts` files of `relay-platform`. `(chapter 3.21, FR-RTM-08)` becomes `(FR-RTM-08)`; `(chapter 3.2)` at the end of a sentence goes; `// Chapter 3.8: nor the notification relay` loses its prefix. **No name is needed and `subjects.json` is not consulted** — the sentence stands without the tag, and where it carried a requirement id that id was always the durable half. (FR-008)
-- [ ] T011 [US3] **SUBSTITUTE a name** in `relay-platform/packages/`, from `subjects.json`, and record found against rewritten. (FR-008)
-- [ ] T011a [US3] Substitute in `relay-platform/services/api/src/db/` — `repository.ts` alone holds 129 references, the largest concentration in the tree. (FR-008)
-- [ ] T011b [US3] Substitute in the rest of `relay-platform/services/api/`, outside `src/db/repository.ts`, located with `grep -rn`. (FR-008)
-- [ ] T011c [US3] Substitute in `relay-platform/services/gateway/` and `services/dispatcher/`, located with `grep -rn`. (FR-008)
+- [X] T010 [US3] **DELETE the tag** — the ~757 references that are a parenthetical provenance note or a sentence-initial marker, across the `.ts` files of `relay-platform`. `(chapter 3.21, FR-RTM-08)` becomes `(FR-RTM-08)`; `(chapter 3.2)` at the end of a sentence goes; `// Chapter 3.8: nor the notification relay` loses its prefix. **No name is needed and `subjects.json` is not consulted** — the sentence stands without the tag, and where it carried a requirement id that id was always the durable half. (FR-008)
+  **687 tags deleted, then 25 more once one shape was widened — 712 in 182 files.** Zero
+  delete-class references remain and `typecheck`, `lint` and `build` are green.
+
+  **THE RULE TOOK FIVE ORDERINGS AND EACH WAS FOUND BY READING THE OUTPUT, NOT THE CODE:**
+
+  | Ordering | What it did to the tree |
+  |---|---|
+  | proximity to a requirement id | called `Chapter 3.8 needed the` a tag because an `ADR-05:` sat earlier on the line |
+  | parentheses before possessives | stripped `(3.17's T040b)` to `( T040b)` — 32 of them, possessives and plurals inside brackets |
+  | possessives first, verbs later | stripped `(chapter 3.11 added it)` to a hole; treated `it("… as chapter 3.10 shipped them")` as a tag, because `it(` opens a bracket |
+  | a last-resort strip for anything left | **applied to the tree**: 16 dangling prepositions and 36 orphaned possessives — `narrowed by's FR-044` |
+  | shape order, no last resort, quotes excluded | 712 rewritten, 0 unmatched |
+
+  **The fourth was caught by scanning the applied diff for damage signatures**, not by
+  reading the rule — 141 flagged lines, reverted, rule fixed, re-applied at 45 flagged of
+  which 44 were false positives. **The one true positive was pre-existing**: the source
+  already read `(chapter 3.11, , NFR-PERF-01)` with a double comma, and the scan found it.
+
+  **AND THE PATTERN ITSELF WAS WRONG A THIRD TIME.** `[Cc]hapter` misses `CHAPTER` — this
+  codebase writes ALL-CAPS for emphasis — so 75 references were invisible, and 117 bare
+  `3.N` more. **1,428 became 1,614 in 207 files.** The count read 985 until it gained a
+  capital `C`, the file count kept the lowercase pattern until analysis pass 3, and this is
+  the same word in caps. The spec and plan need amending.
+
+- [X] T011 [US3] **SUBSTITUTE a name** in `relay-platform/packages/`, from `subjects.json`, and record found against rewritten. (FR-008)
+  **578 substituted across five batches** — packages 71, api/src/db 109, the rest of the api
+  237, gateway 145, dispatcher 16 — with `typecheck`, `lint` and `build` green.
+
+  **CAPITALISATION FOLLOWS SENTENCE POSITION, NOT THE REFERENCE'S OWN CASE**, and it took a
+  revert to see why. The rule read `if ref[0].isupper()`, which in a codebase that writes
+  ALL-CAPS for emphasis is the wrong signal:
+
+      **THIS LINE IS THE ONE CHAPTER 3.21 FORGOT.**
+      -> **THIS LINE IS THE ONE The typing chapter FORGOT.**
+
+  Now a capital is added only where the reference opens a sentence — nothing before it, a
+  comment opener, or a full stop. Both damaged lines read lower-case and correct.
+
+  **AND TEMPORAL PREPOSITIONS MOVED TO THE READ CLASS.** `ADR-16 has said it since chapter
+  3.9` became `since the mail-transport chapter`, which is understandable and wrong about
+  why — the mail chapter has nothing to do with migrations. "Since" means a point in the
+  series, so 35 of these take a rewritten sentence instead of a name.
+
+- [X] T011a [US3] Substitute in `relay-platform/services/api/src/db/` — `repository.ts` alone holds 129 references, the largest concentration in the tree. (FR-008)
+  109 in `services/api/src/db/`; `repository.ts` alone held the largest concentration.
+
+- [X] T011b [US3] Substitute in the rest of `relay-platform/services/api/`, outside `src/db/repository.ts`, located with `grep -rn`. (FR-008)
+  237 in the rest of `services/api/`.
+
+- [X] T011c [US3] Substitute in `relay-platform/services/gateway/` and `services/dispatcher/`, located with `grep -rn`. (FR-008)
+  161 across `services/gateway/` (145) and `services/dispatcher/` (16).
+
 
   **~605 substitutions split four ways, because one task of that size cannot be told part-done from
   done.** Each batch reports found against rewritten. **Read each one; do not run a blind
