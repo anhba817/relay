@@ -177,7 +177,7 @@ walks through a diff.
   | Ordering | What it did to the tree |
   |---|---|
   | proximity to a requirement id | called `Chapter 3.8 needed the` a tag because an `ADR-05:` sat earlier on the line |
-  | parentheses before possessives | stripped `(3.17's T040b)` to `( T040b)` — 32 of them, possessives and plurals inside brackets |
+  | parentheses before possessives | stripped a possessive inside brackets to a hole, leaving the noun it modified stranded — 32 of them, possessives and plurals inside brackets |
   | possessives first, verbs later | stripped `(chapter 3.11 added it)` to a hole; treated `it("… as chapter 3.10 shipped them")` as a tag, because `it(` opens a bracket |
   | a last-resort strip for anything left | **applied to the tree**: 16 dangling prepositions and 36 orphaned possessives — `narrowed by's` where a requirement id had followed |
   | shape order, no last resort, quotes excluded | 712 rewritten, 0 unmatched |
