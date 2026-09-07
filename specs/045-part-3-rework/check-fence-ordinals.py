@@ -33,42 +33,58 @@ if bad:
     sys.exit(2)
 
 FILES = sorted(ROOT.glob("app/**/page.mdx")) + [ROOT / "fences/post-series.md"]
-left, empty = [], []
+left, empty, kept = [], [], []
 
+# A `for` LOOP, BECAUSE `continue` IN A HAND-INDEXED `while` IS AN INFINITE LOOP.
+# This scan was `while i < len(lines)` with `i += 1` at the bottom, and adding a
+# `if is_deliberate(body): continue` guard skipped the increment: a tight spin on one
+# core, no memory growth, so it hit a 120-second timeout rather than failing. Nothing
+# about the guard was wrong; the loop shape made it wrong. Indexing with `enumerate`
+# makes every `continue` safe by construction and the bug unwritable.
 for f in FILES:
     lines = f.read_text(encoding="utf-8").splitlines()
-    i, infence, isdiff = 0, False, False
+    infence = isdiff = False
     hunk = None
-    def close_hunk():
-        if hunk and hunk["minus"] == hunk["plus"] and hunk["minus"]:
+
+    def close_hunk(f=f):
+        if hunk and hunk["minus"] and hunk["minus"] == hunk["plus"]:
             empty.append((f, hunk["at"], hunk["minus"][0][:78]))
-    while i < len(lines):
-        l = lines[i]
+
+    for i, l in enumerate(lines):
         m = re.match(r"^```(\w+)?", l)
         if m and not infence:
-            infence, isdiff = True, m.group(1) == "diff"; hunk = None
-            i += 1; continue
+            infence, isdiff, hunk = True, m.group(1) == "diff", None
+            continue
         if l.startswith("```") and infence:
-            close_hunk(); infence = False; hunk = None
-            i += 1; continue
-        if infence:
-            if isdiff and l.startswith("@@"):
-                close_hunk(); hunk = {"at": i + 1, "minus": [], "plus": []}
-            elif isdiff and hunk is not None:
-                if l.startswith("-"): hunk["minus"].append(l[1:])
-                elif l.startswith("+"): hunk["plus"].append(l[1:])
-            body = l[1:] if (isdiff and l[:1] and l[:1] in "-+ ") else l
-            if is_deliberate(body):
-                continue
-            for m in REF.finditer(body):
-                if is_versionish(body, m):
-                    continue
-                left.append((f, i + 1, classify(body, m), body.strip()[:92]))
-        i += 1
+            close_hunk()
+            infence, hunk = False, None
+            continue
+        if not infence:
+            continue
+        if isdiff and l.startswith("@@"):
+            close_hunk()
+            hunk = {"at": i + 1, "minus": [], "plus": []}
+            continue
+        if isdiff and hunk is not None:
+            if l.startswith("-"):
+                hunk["minus"].append(l[1:])
+            elif l.startswith("+"):
+                hunk["plus"].append(l[1:])
+        body = l[1:] if (isdiff and l[:1] and l[:1] in "-+ ") else l
+        # A line whose subject IS an ordinal keeps it — `refrules.DELIBERATE`. Counted,
+        # never skipped silently.
+        if is_deliberate(body):
+            kept.append((f, i + 1, body.strip()[:92]))
+            continue
+        for mm in REF.finditer(body):
+            if not is_versionish(body, mm):
+                left.append((f, i + 1, classify(body, mm), body.strip()[:92]))
+    close_hunk()
 
 print("check-fence-ordinals: all controls fired")
 print(f"  ordinals still inside a fence body   {len(left)}  in {len({x[0] for x in left})} files")
 print(f"  hunks the rewrite emptied            {len(empty)}")
+print(f"  kept ON PURPOSE (DELIBERATE)         {len(kept)} lines in {len({x[0] for x in kept})} files")
 from collections import Counter
 by = Counter(x[2] for x in left)
 for k in ("delete", "substitute", "read"):

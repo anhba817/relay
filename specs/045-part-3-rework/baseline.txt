@@ -179,3 +179,74 @@ it supplements:
 
 The mirror is blind to exactly the damage the Vietnamese task is most likely to
 do, since T032 replaces everything that is not a fence.
+
+
+================================================================================
+PHASE 3, T014-T017 — THE FENCE CHAIN AND THE EXCERPT-ONLY FILES
+================================================================================
+
+check:fences   240 fenced files replay onto relay-platform across 41 chapters
+               (41 translated, fences mirrored, 2 retired, plus post-series)
+               exit 0
+
+The chain went 154 -> 12 -> 3 -> 16 -> 4 -> 3 -> 1 -> 0 problems. Every rise is a
+fix that widened the corpus and so found more, which is the shape to expect.
+
+WHERE THE REWRITE WENT, AND WHY NOT THE APPENDIX
+
+  chapter fence bodies    2,874 lines from the platform's nine rewrite commits
+                          228 more the platform never held at HEAD
+  fences/post-series.md   amended in the same pass, not as a strip-it-at-the-end hunk
+  one hunk deleted        chapter 16's only content was correcting 3.12 -> 3.14; with
+                          ordinals retired it changes nothing, and check-fence-chain
+                          already filters such a hunk, so this was for the reader
+
+THE CORPUS, MEASURED FOUR TIMES
+
+  rglob("*.ts") under services/ and packages/     266 files    reported 0 references
+  + .mts .mjs .sql .yaml .sh, whole tree          276 files    found 154 more
+  + every path a titled fence names               300 files    found 1 more (Dockerfile)
+  peak RSS after pruning node_modules from the walk           15.7 MB, 0.12 s
+  before pruning (34,620 paths materialised, 26,075 in node_modules)  84 MB, 0.84 s
+
+REFERENCES: 0 in 300 files, 1 kept ON PURPOSE (refrules.DELIBERATE).
+
+EXCERPT-ONLY FILES — WHAT check:fences COMPARES TO NOTHING
+
+  excerpt fences                                        112
+  distinct titles                                        68
+  ... naming no file at all (prose titles)               13
+  ... resolving to a file that IS chained elsewhere      42
+  EXCERPT-ONLY                                           13   (10 platform source)
+  ordinals in those ten                                   0
+  subject-naming lines inside excerpts                   11
+  ... naming a DIFFERENT subject than the source          0
+  ... with no counterpart in HEAD                         4   (earlier state of the file)
+
+  A first version compared whole bodies and called 38 of 99 fences drifted. An
+  excerpt elides, annotates, simplifies, and above all shows the file AS IT STOOD
+  AT THAT CHAPTER. Same error as targeting the platform file for the 49 paths the
+  appendix amends.
+
+RED PROBES — check-excerpt-files.py
+
+  excerpt names a different subject than source    exit 1, prints both sides
+  an ordinal returns to an excerpt-only file       exit 1
+  title stops stripping " before this chapter"     exit 2, a control names it
+
+  THE FIRST FORM OF PROBE 1 LEFT IT GREEN and that was the probe, not the checker:
+  the line chosen was one of the four with no counterpart in HEAD, so perturbing its
+  subject moves it between absent buckets and can never go red. A probe must be able
+  to fail for the reason being tested — "the checker missed it" and "the probe could
+  not show it" are indistinguishable from outside.
+
+REMAINING ORDINALS IN relay-tutorial: 6 distinct lines, all PROSE, none in a fence
+body. Prose keeps ordinals by design (data-model.md). One is
+`<ForwardRef part="chapters 3.13 and 3.14">`, a JSX prop, and it is T022's.
+
+HELD: pnpm typecheck / lint / build. Green at 42cd22b; ba7b8aa and 309ffdd are
+comment-only and NOT re-verified. The machine hard-locked twice during this task —
+0 OOM events in both boots, kernel log stopping mid-sentence, i915_hpd_poll_init_work
+hogged CPU >10000us escalating 7 -> 259 times, hybrid Intel + NVIDIA open module
+595.84 reporting "Cannot find any crtc or sizes" on every boot. Not this feature's
+processes, and turbo spawning tsc per package is the heaviest thing it runs.

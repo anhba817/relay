@@ -272,7 +272,7 @@ walks through a diff.
   was called a substitution is a deletion that consults no table. Batches sized by directory mixed all
   three, so neither the cost nor the reviewer was predictable per batch.
 
-- [ ] T014 [US3] Regenerate the fences for the **183** fenced files whose comments changed, and append amendment hunks to `relay-tutorial/fences/post-series.md`. **`-U6` is a default, not a rule**: regenerate wider when a pre-image matches twice, and verify the hunks apply clean before pasting, not after. `-U8` was worse than `-U6` once and `-U10` fixed it, because widening context merges adjacent hunks. (FR-006, FR-013)
+- [X] T014 [US3] Regenerate the fences for the **183** fenced files whose comments changed, and append amendment hunks to `relay-tutorial/fences/post-series.md`. **`-U6` is a default, not a rule**: regenerate wider when a pre-image matches twice, and verify the hunks apply clean before pasting, not after. `-U8` was worse than `-U6` once and `-U10` fixed it, because widening context merges adjacent hunks. (FR-006, FR-013)
 
   **THE PROPAGATION WAS MEASURED AND IT IS MECHANICAL.** Of 1,221 reference-bearing lines in fenced
   source, **94% are byte-identical from the chapter that introduced them to the final file and 0%
@@ -280,9 +280,97 @@ walks through a diff.
   separate decisions. The remaining **5% appear in no chapter snapshot at all**: those are the
   appendix's, and they are T021a's. **This premise was untested until analysis pass 3**, and it is the
   one headline check in this feature that passed.
-- [ ] T015 [US3] Verify: zero ordinals in fenced source, `check:fences` green at 240 files, and `pnpm typecheck`, `lint`, `build` green in `relay-platform`. **A comment edit that breaks a build is still a broken build.** (SC-002, FR-013)
-- [ ] T016 [US3] Check the **ten excerpt-only platform files** separately with `check-excerpt-files.py` — they carry **99 ordinals**, 43 of them in `session.itest.ts` alone. The other three of the thirteen are `docs/04-srs.md`, `docs/05-sad.md` and a predecessor's `baseline.txt`, which are not `relay-platform` source and so fall outside FR-008. **`check:fences` compares them to nothing**, so T015's green says nothing about them — and one of them, `session.itest.ts`, holds the only end-to-end proof of feature 044's signal.
-- [ ] T017 [US3] Commit all three repositories. `git checkout` on a file with uncommitted work has destroyed it twice in this project.
+  **THE TASK LINE AND ITS OWN NOTE DISAGREED, AND THE NOTE WAS RIGHT.** The line said to
+  append amendment hunks to `fences/post-series.md`; the note said a comment rewrite "is a
+  replace across snapshots". The appendix applies AFTER the last chapter, so amending 154
+  files there leaves every Part 3 chapter PUBLISHING `(chapter 3.8, research R1)` in its own
+  fence and stripping it once the reader has finished the book. The convention that every
+  platform change carries an appendix hunk is feature 044's, and **044 published no chapter**.
+  The fence bodies were rewritten instead. `check:fences` is green at **240 files**.
+
+  **THE MAP CAME FROM THE COMMITS, NOT FROM RE-RUNNING THE RULES.** The rewriters made
+  contextual decisions; re-deriving them against a fence's context could disagree by one
+  word, and a chain that disagrees by one word lands on a file that is not the platform's.
+  1,626 line mappings and 21 reflowed runs, read out of the nine rewrite commits — plus
+  **228 lines the platform never held at HEAD**, which no commit can describe: a comment
+  introduced in 3.2 and replaced by 3.9's hunk is published, typed by readers, and absent
+  from the final file. T014's note measured 94% of reference-bearing lines as byte-stable to
+  HEAD. True — and the other 6% is that.
+
+  **SIX DEFECTS, FOUR OF THEM INVISIBLE TO EVERY GATE HERE.**
+
+      five two-line tags joined wrongly     `(chapter 3.14,` / `// FR-024)` -> `(  // FR-024)`
+      24 references split over a line break `... which is chapter` / `* 3.12 found` — the
+                                            ordinal substituted, the word left dangling
+      19 deleted markers that were subjects  `// Chapter 3.22, and NOT for ...` -> `// And NOT ...`
+      11 lower-case names amid capitals      `* THE LOCK the quota chapter WANTED`
+      1 quotation a substitution made false  `used to say "the deduplication chapter's"` —
+                                            it never said that; the numbers ARE the evidence
+      154 references in 34 non-.ts files     `rglob("*.ts")` matches neither `.mts`, `.mjs`,
+                                            `.sql` nor `compose.yaml`; the Dockerfile has no
+                                            extension at all
+
+  **AND THE CLASSIFIER HAD THE SAME BLIND SPOT AS THE REWRITERS**, so "0 references in 0
+  files, every Part-3 ordinal in platform source now names its subject" was a claim about a
+  corpus that excluded 34 files. **A CHECKER WHOSE CORPUS IS NARROWER THAN ITS CLAIM says
+  nothing, and it says it in the language of a pass.** The corpus is now the union of source
+  suffixes and the paths titled fences name — 300 files — and reads 0, with 1 ordinal kept on
+  purpose in `refrules.DELIBERATE`.
+
+  **FOUR COPIES OF ONE RULE.** The comment-opener set lived in `classify`, in `delete_one`,
+  in the read class and in the re-capitaliser. Teaching three of them that `--` and `#` open a
+  comment left the fourth deciding the capital, so `-- Chapter 3.1 — the tenancy hierarchy`
+  was correctly recognised, correctly stripped, and came out `-- the tenancy hierarchy`.
+
+  **A REMOVED SQL COMMENT LINE READS `--- ` IN A DIFF**, which is also the file-header
+  prefix, so the map silently dropped every removed line in all fifteen migrations. Position
+  tells them apart: the headers sit between `diff --git` and the first `@@`.
+
+  **AND AN ORACLE THAT CAN BE WRONG IS NOT AN ORACLE.** A repair pass re-derived every
+  rewritten line from its pre-image and called any difference damage: 104 lines in 57 files,
+  and reading them showed the TREE was right — the "repair" put `(3.24)` back. The original
+  work was a pipeline of two rule passes, six read kinds and nine hand edits, and one
+  function is not equivalent to it. Rewritten to detect each damage class by its own
+  signature in the tree, where no oracle is needed.
+
+- [~] T015 [US3] Verify: zero ordinals in fenced source, `check:fences` green at 240 files, and `pnpm typecheck`, `lint`, `build` green in `relay-platform`. **A comment edit that breaks a build is still a broken build.** (SC-002, FR-013)
+  **PARTLY DONE, AND THE HELD PART IS NAMED.** Zero ordinals in fenced source (300-file
+  corpus, 1 kept on purpose) and `check:fences` green at 240 files are both confirmed.
+  `pnpm typecheck`, `lint` and `build` were green at commit `42cd22b`; the two commits after
+  it — `ba7b8aa` restoring the quotation and `309ffdd` the Dockerfile — are comment-only and
+  **NOT re-verified**, because the machine hard-locked twice during this task and turbo
+  spawning `tsc` per package is the heaviest thing this feature runs. `T015`'s own line says a
+  comment edit that breaks a build is still a broken build, so this is recorded open rather
+  than assumed. Neither lock-up was memory: **0 OOM events in both boots**, the kernel log
+  stopping mid-sentence, `i915_hpd_poll_init_work hogged CPU for >10000us` escalating 7 -> 259
+  times, and a hybrid Intel + NVIDIA open-module 595.84 stack reporting `Cannot find any crtc
+  or sizes` on every boot. The rewriters' own footprint was measured at **15.7 MB and 0.12 s**
+  after pruning a walk that had been materialising 34,620 paths including `node_modules`.
+
+- [X] T016 [US3] Check the **ten excerpt-only platform files** separately with `check-excerpt-files.py` — they carry **99 ordinals**, 43 of them in `session.itest.ts` alone. The other three of the thirteen are `docs/04-srs.md`, `docs/05-sad.md` and a predecessor's `baseline.txt`, which are not `relay-platform` source and so fall outside FR-008. **`check:fences` compares them to nothing**, so T015's green says nothing about them — and one of them, `session.itest.ts`, holds the only end-to-end proof of feature 044's signal.
+  **THIRTEEN, TEN OF THEM PLATFORM, AND THE COUNT IS PARSED BEFORE IT IS COUNTED.** 112
+  excerpt fences, 68 distinct titles, of which **13 name no file at all** — `the naive
+  version`, `the grep that changed the chapter`. Two more carry a prose suffix over a path
+  that IS chained elsewhere: `frames.ts, chapter 1.3` and `session.ts before this chapter`.
+  Counting those makes fifteen, which is the error this project has made four times in five.
+  `check-excerpt-files.py` asserts all four title shapes as controls before counting.
+
+  **THE 99 ORDINALS WERE ALREADY GONE** — these ten are `.ts` and `.sql` under `services/`
+  and `packages/`, so T010-T012's corpus covered them. The re-measurement reads **0**.
+
+  **THE QUESTION NOBODY ASKS IS THE SECOND ONE**, and its first form was wrong. Comparing
+  each excerpt body against its file reported **38 of 99 fences drifted**, nearly all
+  legitimately: an excerpt elides with `{ … }`, annotates (`path: req.originalUrl,   // was:
+  req.url`), simplifies a signature, and **above all often shows the file as it stood at that
+  chapter**. Comparing a chapter-5 excerpt to HEAD is the same mistake as pointing the
+  chain's replay at the platform file for the 49 paths the appendix amends — the target is
+  wrong, so the failure lands in the wrong place. Narrowed to the answerable question — a
+  line carrying a chapter SUBJECT NAME is a line this feature wrote, and it must read the
+  same in the fence and in the source — it reports **0 naming a different subject** and 4
+  with no counterpart in HEAD, each of which received the same substitution the identical
+  sentence got elsewhere in the platform.
+
+- [X] T017 [US3] Commit all three repositories. `git checkout` on a file with uncommitted work has destroyed it twice in this project.
 
 **Checkpoint**: US3 is independently shippable. Nothing has moved, and nothing can be aged by moving it.
 

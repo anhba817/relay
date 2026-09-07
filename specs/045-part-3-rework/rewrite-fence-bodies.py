@@ -111,18 +111,19 @@ if OV and OV.exists():
         if "\t" in l and not l.startswith("#"):
             a, b = l.split("\t", 1); over[a] = b
 
-decisions, unresolved = {}, []
+decisions, unresolved, kept = {}, [], []
 for body in distinct:
     new = over.get(body, rewrite_line(body))
     decisions[body] = new
     if any(not is_versionish(new, m) for m in REF.finditer(new)):
-        unresolved.append(body)
+        (kept if is_deliberate(body) else unresolved).append(body)
 
 print(f"rewrite-fence-bodies: {'APPLY' if APPLY else 'PROPOSE'}"
       f"{f'  (+{len(over)} overrides)' if over else ''}")
 print(f"  distinct reference-bearing lines   {len(distinct)}")
 print(f"  occurrences                        {sum(distinct.values())}")
 print(f"  STILL CARRY A REFERENCE after      {len(unresolved)}")
+print(f"  kept ON PURPOSE (DELIBERATE)       {len(kept)}")
 print(f"  unchanged by the rules             {sum(1 for k, v in decisions.items() if k == v)}")
 
 tsv = HERE / "fence-decisions.tsv"
@@ -133,12 +134,17 @@ for b in unresolved[:12]:
 
 if APPLY:
     n = 0
+    # ONE WALK, NOT ONE PER FILE. `fence_lines()` was called inside this loop, so each of
+    # 83 files re-read and re-scanned all 83 — about 6,900 full reads to do 83 files' work.
+    per_file = {}
+    for g, i, pref, body in fence_lines():
+        if body in decisions and decisions[body] != body:
+            per_file.setdefault(g, {})[i] = pref + decisions[body]
     for f in FILES:
+        by_idx = per_file.get(f)
+        if not by_idx:
+            continue
         lines = f.read_text(encoding="utf-8").splitlines()
-        by_idx = {}
-        for g, i, pref, body in fence_lines():
-            if g == f and body in decisions and decisions[body] != body:
-                by_idx[i] = pref + decisions[body]
         for i, v in by_idx.items():
             lines[i] = v; n += 1
         if by_idx:

@@ -110,6 +110,12 @@ SOURCE_SUFFIXES = (".ts", ".mts", ".cts", ".js", ".mjs", ".cjs", ".sql", ".yaml"
 SKIP = ("/dist/", "/node_modules/", "/.git/", "/coverage/", "/.turbo/", "/build/")
 
 
+# Memoised: `platform_files` calls this on every invocation and several scripts call
+# `platform_files` inside a loop, so without a cache the 83 `.mdx` files were read and
+# regexed once per call.
+_FENCED_CACHE = {}
+
+
 def fenced_paths(tutorial):
     """Every path a titled fence names — the checker's own definition of the corpus.
 
@@ -124,6 +130,8 @@ def fenced_paths(tutorial):
     import re as _re
     from pathlib import Path as _P
     tutorial = _P(tutorial)
+    if str(tutorial) in _FENCED_CACHE:
+        return _FENCED_CACHE[str(tutorial)]
     out = set()
     files = sorted(tutorial.glob("app/(en)/**/page.mdx")) + [tutorial / "fences/post-series.md"]
     for f in files:
@@ -134,6 +142,7 @@ def fenced_paths(tutorial):
             if "(excerpt)" in t or ".naive." in t:
                 continue
             out.add(t.split(",")[0].split(" before ")[0].split(" (deleted)")[0].strip())
+    _FENCED_CACHE[str(tutorial)] = out
     return out
 
 
@@ -148,16 +157,19 @@ def platform_files(root, tutorial=None):
     root = _P(root)
     tutorial = _P(tutorial) if tutorial else root.parent / "relay-tutorial"
     fenced = fenced_paths(tutorial)
-    for f in sorted(root.rglob("*")):
-        rel = str(f.relative_to(root))
-        s = "/" + rel
-        if not f.is_file():
-            continue
-        if f.suffix not in SOURCE_SUFFIXES and rel not in fenced:
-            continue
-        if any(k in s + "/" for k in SKIP):
-            continue
-        yield f
+    # PRUNE, DO NOT FILTER AFTERWARDS. `sorted(root.rglob("*"))` descends into
+    # `node_modules` and materialises the whole listing before any test runs: 34,620
+    # paths, 26,075 of them build output nothing here reads. `os.walk` lets the
+    # directories be dropped before they are entered.
+    import os as _os
+    prune = {"node_modules", ".git", "dist", "coverage", ".turbo", "build", "__pycache__"}
+    for dirpath, dirnames, filenames in _os.walk(root):
+        dirnames[:] = sorted(d for d in dirnames if d not in prune)
+        for fn in sorted(filenames):
+            f = _P(dirpath) / fn
+            rel = str(f.relative_to(root))
+            if f.suffix in SOURCE_SUFFIXES or rel in fenced:
+                yield f
 
 
 # A COMMENT OPENER IS NOT ALWAYS `//`. Migrations open with `--` and compose files and
