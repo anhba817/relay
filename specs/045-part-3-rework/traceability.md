@@ -14,7 +14,7 @@ is prose, and is carried through regeneration.
 | FR-005 | The error registry MUST appear before the first chapter that adds a code to it. | T018 |
 | FR-006 | The final state of every file the book publishes MUST be byte-identical before and after this… | T014, T021 |
 | FR-007 | Chapters MUST be renumbered to their new reading order, with no gaps and no reordering of the… | T009, T018, T019 |
-| FR-008 | A reference to a Part 3 chapter from `relay-platform` source MUST name the subject rather tha… | T008, T010, T011, T011a, T011b, T011c, T012, T013 |
+| FR-008 | A reference to a Part 3 chapter from `relay-platform` source MUST name the subject rather tha… | T008, T010, T011, T011a, T011b, T011c, T012, T013, T016 |
 | FR-009 | Every English chapter's prose MUST be preserved. This feature moves and renumbers; it does no… | T018, T023 |
 | FR-010 | **Every English chapter MUST have a Vietnamese page**, carrying a fence list and fence bodies… | T031, T032 |
 | FR-011 | A Vietnamese placeholder page MUST be visibly marked as awaiting translation, so a reader is … | T033 |
@@ -29,7 +29,7 @@ is prose, and is carried through regeneration.
 |---|---|---|
 | SC-001 | Eight of eight subject clusters are contiguous, against five of eight today. | T024 |
 | SC-002 | Zero Part-3 chapter-number references remain in fenced `relay-platform` source, against 1,429… | T008, T015 |
-| SC-003 | Every webhook event type the book teaches delivery for has a producer introduced in an earlie… | T027 |
+| SC-003 | Every **emitted** webhook event type has a producer introduced in an earlier chapter — five o… | T027 |
 | SC-004 | Every chapter that reuses the transactional outbox or the subject-grammar rule appears after … | T026 |
 | SC-005 | Every fenced file replays byte-exact onto `relay-platform` in the new chapter order, and the … | T004, T021 |
 | SC-006 | Every Vietnamese chapter carries a fence list and bodies byte-identical to its English counte… | T032, T034 |

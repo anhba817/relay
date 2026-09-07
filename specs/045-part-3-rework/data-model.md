@@ -34,30 +34,40 @@ prints the movement names is a presentation decision for Phase 6, not a requirem
 | **Invariant** | the state after the last fence equals the file in `relay-platform`, byte for byte |
 | **Kinds** | a plain fence states the whole file at that point; a `diff` fence amends the state before it |
 | **Population** | 242 fenced paths, 904 fences repository-wide; 207 paths and 623 fences in Part 3 |
-| **Changing here** | **169 paths**: 166 because a comment inside them changes, 39 because their chapter order changes, 36 overlapping |
+| **Changing here** | **169 paths**: 166 because a comment inside them changes, 42 because their chapter order changes, overlapping |
 
-**This is the feature's risk, and it is concentrated.** 278 fences sit on the 39 order-changing paths,
-and `repository.ts` alone carries 23 of them across 17 chapters.
+**This is the feature's risk, and it is concentrated.** **289 fences sit on 42 order-changing paths**
+once the milestone chapter's split is counted, and `repository.ts` alone carries 23 of them across 17
+chapters.
 
 ### How a chain is re-derived
 
 Not by re-hunking. Replaying the existing per-chapter deltas in the new order lands correctly on 3 of
-39 paths — research R2. Instead each state is synthesised:
+39 paths — research R2. And **not by filtering the final file either**, which was this document's
+first answer:
 
-    for a path, in the new chapter order:
-      state(c) = the final file, minus every line owned by a cluster later than c
-      fence(c) = diff(state(c-1), state(c))
+    state(c) = the final file, minus every line owned by a later cluster      FALSIFIED
 
-**Ownership comes from the current chain**, which attributes each final line to the chapter that
-introduced it. The final file is fixed, so the chain lands on it by construction — the failure mode is
-not drift but an intermediate state that does not compile.
+Analysis pass 2 built it. It gives **52 parse errors on `repository.ts` and 59 on `session.ts`**,
+because line-level ownership cuts through syntax — a method whose signature and body arrived in
+different chapters leaves unbalanced braces when one of them is dropped. It also leaves ~2% of lines
+with no owner, which the rule then keeps in every state including those before the line existed.
+
+What is used instead is a **three-way merge**: cherry-pick each chapter's delta onto the new order,
+resolve the 31 conflicts by hand, and check the 5 paths that merge cleanly onto a *different* file.
+Measured on the eight paths that merge clean end to end: **56 intermediate states, 0 parse failures.**
+A merge of two real files is a real file.
+
+**The final state is the acceptance, not the construction.** `check:fences` compares byte-exact
+against `relay-platform`, and every synthesised state is typechecked — a state that will not compile
+means the order violates a real dependency.
 
 ### State transitions
 
     a path no chapter fences        outside the chain entirely; edits invisible to every gate
     a path fenced once              a plain fence; order-independent
     a path fenced by one movement   order-independent under this feature
-    a path fenced across movements  re-derived — this is the 39
+    a path fenced across movements  re-derived by merge — this is the 42
     a path published as (excerpt)   never compared to anything; thirteen of these
 
 **The excerpt-only row is the one to watch.** Thirteen files are published only as `title="… (excerpt)"`
@@ -83,9 +93,28 @@ a comment is not. The rule applies where the reference is durable and the gate i
 
 ## Chapter map
 
-The old-to-new table. **One record, two consumers** — the redirects in `next.config.ts` and the
-published mapping page. Modelled as an entity rather than a step because the alternative is two lists
-that must agree and will not.
+The old-to-new table. **One record, three consumers** — the redirects in `next.config.ts`, the
+published mapping page, and the chapter registry below. Modelled as an entity rather than a step
+because the alternative is three lists that must agree and will not. **It read "two consumers" until
+analysis counted them**, which is the defect this entity exists to prevent, committed by the document
+describing it.
+
+## Chapter registry
+
+`relay-tutorial/lib/tutorial.ts`. **810 hand-maintained lines** declaring every chapter's number,
+path, title, `titleVi`, reading time and what the reader produces.
+
+| | |
+|---|---|
+| **Read by** | `app/sitemap.ts` and six components — the series sidebar, the chapter shell's previous and next links, the site header, the landing page, the language switcher |
+| **Guarded by** | **nothing.** No script reads it, no test compares it to the filesystem |
+| **State today** | 41 declared, 41 on disk, agreeing in both directions |
+| **Changes here** | 24 Part 3 entries renumbered and reordered, one added for the split |
+
+**Unguarded is not the same as broken**, and it is the harder condition to notice. A renumbering that
+skipped this file would leave `check:fences` green, `check:docs` green, and every navigation link in
+the book dead. FR-015 and SC-009 exist because analysis pass 1 asked what else in the tree knows a
+chapter number.
 
 ## What is deliberately not modelled
 

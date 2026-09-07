@@ -127,6 +127,36 @@ plausible: `docs/07-tutorial-plan.md` looked like it needed `pnpm sync:docs` bef
 `check-docs-drift.sh:31` says it is deliberately the one document not mirrored. And the registry
 looked like it might already be stale; it is not.
 
+### What analysis pass 2 changed
+
+**The mechanism the plan rested on was falsified by building it.** R4 specified each chapter's state
+as *the final file minus every line owned by a later cluster*. Run against the tree it gives **52
+parse errors on `repository.ts`, 59 on `session.ts`** — line-level ownership cuts through syntax, and
+only the 71-line flat `app.module.ts` survives intact. It also leaves ~2% of lines with no owner,
+which the rule keeps in every state including those before the line existed.
+
+**The control caught it, which is the part worth keeping.** Synthesising at the *current* order
+reproduced **17 of 96** states, so the feature would have halted at its own Phase 1 gate. It halted in
+analysis instead only because somebody built the tool a phase early.
+
+**The replacement was measured before it was written down**: three-way merge of the existing deltas
+gives **56 intermediate states with 0 parse failures**, at a cost of 31 conflicts to resolve by hand.
+A merge of two real files is a real file; a filtered subset of one is not.
+
+**And SC-003 could never have been met.** It asked that *every* webhook event type have a producer in
+an earlier chapter. Three of the eight declared have no producer anywhere, this feature builds none,
+and so "every" was unreachable by construction:
+
+| Named in the spec | Class | Why the spec names it |
+|---|---|---|
+| `channel.created` | a declared, unbuilt event type | SC-003 excludes it by name rather than by silence — it has no producer and this feature adds none |
+| `user.connected` | a declared, unbuilt event type | same |
+| `user.disconnected` | a declared, unbuilt event type | same |
+
+Its stated baseline was inverted too — "three of eight today" where `event.ts` marks **five** emitted.
+Now scoped to the emitted five, with the three recorded rather than counted. **A criterion nothing can
+satisfy is worse than a missing one**, because it is traced, ticked and permanently red.
+
 ### The one item that could still be wrong
 
 **FR-009 says prose is preserved, and a moved chapter's prose may not survive the move unchanged.**

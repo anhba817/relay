@@ -49,8 +49,9 @@ them in the new order produces either a merge conflict (31 paths) or a clean mer
 file** (5 paths) — and the second is worse, because it passes every mechanical check up to the final
 comparison.
 
-**278 fences sit on those 39 paths**, 237 of them diffs, 228 of them inside Part 3. That is the unit
-of work this feature is actually made of.
+**289 fences sit on 42 paths** once the milestone chapter's split is counted — this read 278 on 39
+until the split was decided in `contracts/chapter-map.md`. That is the unit of work this feature is
+actually made of.
 
 ---
 
@@ -82,29 +83,63 @@ nature, because it lists one entry per feature in the order the features were ad
 
 ## R4 — Then how is the chain re-derived?
 
-**Decision: synthesise each chapter's state from the final file by cluster attribution, and typecheck
-every synthesised state.**
+**Decision: by three-way merge of the existing per-chapter deltas, resolving the conflicts by hand.
+The first answer here was attribution-and-filter, and analysis pass 2 falsified it.**
 
-The attribution built for R3 is the mechanism. For a path and a chapter in the new order, the state is
-**the final file with every line owned by a later cluster removed**. The final file is fixed, so the
-chain lands on it by construction; the fences are then generated between consecutive synthesised
-states.
+### What was tried first, and why it fails
 
-**And the synthesis doubles as a check on the order itself.** If a synthesised state does not
-typecheck — a domain method calling a helper the webhook cluster introduces — then the proposed order
-violates a real dependency and the order is wrong, not the tool. That failure is loud, it names the
-file, and it arrives before any prose is moved.
+The attribution built for R3 suggested a rule: for a path and a chapter in the new order, the state
+is **the final file with every line owned by a later cluster removed**. The final file is fixed, so
+the chain would land on it by construction.
+
+**It produces files that do not parse.** Built and run against the tree:
+
+    services/api/src/db/repository.ts   synthesised at one position   52 parse errors
+    services/gateway/src/session.ts                                   59 parse errors
+    services/api/src/db/schema.ts                                      4 parse errors
+    services/api/src/app.module.ts                                     0 — 71 lines, a flat list
+
+Line-level ownership cuts through syntax. A method whose signature arrived in one chapter and whose
+body grew in another; an object literal assembled across three; a `try` wrapped later around an
+existing block. Removing the later-owned lines leaves unbalanced braces, and only the smallest and
+flattest file survives.
+
+**Two further problems, both of which would have been silent.** About **2% of lines get no owner at
+all** — 137 in `repository.ts`, 37 in `session.ts` — and the rule drops lines owned by *later*
+clusters, so an unowned line is kept in **every** state, including states before it existed. And
+nothing in a byte-exact comparison of the *final* file can see either fault, because the final file
+is right by construction.
+
+### What is used instead
+
+**Cherry-pick the per-chapter deltas onto the new order and resolve the conflicts.** This is R2's
+experiment turned into the mechanism rather than into a warning:
+
+    39 order-changing paths      3 replay clean      31 conflict      5 land on a different file
+
+The 31 conflicts are hand-resolved and the 5 silent divergences are the ones to watch, since they
+pass every check until the final comparison.
+
+**States derived this way are real states.** Measured on the eight `.ts` paths that cherry-pick clean
+end to end:
+
+    56 intermediate states produced by three-way merge      0 fail to parse
+
+against 52 and 59 parse errors from the mechanism this replaces. A merge of two real files is a real
+file; a filtered subset of one is not.
+
+**And the typecheck stays as the acceptance**, for the reason it was added: a state that will not
+compile means the order violates a real dependency, and that is a finding about the order rather than
+a bug in the tool.
 
 **Alternatives considered.** Restating each moved file as a whole-file fence removes the pre-image
-problem entirely and was rejected: a whole-file fence of `repository.ts` is 5,533 lines in a published
-chapter. Hand-authoring all 278 fences was rejected as the default, though it remains the fallback for
-any path where synthesis fails to typecheck.
+problem and was rejected — a whole-file fence of `repository.ts` is 5,533 lines in a published
+chapter. Hand-authoring all 289 fences from nothing was rejected as the default; hand-resolving 31
+merge conflicts is the same work bounded to where the conflict actually is.
 
-**What this does not solve.** Synthesis produces a state, not a narrative. A chapter whose prose walks
-through a diff will need that prose checked against the regenerated diff. That is reading work, and
-`check:fences` cannot see it.
-
----
+**What this does not solve.** A merge produces a state, not a narrative. A chapter whose prose walks
+through a diff will need that prose checked against the regenerated diff, and `check:fences` cannot
+see it.
 
 ## R5 — What does rewriting 1,429 source references actually cost?
 

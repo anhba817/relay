@@ -34,9 +34,12 @@ an estimate**, and this one was the headline.
   interleaved cluster runs across 7 clusters** in 5,533 lines, `session.ts` 85 runs, and
   `app.module.ts` 21 runs in 71 lines. Making each cluster contiguous means refactoring the
   platform's largest file for the book's convenience.
-- **Each chapter's state can be synthesised from the final file**, by attributing every line to the
-  chapter that introduced it and removing what later clusters own. The chain lands on the final file
-  by construction rather than by luck.
+- **Each chapter's state comes from a three-way merge of the existing deltas, not from filtering the
+  final file.** The first design attributed every line to a chapter and dropped what later clusters
+  owned; analysis pass 2 built it and it produced files that **do not parse** — 52 errors on
+  `repository.ts`, 59 on `session.ts`. Cherry-picking the deltas onto the new order gives states that
+  are real files: **56 intermediate states measured, 0 parse failures.** The cost is 31 conflicts to
+  resolve by hand.
 - **6% of the 1,429 source references need a person.** 29% sit beside a requirement id and lose only
   the ordinal; 64% take a name from a 24-entry table.
 
@@ -54,8 +57,8 @@ the generator. `next.config.ts` for redirects, currently configuring none.
 
 **Storage**: none. This feature changes no schema, no migration, no runtime behaviour.
 
-**Testing**: the fence chain is the test. `check:fences` replays 240 fenced files across 41 chapters
-and fails byte-exact. The platform's own suites are the control: **they must not change**, and the
+**Testing**: the fence chain is the test. `check:fences` replays 240 fenced files across **42**
+chapters after the split — 41 today — and fails byte-exact. The platform's own suites are the control: **they must not change**, and the
 battery's duration is a tripwire on that.
 
 **Target Platform**: unchanged.
@@ -105,9 +108,14 @@ prose that walks through a diff that no longer looks the same.
 ## Phases
 
 **Phase 1 — Setup, and proving the instrument on today's chain.**
-Build the attribution and synthesis tools, then point them at the **current** order and require a
-byte-exact reproduction of today's chain. A generator that cannot rebuild what exists cannot be
-trusted to build what does not. This is the control, and it comes before anything moves.
+Build the replay-and-merge pipeline, then point it at the **current** order and require a byte-exact
+reproduction of today's chain. A generator that cannot rebuild what exists cannot be trusted to build
+what does not. This is the control, and it comes before anything moves.
+
+**It has already earned its place.** The first mechanism this plan specified — filtering the final
+file by line attribution — reproduced **17 of 96** states under exactly this control, and produced
+unparseable files besides. The control fired in analysis rather than in implementation only because
+somebody built the tool early; the plan is written so that it fires either way.
 
 **Phase 2 — Foundational: the three tables.**
 The 24-entry subject-name table, the old-to-new chapter map, and the reference classification.

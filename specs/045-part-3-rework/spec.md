@@ -192,8 +192,13 @@ today; the target is zero in fenced files.
   against 1,429 today. **Report the pattern alongside the count**: the first measurement of this
   number was 985 under a narrower pattern, and a scan whose reach is unstated is a scan nobody can
   check.
-- **SC-003**: Every webhook event type the book teaches delivery for has a producer introduced in an
-  earlier chapter, against three of eight today.
+- **SC-003**: Every **emitted** webhook event type has a producer introduced in an earlier chapter —
+  five of the eight declared, and today none of the five does. **This criterion said "every event type
+  the book teaches delivery for" and could never be satisfied**: `channel.created`, `user.connected`
+  and `user.disconnected` are declared and have no producer anywhere, and building them is out of
+  scope, so "every" was unreachable by construction. **Its baseline was also inverted** — it read
+  "three of eight today" where `event.ts` marks five emitted and three not. Both corrected in analysis
+  pass 2; the three unbuilt types are recorded rather than counted.
 - **SC-004**: Every chapter that reuses the transactional outbox or the subject-grammar rule appears
   after the chapter that teaches it in full. **Not "exactly one chapter", which this criterion read
   until it was matched against FR-009** — counting explanations measures compression, and this

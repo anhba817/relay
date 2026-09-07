@@ -12,7 +12,7 @@ them, and no gate could then say which one broke a chapter. Stated here rather t
 to discover by reading the phase numbers.
 
 **Tests are the fence chain.** This feature writes no test code. `check:fences` replays 240 fenced
-files byte-exact across 41 chapters and is the acceptance test for almost every task below. The two
+files byte-exact across 42 chapters after the split — 41 today — and is the acceptance test for almost every task below. The two
 places it cannot see are named where they occur: the thirteen excerpt-only files, and prose that
 walks through a diff.
 
@@ -21,9 +21,16 @@ walks through a diff.
 ## Phase 1: Setup — and proving the instrument before trusting it
 
 - [ ] T001 Pin the starting state in `specs/045-part-3-rework/baseline.txt`: all fourteen gates with each exit code captured **outside any pipeline**, plus the numbers this feature is measured against — 24 chapters, 447,394 words, 242 fenced files, 904 fences, 1,429 source references, and the battery's 225.45 s mean with stdev 1.15. **`fail=1` inside a `for … | sort` runs in a subshell and dies with it**, which has printed "ALL GATES: GREEN" over a red one three times in feature 043. (SC-007)
-- [ ] T002 Build the attribution tool at `specs/045-part-3-rework/attribute.mjs`: for every fenced path, walk the published chain and record which chapter introduced each line of the final file. Output one JSON map. **Copy `check-fence-chain.mjs` and truncate it rather than reimplementing the replay** — a generator that replays differently from the checker produces output the checker rejects for reasons neither explains.
-- [ ] T003 Build the synthesiser at `specs/045-part-3-rework/synth.mjs`: given a chapter order and the attribution map, emit each chapter's state for each path, and the fence between consecutive states. States are **the final file minus every line owned by a later cluster**, so the chain lands on the final file by construction.
-- [ ] T004 **The control, and the reason Phase 1 exists.** Run `synth.mjs --order current` and require byte-exact reproduction of today's `app/(en)/part-3` fences. **A generator that cannot rebuild what already exists cannot be trusted to build what does not**, and every later phase reads its output. (SC-005)
+- [ ] T002 Build the snapshot tool at `specs/045-part-3-rework/snapshot.mjs`: replay the published chain and dump each path's state **after every chapter**. **Copy `check-fence-chain.mjs` and truncate it rather than reimplementing the replay** — a generator that replays differently from the checker produces output the checker rejects for reasons neither explains.
+- [ ] T003 Build the replay tool at `specs/045-part-3-rework/replay.mjs`: for each path, commit the snapshots as a git history, cherry-pick them onto the new order, and emit each resulting state plus the fence between consecutive states. Conflicts stop and are reported by path, for hand resolution in T021.
+
+  **THIS IS NOT THE MECHANISM THE PLAN FIRST SPECIFIED, AND THE REPLACEMENT WAS MEASURED.** The first
+  design filtered the final file by line attribution — *the final file minus every line owned by a
+  later cluster*. Analysis pass 2 built it: **52 parse errors on `repository.ts`, 59 on `session.ts`,
+  4 on `schema.ts`**, because line-level ownership cuts through syntax. Three-way merge instead gives
+  **56 intermediate states with 0 parse failures**. A merge of two real files is a real file; a
+  filtered subset of one is not.
+- [ ] T004 **The control, and the reason Phase 1 exists.** Run `replay.mjs --order current` and require byte-exact reproduction of today's `app/(en)/part-3` fences. **A generator that cannot rebuild what already exists cannot be trusted to build what does not**, and every later phase reads its output. **This control has already caught one mechanism**: the attribution design reproduced **17 of 96** states under it, which is how T003's approach came to be replaced before a line of the book moved. (SC-005)
 - [ ] T005 Prove T004's control can fail: perturb one fence body in a Part 3 `page.mdx`, confirm the comparison names that file and that fence, restore. **A control that has never been red is a control nobody has tested** — feature 044 shipped two probes that could not fail, one of them written by the audit that exists to find them.
 
 **Checkpoint**: the tool reproduces the present. Nothing has moved.
@@ -63,7 +70,7 @@ walks through a diff.
 - [ ] T013 [P] [US3] Rewrite the 210 references in the 49 **unfenced** `.ts` files under `relay-platform`. Parallel with T010–T012 only if the file sets are confirmed disjoint first — check, do not assume. (FR-008)
 - [ ] T014 [US3] Regenerate the fences for the 166 fenced files whose comments changed, and append amendment hunks to `relay-tutorial/fences/post-series.md`. **`-U6` is a default, not a rule**: regenerate wider when a pre-image matches twice, and verify the hunks apply clean before pasting, not after. `-U8` was worse than `-U6` once and `-U10` fixed it, because widening context merges adjacent hunks. (FR-006, FR-013)
 - [ ] T015 [US3] Verify: zero ordinals in fenced source, `check:fences` green at 240 files, and `pnpm typecheck`, `lint`, `build` green in `relay-platform`. **A comment edit that breaks a build is still a broken build.** (SC-002, FR-013)
-- [ ] T016 [US3] Check the thirteen excerpt-only files separately with `check-excerpt-files.py`. **`check:fences` compares them to nothing**, so T015's green says nothing about them — and one of them, `session.itest.ts`, holds the only end-to-end proof of feature 044's signal.
+- [ ] T016 [US3] Check the **ten excerpt-only platform files** separately with `check-excerpt-files.py` — they carry **99 ordinals**, 43 of them in `session.itest.ts` alone. The other three of the thirteen are `docs/04-srs.md`, `docs/05-sad.md` and a predecessor's `baseline.txt`, which are not `relay-platform` source and so fall outside FR-008. **`check:fences` compares them to nothing**, so T015's green says nothing about them — and one of them, `session.itest.ts`, holds the only end-to-end proof of feature 044's signal.
 - [ ] T017 [US3] Commit all three repositories. `git checkout` on a file with uncommitted work has destroyed it twice in this project.
 
 **Checkpoint**: US3 is independently shippable. Nothing has moved, and nothing can be aged by moving it.
@@ -79,7 +86,7 @@ walks through a diff.
 - [ ] T018 [US1] Split the milestone chapter per `contracts/chapter-map.md`: the error-registry half becomes new 3.3 under its own slug, the outsider half becomes new 3.25 keeping `errors-that-resolve-and-an-outsider`. **Its 21 fences divide 14 to the registry and 7 to the outsider**, at the chapter's own `## The outsider` heading on line 961 of 1,565 — nothing straddles it, and the assignment is in `contracts/chapter-map.md` because the scope estimate turns on it. **This is the only chapter whose prose is divided**, and the division is where FR-009's "prose is preserved" is most at risk. (FR-005, FR-007)
 - [ ] T019 [US1] Rename the 24 English chapter directories under `relay-tutorial/app/(en)/part-3/` per `chapter-map.json`. **The slug travels with the chapter; only the numeric segment moves.** (FR-007)
 - [ ] T020 [US1] Update `metadata.alternates.canonical` and the `languages` pair in each moved `page.mdx`, which name their own path and do not follow a directory rename.
-- [ ] T021 [US1] Run `synth.mjs --order new` for the **42** order-changing paths and write the **289** regenerated fences into their chapters. **These counts moved during analysis**: 39 and 278 assumed the milestone chapter moved whole, and the answer is 39/278 if its fences land early against 44/300 if late. The split is now decided fence by fence in `contracts/chapter-map.md`. **3 of 39 would replay from the old deltas and 36 would not** — 31 conflict and 5 land on a different file, which is the outcome that passes every check but the last. (FR-006, SC-005)
+- [ ] T021 [US1] Run `replay.mjs --order new` for the **42** order-changing paths, **resolve the 31 merge conflicts by hand**, and write the **289** regenerated fences into their chapters. **Give the 5 paths that merge cleanly onto a *different* file their own reading** — they pass every mechanical check until the final byte comparison, which is the worst way for this to fail. **These counts moved during analysis**: 39 and 278 assumed the milestone chapter moved whole, and the answer is 39/278 if its fences land early against 44/300 if late. The split is now decided fence by fence in `contracts/chapter-map.md`. **3 of 39 would replay from the old deltas and 36 would not** — 31 conflict and 5 land on a different file, which is the outcome that passes every check but the last. (FR-006, SC-005)
 - [ ] T022 [US1] Rewrite the 54 forward references in Part 3 prose, across the English `page.mdx` files. A sentence that says "chapter 3.19 will build this" is wrong when 3.19 now precedes it; some become backward references and some become nothing.
 - [ ] T023 [US1] Read every moved chapter's prose against its regenerated diffs. **This is the task no gate can do.** A chapter that walks a reader through a hunk now shows a different hunk, and `check:fences` is satisfied either way. Budget for it: 289 fences across 42 paths, concentrated in `repository.ts` (23 fences), `schema.ts` and `session.ts` (16 each). (FR-009)
 - [ ] T023a [US1] Rewrite the 24 Part 3 entries in `relay-tutorial/lib/tutorial.ts` from `chapter-map.json` — number, path and order — and add the 25th for the split chapter, deriving its `readerMinutes` and `readerProduces` from the halves. **No requirement named this file until analysis went looking for what else knows a chapter number**, and skipping it leaves every gate green with a broken sitemap, a broken sidebar and dead previous-and-next links on all 25 chapters. (FR-015)
@@ -99,8 +106,8 @@ walks through a diff.
 
 **This phase is mostly verification of Phase 4's arrangement**, and saying so is honest: FR-002 is satisfied by the order chosen in `contracts/chapter-map.md`, not by code written here. What this phase adds is the proof, and the proof can fail.
 
-- [ ] T026 [US2] Typecheck every synthesised intermediate state: `synth.mjs --order new --typecheck-each`. **A state that does not compile is a finding about the order, not a bug in the tool** — it means a chapter teaches code calling something a later chapter introduces. Record which pair and move one of them. (FR-002, FR-003, SC-004)
-- [ ] T027 [US2] Trace each of the eight event types declared in `relay-platform/services/api/src/outbox/event.ts` to a producer in an earlier chapter, and record the three that still have none. Feature 043 measured **838 stored subscriptions to types the platform does not emit**; this feature does not build them, and the record should say which they are rather than implying the count is now eight of eight. (FR-002, SC-003)
+- [ ] T026 [US2] Typecheck every intermediate state: `replay.mjs --order new --typecheck-each`. **A state that does not compile is a finding about the order, not a bug in the tool** — it means a chapter teaches code calling something a later chapter introduces. Record which pair and move one of them. (FR-002, FR-003, SC-004)
+- [ ] T027 [US2] Trace each **emitted** event type in `relay-platform/services/api/src/outbox/event.ts` to a producer in an earlier chapter — **five of the eight declared**, measured from the `emitted` flags. Record the other three, `channel.created`, `user.connected` and `user.disconnected`, as declared and unbuilt. Feature 043 measured **838 stored subscriptions to types the platform does not emit**; this feature builds none of them, which is why SC-003 is scoped to the emitted set rather than to all eight. (FR-002, SC-003)
 - [ ] T028 [US2] Confirm the isolation milestone at new 3.24 attacks every route built before it, from `relay-platform/services/api/src/isolation/gauntlet.itest.ts`, using its own derived target list rather than a hand-written one. The list extends itself from the running router, so this is a check that the derivation still runs, not that somebody remembered to add rows. (FR-004)
 - [ ] T029 [US2] Confirm the outsider milestone at new 3.25 has nothing after it — no later `page.mdx` under Part 3 — and that the SRS Phase 2 exit criterion it renders a verdict on is still the last word in Part 3. (FR-004)
 - [ ] T030 [US2] Commit all three repositories with `git commit`, root pointer last.
@@ -179,12 +186,14 @@ tasks do not have.
 **MVP is Phase 1 + Phase 2 + Phase 3 + Phase 4.** That is the defect closed: Part 3 reads as eight
 movements and no reference ages when a chapter moves. Phase 5 proves it, Phases 6 and 7 publish it.
 
-**Phase 1 is not optional and not setup.** It is the control. If `synth.mjs` cannot rebuild today's
+**Phase 1 is not optional and not setup.** It is the control. If `replay.mjs` cannot rebuild today's
 chain byte-exact, every fence it writes later is unverifiable, and the feature has no test at all.
+**The control has already rejected one mechanism at 17 of 96 states**, which is the argument for
+running it before anything moves rather than after.
 
 **Commit each phase.**
 
-**Expect the file count to be wrong.** The plan estimates 169 fenced files and 278 fences. Feature 043
+**Expect the file count to be wrong.** The plan estimates 169 fenced files and 289 fences across 42 paths — and it read 39 and 278 until analysis re-measured with the milestone split. Feature 043
 estimated 17 files and changed 58; feature 044 estimated 12, then 15, then 17. Every unplanned file in
 043 came from **running** something rather than reading it, and T023 — reading prose against
 regenerated diffs — is the task most likely to find work no instrument here can see.

@@ -10,24 +10,31 @@ audit log is 4.7.
 <!-- SPECKIT START -->
 **ACTIVE FEATURE:** `specs/045-part-3-rework/` — Part 3's 24 chapters regrouped into eight
 contiguous subject movements and renumbered to 25, English prose only. Plan:
-`specs/045-part-3-rework/plan.md`. **52 tasks, 8 phases, one analysis pass so far.**
+`specs/045-part-3-rework/plan.md`. **52 tasks, 8 phases, two analysis passes.**
 
-**PLANNING OVERTURNED THE SPEC AND ANALYSIS OVERTURNED THE PLAN.** Replaying the existing
-per-chapter deltas in a new order lands correctly on **3 of 39** paths — 31 conflict and 5 merge
-cleanly onto a DIFFERENT file, which passes every check until the last one. So the fences are
-**re-derived by attribution from the final file**, not re-hunked.
+**EACH STAGE OVERTURNED THE ONE BEFORE IT, AND EVERY TIME BY RUNNING SOMETHING.**
 
-**AND THE HEADLINE SCOPE NUMBER TURNED ON AN UNDECIDED DESIGN QUESTION.** 39 paths / 278 fences
-assumed the milestone chapter moved as a unit; the design splits it, and the answer is 39/278 if
-its fences land early against 44/300 if late. Split decided at its own `## The outsider` heading —
-14 fences to the registry, 7 to the outsider — and re-measured: **42 paths, 289 fences**.
+**Planning killed the spec's assumption.** Replaying the existing per-chapter deltas in a new order
+lands correctly on **3 of 39** paths — 31 conflict, and 5 merge cleanly onto a DIFFERENT file, which
+passes every check until the last one.
 
-**THE THING NO GATE COVERED.** `relay-tutorial/lib/tutorial.ts` is 810 hand-maintained lines
-declaring all 41 chapters, read by `app/sitemap.ts` and six components including every chapter's
-previous-and-next links. No requirement named it, no task touched it, nothing compares it to the
-filesystem — a renumbering that skipped it leaves every gate green and every link dead. It agrees
-today at 41 and 41: **unguarded, not broken**, which is the harder condition to notice. Found by
-asking *what else in this tree knows a chapter number*.
+**Analysis pass 1 killed the scope number and found what no gate covered.**
+`relay-tutorial/lib/tutorial.ts` is 810 hand-maintained lines declaring all 41 chapters, read by
+`app/sitemap.ts` and six components including every chapter's previous-and-next links. Nothing
+compares it to the filesystem — a renumbering that skipped it leaves every gate green and every link
+dead. It agrees today at 41 and 41: **unguarded, not broken.** And the headline 39/278 turned on an
+undecided question — the milestone chapter's split — measuring 39/278 early against 44/300 late.
+Decided at its own `## The outsider` heading, re-measured: **42 paths, 289 fences**.
+
+**Analysis pass 2 killed the plan's mechanism.** It specified each chapter's state as *the final file
+minus every line owned by a later cluster*. Built and run: **52 parse errors on `repository.ts`, 59
+on `session.ts`** — line-level ownership cuts through syntax, and only a 71-line flat file survives.
+Replaced by three-way merge of the existing deltas: **56 intermediate states, 0 parse failures**, at
+31 conflicts to resolve by hand.
+
+**THE CONTROL IS THE POINT.** T004 requires the generator to rebuild TODAY's chain byte-exact before
+it is trusted with a new one. The falsified mechanism scored **17 of 96** against it. It fired in
+analysis only because the tool was built a phase early; the plan is written so it fires either way.
 <!-- SPECKIT END -->
 
     044 "the revision watermark"

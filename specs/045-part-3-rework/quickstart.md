@@ -23,7 +23,7 @@ evidence.**
 
 Before anything moves, point the synthesiser at the **current** order and require byte-exact output.
 
-    node scripts/.synth.mjs --order current --out /tmp/rebuilt
+    node specs/045-part-3-rework/replay.mjs --order current --out /tmp/rebuilt
     diff -r /tmp/rebuilt relay-tutorial/app/(en)/part-3
 
 **Expected** (SC-005): no differences. **Failing means the generator cannot rebuild what already exists**, and
@@ -67,9 +67,12 @@ catches a re-derived chain landing on the wrong file, and it is byte-exact.
 
 ## Scenario 5 — every synthesised state compiles (SC-005's other half)
 
-    node scripts/.synth.mjs --order new --typecheck-each
+    node specs/045-part-3-rework/replay.mjs --order new --typecheck-each
 
-**Expected** (SC-003, SC-004): every intermediate state typechecks, and every chapter that reuses the outbox or the subject grammar follows the chapter teaching it. **Failing is a finding about the order, not a bug
+**Expected** (SC-003, SC-004): every intermediate state typechecks; each of the **five emitted**
+webhook event types has a producer in an earlier chapter, with the three declared-but-unbuilt ones
+recorded rather than counted; and every chapter that reuses the outbox or the subject grammar follows
+the chapter teaching it. **Failing is a finding about the order, not a bug
 in the tool** — a state that does not compile means a chapter teaches code that calls something a
 later chapter introduces, so the proposed order violates a real dependency. Record which pair, and
 move one of them.
