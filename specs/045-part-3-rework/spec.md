@@ -1,0 +1,234 @@
+# Feature Specification: Part 3, reorganised by subject
+
+**Feature Branch**: `045-part-3-rework`
+**Created**: 2026-09-07
+**Status**: Draft
+**Input**: "rework chapter 3 with English only, for vietnamese, use a placeholder content, I will provide translation later"
+
+## Context
+
+Part 3 is 447,394 words across 24 chapters that `docs/07-tutorial-plan.md` says were **planned as
+seven**. Its own header records the cause: *"a chapter that reached its word ceiling and split
+rather than compress."* Every split was a local decision, so the boundaries between subjects were
+never redrawn. What the reader gets is the order the work was done in, not an order anybody chose.
+
+Four things were measured before this specification was written:
+
+- **Five of eight subject clusters are discontiguous.** The event backbone is chapters 3, 4 and 7,
+  interrupted by two webhook chapters. Webhooks are 5, 6 and 9, interrupted by deduplication and
+  rate limits. Commercial controls are 8, 10 and 11, interrupted by email. The two milestones are
+  12 and 14, interrupted by a domain chapter — which exists to repair the instruments the first
+  milestone exposed, and references it ten times.
+- **The webhook chapters teach delivery for events that do not exist yet.** 70,558 words across
+  chapters 5 and 6 build a delivery system whose event types get their first producers in chapter
+  20. Feature 043 later measured 838 stored subscriptions to types the platform still does not
+  emit.
+- **Cross-cutting patterns are re-derived rather than taught.** The outbox is explained four times
+  — one section is titled *"The outbox, a fourth time"* — and mentioned in 21 of 24 chapters. The
+  subject-grammar rule is derived five times, and the plan admits it: *"which three prior chapters
+  reached independently."* Nine architecture decisions are raised mid-chapter.
+- **The dependency order is nevertheless sound.** 54 forward references against 522 backward. The
+  chapters build on what came before; it is the grouping that is wrong, which is why this can be
+  fixed by moving chapters rather than rewriting their arguments.
+
+**Chapter 3.7 already published the rule this feature finishes.** Its section *"A chapter number is
+a reference that ages"* records that inserting one chapter invalidated three source comments, one of
+which had been wrong since a previous insertion: *"A chapter number in a source comment is a
+reference that ages every time the plan changes, and this file is fenced byte-exact into a published
+chapter, so correcting it costs a fence amendment. The subject does not move; the ordinal does."*
+That rule was applied to three comments. **985 more remain, across 166 fenced files.**
+
+## User Scenarios & Testing *(mandatory)*
+
+### User Story 1 - A reader follows one subject to its end (Priority: P1)
+
+A developer reading Part 3 in order encounters each subject as an unbroken run of chapters. When
+they finish the event backbone they have the whole backbone; when they start webhooks they do not
+put it down after two chapters to learn rate limiting and come back four chapters later.
+
+**Why this priority**: this is the defect. Everything else in this specification is either a
+consequence of fixing it or a cost of doing so.
+
+**Independent test**: derive the cluster of every chapter from its subject, then confirm each
+cluster occupies a contiguous run. Eight of eight, against five of eight today.
+
+**Acceptance Scenarios**
+
+1. **Given** the published Part 3, **When** the chapters are grouped by subject, **Then** every
+   group occupies consecutive positions.
+2. **Given** a reader at the first webhook chapter, **When** they read forward, **Then** every
+   webhook chapter follows without another subject intervening.
+3. **Given** a reader who has finished a movement, **When** the next movement begins, **Then** it
+   does not depend on a chapter later than itself.
+
+### User Story 2 - A reader is never asked to build for an absence (Priority: P1)
+
+The reader builds a mechanism only after the thing it operates on exists. Webhook delivery comes
+after the events have producers. Quotas and metering come after there is a product to meter.
+A verification milestone comes after the surface it verifies.
+
+**Why this priority**: it is the sharpest reader-visible symptom, it accounts for the largest single
+block of misplaced material (70,558 words), and it is the one an outside reader would notice first.
+
+**Independent test**: for each event type a webhook chapter delivers, confirm a producer exists in
+an earlier chapter. For the isolation milestone, confirm every route it attacks was built earlier.
+
+**Acceptance Scenarios**
+
+1. **Given** the webhook chapters, **When** each declared event type is traced, **Then** its
+   producer appears in an earlier chapter.
+2. **Given** the isolation milestone, **When** its derived target list is taken, **Then** every
+   target's route was built in an earlier chapter.
+3. **Given** the outsider milestone, **Then** no chapter follows it.
+
+### User Story 3 - A chapter can move without ageing a reference (Priority: P2)
+
+References to a chapter name its subject rather than its position. Moving, inserting or splitting a
+chapter does not silently invalidate a comment in the platform's source.
+
+**Why this priority**: it is what makes this the last reorganisation that costs this much. It is P2
+rather than P1 because the reader does not see it directly — but the next person to insert a chapter
+does.
+
+**Independent test**: count Part-3 chapter-number references in `relay-platform` source. It is 1,171
+today; the target is zero in fenced files.
+
+**Acceptance Scenarios**
+
+1. **Given** a source comment that referred to a chapter, **When** it is read after this feature,
+   **Then** it names the subject and no ordinal.
+2. **Given** a chapter is moved after this feature, **When** the gates run, **Then** no source
+   comment needs amending because of the move.
+
+### Edge Cases
+
+- **A reference whose subject has no name.** Some comments cite a chapter for a decision that was
+  never given a title. The comment must be rewritten to state the decision, not to point at it.
+- **A reference to a chapter outside Part 3.** Parts 0, 1, 2 and 4 are not reordered, so their
+  ordinals are stable. They stay numbered, and the rule is stated so a reader knows why the two
+  cases differ.
+- **A Vietnamese page whose fences no longer match.** The mirror check compares the Vietnamese fence
+  list and every fence body against the English chapter. A placeholder page that drops its fences
+  fails; a placeholder page that keeps them byte-identical passes.
+- **A chapter that both moves and has its comments rewritten.** Its fences change for two reasons at
+  once; the amendment must be generated after both changes, not between them.
+- **An excerpt-only file.** Thirteen files are published only as `(excerpt)` and no gate compares
+  them to anything. Comment renames inside them are invisible to `check:fences` and must be verified
+  another way.
+- **The chapter that splits.** The error-registry material and the outsider verdict currently share
+  one chapter and belong at opposite ends of Part 3. Splitting it changes the chapter count.
+
+## Requirements *(mandatory)*
+
+### Functional Requirements
+
+- **FR-001**: Every subject cluster in Part 3 MUST occupy a contiguous run of chapters.
+- **FR-002**: A chapter MUST NOT teach a mechanism whose subject is introduced in a later chapter.
+  This covers webhook delivery against event producers, commercial controls against the product they
+  meter, and each verification milestone against the surface it verifies.
+- **FR-003**: Each cross-cutting pattern MUST be taught once, in the chapter that first needs it,
+  and referred to thereafter. This applies to the transactional outbox, currently explained four
+  times, and to the subject-grammar rule, currently derived five times.
+- **FR-004**: A verification milestone MUST appear after all the work it verifies.
+- **FR-005**: The error registry MUST appear before the first chapter that adds a code to it.
+- **FR-006**: The final state of every file the book publishes MUST be byte-identical before and
+  after this feature, except where a source comment is rewritten under FR-008. **The platform's
+  behaviour does not change.**
+- **FR-007**: Chapters MUST be renumbered to their new reading order, with no gaps and no
+  reordering of the numbers relative to the sequence.
+- **FR-008**: A reference to a Part 3 chapter from `relay-platform` source MUST name the subject
+  rather than the ordinal. 985 such references exist across 166 fenced files, and 210 more across 49
+  unfenced files.
+- **FR-009**: Every English chapter's prose MUST be preserved. This feature moves and renumbers; it
+  does not compress, merge or rewrite arguments.
+- **FR-010**: Every Vietnamese chapter page MUST continue to exist, MUST carry a fence list and
+  fence bodies byte-identical to its English counterpart, and MUST carry placeholder prose.
+- **FR-011**: A Vietnamese placeholder page MUST be visibly marked as awaiting translation, so a
+  reader is never shown a page that appears translated and is not.
+- **FR-012**: `docs/07-tutorial-plan.md` MUST be amended to the new structure, and the amendment
+  MUST state the chapter count derived from its own rows rather than carried in a heading — a number
+  that section records as having been wrong three times running.
+- **FR-013**: Every gate MUST be green at close-out, including the fence chain replaying byte-exact
+  across all chapters in the new order.
+- **FR-014**: The mapping from old chapter number to new MUST be recorded where a reader of the
+  published book can find it, because external links and existing readers' notes cite the old
+  numbers.
+
+### Key Entities
+
+- **Chapter**: a published unit with a subject, an ordinal, a slug and a route. This feature changes
+  the ordinal and the position; the subject and the prose are preserved.
+- **Movement**: a contiguous run of chapters sharing a subject. Eight of them. Not a published
+  heading level necessarily, but the unit FR-001 is measured against.
+- **Fence chain**: the sequence of code fences for one file path across chapters, replayed in
+  chapter order and required to land byte-exact on the platform. Reordering changes the sequence;
+  rewriting comments changes the content. **169 of 242 fenced files are affected by one or both.**
+- **Reference**: a mention of a chapter from prose, a source comment or a record. After FR-008 a
+  reference from source names a subject.
+
+## Success Criteria *(mandatory)*
+
+### Measurable Outcomes
+
+- **SC-001**: Eight of eight subject clusters are contiguous, against five of eight today.
+- **SC-002**: Zero Part-3 chapter-number references remain in fenced `relay-platform` source,
+  against 985 today.
+- **SC-003**: Every webhook event type the book teaches delivery for has a producer introduced in an
+  earlier chapter, against three of eight today.
+- **SC-004**: The transactional outbox is explained in full in exactly one chapter, against four.
+  The subject-grammar rule is derived in exactly one, against five.
+- **SC-005**: Every fenced file replays byte-exact onto `relay-platform` in the new chapter order,
+  and the platform's final state is unchanged except for rewritten comments.
+- **SC-006**: Every Vietnamese chapter carries a fence list and bodies byte-identical to its English
+  counterpart, and the mirror check passes with 24 or more Vietnamese chapters present.
+- **SC-007**: The full test battery is green and its duration stays within 10% of the 225.45 s mean
+  measured over twenty runs at feature 044's close-out. **The platform is not supposed to change**,
+  so a moved duration is a signal that something did.
+- **SC-008**: All 24 old chapter numbers resolve to their new position from a single published
+  page, and every entry names a chapter that exists.
+
+## Assumptions
+
+**This is a reorganisation, not a rewrite.** The user's words were *"I mean reorganize the
+content"*. Chapter prose is preserved verbatim wherever a chapter moves unchanged. Compression —
+which the 6× size variance and the four outbox explanations would justify — is deliberately excluded
+so that a mechanically verifiable change is not mixed with an unverifiable one. **No gate can tell
+you which of the two broke a chapter, so they are not done together.** A later feature can compress
+against a structure that is already right.
+
+**Renumbering was chosen over the two alternatives, and the third option was rejected on the
+reader's behalf.** Keeping numbers bound to subjects — so the book runs 1, 2, 14, 3, 4, 7, 13 — costs
+almost no reference churn and asks every reader to carry the mapping. Renumbering while rewriting
+the ordinals in place is scriptable and re-creates the liability at the next insertion. Naming the
+subject instead is the rule chapter 3.7 published in print after paying for it twice, and this is
+the moment it stops being expensive to finish.
+
+**The Vietnamese pages stay in place rather than being deleted.** The mirror check skips a chapter
+that has no Vietnamese page, which would make deletion the cheapest option — and would remove
+published translated content from the site. Keeping the pages with placeholder prose and identical
+fences preserves the routes, keeps the mirror honest, and leaves a translator a file to work in.
+
+**Non-Part-3 chapters keep their ordinals.** Parts 0, 1, 2 and 4 are not reordered, so their numbers
+do not age in this feature. The named-reference rule is applied to Part 3 references because those
+are the ones this feature invalidates; extending it to the rest of the book is a separate decision
+and is out of scope here.
+
+**The platform's git history is not load-bearing for the fence chain.** The checker replays fences
+onto the working tree and never reads git history, so reordering chapters does not require rebuilding
+`relay-platform`'s commits. The user has said the repository may be reset and re-tagged; this feature
+does not need it, and says so rather than doing it because it was permitted.
+
+**The 39-path reorder estimate is a floor, not the scope.** Reordering alone changes the chain order
+of 39 of 207 Part-3 fenced paths. Rewriting comments changes the content of 166. The union is 169 of
+242 fenced files repository-wide, and feature 043 changed 58 files against an estimate of 17. **A
+plan counts the fix and not what the fix drags with it**, so the number above is stated as measured
+today and expected to grow.
+
+## Out of Scope
+
+- Compressing chapters, merging them, or reducing the 6× size variance between the smallest and
+  largest.
+- Translating the Vietnamese pages. The user has said they will supply translations later.
+- Reordering Parts 0, 1, 2 or 4, or renaming their chapter references.
+- Any change to platform behaviour. Comments are rewritten; code is not.
+- The open items in `specs/044-revision-watermark/gaps.md`, except where a chapter move forces one.
