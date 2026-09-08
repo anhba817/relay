@@ -77,3 +77,35 @@ exists and the number is visible in the config.
 
 `gaps.md` should carry it with the other two. It is one more reason the probe has to
 be run on a key nothing else names.
+
+## THE PUBLISHED TREE HAS 21 TAGS FOR 24 CHAPTERS
+
+`part3-ch13`, `part3-ch14` and `part3-ch15` were never cut. `relay-platform/README.md:8`
+says:
+
+> **One git tag per chapter** (`part1-ch1`, `part1-ch2`, …). Every tag is a runnable,
+> tested state: check it out and the toolchain checks pass. Each chapter's SKIP AHEAD
+> box names the tag to check out if you get stuck.
+
+Three chapters' SKIP AHEAD boxes name a tag that does not exist. **This is the contract
+that made every snapshot re-derivation the wrong question**, and it turns out to have
+three holes in it.
+
+**AND THE INSTRUMENT HID IT.** `git merge-base --is-ancestor <commit> part3-ch13` exits
+non-zero for a ref that does not exist, which is byte-identical to "not an ancestor". A
+probe over ch12→ch13→ch14→ch15 returned `NO`, `NO`, `NO` and read as a structural claim
+about the repository's shape — that the published tags were not one chain. They are; the
+refs were absent. **A ref-existence control is the positive control this probe needed**,
+the same rule the credential scan bought at a higher price.
+
+The span `part3-ch12..part3-ch16` is **16 commits covering four old chapters** (3.13
+through 3.16) and **not one of them carries a `(3.N)` subject prefix**, unlike every
+other chapter's commits. So the boundaries between old 13, 14, 15 and 16 exist in
+`.mdx` fences and nowhere else — which is what `check-chapter.py` reads, and the reason
+the rebuild's chapter 8 and 9 spans had to be derived from prose rather than from tags.
+
+**A CONSEQUENCE WORTH STATING PLAINLY:** old 3.13's content sits *inside* `part3-ch12`'s
+span (`6c1c90b feat(3.12): a channel and its members over the public API` creates
+`channels.controller.ts`, which new 8's page fences). The tag names chapter 12 and holds
+chapter 13's work. Any measurement that attributes commits to chapters by tag boundary
+is wrong in this region, in a direction no gate reports.

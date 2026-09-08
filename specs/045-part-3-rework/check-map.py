@@ -107,6 +107,16 @@ def main() -> int:
     # found two well-formed splits, and reported zero problems over a key it had
     # never heard of. AN UNKNOWN MEMBER MUST FAIL, or the next shape is invisible
     # the same way.
+    # EVERY CHAPTER NEEDS A TITLE, AND ONE WAS MISSING WITHOUT A WORD FROM THIS FILE.
+    # New 4 carried a slug and no title through the split that created it. The title is
+    # what the annotated tag's message says and what the registry shows in the sidebar,
+    # so a blank one is two published surfaces reading the slug instead — which is the
+    # same defect as the ordinal, arrived at from the other direction.
+    for c in chapters:
+        for field in ("slug", "title", "movement"):
+            if not c.get(field):
+                problems.append(f"chapter {c.get('new')} has no {field}")
+
     KNOWN_KEYS = {"_why", "movements", "chapters", "splits", "reassignments"}
     unknown = set(m) - KNOWN_KEYS
     if unknown:

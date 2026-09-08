@@ -35,6 +35,34 @@ NAMES = {c["was"]: c["name"] for c in json.loads((HERE / "subjects.json").read_t
 def chapter_of(ref: str) -> int:
     return int(re.search(r"3\.(\d{1,2})", ref).group(1))
 
+# A SENTENCE SPANS LINES AND `classify` READS ONE.
+#
+# `classify(line, m)` is line-local by contract, and that contract is right — it is
+# called from two places and neither has the file. But a reference can be the OBJECT
+# of a preposition that sits on the line above:
+#
+#     // The rest of FR-CHN and all of FR-USR go to
+#     // chapter 3.13.
+#
+# Line-local, the second line is a bare provenance tag and deleting it is correct.
+# In the paragraph it is the object of "go to", and deleting it leaves `//` and a
+# sentence with nothing to end on. Two sites in the tree; the other already routed to
+# `read` for an unrelated reason, so this rule moves exactly one reference — which is
+# the whole argument for measuring it rather than assuming it was none or many.
+#
+# The knowledge lives here, in the caller that has `lines`, rather than widening the
+# classifier's signature for two cases.
+_OPENER = re.compile(r"^\s*(?://+|/\*\*?|\*|--+|#+)\s*")
+
+
+def dangles_from_previous(lines: list, i: int, m: re.Match) -> bool:
+    """Does the reference open this line while the line above it ends mid-clause?"""
+    if i == 0 or not re.match(refrules.MARKER_OPENER + re.escape(m.group(0)), lines[i]):
+        return False
+    body = _OPENER.sub("", lines[i - 1]).rstrip()
+    return bool(refrules.PREPOSITION.search(body) or refrules.TEMPORAL.search(body))
+
+
 def delete_one(line: str, m: re.Match) -> str:
     """Remove the tag and leave a sentence. Four shapes, each tried in order."""
     ref = m.group(0)
@@ -53,13 +81,27 @@ def delete_one(line: str, m: re.Match) -> str:
     # `((3.N))` and find nothing — 98 references were left untouched that way.
     if ref.startswith("("):
         return re.sub(rf"\s*{re.escape(ref)}", "", line, count=1)
+    # `H` IS HORIZONTAL WHITESPACE, AND THAT IS NOT PEDANTRY. Lines are read with
+    # `keepends=True`, so a trailing `\s*` reaches past the end of the line and eats
+    # the terminator — the edited line then joins the one after it. Measured:
+    #
+    #   // …all of FR-USR go to        // …all of FR-USR go to
+    #   // chapter 3.13.          ->   //
+    #   <blank>                        export interface CreatedChannel {
+    #   export interface …
+    #
+    # One reference, one comment line consumed and one blank line consumed, in a file
+    # nothing else in this run touched. `\s` matching `\n` is the same fault that
+    # joined five two-line tags in the published tree; it is written out here as a
+    # character class so the next pattern added cannot repeat it by accident.
+    H = r"[^\S\n]"
     for pat, rep in (
-        (rf"\s*\(\s*{re.escape(ref)}\s*\)", ""),          # " (chapter 3.2)" -> ""
-        (rf"{re.escape(ref)},\s*", ""),                    # "(chapter 3.21, FR-…)" -> "(FR-…)"
-        (rf",\s*{re.escape(ref)}", ""),                    # "(FR-…, chapter 3.21)" -> "(FR-…)"
-        (rf"{re.escape(ref)}\s*[:.]\s*", ""),              # "// Chapter 3.8: nor…" -> "// nor…"
-        (rf"{re.escape(ref)}\s+(?=\()", ""),                # "// Chapter 3.8 (FR-…)" -> "// (FR-…)"
-        (rf"{re.escape(ref)}\s*[;\u2014-]\s*", ""),          # "// CHAPTER 3.10 — the cap" -> "// the cap"
+        (rf"{H}*\({H}*{re.escape(ref)}{H}*\)", ""),       # " (chapter 3.2)" -> ""
+        (rf"{re.escape(ref)},{H}*", ""),                    # "(chapter 3.21, FR-…)" -> "(FR-…)"
+        (rf",{H}*{re.escape(ref)}", ""),                    # "(FR-…, chapter 3.21)" -> "(FR-…)"
+        (rf"{re.escape(ref)}{H}*[:.]{H}*", ""),             # "// Chapter 3.8: nor…" -> "// nor…"
+        (rf"{re.escape(ref)}{H}+(?={H}*\()", ""),           # "// Chapter 3.8 (FR-…)" -> "// (FR-…)"
+        (rf"{re.escape(ref)}{H}*[;\u2014-]{H}*", ""),        # "// CHAPTER 3.10 — the cap" -> "// the cap"
         # NO LAST-RESORT STRIP. It used to be `(rf"\s*{re.escape(ref)}", "")`, which
         # removed the reference from anywhere and left the sentence to fend for itself:
         # 16 dangling prepositions and 36 orphaned possessives reached the tree before a
@@ -69,10 +111,28 @@ def delete_one(line: str, m: re.Match) -> str:
     ):
         new = re.sub(pat, rep, line, count=1)
         if new != line:
+            new = _orphaned_punctuation(new)
             if tag:
                 return refrules.recapitalise(new)
             return new
     return line
+
+
+def _orphaned_punctuation(line: str) -> str:
+    """Drop punctuation a deletion left stranded against a comment opener.
+
+    `// (chapter 3.4). The chapter quotes the broker` -> `// The chapter quotes …`
+
+    The parenthesised reference WAS the first sentence, so its full stop belongs to
+    it and not to the sentence after. Removing the parens alone leaves `//. `, which
+    reads as a typo and is one. Only fires when nothing but the opener precedes the
+    punctuation — mid-sentence punctuation is somebody's, and guessing whose is how
+    the last-resort strip put sixteen dangling prepositions in the tree.
+    """
+    m = re.match(r"^(\s*(?://+|/\*\*?|\*|--+|#+))\s*[.,:;]\s+(\S.*)$", line)
+    if not m:
+        return line
+    return f"{m.group(1)} {refrules.recapitalise(m.group(2))[0].upper()}{refrules.recapitalise(m.group(2))[1:]}"
 
 def substitute_one(line: str, m: re.Match) -> str:
     name = NAMES.get(f"3.{chapter_of(m.group(0))}")
@@ -113,7 +173,8 @@ def main() -> int:
                 while True:
                     m = next((x for x in REF.finditer(lines[i])
                               if not is_versionish(lines[i], x)
-                              and classify(lines[i], x) == rule), None)
+                              and (("read" if dangles_from_previous(lines, i, x)
+                                    else classify(lines[i], x)) == rule)), None)
                     if not m:
                         break
                     found += 1
@@ -121,8 +182,16 @@ def main() -> int:
                         # EVERY match on the line, not the first. Stopping at one
                         # undercounted lines carrying two references — 295 against the
                         # classifier's 317, and the two must agree or neither is a count.
+                        # THE SAME ROUTING AS THE SELECTOR ABOVE, or the two disagree
+                        # by exactly the references the caller re-routes — one here.
+                        # The comment above says the two must agree; that only holds
+                        # if they ask the same question.
                         for x in REF.finditer(lines[i]):
-                            if not is_versionish(lines[i], x) and classify(lines[i], x) == "read":
+                            if is_versionish(lines[i], x):
+                                continue
+                            cls = ("read" if dangles_from_previous(lines, i, x)
+                                   else classify(lines[i], x))
+                            if cls == "read":
                                 found += 1
                                 samples.append(f"{rel}:{i+1}  {lines[i].strip()[:96]}")
                         found -= 1

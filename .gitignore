@@ -6,3 +6,7 @@ Thumbs.db
 *.tmp
 *.swp
 tmp/
+
+# Python bytecode from the specs/ tooling. Tracked by mistake until 045.
+__pycache__/
+*.pyc

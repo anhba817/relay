@@ -13,14 +13,14 @@
     "the reader does not meet until chapter fourteen. The outsider is the SRS Phase 2 exit",
     "criterion and nothing may follow it.",
     "",
-    "FOUR CHAPTERS KEEP THEIR NUMBER AND CHANGE MEANING \u2014 3.13, 3.14, 3.15 and 3.16 all",
+    "FOUR CHAPTERS KEEP THEIR NUMBER AND CHANGE MEANING — 3.13, 3.14, 3.15 and 3.16 all",
     "exist before and after and name different chapters. That is the sharpest argument for",
     "the named-reference rule: an ordinal that survives a reorder pointing at different",
     "content is worse than one that breaks.",
     "",
     "THE GUARD'S TABLE ARRAY GROWS PER CHAPTER, AND NO CHAPTER NAMES A COUNT.",
     "New 8's section 'Nine guarded tables, not five' was an AUDIT of chapters 3.10 and",
-    "3.11 \u2014 'neither added them here' \u2014 and both now land at 23 and 24. A chapter that",
+    "3.11 — 'neither added them here' — and both now land at 23 and 24. A chapter that",
     "audits earlier chapters cannot be reordered ahead of them, and no instrument in",
     "either repository reads that sentence. The section is deleted rather than moved:",
     "each chapter adds its own table to the array, plants its bait, and drives it in",
@@ -93,7 +93,8 @@
       "old": 12,
       "new": 4,
       "slug": "the-isolation-harness",
-      "movement": "I"
+      "movement": "I",
+      "title": "The isolation harness"
     },
     {
       "old": 3,
@@ -256,7 +257,7 @@
       "why": "the error vocabulary and the sealed package share no fence",
       "boundary": {
         "en": "## The outsider",
-        "vi": "## Ng\u01b0\u1eddi ngo\u00e0i"
+        "vi": "## Người ngoài"
       },
       "halves": [
         {
@@ -298,7 +299,7 @@
         "FORCED BY A DEPENDENCY, NOT CHOSEN FOR BALANCE. The gauntlet creates eight files",
         "and 25 chapter-edits land on them; moving it to the end of movement VIII put every",
         "one of those edits before the file existed, and `ours` came back 0 lines on all",
-        "eight. A merge cannot resolve that \u2014 taking `theirs` only relocates the conflict to",
+        "eight. A merge cannot resolve that — taking `theirs` only relocates the conflict to",
         "the creator's own add/add. The harness must precede its editors and the verdict",
         "belongs at the end, so the chapter divides at the question that opens the",
         "retrospective.",
@@ -310,7 +311,7 @@
       ],
       "boundary": {
         "en": "## Has it ever caught anything?",
-        "vi": "## N\u00f3 \u0111\u00e3 b\u1eaft \u0111\u01b0\u1ee3c g\u00ec bao gi\u1edd ch\u01b0a?"
+        "vi": "## Nó đã bắt được gì bao giờ chưa?"
       },
       "halves": [
         {
@@ -352,14 +353,14 @@
   ],
   "reassignments": [
     {
-      "_why": "NOT A SPLIT, AND CHECK-MAP WAS RIGHT TO REFUSE IT AS ONE. A split divides a chapter's PROSE at a heading and gives each half its own page. Old 3.10's page is ten sections and every one of them is about quotas \u2014 'The query we did not write' through 'What it costs'. There is no harness section to move, because nobody ever wrote one.",
-      "finding": "FEATURE 030 SHIPPED INSIDE OLD 3.10'S SPAN WITHOUT A CHAPTER. Sixteen commits built packages/test-harness and the global-operation guard; old 3.10's prose does not mention them. That is why new 8 (old 3.13) AUDITS the guard rather than building it \u2014 'It watched five tables. Chapters 3.10 and 3.11 added four more \u2026 and neither added them here.' Three chapters excerpt the harness's files and none of them builds it. The reorder is what surfaced this: in the published order the audit had its antecedents in front of it and read fine.",
-      "consequence": "New 8 gains the sections nobody wrote, and loses the audit. Its prose now builds the harness \u2014 the package, the trigger, the two kinds of bait, the exemption that returns NEW on an UPDATE \u2014 and the five-to-nine retrofit story is gone, because the array grows per chapter now.",
+      "_why": "NOT A SPLIT, AND CHECK-MAP WAS RIGHT TO REFUSE IT AS ONE. A split divides a chapter's PROSE at a heading and gives each half its own page. Old 3.10's page is ten sections and every one of them is about quotas — 'The query we did not write' through 'What it costs'. There is no harness section to move, because nobody ever wrote one.",
+      "finding": "FEATURE 030 SHIPPED INSIDE OLD 3.10'S SPAN WITHOUT A CHAPTER. Sixteen commits built packages/test-harness and the global-operation guard; old 3.10's prose does not mention them. That is why new 8 (old 3.13) AUDITS the guard rather than building it — 'It watched five tables. Chapters 3.10 and 3.11 added four more … and neither added them here.' Three chapters excerpt the harness's files and none of them builds it. The reorder is what surfaced this: in the published order the audit had its antecedents in front of it and read fine.",
+      "consequence": "New 8 gains the sections nobody wrote, and loses the audit. Its prose now builds the harness — the package, the trigger, the two kinds of bait, the exemption that returns NEW on an UPDATE — and the five-to-nine retrofit story is gone, because the array grows per chapter now.",
       "old": 10,
       "prose_stays_at": 23,
       "code_moves_to": 8,
       "commits": "harness d365817..fb97056 (16, reverse order); quotas aa236de..b21a87c (7)",
-      "measured": "no commit touches both \u2014 the split point is exact",
+      "measured": "no commit touches both — the split point is exact",
       "paths": [
         "packages/test-harness/package.json",
         "packages/test-harness/tsconfig.json",

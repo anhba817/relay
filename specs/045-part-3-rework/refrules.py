@@ -50,7 +50,39 @@ TEMPORAL = re.compile(r"\b(since|until|before|after|by the time)\s*$", re.I)
 VERSIONISH = re.compile(
     r'\d\.\d+\.\d|"\d|\bv3\.|gaps\.md\s+3\.\d'
     r'|3\.\d{1,2}\s*(?:billion|million|thousand|bn|m\b|k\b|%|s\b|ms\b|x\b|GB|MB|KB)')
-SPLIT = 14
+# THE AMBIGUOUS OLD CHAPTERS, READ OUT OF THE MAP RATHER THAN NAMED HERE.
+#
+# This was `SPLIT = 14`, one integer, written when one chapter split. Two more shapes
+# arrived since and each of them makes an ordinal ambiguous in the same way:
+#
+#   old 14 -> new 3 + new 26    the error registry, and the outsider milestone
+#   old 12 -> new 4 + new 25    the isolation harness, and the gauntlet milestone
+#   old 10 -> new 8 + new 23    the lane's harness (code), and quotas (prose)
+#
+# A reference to any of them names ONE of two things and only the sentence knows
+# which. `subjects.json` has a single name per old chapter, so substituting one is
+# substituting a coin flip — `REASSESSED IN CHAPTER 3.12` came out as `REASSESSED IN
+# THE ISOLATION GAUNTLET` in a sentence about the e2e journey's endpoints, which is
+# new 4's half and not new 25's.
+#
+# Read from the map so that the next shape routes itself. A hard-coded integer is a
+# checker that has to be edited to admit a finding.
+def _ambiguous_olds() -> frozenset:
+    import json, pathlib as _p
+    m = json.loads((_p.Path(__file__).resolve().parent / "chapter-map.json").read_text())
+    olds = {sp["old"] for sp in m.get("splits", [])}
+    olds |= {r["old"] for r in m.get("reassignments", [])}
+    if not olds:
+        raise SystemExit(
+            "refrules: chapter-map.json names no splits or reassignments — an empty "
+            "parse would route every ordinal to an automatic substitution"
+        )
+    return frozenset(olds)
+
+
+AMBIGUOUS = _ambiguous_olds()
+# Kept as a name so an old caller fails loudly rather than comparing against nothing.
+SPLIT = None
 
 
 def controls_failing() -> list[str]:
@@ -213,6 +245,23 @@ def place_name(line: str, m: re.Match, name: str) -> str:
     plural = re.search(r"\b[Cc]hapters\s+$", before_raw)
     prefix_cut = plural.start() if plural else m.start()
 
+    # AND A DETERMINER DOUBLES WHEN THE NAME CARRIES ITS OWN. Every name in
+    # `subjects.json` is a noun phrase beginning with an article — "the outbox
+    # chapter", "the isolation harness" — so a site that already wrote one gets two:
+    #
+    #     // The chapter 3.4 walk: a redelivery  ->  // The the broker chapter walk
+    #
+    # Cut with the reference, exactly like the plural. The capitalisation below then
+    # sees a `before` that is just the comment opener and restores the capital, which
+    # is why this is a cut rather than a lower-casing of the name.
+    #
+    # Only two sites in the tree, and both were found by asking for the count rather
+    # than by reading the sample — the sample showed one of them.
+    if not plural and name[:1].islower() and re.match(r"(?i:the|an?)\b", name):
+        det = re.search(r"\b(?:[Tt]he|THE|[Aa]n?|AN?)\s+$", before_raw)
+        if det:
+            prefix_cut = det.start()
+
     # AND THE CASE TEST MUST READ THE TEXT THAT WILL ACTUALLY PRECEDE THE NAME. It read
     # `line[:m.start()]`, which still ends in "Chapters" when the plural is being cut, so
     # `// feature (T008). Chapters 3.15 and 3.16 add` came out lower-case after a period.
@@ -242,6 +291,28 @@ def place_name(line: str, m: re.Match, name: str) -> str:
     if line[m.end():m.end() + 2] == "'s" and not ref.endswith("'s"):
         new += "'s"
         end += 2
+
+    # AND A POSSESSIVE CAN REPEAT THE NOUN THAT NAMES THE CHAPTER.
+    #
+    #     3.3's outbox suite  ->  the outbox chapter's outbox suite
+    #
+    # Not wrong, and not something anybody would write. The name earns its keep by
+    # carrying the subject, so the site's own copy of that subject is now redundant
+    # — three sites, all of them `outbox`. Drop the duplicate word, not the name:
+    # `the outbox chapter's suite` says what the sentence meant.
+    #
+    # Only the word IMMEDIATELY after the possessive, and only an exact match on one
+    # of the name's own significant words. Anything looser starts deleting nouns that
+    # happen to appear twice in a sentence for good reason.
+    if new.endswith("'s"):
+        significant = {w for w in re.findall(r"[a-z][\w-]*", name.lower())
+                       if w not in ("the", "a", "an", "chapter", "chapters", "milestone")}
+        nxt = re.match(r"(\s+)([\w-]+)", line[end:])
+        if nxt and nxt.group(2).lower() in significant:
+            end += nxt.end()
+            line = line[:end] + line[end:]
+            return line[:prefix_cut] + new + line[end:]
+
     return line[:prefix_cut] + new + line[end:]
 
 
@@ -286,7 +357,7 @@ def classify(line: str, m: re.Match) -> str:
 
     if RULE_LINE.match(line):
         return "read"                     # a section rule needs its own sentence
-    if chapter_of(ref) == SPLIT:
+    if chapter_of(ref) in AMBIGUOUS:
         return "read"                     # names one of two chapters; only the sentence knows
     if possessive:
         return "substitute"               # it modifies a noun — deleting orphans the noun

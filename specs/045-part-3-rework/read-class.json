@@ -1,0 +1,139 @@
+{
+  "_why": [
+    "THE READ CLASS, DECIDED. Twenty-three references that no rule may touch, each",
+    "resolved by reading the sentence it sits in. `rewrite-refs.py --rule read` lists",
+    "them; this file records what a reader decided, so the decision survives a replay.",
+    "",
+    "AS EXACT REPLACEMENTS AND NOT AS A PATCH. The replay applies the rules to every",
+    "commit's TREE, so the read-class decisions have to apply the same way. A patch",
+    "would need the file to look the same in all 28 trees and it does not; a replacement",
+    "that finds nothing in a given tree simply does not fire, which is correct — the",
+    "reference is not there yet.",
+    "",
+    "TWO OLD CHAPTERS ARE AMBIGUOUS AND THE ANSWERS ARE NOT THE MAP'S HALVES.",
+    "The map splits old 12 into new 4 and new 25. But the channel-endpoint work from old",
+    "12's own commit (`6c1c90b`) sits in the REBUILD's chapter 8 span, because new 8's",
+    "subject is the endpoints. So eight of the ten `chapter 3.12` references mean new 8 —",
+    "this chapter — and two mean the outsider milestone at new 26, which is old 14's",
+    "second half and not old 12's at all. Neither answer is derivable from the map."
+  ],
+  "replacements": [
+    {
+      "why": "old 3.3 -> new 5. Unambiguous; bare ordinals route to read by rule, not by doubt.",
+      "pairs": [
+        [
+          "It lived\n// inside the api's outbox module in 3.3 because",
+          "It lived\n// inside the api's outbox module in the outbox chapter because"
+        ],
+        [
+          "and 3.3 about the outbox table:",
+          "and the outbox chapter about its own:"
+        ],
+        [
+          "both already right because 3.3 chose them.",
+          "both already right because the outbox chapter chose them."
+        ],
+        [
+          "(research R7, the shape 3.3 used)",
+          "(research R7, the shape the outbox chapter used)"
+        ],
+        [
+          " * 3.3 learned the hard way that a background loop",
+          " * The outbox chapter learned the hard way that a background loop"
+        ],
+        [
+          "The outbox arrived in 3.3 and is at the bottom of this file.",
+          "The outbox arrives with the chapter of that name and is at the bottom of this file."
+        ],
+        [
+          " * Had 3.3 taken memory storage as a convenience",
+          " * Had the outbox chapter taken memory storage as a convenience"
+        ],
+        [
+          "is deliberately left where 3.3 found it.",
+          "is deliberately left where the outbox chapter found it."
+        ],
+        [
+          "`api_keys` and 3.3 recorded the outbox's index.",
+          "`api_keys` and the outbox chapter recorded the outbox's index."
+        ]
+      ]
+    },
+    {
+      "why": "old 3.12's ENDPOINT half -> new 8. This chapter builds them, so the reference is reflexive and says so.",
+      "pairs": [
+        [
+          " * REASSESSED IN CHAPTER 3.12 (T063a), and two of the three now have an API.",
+          " * REASSESSED WHEN THOSE ENDPOINTS ARRIVED (T063a), and two of the three now have an API."
+        ],
+        [
+          "// what chapter 3.12 changed here: the endpoint over this call has to be",
+          "// what this chapter changed here: the endpoint over this call has to be"
+        ],
+        [
+          "// THE OBSERVATION CHANGED IN CHAPTER 3.12 AND THE PROPERTY DID NOT.",
+          "// THE OBSERVATION CHANGED WITH THE PUBLIC ENDPOINT AND THE PROPERTY DID NOT."
+        ],
+        [
+          " * (chapter 3.12, FR-047) — this type stays as the column is, because rows",
+          " * (FR-047) — this type stays as the column is, because rows"
+        ],
+        [
+          " * This was a plain insert until chapter 3.12, which is fine for a fixture and",
+          " * This was a plain insert until the endpoint over it, which is fine for a fixture and"
+        ],
+        [
+          " * THREE OUTCOMES, NOT A BOOLEAN (chapter 3.12, R14a). Until then this returned",
+          " * THREE OUTCOMES, NOT A BOOLEAN (R14a). Until the endpoint over it, this returned"
+        ],
+        [
+          "// WHICH FIELD, and chapter 3.12 is where that stopped being optional.",
+          "// WHICH FIELD, and the public channel endpoints are where that stopped being optional."
+        ],
+        [
+          "// Chapter 3.12 built the first two endpoints for exactly this path, and this is",
+          "// The channel endpoints were built for exactly this path, and this is"
+        ]
+      ]
+    },
+    {
+      "why": "old 3.12's MILESTONE half -> new 26, the outsider. And 'Part 3 ends at 3.12' is now false: it ends at 3.26.",
+      "pairs": [
+        [
+          "Part 3 ends at 3.12, and this\n// chapter's exit criterion is that an outsider integrates on public documentation",
+          "Part 3 ends at the outsider\n// milestone, whose exit criterion is that an outsider integrates on public documentation"
+        ],
+        [
+          "// here because chapter 3.12's exit criterion is that an outsider integrates on",
+          "// here because the outsider milestone's exit criterion is that an outsider integrates on"
+        ]
+      ]
+    },
+    {
+      "why": "old 3.13 -> new 8. Written at old 12 pointing forward; at new 8 the work has arrived, and what is still owed goes to the two chapters after.",
+      "pairs": [
+        [
+          "// This is the minimum that unblocks it. The rest of FR-CHN and all of FR-USR go to\n// chapter 3.13.",
+          "// This is the minimum that unblocks it. The rest of FR-CHN and all of FR-USR go to\n// the two chapters after this one."
+        ]
+      ]
+    },
+    {
+      "why": "other parts. 3.2 -> new 2, 3.1 -> new 1, 3.8 -> new 22.",
+      "pairs": [
+        [
+          "the way 2.1 recorded `members`, 3.2 recorded",
+          "the way 2.1 recorded `members`, the credentials chapter recorded"
+        ],
+        [
+          "2.3 learned that on idempotency keys and\n// 3.1 learned it again on signup.",
+          "2.3 learned that on idempotency keys and\n// the tenancy chapter learned it again on signup."
+        ],
+        [
+          "which was declared in 1.3\n      // and first sent in 3.8:",
+          "which was declared in 1.3\n      // and first sent by the rate limiter:"
+        ]
+      ]
+    }
+  ]
+}
