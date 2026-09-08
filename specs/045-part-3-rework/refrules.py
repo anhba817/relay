@@ -284,7 +284,20 @@ def place_name(line: str, m: re.Match, name: str) -> str:
 
     opener = COMMENT_OPENER.match(before)
     first_token = bool(opener) and not re.search(r"[a-z]", before)
-    if not before or first_token or re.search(r"[.!?]\s*\**$", before):
+
+    # AND PROSE OPENS A SENTENCE WITHOUT A COMMENT MARKER. This test knew three
+    # shapes — nothing before it, a comment opener, or a full stop — all of which are
+    # source-file shapes. Applied to a page it lower-cased the first word of a
+    # metadata description:
+    #
+    #     "Chapter 3.3 left twelve thousand events…"   ->  "the outbox chapter left…"
+    #
+    # A markdown or JSON line can open a sentence after a quote, a blockquote marker,
+    # a list bullet or a heading hash, and none of those is a comment opener.
+    PROSE_OPENER = re.compile("^[\\s\"'>*#\u2014-]*$")
+    prose_start = bool(PROSE_OPENER.match(before))
+
+    if not before or first_token or prose_start or re.search(r"[.!?]\s*\**$", before):
         new = new[0].upper() + new[1:]
 
     end = m.end()
