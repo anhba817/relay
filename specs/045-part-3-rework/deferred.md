@@ -185,3 +185,44 @@ returning a secret it had just hashed. `minted.prefix` was already on the return
 object. **The first repair used `lastIndexOf("_")` and was the same fault again**; the
 prefix is the only exact answer. A length guard now refuses to assert on a short
 string at all, and twenty consecutive runs are green.
+
+## A FAITHFUL REWRITE OF A WRONG REFERENCE IS WORSE THAN THE WRONG REFERENCE
+
+Two of the references swept in the prose pass were wrong before anything touched them,
+and the substitution carried each one faithfully into something less checkable:
+
+    chapter 3.1   "3.7's isolation gauntlet"
+                  -> "the deduplication chapter's isolation gauntlet"
+                  The gauntlet is the isolation harness's. Old 3.7 is fan-out and
+                  resume, and has no gauntlet in it.
+
+    chapter 3.9   "(chapter 3.16, FR-022a)" on a test its OWN chapter's page carries
+                  -> would have pointed a reader fourteen chapters away
+
+**A WRONG NUMBER IS CHECKABLE AND A WRONG NAME IS NOT.** A reader who sees "3.7's
+isolation gauntlet" can open chapter 3.7 and find no gauntlet in about four seconds.
+"The deduplication chapter's isolation gauntlet" reads like a fact about a chapter
+whose subject the sentence has just told them, and there is nothing to check it
+against.
+
+So the rewrite is only as good as its input, and the class it cannot see is a reference
+that resolves to a real chapter and names the wrong one. Neither `check-refs` nor the
+damage scan can find these: both compare shapes. Two found by reading, out of roughly
+four hundred substitutions — which is a rate, not a clean bill.
+
+## AND CHAPTER 3.7 HAD ALREADY MADE THE ARGUMENT, WITH THE REASON HALF WRONG
+
+Written one chapter before the reorder was planned:
+
+> The distinction worth keeping is between a **provenance stamp** and a **forward
+> promise**. "Chapter 3.7 added this field" stays true for ever — **chapters do not
+> renumber backwards.** "Chapter 3.7 will build the transport for quotas" goes stale
+> the moment anything is inserted ahead of it.
+
+The premise is the thing this feature falsified: twenty-four chapters renumbered, and
+3.7 kept its number by coincidence while both its neighbours moved. **An ordinal is
+stale in both directions**, which collapses the rule into the one this pass applies —
+name the subject, because a name encodes no position.
+
+The page now says so where the argument was made rather than in a later chapter's
+retrospective, since that is where a reader meets it.
