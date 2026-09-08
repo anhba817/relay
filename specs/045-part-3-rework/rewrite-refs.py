@@ -60,6 +60,20 @@ def dangles_from_previous(lines: list, i: int, m: re.Match) -> bool:
     if i == 0 or not re.match(refrules.MARKER_OPENER + re.escape(m.group(0)), lines[i]):
         return False
     body = _OPENER.sub("", lines[i - 1]).rstrip()
+    # AND THE WORD "CHAPTER" ITSELF SPLITS ACROSS THE LINE BREAK, which is the case
+    # this check was written for and did not cover:
+    #
+    #     * Without this decorator every user's join would be a 403, which is chapter
+    #     * 3.12's FR-044 hole exactly: …
+    #
+    # `PREPOSITION` and `TEMPORAL` look for a dangling function word, and "chapter" is
+    # a noun. Substituting the second line alone gives "which is chapter / The
+    # isolation harness's", which is the same damage as a doubled article one line up.
+    # Twice now: `session.itest.ts` had "a table that chapter / The outbox chapter's
+    # suite". The fix is a two-line replacement, so this routes to `read` and the
+    # table records both lines.
+    if re.search(r"\b[Cc]hapters?$", body):
+        return True
     return bool(refrules.PREPOSITION.search(body) or refrules.TEMPORAL.search(body))
 
 

@@ -27,7 +27,7 @@
         ],
         [
           "and 3.3 about the outbox table:",
-          "and the outbox chapter about its own:"
+          "and the outbox chapter about its own table:"
         ],
         [
           "both already right because 3.3 chose them.",
@@ -92,7 +92,7 @@
         ],
         [
           "// Chapter 3.12 built the first two endpoints for exactly this path, and this is",
-          "// The channel endpoints were built for exactly this path, and this is"
+          "// The first two channel endpoints were built for exactly this path, and this is"
         ]
       ]
     },
@@ -132,6 +132,124 @@
         [
           "which was declared in 1.3\n      // and first sent in 3.8:",
           "which was declared in 1.3\n      // and first sent by the rate limiter:"
+        ]
+      ]
+    },
+    {
+      "why": "Chapter 3.9's port. Its commits come from the published history and every one carries the ordinals the convention removed — 81 explicit at its first tag, against zero at 3.8's, which is why the rewrite is a step in the per-chapter loop. Eight are section rules naming the chapter they sit inside, which tells a reader nothing and goes, re-padded so the box drawing lines up. Two are split across a line break with the word `chapter` stranded on the first — written out here as two-line edits, because rewriting the second line alone gives `which is chapter / The isolation harness's`. The rest go through `place_name`.",
+      "pairs": [
+        [
+          "   * Without this decorator every user's join would be a 403, which is chapter\n   * 3.12's FR-044 hole exactly: a credential mismatch that passed for a whole",
+          "   * Without this decorator every user's join would be a 403, which is the isolation\n   * harness's FR-044 hole exactly: a credential mismatch that passed for a whole"
+        ],
+        [
+          "    // CHAPTER 3.12 ASSERTED THE OPPOSITE HERE, and it was right at the time.",
+          "    // THE ISOLATION HARNESS ASSERTED THE OPPOSITE HERE, and it was right at the time."
+        ],
+        [
+          "    // has carried `field` since chapter 1.3 and nothing set it until chapter 3.14.",
+          "    // has carried `field` since chapter 1.3 and nothing set it until the error-registry chapter."
+        ],
+        [
+          "  // ── THE PRIVATE TYPE, MADE TO MEAN SOMETHING (chapter 3.15) ────────────────",
+          "  // ── THE PRIVATE TYPE, MADE TO MEAN SOMETHING ───────────────────────────────"
+        ],
+        [
+          "      // Without it this would be a 403 for every USER instead — chapter 3.12's",
+          "      // Without it this would be a 403 for every USER instead — the isolation harness's"
+        ],
+        [
+          "  // ── REMOVAL, BULK, BECAUSE THE REQUIREMENT ALWAYS WAS (chapter 3.15) ────────",
+          "  // ── REMOVAL, BULK, BECAUSE THE REQUIREMENT ALWAYS WAS ───────────────────────"
+        ],
+        [
+          "  // ── MEMBER ROLES (chapter 3.15, FR-CHN-04, FR-011) ─────────────────────────",
+          "  // ── MEMBER ROLES (FR-CHN-04, FR-011) ───────────────────────────────────────"
+        ],
+        [
+          "  // `(channel_id, user_id, joined_at)` the whole time. Chapter 3.12's traceability",
+          "  // `(channel_id, user_id, joined_at)` the whole time. The isolation harness's traceability"
+        ],
+        [
+          "      // Mixed forms in one request, because the entry is a union: chapter 3.13",
+          "      // Mixed forms in one request, because the entry is a union: the endpoints chapter"
+        ],
+        [
+          "      // The field name is in the envelope only because chapter 3.14 stopped",
+          "      // The field name is in the envelope only because the error-registry chapter stopped"
+        ],
+        [
+          "  // ── ARCHIVING (chapter 3.15, FR-020, FR-021, FR-021a) ──────────────────────",
+          "  // ── ARCHIVING (FR-020, FR-021, FR-021a) ────────────────────────────────────"
+        ],
+        [
+          "  // Chapter 3.12 pinned this enum to `public` alone with the sharpest edit in that",
+          "  // The isolation harness pinned this enum to `public` alone with the sharpest edit in that"
+        ],
+        [
+          "  // the guarantee before keeping it — which is the mistake chapter 3.12's fifth",
+          "  // the guarantee before keeping it — which is the mistake the isolation harness's fifth"
+        ],
+        [
+          "   * not exist — SC-002, over the same oracle chapter 3.12 built for cross-tenant",
+          "   * not exist — SC-002, over the same oracle the isolation harness built for cross-tenant"
+        ],
+        [
+          "// ── A PRIVATE CHANNEL IS PRIVATE (chapter 3.15, FR-001, FR-CHN-05) ────────────",
+          "// ── A PRIVATE CHANNEL IS PRIVATE (FR-001, FR-CHN-05) ──────────────────────────"
+        ],
+        [
+          "// on it. Chapter 3.12's fifth analysis pass caught `POST /v1/channels` about to",
+          "// on it. The isolation harness's fifth analysis pass caught `POST /v1/channels` about to"
+        ],
+        [
+          "    // which is what chapter 3.12's fourteen passing tests turned out to be",
+          "    // which is what the isolation harness's fourteen passing tests turned out to be"
+        ],
+        [
+          "      // exactly what chapter 3.12's indistinguishability oracle was built to",
+          "      // exactly what the isolation harness's indistinguishability oracle was built to"
+        ],
+        [
+          "      // refusing, which is the defect chapter 3.12's fifth analysis pass caught one",
+          "      // refusing, which is the defect the isolation harness's fifth analysis pass caught one"
+        ],
+        [
+          "  // ── THE SOCKET'S ROUTE INHERITS THE CHECK (chapter 3.15, FR-001) ────────────",
+          "  // ── THE SOCKET'S ROUTE INHERITS THE CHECK (FR-001) ──────────────────────────"
+        ],
+        [
+          "  // `repository.sendMessage` covers both doors. Chapter 3.12 recorded this route",
+          "  // `repository.sendMessage` covers both doors. The isolation harness recorded this route"
+        ],
+        [
+          "  // ── THE IDENTIFIER COLLISION (chapter 3.15, FR-034a) ───────────────────────",
+          "  // ── THE IDENTIFIER COLLISION (FR-034a) ─────────────────────────────────────"
+        ],
+        [
+          "  // ── THE ROUTE A CUSTOMER'S CLIENT ACTUALLY CALLS (chapter 3.15, FR-001) ───────",
+          "  // ── THE ROUTE A CUSTOMER'S CLIENT ACTUALLY CALLS (FR-001) ─────────────────────"
+        ],
+        [
+          "      // why chapter 3.12's oracle drops exactly this one and nothing else.",
+          "      // why the isolation harness's oracle drops exactly this one and nothing else."
+        ],
+        [
+          "  // ── A REMOVED MEMBER'S RECONNECTION (chapter 3.15, SC-004) ──────────────────",
+          "  // ── A REMOVED MEMBER'S RECONNECTION (SC-004) ────────────────────────────────"
+        ],
+        [
+          "  // FR-006 says \"up to 100 in one request\" and FR-007 says the result is reported\n  // per user — chapter 3.13's add shape in both halves. The contract specified a\n  // single-user `DELETE` for ten analysis passes, having read \"the shape chapter\n  // 3.13 chose\" as *named outcomes* and dropped *bulk*. Every pass compared\n  // requirements to tasks, both said \"removal\", and identifier coverage read 100%.",
+          "  // FR-006 says \"up to 100 in one request\" and FR-007 says the result is reported per\n  // user — the endpoints chapter's add shape in both halves. The contract specified a\n  // single-user `DELETE` for ten analysis passes, having read \"the shape that chapter\n  // chose\" as *named outcomes* and dropped *bulk*. Every pass compared requirements\n  // to tasks, both said \"removal\", and identifier coverage read 100%."
+        ]
+      ]
+    },
+    {
+      "why": "Chapter 3.10's port. A THIRD split reference — `which is chapter` / `3.13's` — in the doc comment the previous chapter's bulk removal left behind. Three of these now, in three different files, which is enough to call it a shape rather than an accident: a reference at the start of a wrapped comment line, with the word `chapter` stranded on the line above.",
+      "pairs": [
+        [
+          "   * request\" and FR-007 says the result is reported per user — which is chapter\n   * 3.13's `addMembers` shape in both halves. `contracts/membership.md` specified a",
+          "   * request\" and FR-007 says the result is reported per user — which is the\n   * endpoints chapter's `addMembers` shape in both halves. `contracts/membership.md` specified a"
         ]
       ]
     }

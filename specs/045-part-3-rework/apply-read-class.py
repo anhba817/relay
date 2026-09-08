@@ -14,7 +14,7 @@ runs it against the FINAL tree where all 23 references exist. Without that check
 mistyped left-hand side is silent forever, which is the failure this file's own
 subject matter is about.
 """
-import json, os, pathlib, sys
+import collections, json, os, pathlib, sys
 
 HERE = pathlib.Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
@@ -27,8 +27,26 @@ TABLE = json.loads((HERE / "read-class.json").read_text())
 def main() -> int:
     apply = "--apply" in sys.argv
     require_all = "--require-all" in sys.argv
+    # `--group <substring>` NARROWS THE ASSERTION, and it has to exist.
+    #
+    # `--require-all` was written for the one tree where every replacement in the
+    # table is still unrewritten: the final tree of the first full replay. Run against
+    # any later tree it reports twenty-four replacements matching nothing, and every
+    # one of them is a replacement that already fired — which is indistinguishable, in
+    # its output, from twenty-four typos.
+    #
+    # A group is added for one chapter's port and checked against that chapter's tree.
+    # So the caller names the group it just wrote, and the assertion means something
+    # again.
+    group = None
+    if "--group" in sys.argv:
+        group = sys.argv[sys.argv.index("--group") + 1]
 
-    pairs = [(p[0], p[1], g["why"]) for g in TABLE["replacements"] for p in g["pairs"]]
+    groups = [g for g in TABLE["replacements"] if group is None or group in g["why"]]
+    if group is not None and not groups:
+        print(f"  no group whose reason contains {group!r}", file=sys.stderr)
+        return 1
+    pairs = [(p[0], p[1], g["why"]) for g in groups for p in g["pairs"]]
     fired = {old: 0 for old, _, _ in pairs}
 
     for f in refrules.platform_files(PLAT):
@@ -44,11 +62,61 @@ def main() -> int:
         if out != text and apply:
             f.write_text(out, encoding="utf-8")
 
+    # A REWRAP MUST NOT DROP A WORD, AND ONE DID.
+    #
+    # A two-line replacement that rewraps has to fit the same text into different line
+    # breaks, and trimming to fit is silent: `Every pass compared` became `Every pass`
+    # and the next line went on `requirements to tasks`. Nothing in this file could
+    # see it, because both sides were the right shape.
+    #
+    # So the words are counted. A replacement may LOSE the reference's own words — an
+    # ordinal, the word `chapter` — and may gain the subject name's. Losing anything
+    # else means text went missing.
+    import re as _re
+    # The reference's own words go by definition, and rewording a clause moves
+    # function words and verb inflections around. What must not happen is a CONTENT
+    # word disappearing with no trace of it in the replacement.
+    ALLOWED_LOSS = {
+        "chapter", "chapters",
+        "a", "an", "the", "in", "at", "on", "of", "to", "for", "with", "from",
+        "by", "as", "and", "or", "is", "was", "are", "were", "be", "been",
+        "it", "its", "this", "that", "which", "there", "here", "one",
+        # Temporal and deictic words a rewording routinely replaces with a phrase:
+        # "Until then" becomes "Until the endpoint over it".
+        "then", "now", "still", "already", "when", "since", "until", "before",
+        "after", "so", "but", "not", "no", "all", "both", "each", "own",
+    }
+    # A POSSESSIVE OF AN ALLOWED WORD IS ALLOWED TOO. `chapter's` is the reference's
+    # own word carrying an apostrophe, and the tokeniser keeps it attached.
+    ALLOWED_LOSS |= {w + "'s" for w in ALLOWED_LOSS}
+
+    def words(t):
+        # TWO CHARACTERS MINIMUM. `3.12's` tokenises to a bare `s` — the digits are
+        # not letters and the apostrophe is not a word start — and a one-letter
+        # fragment is never a content word. Left in, it reported `{'s': 1}` for every
+        # possessive reference the table removes.
+        return [w for w in _re.findall(r"[A-Za-z][A-Za-z'`-]*", t) if len(w) > 1]
+
+    for old_s, new_s, why in pairs:
+        kept = {w.lower()[:5] for w in words(new_s)}
+        lost = collections.Counter(words(old_s)) - collections.Counter(words(new_s))
+        unexplained = {
+            w: n for w, n in lost.items()
+            if w.lower() not in ALLOWED_LOSS
+            # `arrived` -> `arrives` is a rewording, not a loss: the stem survives.
+            and w.lower()[:5] not in kept
+        }
+        if unexplained:
+            print(f"  WORDS DROPPED {unexplained}: {old_s.splitlines()[0][:70]}",
+                  file=sys.stderr)
+            return 1
+
     total = sum(fired.values())
     missed = [old for old, n in fired.items() if n == 0]
     doubled = [(old, n) for old, n in fired.items() if n > 1]
 
-    print(f"apply-read-class: {len(pairs)} replacements, {total} applied, "
+    scope = "all groups" if group is None else f"group {group!r}"
+    print(f"apply-read-class: {scope} — {len(pairs)} replacements, {total} applied, "
           f"{len(missed)} matched nothing, apply={apply}")
     for old, n in doubled:
         print(f"  NOT UNIQUE ({n}x): {old.splitlines()[0][:88]}")

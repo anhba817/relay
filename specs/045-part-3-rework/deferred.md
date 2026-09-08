@@ -226,3 +226,46 @@ name the subject, because a name encodes no position.
 
 The page now says so where the argument was made rather than in a later chapter's
 retrospective, since that is where a reader meets it.
+
+## THE REFERENCE REWRITE IS A STEP IN THE PER-CHAPTER LOOP, NOT A PHASE
+
+Measured at chapter 3.9's first tag: **81 explicit ordinals and 84 bare**, against zero
+at 3.8's. A chapter's port cherry-picks commits from the published history, and every
+one of them carries the references the convention removed. The full-branch replay
+established the convention; it cannot keep it.
+
+So `replay-range.sh` runs per chapter — the same tree-by-tree mechanism over one
+chapter's commits, onto a parallel branch, with the tag repointed after. Two traps in
+building it, both already recorded elsewhere in this file and both hit again:
+
+**`git rev-parse` ON AN ANNOTATED TAG RETURNS THE TAG OBJECT.** `commit-tree -p
+<tag object>` fails with *"is not a valid 'commit' object"* naming a sha the script
+never printed. The rework tags are annotated because a tag should carry the chapter
+title a reader checking it out wants — which made every bare `rev-parse` in this
+repository a trap. `^{commit}` everywhere.
+
+**AND `--require-all` ASKED THE WRONG QUESTION ON THE SECOND RUN.** It was written for
+the one tree where every replacement in `read-class.json` is still unrewritten. Run
+against a later tree it reported 24 replacements matching nothing — every one of them
+already applied, which is indistinguishable in its output from 24 typos. It takes
+`--group` now, so a chapter's own group is checked against that chapter's tree.
+
+## A REWRAP DROPS WORDS AND NOTHING COULD SEE IT
+
+A two-line read-class replacement has to fit the same text into different line breaks,
+and trimming to fit is silent — both sides are the right shape:
+
+    - // 3.13 chose" as *named outcomes* and dropped *bulk*. Every pass compared
+    + // endpoints chapter chose" as *named outcomes* and dropped *bulk*. Every pass
+      // requirements to tasks, both said "removal", …
+
+`Every pass compared` became `Every pass`, and the next line went on `requirements to
+tasks`. `apply-read-class.py` counts words now: a replacement may lose the reference's
+own words, function words and verb inflections, and nothing else.
+
+**IT CAUGHT THREE MORE OF MINE ON ITS FIRST RUN** — `first two` dropped from "the first
+two endpoints", `for a whole` dropped from a sentence whose next line began "chapter
+and then turned nine of fifteen tests red", and `table` dropped from a clause I had
+reworded to avoid repeating a noun. Two were real losses; the third I restored rather
+than widen the rule, because a guard with an exemption per rewording is a guard nobody
+trusts.
