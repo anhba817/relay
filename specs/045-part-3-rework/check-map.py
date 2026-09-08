@@ -97,6 +97,56 @@ def main() -> int:
         if not any(c["new"] == h.get("new") for h in halves for c in chapters):
             problems.append(f"split {o} names halves that are not in the chapter list")
 
+    # AND THE MAP GREW A THIRD SHAPE, WHICH THIS CHECKER IGNORED IN SILENCE.
+    #
+    # Old 3.10's harness moved to new 8 and its PROSE stayed at new 23 — two old
+    # chapters feeding one new one, which is a merge and not a split. Recorded as a
+    # `split` it failed here for the right reason and the wrong one: a split needs a
+    # prose boundary heading and there is no harness section in old 3.10's page to
+    # cut at. So it became a `reassignment`, and the checker then read the map,
+    # found two well-formed splits, and reported zero problems over a key it had
+    # never heard of. AN UNKNOWN MEMBER MUST FAIL, or the next shape is invisible
+    # the same way.
+    KNOWN_KEYS = {"_why", "movements", "chapters", "splits", "reassignments"}
+    unknown = set(m) - KNOWN_KEYS
+    if unknown:
+        problems.append(
+            f"the map has {len(unknown)} key(s) this checker does not check: "
+            f"{sorted(unknown)} — add them to KNOWN_KEYS and check them, or remove them"
+        )
+
+    reassignments = {r["old"]: r for r in m.get("reassignments", [])}
+    newnums = {c["new"] for c in chapters}
+    for o, r in sorted(reassignments.items()):
+        # A reassignment's old chapter keeps ONE row — the prose one. Two rows would
+        # mean it also split, and then it is a split.
+        if counts.get(o) != 1:
+            problems.append(
+                f"reassignment {o} appears {counts.get(o, 0)} times in the chapter "
+                f"list — a reassignment moves code only, so its prose has one home"
+            )
+        for field in ("prose_stays_at", "code_moves_to"):
+            n = r.get(field)
+            if n not in newnums:
+                problems.append(f"reassignment {o}'s {field} is {n!r}, which is no chapter")
+        if r.get("prose_stays_at") == r.get("code_moves_to"):
+            problems.append(
+                f"reassignment {o} moves code to the chapter its prose is already in "
+                f"— that is not a reassignment"
+            )
+        if not r.get("paths"):
+            problems.append(f"reassignment {o} names no paths, so it reassigns nothing")
+        # THE PATHS MUST NOT ALSO BELONG TO A SPLIT HALF. A path in two places is a
+        # file two chapters both claim to create, and the fence chain would then
+        # want its pre-image twice.
+        owned = {q for sp in splits.values() for h in sp.get("halves", []) for q in h.get("paths", [])}
+        clash = owned & set(r["paths"])
+        if clash:
+            problems.append(
+                f"reassignment {o} claims {len(clash)} path(s) a split half also "
+                f"claims: {sorted(clash)}"
+            )
+
     for c in chapters:
         if c["movement"] not in movements:
             problems.append(f"chapter {c['new']} names movement {c['movement']}, which is not declared")
