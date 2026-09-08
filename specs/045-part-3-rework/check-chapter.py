@@ -65,13 +65,64 @@ def main(chapter_dir, base, target):
                        capture_output=True, text=True).stdout.split()
     )
 
-    problems, checked = [], 0
+    # AND A TITLE THAT NAMES NO FILE AT ALL IS NOT A PROSE TITLE.
+    #
+    # `path not in changed` covers two very different cases with one `continue`: a
+    # fence quoting a file an EARLIER chapter built (legitimate, and common), and a
+    # fence naming a path that exists in no chapter — which is a reader following a
+    # filename to nothing. Chapter 8 fenced `services/dispatcher/src/dispatcher.itest.ts`
+    # and `services/gateway/src/limits.itest.ts` after the reorder moved the dispatcher
+    # to the webhook chapters and the limiter to movement VII, and both were reported as
+    # prose. `(excerpt)` titles hid three more the same way.
+    #
+    # So the existence question is asked separately, of the target tag, for every title
+    # that looks like a path — INCLUDING excerpts, which are exempt from the byte
+    # comparison and not from existing.
+    problems: list[str] = []
+
+    # A TITLE IS A PATH EVEN WITHOUT A SLASH, AND THIS FILE'S SIBLING SAYS SO.
+    #
+    # `regen-fences.py` carries the same note because it made the same mistake first:
+    # requiring a `/` silently skipped `turbo.json` and `package.json`. Written again
+    # here, it skipped `eslint.config.mjs` and `vitest.coverage.config.mts` — so the
+    # existence check simply did not run on the two root-level configs this chapter
+    # edits most.
+    #
+    # NOT DEFINED AS "EXISTS", which is the tempting fix and a circular one: an
+    # existence check whose subject is "titles that name an existing file" can never
+    # fail. So the test is on the SHAPE — no whitespace, and either a directory
+    # separator or a source extension — and it stays independent of the answer.
+    SOURCE_EXT = (".ts", ".mts", ".cts", ".js", ".mjs", ".cjs", ".sql", ".json",
+                  ".yaml", ".yml", ".sh", ".md", ".mdx")
+
+    def looks_like_a_path(t: str) -> bool:
+        t = t.split(",")[0].strip()
+        if not t or " " in t or "\t" in t:
+            return False
+        return "/" in t or t.endswith(SOURCE_EXT)
+
+    for lang, title, body in fences:
+        bare = (title.split(",")[0]
+                     .replace(" (excerpt)", "")
+                     .replace(" (deleted)", "")
+                     .strip())
+        if not looks_like_a_path(bare):
+            continue
+        if "(deleted)" in title:
+            continue                      # a deletion is asserted by the chain, not here
+        if at(target, bare) is None:
+            problems.append(
+                f"{bare}: fenced here and in no chapter — absent from {target}"
+            )
+
+    problems_existence = len(problems)
+    checked = 0
     for lang, title, body in fences:
         if "(excerpt)" in title:
             continue
         path = title.split(",")[0].split(" (deleted)")[0].strip()
         if path not in changed:
-            continue                      # prose title, or a file this chapter did not touch
+            continue                      # an earlier chapter's file, quoted here
         want = at(target, path)
         if want is None:
             problems.append(f"{path}: not in {target}")

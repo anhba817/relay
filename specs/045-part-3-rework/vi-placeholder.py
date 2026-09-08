@@ -80,11 +80,45 @@ def main(en_dir, apply=False):
                 i = e
             i += 1
         return o
-    a, b = fences(src), fences(page)
-    ok = a == b
+    # TWO COMPARISONS, AND THE FIRST ONE CANNOT FAIL.
+    #
+    # This compared `fences(src)` against `fences(page)` — the page it had just built
+    # in memory, out of those same fences. In a dry run that is the generator checked
+    # against its own input, and it reported `identical: True` over an EN page 3,074
+    # lines long and a VI page of 1,627 with a different fence list entirely. A check
+    # that can only pass is worse than no check: it was the only signal here, and it
+    # said the mirror was satisfied.
+    #
+    # It is kept, because it IS a real self-test of the generator — a fence dropped or
+    # reformatted while being copied would show up here — but it is labelled as what
+    # it is, and the comparison that decides the exit code reads the DISK.
+    a, generated = fences(src), fences(page)
+    self_ok = a == generated
+
+    on_disk = vi / "page.mdx"
+    disk = fences(on_disk.read_text(encoding="utf-8")) if on_disk.exists() else None
+
     print(f"vi-placeholder: {'APPLIED' if apply else 'DRY RUN'} — {slug}")
-    print(f"  EN fences {len(a)} / VI fences {len(b)} — identical: {ok}")
-    return 0 if ok else 1
+    print(f"  generator self-test: {len(a)} EN fences copied, identical: {self_ok}")
+    if disk is None:
+        print(f"  VI page on disk: ABSENT — the mirror skips it, which passes by omission")
+        return 0 if self_ok else 1
+    disk_ok = a == disk
+    print(f"  EN fences {len(a)} / VI ON DISK {len(disk)} — identical: {disk_ok}"
+          + ("" if disk_ok else "   <-- run with --apply"))
+    if not disk_ok and not apply:
+        # Say WHICH, because a count that differs by 34 is not a diagnosis.
+        ea, eb = [(l, t) for l, t, _ in a], [(l, t) for l, t, _ in disk]
+        only_en = [x for x in ea if x not in eb]
+        only_vi = [x for x in eb if x not in ea]
+        for l, t in only_en[:6]:
+            print(f"    EN only: {t or '(untitled ' + l + ')'}")
+        for l, t in only_vi[:6]:
+            print(f"    VI only: {t or '(untitled ' + l + ')'}")
+        bodies = [t for (l, t, ba), (_, _, bb) in zip(a, disk) if ba != bb and t]
+        for t in bodies[:4]:
+            print(f"    body differs: {t}")
+    return 0 if (self_ok and disk_ok) else 1
 
 if __name__ == "__main__":
     args = [a for a in sys.argv[1:] if a != "--apply"]
