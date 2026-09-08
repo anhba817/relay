@@ -18,3 +18,5 @@ chapters earlier, so a chapter about the resume high-water mark could freely fix
 test in passing. Moving webhooks to 19 unpicks that: the resume work applies cleanly and
 the webhook fixes have nothing to apply to. Neither is a merge problem — the file does not
 exist — and neither is lost, because they are here.
+| `6c1c90b` (part) | six `/v1/webhooks*` rows in `isolation/targets.ts`, their gauntlet attacks | new 19 (webhooks) | classify and attack the webhook routes |
+| `6c1c90b` (part) | the webhook block and `get environment()` in `db/repository.ts` | new 19 (webhooks) | endpoint/delivery/dead-letter repository methods |
