@@ -465,3 +465,74 @@ WHAT IS AND IS NOT AFFECTED. 206 of 242 paths keep their chapter order and need
 nothing. The whole problem is 36 paths, and it is concentrated in four files.
 `repository.itest.ts` shows the shape of the good case: 0 lines added by old
 3.05-3.11, because a test file for one subject is not interleaved with six others.
+
+================================================================================
+THE PIVOT — REBUILD FORWARD, DO NOT RE-DERIVE
+================================================================================
+
+THE CONSTRAINT NONE OF THE FOUR MECHANISMS COULD HAVE MET, and it is written in
+`relay-platform/README.md`:
+
+    One git tag per chapter. Every tag is a runnable, tested state: check it out
+    and the toolchain checks pass. Each chapter's SKIP AHEAD box names the tag to
+    check out if you get stuck.
+
+THE TAGS ARE PUBLISHED. Readers check them out. So the reorder was never a fence
+problem with a tag problem attached — every chapter needs a working tree that
+compiles and passes, and no snapshot re-derivation produces one. Re-hunking,
+attribution-and-filter, three-way merge and running-maximum were all answering
+the wrong question, and the 67% figure on `repository.ts` was the symptom rather
+than the disease.
+
+WHAT IS BEING DONE INSTEAD. A worktree at `part2-ch8`, branch `part3-rework`, and
+Part 3 built forward one chapter at a time in the NEW order. The interleaving then
+happens in the new order rather than having to be undone, and each chapter's
+fences are the diff between consecutive tags — generated, not re-derived.
+
+  new 1, 2   identical to old 1, 2 — the branch starts at `part3-ch2`, gates green
+  new 3+     built forward, each ending in a commit + tag that typechecks, lints,
+             builds and passes, with that chapter's `.mdx` regenerated in the same
+             step
+
+DECIDED: the rebuild need NOT land byte-identical on today's HEAD, only
+equivalent. Insisting on byte-identity would reintroduce the interleaving
+constraint through the back door.
+
+TWO DEFECTS IN WHAT IS PUBLISHED TODAY, found by reading the tags:
+
+  part3-ch8 and part3-ch9 are THE SAME COMMIT. Chapter 3.9's SKIP AHEAD sends the
+  reader to 3.8's tree, missing that chapter's work entirely.
+
+  part3-ch13, part3-ch14 and part3-ch15 DO NOT EXIST. Three SKIP AHEAD boxes name
+  tags that were never created.
+
+Four of Part 3's 24 chapters therefore have a wrong or absent tag. The rebuild
+fixes all four as a side effect, and nothing in the old plan would have.
+
+AND THE COMMIT LABELS DO NOT MATCH THE CHAPTER NUMBERS. The error registry was
+built by `89fd038 feat(3.12): thirteen codes, one URL rule, and a typed thrower`,
+while the chapter map calls that chapter old 14 — chapters were renumbered during
+writing and the commit subjects kept the old numbers. Neither the tags nor the
+commit subjects can be trusted as the chapter index; the published `.mdx` is the
+only reliable source for what a chapter taught.
+
+MOVING A CHAPTER CHANGES ITS CONTENT, NOT JUST ITS POSITION — measured on the
+first divergence. Old 14 opens by counting the vocabulary and finding five codes
+the platform had always sent and never registered. That narrative is a RETROFIT
+and it exists only at position 14:
+
+    codes registered at part3-ch2, which is new 3's base      5
+    codes registered at old 3.14                             16
+    codes at HEAD                                            27
+
+At position 3 there is nothing to retrofit. New 3 becomes "establish the error
+contract" — the registry, the typed thrower, the status-to-code filter and the
+`docs_url` rule — over five codes, with every later chapter adding its own to a
+registry that already exists. Better pedagogy, and NEW PROSE: FR-009's "prose is
+preserved" cannot hold for a chapter whose subject was the mess it found.
+
+WHAT THIS RETIRES. T021, T021a, T021b and the 29 conflicts go: there is nothing to
+replay. `replay.mjs`, `runmax.mjs` and the snapshot machinery stay as the
+MEASUREMENT that produced this decision, not as the mechanism. What survives
+unchanged is everything the analysis established: the eight movements, both
+splits, the 26-chapter map, the reference rewrite, the registry and the renaming.
