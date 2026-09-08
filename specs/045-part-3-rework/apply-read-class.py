@@ -46,13 +46,25 @@ def main() -> int:
     if group is not None and not groups:
         print(f"  no group whose reason contains {group!r}", file=sys.stderr)
         return 1
-    pairs = [(p[0], p[1], g["why"]) for g in groups for p in g["pairs"]]
-    fired = {old: 0 for old, _, _ in pairs}
+    # A DELIBERATE CONTENT-WORD DROP IS DECLARED, NOT ASSUMED. `drops` on an entry
+    # lists words its pairs may lose beyond the function-word set below — and it exists
+    # because the guard was right to stop the one case that needed it: a sentence
+    # crediting a chapter with a removal that never happened cannot be fixed without
+    # losing the word `removed`. Declaring it puts the intent in the table next to the
+    # reason, where the next reader of that entry sees it. An undeclared drop still
+    # fails, which is the whole value of the guard.
+    # BACKTICKS ARE STRIPPED ON BOTH SIDES OF THIS COMPARISON. The tokeniser's class
+    # keeps a trailing backtick, so `addMember` tokenises as "addMember`" — and a person
+    # writing `drops` should not have to know that.
+    pairs = [(p[0], p[1], g["why"],
+              frozenset(w.lower().strip("`") for w in g.get("drops", [])))
+             for g in groups for p in g["pairs"]]
+    fired = {old: 0 for old, _, _, _ in pairs}
 
     for f in refrules.platform_files(PLAT):
         text = f.read_text(encoding="utf-8")
         out = text
-        for old, new, _ in pairs:
+        for old, new, _, _ in pairs:
             if old in out:
                 # COUNT, DO NOT JUST FLAG. A left-hand side matching twice in one file
                 # means the sentence is not unique and the decision was made about one
@@ -97,12 +109,13 @@ def main() -> int:
         # possessive reference the table removes.
         return [w for w in _re.findall(r"[A-Za-z][A-Za-z'`-]*", t) if len(w) > 1]
 
-    for old_s, new_s, why in pairs:
+    for old_s, new_s, why, drops in pairs:
         kept = {w.lower()[:5] for w in words(new_s)}
         lost = collections.Counter(words(old_s)) - collections.Counter(words(new_s))
         unexplained = {
             w: n for w, n in lost.items()
             if w.lower() not in ALLOWED_LOSS
+            and w.lower().strip("`") not in drops
             # `arrived` -> `arrives` is a rewording, not a loss: the stem survives.
             and w.lower()[:5] not in kept
         }

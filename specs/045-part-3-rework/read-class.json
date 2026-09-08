@@ -245,7 +245,7 @@
       ]
     },
     {
-      "why": "Chapter 3.10's port. 77 references reintroduced — 53 delete, 6 substitute, 18 read — which is the per-chapter step doing what it exists for. One of the eighteen was not a reference at all: `Users outnumber channels 3.4:1` is a ratio, and a substitution would have written `outnumber channels the broker chapter:1`. `VERSIONISH` now knows that a unit can follow a colon. The rest name the chapter that did the work, `this chapter` where old 3.16 is this one, and `the previous chapter` where old 3.15 is.",
+      "why": "Chapter 3.10's port. 77 references reintroduced — 53 delete, 6 substitute, 18 read — which is the per-chapter step doing what it exists for. One of the eighteen was not a reference at all: `Users outnumber channels 3.4:1` is a ratio, and a substitution would have written `outnumber channels the broker chapter:1`. `VERSIONISH` now knows that a unit can follow a colon. The rest name the chapter that did the work, `this chapter` where old 3.16 is this one, and `the previous chapter` where old 3.15 is.  AND ONE OF THESE WAS A FALSE CLAIM THE CONVENTION WOULD HAVE MADE PERMANENT. The `metadata` comment said chapter 3.12 'removed `addMember`'s `(inserted.rowCount ?? 0)`'. Published 3.12 did — cb011875 — but that removal was never ported: both SQL branches carried `RETURNING` in this tree while the test of them still read `rowCount`. Substituting a NAME into a sentence describing a removal that had not happened is worse than the ordinal was, because a wrong number is checkable and a wrong name is not. The replacement states the objection instead of crediting a chapter with acting on it, which is true in every tree; the sender chapter is where the line is actually changed.",
       "pairs": [
         [
           "  // AND ONE MORE THAN FOUR, SINCE CHAPTER 3.15. `4003` is a ban, which is none of",
@@ -281,7 +281,7 @@
         ],
         [
           "          // never hands back null — and chapter 3.12 removed `addMember`'s",
-          "          // never hands back null — and the isolation harness removed `addMember`'s"
+          "          // never hands back null. The same objection reaches `addMember`'s"
         ],
         [
           "    // that class from chapter 3.12 and its lines ratchet sat at 99; a third took the file",
@@ -310,6 +310,104 @@
         [
           "      // `codes.ts` does not define, which is the thing chapter 3.14's registry exists to",
           "      // `codes.ts` does not define, which is the thing the error-registry chapter's registry exists to"
+        ]
+      ],
+      "drops": [
+        "removed"
+      ]
+    },
+    {
+      "why": "THE SENDER CHAPTER'S OWN ORDINAL. A chapter does not cite itself by number, and 'this chapter' survives a renumbering that a number does not. Four sites, three shapes: a rule line where the tag is pure provenance and goes; two sentences whose subject IS the change this chapter makes, which keep a self-reference in words.",
+      "pairs": [
+        [
+          "// ── T042: the mint's three cases (chapter 3.17, FR-005, FR-005a, SC-006) ──",
+          "// ── T042: the mint's three cases (FR-005, FR-005a, SC-006) ──"
+        ],
+        [
+          "/** REQUIRED SINCE CHAPTER 3.17 (FR-MSG-15, FR-006), and required is the whole",
+          "/** REQUIRED SINCE THIS CHAPTER (FR-MSG-15, FR-006), and required is the whole"
+        ],
+        [
+          " * since chapter 3.17, rather than inherited from `credential.guard.ts`'s `EITHER`",
+          " * since this chapter, rather than inherited from `credential.guard.ts`'s `EITHER`"
+        ],
+        [
+          " * THIS COMMENT SAID SOMETHING ELSE UNTIL CHAPTER 3.17, and what it said was the reading",
+          " * THIS COMMENT SAID SOMETHING ELSE UNTIL THIS CHAPTER, and what it said was the reading"
+        ]
+      ]
+    },
+    {
+      "why": "old 3.15 -> new 9, the channel-control chapter. Both are plain provenance on a clause the sentence needs, so they substitute rather than delete.",
+      "pairs": [
+        [
+          "-- TWO COLUMNS, NOT A SECOND TABLE. `users` is what every reader built since chapter\n-- 3.15 already reads.",
+          "-- TWO COLUMNS, NOT A SECOND TABLE. `users` is what every reader built since the\n-- channel-control chapter already reads."
+        ],
+        [
+          "  /** A user's channels, most recently active first, keyset-paginated (chapter\n   * 3.15, FR-013, FR-CHN-08).",
+          "  /** A user's channels, most recently active first, keyset-paginated (the\n   * channel-control chapter, FR-013, FR-CHN-08)."
+        ]
+      ]
+    },
+    {
+      "why": "old 3.15 and old 3.16 in one sentence -> the channel-control and user-surface chapters. Two references on one line, which is why neither rule may take it: substituting the first rewraps the second out of the line it was matched on.",
+      "pairs": [
+        [
+          "    // Chapters 3.15 and 3.16 exist because five columns had no reader, so leaving a sixth",
+          "    // The channel-control and user-surface chapters exist because five columns had no\n    // reader, so leaving a sixth"
+        ]
+      ]
+    },
+    {
+      "why": "THE NUMBER WAS WRONG BEFORE THE CONVENTION TOUCHED IT, AND A NAME WOULD HAVE MADE IT PERMANENT — AND THE COUNT WAS WRONG TOO. Both sites credit `addMember`'s dead guard to '3.12'. Published 3.12 did remove it (cb011875), but that removal was never ported: this tree carried `RETURNING` on both SQL branches while the test of them still read `rowCount ?? 0`. So the sentence 'third time this project has answered the ratchet by removing code' counts a removal that never happened here — in this order `upsertUser` (949a8062/7a24c846, rework/part3-ch10) is the only precedent, and it is the SECOND time, not the third. Substituting a name would have preserved both errors behind a reference no gate can check. The sender chapter removes the arm for real. The second site drops the tag instead: it lists instances of a pattern and needs no attribution.",
+      "pairs": [
+        [
+          "    // rather than covering it (3.12's `addMember`, the user-surface chapter's `upsertUser`).",
+          "    // rather than covering it: the user-surface chapter's `upsertUser` was the first."
+        ],
+        [
+          "      // that stopped meaning anything**: `addMember`'s `rowCount ?? 0` (3.12), and",
+          "      // that stopped meaning anything**: `addMember`'s `rowCount ?? 0`, and"
+        ]
+      ],
+      "drops": [
+        "addMember",
+        "Third",
+        "third"
+      ]
+    },
+    {
+      "why": "ANOTHER WRONG NUMBER, CAUGHT THE SAME WAY. The read-position clamp this sentence points at is planted by 5f456db2, whose first published tag is part3-ch16 — the user-surface chapter, not the gauntlet.",
+      "pairs": [
+        [
+          "    // is inserted directly, the way chapter 3.12's read-position clamp is planted a few",
+          "    // is inserted directly, the way the user-surface chapter's read-position clamp is\n    // planted a few"
+        ]
+      ]
+    },
+    {
+      "why": "old 3.12's HARNESS half -> new 4, the isolation harness. Verified rather than assumed: `wrong_credential_service` enters at 08e9dbfc and `dispatch/replay` at 2f73e7c3, both first tagged part3-ch12, and `credential.guard.ts`, `internal/dispatch.controller.ts` and `gauntlet.itest.ts` are all in new 4's path list. The milestone half (new 25) tests the instruments and owns none of these.",
+      "pairs": [
+        [
+          "      // Chapter 3.12's fourteen green tests compared two refusals and meant nothing,",
+          "      // The isolation harness's fourteen green tests compared two refusals and meant nothing,"
+        ],
+        [
+          "// rather than a fallback, because a fallback is what let the gateway's credential reach\n// `POST /internal/dispatch/replay` in chapter 3.12.",
+          "// rather than a fallback, because a fallback is what let the gateway's credential reach\n// `POST /internal/dispatch/replay` in the isolation harness."
+        ],
+        [
+          "// its own comment names as the thing that let the gateway's credential reach\n// `POST /internal/dispatch/replay` in chapter 3.12. Both classes are genuinely accepted",
+          "// its own comment names as the thing that let the gateway's credential reach\n// `POST /internal/dispatch/replay` in the isolation harness. Both classes are genuinely accepted"
+        ],
+        [
+          "      // in the chapter that collides with the ladder — so it is named here, the way\n      // chapter 3.12 named `wrong_credential_service` for the same reason. The filter",
+          "      // in the chapter that collides with the ladder — so it is named here, the way\n      // the isolation harness named `wrong_credential_service` for the same reason. The filter"
+        ],
+        [
+          "    // row in it was dropped for having no sender.\" That was true, and it is the reason\n    // chapter 3.12's `gaps.md` G1 listed TWO independent mechanisms for \"a REST-sent",
+          "    // row in it was dropped for having no sender.\" That was true, and it is the reason\n    // the isolation harness's `gaps.md` G1 listed TWO independent mechanisms for \"a REST-sent"
         ]
       ]
     }

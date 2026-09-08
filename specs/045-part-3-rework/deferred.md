@@ -386,3 +386,42 @@ accurate, and none of it arising once a chapter is named by its subject. **Telli
 "accurate" from "necessary" apart is only possible after the convention exists** — which
 is the argument for reading a page after the rules have run over it, and the reason no
 checker will ever do this pass.
+
+## CHAPTER 11 DEFERS FOUR FILES, AND ONE OF THEM IS PROSE
+
+`75d8c33` ("every send site names a sender") is the widest commit in old 3.17: FR-MSG-15 made
+every send name a sender, so every *existing* send site in the tree had to be given one. Three
+of its nine files do not exist yet.
+
+| original commit | file | belongs to | what it did |
+|---|---|---|---|
+| `75d8c33` (part) | `packages/outsider/src/integrate.itest.ts` | new 26 (the outsider) | give the sealed suite's sends a bot, and assert the three refusals |
+| `75d8c33` (part) | `services/api/src/limits/limits.itest.ts` | new 22 (limits) | name a sender in the rate-limit suite's sends |
+| `75d8c33` (part) | `services/gateway/src/limits.itest.ts` | new 22 (limits) | name a sender in the socket-limit suite's sends |
+| `75d8c33` (part) | `README.md`, "Sending a message: name who is sending" | new 26 (the outsider) | document the bot sender in the quickstart of record |
+
+**THE README ROW IS A DIFFERENT KIND OF DEFERRAL, AND THE DIFFERENCE IS THE POINT.** The other
+three are files that do not exist: the cherry-pick says so, loudly, and the only decision is
+which chapter inherits them. The README exists. Its hunk conflicts on *context* and resolving
+that conflict is easy — which is exactly the trap, because the section applies cleanly to a
+document that cannot support it.
+
+Every prerequisite of that section is deferred. It opens `CHANNEL=$(curl … -H "authorization:
+Bearer $RELAY_DEMO_CREDENTIAL" …)`, and `RELAY_DEMO_CREDENTIAL` comes from
+`scripts/seed-demo-tenant.mjs`, which new 26 creates; this tree's README is 79 lines and has no
+demo tenant, no credential and no API example of any kind. It closes by calling itself "the
+quickstart of record", whose claim — "the suite below is that execution — it is sealed from
+workspace code and follows this file" — names `packages/outsider`, also new 26's.
+
+**So the section would have told a reader to export a variable nothing defines, and cited a
+suite nothing runs, and no gate could have said so.** `check:fences` compares fenced bytes
+against a chapter's diff; a bash fence in the README that references an unset variable is
+byte-perfect. The section is correct prose about a platform that will exist eleven chapters
+later, which is the same defect as a comment citing `quota_exceeded` — a code this tree does
+not define, cited twice in `packages/protocol/src/codes.ts` as though it did.
+
+**A DROPPED FILE ANNOUNCES ITSELF AND A DROPPED PARAGRAPH DOES NOT.** Three of these four rows
+were written because `git cherry-pick` printed `CONFLICT (modify/delete)` and named the path.
+The fourth was written because somebody read the hunk. That asymmetry is the argument for this
+ledger existing at all, and it is worth re-reading whenever a chapter's port ends with "it
+applied cleanly".
