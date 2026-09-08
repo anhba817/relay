@@ -333,3 +333,56 @@ the rule is worth.
 established after the first two chapters were written, which the tag's own message
 records. Redundant rather than wrong, and not worth rewriting two chapters' history
 for.
+
+## A CHAPTER'S FENCES GO STALE WHEN ITS OWN TAG MOVES
+
+Chapter 3.9's page verified clean, then reported **16 problems** with nothing touching
+it. The reference replay had moved `rework/part3-ch9`, and `regen-fences` had run
+against the tag before the move.
+
+**So the per-chapter loop has an order, and it is not the obvious one.** The reference
+rewrite has to run BEFORE the fences are regenerated, because it changes the code the
+fences quote:
+
+    port the commits  →  gates  →  reference replay  →  retag
+                      →  regen-fences  →  check-chapter  →  vi-placeholder  →  page
+
+Run the other way round, every fence in the chapter is regenerated against a tree that
+is about to change, and the only thing that notices is `check-chapter` on the next
+chapter's pass — which is how this was found, one chapter late.
+
+## AND THE MDX PASS WAS MISSING A CLAUSE THE SOURCE PASS HAD
+
+`refrules.AMBIGUOUS` routes a reference to a split old chapter away from automatic
+substitution, because old 12 is new 4 *or* new 25 and only the sentence knows. The
+source pass consults it. `rewrite-mdx-refs.py` did not — it substituted every ordinal
+whose chapter `subjects.json` names, and old 12's name there is `the isolation
+gauntlet`, which is new 25's half.
+
+So a sentence about the harness would have sent a reader to the milestone twenty-one
+chapters later. **Two copies of a rule are two rules**, and the second was missing a
+clause — the same finding this feature already recorded about `place_name`, arrived at
+from the other direction. It reports what it leaves for a reader now: six on chapter
+3.10's page, four of them deliberate quotations.
+
+## THREE PROSE SHAPES THE SUBSTITUTION CANNOT HANDLE
+
+Found by reading its output rather than by any check:
+
+**A TABLE COLUMN KEYED BY THE ORDINAL.** `3.15   20 files taught, 2,947 prose words`
+became `The channel-control chapter   20 files taught…`, and the alignment the block
+depends on is gone. A name is longer than a number and a monospace column is not
+prose.
+
+**A QUOTATION OF THE ORDINAL ITSELF.** A passage discussing what a citation *said*
+needs the citation verbatim: `31 files cited "chapter 3.12"` is a fact about the text,
+not a pointer. Substituting it makes the sentence describe something that never
+happened.
+
+**AND A PASSAGE WHOSE SUBJECT THE CONVENTION DELETED.** Chapter 3.10 carried 30 lines
+on matching citing files to the pages that fence them, a distribution of 25 / 9 / 13
+against a shortcut's 15 / 14 / 10, and one file the exercise could not reach. All of it
+accurate, and none of it arising once a chapter is named by its subject. **Telling
+"accurate" from "necessary" apart is only possible after the convention exists** — which
+is the argument for reading a page after the rules have run over it, and the reason no
+checker will ever do this pass.
