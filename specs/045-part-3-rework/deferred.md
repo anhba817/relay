@@ -269,3 +269,67 @@ and then turned nine of fifteen tests red", and `table` dropped from a clause I 
 reworded to avoid repeating a noun. Two were real losses; the third I restored rather
 than widen the rule, because a guard with an exemption per rewording is a guard nobody
 trusts.
+
+## THE FOURTH ATTACK SHAPE, AND THE TWO IT TURNED OUT NOT TO COVER
+
+The isolation harness left a note where a `list` shape would go: *"nothing this api
+serves returns a collection, so a list attack would be a function with no target — and
+a shape with no member is a vocabulary entry that drifts. The chapter that adds the
+first list route adds the shape and the attack together."* Chapter 3.10 is that
+chapter, and the prediction held — but adding the member found two more distinctions
+the taxonomy did not have:
+
+**A LISTING CANNOT ASSERT THE PAIR.** Every other attack compares the foreign
+identifier against one that exists nowhere and requires them indistinguishable. `GET
+/v1/users/:externalId/channels` names the user in the path, so a foreign id is
+correctly a 404 while a user who owns nothing is a 200 with no rows. Comparing those
+says nothing. The property is that no identifier from another environment appears in
+any answer — which a status code cannot express, so `ListVerdict` carries the rows and
+what leaked into them.
+
+**AND A ROUTE THAT ECHOES ITS INPUT HAS NO PAIR EITHER.** `POST /v1/users` and
+`DELETE /v1/users/:externalId` were written as `writeAttack` and both failed
+correctly:
+
+    body {"data":[{"external_id":"victim-…-user","status":"created",…}]}  (foreign)
+    vs   {"data":[{"external_id":"absent-0000…","status":"created",…}]}  (absent)
+
+The answers differ by construction, in the one field the request chose. `POST
+/v1/users` also takes its identifiers in the BODY, so there is no foreign id in a URL
+to compare. Both check the victim's state alone.
+
+**THE TYPE CAUGHT ONE SITE AND NOT THE ARITHMETIC BESIDE IT.** `Record<Shape, number>`
+stopped compiling the moment `Shape` gained a member and named the tally. Four lines
+below, `counts.read + counts.write + counts.credential` quietly stopped totalling
+everything: `expected 17 to be 18`, for a route classified, attacked, and counted as
+neither. Both derive from the record now.
+
+## AND IMPLICIT USER CREATION STOPPED 404 BEING A SIGNAL
+
+A user row is minted on first authentication (FR-039a/b), and the gauntlet's credential
+attack mints a token for the victim's external id with the attacker's key — so it
+**creates that name in the attacker's environment**. Nothing leaks: the row is the
+attacker's own, with a name the attacker chose.
+
+But the two ban attacks asserted 404 and got 200. After this chapter a foreign
+identifier no longer reliably answers not-found on any user route, because presenting
+it may have created it. Both assert the victim's row instead, with `banned_at` named
+beside the deep equality — a field added later would otherwise fail the comparison for
+a reason unrelated to a ban.
+
+## A COMMIT THE CONVENTION DELETED
+
+`b8f278a docs: twenty-two citations point at the chapter that taught the change` was
+skipped, and its content is the argument: twenty-two comments renumbered from
+`chapter 3.12` to `chapter 3.14`, because the work they cited had moved and the number
+encoded a position. Named, none would have needed correcting. **A whole commit of
+maintenance, deleted by a naming rule** — which is the clearest measurement of what
+the rule is worth.
+
+## TWO ORDINALS SURVIVE AT `rework/part3-ch2`, AND BOTH ARE SELF-REFERENCES
+
+`internal.ts` and `messages.module.ts` say "chapter 3.2" inside chapter 3.2.
+`rework/base-convention` removes them one commit later — the convention was
+established after the first two chapters were written, which the tag's own message
+records. Redundant rather than wrong, and not worth rewriting two chapters' history
+for.

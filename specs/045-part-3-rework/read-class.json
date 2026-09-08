@@ -245,11 +245,71 @@
       ]
     },
     {
-      "why": "Chapter 3.10's port. A THIRD split reference — `which is chapter` / `3.13's` — in the doc comment the previous chapter's bulk removal left behind. Three of these now, in three different files, which is enough to call it a shape rather than an accident: a reference at the start of a wrapped comment line, with the word `chapter` stranded on the line above.",
+      "why": "Chapter 3.10's port. 77 references reintroduced — 53 delete, 6 substitute, 18 read — which is the per-chapter step doing what it exists for. One of the eighteen was not a reference at all: `Users outnumber channels 3.4:1` is a ratio, and a substitution would have written `outnumber channels the broker chapter:1`. `VERSIONISH` now knows that a unit can follow a colon. The rest name the chapter that did the work, `this chapter` where old 3.16 is this one, and `the previous chapter` where old 3.15 is.",
       "pairs": [
         [
-          "   * request\" and FR-007 says the result is reported per user — which is chapter\n   * 3.13's `addMembers` shape in both halves. `contracts/membership.md` specified a",
-          "   * request\" and FR-007 says the result is reported per user — which is the\n   * endpoints chapter's `addMembers` shape in both halves. `contracts/membership.md` specified a"
+          "  // AND ONE MORE THAN FOUR, SINCE CHAPTER 3.15. `4003` is a ban, which is none of",
+          "  // AND ONE MORE THAN FOUR, SINCE THE PREVIOUS CHAPTER. `4003` is a ban, which is none of"
+        ],
+        [
+          "    // ── THE USER ROW, CREATED IF ABSENT (chapter 3.15, FR-039a, FR-039b) ────",
+          "    // ── THE USER ROW, CREATED IF ABSENT (FR-039a, FR-039b) ──────────────────"
+        ],
+        [
+          "// ── T113: THE TIE AT A PAGE BOUNDARY (chapter 3.15, FR-013) ───────────────────",
+          "// ── T113: THE TIE AT A PAGE BOUNDARY (FR-013) ─────────────────────────────────"
+        ],
+        [
+          "// ── THE TOMBSTONE, AND THE CLAMP (chapter 3.15, FR-016, FR-019) ───────────────",
+          "// ── THE TOMBSTONE, AND THE CLAMP (FR-016, FR-019) ─────────────────────────────"
+        ],
+        [
+          "    // covered. Chapter 3.12 found three instruments that had never produced output for",
+          "    // covered. The isolation harness found three instruments that had never produced output for"
+        ],
+        [
+          "// ── THE ARMS THE ROUTES CANNOT REACH (chapter 3.15, T174a, T174b) ─────────────",
+          "// ── THE ARMS THE ROUTES CANNOT REACH (T174a, T174b) ───────────────────────────"
+        ],
+        [
+          "// through the gateway's api CHILD PROCESS, whose coverage is not attributable. Chapter 3.5",
+          "// through the gateway's api CHILD PROCESS, whose coverage is not attributable. The webhook dispatcher chapter"
+        ],
+        [
+          "    // `userId`, by design since chapter 3.3. The listing's `last_message.user` is then",
+          "    // `userId`, by design since the outbox chapter. The listing's `last_message.user` is then"
+        ],
+        [
+          "          // never hands back null — and chapter 3.12 removed `addMember`'s",
+          "          // never hands back null — and the isolation harness removed `addMember`'s"
+        ],
+        [
+          "    // that class from chapter 3.12 and its lines ratchet sat at 99; a third took the file",
+          "    // that class from the isolation harness and its lines ratchet sat at 99; a third took the file"
+        ],
+        [
+          "    // chapter 3.12 built and this is the first route to rely on it.",
+          "    // The isolation harness built and this is the first route to rely on it."
+        ],
+        [
+          "    // ago — chapter 3.12's fourteen green tests are why this line exists.",
+          "    // ago — the isolation harness's fourteen green tests are why this line exists."
+        ],
+        [
+          " * (chapter 3.14 gave every validation error its field). Decoding it downstream would",
+          " * (the error-registry chapter gave every validation error its field). Decoding it downstream would"
+        ],
+        [
+          "   * \"send failed\". Chapter 3.14 built thirteen codes and one registry precisely so a",
+          "   * \"send failed\". The error-registry chapter built thirteen codes and one registry precisely so a"
+        ],
+        [
+          "      // ── THE API'S OWN REFUSAL, FORWARDED (chapter 3.15) ────────────────────",
+          "      // ── THE API'S OWN REFUSAL, FORWARDED ───────────────────────────────────"
+        ],
+        [
+          "      // `codes.ts` does not define, which is the thing chapter 3.14's registry exists to",
+          "      // `codes.ts` does not define, which is the thing the error-registry chapter's registry exists to"
         ]
       ]
     }

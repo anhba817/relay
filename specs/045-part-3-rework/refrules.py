@@ -47,8 +47,19 @@ TEMPORAL = re.compile(r"\b(since|until|before|after|by the time)\s*$", re.I)
 # A MAGNITUDE IS NOT A CHAPTER. `-- century reaches 3.2 billion, which overflows
 # `integer`` was classified as a reference to the credentials chapter. The unit is what
 # separates them, and it always follows.
+# A RATIO IS NOT A CHAPTER, AND `3.4:1` LOOKS EXACTLY LIKE ONE.
+#
+# `Users outnumber channels 3.4:1 here` was reported as a read-class reference to old
+# chapter 3.4 — a substitution would have produced "outnumber channels the broker
+# chapter:1". The unit list below catches `3.4x` and `3.4%`; a ratio puts its unit
+# AFTER a colon, which nothing here was looking for.
+#
+# Found by reading eighteen read-class lines, which is the class's whole purpose: the
+# rules route what they cannot decide to a person, and one of the eighteen turned out
+# not to be a reference at all.
 VERSIONISH = re.compile(
     r'\d\.\d+\.\d|"\d|\bv3\.|gaps\.md\s+3\.\d'
+    r'|3\.\d{1,2}\s*:\s*\d'
     r'|3\.\d{1,2}\s*(?:billion|million|thousand|bn|m\b|k\b|%|s\b|ms\b|x\b|GB|MB|KB)')
 # THE AMBIGUOUS OLD CHAPTERS, READ OUT OF THE MAP RATHER THAN NAMED HERE.
 #
