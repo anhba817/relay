@@ -25,7 +25,14 @@ Usage: classify-refs.py [--rule delete|substitute|read] [--files]
 import json, pathlib, re, sys
 
 HERE = pathlib.Path(__file__).resolve().parent
-PLAT = HERE.parent.parent / "relay-platform"
+# OVERRIDABLE, so the same rules can be applied to the rebuild worktree. The
+# rebuild starts from a tag that predates this feature, so its base still names
+# ordinals; the convention has to be established there before Part 3 continues on
+# top of it, or the rebuilt history ends up mixing the two.
+import os
+import pathlib as _pl
+PLAT = (_pl.Path(os.environ["RELAY_PLATFORM"]) if os.environ.get("RELAY_PLATFORM")
+        else HERE.parent.parent / "relay-platform")
 
 import refrules
 from refrules import is_deliberate, REF, ID, RULE_LINE, SPLIT, classify, controls_failing, is_versionish
