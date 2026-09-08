@@ -60,6 +60,13 @@ def main(path: str, apply: bool) -> int:
                     and not re.search(r'<Chapter(Header|Footer) id="', lines[i])
                     and f"3.{refrules.chapter_of(x.group(0))}" != mine
                     and f"3.{refrules.chapter_of(x.group(0))}" in NAMES
+                    # AMBIGUOUS OLD CHAPTERS ARE A PERSON'S, HERE TOO. `refrules`
+                    # routes them to `read` for source, and this pass had no such
+                    # test — so it substituted old 3.12 with one half's name and
+                    # would have sent a reader to the gauntlet milestone for a
+                    # sentence about the harness. Two copies of a rule are two
+                    # rules, and the second one was missing a clause.
+                    and refrules.chapter_of(x.group(0)) not in refrules.AMBIGUOUS
                 ),
                 None,
             )
@@ -84,6 +91,16 @@ def main(path: str, apply: bool) -> int:
         p.write_text(out, encoding="utf-8")
     print(f"rewrite-mdx-refs: {'APPLIED' if apply else 'DRY RUN'} — {p.parent.name}")
     print(f"  own id {mine}   substituted {changed}   unchanged {skipped}")
+    if left := [
+        (i + 1, m.group(0), l.strip()[:74])
+        for i, l in enumerate(out.split("\n"))
+        for m in REF.finditer(l)
+        if not is_versionish(l, m)
+        and refrules.chapter_of(m.group(0)) in refrules.AMBIGUOUS
+    ]:
+        print(f"  {len(left)} ambiguous reference(s) left for a reader:")
+        for ln, ref, txt in left:
+            print(f"    {ln:>5}  {ref:<13} {txt}")
     for s in samples:
         print(f"  {s}")
     return 0
