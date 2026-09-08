@@ -109,3 +109,79 @@ span (`6c1c90b feat(3.12): a channel and its members over the public API` create
 `channels.controller.ts`, which new 8's page fences). The tag names chapter 12 and holds
 chapter 13's work. Any measurement that attributes commits to chapters by tag boundary
 is wrong in this region, in a direction no gate reports.
+
+## TWO MIGRATIONS RE-CUT ALONG CHAPTER LINES
+
+`b8d8bb7 feat: the schema chapters 3.15 and 3.16 stand on` says in its own subject that
+it serves two chapters, and the reorder keeps them adjacent (old 15 → new 9, old 16 →
+new 10) — so nothing forces a split. What forces it is that the two migrations are
+**numbered sequentially and split by subject, not by chapter**:
+
+    0011_activity_and_read_positions   channels.last_activity_at + index   -> new 10
+                                       read_positions table                -> new 10
+    0012_member_roles_and_user_deletion  members.role + CHECK              -> new 9
+                                         users.deleted_at                  -> new 10
+
+New 9 cannot add `0012` without `0011` existing, and `0011` holds nothing it uses. Its
+page is 109 mentions of `role` against three of `deleted_at`, one of
+`last_activity_at` and three of `read_positions` — the prose already knows which
+chapter it is.
+
+So new 9 takes `members.role` alone, as this branch's `0006`, and new 10 takes
+`last_activity_at`, `read_positions` and `users.deleted_at` as `0007`. **A migration's
+number should follow the chapter that introduces it**, which is only true if no
+migration serves two.
+
+Deferred to new 10 with it: `scripts/backfill-channel-activity.mjs` (the
+`last_activity_at` backfill, outside the migration because a scan is not
+downtime-free), and `read_positions`' entry in the guard's table array — which under
+the per-chapter rule belongs to the chapter that creates the table, not to this one.
+
+## `PORT=0` WAS SAFE FOR ONE OF TWO SERVICES, AND THE ASYMMETRY WAS INVISIBLE
+
+The e2e journey failed twice with **all eight tests skipped**, immediately after a
+lane that spawns api children, and green on its own. The obvious cause was
+`packages/e2e/src/harness.ts`'s fixed `4100` with gateways at `apiPort + 1 + i` — a
+band, of the class the port fix was meant to have retired. Replacing it with `PORT=0`
+did not fix it.
+
+**The real cause was one service short of a two-service fix.** `services/api/src/main.ts`
+has read its bound address back since the isolation harness — `PORT=0` prints `0` if
+you log the value you were handed. `services/gateway/src/main.ts` logged `{ port }`
+straight from the environment. So:
+
+    api up on 37763
+    gateway 1 never became healthy      <- a health probe against port zero
+
+**AND NOTHING NOTICED BECAUSE NOTHING ASKED.** Every suite that spawned a gateway
+handed it a fixed port, so the logged value was the value passed in and correct by
+accident. The property only becomes observable the first time a parent needs the
+answer — which is the same shape as an exemption that never fires and a bait row no
+drain can claim.
+
+`packages/test-harness/src/bound-port.test.ts` derives every `services/*/src/main.ts`
+from the tree and asserts each calls `address()` and does not log the name it bound
+from `process.env`. Red-tested by reverting the gateway.
+
+Four fixed ports are now gone: `public-surface.itest.ts`'s 4800-5000 band,
+`session.itest.ts`'s 4123, and the e2e harness's 4100 plus the gateway band derived
+from it. `RELAY_E2E_API_PORT` and `RELAY_SESSION_ITEST_API_PORT` are out of
+`turbo.json`'s env allowlist. The only remaining literals are the two services' own
+production defaults.
+
+## AND AN ASSERTION ON TWO CHARACTERS READ AS A LEAKED SECRET
+
+`credentials.itest.ts` invariant 1 proves a minted secret is unrecoverable from the
+row it leaves behind. It took the secret as `credential.split("_").at(-1)` — and the
+secret is **base64url, whose alphabet includes `_`**. So the assertion was on whatever
+followed the secret's own last underscore: usually a long tail, occasionally two
+characters.
+
+    AssertionError: expected '[{"public_id":"cbd76832…' not to contain 'WA'
+    salt: 7XKYdYc_ottu61KbLY4dWA
+
+Two characters that appear inside the stored salt — which reads exactly like the api
+returning a secret it had just hashed. `minted.prefix` was already on the returned
+object. **The first repair used `lastIndexOf("_")` and was the same fault again**; the
+prefix is the only exact answer. A length guard now refuses to assert on a short
+string at all, and twenty consecutive runs are green.
