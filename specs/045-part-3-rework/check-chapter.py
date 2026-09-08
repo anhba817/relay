@@ -56,11 +56,22 @@ def main(chapter_dir, base, target):
             i = end
         i += 1
 
+    # WHICH TITLES NAME A FILE — asked of the diff, not guessed from the shape of the
+    # string. Guessing said a title with no space and no slash must be a path, so a
+    # prose fence titled `42P01` was looked up as one and reported missing. The tags
+    # know exactly which files changed; anything else is prose.
+    changed = set(
+        subprocess.run(["git", "-C", str(WT), "diff", "--name-only", f"{base}..{target}"],
+                       capture_output=True, text=True).stdout.split()
+    )
+
     problems, checked = [], 0
     for lang, title, body in fences:
-        if "(excerpt)" in title or " " in title.split("/")[-1] and not title.endswith((".ts", ".mts", ".mjs", ".json", ".sql", ".yaml")):
-            continue                      # a prose title names no file
+        if "(excerpt)" in title:
+            continue
         path = title.split(",")[0].split(" (deleted)")[0].strip()
+        if path not in changed:
+            continue                      # prose title, or a file this chapter did not touch
         want = at(target, path)
         if want is None:
             problems.append(f"{path}: not in {target}")
