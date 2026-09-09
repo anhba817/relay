@@ -582,10 +582,27 @@ only ever subscribes. So the client is the stimulus rather than the oracle.
     fanout/**                 no key is touched at all — a publish onto a channel UUID
     membership.ts             the same: PUBLISH only, onto member:{channel_id}
     presence.ts               keys ARE composed, and environment-scoped — the limiter's argument
+    connections.ts            keys put the ENVIRONMENT FIRST: conn:{env}:{user}:{slot}
     presence.itest.ts         \ suites publishing arbitrary bytes with a client
     membership.itest.ts       / belonging to neither module
     connections.itest.ts      the client is the STIMULUS, not the oracle
+    connections.test.ts       a unit test that reads the module's own source from disk
 
-**SIX ENTRIES, FOUR ARGUMENTS, AND NEW 22 HAS TO CARRY ALL OF THEM IN ONE COMMIT** — the
+**EIGHT ENTRIES, FIVE ARGUMENTS, AND NEW 22 HAS TO CARRY ALL OF THEM IN ONE COMMIT** — the
 both-directions check fires on the rule's own arrival if any is missing, and a blanket "the
-gateway's Redis files" would erase four distinctions the rule exists to make.
+gateway's Redis files" would erase five distinctions the rule exists to make.
+
+| original commit | artefact | belongs to | what it did |
+|---|---|---|---|
+| `83309e5` (part) | `services/gateway/src/connections.ts` in the `ioredis` exemption | new 22 (limits) | exempt a client whose keys put the environment first |
+| `23a85c5` (part) | `services/gateway/src/connections.test.ts` in `DRIVER_EXEMPT_TESTS` | new 22 (limits) | exempt a unit test that reads the module's source |
+
+**`connections.ts` IS THE STRONGEST CASE ON THE LIST, NOT THE WEAKEST**, and the reason is
+structural rather than argued: `conn:{env}:{user}:{slot}` puts the environment id FIRST, so a
+cross-tenant read needs a caller to hand the module another environment's id — which the
+session layer takes from the api's verified identity and never from a payload. The other seven
+argue about what they touch; this one cannot reach across a tenant without being lied to.
+
+**AND ITS COMMENT REPEATS THE LIST-PLACEMENT TRAP.** The `.itest.ts` sibling is deliberately
+NOT on the `**/*.ts` block's `ignores`, because the later `**/*.itest.ts` block would override
+it in silence. Two chapters have now written that note; new 22 gets it in writing twice.
