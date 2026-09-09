@@ -494,6 +494,53 @@
           "        // ── THIS CHAPTER'S FOUR NEW PRODUCTION FILES ───────────────────"
         ]
       ]
+    },
+    {
+      "why": "THE TYPING CHAPTER'S TWELVE, and two of them carry a COUNT that the reorder falsified rather than a name that moved. `registry.ts` is fenced by 'chapters 3.7, 3.8, 3.11 and 3.19' — measured on this tree, the pages that fence it are chapter 7 and chapter 13, because the rate-limit and metering chapters are new 22 and new 24. Four chapters' diffs becomes two, which weakens the argument the sentence is making and is the honest version of it. And `meterIntervalMs` occurs exactly once in this tree — in the comment citing it — so the sentence pointed at an option nothing declares; `rereadIntervalMs` is real (15 code uses, the membership chapter's) and carries the same argument alone.  THE GUARD CAUGHT THE NUMBER, WHICH IS THE POINT OF THIS ENTRY: dropping `four` is the whole substance of that decision, not a rewrap. Declared so the next reader of this entry sees that a count changed rather than a name.  AND TWO PAIRS HAD TO BE WRITTEN AGAINST THE POST-SUBSTITUTION TEXT — the second time that has happened, so it is a rule now rather than an incident: **write a read-class pair for a region by running the replay first and reading what `--rule read` reports, not by reading the tree before it.** The replay applies delete, then substitute, then this table, so a region holding two references has its first one rewritten before the pair is tried. One of the two also shows that the SOURCE substitute rule has no own-chapter filter the way the mdx pass does: it turned this chapter's own `3.21` into 'the typing chapter', which inside the typing chapter should read 'this chapter'.",
+      "drops": [
+        "chapter",
+        "chapters",
+        "meterIntervalMs",
+        "above",
+        "four",
+        "for",
+        "followed",
+        "membership"
+      ],
+      "pairs": [
+        [
+          "  [\"typing.send\", \"inbound\", \"chapter 3.21: a client may say it is typing (session.ts)\"],",
+          "  [\"typing.send\", \"inbound\", \"this chapter: a client may say it is typing (session.ts)\"],"
+        ],
+        [
+          "   * **IN THIS CLOSURE, NOT ON `Connection`.** That type lives in `registry.ts`,\n   * which chapters 3.7, 3.8, 3.11 and 3.19 all fence — a field there is four\n   * chapters' diffs regenerated for a value with a two-second lifetime. A closure",
+          "   * **IN THIS CLOSURE, NOT ON `Connection`.** That type lives in `registry.ts`,\n   * which the deduplication and presence chapters both fence — a field there is two\n   * chapters' diffs regenerated for a value with a two-second lifetime. A closure"
+        ],
+        [
+          "    // a describe-level teardown that closed servers first cost chapter 3.20\n    // seven tests and eighty-three seconds, every failure naming a hook.",
+          "    // a describe-level teardown that closed servers first cost the membership\n    // chapter seven tests and eighty-three seconds, every failure naming a hook."
+        ],
+        [
+          " * of being dropped. Chapters 3.19 and 3.20 chose the same strictness for the same\n * reason.",
+          " * of being dropped. The presence and membership chapters chose the same strictness\n * for the same reason."
+        ],
+        [
+          " * the event spine, the presence chapter followed it for presence and 3.20 for\n * membership. A new file is a whole-file fence and leaves three chapters' hunks",
+          " * the event spine, and the presence and membership chapters each followed it.\n * A new file is a whole-file fence and leaves three chapters' hunks"
+        ],
+        [
+          "    // ELEVEN with the typing chapter's `typing.send`. **The title carries the number\n    // too**, and updating the assertion without the title is how chapter 3.19\n    // shipped a good test under a false name.",
+          "    // ELEVEN with this chapter's `typing.send`. **The title carries the number\n    // too**, and updating the assertion without the title is how the presence\n    // chapter shipped a good test under a false name."
+        ],
+        [
+          "  /** Injectable for the reason `meterIntervalMs` above and chapter\n   * 3.20's `rereadIntervalMs` are: **a test that waits out two real seconds pays\n   * them in the package that paces the lane**, which has about four seconds of\n   * headroom in the whole budget. That chapter's itest builds with 40 to test a",
+          "  /** Injectable for the reason the membership chapter's `rereadIntervalMs` is:\n   * **a test that waits out two real seconds pays them in the package that paces\n   * the lane**, which has about four seconds of headroom in the whole budget.\n   * That chapter's itest builds with 40 to test a"
+        ],
+        [
+          "   * by two clocks, the shape that stranded a user online for ever in 3.19. */",
+          "   * by two clocks, the shape that stranded a user online for ever in the presence\n   * chapter. */"
+        ]
+      ]
     }
   ]
 }
