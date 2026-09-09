@@ -373,3 +373,99 @@ chapters 10, 11, 14 and 15 — because a tag's tree changing changes every fence
 it in those chapters. That is the same operation this feature already ran once for the weld
 damage, where the defect changed what a line MEANT. Here it changes one apostrophe's case, so
 it is filed rather than done, and it is filed with the command that would do it.
+
+## 045-11 · NEW 3 PORTED THE TYPED THROWER AND DROPPED TWO OF ITS THREE HUNKS
+
+Measured while porting new 18, phase 6. Published `89fd038` — *"thirteen codes, one URL
+rule, and a typed thrower so a typo cannot ship a dead link"* — did three things. The
+rework's new 3 (`3fd9db5`, "errors that resolve") ported one:
+
+    ported      ERROR_CODES, protocol-error.ts, the filter, session.ts's ErrorCode
+    NOT ported  docsUrl's anchor form and its per-call env base
+    NOT ported  zod-validation.pipe.ts's switch to protocolError
+
+**THE URL RULE IS THE SERIOUS HALF, AND IT IS A DEAD LINK PER CODE.**
+`docs/08-error-reference.md` is ONE document with `## <code>` headings — one `### ` and
+eleven `## `. Published's rule resolves against it:
+
+    published    `${base}#${code}`      -> …/errors#media_not_available   an anchor that exists
+    this tree    `${BASE}/${code}`      -> …/docs/errors/media_not_available   a page that does not
+
+New 3 did not invent the path form: **Parts 1 and 2 publish it** (`docs/errors/not_found` in
+`part-1/chapter-04` and `part-2/chapter-05`), and they were never renumbered. Published's
+answer was to teach the path form early and CORRECT it in Part 3, at old 3.12. The rework
+kept the early form and never ran the correction — so the whole tree now ships the URL that
+89fd038 exists to prevent, and it does so consistently: new 3 also wrote
+`it("appends the code VERBATIM — no slug transform, no case change")` asserting
+`` `${ERROR_DOCS_BASE}/${code}` ``, so the test agrees with the defect. **Nothing could
+catch this**, because the function and its test were written together.
+
+**AND THE ENV BASE WENT WITH IT.** Published reads `RELAY_DOCS_BASE_URL` per call with a
+test named *"reads the base URL per call, not at import"*; this tree has a `const`. A
+preview deployment cannot point its error links at its own docs.
+
+**THE PIPE'S HALF SURFACED ON ITS OWN AND IS FIXED IN NEW 18.** `media_not_available` is a
+422, and a `BadRequestException` cannot carry a code that is not 400 — so phase 6 could not
+be ported without the switch. It is made there with the reason written at the top of the
+file, naming the chapter that owed it. **The one call site that never needed typing is the
+one that proved it was needed**, which is the same shape as the SRS clauses this feature
+found by opening the file to make an edit.
+
+**WHAT NEW 18 DID NOT DO.** Change `docsUrl`. That is one line and it rewrites every
+`docs_url` the platform emits, in five production call sites and in the fences of four
+already-paged chapters plus Parts 1 and 2 — inside a chapter about attachments. Chapter
+18's own route test was written to survive either rule instead: it asserts
+`body.docs_url === docsUrl("media_not_available")`, deriving the URL from the package that
+builds it rather than restating a separator. `codes.test.ts` owns the rule, and one place
+should.
+
+**WHAT CLOSING IT COSTS.** `docsUrl` and `ERROR_DOCS_BASE` in new 3, its two URL tests,
+then `regen-fences` and `check-chapter` on new 3 and on every later chapter whose fences
+show an error envelope — and a decision about Parts 1 and 2, which are outside this
+feature's scope and currently publish the form new 3 would be leaving behind. That last
+point is why this is filed with a question rather than a patch: published answered it by
+correcting mid-book, and whether the rework should correct in new 3 or teach the anchor form
+from Part 1 is not a renumbering decision.
+
+## 045-12 · THE REWORK TREE HAS NO LANE RESET, SO ITS BROKER ACCUMULATES AND ONE SUITE HANGS
+
+Measured while porting new 18. `consumer.itest.ts` was run alone to reproduce the chapter's
+"six red tests" claim and produced no output for six minutes before being stopped. Both
+node processes showed ~0 seconds of CPU against 5:49 elapsed — which is what a suite waiting
+on JetStream deliveries looks like either way, so the CPU reading is NOT evidence of a hang.
+What the broker said is:
+
+    curl -s 'localhost:8222/jsz?consumers=1&streams=1'
+
+    EVENTS msgs 8520
+        recorder            pending 14
+        itest-basic-…       pending 0
+        walk-c7b02d3f       pending 0
+        itest-shared-…      pending 0
+        itest-poison-…      pending 0
+        itest-garbage-…     pending 0
+        itest-catchup-…     pending 0
+
+**EACH TEST LEAKS A DURABLE CONSUMER AND EACH ONE PAYS A FULL STREAM SCAN.** Six durables
+from earlier runs, all caught up, on a stream of 8,520 messages nothing drains — so every
+new durable the suite creates walks the whole backlog before it reaches its own messages.
+
+**THE SELF-CLEANING THIS LANE RELIES ON DOES NOT EXIST HERE.** CLAUDE.md records that
+`reset-lane.itest.ts` runs the real purge script and `@relay/test-harness` sorts first, so a
+full integration run begins by purging. That script is 043/044 work on `main` — AFTER Part 3
+— and `find . -name 'reset-lane*'` in this tree returns nothing. **The rework's lane
+degrades run by run and there is no floor under it**, which also means the "no two batteries
+are comparable" rule is back in force for every timing this feature reports.
+
+**WORKED AROUND, NOT FIXED.** Purging `EVENTS` and dropping the six leaked durables took the
+stream to zero and the suite ran. That is a hand operation performed from a scratch script,
+not a checked-in one, and it purges lane debris rather than data — the same distinction
+`reset-lane.mjs` makes.
+
+**WHAT CLOSING IT COSTS.** The purge script and its test are one file each and they are
+`main`'s, not this feature's; porting them into the rework tree would put post-Part-3 work
+inside a Part-3 chapter, which is the thing `deferred.md` exists to prevent in the other
+direction. The honest options are to run the full integration lane rather than one suite
+(the sort order then purges first — but only once `reset-lane` exists), or to keep purging
+by hand and say so beside every number. **This gap is why every duration in new 18's
+close-out is reported with the broker's message count next to it.**

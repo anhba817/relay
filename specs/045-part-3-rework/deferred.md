@@ -630,3 +630,30 @@ message-shaped one.
 `["message.created"]`** — which is the trap the deferred test's own comment names. A new
 test that forgets the argument seeds a creations-only endpoint, receives nothing, and reads
 as though the expansion were broken rather than as though the test were.
+
+## THE ATTACHMENTS CHAPTER OWES ONE FILE FORWARD AND ONE CITATION BACK
+
+Measured while porting new 18. Fourteen commits, one file this tree does not have, and
+one comment that pointed at a file three movements away.
+
+| original commit | file | belongs to | what it did |
+|---|---|---|---|
+| `a55bcd0`, `93a7b07` (part) | `packages/outsider/src/integrate.itest.ts` | new 26 (the outsider) | 68 more lines walking an attachment from outside the monorepo |
+| `c8ab3f1` (part) | two titles in the files above and in `webhooks/deliveries.itest.ts` | new 26, new 19 | strip the `T0xx:` prefix with the rest of the sweep |
+
+**AND A CITATION THAT POINTED AT A FILE THIS TREE HAS NOT BUILT.** Phase 6's route test
+argued for asserting the body rather than the status by citing
+`` `webhooks.itest.ts:90` `` and *"the five bare 422s behind it … for four chapters"*. The
+whole `services/api/src/webhooks/` directory arrives at new 19, so that was the only
+mention of the file anywhere in the tree — a forward reference with nothing at the other
+end, and no gate reads a comment.
+
+Rewritten to stand on the mechanism instead: `ProtocolErrorFilter` derives a code from the
+status for 400, 401, 403 and 404 only, so every other status ships a body calling itself
+`internal_error` while the status line reads correctly. That is checkable here. The
+five-422s finding stays the webhook chapter's, named as owed rather than quoted early.
+
+**THIS IS THE THIRD TIME A PORTED COMMENT HAS CITED A FILE THE REORDER MOVED**, and the
+first two were caught by `tsc` because they were imports. A citation in prose is the same
+defect with no compiler — which is why the port now greps each new comment's filenames
+against the tree.

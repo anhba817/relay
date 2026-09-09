@@ -642,6 +642,55 @@
    "drops": [
     "twenty-three"
    ]
+  },
+  {
+   "why": "THE ATTACHMENTS CHAPTER'S ELEVEN. Keyed off the POST-REPLAY text. Six are self-references and become 'this chapter'; the rest take a subject name. TWO AMBIGUOUS OLD ORDINALS, SETTLED BY ASKING THE REPOSITORY WHICH CHAPTER BUILT THE THING THE SENTENCE IS ABOUT. `chapter 3.12's oracle` is the pair comparison in `isolation/attack.ts`, and `git log --diff-filter=A` puts that file in `rework/part3-ch4` — the isolation harness, the same answer the revisions chapter reached for `targets.ts`, and NOT the gauntlet milestone at new 25. `chapter 3.14` splits into 3.14a and 3.14b in `subjects.json`; the sentence is about naming the FIELD in an error envelope, which is the error-registry chapter at new 3, not the outsider milestone at new 26. NEITHER COUNT NEEDED RE-MEASURING AND BOTH WERE CHECKED ANYWAY, because a count beside an ordinal is the shape `gaps.md` 045-9 is about. 'SIX UNTIL THIS CHAPTER' is `messageSchema`'s key set: seven now, listed in the assertion under it. 'SEVEN SINCE THIS CHAPTER' is a DIFFERENT seven — the outbox event's `data` payload, not the event-type list, which holds five. Two sevens and a five in one chapter, and reading the assertion under each is what tells them apart.",
+   "pairs": [
+    [
+     " * since chapter 3.16. A second number for the same kind of value would be two limits a\n * customer has to remember. */",
+     " * since the user-surface chapter. A second number for the same kind of value would be\n * two limits a customer has to remember. */"
+    ],
+    [
+     "    // SIX UNTIL CHAPTER 3.24, and pinned here for the first time",
+     "    // SIX UNTIL THIS CHAPTER, and pinned here for the first time"
+    ],
+    [
+     "    // silent addition could reach. `codes.test.ts` has pinned its set since 3.2 for the\n    // same reason: an exact set makes a change a decision rather than an accident.",
+     "    // silent addition could reach. `codes.test.ts` has pinned its set since the\n    // credentials chapter for the same reason: an exact set makes a change a decision\n    // rather than an accident."
+    ],
+    [
+     "// THAT IS NOT THE SAME AS \"CANNOT DRIFT\", which this comment claimed until\n// chapter 3.24. They are two schemas validated at two controllers — this route",
+     "// THAT IS NOT THE SAME AS \"CANNOT DRIFT\", which this comment claimed until this\n// chapter. They are two schemas validated at two controllers — this route"
+    ],
+    [
+     "// against `idempotency_key`, the text bound, and FR-019b's pair rule, which\n// 3.24 had to be told to carry across. What keeps them together is a shared",
+     "// against `idempotency_key`, the text bound, and FR-019b's pair rule, which this\n// chapter had to be told to carry across. What keeps them together is a shared"
+    ],
+    [
+     "      // `expect(read.attachments).toEqual([])` when the value is undefined — chapter\n      // 3.23 shipped a control test that was green before its field existed for exactly\n      // this reason. This assertion fails on an absent key.",
+     "      // `expect(read.attachments).toEqual([])` when the value is undefined — the\n      // revisions chapter shipped a control test that was green before its field existed\n      // for exactly this reason. This assertion fails on an absent key."
+    ],
+    [
+     "      // therefore no attachment whatever the read path does with the column. Chapter\n      // 3.23's falsification proved this shape of test stays green when the predicate is\n      // removed. T032b runs it again here and expects green.",
+     "      // therefore no attachment whatever the read path does with the column. The\n      // revisions chapter's falsification proved this shape of test stays green when the\n      // predicate is removed. T032b runs it again here and expects green."
+    ],
+    [
+     "      // BYTE-IDENTICAL BUT FOR `request_id`, the same strip chapter 3.12's oracle uses",
+     "      // BYTE-IDENTICAL BUT FOR `request_id`, the same strip the isolation harness's\n      // oracle uses"
+    ],
+    [
+     "      // work out which key it was about — chapter 3.14's whole subject, and the reason",
+     "      // work out which key it was about — the error-registry chapter's whole subject,\n      // and the reason"
+    ],
+    [
+     " * This read `sendMessageBodySchema.shape.text` until chapter 3.24, which was correct",
+     " * This read `sendMessageBodySchema.shape.text` until this chapter, which was correct"
+    ],
+    [
+     "    // SEVEN SINCE CHAPTER 3.24, and both events gained the field together because both",
+     "    // SEVEN SINCE THIS CHAPTER, and both events gained the field together because both"
+    ]
+   ]
   }
  ]
 }
