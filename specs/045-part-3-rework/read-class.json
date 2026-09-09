@@ -446,6 +446,19 @@
           "// no broker, no container and no lane. It moved here with the function in\n// this chapter, and it exists before the old copy is deleted so the property is"
         ]
       ]
+    },
+    {
+      "why": "THE PRESENCE CHAPTER'S TWO. old 3.12 -> the harness half (new 4): the gauntlet that proves a client cannot forge a frame is `gauntlet.itest.ts`, which new 4 owns; the milestone half tests the instruments and owns no attack. old 3.18 -> the fan-out chapter (new 12), and this one opens its line so the rules route it to a reader — the sentence began one line up and `place_name` cannot see that.",
+      "pairs": [
+        [
+          "// `state: \"away\"`, and chapter 3.12's gauntlet proves a client cannot forge one.",
+          "// `state: \"away\"`, and the isolation harness's gauntlet proves a client cannot forge one."
+        ],
+        [
+          "// opened\" is true of a working presence path and of an empty function, and chapter\n// 3.18 recorded that trap against its own publisher: its `publish` swallows errors",
+          "// opened\" is true of a working presence path and of an empty function, and the\n// fan-out chapter recorded that trap against its own publisher: its `publish` swallows errors"
+        ]
+      ]
     }
   ]
 }
