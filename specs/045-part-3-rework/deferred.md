@@ -539,3 +539,29 @@ that says which list each belongs on and why putting one in the wrong place prod
     presence.ts               keys ARE composed, and environment-scoped — the limiter's argument
     presence.itest.ts         \ suites publishing arbitrary bytes with a client
     membership.itest.ts       / belonging to neither module
+
+## THE TYPING CHAPTER OWES ONE TEST TO THE LIMITS CHAPTER, AND IT IS THE SHARPEST ONE
+
+| original commit | artefact | belongs to | what it did |
+|---|---|---|---|
+| `3412851` (part) | `typing.itest.ts`'s T048b, `GatewayLimits` plumbing, the session stub's `limits` | new 22 (limits) | assert a typing signal spends no message quota (FR-014) |
+| `3412851` (part) | `packages/outsider/src/integrate.itest.ts` | new 26 (the outsider) | the sealed exercise's typing leg |
+| `3412851` (part) | `services/api/src/internal/usage.itest.ts` | new 24 (metering) | the usage suite's typing case |
+| `0ecb21f` | `services/gateway/src/meter.itest.ts` | new 24 (metering) | keep the meter fixture's child output |
+
+**T048b IS THE ONE THAT MATTERS AND ITS OWN COMMENT SAYS WHY.** *"Moved out of US3 by analysis
+pass 1, and the reason is worth keeping: leaving it in a P2 story meant stopping after the MVP
+could ship a cosmetic feature able to exhaust a customer's message budget."* A typing indicator
+that spends a send's budget is a denial of service a client controls by holding a key down.
+
+**AND THE ASSERTION'S SHAPE IS THE PART TO CARRY, NOT THE TEST.** It asserts on the LIMITER
+rather than on a counter in Redis: a recording double proves the typing branch never *reaches*
+`limits.spend`, where a counter reading would also pass if the branch spent and then refunded.
+Two implementations satisfy "the count did not move" and only one satisfies "the call was never
+made".
+
+**IN THIS ORDER THE PROPERTY IS TRUE BY CONSTRUCTION AND UNTESTABLE.** `session.ts` returns from
+the `typing.send` branch before it reaches anything that could spend — there is no limiter below
+it to reach. So new 22 does not merely port a test: it adds a limiter *underneath* an early
+return that has been there for nine chapters, and the test that says the early return still comes
+first is the one thing standing between a typing indicator and a customer's message budget.
