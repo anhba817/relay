@@ -454,3 +454,29 @@ rather than re-deriving it. **The exemption's second half is the part worth carr
 early so a bot is not refused is visible, and excluding bots from the count the ceiling compares
 against is the half that decides whether it works — with a test that sends as a *person* after a
 bot, never as the bot itself.
+
+## A DEFERRAL THAT RUNS THE OTHER WAY: A RULE THAT ARRIVES AFTER THE FILE IT MUST EXEMPT
+
+Every other row in this ledger is a change that cannot apply because its file does not exist yet.
+This one is the inverse, and it is the shape that goes wrong silently.
+
+`eslint.config.mjs` restricts `ioredis` to the two limits files, and the fan-out chapter adds
+`services/api/src/fanout/**` to that exemption with a reason: the restriction exists because
+rate-limit counters are keyed `rl:{environment_id}:…` and an unrestricted client can read another
+tenant's counter, whereas the publisher touches no keys — it calls PUBLISH onto `chan:{channel_id}`
+and nothing else.
+
+**In this order the rule does not exist yet.** `ioredis` is restricted by the rate-limit chapter,
+which is new 22; the fan-out chapter is new 12. So the exemption hunk has nothing to apply to, the
+api's publisher imports `ioredis` and lints clean, and **nothing is wrong until new 22 lands the
+rule** — at which point a file ten chapters old starts failing a rule it has never seen.
+
+| original commit | artefact | belongs to | what it did |
+|---|---|---|---|
+| `eeafe8a` (part) | the `services/api/src/fanout/**` entry in the `ioredis` exemption | new 22 (limits) | exempt the publisher from a rule that does not exist yet |
+
+**THE FAILURE MODE IS THE OPPOSITE OF A MISSING FILE.** A cherry-pick that cannot apply prints
+`CONFLICT` and names the path. A rule that has not arrived prints nothing, because there is nothing
+to print — the exemption is for a rule with no members, and an exemption list is only checked
+against the rule it belongs to. New 22 must add `services/api/src/fanout/**` in the same commit
+that adds the `ioredis` restriction, or its own gate goes red on a chapter nobody is editing.
