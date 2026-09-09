@@ -31,9 +31,66 @@ from refrules import REF, is_versionish, place_name
 NAMES = {c["was"]: c["name"] for c in json.loads((HERE / "subjects.json").read_text())["chapters"]}
 
 
+# new ordinal -> the OLD ordinal that chapter was, from the map. Splits contribute
+# both halves, each pointing back at the one old chapter they came from.
+def _old_for_new() -> dict[str, str]:
+    m = json.loads((HERE / "chapter-map.json").read_text())
+    out: dict[str, str] = {}
+    for c in m["chapters"]:
+        if c.get("old") and c.get("new"):
+            out[f"3.{c['new']}"] = f"3.{c['old']}"
+    for sp in m.get("splits", []):
+        for half in sp["halves"]:
+            out[f"3.{half['new']}"] = f"3.{sp['old']}"
+    for r in m.get("reassignments", []):
+        for key in ("prose_stays_at", "code_moves_to"):
+            if r.get(key):
+                out.setdefault(f"3.{r[key]}", f"3.{r['old']}")
+    return out
+
+
+OLD_FOR_NEW = _old_for_new()
+
+
 def own_id(text: str) -> str | None:
+    """The chapter's OWN ordinal in the OLD numbering — which is not the one in its header.
+
+    THE HEADER CARRIES THE NEW NUMBER AND EVERY REFERENCE IN THE PROSE IS AN OLD ONE, so
+    comparing them is comparing two different namespaces. `<ChapterHeader id="3.12" />` is
+    new chapter 12 (the fan-out chapter, old 3.18); a sentence saying "chapter 3.12" means
+    the isolation gauntlet. This function returned the header's id, so the pass skipped
+    every reference to old chapter N inside new chapter N — silently, as "the chapter's
+    own id".
+
+    **It is a hazard for all twenty-three ported chapters and it bit two.** Chapter 7
+    (old 3.7, new 7 — the one coincidence in the renumbering) kept a table row reading
+    `| **3.7** |` among rows that name their subject, and chapter 8 kept "Part 3 ends at
+    3.14" — a sentence that was true of the old order and is false of this one. Neither is
+    visible to a gate: an ordinal in prose is bytes like any other.
+
+    Resolved through the map instead, so the comparison is old-to-old.
+    """
     m = re.search(r'<ChapterHeader id="(3\.\d+)"', text)
-    return m.group(1) if m else None
+    if not m:
+        return None
+    return OLD_FOR_NEW.get(m.group(1), m.group(1))
+
+
+def in_code_span(line: str, start: int) -> bool:
+    """Is the character at `start` inside a single-backtick code span?
+
+    A QUOTED ORDINAL IS NOT A POINTER. Prose that discusses the convention writes the
+    ordinal as a string — "`the outbox chapter` encodes no position; `chapter 3.3`
+    encodes one and nothing checks it" — and substituting inside the quotation inverts
+    the sentence it is illustrating. Two of these exist across the ported chapters and
+    the substitution destroyed one of them.
+
+    Counted by backticks before the position, not by a regex over the span: a pattern
+    matching "backtick, anything, ordinal, anything, backtick" also matches the GAP
+    between two adjacent code spans, which is prose and must be substituted. Four of the
+    six candidates in these pages are that shape.
+    """
+    return line.count("`", 0, start) % 2 == 1
 
 
 def main(path: str, apply: bool) -> int:
@@ -56,6 +113,7 @@ def main(path: str, apply: bool) -> int:
                     x
                     for x in REF.finditer(lines[i])
                     if not is_versionish(lines[i], x)
+                    and not in_code_span(lines[i], x.start())
                     # The chapter's OWN id is not a reference to elsewhere.
                     and not re.search(r'<Chapter(Header|Footer) id="', lines[i])
                     and f"3.{refrules.chapter_of(x.group(0))}" != mine
@@ -96,6 +154,11 @@ def main(path: str, apply: bool) -> int:
         for i, l in enumerate(out.split("\n"))
         for m in REF.finditer(l)
         if not is_versionish(l, m)
+        # THE SAME FILTER THE SELECTOR USES, or the report names references the pass was
+        # never going to touch. It reported the one quoted ordinal in the user-surface
+        # chapter as "left for a reader" when nothing was left: the selector skips a code
+        # span and this loop did not.
+        and not in_code_span(l, m.start())
         and refrules.chapter_of(m.group(0)) in refrules.AMBIGUOUS
     ]:
         print(f"  {len(left)} ambiguous reference(s) left for a reader:")
