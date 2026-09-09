@@ -1155,3 +1155,38 @@ accident*. **"Which half does this test fail without?" has to be asked once per 
 answer is not derivable from the requirement — both halves cite the same clause.
 
 Closed in new 23, with both cases and both falsifications recorded at the code.
+
+
+## 045-31 · SIX CHAPTERS' VIETNAMESE TRANSLATIONS WERE REPLACED BY PLACEHOLDERS, AND THE INSTRUCTION HAD BEEN OVERTAKEN
+
+The standing instruction for this rework reads *"writing the tutorial in English only, keep a
+placeholder for vietnamese"*, and the per-chapter loop ends with `vi-placeholder.py`. Applied to
+new 17 through new 22, that replaced **real translated prose** — six pages, 1.2 MB of Vietnamese —
+with a three-line notice.
+
+    ch17  246,834 bytes      ch20  243,819 bytes
+    ch18  128,714 bytes      ch21   51,301 bytes
+    ch19  289,486 bytes      ch22  155,647 bytes
+
+**THE INSTRUCTION WAS NOT WRONG WHEN IT WAS GIVEN; IT WAS OVERTAKEN.** Somebody is translating
+the early chapters, and `restore_part3_vi.py` in the worktree root is theirs. Three sessions
+running, this session's records show the question being put — *should the placeholder step keep
+running when real prose exists?* — and the loop kept running while it went unanswered. **A
+standing instruction is a fact about the moment it was given.** The step that acts on it destroys
+something; the question about it was asked and then not blocked on, which is the wrong way round
+for a destructive step.
+
+All six are restored byte-for-byte from the commit before each placeholder. Nothing was lost —
+git had them — but nothing here checked, either: `vi-placeholder.py` never asks what it is about
+to overwrite, and its own docstring says the alternative it rejects is deleting the page, which
+frames the choice as "placeholder or nothing" when the third option was already on disk.
+
+**WHAT THE RESTORE COSTS, STATED RATHER THAN HIDDEN.** Each restored page carries the fences it
+had before its chapter was re-ported, so the English and Vietnamese fence lists disagree — new 22
+by 19 added, 1 removed and 30 bodies regenerated — and `check-fence-chain`'s mirror reports every
+one of them. That is the honest state: the English page is what a translator works from, and
+syncing fences into somebody's prose would put untranslated blocks under Vietnamese headings.
+
+**THE RULE.** A step that overwrites human-authored content is not a step in a loop. It needs the
+same treatment this project gives a migration or a lane reset: look at the target first, and stop
+if what is there is not what the step assumes.
