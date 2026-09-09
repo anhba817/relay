@@ -425,3 +425,32 @@ were written because `git cherry-pick` printed `CONFLICT (modify/delete)` and na
 The fourth was written because somebody read the hunk. That asymmetry is the argument for this
 ledger existing at all, and it is worth re-reading whenever a chapter's port ends with "it
 applied cleanly".
+
+## AND A WHOLE SECTION OF THE SENDER CHAPTER'S PAGE IS THE QUOTA CHAPTER'S
+
+`## Billed, and exempt` — 38 lines, one `<Figure>`, one `<Trap>` — argues that a bot must be
+metered and exempt from the ceiling: `usage_active_users` answers two questions, FR-ANL-05
+*meters* unique active users and FR-RTL-05 *enforces* a quota on them, and only the second is
+narrowed to persons. It is the sharpest argument in the chapter and none of it is true here yet.
+
+| original commit | artefact | belongs to | what it did |
+|---|---|---|---|
+| old 3.17's page | `## Billed, and exempt`, and `figTwoCounters` in `figures.ts` | new 23 (quotas) | the bot is billed and exempt, and the exemption's second half |
+
+**MEASURED BEFORE REMOVING IT, because the section reads as though it describes this chapter's
+code.** In `rework/part3-ch11`: `usage_active_users` occurs 4 times and every one is a comment;
+the table is in no migration; `assertWithinQuota`, `usageActiveUsers` and `max_active_users` do
+not occur at all; and no file the chapter changes is quota-shaped. The 18 occurrences of
+"ceiling" are FR-CHN-07's **channel member** limit, which is a different ceiling in a different
+family — the one trap in checking this by name.
+
+**ITS `<Trap>` NAMED A NUMBER THAT CANNOT EXIST HERE**: "verified by removing the other half and
+watching all 26 quota tests stay green". `quotas.itest.ts`, `period.itest.ts` and
+`connections.itest.ts` are all deferred; there are no quota tests to stay green. That sentence is
+the reason this was found — a count is checkable and a claim about an argument is not.
+
+The section text and the figure are kept verbatim in the record so new 23 inherits the argument
+rather than re-deriving it. **The exemption's second half is the part worth carrying**: returning
+early so a bot is not refused is visible, and excluding bots from the count the ceiling compares
+against is the half that decides whether it works — with a test that sends as a *person* after a
+bot, never as the bot itself.

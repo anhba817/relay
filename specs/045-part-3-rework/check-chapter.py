@@ -22,6 +22,11 @@ from pathlib import Path
 WT = Path("/home/dong/work/relay/tmp/part3-refactor")
 TITLE = re.compile(r'^```(\w+) title="([^"]+)"$')
 
+# The specification and its siblings live in the tutorial's own repository, not in the
+# platform worktree the fence chain replays.
+DOCS = Path("/home/dong/work/relay")
+
+
 def at(ref, path):
     r = subprocess.run(["git", "-C", str(WT), "show", f"{ref}:{path}"],
                        capture_output=True, text=True)
@@ -111,8 +116,20 @@ def main(chapter_dir, base, target):
         if "(deleted)" in title:
             continue                      # a deletion is asserted by the chain, not here
         if at(target, bare) is None:
+            # NOT EVERY PATH-SHAPED TITLE NAMES A PLATFORM FILE. The specification lives
+            # in THIS repository — `docs/04-srs.md` — and a chapter quoting a clause
+            # fences it by its real path. The sender chapter is the first rework chapter
+            # to do so, and this check called a file that exists "absent" because it
+            # looked in one of the two trees the tutorial cites.
+            #
+            # Checked here rather than exempted by prefix: the point of the check is that
+            # a title naming nothing is a typo, and a path that resolves in the docs repo
+            # is not a typo. A `docs/` title that resolves NOWHERE still fails.
+            if (DOCS / bare).is_file():
+                continue
             problems.append(
-                f"{bare}: fenced here and in no chapter — absent from {target}"
+                f"{bare}: fenced here and in no chapter — absent from {target} "
+                f"and from {DOCS}"
             )
 
     problems_existence = len(problems)
