@@ -133,7 +133,7 @@ def delete_one(line: str, m: re.Match) -> str:
 
 
 def _orphaned_punctuation(line: str) -> str:
-    """Drop punctuation a deletion left stranded against a comment opener.
+    r"""Drop punctuation a deletion left stranded against a comment opener.
 
     `// (chapter 3.4). The chapter quotes the broker` -> `// The chapter quotes …`
 
@@ -142,11 +142,28 @@ def _orphaned_punctuation(line: str) -> str:
     reads as a typo and is one. Only fires when nothing but the opener precedes the
     punctuation — mid-sentence punctuation is somebody's, and guessing whose is how
     the last-resort strip put sixteen dangling prepositions in the tree.
+
+    AND IT CAPTURES ITS OWN LINE TERMINATOR, for the reason `H` exists forty lines up.
+    This returned an f-string built from two groups, and `(\S.*)$` stops BEFORE a
+    trailing newline — `.` does not match a newline and `$` sits in front of it — so
+    every line this function touched came back without its terminator and joined the
+    line after it. Measured on the fan-out chapter:
+
+        // (chapter 3.17). An application credential may send only as a bot user.
+        await repo.upsertUser("publish-bot", {
+
+    became one line, and `tsc` said `';' expected` at a column in the middle of a
+    comment. The rule is the same as `H`'s and is stated twice on purpose: **a
+    function that rebuilds a line from match groups must capture the terminator as a
+    group.**
     """
-    m = re.match(r"^(\s*(?://+|/\*\*?|\*|--+|#+))\s*[.,:;]\s+(\S.*)$", line)
+    m = re.match(
+        r"^(\s*(?://+|/\*\*?|\*|--+|#+))[^\S\n]*[.,:;][^\S\n]+(\S[^\n]*?)(\r?\n?)$", line
+    )
     if not m:
         return line
-    return f"{m.group(1)} {refrules.recapitalise(m.group(2))[0].upper()}{refrules.recapitalise(m.group(2))[1:]}"
+    body = refrules.recapitalise(m.group(2))
+    return f"{m.group(1)} {body[0].upper()}{body[1:]}{m.group(3)}"
 
 def substitute_one(line: str, m: re.Match) -> str:
     name = NAMES.get(f"3.{chapter_of(m.group(0))}")

@@ -410,6 +410,42 @@
           "    // row in it was dropped for having no sender.\" That was true, and it is the reason\n    // the isolation harness's `gaps.md` G1 listed TWO independent mechanisms for \"a REST-sent"
         ]
       ]
+    },
+    {
+      "why": "THE FAN-OUT CHAPTER'S OWN ORDINAL, six sites, three shapes. A chapter does not cite itself by number and 'this chapter' survives a renumbering that a number does not. Two are rule lines where the tag is pure provenance and goes; one is a parenthetical beside a clause id and goes the same way; three are sentences whose subject IS this chapter's change and keep a self-reference in words. The `That chapter` in the isolation suite becomes `It`, because 'this chapter … That chapter' reads as two different chapters.  SEVEN, NOT SIX — AND THE SEVENTH ONLY APPEARS IF YOU ASK THE TOOL. An enumeration written for this survey called `classify` directly and reported six; `rewrite-refs.py --rule read` reported seven. The extra one is a reference that OPENS its line — 'It moved here with the function in / chapter 3.18' — which the tool routes to `read` through `dangles_from_previous` and a bare `classify` calls `substitute`. The re-implementation was missing exactly the clause the tool has, which is the same defect as the mdx pass's missing AMBIGUOUS test: two copies of a rule are two rules. Run the tool.",
+      "drops": [
+        "chapter"
+      ],
+      "pairs": [
+        [
+          " * grammar belongs where every party that uses it can agree on it. Until 3.18",
+          " * grammar belongs where every party that uses it can agree on it. Until this chapter"
+        ],
+        [
+          "// ── chapter 3.18: the failure path (Phase 6) ────────────────────────────────",
+          "// ── the failure path (Phase 6) ──────────────────────────────────────────────"
+        ],
+        [
+          "    // ── the live fan-out (chapter 3.18, FR-004) ────────────────────────────",
+          "    // ── the live fan-out (FR-004) ──────────────────────────────────────────"
+        ],
+        [
+          "  //      STILL TRUE OF THIS SUITE after chapter 3.18. That chapter gave the api a",
+          "  //      STILL TRUE OF THIS SUITE after this chapter. It gave the api a"
+        ],
+        [
+          "    // LIVE DELIVERY, WHICH THIS BLOCK ASSERTED WAS ABSENT UNTIL CHAPTER 3.18.",
+          "    // LIVE DELIVERY, WHICH THIS BLOCK ASSERTED WAS ABSENT UNTIL THIS CHAPTER."
+        ],
+        [
+          "// ── chapter 3.18: two instances, one fabric (US2) ───────────────────────────",
+          "// ── two instances, one fabric (US2) ─────────────────────────────────────────"
+        ],
+        [
+          "// no broker, no container and no lane. It moved here with the function in\n// chapter 3.18, and it exists before the old copy is deleted so the property is",
+          "// no broker, no container and no lane. It moved here with the function in\n// this chapter, and it exists before the old copy is deleted so the property is"
+        ]
+      ]
     }
   ]
 }
