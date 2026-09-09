@@ -138,6 +138,30 @@ def main(chapter_dir, base, target):
         if "(excerpt)" in title:
             continue
         path = title.split(",")[0].split(" (deleted)")[0].strip()
+        # THE DELETION CHECK RUNS BEFORE THE `changed` GUARD, and the order is the check.
+        # Placed after it, a title naming a path that was NEVER in the repository passed
+        # silently: the path is not in `changed`, so the loop skipped it, and the
+        # existence check above skips `(deleted)` titles by design. Found by probing this
+        # very assertion red — `never-existed.guard.ts (deleted)` gave 0 problems. A
+        # deletion IS a change, so a `(deleted)` title outside `changed` is already wrong.
+        # A `(deleted)` TITLE IS ASSERTED, NOT SKIPPED. The existence check above skips
+        # these — a deleted file is absent by definition — and this loop did not, so it
+        # demanded the file exist in the head tree and reported every deletion fence as
+        # "not in <tag>". One had been sitting in the credentials chapter since it was
+        # ported: `environment-context.guard.ts (deleted)`, correctly titled, correctly
+        # deleted, reported as a problem by the only checker that reads the chapter.
+        #
+        # Asserted rather than skipped, because a skip would also pass a title claiming a
+        # deletion that never happened: absent from the head AND present in the base is
+        # what "this chapter deleted it" means, and both halves are checkable.
+        if "(deleted)" in title:
+            if at(target, path) is not None:
+                problems.append(f"{path}: titled (deleted) and still present in {target}")
+            elif at(base, path) is None:
+                problems.append(f"{path}: titled (deleted) but absent from {base} too")
+            else:
+                checked += 1
+            continue
         if path not in changed:
             continue                      # an earlier chapter's file, quoted here
         want = at(target, path)
