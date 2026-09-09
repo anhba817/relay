@@ -163,3 +163,34 @@ code spans, which is prose. Four of the six candidates in these pages are that s
 **THE REPORTING LOOP HAD TO LEARN THE SAME FILTER.** It listed the one quoted ordinal as
 "left for a reader" when nothing was left. The selector and the report must ask the same
 question or the count is about neither.
+
+## 045-6 · A COMMIT THIS ORDER MADE OBSOLETE, AND THE NUMBER IN IT IS WORTH KEEPING
+
+`b285b47` — *"the port map was wrong, not 78% complete"* — is skipped entirely. It touches only
+`services/gateway/src/limits.itest.ts`, which arrives with new 22, and its subject is a
+hand-maintained table of port bands that **this order deleted three chapters ago**: new 14
+retired all of them for `PORT=0` with the port read from each child's own `listening` line.
+
+**ITS ANALYSIS IS THE PART THAT SURVIVES ITS OBSOLESCENCE.** The commit's finding is not "two
+entries are missing" but that the map was *wrong*:
+
+    presence.itest.ts   4700 + %200   →  4700-4900
+    meter.itest.ts api  4710 +  %60   →  4710-4770   ← strictly inside the range above
+
+**One unregistered range strictly contains a registered one**, and the gateway's integration
+config sets no `fileParallelism`, so both files run at once. P = 1/200 per run against an
+observed 2.5–5% failure rate for those two files — a contributor rather than the cause, and the
+first hypothesis in that ledger item with a number attached.
+
+And it names why the earlier chapter's elimination could not see it: that chapter ruled out "a
+port collision" because *"the failing ports are in each file's own range"* — **the colliding
+port IS in each file's own range.** An elimination is only as good as the property it tests, and
+that one tested the wrong property.
+
+**WHAT THIS ORDER SHOWS THAT THE PUBLISHED ONE COULD NOT.** The commit ends *"left as it is
+rather than fixed here, because moving a range is another chapter's change to another chapter's
+file"* — which is true of a table and false of the mechanism. Rebuilding by subject put the two
+suites that owned the worst bands in the same chapter, so the fix was one chapter's change to
+its own files, and the table went rather than gaining two rows. **A defect that is nobody's to
+fix is a defect the ordering created**, and this is the clearest instance of it in the rework so
+far.
