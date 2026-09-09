@@ -1015,3 +1015,42 @@ the seventeen do not need Redis at all and belong where they are.
 Not fixed in new 22: the file is the connection-cap chapter's, it is fenced into that chapter's
 page, and the change is a rename plus a split — a `replay-repair.sh` pass, not a line in another
 chapter's port.
+
+## 045-27 · THE GUARD'S THREE PARTS WENT TOGETHER AND ONLY TWO WERE CHECKED — AND THE FIRST FIX WAS VACUOUS
+
+`packages/test-harness/src/sentinel.sql` names the tables the global-operation guard watches,
+and its comment states the discipline plainly:
+
+> *"A name added here without bait planted in `sentinel.ts` installs a trigger that can never
+> match, and it reads exactly like protection. That is why the three go together: the name, the
+> bait, and the case that turns red when the name is removed."*
+
+**TWO OF THE THREE WERE CHECKED AGAINST EACH OTHER AND THE BAIT AGAINST NOTHING.**
+`guard.itest.ts` compares the array to its own `SHAPES` in both directions, and to `pg_trigger`
+in both directions. Measured while adding the quota chapter's three tables: deleting the
+`usage_periods` insert from `plant()` left the suite at **32 of 32 green**, and deleting
+`read_positions`' — an older chapter's — did too.
+
+**WHAT THAT COSTS IS NOT THAT SUITE.** Every case in it plants its own row through `SHAPES`, so
+it is unaffected. `plant()` is what `setup.ts` runs **once per test FILE**, and the row it leaves
+is what makes an unscoped `DELETE FROM usage_periods` in somebody else's suite meet a trigger at
+all. A name added with a shape and no bait leaves that table with no canary in any lane run.
+
+**AND THE FIRST FIX WAS VACUOUS, WHICH IS THE PART WORTH KEEPING.** The new assertion counted
+rows for `VICTIM.environmentId` — and `beforeAll` plants the victim's rows through `SHAPES`, so
+every count was nonzero for a reason unrelated to `plant()`. It passed with the insert deleted,
+twice. `CLAUDE.md` records this exact shape from 044 — *"a test written by the audit that finds
+vacuous tests was vacuous"* — and the question that finds it is the same one: **what would have
+to be false for this to fail?** Here: nothing, because two different mechanisms could satisfy it
+and only one was the subject.
+
+Fixed by planting a THIRD sentinel that only `plant()` ever touches and counting against its
+environment. Falsified three ways, each naming the right table:
+
+    guarded, and plant() leaves no row to guard: usage_periods
+    guarded, and plant() leaves no row to guard: read_positions
+    guarded, and plant() leaves no row to guard: quota_notifications
+
+**AND IT IS ASKED OF THE DATABASE, NOT OF THE SOURCE.** A scan of `sentinel.ts` would pass on an
+insert that runs and inserts nothing — an `ON CONFLICT DO NOTHING` against a row the fixture does
+not own — which is the shape a fixture fails in. Closed in new 23.
