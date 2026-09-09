@@ -130,3 +130,36 @@ where it fires on the weld and on none of the tables.
 ELEVEN PROBLEMS THAT HAD NOTHING TO DO WITH THIS.** Chapters 1 and 2's fences had never
 been regenerated after `rework/base-convention` rewrote their trees. **A per-chapter check
 is only a per-chapter check if somebody runs it on the chapters that are already done.**
+
+## 045-5 · THE MDX PASS COMPARED TWO NUMBERING SYSTEMS — CLOSED
+
+`own_id` read `<ChapterHeader id="3.N" />` and the pass skipped every reference whose
+chapter number equalled N, as "the chapter's own id". **The header carries the NEW number
+and every reference in the prose is an OLD one**, so inside new chapter N the pass silently
+skipped references to old chapter N — a different chapter with a different subject.
+
+    new 3.3  is old 3.14      new 3.8  is old 3.13      new 3.12 is old 3.18
+    new 3.4  is old 3.12      new 3.10 is old 3.16      new 3.25 is old 3.12
+
+It is a hazard for all twenty-three ported chapters and **it bit two**. Chapter 7 — old 3.7
+and new 7, the one coincidence in the renumbering — kept a table row reading `| **3.7** |`
+among rows that name their subject. Chapter 8 kept *"Part 3 ends at 3.14"*, which was true
+of the published order and is false of this one: the endpoints chapter is now eighteen
+chapters ahead of the criterion it unblocks, not two, and the whole near-miss the paragraph
+was about is gone. **Both are ordinals in prose, which is bytes like any other to every
+gate this repository has.**
+
+Resolved through `chapter-map.json`, so the comparison is old-to-old, and both sentences
+rewritten for the order they now sit in.
+
+**AND A QUOTED ORDINAL IS NOT A POINTER.** Chapter 7 argues the convention by exhibiting
+the thing it replaces — "`the outbox chapter` encodes no position; `chapter 3.3` encodes one
+and nothing checks it" — and the pass substituted inside the quotation, inverting the
+sentence it was illustrating. A reference inside a single-backtick code span is skipped now,
+counted by backticks before the position rather than matched as a span: a pattern for
+"backtick, anything, ordinal, anything, backtick" also matches the GAP between two adjacent
+code spans, which is prose. Four of the six candidates in these pages are that shape.
+
+**THE REPORTING LOOP HAD TO LEARN THE SAME FILTER.** It listed the one quoted ordinal as
+"left for a reader" when nothing was left. The selector and the report must ask the same
+question or the count is about neither.
