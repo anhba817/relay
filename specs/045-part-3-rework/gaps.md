@@ -1054,3 +1054,71 @@ environment. Falsified three ways, each naming the right table:
 **AND IT IS ASKED OF THE DATABASE, NOT OF THE SOURCE.** A scan of `sentinel.ts` would pass on an
 insert that runs and inserts nothing — an `ON CONFLICT DO NOTHING` against a row the fixture does
 not own — which is the shape a fixture fails in. Closed in new 23.
+
+## 045-28 · "THE FIVE TEST LANES", AND FOUR OF THEM WERE WIRED
+
+Published's harness half carries a commit named `02993b1 feat: wire the guard into the five test
+lanes`. That half went to new 8. Measured at new 23, before this chapter touched anything:
+
+    services/api/vitest.integration.config.mts             globalSetup ✓  setupFiles ✓
+    services/gateway/vitest.integration.config.mts         globalSetup ✓  setupFiles ✓
+    packages/e2e/vitest.integration.config.mts             globalSetup ✓  setupFiles ✓
+    packages/test-harness/vitest.integration.config.mts    globalSetup ✓  setupFiles ✓
+    services/dispatcher/vitest.integration.config.mts      —              —
+
+**AND NOTHING COULD SAY SO**, which is the property worth naming. An unwired lane does not fail;
+it simply never installs the guard, never plants a sentinel, and never refuses anything. The
+missing lane is invisible in exactly the direction that passes — the third instance of that
+asymmetry in this feature after the driver-exemption list (045-17) and the derived fabric check
+(045-25).
+
+**A SIXTH SURFACE WAS UNWIRED TOO, AND IT IS THE ONE THIS REWORK RUNS MOST.**
+`vitest.coverage.config.mts` had `setupFiles` and no `env`, so the coverage battery — 1,183
+tests, run once per chapter — booted every relay, each defaulting to on when its flag is unset.
+Published set the flags there at old 3.10 and this port takes that change; before it, every
+per-chapter coverage run swept the whole database with four background loops while every other
+suite's fixtures sat in it.
+
+Both are fixed here rather than filed, because the quota relay is the FOURTH such loop and this
+chapter is what starts it — leaving the flags unset would have been shipping the problem the
+flags exist for. The new-8 wiring is carried with it: splitting one `test: {}` block across two
+chapters would have been an artefact of the ledger rather than of the code.
+
+**WHAT THE LEDGER COULD NOT HAVE CAUGHT.** No cherry-pick failed. `02993b1` is a harness commit
+and went to new 8 whole; new 8 applied it and the dispatcher's hunk is simply not in the tree,
+which means the commit was ported partially and reported as ported. **A commit that touches five
+files and lands four is indistinguishable, afterwards, from a commit that touches four** — unless
+somebody counts, and the only reason anybody counted here is that this chapter needed to add a
+fifth flag to the same block.
+
+## 045-29 · THE FOURTH MEASUREMENT OF ONE LAW, AND THE FIRST WITH TEETH
+
+`sentinel.ts` records a rule the project has now paid for four times:
+
+> *"bait may be claimable only where draining it is DATABASE work. The endpoints (a sweep) and
+> the outbox rows (a publish to whatever the test hands it) qualify and are left claimable …
+> The deliveries and these notifications do I/O per row, so they stay in the table as rows a
+> global count would see and out of every claim window."*
+
+`drainQuotaNotifications` claims on `delivered_at IS NULL` and then calls `deliver(row)` — a mail
+send. So the quota chapter's bait had to be planted already delivered, like the two before it.
+
+**THE THREE EARLIER INSTANCES COST SECONDS; THIS ONE IS A HARD FAILURE**, because the same
+chapter puts `quota_notifications` under the global-operation guard. The relay claims the
+sentinel's row on a connection carrying no exemption, the trigger refuses the UPDATE, and the
+transaction is poisoned:
+
+    Failed query: UPDATE quota_notifications SET delivered_at = now(), last_error = NULL
+    → 25P02 in_failed_sql_transaction on the next statement
+    six tests red, and the message names neither the bait nor the guard
+
+**AND `ON CONFLICT DO NOTHING` MADE IT UNFIXABLE FROM SOURCE.** A sentinel's ids are derived from
+its owner, so the bait's id is the same on every run for ever. Planting it delivered fixed
+nothing on a lane that had already planted it undelivered: the row persisted, the failure
+persisted, and the diff looked correct. The insert now uses `DO UPDATE SET delivered_at`, because
+**this row's STATE is part of the fixture's contract and not merely its existence** — and a
+fixture that only guarantees existence guarantees whatever the first run happened to write.
+
+The lane's own debris was cleaned by hand, which needed the exemption — and the guard refusing
+that cleanup, naming the owning test file, is the clearest demonstration of it working that this
+feature has produced.
