@@ -603,3 +603,371 @@ directly by the suite. It sits beside `internal/dispatch.controller.ts` (9.09%) 
 `webhooks/delivery-relay.ts` (28.12%) — three files now, all unpinned, and the fact is
 recorded in the config rather than in three lowered pins that would describe a test
 topology instead of the code.
+
+## 045-17 · THE LEDGER OWED EIGHT `ioredis` EXEMPTIONS AND THE TREE NEEDED TWELVE, ONE OF THE EIGHT WRONG
+
+`deferred.md` recorded the inverted deferral carefully — a rule that arrives after the files it
+must exempt — and it recorded the count wrong in both directions. Its headline is **"EIGHT
+ENTRIES, FIVE ARGUMENTS, AND NEW 22 HAS TO CARRY ALL OF THEM IN ONE COMMIT"**, built up one
+chapter at a time across four separate notes as each porting session found the next one.
+
+**MEASURED BY ASKING THE TREE INSTEAD OF READING THE LEDGER.** One grep for the importers:
+
+    grep -rln 'from "ioredis"' --include=*.ts .   →   13 files
+
+Thirteen, of which `services/api/src/limits/store.ts` is the rule's own home and covered by the
+`services/api/src/limits/**` carve-out. **Twelve need an entry**, not eight. The four the ledger
+never recorded:
+
+    services/api/src/fanout/fanout.itest.ts     the fan-out chapter — the suite, not just `fanout/**`
+    services/api/src/membership/publisher.ts    the api's half of the membership fabric
+    services/gateway/src/typing.ts              the typing chapter, publish AND subscribe
+    services/gateway/src/typing.itest.ts        its suite
+
+The typing chapter is the sharp one: `deferred.md` has a whole section titled **"THE TYPING
+CHAPTER OWES ONE TEST TO THE LIMITS CHAPTER, AND IT IS THE SHARPEST ONE"** — T048b, a real
+finding — and while writing it nobody noticed that the same chapter's two files import `ioredis`
+and would go red on the rule's arrival. **A ledger entry written about one artefact does not
+sweep the commit it came from.**
+
+**AND THE EIGHTH ENTRY WAS AN EXEMPTION OVER NOTHING.** `services/gateway/src/connections.test.ts`
+is recorded as owed, with a reason — *"a unit test that reads the module's own source from
+disk"*. It reads the source and imports nothing restricted, so the rule has nothing to say about
+it. Adding it fails `driver-exempt.test.ts`'s stale-entry check, and that is how it was caught:
+
+    AssertionError: services/gateway/src/connections.test.ts is exempt from the driver
+    rule and imports none of pg, drizzle-orm, ioredis: expected [] to not deeply equal []
+
+The published tree does not list it either. The ledger row came from reading a chapter's diff
+rather than the file it names.
+
+**WHAT ACTUALLY HELD THE LINE WAS THE CHECK, NOT THE LEDGER.** Both halves of
+`driver-exempt.test.ts` were falsified against this commit — a removed exemption gives the
+rule's own error on `presence.ts`, a stale entry gives the assertion above, a third glob gives
+`expected [ 'db/**', …(2) ] to deeply equal [ 'db/**', …(1) ]`. **The ledger is a reminder; the
+both-directions test is the instrument.** 044 filed that asymmetry as a gap and closing it is
+what made an eight-versus-twelve error a red test rather than a chapter reddened months later.
+
+**ONE DIVERGENCE FROM PUBLISHED, DELIBERATE.** Published exempts `services/api/src/fanout/**`
+and `services/api/src/membership/**` as directory patterns. This tree lists their two files by
+path, because its own comment says a pattern *"would silently absorb the next file added
+there"* and `driver-exempt.test.ts` asserts exactly which entries may be globs. Two are:
+`db/**` and `limits/**`, the two data-access LAYERS the rule carves out.
+
+## 045-18 · A PARAMETER INSERTED BEFORE AN OPTIONAL ONE RENAMED EVERY LATER ARGUMENT, AND THE TYPECHECK AGREED
+
+`sendError` in `services/gateway/src/session.ts` took `(socket, code, message, field?)` in this
+tree. The limits chapter's `request_id` commit adds a fourth parameter — and published put it
+**before** `field`, because in the published order `field` did not exist yet and was appended two
+chapters later:
+
+    function sendError(socket, code: ErrorCode, message: string,
+                       requestId: string = newRequestId(),
+                       field?: string)
+
+**IN THIS ORDER `field` IS ALREADY THERE, SO THE INSERT IS A RENAME.** One call passed a fourth
+argument — the invalid-frame refusal, handing over `frame.error.issues[0]?.path.join(".")` — and
+after the merge that string was the `request_id`, with `field` gone. **Both parameters are
+`string`, so nothing could complain**: `pnpm typecheck` green over twelve packages, `pnpm lint`
+green, `pnpm test` green over 11 packages. The frame then carries a zod path where a support
+ticket expects an id, and carries no `field` at all.
+
+**WHAT DID SEE IT WAS ONE INTEGRATION ASSERTION**, and it was written three chapters earlier for
+its own reason (T041a, `session.itest.ts:403`). Falsified by reintroducing the swap:
+
+    AssertionError: expected undefined to be 'payload.attachments'
+      services/gateway/src/session.itest.ts:403
+
+So this is not "nothing could have caught it" — it is **nothing in the per-commit gate could**.
+The loop for this rework runs typecheck/lint/test per commit and the battery per chapter, which
+means a defect of this shape lives inside the chapter until its end. Fixed by passing an explicit
+`undefined`, with the reason at the call, matching what published's later state does anyway.
+
+**THE GENERAL RULE THIS EARNS.** When a port inserts a parameter, the question is not whether the
+signature compiles — it is **which existing call sites pass an argument at or after that
+position**. Two `string` parameters make the compiler useless for it, and a positional API of
+four-plus arguments makes it likely. Read the call sites; there were nine and only one mattered.
+
+## 045-19 · TWO COMMENTS ARGUED FOR OMITTING A FIELD, AND THE ARGUMENT INVERTED WHEN THE FIELD BECAME REQUIRED
+
+Both gateway suites that forge one frame per union member carried a note on the `error` sample:
+
+    // NO `request_id`. The payload is a `strictObject`, so an extra field is refused
+    // as `invalid_frame` — and this loop asserts `unknown_frame_type`, which is a
+    // claim about DIRECTION. A sample that fails validation tests the validator
+    // instead, and the assertion then passes or fails for the wrong reason.
+
+Every clause of that is true, and the conclusion inverts the moment `request_id` goes from
+absent to required: the same `strictObject` that refused the extra field now refuses its
+absence. `session.itest.ts` came back
+
+    AssertionError: direction refusal for error: expected { code: 'invalid_frame', …(4) }
+    to match object { code: 'unknown_frame_type' }
+
+which is exactly the failure the builder's own header warns about — *"a frame that fails
+`safeParse` is answered `invalid_frame` and never reaches the direction check"* — arriving from
+the other side. `isolation.itest.ts` held the same comment, was not run by the per-commit gate,
+and would have failed the same way.
+
+**THE REASON SURVIVES AND THE INSTRUCTION DOES NOT.** The durable half is *"the sample must be
+exactly what the schema accepts, or this loop tests the validator instead"*. The perishable half
+is the list of fields that satisfies it. Both comments now say which half is which, so the next
+field to arrive reads as an update rather than a contradiction.
+
+**AND THIS IS THE PRODUCER/READER INVERSION IN A THIRD PLACE.** `CLAUDE.md` keeps chapter 3.24's
+lesson — an argument right about a schema the platform BUILDS inverts about one that READS off a
+durable queue. A test fixture is a producer for a schema it does not own, which makes it the same
+shape of mistake: **a claim about what a schema refuses is a claim with a date on it.**
+
+## 045-20 · A HELPER ARRIVED THIRTEEN CHAPTERS BEFORE THE FIELD IT STRIPS, AND ITS DOCBLOCK SAYS OTHERWISE
+
+`services/api/src/isolation/compare.ts` holds `withoutRequestId`, the indistinguishability
+oracle three isolation assertions compare bodies through. Its docblock states:
+
+> *"Chapter 2.2's suite needed to prove that a foreign channel answers exactly as an absent one;
+> **the rate limiter added `request_id` to every error body and forced this helper into
+> existence**; and there it stayed…"*
+
+**IT ARRIVED AT NEW 9 AND THE LIMITER IS NEW 22.** Measured — the file's first commit is
+`d6aa3ef` (*"feat: the private type decides something, on every read"*), whose earliest chapter
+tag is `rework/part3-ch9`. Asked the tree what produced the field at that point:
+
+    git grep -ln 'request_id' rework/part3-ch9^{commit} -- services packages
+
+Eleven files, and **not one of them puts `request_id` in an error body**. `service-kit`'s
+`serve()` has it in the LOG line beside the 404 body, not in it; `zod-validation.pipe.ts` and
+`repository.ts` only mention it in comments — the pipe's saying, correctly, that the field *"was
+declared in 1.3 and first sent by the rate limiter"*. So from new 9 until new 22's
+`request_id` commit, `withoutRequestId` deleted a key no body had: **a no-op wrapped around
+three assertions that were passing for a reason unrelated to it.**
+
+**THIS IS NOT A DEFECT IN THE ASSERTIONS AND THAT IS THE POINT.** The three comparisons are
+right, and they were right without the helper. What is wrong is a docblock that explains the
+file by an event thirteen chapters ahead, so a reader at new 9 is told the code answers a
+pressure that does not exist yet — and cannot check the claim, because the thing it cites has
+not been written. `gaps.md` 045-2 filed three forward references of this shape; this is a fourth
+and the strongest, because the others are citations and this one is the file's whole reason.
+
+**THE REPAIR IS A SENTENCE AND ITS COST IS A REPLAY.** New 9 is tagged and paged, so the fix
+goes through `replay-repair.sh` the way 045-10's possessives did: change the middle clause to
+say the field is *declared* in the frame contract and not yet sent by anything, and that the
+helper is here because this chapter's assertions will need it the moment it is. Left open rather
+than executed inside new 22, because a chapter's own port must not quietly rewrite a tagged
+predecessor — and recorded now, while the measurement is in hand.
+
+**AND IT SHARPENS 045-2's CLASS.** A forward reference in prose is a citation somebody can
+follow late. A forward reference in a *rationale* is different: it makes the code look
+already-justified, so nobody asks the question the helper's own arrival should have raised —
+**what does this strip today?**
+
+## 045-21 · THE LEDGER SAID "BOTH" AND ONE OF THE TWO CHAPTERS DID NOT COLLECT
+
+`deferred.md`'s split table for the interleaved rate-limit/mail range marks one commit
+`31e9cce` as **"BOTH — see below"**, and the row below it names only the halves new 22 owes:
+
+| original commit | artefact | belongs to |
+|---|---|---|
+| `31e9cce` (part) | the `credentials.itest.ts` and `signup.itest.ts` halves | new 22 (limits) |
+
+**THE THIRD HALF HAS NO ROW, AND NEW 21 SHIPPED WITHOUT IT.** `31e9cce` also rewrites
+`services/api/src/notifications/notifications.itest.ts` — 42 lines, adding an `undelivered(endpointId)`
+helper and replacing `expect(await broken.drainOnce()).toBe(0)` with a question asked of ONE
+row. Measured in the tree at new 22: the helper is absent and `notifications.itest.ts:259` still
+reads `expect(await broken.drainOnce()).toBe(0)`.
+
+**AND THE MISSING HALF IS THE ONE THIS PROJECT HAS PAID FOR REPEATEDLY.** `drainDisableNotifications`
+is global, the integration lane runs files in parallel, and the assertion counts the batch rather
+than the row — which is `CLAUDE.md`'s *"AN ASSERTION SCOPED WIDER THAN THE THING IT TESTS FAILS
+FOR SOMEBODY ELSE'S REASON"*, the fault four suites carried at 043 and the reason published wrote
+this hunk at all. Its own comment says so: *"which this file walked into on its first full-lane
+run."*
+
+**WHY "BOTH" WAS ENOUGH TO LOSE IT.** Every other row in that ledger names a file. This one named
+a decision — that the commit divides — and left the second side to whoever read the table. The
+chapter porting the FIRST side reads the row addressed to it, finds its two files, and has no
+reason to look for a third; the chapter that owed the third side had already gone. **A ledger row
+addressed to one chapter cannot record an obligation of another one.** Split rows need one row
+per destination, both written when the split is found.
+
+**NOT CARRIED INTO NEW 22, DELIBERATELY.** The hunk lands in a suite whose subject is the mail
+transport, and carrying it here would put a mail-chapter diff on the limits chapter's page — the
+exact thing this ledger exists to prevent. The repair is a `replay-repair.sh` pass over new 21,
+the way 045-10's possessives were repaired, and it is filed rather than executed inside another
+chapter's port. **The risk while it is open is a flake attributed to the wrong chapter**: new 22's
+battery runs this suite, and if the lane leaves a claimable row the failure will read as new 22's.
+Recorded here so it does not.
+
+**AND IT IS NOT THE ONLY ONE THE MAIL CHAPTER LEFT.** The same interleaved range holds four
+cleanup commits, and new 21 collected none of them:
+
+    31e9cce (part)   notifications.itest.ts — ask ONE row, not the batch count
+    b060056          notifications.itest.ts — the suite must not run a global sweep
+    14816fa (part)   the mail files' feature-local ids: mailer.ts, mailer.test.ts,
+                     notification-relay.ts, notifications.itest.ts, and two lines of
+                     repository.ts
+    14816fa (part)   `packages/config/src/infra.ts` — the Mailpit line's `FR-021`
+    1144655          n/a — a prettier revert this tree never needed
+
+Measured in the worktree at new 22: `notifications.itest.ts:259` still counts the batch, no
+`undelivered()` helper exists, and `mailer.ts:1` still reads `(FR-021, FR-WHK-07)`. **Three of
+the four are the SAME shape of miss** — a feature commit was collected and the range's tidy-up
+commits were not — which makes this a rule rather than an accident: **the last commits of an
+interleaved range are the ones a split loses**, because the chapter that owns the feature has
+already stopped reading by the time they appear.
+
+## 045-22 · A MECHANICAL ID SWEEP PRINTED ONE ID TWICE, AND CITED A WEBHOOK CLAUSE FOR A RATE LIMIT
+
+`14816fa` ("cite identifiers that resolve, not feature-local ones") replaced fifty-nine
+feature-local `FR-0xx` citations with SRS, SAD and ADR ids. Most of them are right. Eight are
+not, and published's HEAD still carries them:
+
+    services/api/src/db/schema.ts:148     (FR-RTL-04, FR-RTL-04)
+    services/api/src/limits/policy.ts:19  (FR-RTL-04, FR-RTL-04)
+    services/api/migrations/0008…sql:1    (FR-RTL-04, FR-RTL-04)
+    gateway/src/limits.itest.ts:433       "the gateway's internal call … is exempt (FR-WHK-05)"
+    gateway/src/limits.itest.ts:530       a test TITLE ending "(FR-WHK-05)"
+    api/src/limits/limits.itest.ts:268    "the failure FR-WHK-05 forbids"
+    api/src/limits/limits.itest.ts:294    "the half constitution I needed"
+    api/src/limits/rate-limit.middleware  "Account creation (FR-AUT-12)"
+
+**THE TWO FAILURE SHAPES ARE DIFFERENT AND BOTH COME FROM THE SAME MECHANISM.** A substitution
+table maps many-to-one, so **a range collapses**: `(FR-018 to FR-020)` becomes
+`(FR-WHK-07 to FR-WHK-07)` and `(FR-RTL-04, FR-007)` becomes `(FR-RTL-04, FR-RTL-04)` — a
+citation that has lost its second half while looking complete. And where no real id fits, the
+table supplies **the nearest one it has**: FR-WHK-05 is *"webhook delivery shall be asynchronous
+and shall never delay or block message delivery"*, cited here for the gateway's internal routes
+being exempt from the tenant rate limit. Those are unrelated clauses, and one of the two
+citations is in a test title — the part read detached from its file, where nobody has the source
+to notice.
+
+`FR-AUT-12` is *"failed authentication attempts shall be rate limited per source IP"*, and the
+signup limiter is not an authentication at all. Same key shape, same threshold, no clause of its
+own — which is worth saying rather than papering over with the neighbouring id.
+
+**AND `constitution I` LANDED IN THE MIDDLE OF A SENTENCE.** *"FR-RTL-04's configurability, and
+the half constitution I needed"* — the replaced token was `SC-003`, a success criterion, and the
+substitution was made without reading the clause it sat in. **An id inside a sentence has a
+grammatical role**, and a table cannot see it.
+
+All eight are corrected in this tree rather than copied, with the reason recorded at two of them.
+
+**THE GENERAL RULE.** A sweep that replaces identifiers needs the same treatment as a checker: a
+positive control (does the new id resolve?) and a **collision check** (did two distinct ids
+become one?). The second is the one nobody runs, and it is the one that silently deletes a
+citation.
+
+## 045-23 · THIRTY-FIVE OF ONE HUNDRED AND THIRTY-SEVEN CITED IDS RESOLVE NOWHERE, AFTER THE SWEEP THAT WAS ABOUT THAT
+
+Measured over the seventeen source files new 22 touched, after `14816fa`'s sweep was ported:
+
+    ids cited (FR/EIR/NFR/DR/CON/SC/ADR)                137
+    resolving nowhere in docs/ (word-boundary grep)       35
+
+    FR-002a FR-002b FR-002d FR-003 FR-003a FR-004 FR-004a FR-004b FR-005 FR-005c
+    FR-007a FR-010 FR-011a FR-011b FR-013a FR-015 FR-017a FR-019a FR-019b FR-020a
+    FR-021a FR-026 FR-027 FR-028 FR-029 FR-030 FR-031 FR-032
+    SC-001 SC-002 SC-003 SC-003a SC-005 SC-008 SC-013
+
+**TWO CONTROLS, BOTH BEHAVING.** A fabricated `FR-ZZZ-99` is reported missing; `FR-RTL-01` is
+reported found. Without both, a `0` and a `35` are equally meaningless — the lesson `CLAUDE.md`
+records under *"give every pattern a positive control"*.
+
+**THESE ARE FEATURE-LOCAL IDS FROM EACH CHAPTER'S OWN SPEC**, and they resolve nowhere a reader
+of the published tutorial can follow: the spec directories are not published. `14816fa` fixed the
+subset its author's grep found in the files that chapter touched. The rest are spread over
+chapters that had already shipped, which is why a sweep run inside one chapter cannot close this
+— **the leak is tree-wide and the fix was chapter-local.**
+
+Not fixed here, for the reason 045-20 gives: rewriting citations in files fenced byte-exact into
+already-tagged chapters is a `replay-repair.sh` pass, not a line in another chapter's port. Filed
+with the measurement so the pass has a target list and a way to check itself.
+
+## 045-24 · A FIELD ARRIVED AFTER THE SUITES THAT COMPARE WHOLE BODIES, AND THE FILE HAD WRITTEN DOWN WHAT TO DO
+
+`deferred.md` records one **inverted** deferral — a lint rule that arrives after the files it
+must exempt — and calls it *"the shape that goes wrong silently."* This is the same shape with a
+data field instead of a rule, it was not in the ledger, and it is louder: twenty-three tests in
+two files, all at once.
+
+    Test Files  2 failed | 21 passed (23)
+    Tests      23 failed | 489 passed (512)
+
+Every failure the same:
+
+    AssertionError: expected { code: 'not_found', …(3) } to deeply equal { code: 'not_found', …(3) }
+    -   "request_id": "6bca7578-0461-4274-804a-22a71f0c195d"
+    +   "request_id": "6d5517e3-baf6-48ad-a935-4a535ce80d68"
+
+**THE MECHANISM.** Constitution I's oracle is a PAIR: a foreign identifier must answer exactly
+as an identifier that exists nowhere, so the gauntlet compares status and **whole body**. Add a
+field that is unique per request and every pair differs — twenty-two attacks in
+`isolation/attack.ts`'s `comparePair`, plus `channels.itest.ts`'s membership case. In the
+published order those suites came AFTER the limiter and were written knowing; here the isolation
+harness is new 4, the channel surface new 8, and the limiter is new 22.
+
+**WHAT MADE IT A ONE-LINE FIX INSTEAD OF A DEBUGGING SESSION**, and it is the finding worth
+keeping. `attack.ts`'s own docblock said:
+
+> *"So status and whole body are compared. There is nothing to exclude from the comparison yet:
+> the error envelope is `code`, `message` and `docs_url`, all three of which must match. **When a
+> per-request field joins it, the chapter that adds it owns the decision to drop it here** — and
+> it will have to argue that the field reveals nothing about the resource."*
+
+`channels.itest.ts:205` carried the same sentence in miniature: *"Nothing here is per-request
+yet, so nothing is excluded."* **Both notes are in the exact place a reader lands from the
+failure**, they name the chapter that owns the decision, and they state the argument that
+decision has to make. The argument, made: `request_id` is the only field in the envelope not
+derived from the resource — `code`, `message` and `docs_url` answer what was asked for, the id
+answers the asking — so dropping it removes no leak.
+
+**THIS IS THE COUNTEREXAMPLE TO 045-20 AND THE PAIR IS THE LESSON.** There, `compare.ts`'s
+docblock explained itself by an event thirteen chapters ahead, and the reader could not check
+it. Here, a comment states what is true TODAY, names the condition that will change it, and
+says who decides — and it cost one line to act on. **A forward-looking comment works when it
+records the trigger and the owner, and fails when it records the outcome.**
+
+**AND THE LEDGER COULD NOT HAVE FOUND THIS BY ITS OWN METHOD.** Every `deferred.md` row comes
+from a cherry-pick that would not apply. Nothing failed to apply here: the field's commit
+touched six files and none of them was `attack.ts`. What found it was **running the battery** —
+which is why the per-chapter loop runs one, and why a chapter is not finished when its commits
+are green.
+
+## 045-25 · THE CHECK AGAINST AN UNINJECTED MODULE COULD NOT SEE A MODULE BUILT WITHOUT OPTIONS
+
+`services/gateway/src/main.test.ts` holds one of this project's better instruments. Its comment
+states the defect it exists for: *"A MODULE BUILT, CLOSED, AND NEVER PASSED IN IS INERT AND
+GREEN … That happened to `typing` in the order this book was first written and was found by the
+sealed client, which is eleven chapters away."* It reads `main.ts` as text, derives the fabrics
+rather than listing them, and asserts each one appears in the `attachSessions` call.
+
+**IT DERIVED FIVE OF SIX.** The pattern was
+
+    /\bconst (\w+) = create[A-Z]\w*\(\{/g
+
+— a call with an OBJECT ARGUMENT. `createGatewayLimits()` takes none: it reads its url from the
+environment. Measured on the tree at new 22:
+
+    old pattern   fanout presence membership typing connections
+    widened       fanout presence membership typing connections limits
+
+So the ninth Redis client in that file was outside the check, and outside it **in the direction
+that passes** — the same asymmetry 044 found in the driver-exemption linter and closed there.
+A `limits` line deleted from the call left the suite green; the limiter would have been inert,
+every socket unlimited, and `**/main.ts` is excluded from coverage so no figure could show it.
+
+**AND THE POSITIVE CONTROL WAS SATISFIED BY THE HOLE.** The control asserted
+`built().length > 1` — five names pass that as easily as six. It is now an assertion on the
+list by name, which goes red when a fabric is added without a thought about this file. **"More
+than one" is a control against a parse that found NOTHING; it is not a control against a parse
+that found MOST.**
+
+**THE FIX HAD A TRAP OF ITS OWN AND THAT IS WHY IT IS RECORDED.** Dropping the `{` widens the
+match to `createLogger` and `createServer` in the `import.meta.main` block below the
+function — neither is a fabric. Both happen to satisfy the injection test (`logger: log,` and
+`server,` both match), so the widened check would have passed for the wrong reason. It is
+scoped to the text between `export function createServer` and the `attachSessions({` call
+instead, which is what the describe's title always claimed. **An exclusion list would have been
+the thing this file exists instead of.**
+
+Falsified: with `limits,` removed from the call, `built by createServer and never injected:
+limits`. Closed in new 22.

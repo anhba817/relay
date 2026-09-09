@@ -59,7 +59,19 @@ for C in $(git rev-list --reverse "$1..$2"); do
   RELAY_PLATFORM=$WT python3 "$S/rewrite-refs.py" --rule delete     --apply >/dev/null
   RELAY_PLATFORM=$WT python3 "$S/rewrite-refs.py" --rule substitute --apply >/dev/null
   RELAY_PLATFORM=$WT python3 "$S/apply-read-class.py" --apply >/dev/null
-  git add -A
+  # `-u`, NOT `-A`, AND AN UNTRACKED FILE IS THE REASON.
+  #
+  # `read-tree --reset -u "$C"` makes the index exactly $C's tree, and the rewrite scripts
+  # above only EDIT files that tree already contains — they create nothing. So staging
+  # tracked modifications is the whole of what this commit needs, and `-A` was strictly
+  # wider than the job.
+  #
+  # What that width cost: a scratch script belonging to ANOTHER session appeared untracked
+  # in this worktree between two chapters, and the next `-A` would have committed it into
+  # a chapter's tree and into a published tag. Found by reading `git status` after a
+  # cherry-pick rather than by anything failing. A replay that stages by pattern is a
+  # replay that commits whatever happens to be lying about.
+  git add -u
   T=$(git write-tree)
   NEW=$(GIT_AUTHOR_NAME="$(git log -1 --format=%an "$C")" \
         GIT_AUTHOR_EMAIL="$(git log -1 --format=%ae "$C")" \

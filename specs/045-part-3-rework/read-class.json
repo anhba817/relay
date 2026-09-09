@@ -829,6 +829,26 @@
      " * else — the disablement chapter wrote the reason down and this is the first code to\n * depend on it."
     ]
    ]
+  },
+  {
+   "why": "new 22 (the rate limiter). Four references the rules route to a person, and three of the four resolve to THIS chapter — a temporal `until 3.8`, and two sentences whose subject is what this chapter decided not to do. A subject name would be wrong for all three: the file is fenced into this chapter's own page, so `this chapter` is both shorter and the only form that stays true if the ordinal moves again. The fourth is a citation of the chapter that made the rule and takes its name. Two pairs also reflow the lines published left over-long, and one splits a parenthesis that ended mid-sentence on `Putting`.",
+   "drops": [
+    "deduplication"
+   ],
+   "pairs": [
+    [
+     "// `originalUrl` first, and this line was WRONG from chapter 2.2 until 3.8.",
+     "// `originalUrl` first, and this line was WRONG from chapter 2.2 until this chapter."
+    ],
+    [
+     "    // and SAD §338, read by nothing in seventeen chapters. Chapter 3.8\n    // deliberately did NOT put rate-limit policy here: the column is named for\n    // quotas, quotas are a later chapter, and the distinction between a limit\n    // that may be lost and a quota that is money is the thing 3.8 is about.\n",
+     "    // and SAD §338, read by nothing in seventeen chapters. THIS chapter\n    // deliberately did NOT put rate-limit policy here: the column is named for\n    // quotas, quotas are a later chapter, and the distinction between a limit\n    // that may be lost and a quota that is money is the thing this chapter is\n    // about.\n"
+    ],
+    [
+     "    // (Deliberately not a chapter NUMBER: 3.7 renumbered quotas once already,\n    // and a comment in a file fenced byte-exact into a published page goes stale\n    // silently. The deduplication chapter's rule — cite what a thing is, never where it will\n    // be. A grep for forward references is the gate, so this comment must not\n    // trip it either.) Putting\n    // one in a field named for the other would collapse in the schema what the\n    // prose spends a chapter drawing (research R31).\n",
+     "    // (Deliberately not a chapter NUMBER: the deduplication chapter renumbered\n    // quotas once already, and a comment in a file fenced byte-exact into a\n    // published page goes stale silently. That chapter's rule — cite what a\n    // thing is, never where it will be. A grep for forward references is the\n    // gate, so this comment must not trip it either.)\n    //\n    // Putting one in a field named for the other would collapse in the schema\n    // what the prose spends a chapter drawing (research R31).\n"
+    ]
+   ]
   }
  ]
 }

@@ -368,6 +368,24 @@ def place_name(line: str, m: re.Match, name: str, prev: str | None = None) -> st
         if pm and pm.group(2) and not re.search(r"[.!?:;\u2014-]$|\*/$", pm.group(2)):
             continues = True
 
+    # AND A CONTINUATION CANNOT OVERRIDE A FULL STOP ON THIS LINE, which is the
+    # first thing the test above got wrong. It is a claim about the PREVIOUS line
+    # and it was applied unconditionally, so a reference that opens a new sentence
+    # mid-line lost its capital whenever the line before it happened to end in an
+    # ordinary word — and a comment sentence wrapping onto a line that then starts
+    # another is the commonest shape in this codebase:
+    #
+    #     // …rather than the default being chosen to suit the
+    #     // tests. Chapter 3.6's `RELAY_DISABLE_SWEEP` states…
+    #
+    # `prev` ends in "the", so the sentence "continues"; the reference is still the
+    # first word of a new sentence, two characters after a full stop this line
+    # carries itself. Two of these were caught by reading a dry run before the
+    # replay rather than after it. The previous line only decides the case when the
+    # current line offers no boundary of its own.
+    if continues and re.search(r"[.!?]\s*\**$", before):
+        continues = False
+
     if not continues and (
         not before or first_token or prose_start or re.search(r"[.!?]\s*\**$", before)
     ):

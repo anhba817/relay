@@ -733,3 +733,53 @@ adds says *"Deliberately not a chapter NUMBER: 3.7 renumbered quotas once alread
 comment in a file fenced byte-exact into a published page goes stale silently."* That is
 the argument for feature 045, written by the chapter that will carry it — which is why the
 row is here rather than executed early.
+
+## NEW 22 COLLECTED THE LEDGER, AND THE LEDGER WAS WRONG THREE WAYS
+
+Every row addressed to new 22 is discharged. Recorded here with what each one turned out
+to be, because two of the twelve were misfiled and one was an exemption over nothing —
+and the pattern in the errors is more useful than the list.
+
+| row | what happened |
+|---|---|
+| `eeafe8a` · `services/api/src/fanout/**` | taken as two PATHS (`publisher.ts`, `fanout.itest.ts`); the glob would have failed `driver-exempt.test.ts` |
+| `60e7f03` · `gateway/presence.ts` | taken, with the key-composition argument re-checked against the code |
+| `d38f415` · `gateway/presence.itest.ts` | taken |
+| `576b316` · `gateway/membership.ts`, `membership.itest.ts` | taken — and `membership.ts` only SUBSCRIBES, which the ledger's "publisher that composes no key" got half right |
+| `a7ebbb1` · `gateway/connections.itest.ts` | taken |
+| `83309e5` · `gateway/connections.ts` | taken |
+| `23a85c5` · `gateway/connections.test.ts` | **NOT taken — it imports nothing restricted.** See gaps 045-17 |
+| `3412851` · T048b + `GatewayLimits` plumbing | taken, and falsified by moving the early return below the limiter |
+| `a068427` · `gateway/limits.itest.ts` relay-off | taken (arrived with the port's own `PORT=0` repair) |
+| `a068427` · `RELAY_AUTH_*` in `harness.ts` | **discharged by `619156d`, not by `a068427`** — the mail commit only added `RELAY_SMTP_URL` beside them |
+| `31e9cce` · credentials + signup halves | taken; the notifications half is owed to new 21 (gaps 045-21) |
+| `ba798af` (whole) | taken |
+| `f245c05` · `withoutRequestId` in `test-event.itest.ts` | **already applied** — that commit changes one id on a line ADJACENT to the helper, which appeared as diff CONTEXT |
+| `75d8c33` · a sender in both limits suites | taken, without the channel membership the row implied (measured: both suites green without it) |
+
+**THE THREE ERRORS HAVE ONE CAUSE BETWEEN THEM: THE ROW WAS WRITTEN FROM A DIFF AND NOT
+FROM THE FILE.** `connections.test.ts` was listed because a chapter's diff touched it;
+`withoutRequestId` was listed because it sat in a hunk's context; the `harness.ts` row was
+attributed to the commit whose hunk it appeared beside. **A diff shows what moved and what
+was nearby, and a ledger row is a claim about what a chapter NEEDS** — which is only
+answerable by opening the file in the tree that will receive it.
+
+**AND THE LEDGER UNDERCOUNTED THE ONE THING IT WAS MOST CAREFUL ABOUT.** Four notes across
+four chapters built up to *"EIGHT ENTRIES, FIVE ARGUMENTS, AND NEW 22 HAS TO CARRY ALL OF
+THEM IN ONE COMMIT."* The tree needed twelve, and the four it never recorded include both
+files of the typing chapter — the same chapter that got a section of its own in this ledger
+for owing T048b. **Recording one artefact from a commit does not sweep the commit**, and
+the count went out of date every time a chapter was ported, with nothing to notice.
+
+## WHAT NEW 22 HANDS FORWARD
+
+Nothing to a later chapter. Two things BACKWARD, to new 21, which is the direction this
+ledger was not built for and the reason gaps 045-21 exists rather than a row here:
+
+    31e9cce (part)   notifications.itest.ts — ask ONE row, not the batch count
+    b060056          notifications.itest.ts — the suite must not run a global sweep
+    14816fa (part)   the mail files' feature-local ids (four files + two lines of
+                     repository.ts)
+
+`1144655` is n/a: it reverts three prettier reformats this tree never had, and all three
+sites already carry its post-image.
