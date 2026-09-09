@@ -565,3 +565,27 @@ the `typing.send` branch before it reaches anything that could spend — there i
 it to reach. So new 22 does not merely port a test: it adds a limiter *underneath* an early
 return that has been there for nine chapters, and the test that says the early return still comes
 first is the one thing standing between a typing indicator and a customer's message budget.
+
+## A FIFTH `ioredis` EXEMPTION, AND A FIFTH REASON — WHICH IS THE POINT NOW
+
+| original commit | artefact | belongs to | what it did |
+|---|---|---|---|
+| `a7ebbb1` (part) | `services/gateway/src/connections.itest.ts` in `DRIVER_EXEMPT_TESTS` | new 22 (limits) | exempt a suite whose raw client is the STIMULUS |
+
+**THE REASON IS NEW AND THE RULE CANNOT EXPRESS IT.** The four before it are about what the
+client reads or writes: three touch no key at all, one composes environment-scoped keys and
+argues how. This suite needs a raw client for neither — its subject is delivery and it asserts
+on sockets. It needs one to **cause** a membership change, because `Membership` exposes
+`onChange`, `subscribeChannel` and `watch` and no `publish`: the api publishes and the gateway
+only ever subscribes. So the client is the stimulus rather than the oracle.
+
+    fanout/**                 no key is touched at all — a publish onto a channel UUID
+    membership.ts             the same: PUBLISH only, onto member:{channel_id}
+    presence.ts               keys ARE composed, and environment-scoped — the limiter's argument
+    presence.itest.ts         \ suites publishing arbitrary bytes with a client
+    membership.itest.ts       / belonging to neither module
+    connections.itest.ts      the client is the STIMULUS, not the oracle
+
+**SIX ENTRIES, FOUR ARGUMENTS, AND NEW 22 HAS TO CARRY ALL OF THEM IN ONE COMMIT** — the
+both-directions check fires on the rule's own arrival if any is missing, and a blanket "the
+gateway's Redis files" would erase four distinctions the rule exists to make.
