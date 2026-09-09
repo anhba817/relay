@@ -102,8 +102,24 @@ def welded(line: str) -> bool:
         return False
     if s.lstrip().startswith("//") and "//" in s.lstrip()[2:]:
         return True
-    if s.lstrip().startswith("*") and re.search(r"\S\s{2,}\* ", s.lstrip()):
-        return True
+    if s.lstrip().startswith("*"):
+        # THE OPENER IS NOT CONTENT, AND A NESTED BULLET IS NOT A WELD. This clause used
+        # to search `s.lstrip()` for "something, two spaces, another `* `" — and a
+        # two-level JSDoc list is exactly that shape:
+        #
+        #      *   * ONE ENDPOINT, named by the caller, rather than every endpoint
+        #
+        # `\S` matched the OPENER's own asterisk, so three legitimate bullets in
+        # `repository.ts` were reported as unrecognised welds and the script exited 1.
+        # A detector with false positives teaches its reader to ignore it, which costs
+        # more than the check is worth.
+        #
+        # The weld has PROSE before the second opener; the nested bullet has only
+        # whitespace. So the opener run is removed before the search, and the `\S` then
+        # has to be real content.
+        body = re.sub(r"^\*+\s*", "", s.lstrip())
+        if re.search(r"\S\s{2,}\* ", body):
+            return True
     if s.lstrip().startswith("--") and "--" in s.lstrip()[2:]:
         return not re.search(r"-{3,}", s)
     # AND A COMMENT WELDED TO A CODE LINE HAS NO SECOND OPENER, which is how the worst

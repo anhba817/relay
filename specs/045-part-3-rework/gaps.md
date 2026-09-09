@@ -535,3 +535,34 @@ before the chapter's replay, and `classify-refs` reports 3 kept on purpose after
 arrives with new 19, so no earlier tag ever contained a deliberate line for the rewriter to
 damage. This gap was a loaded gun rather than a wound, and it fired on the first chapter
 that handed it something.
+
+## 045-15 · THE WELD DETECTOR FIRED ON A NESTED BULLET, AND EXITED 1 — CLOSED
+
+Found while porting new 20, by running `repair-welds.py` in the per-chapter loop.
+
+    3 UNRECOGNISED weld(s) — the bug is back, or the detector is:
+      services/api/src/db/repository.ts:812  *   * ONE ENDPOINT, named by the caller, …
+      services/api/src/db/repository.ts:815  *   * DELIVERED EVEN WHEN DISABLED — …
+      services/api/src/db/repository.ts:819  *   * NO CLAIM LEDGER. Expansion claims …
+
+All three are a two-level JSDoc list. The clause searched `s.lstrip()` for
+`\S\s{2,}\* ` — content, alignment whitespace, a second comment opener — and in
+`*   * ONE ENDPOINT…` the `\S` it matched was **the opener's own asterisk**. So the
+detector reported three legitimate bullets as damage and the script exited 1.
+
+**A DETECTOR WITH FALSE POSITIVES TEACHES ITS READER TO IGNORE IT**, which costs more than
+the check is worth — and this one was written precisely because "a checker's blind spot is
+worse than its absence". A false alarm is the same failure wearing the other face.
+
+**THE DISTINCTION IS WHAT COMES BEFORE THE SECOND OPENER.** A weld has PROSE there; a
+nested bullet has only whitespace. So the opener run is stripped before the search and the
+`\S` has to be real content. Verified in both directions: the three bullets stop firing,
+and a line of the shape the `REPAIRS` table records —
+`* So a REST send needs one to exist — and \`createUser\`     * makes a person.` — is still
+reported as unrecognised.
+
+**THIS IS THE THIRD FAULT FOUND IN THIS FEATURE'S OWN TOOLING IN THREE CHAPTERS**, after
+the read rule listing eight of nineteen and the rewriter never calling `is_deliberate`. All
+three were found by RUNNING the tool on new input rather than by reading it, and none was
+visible to any test: the tooling has no tests of its own, which is the oldest item on this
+ledger and now has three instances behind it.

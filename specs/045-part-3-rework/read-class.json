@@ -768,6 +768,50 @@
      "    // environments, 2.6 for subjects, the broker chapter for its own durables."
     ]
    ]
+  },
+  {
+   "why": "THE DISABLEMENT CHAPTER'S NINE, and the split is five self-references to four backward ones. Keyed off the POST-REPLAY text. `webhook-walk.mjs`'S TWO ARE IN A USAGE BLOCK a reader copies into a terminal, so 'this chapter' is right there and a subject name would read as a flag value. AND ONE LINE WAS ALREADY HALF-SUBSTITUTED BY THE SUBSTITUTE RULE — `repository.ts:644` came out reading 'every attempt since the webhook dispatcher chapter and discarded until 3.6 wanted it', two references on one line where only the first was in that rule's class. That is why the practice is to run the replay first and read the read class off the result: keyed off the pre-replay text this pair would have matched nothing. `schema.ts:632` DROPS THE WORDS 'retry-and-disable' ON PURPOSE: the sentence named this chapter by its subject before this chapter existed to be 'this' one, and keeping both would read 'the retry-and-disable chapter is this chapter'.",
+   "pairs": [
+    [
+     "//   node scripts/webhook-walk.mjs --fast-forward --watch-disable   # chapter 3.6\n",
+     "//   node scripts/webhook-walk.mjs --fast-forward --watch-disable   # this chapter\n"
+    ],
+    [
+     "//   --watch-disable                    chapter 3.6: print the failure run as it\n",
+     "//   --watch-disable                    this chapter: print the failure run as it\n"
+    ],
+    [
+     "--   * all three foreign keys are ON DELETE NO ACTION, the choice 3.5 made and",
+     "--   * all three foreign keys are ON DELETE NO ACTION, the choice the webhook\n--     dispatcher chapter made and"
+    ],
+    [
+     "     * every attempt since the webhook dispatcher chapter and discarded until 3.6 wanted it (research\n     * R6).",
+     "     * every attempt since the webhook dispatcher chapter and discarded until this one\n     * wanted it (research R6)."
+    ],
+    [
+     "    // An owner can pause an endpoint. The retry-and-disable chapter is the follow-on chapter 3.5\n    // named here, and the prediction held:",
+     "    // An owner can pause an endpoint. This chapter is the follow-on the webhook\n    // dispatcher chapter named here, and the prediction held:"
+    ],
+    [
+     "    // off the floor: it has crossed the internal seam on every attempt since 3.5\n    // and been discarded (research R6).",
+     "    // off the floor: it has crossed the internal seam on every attempt since the\n    // webhook dispatcher chapter and been discarded (research R6)."
+    ],
+    [
+     "  // Retention and storage are immutable on an existing stream — chapter 3.4\n  // measured that (its research R1), and the lesson transfers unchanged.",
+     "  // Retention and storage are immutable on an existing stream — the broker chapter\n  // measured that (its research R1), and the lesson transfers unchanged."
+    ],
+    [
+     " * chapter 3.6's own baseline is the reason this is a per-SUITE prefix rather than",
+     " * THIS CHAPTER'S own baseline is the reason this is a per-SUITE prefix rather than"
+    ],
+    [
+     "    // 3.5 recorded an attempt by moving the delivery and discarded the answer;",
+     "    // The webhook dispatcher chapter recorded an attempt by moving the delivery and\n    // discarded the answer;"
+    ]
+   ],
+   "drops": [
+    "retry-and-disable"
+   ]
   }
  ]
 }
