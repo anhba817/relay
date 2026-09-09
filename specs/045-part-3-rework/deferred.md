@@ -480,3 +480,32 @@ rule** — at which point a file ten chapters old starts failing a rule it has n
 to print — the exemption is for a rule with no members, and an exemption list is only checked
 against the rule it belongs to. New 22 must add `services/api/src/fanout/**` in the same commit
 that adds the `ioredis` restriction, or its own gate goes red on a chapter nobody is editing.
+
+## THE `ioredis` EXEMPTION IS NOW OWED TWICE, AND THE TWO REASONS ARE DIFFERENT
+
+The fan-out chapter's entry is recorded above. The presence chapter adds two more, and the
+distinction between them is the rule's own reason rather than a formality:
+
+| original commit | artefact | belongs to | what it did |
+|---|---|---|---|
+| `60e7f03` (part) | `services/gateway/src/presence.ts` in the `ioredis` exemption | new 22 (limits) | exempt a client that composes environment-scoped keys |
+| `d38f415` (part) | `services/gateway/src/presence.itest.ts` in `DRIVER_EXEMPT_TESTS` | new 22 (limits) | exempt a suite that publishes arbitrary bytes onto the fabric |
+
+**AND THE PRESENCE ENTRY IS THE ONE THAT MATTERS.** The fan-out publisher is justified by
+"this client touches no keys" — it publishes onto `chan:{channel_id}`, a channel UUID, and a
+subject is not readable at all. **Presence's client touches keys and they are
+environment-scoped**: `presence:{env}:{user}`, which is exactly the shape the restriction
+exists to guard. Its justification is the rate limiter's instead — every key is composed from
+the environment id on the authenticated connection's own identity, nothing takes an environment
+id from a client, and there is no scan, `KEYS` or pattern read that could reach another
+tenant's key.
+
+So new 22 cannot add one blanket exemption for "the gateway's Redis files". It has to carry
+both arguments, and the presence one is a claim about how keys are composed that somebody has
+to re-check against the code as it then stands.
+
+**A LIST THAT CAN ONLY GROW HAS ALREADY BEEN A GAP IN THIS PROJECT ONCE.** 044 found the
+driver-exemption linter checking one direction only: an unlisted file importing `pg` fails
+loudly, a listed file importing nothing restricted passes forever. Both directions are asserted
+now — which means new 22 must add the rule and all three exemptions in ONE commit, or the
+assertion fires on the rule's own arrival.
