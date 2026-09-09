@@ -237,7 +237,7 @@ def recapitalise(line: str) -> str:
                   lambda g: g.group(1) + g.group(2).upper(), line, count=1)
 
 
-def place_name(line: str, m: re.Match, name: str) -> str:
+def place_name(line: str, m: re.Match, name: str, prev: str | None = None) -> str:
     """Put `name` where the reference `m` was, with the case and plural the site needs.
 
     ONE IMPLEMENTATION, TWO CALLERS. `substitute_one` and the read class's `rewrite` each
@@ -308,7 +308,32 @@ def place_name(line: str, m: re.Match, name: str) -> str:
     PROSE_OPENER = re.compile("^[\\s\"'>*#\u2014-]*$")
     prose_start = bool(PROSE_OPENER.match(before))
 
-    if not before or first_token or prose_start or re.search(r"[.!?]\s*\**$", before):
+    # AND A CONTINUATION LINE IS NOT A SENTENCE OPENING, WHICH THE THREE TESTS ABOVE
+    # CANNOT SEE. All three are line-local, and a comment sentence routinely spans lines:
+    #
+    #     // …which is the mechanism            // …which is the mechanism
+    #     // chapter 3.12 built and this…   ->  // The isolation harness built and this…
+    #
+    # Both of those tests fire — the reference is the line's first token, after a comment
+    # opener — and the capital is wrong, because the sentence began one line up. Two of
+    # these shipped inside tagged chapters before anything noticed, and neither is
+    # visible to a compiler: a capital letter mid-sentence is valid TypeScript.
+    #
+    # `dangles_from_previous` in `rewrite-refs.py` exists for the same problem and did
+    # not catch these, because it looks for a preposition or a temporal word at the end
+    # of the previous line and both of these end in an ordinary noun. So the test here
+    # is the weaker and more reliable one: **if the previous line is a comment of the
+    # same kind and does not end in sentence-final punctuation, the sentence continues.**
+    # Callers that have no previous line pass none and get the old behaviour.
+    continues = False
+    if prev is not None:
+        pm = re.match(r"^\s*(//+|/\*\*?|\*|--+|#+)\s*(\S.*?)\s*$", prev)
+        if pm and pm.group(2) and not re.search(r"[.!?:;\u2014-]$|\*/$", pm.group(2)):
+            continues = True
+
+    if not continues and (
+        not before or first_token or prose_start or re.search(r"[.!?]\s*\**$", before)
+    ):
         new = new[0].upper() + new[1:]
 
     end = m.end()

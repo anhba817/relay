@@ -73,7 +73,7 @@ def main(path: str, apply: bool) -> int:
             if not m:
                 break
             name = NAMES[f"3.{refrules.chapter_of(m.group(0))}"]
-            new = place_name(lines[i], m, name)
+            new = place_name(lines[i], m, name, lines[i - 1] if i else None)
             if new == lines[i]:
                 skipped += 1
                 break

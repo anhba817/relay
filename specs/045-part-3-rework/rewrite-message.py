@@ -63,7 +63,7 @@ def tables(path: str) -> tuple[dict[str, str], list[tuple[str, str]]]:
     return subjects, bodies
 
 
-def substitute(line: str) -> str:
+def substitute(line: str, prev: str | None = None) -> str:
     """One prose line, every substitutable reference placed. Mirrors the mdx loop."""
     while True:
         m = next(
@@ -81,7 +81,7 @@ def substitute(line: str) -> str:
         )
         if not m:
             return line
-        new = place_name(line, m, NAMES[f"3.{refrules.chapter_of(m.group(0))}"])
+        new = place_name(line, m, NAMES[f"3.{refrules.chapter_of(m.group(0))}"], prev)
         if new == line:
             return line
         line = new
@@ -106,7 +106,9 @@ def main() -> int:
             break
 
     if body:
-        body = "\n".join(substitute(l) for l in body.split("\n"))
+        bl = body.split("\n")
+        body = "\n".join(substitute(l, bl[i - 1] if i else None)
+                         for i, l in enumerate(bl))
         for old, new in bodies:
             if old in body:
                 body = body.replace(old, new)

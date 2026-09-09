@@ -165,7 +165,7 @@ def _orphaned_punctuation(line: str) -> str:
     body = refrules.recapitalise(m.group(2))
     return f"{m.group(1)} {body[0].upper()}{body[1:]}{m.group(3)}"
 
-def substitute_one(line: str, m: re.Match) -> str:
+def substitute_one(line: str, m: re.Match, prev: str | None = None) -> str:
     name = NAMES.get(f"3.{chapter_of(m.group(0))}")
     if not name:
         return line
@@ -173,7 +173,7 @@ def substitute_one(line: str, m: re.Match) -> str:
     # plural cut and no all-caps handling, both of which the read class's version grew —
     # so `chapters 3.10 and 3.11` and `**THE ONE CHAPTER 3.21 FORGOT**` came out wrong
     # from this rule and right from that one. Two copies of a rule are two rules.
-    return refrules.place_name(line, m, name)
+    return refrules.place_name(line, m, name, prev)
 
 def main() -> int:
     broken = controls_failing()
@@ -227,7 +227,9 @@ def main() -> int:
                                 samples.append(f"{rel}:{i+1}  {lines[i].strip()[:96]}")
                         found -= 1
                         break
-                    new = delete_one(lines[i], m) if rule == "delete" else substitute_one(lines[i], m)
+                    new = (delete_one(lines[i], m) if rule == "delete"
+                             else substitute_one(lines[i], m,
+                                                lines[i - 1] if i else None))
                     if new == lines[i]:
                         samples.append(f"UNCHANGED {rel}:{i+1}  {lines[i].strip()[:80]}")
                         break

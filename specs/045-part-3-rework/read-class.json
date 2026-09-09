@@ -245,7 +245,7 @@
       ]
     },
     {
-      "why": "Chapter 3.10's port. 77 references reintroduced — 53 delete, 6 substitute, 18 read — which is the per-chapter step doing what it exists for. One of the eighteen was not a reference at all: `Users outnumber channels 3.4:1` is a ratio, and a substitution would have written `outnumber channels the broker chapter:1`. `VERSIONISH` now knows that a unit can follow a colon. The rest name the chapter that did the work, `this chapter` where old 3.16 is this one, and `the previous chapter` where old 3.15 is.  AND ONE OF THESE WAS A FALSE CLAIM THE CONVENTION WOULD HAVE MADE PERMANENT. The `metadata` comment said chapter 3.12 'removed `addMember`'s `(inserted.rowCount ?? 0)`'. Published 3.12 did — cb011875 — but that removal was never ported: both SQL branches carried `RETURNING` in this tree while the test of them still read `rowCount`. Substituting a NAME into a sentence describing a removal that had not happened is worse than the ordinal was, because a wrong number is checkable and a wrong name is not. The replacement states the objection instead of crediting a chapter with acting on it, which is true in every tree; the sender chapter is where the line is actually changed.",
+      "why": "Chapter 3.10's port. 77 references reintroduced — 53 delete, 6 substitute, 18 read — which is the per-chapter step doing what it exists for. One of the eighteen was not a reference at all: `Users outnumber channels 3.4:1` is a ratio, and a substitution would have written `outnumber channels the broker chapter:1`. `VERSIONISH` now knows that a unit can follow a colon. The rest name the chapter that did the work, `this chapter` where old 3.16 is this one, and `the previous chapter` where old 3.15 is.  AND ONE OF THESE WAS A FALSE CLAIM THE CONVENTION WOULD HAVE MADE PERMANENT. The `metadata` comment said chapter 3.12 'removed `addMember`'s `(inserted.rowCount ?? 0)`'. Published 3.12 did — cb011875 — but that removal was never ported: both SQL branches carried `RETURNING` in this tree while the test of them still read `rowCount`. Substituting a NAME into a sentence describing a removal that had not happened is worse than the ordinal was, because a wrong number is checkable and a wrong name is not. The replacement states the objection instead of crediting a chapter with acting on it, which is true in every tree; the sender chapter is where the line is actually changed.  AND ONE OF THESE PAIRS CAPITALISED A CONTINUATION. `// chapter 3.12 built and this is the first route to rely on it.` continues the sentence one line above it — '…which is the mechanism' — and the replacement was written with a capital T, so the tree read '…which is the mechanism The isolation harness built'. A capital letter mid-sentence is valid TypeScript and no gate reads prose, so it shipped inside a tagged chapter. Lower-cased here; `refrules.place_name` now refuses the same capital for the rule-driven half.",
       "pairs": [
         [
           "  // AND ONE MORE THAN FOUR, SINCE CHAPTER 3.15. `4003` is a ban, which is none of",
@@ -289,7 +289,7 @@
         ],
         [
           "    // chapter 3.12 built and this is the first route to rely on it.",
-          "    // The isolation harness built and this is the first route to rely on it."
+          "    // the isolation harness built and this is the first route to rely on it."
         ],
         [
           "    // ago — chapter 3.12's fourteen green tests are why this line exists.",
