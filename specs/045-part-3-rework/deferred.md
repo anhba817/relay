@@ -509,3 +509,29 @@ driver-exemption linter checking one direction only: an unlisted file importing 
 loudly, a listed file importing nothing restricted passes forever. Both directions are asserted
 now — which means new 22 must add the rule and all three exemptions in ONE commit, or the
 assertion fires on the rule's own arrival.
+
+## AND TWICE MORE FOR MEMBERSHIP — WITH THE MISTAKE THAT WAS MADE WRITING IT
+
+| original commit | artefact | belongs to | what it did |
+|---|---|---|---|
+| `576b316` (part) | `services/gateway/src/membership.itest.ts` in `DRIVER_EXEMPT_TESTS` | new 22 (limits) | exempt a suite that publishes arbitrary bytes onto the fabric |
+| `576b316` (part) | `services/gateway/src/membership.ts` in the `ioredis` exemption | new 22 (limits) | exempt a publisher that composes no key |
+
+**THE COMMENT ON THE FIRST ONE RECORDS A MISTAKE WORTH INHERITING.** The entry was written first
+on the `**/*.ts` block's `ignores` list, where an `.itest.ts` entry does nothing: the
+`**/*.itest.ts` block below REPLACES `no-restricted-imports` for every integration test not on one
+of the two exemption lists, so an exemption placed above it is overwritten in silence. The file's
+own header states that hazard — it is the bug the isolation harness found (R23, FR-043) — and the
+entry still went to the wrong list.
+
+That is a fact about `eslint.config.mjs`'s structure, not about membership, and it is true of this
+tree today. New 22 will be adding four entries across two lists in one commit; this is the note
+that says which list each belongs on and why putting one in the wrong place produces no error.
+
+**FOUR EXEMPTIONS NOW, THREE ARGUMENTS:**
+
+    fanout/**                 no key is touched at all — a publish onto a channel UUID
+    membership.ts             the same: PUBLISH only, onto member:{channel_id}
+    presence.ts               keys ARE composed, and environment-scoped — the limiter's argument
+    presence.itest.ts         \ suites publishing arbitrary bytes with a client
+    membership.itest.ts       / belonging to neither module
