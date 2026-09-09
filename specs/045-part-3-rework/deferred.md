@@ -19,7 +19,11 @@ test in passing. Moving webhooks to 19 unpicks that: the resume work applies cle
 the webhook fixes have nothing to apply to. Neither is a merge problem — the file does not
 exist — and neither is lost, because they are here.
 | `6c1c90b` (part) | six `/v1/webhooks*` rows in `isolation/targets.ts`, their gauntlet attacks | new 19 (webhooks) | classify and attack the webhook routes |
-| `6c1c90b` (part) | the webhook block and `get environment()` in `db/repository.ts` | new 19 (webhooks) | endpoint/delivery/dead-letter repository methods |
+| `6c1c90b` (part) | the webhook block in `db/repository.ts` | new 19 (webhooks) | endpoint/delivery/dead-letter repository methods |
+
+**AND `get environment()` CAME OUT OF THAT ROW, because the membership chapter needed it first.** It was deferred with the webhook block on the strength of its own comment, which attributes it to the test event: "an UNSCOPED operation … must still be told which environment is asking". New 14 publishes a membership change from two controllers and needs the same id for a different reason — `req.principal?.environmentId ?? "unknown"` reads it too and carries a branch the guard makes unreachable, which is a coverage failure with no fix but a comment. So the accessor lands there, with that reason, and new 19 inherits a smaller row.
+
+**THE LESSON IS ABOUT THE LEDGER RATHER THAN THE ACCESSOR.** A row here was written by reading what a thing's comment SAID it was for. Three lines of it turned out to be load-bearing for a chapter five earlier, and nothing found that until `tsc` said `Property 'environment' does not exist`. **A deferral justified by a comment is a deferral justified by one caller's opinion of why the code exists.**
 
 ## OLD 3.10 IS LOAD-BEARING INFRASTRUCTURE THE MAP MOVES THIRTEEN CHAPTERS LATER
 
