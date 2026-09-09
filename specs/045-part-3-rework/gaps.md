@@ -25,13 +25,30 @@ that argument about task ids in test titles and removed seven of them.
 rewrites bodies through `refrules` and takes a person's table for subjects and for the
 ambiguous bodies a rule may not touch. `rework/part3-ch11` carries zero.
 
-**WHAT CLOSING IT COSTS.** A replay of `rework/part3-ch1..rework/part3-ch10` with a
-subject map of three lines and five body decisions, then re-cutting ten annotated tags
-and re-cutting `rework/part3-ch11` on top. The TREES do not change — only messages — so
-no fence, no page and no gate is affected, and each chapter's verification stands.
-Deferred because it rewrites ten tags mid-rebuild for a defect that costs nothing while
-the rebuild is still running, and the same replay will be cheaper once every chapter is
-in and the tags are cut once.
+**WHAT CLOSING IT COSTS — AND THE FIRST ESTIMATE HERE WAS WRONG.** It was written as
+"the trees do not change, only messages, so no fence and no page is affected". That is
+false, and what falsified it was reading chapter 11's own published diff: it contains
+
+    -   * 3.15, FR-013, FR-CHN-08).
+    +   * channel-control chapter, FR-013, FR-CHN-08).
+
+which is chapter 10's comment being rewritten inside chapter 11's fence, because the
+read-class decision covering it was added while porting chapter 11 and chapter 10 was
+tagged before it. **Every read-class pair added after a chapter is tagged leaves that
+chapter's tree carrying the ordinal and the next one appearing to fix it.** So the
+replay changes ten trees, not ten messages, and each affected chapter's fences must be
+regenerated and its page re-verified.
+
+Measured on chapter 11: **one line out of 1,800 changed**, in one fence. That is the
+whole present cost, which is why it is still deferred — but the ratio is a property of
+this chapter's decisions, not a constant, and the next chapter that decides a reference
+an earlier tree also carries will add its own. Re-check this number per chapter rather
+than assuming it stays at one.
+
+A probe that said "no earlier tree is affected" was run and was WRONG — it reported zero
+against a tree where `git show rework/part3-ch10:services/api/src/db/repository.ts`
+plainly shows the line. Two minutes with `git show` settled what the probe could not.
+**A zero from an instrument with no positive control is not a measurement.**
 
 ## 045-2 · THREE FORWARD REFERENCES TO DEFERRED MATERIAL, IN PROSE NO GATE READS
 
