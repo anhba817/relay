@@ -1,571 +1,647 @@
 {
-  "_why": [
-    "THE READ CLASS, DECIDED. Twenty-three references that no rule may touch, each",
-    "resolved by reading the sentence it sits in. `rewrite-refs.py --rule read` lists",
-    "them; this file records what a reader decided, so the decision survives a replay.",
-    "",
-    "AS EXACT REPLACEMENTS AND NOT AS A PATCH. The replay applies the rules to every",
-    "commit's TREE, so the read-class decisions have to apply the same way. A patch",
-    "would need the file to look the same in all 28 trees and it does not; a replacement",
-    "that finds nothing in a given tree simply does not fire, which is correct — the",
-    "reference is not there yet.",
-    "",
-    "TWO OLD CHAPTERS ARE AMBIGUOUS AND THE ANSWERS ARE NOT THE MAP'S HALVES.",
-    "The map splits old 12 into new 4 and new 25. But the channel-endpoint work from old",
-    "12's own commit (`6c1c90b`) sits in the REBUILD's chapter 8 span, because new 8's",
-    "subject is the endpoints. So eight of the ten `chapter 3.12` references mean new 8 —",
-    "this chapter — and two mean the outsider milestone at new 26, which is old 14's",
-    "second half and not old 12's at all. Neither answer is derivable from the map."
-  ],
-  "replacements": [
-    {
-      "why": "old 3.3 -> new 5. Unambiguous; bare ordinals route to read by rule, not by doubt.",
-      "pairs": [
-        [
-          "It lived\n// inside the api's outbox module in 3.3 because",
-          "It lived\n// inside the api's outbox module in the outbox chapter because"
-        ],
-        [
-          "and 3.3 about the outbox table:",
-          "and the outbox chapter about its own table:"
-        ],
-        [
-          "both already right because 3.3 chose them.",
-          "both already right because the outbox chapter chose them."
-        ],
-        [
-          "(research R7, the shape 3.3 used)",
-          "(research R7, the shape the outbox chapter used)"
-        ],
-        [
-          " * 3.3 learned the hard way that a background loop",
-          " * The outbox chapter learned the hard way that a background loop"
-        ],
-        [
-          "The outbox arrived in 3.3 and is at the bottom of this file.",
-          "The outbox arrives with the chapter of that name and is at the bottom of this file."
-        ],
-        [
-          " * Had 3.3 taken memory storage as a convenience",
-          " * Had the outbox chapter taken memory storage as a convenience"
-        ],
-        [
-          "is deliberately left where 3.3 found it.",
-          "is deliberately left where the outbox chapter found it."
-        ],
-        [
-          "`api_keys` and 3.3 recorded the outbox's index.",
-          "`api_keys` and the outbox chapter recorded the outbox's index."
-        ]
-      ]
-    },
-    {
-      "why": "old 3.12's ENDPOINT half -> new 8. This chapter builds them, so the reference is reflexive and says so.",
-      "pairs": [
-        [
-          " * REASSESSED IN CHAPTER 3.12 (T063a), and two of the three now have an API.",
-          " * REASSESSED WHEN THOSE ENDPOINTS ARRIVED (T063a), and two of the three now have an API."
-        ],
-        [
-          "// what chapter 3.12 changed here: the endpoint over this call has to be",
-          "// what this chapter changed here: the endpoint over this call has to be"
-        ],
-        [
-          "// THE OBSERVATION CHANGED IN CHAPTER 3.12 AND THE PROPERTY DID NOT.",
-          "// THE OBSERVATION CHANGED WITH THE PUBLIC ENDPOINT AND THE PROPERTY DID NOT."
-        ],
-        [
-          " * (chapter 3.12, FR-047) — this type stays as the column is, because rows",
-          " * (FR-047) — this type stays as the column is, because rows"
-        ],
-        [
-          " * This was a plain insert until chapter 3.12, which is fine for a fixture and",
-          " * This was a plain insert until the endpoint over it, which is fine for a fixture and"
-        ],
-        [
-          " * THREE OUTCOMES, NOT A BOOLEAN (chapter 3.12, R14a). Until then this returned",
-          " * THREE OUTCOMES, NOT A BOOLEAN (R14a). Until the endpoint over it, this returned"
-        ],
-        [
-          "// WHICH FIELD, and chapter 3.12 is where that stopped being optional.",
-          "// WHICH FIELD, and the public channel endpoints are where that stopped being optional."
-        ],
-        [
-          "// Chapter 3.12 built the first two endpoints for exactly this path, and this is",
-          "// The first two channel endpoints were built for exactly this path, and this is"
-        ]
-      ]
-    },
-    {
-      "why": "old 3.12's MILESTONE half -> new 26, the outsider. And 'Part 3 ends at 3.12' is now false: it ends at 3.26.",
-      "pairs": [
-        [
-          "Part 3 ends at 3.12, and this\n// chapter's exit criterion is that an outsider integrates on public documentation",
-          "Part 3 ends at the outsider\n// milestone, whose exit criterion is that an outsider integrates on public documentation"
-        ],
-        [
-          "// here because chapter 3.12's exit criterion is that an outsider integrates on",
-          "// here because the outsider milestone's exit criterion is that an outsider integrates on"
-        ]
-      ]
-    },
-    {
-      "why": "old 3.13 -> new 8. Written at old 12 pointing forward; at new 8 the work has arrived, and what is still owed goes to the two chapters after.",
-      "pairs": [
-        [
-          "// This is the minimum that unblocks it. The rest of FR-CHN and all of FR-USR go to\n// chapter 3.13.",
-          "// This is the minimum that unblocks it. The rest of FR-CHN and all of FR-USR go to\n// the two chapters after this one."
-        ]
-      ]
-    },
-    {
-      "why": "other parts. 3.2 -> new 2, 3.1 -> new 1, 3.8 -> new 22.",
-      "pairs": [
-        [
-          "the way 2.1 recorded `members`, 3.2 recorded",
-          "the way 2.1 recorded `members`, the credentials chapter recorded"
-        ],
-        [
-          "2.3 learned that on idempotency keys and\n// 3.1 learned it again on signup.",
-          "2.3 learned that on idempotency keys and\n// the tenancy chapter learned it again on signup."
-        ],
-        [
-          "which was declared in 1.3\n      // and first sent in 3.8:",
-          "which was declared in 1.3\n      // and first sent by the rate limiter:"
-        ]
-      ]
-    },
-    {
-      "why": "Chapter 3.9's port. Its commits come from the published history and every one carries the ordinals the convention removed — 81 explicit at its first tag, against zero at 3.8's, which is why the rewrite is a step in the per-chapter loop. Eight are section rules naming the chapter they sit inside, which tells a reader nothing and goes, re-padded so the box drawing lines up. Two are split across a line break with the word `chapter` stranded on the first — written out here as two-line edits, because rewriting the second line alone gives `which is chapter / The isolation harness's`. The rest go through `place_name`.",
-      "pairs": [
-        [
-          "   * Without this decorator every user's join would be a 403, which is chapter\n   * 3.12's FR-044 hole exactly: a credential mismatch that passed for a whole",
-          "   * Without this decorator every user's join would be a 403, which is the isolation\n   * harness's FR-044 hole exactly: a credential mismatch that passed for a whole"
-        ],
-        [
-          "    // CHAPTER 3.12 ASSERTED THE OPPOSITE HERE, and it was right at the time.",
-          "    // THE ISOLATION HARNESS ASSERTED THE OPPOSITE HERE, and it was right at the time."
-        ],
-        [
-          "    // has carried `field` since chapter 1.3 and nothing set it until chapter 3.14.",
-          "    // has carried `field` since chapter 1.3 and nothing set it until the error-registry chapter."
-        ],
-        [
-          "  // ── THE PRIVATE TYPE, MADE TO MEAN SOMETHING (chapter 3.15) ────────────────",
-          "  // ── THE PRIVATE TYPE, MADE TO MEAN SOMETHING ───────────────────────────────"
-        ],
-        [
-          "      // Without it this would be a 403 for every USER instead — chapter 3.12's",
-          "      // Without it this would be a 403 for every USER instead — the isolation harness's"
-        ],
-        [
-          "  // ── REMOVAL, BULK, BECAUSE THE REQUIREMENT ALWAYS WAS (chapter 3.15) ────────",
-          "  // ── REMOVAL, BULK, BECAUSE THE REQUIREMENT ALWAYS WAS ───────────────────────"
-        ],
-        [
-          "  // ── MEMBER ROLES (chapter 3.15, FR-CHN-04, FR-011) ─────────────────────────",
-          "  // ── MEMBER ROLES (FR-CHN-04, FR-011) ───────────────────────────────────────"
-        ],
-        [
-          "  // `(channel_id, user_id, joined_at)` the whole time. Chapter 3.12's traceability",
-          "  // `(channel_id, user_id, joined_at)` the whole time. The isolation harness's traceability"
-        ],
-        [
-          "      // Mixed forms in one request, because the entry is a union: chapter 3.13",
-          "      // Mixed forms in one request, because the entry is a union: the endpoints chapter"
-        ],
-        [
-          "      // The field name is in the envelope only because chapter 3.14 stopped",
-          "      // The field name is in the envelope only because the error-registry chapter stopped"
-        ],
-        [
-          "  // ── ARCHIVING (chapter 3.15, FR-020, FR-021, FR-021a) ──────────────────────",
-          "  // ── ARCHIVING (FR-020, FR-021, FR-021a) ────────────────────────────────────"
-        ],
-        [
-          "  // Chapter 3.12 pinned this enum to `public` alone with the sharpest edit in that",
-          "  // The isolation harness pinned this enum to `public` alone with the sharpest edit in that"
-        ],
-        [
-          "  // the guarantee before keeping it — which is the mistake chapter 3.12's fifth",
-          "  // the guarantee before keeping it — which is the mistake the isolation harness's fifth"
-        ],
-        [
-          "   * not exist — SC-002, over the same oracle chapter 3.12 built for cross-tenant",
-          "   * not exist — SC-002, over the same oracle the isolation harness built for cross-tenant"
-        ],
-        [
-          "// ── A PRIVATE CHANNEL IS PRIVATE (chapter 3.15, FR-001, FR-CHN-05) ────────────",
-          "// ── A PRIVATE CHANNEL IS PRIVATE (FR-001, FR-CHN-05) ──────────────────────────"
-        ],
-        [
-          "// on it. Chapter 3.12's fifth analysis pass caught `POST /v1/channels` about to",
-          "// on it. The isolation harness's fifth analysis pass caught `POST /v1/channels` about to"
-        ],
-        [
-          "    // which is what chapter 3.12's fourteen passing tests turned out to be",
-          "    // which is what the isolation harness's fourteen passing tests turned out to be"
-        ],
-        [
-          "      // exactly what chapter 3.12's indistinguishability oracle was built to",
-          "      // exactly what the isolation harness's indistinguishability oracle was built to"
-        ],
-        [
-          "      // refusing, which is the defect chapter 3.12's fifth analysis pass caught one",
-          "      // refusing, which is the defect the isolation harness's fifth analysis pass caught one"
-        ],
-        [
-          "  // ── THE SOCKET'S ROUTE INHERITS THE CHECK (chapter 3.15, FR-001) ────────────",
-          "  // ── THE SOCKET'S ROUTE INHERITS THE CHECK (FR-001) ──────────────────────────"
-        ],
-        [
-          "  // `repository.sendMessage` covers both doors. Chapter 3.12 recorded this route",
-          "  // `repository.sendMessage` covers both doors. The isolation harness recorded this route"
-        ],
-        [
-          "  // ── THE IDENTIFIER COLLISION (chapter 3.15, FR-034a) ───────────────────────",
-          "  // ── THE IDENTIFIER COLLISION (FR-034a) ─────────────────────────────────────"
-        ],
-        [
-          "  // ── THE ROUTE A CUSTOMER'S CLIENT ACTUALLY CALLS (chapter 3.15, FR-001) ───────",
-          "  // ── THE ROUTE A CUSTOMER'S CLIENT ACTUALLY CALLS (FR-001) ─────────────────────"
-        ],
-        [
-          "      // why chapter 3.12's oracle drops exactly this one and nothing else.",
-          "      // why the isolation harness's oracle drops exactly this one and nothing else."
-        ],
-        [
-          "  // ── A REMOVED MEMBER'S RECONNECTION (chapter 3.15, SC-004) ──────────────────",
-          "  // ── A REMOVED MEMBER'S RECONNECTION (SC-004) ────────────────────────────────"
-        ],
-        [
-          "  // FR-006 says \"up to 100 in one request\" and FR-007 says the result is reported\n  // per user — chapter 3.13's add shape in both halves. The contract specified a\n  // single-user `DELETE` for ten analysis passes, having read \"the shape chapter\n  // 3.13 chose\" as *named outcomes* and dropped *bulk*. Every pass compared\n  // requirements to tasks, both said \"removal\", and identifier coverage read 100%.",
-          "  // FR-006 says \"up to 100 in one request\" and FR-007 says the result is reported per\n  // user — the endpoints chapter's add shape in both halves. The contract specified a\n  // single-user `DELETE` for ten analysis passes, having read \"the shape that chapter\n  // chose\" as *named outcomes* and dropped *bulk*. Every pass compared requirements\n  // to tasks, both said \"removal\", and identifier coverage read 100%."
-        ]
-      ]
-    },
-    {
-      "why": "Chapter 3.10's port. 77 references reintroduced — 53 delete, 6 substitute, 18 read — which is the per-chapter step doing what it exists for. One of the eighteen was not a reference at all: `Users outnumber channels 3.4:1` is a ratio, and a substitution would have written `outnumber channels the broker chapter:1`. `VERSIONISH` now knows that a unit can follow a colon. The rest name the chapter that did the work, `this chapter` where old 3.16 is this one, and `the previous chapter` where old 3.15 is.  AND ONE OF THESE WAS A FALSE CLAIM THE CONVENTION WOULD HAVE MADE PERMANENT. The `metadata` comment said chapter 3.12 'removed `addMember`'s `(inserted.rowCount ?? 0)`'. Published 3.12 did — cb011875 — but that removal was never ported: both SQL branches carried `RETURNING` in this tree while the test of them still read `rowCount`. Substituting a NAME into a sentence describing a removal that had not happened is worse than the ordinal was, because a wrong number is checkable and a wrong name is not. The replacement states the objection instead of crediting a chapter with acting on it, which is true in every tree; the sender chapter is where the line is actually changed.  AND ONE OF THESE PAIRS CAPITALISED A CONTINUATION. `// chapter 3.12 built and this is the first route to rely on it.` continues the sentence one line above it — '…which is the mechanism' — and the replacement was written with a capital T, so the tree read '…which is the mechanism The isolation harness built'. A capital letter mid-sentence is valid TypeScript and no gate reads prose, so it shipped inside a tagged chapter. Lower-cased here; `refrules.place_name` now refuses the same capital for the rule-driven half.",
-      "pairs": [
-        [
-          "  // AND ONE MORE THAN FOUR, SINCE CHAPTER 3.15. `4003` is a ban, which is none of",
-          "  // AND ONE MORE THAN FOUR, SINCE THE PREVIOUS CHAPTER. `4003` is a ban, which is none of"
-        ],
-        [
-          "    // ── THE USER ROW, CREATED IF ABSENT (chapter 3.15, FR-039a, FR-039b) ────",
-          "    // ── THE USER ROW, CREATED IF ABSENT (FR-039a, FR-039b) ──────────────────"
-        ],
-        [
-          "// ── T113: THE TIE AT A PAGE BOUNDARY (chapter 3.15, FR-013) ───────────────────",
-          "// ── T113: THE TIE AT A PAGE BOUNDARY (FR-013) ─────────────────────────────────"
-        ],
-        [
-          "// ── THE TOMBSTONE, AND THE CLAMP (chapter 3.15, FR-016, FR-019) ───────────────",
-          "// ── THE TOMBSTONE, AND THE CLAMP (FR-016, FR-019) ─────────────────────────────"
-        ],
-        [
-          "    // covered. Chapter 3.12 found three instruments that had never produced output for",
-          "    // covered. The isolation harness found three instruments that had never produced output for"
-        ],
-        [
-          "// ── THE ARMS THE ROUTES CANNOT REACH (chapter 3.15, T174a, T174b) ─────────────",
-          "// ── THE ARMS THE ROUTES CANNOT REACH (T174a, T174b) ───────────────────────────"
-        ],
-        [
-          "// through the gateway's api CHILD PROCESS, whose coverage is not attributable. Chapter 3.5",
-          "// through the gateway's api CHILD PROCESS, whose coverage is not attributable. The webhook dispatcher chapter"
-        ],
-        [
-          "    // `userId`, by design since chapter 3.3. The listing's `last_message.user` is then",
-          "    // `userId`, by design since the outbox chapter. The listing's `last_message.user` is then"
-        ],
-        [
-          "          // never hands back null — and chapter 3.12 removed `addMember`'s",
-          "          // never hands back null. The same objection reaches `addMember`'s"
-        ],
-        [
-          "    // that class from chapter 3.12 and its lines ratchet sat at 99; a third took the file",
-          "    // that class from the isolation harness and its lines ratchet sat at 99; a third took the file"
-        ],
-        [
-          "    // chapter 3.12 built and this is the first route to rely on it.",
-          "    // the isolation harness built and this is the first route to rely on it."
-        ],
-        [
-          "    // ago — chapter 3.12's fourteen green tests are why this line exists.",
-          "    // ago — the isolation harness's fourteen green tests are why this line exists."
-        ],
-        [
-          " * (chapter 3.14 gave every validation error its field). Decoding it downstream would",
-          " * (the error-registry chapter gave every validation error its field). Decoding it downstream would"
-        ],
-        [
-          "   * \"send failed\". Chapter 3.14 built thirteen codes and one registry precisely so a",
-          "   * \"send failed\". The error-registry chapter built thirteen codes and one registry precisely so a"
-        ],
-        [
-          "      // ── THE API'S OWN REFUSAL, FORWARDED (chapter 3.15) ────────────────────",
-          "      // ── THE API'S OWN REFUSAL, FORWARDED ───────────────────────────────────"
-        ],
-        [
-          "      // `codes.ts` does not define, which is the thing chapter 3.14's registry exists to",
-          "      // `codes.ts` does not define, which is the thing the error-registry chapter's registry exists to"
-        ]
-      ],
-      "drops": [
-        "removed"
-      ]
-    },
-    {
-      "why": "THE SENDER CHAPTER'S OWN ORDINAL. A chapter does not cite itself by number, and 'this chapter' survives a renumbering that a number does not. Four sites, three shapes: a rule line where the tag is pure provenance and goes; two sentences whose subject IS the change this chapter makes, which keep a self-reference in words.",
-      "pairs": [
-        [
-          "// ── T042: the mint's three cases (chapter 3.17, FR-005, FR-005a, SC-006) ──",
-          "// ── T042: the mint's three cases (FR-005, FR-005a, SC-006) ──"
-        ],
-        [
-          "/** REQUIRED SINCE CHAPTER 3.17 (FR-MSG-15, FR-006), and required is the whole",
-          "/** REQUIRED SINCE THIS CHAPTER (FR-MSG-15, FR-006), and required is the whole"
-        ],
-        [
-          " * since chapter 3.17, rather than inherited from `credential.guard.ts`'s `EITHER`",
-          " * since this chapter, rather than inherited from `credential.guard.ts`'s `EITHER`"
-        ],
-        [
-          " * THIS COMMENT SAID SOMETHING ELSE UNTIL CHAPTER 3.17, and what it said was the reading",
-          " * THIS COMMENT SAID SOMETHING ELSE UNTIL THIS CHAPTER, and what it said was the reading"
-        ]
-      ]
-    },
-    {
-      "why": "old 3.15 -> new 9, the channel-control chapter. Both are plain provenance on a clause the sentence needs, so they substitute rather than delete.",
-      "pairs": [
-        [
-          "-- TWO COLUMNS, NOT A SECOND TABLE. `users` is what every reader built since chapter\n-- 3.15 already reads.",
-          "-- TWO COLUMNS, NOT A SECOND TABLE. `users` is what every reader built since the\n-- channel-control chapter already reads."
-        ],
-        [
-          "  /** A user's channels, most recently active first, keyset-paginated (chapter\n   * 3.15, FR-013, FR-CHN-08).",
-          "  /** A user's channels, most recently active first, keyset-paginated (the\n   * channel-control chapter, FR-013, FR-CHN-08)."
-        ]
-      ]
-    },
-    {
-      "why": "old 3.15 and old 3.16 in one sentence -> the channel-control and user-surface chapters. Two references on one line, which is why neither rule may take it: substituting the first rewraps the second out of the line it was matched on.",
-      "pairs": [
-        [
-          "    // Chapters 3.15 and 3.16 exist because five columns had no reader, so leaving a sixth",
-          "    // The channel-control and user-surface chapters exist because five columns had no\n    // reader, so leaving a sixth"
-        ]
-      ]
-    },
-    {
-      "why": "THE NUMBER WAS WRONG BEFORE THE CONVENTION TOUCHED IT, AND A NAME WOULD HAVE MADE IT PERMANENT — AND THE COUNT WAS WRONG TOO. Both sites credit `addMember`'s dead guard to '3.12'. Published 3.12 did remove it (cb011875), but that removal was never ported: this tree carried `RETURNING` on both SQL branches while the test of them still read `rowCount ?? 0`. So the sentence 'third time this project has answered the ratchet by removing code' counts a removal that never happened here — in this order `upsertUser` (949a8062/7a24c846, rework/part3-ch10) is the only precedent, and it is the SECOND time, not the third. Substituting a name would have preserved both errors behind a reference no gate can check. The sender chapter removes the arm for real. The second site drops the tag instead: it lists instances of a pattern and needs no attribution.",
-      "pairs": [
-        [
-          "    // rather than covering it (3.12's `addMember`, the user-surface chapter's `upsertUser`).",
-          "    // rather than covering it: the user-surface chapter's `upsertUser` was the first."
-        ],
-        [
-          "      // that stopped meaning anything**: `addMember`'s `rowCount ?? 0` (3.12), and",
-          "      // that stopped meaning anything**: `addMember`'s `rowCount ?? 0`, and"
-        ]
-      ],
-      "drops": [
-        "addMember",
-        "Third",
-        "third"
-      ]
-    },
-    {
-      "why": "ANOTHER WRONG NUMBER, CAUGHT THE SAME WAY. The read-position clamp this sentence points at is planted by 5f456db2, whose first published tag is part3-ch16 — the user-surface chapter, not the gauntlet.",
-      "pairs": [
-        [
-          "    // is inserted directly, the way chapter 3.12's read-position clamp is planted a few",
-          "    // is inserted directly, the way the user-surface chapter's read-position clamp is\n    // planted a few"
-        ]
-      ]
-    },
-    {
-      "why": "old 3.12's HARNESS half -> new 4, the isolation harness. Verified rather than assumed: `wrong_credential_service` enters at 08e9dbfc and `dispatch/replay` at 2f73e7c3, both first tagged part3-ch12, and `credential.guard.ts`, `internal/dispatch.controller.ts` and `gauntlet.itest.ts` are all in new 4's path list. The milestone half (new 25) tests the instruments and owns none of these.",
-      "pairs": [
-        [
-          "      // Chapter 3.12's fourteen green tests compared two refusals and meant nothing,",
-          "      // The isolation harness's fourteen green tests compared two refusals and meant nothing,"
-        ],
-        [
-          "// rather than a fallback, because a fallback is what let the gateway's credential reach\n// `POST /internal/dispatch/replay` in chapter 3.12.",
-          "// rather than a fallback, because a fallback is what let the gateway's credential reach\n// `POST /internal/dispatch/replay` in the isolation harness."
-        ],
-        [
-          "// its own comment names as the thing that let the gateway's credential reach\n// `POST /internal/dispatch/replay` in chapter 3.12. Both classes are genuinely accepted",
-          "// its own comment names as the thing that let the gateway's credential reach\n// `POST /internal/dispatch/replay` in the isolation harness. Both classes are genuinely accepted"
-        ],
-        [
-          "      // in the chapter that collides with the ladder — so it is named here, the way\n      // chapter 3.12 named `wrong_credential_service` for the same reason. The filter",
-          "      // in the chapter that collides with the ladder — so it is named here, the way\n      // the isolation harness named `wrong_credential_service` for the same reason. The filter"
-        ],
-        [
-          "    // row in it was dropped for having no sender.\" That was true, and it is the reason\n    // chapter 3.12's `gaps.md` G1 listed TWO independent mechanisms for \"a REST-sent",
-          "    // row in it was dropped for having no sender.\" That was true, and it is the reason\n    // the isolation harness's `gaps.md` G1 listed TWO independent mechanisms for \"a REST-sent"
-        ]
-      ]
-    },
-    {
-      "why": "THE FAN-OUT CHAPTER'S OWN ORDINAL, six sites, three shapes. A chapter does not cite itself by number and 'this chapter' survives a renumbering that a number does not. Two are rule lines where the tag is pure provenance and goes; one is a parenthetical beside a clause id and goes the same way; three are sentences whose subject IS this chapter's change and keep a self-reference in words. The `That chapter` in the isolation suite becomes `It`, because 'this chapter … That chapter' reads as two different chapters.  SEVEN, NOT SIX — AND THE SEVENTH ONLY APPEARS IF YOU ASK THE TOOL. An enumeration written for this survey called `classify` directly and reported six; `rewrite-refs.py --rule read` reported seven. The extra one is a reference that OPENS its line — 'It moved here with the function in / chapter 3.18' — which the tool routes to `read` through `dangles_from_previous` and a bare `classify` calls `substitute`. The re-implementation was missing exactly the clause the tool has, which is the same defect as the mdx pass's missing AMBIGUOUS test: two copies of a rule are two rules. Run the tool.",
-      "drops": [
-        "chapter"
-      ],
-      "pairs": [
-        [
-          " * grammar belongs where every party that uses it can agree on it. Until 3.18",
-          " * grammar belongs where every party that uses it can agree on it. Until this chapter"
-        ],
-        [
-          "// ── chapter 3.18: the failure path (Phase 6) ────────────────────────────────",
-          "// ── the failure path (Phase 6) ──────────────────────────────────────────────"
-        ],
-        [
-          "    // ── the live fan-out (chapter 3.18, FR-004) ────────────────────────────",
-          "    // ── the live fan-out (FR-004) ──────────────────────────────────────────"
-        ],
-        [
-          "  //      STILL TRUE OF THIS SUITE after chapter 3.18. That chapter gave the api a",
-          "  //      STILL TRUE OF THIS SUITE after this chapter. It gave the api a"
-        ],
-        [
-          "    // LIVE DELIVERY, WHICH THIS BLOCK ASSERTED WAS ABSENT UNTIL CHAPTER 3.18.",
-          "    // LIVE DELIVERY, WHICH THIS BLOCK ASSERTED WAS ABSENT UNTIL THIS CHAPTER."
-        ],
-        [
-          "// ── chapter 3.18: two instances, one fabric (US2) ───────────────────────────",
-          "// ── two instances, one fabric (US2) ─────────────────────────────────────────"
-        ],
-        [
-          "// no broker, no container and no lane. It moved here with the function in\n// chapter 3.18, and it exists before the old copy is deleted so the property is",
-          "// no broker, no container and no lane. It moved here with the function in\n// this chapter, and it exists before the old copy is deleted so the property is"
-        ]
-      ]
-    },
-    {
-      "why": "THE PRESENCE CHAPTER'S TWO. old 3.12 -> the harness half (new 4): the gauntlet that proves a client cannot forge a frame is `gauntlet.itest.ts`, which new 4 owns; the milestone half tests the instruments and owns no attack. old 3.18 -> the fan-out chapter (new 12), and this one opens its line so the rules route it to a reader — the sentence began one line up and `place_name` cannot see that.",
-      "pairs": [
-        [
-          "// `state: \"away\"`, and chapter 3.12's gauntlet proves a client cannot forge one.",
-          "// `state: \"away\"`, and the isolation harness's gauntlet proves a client cannot forge one."
-        ],
-        [
-          "// opened\" is true of a working presence path and of an empty function, and chapter\n// 3.18 recorded that trap against its own publisher: its `publish` swallows errors",
-          "// opened\" is true of a working presence path and of an empty function, and the\n// fan-out chapter recorded that trap against its own publisher: its `publish` swallows errors"
-        ]
-      ]
-    },
-    {
-      "why": "THE MEMBERSHIP CHAPTER'S SIX. Two are rule lines where the tag is pure provenance and goes — one of them this chapter's own ordinal — with the padding lengthened by exactly what the tag took, so the rule still reaches the same column. Two are the fan-out chapter (old 3.18), one the presence chapter (old 3.19), and one is an attribution to the RATE-LIMIT chapter, which in this order has not happened: close code 4009 exists here and the sentence about it stands without being told who first refused by name.  THE 4009 PAIR DROPS THREE CONTENT WORDS AND SAYS SO: `refusal`, `made` and `name` all belonged to the clause 'which is the refusal chapter 3.8 made by name', and that clause is the attribution. What replaces it is a sentence about the socket rather than about who first refused this way.  AND ONE PAIR HAD TO BE RE-KEYED OFF THE SUBSTITUTED TEXT. The `publisher.test.ts` region carried TWO references to old 3.18, one of them mid-line and one opening a line. The replay runs delete, then substitute, then the read class — so `substitute` rewrote the mid-line one first, the region no longer matched the pair written against the original, and the pair silently fired on nothing. **A read-class pair for a region that also contains a substitutable reference must be written against the text as the substitution leaves it.**",
-      "drops": [
-        "chapter",
-        "refusal",
-        "made",
-        "name"
-      ],
-      "pairs": [
-        [
-          "  // ── THE BACKSTOP'S ROUTE (chapter 3.20, FR-017) ───────────────────────────",
-          "  // ── THE BACKSTOP'S ROUTE (FR-017) ─────────────────────────────────────────"
-        ],
-        [
-          "  // ── THE SOCKET'S ROUTE INHERITS THE CHECK (chapter 3.15, FR-001) ────────────",
-          "  // ── THE SOCKET'S ROUTE INHERITS THE CHECK (FR-001) ──────────────────────────"
-        ],
-        [
-          "    // Close code 4009 exists and this is not it, which is the refusal chapter 3.8\n    // made by name. A revocation is not a protocol violation.",
-          "    // Close code 4009 exists and this is not it. A revocation is not a protocol\n    // violation, and a socket that stops hearing a channel has not misbehaved."
-        ],
-        [
-          "    // their own channels with themselves, so `linh` sees `linh` arrive. Chapter\n    // 3.19's `collect()` carries this warning in its own comment, T043 repeats it as",
-          "    // their own channels with themselves, so `linh` sees `linh` arrive. The\n    // presence chapter's `collect()` carries this warning in its own comment, T043 repeats it as"
-        ],
-        [
-          "    // unstructured, unbounded output — rather than process death, which 3.18\n    // measured against ioredis 6.0.0 and found false.",
-          "    // unstructured, unbounded output — rather than process death, which that\n    // chapter measured against ioredis 6.0.0 and found false."
-        ],
-        [
-          "        // ── CHAPTER 3.20'S FOUR NEW PRODUCTION FILES ───────────────────",
-          "        // ── THIS CHAPTER'S FOUR NEW PRODUCTION FILES ───────────────────"
-        ]
-      ]
-    },
-    {
-      "why": "THE TYPING CHAPTER'S TWELVE, and two of them carry a COUNT that the reorder falsified rather than a name that moved. `registry.ts` is fenced by 'chapters 3.7, 3.8, 3.11 and 3.19' — measured on this tree, the pages that fence it are chapter 7 and chapter 13, because the rate-limit and metering chapters are new 22 and new 24. Four chapters' diffs becomes two, which weakens the argument the sentence is making and is the honest version of it. And `meterIntervalMs` occurs exactly once in this tree — in the comment citing it — so the sentence pointed at an option nothing declares; `rereadIntervalMs` is real (15 code uses, the membership chapter's) and carries the same argument alone.  THE GUARD CAUGHT THE NUMBER, WHICH IS THE POINT OF THIS ENTRY: dropping `four` is the whole substance of that decision, not a rewrap. Declared so the next reader of this entry sees that a count changed rather than a name.  AND TWO PAIRS HAD TO BE WRITTEN AGAINST THE POST-SUBSTITUTION TEXT — the second time that has happened, so it is a rule now rather than an incident: **write a read-class pair for a region by running the replay first and reading what `--rule read` reports, not by reading the tree before it.** The replay applies delete, then substitute, then this table, so a region holding two references has its first one rewritten before the pair is tried. One of the two also shows that the SOURCE substitute rule has no own-chapter filter the way the mdx pass does: it turned this chapter's own `3.21` into 'the typing chapter', which inside the typing chapter should read 'this chapter'.",
-      "drops": [
-        "chapter",
-        "chapters",
-        "meterIntervalMs",
-        "above",
-        "four",
-        "for",
-        "followed",
-        "membership"
-      ],
-      "pairs": [
-        [
-          "  [\"typing.send\", \"inbound\", \"chapter 3.21: a client may say it is typing (session.ts)\"],",
-          "  [\"typing.send\", \"inbound\", \"this chapter: a client may say it is typing (session.ts)\"],"
-        ],
-        [
-          "   * **IN THIS CLOSURE, NOT ON `Connection`.** That type lives in `registry.ts`,\n   * which chapters 3.7, 3.8, 3.11 and 3.19 all fence — a field there is four\n   * chapters' diffs regenerated for a value with a two-second lifetime. A closure",
-          "   * **IN THIS CLOSURE, NOT ON `Connection`.** That type lives in `registry.ts`,\n   * which the deduplication and presence chapters both fence — a field there is two\n   * chapters' diffs regenerated for a value with a two-second lifetime. A closure"
-        ],
-        [
-          "    // a describe-level teardown that closed servers first cost chapter 3.20\n    // seven tests and eighty-three seconds, every failure naming a hook.",
-          "    // a describe-level teardown that closed servers first cost the membership\n    // chapter seven tests and eighty-three seconds, every failure naming a hook."
-        ],
-        [
-          " * of being dropped. Chapters 3.19 and 3.20 chose the same strictness for the same\n * reason.",
-          " * of being dropped. The presence and membership chapters chose the same strictness\n * for the same reason."
-        ],
-        [
-          " * the event spine, the presence chapter followed it for presence and 3.20 for\n * membership. A new file is a whole-file fence and leaves three chapters' hunks",
-          " * the event spine, and the presence and membership chapters each followed it.\n * A new file is a whole-file fence and leaves three chapters' hunks"
-        ],
-        [
-          "    // ELEVEN with the typing chapter's `typing.send`. **The title carries the number\n    // too**, and updating the assertion without the title is how chapter 3.19\n    // shipped a good test under a false name.",
-          "    // ELEVEN with this chapter's `typing.send`. **The title carries the number\n    // too**, and updating the assertion without the title is how the presence\n    // chapter shipped a good test under a false name."
-        ],
-        [
-          "  /** Injectable for the reason `meterIntervalMs` above and chapter\n   * 3.20's `rereadIntervalMs` are: **a test that waits out two real seconds pays\n   * them in the package that paces the lane**, which has about four seconds of\n   * headroom in the whole budget. That chapter's itest builds with 40 to test a",
-          "  /** Injectable for the reason the membership chapter's `rereadIntervalMs` is:\n   * **a test that waits out two real seconds pays them in the package that paces\n   * the lane**, which has about four seconds of headroom in the whole budget.\n   * That chapter's itest builds with 40 to test a"
-        ],
-        [
-          "   * by two clocks, the shape that stranded a user online for ever in 3.19. */",
-          "   * by two clocks, the shape that stranded a user online for ever in the presence\n   * chapter. */"
-        ]
-      ]
-    },
-    {
-      "why": "THE CONNECTION-CAP CHAPTER'S FOUR, and all four are keyed off the text the replay leaves rather than the tree before it — which is the rule this feature arrived at after it bit three times in the typing chapter. Two point at the fan-out chapter, one at the membership chapter, one at the channel-control chapter. Chapter 1.3 stays a number: Part 1 was not renumbered, so its ordinals are still true.",
-      "drops": [
-        "chapter",
-        "chapters"
-      ],
-      "pairs": [
-        [
-          "  // was none of them. Numbered here, in the space chapters 1.3 and 3.15 drew from.",
-          "  // was none of them. Numbered here, in the space chapter 1.3 and the\n  // channel-control chapter drew from."
-        ],
-        [
-          "   * needs the lines. Chapter 3.18: a publisher that does nothing satisfies \"the\n   * send returned 201\". */",
-          "   * needs the lines. The fan-out chapter's finding: a publisher that does nothing\n   * satisfies \"the send returned 201\". */"
-        ],
-        [
-          "    // seen from here — and the ownership half of it is the test below. Chapter\n    // 3.20's rule: a claim about an observable difference needs falsifying before\n    // the test is written.",
-          "    // seen from here — and the ownership half of it is the test below. The\n    // membership chapter's rule: a claim about an observable difference needs\n    // falsifying before the test is written."
-        ],
-        [
-          "          // the cap was checked and satisfied or not checked at all. Chapter\n          // 3.18's lesson: the assertion that carries the requirement is the log\n          // line.",
-          "          // the cap was checked and satisfied or not checked at all. The fan-out\n          // chapter's lesson: the assertion that carries the requirement is the\n          // log line."
-        ]
-      ]
-    }
-  ]
+ "_why": [
+  "THE READ CLASS, DECIDED. Twenty-three references that no rule may touch, each",
+  "resolved by reading the sentence it sits in. `rewrite-refs.py --rule read` lists",
+  "them; this file records what a reader decided, so the decision survives a replay.",
+  "",
+  "AS EXACT REPLACEMENTS AND NOT AS A PATCH. The replay applies the rules to every",
+  "commit's TREE, so the read-class decisions have to apply the same way. A patch",
+  "would need the file to look the same in all 28 trees and it does not; a replacement",
+  "that finds nothing in a given tree simply does not fire, which is correct — the",
+  "reference is not there yet.",
+  "",
+  "TWO OLD CHAPTERS ARE AMBIGUOUS AND THE ANSWERS ARE NOT THE MAP'S HALVES.",
+  "The map splits old 12 into new 4 and new 25. But the channel-endpoint work from old",
+  "12's own commit (`6c1c90b`) sits in the REBUILD's chapter 8 span, because new 8's",
+  "subject is the endpoints. So eight of the ten `chapter 3.12` references mean new 8 —",
+  "this chapter — and two mean the outsider milestone at new 26, which is old 14's",
+  "second half and not old 12's at all. Neither answer is derivable from the map."
+ ],
+ "replacements": [
+  {
+   "why": "old 3.3 -> new 5. Unambiguous; bare ordinals route to read by rule, not by doubt.",
+   "pairs": [
+    [
+     "It lived\n// inside the api's outbox module in 3.3 because",
+     "It lived\n// inside the api's outbox module in the outbox chapter because"
+    ],
+    [
+     "and 3.3 about the outbox table:",
+     "and the outbox chapter about its own table:"
+    ],
+    [
+     "both already right because 3.3 chose them.",
+     "both already right because the outbox chapter chose them."
+    ],
+    [
+     "(research R7, the shape 3.3 used)",
+     "(research R7, the shape the outbox chapter used)"
+    ],
+    [
+     " * 3.3 learned the hard way that a background loop",
+     " * The outbox chapter learned the hard way that a background loop"
+    ],
+    [
+     "The outbox arrived in 3.3 and is at the bottom of this file.",
+     "The outbox arrives with the chapter of that name and is at the bottom of this file."
+    ],
+    [
+     " * Had 3.3 taken memory storage as a convenience",
+     " * Had the outbox chapter taken memory storage as a convenience"
+    ],
+    [
+     "is deliberately left where 3.3 found it.",
+     "is deliberately left where the outbox chapter found it."
+    ],
+    [
+     "`api_keys` and 3.3 recorded the outbox's index.",
+     "`api_keys` and the outbox chapter recorded the outbox's index."
+    ]
+   ]
+  },
+  {
+   "why": "old 3.12's ENDPOINT half -> new 8. This chapter builds them, so the reference is reflexive and says so.",
+   "pairs": [
+    [
+     " * REASSESSED IN CHAPTER 3.12 (T063a), and two of the three now have an API.",
+     " * REASSESSED WHEN THOSE ENDPOINTS ARRIVED (T063a), and two of the three now have an API."
+    ],
+    [
+     "// what chapter 3.12 changed here: the endpoint over this call has to be",
+     "// what this chapter changed here: the endpoint over this call has to be"
+    ],
+    [
+     "// THE OBSERVATION CHANGED IN CHAPTER 3.12 AND THE PROPERTY DID NOT.",
+     "// THE OBSERVATION CHANGED WITH THE PUBLIC ENDPOINT AND THE PROPERTY DID NOT."
+    ],
+    [
+     " * (chapter 3.12, FR-047) — this type stays as the column is, because rows",
+     " * (FR-047) — this type stays as the column is, because rows"
+    ],
+    [
+     " * This was a plain insert until chapter 3.12, which is fine for a fixture and",
+     " * This was a plain insert until the endpoint over it, which is fine for a fixture and"
+    ],
+    [
+     " * THREE OUTCOMES, NOT A BOOLEAN (chapter 3.12, R14a). Until then this returned",
+     " * THREE OUTCOMES, NOT A BOOLEAN (R14a). Until the endpoint over it, this returned"
+    ],
+    [
+     "// WHICH FIELD, and chapter 3.12 is where that stopped being optional.",
+     "// WHICH FIELD, and the public channel endpoints are where that stopped being optional."
+    ],
+    [
+     "// Chapter 3.12 built the first two endpoints for exactly this path, and this is",
+     "// The first two channel endpoints were built for exactly this path, and this is"
+    ]
+   ]
+  },
+  {
+   "why": "old 3.12's MILESTONE half -> new 26, the outsider. And 'Part 3 ends at 3.12' is now false: it ends at 3.26.",
+   "pairs": [
+    [
+     "Part 3 ends at 3.12, and this\n// chapter's exit criterion is that an outsider integrates on public documentation",
+     "Part 3 ends at the outsider\n// milestone, whose exit criterion is that an outsider integrates on public documentation"
+    ],
+    [
+     "// here because chapter 3.12's exit criterion is that an outsider integrates on",
+     "// here because the outsider milestone's exit criterion is that an outsider integrates on"
+    ]
+   ]
+  },
+  {
+   "why": "old 3.13 -> new 8. Written at old 12 pointing forward; at new 8 the work has arrived, and what is still owed goes to the two chapters after.",
+   "pairs": [
+    [
+     "// This is the minimum that unblocks it. The rest of FR-CHN and all of FR-USR go to\n// chapter 3.13.",
+     "// This is the minimum that unblocks it. The rest of FR-CHN and all of FR-USR go to\n// the two chapters after this one."
+    ]
+   ]
+  },
+  {
+   "why": "other parts. 3.2 -> new 2, 3.1 -> new 1, 3.8 -> new 22.",
+   "pairs": [
+    [
+     "the way 2.1 recorded `members`, 3.2 recorded",
+     "the way 2.1 recorded `members`, the credentials chapter recorded"
+    ],
+    [
+     "2.3 learned that on idempotency keys and\n// 3.1 learned it again on signup.",
+     "2.3 learned that on idempotency keys and\n// the tenancy chapter learned it again on signup."
+    ],
+    [
+     "which was declared in 1.3\n      // and first sent in 3.8:",
+     "which was declared in 1.3\n      // and first sent by the rate limiter:"
+    ]
+   ]
+  },
+  {
+   "why": "Chapter 3.9's port. Its commits come from the published history and every one carries the ordinals the convention removed — 81 explicit at its first tag, against zero at 3.8's, which is why the rewrite is a step in the per-chapter loop. Eight are section rules naming the chapter they sit inside, which tells a reader nothing and goes, re-padded so the box drawing lines up. Two are split across a line break with the word `chapter` stranded on the first — written out here as two-line edits, because rewriting the second line alone gives `which is chapter / The isolation harness's`. The rest go through `place_name`.",
+   "pairs": [
+    [
+     "   * Without this decorator every user's join would be a 403, which is chapter\n   * 3.12's FR-044 hole exactly: a credential mismatch that passed for a whole",
+     "   * Without this decorator every user's join would be a 403, which is the isolation\n   * harness's FR-044 hole exactly: a credential mismatch that passed for a whole"
+    ],
+    [
+     "    // CHAPTER 3.12 ASSERTED THE OPPOSITE HERE, and it was right at the time.",
+     "    // THE ISOLATION HARNESS ASSERTED THE OPPOSITE HERE, and it was right at the time."
+    ],
+    [
+     "    // has carried `field` since chapter 1.3 and nothing set it until chapter 3.14.",
+     "    // has carried `field` since chapter 1.3 and nothing set it until the error-registry chapter."
+    ],
+    [
+     "  // ── THE PRIVATE TYPE, MADE TO MEAN SOMETHING (chapter 3.15) ────────────────",
+     "  // ── THE PRIVATE TYPE, MADE TO MEAN SOMETHING ───────────────────────────────"
+    ],
+    [
+     "      // Without it this would be a 403 for every USER instead — chapter 3.12's",
+     "      // Without it this would be a 403 for every USER instead — the isolation harness's"
+    ],
+    [
+     "  // ── REMOVAL, BULK, BECAUSE THE REQUIREMENT ALWAYS WAS (chapter 3.15) ────────",
+     "  // ── REMOVAL, BULK, BECAUSE THE REQUIREMENT ALWAYS WAS ───────────────────────"
+    ],
+    [
+     "  // ── MEMBER ROLES (chapter 3.15, FR-CHN-04, FR-011) ─────────────────────────",
+     "  // ── MEMBER ROLES (FR-CHN-04, FR-011) ───────────────────────────────────────"
+    ],
+    [
+     "  // `(channel_id, user_id, joined_at)` the whole time. Chapter 3.12's traceability",
+     "  // `(channel_id, user_id, joined_at)` the whole time. The isolation harness's traceability"
+    ],
+    [
+     "      // Mixed forms in one request, because the entry is a union: chapter 3.13",
+     "      // Mixed forms in one request, because the entry is a union: the endpoints chapter"
+    ],
+    [
+     "      // The field name is in the envelope only because chapter 3.14 stopped",
+     "      // The field name is in the envelope only because the error-registry chapter stopped"
+    ],
+    [
+     "  // ── ARCHIVING (chapter 3.15, FR-020, FR-021, FR-021a) ──────────────────────",
+     "  // ── ARCHIVING (FR-020, FR-021, FR-021a) ────────────────────────────────────"
+    ],
+    [
+     "  // Chapter 3.12 pinned this enum to `public` alone with the sharpest edit in that",
+     "  // The isolation harness pinned this enum to `public` alone with the sharpest edit in that"
+    ],
+    [
+     "  // the guarantee before keeping it — which is the mistake chapter 3.12's fifth",
+     "  // the guarantee before keeping it — which is the mistake the isolation harness's fifth"
+    ],
+    [
+     "   * not exist — SC-002, over the same oracle chapter 3.12 built for cross-tenant",
+     "   * not exist — SC-002, over the same oracle the isolation harness built for cross-tenant"
+    ],
+    [
+     "// ── A PRIVATE CHANNEL IS PRIVATE (chapter 3.15, FR-001, FR-CHN-05) ────────────",
+     "// ── A PRIVATE CHANNEL IS PRIVATE (FR-001, FR-CHN-05) ──────────────────────────"
+    ],
+    [
+     "// on it. Chapter 3.12's fifth analysis pass caught `POST /v1/channels` about to",
+     "// on it. The isolation harness's fifth analysis pass caught `POST /v1/channels` about to"
+    ],
+    [
+     "    // which is what chapter 3.12's fourteen passing tests turned out to be",
+     "    // which is what the isolation harness's fourteen passing tests turned out to be"
+    ],
+    [
+     "      // exactly what chapter 3.12's indistinguishability oracle was built to",
+     "      // exactly what the isolation harness's indistinguishability oracle was built to"
+    ],
+    [
+     "      // refusing, which is the defect chapter 3.12's fifth analysis pass caught one",
+     "      // refusing, which is the defect the isolation harness's fifth analysis pass caught one"
+    ],
+    [
+     "  // ── THE SOCKET'S ROUTE INHERITS THE CHECK (chapter 3.15, FR-001) ────────────",
+     "  // ── THE SOCKET'S ROUTE INHERITS THE CHECK (FR-001) ──────────────────────────"
+    ],
+    [
+     "  // `repository.sendMessage` covers both doors. Chapter 3.12 recorded this route",
+     "  // `repository.sendMessage` covers both doors. The isolation harness recorded this route"
+    ],
+    [
+     "  // ── THE IDENTIFIER COLLISION (chapter 3.15, FR-034a) ───────────────────────",
+     "  // ── THE IDENTIFIER COLLISION (FR-034a) ─────────────────────────────────────"
+    ],
+    [
+     "  // ── THE ROUTE A CUSTOMER'S CLIENT ACTUALLY CALLS (chapter 3.15, FR-001) ───────",
+     "  // ── THE ROUTE A CUSTOMER'S CLIENT ACTUALLY CALLS (FR-001) ─────────────────────"
+    ],
+    [
+     "      // why chapter 3.12's oracle drops exactly this one and nothing else.",
+     "      // why the isolation harness's oracle drops exactly this one and nothing else."
+    ],
+    [
+     "  // ── A REMOVED MEMBER'S RECONNECTION (chapter 3.15, SC-004) ──────────────────",
+     "  // ── A REMOVED MEMBER'S RECONNECTION (SC-004) ────────────────────────────────"
+    ],
+    [
+     "  // FR-006 says \"up to 100 in one request\" and FR-007 says the result is reported\n  // per user — chapter 3.13's add shape in both halves. The contract specified a\n  // single-user `DELETE` for ten analysis passes, having read \"the shape chapter\n  // 3.13 chose\" as *named outcomes* and dropped *bulk*. Every pass compared\n  // requirements to tasks, both said \"removal\", and identifier coverage read 100%.",
+     "  // FR-006 says \"up to 100 in one request\" and FR-007 says the result is reported per\n  // user — the endpoints chapter's add shape in both halves. The contract specified a\n  // single-user `DELETE` for ten analysis passes, having read \"the shape that chapter\n  // chose\" as *named outcomes* and dropped *bulk*. Every pass compared requirements\n  // to tasks, both said \"removal\", and identifier coverage read 100%."
+    ]
+   ]
+  },
+  {
+   "why": "Chapter 3.10's port. 77 references reintroduced — 53 delete, 6 substitute, 18 read — which is the per-chapter step doing what it exists for. One of the eighteen was not a reference at all: `Users outnumber channels 3.4:1` is a ratio, and a substitution would have written `outnumber channels the broker chapter:1`. `VERSIONISH` now knows that a unit can follow a colon. The rest name the chapter that did the work, `this chapter` where old 3.16 is this one, and `the previous chapter` where old 3.15 is.  AND ONE OF THESE WAS A FALSE CLAIM THE CONVENTION WOULD HAVE MADE PERMANENT. The `metadata` comment said chapter 3.12 'removed `addMember`'s `(inserted.rowCount ?? 0)`'. Published 3.12 did — cb011875 — but that removal was never ported: both SQL branches carried `RETURNING` in this tree while the test of them still read `rowCount`. Substituting a NAME into a sentence describing a removal that had not happened is worse than the ordinal was, because a wrong number is checkable and a wrong name is not. The replacement states the objection instead of crediting a chapter with acting on it, which is true in every tree; the sender chapter is where the line is actually changed.  AND ONE OF THESE PAIRS CAPITALISED A CONTINUATION. `// chapter 3.12 built and this is the first route to rely on it.` continues the sentence one line above it — '…which is the mechanism' — and the replacement was written with a capital T, so the tree read '…which is the mechanism The isolation harness built'. A capital letter mid-sentence is valid TypeScript and no gate reads prose, so it shipped inside a tagged chapter. Lower-cased here; `refrules.place_name` now refuses the same capital for the rule-driven half.",
+   "pairs": [
+    [
+     "  // AND ONE MORE THAN FOUR, SINCE CHAPTER 3.15. `4003` is a ban, which is none of",
+     "  // AND ONE MORE THAN FOUR, SINCE THE PREVIOUS CHAPTER. `4003` is a ban, which is none of"
+    ],
+    [
+     "    // ── THE USER ROW, CREATED IF ABSENT (chapter 3.15, FR-039a, FR-039b) ────",
+     "    // ── THE USER ROW, CREATED IF ABSENT (FR-039a, FR-039b) ──────────────────"
+    ],
+    [
+     "// ── T113: THE TIE AT A PAGE BOUNDARY (chapter 3.15, FR-013) ───────────────────",
+     "// ── T113: THE TIE AT A PAGE BOUNDARY (FR-013) ─────────────────────────────────"
+    ],
+    [
+     "// ── THE TOMBSTONE, AND THE CLAMP (chapter 3.15, FR-016, FR-019) ───────────────",
+     "// ── THE TOMBSTONE, AND THE CLAMP (FR-016, FR-019) ─────────────────────────────"
+    ],
+    [
+     "    // covered. Chapter 3.12 found three instruments that had never produced output for",
+     "    // covered. The isolation harness found three instruments that had never produced output for"
+    ],
+    [
+     "// ── THE ARMS THE ROUTES CANNOT REACH (chapter 3.15, T174a, T174b) ─────────────",
+     "// ── THE ARMS THE ROUTES CANNOT REACH (T174a, T174b) ───────────────────────────"
+    ],
+    [
+     "// through the gateway's api CHILD PROCESS, whose coverage is not attributable. Chapter 3.5",
+     "// through the gateway's api CHILD PROCESS, whose coverage is not attributable. The webhook dispatcher chapter"
+    ],
+    [
+     "    // `userId`, by design since chapter 3.3. The listing's `last_message.user` is then",
+     "    // `userId`, by design since the outbox chapter. The listing's `last_message.user` is then"
+    ],
+    [
+     "          // never hands back null — and chapter 3.12 removed `addMember`'s",
+     "          // never hands back null. The same objection reaches `addMember`'s"
+    ],
+    [
+     "    // that class from chapter 3.12 and its lines ratchet sat at 99; a third took the file",
+     "    // that class from the isolation harness and its lines ratchet sat at 99; a third took the file"
+    ],
+    [
+     "    // chapter 3.12 built and this is the first route to rely on it.",
+     "    // the isolation harness built and this is the first route to rely on it."
+    ],
+    [
+     "    // ago — chapter 3.12's fourteen green tests are why this line exists.",
+     "    // ago — the isolation harness's fourteen green tests are why this line exists."
+    ],
+    [
+     " * (chapter 3.14 gave every validation error its field). Decoding it downstream would",
+     " * (the error-registry chapter gave every validation error its field). Decoding it downstream would"
+    ],
+    [
+     "   * \"send failed\". Chapter 3.14 built thirteen codes and one registry precisely so a",
+     "   * \"send failed\". The error-registry chapter built thirteen codes and one registry precisely so a"
+    ],
+    [
+     "      // ── THE API'S OWN REFUSAL, FORWARDED (chapter 3.15) ────────────────────",
+     "      // ── THE API'S OWN REFUSAL, FORWARDED ───────────────────────────────────"
+    ],
+    [
+     "      // `codes.ts` does not define, which is the thing chapter 3.14's registry exists to",
+     "      // `codes.ts` does not define, which is the thing the error-registry chapter's registry exists to"
+    ]
+   ],
+   "drops": [
+    "removed"
+   ]
+  },
+  {
+   "why": "THE SENDER CHAPTER'S OWN ORDINAL. A chapter does not cite itself by number, and 'this chapter' survives a renumbering that a number does not. Four sites, three shapes: a rule line where the tag is pure provenance and goes; two sentences whose subject IS the change this chapter makes, which keep a self-reference in words.",
+   "pairs": [
+    [
+     "// ── T042: the mint's three cases (chapter 3.17, FR-005, FR-005a, SC-006) ──",
+     "// ── T042: the mint's three cases (FR-005, FR-005a, SC-006) ──"
+    ],
+    [
+     "/** REQUIRED SINCE CHAPTER 3.17 (FR-MSG-15, FR-006), and required is the whole",
+     "/** REQUIRED SINCE THIS CHAPTER (FR-MSG-15, FR-006), and required is the whole"
+    ],
+    [
+     " * since chapter 3.17, rather than inherited from `credential.guard.ts`'s `EITHER`",
+     " * since this chapter, rather than inherited from `credential.guard.ts`'s `EITHER`"
+    ],
+    [
+     " * THIS COMMENT SAID SOMETHING ELSE UNTIL CHAPTER 3.17, and what it said was the reading",
+     " * THIS COMMENT SAID SOMETHING ELSE UNTIL THIS CHAPTER, and what it said was the reading"
+    ]
+   ]
+  },
+  {
+   "why": "old 3.15 -> new 9, the channel-control chapter. Both are plain provenance on a clause the sentence needs, so they substitute rather than delete.",
+   "pairs": [
+    [
+     "-- TWO COLUMNS, NOT A SECOND TABLE. `users` is what every reader built since chapter\n-- 3.15 already reads.",
+     "-- TWO COLUMNS, NOT A SECOND TABLE. `users` is what every reader built since the\n-- channel-control chapter already reads."
+    ],
+    [
+     "  /** A user's channels, most recently active first, keyset-paginated (chapter\n   * 3.15, FR-013, FR-CHN-08).",
+     "  /** A user's channels, most recently active first, keyset-paginated (the\n   * channel-control chapter, FR-013, FR-CHN-08)."
+    ]
+   ]
+  },
+  {
+   "why": "old 3.15 and old 3.16 in one sentence -> the channel-control and user-surface chapters. Two references on one line, which is why neither rule may take it: substituting the first rewraps the second out of the line it was matched on.",
+   "pairs": [
+    [
+     "    // Chapters 3.15 and 3.16 exist because five columns had no reader, so leaving a sixth",
+     "    // The channel-control and user-surface chapters exist because five columns had no\n    // reader, so leaving a sixth"
+    ]
+   ]
+  },
+  {
+   "why": "THE NUMBER WAS WRONG BEFORE THE CONVENTION TOUCHED IT, AND A NAME WOULD HAVE MADE IT PERMANENT — AND THE COUNT WAS WRONG TOO. Both sites credit `addMember`'s dead guard to '3.12'. Published 3.12 did remove it (cb011875), but that removal was never ported: this tree carried `RETURNING` on both SQL branches while the test of them still read `rowCount ?? 0`. So the sentence 'third time this project has answered the ratchet by removing code' counts a removal that never happened here — in this order `upsertUser` (949a8062/7a24c846, rework/part3-ch10) is the only precedent, and it is the SECOND time, not the third. Substituting a name would have preserved both errors behind a reference no gate can check. The sender chapter removes the arm for real. The second site drops the tag instead: it lists instances of a pattern and needs no attribution.",
+   "pairs": [
+    [
+     "    // rather than covering it (3.12's `addMember`, the user-surface chapter's `upsertUser`).",
+     "    // rather than covering it: the user-surface chapter's `upsertUser` was the first."
+    ],
+    [
+     "      // that stopped meaning anything**: `addMember`'s `rowCount ?? 0` (3.12), and",
+     "      // that stopped meaning anything**: `addMember`'s `rowCount ?? 0`, and"
+    ]
+   ],
+   "drops": [
+    "addMember",
+    "Third",
+    "third"
+   ]
+  },
+  {
+   "why": "ANOTHER WRONG NUMBER, CAUGHT THE SAME WAY. The read-position clamp this sentence points at is planted by 5f456db2, whose first published tag is part3-ch16 — the user-surface chapter, not the gauntlet.",
+   "pairs": [
+    [
+     "    // is inserted directly, the way chapter 3.12's read-position clamp is planted a few",
+     "    // is inserted directly, the way the user-surface chapter's read-position clamp is\n    // planted a few"
+    ]
+   ]
+  },
+  {
+   "why": "old 3.12's HARNESS half -> new 4, the isolation harness. Verified rather than assumed: `wrong_credential_service` enters at 08e9dbfc and `dispatch/replay` at 2f73e7c3, both first tagged part3-ch12, and `credential.guard.ts`, `internal/dispatch.controller.ts` and `gauntlet.itest.ts` are all in new 4's path list. The milestone half (new 25) tests the instruments and owns none of these.",
+   "pairs": [
+    [
+     "      // Chapter 3.12's fourteen green tests compared two refusals and meant nothing,",
+     "      // The isolation harness's fourteen green tests compared two refusals and meant nothing,"
+    ],
+    [
+     "// rather than a fallback, because a fallback is what let the gateway's credential reach\n// `POST /internal/dispatch/replay` in chapter 3.12.",
+     "// rather than a fallback, because a fallback is what let the gateway's credential reach\n// `POST /internal/dispatch/replay` in the isolation harness."
+    ],
+    [
+     "// its own comment names as the thing that let the gateway's credential reach\n// `POST /internal/dispatch/replay` in chapter 3.12. Both classes are genuinely accepted",
+     "// its own comment names as the thing that let the gateway's credential reach\n// `POST /internal/dispatch/replay` in the isolation harness. Both classes are genuinely accepted"
+    ],
+    [
+     "      // in the chapter that collides with the ladder — so it is named here, the way\n      // chapter 3.12 named `wrong_credential_service` for the same reason. The filter",
+     "      // in the chapter that collides with the ladder — so it is named here, the way\n      // the isolation harness named `wrong_credential_service` for the same reason. The filter"
+    ],
+    [
+     "    // row in it was dropped for having no sender.\" That was true, and it is the reason\n    // chapter 3.12's `gaps.md` G1 listed TWO independent mechanisms for \"a REST-sent",
+     "    // row in it was dropped for having no sender.\" That was true, and it is the reason\n    // the isolation harness's `gaps.md` G1 listed TWO independent mechanisms for \"a REST-sent"
+    ]
+   ]
+  },
+  {
+   "why": "THE FAN-OUT CHAPTER'S OWN ORDINAL, six sites, three shapes. A chapter does not cite itself by number and 'this chapter' survives a renumbering that a number does not. Two are rule lines where the tag is pure provenance and goes; one is a parenthetical beside a clause id and goes the same way; three are sentences whose subject IS this chapter's change and keep a self-reference in words. The `That chapter` in the isolation suite becomes `It`, because 'this chapter … That chapter' reads as two different chapters.  SEVEN, NOT SIX — AND THE SEVENTH ONLY APPEARS IF YOU ASK THE TOOL. An enumeration written for this survey called `classify` directly and reported six; `rewrite-refs.py --rule read` reported seven. The extra one is a reference that OPENS its line — 'It moved here with the function in / chapter 3.18' — which the tool routes to `read` through `dangles_from_previous` and a bare `classify` calls `substitute`. The re-implementation was missing exactly the clause the tool has, which is the same defect as the mdx pass's missing AMBIGUOUS test: two copies of a rule are two rules. Run the tool.",
+   "drops": [
+    "chapter"
+   ],
+   "pairs": [
+    [
+     " * grammar belongs where every party that uses it can agree on it. Until 3.18",
+     " * grammar belongs where every party that uses it can agree on it. Until this chapter"
+    ],
+    [
+     "// ── chapter 3.18: the failure path (Phase 6) ────────────────────────────────",
+     "// ── the failure path (Phase 6) ──────────────────────────────────────────────"
+    ],
+    [
+     "    // ── the live fan-out (chapter 3.18, FR-004) ────────────────────────────",
+     "    // ── the live fan-out (FR-004) ──────────────────────────────────────────"
+    ],
+    [
+     "  //      STILL TRUE OF THIS SUITE after chapter 3.18. That chapter gave the api a",
+     "  //      STILL TRUE OF THIS SUITE after this chapter. It gave the api a"
+    ],
+    [
+     "    // LIVE DELIVERY, WHICH THIS BLOCK ASSERTED WAS ABSENT UNTIL CHAPTER 3.18.",
+     "    // LIVE DELIVERY, WHICH THIS BLOCK ASSERTED WAS ABSENT UNTIL THIS CHAPTER."
+    ],
+    [
+     "// ── chapter 3.18: two instances, one fabric (US2) ───────────────────────────",
+     "// ── two instances, one fabric (US2) ─────────────────────────────────────────"
+    ],
+    [
+     "// no broker, no container and no lane. It moved here with the function in\n// chapter 3.18, and it exists before the old copy is deleted so the property is",
+     "// no broker, no container and no lane. It moved here with the function in\n// this chapter, and it exists before the old copy is deleted so the property is"
+    ]
+   ]
+  },
+  {
+   "why": "THE PRESENCE CHAPTER'S TWO. old 3.12 -> the harness half (new 4): the gauntlet that proves a client cannot forge a frame is `gauntlet.itest.ts`, which new 4 owns; the milestone half tests the instruments and owns no attack. old 3.18 -> the fan-out chapter (new 12), and this one opens its line so the rules route it to a reader — the sentence began one line up and `place_name` cannot see that.",
+   "pairs": [
+    [
+     "// `state: \"away\"`, and chapter 3.12's gauntlet proves a client cannot forge one.",
+     "// `state: \"away\"`, and the isolation harness's gauntlet proves a client cannot forge one."
+    ],
+    [
+     "// opened\" is true of a working presence path and of an empty function, and chapter\n// 3.18 recorded that trap against its own publisher: its `publish` swallows errors",
+     "// opened\" is true of a working presence path and of an empty function, and the\n// fan-out chapter recorded that trap against its own publisher: its `publish` swallows errors"
+    ]
+   ]
+  },
+  {
+   "why": "THE MEMBERSHIP CHAPTER'S SIX. Two are rule lines where the tag is pure provenance and goes — one of them this chapter's own ordinal — with the padding lengthened by exactly what the tag took, so the rule still reaches the same column. Two are the fan-out chapter (old 3.18), one the presence chapter (old 3.19), and one is an attribution to the RATE-LIMIT chapter, which in this order has not happened: close code 4009 exists here and the sentence about it stands without being told who first refused by name.  THE 4009 PAIR DROPS THREE CONTENT WORDS AND SAYS SO: `refusal`, `made` and `name` all belonged to the clause 'which is the refusal chapter 3.8 made by name', and that clause is the attribution. What replaces it is a sentence about the socket rather than about who first refused this way.  AND ONE PAIR HAD TO BE RE-KEYED OFF THE SUBSTITUTED TEXT. The `publisher.test.ts` region carried TWO references to old 3.18, one of them mid-line and one opening a line. The replay runs delete, then substitute, then the read class — so `substitute` rewrote the mid-line one first, the region no longer matched the pair written against the original, and the pair silently fired on nothing. **A read-class pair for a region that also contains a substitutable reference must be written against the text as the substitution leaves it.** ONE PAIR WAS REMOVED FROM THIS GROUP AS A DUPLICATE: the socket's rule line is already declared identically by the chapter-3.9 group above, and two groups declaring one left-hand side made the tool's own arithmetic unreadable — 125 pairs over 124 unique keys, so `missed` could never reach zero and `require_all` could never pass.",
+   "drops": [
+    "chapter",
+    "refusal",
+    "made",
+    "name"
+   ],
+   "pairs": [
+    [
+     "  // ── THE BACKSTOP'S ROUTE (chapter 3.20, FR-017) ───────────────────────────",
+     "  // ── THE BACKSTOP'S ROUTE (FR-017) ─────────────────────────────────────────"
+    ],
+    [
+     "    // Close code 4009 exists and this is not it, which is the refusal chapter 3.8\n    // made by name. A revocation is not a protocol violation.",
+     "    // Close code 4009 exists and this is not it. A revocation is not a protocol\n    // violation, and a socket that stops hearing a channel has not misbehaved."
+    ],
+    [
+     "    // their own channels with themselves, so `linh` sees `linh` arrive. Chapter\n    // 3.19's `collect()` carries this warning in its own comment, T043 repeats it as",
+     "    // their own channels with themselves, so `linh` sees `linh` arrive. The\n    // presence chapter's `collect()` carries this warning in its own comment, T043 repeats it as"
+    ],
+    [
+     "    // unstructured, unbounded output — rather than process death, which 3.18\n    // measured against ioredis 6.0.0 and found false.",
+     "    // unstructured, unbounded output — rather than process death, which that\n    // chapter measured against ioredis 6.0.0 and found false."
+    ],
+    [
+     "        // ── CHAPTER 3.20'S FOUR NEW PRODUCTION FILES ───────────────────",
+     "        // ── THIS CHAPTER'S FOUR NEW PRODUCTION FILES ───────────────────"
+    ]
+   ]
+  },
+  {
+   "why": "THE TYPING CHAPTER'S TWELVE, and two of them carry a COUNT that the reorder falsified rather than a name that moved. `registry.ts` is fenced by 'chapters 3.7, 3.8, 3.11 and 3.19' — measured on this tree, the pages that fence it are chapter 7 and chapter 13, because the rate-limit and metering chapters are new 22 and new 24. Four chapters' diffs becomes two, which weakens the argument the sentence is making and is the honest version of it. And `meterIntervalMs` occurs exactly once in this tree — in the comment citing it — so the sentence pointed at an option nothing declares; `rereadIntervalMs` is real (15 code uses, the membership chapter's) and carries the same argument alone.  THE GUARD CAUGHT THE NUMBER, WHICH IS THE POINT OF THIS ENTRY: dropping `four` is the whole substance of that decision, not a rewrap. Declared so the next reader of this entry sees that a count changed rather than a name.  AND TWO PAIRS HAD TO BE WRITTEN AGAINST THE POST-SUBSTITUTION TEXT — the second time that has happened, so it is a rule now rather than an incident: **write a read-class pair for a region by running the replay first and reading what `--rule read` reports, not by reading the tree before it.** The replay applies delete, then substitute, then this table, so a region holding two references has its first one rewritten before the pair is tried. One of the two also shows that the SOURCE substitute rule has no own-chapter filter the way the mdx pass does: it turned this chapter's own `3.21` into 'the typing chapter', which inside the typing chapter should read 'this chapter'.",
+   "drops": [
+    "chapter",
+    "chapters",
+    "meterIntervalMs",
+    "above",
+    "four",
+    "for",
+    "followed",
+    "membership"
+   ],
+   "pairs": [
+    [
+     "  [\"typing.send\", \"inbound\", \"chapter 3.21: a client may say it is typing (session.ts)\"],",
+     "  [\"typing.send\", \"inbound\", \"this chapter: a client may say it is typing (session.ts)\"],"
+    ],
+    [
+     "   * **IN THIS CLOSURE, NOT ON `Connection`.** That type lives in `registry.ts`,\n   * which chapters 3.7, 3.8, 3.11 and 3.19 all fence — a field there is four\n   * chapters' diffs regenerated for a value with a two-second lifetime. A closure",
+     "   * **IN THIS CLOSURE, NOT ON `Connection`.** That type lives in `registry.ts`,\n   * which the deduplication and presence chapters both fence — a field there is two\n   * chapters' diffs regenerated for a value with a two-second lifetime. A closure"
+    ],
+    [
+     "    // a describe-level teardown that closed servers first cost chapter 3.20\n    // seven tests and eighty-three seconds, every failure naming a hook.",
+     "    // a describe-level teardown that closed servers first cost the membership\n    // chapter seven tests and eighty-three seconds, every failure naming a hook."
+    ],
+    [
+     " * of being dropped. Chapters 3.19 and 3.20 chose the same strictness for the same\n * reason.",
+     " * of being dropped. The presence and membership chapters chose the same strictness\n * for the same reason."
+    ],
+    [
+     " * the event spine, the presence chapter followed it for presence and 3.20 for\n * membership. A new file is a whole-file fence and leaves three chapters' hunks",
+     " * the event spine, and the presence and membership chapters each followed it.\n * A new file is a whole-file fence and leaves three chapters' hunks"
+    ],
+    [
+     "    // ELEVEN with the typing chapter's `typing.send`. **The title carries the number\n    // too**, and updating the assertion without the title is how chapter 3.19\n    // shipped a good test under a false name.",
+     "    // ELEVEN with this chapter's `typing.send`. **The title carries the number\n    // too**, and updating the assertion without the title is how the presence\n    // chapter shipped a good test under a false name."
+    ],
+    [
+     "  /** Injectable for the reason `meterIntervalMs` above and chapter\n   * 3.20's `rereadIntervalMs` are: **a test that waits out two real seconds pays\n   * them in the package that paces the lane**, which has about four seconds of\n   * headroom in the whole budget. That chapter's itest builds with 40 to test a",
+     "  /** Injectable for the reason the membership chapter's `rereadIntervalMs` is:\n   * **a test that waits out two real seconds pays them in the package that paces\n   * the lane**, which has about four seconds of headroom in the whole budget.\n   * That chapter's itest builds with 40 to test a"
+    ],
+    [
+     "   * by two clocks, the shape that stranded a user online for ever in 3.19. */",
+     "   * by two clocks, the shape that stranded a user online for ever in the presence\n   * chapter. */"
+    ]
+   ]
+  },
+  {
+   "why": "THE CONNECTION-CAP CHAPTER'S FOUR, and all four are keyed off the text the replay leaves rather than the tree before it — which is the rule this feature arrived at after it bit three times in the typing chapter. Two point at the fan-out chapter, one at the membership chapter, one at the channel-control chapter. Chapter 1.3 stays a number: Part 1 was not renumbered, so its ordinals are still true.",
+   "drops": [
+    "chapter",
+    "chapters"
+   ],
+   "pairs": [
+    [
+     "  // was none of them. Numbered here, in the space chapters 1.3 and 3.15 drew from.",
+     "  // was none of them. Numbered here, in the space chapter 1.3 and the\n  // channel-control chapter drew from."
+    ],
+    [
+     "   * needs the lines. Chapter 3.18: a publisher that does nothing satisfies \"the\n   * send returned 201\". */",
+     "   * needs the lines. The fan-out chapter's finding: a publisher that does nothing\n   * satisfies \"the send returned 201\". */"
+    ],
+    [
+     "    // seen from here — and the ownership half of it is the test below. Chapter\n    // 3.20's rule: a claim about an observable difference needs falsifying before\n    // the test is written.",
+     "    // seen from here — and the ownership half of it is the test below. The\n    // membership chapter's rule: a claim about an observable difference needs\n    // falsifying before the test is written."
+    ],
+    [
+     "          // the cap was checked and satisfied or not checked at all. Chapter\n          // 3.18's lesson: the assertion that carries the requirement is the log\n          // line.",
+     "          // the cap was checked and satisfied or not checked at all. The fan-out\n          // chapter's lesson: the assertion that carries the requirement is the\n          // log line."
+    ]
+   ]
+  },
+  {
+   "why": "THE REVISIONS CHAPTER'S NINETEEN, and four of them are numbers rather than names. Keyed off the POST-REPLAY text throughout, per the rule the typing chapter arrived at. Self-references become 'this chapter'; the others take their subject name. RE-MEASURED ON THIS TREE, because a reorder falsifies a count as silently as it falsifies an ordinal: `messages.itest.ts` said the send route ran with no user 'for twenty-three chapters' — 2.2 through old 3.16 — and the sender chapter is now new 11, so the span is SEVENTEEN. `repository.itest.ts` said 121,250 senderless rows; this lane holds 19,965 of 125,076. `messages.controller.ts` pointed at `:64`, `messages.itest.ts:161` and `repository.ts:3999` for three copies of one sentence; here they are `:94` (twenty-eight lines up), `:153` and `:2136`, and `credential.guard.ts:31`'s `?? EITHER` is at `:56`. TWO COUNTS WERE CHECKED AND LEFT ALONE: `event.test.ts`'s 'FIVE exist' is five in `OUTBOX_EVENT_TYPES`, and `fanout.ts`'s 'a service the typing chapter took to eight' is eight production `new Redis(` in `services/gateway/src`. AND `chapter 3.12` MEANS THE ISOLATION HARNESS HERE, not new 8 and not new 26: the sentence is about `targets.ts` carrying `accepts`, and `git log --diff-filter=A` puts that file and that field in `rework/part3-ch4`.",
+   "pairs": [
+    [
+     "a senderless row (FR-018 of 3.23) before it can return",
+     "a senderless row (FR-018) before it can return"
+    ],
+    [
+     "fixed for 400\n  //                        and 3.2 for 403.",
+     "fixed for 400\n  //                        and the credentials chapter for 403."
+    ],
+    [
+     "// The listing's rule was implemented and tested here before its writer existed, which\n// 3.15 said was so that \"the day FR-MSG-08's chapter ships, the count and the preview\n// already agree.\" They did.",
+     "// The listing's rule was implemented and tested here before its writer existed, which\n// the channel-control chapter said was so that \"the day FR-MSG-08's chapter ships, the\n// count and the preview already agree.\" They did."
+    ],
+    [
+     "  // ── T009 (chapter 3.23): THE READER, TESTED BEFORE THE WRITER EXISTS ────────\n",
+     "  // ── T009: THE READER, TESTED BEFORE THE WRITER EXISTS ───────────────────────\n"
+    ],
+    [
+     "    // PLANTED WITH RAW SQL, because no write path can produce one any more — chapter\n    // 3.17 made `userId` required — and 121,250 of them exist in the lane, written\n    // before chapter 2.6 recorded a sender.",
+     "    // PLANTED WITH RAW SQL, because no write path can produce one any more — the sender\n    // chapter made `userId` required — and 19,965 of them exist in the lane out of\n    // 125,076, written before chapter 2.6 recorded a sender."
+    ],
+    [
+     "    // T018h, chapter 3.23. THE SUBJECT IS THE ASSERTION.",
+     "    // T018h. THE SUBJECT IS THE ASSERTION."
+    ],
+    [
+     "is not a creation. Deletes arrived in\n *     chapter 3.23 and they do get `message.deleted`",
+     "is not a creation. Deletes arrive with\n *     this chapter and they do get `message.deleted`"
+    ],
+    [
+     " * ONE FUNCTION AND NOT THREE COPIES, and the coverage ratchet is what asked. Chapter\n * 3.23 added two more publish sites to this file, each with its own",
+     " * ONE FUNCTION AND NOT THREE COPIES, and the coverage ratchet is what asked. This\n * chapter added two more publish sites to this file, each with its own"
+    ],
+    [
+     "    // PAST TENSE SINCE CHAPTER 3.17, and it took until 3.23 to say so. That chapter\n    // added `@Accepts(\"application\", \"user\")` at :64 — twenty-five lines above this\n    // sentence — and left three copies of the sentence describing its absence, here, in\n    // `messages.itest.ts:161` and in `repository.ts:3999`. Nothing compares a comment",
+     "    // PAST TENSE SINCE THE SENDER CHAPTER, and it took until this one to say so. That\n    // chapter added `@Accepts(\"application\", \"user\")` at :94 — twenty-eight lines above\n    // this sentence — and left three copies of the sentence describing its absence, here,\n    // in `messages.itest.ts:153` and in `repository.ts:2136`. Nothing compares a comment"
+    ],
+    [
+     "    // ── the live fan-out (chapter 3.23, FR-005, ADR-24) ──────────────────────\n",
+     "    // ── the live fan-out (FR-005, ADR-24) ─────────────────────────────────────\n"
+    ],
+    [
+     "   * is the thing `credential.guard.ts:31` argues about and chapter 3.12 paid for. So",
+     "   * is the thing `credential.guard.ts:56` argues about and the isolation harness paid\n   * for. So"
+    ],
+    [
+     "    // ── the live fan-out (chapter 3.23, FR-007, FR-009, ADR-24) ──────────────\n",
+     "    // ── the live fan-out (FR-007, FR-009, ADR-24) ────────────────────────────\n"
+    ],
+    [
+     "  // twenty-three chapters this controller called `messages.send(channelId, body)`",
+     "  // seventeen chapters this controller called `messages.send(channelId, body)`"
+    ],
+    [
+     "a user token was accepted here. Chapter 3.17\n  // declared it; this sentence went on describing its absence until 3.23.",
+     "a user token was accepted here. The sender\n  // chapter declared it; this sentence went on describing its absence until this one."
+    ],
+    [
+     "  // eight and FIVE exist since chapter 3.23; the other three arrive with the features",
+     "  // eight and FIVE exist as of this chapter; the other three arrive with the features"
+    ],
+    [
+     "   * would duplicate that counting and add two more Redis clients to a service chapter 3.21\n   * took to eight. */",
+     "   * would duplicate that counting and add two more Redis clients to a service the typing\n   * chapter took to eight. */"
+    ],
+    [
+     "      // until 3.23 gave the frame a payload of its own with no text and a",
+     "      // until this chapter gave the frame a payload of its own with no text and a"
+    ],
+    [
+     "  // ── chapter 3.23: the revision fabric reaches a socket ─────────────────\n",
+     "  // ── the revision fabric reaches a socket ──────────────────────────────────\n"
+    ]
+   ],
+   "drops": [
+    "twenty-three"
+   ]
+  }
+ ]
 }

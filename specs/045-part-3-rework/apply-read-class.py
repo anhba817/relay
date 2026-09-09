@@ -61,19 +61,13 @@ def main() -> int:
              for g in groups for p in g["pairs"]]
     fired = {old: 0 for old, _, _, _ in pairs}
 
-    for f in refrules.platform_files(PLAT):
-        text = f.read_text(encoding="utf-8")
-        out = text
-        for old, new, _, _ in pairs:
-            if old in out:
-                # COUNT, DO NOT JUST FLAG. A left-hand side matching twice in one file
-                # means the sentence is not unique and the decision was made about one
-                # of two places.
-                fired[old] += out.count(old)
-                out = out.replace(old, new)
-        if out != text and apply:
-            f.write_text(out, encoding="utf-8")
-
+    # THE GUARD RUNS BEFORE ANY FILE IS TOUCHED, and it did not always. It sat after
+    # the write loop, so a table whose word-count check failed had ALREADY been applied:
+    # the run printed `WORDS DROPPED`, exited 1, and left eighteen of nineteen
+    # replacements in the tree. Fixing the table and re-running then reported
+    # `0 applied, 124 matched nothing` — every left-hand side gone, because the failing
+    # run had made the edits it was refusing to stand behind. A check that fires after
+    # the side effect is a report, not a guard.
     # A REWRAP MUST NOT DROP A WORD, AND ONE DID.
     #
     # A two-line replacement that rewraps has to fit the same text into different line
@@ -123,6 +117,19 @@ def main() -> int:
             print(f"  WORDS DROPPED {unexplained}: {old_s.splitlines()[0][:70]}",
                   file=sys.stderr)
             return 1
+
+    for f in refrules.platform_files(PLAT):
+        text = f.read_text(encoding="utf-8")
+        out = text
+        for old, new, _, _ in pairs:
+            if old in out:
+                # COUNT, DO NOT JUST FLAG. A left-hand side matching twice in one file
+                # means the sentence is not unique and the decision was made about one
+                # of two places.
+                fired[old] += out.count(old)
+                out = out.replace(old, new)
+        if out != text and apply:
+            f.write_text(out, encoding="utf-8")
 
     total = sum(fired.values())
     missed = [old for old, n in fired.items() if n == 0]

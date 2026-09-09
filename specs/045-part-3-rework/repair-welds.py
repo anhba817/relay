@@ -73,6 +73,24 @@ CAPITALS: list[tuple[str, str]] = [
         "    // The outbox chapter's own suite asserts on that same table is a race",
         "    // the outbox chapter's own suite asserts on that same table is a race",
     ),
+    # AND THE POSSESSIVE THAT DID NOT SHOUT WITH ITS OWN CLAUSE. `place_name` upper-cases
+    # the substituted name inside an all-caps run, and the `chapter` branch's pattern stops
+    # before `'s` — so `CHAPTER 3.23's EDIT HISTORY` came out `THE REVISIONS CHAPTER's EDIT
+    # HISTORY`. `refrules.place_name` now upper-cases a possessive it finds immediately
+    # after the match; these three are the instances already written into this chapter's
+    # trees, and five more sit in chapters 10, 11, 14 and 15 (`gaps.md` 045-10).
+    (
+        "  // THE REVISIONS CHAPTER's EDIT HISTORY",
+        "  // THE REVISIONS CHAPTER'S EDIT HISTORY",
+    ),
+    (
+        "  // THE REVISIONS CHAPTER's EDIT (",
+        "  // THE REVISIONS CHAPTER'S EDIT (",
+    ),
+    (
+        "  // THE REVISIONS CHAPTER's DELETION (",
+        "  // THE REVISIONS CHAPTER'S DELETION (",
+    ),
 ]
 
 OPENER = re.compile(r"^\s*(?://+|/\*\*?|\*|--+|#+)\s")

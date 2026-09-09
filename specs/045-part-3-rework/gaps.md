@@ -194,3 +194,182 @@ suites that owned the worst bands in the same chapter, so the fix was one chapte
 its own files, and the table went rather than gaining two rows. **A defect that is nobody's to
 fix is a defect the ordering created**, and this is the clearest instance of it in the rework so
 far.
+
+## 045-7 · THE REORDER LEFT THREE SENTENCES FALSE FOR SIX CHAPTERS, AND PUBLISHED FIXED THEM LATE TOO
+
+Measured while porting new 17. Three comments in three files said, in the PRESENT tense,
+that `MessagesController` declares no `@Accepts` and the guard therefore falls back to
+`EITHER`:
+
+    services/api/src/db/repository.ts:2131
+    services/api/src/messages/messages.controller.ts:95
+    services/api/src/messages/messages.itest.ts:153
+
+`@Accepts(` arrived on that controller in `rework/part3-ch11` (`560bd5c`, old 3.17, the
+sender chapter), so all three were false from new 11 onward. They were corrected in new
+17, which is where old 3.23 corrected them — six chapters after this order made them
+wrong, and the port carried that lateness in rather than fixing it in place.
+
+**THE REORDER DID NOT CAUSE THIS, IT LENGTHENED IT.** Published was wrong for six
+chapters too — 3.17 through 3.23 — which is why old 3.23 is the commit that carries the
+fix at all. What the reorder changes is only which chapter numbers the staleness spans.
+So this is not a rework defect to be repaired quietly; it is a published one whose
+correction the rework should arguably move EARLIER, to new 11.
+
+**WHY IT WAS NOT MOVED.** The correction is one clause in each of three comments and it
+would be free to move. What is not free is the precedent: this feature's rule is that a
+chapter ports what its published commit did, and a chapter that also fixes prose its
+predecessor left stale becomes a chapter whose diff no published fence matches. Two
+fenced files are involved (`repository.ts`, `messages.controller.ts`), so moving the
+clause means regenerating new 11's hunks for a change new 11's published commit never
+made.
+
+**WHAT CLOSING IT COSTS.** Three one-clause edits in new 11's port, `regen-fences` on new
+11 and new 17, and a sentence in each chapter's prose explaining a correction the reader
+cannot see a cause for — because the cause is in the chapter they are about to read. That
+last cost is the real one, and it is why this is filed rather than done.
+
+**AND THE CLASS IS THE ONE THIS PROJECT KEEPS RECORDING.** Two more copies of the same
+sentence (`users/users.controller.ts:48`, `messages/messages.controller.ts:65`) were
+already past tense before this chapter, so the tree held five copies of one fact in two
+tenses. A grep for the claim found all five in one command; nothing else would have.
+
+## 045-8 · THREE ROUTES WERE CLASSIFIED AND NEVER ATTACKED, AND PUBLISHED PART 3 COULD NOT SEE IT — CLOSED
+
+Measured while porting new 17. The revisions chapter classifies three routes in
+`isolation/targets.ts` — `GET …/:messageId/edits`, `PATCH …/:messageId`,
+`DELETE …/:messageId` — and old 3.23 wrote no gauntlet attack for any of them. Ten
+commits, none touching `gauntlet.itest.ts`.
+
+**PUBLISHED HAD NO TEST THAT COULD ASK.** `git show part3-ch24:…/gauntlet.itest.ts` has no
+`attacked` set and no accounting test; the file's own header says there was *"nothing
+anywhere that knew which endpoints had been attacked and which had merely been
+classified."* The rework's new 4 wrote that accounting test, and it fired on this chapter
+with all three routes named by path:
+
+    classified but never attacked: GET /v1/channels/:channelId/messages/:messageId/edits,
+    PATCH /v1/channels/:channelId/messages/:messageId,
+    DELETE /v1/channels/:channelId/messages/:messageId
+
+**IT ONLY FIRED IN THE COVERAGE RUN.** `targets.itest.ts` and `gauntlet.itest.ts` are
+different files, and the accounting test lives in the second one — so the three
+per-commit itest runs this chapter's port made were all green. The full battery is what
+asked, 258 seconds in.
+
+**FOUR ATTACKS WERE WRITTEN, AND THE FOURTH IS THE ONE NO PAIR CAN EXPRESS.** Every
+helper in `attack.ts` forges BOTH identifiers, which a nested route can satisfy while
+checking only the outer one. The added case presents the attacker's OWN channel with the
+victim's message id, against all three verbs. Falsified by dropping
+`eq(messages.channelId, channelId)` and `eq(channels.environmentId, …)` from
+`messageExistsIn`: the history route answered **200 to a cross-tenant read** and the other
+44 attacks stayed green. `send` is now exported from `attack.ts` for that one caller,
+with the reason written at the export.
+
+**THE EDIT AND THE DELETION WERE NOT REACHABLE THAT WAY**, which is worth recording
+because it is the half the probe did NOT show: `editMessage` and `deleteMessage` each
+join the channel and the environment inside their own transaction, so the unscoped
+`messageExistsIn` could not be used against a write. One read-only hole, and the test that
+finds it also covers the two writes that were already closed.
+
+## 045-9 · THIRTY-SIX SPAN CLAIMS COUNTED IN CHAPTERS, AND THE REORDER MOVED MOST OF THEM
+
+Measured while porting new 17, across the seventeen ported English pages. Prose says how
+long a thing has been true by COUNTING CHAPTERS — *"for twenty-two chapters"*, *"eleven
+chapters later"* — and a reorder changes every one of those numbers without touching a
+single ordinal. `rewrite-mdx-refs.py` cannot see them: there is no `3.` in them.
+
+    36  numeric span claims          "for twenty-two chapters", "twenty-four chapters later"
+    34  relative-position phrases    "the previous chapter", "two chapters ago"
+    12  of the 17 ported pages carry at least one
+
+**THE SHARPEST INSTANCE IS TWO SENTENCES APART.** New 11 reads:
+
+    For fourteen chapters that was fine. Nothing read the sender.
+
+    Then the channel-control chapter made the sender decide whether a private channel is
+    visible, the user-surface chapter made it decide what a channel listing renders …
+
+The second paragraph carries substituted subject names — the port rewrote it. The first
+carries a published count and was left. **One passage, one pass, two treatments**, because
+the tool that did the rewriting only looks for digits after a `3.`.
+
+**AND THE CHECKABLE ONES ARE FINE, WHICH IS THE SIGNAL.** New 13 says `session.ts` *"is
+fenced by eight chapters before this one — four in Part 2 and four in Part 3"*. One command
+answers it:
+
+    grep -rln 'title="services/gateway/src/session.ts"' 'app/(en)'
+    → part-2: 05, 06, 07, 08         four
+    → part-3 before 13: 02, 03, 07, 10   four
+
+Still exactly true. The claims that survived are the ones a command can answer; the ones
+carrying stale numbers are the ones where the anchor is a sentence rather than a file.
+
+**WHAT IS PROVABLY STALE, BY ARITHMETIC ALONE.** A claim of the form "for N chapters" whose
+anchor is the start of Part 3 is stale by exactly the renumber delta:
+
+    new 16  "for twenty-one chapters"   old 22, 21 before it   →  fifteen
+    new 17  "for twenty-two chapters"   old 23, 22 before it   →  sixteen   (fixed in new 17)
+    new 15  "for twenty chapters"       old 21, 20 before it   →  fourteen
+    new 11  "for fourteen chapters"     old 17                 →  needs its anchor read
+    new 09  "for twenty-three chapters" old 15, cross-part     →  needs its anchor read
+
+**ONLY NEW 17's IS FIXED.** Every other page is already committed to the tutorial
+repository, and the fix is not mechanical: each number's anchor is a chapter named in prose
+somewhere else, so closing this means reading 36 passages and computing 36 spans. Two of
+them (new 07's "seven chapters", new 13's "eight chapters") are already correct and would
+be broken by a blanket adjustment, which is why a delta applied everywhere is worse than
+the gap.
+
+**AND THE RELATIVE PHRASES ARE THE WORSE HALF.** "The previous chapter" is not a number and
+cannot be checked at all — it is right when the reorder happens to preserve adjacency and
+silently wrong otherwise. New 17's one instance (*"the previous chapter learned that"*, of
+the connection-cap chapter) is still correct because old 22 → new 16 sits directly before
+old 23 → new 17. That is luck, and 33 more sit on the same luck.
+
+**WHAT CLOSING IT COSTS.** For each of the 70: find the anchor, decide whether the span is
+within Part 3 or crosses into Part 2, recount, and edit both locales. Roughly a chapter's
+worth of work with no gate to confirm it afterwards — which is the same shape as this
+feature's own SC-006 problem. A cheaper partial: a checker that FAILS on any "for N
+chapters" in a Part-3 page, forcing each one to be either recounted or rewritten to name a
+chapter instead of counting to it. Naming is the better prose anyway, and it is what the
+reference convention already decided for ordinals.
+
+## 045-10 · A POSSESSIVE THAT DID NOT SHOUT WITH ITS OWN CLAUSE, IN FIVE TAGGED CHAPTERS
+
+Measured while porting new 17. `place_name` upper-cases the substituted name when the
+clause around it is all-caps, and the `chapter` branch's pattern —
+`(?i:chapter) 3\.\d{1,2}`, with no `(?:'s)?`, which only `bare` has — stops before the
+possessive. So the case conversion could not reach it:
+
+    // CHAPTER 3.23's EDIT HISTORY  ->  // THE REVISIONS CHAPTER's EDIT HISTORY
+
+Eight instances across seven files. **Nothing in this feature could see them**: the ordinal
+IS gone, so `classify-refs` reports zero and `check-chapter` compares the same bytes on both
+sides; a lower-case apostrophe-s is valid TypeScript and valid prose.
+
+    rework/part3-ch10   services/api/src/isolation/gauntlet.itest.ts:472
+    rework/part3-ch11   services/api/src/db/schema.ts:250
+    rework/part3-ch14   services/gateway/src/membership.ts:20
+    rework/part3-ch14   services/api/src/membership/publisher.ts:99
+    rework/part3-ch15   services/gateway/src/typing.itest.ts:880
+
+**FIXED IN THE TOOL AND IN NEW 17.** `refrules.place_name` now upper-cases a possessive it
+finds immediately after the match, with four cases run against it — the all-caps possessive,
+the all-caps non-possessive, the lower-case possessive, and a mixed line that must stay
+lower. `repair-welds.py` gained the three exact pairs for this chapter's `targets.ts`, and
+`replay-repair.sh` re-cut the chapter over its whole range rather than from the first damaged
+commit, which is the mistake this feature made twice in the other direction.
+
+**WIDENING THE BRANCH PATTERN WAS THE WRONG FIX AND THAT IS THE INTERESTING PART.** Adding
+`(?:'s)?` to the `chapter` branch would put the possessive inside the match — and then the
+DELETE rule swallows it, and `classify-refs`' published counts change eight chapters into a
+feature that has stated 1,614 references in 207 files as a measured figure. A case bug fixed
+where case is decided costs one function; fixed in the pattern it costs the feature's own
+arithmetic.
+
+**WHAT CLOSING THE FIVE COSTS.** `replay-repair.sh` over `rework/part3-ch9..rework/part3-ch15`
+with five more exact pairs, re-pointing six tags, then `regen-fences` and `check-chapter` on
+chapters 10, 11, 14 and 15 — because a tag's tree changing changes every fence downstream of
+it in those chapters. That is the same operation this feature already ran once for the weld
+damage, where the defect changed what a line MEANT. Here it changes one apostrophe's case, so
+it is filed rather than done, and it is filed with the command that would do it.

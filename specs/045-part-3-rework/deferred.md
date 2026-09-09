@@ -606,3 +606,27 @@ argue about what they touch; this one cannot reach across a tenant without being
 **AND ITS COMMENT REPEATS THE LIST-PLACEMENT TRAP.** The `.itest.ts` sibling is deliberately
 NOT on the `**/*.ts` block's `ignores`, because the later `**/*.itest.ts` block would override
 it in silence. Two chapters have now written that note; new 22 gets it in writing twice.
+
+## THE REVISIONS CHAPTER OWES TWO FILES FORWARD, AND ONE OF THEM IS A TEST WITH NO SUBJECT YET
+
+Measured while porting new 17. Old 3.23's eight commits touch two files this tree does not
+have, for two different reasons — one moved later by the map, one never in Part 3 at all.
+
+| original commit | file | belongs to | what it did |
+|---|---|---|---|
+| `93a7b07` (part) | `packages/outsider/src/integrate.itest.ts` | new 26 (the outsider) | 110 lines walking the edit and its history from outside the monorepo |
+| `d9e18f8` (part) | `services/api/src/webhooks/deliveries.itest.ts` | new 19 (webhooks) | the fan-out of `message.updated` and `message.deleted` to a subscriber of both, with a creations-only endpoint as the negative control |
+| `a258e9a` (part) | one title in each of the two files above | new 26, new 19 | strip the `T0xx:` prefix with the rest of the close-out's 52 |
+
+**THE WEBHOOK ONE IS THE HALF OF FR-019 A ROUTE TEST CANNOT SHOW.** `messages.itest.ts`
+asserts an edit writes an outbox row and a repeated deletion writes none — that ported
+cleanly, because the outbox is the api's own table. What is owed is the FILTER: FR-WHK-02
+spells `message.updated` and `message.deleted` as separate names rather than one
+`message.*`, and the only way to see that spelling do work is a second endpoint subscribed
+to creations only, hearing nothing. New 19 inherits an endpoint-shaped test, not a
+message-shaped one.
+
+**AND `seedEndpoint` IS PARAMETERISED IN THAT FILE WITH EVERY CALL SITE PASSING
+`["message.created"]`** — which is the trap the deferred test's own comment names. A new
+test that forgets the argument seeds a creations-only endpoint, receives nothing, and reads
+as though the expansion were broken rather than as though the test were.

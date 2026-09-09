@@ -291,7 +291,23 @@ def place_name(line: str, m: re.Match, name: str, prev: str | None = None) -> st
     shouting = (all(w.isupper() for w in tail) if tail
                 else bool(ahead) and all(w.isupper() for w in ahead))
     if shouting:
-        return line[:prefix_cut] + new.upper() + line[m.end():]
+        # AND A POSSESSIVE LEFT OUTSIDE THE MATCH HAS TO SHOUT TOO. The `chapter` branch's
+        # pattern is `(?i:chapter) 3\.\d{1,2}` with no `(?:'s)?` — only `bare` has that —
+        # so for `CHAPTER 3.23's EDIT HISTORY` the reference is `CHAPTER 3.23`, `new` never
+        # carries the possessive, and `new.upper()` cannot reach it:
+        #
+        #     // CHAPTER 3.23's EDIT HISTORY  ->  // THE REVISIONS CHAPTER's EDIT HISTORY
+        #
+        # Eight of these shipped across seven files before anything noticed, five of them
+        # inside tagged chapters, and none is visible to a compiler or to `classify-refs`
+        # — the ordinal IS gone, which is all either of them asks. Widening the branch
+        # pattern instead would change what the delete rule swallows and what
+        # `classify-refs` counts, eight chapters into a feature that has published both
+        # numbers; the case fix is local to the one place that decides case.
+        rest = line[m.end():]
+        if not new.endswith("'s") and rest[:2] == "'s":
+            rest = "'S" + rest[2:]
+        return line[:prefix_cut] + new.upper() + rest
 
     opener = COMMENT_OPENER.match(before)
     first_token = bool(opener) and not re.search(r"[a-z]", before)

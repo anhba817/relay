@@ -243,8 +243,17 @@ def main() -> int:
                 touched.add(rel)
     print(f"rewrite-refs: rule={rule} scope={scope or 'all'} apply={apply}")
     print(f"  found {found}   rewritten {rewritten}   files touched {len(touched)}")
-    for s in samples[:8]:
+    # THE READ RULE PRINTS EVERY ONE, AND THE OTHER TWO PRINT A SAMPLE. `read` means a
+    # PERSON decides each reference, so this listing is the worklist rather than an
+    # illustration — and it printed eight of nineteen while the line above said nineteen.
+    # A reader writing pairs from the sample writes eight and believes they are done,
+    # which is the "a report that shows a sample and states a count" trap, here in the
+    # one place where the sample IS the instruction.
+    shown = samples if rule == "read" else samples[:8]
+    for s in shown:
         print(f"  {s}")
+    if len(shown) < len(samples):
+        print(f"  … {len(samples) - len(shown)} more not shown (rule={rule} prints a sample)")
     return 0
 
 if __name__ == "__main__":
