@@ -22,6 +22,29 @@ GENERATED = ("pnpm-lock.yaml", "/migrations/meta/")
 def git(*args):
     return subprocess.run(["git", "-C", str(WT), *args], capture_output=True, text=True).stdout
 
+def unique_hunks(diff: str, base_text: str | None) -> bool:
+    """Does every hunk's pre-image occur exactly once in the base file?
+
+    That is the property a reader needs: a hunk says "find THIS and replace it", and a
+    pre-image occurring twice leaves them guessing. Counted the way `check-chapter`
+    counts it, so the two agree — a generator that replays differently from the checker
+    produces hunks the checker rejects for reasons neither of them explains.
+    """
+    if base_text is None:
+        return True
+    for block in diff.split("\n@@")[1:]:
+        body = block.split("\n", 1)[1] if "\n" in block else ""
+        pre = "\n".join(
+            l[1:] for l in body.split("\n")
+            if l[:1] in (" ", "-") and not l.startswith("---")
+        )
+        if not pre.strip():
+            continue
+        if base_text.count(pre) != 1:
+            return False
+    return True
+
+
 def bodies(base, head):
     files = git("diff", "--name-only", f"{base}..{head}").split()
     added = set(git("diff", "--name-only", "--diff-filter=A", f"{base}..{head}").split())
@@ -32,7 +55,17 @@ def bodies(base, head):
         if f in added:
             out[f] = ("whole", git("show", f"{head}:{f}").rstrip())
         else:
-            d = git("diff", "-U6", "--no-color", f"{base}..{head}", "--", f)
+            # `-U6` IS A DEFAULT, NOT A RULE, and this widens until the hunks are
+            # unique. A pre-image that matches twice cannot be applied by a reader —
+            # `check-chapter` says `matched N times (need 1)` and the fence is
+            # unusable. Widening merges adjacent hunks, so a wider context is not
+            # monotonically better: this tries each width and takes the FIRST whose
+            # every hunk pre-image occurs exactly once in the base file, which is the
+            # property that matters rather than the number.
+            for width in (6, 10, 14, 20, 30):
+                d = git("diff", f"-U{width}", "--no-color", f"{base}..{head}", "--", f)
+                if unique_hunks(d, git("show", f"{base}:{f}") or None):
+                    break
             body = "\n".join(
                 l for l in d.split("\n")
                 if not l.startswith(("diff --git", "index ", "--- ", "+++ ", "new file mode"))

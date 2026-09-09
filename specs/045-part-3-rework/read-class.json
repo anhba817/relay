@@ -459,6 +459,41 @@
           "// opened\" is true of a working presence path and of an empty function, and the\n// fan-out chapter recorded that trap against its own publisher: its `publish` swallows errors"
         ]
       ]
+    },
+    {
+      "why": "THE MEMBERSHIP CHAPTER'S SIX. Two are rule lines where the tag is pure provenance and goes — one of them this chapter's own ordinal — with the padding lengthened by exactly what the tag took, so the rule still reaches the same column. Two are the fan-out chapter (old 3.18), one the presence chapter (old 3.19), and one is an attribution to the RATE-LIMIT chapter, which in this order has not happened: close code 4009 exists here and the sentence about it stands without being told who first refused by name.  THE 4009 PAIR DROPS THREE CONTENT WORDS AND SAYS SO: `refusal`, `made` and `name` all belonged to the clause 'which is the refusal chapter 3.8 made by name', and that clause is the attribution. What replaces it is a sentence about the socket rather than about who first refused this way.  AND ONE PAIR HAD TO BE RE-KEYED OFF THE SUBSTITUTED TEXT. The `publisher.test.ts` region carried TWO references to old 3.18, one of them mid-line and one opening a line. The replay runs delete, then substitute, then the read class — so `substitute` rewrote the mid-line one first, the region no longer matched the pair written against the original, and the pair silently fired on nothing. **A read-class pair for a region that also contains a substitutable reference must be written against the text as the substitution leaves it.**",
+      "drops": [
+        "chapter",
+        "refusal",
+        "made",
+        "name"
+      ],
+      "pairs": [
+        [
+          "  // ── THE BACKSTOP'S ROUTE (chapter 3.20, FR-017) ───────────────────────────",
+          "  // ── THE BACKSTOP'S ROUTE (FR-017) ─────────────────────────────────────────"
+        ],
+        [
+          "  // ── THE SOCKET'S ROUTE INHERITS THE CHECK (chapter 3.15, FR-001) ────────────",
+          "  // ── THE SOCKET'S ROUTE INHERITS THE CHECK (FR-001) ──────────────────────────"
+        ],
+        [
+          "    // Close code 4009 exists and this is not it, which is the refusal chapter 3.8\n    // made by name. A revocation is not a protocol violation.",
+          "    // Close code 4009 exists and this is not it. A revocation is not a protocol\n    // violation, and a socket that stops hearing a channel has not misbehaved."
+        ],
+        [
+          "    // their own channels with themselves, so `linh` sees `linh` arrive. Chapter\n    // 3.19's `collect()` carries this warning in its own comment, T043 repeats it as",
+          "    // their own channels with themselves, so `linh` sees `linh` arrive. The\n    // presence chapter's `collect()` carries this warning in its own comment, T043 repeats it as"
+        ],
+        [
+          "    // unstructured, unbounded output — rather than process death, which 3.18\n    // measured against ioredis 6.0.0 and found false.",
+          "    // unstructured, unbounded output — rather than process death, which that\n    // chapter measured against ioredis 6.0.0 and found false."
+        ],
+        [
+          "        // ── CHAPTER 3.20'S FOUR NEW PRODUCTION FILES ───────────────────",
+          "        // ── THIS CHAPTER'S FOUR NEW PRODUCTION FILES ───────────────────"
+        ]
+      ]
     }
   ]
 }
