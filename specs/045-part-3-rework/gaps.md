@@ -971,3 +971,47 @@ the thing this file exists instead of.**
 
 Falsified: with `limits,` removed from the call, `built by createServer and never injected:
 limits`. Closed in new 22.
+
+## 045-26 · THE UNIT GATE NEEDS A LIVE REDIS, AND ITS FAILURE READS AS A DEFECT
+
+Measured while re-verifying new 22 after the lane had gone down: `pnpm run test` — the cheap
+gate, the one that runs before every commit in this rework's loop — came back with twelve
+failures.
+
+    AssertionError: expected { kind: 'unenforced' } to deeply equal
+                    { kind: 'claimed', slot: +0, held: +0 }
+
+**NOTHING WAS WRONG WITH THE TREE.** `relay-redis-1` was not running, and `unenforced` is the
+connection registry's fail-open arm — the correct answer to "the store is gone". The suite is
+`services/gateway/src/connections.test.ts`, named `.test.ts`, so it runs in the UNIT lane; with
+Redis down it contributes 12 of its 17 tests as failures, and every message is about slots and
+claims rather than about a connection refused. Measured directly through vitest, bypassing
+turbo: `src/connections.test.ts (17 tests | 12 failed)`, every other unit suite green.
+
+Eight `.test.ts` files reach for a store or a client at all — the two api publishers, five
+gateway modules and `main.test.ts` — and seven of them get away with it because they only
+construct or read source. One actually issues commands.
+
+**AND THE CACHE MAKES IT WORSE IN THE OTHER DIRECTION.** `test` is a cacheable turbo task, so
+after a green run the same command reports
+
+    Tasks: 11 successful, 11 total   Cached: 11 cached, 11 total   Time: 10ms >>> FULL TURBO
+
+with no store running at all. So the unit gate can say green with the lane down and red with the
+lane down, from the same tree, depending only on whether the cache was warm. **A gate whose
+answer depends on a cache and a container is not a gate about the code**, and neither reading
+names the reason.
+
+**WHAT IS ACTUALLY FILED HERE IS A NAMING DEFECT.** The tree's convention is
+`.itest.ts` for a suite that needs the lane, and it is what the integration config globs. This
+suite needs the lane and does not say so, so nothing routes it correctly and no one running the
+cheap gate is told what the failure means. Two fixes, and they are not equivalent: rename it
+`connections.itest.ts` (which moves 17 tests into a 6-minute lane), or keep it in the unit lane
+behind a store probe that skips with a stated reason. **The second is worse than it sounds** —
+this project has already recorded that *"a security test that skips itself is worse than no
+test"* — so the rename is the honest one, and it should be measured before it is made: five of
+the seventeen do not need Redis at all and belong where they are.
+
+Not fixed in new 22: the file is the connection-cap chapter's, it is fenced into that chapter's
+page, and the change is a rename plus a split — a `replay-repair.sh` pass, not a line in another
+chapter's port.
