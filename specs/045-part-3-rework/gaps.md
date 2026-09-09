@@ -83,3 +83,50 @@ Measured: 80 pairs, of which 15 fired on the sender chapter's tree and 65 did no
 nothing distinguishes "not yet" from "never". Closing it means recording, per pair, the
 chapter whose tree it is expected to fire on, and failing when that tree passes without
 it — which is a table of 80 entries somebody must fill in and keep true.
+
+## 045-4 · A REFERENCE REWRITE DAMAGED FIVE LINES AND SIX TAGS SHIPPED WITH IT — CLOSED
+
+`_orphaned_punctuation` rebuilt its line from two match groups, and `(\S.*)$` stops before
+a trailing newline: `.` does not match one and `$` sits in front of it. **Every line that
+function touched came back without its terminator and welded to the line beneath it.** A
+second defect in the same replay capitalised a subject name at the start of a
+*continuation* line, because all three of `place_name`'s sentence-start tests are
+line-local and a comment sentence routinely spans lines.
+
+    scripts/stream-info.mjs          "— a" + "// configuration"  ->  "— a// configuration"
+    users/users.itest.ts             two comment lines welded
+    fanout/fanout.itest.ts           a comment welded to a CODE line
+    users/users.itest.ts             "the mechanism The isolation harness built"
+    packages/e2e/src/harness.ts      "while The outbox chapter's own suite"
+
+**FOUR OF THE FIVE WERE INVISIBLE TO EVERY GATE.** Joining two comment lines is valid
+TypeScript; so is a capital letter mid-sentence. `check:fences` compared the damaged bytes
+against the damaged tree and they matched, because a comment that says the wrong thing is
+still byte-identical to itself. The fifth welded a comment to a *statement*, and `tsc`
+said `';' expected` at a column in the middle of a comment — which is how the whole class
+was found. **One instrument out of six saw one instance out of five.**
+
+**THE REPAIR COULD NOT BE A RE-REPLAY.** The reference rules remove ordinals, and the
+damaged trees have none left, so running them again finds nothing. `replay-repair.sh`
+walks the range applying `repair-welds.py` — a table of exact pairs that **fails on a weld
+it does not recognise**, because a pattern loose enough to find these also splits the
+fifty aligned tables this repository writes inside comments.
+
+Closed: tags ch5–ch12 re-cut, chapters 1, 2, 5, 6, 10 and 11's fences regenerated, their
+mirrors rebuilt, and all eleven ported chapters verify at 0 problems.
+
+**THREE THINGS THIS COST THAT ARE WORTH THE PRICE:**
+
+**The replay range was wrong twice, in the same direction.** First run started at ch5 and
+ch5's own tree kept its capital; the fix has to start at the chapter BEFORE the earliest
+damage, and finding the earliest damage means asking each tag, not reasoning about it.
+
+**The weld detector had the same blind spot as the weld.** It looked for a second comment
+opener, which a comment-welded-to-code does not have. Widened to "sentence-ending
+punctuation, then alignment whitespace, then content" — checked against the whole tree,
+where it fires on the weld and on none of the tables.
+
+**AND RUNNING `check-chapter` ACROSS ALL ELEVEN PORTED CHAPTERS FOR THE FIRST TIME FOUND
+ELEVEN PROBLEMS THAT HAD NOTHING TO DO WITH THIS.** Chapters 1 and 2's fences had never
+been regenerated after `rework/base-convention` rewrote their trees. **A per-chapter check
+is only a per-chapter check if somebody runs it on the chapters that are already done.**
