@@ -783,3 +783,39 @@ ledger was not built for and the reason gaps 045-21 exists rather than a row her
 
 `1144655` is n/a: it reverts three prettier reformats this tree never had, and all three
 sites already carry its post-image.
+
+## NEW 23 IS THE SPLIT THE MAP CALLED A REASSIGNMENT, AND THE BOUNDARY HELD
+
+Old 3.10's span carries two subjects: sixteen commits of `packages/test-harness` and the
+global-operation guard, and seven of quotas. `chapter-map.json` sends the CODE to new 8 and
+keeps the PROSE at new 23, and records that no commit touches both. **Measured again at the
+port: `aa236de..b21a87c` is exactly the seven, and none of them touches the harness.** A
+boundary claimed exact and found exact is worth one line, because most of this ledger is the
+other kind.
+
+| row | what happened |
+|---|---|
+| old 3.17's page · `## Billed, and exempt` + `figTwoCounters` | taken — and the CODE with it, which the row did not name |
+| the guard's four tables, owed by the reassignment's own note | three taken here (`usage_periods`, `usage_active_users`, `quota_notifications`); `usage_connections` is new 24's |
+
+**THE FIRST ROW UNDERSTATED WHAT IT OWED, WHICH IS THIS LEDGER'S RECURRING SHAPE.** It named a
+page section and a figure. But the section describes a three-part mechanism — a bot is billed,
+exempt from the ceiling, and excluded from the count the ceiling compares against — and **none
+of the three existed in this tree**, because old 3.17 could not write quota code before the
+quota tables. Porting the prose without the code would have shipped a page describing behaviour
+the chapter does not have. The row was written from the page, and a page is not the artefact.
+
+**AND THE REASSIGNMENT'S OWN INSTRUCTION WAS THE USEFUL ONE.** It said each chapter adds its own
+tables to the guard array as it creates them, rather than new 8 retrofitting nine. That is what
+this chapter did — three names, three bait rows, three cases — and it is what surfaced 045-27,
+because writing the third part is what made somebody ask whether the second was checked.
+
+## WHAT NEW 23 HANDS FORWARD
+
+    usage_connections in the guard array, with bait and a case     new 24
+    `connection_minutes` as a quota dimension                       new 24
+
+Both are named in this chapter's own comments (`quota.error.ts` says `connection_minutes`
+belongs to the connection-metering chapter) rather than only here, which is the placement this
+ledger has been arguing for since the fan-out chapter's exemption: **a note in the file the next
+chapter will open beats a row in a document it may not.**
