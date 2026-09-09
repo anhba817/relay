@@ -10,8 +10,37 @@ once, on a terminal, and then never again.
 | original commit | file | belongs to | what it did |
 |---|---|---|---|
 | `b638242` | `services/api/src/webhooks/deliveries.itest.ts` | new 19 (webhooks) | settle the drain before asserting a delivery was published |
-| `5015cc8` | `services/api/src/webhooks/deliveries.itest.ts` | new 19 (webhooks) | give the sweep tests a limit that reaches their own endpoint |
-| `aed5af8` | `scripts/webhook-walk.mjs`, the webhook block of `services/api/src/db/schema.ts` | new 19 (webhooks) | name the subject instead of the chapter number in three comments |
+| `5015cc8` | `services/api/src/webhooks/deliveries.itest.ts` | ~~new 19~~ → **new 20** | give the sweep tests a limit that reaches their own endpoint |
+| `aed5af8` (1 of 3) | the gauntlet reference in `services/api/src/db/schema.ts` | new 19 (webhooks) | name the subject instead of the chapter number |
+| `aed5af8` (2 of 3) | `scripts/webhook-walk.mjs`, the disable-notifications comment in `schema.ts` | ~~new 19~~ → **new 20** | the same, in two blocks new 20 creates |
+
+**TWO OF THESE THREE ROWS WERE WRONG AND EXECUTING THEM IS WHAT SAID SO.** Both were
+filed by reading which FILE a commit touched. `deliveries.itest.ts` and `schema.ts` are
+webhook files, so both rows said new 19 — and neither commit's actual TARGET is in this
+chapter:
+
+    5015cc8   edits `describe("the failure run")` and calls `sweepDisabledEndpoints`.
+              Both arrive with old 3.6, which is new 20. `grep` for that function in
+              this tree returns nothing.
+    aed5af8   three one-line comment edits. ONE is on the gauntlet reference beside
+              `webhookDeadLetters`, which this chapter creates. The other two are inside
+              `if (WATCH_DISABLE)` and above `webhook_disable_notifications` — new 20's
+              blocks, and the cherry-pick rendered both as a conflict with 60 lines of
+              "theirs" that this tree does not have.
+
+**THE INFLATED CONFLICT IS THE TELL, AND IT LOOKS EXACTLY LIKE REAL WORK.** A cherry-pick
+whose target is missing does not fail cleanly: git shows the whole surrounding block as
+the incoming side, and a 20-line commit arrives looking like a 300-line one. This has now
+happened at every chapter — the quota imports in new 17, the rate limiter in new 18, this
+— and the check is always the same: read the commit's own `git show`, not the conflict.
+
+**AND ONE OF THE THREE IS THE ORIGIN OF THIS ENTIRE FEATURE.** `aed5af8`'s applicable edit
+replaces *"chapter 3.7's cross-tenant gauntlet"* with the subject, and the paragraph it
+adds is the argument feature 045 exists to execute — *"The gauntlet was 3.7 when that was
+written, became 3.8 when a chapter was inserted ahead of it, and is now 3.9 after a second
+insertion… The subject does not move; the ordinal does."* `subjects.json`'s own `_why`
+quotes it. So it is carried here verbatim rather than left to the mechanical replay, which
+would have deleted the ordinal and lost the reason.
 
 **Three of old 3.7's eight commits are webhook work.** In the old order webhooks came two
 chapters earlier, so a chapter about the resume high-water mark could freely fix a webhook

@@ -691,6 +691,83 @@
      "    // SEVEN SINCE THIS CHAPTER, and both events gained the field together because both"
     ]
    ]
+  },
+  {
+   "why": "THE WEBHOOK DISPATCHER CHAPTER'S NINETEEN, and seven of them are this chapter naming itself. Keyed off the POST-REPLAY text. Self-references become 'this chapter' inside a rule line and 'the webhook dispatcher chapter' where the sentence needs a noun phrase — `compose.yaml` is read by somebody who is not reading a chapter at all, so it takes the name. THREE LINES IN `schema.ts` ARE NOT HERE BECAUSE THEY ARE `refrules.DELIBERATE`: the NAMED-NOT-NUMBERED paragraph quotes 3.7, 3.8 and 3.9 as the ordinals that MOVED, and substituting a subject into it would delete the evidence for the convention this whole feature executes. `classify-refs` reports them separately — 'kept ON PURPOSE' — which is the one place in this feature where the right answer to an ordinal is to leave it. AND `2.2` AND `2.6` STAY NUMBERS throughout, as Part 2 was never renumbered.",
+   "pairs": [
+    [
+     "# Four stores, each here by a recorded decision (SAD §9), and — since chapter\n# 3.5 — the three services themselves. Host ports are env knobs with the",
+     "# Four stores, each here by a recorded decision (SAD §9), and — since the webhook\n# dispatcher chapter — the three services themselves. Host ports are env knobs with the"
+    ],
+    [
+     "  # --- the services (chapter 3.5) -----------------------------------------\n",
+     "  # --- the services (the webhook dispatcher chapter) -----------------------\n"
+    ],
+    [
+     "  // ── THE WEBHOOK REFUSALS (chapter 3.5) ──────────────────────────────────────\n",
+     "  // ── THE WEBHOOK REFUSALS (THIS CHAPTER) ─────────────────────────────────────\n"
+    ],
+    [
+     "  // --- chapter 3.5: the third principal ----------------------------------\n",
+     "  // --- this chapter: the third principal ----------------------------------\n"
+    ],
+    [
+     "  // ── the webhook surface (chapter 3.5) ──────────────────────────────────────────\n",
+     "  // ── the webhook surface (this chapter) ─────────────────────────────────────────\n"
+    ],
+    [
+     "  // ── the platform credential (chapter 3.5) ──────────────────────────────────────\n",
+     "  // ── the platform credential (this chapter) ─────────────────────────────────────\n"
+    ],
+    [
+     "  // ── the webhook surface (chapter 3.5), and the derivation named all seven ──────\n",
+     "  // ── the webhook surface (this chapter), and the derivation named all seven ─────\n"
+    ],
+    [
+     " /** The envelope as it will be delivered, byte-identical to what 3.3 published.",
+     " /** The envelope as it will be delivered, byte-identical to what the outbox chapter\n   * published."
+    ],
+    [
+     "// has ever held, which on a development machine is every test run since 3.3.)",
+     "// has ever held, which on a development machine is every test run since the outbox\n// chapter.)"
+    ],
+    [
+     " * is scoped to exactly ONE environment by construction (3.1, 3.2), so a",
+     " * is scoped to exactly ONE environment by construction (the tenancy and credentials\n * chapters), so a"
+    ],
+    [
+     "  // Retention and storage are immutable on an existing stream — chapter 3.4\n  // measured that (its research R1), and the lesson transfers unchanged.",
+     "  // Retention and storage are immutable on an existing stream — the broker chapter\n  // measured that (its research R1), and the lesson transfers unchanged."
+    ],
+    [
+     "    // Hashing is what 3.2 does to an API key, and it is one-way on purpose. The",
+     "    // Hashing is what the credentials chapter does to an API key, and it is one-way on\n    // purpose. The"
+    ],
+    [
+     "    // 256 bits, the same budget 3.2 gave an API key secret.",
+     "    // 256 bits, the same budget the credentials chapter gave an API key secret."
+    ],
+    [
+     "// DECISION: envelope encryption, not the salted hash chapter 3.2\n// used for API keys.",
+     "// DECISION: envelope encryption, not the salted hash the credentials chapter\n// used for API keys."
+    ],
+    [
+     "const SECRET_BYTES = 32; // 256 bits, the budget 3.2 gave an API key secret",
+     "const SECRET_BYTES = 32; // 256 bits, the budget the credentials chapter gave an API key"
+    ],
+    [
+     "// The same wiring chapter 2.2 established and 3.2 re-pointed: the repository is",
+     "// The same wiring chapter 2.2 established and the credentials chapter re-pointed: the\n// repository is"
+    ],
+    [
+     "// gateway's socket suite made in 3.2 and for the same reason. The dispatcher's",
+     "// gateway's socket suite made in the credentials chapter and for the same reason. The\n// dispatcher's"
+    ],
+    [
+     "    // environments, 2.6 for subjects, 3.4 for its own durables.",
+     "    // environments, 2.6 for subjects, the broker chapter for its own durables."
+    ]
+   ]
   }
  ]
 }

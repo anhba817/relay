@@ -200,6 +200,21 @@ def main() -> int:
             lines = f.read_text(encoding="utf-8").splitlines(keepends=True)
             changed = False
             for i, line in enumerate(lines):
+                # A COMMENT WHOSE SUBJECT IS AN ORDINAL IS LEFT ALONE, AND THIS CHECK WAS
+                # MISSING FOR NINETEEN CHAPTERS. `is_deliberate` was imported at the top
+                # of this file and never called: `classify-refs.py` honoured it and
+                # printed "N kept ON PURPOSE", and then this rewriter rewrote them
+                # anyway. An instrument reporting a protection it does not enforce is
+                # worse than one with no protection at all, because the report is the
+                # thing a reader checks.
+                #
+                # What it cost: `schema.ts`'s NAMED-NOT-NUMBERED paragraph — the origin
+                # of this feature's whole convention, quoted in `subjects.json`'s own
+                # `_why` — came out reading *"This line used to say 'the deduplication
+                # chapter's cross-tenant gauntlet'"*, which is what it says NOW. The
+                # sentence's evidence was the ordinal, and the substitution deleted it.
+                if is_deliberate(lines[i]):
+                    continue
                 # Re-scan after each edit: an edit shifts every later offset on the line.
                 while True:
                     m = next((x for x in REF.finditer(lines[i])

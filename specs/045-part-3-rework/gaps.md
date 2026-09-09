@@ -469,3 +469,69 @@ direction. The honest options are to run the full integration lane rather than o
 (the sort order then purges first — but only once `reset-lane` exists), or to keep purging
 by hand and say so beside every number. **This gap is why every duration in new 18's
 close-out is reported with the broker's message count next to it.**
+
+## 045-13 · A DOCUMENTED CODE WITH NO PRODUCER, AND THE GATE THAT COUNTS CANNOT SEE IT
+
+Measured while porting new 19. `docs/08-error-reference.md` publishes six webhook
+refusals; `webhooks.service.ts` throws five. The sixth,
+`webhook_event_type_unknown`, has a section — status, retryability, field — and nothing
+anywhere emits it: `create` accepts any string in `event_types`.
+
+**`check:errors` PASSES AND IS RIGHT TO.** It reads the built `dist` against the docs and
+reports *"27 codes, 27 sections, each with a cause and a client action"*. Both directions
+it checks are satisfied because it compares the REGISTRY with the SECTIONS — and a code
+can be in both while no code path constructs it. What it cannot ask is whether anything
+produces the refusal, which is the same shape as the producer test the revisions chapter
+had to write by reading `session.ts` as text.
+
+**THE OTHER FIVE WERE THE OPPOSITE DEFECT AND ARE FIXED IN NEW 19.** They were documented,
+unregistered, and thrown as bare 422s that shipped `code: "internal_error"` — measured on
+this tree with the exact body. So this one file held both directions of the same hole at
+once: five codes the registry lacked, and one the registry has with nothing to emit it.
+
+**WHY IT IS NOT FIXED HERE.** Refusing an unknown event type is new product behaviour that
+published's chapter 3.5 did not have, and the set to validate against is a decision:
+`OUTBOX_EVENT_TYPES` holds five names in this tree and FR-WHK-02 spells eight, three of
+which have no producer yet. Validating against the five would refuse a subscription to an
+event the contract publishes — which is the mistake feature 044's FR-016 made and had to
+amend, recorded in CLAUDE.md as *"a design in which a case cannot arise beats a branch
+that handles it"* inverted.
+
+**WHAT CLOSING IT COSTS.** One decision — which set — then one refusal, one code
+registration, one row in `webhooks.itest.ts`'s vocabulary test, and a paragraph in the
+chapter that makes it. Cheap; the decision is the part that needs a person.
+
+## 045-14 · THE REWRITER IMPORTED THE PROTECTION AND NEVER CALLED IT — CLOSED
+
+Found while porting new 19, by reading the replayed file rather than the tool's report.
+
+`refrules.DELIBERATE` names the three lines of one comment whose SUBJECT is an ordinal —
+`schema.ts`'s NAMED-NOT-NUMBERED paragraph, the origin of this feature's convention and
+quoted in `subjects.json`'s own `_why`. `classify-refs.py` honours it and prints
+*"3 kept ON PURPOSE (refrules.DELIBERATE) — a comment whose subject IS an ordinal"*.
+
+**`rewrite-refs.py` IMPORTS `is_deliberate` ON LINE 31 AND NEVER CALLS IT.** So the
+counter reported a protection the rewriter did not enforce, for nineteen chapters, and the
+substitution ran:
+
+    - // NAMED, NOT NUMBERED. This line used to say "chapter 3.7's cross-tenant
+    + // NAMED, NOT NUMBERED. This line used to say "the deduplication chapter's cross-tenant
+
+The sentence now claims the line used to say the thing it says now. **The ordinal WAS the
+evidence**, and the tool that exists to remove ordinals removed the one that was being
+quoted as a specimen.
+
+**AN INSTRUMENT REPORTING A PROTECTION IT DOES NOT ENFORCE IS WORSE THAN ONE WITH NO
+PROTECTION**, because the report is the thing a reader checks. Two tools, one definition,
+and only one of them applied it — the same shape as `check-fence-chain`'s corpus being
+narrower than its claim, and as the three classifiers that disagreed 4.5×.
+
+**FIXED AND CONTROLLED IN BOTH DIRECTIONS.** The rewriter now skips a deliberate line, with
+the cost written at the check. Falsified by disabling the guard: `found 1 rewritten 1`,
+naming `schema.ts:597`. Re-enabled: `found 0`. The paragraph was restored in the tree
+before the chapter's replay, and `classify-refs` reports 3 kept on purpose after it.
+
+**WHAT IT MEANS FOR THE EIGHTEEN TAGGED CHAPTERS.** Nothing to repair: the paragraph
+arrives with new 19, so no earlier tag ever contained a deliberate line for the rewriter to
+damage. This gap was a loaded gun rather than a wound, and it fired on the first chapter
+that handed it something.
