@@ -1122,3 +1122,36 @@ fixture that only guarantees existence guarantees whatever the first run happene
 The lane's own debris was cleaned by hand, which needed the exemption — and the guard refusing
 that cleanup, naming the owning test file, is the clearest demonstration of it working that this
 feature has produced.
+
+## 045-30 · A TWO-HALF EXEMPTION WHOSE OBVIOUS TEST COVERS ONE HALF, AND THE SECOND CASE FOUND BY FALSIFYING
+
+`deferred.md` deferred old 3.17's `## Billed, and exempt` section to new 23 and said which part
+mattered:
+
+> *"The exemption's second half is the part worth carrying: returning early so a bot is not
+> refused is visible, and excluding bots from the count the ceiling compares against is the half
+> that decides whether it works — with a test that sends as a person after a bot, never as the
+> bot itself."*
+
+That instruction is right and it is not sufficient, which is the finding. Written as directed —
+bot sends, then a person must still get through — and falsified both ways:
+
+    drop the COUNT's `kind = 'person'` filter   → red: QuotaExceededError, 1 of 1
+    drop the `!senderIsPerson` early return     → GREEN
+
+**THE EARLY RETURN IS UNREACHED BY THE TEST WRITTEN TO PROTECT IT.** With the count filtered to
+persons, a bot sending first sees zero of one and passes the ceiling check on its way through, so
+the return it would have taken is never needed. The early return only bites once the PERSONS have
+filled the ceiling — which is the state a customer meets on the day their team grows, and the one
+where refusing their own software is worst.
+
+A second case covers it: cap of one, a person sends, then a bot must still send. Falsified: with
+the early return deleted, `QuotaExceededError: active_users quota exhausted: 1 of 1`.
+
+**THE GENERAL SHAPE.** Two mechanisms that implement one rule can each be sufficient for the
+obvious case, and a single test then pins whichever runs first. The ledger's warning caught the
+half that is easy to forget; only running the probe caught the half that is easy to *cover by
+accident*. **"Which half does this test fail without?" has to be asked once per half**, and the
+answer is not derivable from the requirement — both halves cite the same clause.
+
+Closed in new 23, with both cases and both falsifications recorded at the code.
