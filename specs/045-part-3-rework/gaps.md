@@ -1192,3 +1192,38 @@ what it is overwriting, and a loop should not contain one whose premise is unver
 same treatment this project gives a migration or a lane reset: look at the target first, and stop
 if what is there is not what the step assumes — and when the boundary is somebody else's to draw,
 ask for the list, not for permission.
+
+## 045-32 · THE RE-PIN PROBE THIS PROJECT REQUIRES CANNOT RUN ON ONE FILE, AND IT FAILS SILENT
+
+`CLAUDE.md` records a rule from 044 and asks for it on every re-pin:
+
+> *"A PER-FILE COVERAGE THRESHOLD WHOSE KEY MATCHES NO FILE IS SILENT. Demanding 101% of
+> `this-file-does-not-exist.ts` produced no error, no warning, nothing. Demanding 101% of a real
+> file names the key. **Run both halves of that probe every time the ratchet is re-pinned.**"*
+
+Run against a single test file, as anyone would to keep it cheap, **both halves are silent and
+for two different reasons**. Measured while pinning the quota chapter's six files:
+
+    npx vitest run --config vitest.coverage.config.mts <one>.test.ts
+      → exit 0. No coverage table, no "Coverage enabled" line: without `--coverage`
+        the thresholds are not evaluated at all, so a 101% key on a REAL file passes.
+
+    npx vitest run --config vitest.coverage.config.mts --coverage <one>.test.ts
+      → exit 1, and the message is
+        `ERROR: Coverage for lines (0.28%) does not meet global threshold (70%)`
+        The global floor fires first and the per-file key is never reported.
+
+So the cheap form of the probe reports "nothing happened" in exactly the case it exists to
+distinguish from "nothing happened", and the form that does fire reports the wrong thing. **A
+probe whose negative result is indistinguishable from a broken probe is the defect it was written
+to find**, one level up — the same shape as 043's grep that matched nothing under one engine.
+
+**THE PROBE IS ONLY VALID IN THE FULL RUN**, where the global floor is met and the per-file keys
+are the only thing left to fail. That costs six minutes, which is why nobody would reach for it
+by hand, which is why the cheap form is the one that gets run.
+
+Not closed. Two shapes would fix it and both are work: run the probe as part of the close-out
+battery rather than by hand, or give the config a mode where the global floor is relaxed so a
+single-file run can exercise one key. Recorded here with the measurements so the next re-pin does
+not spend the same twenty minutes discovering it, and the config now says which half of the
+ritual each pin was validated by.
