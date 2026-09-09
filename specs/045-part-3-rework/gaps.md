@@ -1157,36 +1157,38 @@ answer is not derivable from the requirement — both halves cite the same claus
 Closed in new 23, with both cases and both falsifications recorded at the code.
 
 
-## 045-31 · SIX CHAPTERS' VIETNAMESE TRANSLATIONS WERE REPLACED BY PLACEHOLDERS, AND THE INSTRUCTION HAD BEEN OVERTAKEN
 
-The standing instruction for this rework reads *"writing the tutorial in English only, keep a
-placeholder for vietnamese"*, and the per-chapter loop ends with `vi-placeholder.py`. Applied to
-new 17 through new 22, that replaced **real translated prose** — six pages, 1.2 MB of Vietnamese —
-with a three-line notice.
+## 045-31 · A DESTRUCTIVE STEP RAN FOR THREE SESSIONS WITH ITS QUESTION UNANSWERED — AND THE ANSWER WAS "KEEP RUNNING IT"
 
-    ch17  246,834 bytes      ch20  243,819 bytes
-    ch18  128,714 bytes      ch21   51,301 bytes
-    ch19  289,486 bytes      ch22  155,647 bytes
+The per-chapter loop ends with `vi-placeholder.py`, which replaces a chapter's Vietnamese page
+with a three-line notice. Applied to new 17 through new 22 it overwrote 1.2 MB of Vietnamese
+prose, and this session's records show the question being put three times and never blocked on:
+*should the placeholder step keep running when real prose exists?*
 
-**THE INSTRUCTION WAS NOT WRONG WHEN IT WAS GIVEN; IT WAS OVERTAKEN.** Somebody is translating
-the early chapters, and `restore_part3_vi.py` in the worktree root is theirs. Three sessions
-running, this session's records show the question being put — *should the placeholder step keep
-running when real prose exists?* — and the loop kept running while it went unanswered. **A
-standing instruction is a fact about the moment it was given.** The step that acts on it destroys
-something; the question about it was asked and then not blocked on, which is the wrong way round
-for a destructive step.
+**BOTH ANSWERS I GUESSED WERE WRONG, AND IN OPPOSITE DIRECTIONS.** Running the step for six
+chapters assumed the prose was disposable. Then, told *"I'm doing the translation to Vietnamese
+for the first chapters, so do not clean up my work"*, I restored all six — assuming the prose was
+the author's. It was neither: **chapters 1 to 9 are the author's translations and chapters 10
+onward are machine edits**, so the six I restored were exactly the ones that should have stayed
+placeholders, and the nine I never touched were the ones at risk.
 
-All six are restored byte-for-byte from the commit before each placeholder. Nothing was lost —
-git had them — but nothing here checked, either: `vi-placeholder.py` never asks what it is about
-to overwrite, and its own docstring says the alternative it rejects is deleting the page, which
-frames the choice as "placeholder or nothing" when the third option was already on disk.
+The restore was reverted; chapters 17 to 22 hold placeholders again and chapters 1 to 9 have
+never been touched by this loop.
 
-**WHAT THE RESTORE COSTS, STATED RATHER THAN HIDDEN.** Each restored page carries the fences it
-had before its chapter was re-ported, so the English and Vietnamese fence lists disagree — new 22
-by 19 added, 1 removed and 30 bodies regenerated — and `check-fence-chain`'s mirror reports every
-one of them. That is the honest state: the English page is what a translator works from, and
-syncing fences into somebody's prose would put untranslated blocks under Vietnamese headings.
+**THE FINDING IS NOT ABOUT VIETNAMESE.** A step that overwrites human-authored content ran for
+three sessions on an instruction given before the content existed, and when the instruction was
+finally clarified my correction was wrong too — because I inferred the boundary rather than
+asking where it was. The question I asked three times was *"should I keep doing this?"*. The
+question that would have settled it in one exchange is **"which files are yours?"** — a question
+whose answer is a list rather than a judgement.
+
+**WHAT WOULD HAVE CAUGHT IT.** Not a gate: no instrument in either repository knows who wrote a
+paragraph. What was available and unused is the target itself — `vi-placeholder.py` never reads
+what it is about to replace, and its own docstring frames the choice as "placeholder or delete
+the page", which hides the third state that was already on disk. A destructive step should print
+what it is overwriting, and a loop should not contain one whose premise is unverified.
 
 **THE RULE.** A step that overwrites human-authored content is not a step in a loop. It needs the
 same treatment this project gives a migration or a lane reset: look at the target first, and stop
-if what is there is not what the step assumes.
+if what is there is not what the step assumes — and when the boundary is somebody else's to draw,
+ask for the list, not for permission.
