@@ -566,3 +566,40 @@ the read rule listing eight of nineteen and the rewriter never calling `is_delib
 three were found by RUNNING the tool on new input rather than by reading it, and none was
 visible to any test: the tooling has no tests of its own, which is the oldest item on this
 ledger and now has three instances behind it.
+
+## 045-16 · A DEFAULT PARAMETER THAT IS NEVER CONSTRUCTED, AND ONLY ONE INSTRUMENT COULD SEE IT — CLOSED
+
+Measured while porting new 21. Every test passed — 1,120 across 74 files, both lanes green
+— and the battery exited 1 on one line:
+
+    ERROR: Coverage for functions (99.12%) does not meet
+           "services/api/src/db/repository.ts" threshold (100%)
+
+The uncovered function was not a branch nobody tested. It was a **default parameter**:
+
+    onError: (row: DisableNotificationRow, error: unknown) => void = () => {},
+
+`() => {}` is a function that exists and never runs, because the one caller —
+`notification-relay.ts`'s `drainOnce` — has always passed a logging callback. v8 counts it,
+and 113 of 114 is 99.12%.
+
+**NOTHING ELSE IN THE REPOSITORY COULD HAVE ASKED.** Not the typecheck: a default is
+well-typed. Not lint: the parameter is used. Not either test lane: they were green. Not the
+statement or branch thresholds: one arrow body is one function and no statements. Only a
+per-file FUNCTION threshold pinned at 100 — rather than at whatever the file happened to
+measure — can produce this failure, which is the argument for pinning at the requirement
+instead of at the reading.
+
+**DELETED RATHER THAN COVERED, THE SIXTH TIME THIS FILE'S RATCHET HAS DONE THAT.** And the
+deletion is right on its own terms, not merely convenient: `onError` is how a caller learns
+a row was CLAIMED AND NOT SENT, so a default that swallows the failure silently is the
+wrong default. Required means the compiler asks the question instead of a reviewer. Battery
+re-run: 1,120 tests, exit 0, `repository.ts` functions back to 100.
+
+**AND A THIRD FILE JOINED THE LIST THAT READS LOW FOR WHERE ITS CODE RUNS.**
+`notifications/notification-relay.ts` measures 58.06/50/62.5/62.06 because its loop is
+started by `main.ts` in a spawned api; what this process reaches is `drainOnce`, called
+directly by the suite. It sits beside `internal/dispatch.controller.ts` (9.09%) and
+`webhooks/delivery-relay.ts` (28.12%) — three files now, all unpinned, and the fact is
+recorded in the config rather than in three lowered pins that would describe a test
+topology instead of the code.

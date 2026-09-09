@@ -35,7 +35,7 @@ PLAT = (_pl.Path(os.environ["RELAY_PLATFORM"]) if os.environ.get("RELAY_PLATFORM
         else HERE.parent.parent / "relay-platform")
 
 import refrules
-from refrules import is_deliberate, REF, ID, RULE_LINE, SPLIT, classify, controls_failing, is_versionish
+from refrules import dead_deliberate, is_deliberate, REF, ID, RULE_LINE, SPLIT, classify, controls_failing, is_versionish
 
 def main() -> int:
     broken = controls_failing()
@@ -86,6 +86,15 @@ def main() -> int:
     print(f"classify-refs: {tot} references in {len(files)} files, all 7 controls fired through REF")
     if deliberate:
         print(f"  plus {deliberate} kept ON PURPOSE (refrules.DELIBERATE) — a comment whose subject IS an ordinal")
+    # AND THE OTHER DIRECTION, which this checker did not ask for four chapters. An
+    # exemption over text that no longer exists is a standing permission nobody granted,
+    # and the only way it ever surfaces is a reader wondering why the count is short.
+    dead = dead_deliberate(list(refrules.platform_files(PLAT)))
+    if dead:
+        print(f"  {len(dead)} DELIBERATE entr(y/ies) match nothing in the tree:", file=sys.stderr)
+        for entry in dead:
+            print(f"    {entry[:96]}", file=sys.stderr)
+        return 1
     if not tot:
         # ZERO IS THE GOAL, AND IT CRASHED ON IT. `counts[k]*100//tot` divided by zero the
         # moment the last reference was rewritten — a script that cannot report its own

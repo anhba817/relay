@@ -127,11 +127,32 @@ def controls_failing() -> list[str]:
 # exact text rather than detected, because "is this line talking about ordinals or using
 # one" is not a question a pattern answers, and an exemption nobody can enumerate is an
 # exemption nobody can review.
+# A COMMENT WHOSE SUBJECT IS AN ORDINAL, LEFT ALONE ON PURPOSE — AND THE SET SHRANK.
+#
+# It held three lines: the specimen and two that recited "the gauntlet was 3.7, became
+# 3.8, is now 3.9". Published's own later chapter deleted those two, because the sentence
+# STATING the ordinals had itself gone stale in the very next chapter — the rule proving
+# itself on its own explanation. What is left is the one line that QUOTES the reference it
+# is about, and quoting is the only reason an ordinal survives this feature.
+#
+# THE TWO DEAD ENTRIES WERE FOUND BY ASKING WHETHER EACH STILL MATCHES THE TREE, which is
+# the both-directions check this repository has now paid for four times: a list checked
+# one way can only grow, and a stale entry holds a standing exemption over text that no
+# longer exists. `dead_deliberate` below is that question, and `classify-refs` asks it.
 DELIBERATE = frozenset({
     '// NAMED, NOT NUMBERED. This line used to say "chapter 3.7\'s cross-tenant',
-    '// gauntlet". The gauntlet was 3.7 when that was written, became 3.8 when a chapter',
-    '// was inserted ahead of it, and is now 3.9 after a second insertion — and the',
 })
+
+
+def dead_deliberate(files) -> list[str]:
+    """Entries that match no line in the corpus — an exemption over nothing."""
+    live: set[str] = set()
+    for f in files:
+        for line in f.read_text(encoding="utf-8", errors="ignore").splitlines():
+            s = line.strip()
+            if s in {x.strip() for x in DELIBERATE}:
+                live.add(s)
+    return sorted({x.strip() for x in DELIBERATE} - live)
 
 
 def is_deliberate(line: str) -> bool:

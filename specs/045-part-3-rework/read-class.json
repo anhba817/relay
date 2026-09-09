@@ -812,6 +812,23 @@
    "drops": [
     "retry-and-disable"
    ]
+  },
+  {
+   "why": "THE MAIL-TRANSPORT CHAPTER'S THREE, and the first one is why this chapter needed a read class at all. `infra.test.ts` says 'Chapter 3.8 added a fifth container' — and published cut `part3-ch8` and `part3-ch9` at the same commit, so 3.8 there means THE CHAPTER THIS WORK LANDED IN, which in this order is new 21. Substituting the limits chapter's subject would attribute Mailpit to a chapter that does not build it. The other two point back at the disablement chapter, whose notification rows this one finally sends.",
+   "pairs": [
+    [
+     "    // naming the local infrastructure while every test still passed. Chapter\n    // 3.8 added a fifth container and the gap is how it nearly went unnoticed.",
+     "    // naming the local infrastructure while every test still passed. This chapter\n    // added a fifth container and the gap is how it nearly went unnoticed."
+    ],
+    [
+     "// The backlog 3.6 accumulated therefore drains on the first run with NO SPECIAL",
+     "// The backlog the disablement chapter accumulated therefore drains on the first run\n// with NO SPECIAL"
+    ],
+    [
+     " * else — 3.6 wrote the reason down and this is the first code to depend on it.",
+     " * else — the disablement chapter wrote the reason down and this is the first code to\n * depend on it."
+    ]
+   ]
   }
  ]
 }

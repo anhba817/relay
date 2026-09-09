@@ -686,3 +686,50 @@ five-422s finding stays the webhook chapter's, named as owed rather than quoted 
 first two were caught by `tsc` because they were imports. A citation in prose is the same
 defect with no compiler — which is why the port now greps each new comment's filenames
 against the tree.
+
+## THE ONE PUBLISHED RANGE THAT HAS TO BE SPLIT, NOT DEFERRED
+
+Measured while porting new 21. `part3-ch8` and `part3-ch9` point at THE SAME COMMIT
+(`b0600560`), and the nineteen commits between `part3-ch7` and them hold two chapters'
+work interleaved: the rate limiter (old 3.8 → **new 22**) and the email transport
+(old 3.9 → **new 21**). The chapter boundary is editorial and was never in the history.
+
+    4e61e59 … 6354153   ten commits of rate-limit work        new 22
+    a068427             the email transport                   new 21, and it straddles
+    4a2ea93             one undeliverable must not block      new 21
+    31e9cce             two suites get their own bucket       BOTH — see below
+    ba798af … b060056   six docs/test cleanups                mostly new 21
+
+**SO THIS IS THE FIRST CHAPTER WHERE A COMMIT IS DIVIDED RATHER THAN MOVED.** Everything
+before this point was a whole commit owed to a later chapter; here `a068427` adds the
+mailer AND two lines to `services/gateway/src/limits.itest.ts`, a file new 22 creates, and
+its `harness.ts` hunk forwards `RELAY_AUTH_FAILURES_PER_MINUTE` and `RELAY_AUTH_KEY_PREFIX`
+beside `RELAY_SMTP_URL`. The first two are the limiter's; the third is this chapter's.
+
+| original commit | part | belongs to | what it does |
+|---|---|---|---|
+| `a068427` (part) | `services/gateway/src/limits.itest.ts` | new 22 (limits) | two lines turning the notification relay off in a limiter child |
+| `a068427` (part) | `RELAY_AUTH_FAILURES_PER_MINUTE`, `RELAY_AUTH_KEY_PREFIX` in `packages/e2e/src/harness.ts` | new 22 (limits) | forward the auth threshold and key prefix into api children |
+| `31e9cce` (part) | the `credentials.itest.ts` and `signup.itest.ts` halves | new 22 (limits) | give the two threshold-raising suites their own counter bucket |
+
+**AND THE ROW BEFORE THIS ONE IS WHY THE SPLIT IS WRITTEN DOWN AT ALL.** Two rows in this
+ledger were filed against the wrong chapter by reading which FILE a commit touched; a
+commit that touches four files belonging to two chapters cannot be filed that way at all.
+What settles it is what the hunk's TARGET is — `limits.itest.ts` does not exist here, and
+`RELAY_AUTH_*` is read by a limiter that does not exist here either.
+
+| `ba798af` (whole) | the `quotaConfig` comment in `schema.ts`, the `rate_limited` frame test in `session.test.ts` | new 22 (limits) | cite what a thing is, not which chapter it lands in |
+| `f245c05` (part) | `withoutRequestId` in `webhooks/test-event.itest.ts` | new 22 (limits) | drop the fourth error field before comparing two bodies whole |
+
+**`ba798af` IS THE CLEANEST CASE IN THIS LEDGER AND IT LOOKED LIKE THE MESSIEST.** Its
+subject — *"cite what a thing is, not which chapter it lands in"* — is this feature's own
+thesis, so it reads as though it must belong wherever the convention is being applied. It
+does not: both hunks land in text old 3.8 writes, `quotaConfig`'s "rate-limit policy is not
+here" note and the first test that asserts `rate_limited` on a frame. Neither exists in
+this tree, and the cherry-pick rendered both as sixty lines of "theirs" that cannot apply.
+
+**AND ITS OWN COMMENT ARGUES FOR THE DEFERRAL BETTER THAN THIS ROW CAN.** The text it
+adds says *"Deliberately not a chapter NUMBER: 3.7 renumbered quotas once already, and a
+comment in a file fenced byte-exact into a published page goes stale silently."* That is
+the argument for feature 045, written by the chapter that will carry it — which is why the
+row is here rather than executed early.
