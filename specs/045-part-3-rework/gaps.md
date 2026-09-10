@@ -2079,33 +2079,40 @@ shas are still in the range before adding a line to it, and delete a map whose d
 landed.** The alternative — re-keying five shas after every replay — is a table that has to be
 maintained against a moving history, which is the shape this whole feature exists to remove.
 
-## 045-55 · A FEATURE ID READ AS A CHAPTER ORDINAL, NINE TIMES, IN THE ONE FILE NO CHAPTER OWNS
-
-Found while repairing a `post-series.md` hunk. The amendment chain carries:
+## 045-55 · AN ORDINAL WITH AN ITEM NUMBER HANGING OFF IT, ELEVEN TIMES IN THIS FEATURE'S OWN COMMIT — CLOSED
+Found while repairing a `post-series.md` hunk. The amendment chain carried:
 
     the two-lists-that-must-agree defect `gaps.md` the revisions chapter-4 records about
 
-That was `gaps.md 044-4`. The reference pass matched `044` — the revision-watermark feature,
-whose subject name is *the revisions chapter* — and substituted it, leaving the item number
-stranded as `-4`. Nine instances, all in `fences/post-series.md`:
+**AND THE FIRST DIAGNOSIS WAS WRONG, WHICH IS WHY IT IS WRITTEN DOWN TWICE.** It was filed as a
+FEATURE id read as a chapter ordinal — `044-4` matched because 044's subject name is *the
+revisions chapter*. That reading is tidy and false. `git show` on the commit that did it settled
+it in one line:
 
-    the revisions chapter-1     x2      the revisions chapter-3     x2
-    the revisions chapter-4     x1      the revisions chapter-9     x2
-    the connection-cap chapter-6 x1     (and one more of the same shape)
+    - * subscriptions name `channel.created`**. The review and `gaps.md` 3.23-1 both recommend
+    + * subscriptions name `channel.created`**. The review and `gaps.md` the revisions chapter-1 both
 
-**A GAPS ITEM ID IS NOT A CHAPTER REFERENCE**, and `044-4` looks like one to a rule that reads
-three digits and a separator. The rule's own corpus notes warn about the mirror image — a decimal
-mistaken for an ordinal, `80% of 4 is 3.2` — and that one is in `DELIBERATE` with a comment. This
-is the same collision from the other direction and nobody looked, because **`post-series.md` is
-the one fenced file no chapter owns**: every per-chapter instrument is keyed to a chapter
-directory, and this file is checked only by the chain, which compares bodies and reads no prose.
+The original is **`3.23-1`** — a gaps ITEM id, `<chapter>-<item>`. The rule matched the right
+thing: `3.23` IS a chapter ordinal, and *the revisions chapter* is its name. What it could not
+know is that the ordinal was part of a larger identifier, so the substitution left `-1` hanging
+off a chapter name.
 
-**IT IS NOT THIS FEATURE'S TEXT, WHICH IS WHY IT SURVIVED.** `post-series.md` is 044's record of
-amending the published series. Feature 045's passes rewrote references across it because it is
-fenced, and the damage is to citations of 044's own ledger — nine pointers into `gaps.md` that
-now resolve to nothing and read as a chapter that does not exist.
+**ELEVEN IN THE PLATFORM, NINE OF THEM ALSO IN THE AMENDMENT** — and the two counts are the same
+defect seen twice, because `post-series.md`'s `+` lines are what put them in the tree. The
+rebuild's own trees carry **zero**: these are 044's files, after Part 3, so the Part-3 rebuild
+never touched them.
 
-**NOT FIXED HERE.** Nine hunks in the amendment chain, each quoting platform source as context,
-and every edit to that file is one the chain re-verifies against the tree — the same care the
-one-line context fix above needed. It is a pass of its own, and it needs the `044-N` shapes added
-to the rule's own exemption list first, or the next replay will re-break what this one fixes.
+**A CITATION INTO A DOCUMENT IS AN ID.** Renaming a chapter does not renumber that chapter's own
+`gaps.md`, which is exactly why `FR-RTL-05`, `T121a` and `R7` pass through untouched. Reverted to
+`3.23-N` and `3.22-6` in both places at once, because the amendment and the tree have to agree or
+the chain HEAD-mismatches. `check:fences` before and after: **296, APPLY 139, HEAD 157.**
+
+**AND THE GUARD'S FIRST VERSION WAS WRONG, CAUGHT BY ITS OWN NEGATIVE CONTROL.** `(?!-\d)` on the
+ordinal branches looked sufficient and is not: `\d{1,2}` backtracks, so `chapter 3.23-4` still
+matched — as `chapter 3.2`, with `3-4` left over. `(?!\d)(?!-\d)` is the pair that holds.
+
+`refrules.py` declares three refused strings beside its three positive controls now. **A positive
+control proves a pattern still fires; only a negative control proves it stopped firing where it
+should not** — and this one found the fix incomplete before a line of source was touched, which is
+the whole argument for having written it.
+

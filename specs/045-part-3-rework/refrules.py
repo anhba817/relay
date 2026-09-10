@@ -24,11 +24,40 @@ text. The two designs before this one both let a broken branch pass:
 """
 import re
 
+# AN ORDINAL WITH AN ITEM NUMBER HANGING OFF IT IS AN ID, NOT A REFERENCE.
+#
+# `gaps.md` items are cited as `<chapter>-<item>`: `3.23-1`, `3.22-6`. The `bare` branch
+# matched the `3.23` — a hyphen is a non-word character, so `\b` was satisfied — and the
+# substitution stranded the item number:
+#
+#     `gaps.md` 3.23-1  ->  `gaps.md` the revisions chapter-1
+#
+# Eleven of those reached the platform in this feature's own `refactor(045): the read
+# class` commit, and nine of them ride into it through the amendment chain. They read as
+# a chapter that does not exist, and every one is a pointer into a record that renaming a
+# chapter does not renumber — the same reason `FR-RTL-05`, `T121a` and `R7` are left
+# alone. A citation into a document is an ID.
+#
+# `(?!\d)(?!-\d)` on both ordinal branches, and BOTH lookaheads are needed. `(?!-\d)`
+# alone was written first and the negative control refused it: `\d{1,2}` backtracks, so
+# `chapter 3.23-4` matched as `chapter 3.2` with `3-4` left over. `(?!\d)` is what stops
+# the retry at one digit.
+#
+# A pattern's positive control proves it still fires; only a NEGATIVE control proves it
+# stopped firing where it should not — and this one found the first fix incomplete before
+# a line of source was touched.
 BRANCHES = {
-    "chapter": (r"(?i:chapter) 3\.\d{1,2}", "// see CHAPTER 3.20 for the finding", "CHAPTER 3.20"),
-    "paren":   (r"\(3\.\d{1,2}\)",          "// the sender's own half (3.17)",     "(3.17)"),
-    "bare":    (r"\b3\.\d{1,2}(?:'s)?\b",   "// as 3.20's does, for the same reason", "3.20's"),
+    "chapter": (r"(?i:chapter) 3\.\d{1,2}(?!\d)(?!-\d)", "// see CHAPTER 3.20 for the finding", "CHAPTER 3.20"),
+    "paren":   (r"\(3\.\d{1,2}\)",                       "// the sender's own half (3.17)",     "(3.17)"),
+    "bare":    (r"\b3\.\d{1,2}(?!\d)(?:'s)?\b(?!-\d)",  "// as 3.20's does, for the same reason", "3.20's"),
 }
+
+# STRINGS NO BRANCH MAY MATCH, each one a shape that reached the tree.
+REFUSED = (
+    "// The review and `gaps.md` 3.23-1 both recommend OUTBOX_EVENT_TYPES",
+    "// `gaps.md` 3.22-6 counts eleven files",
+    "// chapter 3.23-4 records the two-lists-that-must-agree defect",
+)
 REF = re.compile("|".join(pat for pat, _, _ in BRANCHES.values()))
 ID = re.compile(r"\b(FR|SC|NFR|EIR|ADR|CON|DR|ASM)-[A-Z]*-?\d+[a-z]?\b")
 RULE_LINE = re.compile(r"^\s*(?://|--|#)\s*(?:[─=]{2,}|-{3,})")
@@ -104,6 +133,10 @@ def controls_failing() -> list[str]:
         got = m.group(0) if m else None
         if got != expect:
             bad.append(f"branch {name!r}: REF matched {got!r} on its own control, expected {expect!r}")
+    for text in REFUSED:
+        m = REF.search(text)
+        if m:
+            bad.append(f"REF matched {m.group(0)!r} in {text!r} — a gaps item id is not a reference")
     for text, want in (("(chapter 3.21, FR-RTM-08)", True), ("(chapter 3.21)", False)):
         if bool(ID.search(text)) != want:
             bad.append(f"ID pattern failed its control {text!r}")
