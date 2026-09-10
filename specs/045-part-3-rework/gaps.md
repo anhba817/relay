@@ -2823,3 +2823,54 @@ past the rule line is caught, exit 1, one ordinal in one file. **A probe that la
 exemption tests the exemption, not the boundary**, and the difference is one line of the file.
 `deliberate_controls()` asserts the span is the tag's three lines and not the seven-line block, and
 runs on every invocation.
+
+## 045-71 · THE TWO FENCE CHECKERS CANNOT BOTH BE SATISFIED BY EDITING A BODY, AND ONE OF THEM IS THE ARTIFACT
+
+`check-chapter.py` verifies a fence against the diff between the chapter's own two tags.
+`check-fence-chain.mjs` verifies it against the cumulative replay of every fence from Part 1.
+**Where those two states differ, no fence body satisfies both** — and the difference is not
+hypothetical, it is 68 of this feature's remaining fence problems.
+
+**I BUILT THE REPLAY-SOURCED GENERATOR AND IT MADE THE ARTIFACT WRONG.** CLAUDE.md's rule 1a says
+to generate hunks from the checker's own replay — copy `check-fence-chain.mjs`, make it dump its
+state, generate from that. Done: `regen-from-replay.py`, eleven fences regenerated from the
+predecessor state the chain actually holds.
+
+    check-fence-chain    APPLY 137 → 132     the chain went greener
+    check-chapter        0 → 4, 4, 2, 1      chapters 22, 23, 24 and 25 went RED
+
+Every new pre-image was absent from the chapter's real starting tree, so a reader typing along
+would find nothing to match. **Green instrument, false artifact**, and the eleven were reverted to
+tag-correct bodies. Rule 1a is right about generating hunks the CHAIN will accept; it does not say
+that accepting them is worth a fence a reader cannot apply, and this is the case where those
+diverge.
+
+**WHY THE STATES DIVERGE, WHICH IS THE FINDING UNDER THE FINDING.** The chain replays only what it
+can see: a fence with a `title="…"`. Content that reaches a file through an untitled fence, an
+excerpt-only file, or no fence at all never enters the replayed state — so the state the chain
+holds at chapter N is the real tree minus everything invisible to it. **The remaining APPLY
+failures are not fence-body bugs; they are 043-1's 151 untitled fences, measured from the other
+end.** Editing bodies to accommodate that is repairing the symptom into the published text.
+
+**THE DECOMPOSITION, RE-MEASURED** (045-66's numbers were taken before the chain rewrite):
+
+                            vs main    vs the rework tip
+    HEAD  en chapters          137                   36
+    HEAD  post-series.md        19                   24
+    APPLY post-series.md        55                   55
+    APPLY en chapters           34                   34
+    APPLY vi chapters           34                   34
+                            ───────    ─────────────────
+                                279                  183
+
+**101 of the 279 are "main is not the rebuilt history"** and go when the publish decision lands.
+**79 are the appendix**, unchanged either way, and no task in this feature touches it. **68 are the
+untitled-fence divergence**, mirrored across two locales, and the honest repair is upstream —
+title the fences that carry content — not downstream in the bodies that fail because of them.
+**Seven were fences describing changes the reorder had already made elsewhere**, and those are
+gone: chapter 10's five citation-only edits, chapter 7's provenance tag, chapter 25's assertion.
+
+**AND `check-chapter` IS THE ONE TO KEEP GREEN.** It tests the property a reader depends on — this
+chapter's diff applies to this chapter's starting point. The chain tests a property the *book*
+depends on, and it is currently measuring its own blind spot as well as the text. Both are worth
+having; when they disagree, the artifact wins.
