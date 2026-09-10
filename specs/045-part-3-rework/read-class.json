@@ -1221,6 +1221,33 @@
      "    // WAS `every((m) => m.user === null)`, AND THAT IS THE CHAPTER\n    // (T055's class). This assertion existed to prove the rows were senderless, which was"
     ]
    ]
+  },
+  {
+   "why": "THE PROSE CORRECTIONS — 045-7 and 045-20, the two the reference table refused. Both are claims that the reorder made false and that a later chapter corrected, so the trees between carry a sentence nobody would write today.\n\nDECLARED DROPS, NOT A DISABLED GUARD. The word-count check is the reason these were held back at all, and turning it off for a whole group would give up the thing that caught them. `drops` names the words each correction loses — a tense cannot be changed without losing the old inflection — and an undeclared drop still fails.\n\n045-7: `@Accepts` arrived on `MessagesController` at new 11, so three comments asserting in the PRESENT tense that it declares none are false from new 11 to new 16, where new 17 corrects them. The correction here is true at new 11 and new 17 supersedes it with its own richer version, which is correct — that chapter is where the declaration is the subject.\n\n045-20: `compare.ts`'s docblock credits the rate limiter with forcing `withoutRequestId` into existence. The helper arrived at new 9 and the limiter is new 22. What actually put `request_id` on every error body is the error-registry chapter, which is new 3.",
+   "drops": [
+    "falls",
+    "rate",
+    "limiter",
+    "added"
+   ],
+   "pairs": [
+    [
+     "      // `MessagesController` declares no `@Accepts` — so the guard falls back to\n      // `EITHER` and a user token was accepted there.",
+     "      // `MessagesController` declared no `@Accepts` until the sender chapter — so the\n      // guard fell back to `EITHER` and a user token was accepted there."
+    ],
+    [
+     "    // customer's own client calls. `MessagesController` declares no `@Accepts`, so\n    // the guard falls back to `EITHER` and a user token is accepted here.",
+     "    // customer's own client calls. `MessagesController` declared no `@Accepts` until\n    // the sender chapter, so the guard fell back to `EITHER` and a user token was\n    // accepted here."
+    ],
+    [
+     "  // with no user at all — and `MessagesController` declares no `@Accepts`, so the\n  // guard falls back to `EITHER` and a user token is accepted here.",
+     "  // with no user at all — and `MessagesController` declared no `@Accepts` until the\n  // sender chapter, so the guard fell back to `EITHER` and a user token was accepted\n  // here."
+    ],
+    [
+     " * as an absent one; the rate limiter added `request_id` to every error body and\n * forced this helper into existence; and there it stayed — one file's private",
+     " * as an absent one; `request_id` on every error body is what forced this helper into\n * existence, and the error-registry chapter is what put it there; and there it stayed —\n * one file's private"
+    ]
+   ]
   }
  ]
 }

@@ -1,384 +1,415 @@
 {
-  "_why": [
-    "The old-to-new chapter map. Feature 045, FR-007 and FR-014.",
-    "",
-    "ONE RECORD, THREE CONSUMERS: the published mapping page, the 48 redirects in",
-    "next.config.ts, and the chapter registry in relay-tutorial/lib/tutorial.ts that the",
-    "sitemap and six components read. The plan said two consumers until analysis counted",
-    "them. A hand-maintained list cannot be checked, and neither can a hand-maintained",
-    "count of who reads it.",
-    "",
-    "TWENTY-FOUR BECOMES TWENTY-FIVE. One chapter splits: the error registry is needed by",
-    "every chapter that adds a refusal, and ten chapters currently add codes to a registry",
-    "the reader does not meet until chapter fourteen. The outsider is the SRS Phase 2 exit",
-    "criterion and nothing may follow it.",
-    "",
-    "FOUR CHAPTERS KEEP THEIR NUMBER AND CHANGE MEANING — 3.13, 3.14, 3.15 and 3.16 all",
-    "exist before and after and name different chapters. That is the sharpest argument for",
-    "the named-reference rule: an ordinal that survives a reorder pointing at different",
-    "content is worse than one that breaks.",
-    "",
-    "THE GUARD'S TABLE ARRAY GROWS PER CHAPTER, AND NO CHAPTER NAMES A COUNT.",
-    "New 8's section 'Nine guarded tables, not five' was an AUDIT of chapters 3.10 and",
-    "3.11 — 'neither added them here' — and both now land at 23 and 24. A chapter that",
-    "audits earlier chapters cannot be reordered ahead of them, and no instrument in",
-    "either repository reads that sentence. The section is deleted rather than moved:",
-    "each chapter adds its own table to the array, plants its bait, and drives it in",
-    "guard.itest.ts. That also disposes of sentinel.sql's running count ('TEN AS OF",
-    "CHAPTER 3.16'), a number the reorder scrambles and nothing checks."
-  ],
-  "movements": [
+ "_why": [
+  "The old-to-new chapter map. Feature 045, FR-007 and FR-014.",
+  "",
+  "ONE RECORD, THREE CONSUMERS: the published mapping page, the 48 redirects in",
+  "next.config.ts, and the chapter registry in relay-tutorial/lib/tutorial.ts that the",
+  "sitemap and six components read. The plan said two consumers until analysis counted",
+  "them. A hand-maintained list cannot be checked, and neither can a hand-maintained",
+  "count of who reads it.",
+  "",
+  "TWENTY-FOUR BECOMES TWENTY-FIVE. One chapter splits: the error registry is needed by",
+  "every chapter that adds a refusal, and ten chapters currently add codes to a registry",
+  "the reader does not meet until chapter fourteen. The outsider is the SRS Phase 2 exit",
+  "criterion and nothing may follow it.",
+  "",
+  "FOUR CHAPTERS KEEP THEIR NUMBER AND CHANGE MEANING — 3.13, 3.14, 3.15 and 3.16 all",
+  "exist before and after and name different chapters. That is the sharpest argument for",
+  "the named-reference rule: an ordinal that survives a reorder pointing at different",
+  "content is worse than one that breaks.",
+  "",
+  "THE GUARD'S TABLE ARRAY GROWS PER CHAPTER, AND NO CHAPTER NAMES A COUNT.",
+  "New 8's section 'Nine guarded tables, not five' was an AUDIT of chapters 3.10 and",
+  "3.11 — 'neither added them here' — and both now land at 23 and 24. A chapter that",
+  "audits earlier chapters cannot be reordered ahead of them, and no instrument in",
+  "either repository reads that sentence. The section is deleted rather than moved:",
+  "each chapter adds its own table to the array, plants its bait, and drives it in",
+  "guard.itest.ts. That also disposes of sentinel.sql's running count ('TEN AS OF",
+  "CHAPTER 3.16'), a number the reorder scrambles and nothing checks.",
+  "",
+  "`was_url` IS THE REDIRECT'S SOURCE, and it is recorded here because a redirect needs the",
+  "OLD slug and this map only ever carried the new one. Twenty-four of the twenty-six have",
+  "one; the two without are the halves the split created, which never had a URL to redirect.",
+  "Matched BY SLUG rather than by number: old 12 and old 14 each split, and the old slug is",
+  "what says which new chapter inherits the address — `milestone-the-isolation-gauntlet` went",
+  "to new 25, not to new 4. That is why T038 asks for 48 redirects across 26 chapters."
+ ],
+ "movements": [
+  {
+   "id": "I",
+   "title": "The tenant, the credential, and the vocabulary",
+   "chapters": [
+    1,
+    2,
+    3,
+    4
+   ]
+  },
+  {
+   "id": "II",
+   "title": "One event, written once"
+  },
+  {
+   "id": "III",
+   "title": "The domain a customer can use"
+  },
+  {
+   "id": "IV",
+   "title": "The socket, continued from Part 2"
+  },
+  {
+   "id": "V",
+   "title": "The message, revised"
+  },
+  {
+   "id": "VI",
+   "title": "Someone else's system"
+  },
+  {
+   "id": "VII",
+   "title": "What it costs"
+  },
+  {
+   "id": "VIII",
+   "title": "The verdict"
+  }
+ ],
+ "chapters": [
+  {
+   "old": 1,
+   "new": 1,
+   "movement": "I",
+   "slug": "tenants-all-the-way-down",
+   "title": "Tenants all the way down",
+   "was_url": "chapter-01/tenants-all-the-way-down"
+  },
+  {
+   "old": 2,
+   "new": 2,
+   "movement": "I",
+   "slug": "keys-and-tokens",
+   "title": "Keys and tokens",
+   "was_url": "chapter-02/keys-and-tokens"
+  },
+  {
+   "old": 14,
+   "new": 3,
+   "movement": "I",
+   "slug": "errors-that-resolve",
+   "title": "Errors that resolve"
+  },
+  {
+   "old": 12,
+   "new": 4,
+   "slug": "the-isolation-harness",
+   "movement": "I",
+   "title": "The isolation harness"
+  },
+  {
+   "old": 3,
+   "new": 5,
+   "movement": "II",
+   "slug": "the-outbox",
+   "title": "The outbox",
+   "was_url": "chapter-03/the-outbox"
+  },
+  {
+   "old": 4,
+   "new": 6,
+   "movement": "II",
+   "slug": "jetstream-and-the-first-consumer",
+   "title": "JetStream, and the grammar a subject needs",
+   "was_url": "chapter-04/jetstream-and-the-first-consumer"
+  },
+  {
+   "old": 7,
+   "new": 7,
+   "movement": "II",
+   "slug": "commit-and-publish-are-two-instants",
+   "title": "Commit and publish are two instants",
+   "was_url": "chapter-07/commit-and-publish-are-two-instants"
+  },
+  {
+   "old": 13,
+   "new": 8,
+   "movement": "III",
+   "slug": "the-endpoints-and-the-instruments",
+   "title": "The endpoints and the instruments",
+   "was_url": "chapter-13/the-endpoints-and-the-instruments"
+  },
+  {
+   "old": 15,
+   "new": 9,
+   "movement": "III",
+   "slug": "the-channel-a-customer-controls",
+   "title": "The channel a customer controls",
+   "was_url": "chapter-15/the-channel-a-customer-controls"
+  },
+  {
+   "old": 16,
+   "new": 10,
+   "movement": "III",
+   "slug": "what-a-user-sees",
+   "title": "What a user sees",
+   "was_url": "chapter-16/what-a-user-sees"
+  },
+  {
+   "old": 17,
+   "new": 11,
+   "movement": "III",
+   "slug": "the-sender-a-message-never-had",
+   "title": "The sender a message never had",
+   "was_url": "chapter-17/the-sender-a-message-never-had"
+  },
+  {
+   "old": 18,
+   "new": 12,
+   "movement": "IV",
+   "slug": "the-message-that-never-arrived",
+   "title": "The message that never arrived",
+   "was_url": "chapter-18/the-message-that-never-arrived"
+  },
+  {
+   "old": 19,
+   "new": 13,
+   "movement": "IV",
+   "slug": "who-is-allowed-to-see-it",
+   "title": "Who is allowed to see it",
+   "was_url": "chapter-19/who-is-allowed-to-see-it"
+  },
+  {
+   "old": 20,
+   "new": 14,
+   "movement": "IV",
+   "slug": "the-membership-that-changed",
+   "title": "The membership that changed",
+   "was_url": "chapter-20/the-membership-that-changed"
+  },
+  {
+   "old": 21,
+   "new": 15,
+   "movement": "IV",
+   "slug": "the-frame-nobody-may-send",
+   "title": "The frame nobody may send",
+   "was_url": "chapter-21/the-frame-nobody-may-send"
+  },
+  {
+   "old": 22,
+   "new": 16,
+   "movement": "IV",
+   "slug": "the-sixth-connection",
+   "title": "The sixth connection",
+   "was_url": "chapter-22/the-sixth-connection"
+  },
+  {
+   "old": 23,
+   "new": 17,
+   "movement": "V",
+   "slug": "the-words-somebody-wants-back",
+   "title": "The words somebody wants back",
+   "was_url": "chapter-23/the-words-somebody-wants-back"
+  },
+  {
+   "old": 24,
+   "new": 18,
+   "movement": "V",
+   "slug": "the-message-that-is-not-only-text",
+   "title": "The message that is not only text",
+   "was_url": "chapter-24/the-message-that-is-not-only-text"
+  },
+  {
+   "old": 5,
+   "new": 19,
+   "movement": "VI",
+   "slug": "webhooks-that-survive-the-customer",
+   "title": "Webhooks that survive the customer",
+   "was_url": "chapter-05/webhooks-that-survive-the-customer"
+  },
+  {
+   "old": 6,
+   "new": 20,
+   "movement": "VI",
+   "slug": "when-to-stop-trying",
+   "title": "When to stop trying",
+   "was_url": "chapter-06/when-to-stop-trying"
+  },
+  {
+   "old": 9,
+   "new": 21,
+   "movement": "VI",
+   "slug": "the-email-nobody-was-sending",
+   "title": "The email nobody was sending",
+   "was_url": "chapter-09/the-email-nobody-was-sending"
+  },
+  {
+   "old": 8,
+   "new": 22,
+   "movement": "VII",
+   "slug": "limits-you-can-see-coming",
+   "title": "Limits you can see coming",
+   "was_url": "chapter-08/limits-you-can-see-coming"
+  },
+  {
+   "old": 10,
+   "new": 23,
+   "movement": "VII",
+   "slug": "quotas-and-what-they-cost",
+   "title": "Quotas and what they cost",
+   "was_url": "chapter-10/quotas-and-what-they-cost"
+  },
+  {
+   "old": 11,
+   "new": 24,
+   "movement": "VII",
+   "slug": "counting-a-connection",
+   "title": "Counting a connection",
+   "was_url": "chapter-11/counting-a-connection"
+  },
+  {
+   "old": 12,
+   "new": 25,
+   "movement": "VIII",
+   "slug": "milestone-the-isolation-gauntlet",
+   "title": "Milestone: the isolation gauntlet",
+   "was_url": "chapter-12/milestone-the-isolation-gauntlet"
+  },
+  {
+   "old": 14,
+   "new": 26,
+   "movement": "VIII",
+   "slug": "errors-that-resolve-and-an-outsider",
+   "title": "Milestone: an outsider",
+   "was_url": "chapter-14/errors-that-resolve-and-an-outsider"
+  }
+ ],
+ "splits": [
+  {
+   "old": 14,
+   "why": "the error vocabulary and the sealed package share no fence",
+   "boundary": {
+    "en": "## The outsider",
+    "vi": "## Người ngoài"
+   },
+   "halves": [
     {
-      "id": "I",
-      "title": "The tenant, the credential, and the vocabulary",
-      "chapters": [
-        1,
-        2,
-        3,
-        4
-      ]
+     "new": 3,
+     "slug": "errors-that-resolve",
+     "titled_fences": 14,
+     "paths": [
+      "packages/protocol/src/codes.ts",
+      "services/api/src/protocol-error.ts",
+      "services/api/src/protocol-error.filter.ts",
+      "services/api/src/messages/messages.service.ts",
+      "services/api/src/internal/session.controller.ts",
+      "services/api/src/limits/rate-limit.middleware.ts",
+      "services/gateway/src/session.ts",
+      "services/api/src/messages/zod-validation.pipe.ts",
+      "packages/service-kit/src/index.ts",
+      "services/gateway/src/main.ts",
+      "services/gateway/src/session.test.ts",
+      "packages/protocol/src/codes.test.ts"
+     ]
     },
     {
-      "id": "II",
-      "title": "One event, written once"
-    },
-    {
-      "id": "III",
-      "title": "The domain a customer can use"
-    },
-    {
-      "id": "IV",
-      "title": "The socket, continued from Part 2"
-    },
-    {
-      "id": "V",
-      "title": "The message, revised"
-    },
-    {
-      "id": "VI",
-      "title": "Someone else's system"
-    },
-    {
-      "id": "VII",
-      "title": "What it costs"
-    },
-    {
-      "id": "VIII",
-      "title": "The verdict"
+     "new": 26,
+     "slug": "errors-that-resolve-and-an-outsider",
+     "titled_fences": 7,
+     "paths": [
+      "packages/outsider/package.json",
+      "packages/outsider/tsconfig.json",
+      "packages/outsider/vitest.integration.config.mts",
+      "packages/outsider/src/integrate.itest.ts",
+      "scripts/seed-demo-tenant.mjs"
+     ]
     }
-  ],
-  "chapters": [
+   ]
+  },
+  {
+   "old": 12,
+   "why": [
+    "FORCED BY A DEPENDENCY, NOT CHOSEN FOR BALANCE. The gauntlet creates eight files",
+    "and 25 chapter-edits land on them; moving it to the end of movement VIII put every",
+    "one of those edits before the file existed, and `ours` came back 0 lines on all",
+    "eight. A merge cannot resolve that — taking `theirs` only relocates the conflict to",
+    "the creator's own add/add. The harness must precede its editors and the verdict",
+    "belongs at the end, so the chapter divides at the question that opens the",
+    "retrospective.",
+    "",
+    "THE HALVES FENCE DISJOINT PATHS, which is what makes the division mechanical: the",
+    "early half builds the gauntlet and its production code, the late half adds unit",
+    "tests OF the instruments. `catalogue.ts` early and `catalogue.test.ts` late;",
+    "`targets.ts` early and `targets.test.ts` late. No path appears in both."
+   ],
+   "boundary": {
+    "en": "## Has it ever caught anything?",
+    "vi": "## Nó đã bắt được gì bao giờ chưa?"
+   },
+   "halves": [
     {
-      "old": 1,
-      "new": 1,
-      "movement": "I",
-      "slug": "tenants-all-the-way-down",
-      "title": "Tenants all the way down"
+     "new": 4,
+     "slug": "the-isolation-harness",
+     "titled_fences": 15,
+     "paths": [
+      "services/api/src/isolation/targets.ts",
+      "services/api/src/isolation/targets.itest.ts",
+      "services/api/src/isolation/fixtures.ts",
+      "services/gateway/src/isolation-fixtures.ts",
+      "services/api/src/isolation/attack.ts",
+      "services/api/src/isolation/compare.ts",
+      "services/api/src/messages/messages.itest.ts",
+      "services/api/src/isolation/gauntlet.itest.ts",
+      "services/api/src/auth/credential.guard.ts",
+      "services/api/src/auth/authenticate.middleware.ts",
+      "services/api/src/internal/dispatch.controller.ts",
+      "services/api/src/internal/usage.controller.ts",
+      "services/api/src/db/catalogue.ts",
+      "services/api/src/isolation/tenant-scope.itest.ts",
+      "services/gateway/src/isolation.itest.ts"
+     ]
     },
     {
-      "old": 2,
-      "new": 2,
-      "movement": "I",
-      "slug": "keys-and-tokens",
-      "title": "Keys and tokens"
-    },
-    {
-      "old": 14,
-      "new": 3,
-      "movement": "I",
-      "slug": "errors-that-resolve",
-      "title": "Errors that resolve"
-    },
-    {
-      "old": 12,
-      "new": 4,
-      "slug": "the-isolation-harness",
-      "movement": "I",
-      "title": "The isolation harness"
-    },
-    {
-      "old": 3,
-      "new": 5,
-      "movement": "II",
-      "slug": "the-outbox",
-      "title": "The outbox"
-    },
-    {
-      "old": 4,
-      "new": 6,
-      "movement": "II",
-      "slug": "jetstream-and-the-first-consumer",
-      "title": "JetStream, and the grammar a subject needs"
-    },
-    {
-      "old": 7,
-      "new": 7,
-      "movement": "II",
-      "slug": "commit-and-publish-are-two-instants",
-      "title": "Commit and publish are two instants"
-    },
-    {
-      "old": 13,
-      "new": 8,
-      "movement": "III",
-      "slug": "the-endpoints-and-the-instruments",
-      "title": "The endpoints and the instruments"
-    },
-    {
-      "old": 15,
-      "new": 9,
-      "movement": "III",
-      "slug": "the-channel-a-customer-controls",
-      "title": "The channel a customer controls"
-    },
-    {
-      "old": 16,
-      "new": 10,
-      "movement": "III",
-      "slug": "what-a-user-sees",
-      "title": "What a user sees"
-    },
-    {
-      "old": 17,
-      "new": 11,
-      "movement": "III",
-      "slug": "the-sender-a-message-never-had",
-      "title": "The sender a message never had"
-    },
-    {
-      "old": 18,
-      "new": 12,
-      "movement": "IV",
-      "slug": "the-message-that-never-arrived",
-      "title": "The message that never arrived"
-    },
-    {
-      "old": 19,
-      "new": 13,
-      "movement": "IV",
-      "slug": "who-is-allowed-to-see-it",
-      "title": "Who is allowed to see it"
-    },
-    {
-      "old": 20,
-      "new": 14,
-      "movement": "IV",
-      "slug": "the-membership-that-changed",
-      "title": "The membership that changed"
-    },
-    {
-      "old": 21,
-      "new": 15,
-      "movement": "IV",
-      "slug": "the-frame-nobody-may-send",
-      "title": "The frame nobody may send"
-    },
-    {
-      "old": 22,
-      "new": 16,
-      "movement": "IV",
-      "slug": "the-sixth-connection",
-      "title": "The sixth connection"
-    },
-    {
-      "old": 23,
-      "new": 17,
-      "movement": "V",
-      "slug": "the-words-somebody-wants-back",
-      "title": "The words somebody wants back"
-    },
-    {
-      "old": 24,
-      "new": 18,
-      "movement": "V",
-      "slug": "the-message-that-is-not-only-text",
-      "title": "The message that is not only text"
-    },
-    {
-      "old": 5,
-      "new": 19,
-      "movement": "VI",
-      "slug": "webhooks-that-survive-the-customer",
-      "title": "Webhooks that survive the customer"
-    },
-    {
-      "old": 6,
-      "new": 20,
-      "movement": "VI",
-      "slug": "when-to-stop-trying",
-      "title": "When to stop trying"
-    },
-    {
-      "old": 9,
-      "new": 21,
-      "movement": "VI",
-      "slug": "the-email-nobody-was-sending",
-      "title": "The email nobody was sending"
-    },
-    {
-      "old": 8,
-      "new": 22,
-      "movement": "VII",
-      "slug": "limits-you-can-see-coming",
-      "title": "Limits you can see coming"
-    },
-    {
-      "old": 10,
-      "new": 23,
-      "movement": "VII",
-      "slug": "quotas-and-what-they-cost",
-      "title": "Quotas and what they cost"
-    },
-    {
-      "old": 11,
-      "new": 24,
-      "movement": "VII",
-      "slug": "counting-a-connection",
-      "title": "Counting a connection"
-    },
-    {
-      "old": 12,
-      "new": 25,
-      "movement": "VIII",
-      "slug": "milestone-the-isolation-gauntlet",
-      "title": "Milestone: the isolation gauntlet"
-    },
-    {
-      "old": 14,
-      "new": 26,
-      "movement": "VIII",
-      "slug": "errors-that-resolve-and-an-outsider",
-      "title": "Milestone: an outsider"
+     "new": 25,
+     "slug": "milestone-the-isolation-gauntlet",
+     "titled_fences": 5,
+     "paths": [
+      "services/api/src/isolation/attack.test.ts",
+      "services/api/src/isolation/targets.test.ts",
+      "services/api/src/db/catalogue.test.ts",
+      "services/api/src/isolation/compare.test.ts",
+      "services/api/src/db/repository.itest.ts"
+     ]
     }
-  ],
-  "splits": [
-    {
-      "old": 14,
-      "why": "the error vocabulary and the sealed package share no fence",
-      "boundary": {
-        "en": "## The outsider",
-        "vi": "## Người ngoài"
-      },
-      "halves": [
-        {
-          "new": 3,
-          "slug": "errors-that-resolve",
-          "titled_fences": 14,
-          "paths": [
-            "packages/protocol/src/codes.ts",
-            "services/api/src/protocol-error.ts",
-            "services/api/src/protocol-error.filter.ts",
-            "services/api/src/messages/messages.service.ts",
-            "services/api/src/internal/session.controller.ts",
-            "services/api/src/limits/rate-limit.middleware.ts",
-            "services/gateway/src/session.ts",
-            "services/api/src/messages/zod-validation.pipe.ts",
-            "packages/service-kit/src/index.ts",
-            "services/gateway/src/main.ts",
-            "services/gateway/src/session.test.ts",
-            "packages/protocol/src/codes.test.ts"
-          ]
-        },
-        {
-          "new": 26,
-          "slug": "errors-that-resolve-and-an-outsider",
-          "titled_fences": 7,
-          "paths": [
-            "packages/outsider/package.json",
-            "packages/outsider/tsconfig.json",
-            "packages/outsider/vitest.integration.config.mts",
-            "packages/outsider/src/integrate.itest.ts",
-            "scripts/seed-demo-tenant.mjs"
-          ]
-        }
-      ]
-    },
-    {
-      "old": 12,
-      "why": [
-        "FORCED BY A DEPENDENCY, NOT CHOSEN FOR BALANCE. The gauntlet creates eight files",
-        "and 25 chapter-edits land on them; moving it to the end of movement VIII put every",
-        "one of those edits before the file existed, and `ours` came back 0 lines on all",
-        "eight. A merge cannot resolve that — taking `theirs` only relocates the conflict to",
-        "the creator's own add/add. The harness must precede its editors and the verdict",
-        "belongs at the end, so the chapter divides at the question that opens the",
-        "retrospective.",
-        "",
-        "THE HALVES FENCE DISJOINT PATHS, which is what makes the division mechanical: the",
-        "early half builds the gauntlet and its production code, the late half adds unit",
-        "tests OF the instruments. `catalogue.ts` early and `catalogue.test.ts` late;",
-        "`targets.ts` early and `targets.test.ts` late. No path appears in both."
-      ],
-      "boundary": {
-        "en": "## Has it ever caught anything?",
-        "vi": "## Nó đã bắt được gì bao giờ chưa?"
-      },
-      "halves": [
-        {
-          "new": 4,
-          "slug": "the-isolation-harness",
-          "titled_fences": 15,
-          "paths": [
-            "services/api/src/isolation/targets.ts",
-            "services/api/src/isolation/targets.itest.ts",
-            "services/api/src/isolation/fixtures.ts",
-            "services/gateway/src/isolation-fixtures.ts",
-            "services/api/src/isolation/attack.ts",
-            "services/api/src/isolation/compare.ts",
-            "services/api/src/messages/messages.itest.ts",
-            "services/api/src/isolation/gauntlet.itest.ts",
-            "services/api/src/auth/credential.guard.ts",
-            "services/api/src/auth/authenticate.middleware.ts",
-            "services/api/src/internal/dispatch.controller.ts",
-            "services/api/src/internal/usage.controller.ts",
-            "services/api/src/db/catalogue.ts",
-            "services/api/src/isolation/tenant-scope.itest.ts",
-            "services/gateway/src/isolation.itest.ts"
-          ]
-        },
-        {
-          "new": 25,
-          "slug": "milestone-the-isolation-gauntlet",
-          "titled_fences": 5,
-          "paths": [
-            "services/api/src/isolation/attack.test.ts",
-            "services/api/src/isolation/targets.test.ts",
-            "services/api/src/db/catalogue.test.ts",
-            "services/api/src/isolation/compare.test.ts",
-            "services/api/src/db/repository.itest.ts"
-          ]
-        }
-      ]
-    }
-  ],
-  "reassignments": [
-    {
-      "_why": "NOT A SPLIT, AND CHECK-MAP WAS RIGHT TO REFUSE IT AS ONE. A split divides a chapter's PROSE at a heading and gives each half its own page. Old 3.10's page is ten sections and every one of them is about quotas — 'The query we did not write' through 'What it costs'. There is no harness section to move, because nobody ever wrote one.",
-      "finding": "FEATURE 030 SHIPPED INSIDE OLD 3.10'S SPAN WITHOUT A CHAPTER. Sixteen commits built packages/test-harness and the global-operation guard; old 3.10's prose does not mention them. That is why new 8 (old 3.13) AUDITS the guard rather than building it — 'It watched five tables. Chapters 3.10 and 3.11 added four more … and neither added them here.' Three chapters excerpt the harness's files and none of them builds it. The reorder is what surfaced this: in the published order the audit had its antecedents in front of it and read fine.",
-      "consequence": "New 8 gains the sections nobody wrote, and loses the audit. Its prose now builds the harness — the package, the trigger, the two kinds of bait, the exemption that returns NEW on an UPDATE — and the five-to-nine retrofit story is gone, because the array grows per chapter now.",
-      "old": 10,
-      "prose_stays_at": 23,
-      "code_moves_to": 8,
-      "commits": "harness d365817..fb97056 (16, reverse order); quotas aa236de..b21a87c (7)",
-      "measured": "no commit touches both — the split point is exact",
-      "paths": [
-        "packages/test-harness/package.json",
-        "packages/test-harness/tsconfig.json",
-        "packages/test-harness/vitest.integration.config.mts",
-        "packages/test-harness/src/index.ts",
-        "packages/test-harness/src/sentinel.sql",
-        "packages/test-harness/src/sentinel.ts",
-        "packages/test-harness/src/exempt.ts",
-        "packages/test-harness/src/exempt.test.ts",
-        "packages/test-harness/src/driver-exempt.test.ts",
-        "packages/test-harness/src/db-url.ts",
-        "packages/test-harness/src/db-url.test.ts",
-        "packages/test-harness/src/global-setup.ts",
-        "packages/test-harness/src/setup.ts",
-        "packages/test-harness/src/guard.itest.ts",
-        "packages/test-harness/src/bait-size.test.ts",
-        "packages/test-harness/src/no-trigger-in-migrations.test.ts"
-      ]
-    }
-  ]
+   ]
+  }
+ ],
+ "reassignments": [
+  {
+   "_why": "NOT A SPLIT, AND CHECK-MAP WAS RIGHT TO REFUSE IT AS ONE. A split divides a chapter's PROSE at a heading and gives each half its own page. Old 3.10's page is ten sections and every one of them is about quotas — 'The query we did not write' through 'What it costs'. There is no harness section to move, because nobody ever wrote one.",
+   "finding": "FEATURE 030 SHIPPED INSIDE OLD 3.10'S SPAN WITHOUT A CHAPTER. Sixteen commits built packages/test-harness and the global-operation guard; old 3.10's prose does not mention them. That is why new 8 (old 3.13) AUDITS the guard rather than building it — 'It watched five tables. Chapters 3.10 and 3.11 added four more … and neither added them here.' Three chapters excerpt the harness's files and none of them builds it. The reorder is what surfaced this: in the published order the audit had its antecedents in front of it and read fine.",
+   "consequence": "New 8 gains the sections nobody wrote, and loses the audit. Its prose now builds the harness — the package, the trigger, the two kinds of bait, the exemption that returns NEW on an UPDATE — and the five-to-nine retrofit story is gone, because the array grows per chapter now.",
+   "old": 10,
+   "prose_stays_at": 23,
+   "code_moves_to": 8,
+   "commits": "harness d365817..fb97056 (16, reverse order); quotas aa236de..b21a87c (7)",
+   "measured": "no commit touches both — the split point is exact",
+   "paths": [
+    "packages/test-harness/package.json",
+    "packages/test-harness/tsconfig.json",
+    "packages/test-harness/vitest.integration.config.mts",
+    "packages/test-harness/src/index.ts",
+    "packages/test-harness/src/sentinel.sql",
+    "packages/test-harness/src/sentinel.ts",
+    "packages/test-harness/src/exempt.ts",
+    "packages/test-harness/src/exempt.test.ts",
+    "packages/test-harness/src/driver-exempt.test.ts",
+    "packages/test-harness/src/db-url.ts",
+    "packages/test-harness/src/db-url.test.ts",
+    "packages/test-harness/src/global-setup.ts",
+    "packages/test-harness/src/setup.ts",
+    "packages/test-harness/src/guard.itest.ts",
+    "packages/test-harness/src/bait-size.test.ts",
+    "packages/test-harness/src/no-trigger-in-migrations.test.ts"
+   ]
+  }
+ ]
 }

@@ -66,9 +66,21 @@ def main(en_dir, apply=False):
     if apply:
         vi.mkdir(parents=True, exist_ok=True)
         vi.joinpath("page.mdx").write_text(page, encoding="utf-8")
+        # THIS USED TO `unlink()` THE SIBLING `figures.ts` when the placeholder it
+        # generated imported no figures, and it cost the site its build for the whole
+        # of Part 3's rebuild. The placeholder is a page nobody has translated yet;
+        # the file beside it holds Vietnamese somebody wrote. Ten of them were deleted
+        # by ten chapter ports, each page was later translated with its figure imports
+        # restored, and every one of those imports pointed at nothing.
+        #
+        # An unused module breaks NOTHING — no gate reads it, the bundler drops it.
+        # An absent one breaks `next build` outright, and that is unrecoverable from
+        # the working tree alone: the content had to come back out of the commit
+        # before each deletion. So it is left in place and reported.
         fig = vi / "figures.ts"
         if fig.exists() and "./figures" not in page:
-            fig.unlink()
+            print(f"  note: {fig.relative_to(fig.parents[4])} is unused by this "
+                  f"placeholder and was KEPT — a later translation will import it")
 
     def fences(text):
         Ls, o, i = text.split("\n"), [], 0

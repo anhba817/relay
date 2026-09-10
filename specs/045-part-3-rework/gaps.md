@@ -195,7 +195,7 @@ its own files, and the table went rather than gaining two rows. **A defect that 
 fix is a defect the ordering created**, and this is the clearest instance of it in the rework so
 far.
 
-## 045-7 · THE REORDER LEFT THREE SENTENCES FALSE FOR SIX CHAPTERS, AND PUBLISHED FIXED THEM LATE TOO
+## 045-7 · THE REORDER LEFT THREE SENTENCES FALSE FOR SIX CHAPTERS, AND PUBLISHED FIXED THEM LATE TOO — CLOSED
 
 Measured while porting new 17. Three comments in three files said, in the PRESENT tense,
 that `MessagesController` declares no `@Accepts` and the guard therefore falls back to
@@ -374,7 +374,7 @@ it in those chapters. That is the same operation this feature already ran once f
 damage, where the defect changed what a line MEANT. Here it changes one apostrophe's case, so
 it is filed rather than done, and it is filed with the command that would do it.
 
-## 045-11 · NEW 3 PORTED THE TYPED THROWER AND DROPPED TWO OF ITS THREE HUNKS
+## 045-11 · NEW 3 PORTED THE TYPED THROWER AND DROPPED TWO OF ITS THREE HUNKS — CLOSED
 
 Measured while porting new 18, phase 6. Published `89fd038` — *"thirteen codes, one URL
 rule, and a typed thrower so a typo cannot ship a dead link"* — did three things. The
@@ -427,7 +427,7 @@ point is why this is filed with a question rather than a patch: published answer
 correcting mid-book, and whether the rework should correct in new 3 or teach the anchor form
 from Part 1 is not a renumbering decision.
 
-## 045-12 · THE REWORK TREE HAS NO LANE RESET, SO ITS BROKER ACCUMULATES AND ONE SUITE HANGS
+## 045-12 · THE REWORK TREE HAS NO LANE RESET, SO ITS BROKER ACCUMULATES AND ONE SUITE HANGS — CLOSED
 
 Measured while porting new 18. `consumer.itest.ts` was run alone to reproduce the chapter's
 "six red tests" claim and produced no output for six minutes before being stopped. Both
@@ -509,7 +509,7 @@ comparable only in the way CLAUDE.md already qualifies, and now for a second rea
 `packages/test-harness/src/reset-lane.itest.ts` belong to the harness, which is new 8. Porting
 them into new 25 would put the lane's own infrastructure into the gauntlet milestone's diff.
 
-## 045-13 · A DOCUMENTED CODE WITH NO PRODUCER, AND THE GATE THAT COUNTS CANNOT SEE IT
+## 045-13 · A DOCUMENTED CODE WITH NO PRODUCER, AND THE GATE THAT COUNTS CANNOT SEE IT — CLOSED
 
 Measured while porting new 19. `docs/08-error-reference.md` publishes six webhook
 refusals; `webhooks.service.ts` throws five. The sixth,
@@ -758,7 +758,7 @@ lesson — an argument right about a schema the platform BUILDS inverts about on
 durable queue. A test fixture is a producer for a schema it does not own, which makes it the same
 shape of mistake: **a claim about what a schema refuses is a claim with a date on it.**
 
-## 045-20 · A HELPER ARRIVED THIRTEEN CHAPTERS BEFORE THE FIELD IT STRIPS, AND ITS DOCBLOCK SAYS OTHERWISE
+## 045-20 · A HELPER ARRIVED THIRTEEN CHAPTERS BEFORE THE FIELD IT STRIPS, AND ITS DOCBLOCK SAYS OTHERWISE — CLOSED
 
 `services/api/src/isolation/compare.ts` holds `withoutRequestId`, the indistinguishability
 oracle three isolation assertions compare bodies through. Its docblock states:
@@ -2116,3 +2116,252 @@ control proves a pattern still fires; only a negative control proves it stopped 
 should not** — and this one found the fix incomplete before a line of source was touched, which is
 the whole argument for having written it.
 
+
+## THE DECIDED PASS — SIX ITEMS CLOSED ON A PERSON'S ANSWER, AND TWO ESTIMATES CORRECTED BY THE TOOLS
+
+Four decisions were put to a person because each changed what the work would be, and two more
+were taken with a stated recommendation. What came back closed **045-7, 045-11, 045-12, 045-13,
+045-20 and 045-50**, through three history splices and one replay.
+
+**045-12 SPLIT THE WAY THE CHAPTERS DO, WHICH THE DECISION DID NOT ANTICIPATE.** "Port it into
+new 8 properly" could not be done: the script purges `webhook_deliveries`, and that table is
+created at **new 19**. A script deleting from a table the tree does not have is a script nobody
+can run. So the broker half is new 8's — where the harness is — and the deliveries half arrives
+in the chapter that creates the table, each with its own half of the test. 192 commits rebased
+for the first, 70 for the second, one conflict each.
+
+**AND ITS SECOND ASSERTION WAS VACUOUS UNTIL IT WAS FALSIFIED.** Written as "run the script,
+count stale rows, expect zero", it PASSED with the DELETE replaced by a no-op — a lane that was
+just reset has no stale rows either way, so the test was green in exactly the case it exists to
+catch. It plants the row it is about to have deleted now. The stream half was written with its
+planting from the start and went red on the same probe: `messages survived the purge: expected 3
+to be +0`.
+
+**045-13 LANDED IN THE SHAPE MAIN INDEPENDENTLY REACHED.** `WEBHOOK_EVENT_TYPES` carries an
+`emitted` flag per type, and `satisfies Record<string, { emitted: boolean }>` makes adding a type
+without deciding a compile error — so "declared but unbuilt" stops being a comment. Validated
+against FR-WHK-02's declared eight, not the emitted five, because refusing a subscription to a
+published-but-unbuilt type is 044's FR-016 defect, which was amended rather than shipped.
+`event.test.ts` compares the two sets in both directions **with a positive control**: if they
+were ever identical the agreement test would pass against a declared set whose flag was dead
+weight.
+
+**045-11's DEFECT WAS A TITLE AND AN ASSERTION DISAGREEING FOR TWENTY-TWO CHAPTERS.** The
+`describe` said *"the docs URL is built in one place, with the code as the anchor"* and the
+assertion under it checked `` `${base}/${code}` `` — a path. `docs/08-error-reference.md` is one
+document with `## <code>` headings, so all 27 `docs_url` values named pages that do not exist.
+Nothing could catch it: the function and its test were written together, and **the reference
+document is the only artefact that disagreed — no instrument reads it.** Corrected at new 25,
+where published corrected it; Parts 1 and 2 keep teaching the path form, as published does.
+
+**AND CLOSING IT FALSIFIED 045-50.** That entry says a turbo env declaration no task reads is a
+cache key that cannot change, and it was right — `RELAY_DOCS_BASE_URL` was declared and unread.
+Making `docsUrl` read it per call gives the declaration a reader, so the commit that removed it
+was replayed out of the history. **An item can be closed by making its premise false rather than
+by fixing what it describes.**
+
+## 045-56 · THE TOOLS CORRECTED TWO OF MY ESTIMATES BEFORE EITHER COST ANYTHING
+
+**"SIX ITEMS ARE ONE PASS NOW, NOT SIX" WAS WRONG, AND `apply-read-class.py` SAID SO.** Its
+word-count guard refused 045-7 (`WORDS DROPPED {'falls': 1}`) and 045-20 (`{'rate', 'limiter',
+'added'}`) — a tense and a rationale, neither of which is a reference. Two of six, not six.
+
+**AND THE ANSWER WAS NOT TO TURN THE GUARD OFF**, which is what the decision offered and what I
+would have built. The tool already had the sharper mechanism: a per-group `drops` list naming the
+words the group may lose, declared beside its reason, with an undeclared drop still failing. The
+prose group declares four words. **A guard with an exemption per declared word beats a guard with
+a switch.**
+
+**AND SEVEN OF EIGHT PAREN PAIRS MISSED**, hand-typed from `sed 's/^/    /'` display output and
+carrying four spaces the files do not have. One of the eight happened to sit at column zero, so
+the first attempt looked like partial success. Regenerated from the files: all eight.
+
+## 045-57 · `pnpm install` AT A MID-HISTORY CHECKOUT PRUNES THE DEPENDENCIES LATER CHAPTERS DECLARE
+
+Splicing a commit into new 8 meant checking the worktree out there and installing. Chapter 8's
+`services/api/package.json` does not declare `ioredis`; the rate-limit chapter is new 22. pnpm
+pruned it, and the next typecheck at new 19 said:
+
+    src/fanout/publisher.ts(9,23): error TS2307: Cannot find module 'ioredis'
+
+**IN FILES THAT LEGITIMATELY IMPORT IT**, which is why it reads as a broken tree rather than a
+pruned `node_modules`. The rule: install at the tree you are about to gate, and install again at
+the tip when the splicing is done. `node_modules` is state the checkout does not carry.
+
+## 045-58 · AN EARLY CHAPTER'S INTEGRATION SUITE CANNOT RUN AGAINST THE FINAL SCHEMA
+
+Running new 19's webhook suite to check the new refusal:
+
+    error: update or delete on table "users" violates foreign key constraint
+           "usage_active_users_user_id_fkey" on table "usage_active_users"
+
+The harness's `plant()` deletes the tables **that chapter knows about**, and the lane's database
+is migrated to the LAST chapter's schema. `usage_active_users` arrives at new 23 with a foreign
+key to `users`, and chapter 19's harness has never heard of it.
+
+**THE PER-CHAPTER LOOP NEVER MET THIS BECAUSE IT ALWAYS RAN FORWARD** — each chapter's battery
+ran at that chapter's tip, where the schema and the harness agree by construction. Going
+backwards breaks that, and it is not a defect in either: a chapter's harness is correct for its
+own tree. What it means practically is that a spliced change is verified at the TIP, not at the
+chapter it lands in.
+
+## 045-59 · A DERIVATION FOR 045-3 WAS ATTEMPTED TWICE AND FAILED TWICE — WHICH IS THE ANSWER
+
+045-3 asks for a table recording which chapter's tree each read-class pair should fire on. It was
+measured at 80 pairs; there are now **252 in 29 groups**, so the proposal was to record the
+chapter per GROUP — 29 entries, catching a mistyped left-hand side, with no maintenance as pairs
+join an existing group.
+
+Deriving those 29 mechanically failed twice:
+
+    from the group's own `why`      17 of 30 name a chapter in the first line
+    from the commit that added it   `docs\((?:3\.)?(\d+)\)` matched `docs(045)` and returned
+                                    chapter 45 for everything
+    name-first, feature excluded    8 of 30 — the messages name their chapter in PROSE, and
+                                    only two-thirds of them do
+
+**SO IT IS NOT DERIVABLE, WHICH IS WHAT 045-3 SAID.** *"A table of 80 entries somebody must fill
+in and keep true."* The estimate was right and the shape was wrong; it is 29 entries, and they
+still need a person.
+
+**AND THE HALF-POPULATED VERSION WAS REFUSED DELIBERATELY.** A `chapter` key on 8 groups with a
+check over it passes the other 21 in silence — the "list checked one way can only grow" defect
+this feature has recorded four times. Either every group declares one and the check can fail, or
+neither exists. Left open with the attempt written down so the next person does not spend it
+again.
+
+## 045-60 · `docker compose up` WITH A PARTIAL ENV RECREATES CONTAINERS THE COMMAND WAS NOT ABOUT
+
+045-36 records a battery reading as twenty-two defects because Mailpit answered on 8025 while the
+lane runs 18025. It happened again in the same session, from a different direction, and the
+second cause is worse than the first.
+
+Bringing the services profile up for the outsider suite:
+
+    RELAY_POSTGRES_PORT=15432 RELAY_WEBHOOK_SECRET_KEY=… \
+      docker compose --profile services up -d --wait --build
+
+That command is about `api`, `gateway` and `dispatcher`. It passed no
+`RELAY_MAILPIT_HTTP_PORT`, so compose resolved `${RELAY_MAILPIT_HTTP_PORT:-8025}` to the
+DEFAULT, found the running container's published ports no longer matched the resolved config,
+and **recreated Mailpit on 1025/8025** — a container the command never named.
+
+Eighteen failures across three suites, and the two shapes it produced are not equally readable:
+
+    quotas, connections   TypeError: fetch failed        in `inbox` — honest and traceable
+    notifications         expected 0 to be greater than 0 on a DRAIN — the relay sends mail,
+                          SMTP refuses, the drain reports nothing drained, and the failure
+                          names neither mail nor a port
+
+**THE SECOND SHAPE IS THE DANGEROUS ONE.** A drain returning zero reads as a defect in the
+disablement logic. Nothing in it mentions Mailpit, and the suite that says `fetch failed` is a
+different file — so a reader who opens the first failure alphabetically starts in the wrong
+place.
+
+**THE RULE, AND IT IS NARROWER THAN "SET THE ENVIRONMENT".** `baseline.txt` pins nine variables
+for the TEST command; this was a compose command, and the two were treated as different
+concerns. They are not: **every `docker compose up` needs the full port environment, whichever
+services it names**, because compose reconciles the whole file and a variable it cannot see reads
+as a changed configuration. Checking `docker ps` for the published ports after a bring-up costs
+one line and would have caught both instances.
+
+
+## 045-61 · A PLACEHOLDER DELETED TEN TRANSLATED FILES AND THE BUILD COULD NOT SAY SO
+
+`vi-placeholder.py` unlinked the sibling `figures.ts` whenever the placeholder it generated
+imported no figures. That is correct in isolation — a placeholder renders no diagrams — and it
+is wrong the moment somebody translates the page, because a translated page imports figures the
+way the English one does and the file is gone.
+
+Ten chapters, one per port: **01, 02, 05, 06, 07, 08, 09, 10, 11, 12**. Seven of the ten are
+broken at HEAD, not only in the working tree, so **the site has not built since chapter 3.1's
+port** — the whole of the rebuild.
+
+**WHAT MADE IT INVISIBLE IS NOT THE SCRIPT.** Three instruments passed over it:
+
+    check:figures       reads the PROP NAME — `code={figThing}` vs `chart={figThing}` — and
+                        never asks whether `figThing` resolves. One step outside its own header.
+    check:fences        reads fences; a JSX import is not a fence
+    pnpm run build      the only thing that could see it, and the tutorial checkout had
+                        NO `node_modules` for the entire feature
+
+The third is the finding. Every `pnpm` invocation printed *"Local package.json exists, but
+node_modules missing"* and the five `check:*` gates ran anyway, because they are plain Node
+scripts reading files. **A gate that does not need the install cannot tell you the install is
+missing**, and the one gate that would have failed was the one nobody could run.
+
+**RECOVERY IS NOT REGENERATION.** The ten files hold Vietnamese somebody wrote — figure labels,
+not identifiers. Copying the English siblings would have compiled and silently replaced ten
+translations with English. Each was recovered from the parent of its own deleting commit
+(`git log --diff-filter=D`), verified export-for-export against what its page imports: nine
+matched exactly, chapter 11's carried one extra export from a state that no longer exists.
+
+Fixed three ways: the `unlink()` is gone and reports instead; `check-figures.mjs` now resolves
+every imported binding in both directions and is red-tested three ways (absent file, renamed
+export, used-but-unimported); and the whole corpus scans clean for the two MDX parse faults that
+the same absent build had been hiding — `\"` inside a JSX attribute, and a `</ForwardRef>`
+closing a `<Why>`. Both were unique. 209 figures, 211 bindings, all resolving.
+
+## 045-62 · `pnpm run build` IS NOT ONE OF THE FOURTEEN GATES
+
+Falling out of 045-61 and worth its own entry, because the fourteen-gate list is what T045 checks
+and the list is missing the only instrument that compiles the pages.
+
+The fourteen gates are typecheck, lint, unit, integration, coverage, and the five `check:*`
+scripts, plus the platform's own. **None of them parses MDX.** A page can be syntactically
+invalid, import a module that does not exist, or close a component with the wrong tag, and every
+gate stays green. Two of those three shapes were live in this feature simultaneously.
+
+`pnpm run build` in `relay-tutorial` takes about four minutes, fails on the FIRST bad page and
+names no other, and needs `node_modules` — which is the argument for running it once per chapter
+rather than once per feature. Ten faults would otherwise cost ten builds.
+
+## 045-63 · THE CONVENTION COMMIT LANDED TWO CHAPTERS LATE, AND ITS OWN MESSAGE SAYS WHERE IT BELONGS
+
+`0317d83 refactor: a source comment names its subject, not an ordinal` — 74 references across 44
+files — carries this in its body:
+
+> Establishing the convention on the base so the rebuilt history does not mix the two.
+
+It is not on the base. It sits **between `rework/part3-ch2` and `rework/part3-ch3`**, so the two
+chapters ahead of it are on the wrong side of their own convention. Counted over every source
+file in every chapter tree, unexempted:
+
+    ch1     2      environment-context.guard.ts:9, signup.controller.ts:34
+    ch2     9      internal.ts, user-token.ts, schema.ts, internal.controller.ts,
+                   messages.module.ts, request-with-tenant.ts, signup.controller.ts ×2, auth.ts
+    ch3–ch8 0
+    ch9     1      repository.ts:928 — `3.13's addMembers shape`, removed again at ch10
+    ch10+   0      (ch19/ch20's two are 045-64, a false positive)
+
+**Twelve references, and the tip is clean** — 0 over 301 platform files. So every instrument that
+looked at the corpus said zero, because every instrument looked at the tip. **A per-chapter
+contract needs a per-chapter measurement**: the reader checks out `rework/part3-ch2` and reads
+`chapter 3.2` in a comment, naming a chapter this feature deleted.
+
+Chapter 9's one is a different miss from the other eleven — it is inside a chapter's own ported
+diff rather than on the base, so the reference replay had it in range and did not rewrite it.
+Both halves of chapter 9/10's `repository.ts` fence show it, `+` then `-`.
+
+**THE REPAIR IS A CHAIN REWRITE AND IS NOT FREE.** Moving `0317d83` ahead of chapter 1 re-points
+all 26 tags; because it changes only comment text and no line counts, chapters 3 onward keep
+their trees exactly, and the commit itself becomes empty and drops. Chapters 1, 2 and 3's fences
+and chapter 9/10's `repository.ts` fence need regenerating from the moved tags. Not attempted
+under this entry; measured, scoped, and left for a decision.
+
+## 045-64 · `DELIBERATE` EXEMPTS THE FIRST LINE OF A PROVENANCE TAG AND NOT ITS CONTINUATION
+
+The tag `refrules` was built to protect is three lines of prose:
+
+    // NAMED, NOT NUMBERED. This line used to say "chapter 3.7's cross-tenant
+    // gauntlet". The gauntlet was 3.7 when that was written, became 3.8 when a chapter
+    // was inserted ahead of it, and is now 3.9 after a second insertion — and the
+
+`DELIBERATE` is a set of whole lines and holds the first one. Lines two and three each carry
+ordinals and are matched, so `schema.ts` reports two references at ch19 and two at ch20 — four
+hits that are the exemption's own subject matter. Harmless today because the corpus scan runs at
+the tip where the wording differs, which is exactly why it went unnoticed.
+
+The fix is not more lines in a set: an exemption for a *tag* should be scoped to the tag, not to
+each sentence in it. Filed rather than patched, because the set-of-lines design is what 045-55
+also strained against.
