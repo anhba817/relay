@@ -2365,3 +2365,25 @@ the tip where the wording differs, which is exactly why it went unnoticed.
 The fix is not more lines in a set: an exemption for a *tag* should be scoped to the tag, not to
 each sentence in it. Filed rather than patched, because the set-of-lines design is what 045-55
 also strained against.
+
+## 045-65 · THE CONVENTION COMMIT INTRODUCED A DOUBLED ARTICLE ONTO A LINE THAT HAD NO ORDINAL
+
+`scripts/credential-walk.mjs:1`, live at the tip and in every tag from ch3 on:
+
+    parent   // The credentials chapter walk, as a script (so the transcript in the chapter is
+    0317d83  // The the credentials chapter walk, as a script (so the transcript in the chapter is
+
+The pre-image contains no digits. Whatever produced it — the substitution running on a line
+somebody had already fixed by hand, or a hand edit among the 74 — the line was not a reference
+and was changed anyway.
+
+**AND THE MEASUREMENT THAT SAID THE CORPUS WAS CLEAN CANNOT SEE IT.** `refrules` looks for
+ordinals; zero ordinals over 301 files is a true statement that says nothing about whether the
+replacements read correctly. **A rewrite needs a check on its OUTPUT, not only on the absence of
+its input** — one `grep -niE '\b(the the|a a|the a|an the)\b'` over the same corpus finds this
+one and finds nothing else, and it costs a second.
+
+The file is fenced in chapter 2 (both locales), so the typo is published text. It is one line in
+the same commit as 045-63 and is fixed by the same repair, which is why it is filed beside it
+rather than patched at the tip: a tip-only fix would be a platform change no chapter documents
+and would need a `fences/post-series.md` amendment for a doubled article.
