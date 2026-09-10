@@ -2456,3 +2456,62 @@ both locales (84), and the appendix rewritten against the new end state (79). Th
 person's call, the second is `regen-fences.py` plus reading, and the third is a chapter-sized
 piece of work that no task in this feature planned for. **Recording the decomposition is the
 useful act here**; quoting 296 as a baseline hid a person's decision inside a number.
+
+## 045-67 · THE REBUILT CHAIN IS A PARALLEL HISTORY, AND PUBLISHING IT AS-IS DELETES FEATURES 043 AND 044
+
+`main` and `part3-rework` diverge at **`6b3423d feat: milestone the tuan test - chapter 2.8`** —
+the end of Part 2, which is where the rebuild was told to start. They are not ancestor and
+descendant:
+
+    commits on main not in part3-rework    228
+    commits on part3-rework not in main    225
+    files differing                        177
+
+The raw counts are alarming and mostly meaningless: 193 of main's 228 are published Part 3, which
+the rebuild re-ports. **The number that matters is 35** — main's commits after published Part 3's
+tip (`8829881 fix(3.24): delete the key instead of destructuring it away`):
+
+    feature 043     16     port bands retired, message-length bound, webhook refusals named
+    feature 044      6     `channels.revision_sequence` and the ack that reports it
+    feature 045     11     the reference campaign, whose effect the chain already carries
+    unlabelled       2
+
+**SO THE REWORK TIP DOES NOT CONTAIN 043 OR 044.** `revision_sequence` appears 10 times in main's
+source and **zero** times at the rework tip. Publishing `part3-rework` as the platform's history,
+as a branch replacement, would delete a shipped column, the ack that reports it, the
+message-length bound, the named webhook refusals and two features' worth of coverage pins.
+
+**NOTHING IN THE RECORD PLANS FOR THIS.** `plan.md`, `tasks.md`, `spec.md`, `deferred.md` and
+`baseline.txt` between them mention 043 and 044 only in passing — a credential value "unchanged
+from 043 and 044". There is no task to replay them, no note that the chain must be rebased before
+it can be published, and no acknowledgement that the two histories cannot be fast-forwarded. It
+is the largest hole in the plan and it sits directly under the decision the fence chain's 92 HEAD
+problems are waiting on (045-66).
+
+**THE GOOD NEWS IS THE SIZE.** Twenty-two commits of real work plus two unlabelled, onto a chain
+whose tip is already green on typecheck, lint and build. That is a replay, not a rewrite — and
+`replay-range.sh` and `replay-repair.sh` are the mechanism, already used twenty-six times.
+
+**AND IT ALREADY MISLED A MEASUREMENT, WHICH IS HOW IT WAS FOUND.** T044 carries feature 044's
+ledger "re-measured against the tree rather than copied", and the tree I reached for first was the
+rework worktree — the one tree that **cannot** contain 044's fixes. Item C6 ("files that discard
+their child's output", closed at zero) came back as **14** and read as a reopening.
+
+Two errors, stacked, and each is one of this project's recorded classes:
+
+    the corpus    measured against a tree that predates the fix
+    the pattern   `stdio: ["ignore"` matches `["ignore","pipe","pipe"]`, which discards only
+                  STDIN and is the CORRECT form — the child's log line is readable. The
+                  positive control for the good form found 15 of them and made the false
+                  positive obvious in one line
+
+**C6 re-measured properly, with a control per pattern: one instance in code, in both trees** —
+`scripts/webhook-walk.mjs`, `stdio: ["ignore", "ignore", "inherit"]`, which discards stdout and
+keeps stderr, in a walk script that drives its loops by hand and needs no port from a log line.
+044's "still zero" was measured over test files and is still true of test files. **The item stays
+closed, and the ledger now says which corpus the zero belongs to.**
+
+**THE RULE FOR THE REST OF THE CARRY.** Every carried item is a claim about a tree, and this
+feature has three: `main`, the rebuilt chain, and the tutorial. An item about the platform's
+present state is measured on `main`; an item about the rebuilt series is measured on the chain.
+Saying which is not pedantry — it is the difference between a closed item and a false reopening.
