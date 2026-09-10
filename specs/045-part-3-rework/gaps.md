@@ -2515,3 +2515,77 @@ closed, and the ledger now says which corpus the zero belongs to.**
 feature has three: `main`, the rebuilt chain, and the tutorial. An item about the platform's
 present state is measured on `main`; an item about the rebuilt series is measured on the chain.
 Saying which is not pedantry — it is the difference between a closed item and a false reopening.
+
+## T044 · FEATURE 044's LEDGER, CARRIED AND RE-MEASURED — THIRTEEN ITEMS AND THE UNNUMBERED ONE
+
+Re-measured against the tree, not copied. **Every row names the tree it was measured on**, which
+045-67 is the reason for: this feature has three trees, and one of them predates the fixes half
+these items are about.
+
+    id        state            measured on        then      now
+    3.22-3    OPEN, MOVED      tutorial             13         6   excerpt-only files
+    3.22-6    CLOSED           main + chain          0         0   in tests (1 in a walk script)
+    3.23-4    CLOSED, TWICE    main + chain          —         —   by different means; see below
+    043-1     OPEN             tutorial       146/904   151/981   untitled fences
+    3.23-2    OPEN             —                     —         —   Part 4.7's, out of scope by name
+    3.23-7    OPEN, UNMEASURED main                  —         ?   needs a coverage run
+    3.22-4    OPEN             main                  —         —   assertion re-read, unchanged
+    3.22-5    OPEN, PREMISE?   main                  5         4   modules naming the bound
+    3.22-7    OPEN, WORSE      —                     —         —   045 added its own case
+    3.22-8    OPEN, 9th time   feature dir           6        39   instruments with no owner
+    044-1     OPEN             this machine    ugrep 7.8.4      confirmed, and paid forward
+    044-2     CLOSED           main                  0         0   ids in test titles
+    044-3     OPEN             main            330/46    314/45   ids elsewhere in tests
+
+**3.22-3 IS THE ONE THIS FEATURE IMPROVED, AND IT DID NOT MEAN TO.** Excerpt-only files — the
+class no gate can verify — went from **thirteen to six**, three of them platform source.
+Regenerating every Part-3 fence from the chapter's own two tags replaced excerpts with full
+chained bodies wherever the diff had one. **Seven files left a class that had been stuck for four
+features, as a side effect of a renumbering.** The count has been wrong four times out of five in
+this project's history and every error was in parsing the title; this instrument declares four
+title controls and fires them, which is why the number is trustworthy this time.
+
+**043-1 IS NOT CLOSED, AND THIS WAS ITS BEST CHANCE.** T044 says so in its own text: renumbering
+touches every chapter, so the untitled fences "are as findable now as they will ever be". They
+were findable and nobody titled them. **151 untitled against 830 titled**, 15.4% — the share fell
+from 16.1% because the corpus grew from 904 fences to 981, and the absolute number ROSE by five.
+This feature added untitled fences while holding the one opportunity to retire them.
+
+**3.23-4 IS CLOSED IN BOTH TREES BY DIFFERENT MEANS, WHICH IS WORTH MORE THAN EITHER FIX.** On
+`main`, 044 added `describe("the driver exemption list")` to `lists-agree.test.ts` — three `it`s,
+one of which asserts the list "is reading a real list, a real rule, and a wired-in one". On the
+rebuilt chain the same problem produced `driver-exempt.test.ts` and `drain-exempt.test.ts`, which
+read the restricted module names **out of the rule** and assert both directions against the tree.
+Neither knew about the other. **The chain's version is stronger and proved it: it found three of
+published's six drain exemptions stale**, which a test asserting only "an unlisted file fails"
+can never see.
+
+**3.22-8 IS THE ONE THAT GOT MEASURABLY WORSE.** 044 recorded "six Python instruments … copied
+from 043, which copied them from 042. They will be copied into 045 and drift there." They were,
+and there are now **thirty-nine** files in this feature's directory. Two of them drifted exactly
+as predicted — `check-refs.py`'s `FOREIGN` set and its docstring both arrived stale from 044's
+copy, and the file says so in a comment. **The prediction was precise and nobody acted on it for
+the eighth feature running; this is the ninth.**
+
+**3.22-5's PREMISE MAY HAVE EXPIRED.** The item calls the retry-log bound "a five-module
+decision"; four modules on `main` name it today. Whether a module left or the count was always
+four needs the five identified by name, which the item does not give. **Filed as a premise to
+check rather than as a number that moved** — checking a task's premise before executing it is the
+third of this project's three mechanisms, and an item is a task.
+
+**3.22-7 GOT ITS 045 INSTANCE, AND IT IS THE PLAINEST ONE YET.** The item is that coverage cannot
+see an omission. This feature wrote `reset-lane.itest.ts`'s deliveries assertion, which **passed
+against a no-op DELETE** — the row it was meant to prove had been removed was never planted, so
+the assertion compared zero to zero. Fixed by planting the row and watching it go red first.
+Coverage saw a green file both times.
+
+**3.23-7 IS UNMEASURED AND SAYS SO.** The tenancy guard's coverage needs a coverage run, and the
+twenty-run timing battery has the machine. **Recorded as unmeasured rather than carried forward
+with 044's number**, because copying is the thing this task exists not to do.
+
+**AND THE UNNUMBERED ONE, FOR THE FOURTEENTH FEATURE.** Use a person. This feature's own
+instruments say it in their last lines — `check-movements: contiguity only — whether the ORDER
+teaches anything needs a person` is a new instrument written this week whose closing sentence is
+that it cannot answer the question the feature exists to answer. Eight contiguous movements are
+measurable. Whether they teach anybody anything is not, and `reader-protocol.md` has been sitting
+there since chapter 3.18.
