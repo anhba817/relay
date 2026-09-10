@@ -714,3 +714,74 @@ Neither was a false positive: the checklist's argument is that every code-shaped
 reference in the spec is deliberate, and six had nobody arguing for them until they were
 enumerated. **The gates that broke were the two that read the documents I was editing**,
 and finding that out cost one pass.
+
+════════════════════════════════════════════════════════════════════════════════
+T043 · THE TWENTY-RUN BATTERY (2026-09-10) — 20 OF 20 GREEN, AND SC-007 TRIPS
+════════════════════════════════════════════════════════════════════════════════
+
+Tree: `tmp/part3-refactor`, branch `part3-rework` @ e8bf10c.
+Command: `pnpm test:integration` = `turbo run test:integration --concurrency=1
+--filter=!@relay/outsider`, `cache: false`, so no run was served from a cache.
+
+ELEVEN VARIABLES, NOT NINE, AND THE MISSING TWO ARE 045-36's. This file pinned nine
+and the mail suites read two more — `RELAY_SMTP_URL` and `RELAY_MAILPIT_URL`, which
+`notifications.itest.ts` names in its own header twelve lines above the
+`?? "http://localhost:8025"` it falls back to. Both are in `turbo.json`'s env list; the
+`*_PORT` pair is not, so it is compose's concern and not the suite's. Set for all twenty.
+
+TEN SEQUENCER CACHES, NOT SEVEN — AND SEVEN WAS RIGHT WHEN 044 WROTE IT. The three
+extra belong to `packages/service-kit`, `packages/config` and `packages/outsider`,
+whose suites have been run by hand since. Cleared once, before run 1.
+
+    run  exit  seconds        run  exit  seconds
+    01     0    392.54        11     0    403.56
+    02     0    404.19        12     0    402.53
+    03     0    403.35        13     0    401.88
+    04     0    402.25        14     0   1171.09   ← EXCLUDED, see below
+    05     0    408.36        15     0    407.08
+    06     0    403.15        16     0    404.64
+    07     0    404.03        17     0    402.85
+    08     0    403.09        18     0    403.01
+    09     0    414.35        19     0    403.66
+    10     0    403.57        20     0    403.37
+
+    20 of 20 GREEN.  46 files / 891 tests / 0 failures in EVERY run.
+    exit column: G G G G G G G G G G G G G G G G G G G G
+    alternations between consecutive runs: ZERO
+    nineteen runs   mean 403.76 s   stdev 3.95   cv 1.0%   min 392.54   max 414.35
+    all twenty      mean 442.13 s   stdev 171.62  cv 38.8%  — run 14 alone
+
+RUN 14 IS EXCLUDED AND THE OPERATOR CAUSED IT. Its per-suite durations are IDENTICAL to
+run 13's — consumer 101.1 s, dispatcher 81.0 s, membership 25.5 s — so the extra 768 s
+sat entirely outside test execution. It coincides with several hundred `git show` and
+`git ls-tree` calls run in `relay-platform` for the 045-68 diagnosis. **`tmp/part3-refactor`
+is a git WORKTREE of that same repository**, and turbo reads the shared object store to
+hash task inputs, so the tests ran at full speed while turbo waited on git. Excluded and
+disclosed rather than dropped; the rule "nothing else runs on the machine during a timing
+battery" now has a second clause — **nothing else touches the repository either.**
+
+ROW COUNTS BESIDE THE TIMING, because they are part of the instrument:
+
+    before the battery    environments 13,338   channels 22,663   messages 179,666
+                          outbox 238,643        webhook_deliveries 5,632
+
+    044's close-out       environments 76,980   channels 93,319   messages 392,517
+                          outbox 791,520
+
+    A THIRD THE ROWS AND 79% SLOWER, which is what made the duration worth chasing
+    rather than explaining away.
+
+SC-007: 225.45 s ± 10% = 202.91–248.00 s. MEASURED 403.76 s, +79%, OUTSIDE THE WINDOW.
+**The tripwire fired and the platform did not change** — gaps 045-68: the rebuilt chain
+carries `fileParallelism: false` in the api, gateway, e2e and test-harness lanes where
+main carries it only in e2e, published Part 3 carried it nowhere, and the two commits
+that add it exist on rework branches alone. It is load-bearing there, because the chain
+lacks 043's scoping of `presence.itest.ts`'s whole-table outbox count.
+
+THE SAME-DAY CONTROL ON `main` COULD NOT BE RUN, and gaps 045-69 is why: the reorder
+renumbered seven migrations and re-partitioned two, `schema_migrations` keys on the
+filename, and one lane holds one database. Three attempts failed in 0.6 s each with
+`relation "webhook_dead_letters" already exists`. The lane was verified intact
+afterwards — 15 migrations, no idle-in-transaction backends. **The 79% therefore rests
+on the config and assertion diffs, which are conclusive, and NOT on a measured control.
+Recorded as unmeasured rather than as measured.**

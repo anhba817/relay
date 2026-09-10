@@ -2589,3 +2589,127 @@ teaches anything needs a person` is a new instrument written this week whose clo
 that it cannot answer the question the feature exists to answer. Eight contiguous movements are
 measurable. Whether they teach anybody anything is not, and `reader-protocol.md` has been sitting
 there since chapter 3.18.
+
+## 045-68 · THE BATTERY IS 79% SLOWER BECAUSE THE CHAIN MUST SERIALISE A LANE THAT MAIN RUNS IN PARALLEL
+
+SC-007 is a tripwire: 225.45 s ± 10%, and a moved duration means the platform changed when it was
+not supposed to. Twenty runs at the rework tip measure **~404 s**, +79%. It tripped, and the cause
+is not the platform.
+
+**EVERY SIZE MEASURE POINTS THE OTHER WAY**, which is what made the number worth chasing rather
+than explaining away:
+
+    integration files in the battery   47 at 044's tree      46 at the rework tip
+    static `it`/`test` calls           859                   832
+    packages the battery runs          api gw disp harness   identical
+    lane rows, outbox / messages       791,520 / 392,517     238,643 / 179,666
+
+Fewer files, fewer cases, a third of the rows — and 179 s longer.
+
+**`fileParallelism: false`, AND THE REBUILD PUT IT THERE.**
+
+    rework tip    api ✓   gateway ✓   e2e ✓   test-harness ✓
+    main          api ✗   gateway ✗   e2e ✓   test-harness ✗
+    published 3.24 tip (8829881)      nowhere
+
+The only two commits that ever add the string live on rework branches alone, dated 2026-09-08:
+*"fix: what the outbox's new table and migration forced"*. Nine suites call `migrate(pool)` in
+their own `beforeAll`; with a migration PENDING several issue `CREATE TYPE` against one schema at
+once and Postgres answers `duplicate key value violates unique constraint
+"pg_type_typname_nsp_index"` — an error about its own catalogue that reads like a driver fault.
+Serialising the files closed it.
+
+**THE COST, FROM THE RUN'S OWN LOG.** The gateway runs eleven files one at a time for 135.66 s
+against a longest single file of 34.1 s; the api takes 174.04 s of which `consumer.itest.ts` is
+101 s on its own — and 101 s is this project's recorded CLEAN-broker figure, so the broker is not
+dirty. Parallel execution collapses each lane toward its longest file: **roughly 160–170 s of the
+179 s gap.**
+
+**AND IT IS LOAD-BEARING, WHICH IS THE PART THAT MAKES THIS 045-67 AGAIN.** The line cannot simply
+be deleted, because the chain is at a pre-043 state and still holds the assertions parallel
+execution breaks:
+
+    chain    select count(*)::int as n from outbox
+    main     select count(*)::int as n from outbox where subject like '%' || $1 || '%'
+
+Main's version carries a comment naming the exact failure — *"`membership.itest.ts` sending a
+message next door moved the number and the test reported `expected 614255 to be 614250`. Nothing
+in that failure suggests a neighbour."* `limits.itest.ts`'s wall-clock minute bucket is the same
+story. **Main runs in parallel because 043 scoped those assertions; the chain serialises because
+it has not got 043 yet.**
+
+**SO THE TWO NUMBERS ARE NOT THE SAME QUANTITY.** 225.45 s is a parallel lane with scoped
+assertions; 404 s is a serial lane with global ones. The old rule was "no two batteries are
+comparable"; 043 and 044 earned the newer one — "two batteries are comparable once the lane stops
+colliding with itself". **This is the third case: a lane that is not colliding because it has been
+forbidden to, which is comparable to nothing until the forbidding is lifted.**
+
+**THE ORDER OF OPERATIONS.** Replay 043 and 044 onto the chain (045-67, ~22 commits) — the scoped
+assertions arrive with them — then drop `fileParallelism: false` from api, gateway and
+test-harness, then re-measure. Only then does SC-007 mean anything. **Measuring it before that
+order is complete produces a number that trips a tripwire nobody can act on**, which is what this
+battery did, and the twenty runs were still worth it: 20 of 20 green with a cv near 1% is the
+evidence that the lane itself is sound.
+
+## 045-69 · THE REORDER RENUMBERED THE MIGRATIONS, AND `schema_migrations` KEYS ON THE FILENAME
+
+Found by trying to run the control for 045-68 — the same battery command on `main`, same machine,
+same lane, to prove the serialisation is the whole of the 79%. It failed in 0.6 s, three times:
+
+    error: relation "webhook_dead_letters" already exists     SQLSTATE 42P07
+      ❯ migrate services/api/dist/db/migrate.js:37
+      ❯ Object.globalSetup src/global-setup.ts:37
+
+The lane's database was migrated by the rebuilt chain. `main`'s `migrate` read its own directory,
+found a version string `schema_migrations` had never seen, and re-ran a migration whose tables
+already exist. **Comparing the two migration sets by their SQL with comments stripped:**
+
+    6   identical name and SQL          0000–0005, the Part-2 base
+    7   RENUMBERED, SQL identical       webhooks        0006 → 0010
+                                        attempts        0007 → 0011
+                                        limit_policy    0008 → 0012
+                                        quotas          0009 → 0013
+                                        conn_minutes    0010 → 0014
+                                        bot_users       0013 → 0008
+                                        message_edits   0014 → 0009
+    2   RE-PARTITIONED                  main's 0011_activity_and_read_positions +
+                                        0012_member_roles_and_user_deletion  ↔  the chain's
+                                        0006_member_roles + 0007_user_surface
+    1   absent from the chain           0015_channel_revision_sequence — feature 044's
+
+**THE SQL IS THE SAME. THE IDENTITY IS NOT.** No schema differs; seven files carry byte-identical
+DDL under a different number, because a migration belongs to the chapter that introduces it and
+seven chapters moved. That is correct behaviour for a series read from scratch and it is a
+migration-ledger rewrite for anything already migrated.
+
+**WHAT IT COSTS.** A database migrated in published order records `0006_webhooks.sql`. Handed the
+rebuilt chain it is told to apply `0010_webhooks.sql` — and nine of them in turn, every one
+failing on "already exists". **The re-partitioned pair is worse than the renames**: main's two
+files and the chain's two files divide the same DDL differently, so there is no 1:1 rewrite of
+`schema_migrations` rows that fixes it. This lane is the proof, and this lane is the easy case —
+it can be dropped and recreated. A reader's cannot, and neither can a deployment's.
+
+**THE CHAIN ALREADY DOCUMENTS THE PROBLEM FROM THE INSIDE.** `0010_webhooks.sql`'s own header:
+
+> NUMBERED 0010 AND GENERATED AS 0006 … `drizzle-kit` numbers from its own snapshot count and
+> this directory's snapshots stop at 0005 … `migrate.ts` reads the DIRECTORY and sorts by
+> filename, so a 0006 here would run before the four migrations it must follow.
+
+Somebody worked out the intra-chain numbering carefully and wrote it down. **Nobody asked what the
+number means to a database that was migrated under the other order** — the same shape as this
+project's oldest lesson: required is a claim about what you WRITE, and a reader of durable state
+cannot be handed a new name for work it has already done.
+
+**THIS IS THE SECOND HALF OF THE PUBLISH DECISION, AND IT IS HARDER THAN THE FIRST.** 045-67's
+replay of 043 and 044 is twenty-two commits of mechanical work. This one needs a decision about
+what a migration's identity IS: keep published numbering for migrations while chapters move
+(breaking the rule that a chapter owns its migration), rewrite `schema_migrations` rows on upgrade
+(impossible for the re-partitioned pair), or declare the rebuilt series a fresh start that no
+existing database upgrades into. **None of the three is free and the record contains no trace of
+the question.**
+
+**AND THE 045-68 CONTROL IS BLOCKED BY IT.** Measuring `main`'s battery needs a database migrated
+in published order; measuring the chain's needs one migrated in subject order; the lane holds one
+database. The 79% gap therefore rests on the config and assertion diffs — which are conclusive on
+their own — and not on a same-day measured control. **Recorded as unmeasured rather than assumed
+measured**, and the way to get it is a second database, not a second run.
