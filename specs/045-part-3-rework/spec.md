@@ -212,7 +212,8 @@ today; the target is zero in fenced files.
   **183** fenced paths. **Report the pattern and the corpus alongside the count.** This criterion
   said "report the pattern" and the specification then quoted two numbers measured with different
   patterns over different corpora, which is the failure the rule exists to prevent, committed by the
-  document that states it.
+  document that states it. **Measured at close-out: 1,710 across 232 files over a corpus of 302,
+  and zero at the tip — see "Measured at close-out" below, which states the corpus first.**
 - **SC-003**: Every **emitted** webhook event type has a producer introduced in an earlier chapter —
   five of the eight declared, and today none of the five does. **This criterion said "every event type
   the book teaches delivery for" and could never be satisfied**: `channel.created`, `user.connected`
@@ -243,6 +244,53 @@ today; the target is zero in fenced files.
   the appendix lands byte-exact on `relay-platform`. **The chain does not end at the last chapter**,
   and a tool that stops there reaches a state that is not the platform's — measured: 70
   reference-bearing lines appear in no chapter snapshot at all, because the appendix put them there.
+
+## Measured at close-out
+
+**SC-001 — MET, AND MEASURED BY AN INSTRUMENT RATHER THAN ASSERTED.** `check-movements.py`:
+**eight of eight movements contiguous**, against five of eight at specification time.
+
+    I 1–4   II 5–7   III 8–11   IV 12–16   V 17–18   VI 19–21   VII 22–24   VIII 25–26
+
+It also asserts the runs ASCEND in declared order, which contiguity alone does not — eight
+individually contiguous runs interleaved at the top level would satisfy the clause and read as
+chaos. Red-tested four ways. **Contiguity is not comprehension**: whether this order teaches
+anything is `reader-protocol.md`'s question and still needs a person.
+
+**SC-002 — THE CORPUS AND THE PATTERN, THEN THE COUNT, IN THAT ORDER.**
+
+    corpus    `refrules.platform_files` — SOURCE_SUFFIXES (.ts .mts .cts .js .mjs .cjs
+              .sql .yaml .yml .sh) across the whole tree, UNION every path the tutorial
+              fences (which is what admits `services/api/Dockerfile`, extensionless):
+              302 files
+    pattern   `refrules.REF` — the three branches (chapter/paren/bare), each guarded
+              `(?!\d)(?!-\d)`, minus `is_deliberate` and `is_versionish`; every match on
+              a line counted, not one per line
+    state     79b5d0b, the commit immediately before the rewrite campaign's first commit
+    result    **1,710 references across 232 files** — by shape 773 delete, 603 substitute,
+              334 read
+
+**THE SPECIFICATION'S 1,429 WAS LOW BY 281 AND THE ERROR WAS THE CORPUS, NOT THE PATTERN.**
+It counted `*.ts` under `services/` and `packages/`, which is neither every directory nor every
+suffix. The record corrected it twice while the work ran — *"the 154 references in 34 files that
+were not .ts"*, *"24 references that were split across a line break"* — and once more for the
+Dockerfile, and 1,429 + 154 + 24 + 1 is 1,608 against the 1,710 a single consistent measurement
+gives. **Four numbers for one quantity, none of them wrong when it was written**, which is what
+"report the pattern and the corpus alongside the count" exists to prevent and what this
+criterion's own text already confesses to.
+
+**AND THE `read` CLASS DISAGREES BY 4.8× AGAIN.** The shape classifier says **334**; the plan
+says ~70 after twelve sentences were read by hand; `gaps.md` records a third classifier at 407.
+The delete and substitute classes agree closely with the plan's re-sort (773 against ~757, 603
+against ~605) — **it is only the expensive class that no automated reading can size**, and that
+is now three independent confirmations of the same thing rather than one.
+
+**THE VERDICT IS ZERO AT THE TIP AND TWELVE INSIDE THE CHAIN.** Over the same corpus at the
+rebuilt tip: **0 across 301 files**. But this feature's contract is per chapter — check out
+`rework/part3-chN` and the toolchain passes — and the convention commit landed between chapters 2
+and 3 rather than on the base, so chapters 1, 2 and 9 carry twelve references a reader of those
+chapters sees. **SC-002 as worded is met; SC-002 as intended is not**, and the difference is
+`gaps.md` 045-63 with the repair scoped.
 
 ## Assumptions
 

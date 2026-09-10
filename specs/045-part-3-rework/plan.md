@@ -93,7 +93,7 @@ so a moved duration means something changed that should not have.**
 Vietnamese pages must keep fence lists and bodies byte-identical to English, because the mirror check
 compares them and skips only chapters that do not exist.
 
-**Scale/Scope**: **184 fenced files, 289 fences across 42 re-derived paths, 1,429 source references
+**Scale/Scope** *(the reference count here is the `.ts`-only corpus and reads 1,710 over the full one — `spec.md`'s "Measured at close-out" states the corpus before the count)*: **184 fenced files, 289 fences across 42 re-derived paths, 1,429 source references
 (1,298 of them inside 183 fenced paths), 48 existing appendix hunks to re-verify, 50 directory
 renames, 50 canonical URLs, 48 redirects**, plus an 810-line chapter registry no requirement named
 until analysis went looking for what else knows a chapter number.
