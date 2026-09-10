@@ -1583,7 +1583,36 @@ the sibling. The three replay scripts pass it. **A default path is a claim about
 and an unchecked one turns a checker into a checker of half its corpus that reports in the
 language of a pass — which is 044-1's lesson about a broken pattern filing a zero, one layer up.
 
-**THE REPAIR MUST RUN BEFORE NEW 25.** With the corpus complete, a replay now rewrites
-`services/api/Dockerfile` — a file belonging to new 19 — inside whatever chapter's trees the
-replay next builds. New 24 is tagged and is deliberately left alone; the Dockerfile goes with
-045-21's repair-replay list, where it lands in the chapter that owns the file.
+**THE REPAIR RAN BEFORE NEW 25, AND IT HAD TO.** With the corpus complete, a replay rewrites
+`services/api/Dockerfile` in every tree that contains it — so porting new 25 first would have
+put a file belonging to **new 19** into new 25's diff, and the chain would then want a hunk for
+it on the wrong chapter's page.
+
+Measured first, then done. The reference sits in the tags for **ch19 through ch24** and nowhere
+earlier, which is exactly where old 3.5's Dockerfile lands in the new order, so the repair range
+is `ch18..ch24` — 68 commits — and not the whole rebuild.
+
+    tip-to-tip diff after the replay   1 file, 1 line: `# The api (chapter 3.5).` -> `# The api.`
+    the commit it lands in             `feat: containerise the api, gateway and dispatcher`
+    tags re-pointed                    ch19 … ch24, messages preserved
+    references at the new tip          0, over the COMPLETE corpus, all 7 controls firing
+    check-chapter ch19..ch24           0 problems each, after the fence body moved with it
+    check:fences HEAD mismatches       157 -> 156, and no Dockerfile in the remainder
+
+**THE LINE LANDS IN THE COMMIT THAT CREATES THE FILE**, so no chapter shows the Dockerfile as a
+modification and no other chapter's fences move. That is the property a repair replay is for, and
+it is only available because the reference rules are idempotent: re-running them over trees with
+no ordinals left finds nothing and changes nothing.
+
+**AND `main` HAS THE SAME TWO STRAGGLERS.** `services/dispatcher/Dockerfile` and
+`services/gateway/Dockerfile` still read `(chapter 3.5)` in both trees, because neither is fenced
+and neither has a source suffix — outside the corpus **by the corpus's own definition**, which is
+a scope rather than a hole. The convention's REASON reaches them (an ordinal ages every time the
+plan changes, and a person reads these files) and its INSTRUMENT does not. Left as measured, said
+out loud here, rather than fixed by a scan that would then be claiming a corpus it does not have.
+
+**ONE COUNT CHECKED AND FOUND RIGHT.** `refrules.py` says "24 fenced paths sit outside the suffix
+list". Re-counted with the corpus working: 37 such titles, of which 13 name nothing here — 11 are
+PROSE titles (`the check`, `42P01`, `run 11 of 20`) and two are `packages/outsider/`, which does
+not exist until new 26. **24 real paths.** The number was right; this ledger's usual finding is
+the other kind, so a confirmation is worth its line.
