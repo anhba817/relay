@@ -2316,7 +2316,7 @@ gate stays green. Two of those three shapes were live in this feature simultaneo
 names no other, and needs `node_modules` — which is the argument for running it once per chapter
 rather than once per feature. Ten faults would otherwise cost ten builds.
 
-## 045-63 · THE CONVENTION COMMIT LANDED TWO CHAPTERS LATE, AND ITS OWN MESSAGE SAYS WHERE IT BELONGS
+## 045-63 · THE CONVENTION COMMIT LANDED TWO CHAPTERS LATE, AND ITS OWN MESSAGE SAYS WHERE IT BELONGS — CLOSED IN THE CHAIN
 
 `0317d83 refactor: a source comment names its subject, not an ordinal` — 74 references across 44
 files — carries this in its body:
@@ -2368,7 +2368,7 @@ their trees exactly, and the commit itself becomes empty and drops. Chapters 1, 
 and chapter 9/10's `repository.ts` fence need regenerating from the moved tags. Not attempted
 under this entry; measured, scoped, and left for a decision.
 
-## 045-64 · `DELIBERATE` EXEMPTS THE FIRST LINE OF A PROVENANCE TAG AND NOT ITS CONTINUATION
+## 045-64 · `DELIBERATE` EXEMPTS THE FIRST LINE OF A PROVENANCE TAG AND NOT ITS CONTINUATION — CLOSED
 
 The tag `refrules` was built to protect is three lines of prose:
 
@@ -2385,7 +2385,7 @@ The fix is not more lines in a set: an exemption for a *tag* should be scoped to
 each sentence in it. Filed rather than patched, because the set-of-lines design is what 045-55
 also strained against.
 
-## 045-65 · THE CONVENTION COMMIT INTRODUCED A DOUBLED ARTICLE ONTO A LINE THAT HAD NO ORDINAL
+## 045-65 · THE CONVENTION COMMIT INTRODUCED A DOUBLED ARTICLE ONTO A LINE THAT HAD NO ORDINAL — CLOSED IN THE CHAIN
 
 `scripts/credential-walk.mjs:1`, live at the tip and in every tag from ch3 on:
 
@@ -2492,7 +2492,7 @@ problems are waiting on (045-66).
 whose tip is already green on typecheck, lint and build. That is a replay, not a rewrite — and
 `replay-range.sh` and `replay-repair.sh` are the mechanism, already used twenty-six times.
 
-**AND IT ALREADY MISLED A MEASUREMENT, WHICH IS HOW IT WAS FOUND.** T044 carries feature 044's
+**AND IT ALREADY MISLED A MEASUREMENT, WHICH IS HOW IT WAS FOUND.** The carry task takes feature 044's
 ledger "re-measured against the tree rather than copied", and the tree I reached for first was the
 rework worktree — the one tree that **cannot** contain 044's fixes. Item C6 ("files that discard
 their child's output", closed at zero) came back as **14** and read as a reopening.
@@ -2516,7 +2516,7 @@ feature has three: `main`, the rebuilt chain, and the tutorial. An item about th
 present state is measured on `main`; an item about the rebuilt series is measured on the chain.
 Saying which is not pedantry — it is the difference between a closed item and a false reopening.
 
-## T044 · FEATURE 044's LEDGER, CARRIED AND RE-MEASURED — THIRTEEN ITEMS AND THE UNNUMBERED ONE
+## FEATURE 044's LEDGER, CARRIED AND RE-MEASURED — THIRTEEN ITEMS AND THE UNNUMBERED ONE
 
 Re-measured against the tree, not copied. **Every row names the tree it was measured on**, which
 045-67 is the reason for: this feature has three trees, and one of them predates the fixes half
@@ -2528,7 +2528,7 @@ these items are about.
     3.23-4    CLOSED, TWICE    main + chain          —         —   by different means; see below
     043-1     OPEN             tutorial       146/904   151/981   untitled fences
     3.23-2    OPEN             —                     —         —   Part 4.7's, out of scope by name
-    3.23-7    OPEN, UNMEASURED main                  —         ?   needs a coverage run
+    3.23-7    OPEN, MEASURED   chain             —         —   comment-only, no trigger
     3.22-4    OPEN             main                  —         —   assertion re-read, unchanged
     3.22-5    OPEN, PREMISE?   main                  5         4   modules naming the bound
     3.22-7    OPEN, WORSE      —                     —         —   045 added its own case
@@ -2545,7 +2545,7 @@ features, as a side effect of a renumbering.** The count has been wrong four tim
 this project's history and every error was in parsing the title; this instrument declares four
 title controls and fires them, which is why the number is trustworthy this time.
 
-**043-1 IS NOT CLOSED, AND THIS WAS ITS BEST CHANCE.** T044 says so in its own text: renumbering
+**043-1 IS NOT CLOSED, AND THIS WAS ITS BEST CHANCE.** The carry task says so in its own text: renumbering
 touches every chapter, so the untitled fences "are as findable now as they will ever be". They
 were findable and nobody titled them. **151 untitled against 830 titled**, 15.4% — the share fell
 from 16.1% because the corpus grew from 904 fences to 981, and the absolute number ROSE by five.
@@ -2579,9 +2579,28 @@ against a no-op DELETE** — the row it was meant to prove had been removed was 
 the assertion compared zero to zero. Fixed by planting the row and watching it go red first.
 Coverage saw a green file both times.
 
-**3.23-7 IS UNMEASURED AND SAYS SO.** The tenancy guard's coverage needs a coverage run, and the
-twenty-run timing battery has the machine. **Recorded as unmeasured rather than carried forward
-with 044's number**, because copying is the thing this task exists not to do.
+**3.23-7 IS MEASURED, AND MY REASON FOR DEFERRING IT WAS A MISREADING.** I recorded it as needing
+a coverage run and waiting on the battery. It needs no run: "the guard's coverage" in that title
+means **which tables the guard reaches**, not line coverage, and the item's own body says so —
+`db/catalogue.ts` classifies by `has_environment_id` then `via`, `message_edits` is a `hop`, and
+no check asks whether a `hop` table is append-only. Four greps, no lane.
+
+**OPEN, unchanged, and now measured rather than carried:**
+
+    catalogue.ts:195-196   `direct` if has_environment_id, then `hop` if via.length > 0 —
+                           the classifier is the one 3.23 left
+    message_edits          still two links away, still a `hop` (catalogue.ts:135)
+    the append-only claim  lives in TWO COMMENTS citing FR-004 —
+                           `0009_message_edits.sql:25` and `schema.ts:421`, both saying
+                           "Nothing updates or deletes a row here"
+    enforcement            NO trigger, in any migration
+    assertion              four integration suites name `message_edits` and not one
+                           attempts an UPDATE or DELETE against it
+
+**So the property is stated twice, enforced nowhere, and asserted nowhere** — which is a sharper
+statement of the item than the one it carried, and it is the shape this project keeps finding: a
+claim in a comment reads like a guarantee to everybody except the database. **Reading the item's
+body rather than its title is what turned a blocked measurement into a four-grep one.**
 
 **AND THE UNNUMBERED ONE, FOR THE FOURTEENTH FEATURE.** Use a person. This feature's own
 instruments say it in their last lines — `check-movements: contiguity only — whether the ORDER
@@ -2702,11 +2721,27 @@ cannot be handed a new name for work it has already done.
 
 **THIS IS THE SECOND HALF OF THE PUBLISH DECISION, AND IT IS HARDER THAN THE FIRST.** 045-67's
 replay of 043 and 044 is twenty-two commits of mechanical work. This one needs a decision about
-what a migration's identity IS: keep published numbering for migrations while chapters move
-(breaking the rule that a chapter owns its migration), rewrite `schema_migrations` rows on upgrade
-(impossible for the re-partitioned pair), or declare the rebuilt series a fresh start that no
-existing database upgrades into. **None of the three is free and the record contains no trace of
-the question.**
+what a migration's identity IS, and the three options are not equally available:
+
+    keep published numbering    BROKEN, and it is the option that looks safest. `migrate.ts`
+                                sorts by FILENAME, so webhooks keeping `0006` while its chapter
+                                sits at 19 applies it eleven chapters early for a reader
+                                working through the book from scratch.
+    rewrite schema_migrations   works for the seven pure renames; the re-partitioned pair
+                                divides the same DDL across differently-named files, so there
+                                is no 1:1 row mapping — only "mark all four applied", which is
+                                sound because the schema is the union, and delicate.
+    a fresh start               no existing database upgrades into the rebuilt series.
+
+**DECIDED: THE FRESH START.** A reader working through the reworked series builds the database
+from scratch, which is what a reader does; the only people inconvenienced are those who finished
+the published Part 3 and want to continue, and they recreate a DEVELOPMENT database. The mapping
+page carries the instruction, because that page is where a returning reader already goes to find
+out what moved — the same page that tells them 21 of 26 numbers changed meaning.
+
+**AND THE DECISION IS WHY THE 045-68 CONTROL STAYS UNMEASURED.** A fresh start means this lane's
+database belongs to the rebuilt chain; measuring `main`'s battery against it would need a second
+database, which is now a deliberate consequence rather than an obstacle.
 
 **AND THE 045-68 CONTROL IS BLOCKED BY IT.** Measuring `main`'s battery needs a database migrated
 in published order; measuring the chain's needs one migrated in subject order; the lane holds one
@@ -2764,6 +2799,27 @@ chain. Audited by what each commit creates rather than by how many of its lines 
     needs a reading 17   modification-only; no new file or symbol to test for
 
 **A CARRIED COMMIT IS A CARRIED LEDGER ITEM.** Measure it against the tree, do not copy it — the
-same rule T044 applies to gaps entries, and the same failure mode: the overlap percentages said
+same rule the carry task applies to gaps entries, and the same failure mode: the overlap percentages said
 27% and 36% and meant almost nothing, because most of what two versions of a fix share is braces
 and prose.
+
+## 045-64's FIX, AND WHAT IT COST TO GET THE BOUNDARY RIGHT
+
+`refrules.deliberate_lines()` covers a deliberate tag's comment PARAGRAPH — the entry's line plus
+every following comment line until a bare `//`, a rule line, or the first non-comment line. Not the
+comment block, which would exempt a genuine ordinal sitting further down the same comment; not three
+more entries in the set, which would fix these two tags and nothing about the next one somebody
+writes. `check-fence-ordinals.py` now runs two passes, because **a paragraph is not visible from one
+line** and the first pass is what builds the spans.
+
+    before the chain rewrite    38 ordinals in 12 files
+    after regenerating fences   12 in 4 — every one a tag continuation
+    after the paragraph span     0 in 0, 28 lines kept on purpose in 4 files, exit 0
+
+**RED-TESTED BOTH WAYS, AND THE FIRST PROBE WAS WRONG.** I inserted `chapter 3.11` after the tag's
+last sentence and the checker stayed green — which looked like a hole and was the design: that line
+is still inside the tag's paragraph, because the paragraph ends at the rule line BELOW it. Inserting
+past the rule line is caught, exit 1, one ordinal in one file. **A probe that lands inside the
+exemption tests the exemption, not the boundary**, and the difference is one line of the file.
+`deliberate_controls()` asserts the span is the tag's three lines and not the seven-line block, and
+runs on every invocation.

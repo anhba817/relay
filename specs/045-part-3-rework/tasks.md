@@ -18,6 +18,36 @@ walks through a diff.
 
 ---
 
+## READ THIS BEFORE THE TASKS: THE MECHANISM BELOW WAS ABANDONED, AND THE TASKS ARE KEPT ANYWAY
+
+**Thirty-four of the tasks below describe a replay-and-merge mechanism that does not exist.** The
+plan was to reconstruct each chapter's state by three-way merging the published commits onto a
+re-ordered base — `replay.mjs`, `runmax.mjs`, the snapshot machinery in `.replayed/`, T021 and its
+29 conflicts. **Analysis pass 2 falsified it by measurement**: line-attribution synthesis gives 52
+parse errors on `repository.ts` and 59 on `session.ts`; three-way merge gives 56 unresolved states.
+`baseline.txt` records the decision and what replaced it — porting each chapter's published commits
+onto the new base in order, one chapter at a time, with a tag per chapter.
+
+**THE TASKS ARE NOT REWRITTEN, AND THAT IS THE POINT.** What they record is a plan that was checked
+before it was executed, by an analysis pass that ran the premise instead of reading it. Rewriting
+them to match the work that happened would leave this feature's record showing a plan that went
+straight through — the one thing about it that was not true. The reversal is the part worth reading.
+
+**HOW TO READ A TASK BELOW.** Its FILE PATHS and its REASONING are current: the fence chain, the
+registry, the reference corpus, the eight movements and both splits all survived the change of
+mechanism unchanged. Its MECHANISM may not be. Where a task says "replay", "merge", "conflict" or
+"snapshot", the work was done by porting and tagging instead. Where a task names a count, check it:
+**a task's file count in this project is wrong in one direction, every time** — T018 named five
+fenced files against thirteen needed hunks, T037 said four chapter numbers change meaning against a
+measured twenty-one, T043 said seven sequencer caches against ten, T045 said six instruments against
+eleven, and SC-002 said 1,429 references against a measured 1,710.
+
+**WHAT IS ACTUALLY UNFINISHED** is in `gaps.md`, not in the checkboxes here: 045-66's three causes of
+the fence chain's remaining problems, 045-67's carry of features 043 and 044 onto the rebuilt chain,
+and 045-69's migration identity. An unticked box below is not a reliable signal either way.
+
+---
+
 ## Phase 1: Setup — and proving the instrument before trusting it
 
 - [X] T001 Pin the starting state in `specs/045-part-3-rework/baseline.txt`: all fourteen gates with each exit code captured **outside any pipeline**, plus the numbers this feature is measured against — 24 chapters, 447,394 words, 242 fenced files, 904 fences, 1,429 source references, and the battery's 225.45 s mean with stdev 1.15. **`fail=1` inside a `for … | sort` runs in a subshell and dies with it**, which has printed "ALL GATES: GREEN" over a red one three times in feature 043. (SC-007)

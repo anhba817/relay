@@ -24,10 +24,11 @@ sys.path.insert(0, str(Path(__file__).parent))
 # `refrules.is_versionish` already knew that, and two copies of `classify` disagreeing
 # by nine references is why `refrules.py` exists at all.
 import refrules
-from refrules import REF, classify, is_versionish, is_deliberate, controls_failing
+from refrules import (REF, classify, is_versionish, is_deliberate, controls_failing,
+                      deliberate_lines, deliberate_controls)
 
 ROOT = Path("/home/dong/work/relay/relay-tutorial")
-bad = controls_failing()
+bad = controls_failing() + deliberate_controls()
 if bad:
     print("check-fence-ordinals: BROKEN — controls failing: " + ", ".join(bad))
     sys.exit(2)
@@ -43,6 +44,15 @@ left, empty, kept = [], [], []
 # makes every `continue` safe by construction and the bug unwritable.
 for f in FILES:
     lines = f.read_text(encoding="utf-8").splitlines()
+    # A FIRST PASS, BECAUSE A PARAGRAPH IS NOT VISIBLE FROM ONE LINE (gaps 045-64). The
+    # bodies are what `DELIBERATE` matches — a diff line's `+`/`-`/space is stripped —
+    # so the span is computed over the bodies and indexed by the same line numbers the
+    # second pass reports.
+    bodies = [
+        l[1:] if (l[:1] in "-+ " and not l.startswith(("---", "+++"))) else l
+        for l in lines
+    ]
+    exempt = deliberate_lines(bodies)
     infence = isdiff = False
     hunk = None
 
@@ -73,7 +83,7 @@ for f in FILES:
         body = l[1:] if (isdiff and l[:1] and l[:1] in "-+ ") else l
         # A line whose subject IS an ordinal keeps it — `refrules.DELIBERATE`. Counted,
         # never skipped silently.
-        if is_deliberate(body):
+        if i + 1 in exempt:
             kept.append((f, i + 1, body.strip()[:92]))
             continue
         for mm in REF.finditer(body):

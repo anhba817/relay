@@ -198,6 +198,67 @@ def is_deliberate(line: str) -> bool:
     return line.strip() in {x.strip() for x in DELIBERATE}
 
 
+# THE EXEMPTION IS FOR A TAG, AND A TAG IS A PARAGRAPH — gaps.md 045-64. `DELIBERATE` is a
+# set of whole LINES, so it exempted the first line of the "NAMED, NOT NUMBERED" tag and
+# counted the two after it, which each carry an ordinal because the tag's whole subject is
+# how those ordinals aged. Twelve hits in four files, every one of them the exemption's own
+# subject matter, reported for the whole feature beside a fence chain already red for other
+# reasons — which is the cover a second unexplained red needs.
+#
+# THE UNIT IS THE COMMENT PARAGRAPH, not the comment block and not the file. The tag ends
+# at a bare `//`, a rule line, or the first non-comment line; extending to the whole block
+# would exempt a genuine ordinal that happens to sit further down the same comment. That
+# boundary is why this is a span function rather than three more entries in the set: three
+# entries would fix these two tags and nothing about the next one somebody writes.
+_PARAGRAPH_END = ("//", "*")
+
+
+def deliberate_lines(lines) -> frozenset[int]:
+    """1-based line numbers covered by a deliberate tag's paragraph.
+
+    A caller with the whole text uses this; `is_deliberate` remains correct for a caller
+    that has one line and no context, and is what this builds on.
+    """
+    covered: set[int] = set()
+    rows = list(lines)
+    for i, line in enumerate(rows, 1):
+        if not is_deliberate(line):
+            continue
+        covered.add(i)
+        marker = line.strip()[:2]
+        for j in range(i, len(rows)):
+            nxt = rows[j].strip()
+            if not nxt.startswith(marker):
+                break
+            rest = nxt[len(marker):].strip()
+            if not rest:                      # a bare `//` — the paragraph is over
+                break
+            if set(rest) <= set("-="):        # a rule line — likewise
+                break
+            covered.add(j + 1)
+    return frozenset(covered)
+
+
+def deliberate_controls() -> list[str]:
+    """`deliberate_lines` must cover the tag and stop at its boundary. Both halves, every
+    run — a span function that never stops is an exemption over the rest of the file."""
+    tag = next(x for x in DELIBERATE if "NAMED, NOT NUMBERED" in x)
+    body = [
+        "// customer. Both fail the test on both halves, so both are scoped and both join",
+        "//",
+        tag,
+        '// gauntlet". The gauntlet was 3.7 when that was written, became 3.8 when a chapter',
+        "// was inserted ahead of it, and is now 3.9 after a second insertion — and the",
+        "// ---------------------------------------------------------------------------",
+        "// DECISION: no source document defines this table. FR-WHK-01 mentions 3.5.",
+    ]
+    got = deliberate_lines(body)
+    bad = []
+    if got != {3, 4, 5}:
+        bad.append(f"deliberate_lines covered {sorted(got)}, expected the tag's [3, 4, 5]")
+    return bad
+
+
 def is_versionish(line: str, m: re.Match) -> bool:
     return bool(VERSIONISH.search(line[max(0, m.start() - 24):m.end() + 16]))
 
