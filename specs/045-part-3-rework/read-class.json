@@ -1151,6 +1151,19 @@
      "// FR-044: the CLASS was never enough. Two platform credentials"
     ]
    ]
+  },
+  {
+   "why": "new 26 (the outsider milestone). Two pairs, both SELF-references: old 3.12's span creates these two files and old 3.12 is this chapter, so the tag goes and the FR ids stay. The tag on a file's opening line is provenance for a file that has only ever had one chapter.",
+   "pairs": [
+    [
+     "// THE SEALED INTEGRATION (chapter 3.12, FR-030, FR-031).",
+     "// THE SEALED INTEGRATION (FR-030, FR-031)."
+    ],
+    [
+     "// A tenant an outsider can integrate against (chapter 3.12, FR-032).",
+     "// A tenant an outsider can integrate against (FR-032)."
+    ]
+   ]
   }
  ]
 }

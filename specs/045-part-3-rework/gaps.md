@@ -1803,3 +1803,177 @@ three-entries-stale exemption list. `check-chapter` goes 6 fences / 4 compared /
 line is the only instrument in either repository that answers "did this chapter change something
 it never explains", and it answers by listing rather than counting — which is what made one file
 out of thirteen stand out at all.
+
+## 045-48 · THE SEAL'S LAST BLOCK CARRIED HALF A RULE, IN THE ONE PACKAGE THAT MOST NEEDS THE OTHER HALF
+
+`packages/outsider` is sealed in three levels so that "an integration built from published
+documentation alone" is a mechanical claim rather than a promise. Level 2 is a
+`no-restricted-imports` block, and published's version sets **only the outsider's own
+patterns**:
+
+    rules: { "no-restricted-imports": ["error", { patterns: [ @relay/*, ../* ] }] }
+
+No `paths`. And that block is LAST, which the file's own comment says is deliberate — one
+winner per file, the last matching block. So `pg`, `drizzle-orm` and `ioredis` were unrestricted
+in `packages/outsider`, **and they resolve there**: the parent walk reaches the workspace root's
+`node_modules` even though `@relay/*` does not, which is the whole mechanism level 1 depends on.
+
+That is 045-34's replacement fault again, in the package where the ban matters most — the one
+whose entire purpose is to have no privileged access. Published's own final tree fixes it
+(`paths: DRIVER_AND_ENGINE.paths`); its Part-3 commit does not.
+
+**TAKEN HERE COMPOSED, AND ALL THREE LEVELS MEASURED RATHER THAN ASSERTED:**
+
+    level 1  node -e "import('@relay/protocol')" from the package   ERR_MODULE_NOT_FOUND
+    level 2  `@relay/protocol`                                      red
+    level 2  `../../protocol/src/codes.js`                          red
+    level 3  `join(HERE, "..", "dist")`                             red
+    level 3  `node:module` / `createRequire`                        red
+    level 3  `import … from "/etc/passwd"`                          red
+    the union `import { sql } from "drizzle-orm"`                   red   <- published: allowed
+    the package as written                                          clean
+
+**LEVEL 1 IS THE ONE WORTH MEASURING AT ALL**, because it is the only level that is not a rule.
+The comment says the module "is not there"; `ERR_MODULE_NOT_FOUND` from inside the package is the
+difference between that sentence and a belief about pnpm's layout.
+
+## 045-49 · A COMMENT COUNTED ITS OWN FILE AND THE COUNT WAS TRUE OF ONE COMMIT
+
+The sealed suite's typing test opens: *"the first `socket.send` in this file's history"*, with a
+measured `grep -c` of **0** beside it. Counted across published's own history:
+
+    30fb8f1  (the commit that CREATES the file)   1
+    3412851^ (three chapters later)               0
+    3412851  (the commit making the claim)        3
+    main                                          3
+
+**The file had an inbound `socket.send` on the day it was written.** A later chapter removed it
+and retitled that test "sent over REST", which is the state the claim was measured against — so
+"in this file's history" was already false when it was written, and the grep that proved it was
+run on a file the sentence was not describing.
+
+**AND THIS REBUILD NEVER APPLIED THE REMOVAL**, so the premise fails twice here: the suite has
+sent over the socket since it arrived. The typing leg is still worth porting — every other check
+on `typing.send` is in-workspace, using the `ws` package this file refuses to import, so the
+frame genuinely had never been driven from outside — but the sentence had to be rewritten to say
+that instead.
+
+**FOUND ONLY BY RUNNING THE COMMENT'S OWN COMMAND.** Nothing else would have: a `grep -c` in a
+docblock is prose to every instrument in both repositories. **A count in a comment is a claim
+about one commit**, and this one outlived its commit by three chapters and a whole reorder.
+
+## 045-50 · A TURBO ENV DECLARATION THAT NO TASK READS IS A CACHE KEY THAT CANNOT CHANGE
+
+`f33beee` adds four variables to turbo's global env list. This tree reads three —
+`RELAY_API_URL`, `RELAY_WS_URL`, `RELAY_DEMO_CREDENTIAL`, all by the sealed suite. The fourth,
+`RELAY_DOCS_BASE_URL`, is read by `docsUrl` on published's FINAL tree, where `ERROR_DOCS_BASE`
+became `DEFAULT_DOCS_BASE_URL` behind an env lookup. In this tree it is still a constant.
+
+A turbo `env` entry is a cache key: turbo hashes the variable's value into the task hash. One
+that no task reads can never change a hash, and **nothing reports it** — not turbo, not lint,
+not any `check:*`. Dropped rather than kept against a reader that may or may not arrive.
+
+**THE READER BELONGS TO THE ERROR-REGISTRY CHAPTER**, which is new 3 and tagged. Making
+`ERROR_DOCS_BASE` configurable is the change that turns `docs_url` from a placeholder into
+something a deployment can point at a real host — the debt new 3 opens and puts in Part 4. It
+goes with that debt rather than into the last chapter of this part.
+
+## 045-51 · THE SEALED SUITE IS FILTERED OUT OF THREE LANES AND THE THIRD LANE GLOBS THE FILESYSTEM
+
+`packages/outsider` integrates against a platform it does not start. Without `RELAY_API_URL`,
+`RELAY_WS_URL` and `RELAY_DEMO_CREDENTIAL` it throws on purpose and prints the five commands that
+would satisfy it — a good failure, and the right one.
+
+Three lanes have to be told not to run it, and each is told differently:
+
+    the unit lane          the package declares no `test` script — nothing to find
+    `test:integration`     `turbo run test:integration --filter=!@relay/outsider`
+    `pnpm coverage`        globs `packages/*/src/**/*.itest.ts` and found it anyway
+
+**MEASURED: one failed file, ten skipped tests, every coverage run.** The exclusion went into a
+`package.json` SCRIPT, and the third lane's membership is decided by a glob in
+`vitest.coverage.config.mts` — so being filtered out of the lane a chapter was thinking about
+says nothing about the lane it was not.
+
+**PUBLISHED SHIPPED IT AND FIXED IT TWO CHAPTERS LATER**, at eight skipped tests; its config
+carries the story in the comment that fixes it. It is ten here because the typing leg above added
+two. **A count in a filter is a count of what somebody remembered to filter**, and the number
+grows with the suite while the filter does not.
+
+**THE GENERAL SHAPE, WHICH IS THE PART TO KEEP.** A suite's membership in a lane is declared in
+as many places as there are lanes, in as many languages: a missing script, a turbo filter, a
+vitest glob. Nothing cross-checks them, and this rebuild has now been bitten by the same class
+twice in two chapters — 045-47's unfenced config was a file changed and never explained, and this
+is a file excluded and never excluded. **Ask of every lane, separately, whether it can see the
+thing you just told one lane to ignore.**
+
+## 045-52 · THE SEALED SUITE PORTED AT ITS BIRTH COMMIT WAS RED ON THREE OF TEN, AND PUBLISHED TOOK TWO CHAPTERS TO NOTICE THE SAME THING
+
+`packages/outsider` arrives at new 26 from `30fb8f1` — the commit that creates it, fourteen
+chapters earlier in published's order than this chapter sits in the rebuild's. Run against a live
+stack:
+
+    refuses a private channel, naming the field    expected 400, got 201
+    sends a message over REST and reads it back    expected 201, got 400
+    docs_url on a foreign channel                  expected "#not_found", got ".../not_found"
+
+Each is the platform having moved: the channel-control chapter widened the create route's enum to
+`["public","private"]` and that chapter is now BEHIND this one; a send must name a bot since
+FR-MSG-15; and `docsUrl` is a path per code here where published later made it an anchor on one
+page.
+
+**PUBLISHED'S OWN COMMENT ON THE FIRST ONE IS THE ENTRY:**
+
+> *"THIS TEST WAS RED FOR TWO CHAPTERS AND NOBODY SAW IT (T065). It asserted `400` with
+> `field: "type"`, which was true when it was written… this suite was not run at that chapter's
+> close — `pnpm test:outsider` is its own lane, outside `pnpm test:integration`, so nothing in the
+> twenty-run battery touches it. The one suite that stands for an external developer was wrong
+> about the API for two chapters."*
+
+**THE LANE ISOLATION IS RIGHT AND IT IS THE CAUSE.** The suite needs a compose profile no
+developer should be forced into, so keeping it out of the default lane is correct — and it means
+the suite is only ever as true as the last time somebody deliberately ran it. That is the same
+class as 045-51 one turn earlier, from the other side: **a suite kept out of the lanes everybody
+runs is a suite nobody runs.**
+
+**SO IT WAS RUN, WHICH IS THE POINT OF THE CHAPTER.** Taken in the form written against a complete
+platform and adapted where this tree differs: **16 of 16**, against a stack built with `--build`
+(the chapter's own `<Trap>` is about stale images), seeded through `scripts/seed-demo-tenant.mjs`,
+with the seal re-verified after the swap — level 1 `ERR_MODULE_NOT_FOUND`, a `drizzle-orm` import
+still red.
+
+**AND THE ADAPTATION IS ONE LINE, NAMED.** `docs_url` is asserted as a path per code. The anchor
+form needs `ERROR_DOCS_BASE` to become configurable, which is the error-registry chapter's change
+and Part 4's debt — 045-50 is the same boundary seen from turbo's env list.
+
+## 045-53 · THE LAST CHAPTER'S VERDICT IMPROVED BECAUSE OF THE REORDER, WHICH IS THE FEATURE'S OWN THESIS ARRIVING AS A MEASUREMENT
+
+New 26 is the outsider milestone, and its verdict is the SRS Phase 2 exit criterion. Published
+reports **MET IN PART** with two things missing, "different in kind":
+
+    1  a REST-sent message reaches no live socket, and no document says so
+    2  content sufficiency is not comprehensibility — no test can reach it
+
+**THE FIRST IS CLOSED HERE, AND NOT BY ANY WORK THIS CHAPTER DID.** That symptom had two causes.
+The sender chapter removed one — a public send attributes a sender, so the row survives a resume.
+The message-delivery chapter removed the other, which was the whole of what remained: the api
+published to no fan-out at all. **In published's order both fixes came AFTER the exercise that
+recorded the gap. In this order both are behind it.**
+
+Measured, not argued: the suite's own test used to be titled "receives a message on a socket —
+SENT over the socket", in capitals, because a REST send could not work. It sends over REST now
+and passes — the send an integrating developer's backend actually makes.
+
+So the verdict goes from two missing things to **one**, and the closing hand-forward loses two of
+its three items: the publish is done, and so is the public surface a customer drives, including
+the `type: "private"` this part used to refuse at the door.
+
+**THIS IS FR-007's CLAIM WITH A NUMBER ON IT.** The feature's premise is that grouping by subject
+is better than grouping by the order the work happened in. The strongest evidence available for
+that was always going to be a milestone whose verdict changes — same suite, same platform, and a
+chapter that measures a gap no longer running before the chapters that close it. **Nothing in the
+plan predicted this**; it fell out of running the suite the chapter is about.
+
+**AND THE WEAKER HALF IS WORTH SAYING TOO.** The remaining gap is the one no reorder can help and
+no instrument can reach, and it is the same sentence CLAUDE.md has carried for thirteen records:
+*use a person.* Part 3 now ends on it rather than on a scheduling note.
