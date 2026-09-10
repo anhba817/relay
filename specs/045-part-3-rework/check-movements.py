@@ -21,6 +21,7 @@ WHAT IT CHECKS, AND EVERY ANSWER IS A NUMBER RATHER THAN A YES:
   a movement carrying an explicit `chapters` list agrees with the chapters that name it
   the plan's table has one row per mapped chapter, in ordinal order
   each row's Was, Movement and Title agree with the map and with the page's own metadata
+  the published mapping page's data file is a faithful copy of the canonical map
 
 CONTIGUITY IS NOT COMPREHENSION. Eight contiguous runs say the chapters about one subject
 sit together. Whether the order teaches anything is `reader-protocol.md`'s question and it
@@ -34,6 +35,7 @@ HERE = pathlib.Path(__file__).resolve().parent
 ROOT = HERE.parent.parent
 TUT = pathlib.Path(__import__("os").environ.get("RELAY_TUTORIAL", ROOT / "relay-tutorial"))
 PLAN = ROOT / "docs" / "07-tutorial-plan.md"
+PUBLISHED_MAP = TUT / "lib" / "part3-chapter-map.json"
 
 
 def movement_problems(chapters, movements) -> list[str]:
@@ -144,6 +146,40 @@ def table_problems(chapters) -> list[str]:
     return problems
 
 
+def published_map_problems(chapters, movements) -> list[str]:
+    """The mapping page renders `relay-tutorial/lib/part3-chapter-map.json`, which is a
+    machine-written copy of the canonical map. A COPY IS A SECOND PLACE TO BE WRONG, and
+    this one is published — so it is compared field by field rather than trusted because a
+    script wrote it once."""
+    if not PUBLISHED_MAP.exists():
+        return [f"{PUBLISHED_MAP} does not exist — the mapping page has no data"]
+    pub = json.loads(PUBLISHED_MAP.read_text(encoding="utf-8"))
+    problems: list[str] = []
+    if [m["id"] for m in pub.get("movements", [])] != [m["id"] for m in movements]:
+        problems.append("published map's movement ids differ from the canonical map's")
+    for m_pub, m in zip(pub.get("movements", []), movements):
+        if m_pub.get("title") != m["title"]:
+            problems.append(
+                f"published movement {m['id']}: title {m_pub.get('title')!r} vs {m['title']!r}"
+            )
+    by_new = {c["new"]: c for c in chapters}
+    pub_by_new = {c["new"]: c for c in pub.get("chapters", [])}
+    for n in sorted(set(by_new) | set(pub_by_new)):
+        c, q = by_new.get(n), pub_by_new.get(n)
+        if c is None:
+            problems.append(f"published map has chapter {n}, the canonical map does not")
+            continue
+        if q is None:
+            problems.append(f"published map is missing chapter {n} ({c['slug']})")
+            continue
+        for field in ("old", "movement", "slug", "title"):
+            if q.get(field) != c[field]:
+                problems.append(
+                    f"published chapter {n}: {field} {q.get(field)!r} vs canonical {c[field]!r}"
+                )
+    return problems
+
+
 def main(argv) -> int:
     m = json.loads((HERE / "chapter-map.json").read_text(encoding="utf-8"))
     chapters, movements = m["chapters"], m["movements"]
@@ -152,6 +188,7 @@ def main(argv) -> int:
         problems += movement_problems(chapters, movements)
     if "--movements-only" not in argv:
         problems += table_problems(chapters)
+        problems += published_map_problems(chapters, movements)
 
     for p in problems:
         print(f"  {p}", file=sys.stderr)
