@@ -1227,3 +1227,44 @@ battery rather than by hand, or give the config a mode where the global floor is
 single-file run can exercise one key. Recorded here with the measurements so the next re-pin does
 not spend the same twenty minutes discovering it, and the config now says which half of the
 ritual each pin was validated by.
+
+## 045-33 · THE FENCE GENERATOR ATE EVERY REMOVED SQL COMMENT, AND THE CHECKER CAUGHT IT THE SAME DAY
+
+`regen-fences.py` strips `git diff`'s header before storing a fence body, and it did so by prefix:
+
+    if not l.startswith(("diff --git", "index ", "--- ", "+++ ", "new file mode"))
+
+`--- ` is the header's old-file line. It is also **a removed SQL comment**: `-- a trigger that
+can never match` is emitted by `git diff` as `--- a trigger that can never match` — one `-` for
+the removal, two for the comment. So every such line was deleted from the fence.
+
+The result is a fence carrying the ADDITIONS of a rewritten comment block and none of the
+REMOVALS. Measured on new 23's `sentinel.sql`: git's diff has 2 hunks and 4 removals; the
+generated fence had 1 hunk and 1 removal, and the three lost lines were exactly the three
+comment lines the chapter replaced.
+
+**THE CHECKER CAUGHT IT IMMEDIATELY AND SAID SOMETHING TRUE BUT UNHELPFUL:**
+
+    packages/test-harness/src/sentinel.sql: hunk pre-image matched 0 times (need 1)
+      — starts '  -- so a table with no `id` raises `record "old" has no fie'
+
+Every individual line of the pre-image was present in the base file; only the SEQUENCE was wrong,
+which is why the message names a line that is not the problem. Finding it took aligning the
+pre-image against the base line by line and reading the first divergence — the fence had context
+where the base had text.
+
+**BOUNDED, AND THE BOUND IS THE INTERESTING PART.** Two chapters fence a `.sql` file as a diff
+rather than whole: new 10 and new 23. New 10 removes no comment line, so it is undamaged and
+`check-chapter` confirms it at 0 problems. **New 23 is the first chapter in this rework to delete
+a line of SQL commentary**, which is why a bug that has been in the generator since it was written
+surfaced now.
+
+Fixed by stripping the header **by position** rather than by prefix — everything before the first
+`@@` is header and nothing after it is, and `git diff` always emits hunks last. That is exact
+where a prefix match is a guess, and it needs no list of the languages whose comments collide with
+diff syntax (SQL, Lua, Haskell, Ada all use `--`).
+
+**AND IT IS THE FILE'S OWN WARNING COMING TRUE.** `regen-fences.py`'s header says a generator that
+replays differently from the checker "produces hunks the checker rejects for reasons neither of
+them explains". This is that, from the one direction nobody looked: not the widening, but the
+line filter that runs after it.
