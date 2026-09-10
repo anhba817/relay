@@ -649,3 +649,68 @@ EVERY DISTINCT VALUE, CLASSIFIED — no hit is left as "probably fine":
 NOTHING NEW WAS INTRODUCED BY FEATURE 045. Every hit is a lane value pinned on
 purpose, a test fixture whose fixedness is the point, a prose example that says it is
 fake, a lockfile hash, or a false positive of a pattern that is doing its job.
+
+════════════════════════════════════════════════════════════════════════════════
+T045 · THE GATE PASS AT CLOSE-OUT — TWENTY GATES, NOT FOURTEEN
+════════════════════════════════════════════════════════════════════════════════
+
+EVERY EXIT CODE READ FROM $? ON THE LINE AFTER ITS COMMAND, appended to a file.
+Nothing pipes. `fail=1` inside a `for … | sort` runs in a subshell and dies with it,
+which has printed "ALL GATES: GREEN" over a red one three times in feature 043.
+Runner: `/tmp/…/scratchpad/gates.sh`, one log per gate.
+
+THE LIST WAS WRONG IN TWO DIRECTIONS AND BOTH MATTER.
+
+  "the six instruments in specs/045-part-3-rework/"    there are ELEVEN that take no
+                                                       argument, plus check-chapter.py
+                                                       which takes a chapter and two
+                                                       refs. The six were never named,
+                                                       so nobody could notice.
+  `pnpm run build` in relay-tutorial                   NOT in the list, and it is the
+                                                       only gate that parses MDX. It was
+                                                       unrunnable all feature — no
+                                                       node_modules — and red when it
+                                                       first ran. See gaps 045-61/62.
+
+  relay-platform  (tmp/part3-refactor, part3-rework @ e8bf10c)
+    pnpm typecheck                                                        0
+    pnpm lint                                                             0
+    pnpm build                                                            0
+  relay-tutorial
+    pnpm check:docs                                                       0
+    pnpm check:figures                                                    0
+    pnpm check:srs                                                        0
+    pnpm check:errors                                                     0
+    pnpm run build                    ← added to the list, 097 routes      0
+    pnpm check:fences                                                     1  ← 045-66
+  specs/045-part-3-rework
+    check-checklist.py                                                    0
+    check-excerpt-files.py                                                0
+    check-fence-parity.py             43 en / 43 vi, 830 titled           0
+    check-map.py                      26 chapters, 8 movements            0
+    check-movements.py                8 of 8 contiguous                   0
+    check-prose.py                                                        0
+    check-quickstart.py                                                   0
+    check-redirects.py                42 derived, 42 present              0
+    check-refs.py                     56 tasks, 7 declared foreign        0
+    check-registry.py                 43 declared, 43 on disk             0
+    check-fence-ordinals.py           38 in 12 files                      1  ← 045-63/64
+
+EIGHTEEN OF TWENTY GREEN. The two reds are the same underlying thing seen from two
+distances, and both are recorded rather than silenced:
+
+  check-fence-ordinals   the twelve live ordinals in chapters 1, 2 and 9's trees, plus
+                         four provenance continuations. 045-63 scopes the repair; 045-64
+                         is the exemption's own subject matter.
+  check:fences           decomposed in 045-66: 92 of the 296 are "main is not the
+                         rebuilt history", 84 are 42 fence bodies mirrored across two
+                         locales, and 79 are an appendix written against the end state
+                         this feature replaced.
+
+TWO GATES MY OWN CLOSE-OUT EDITS TURNED RED, WHICH IS THE COUPLING WORKING.
+`check-checklist.py` and `check-refs.py` both went red on names the close-out
+measurement added to `spec.md` — six paths and one requirement id quoted as evidence.
+Neither was a false positive: the checklist's argument is that every code-shaped
+reference in the spec is deliberate, and six had nobody arguing for them until they were
+enumerated. **The gates that broke were the two that read the documents I was editing**,
+and finding that out cost one pass.

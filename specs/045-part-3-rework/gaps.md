@@ -2406,3 +2406,53 @@ The file is fenced in chapter 2 (both locales), so the typo is published text. I
 the same commit as 045-63 and is fixed by the same repair, which is why it is filed beside it
 rather than patched at the tip: a tip-only fix would be a platform change no chapter documents
 and would need a `fences/post-series.md` amendment for a doubled article.
+
+## 045-66 · THE 296 FENCE PROBLEMS DECOMPOSE INTO THREE CAUSES, AND ONLY ONE OF THEM IS ABOUT WHICH TREE
+
+`check:fences` has sat at "296 problem(s) — APPLY 139, HEAD 157" for the whole rebuild, carried
+in the record as a baseline. A baseline is a number somebody decided to accept, and nobody
+decided this one: it was measured once and repeated. FR-013 says every gate is green at
+close-out, so it has to be decomposed before it can be argued about.
+
+`check-fence-chain.mjs:38` reads the platform from `../relay-platform` — a hardcoded path to the
+submodule's working tree, which is `main`. The rebuilt chapters' fences replay onto the REWORK
+tip. So the gate has been comparing a rebuilt chain against a tree that does not contain it.
+Running a copy of the checker with that one line repointed at `tmp/part3-refactor` answers the
+question:
+
+                        vs main   vs the rework tip
+    HEAD  en chapters       138                  41
+    HEAD  post-series.md     19                  24
+    APPLY en chapters        42                  42
+    APPLY vi chapters        42                  42
+    APPLY post-series.md     55                  55
+                        ───────   ─────────────────
+                            296                 204
+
+**THREE CAUSES, AND THE MIDDLE ONE IS THE ONLY ONE ANYBODY GUESSED.**
+
+**1. Ninety-two are "main is not the rebuilt history" (296 → 204).** The HEAD category is the one
+sensitive to which tree; it drops from 157 to 65. This is not a defect in anything — it is the
+gate correctly reporting that the published platform does not carry the chapters the tutorial now
+describes. **It cannot be fixed inside the tutorial**, and it cannot be fixed at all without
+deciding to make `part3-rework` the published history. That decision is not a gate's to make.
+
+**2. The APPLY count is 139 either way — completely insensitive to the platform tree.** 42 in the
+English chapters, 42 in the Vietnamese ones, 55 in the appendix. The 42/42 symmetry says these are
+the same fences in both locales, which is what a mirrored body does: `sync-vi-fences.py` copies EN
+bodies into vi by title and occurrence, so a bad EN body is a bad vi body. **One repair fixes
+both**, and the count halves the work rather than doubling it.
+
+**3. The appendix accounts for 79 of the 204 and was never in scope.** `fences/post-series.md`
+amends 49 paths with 48 hunks, and analysis pass 3 recorded that "the chain does not end at the
+last chapter". Every one of those hunks was written against published 3.24's end state. The
+rework changed the end state, so the appendix's pre-images no longer match — **not because the
+appendix is wrong, but because it is an amendment to a history that was replaced underneath it.**
+No task in this feature touches it. It is the single largest contiguous block of the 204.
+
+**WHAT THIS MEANS FOR FR-013.** "Every gate green" is reachable for twelve of the fourteen. For
+`check:fences` it requires, in order: the platform decision (92), 42 fence bodies regenerated in
+both locales (84), and the appendix rewritten against the new end state (79). The first is a
+person's call, the second is `regen-fences.py` plus reading, and the third is a chapter-sized
+piece of work that no task in this feature planned for. **Recording the decomposition is the
+useful act here**; quoting 296 as a baseline hid a person's decision inside a number.
