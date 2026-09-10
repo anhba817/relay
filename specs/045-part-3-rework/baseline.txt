@@ -536,3 +536,116 @@ replay. `replay.mjs`, `runmax.mjs` and the snapshot machinery stay as the
 MEASUREMENT that produced this decision, not as the mechanism. What survives
 unchanged is everything the analysis established: the eight movements, both
 splits, the 26-chapter map, the reference rewrite, the registry and the renaming.
+
+════════════════════════════════════════════════════════════════════════════════
+T042 · THE CREDENTIAL SCAN — THREE REPOSITORIES, SEVENTEEN PATTERNS, EVERY HIT
+      CLASSIFIED
+════════════════════════════════════════════════════════════════════════════════
+
+SEVENTEEN PATTERNS, EACH WITH A POSITIVE CONTROL, ALL SEVENTEEN MATCHED IT. A zero
+below therefore means the corpus is clean of that pattern and not that the pattern is
+broken — which is the whole reason this is Python and not `grep`. gaps.md 044-1:
+ugrep 7.8.4 matches nothing for a grouped alternation followed by two negated classes,
+and the previous scan filed that zero as evidence over a corpus holding the string
+twice. The DSN pattern below is deliberately UNGROUPED for that reason, and the redis
+form is a second pattern rather than a second branch of the first.
+
+RE-RUN IT WITH `python3 specs/045-part-3-rework/credential-scan.py`. The ranges are in
+the script, so the scan is reproducible rather than described; it exits 2 if any pattern
+fails its own control, before it reports a single count.
+
+THE CORPUS IS THE ADDED SIDE OF THIS FEATURE'S DIFF — what the feature put into the
+tree, which is the only thing it can be blamed for.
+
+  superproject                    44ddece^..HEAD          88,524 added lines
+  relay-tutorial                  9f6d85b^..HEAD          55,422 added lines
+  relay-platform (main campaign)  33bbd2a^..main           1,675 added lines
+  relay-platform (rework chain)   79b5d0b..part3-rework   16,097 added lines
+                                                         ───────
+                                                         161,718 added lines
+
+  The superproject figure is large because `specs/045-part-3-rework/.replayed/`
+  holds 422 tracked files, 5.2 MB — thirty-six per-chapter snapshots of platform
+  source, committed on purpose (064b7b1: "the snapshot is an input and lived in
+  /tmp until a reboot wiped it"). It is why fixtures like `deadbeef…` and
+  `whsec_do_not_publish_this` appear below under a `specs/` path: they are platform
+  test files, scanned twice because the specs repo now carries a copy. Nothing
+  reads `.replayed/` — `check-fence-chain` only uses the WORD "replayed" — so it is
+  a preserved measurement input with no consumer, and it is recorded here rather
+  than deleted because deleting somebody's evidence is not a scan's decision.
+
+  PATTERN                       HITS  DISTINCT  CLASSIFICATION
+  relay key prefix                20        10  2 lane values + 6 fixtures + 2 prose
+  stripe-style live/test           0         0  clean
+  AWS access key id                0         0  clean
+  private key header               0         0  clean
+  JWT literal                      0         0  clean
+  gh/slack/npm token               0         0  clean
+  password assignment              0         0  clean
+  secret assignment                2         2  webhook test vectors
+  token assignment                 1         1  FALSE POSITIVE — a public URL
+  bearer literal                   6         3  prose examples, all named as fake
+  dsn with password               13         1  the lane DSN, pinned in this file
+  dsn with password (redis)        0         0  clean
+  base64 blob >= 40               62        62  56 lockfile hashes, 3 paths, 2 shas,
+                                                1 lane key
+  hex secret >= 32                 5         3  1 fixture + 2 submodule pointers
+  RELAY_ secret/key/cred          97         8  variable NAMES, no values
+  generic api_key                  0         0  clean
+  ssh/pem file ref                 0         0  clean
+
+EVERY DISTINCT VALUE, CLASSIFIED — no hit is left as "probably fine":
+
+  rk_svc_local_development_credential_0000   The lane's fixed development
+  rk_svc_local_development_gateway_00000     credentials and DSN, pinned above
+  postgres://relay:relay@localhost:15432     where the tasks can see them. Carried
+  BpDal75yBZp7Fc2GtGS3D1vh7qOKgCWJkF6/d…=    unchanged from 043 and 044. Not new,
+                                             not secret, deliberate.
+
+  rk_svc_attempts_itest_0123456789abcdef0123      Integration-test fixtures. Two of
+  rk_svc_testevent_itest_0123456789abcdef01       them are negative controls —
+  rk_svc_credentials_itest_0123456789abcdef01234  `rk_svc_tooshort` exists to be
+  rk_svc_gateway_itest_fedcba98765432100fedcba9   REJECTED for its length, and
+  rk_svc_tooshort                                 `nobodys_secret` to be rejected
+  rk_svc_nobodys_secret_0000000000000000000       for not matching a stored hash.
+
+  rk_live_not_a_real_key_at_all_000000       Chapter 22's prose, in the rate-limit
+  rk_live_still_not_a_real_key_0000000       transcripts. The values say what they
+  Bearer not.a.real.token                    are. Two of the three `bearer` hits
+                                             are these same two keys behind the
+                                             word Bearer.
+
+  whsec_test_2f4b8c1e9a7d3f6b5c0e8a2d4f6b8c1e   `signature.test.ts`'s HMAC vector
+  whsec_do_not_publish_this                     and `analytics.test.ts`'s fixture.
+                                                A signature test needs a fixed key
+                                                or it asserts nothing.
+
+  deadbeefdeadbeefdeadbeefdeadbeef           `signup.itest.ts`'s stub OAuth state.
+
+  tokenUrl: "https://github.com/login/oauth/access_token"
+                                             FALSE POSITIVE. GitHub's published
+                                             endpoint. The pattern matches
+                                             `token…=` and cannot tell a URL from a
+                                             value — kept in the record rather than
+                                             filtered, because a pattern's false
+                                             positives are part of what it means.
+
+  56 × pnpm-lock.yaml `integrity:` sha512    Base64 by construction; the lockfile
+  2  × git submodule pointer shas            is a published artifact. The two shas
+  3  × repository paths                      are this feature's own submodule
+                                             bumps. The three paths are 044's known
+                                             class: `/` is in the base64 alphabet,
+                                             so a path with no dots is a 40-char
+                                             base64 blob.
+
+  RELAY_INTERNAL_CREDENTIAL · RELAY_INTERNAL_CREDENTIAL_GATEWAY · RELAY_AUTH_KEY_PREFIX
+  RELAY_WEBHOOK_SECRET_KEY · RELAY_DEV_JWT_SECRET · RELAY_DEMO_CREDENTIAL
+  RELAY_OAUTH_GITHUB_CLIENT_SECRET · RELAY_OAUTH_GITHUB_TOKEN_URL
+                                             Variable NAMES. The scan hits the
+                                             identifier; the values they name are
+                                             the four pinned rows above, or absent
+                                             from the tree entirely.
+
+NOTHING NEW WAS INTRODUCED BY FEATURE 045. Every hit is a lane value pinned on
+purpose, a test fixture whose fixedness is the point, a prose example that says it is
+fake, a lockfile hash, or a false positive of a pattern that is doing its job.
