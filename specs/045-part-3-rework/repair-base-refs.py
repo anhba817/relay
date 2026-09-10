@@ -44,8 +44,9 @@ def main(apply: bool) -> int:
         if e["old"] not in t:
             continue
         n = t.count(e["old"])
-        if n != 1:
-            print(f"  REFUSING {e['file']}: pre-image occurs {n} times, need exactly 1",
+        if n != 1 and not e.get("all"):
+            print(f"  REFUSING {e['file']}: pre-image occurs {n} times, need exactly 1"
+                  f" (set \"all\": true if every occurrence wants the same swap)",
                   file=sys.stderr)
             return 2
         if apply:

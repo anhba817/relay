@@ -61,5 +61,19 @@
   "old": "// DECISION (chapter 2.2): real credentials arrive with Part 3 (API keys\n// in 3.2, tenancy in 3.1). Until then, public routes name their tenant\n// via the X-Relay-Environment header — a dev-mode seam, load-bearing for\n// exactly as long as it takes Part 3 to replace it. The guard resolves\n// the header; the request-scoped Repository below it is what makes the\n// scoping real (constitution I).",
   "new": "// DECISION (chapter 2.2): real credentials arrive with Part 3 (API keys in\n// the credentials chapter, tenancy in the tenancy chapter). Until then,\n// public routes name their tenant via the X-Relay-Environment header — a\n// dev-mode seam, load-bearing for exactly as long as it takes Part 3 to\n// replace it. The guard resolves the header; the request-scoped Repository\n// below it is what makes the scoping real (constitution I).",
   "note": "045-63. `0317d83` never saw this file — chapter 2 deletes it, so it does not exist at the tip the convention commit was written against. `chapter 2.2` stays: Part 2 was not renumbered. The block is rewrapped because the substitution is longer than the ordinal it replaces."
+ },
+ {
+  "file": "services/api/src/db/repository.itest.ts",
+  "old": "// `gaps.md` 3.23-3 has carried this since chapter 3.23 built both writes. Neither takes",
+  "new": "// `gaps.md` 3.23-3 has carried this since this chapter built both writes. Neither takes",
+  "note": "carried from 043, which named the chapter by number. Published 3.23 IS this chapter, so the reference is to itself; the gaps item id stays, per 045-55.",
+  "all": true
+ },
+ {
+  "file": "services/api/src/db/repository.itest.ts",
+  "old": "// DO NOT START FROM `Promise.all` ON ONE CLIENT. Chapter 3.22 spent a phase learning",
+  "new": "// DO NOT START FROM `Promise.all` ON ONE CLIENT. The connection-cap chapter spent a phase",
+  "note": "published 3.22 is the connection-cap chapter (new 16)",
+  "all": true
  }
 ]
