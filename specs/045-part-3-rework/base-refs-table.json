@@ -1,0 +1,65 @@
+[
+ {
+  "file": "packages/protocol/src/internal.ts",
+  "old": "/** api → gateway, chapter 3.2: who the presented token belongs to, and what it",
+  "new": "/** api → gateway: who the presented token belongs to, and what it"
+ },
+ {
+  "file": "scripts/credential-walk.mjs",
+  "old": "// The the credentials chapter walk, as a script (so the transcript in the chapter is",
+  "new": "// The credentials chapter walk, as a script (so the transcript in the chapter is",
+  "note": "045-65, inverted: finds the doubled article and removes it"
+ },
+ {
+  "file": "services/api/src/auth/user-token.ts",
+  "old": "// WHY a dependency here, when 3.1 went out of its way to add none: hand-rolled",
+  "new": "// WHY a dependency here, when the tenancy chapter went out of its way to add none:\n// hand-rolled"
+ },
+ {
+  "file": "services/api/src/db/schema.ts",
+  "old": "// the way 2.1 recorded `members` and 3.1 recorded the tenancy containers.",
+  "new": "// the way 2.1 recorded `members` and the tenancy chapter recorded its containers."
+ },
+ {
+  "file": "services/api/src/internal/internal.controller.ts",
+  "old": "// DECISION (chapter 2.5, narrowed by 3.2): these routes are still",
+  "new": "// DECISION (chapter 2.5, narrowed by the credentials chapter): these routes are still"
+ },
+ {
+  "file": "services/api/src/messages/messages.module.ts",
+  "old": "        // here. Middleware runs earlier still, which is why chapter 3.2",
+  "new": "        // here. Middleware runs earlier still, which is why the credentials chapter"
+ },
+ {
+  "file": "services/api/src/messages/request-with-tenant.ts",
+  "old": " * 3.2). It used to carry a headers bag, because the tenant arrived as an",
+  "new": " * the credentials chapter). It used to carry a headers bag, because the tenant arrived as an"
+ },
+ {
+  "file": "services/api/src/tenancy/signup.controller.ts",
+  "old": "// the seam it guards is untouched by this chapter (3.2 retires it).",
+  "new": "// the seam it guards is untouched by this chapter (the credentials chapter\n  // retires it)."
+ },
+ {
+  "file": "services/api/src/tenancy/signup.controller.ts",
+  "old": "// Part 5. The callback reports what it created — and, from 3.2, hands over the",
+  "new": "// Part 5. The callback reports what it created — and, from the credentials\n  // chapter, hands over the"
+ },
+ {
+  "file": "services/gateway/src/auth.ts",
+  "old": "// The door (chapter 2.5, rebuilt by 3.2). Tokens are still checked BEFORE the",
+  "new": "// The door (chapter 2.5, rebuilt by the credentials chapter). Tokens are still\n// checked BEFORE the"
+ },
+ {
+  "file": "services/api/src/db/repository.ts",
+  "old": "   * 3.13's `addMembers` shape in both halves.",
+  "new": "   * the endpoints chapter's `addMembers` shape in both halves.",
+  "note": "045-63, the ch9 miss"
+ },
+ {
+  "file": "services/api/src/messages/environment-context.guard.ts",
+  "old": "// DECISION (chapter 2.2): real credentials arrive with Part 3 (API keys\n// in 3.2, tenancy in 3.1). Until then, public routes name their tenant\n// via the X-Relay-Environment header — a dev-mode seam, load-bearing for\n// exactly as long as it takes Part 3 to replace it. The guard resolves\n// the header; the request-scoped Repository below it is what makes the\n// scoping real (constitution I).",
+  "new": "// DECISION (chapter 2.2): real credentials arrive with Part 3 (API keys in\n// the credentials chapter, tenancy in the tenancy chapter). Until then,\n// public routes name their tenant via the X-Relay-Environment header — a\n// dev-mode seam, load-bearing for exactly as long as it takes Part 3 to\n// replace it. The guard resolves the header; the request-scoped Repository\n// below it is what makes the scoping real (constitution I).",
+  "note": "045-63. `0317d83` never saw this file — chapter 2 deletes it, so it does not exist at the tip the convention commit was written against. `chapter 2.2` stays: Part 2 was not renumbered. The block is rewrapped because the substitution is longer than the ordinal it replaces."
+ }
+]

@@ -2713,3 +2713,57 @@ in published order; measuring the chain's needs one migrated in subject order; t
 database. The 79% gap therefore rests on the config and assertion diffs — which are conclusive on
 their own — and not on a same-day measured control. **Recorded as unmeasured rather than assumed
 measured**, and the way to get it is a second database, not a second run.
+
+## 045-70 · THE CHAIN REWRITE LANDED, AND IT FOUND SEVEN COMMITS THAT CLAIM WORK AND CONTAIN NONE
+
+045-63 and 045-65 are **CLOSED in the chain.** `repair-base-refs.py` applies twelve exact-string
+replacements extracted from `0317d83` itself, and `replay-publish.sh` replays the 225 commits
+tree-by-tree applying only that. Result, on branch `part3-published`:
+
+    ordinals in chapter trees      ch1 2 → 0    ch2 9 → 0    ch9 1 → 0
+    remaining across all 26        4, and all four are 045-64's provenance continuations
+    tip vs the old tip             ONE line — the doubled article of 045-65
+    commits dropped                1, `0317d83`, empty once the convention is in the trees
+    tags re-pointed                26 of 26, all ancestors of the new tip, 0 unmapped
+
+**THE FIRST RUN DROPPED SEVEN COMMITS AND ITS RULE WAS WRONG.** The driver skipped any commit
+whose repaired tree matched its parent's. Seven were skipped, none of them the convention commit,
+all with substantive subjects — *"the last fixed ports, and the service that never reported the
+one it bound"*, *"the fourth attack shape"*, *"a route that echoes its input has no
+indistinguishable pair"*. Measured: **all seven change zero files and their trees already equal
+their parents' in the ORIGINAL chain.** They were empty before this replay touched them.
+
+    a tree-by-tree rebuild emits a commit even when its rewrite leaves nothing to commit
+
+That is where they come from, and one of the seven says so in its own subject — *"the citation
+commit this convention makes unnecessary"*. **Six do not**, and `git log` is read as the record of
+what happened. They are preserved rather than swept, because they are somebody's record and not
+this replay's business; the driver now drops only a commit that was non-empty BEFORE and is empty
+AFTER, which is the convention commit and nothing else.
+
+**AND MY OWN PATCH TABLE HAD A NO-OP IN IT, WHICH THE FIRST RUN ALSO REVEALED.** The
+`credential-walk.mjs` entry was built by diffing `0317d83`'s pre- and post-images and then
+applying the 045-65 correction to the post-image — which made `new` identical to `old`, because
+that commit's ONLY change to that file was inserting the second "the". An entry whose replacement
+equals its pre-image matches everywhere and changes nothing, so **the doubled article survived the
+replay untouched and the tip diff was zero lines.** Found by asking why `0317d83` had not been
+dropped when the whole point of the table was to empty it. The entry now runs the other way — it
+finds the damage and removes it — and the table asserts no entry is a no-op before it runs.
+
+**THE CARRY IS NOT A CHERRY-PICK SEQUENCE, AND THE FIRST CONFLICT SAID SO.** Feature 043's first
+commit conflicts on three files, and in two of them **the chain already implements the same fix,
+independently and better documented**: `packages/e2e/src/harness.ts` reads the port out of the
+child's own `listening` line, and `services/gateway/src/main.ts` logs `server.address()` rather
+than the port it asked for. Resolving those in favour of the incoming commit would DOWNGRADE the
+chain. Audited by what each commit creates rather than by how many of its lines already appear:
+
+    likely PRESENT   1   the lane reset with a real guard — both new files are in the chain,
+                         because the rebuild built them
+    clearly ABSENT   6   the teardown assertion, the retired generator, the message-length
+                         maximum, the scale harness, the revision counter, the ack's report
+    needs a reading 17   modification-only; no new file or symbol to test for
+
+**A CARRIED COMMIT IS A CARRIED LEDGER ITEM.** Measure it against the tree, do not copy it — the
+same rule T044 applies to gaps entries, and the same failure mode: the overlap percentages said
+27% and 36% and meant almost nothing, because most of what two versions of a fix share is braces
+and prose.
