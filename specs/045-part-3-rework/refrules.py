@@ -141,6 +141,12 @@ def controls_failing() -> list[str]:
 # longer exists. `dead_deliberate` below is that question, and `classify-refs` asks it.
 DELIBERATE = frozenset({
     '// NAMED, NOT NUMBERED. This line used to say "chapter 3.7\'s cross-tenant',
+    # ARITHMETIC, NOT AN ORDINAL. `3.2` here is 80% of 4, and the sentence is about a
+    # threshold the quota chapter got wrong twice. `REF` cannot tell a decimal from a
+    # chapter number and should not try: widening the pattern to exclude "numbers that
+    # look like sums" would cost real references. Declared instead, and
+    # `dead_deliberate` fails if the line ever stops existing.
+    '// 80% of 4 is 3.2, which the quota chapter got wrong twice before writing it down.',
 })
 
 
