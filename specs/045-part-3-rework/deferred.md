@@ -810,6 +810,24 @@ tables to the guard array as it creates them, rather than new 8 retrofitting nin
 this chapter did — three names, three bait rows, three cases — and it is what surfaced 045-27,
 because writing the third part is what made somebody ask whether the second was checked.
 
+## AND NEW 23 ADDED THREE COMMITS THE PUBLISHED CHAPTER DID NOT
+
+None of the three is a port. Each is the tree's own standard applied where published's
+chapter did not apply it, and all three were found by comparing two chapters that are
+adjacent HERE and were seven apart there.
+
+| what | why it is this chapter's |
+|---|---|
+| the three quota tables in the guard, with bait and cases | the reassignment's own note says each chapter arms its own tables |
+| `nextPeriod` extracted into `period.ts` | two copies of the month-after arithmetic, each paying for its own unreachable arms |
+| six coverage pins | the limits chapter pinned all eight of its files one chapter earlier; this one pinned none |
+
+**THE PIN ROW IS THE ONE WORTH KEEPING.** Published's quota chapter left the ratchet
+nothing to hold, and nothing in either repository can see that: a file with no pin sits
+under the global 70% floor, which a six-branch file clears while losing half of them.
+It is visible only as an inconsistency BETWEEN chapters — and only when the two are next
+to each other, which this reorder made them.
+
 ## WHAT NEW 23 HANDS FORWARD
 
     usage_connections in the guard array, with bait and a case     new 24
