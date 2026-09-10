@@ -2052,3 +2052,60 @@ Its guard fired immediately, on two chapters that fence one path twice.
 to every tree, which is what this pass just proved costs: one replay, four chapters' fences, one
 mirror sync. They were filed separately because each was found in a different chapter; they close
 together.
+
+## 045-54 · A SUBJECT MAP IS KEYED BY SHA, AND A REPLAY IS THE THING THAT CHANGES SHAS
+
+The close-out pass closed 045-1 by replaying the rebuild with a subject map — `<sha>|<subject>`
+for the five published titles that carried their position. It worked. The NEXT replay, twenty
+minutes later, refused:
+
+    subject map names e4bc665, which is not in part2-ch8..part3-rework
+
+**THE CHECK IS RIGHT AND THE MAP WAS RIGHT WHEN IT WAS WRITTEN.** `replay-range.sh` asserts that
+every mapped sha is an ancestor of the head, because *"a stale line is a subject that silently
+keeps its ordinal, which is the failure this map exists to prevent."* And the first replay is
+exactly what made those five shas non-ancestors: it rewrote them.
+
+So a subject map is **single-use by construction** — good for the replay that consumes it and
+invalid for every replay after, including a re-run of the same one. Nothing said so, and the
+mode it fails in is the good one: it stops rather than passing over a name it cannot find.
+
+**THE SECOND REPLAY NEEDED NO MAP AT ALL**, which is the other half of the point. The messages
+were already rewritten and committed; only the file table had grown. A map is a record of a
+decision, and once the decision is in the history the map is spent.
+
+Written down because the next repair pass will reach for the same file: **check whether the map's
+shas are still in the range before adding a line to it, and delete a map whose decisions have
+landed.** The alternative — re-keying five shas after every replay — is a table that has to be
+maintained against a moving history, which is the shape this whole feature exists to remove.
+
+## 045-55 · A FEATURE ID READ AS A CHAPTER ORDINAL, NINE TIMES, IN THE ONE FILE NO CHAPTER OWNS
+
+Found while repairing a `post-series.md` hunk. The amendment chain carries:
+
+    the two-lists-that-must-agree defect `gaps.md` the revisions chapter-4 records about
+
+That was `gaps.md 044-4`. The reference pass matched `044` — the revision-watermark feature,
+whose subject name is *the revisions chapter* — and substituted it, leaving the item number
+stranded as `-4`. Nine instances, all in `fences/post-series.md`:
+
+    the revisions chapter-1     x2      the revisions chapter-3     x2
+    the revisions chapter-4     x1      the revisions chapter-9     x2
+    the connection-cap chapter-6 x1     (and one more of the same shape)
+
+**A GAPS ITEM ID IS NOT A CHAPTER REFERENCE**, and `044-4` looks like one to a rule that reads
+three digits and a separator. The rule's own corpus notes warn about the mirror image — a decimal
+mistaken for an ordinal, `80% of 4 is 3.2` — and that one is in `DELIBERATE` with a comment. This
+is the same collision from the other direction and nobody looked, because **`post-series.md` is
+the one fenced file no chapter owns**: every per-chapter instrument is keyed to a chapter
+directory, and this file is checked only by the chain, which compares bodies and reads no prose.
+
+**IT IS NOT THIS FEATURE'S TEXT, WHICH IS WHY IT SURVIVED.** `post-series.md` is 044's record of
+amending the published series. Feature 045's passes rewrote references across it because it is
+fenced, and the damage is to citations of 044's own ledger — nine pointers into `gaps.md` that
+now resolve to nothing and read as a chapter that does not exist.
+
+**NOT FIXED HERE.** Nine hunks in the amendment chain, each quoting platform source as context,
+and every edit to that file is one the chain re-verifies against the tree — the same care the
+one-line context fix above needed. It is a pass of its own, and it needs the `044-N` shapes added
+to the rule's own exemption list first, or the next replay will re-break what this one fixes.

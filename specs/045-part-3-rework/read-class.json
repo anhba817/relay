@@ -1164,6 +1164,63 @@
      "// A tenant an outsider can integrate against (FR-032)."
     ]
    ]
+  },
+  {
+   "why": "THE CLOSE-OUT REPAIR — 045-10 and 045-41, which is TWO of the six items the close-out pass called one pass.\n\nTHE TOOL DECIDED WHICH TWO, AND IT WAS RIGHT. `apply-read-class.py` refuses a replacement that drops a word, because a rewrite which silently deletes prose is this feature's worst failure mode. It fired twice:\n\n  045-7   WORDS DROPPED {'falls': 1}                       a TENSE correction\n  045-20  WORDS DROPPED {'rate': 1, 'limiter': 1, ...}     a factual correction to a rationale\n\n**This table is for REFERENCE decisions, and neither a tense nor a rationale is a reference.** 045-10 and 045-41 pass the guard because they move or re-case the SAME words: `CHAPTER's` to `CHAPTER'S`, and a parenthetical re-flowed off the end of its line. That is the line the guard draws, and it draws it better than the estimate did.\n\n045-10 is also larger than its entry says. It reads as five possessives in five tagged chapters; measured across all 26 tags they are five DISTINCT LINES that persist to the tip — the tool fix stopped new ones and never rewrote the existing five.\n\nAND THE EIGHT PAREN PAIRS WERE HAND-TYPED ONCE AND SEVEN OF THEM MISSED. They were built from `sed -n \"$ln,$((ln+1))p\" | sed 's/^/    /'` — display output — so every one carried four spaces of indentation the file does not have, and only the single unindented case fired. Regenerated FROM THE FILES, where the indentation cannot be wrong: read the line, read its continuation, move the `(` past the continuation's comment marker. **A pair typed from a terminal is a pair typed from a rendering.**",
+   "pairs": [
+    [
+     "THE MEMBERSHIP-REVOCATION CHAPTER's EQUIVALENT",
+     "THE MEMBERSHIP-REVOCATION CHAPTER'S EQUIVALENT"
+    ],
+    [
+     "THE FAN-OUT CHAPTER's",
+     "THE FAN-OUT CHAPTER'S"
+    ],
+    [
+     "THE RATE-LIMIT CHAPTER's rule",
+     "THE RATE-LIMIT CHAPTER'S rule"
+    ],
+    [
+     "(THE CHANNEL-CONTROL CHAPTER's\n",
+     "(THE CHANNEL-CONTROL CHAPTER'S\n"
+    ],
+    [
+     "THE CHANNEL-CONTROL CHAPTER's T121a)",
+     "THE CHANNEL-CONTROL CHAPTER'S T121a)"
+    ],
+    [
+     "/** Disable every endpoint whose failure run has outrun the hour (\n * research R1, contract invariant 12).",
+     "/** Disable every endpoint whose failure run has outrun the hour\n * (research R1, contract invariant 12)."
+    ],
+    [
+     "  /** Upsert a user by external id, updating the profile fields present (\n   * FR-025, FR-026).",
+     "  /** Upsert a user by external id, updating the profile fields present\n   * (FR-025, FR-026)."
+    ],
+    [
+     "      // MEMBERSHIP, FOR A PRIVATE CHANNEL, WHEN A USER IS SENDING (\n      // FR-001, FR-CHN-05).",
+     "      // MEMBERSHIP, FOR A PRIVATE CHANNEL, WHEN A USER IS SENDING\n      // (FR-001, FR-CHN-05)."
+    ],
+    [
+     "    // THE ATTACK PRESENTS A KEY, AND A KEY SEND NAMES A BOT (\n    // FR-MSG-15). Without a sender both halves would be refused for naming",
+     "    // THE ATTACK PRESENTS A KEY, AND A KEY SEND NAMES A BOT\n    // (FR-MSG-15). Without a sender both halves would be refused for naming"
+    ],
+    [
+     "// The transport the retry-and-disable chapter deferred, against a real mail server (\n// FR-018 to FR-024).",
+     "// The transport the retry-and-disable chapter deferred, against a real mail server\n// (FR-018 to FR-024)."
+    ],
+    [
+     "/** A deletion, built inside the transaction that wrote the tombstone (\n * FR-019, FR-020).",
+     "/** A deletion, built inside the transaction that wrote the tombstone\n * (FR-019, FR-020)."
+    ],
+    [
+     "  /** Ban and unban this tenant's own user through the public route (\n   * T153). */",
+     "  /** Ban and unban this tenant's own user through the public route\n   * (T153). */"
+    ],
+    [
+     "    // WAS `every((m) => m.user === null)`, AND THAT IS THE CHAPTER (\n    // T055's class). This assertion existed to prove the rows were senderless, which was",
+     "    // WAS `every((m) => m.user === null)`, AND THAT IS THE CHAPTER\n    // (T055's class). This assertion existed to prove the rows were senderless, which was"
+    ]
+   ]
   }
  ]
 }
