@@ -3,7 +3,7 @@
 Things this feature found and has not closed. Each names what is wrong, how it was
 measured, and what closing it costs. A gap with no measurement is an opinion.
 
-## 045-1 · EIGHT PART-3 ORDINALS SURVIVE IN TAGGED CHAPTERS' COMMIT MESSAGES
+## 045-1 · EIGHT PART-3 ORDINALS SURVIVE IN TAGGED CHAPTERS' COMMIT MESSAGES — CLOSED
 
 `replay-range.sh` rewrote file contents and passed `%B` through untouched, so every
 chapter ported before the sender chapter kept the published messages. Measured on
@@ -971,7 +971,7 @@ touched six files and none of them was `attack.ts`. What found it was **running 
 which is why the per-chapter loop runs one, and why a chapter is not finished when its commits
 are green.
 
-## 045-25 · THE CHECK AGAINST AN UNINJECTED MODULE COULD NOT SEE A MODULE BUILT WITHOUT OPTIONS
+## 045-25 · THE CHECK AGAINST AN UNINJECTED MODULE COULD NOT SEE A MODULE BUILT WITHOUT OPTIONS — CLOSED
 
 `services/gateway/src/main.test.ts` holds one of this project's better instruments. Its comment
 states the defect it exists for: *"A MODULE BUILT, CLOSED, AND NEVER PASSED IN IS INERT AND
@@ -1055,7 +1055,7 @@ Not fixed in new 22: the file is the connection-cap chapter's, it is fenced into
 page, and the change is a rename plus a split — a `replay-repair.sh` pass, not a line in another
 chapter's port.
 
-## 045-27 · THE GUARD'S THREE PARTS WENT TOGETHER AND ONLY TWO WERE CHECKED — AND THE FIRST FIX WAS VACUOUS
+## 045-27 · THE GUARD'S THREE PARTS WENT TOGETHER AND ONLY TWO WERE CHECKED — AND THE FIRST FIX WAS VACUOUS — CLOSED
 
 `packages/test-harness/src/sentinel.sql` names the tables the global-operation guard watches,
 and its comment states the discipline plainly:
@@ -1094,7 +1094,7 @@ environment. Falsified three ways, each naming the right table:
 insert that runs and inserts nothing — an `ON CONFLICT DO NOTHING` against a row the fixture does
 not own — which is the shape a fixture fails in. Closed in new 23.
 
-## 045-28 · "THE FIVE TEST LANES", AND FOUR OF THEM WERE WIRED
+## 045-28 · "THE FIVE TEST LANES", AND FOUR OF THEM WERE WIRED — CLOSED
 
 Published's harness half carries a commit named `02993b1 feat: wire the guard into the five test
 lanes`. That half went to new 8. Measured at new 23, before this chapter touched anything:
@@ -1162,7 +1162,7 @@ The lane's own debris was cleaned by hand, which needed the exemption — and th
 that cleanup, naming the owning test file, is the clearest demonstration of it working that this
 feature has produced.
 
-## 045-30 · A TWO-HALF EXEMPTION WHOSE OBVIOUS TEST COVERS ONE HALF, AND THE SECOND CASE FOUND BY FALSIFYING
+## 045-30 · A TWO-HALF EXEMPTION WHOSE OBVIOUS TEST COVERS ONE HALF, AND THE SECOND CASE FOUND BY FALSIFYING — CLOSED
 
 `deferred.md` deferred old 3.17's `## Billed, and exempt` section to new 23 and said which part
 mattered:
@@ -1267,7 +1267,7 @@ single-file run can exercise one key. Recorded here with the measurements so the
 not spend the same twenty minutes discovering it, and the config now says which half of the
 ritual each pin was validated by.
 
-## 045-33 · THE FENCE GENERATOR ATE EVERY REMOVED SQL COMMENT, AND THE CHECKER CAUGHT IT THE SAME DAY
+## 045-33 · THE FENCE GENERATOR ATE EVERY REMOVED SQL COMMENT, AND THE CHECKER CAUGHT IT THE SAME DAY — CLOSED
 
 `regen-fences.py` strips `git diff`'s header before storing a fence body, and it did so by prefix:
 
@@ -1356,7 +1356,7 @@ is the only reason this is a nuisance rather than a silent hole. Published's tre
 `const DRIVER_AND_ENGINE = {` … `\n};` by position instead; that is the change this test needs
 in the same commit.
 
-## 045-35 · THE DERIVED TARGET LIST NAMED A ROUTE THE CHAPTER FORGOT, AND ITS HAND-KEPT SIBLING HAS FIVE HOLES
+## 045-35 · THE DERIVED TARGET LIST NAMED A ROUTE THE CHAPTER FORGOT, AND ITS HAND-KEPT SIBLING HAS FIVE HOLES — CLOSED
 
 New 24 adds `POST /internal/usage/connections` and classified it nowhere, so three tests in
 `services/api/src/isolation/targets.itest.ts` went red in a file the chapter was not editing:
@@ -1523,7 +1523,7 @@ not have to work.
 Build before believing it."* That was written about one gate. It is true of every suite in this
 repository that spawns a service or imports a workspace package, which is most of them.
 
-## 045-40 · THE RATCHET FIRED ON THE CHAPTER THAT MOVED THE READING, WHICH IS THE ONE TIME IT IS SUPPOSED TO
+## 045-40 · THE RATCHET FIRED ON THE CHAPTER THAT MOVED THE READING, WHICH IS THE ONE TIME IT IS SUPPOSED TO — CLOSED
 
 New 24's coverage battery: **95 files, 1405 tests, all passing, exit 1.**
 
@@ -1656,7 +1656,7 @@ PROSE titles (`the check`, `42P01`, `run 11 of 20`) and two are `packages/outsid
 not exist until new 26. **24 real paths.** The number was right; this ledger's usual finding is
 the other kind, so a confirmation is worth its line.
 
-## 045-43 · THE DRAIN EXEMPTION ARRIVED HALF STALE, AND THE TEST THAT SAYS SO FOUND IT ON ITS FIRST DAY
+## 045-43 · THE DRAIN EXEMPTION ARRIVED HALF STALE, AND THE TEST THAT SAYS SO FOUND IT ON ITS FIRST DAY — CLOSED
 
 045-34 deferred published's global-drain rule out of new 24 and named the chapter that would owe
 it. That chapter is **new 25**, because published fixes R23 in `f2e4a37` — old 3.12's own commit —
@@ -1723,7 +1723,7 @@ question that HAS a yes-or-no answer is asked of the wrong oracle.
 narrowing it is about: two platform credentials resolving to one class, the gateway's reaching
 `POST /internal/dispatch/replay`, which takes a dead-letter id and no environment.
 
-## 045-45 · FR-044 WENT RED IN A NEIGHBOUR'S POSITIVE CONTROL, WHICH IS THE ONLY REASON IT WAS NOTICED
+## 045-45 · FR-044 WENT RED IN A NEIGHBOUR'S POSITIVE CONTROL, WHICH IS THE ONLY REASON IT WAS NOTICED — CLOSED
 
 New 25 narrowed `/internal/usage/connections` to `@Accepts({ platform: ["gateway"] })`. New 24's
 gauntlet attack — the one 045-35 added — reports usage through
@@ -1782,7 +1782,7 @@ status` empty, `git diff` empty, zero occurrences of the probe's own helper name
 suites back to 71/71. The lane keeps the rows: the gauntlet seeds fresh disposable environments
 per run, so reintroduction 2's cross-tenant write damaged a fixture that no later run reads.
 
-## 045-47 · THE CHAPTER'S OWN LINT FIX HAD NO FENCE AND NO PROSE IN ANY CHAPTER
+## 045-47 · THE CHAPTER'S OWN LINT FIX HAD NO FENCE AND NO PROSE IN ANY CHAPTER — CLOSED
 
 `regen-fences` reported `eslint.config.mjs` under **changed but NOT fenced** for new 25 — and
 that file is where this chapter closes R23, in 260 added lines. Four chapters fence that file
@@ -1804,7 +1804,7 @@ line is the only instrument in either repository that answers "did this chapter 
 it never explains", and it answers by listing rather than counting — which is what made one file
 out of thirteen stand out at all.
 
-## 045-48 · THE SEAL'S LAST BLOCK CARRIED HALF A RULE, IN THE ONE PACKAGE THAT MOST NEEDS THE OTHER HALF
+## 045-48 · THE SEAL'S LAST BLOCK CARRIED HALF A RULE, IN THE ONE PACKAGE THAT MOST NEEDS THE OTHER HALF — CLOSED
 
 `packages/outsider` is sealed in three levels so that "an integration built from published
 documentation alone" is a mechanical claim rather than a promise. Level 2 is a
@@ -1837,7 +1837,7 @@ whose entire purpose is to have no privileged access. Published's own final tree
 The comment says the module "is not there"; `ERR_MODULE_NOT_FOUND` from inside the package is the
 difference between that sentence and a belief about pnpm's layout.
 
-## 045-49 · A COMMENT COUNTED ITS OWN FILE AND THE COUNT WAS TRUE OF ONE COMMIT
+## 045-49 · A COMMENT COUNTED ITS OWN FILE AND THE COUNT WAS TRUE OF ONE COMMIT — CLOSED
 
 The sealed suite's typing test opens: *"the first `socket.send` in this file's history"*, with a
 measured `grep -c` of **0** beside it. Counted across published's own history:
@@ -1862,7 +1862,7 @@ that instead.
 docblock is prose to every instrument in both repositories. **A count in a comment is a claim
 about one commit**, and this one outlived its commit by three chapters and a whole reorder.
 
-## 045-50 · A TURBO ENV DECLARATION THAT NO TASK READS IS A CACHE KEY THAT CANNOT CHANGE
+## 045-50 · A TURBO ENV DECLARATION THAT NO TASK READS IS A CACHE KEY THAT CANNOT CHANGE — CLOSED
 
 `f33beee` adds four variables to turbo's global env list. This tree reads three —
 `RELAY_API_URL`, `RELAY_WS_URL`, `RELAY_DEMO_CREDENTIAL`, all by the sealed suite. The fourth,
@@ -1878,7 +1878,7 @@ not any `check:*`. Dropped rather than kept against a reader that may or may not
 something a deployment can point at a real host — the debt new 3 opens and puts in Part 4. It
 goes with that debt rather than into the last chapter of this part.
 
-## 045-51 · THE SEALED SUITE IS FILTERED OUT OF THREE LANES AND THE THIRD LANE GLOBS THE FILESYSTEM
+## 045-51 · THE SEALED SUITE IS FILTERED OUT OF THREE LANES AND THE THIRD LANE GLOBS THE FILESYSTEM — CLOSED
 
 `packages/outsider` integrates against a platform it does not start. Without `RELAY_API_URL`,
 `RELAY_WS_URL` and `RELAY_DEMO_CREDENTIAL` it throws on purpose and prints the five commands that
@@ -1907,7 +1907,7 @@ twice in two chapters — 045-47's unfenced config was a file changed and never 
 is a file excluded and never excluded. **Ask of every lane, separately, whether it can see the
 thing you just told one lane to ignore.**
 
-## 045-52 · THE SEALED SUITE PORTED AT ITS BIRTH COMMIT WAS RED ON THREE OF TEN, AND PUBLISHED TOOK TWO CHAPTERS TO NOTICE THE SAME THING
+## 045-52 · THE SEALED SUITE PORTED AT ITS BIRTH COMMIT WAS RED ON THREE OF TEN, AND PUBLISHED TOOK TWO CHAPTERS TO NOTICE THE SAME THING — CLOSED
 
 `packages/outsider` arrives at new 26 from `30fb8f1` — the commit that creates it, fourteen
 chapters earlier in published's order than this chapter sits in the rebuild's. Run against a live
@@ -1977,3 +1977,78 @@ plan predicted this**; it fell out of running the suite the chapter is about.
 **AND THE WEAKER HALF IS WORTH SAYING TOO.** The remaining gap is the one no reorder can help and
 no instrument can reach, and it is the same sentence CLAUDE.md has carried for thirteen records:
 *use a person.* Part 3 now ends on it rather than on a scheduling note.
+
+## THE CLOSE-OUT PASS — FIFTY-THREE ITEMS RE-MEASURED, TWENTY-TWO CLOSED, AND THE ESTIMATES WERE WRONG IN BOTH DIRECTIONS
+
+Part 3 is rebuilt, so the ledger was read against the tree rather than against itself — the rule
+CLAUDE.md states as **measure the carried ledger; do not copy it**. Every open item was given a
+yes-or-no question and asked it of the repository.
+
+**SIX WERE ALREADY DISCHARGED AND SAID SO, AND FIVE OF THE SIX CHECKED OUT:**
+
+    045-25  `built by createServer and never injected: limits` is in `main.test.ts`
+    045-27  guard.itest.ts carries the third direction — bait in every guarded table
+    045-30  both cases and both falsifications are at the code, in new 23
+    045-33  regen-fences.py:81-85 strips the header BY POSITION; the prefix filter is gone
+    045-35  all five `/internal` keys are in `ADDED`
+    045-40  `quota-email.ts` is pinned at `branches: 90`
+
+**ONE CLOSED WITH NOBODY WORKING ON IT**, which is 043's shape and worth the line. **045-28**
+said the dispatcher's integration config was the unwired one of five lanes. Re-measured: all five
+carry `globalSetup` and `setupFiles`. It was wired by a later chapter's port and the ledger never
+heard.
+
+**AND 045-1's OWN COST ESTIMATE WAS PESSIMISTIC BY A FACTOR OF FIVE.** It warned that closing it
+"changes ten trees, not ten messages", because a read-class pair added after a chapter is tagged
+leaves that chapter's tree carrying the ordinal — and it said to *re-check the number per chapter
+rather than assuming it stays at one*. Re-checked, all 26:
+
+    ch1, ch3..ch18   0 ordinals in source
+    ch2              2   (both `chapter 3.2` — self-references, and NOT covered by any rule)
+    ch19..ch26       3   the deliberate `schema.ts` quotation, and two unfenced Dockerfiles
+
+So the tree cost was **two files in two chapters**, not ten trees. The replay over
+`part2-ch8..part3-rework` — 221 commits — changed:
+
+    messages         8 ordinals -> 1        the one that stays is a QUOTATION (below)
+    trees            ch9..ch16, 1-2 files   `(chapter 3.15…)` and a span recount
+    the tip tree     BYTE-IDENTICAL         `git diff` between old and new heads: empty
+    26 tags          re-pointed, messages preserved, chain re-verified
+    check-chapter    0 problems on all 26, after four chapters' fences regenerated
+
+**THE ONE ORDINAL THAT STAYS IS THE EVIDENCE FOR THE CONVENTION.** `56292d8` reads *"twenty-two
+comments renumbered from `chapter 3.12` to `chapter 3.14`, because the work they cited had moved
+and the number encoded a position"*, and its next paragraph is this feature's whole argument. The
+ordinals are the SUBJECT of that sentence, not citations in it — the same exemption
+`schema.ts`'s "This line used to say" carries in source. Rewriting it would delete the evidence,
+so the subject map says so in a comment beside the decision.
+
+**AND THE MIRROR CAUGHT WHAT check-chapter COULD NOT.** Regenerating four chapters' fences moved
+four fence BODIES, and their Vietnamese pages hold byte-identical copies. `check-chapter` is
+tag-to-tag and stayed at 0; `check:fences` went **296 -> 300 with a new MIRROR 4 category naming
+exactly those four chapters**, and back to 296 once the bodies followed. Two instruments, two
+scopes, and only one of them can see a mirror.
+
+Three of the four Vietnamese pages hold LIVE translation work, so `vi-placeholder.py` was the
+wrong tool — it replaces prose by design. `sync-vi-fences.py` is the new one: it copies fence
+bodies by title and occurrence, refuses a per-title count mismatch, and touches nothing else.
+Its guard fired immediately, on two chapters that fence one path twice.
+
+**WHAT IS STILL OPEN, AND WHY** — thirty-one items, and none of them is a chapter's:
+
+    a repair replay with pairs      045-7 (three sentences false for six chapters),
+                                    045-10 (five possessives), 045-20 (a docblock),
+                                    045-23 (35 of 137 cited ids), 045-26 (a rename),
+                                    045-41 (eight dangling `(`)
+    a chapter that no longer exists 045-12 — the lane reset belongs to new 8 and Part 3 is closed
+    a decision that is a person's   045-13 (which set), 045-2 and 045-11 (scope),
+                                    045-3 (an 80-entry expectation table)
+    recorded lessons, no action     045-6, 045-9's residue, 045-17..045-19, 045-21, 045-22,
+                                    045-24, 045-29, 045-31, 045-32, 045-36..045-39, 045-42's
+                                    two Dockerfiles, 045-44, 045-46, 045-53
+    the post-series amendment       045-38 (the typing flake)
+
+**THE SIX REPAIR-REPLAY ITEMS ARE ONE PASS NOW, NOT SIX.** Each is a table of exact pairs applied
+to every tree, which is what this pass just proved costs: one replay, four chapters' fences, one
+mirror sync. They were filed separately because each was found in a different chapter; they close
+together.

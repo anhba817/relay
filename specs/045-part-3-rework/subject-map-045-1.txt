@@ -1,0 +1,25 @@
+# 045-1 · the eight ordinals that survived in the rebuild's commit messages.
+#
+# FIVE SUBJECTS, and each is the published chapter's title with its position
+# appended. The position is the part that ages; the title is not, so the fix is to
+# drop the suffix rather than to substitute a name into it — "feat: the outbox -
+# the outbox chapter" is a sentence nobody would write.
+e4bc665|feat: tenants all the way down
+2ec47b5|feat: keys and tokens
+9d21099|feat: the outbox
+6fc5261|feat: JetStream and the first consumer
+bc43d5b|feat: a channel and its members over the public API, idempotent, and every validation error now names its field
+#
+# THREE BODY LINES A RULE MAY NOT TOUCH. Old 3.12 is ambiguous by rule — it is new 4
+# or new 25 and only the sentence knows — so `substitute` skips it and a reader
+# decides.
+body|chapter 3.5's precedent was the|the webhook dispatcher chapter's precedent was the
+body|the margin 3.12 declined.|the margin the isolation gauntlet declined.
+body|run 11 of chapter 3.7's twenty lane runs onward.|run 11 of the deduplication chapter's twenty lane runs onward.
+#
+# AND ONE THAT STAYS, FOR THE REASON THE COMMIT ITSELF GIVES. `56292d8` reads
+# "twenty-two comments renumbered from `chapter 3.12` to `chapter 3.14`, because the
+# work they cited had moved and the number encoded a position" — and its next
+# paragraph is the argument for this whole convention. The ordinals are the SUBJECT of
+# the sentence, not a citation in it, which is the same exemption `schema.ts`'s "This
+# line used to say" carries in source. Rewriting it would delete the evidence.
