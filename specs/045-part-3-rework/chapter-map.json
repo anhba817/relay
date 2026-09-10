@@ -32,7 +32,8 @@
   "one; the two without are the halves the split created, which never had a URL to redirect.",
   "Matched BY SLUG rather than by number: old 12 and old 14 each split, and the old slug is",
   "what says which new chapter inherits the address — `milestone-the-isolation-gauntlet` went",
-  "to new 25, not to new 4. That is why T038 asks for 48 redirects across 26 chapters."
+  "to new 25, not to new 4. That is why T038 asks for 48 redirects across 26 chapters.",
+  "TITLES COME FROM THE PAGES, NOT FROM THE PLAN. Five of the twenty-six disagreed with their page's own `metadata.title` — four were shortened labels and chapter 6's was a re-narration the page never adopted ('JetStream, and the grammar a subject needs' against the published 'JetStream and the first consumer', which is still what the chapter builds). The page is the artifact a reader sees, so the page wins, and `check-movements.py` asserts map, plan table and page agree."
  ],
  "movements": [
   {
@@ -118,7 +119,7 @@
    "new": 6,
    "movement": "II",
    "slug": "jetstream-and-the-first-consumer",
-   "title": "JetStream, and the grammar a subject needs",
+   "title": "JetStream and the first consumer",
    "was_url": "chapter-04/jetstream-and-the-first-consumer"
   },
   {
@@ -174,7 +175,7 @@
    "new": 13,
    "movement": "IV",
    "slug": "who-is-allowed-to-see-it",
-   "title": "Who is allowed to see it",
+   "title": "Presence, and who is allowed to see it",
    "was_url": "chapter-19/who-is-allowed-to-see-it"
   },
   {
@@ -182,7 +183,7 @@
    "new": 14,
    "movement": "IV",
    "slug": "the-membership-that-changed",
-   "title": "The membership that changed",
+   "title": "The membership that changed under a live socket",
    "was_url": "chapter-20/the-membership-that-changed"
   },
   {
@@ -198,7 +199,7 @@
    "new": 16,
    "movement": "IV",
    "slug": "the-sixth-connection",
-   "title": "The sixth connection",
+   "title": "The sixth connection, and where the count lives",
    "was_url": "chapter-22/the-sixth-connection"
   },
   {
@@ -278,7 +279,7 @@
    "new": 26,
    "movement": "VIII",
    "slug": "errors-that-resolve-and-an-outsider",
-   "title": "Milestone: an outsider",
+   "title": "Milestone: an outsider integrates",
    "was_url": "chapter-14/errors-that-resolve-and-an-outsider"
   }
  ],
