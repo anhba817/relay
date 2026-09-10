@@ -1115,6 +1115,42 @@
      "   * Sorting subjects as strings puts \"100%\" before \"50%\" — the quota chapter got\n   * that wrong once and left the warning. */"
     ]
    ]
+  },
+  {
+   "why": "new 25 (the gauntlet milestone). Eight pairs, every one a SELF-reference: old 3.12 is this chapter, so the tag either goes (a parenthetical beside an FR id) or becomes \"this chapter\" (where the sentence needs a subject). The last pair is one comment in TWO controllers — `dispatch.controller.ts` and `usage.controller.ts` explain the same decorator change and say so in the same words — so it is declared with its count rather than split into two copies of one decision.",
+   "expect": {
+    "// FR-044 (chapter 3.12): the CLASS was never enough. Two platform credentials": 2
+   },
+   "pairs": [
+    [
+     "        // ── CHAPTER 3.12'S NEW FILES, PINNED DELIBERATELY ──────────────────",
+     "        // ── THIS CHAPTER'S NEW FILES, PINNED DELIBERATELY ─────────────────────"
+    ],
+    [
+     " * retyped beside it (chapter 3.12, FR-044).",
+     " * retyped beside it (FR-044)."
+    ],
+    [
+     "/** What a route accepts (research R6, narrowed by chapter 3.12's FR-044).",
+     "/** What a route accepts (research R6, narrowed by FR-044)."
+    ],
+    [
+     " * `AcceptSpec` broke this and nothing in an earlier draft of chapter 3.12 fixed it:",
+     " * `AcceptSpec` broke this and nothing in an earlier draft of this chapter fixed it:"
+    ],
+    [
+     "// rows a database happens to hold (chapter 3.12, FR-040).",
+     "// rows a database happens to hold (FR-040)."
+    ],
+    [
+     "// THE GATEWAY'S CREDENTIAL, and chapter 3.12 is why the variable changed.",
+     "// THE GATEWAY'S CREDENTIAL, and this chapter is why the variable changed."
+    ],
+    [
+     "// FR-044 (chapter 3.12): the CLASS was never enough. Two platform credentials",
+     "// FR-044: the CLASS was never enough. Two platform credentials"
+    ]
+   ]
   }
  ]
 }

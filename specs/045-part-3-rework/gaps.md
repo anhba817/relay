@@ -470,6 +470,45 @@ direction. The honest options are to run the full integration lane rather than o
 by hand and say so beside every number. **This gap is why every duration in new 18's
 close-out is reported with the broker's message count next to it.**
 
+### RE-MEASURED AT NEW 25, ON A DIFFERENT SUITE, AND THE NUMBER IS WORSE
+
+New 25's coverage battery went red on `dispatcher.itest.ts` — *"Test timed out in 60000ms"* on
+one case. The suite passes alone, three times for three: **16/16 in 126s, 73s and 73s.** A suite
+whose whole run takes 73 seconds has a case that cannot afford a loaded lane, and the lane said
+what it was carrying:
+
+    ANALYTICS   msgs=  84   consumers= 0
+    EVENTS      msgs= 293   consumers=15
+    DELIVERIES  msgs= 660   consumers=14
+
+**THIRTY-ONE DURABLE CONSUMERS AND THREE THOUSAND FOUR HUNDRED AND FORTY-EIGHT STALE ROWS.**
+Borrowing `main`'s own `scripts/reset-lane.mjs` — copied in, run once, deleted again, never
+committed — cleared:
+
+    ANALYTICS:   137 -> 0 messages,  0/0  consumers deleted
+    DELIVERIES:  706 -> 0 messages, 15/15 consumers deleted
+    EVENTS:      303 -> 0 messages, 16/16 consumers deleted
+    webhook_deliveries: 3,448 stale pending rows deleted
+
+The original entry measured six leaked durables on one stream. This is thirty-one across two,
+plus a table of pending deliveries nothing was ever going to drain. **The curve has a known
+endpoint**: that script's own header records the state it was written for — *"216 durable
+consumers on DELIVERIES, with 27,847 webhook deliveries due."*
+
+**AND THE SAME BATTERY, TWENTY MINUTES APART, PRICES IT:** 457.02s on the accumulated lane,
+**399.68s on the reset one** — 57 seconds, 12.5%, for no change to a line of code. That is four
+times SC-005's 10% threshold and the same order as the noise CLAUDE.md measured on `session.ts`,
+which is the reason a duration is quoted with its lane state or not at all.
+
+**AND IT CHANGES WHAT A GREEN BATTERY MEANS.** Chapters 22, 23, 24 and 25 were all measured on a
+lane nobody had reset, so their durations include whatever the broker had accumulated by then —
+which is a monotonic quantity. `check:fences` and the test counts are unaffected; the TIMINGS are
+comparable only in the way CLAUDE.md already qualifies, and now for a second reason it names.
+
+**THE FIX IS NEW 8'S, NOT THIS CHAPTER'S.** `scripts/reset-lane.mjs` and
+`packages/test-harness/src/reset-lane.itest.ts` belong to the harness, which is new 8. Porting
+them into new 25 would put the lane's own infrastructure into the gauntlet milestone's diff.
+
 ## 045-13 · A DOCUMENTED CODE WITH NO PRODUCER, AND THE GATE THAT COUNTS CANNOT SEE IT
 
 Measured while porting new 19. `docs/08-error-reference.md` publishes six webhook
@@ -1269,7 +1308,7 @@ replays differently from the checker "produces hunks the checker rejects for rea
 them explains". This is that, from the one direction nobody looked: not the widening, but the
 line filter that runs after it.
 
-## 045-34 · A PROSPECTIVE RULE WHOSE ARRIVAL WOULD SWITCH OFF THE ONE ALREADY THERE — MEASURED IN THIS TREE
+## 045-34 · A PROSPECTIVE RULE WHOSE ARRIVAL WOULD SWITCH OFF THE ONE ALREADY THERE — MEASURED, THEN CLOSED IN NEW 25
 
 New 24's phase-7 port (`f605840`) adds `drainQuotaNotifications` to a `no-restricted-imports`
 rule **this tree does not have**. The cherry-pick therefore offered the whole feature-030 block
@@ -1616,3 +1655,151 @@ list". Re-counted with the corpus working: 37 such titles, of which 13 name noth
 PROSE titles (`the check`, `42P01`, `run 11 of 20`) and two are `packages/outsider/`, which does
 not exist until new 26. **24 real paths.** The number was right; this ledger's usual finding is
 the other kind, so a confirmation is worth its line.
+
+## 045-43 · THE DRAIN EXEMPTION ARRIVED HALF STALE, AND THE TEST THAT SAYS SO FOUND IT ON ITS FIRST DAY
+
+045-34 deferred published's global-drain rule out of new 24 and named the chapter that would owe
+it. That chapter is **new 25**, because published fixes R23 in `f2e4a37` — old 3.12's own commit —
+and the fix is the four-block composed shape that ledger entry described from published's final
+tree.
+
+**TAKEN HERE, AND THE OBJECTION THAT HELD IT BACK IS GONE.** New 24 refused it because the rule
+would have arrived without the matching `exempt.ts` entries and made that file's "the two lists
+MUST AGREE" comment false. `f2e4a37` carries both halves.
+
+**SIX PROBES, EACH RED WHERE IT SHOULD BE RED**, run against the composed config:
+
+    a plain `.itest.ts` importing `drizzle-orm`          banned   (R23 closed)
+    a DRAIN-exempt suite importing `drizzle-orm`         banned   (excused from one rule, not two)
+    a DRIVER-exempt suite importing `drainOutbox`        banned   (likewise, the other way)
+    a plain `.itest.ts` importing `outboxDepth`          banned   (the union's drain half)
+    a drain-exempt suite importing its own drain         allowed  (the exemption works)
+    the tree as it stands                                clean
+
+**AND THE EXEMPTION LIST IS THREE, WHERE PUBLISHED'S IS SIX.** `drain-exempt.test.ts` reads the
+restricted names out of `DRAIN_NAMES` and asserts both directions against the TREE — every listed
+suite still imports one, and every suite that imports one is listed. It went red immediately:
+
+    test-event.itest.ts      names `drainDueDeliveries` only in prose about why it does NOT call one
+    notifications.itest.ts   names two drains in comments arguing for scoped assertions instead
+    dispatcher.itest.ts      declares `drainDueDeliveries` as a PROPERTY on a stub it builds
+
+Three standing exemptions over nothing, on the list's first day — **the exact failure mode
+`exempt.ts`'s own header warns about, arriving by inheritance rather than by drift.** A list
+copied from another tree is a list nobody has checked against this one.
+
+**`lists-agree.test.ts` IS DELIBERATELY NOT TAKEN**, and the reason is the sharper half of this
+entry. It asserts `DRAIN_EXEMPT_TESTS` and `exempt.ts` name the same files. That holds in a tree
+whose guard array has nine tables including the webhook ones; **this rebuild's guard grew per
+chapter by SUBJECT** — the reassignment's own instruction — so it holds seven, none of them
+touched by these drains, and `EXEMPT_FILES` names one file. Asserting the agreement would mean
+widening a guard array to satisfy a test. **Two lists agreeing is a proxy; each list agreeing with
+the tree is the thing itself**, which is 044's finding about this very file read one step further.
+
+## 045-44 · A "IS THIS ALREADY PORTED?" PROBE ANSWERED THE OPPOSITE ON THE ONE COMMIT THAT MATTERED
+
+Scoping new 25 meant asking, of sixteen commits in old 3.12's span, which were already in the
+tree. The cheap probe is to reverse-apply each patch and see whether it fits:
+
+    git show <c> | git apply --check -R --3way -
+
+It reported **`08e9dbf` — FR-044, authorize a platform credential by SERVICE — as already in.**
+It is not. `AcceptSpec` did not exist, `PlatformService` did not exist, and both controllers still
+read `@Accepts("platform")`. The ledger had named that commit as new 25's in writing, one line of
+`deferred.md` above where the probe's answer was being read.
+
+    with --3way   1 of 16 wrong in the direction that SKIPS work
+    strict        15 of 16 wrong in the direction that REDOES it
+
+Neither is usable: `--3way` falls back to blob matching and reports success for a patch it did
+nothing with, and strict mode fails on any file the rebuild has touched — which is most of them.
+
+**WHAT ANSWERED IT WAS READING THE TREE.** `grep AcceptSpec` and `grep @Accepts` in the two
+controllers, five seconds, unambiguous. That is mechanism 1 in CLAUDE.md's ranking — ask the
+repository a question with a yes-or-no answer — and the probe above is what it looks like when a
+question that HAS a yes-or-no answer is asked of the wrong oracle.
+
+**AND THE COST OF BELIEVING IT WAS SPECIFIC.** The chapter would have shipped without the
+narrowing it is about: two platform credentials resolving to one class, the gateway's reaching
+`POST /internal/dispatch/replay`, which takes a dead-letter id and no environment.
+
+## 045-45 · FR-044 WENT RED IN A NEIGHBOUR'S POSITIVE CONTROL, WHICH IS THE ONLY REASON IT WAS NOTICED
+
+New 25 narrowed `/internal/usage/connections` to `@Accepts({ platform: ["gateway"] })`. New 24's
+gauntlet attack — the one 045-35 added — reports usage through
+`process.env["RELAY_INTERNAL_CREDENTIAL"]`, which is **the dispatcher's**. The battery said:
+
+    FAIL  the platform routes > a connection billed to one environment cannot be re-billed
+    AssertionError: expected 403 to be 200
+
+**ON THE SETUP CALL, BEFORE ANY ATTACK WAS MADE.** The line that failed is the positive control
+written into that test one chapter earlier — *"a legitimate call: the platform may report the
+victim's own connection. Without it the refusal below would also arrive from a route that credits
+nothing at all."* Without that line, the test would have gone GREEN: the attack expects a refusal,
+and a route refusing everything refuses the attack too.
+
+**THAT IS THE WHOLE ARGUMENT FOR A POSITIVE CONTROL, PAID BACK ACROSS A CHAPTER BOUNDARY.** The
+control was written to guard against the route being broken; what it caught was the route being
+correctly narrowed and the test not knowing. Same shape, one chapter's distance, and no other
+assertion in either chapter could have seen it — `usage.itest.ts` sets both credentials itself.
+
+Fixed by presenting the gateway's credential, which is what the route now requires. **A narrowing
+its own suite does not notice is a narrowing nobody has measured.**
+
+## 045-46 · A REINTRODUCTION NAMED ITS TARGET BY MEMORY, AND THE TARGET HAD MOVED
+
+New 25's opening section is three deliberate defect reintroductions, and its whole point is
+that the first one did not fire. Re-run in this tree:
+
+    1.  unscope `listMessages`' scoping helper       71/71 passed   (as published: 21/21)
+    1b. ALSO unscope `channelExists`                 71/71 passed   (published: 2 fired)
+    1c. unscope `channelVisibleTo`                   5 fired
+    2.  unscoped UPDATE, every read still scoped     1 fired, `differences` EMPTY
+    3.  a 403 that needs an unscoped read to make    2 fired
+
+**STEP 1b IS THE NEW FINDING.** Published's correction — the move that took its first
+reintroduction from green to red — **is green here.** `channelExists` is not on the history
+path any more: the channel-control chapter replaced existence with VISIBILITY, because an
+absent channel answered 404 while a private channel a non-member read answered 200 with an
+empty page, and one predicate now produces both refusals.
+
+So the probe was right about the shape of the fault and wrong about the function, and a probe
+aimed at a function nothing calls **passes without testing anything** — which is the same
+sentence this chapter spends four hundred lines making about test suites, arriving one level up
+in the thing that verifies them. *Which check is outermost is itself a thing that changes.*
+
+**AND FIVE REDS ARE NOT FIVE FAULTS.** `channelVisibleTo` sits under the message read, the edit,
+the deletion and the edit history; the fifth is the credential attack, whose ORACLE is a message
+read. One unscoped SELECT, five assertions. A suite of independent attacks is not independent
+where two of them share a target, and a count of red assertions is a count of assertions.
+
+**REINTRODUCTION 3 FIRED TWICE WHERE PUBLISHED REPORTS ONCE**, for a duller reason worth one
+line: `setEnabled(id, enabled)` serves both the enable and the disable route here, so a fault
+planted in it is visible from either door.
+
+All three were reverted against a committed tree and the tree was verified pristine — `git
+status` empty, `git diff` empty, zero occurrences of the probe's own helper name, isolation
+suites back to 71/71. The lane keeps the rows: the gauntlet seeds fresh disposable environments
+per run, so reintroduction 2's cross-tenant write damaged a fixture that no later run reads.
+
+## 045-47 · THE CHAPTER'S OWN LINT FIX HAD NO FENCE AND NO PROSE IN ANY CHAPTER
+
+`regen-fences` reported `eslint.config.mjs` under **changed but NOT fenced** for new 25 — and
+that file is where this chapter closes R23, in 260 added lines. Four chapters fence that file
+(new 8, 11, 22, 23) and none of them is this one, so a reader typing along would have reached
+the end of Part 3 with a config that silently exempts every integration test from the driver
+rule, and no page would have mentioned it.
+
+**THE UNFENCED LIST IS NOT A DEFECT BY ITSELF** — a milestone chapter publishes instruments
+rather than an appendix, and new 24 left 27 of 52 unfenced with reasons. What made this one
+different is that the unfenced file carried the chapter's own headline change.
+
+A section was added: the rule, the replacement mechanism stated plainly, the two-line
+measurement that proves it, the four hoisted sets, the six probes as a table, and the
+three-entries-stale exemption list. `check-chapter` goes 6 fences / 4 compared / 0 problems to
+**7 / 5 / 0**.
+
+**AND `regen-fences`' SECOND LIST IS THE ONE TO READ EVERY TIME.** Its "changed but NOT fenced"
+line is the only instrument in either repository that answers "did this chapter change something
+it never explains", and it answers by listing rather than counting — which is what made one file
+out of thirteen stand out at all.

@@ -885,3 +885,47 @@ them adjacent too and still let `ADDED` fall five keys behind.
 `usage.controller.ts`'s own comment says the class-level decorator is the answer to "who may
 call this" — which it stops being the moment two services hold the class. That is what FR-044 is
 for, and this chapter is the one that created the condition.
+
+## NEW 25 — THE CHAPTER THE ESLINT FIX BELONGED TO ALL ALONG
+
+Seven commits. Old 3.12's span is sixteen commits serving FOUR new chapters — new 4 (the
+harness), new 8 (the endpoints), new 25 (this) and new 26 (the outsider) — so the unit of the
+ledger is again the hunk.
+
+| what | published commit | why it is new 25's |
+|---|---|---|
+| `compare.test.ts` | `2f73e7c` (part) | the harness chapter lifted `withoutRequestId` and left its unit tests behind; this chapter's page fences them |
+| FR-044, a credential authorized by SERVICE | `08e9dbf` | the metering chapter created the condition — two services holding one class |
+| `catalogue.test.ts`, `attack.test.ts`, `targets.test.ts`, the pins | `cb01187` | the arms a passing suite cannot reach |
+| the composed lint config | `f2e4a37` (part) | **045-34's fix, and this is the commit published fixed it in** |
+| the five `/internal` keys in `ADDED` | — | 045-35, and the gauntlet's chapter owes the sweep |
+
+**THE ESLINT ROW IS THE ONE THE LEDGER GOT RIGHT BY ACCIDENT.** 045-34 deferred the drain rule
+out of new 24 on the grounds that it would arrive without the `exempt.ts` half and falsify that
+file's own comment. It named no chapter to take it. The chapter turned out to be this one, for a
+reason nobody had looked up: **published fixes R23 in old 3.12's own commit**, and that commit
+carries both halves. A deferral that names a reason and no owner still lands in the right place
+when the reason is the real one.
+
+**AND THREE HUNKS OF `f2e4a37` ARE NOT TAKEN, EACH FOR A MEASURED REASON:**
+
+    exempt.ts's six entries with per-table scopes   this tree's guard holds SEVEN tables and
+                                                    none of them is a webhook table; five of the
+                                                    six would be exemptions over nothing
+    lists-agree.test.ts                             asserts those two lists AGREE, which is true
+                                                    of a nine-table guard and false of this one
+    "the last two fixed ports"                      already done — no hand-allocated band is left
+                                                    in the tree, measured by grep
+
+## WHAT NEW 25 HANDS FORWARD
+
+    `scripts/reset-lane.mjs` + `reset-lane.itest.ts`   new 8 (the harness) — 045-12, and the
+                                                       number is now 31 durables and 3,448 rows
+    the eight dangling `(` from chapters 9-21          the repair pass — 045-41
+    `30fb8f1`, `f33beee`, `89fd038` — the sealed
+      outsider, its seed, and the URL rule             new 26 (old 14b)
+
+**THE LANE RESET IS THE ONE WITH A DEADLINE.** It is not this chapter's file and it is now
+costing every chapter's timing 12.5% — 457.02s against 399.68s on the same tree twenty minutes
+apart. New 26 is the last chapter; whoever runs its battery should reset the lane first and say
+so beside the number, because there is no chapter left to port the script into.
