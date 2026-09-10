@@ -91,8 +91,10 @@ does* — and applies it three times. The specification finishes it rather than 
 
 ### The documents this specification names, and why
 
-A specification that names a document is making a claim about the tree. Four are named and each is
-deliberate:
+A specification that names a document is making a claim about the tree. Each is deliberate — and
+the count lives in the rows rather than in this sentence, which said "four" above seven of them and
+then above thirteen. `check-checklist.py` derives it and fails on a name the spec added and this
+table did not:
 
 | Reference | Class | Why the spec names it |
 |---|---|---|
@@ -103,6 +105,12 @@ deliberate:
 | `services/` and `packages/` | the corpus FR-008 counts over | 1,429 references live in the `.ts` under them; 1,298 of those sit inside fenced paths, and stating which corpus a count came from is SC-002's own rule |
 | `relay-tutorial/fences/post-series.md` | the appendix | part of the chain, applied after the last chapter; FR-016 and SC-010 exist because the tooling forgot it |
 | `relay-tutorial/lib/tutorial.ts` | the chapter registry | **named only after analysis pass 1.** 810 hand-maintained lines read by the sitemap and six components; FR-015 and SC-009 exist because nothing checked it |
+| `*.ts` and the other source suffixes | the corpus SC-002 counts over | the close-out measurement states the corpus BEFORE the count, which is SC-002's own rule, and the corpus is a suffix list unioned with the fenced paths — naming `.ts` alone is what made the specification's 1,429 low by 281 |
+| `refrules.platform_files` | the definition of that corpus | one definition, in code, reused by every instrument; two copies of `classify` disagreeing by nine references is why the module exists |
+| `services/api/Dockerfile` | the file no suffix list reaches | fenced by a chapter and extensionless, so it is in the corpus only because `platform_files` unions the fenced paths — it is the single file that proves the union is load-bearing |
+| `check-movements.py` | SC-001's instrument | `check-map.py`'s docstring delegated contiguity to it and it did not exist; SC-001 had no instrument at all until close-out |
+| `rework/part3-chN` | the published-tag contract | the per-chapter contract FR-013 is measured against: check out the tag and the toolchain passes. SC-002 is met at the tip and not per chapter, which is the difference this name makes visible |
+| `specs/045-part-3-rework/reader-protocol.md` | the thing no instrument replaces | contiguity is measurable and comprehension is not; the spec names the protocol so the gap is stated rather than implied |
 
 ### What analysis pass 1 changed
 

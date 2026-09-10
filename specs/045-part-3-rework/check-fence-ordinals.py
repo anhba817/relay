@@ -93,5 +93,14 @@ seen = {x[3] for x in left}
 for f, n, t in empty:
     print(f"    EMPTY HUNK  {f.relative_to(ROOT)}:{n}  {t}")
 print(f"  distinct texts                       {len(seen)}")
+# A COUNT WITH NO LOCATIONS MAKES THE READER RE-DERIVE THEM. This printed 38 in 12
+# files and nothing else, so the same scan had to be written a second time by hand to
+# find out which twelve — and the hand-written one disagreed, because it covered one
+# locale. `--list` is the difference between a number and a finding.
+if "--list" in sys.argv:
+    for f, n, rule, text in left:
+        print(f"    {rule:10s} {f.relative_to(ROOT)}:{n}  {text}")
+    for f, n, text in kept:
+        print(f"    DELIBERATE {f.relative_to(ROOT)}:{n}  {text}")
 print(f"  files                                {len({x[0] for x in left})}")
 sys.exit(1 if left or empty else 0)

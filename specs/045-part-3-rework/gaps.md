@@ -2304,7 +2304,7 @@ closing a `<Why>`. Both were unique. 209 figures, 211 bindings, all resolving.
 
 ## 045-62 · `pnpm run build` IS NOT ONE OF THE FOURTEEN GATES
 
-Falling out of 045-61 and worth its own entry, because the fourteen-gate list is what T045 checks
+Falling out of 045-61 and worth its own entry, because the close-out gate task checks that list
 and the list is missing the only instrument that compiles the pages.
 
 The fourteen gates are typecheck, lint, unit, integration, coverage, and the five `check:*`
@@ -2334,10 +2334,29 @@ file in every chapter tree, unexempted:
     ch9     1      repository.ts:928 — `3.13's addMembers shape`, removed again at ch10
     ch10+   0      (ch19/ch20's two are 045-64, a false positive)
 
-**Twelve references, and the tip is clean** — 0 over 301 platform files. So every instrument that
-looked at the corpus said zero, because every instrument looked at the tip. **A per-chapter
-contract needs a per-chapter measurement**: the reader checks out `rework/part3-ch2` and reads
-`chapter 3.2` in a comment, naming a chapter this feature deleted.
+**Twelve references, and the tip is clean** — 0 over 301 platform files. **A per-chapter contract
+needs a per-chapter measurement**: the reader checks out `rework/part3-ch2` and reads `chapter 3.2`
+in a comment, naming a chapter this feature deleted.
+
+**AND THE CORRECTION TO THIS ENTRY IS THE PART WORTH KEEPING.** It first said no instrument could
+see this, because every instrument looked at the tip. That is false. `check-fence-ordinals.py`
+reads fence BODIES across both locales, it reports these same references — **38 hits in 12 files,
+19 per locale, the twelve real ones plus the provenance tag's continuations of 045-64** — and it
+has been exiting 1 for the whole feature. Nothing was hidden. What happened is smaller and more
+familiar: **its output was a bare count with no locations.**
+
+    ordinals still inside a fence body   38  in 12 files
+    distinct texts                       12
+    files                                12
+
+Twelve files, unnamed. To find out WHICH twelve the scan had to be written a second time by hand,
+and the hand-written one disagreed — 18, because it covered one locale — which is how a
+disagreement between two measurements of the same thing became the way in. **A red gate that
+names nothing is a red gate somebody learns to step over**, and it stayed red beside a fence
+chain sitting at a 296-problem baseline, which is the cover a second unexplained red needs.
+`--list` now prints every location and its class; that costs eight lines and is the difference
+between a number and a finding. What no instrument does is scan the chapter TREES rather than the
+pages, which is how the ch1/ch2 split from the ch9 miss was established.
 
 Chapter 9's one is a different miss from the other eleven — it is inside a chapter's own ported
 diff rather than on the base, so the reference replay had it in range and did not rewrite it.

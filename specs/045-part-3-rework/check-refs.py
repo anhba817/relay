@@ -53,6 +53,19 @@ import re, sys, pathlib
 # id-only allowlist silently accepts either. Testing this checker red is what found
 # that — removing T065 from an id-only list changed nothing, because T065 had become
 # real. Pairs make the collision impossible to hide.
+# THE SAME DOCTRINE, ONE CLASS FURTHER OUT: a requirement id that appears as QUOTED
+# EVIDENCE rather than as a citation. `SRS ` in front of an id already exempts another
+# document's clause, and that covers a reference; it does not cover an id sitting inside
+# a transcript of a defect, where changing the id would change what the transcript shows.
+# Declared per (file, id) for the reason the FOREIGN comment gives — a bare id list
+# cannot survive a renumber.
+FOREIGN_REQUIREMENTS: set[tuple[str, str]] = {
+    # ('tasks.md', 'FR-024') — the two-line provenance tag `(chapter 3.14,` / `// FR-024)`
+    # joined wrongly by the rewriter into `(  // FR-024)`. The task quotes both sides to
+    # show the join. FR-024 belongs to chapter 3.14, and the quotation is the evidence.
+    ("tasks.md", "FR-024"),
+}
+
 FOREIGN: set[tuple[str, str]] = {
     # EMPTIED WHEN THIS COPY WAS MADE, as every copy of this file must be. Feature 044's
     # copy arrived from 043 carrying nine pairs naming other features' task ids, and the
@@ -68,6 +81,26 @@ FOREIGN: set[tuple[str, str]] = {
     # feature. Declared rather than paraphrased, because changing the quote would change
     # what the example demonstrates.
     ("research.md", "T059"),
+    # ('deferred.md', 'T048b') and ('gaps.md', 'T048b') — chapter 3.21's task for the
+    # typing-signal spend, cited four times in `deferred.md`'s carry table and once in
+    # `gaps.md` as the one test that chapter owed the limits chapter. The id is how the
+    # predecessor's record names that test; paraphrasing it would break the trail back.
+    ("deferred.md", "T048b"),
+    ("gaps.md", "T048b"),
+    # ('gaps.md', 'T041a') — chapter 3.22's task, quoted with the line it asserts
+    # (`session.itest.ts:403`) in the entry about a reintroduction that stayed green.
+    ("gaps.md", "T041a"),
+    # ('gaps.md', 'T065') — inside a BLOCKQUOTE of a predecessor record: "THIS TEST WAS
+    # RED FOR TWO CHAPTERS AND NOBODY SAW IT (T065)". Changing a quotation to satisfy a
+    # checker is the one repair that cannot be right.
+    ("gaps.md", "T065"),
+    # ('gaps.md', 'T121a') — named as an id the reference rewriter must pass through
+    # untouched, beside `FR-RTL-05` and `R7`. The example IS the id.
+    ("gaps.md", "T121a"),
+    # ('tasks.md', 'FR-024') — quoted DEFECT output, not a citation: the two-line tag
+    # `(chapter 3.14,` / `// FR-024)` joined wrongly into `(  // FR-024)`. The id is
+    # inside the evidence.
+    ("tasks.md", "FR-024"),
 
 }
 
@@ -311,7 +344,7 @@ def main() -> int:
         pattern = (r"(?<!SRS )\b((?:FR|SC)-\d+[a-z]?)\b(?! \()" if CHAPTER == "?.?"
                    else r"(?<!SRS )\b((?:FR|SC)-\d+[a-z]?) \(" + re.escape(CHAPTER) + r"\)")
         for m in re.finditer(pattern, body):
-            if m.group(1) not in declared:
+            if m.group(1) not in declared and ("tasks.md", m.group(1)) not in FOREIGN_REQUIREMENTS:
                 seen.setdefault(m.group(1), body.count("\n", 0, m.start()) + 1)
         for ident, line in sorted(seen.items()):
             problems.append(
