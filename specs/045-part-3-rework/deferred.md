@@ -837,3 +837,51 @@ Both are named in this chapter's own comments (`quota.error.ts` says `connection
 belongs to the connection-metering chapter) rather than only here, which is the placement this
 ledger has been arguing for since the fan-out chapter's exemption: **a note in the file the next
 chapter will open beats a row in a document it may not.**
+
+## NEW 24 — WHAT THE LEDGER OWED, AND WHAT IT GOT WRONG
+
+Ten commits ported (`c2b54b3`, `48fd1ec`, `e52529e`, `deed1e6`, `9905938`, `f605840`,
+`d7e5354`, `55ff231`, `acf0695`, `c7fd20c`) plus the two rows above. Both handed-forward
+items from new 23 arrived: `usage_connections` is in the guard array with bait and a case,
+and `connection_minutes` is a quota dimension in `config.ts`.
+
+| row | what happened |
+|---|---|
+| `3412851` · "the usage suite's typing case" | **the row named the wrong change.** There is no typing case in `usage.itest.ts`; what that commit did was `AUGUST` → `periodOf(new Date())`, ported in the cap phase |
+| `0ecb21f` · keep the meter fixture's child output | taken — **and the two hand-allocated port bands with it**, which the row did not name |
+| `acf0695` · the api key secret | **already carried, and better.** Nothing to port |
+| `f605840`'s eslint hunk | **not taken**, and 045-34 is the measurement that decided it |
+
+**THE `0ecb21f` ROW IS THE UNDERSTATEMENT THIS TIME.** It asked for a ring buffer in place of
+`.resume()`. The same fixture allocated `4610-4669` for the gateway and `4710-4769` for the api
+by hand — the table this repository deleted everywhere else, sitting in a file the row was
+pointing at. `PORT=0` and the child's own `listening` line, for both children, in the same
+commit. **A row that names the defect it was filed for cannot name the one beside it.**
+
+**AND THE CHAPTER'S OWN THREE COMMITS ARE THE TREE'S STANDARD, AGAIN:**
+
+| what | why it is this chapter's |
+|---|---|
+| `POST /internal/usage/connections` classified and attacked | the derivation named it; three tests red in a file the chapter was not editing (045-35) |
+| the meter fixture's two port bands deleted | the row asked for the ring; the bands were the same fault one layer down |
+| `rate-limit.middleware.ts` and `usage.controller.ts` re-counted | published corrected "three api calls" to "four"; there are **five** here, and the second comment was wrong the same way |
+
+## WHAT NEW 24 HANDS FORWARD
+
+    the eslint drain block, in its four-block form                 whoever takes 045-34
+    `POST /internal/usage/connections` in `targets.itest.ts`'s
+      `ADDED` list — and the five `/internal` keys missing beside it   new 25 (the gauntlet)
+    `08e9dbf` — a platform credential authorized by SERVICE
+      rather than by class (FR-044)                                new 25 (old 12)
+
+**THE GAUNTLET MILESTONE IS THE RIGHT PLACE FOR TWO OF THE THREE**, which the reorder did rather
+than anyone deciding it: old 12 became new 25 and old 11 became new 24, so the chapter that adds
+the route and the chapter whose whole subject is the gauntlet are now adjacent. Published had
+them adjacent too and still let `ADDED` fall five keys behind.
+
+**AND `08e9dbf` IS THE ONE TO READ BEFORE PORTING.** This chapter gave the gateway
+`RELAY_INTERNAL_CREDENTIAL_GATEWAY` and the api reads it beside `RELAY_INTERNAL_CREDENTIAL`
+(`authenticate.middleware.ts` exports both names). Two credentials, one `platform` class, and
+`usage.controller.ts`'s own comment says the class-level decorator is the answer to "who may
+call this" — which it stops being the moment two services hold the class. That is what FR-044 is
+for, and this chapter is the one that created the condition.

@@ -125,6 +125,23 @@ def delete_one(line: str, m: re.Match) -> str:
     ):
         new = re.sub(pat, rep, line, count=1)
         if new != line:
+            # A TAG THAT OPENED A PARENTHETICAL CONTINUING ON THE NEXT LINE IS A
+            # TWO-LINE CASE, AND THE SECOND PATTERN ABOVE CANNOT SEE THAT.
+            #
+            #   /** Everything the connect path needs, in ONE round trip (chapter 3.11,
+            #    * FR-RTL-05, FR-RTL-06).
+            #
+            # `{ref},{H}*` is right about this line and wrong about the sentence: `H` is
+            # horizontal whitespace by design, so it stops at the newline and leaves the
+            # `(` orphaned at the end of the line. Ten of these reached the tree before
+            # anything looked — EIGHT of them before this chapter, in files no chapter
+            # since has opened.
+            #
+            # Refusing here routes the reference to `read`, where a person joins the two
+            # lines. That is the same answer `\b[Cc]hapters?$` gives one function up, for
+            # the mirror image of this case: the tag split across the break the other way.
+            if new.rstrip().endswith("(") and not line.rstrip().endswith("("):
+                continue
             new = _orphaned_punctuation(new)
             if tag:
                 return refrules.recapitalise(new)

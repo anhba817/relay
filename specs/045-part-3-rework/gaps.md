@@ -1268,3 +1268,322 @@ diff syntax (SQL, Lua, Haskell, Ada all use `--`).
 replays differently from the checker "produces hunks the checker rejects for reasons neither of
 them explains". This is that, from the one direction nobody looked: not the widening, but the
 line filter that runs after it.
+
+## 045-34 · A PROSPECTIVE RULE WHOSE ARRIVAL WOULD SWITCH OFF THE ONE ALREADY THERE — MEASURED IN THIS TREE
+
+New 24's phase-7 port (`f605840`) adds `drainQuotaNotifications` to a `no-restricted-imports`
+rule **this tree does not have**. The cherry-pick therefore offered the whole feature-030 block
+instead of a three-line addition, and the block is the one every `ioredis` note in
+`eslint.config.mjs` has warned about twice without ever meeting.
+
+**REPRODUCED RATHER THAN ASSERTED.** `services/api/src/channels/channels.itest.ts` is on no
+exemption list. With `import { sql } from "drizzle-orm";` prepended:
+
+    control (this tree's config)         eslint exit 1, `no-restricted-imports` fires
+    published's block appended verbatim  eslint exit 1, and the ONLY error left is
+                                         `'sql' is defined but never used`
+
+The driver-and-engine ban is gone for **all 33 non-exempt `.itest.ts` files** in the workspace,
+silently, because in flat config a later block REPLACES a rule rather than merging it. The
+hazard is R23/FR-043 and the file's own header states it.
+
+**AND THE BLOCK RESTRICTS NOTHING HERE TODAY.** Exactly six `.itest.ts` files import a drain
+function — `outbox`, `deliveries`, `test-event`, `attempts`, `notifications`, `dispatcher` — and
+those six are precisely published's exemption list. Published's own comment says as much: *"It
+protects a future DIRECT importer."*
+
+**THE DECIDING MEASUREMENT IS THE SIBLING LIST.** `packages/test-harness/src/exempt.ts` names
+**one** file, and its comment says the two lists "must agree. A file exempt from one and not the
+other is a trap for whoever adds the next one." A six-entry block would make the tree's own
+comment false on arrival. So the hunk is **not taken**, and the port says so in its message
+rather than leaving a reader to wonder which side won.
+
+**WHAT THE CHAPTER THAT DOES TAKE IT HAS TO DO**, since published's final tree solved this and
+its Part-3 commits do not: four blocks, not two. Hoist `DRIVER_AND_ENGINE`, `DRIVER_EXEMPT_TESTS`,
+`DRAIN_EXEMPT_TESTS` and `GLOBAL_DRAINS`; the `**/*.itest.ts` block composes the **union**
+(`paths: [...DRIVER_AND_ENGINE.paths, ...GLOBAL_DRAINS.paths]`) and ignores both lists; two
+trailing blocks give each list back its own single rule.
+
+**AND ONE TEST BREAKS ON THE HOISTING, WHICH IS THE PART A PLAN WOULD MISS.**
+`driver-exempt.test.ts` parses the rule with
+
+    /"no-restricted-imports":[\s\S]*?paths:\s*\[([\s\S]*?)\],\s*patterns:/
+
+With the consts hoisted, the first `"no-restricted-imports"` is followed by
+`["error", DRIVER_AND_ENGINE]` and the regex then captures
+`...DRIVER_AND_ENGINE.paths, ...GLOBAL_DRAINS.paths` — no `name:` in it, so `restricted()`
+returns `[]` and every check reading it goes vacuous. Its own first assertion catches that, which
+is the only reason this is a nuisance rather than a silent hole. Published's tree parses
+`const DRIVER_AND_ENGINE = {` … `\n};` by position instead; that is the change this test needs
+in the same commit.
+
+## 045-35 · THE DERIVED TARGET LIST NAMED A ROUTE THE CHAPTER FORGOT, AND ITS HAND-KEPT SIBLING HAS FIVE HOLES
+
+New 24 adds `POST /internal/usage/connections` and classified it nowhere, so three tests in
+`services/api/src/isolation/targets.itest.ts` went red in a file the chapter was not editing:
+
+    classifies every derived target exactly once   unclassified: ["POST /internal/usage/connections"]
+    accounts for every derived target …            expected 41 to be 42
+    leaves nothing exempt by omission (FR-033a)    CLASSIFICATIONS.length !== derived.length
+
+**THIS IS THE DERIVATION PAYING FOR ITSELF, for the sixth recorded time.** The list is read off
+the running router rather than typed, so a route nobody classified cannot hide — and the failure
+names the route rather than printing two integers.
+
+Classified `write`, for `expand`'s reason: it names an environment ALONGSIDE a connection id, so
+a caller can claim one tenant's connection for another's bill. The attack is in
+`gauntlet.itest.ts` and asserts both directions — the attacker gained nothing, and the victim did
+not LOSE the minutes it had, which a refusal that moved the row and then failed would still
+satisfy.
+
+**AND THE ONE-DIRECTIONAL LIST BESIDE IT IS FIVE ENTRIES SHORT.** `targets.itest.ts`'s `ADDED`
+list — "each chapter that adds a route adds its key here" — holds only `/v1/…` routes. The four
+`/internal/dispatch/*` routes and `/internal/memberships` are on the router and not on it. That
+direction catches *a route classified and never built*, so the holes cost nothing today and the
+list is weaker than it reads. This chapter added its own key and filed the rest rather than
+sweeping them.
+
+## 045-36 · A BATTERY RUN WITHOUT THE PINNED LANE READS AS TWENTY-TWO DEFECTS, AND ONE OF THEM WAS REAL
+
+New 24's first integration battery: **22 failed / 583 passed across 29 files, 16m33s**. It was run
+with `RELAY_POSTGRES_PORT=15432` and nothing else, and `baseline.txt` pins **nine** variables.
+
+    18 failures   `inbox` in notifications (7), connections (6) and quotas (5) —
+                  Mailpit defaults to `http://localhost:8025`; the lane runs 18025
+     1 failure    "the lane must configure a platform credential: expected undefined
+                  to be truthy" — `RELAY_INTERNAL_CREDENTIAL` unset, in a message
+                  that names its own cause
+     3 failures   REAL, and 045-35 is them
+
+**THE SUITE SAID SO IN ITS OWN HEADER.** `notifications.itest.ts` carries the full command —
+`RELAY_MAILPIT_HTTP_PORT=… RELAY_SMTP_URL=… RELAY_MAILPIT_URL=…` — twelve lines above the
+`?? "http://localhost:8025"` it falls back to. The instrument was documented and the run was
+not read against the document.
+
+**AND THE DURATION IS NOT A MEASUREMENT.** 16m33s red against **6m39s green** on the same tree
+twenty minutes later — 45 files, 882 tests, exit 0, nine variables set. A battery with 22
+failures spends its time on retries, teardown and mail polling that never arrives. **A red
+battery has no timing.** Record the environment beside the duration or neither number means
+anything.
+
+    new 22   37 files   759 tests   6m10s
+    new 23   40 files   802 tests   6m22s
+    new 24   45 files   882 tests   6m39s
+
+Three chapters that can be compared, which is what 043's port fix bought and what this run
+would have thrown away.
+
+## 045-37 · TWO LEDGER ROWS WERE ALREADY PAID, ONE OF THEM BETTER THAN PUBLISHED, AND A THIRD NAMED THE WRONG THING
+
+`acf0695` — "invariant 1 took the api key secret as `split("_").at(-1)`" — is **entirely carried**.
+The tree already fixed it, and differently: it slices by `minted.prefix.length`, where published's
+version restates the credential's shape in the test as
+`/^rk_(?:dev|live)_[0-9a-f]{32}_(.+)$/`. A second copy of a production rule is a second rule;
+the prefix is returned by the minting call and cannot disagree with the row. Cherry-picked to a
+zero-byte diff, and dropped.
+
+`3412851`'s row read **"the usage suite's typing case"**. There is no typing case in
+`services/api/src/internal/usage.itest.ts` and never was: what that commit did to the file was
+replace a hard-coded `AUGUST` with `periodOf(new Date())`, already ported in this chapter's cap
+phase. **The row named the chapter the change was FOUND in, not the change** — the same shape as
+044's four artifacts agreeing on two clauses that do not exist.
+
+**AND PUBLISHED'S OWN ID SWEEP LEFT A COMMA.** `d7e5354` rewrites
+`session.perf.itest.ts`'s header from `(chapter 3.11, SC-012, FR-025)` to
+`(chapter 3.11, , NFR-PERF-01)`. The sweep was right — the id it removed is gone from the test
+title below too — and its edit was not. A mechanical rewrite that leaves punctuation behind is
+invisible to every gate in both repositories, which is 045-22 in a third shape.
+
+## 045-38 · A SUITE THAT FAILS HALF THE TIME, AND ITS OWN COMMENT PRESCRIBES A MITIGATION THAT CANNOT WORK
+
+New 24's coverage battery came back **1 failed / 1404 passed, 95 files, 400.78s** — one test in
+`services/gateway/src/typing.itest.ts`:
+
+    Error: only 0 of 1 typing frames for dc16e82c-…; saw connection.ack
+
+**FORCED RATHER THAN WAVED AWAY**, which took two minutes against a battery that would have shown
+it once in six. Four runs of that one suite at HEAD and four at `rework/part3-ch23`:
+
+    HEAD   pass, FAIL, pass, FAIL      2 of 4
+    ch23   pass, FAIL, pass, FAIL      2 of 4   ← so this chapter did not introduce it
+
+Three distinct tests have failed across the eight runs — "sends nothing at all after the signal",
+"sends the signaller nothing while another member receives", and "keeps four kinds apart over one
+channel" (that one on `presence`, not on typing at all). **One cause, three symptoms**, which is
+why each one alone reads as its own flake.
+
+**THE FILE ALREADY NAMES THE CAUSE, IN A COMMENT WRITTEN WHEN IT WAS FOUND:**
+
+> *"A connection is acked before its Redis SUBSCRIBE has necessarily landed: the non-resume
+> branch of `open()` acks without awaiting `subscribing`. So a test that acks a watcher and
+> immediately signals can miss the frame, and a fixed `settle()` after the signal only makes that
+> unlikely rather than impossible."*
+
+**AND THE MITIGATION IT THEN CHOSE CANNOT FIX THAT.** It replaced the sleep with
+`untilTyping`, a 4-second poll for the frame — *"POLL FOR AN ARRIVAL, NEVER SLEEP FOR ONE"*.
+A publish that reaches Redis before the SUBSCRIBE lands is **discarded by Redis**: there is no
+frame to arrive, so polling for four seconds is a slower way to fail. The comment diagnosed a
+lost message and prescribed a longer wait for it.
+
+**THE FIX IS TO WAIT FOR THE SUBSCRIPTION, NOT FOR THE FRAME.** The suite already imports
+`Redis` from `ioredis` — it is on `DRIVER_EXEMPT` — and already imports `subjectForTyping`,
+`subjectForChannel`, `subjectForChannelMembership`, `subjectForPresence`. `PUBSUB NUMSUB
+<subject>` polled after `acked()` and before the send is exact where the current poll is a
+guess. The alternative is to make `open()` await `subscribing` before acking, which is a
+platform change and a published design decision: an early ack is deliberate.
+
+**NOT FIXED INSIDE NEW 24, AND THE REASON IS THE FENCE CHAIN.** `typing.itest.ts` is the typing
+chapter's file and that chapter is tagged. An edit to it inside this chapter's tag makes the
+chapter's diff carry a file belonging to a subject twelve chapters back, and the chain would then
+want a hunk for it on this chapter's page. This belongs in
+`relay-tutorial/fences/post-series.md`, which is the mechanism for a platform change that
+publishes no chapter.
+
+**AND UNTIL IT IS FIXED THE COVERAGE GATE NEEDS A STATED POLICY.** New 24's figure below is a
+re-run. Record which run a coverage number came from, because "1 failed" in this suite is not
+evidence about the tree.
+
+## 045-39 · A DIAGNOSTIC CHECKOUT LEFT THE BUILD AT ANOTHER TAG, AND SEVENTEEN FAILURES FOLLOWED — THE TELL WAS A UNIT TEST
+
+045-38 was measured by checking the worktree out at `rework/part3-ch23`, building, running the
+suite four times, and returning to `part3-rework`. **The return did not rebuild.** The next
+coverage battery came back **17 failed / 1388 passed across 5 files**, every one of them about
+the usage report:
+
+    usage.itest.ts        8   the whole controller suite
+    session.itest.ts      3   the cap at the door
+    api-client.test.ts    3   reportUsage's credential and body
+    meter.itest.ts        2   SIGKILL and SIGTERM
+    gauntlet.itest.ts     1   this chapter's own new attack
+
+Read as a chapter, that is a feature that does not work. Read once, it is one mistake.
+
+**THE TELL IS THAT THREE OF THEM ARE IN A `.test.ts`.** A unit test spawns nothing, reads no
+database and cannot be affected by the lane, so a unit failure alongside integration failures is
+not interference — it is the code under test being different from the code on disk. And the
+message says which:
+
+    TypeError: Cannot read properties of undefined (reading 'safeParse')
+      ❯ parse services/gateway/src/api-client.ts:156:27
+
+`schema` is `undefined` because `@relay/protocol` is consumed as its BUILT `dist`, and that dist
+was chapter 23's — where `internalUsageReportResponseSchema` does not exist yet. Every other
+failure is the same fact one layer out: `session.itest.ts`, `meter.itest.ts` and `usage.itest.ts`
+spawn `services/api/dist/main.js`, which at that tag serves no
+`POST /internal/usage/connections` at all.
+
+**AND TURBO MADE THE WRONG BUILD FREE AND SILENT.** `turbo run build` at ch23 printed
+`5 cached, FULL TURBO` in 16ms, and printed exactly the same thing at HEAD afterwards. The cache
+is keyed on inputs, so it is *right* both times — which means **nothing in the output
+distinguishes "your dist is now at the tag you asked for" from "your dist is already correct"**.
+A checkout for measurement has to be followed by a build before anything is believed, and
+`FULL TURBO` is not evidence that the build is the one you want; it is evidence that turbo did
+not have to work.
+
+**THIS IS CLAUDE.md's OWN RULE IN A THIRD SHAPE.** *"`check:errors` reads the BUILT `dist`.
+Build before believing it."* That was written about one gate. It is true of every suite in this
+repository that spawns a service or imports a workspace package, which is most of them.
+
+## 045-40 · THE RATCHET FIRED ON THE CHAPTER THAT MOVED THE READING, WHICH IS THE ONE TIME IT IS SUPPOSED TO
+
+New 24's coverage battery: **95 files, 1405 tests, all passing, exit 1.**
+
+    ERROR: Coverage for branches (70%) does not meet
+           "services/api/src/quotas/quota-email.ts" threshold (75%)
+
+New 23 pinned that file at 75 and wrote the fraction down: **6/8, the uncovered pair being
+`months[Number(m) - 1] ?? m`**. This chapter added a third guard —
+`STOPPAGE[facts.dimension] ?? DEFAULT_STOPPAGE`, the sentence that says a connection-minutes cap
+refuses connects rather than sends — taking the file to **7/10**. Ten arms, three uncovered, 70%.
+
+**A PIN SET AT THE PREVIOUS READING IS WHAT MADE THAT VISIBLE**, and 044's warning about pins
+set at readings is the other half of the same rule: pin at what the requirement is, and then a
+chapter that adds an uncovered arm goes red rather than diluting a percentage. An eight-branch
+file at 75 leaves room for exactly two arms. The third one was refused.
+
+**AND THE ANSWER WAS NOT 70.** *"A ratchet that teaches people to lower ratchets"* is the failure
+mode; the question is whether the arm is reachable. Two of the three are:
+
+    NOUN[facts.dimension] ?? facts.dimension        reachable
+    STOPPAGE[facts.dimension] ?? DEFAULT_STOPPAGE   reachable
+    months[Number(m) - 1] ?? m                      NOT — a `date` column has no month 13
+
+**A DIMENSION IS A STRING OFF A ROW, NOT A MEMBER OF A UNION.** `quota-relay.ts` reads it out of
+`usage_periods`, so a fourth dimension added to the database and not to those two maps arrives at
+this function — and what the customer then reads in an email about their own bill is the word
+`undefined`. One test reaches both fallbacks and asserts exactly that, in both the subject and
+the body. **9/10, pinned at 90** — the file ends this chapter better covered than it started it.
+
+**AND THE NOTE BESIDE THE PIN POINTED AT THE WRONG LINE.** It cited `quota-email.ts:31` for a
+guard that now sits at 51: the file grew by twenty lines and the comment did not. A line number
+in a comment is the same class of artefact as a task id in a test title — read detached from the
+thing it names, and wrong in silence.
+
+## 045-41 · THE DELETE RULE TOOK A TAG THAT OPENED A PARENTHETICAL AND LEFT THE `(` BEHIND — TEN TIMES
+
+`rewrite-refs.py --rule delete` has a pattern for `"(chapter 3.21, FR-…)" -> "(FR-…)"`. It is
+right about that line and blind to the sentence:
+
+    /** Everything the connect path needs, in ONE round trip (chapter 3.11,
+     * FR-RTL-05, FR-RTL-06).
+
+`H` is horizontal whitespace **by design** — a deliberate fix, recorded in the file, for a
+`\s*` that once ate a newline and joined two comment lines. So the substitution stops at the
+line break and leaves `(` orphaned at the end of the line, with its contents on the next.
+
+**TEN IN THE TREE, AND EIGHT OF THEM PREDATE THIS CHAPTER:**
+
+    at rework/part3-ch23   8    in files no chapter since has opened
+    at rework/part3-ch24  10    the two new ones are both `repository.ts`
+
+Nothing looked, because the property has no checker. It is trivially checkable: after the rule
+runs, **no comment line may end in a bare `(`** — a positive-controllable, corpus-wide assertion
+in one grep.
+
+**FIXED BY REFUSING RATHER THAN BY WIDENING.** `delete_one` now skips a substitution whose result
+ends in `(` when the input did not, which routes the reference to `read` — where a person joins
+the two lines. That is the answer the mirror-image case already gets: `\b[Cc]hapters?$` one
+function up catches the tag split across the break the OTHER way, and it was written for the same
+reason. The two new instances are decided in `read-class.json`; **the eight older ones are a
+repair, not this chapter's**, and they go with 045-21's repair-replay list.
+
+**AND THE SAME PASS FOUND AN ID LIST PUBLISHED COLLAPSED.** Four comments in this range read
+`(FR-RTL-05/FR-RTL-05/FR-RTL-05)` and `(FR-RTL-07/FR-RTL-07)`. Published's own text had
+`FR-005/FR-006/FR-009` and `FR-022/FR-023` — three distinct clauses and two, renamed to one id
+each by a later feature and left printed three times and twice. `main` carries them still.
+Collapsed to a single id here, in the commit that first brings the line into this tree.
+
+## 045-42 · THE FENCED HALF OF THE REFERENCE CORPUS HAS BEEN EMPTY FOR THE WHOLE REBUILD
+
+`refrules.platform_files` is the union of two definitions — files with a source suffix, and files
+a titled fence names — and its own docstring says why the second is needed: `services/api/Dockerfile`
+has no extension, is fenced, and carries `# The api (chapter 3.5).`
+
+`platform_files(root, tutorial=None)` defaults `tutorial` to `root.parent / "relay-tutorial"`.
+**Every script the rebuild runs passes the WORKTREE as the root** — `replay-range.sh` does
+`RELAY_PLATFORM=$WT`, and `$WT` is `/home/dong/work/relay/tmp/part3-refactor`, whose parent is
+`tmp`. There is no tutorial there. `Path.glob` on a missing directory yields nothing and
+`post-series.md` was skipped by its own `exists()` check, so the fenced set came back **empty**,
+the corpus silently collapsed to `SOURCE_SUFFIXES`, and every reference scan of the rebuild has
+been running on the narrower half.
+
+**MEASURED AT THIS CHAPTER'S TAG, BOTH WAYS:**
+
+    RELAY_PLATFORM=<worktree>                        1 reference in 1 file
+    RELAY_PLATFORM=<worktree> RELAY_TUTORIAL=<...>   2 references in 2 files, one `delete`
+
+The one that appears is the fenced Dockerfile the docstring was written about. `git grep` finds
+`chapter 3.5` in three Dockerfiles; only one is fenced, and the other two are outside the
+corpus **by the corpus's own definition** — which is a scope, not a hole, and is now the
+difference between the two numbers rather than an accident.
+
+**THE FIX IS TO FAIL, NOT TO DEFAULT.** `fenced_paths` now raises on an absent tutorial rather
+than returning an empty set, and `platform_files` reads `RELAY_TUTORIAL` before falling back to
+the sibling. The three replay scripts pass it. **A default path is a claim about the filesystem**,
+and an unchecked one turns a checker into a checker of half its corpus that reports in the
+language of a pass — which is 044-1's lesson about a broken pattern filing a zero, one layer up.
+
+**THE REPAIR MUST RUN BEFORE NEW 25.** With the corpus complete, a replay now rewrites
+`services/api/Dockerfile` — a file belonging to new 19 — inside whatever chapter's trees the
+replay next builds. New 24 is tagged and is deliberately left alone; the Dockerfile goes with
+045-21's repair-replay list, where it lands in the chapter that owns the file.

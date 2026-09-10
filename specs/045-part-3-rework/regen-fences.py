@@ -66,10 +66,25 @@ def bodies(base, head):
                 d = git("diff", f"-U{width}", "--no-color", f"{base}..{head}", "--", f)
                 if unique_hunks(d, git("show", f"{base}:{f}") or None):
                     break
-            body = "\n".join(
-                l for l in d.split("\n")
-                if not l.startswith(("diff --git", "index ", "--- ", "+++ ", "new file mode"))
-            ).strip()
+            # THE HEADER IS STRIPPED BY POSITION, NOT BY PREFIX, AND A `.sql` FILE IS
+            # WHY. This filtered every line starting with `--- ` or `+++ `, which is
+            # right for the two header lines and catastrophic for a removed SQL
+            # comment: `-- a trigger that can never match` is emitted as
+            # `--- a trigger that can never match`, one `-` for the removal and two for
+            # the comment, and the filter deleted it as though it were a header.
+            #
+            # The fence then carried the ADDITIONS of a rewritten comment block and
+            # none of the REMOVALS, so `check-chapter` reported `hunk pre-image matched
+            # 0 times` — the generator producing a fence the checker rejects, which is
+            # the failure this file's own header warns about.
+            #
+            # Everything before the first `@@` is header and nothing after it is, so
+            # position decides it exactly. `git diff` always emits the hunks last.
+            lines = d.split("\n")
+            first_hunk = next(
+                (i for i, l in enumerate(lines) if l.startswith("@@")), len(lines)
+            )
+            body = "\n".join(lines[first_hunk:]).strip()
             out[f] = ("diff", body)
     return out
 

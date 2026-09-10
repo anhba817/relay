@@ -22,6 +22,12 @@
 # verifies, then repoints.
 set -euo pipefail
 WT=/home/dong/work/relay/tmp/part3-refactor
+# THE FENCED HALF OF THE CORPUS NEEDS THE TUTORIAL, and `$WT`'s parent has no
+# `relay-tutorial` beside it — which is the default `platform_files` used to take.
+# It silently returned an EMPTY fenced set, so every scan this script ran saw only
+# `SOURCE_SUFFIXES` and passed over `services/api/Dockerfile`, which is fenced and
+# has no extension. `refrules` now refuses an absent tutorial rather than shrinking.
+TUT=${RELAY_TUTORIAL:-/home/dong/work/relay/relay-tutorial}
 S=/home/dong/work/relay/specs/045-part-3-rework
 cd "$WT"
 
@@ -34,12 +40,12 @@ n=0
 for C in $(git rev-list --reverse part2-ch8..backup/pre-refs); do
   n=$((n+1))
   git read-tree --reset -u "$C"
-  RELAY_PLATFORM=$WT python3 "$S/rewrite-refs.py" --rule delete     --apply >/dev/null
-  RELAY_PLATFORM=$WT python3 "$S/rewrite-refs.py" --rule substitute --apply >/dev/null
+  RELAY_PLATFORM=$WT RELAY_TUTORIAL=$TUT python3 "$S/rewrite-refs.py" --rule delete     --apply >/dev/null
+  RELAY_PLATFORM=$WT RELAY_TUTORIAL=$TUT python3 "$S/rewrite-refs.py" --rule substitute --apply >/dev/null
   # The read class, decided by hand and recorded as a table. No --require-all here:
   # an early tree legitimately holds none of these yet. The caller asserts all 23
   # fire against the FINAL tree, which is where a typo becomes visible.
-  RELAY_PLATFORM=$WT python3 "$S/apply-read-class.py" --apply >/dev/null
+  RELAY_PLATFORM=$WT RELAY_TUTORIAL=$TUT python3 "$S/apply-read-class.py" --apply >/dev/null
   git add -A
   T=$(git write-tree)
   NEW=$(GIT_AUTHOR_NAME="$(git log -1 --format=%an "$C")" \

@@ -10,6 +10,12 @@
 # Usage: replay-repair.sh <base-ref> <head-ref>
 set -euo pipefail
 WT=/home/dong/work/relay/tmp/part3-refactor
+# THE FENCED HALF OF THE CORPUS NEEDS THE TUTORIAL, and `$WT`'s parent has no
+# `relay-tutorial` beside it — which is the default `platform_files` used to take.
+# It silently returned an EMPTY fenced set, so every scan this script ran saw only
+# `SOURCE_SUFFIXES` and passed over `services/api/Dockerfile`, which is fenced and
+# has no extension. `refrules` now refuses an absent tutorial rather than shrinking.
+TUT=${RELAY_TUTORIAL:-/home/dong/work/relay/relay-tutorial}
 S=/home/dong/work/relay/specs/045-part-3-rework
 cd "$WT"
 # `^{commit}` IS NOT OPTIONAL on an annotated tag; see replay-range.sh.
@@ -22,7 +28,7 @@ total=$(git rev-list --count "$1..$2")
 for C in $(git rev-list --reverse "$1..$2"); do
   n=$((n+1))
   git read-tree --reset -u "$C"
-  RELAY_PLATFORM=$WT python3 "$S/repair-welds.py" --apply >/dev/null
+  RELAY_PLATFORM=$WT RELAY_TUTORIAL=$TUT python3 "$S/repair-welds.py" --apply >/dev/null
   # `-u`, NOT `-A`, AND AN UNTRACKED FILE IS THE REASON.
   #
   # `read-tree --reset -u "$C"` makes the index exactly $C's tree, and the rewrite scripts

@@ -194,6 +194,23 @@ def fenced_paths(tutorial):
     import re as _re
     from pathlib import Path as _P
     tutorial = _P(tutorial)
+    # AND AN ABSENT TUTORIAL IS NOT AN EMPTY ONE, which is how this half of the corpus
+    # disappeared for the whole of the rebuild. `platform_files` defaults `tutorial` to
+    # `root.parent / "relay-tutorial"`, and `replay-range.sh` passes the rebuild WORKTREE
+    # as the root — `/home/dong/work/relay/tmp/part3-refactor`, whose parent holds no
+    # tutorial. `glob` on a missing directory yields nothing and `post-series.md` was
+    # skipped by its own `exists()` check, so `out` came back empty and the corpus
+    # collapsed to `SOURCE_SUFFIXES` in silence.
+    #
+    # Measured at the connection-metering chapter's tag: `classify-refs` said ONE
+    # reference in one file while `git grep` found `chapter 3.5` in three fenced
+    # Dockerfiles. The docstring above this function exists BECAUSE of those Dockerfiles.
+    # A default path is a claim about the filesystem, and this one is now checked.
+    if not tutorial.is_dir():
+        raise SystemExit(
+            f"refrules: no tutorial at {tutorial} — the fenced half of the corpus would "
+            f"be empty and every scan would pass over it. Set RELAY_TUTORIAL."
+        )
     if str(tutorial) in _FENCED_CACHE:
         return _FENCED_CACHE[str(tutorial)]
     out = set()
@@ -218,8 +235,12 @@ def platform_files(root, tutorial=None):
     types). `tutorial` defaults to the sibling checkout.
     """
     from pathlib import Path as _P
+    import os as _env
     root = _P(root)
-    tutorial = _P(tutorial) if tutorial else root.parent / "relay-tutorial"
+    # `RELAY_TUTORIAL` FIRST, because the rebuild's root has no tutorial beside it.
+    tutorial = (_P(tutorial) if tutorial
+                else _P(_env.environ["RELAY_TUTORIAL"]) if _env.environ.get("RELAY_TUTORIAL")
+                else root.parent / "relay-tutorial")
     fenced = fenced_paths(tutorial)
     # PRUNE, DO NOT FILTER AFTERWARDS. `sorted(root.rglob("*"))` descends into
     # `node_modules` and materialises the whole listing before any test runs: 34,620

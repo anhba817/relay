@@ -61,6 +61,27 @@ def main() -> int:
              for g in groups for p in g["pairs"]]
     fired = {old: 0 for old, _, _, _ in pairs}
 
+    # A LINE THAT IS DELIBERATELY THE SAME IN SEVERAL FILES IS DECLARED, NOT ASSUMED —
+    # and the declaration carries the COUNT, which is what makes it a check rather than
+    # a way out.
+    #
+    # The rule below refuses a pair that fires more than once, because a read-class
+    # decision is about one site a person read and firing elsewhere means the decision
+    # was applied where nobody looked. That is right almost always. It is wrong for a
+    # comment three lane configs carry verbatim: `// The quota relay, the fourth. Same
+    # reason as the other three.` appears in the coverage, api and dispatcher configs
+    # with identical neighbours, so no amount of context makes the left-hand side
+    # unique, and three separate pairs would be three copies of one decision.
+    #
+    # `expect` maps such a line to the number of places it is expected in. Firing a
+    # different number of times still fails — a fourth lane, or one deleted, and the
+    # count is wrong — so this widens what can be declared without widening what goes
+    # unchecked.
+    expect = {}
+    for g in groups:
+        for lhs, n in g.get("expect", {}).items():
+            expect[lhs] = n
+
     # THE GUARD RUNS BEFORE ANY FILE IS TOUCHED, and it did not always. It sat after
     # the write loop, so a table whose word-count check failed had ALREADY been applied:
     # the run printed `WORDS DROPPED`, exited 1, and left eighteen of nineteen
@@ -133,7 +154,19 @@ def main() -> int:
 
     total = sum(fired.values())
     missed = [old for old, n in fired.items() if n == 0]
-    doubled = [(old, n) for old, n in fired.items() if n > 1]
+    doubled = [(old, n) for old, n in fired.items()
+               if n > 1 and expect.get(old) != n]
+    # A DECLARED COUNT THAT DID NOT HAPPEN IS ALSO A FAILURE, in the direction a
+    # declaration normally hides: `expect` says three and the tree holds two.
+    #
+    # `n > 0` GUARDS IT, AND THE REPLAY IS WHY. These pairs run against every tree in a
+    # chapter's range, and a line only exists from the commit that writes it — so
+    # `expect: 3` means "wherever this fires, it fires three times", not "three in every
+    # tree". Without the guard the replay died on commit 1 of 9 with `DECLARED 3x, FIRED
+    # 0x`, which is the table telling the truth about a tree where the line is correctly
+    # absent. Matching nothing is already the table's normal case and is not an error.
+    miscounted = [(old, n, expect[old]) for old, n in fired.items()
+                  if old in expect and n > 0 and expect[old] != n]
 
     scope = "all groups" if group is None else f"group {group!r}"
     print(f"apply-read-class: {scope} — {len(pairs)} replacements, {total} applied, "
@@ -147,7 +180,9 @@ def main() -> int:
               f"them should — a mistyped left-hand side is silent otherwise",
               file=sys.stderr)
         return 1
-    if doubled:
+    for old, n, want in miscounted:
+        print(f"  DECLARED {want}x, FIRED {n}x: {old.splitlines()[0][:80]}", file=sys.stderr)
+    if doubled or miscounted:
         return 1
     return 0
 

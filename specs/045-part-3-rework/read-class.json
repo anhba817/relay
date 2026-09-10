@@ -849,6 +849,272 @@
      "    // (Deliberately not a chapter NUMBER: the deduplication chapter renumbered\n    // quotas once already, and a comment in a file fenced byte-exact into a\n    // published page goes stale silently. That chapter's rule — cite what a\n    // thing is, never where it will be. A grep for forward references is the\n    // gate, so this comment must not trip it either.)\n    //\n    // Putting one in a field named for the other would collapse in the schema\n    // what the prose spends a chapter drawing (research R31).\n"
     ]
    ]
+  },
+  {
+   "why": "new 23 (quotas). Thirty references, and most are the chapter citing ITSELF: the files are fenced into this page, so `(chapter 3.10, FR-RTL-08)` is a provenance tag sitting beside an id that already resolves, and the tag is what goes. `Chapter 3.10, User Story N` keeps the story and loses the number. The cross-references take subject names. Three pairs also do work no rule could: two reflow lines the substitution left past the column, one removes `FR-RTL-07, FR-RTL-07` — a range published's own id sweep printed as one id twice — and one rewrites a paragraph the reorder made false, about an unattributed send that no write path can produce since the sender chapter. `80% of 4 is 3.2` in `quotas.itest.ts` is NOT a chapter reference and is left alone; the read class routing it to a person is the class working. The `drops` entry `id`` is the tokeniser's view of `user_id` in the rewritten paragraph: the old text named the COLUMN a send leaves empty and the new one names the requirement that no send can, so the column drops out of the sentence deliberately. FIVE PAIRS DO NO SUBSTITUTION AT ALL. Four reflow lines the subject names pushed past the column — a name is longer than an ordinal, every time — and the fifth rewords `80% of 4 is 3.2` so the sentence carries no bare decimal: that `3.2` is arithmetic and not a reference, and leaving it meant `classify-refs` reporting one residual for ever. ONE PAIR IS DECLARED THREE TIMES OVER. The relay comment is carried verbatim by the coverage, api and dispatcher lane configs, with identical neighbours, so no context makes it unique and three pairs would be three copies of one decision. `expect` names the count, which keeps it checked: a fourth lane, or one removed, and the run fails.",
+   "drops": [
+    "3",
+    "10",
+    "id`"
+   ],
+   "pairs": [
+    [
+     "// Chapter 3.10's relay, the fourth. Same reason as the other three.",
+     "// The quota relay, the fourth. Same reason as the other three."
+    ],
+    [
+     "/** Set an environment's quota policy (chapter 3.10).",
+     "/** Set an environment's quota policy."
+    ],
+    [
+     "// Chapter 3.10 — the cap through the OTHER door, and what it leaves alone.",
+     "// The cap through the OTHER door, and what it leaves alone."
+    ],
+    [
+     "-- Chapter 3.10 — monthly usage quotas (FR-RTL-05 to FR-RTL-08).",
+     "-- Monthly usage quotas (FR-RTL-05 to FR-RTL-08)."
+    ],
+    [
+     "// Chapter 3.10 — monthly usage quotas (FR-RTL-05 to FR-RTL-08).",
+     "// Monthly usage quotas (FR-RTL-05 to FR-RTL-08)."
+    ],
+    [
+     " * (chapter 3.10, FR-RTL-05).",
+     " * (FR-RTL-05)."
+    ],
+    [
+     " * (chapter 3.10, FR-RTL-07).",
+     " * (FR-RTL-07)."
+    ],
+    [
+     "// THE CAP, CHECKED BEFORE THE MESSAGE IS WRITTEN (chapter 3.10, FR-RTL-08).",
+     "// THE CAP, CHECKED BEFORE THE MESSAGE IS WRITTEN (FR-RTL-08)."
+    ],
+    [
+     "// THE MONTH'S USAGE COMMITS WITH THE MESSAGE (chapter 3.10, FR-RTL-05).",
+     "// THE MONTH'S USAGE COMMITS WITH THE MESSAGE (FR-RTL-05)."
+    ],
+    [
+     "/** Refuse the send if a hard cap is already met (chapter 3.10, FR-RTL-08).",
+     "/** Refuse the send if a hard cap is already met (FR-RTL-08)."
+    ],
+    [
+     "// ONE THROW, AND IT IS THE ONLY ONE (chapter 3.10, FR-RTL-08).",
+     "// ONE THROW, AND IT IS THE ONLY ONE (FR-RTL-08)."
+    ],
+    [
+     "// The quota relay's home (chapter 3.10). Same shape as the notification",
+     "// The quota relay's home. Same shape as the notification"
+    ],
+    [
+     "// Chapter 3.10, User Story 1 — the month is counted, and the count survives.",
+     "// User Story 1 — the month is counted, and the count survives."
+    ],
+    [
+     "// Chapter 3.10, User Story 2 — running out is predictable.",
+     "// User Story 2 — running out is predictable."
+    ],
+    [
+     "// Chapter 3.10, User Story 3 — nobody is surprised.",
+     "// User Story 3 — nobody is surprised."
+    ],
+    [
+     "  /** Write a row for each threshold a usage increase crossed (chapter 3.10,\n   * FR-RTL-07, FR-RTL-07).",
+     "  /** Write a row for each threshold a usage increase crossed (FR-RTL-07)."
+    ],
+    [
+     "/** The outbox drain, a FOURTH time (chapter 3.10) — after the outbox chapter's events, the webhook dispatcher chapter's\n * deliveries and the mail-transport chapter's disablement emails. Same claim predicate, same\n * per-row error handling, same required batch size.",
+     "/** The outbox drain, a FOURTH time — after the outbox chapter's events, the webhook\n * dispatcher chapter's deliveries and the mail-transport chapter's disablement\n * emails. Same claim predicate, same per-row error handling, same required batch\n * size."
+    ],
+    [
+     "// THE OUTBOX PATTERN, A FOURTH TIME (chapter 3.10) — after the outbox chapter's events, the webhook dispatcher chapter's\n// deliveries and the mail-transport chapter's disablement emails. Same shape on purpose: a table whose",
+     "// THE OUTBOX PATTERN, A FOURTH TIME — after the outbox chapter's events, the webhook\n// dispatcher chapter's deliveries and the mail-transport chapter's disablement\n// emails. Same shape on purpose: a table whose"
+    ],
+    [
+     "-- The outbox chapter published events, 3.5 dispatched webhook deliveries, 3.9 sent\n-- disablement emails.",
+     "-- The outbox chapter published events, the webhook dispatcher chapter dispatched\n-- webhook deliveries, the mail-transport chapter sent disablement emails."
+    ],
+    [
+     "// 3.8 was offered it for rate-limit policy and refused it in prose, on the",
+     "// the rate-limit chapter was offered it for rate-limit policy and refused it in prose, on the"
+    ],
+    [
+     "    // be switched off deliberately (FR-RTL-06). This is the distinction chapter 3.8\n    // needed nullable columns for, and it survives the move to jsonb.",
+     "    // be switched off deliberately (FR-RTL-06). This is the distinction the\n    // rate-limit chapter needed nullable columns for, and it survives the move to jsonb."
+    ],
+    [
+     "// `connection_minutes` is chapter 3.11. Until then a config naming it is a",
+     "// `connection_minutes` is the connection-metering chapter's. Until then a config naming it is a"
+    ],
+    [
+     "/** The dimensions a quota is measured in. `connection_minutes` is chapter 3.11. */",
+     "/** The dimensions a quota is measured in. `connection_minutes` belongs to the\n * connection-metering chapter. */"
+    ],
+    [
+     " * fault this whole lane has been recording since chapter 3.3. */",
+     " * fault this whole lane has been recording since the outbox chapter. */"
+    ],
+    [
+     "-- A SEND WITH NO `user_id` WRITES NO ROW. A key-authenticated REST send is\n-- unattributed by design since chapter 3.3, and an unattributed send counts\n-- toward the message quota and toward no user.",
+     "-- EVERY SEND WRITES A ROW, BECAUSE EVERY SEND HAS A SENDER. This paragraph used to\n-- say the opposite — that a key-authenticated REST send is unattributed by design,\n-- and that an unattributed send counts toward the message quota and toward no\n-- user — which was true of a platform whose `sendMessage` took an optional\n-- `userId`. The sender chapter made it required, so the state described here is one\n-- no write path can reach and the count of distinct users IS the count of senders."
+    ],
+    [
+     "-- alike, and the string `'0'` for zero. The distinction 3.8 needed nullable\n-- columns for survives the move.",
+     "-- alike, and the string `'0'` for zero. The distinction the rate-limit chapter\n-- needed nullable columns for survives the move."
+    ],
+    [
+     "-- webhook deliveries, the mail-transport chapter sent disablement emails. Each is a table whose claim predicate starts null, drained\n-- by a relay, retried by falling due again.",
+     "-- webhook deliveries, the mail-transport chapter sent disablement emails. Each is\n-- a table whose claim predicate starts null, drained by a relay, retried by\n-- falling due again."
+    ],
+    [
+     " * sit on the mail-transport chapter's version is not repeated here: it discarded a row's failure with no\n * log line, and feature 030's R48 removed it after finding it as this file's last",
+     " * sit on the mail-transport chapter's version is not repeated here: it discarded a\n * row's failure with no log line, and feature 030's R48 removed it after finding it\n * as this file's last"
+    ],
+    [
+     "// THE OUTBOX, A FOURTH TIME — after the outbox chapter's events, the webhook dispatcher chapter's deliveries and the mail-transport chapter's\n// disablement emails.",
+     "// THE OUTBOX, A FOURTH TIME — after the outbox chapter's events, the webhook\n// dispatcher chapter's deliveries and the mail-transport chapter's disablement\n// emails."
+    ],
+    [
+     "// codebase that no test enters — the outbox chapter's, the webhook dispatcher chapter's and the mail-transport chapter's all report the\n// same hole, and `notification-relay.ts` sits at 58.06% statements because of\n// it. Every suite drives `drainOnce()` directly, which is the right way to",
+     "// codebase that no test enters — the outbox chapter's, the webhook dispatcher\n// chapter's and the mail-transport chapter's all report the same hole, and\n// `notification-relay.ts` sits at 58.06% statements because of it. Every suite\n// drives `drainOnce()` directly, which is the right way to"
+    ],
+    [
+     "    // fourth message clears 80% and 100% in one step, because 80% of 4 is 3.2",
+     "    // fourth message clears 80% and 100% in one step, because four fifths of four is\n    // not a whole message"
+    ]
+   ],
+   "expect": {
+    "// Chapter 3.10's relay, the fourth. Same reason as the other three.": 3
+   }
+  },
+  {
+   "why": "new 24 (metering). Twenty-six pairs, and every one names old 3.10 -> the quota chapter or old 3.11 -> this chapter. They arrived with the port rather than with the rebuild: the published commits carry the ordinals the convention removed. Three of the pairs are not references at all: two tags that OPEN a parenthetical continuing on the next line, which the delete rule now refuses rather than orphaning the `(`, and one id list published's own renumbering collapsed into `FR-RTL-05/FR-RTL-05/FR-RTL-05` — three distinct clauses printed as one, three times.",
+   "pairs": [
+    [
+     "-- Chapter 3.10 metered messages sent and distinct active users and stopped",
+     "-- The quota chapter metered messages sent and distinct active users and stopped"
+    ],
+    [
+     "-- The policy: the one-line change chapter 3.10 promised, priced.",
+     "-- The policy: the one-line change the quota chapter promised, priced."
+    ],
+    [
+     "-- distinct connections instead — chapter 3.10 made exactly this trade for",
+     "-- distinct connections instead — the quota chapter made exactly this trade for"
+    ],
+    [
+     "-- No fifth table. Chapter 3.10 said \"four concrete tables that look alike is a",
+     "-- No fifth table. The quota chapter said \"four concrete tables that look alike is a"
+    ],
+    [
+     "  // --- chapter 3.11: one credential per service ---------------------------",
+     "  // --- one credential per service -----------------------------------------"
+    ],
+    [
+     "/** Write a row for each threshold a usage increase crossed (chapter 3.10,\n * FR-RTL-07), and the organisation to tell about it.",
+     "/** Write a row for each threshold a usage increase crossed (FR-RTL-07), and\n * the organisation to tell about it."
+    ],
+    [
+     " * STANDALONE SINCE CHAPTER 3.11, and the reason is the same one `usageFor` and\n * `creditConnectionMinutes` give:",
+     " * STANDALONE SINCE THE CONNECTION-METERING CHAPTER, and the reason is the same\n * one `usageFor` and `creditConnectionMinutes` give:"
+    ],
+    [
+     " * private methods on `Repository` stay as one-line delegations, so chapter 3.10's\n * two call sites inside `sendMessage` read exactly as they did.",
+     " * private methods on `Repository` stay as one-line delegations, so the quota\n * chapter's two call sites inside `sendMessage` read exactly as they did."
+    ],
+    [
+     " * request rather than a heavier version of the first\", because chapter 3.10's H2\n * had refused to put a usage join inside `environmentLimits`.",
+     " * request rather than a heavier version of the first\", because the quota\n * chapter's H2 had refused to put a usage join inside `environmentLimits`."
+    ],
+    [
+     " * one chapter 3.10's T033 already recorded — an extra round trip holds a pooled",
+     " * one the quota chapter's T033 already recorded — an extra round trip holds a pooled"
+    ],
+    [
+     " * THE LOCK CHAPTER 3.10 WANTED AND COULD NOT HAVE. Crediting is read-then-write,\n * so it takes `SELECT … FOR UPDATE` on the accounting row. 3.10 needed the same",
+     " * THE LOCK THE QUOTA CHAPTER WANTED AND COULD NOT HAVE. Crediting is\n * read-then-write, so it takes `SELECT … FOR UPDATE` on the accounting row. That\n * chapter needed the same"
+    ],
+    [
+     "      // connections for the month, which is chapter 3.10's R1 argument in a new",
+     "      // connections for the month, which is the quota chapter's R1 argument in a new"
+    ],
+    [
+     "    // rather than a heavier `environmentLimits`, because chapter 3.10's H2 had",
+     "    // rather than a heavier `environmentLimits`, because the quota chapter's H2 had"
+    ],
+    [
+     "    // refusal would reach the gateway as `internal_error` — chapter 3.10's H3.\n    let policy;",
+     "    // refusal would reach the gateway as `internal_error` — the quota chapter's H3.\n    let policy;"
+    ],
+    [
+     "// COMMITTED RATHER THAN AD-HOC, because chapter 3.10's T033 measured with a",
+     "// COMMITTED RATHER THAN AD-HOC, because the quota chapter's T033 measured with a"
+    ],
+    [
+     "    // scan, which is the correction chapter 3.10's first analysis pass had to",
+     "    // scan, which is the correction the quota chapter's first analysis pass had to"
+    ],
+    [
+     "// The gateway's only road to a number it can see and cannot write (chapter\n// 3.11, constitution IV).",
+     "// The gateway's only road to a number it can see and cannot write\n// (constitution IV)."
+    ],
+    [
+     "      // as `internal_error` — chapter 3.10's H3.",
+     "      // as `internal_error` — the quota chapter's H3."
+    ],
+    [
+     "      // Four fields, as every refusal on this contract has since chapter 3.8.",
+     "      // Four fields, as every refusal on this contract has since the rate-limit\n      // chapter."
+    ],
+    [
+     "// applied. Chapter 3.10 called the parser \"the second gate rather than the only",
+     "// applied. The quota chapter called the parser \"the second gate rather than the only"
+    ],
+    [
+     "  it(\"still refuses everything chapter 3.10's clauses refused\", async () => {",
+     "  it(\"still refuses everything the quota chapter's clauses refused\", async () => {"
+    ],
+    [
+     "    // drops. Both of 3.10's dimensions are re-checked here for that reason.",
+     "    // drops. Both of that chapter's dimensions are re-checked here for that reason."
+    ],
+    [
+     "    // THIS TEST NAMED `connection_minutes` UNTIL CHAPTER 3.11, with the comment",
+     "    // THIS TEST NAMED `connection_minutes` UNTIL THE METERING CHAPTER, with the comment"
+    ],
+    [
+     "// filters by a per-test recipient. Chapter 3.10's suite established that shape",
+     "// filters by a per-test recipient. The quota chapter's suite established that shape"
+    ],
+    [
+     "    // 80% of 4 is 3.2, which chapter 3.10 got wrong twice before writing it down.",
+     "    // 80% of 4 is 3.2, which the quota chapter got wrong twice before writing it down."
+    ],
+    [
+     "  it(\"keeps the other two dimensions exactly as chapter 3.10 shipped them\", () => {",
+     "  it(\"keeps the other two dimensions exactly as the quota chapter shipped them\", () => {"
+    ],
+    [
+     "/** Everything the connect path needs, in ONE round trip (chapter 3.11,\n * FR-RTL-05, FR-RTL-06).",
+     "/** Everything the connect path needs, in ONE round trip (FR-RTL-05, FR-RTL-06)."
+    ],
+    [
+     "    // THE CROSSINGS, IN THE SAME TRANSACTION AS THE CREDIT (chapter 3.11,\n    // FR-RTL-07/FR-RTL-07). The report knows the figure before and after, so it knows\n    // which thresholds it crossed — which is why this chapter has no periodic",
+     "    // THE CROSSINGS, IN THE SAME TRANSACTION AS THE CREDIT (FR-RTL-07). The report\n    // knows the figure before and after, so it knows which thresholds it crossed —\n    // which is why this chapter has no periodic"
+    ],
+    [
+     "/** Credit a batch of usage reports (FR-RTL-05/FR-RTL-05/FR-RTL-05).",
+     "/** Credit a batch of usage reports (FR-RTL-05)."
+    ],
+    [
+     "/** What a usage report is worth, in one function (FR-RTL-05/FR-RTL-05).",
+     "/** What a usage report is worth, in one function (FR-RTL-05)."
+    ],
+    [
+     "   * Sorting subjects as strings puts \"100%\" before \"50%\" — chapter 3.10 got\n   * that wrong once and left the warning. */",
+     "   * Sorting subjects as strings puts \"100%\" before \"50%\" — the quota chapter got\n   * that wrong once and left the warning. */"
+    ]
+   ]
   }
  ]
 }
