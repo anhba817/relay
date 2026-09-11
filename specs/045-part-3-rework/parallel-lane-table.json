@@ -1,0 +1,72 @@
+[
+  {
+    "file": "services/api/vitest.integration.config.mts",
+    "old": "    // ONE FILE AT A TIME, BECAUSE THEY SHARE ONE DATABASE.\n    //\n    // Every suite here runs migrations before it starts. Vitest runs FILES in parallel\n    // by default, so several of them issue `CREATE TYPE` against the same schema at the\n    // same moment and Postgres answers `duplicate key value violates unique constraint\n    // \"pg_type_typname_nsp_index\"` — an error about its own catalogue, which reads like\n    // a driver fault and is not one.\n    //\n    // It only bites when a migration is PENDING. With the schema already applied every\n    // suite finds nothing to do and the race has no window, which is why serialising the\n    // turbo tasks was enough until this chapter added a table.\n    fileParallelism: false,\n",
+    "new": "    // FILES IN PARALLEL AGAIN, AND THREE ASSERTIONS ARE WHY IT COULD NOT BE.\n    //\n    // This lane ran one file at a time from the outbox chapter, for a real reason: a\n    // PENDING migration lets two suites issue `CREATE TYPE` against one schema, and\n    // Postgres answers `duplicate key value violates unique constraint\n    // \"pg_type_typname_nsp_index\"` — an error about its own catalogue that reads like a\n    // driver fault. That window is one run wide, the first after a schema change.\n    //\n    // Serialising every file for ever to cover it costs about 170 seconds a battery. What\n    // actually kept the files apart was three assertions scoped wider than their subject —\n    // a whole-table `outbox` count, and two reads of a wall-clock minute bucket — each of\n    // which failed for a neighbour's reason and named no neighbour. They are fixed where\n    // they live. The migration race is left to the one run it can happen on.\n",
+    "from_chapter": 16,
+    "note": "the api lane stops serialising once the three assertions are scoped"
+  },
+  {
+    "file": "services/gateway/vitest.integration.config.mts",
+    "old": "    // ONE FILE AT A TIME, BECAUSE THEY SHARE ONE DATABASE.\n    //\n    // Every suite here runs migrations before it starts. Vitest runs FILES in parallel\n    // by default, so several of them issue `CREATE TYPE` against the same schema at the\n    // same moment and Postgres answers `duplicate key value violates unique constraint\n    // \"pg_type_typname_nsp_index\"` — an error about its own catalogue, which reads like\n    // a driver fault and is not one.\n    //\n    // It only bites when a migration is PENDING. With the schema already applied every\n    // suite finds nothing to do and the race has no window, which is why serialising the\n    // turbo tasks was enough until this chapter added a table.\n    fileParallelism: false,\n",
+    "new": "    // FILES IN PARALLEL AGAIN, AND THREE ASSERTIONS ARE WHY IT COULD NOT BE.\n    //\n    // This lane ran one file at a time from the outbox chapter, for a real reason: a\n    // PENDING migration lets two suites issue `CREATE TYPE` against one schema, and\n    // Postgres answers `duplicate key value violates unique constraint\n    // \"pg_type_typname_nsp_index\"` — an error about its own catalogue that reads like a\n    // driver fault. That window is one run wide, the first after a schema change.\n    //\n    // Serialising every file for ever to cover it costs about 170 seconds a battery. What\n    // actually kept the files apart was three assertions scoped wider than their subject —\n    // a whole-table `outbox` count, and two reads of a wall-clock minute bucket — each of\n    // which failed for a neighbour's reason and named no neighbour. They are fixed where\n    // they live. The migration race is left to the one run it can happen on.\n",
+    "from_chapter": 16,
+    "note": "the gateway lane, same"
+  },
+  {
+    "file": "services/gateway/src/presence.itest.ts",
+    "old": "      const result = (await pool.query(\"select count(*)::int as n from outbox\")) as {",
+    "new": "      /** THIS ENVIRONMENT'S ROWS, NOT THE TABLE'S.\n       *\n       * This counted `select count(*) from outbox` — every row written by anything. The\n       * assertion it serves is \"a presence transition writes no outbox row\", and the lane\n       * runs this package's files in PARALLEL, so `membership.itest.ts` sending a message\n       * next door moves the number and the test reports `expected 614255 to be 614250`.\n       * Nothing in that failure suggests a neighbour.\n       *\n       * The outbox has no `environment_id` column — it keys on `subject`, and the subject\n       * carries the environment, so that is what scopes it. */\n      const result = (await pool.query(\n        \"select count(*)::int as n from outbox where subject like '%' || $1 || '%'\",\n        [environment.id],\n      )) as {",
+    "from_chapter": 13,
+    "note": "carried from 043 — the count was the table's, not the environment's"
+  },
+  {
+    "file": "services/gateway/src/presence.itest.ts",
+    "old": "    createPool: () => { query: (sql: string) => Promise<unknown> };",
+    "new": "    createPool: () => { query: (sql: string, params?: unknown[]) => Promise<unknown> };",
+    "from_chapter": 13,
+    "note": "the scoped query takes a parameter"
+  },
+  {
+    "file": "services/gateway/src/limits.itest.ts",
+    "old": "  const key = (operation: string) =>\n    `rl:${api.environmentId}:${operation}:` +\n    `${Math.floor(Date.now() / 60_000) * 60_000}`;\n\n  const count = async (operation: string): Promise<number> =>\n    Number((await redis.get(key(operation))) ?? 0);",
+    "new": "  const key = (operation: string, atMs: number = Date.now()) =>\n    `rl:${api.environmentId}:${operation}:` +\n    `${Math.floor(atMs / 60_000) * 60_000}`;\n\n  /** THE WINDOW IS WALL-CLOCK, SO A TEST CAN SPAN TWO OF THEM.\n   *\n   * `limits.ts:115` keys on `Math.floor(now / 60_000) * 60_000`. The bucket rolls at the\n   * top of every minute whatever the suite is doing, so ten sends either side of the\n   * boundary write two keys — and reading one of them reports `7` where the test means\n   * `10`, which looks exactly like a limiter dropping increments.\n   *\n   * Measured, twice: run 1 of feature 043's second battery and run 2 of its third.\n   * Nothing in either failure named a clock.\n   *\n   * SUMMING RATHER THAN SLEEPING, and the first attempt did sleep. Waiting for the next\n   * boundary made the test correct and blew its 5-second timeout the moment the guard\n   * actually fired — a fix whose failure mode is worse than the fault, because a timeout\n   * says nothing about what it was waiting for. This asserts the same number without\n   * spending any time: ten sends are ten sends however the minute falls across them. */\n  const windowsSince = (sinceMs: number): number[] => {\n    const first = Math.floor(sinceMs / 60_000) * 60_000;\n    const last = Math.floor(Date.now() / 60_000) * 60_000;\n    const out: number[] = [];\n    for (let w = first; w <= last; w += 60_000) out.push(w);\n    return out;\n  };\n\n  let testStartedAt = Date.now();\n\n  const count = async (operation: string): Promise<number> => {\n    let total = 0;\n    for (const w of windowsSince(testStartedAt)) {\n      total += Number((await redis.get(key(operation, w))) ?? 0);\n    }\n    return total;\n  };",
+    "from_chapter": 22,
+    "note": "carried from 043: the counting window is wall-clock, so a test that spends ten operations across the top of a minute writes two keys and reads one. Sums the windows instead of sleeping to the boundary — the first attempt slept, and blew the test's own five-second timeout the moment the guard fired."
+  },
+  {
+    "file": "services/gateway/src/limits.itest.ts",
+    "old": "import { afterAll, afterEach, beforeAll, describe, expect, it } from \"vitest\";",
+    "new": "import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from \"vitest\";",
+    "from_chapter": 22,
+    "note": "the summing needs a per-test start instant"
+  },
+  {
+    "file": "services/gateway/src/limits.itest.ts",
+    "old": "  afterEach(async () => {",
+    "new": "  beforeEach(() => {\n    // Where `count()` starts summing, and where `afterEach` starts deleting.\n    testStartedAt = Date.now();\n  });\n\n  afterEach(async () => {",
+    "from_chapter": 22,
+    "note": "pins the instant each test's counting starts from"
+  },
+  {
+    "file": "services/api/src/notifications/notifications.itest.ts",
+    "from_commit": "1309167ac6323729500ef9eb136573e904e31ced",
+    "note": "the scoped reading `drainOnce`'s global count cannot give",
+    "old": "  const relay = () =>\n    createNotificationRelay({",
+    "new": "  /** What is STILL CLAIMABLE for one endpoint. `drainOnce` returns a count over the\n   * whole table, so an assertion on that number is an assertion about every suite\n   * sharing the lane; this asks the same question about the row under test. */\n  const claimable = async (endpointId: string) => {\n    const { rows } = await pool.query(\n      \"SELECT count(*)::int AS n FROM webhook_disable_notifications \" +\n        \"WHERE endpoint_id = $1 AND delivered_at IS NULL\",\n      [endpointId],\n    );\n    return (rows[0] as { n: number }).n;\n  };\n\n  const relay = () =>\n    createNotificationRelay({"
+  },
+  {
+    "file": "services/api/src/notifications/notifications.itest.ts",
+    "from_commit": "1309167ac6323729500ef9eb136573e904e31ced",
+    "note": "FR-019: the second pass claims nothing HERE — a global zero is somebody else's claim",
+    "old": "    const second = relay();\n    expect(await second.drainOnce()).toBe(0);\n    await second.stop();\n    // Still one. `delivered_at IS NULL` is the whole of the deduplication, which\n    // is why this needed no new column.\n",
+    "new": "    // SCOPED TO THIS ROW, not to the drain's total. `drainOnce` returns a count\n    // over the whole table, so `toBe(0)` there is a claim about every suite\n    // sharing the lane — it goes red when a neighbouring file has a claimable\n    // row of its own, for a reason with nothing to do with FR-019. The fault\n    // the `disable` helper above documents, one assertion further in, and\n    // invisible for as long as the lane ran this file with nothing beside it.\n    expect(await claimable(endpointId)).toBe(0);\n    const second = relay();\n    await second.drainOnce();\n    await second.stop();\n    // Still one. `delivered_at IS NULL` is the whole of the deduplication, which\n    // is why this needed no new column.\n"
+  },
+  {
+    "file": "services/api/src/notifications/notifications.itest.ts",
+    "from_commit": "1309167ac6323729500ef9eb136573e904e31ced",
+    "note": "FR-023: the unaddressable row is marked — asked of the row, not of the lane",
+    "old": "    // Marked, so the next pass does not reclaim it.\n    const again = relay();\n    expect(await again.drainOnce()).toBe(0);\n    await again.stop();\n",
+    "new": "    // Marked, so the next pass does not reclaim it — asked of THIS endpoint's\n    // row rather than of the drain's global count, for the reason the\n    // deduplication test above gives.\n    expect(await claimable(endpointId)).toBe(0);\n    const again = relay();\n    await again.drainOnce();\n    await again.stop();\n"
+  }
+]

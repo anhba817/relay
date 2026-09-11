@@ -1,0 +1,65 @@
+[
+  {
+    "file": "services/gateway/src/typing.itest.ts",
+    "from_chapter": 15,
+    "note": "a flat sleep before an arrival assertion is a bet on an idle lane",
+    "old": "\ndescribe(\"a typing signal on its way out\", () => {\n",
+    "new": "\n/** WAIT FOR THINGS TO ARRIVE, rather than for a clock to run out.\n *\n * A flat `settle(n)` before an assertion is a bet that the lane is idle, and this lane\n * is not: it runs four files at once beside an api lane doing the same. A frame still\n * in Redis when the clock expires reads as `expected [] to have a length of 1 but got\n * 0` — a message that names no neighbour and no load. It cost one run of a twenty-run\n * battery and one of six amplified runs, in two different tests of this file.\n *\n * ARRIVAL IS A CONDITION; ABSENCE IS NOT. This polls to a deadline and returns the\n * moment the count is reached, so an idle lane pays nothing for it. Proving that\n * nothing ELSE arrives cannot be shortened that way, so the tests making THAT claim\n * keep their quiet window — `settle(1_500)` for the silence after a refused signal,\n * `settle(120)` for the one inside a debounce interval. Those sleeps are the\n * instrument; the ones this replaced were a guess. */\nconst arrived = async (\n  of: () => unknown[],\n  count: number,\n  timeoutMs = 10_000,\n): Promise<void> => {\n  const deadline = Date.now() + timeoutMs;\n  while (of().length < count && Date.now() < deadline) await settle(25);\n};\n\ndescribe(\"a typing signal on its way out\", () => {\n"
+  },
+  {
+    "file": "services/gateway/src/typing.itest.ts",
+    "from_chapter": 15,
+    "note": "a flat sleep before an arrival assertion is a bet on an idle lane",
+    "old": "    socket.send(JSON.stringify({ type: \"typing.send\", payload: { channel: mine } }));\n    await settle();\n    expect(watchMine.signals).toEqual([\n",
+    "new": "    socket.send(JSON.stringify({ type: \"typing.send\", payload: { channel: mine } }));\n    await arrived(() => watchMine.signals, 1);\n    expect(watchMine.signals).toEqual([\n"
+  },
+  {
+    "file": "services/gateway/src/typing.itest.ts",
+    "from_chapter": 15,
+    "note": "a flat sleep before an arrival assertion is a bet on an idle lane",
+    "old": "    await acked(signaller);\n    signaller.send(JSON.stringify({ type: \"typing.send\", payload: { channel } }));\n    await settle();\n\n    expect(typingFor(outsideFrames, channel)).toEqual([]);\n",
+    "new": "    await acked(signaller);\n    signaller.send(JSON.stringify({ type: \"typing.send\", payload: { channel } }));\n    // The REFUSAL is the arrival. A log line has to cross the gateway before it can be\n    // counted, and `settle()` bet 300ms on that — `expected [] to have a length of 1 but\n    // got 0`, once in six amplified runs, naming neither the line nor the load.\n    await arrived(() => lines.filter((l) => l[\"msg\"] === \"typing.failed\"), 1);\n\n    expect(typingFor(outsideFrames, channel)).toEqual([]);\n"
+  },
+  {
+    "file": "services/gateway/src/typing.itest.ts",
+    "from_chapter": 15,
+    "note": "a flat sleep before an arrival assertion is a bet on an idle lane",
+    "old": "    socket.send(JSON.stringify({ type: \"typing.send\", payload: { channel } }));\n    await settle();\n    expect(watcher.signals, \"the third was after it\").toHaveLength(2);\n",
+    "new": "    socket.send(JSON.stringify({ type: \"typing.send\", payload: { channel } }));\n    await arrived(() => watcher.signals, 2);\n    expect(watcher.signals, \"the third was after it\").toHaveLength(2);\n"
+  },
+  {
+    "file": "services/gateway/src/typing.itest.ts",
+    "from_chapter": 15,
+    "note": "a flat sleep before an arrival assertion is a bet on an idle lane",
+    "old": "    b.send(JSON.stringify({ type: \"typing.send\", payload: { channel: first } }));\n    await settle();\n    expect(watchFirst.signals).toHaveLength(2);\n",
+    "new": "    b.send(JSON.stringify({ type: \"typing.send\", payload: { channel: first } }));\n    await arrived(() => watchFirst.signals, 2);\n    expect(watchFirst.signals).toHaveLength(2);\n"
+  },
+  {
+    "file": "services/gateway/src/typing.itest.ts",
+    "from_chapter": 15,
+    "note": "a flat sleep before an arrival assertion is a bet on an idle lane",
+    "old": "    a.send(JSON.stringify({ type: \"typing.send\", payload: { channel: second } }));\n    await settle();\n    expect(watchSecond.signals).toHaveLength(1);\n",
+    "new": "    a.send(JSON.stringify({ type: \"typing.send\", payload: { channel: second } }));\n    await arrived(() => watchSecond.signals, 1);\n    expect(watchSecond.signals).toHaveLength(1);\n"
+  },
+  {
+    "file": "services/gateway/src/typing.itest.ts",
+    "from_chapter": 15,
+    "note": "a flat sleep before an arrival assertion is a bet on an idle lane",
+    "old": "    signaller.send(JSON.stringify({ type: \"typing.send\", payload: { channel } }));\n    await settle(250);\n    expect(typingFor(frames, channel)).toHaveLength(1);\n",
+    "new": "    signaller.send(JSON.stringify({ type: \"typing.send\", payload: { channel } }));\n    await arrived(() => typingFor(frames, channel), 1);\n    expect(typingFor(frames, channel)).toHaveLength(1);\n"
+  },
+  {
+    "file": "services/gateway/src/typing.itest.ts",
+    "from_chapter": 15,
+    "note": "a flat sleep before an arrival assertion is a bet on an idle lane",
+    "old": "    // And the backfill still arrives afterwards, so the resume was real.\n    await settle(900);\n    expect(frames.filter((f) => f.type === \"message.created\")).toHaveLength(1);\n",
+    "new": "    // And the backfill still arrives afterwards, so the resume was real.\n    await arrived(() => frames.filter((f) => f.type === \"message.created\"), 1);\n    expect(frames.filter((f) => f.type === \"message.created\")).toHaveLength(1);\n"
+  },
+  {
+    "file": "services/gateway/src/typing.itest.ts",
+    "from_chapter": 15,
+    "note": "a flat sleep before an arrival assertion is a bet on an idle lane",
+    "old": "\n    await settle(700);\n\n",
+    "new": "\n    // FOUR FRAMES, THEN A QUIET WINDOW — not 700ms and hope.\n    //\n    // Both halves of this claim need a different wait. \"Each kind arrives\" is a\n    // condition, so it is polled to a deadline and costs nothing on an idle lane.\n    // \"Nothing arrived twice\" is the ABSENCE of a fifth frame, which no condition can\n    // confirm early — so the quiet window stays, taken AFTER the four have landed\n    // rather than instead of waiting for them.\n    await arrived(() => frames.filter((f) => f.type !== \"connection.ack\"), 4);\n    await settle(300);\n\n"
+  }
+]

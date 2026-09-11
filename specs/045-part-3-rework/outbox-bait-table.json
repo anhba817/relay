@@ -1,0 +1,23 @@
+[
+  {
+    "file": "packages/test-harness/src/sentinel.ts",
+    "from_commit": "4588d71a2fe4e0d1470321bbdf960e5e5b7ca76b",
+    "note": "a subject no stream accepts, on a row a real drain will reach",
+    "old": "  // DRAIN BAIT: unpublished events. `outbox` carries no environment_id — it is\n  // platform bookkeeping — so the subject is what identifies these, and it is also\n  // why the trigger cannot guard them (data-model.md). The count is `BAIT_ROWS` and\n  // not one, because a single row cannot tell a batch that ignored its limit from\n  // one that honoured it.\n  await q(\n    `INSERT INTO outbox (subject, payload)\n     SELECT $1, '{}'::jsonb FROM generate_series(1, $2)`,\n    [`${s.name}.bait`, BAIT_ROWS],\n  );\n",
+    "new": "  // DRAIN BAIT: unpublished events. `outbox` carries no environment_id — it is\n  // platform bookkeeping — so the subject is what identifies these, and it is also\n  // why the trigger cannot guard them (data-model.md). The count is `BAIT_ROWS` and\n  // not one, because a single row cannot tell a batch that ignored its limit from\n  // one that honoured it.\n  //\n  // AND IT IS AN `events.` SUBJECT WITH AN ENVELOPE ID, WHICH IT WAS NOT. Bait\n  // imitates an unpublished event, and these rows sit in the one table the outbox\n  // chapter's relay drains GLOBALLY, oldest first. A bait row is therefore reachable\n  // by any test that drains for real, and the first version was unreachable in the\n  // two ways that matter: `EVENTS` accepts `events.>` and nothing accepts\n  // `<name>.bait`, so a real publish came back `NatsError: 503`; and `'{}'` carries\n  // no `id`, so `publishPending` handed the broker `msgID: undefined` and every bait\n  // row looked like the same event. Both were measured: 3,200 pending rows in 16\n  // subjects, every unroutable row in this lane and no other.\n  //\n  // A FIXTURE THAT IMITATES A THING MUST BE USABLE EVERYWHERE THE THING IS. The\n  // count, the table and the unpublished state — everything the bait is FOR — are\n  // unchanged; what changed is the two fields that made it a landmine rather than\n  // bait.\n  await q(\n    `INSERT INTO outbox (subject, payload)\n     SELECT $1, jsonb_build_object('id', gen_random_uuid()::text, 'type', 'bait')\n       FROM generate_series(1, $2)`,\n    [`events.${s.name}.bait`, BAIT_ROWS],\n  );\n"
+  },
+  {
+    "file": "packages/test-harness/src/sentinel.ts",
+    "from_commit": "4588d71a2fe4e0d1470321bbdf960e5e5b7ca76b",
+    "note": "the cleanup has to match the subject the plant writes",
+    "old": "  await q(`DELETE FROM outbox         WHERE subject = $1`, [`${s.name}.bait`]);\n",
+    "new": "  // The subject the plant below writes, not the one it used to: a cleanup keyed on\n  // a stale subject leaves every row it was meant to remove.\n  await q(`DELETE FROM outbox         WHERE subject = $1`, [`events.${s.name}.bait`]);\n"
+  },
+  {
+    "file": "services/api/src/outbox/outbox.itest.ts",
+    "from_chapter": 5,
+    "note": "exactly-once is a claim about the rows this test wrote",
+    "old": "    expect(await outboxDepthFor(db, env.id)).toBe(0);\n    const all = [...a.sent, ...b.sent].map((m) => m.id);\n    expect(new Set(all).size).toBe(all.length);\n",
+    "new": "    expect(await outboxDepthFor(db, env.id)).toBe(0);\n\n    // UNIQUE AMONG THE ROWS THIS TEST WROTE. `drainOnce` is global and ordered\n    // oldest-first, so these two relays publish the whole table's backlog on the way\n    // to this environment's twenty — and a uniqueness claim over everything they\n    // sent is a claim about data this test did not write. It is also false for\n    // reasons that have nothing to do with exactly-once: `m.id` is the ENVELOPE id,\n    // which an edit's `message.created` and `message.updated` deliberately share.\n    //\n    // It passed for years because it ran when the backlog happened to be empty. The\n    // measurement that settled it: 700 published, 41 distinct — 513 of them another\n    // package's fixture rows, whose payload carried no id at all.\n    const mine = [...a.sent, ...b.sent].filter((m) => {\n      const p = m.payload as { environment_id?: string; data?: { text?: string } };\n      return p.environment_id === env.id && p.data?.text?.startsWith(\"concurrent \") === true;\n    });\n    const ids = mine.map((m) => m.id);\n    // TWENTY, NOT \"at least one\": a relay that published nineteen and a loop that\n    // exited early both satisfy uniqueness, and neither is exactly-once.\n    expect(ids).toHaveLength(20);\n    expect(new Set(ids).size).toBe(ids.length);\n"
+  }
+]

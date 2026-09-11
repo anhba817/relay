@@ -2979,3 +2979,292 @@ at 0, and fence parity holds once the Vietnamese page carries the same fence.
 the commit that creates it, whether or not that chapter is about it — because the alternative
 is a diff whose pre-image never existed for the reader. Saying "this is not this chapter's
 subject, and here it is" costs a paragraph. The chain has no other way to say it.
+
+## 045-74 · EIGHT PLACES KEPT THE LANES SERIALISED, THE ESTIMATE SAID THREE, AND THE SETTING HAD OUTLIVED ITS REASON BY EIGHT CHAPTERS — CLOSED
+
+`fileParallelism: false` entered the api config in **chapter 5** for a real error:
+`duplicate key value violates unique constraint "pg_type_typname_nsp_index"`, which is what
+Postgres answers when two suites issue `CREATE TYPE` against one schema. It cost **175
+seconds a battery** — api 176s → 102s, gateway 136s → 35s, the whole pipeline 403.76s →
+232.05s (twenty runs a side),
+measured either side on one machine and one database.
+
+**THE REASON WAS GONE AT CHAPTER 8.** `globalSetup` was wired into all four lanes there; it
+migrates once before any file starts, and the per-suite `migrate(pool)` calls are idempotent
+on `schema_migrations`. The setting stayed for eleven more chapters — and the comment
+justifying it was written in chapter 8 itself, in the one config that did NOT set it, naming
+the race its own change had just closed.
+
+    probe        fresh unmigrated database, every file racing, files in parallel
+    at ch16      api 17 files / 312 tests green · gateway 9 files / 197 tests green
+    at ch5       42P01 relation "organisations" does not exist, in every suite
+                 that does not migrate itself — no globalSetup to migrate for it
+
+**THE RED HALF IS WHAT MAKES THE GREEN MEAN ANYTHING.** Without the chapter-5 control, the
+chapter-16 run is a lane that happened to find a ready database.
+
+**AND THE COUNT WAS WRONG IN THE USUAL DIRECTION, TWICE.** The estimate named three
+assertions — presence's whole-table `outbox` count and the limits chapter's two wall-clock
+bucket reads, all three filed by the features that hit them. Running the lane found three
+more. A sweep then found two the runs had not reached yet. **Eight:**
+
+    the tenancy chapter       invariant 7's whole-table `organisations` count (new)
+    the outbox chapter        invariant 8's uniqueness claim over every ENVELOPE id
+    the instruments chapter   drain bait on a subject no stream accepts, with no id
+    the presence chapter      a whole-table `outbox` count                    (known)
+    the revisions chapter     two forged `connection.ack` samples             (new)
+    the retry chapter         reset-lane's org count, open at the far end     (new)
+    the notifications chapter two global drain totals read as one endpoint's  (new)
+    the limits chapter        two wall-clock minute-bucket reads              (known)
+
+**AND THE LAST TWO ARE THE METHOD LESSON.** Six were found one failure at a time across six
+runs — the slowest route, and an unreliable one, because each instance is load-dependent and
+rare. "Three green runs" was offered here as evidence the lanes were parallel-safe; the fourth
+run falsified it. What found the remaining two in seconds was asking the repository a question
+with a yes-or-no answer: **which queries read a table every other suite writes, without a
+predicate naming this test's own rows?** That is `check-lane-scope.py`, ten controls, and it
+reports zero.
+
+**ONE OF THE EIGHT COULD NEVER HAVE FAILED FOR ITS OWN REASON.** Signup's invariant 7 counted
+`organisations` before and after an unauthenticated `GET /internal/memberships` — a request
+refused before it reaches a handler, so no code path could move the number. It moved anyway,
+because it is the whole table. Replaced by the claim the test's own comment already makes and
+nothing was checking: `provisionOrganisation` has exactly one non-test importer, and it is the
+signup controller. That is **stronger** than the count, which fires only if a new route both
+exists and is called here.
+
+Each of the eight is fixed where it lives, gated by chapter or by commit. Chapter 16 publishes
+the removal with all three configs fenced and the measurement in the prose. **A count of a fix
+counts the fix and not what the fix drags with it** — and when the count keeps growing, stop
+counting failures and go ask the tree.
+
+## 045-75 · A FIXTURE THAT IMITATES AN EVENT MUST BE PUBLISHABLE, OR ANY REAL DRAIN DIES ON IT — CLOSED
+
+Two of `outbox.itest.ts`'s invariants failed under parallelism with two different faces, and
+they had one cause: **the isolation gauntlet's sentinel plants drain bait that no broker will
+take and no reader can tell apart.**
+
+    subject   `<sentinel>.bait`         the EVENTS stream accepts `events.>` and nothing
+                                        else — a real publish returns `NatsError: 503`
+    payload   `'{}'::jsonb`             no `id`, so `publishPending` hands JetStream
+                                        `msgID: undefined` and every bait row looks alike
+
+Asked of the database rather than argued: **3,200 pending rows in 16 subjects were
+unroutable, every one of them bait, and nothing else in the backlog was.** In the oldest 700
+rows a relay would reach, 513 carried no envelope id — which is exactly `expected 41 to be
+700`, invariant 8's failure, arithmetic and all.
+
+**NEITHER TEST WAS A PARALLELISM CASUALTY.** Both drain the GLOBAL backlog, oldest-first, on
+the way to their own environment's rows. They passed whenever the backlog happened to be
+empty — which is to say they passed because something had just drained it, and `fileParallelism:
+false` never protected them. **A test whose result depends on what another package planted is
+not serialised into correctness; it is serialised into a luckier order.**
+
+Fixed both ways, because each is worth fixing alone: the bait is now `events.<sentinel>.bait`
+with a `gen_random_uuid()` envelope id, and invariant 8 asserts uniqueness over the twenty
+rows it wrote — found by text and environment — with an exact count, because a loop that
+exits early also satisfies uniqueness.
+
+## 045-76 · THE THIRD TEST CARRIED WITHOUT ITS FIX, AND ITS OWN ASSERTION HAD A BLIND SPOT — CLOSED
+
+Carry commit 2 was logged as *"APPLIED cleanly — one new file, no overlap with the rebuild"*.
+It was not one file. 043's commit also rewrote `packages/e2e/src/harness.ts`'s `stop()`, and
+the chain kept the old one: `SIGTERM`, then a flat 200 ms sleep. The assertion arrived, the
+fix did not, and the e2e lane was red **3 of 3 runs** — deterministically, not flakily.
+
+**THAT IS THE THIRD TIME IN THIS CARRY.** 043's tombstone test came without `a8b2b317` and
+failed one run in three; 044's race test the same. The pattern is now unmistakable: **a
+commit whose subject begins `test(` is the half that goes red, and the half that goes red is
+the half you notice — so it gets carried first and alone.**
+
+**AND CARRYING THE FIX EXPOSED THE ASSERTION'S OWN HOLE.** With `stop()` correct the test
+went green and **twelve gateway processes per lane run survived indefinitely**. The api is one
+`spawn("node", …)`, so the signal reaches the server and the probed port dies. The gateway was
+`spawn("pnpm", ["exec", "tsx", …])` — four processes deep. SIGTERM reached `pnpm`; `pnpm`
+exited without passing it on; `child.once("exit")` resolved on `pnpm`'s exit; the gateway kept
+its port. The test probes the api's port, so it was green over the leak the whole time.
+
+    before   clear strays, run the lane, count      12 survivors, still there 15s later
+    after    same probe, gateway spawned like api    0 survivors, lane 14s → 12s
+
+**A RED PROBE PROVES THE TEARDOWN FOR THE PROCESS YOU SPAWNED.** Only a probe of the service
+that leaks proves it for the process that HOLDS THE PORT — and a package-manager wrapper is
+not the thing you are trying to kill.
+
+## 045-77 · THE STALE `dist` TRAP, A FOURTH TIME, AND THIS TIME AT RUNTIME — CLOSED
+
+045-39 is about `git checkout` of an old tag leaving `packages/protocol/dist` at the last
+build. It happened again with a different artefact and a different symptom, and the symptom is
+why it deserves its own line: **`services/api/dist` is what the harness SPAWNS.**
+
+Measuring chapter 16's lane, 38 identical failures came back as
+`42703 column "revision_sequence" of relation "channels" does not exist`. That column arrives
+with 044's carry in chapter 17. Chapter 16's source does not name it and neither does any
+chapter-16 migration — but `services/api/dist/db/schema.js`, built at the tip, did, and every
+spawned child ran it. **A compile-time stale `dist` is a type error; a runtime one is
+38 database errors that read like a broken chain.**
+
+It cost a wrong conclusion before it was found: *"chapter 16 measurably cannot claim a
+parallel lane"*, retracted. With every package rebuilt at the tag and a fresh database, both
+lanes are green there.
+
+**THE RULE IS NOW TWO RULES.** Rebuild before typechecking a tag — and rebuild before
+RUNNING one, because the lane's children are `dist`, not source.
+
+## 045-78 · A TIP-SCHEMA DATABASE CANNOT MEASURE AN EARLIER TAG, AND THE FIXTURE SAYS SO BY FAILING SIDEWAYS
+
+Running chapter 16's api lane against the live lane database gave 17 suites failing in
+`plant()` with `update or delete on table "users" violates foreign key constraint
+"usage_active_users_user_id_fkey"`. The table arrives with the quota chapter; chapter 16's
+sentinel has no `DELETE` for it. **The fixture is correct at its own tag and the database is
+eight chapters ahead of it.**
+
+The whats-moved page already instructs a fresh database for exactly this reason. What is new
+is the shape of the failure: not "column missing" but a foreign key from a table the fixture
+has never heard of, raised inside a teardown, reported 17 times. **A schema that is newer than
+the code fails in the fixture, not in the test** — and a fixture failure reads like a harness
+bug, which is the wrong place to start looking.
+
+Filed rather than fixed: teaching every chapter's sentinel about every later table would
+invert the chain. The instrument is `DATABASE_URL` pointed at a database built from the tag's
+own migrations, and it works.
+
+## 045-79 · THE DEFAULT WORKER COUNT IS A BILL, NOT A SETTING — AND THE KNEE IS PER-LANE — CLOSED
+
+Dropping `fileParallelism: false` hands the file count to vitest, which forks about one worker
+per core. Ten cores, two lanes at once under `TURBO_CONCURRENCY=2`: **eighteen NestJS
+applications against one Postgres.** The first thing that bought was a killed twenty-run
+battery — out of memory, mid-run, with no test having failed. **That is the failure mode to
+note: the lane was green and the machine was not.**
+
+    api lane      maxWorkers      1      2      3      5   default(9)
+                  duration      177s   102s   102s   102s     102s
+                  peak used    4188M  4275M  4467M  4817M    5456M
+
+    gateway lane  maxWorkers      2      3      4      6
+                  duration       69s    46s    35s    35s
+                  peak used    4313M  4623M  4717M   5064M
+
+**EVERY SECOND OF THE API LANE'S SAVING IS IN ONE-TO-TWO** — 75 seconds for 87 MB, and then
+nothing. A third worker is 192 MB for zero and a ninth is 1.2 GB for zero, because the lane
+waits on a shared database and broker far more than it computes: a second file fills the
+first's gaps and a third finds none left.
+
+**AND THE GATEWAY'S KNEE IS FOUR, NOT TWO.** Its suites each drive an api child of their own,
+so they overlap further before they queue. A single number copied from the api lane would have
+cost this one half its saving — **the right worker count is per-lane and measured, and a
+default is neither: it is a number about the machine, chosen by something that has never seen
+the workload.**
+
+**ABOVE THE KNEE IT STOPS BEING FREE.** The gateway at six is exactly as fast as at four and
+`typing.itest.ts` starts missing a presence frame. Not a cliff — the point where the speed
+stops arriving and the failures start. Both lanes are pinned at their knee, with the curve in
+the config beside the number.
+
+Whole pipeline, bounded, twenty runs: **mean 232.05 s against the 403.76 s baseline**, stdev
+0.51, peak 5,180 MB mean with 10.8 GB still available, 913 tests and zero leaked processes on
+every run.
+
+## 045-80 · `check-lane-scope.py` — AND ITS FIRST TWO VERSIONS WERE WRONG IN OPPOSITE DIRECTIONS
+
+The instrument that found the last two of 045-74's eight. It asks one question: does a query
+over a table every suite writes carry a predicate naming this test's own rows? Ten controls,
+all asserted rather than assumed.
+
+**IT TOOK THREE VERSIONS AND THE FIRST TWO FAILURES ARE THE RECORD.** Ending the match at the
+template's closing quote reported three CORRECTLY SCOPED queries, because `'${id}')` closes the
+lookahead before the `WHERE` it was looking for. Replacing that with a fixed window after
+`from` then MISSED a real one, because the surrounding JavaScript happened to contain the word
+`period`. **A false positive wastes an afternoon; a false negative hides the defect you wrote
+the instrument to find** — and the second version reported a clean sweep over a file I already
+knew was dirty. The rule that works is that a SQL scope has to be in the SQL: find the string
+literal the `from` sits in, join literals across a `+` because that is how this repository
+builds parameterised queries, strip comments first because `presence.itest.ts` documents its
+own repair by quoting the broken query.
+
+**A PINNED INSTANT COUNTS AS A SCOPE**, and that is not a loophole. `reset-lane.itest.ts`
+asserts a global script deleted no organisation — genuinely a whole-table claim, which cannot
+be scoped to a tenant. It scopes to TIME instead: rows created after the pin belong to whoever
+is running beside it. The same correction that file already made for staleness, in the other
+direction.
+
+Its last line says what it cannot see: SQL text only, so a scope applied in JavaScript after
+the rows come back is invisible to it, and a test can be wider than its subject with no SQL at
+all.
+
+## 045-81 · A GATE PASSED TWENTY-SIX TIMES ON A REF THAT DOES NOT EXIST — CLOSED
+
+Every sweep of `check-chapter.py` in this feature passed `rework/part3-base` as chapter 1's
+base. **There is no such tag.** Chapter 1's base is `rework/base-convention`. `git diff` against
+an unresolvable ref returns nothing, so the checker compared nothing and printed:
+
+    check-chapter: 12 fences, 0 compared, 0 problem(s)
+
+exit code 0. **The zero that means "clean" and the zero that means "never looked" printed the
+same line**, and chapter 1 was reported green in every sweep this feature ran. Behind it:
+
+    services/api/src/db/schema.ts        hunk pre-image matched 0 times
+    services/api/src/db/repository.ts    hunk pre-image matched 0 times
+    services/api/src/app.module.ts       hunk pre-image matched 0 times
+    services/api/src/tenancy/signup.itest.ts   replays to something else
+
+Three of the four predate this session. `check-chapter.py` now resolves both refs with
+`rev-parse --verify` and exits 2 naming the tag, and refuses a run that compares NOTHING —
+both red-tested. **A checker's blind spot is worse than its absence**, and this one was
+self-inflicted by a typo in the caller rather than by the checker's logic, which is exactly
+why the checker has to refuse rather than trust its arguments.
+
+**AND FIXING CHAPTER 1 COSTS 92 CHAIN PROBLEMS, MEASURED.** Regenerating its twelve fences
+makes `check-chapter` green and takes `check-fence-chain` from **111 problems to 203** —
+because chapter 1 fences these files as WHOLE BODIES, and a whole-body fence is the chain's
+foundation: every later diff in every later chapter is anchored on the bytes it publishes.
+Regenerating it shrank the chapter by 1,806 lines and unanchored 92 downstream hunks.
+
+That is 045-71 with a number on it. **The artifact wins** was the right rule for a chapter's
+own fence; it does not extend to a foundation fence, where the two checkers disagree and the
+chain is the one carrying the readers. Reverted, and the four problems are left standing and
+visible rather than traded for ninety-two. The two import lines this session needed went into
+the appendix instead, which is where a change no chapter can own belongs.
+
+## 045-82 · A FLAT SLEEP BEFORE AN ASSERTION IS A BET ON AN IDLE LANE — CLOSED
+
+The twenty-run battery came back **19 green, 1 red**, and the red was `typing.itest.ts`:
+`presence: expected [] to have a length of 1 but got 0`. Mean 231.84 s, stdev 0.50 — so the
+failure is not a slow run, it is a frame that had not arrived.
+
+**FORCING IT TOOK TWO ATTEMPTS, AND THE FIRST ONE'S FAILURE IS THE FINDING.** Eight runs of
+the gateway lane alone: **8 green**. The flake needs the api lane loading the machine beside
+it, which is what `TURBO_CONCURRENCY=2` does and what running one lane never reproduces.
+Amplifying with `--maxWorkers=10` got it back — **1 of 6 red** — and in a DIFFERENT test of
+the same file (`refuses a signal whose environment does not match the connection`). Two
+instances, one class.
+
+    await publisher.publish(...)      four publishes onto Redis
+    await settle(700)                 a flat sleep
+    expect(byType("presence.changed")).toHaveLength(1)
+
+**700 ms is a bet that the lane is idle, and this lane is four files beside four more.** The
+same fault the harness teardown was fixed for two entries ago — *"it bought time instead of
+certainty"* — one repository over.
+
+**ARRIVAL IS A CONDITION; ABSENCE IS NOT**, and that distinction is the whole fix. Eight waits
+became `arrived(() => …, n)`, which polls to a deadline and returns the moment the count is
+reached, so an idle lane pays nothing. The sleeps that prove nothing ELSE arrives are KEPT —
+`settle(1_500)` for the silence after a refused signal, `settle(120)` for the one inside a
+debounce interval — because no condition can confirm an absence early. Where a test claims
+both, the quiet window is taken AFTER the arrival wait rather than instead of it.
+
+    before the fix   1 of 6 red at maxWorkers=10 · battery 1: 19 of 20
+    after the fix    0 of 10 red at maxWorkers=10 · battery 2: 20 of 20
+
+**AND THE SECOND BATTERY IS THE CONFIRMATION.** 20 of 20 green, mean **232.05 s**, stdev 0.51,
+cv 0.22% — against battery 1's 19 of 20 at mean 231.84 s. The two means are 0.21 s apart, which
+is the point worth keeping: **the fix cost nothing and the flake was never a slow run.** A
+timing bet does not show up in the distribution; it shows up once, in the twentieth run, as a
+frame that had not arrived.
+
+**AND THE WORKER BOUND STAYS AT FOUR.** Ten workers is green now and no faster than four
+(35 s either way, 045-79's knee), so the extra memory buys nothing. The fix was to the test's
+wait, not to the lane's speed — **slowing the lane to hide a timing bet is the fix that
+teaches people to slow lanes.**
+

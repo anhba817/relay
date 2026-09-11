@@ -785,3 +785,35 @@ filename, and one lane holds one database. Three attempts failed in 0.6 s each w
 afterwards — 15 migrations, no idle-in-transaction backends. **The 79% therefore rests
 on the config and assertion diffs, which are conclusive, and NOT on a measured control.
 Recorded as unmeasured rather than as measured.**
+
+================================================================================
+SC-007 CLOSE-OUT — MEASURED AGAIN AFTER THE LANES WERE DE-SERIALISED
+================================================================================
+
+SC-007: 225.45 s ± 10% = 202.91-248.00 s.  MEASURED 232.05 s.  **INSIDE THE WINDOW.**
+
+    battery 2   20 of 20 green   mean 232.05 s   stdev 0.51   cv 0.22%   min 231  max 233
+                913 tests every run, 0 leaked processes every run
+                peak memory mean 5,180 MB (min 5,133, max 5,269) of 15,993 MB
+    battery 1   19 of 20 green   mean 231.84 s   stdev 0.50   cv 0.22%
+                the one red was a timing bet in `typing.itest.ts`, gaps 045-82
+
+    row counts at close-out, because they are part of the instrument:
+      environments 31,215 · outbox 481,251 (5,253 pending) · messages 300,719
+      channels 45,567
+
+THE +79% WAS DIAGNOSED CORRECTLY AND SIZED WRONG. 045-68 named `fileParallelism: false`
+and said it was load-bearing because the chain lacked 043's scoping of presence's
+whole-table outbox count. The config was the right suspect. The count was not: EIGHT
+places held the lanes apart, not one, and only three of them were assertions anybody had
+filed (gaps 045-74). Carrying 043's three fixes alone would have left the lane red.
+
+AND THE SAVING IS NOT WHERE IT LOOKS. 045-79: every second of the api lane's 75 s is in
+one worker to two, and vitest's default of one-per-core buys nothing above that while
+costing 1.2 GB — it killed two battery attempts before the bound was measured. The
+gateway's knee is four, not two. The right worker count is per-lane and measured.
+
+STILL NOT A CONTROL. 045-69 stands: the same-day run on `main` remains impossible for the
+reason given above, so 403.76 s -> 232.05 s compares two states of the REBUILT chain,
+measured on one machine twenty runs a side. That is a stronger comparison than the 79%
+rested on, and it is still not a control against `main`.

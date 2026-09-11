@@ -49,7 +49,28 @@ def hunks(body):
             out.append((pre, post))
     return out
 
+def resolve(ref: str) -> str:
+    """A ref this repository does not have is a REFUSAL, not an empty diff.
+
+    `rework/part3-base` does not exist — chapter 1's base is `rework/base-convention` —
+    and a sweep that passed the wrong name got `12 fences, 0 compared, 0 problem(s)` and
+    an exit code of zero, twenty-six times over. **A gate that reports success for a
+    chapter it never looked at is worse than no gate**, because the zero is indistinguishable
+    from a clean result. Chapter 1 had four problems behind that zero.
+    """
+    r = subprocess.run(["git", "-C", str(WT), "rev-parse", "--verify", "-q", f"{ref}^{{commit}}"],
+                       capture_output=True, text=True)
+    if r.returncode:
+        print(f"check-chapter: REF NOT FOUND — {ref!r} does not resolve in {WT}", file=sys.stderr)
+        print("  chapter 1's base is `rework/base-convention`; every other chapter's is "
+              "the previous chapter's tag", file=sys.stderr)
+        sys.exit(2)
+    return r.stdout.strip()
+
+
 def main(chapter_dir, base, target):
+    resolve(base)
+    resolve(target)
     page = Path(chapter_dir) / "page.mdx"
     lines = page.read_text(encoding="utf-8").split("\n")
     fences, i = [], 0
@@ -189,6 +210,13 @@ def main(chapter_dir, base, target):
             problems.append(f"{path}: replays to something else than {target}")
     for p in problems:
         print(f"  {p}", file=sys.stderr)
+    # AND NOTHING COMPARED IS A REFUSAL TOO. A chapter whose fences all got skipped has
+    # been read and not checked, and the two must not print the same line.
+    if fences and not checked:
+        print(f"check-chapter: {len(fences)} fences and NOTHING COMPARED — this is not a pass",
+              file=sys.stderr)
+        print("  every fence was skipped: wrong refs, or every title is an excerpt", file=sys.stderr)
+        return 2
     print(f"check-chapter: {len(fences)} fences, {checked} compared, {len(problems)} problem(s)")
     print(f"check-chapter: bytes only — it cannot say whether the PROSE describes the diff")
     return 1 if problems else 0
