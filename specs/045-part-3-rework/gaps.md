@@ -3268,3 +3268,62 @@ frame that had not arrived.
 wait, not to the lane's speed — **slowing the lane to hide a timing bet is the fix that
 teaches people to slow lanes.**
 
+## 045-83 · TWO CARRY DECISIONS SAID "APPENDIX MATERIAL" AND NOBODY TOOK THEM THERE — CLOSED
+
+Moving `main` onto the rebuilt chain would have deleted two pieces of work, and both had been
+looked at and filed rather than missed:
+
+    carry row 10  `afee4872` retire the migration generator   "ABSENT, appendix material"
+    carry row 17  `c427e3bf` the NFR-SCL-01 load harness      "Part 7's subject, not Part 3's"
+
+Both notes were RIGHT about chapters — no chapter teaches either — and the appendix exists for
+exactly that, which is what makes the outcome worth recording: **a deferral that names its
+destination reads as done.** Nobody re-read row 10 to ask whether it had arrived.
+
+**AND THE CHAIN WAS ALREADY CONTRADICTING ITSELF ABOUT IT.** A chapter fence retired
+`drizzle.config.ts` while the tree still carried it, and `check-fence-chain` said so on every
+run — *"shown as deleted but still exists in relay-platform"* — one line inside a backlog of a
+hundred. Carrying the retirement **lowered the chain from 110 problems to 109**: the repair was
+sitting in the report the whole time, indistinguishable from the noise around it.
+
+**WHAT WOULD HAVE LANDED ON `main`:** a generator ADR-16 forbids, its nine drifted snapshots,
+the `drizzle-kit` dependency, and no `migrations.test.ts` to stop it happening again — on a
+branch whose whole argument is that migrations are hand-written. **Un-retiring something is the
+kind of regression a diff of commit counts cannot show**; it took a tree diff, `--diff-filter=A`,
+and reading all eight results.
+
+**AND 043 LEFT THE SENTENCE MANGLED.** `schema.ts` still read *"the migration SQL ... is
+hand-written from these definitions and reviewed against SAD §6.1 (feature 043 retired the
+generator) definitions, and the generated SQL is reviewed against §6.1"* — "definitions" twice
+and a tail still reviewing output nothing produces. It shipped that way and survived two
+features. **A change that edits AROUND a comment leaves it describing the old world**, which is
+why the file needed a test and not a note.
+
+## 045-84 · THE RENUMBERED MIGRATIONS WERE PROVED EQUIVALENT, NOT ARGUED
+
+`main` had 16 migration files and the chain has 15, with four filenames on one side and three on
+the other. 045-69 explains the renumbering, and every earlier statement about it was reasoning
+from the record rather than from the database.
+
+The move was a history rewrite, so it was measured instead. Two fresh databases, each migrated
+by its own tree's runner, `pg_dump --schema-only` on both:
+
+    chain   15 migrations, user surface before webhooks   368 lines
+    main    16 migrations, webhooks before user surface   368 lines
+    diff    4 lines, all of them pg_dump's random \restrict tokens
+
+**Identical, in a different application order.** That is the claim the rework needed and had
+never made: the renumbering moved where each statement runs and changed nothing about where the
+schema ends up.
+
+## 045-85 · THE PATCHED CHECKER AND THE REAL GATE AGREE — CLOSED
+
+Every fence-chain number in this feature was taken with a copy of `check-fence-chain.mjs` whose
+`PLATFORM` constant pointed at the worktree, because the gate resolves `../relay-platform` and
+that held the old history for the whole rebuild. **A measurement taken with a modified instrument
+is worth what the modification is worth**, and there was no way to check it until `main` moved.
+
+With `main` on the rebuilt chain, `pnpm check:fences` — unpatched, the real gate — reports
+**109 problems, APPLY 74, HEAD 35**: the same three numbers the patched copy had been reporting.
+The trick was sound, and it is now retired: run the gate.
+

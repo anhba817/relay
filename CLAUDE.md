@@ -12,11 +12,15 @@ database instruction. Everything deferred is still Part 4's: hosted media
 (`media_not_available`) is 4.5 and 4.6, the queryable attempt log is 4.2, FR-MOD-03's audit
 log is 4.7.
 
-**THE REBUILT CHAIN IS NOT ON `main`.** It is `part3-published` in the worktree
-`tmp/part3-refactor`, one annotated tag per chapter (`rework/part3-chN`, unpadded) with
-`rework/base-convention` as chapter 1's base — **not `rework/part3-base`, which does not
-exist and which a gate silently passed on twenty-six times**. Publishing it is a decision
-nobody has taken.
+**THE REBUILT CHAIN IS `main` NOW.** 228 commits replaced by 230, diverging at the end of
+Part 2; the old history is tagged `backup/pre-main-move-20260911` in all three repositories.
+One annotated tag per chapter (`rework/part3-chN`, unpadded) with `rework/base-convention` as
+chapter 1's base — **not `rework/part3-base`, which does not exist and which a gate silently
+passed on twenty-six times**. `pnpm check:fences` runs for real against it and reports **109**,
+the number the patched checker reported throughout the rebuild.
+
+**NOTHING IS PUSHED.** All three mains are ahead of their origins and `relay-platform`'s is a
+FORCE-push — `origin/main` is not an ancestor of the chain. That decision has not been taken.
 
 <!-- SPECKIT START -->
 **NO ACTIVE FEATURE.** 045 closed and nothing is queued behind it. The next
