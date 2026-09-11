@@ -1011,7 +1011,7 @@ the thing this file exists instead of.**
 Falsified: with `limits,` removed from the call, `built by createServer and never injected:
 limits`. Closed in new 22.
 
-## 045-26 · THE UNIT GATE NEEDS A LIVE REDIS, AND ITS FAILURE READS AS A DEFECT
+## 045-26 · THE UNIT GATE NEEDS A LIVE REDIS, AND ITS FAILURE READS AS A DEFECT — CLOSED
 
 Measured while re-verifying new 22 after the lane had gone down: `pnpm run test` — the cheap
 gate, the one that runs before every commit in this rework's loop — came back with twelve
@@ -2925,6 +2925,21 @@ container-free lane holding a Redis client it never uses is a lane that will gro
 matters. The natural home in the rebuilt order is the connection-cap chapter, new 16, which is
 where those tests are written — and the lesson about titles is the kind this series teaches.
 
-**NOT DONE, AND NOT INSIDE THE AUTHORISED SET.** The full set decided on was chapters 17, 18 and
-19; this is a fourth chapter and a fourth mid-chain insertion. Filed with its measurement so the
-next person does not have to re-derive which five stay.
+**DONE, AS A FOURTH INSERTION.** Carried into chapter 16, where the file is introduced. Twelve
+tests moved to `connections.itest.ts`, five stayed, the shared `beforeEach` went with the twelve.
+Verified both ways rather than once:
+
+    RELAY_REDIS_URL=redis://127.0.0.1:6399  connections.test.ts    5 passed, 0 failed
+    the lane up                             connections.itest.ts  32 passed, 0 failed
+
+Five of five against a dead broker is the property 045-26 is about: the container-free lane is
+honest again, and a failure in it now means something. The chapter's prose says which five and
+why, and prints the measurement rather than the reasoning — **reading the file first predicted
+two.**
+
+**AND THE FIX IMMEDIATELY DEMONSTRATED 043-1.** The prose needed a `text` block showing the
+command and its output, which is an UNTITLED fence — and `check-fence-parity` went red at once
+because the mirror has no key to pair it on. Two untitled fences in English, one in Vietnamese.
+The repair was to put the same block in the Vietnamese page under a translation notice, which is
+a workaround and not a fix: **the fence still cannot be compared to anything, and I added it while
+holding the entry that says so.**
