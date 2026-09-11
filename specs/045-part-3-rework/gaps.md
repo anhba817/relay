@@ -2943,3 +2943,39 @@ because the mirror has no key to pair it on. Two untitled fences in English, one
 The repair was to put the same block in the Vietnamese page under a translation notice, which is
 a workaround and not a fix: **the fence still cannot be compared to anything, and I added it while
 holding the entry that says so.**
+
+## 045-73 · A FILE CREATED BY CHAPTERLESS WORK HAS NOWHERE TO BE INTRODUCED
+
+`vitest.coverage.config.mts` was amended by **ten chapters and nine appendix entries and
+introduced by nothing**, and the chain said so ten times over: *"amended here but no chapter
+ever showed it"*. It is the single largest identifiable block left in the fence chain after
+the appendix regeneration, and the cause is a hole in the chain's grammar rather than a
+mistake in anybody's fence.
+
+    created by     8f44783 "feat: Adding coverage tooling and CI", inside chapter 6's span
+    first fenced   chapter 7 — as a DIFF
+    amended by     chapters 7, 8, 10, 11, 12, 17, 19, 20, 22, 23, then the appendix ×9
+
+**NEITHER PLACE COULD TAKE IT.** A chapter may only fence what it discusses, and no chapter
+discusses the coverage tooling — it is feature 024's, which publishes no chapter. The
+appendix exists for exactly that work, and `check-fence-chain` requires its fences to be
+diffs: *"a post-series fence amends, it never restates"*. **So chapterless work that MODIFIES
+a file has a home and chapterless work that CREATES one does not.**
+
+**AND RELAXING THE APPENDIX WOULD NOT HAVE WORKED EITHER**, which is the part worth keeping.
+The obvious fix is to let a post-series fence introduce a file. It fails on ordering: the
+appendix is applied AFTER every chapter, so a file introduced there arrives ten chapters too
+late for the chapter diffs that amend it. The grammar is not too strict; the position is
+wrong, and no flag on the checker fixes that.
+
+**WHAT WAS DONE.** Chapter 6 introduces it in full, once, at the commit where the repository
+gains it — with a paragraph saying plainly that none of it is that chapter's work and that
+the reason it appears is that ten later chapters amend it. The chapter already discussed
+feature 024's ratchet two paragraphs earlier, so the file arrives beside the number it
+produces. The fence chain drops from 116 problems to 108; `check-chapter` on chapter 6 stays
+at 0, and fence parity holds once the Vietnamese page carries the same fence.
+
+**THE GENERAL RULE.** A file's INTRODUCTION belongs to the first chapter whose span contains
+the commit that creates it, whether or not that chapter is about it — because the alternative
+is a diff whose pre-image never existed for the reader. Saying "this is not this chapter's
+subject, and here it is" costs a paragraph. The chain has no other way to say it.
