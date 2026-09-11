@@ -489,7 +489,7 @@ and 045-69's migration identity. An unticked box below is not a reliable signal 
 - [ ] T043 Run the twenty-run battery of `pnpm test:integration` from a cleared lane with all seven sequencer caches removed, **including the root `node_modules/.vite/vitest`** which a `packages/*` and `services/*` glob misses. SC-007 is a tripwire: 225.45 s ± 10%, and a moved duration means the platform changed when it was not supposed to. (SC-007)
 - [ ] T044 Write `specs/045-part-3-rework/gaps.md`, carrying feature 044's ledger **re-measured against the tree rather than copied**. Two items — 044-2 and 3.23-4 — were closed after 044's close-out and must not be re-opened by a copy. Note whether this feature closes `043-1`: renumbering touches every chapter, so the 146 untitled fences are as findable now as they will ever be.
 - [ ] T045 Run all fourteen gates last — `pnpm typecheck`, `pnpm lint`, `pnpm build` in `relay-platform`; `pnpm check:fences`, `check:docs`, `check:figures`, `check:srs`, `check:errors` in `relay-tutorial`; and the six instruments in `specs/045-part-3-rework/` — with every exit code written to a file outside any pipeline. (FR-013)
-- [ ] T046 Commit the close-out records, then trim `CLAUDE.md` and point the `SPECKIT` block past this feature.
+- [x] T046 Commit the close-out records, then trim `CLAUDE.md` and point the `SPECKIT` block past this feature.
 
 ---
 
