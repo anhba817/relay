@@ -3350,3 +3350,38 @@ protects when that ref is fresh. Fetch, re-derive the relationship, then push.
     kept     backup/pre-main-move-20260911 pushed to all three, so the replaced
              history is reachable on the remote and not only in a local reflog
 
+## 045-87 · THE REWORK DELETED PART 3'S LAYOUT AND EVERY GATE PASSED — CLOSED
+
+`439e783` (T018-T020, "25 chapters, renumbered") renamed every chapter directory and, in the
+same commit, deleted **both** `app/(en)/part-3/layout.tsx` and `app/(vi)/vi/part-3/layout.tsx`.
+Parts 0, 1 and 2 kept theirs. From that commit until now, every Part 3 chapter rendered as bare
+MDX — **no series sidebar, no article measure, no on-this-page rail** — and it shipped to `main`.
+
+**NOTHING CAUGHT IT, AND NOTHING COULD HAVE.** A missing `layout.tsx` is legal in Next.js: the
+route simply inherits the one above it. So the build is green at 111 pages, `check:figures`,
+`check:registry`, `check-fence-parity`, `check:docs`, `check:errors`, `check:srs`, all twelve
+feature instruments and `check-chapter` on 26 chapters are green, and the fence chain does not
+know the file exists. **Every instrument in both repositories compares bytes inside files it was
+pointed at; not one looks at what a route renders.**
+
+This is one step further out than the blind spots this feature's plan tabulated. Those were all
+"a gate exists and does not cover X" — untitled fences, excerpt-only files, prose. **This is a
+file that no gate has any reason to name**, deleted as collateral in a rename of 52 directories,
+in a commit whose subject is about chapter numbering.
+
+**AND A PERSON FOUND IT.** Fourteen records have named the missing reader and not closed it.
+This is the first defect in the ledger that **only** a reader could have found: not a sentence
+that is absent (the substitute exercise finds those), not a sentence that is unclear — a page
+that is byte-correct in every file and wrong on the screen. The reader opened Part 3 and saw
+chapters without the shell the rest of the series has.
+
+**THE DAMAGE WAS BOUNDED AND THE CHECK IS CHEAP.** `439e783` deleted exactly two non-`page.mdx`
+files and both are restored. The general form — *does every part directory have the same root
+files as its siblings?* — is four lines of shell and belongs with the other instruments; filed
+rather than written, because the next part is Part 4's to build.
+
+**SECOND-ORDER, AND WORTH SAYING:** three `figures.ts` were recovered in the same sitting, also
+deleted by this feature, also invisible until somebody restored the `<Figure>` imports that
+needed them. **A rename of 52 directories is a delete-and-add, and what falls out of it is
+whatever nobody listed.**
+
