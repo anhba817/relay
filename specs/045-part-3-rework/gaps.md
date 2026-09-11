@@ -2874,3 +2874,57 @@ gone: chapter 10's five citation-only edits, chapter 7's provenance tag, chapter
 chapter's diff applies to this chapter's starting point. The chain tests a property the *book*
 depends on, and it is currently measuring its own blind spot as well as the text. Both are worth
 having; when they disagree, the artifact wins.
+
+## 045-72 · THE 8,000-CHARACTER BOUND IS FENCED IN EIGHT CHAPTERS ACROSS TWO PARTS AND DISCUSSED IN NONE
+
+Found while deciding whether feature 043's message-length work needed teaching in this part. It
+does not, and the reason is worth more than the answer: **the bound predates Part 3 entirely.**
+
+    services/api/src/messages/messages.schema.ts    text: z.string().max(8000)
+
+present from `rework/part3-ch1`, which means it arrives with the base — the end of Part 2. 043's
+contribution was consolidating duplicate maxima and adding the avatar scheme rule, and the avatar
+rule IS taught, in chapters 10 and 18.
+
+**THE BOUND ITSELF IS TAUGHT NOWHERE.** Searched across every chapter of every part, with fences
+stripped so only prose counts:
+
+    fenced in   part-2 chapter-02 the-write-path          ← where it is introduced
+                part-2 chapter-03 send-it-twice
+                part-2 chapter-04 history-that-pages
+                part-2 chapter-05 the-socket
+                part-2 chapter-06 two-servers-one-conversation
+                part-3 chapter-11, chapter-17, chapter-18
+    in prose    nowhere, in any part
+
+Eight chapters show a reader a number that decides whether their message is accepted, and not one
+of them says why it is 8,000 or that it exists. **This is the same defect as the one this feature
+just fixed in chapter 19** — a fence showing code no prose discusses — one part earlier and five
+chapters wider.
+
+**OUT OF SCOPE AND FILED RATHER THAN FIXED.** Part 2 is not being reworked, and reaching into it
+would widen this feature past its own boundary. Recorded here because the discovery was free — it
+fell out of asking where 043's work belonged — and because the *class* is now measurable: the
+check that found it is four greps over prose-with-fences-removed, and running it over every
+constant a reader must type would be a real instrument rather than an anecdote.
+
+## 045-26's FIX EXISTS, IS MEASURED, AND IS SITTING ON `main`
+
+Carrying feature 043 turned up the repair for this feature's own open item. 045-26 says the unit
+gate needs a live Redis and its failure reads as a defect; the chain's `connections.test.ts` is
+366 lines and opens `redis://localhost:6399`. `main`'s is 139 lines, and its header records both
+the split and how the line was drawn:
+
+> Run the original against a dead broker and it reports `12 failed | 5 passed`.
+> Research predicted two and the measurement found five. The heartbeat test was filed under
+> "asserts registry behaviour" on the strength of its title; it asserts a ratio between two
+> constants and never reaches the broker. **A title is not an inventory of what a test touches.**
+
+Twelve tests move to `connections.itest.ts`; five stay; the shared `beforeEach` goes, because a
+container-free lane holding a Redis client it never uses is a lane that will grow one that
+matters. The natural home in the rebuilt order is the connection-cap chapter, new 16, which is
+where those tests are written — and the lesson about titles is the kind this series teaches.
+
+**NOT DONE, AND NOT INSIDE THE AUTHORISED SET.** The full set decided on was chapters 17, 18 and
+19; this is a fourth chapter and a fourth mid-chain insertion. Filed with its measurement so the
+next person does not have to re-derive which five stay.
