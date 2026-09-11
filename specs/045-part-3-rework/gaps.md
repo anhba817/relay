@@ -3327,3 +3327,26 @@ With `main` on the rebuilt chain, `pnpm check:fences` — unpatched, the real ga
 **109 problems, APPLY 74, HEAD 35**: the same three numbers the patched copy had been reporting.
 The trick was sound, and it is now retired: run the gate.
 
+## 045-86 · THE FETCH BEFORE THE FORCE-PUSH IS NOT A FORMALITY
+
+The plan said `origin/main` was `c427e3bf`, eighteen commits behind local. **That number came
+from a remote-tracking ref nobody had refreshed.** One `git fetch` moved it to `309ffdd0`, and
+all three origins turned out to have advanced — 227 commits on `relay-platform` alone that the
+local `main` did not contain.
+
+For ten seconds that read as a force-push about to destroy a week of somebody's work. It was
+not: `origin/main` proved to be **fully contained in the pre-move local main**, one commit
+behind, and the 227 were old-history commits the rebuild replaces by design. But the check that
+settled it — `merge-base --is-ancestor origin/main <backup>` — is the one that had to happen
+BEFORE the push, and the stale ref is what made it necessary.
+
+**A FORCE-PUSH PLANNED AGAINST AN UNFETCHED REF IS PLANNED AGAINST A GUESS.** `--force-with-lease`
+is the mechanical half of the same rule: it compares against the remote-tracking ref, so it only
+protects when that ref is fresh. Fetch, re-derive the relationship, then push.
+
+    pushed   relay-platform  309ffdd0 -> 52766091   FORCED, 227 commits replaced
+             relay-tutorial  ed95211  -> a0827db    fast-forward
+             relay           b6ad373  -> 2a06625    fast-forward
+    kept     backup/pre-main-move-20260911 pushed to all three, so the replaced
+             history is reachable on the remote and not only in a local reflog
+

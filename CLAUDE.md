@@ -19,8 +19,10 @@ chapter 1's base — **not `rework/part3-base`, which does not exist and which a
 passed on twenty-six times**. `pnpm check:fences` runs for real against it and reports **109**,
 the number the patched checker reported throughout the rebuild.
 
-**NOTHING IS PUSHED.** All three mains are ahead of their origins and `relay-platform`'s is a
-FORCE-push — `origin/main` is not an ancestor of the chain. That decision has not been taken.
+**AND IT IS PUSHED.** `relay-platform`'s `main` was force-pushed over 227 commits of published
+history; the replaced history is preserved on the remote as the tag
+`backup/pre-main-move-20260911` in all three repositories, alongside the 27 `rework/*` chapter
+tags. **Anyone holding an older clone of `relay-platform` must reset rather than pull.**
 
 <!-- SPECKIT START -->
 **NO ACTIVE FEATURE.** 045 closed and nothing is queued behind it. The next
