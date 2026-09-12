@@ -92,11 +92,17 @@ authority on this. Nothing in this section overrides it.
 When given an input MDX file path:
 
 1. Read the input MDX content carefully.
-2. **Split prose from fences before translating anything.** The reliable method is
-   mechanical: walk the file, treat every line beginning ``` as a fence
-   boundary, and collect the segments. Translate the prose segments; copy the
-   fence segments across untouched. Translating in a single pass over the whole
-   file is how a fence gets edited by accident.
+2. **Split prose from fences before translating anything.** Translating in a single
+   pass over the whole file is how a fence gets edited by accident, so the fence
+   text must never reach the translator at all.
+   **In this repository there are scripts for it** — `relay-tutorial/scripts/vi/`,
+   whose README carries the order: `split.py` emits only the prose, you translate
+   that, and `weave.py` rebuilds the page from the ENGLISH segments so fences are
+   identical by construction. `captions.py` and `title.py` handle the two display
+   strings `split.py` deliberately protects.
+   Elsewhere, do it mechanically by hand: walk the file, treat every line
+   beginning ``` as a fence boundary, collect the segments, translate the prose
+   ones and copy the fence ones across untouched.
 3. Translate the prose segment by segment, infusing the storytelling narrative flow.
 4. Verify that all JSX components, props and markdown symbols are 100%
    syntactically intact, and that **every fence is byte-identical to its English
