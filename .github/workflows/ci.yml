@@ -84,6 +84,13 @@ jobs:
           submodules: recursive
 
       - uses: pnpm/action-setup@v4
+        # WHICH package.json. This repository has none at its root — it is the
+        # superproject, and `packageManager` lives in each submodule. Without this
+        # the action reads the root, finds nothing, and fails before any job runs.
+        # Pinning `version:` here instead would be a second place to change when
+        # the submodule's pnpm moves, and the two would drift in silence.
+        with:
+          package_json_file: relay-platform/package.json
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -136,6 +143,8 @@ jobs:
           submodules: recursive
 
       - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: relay-tutorial/package.json
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -178,6 +187,8 @@ jobs:
           submodules: recursive
 
       - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: relay-platform/package.json
       - uses: actions/setup-node@v4
         with:
           node-version: 22
