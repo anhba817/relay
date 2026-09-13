@@ -344,3 +344,83 @@ A THIRD DEFECT THE SEEDER CARRIED, FOUND BY SENDING ONE MESSAGE
     `channels_with_last_sequence`. A counter maintained on the write path is cheap
     for the write and invisible to anything that writes around it — which is the
     chapter's own subject, one level down.
+
+
+================================================================================
+PHASE 4 — THE COUNTERFACTUAL, AND THREE WRONG STORAGE NUMBERS.
+Recorded 2026-09-13.
+
+Most of this phase executed inside Phase 3's counterfactual run. What it added is
+the storage figure, which was wrong three times, each time by conflating two
+things — and the reproducibility check, which changed the query verdict.
+
+
+T038 — WHAT THE FIX COSTS TO STORE
+
+    table before the column        178.6 MB
+    after ALTER + backfill         381.9 MB
+    after VACUUM FULL              203.4 MB
+
+    the column costs                24.8 MB   permanent
+    the index costs                 62.0 MB   permanent, measured by name
+    the rewrite cost               178.6 MB   transient, reclaimed by the vacuum
+
+    permanent total                 86.8 MB on a 179 MB table = +49%
+
+THE NUMBER WAS WRONG THREE TIMES AND EACH VERSION CONFLATED A DIFFERENT PAIR:
+
+    +204 MB   the column PLUS 1.6M dead tuples from the UPDATE. Publishing it
+              would have been quoting a vacuum that had not been run.
+    +107 MB   the new index PLUS the bloat of the old ones, same cause.
+    +4.3 MB   the new index MINUS the compaction the VACUUM FULL had just done to
+              the others — `messages_channel_id_sequence_unique` 104 MB -> 62 and
+              `messages_pkey` 64 -> 48. The subtraction hid a 62 MB index inside
+              somebody else's saving.
+    62.0 MB   `pg_relation_size('messages_cf_idx')`. Ask for the thing itself.
+
+A delta between two totals is not a measurement of the thing that changed unless
+nothing else changed, and a VACUUM FULL changes everything else.
+
+
+T036 / T039 — THE QUERY ACROSS THREE CORPORA
+
+                       run 1     run 2     run 3
+    baseline           585.9     603.4         -
+    counterfactual     560.2         -     552.0
+
+THE INDEX'S BENEFIT IS INSIDE THE RUN-TO-RUN SPREAD. Baseline varies by 17.5 ms
+between two corpora of identical volumes; the counterfactual is 8.2 ms apart
+across two. The gap between the two conditions is 25.7 ms on one pairing and
+51.4 ms on another — both smaller than or comparable to the noise, and a single
+pairing would have reported "4.4% faster" as though it were a finding.
+
+    SO THE ARGUMENT IS NOT "THE INDEX HELPS AND TAXES YOUR WRITES". IT IS:
+    the index costs 49% more storage and buys an improvement this measurement
+    cannot separate from noise, because the cost is a sort of a million rows that
+    no index removes.
+
+Resolving a 25 ms difference at this spread would need repeated runs per side —
+recorded as a limit rather than papered over, the way 044 kept its criterion with
+its resolution limit stated.
+
+
+T039 — THE HYPOTHESIS, VERDICT STATED BY THE HARNESS
+
+The harness now reports `hypothesis_send_path_pays` rather than leaving a reader
+to subtract two numbers and pick the flattering direction:
+
+    baseline        quiet mean 18.6 ms   beside 12.0 ms   NOT SUPPORTED
+    counterfactual  quiet mean 18.6 ms   beside 10.1 ms   NOT SUPPORTED
+    controls agree within 1.3 ms and 0.3 ms respectively
+
+Four control loops across two databases, all four agreeing. The send path is
+consistently FASTER beside a continuous analytical query than alone, on both
+schemas.
+
+
+T041 — CLEANUP
+
+    corpus databases after --drop-all     0
+    lane                                  31,685 env · 46,143 ch · 303,885 msg
+                                          — identical to T007
+    repository                            scripts/scale/measure.mjs only
