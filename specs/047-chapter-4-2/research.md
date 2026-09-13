@@ -364,6 +364,49 @@ text as its answer. The positive control — `SELECT 1` must return `1` — is w
 **That is the second broken probe in this feature caught by its own control, and neither would
 have been caught by reading the script.**
 
+## R14 — Which database do these statements go in? **`relay_analytics`, said in every statement — and the default is not it.**
+
+**Decision**: the database is `relay_analytics`; every `.sql` statement names it; `apply.mjs`
+bootstraps `CREATE DATABASE IF NOT EXISTS` before the ledger and refuses a statement that does
+not name it; `--drop-all` is `DROP DATABASE IF EXISTS relay_analytics`.
+
+**Rationale**: no artifact in this feature named a database, and the value you get by not
+choosing one is wrong:
+
+    CLICKHOUSE_DB=relay_analytics             -> database created at first start
+    SELECT currentDatabase()   (HTTP, relay)  -> default
+    CREATE TABLE message_events …             -> lands in `default`, no error
+
+**`CLICKHOUSE_DB` creates a database and does not make it the session's.** So SAD §6.2's DDL,
+posted as published, builds the analytical schema in `default` while the database compose
+provisioned sits empty beside it — and nothing downstream disagrees, because every later
+statement makes the same mistake consistently.
+
+**The cleanup cannot catch it from either side.** `DROP DATABASE relay_analytics` returns no
+error and removes nothing, leaving `message_events` standing; `DROP DATABASE default` also
+succeeds, after which the server still answers `SELECT 1` while every unqualified statement
+fails `Code: 81 … UNKNOWN_DATABASE` and no task re-creates it. **An unnamed `DROP DATABASE` is
+wrong in both directions and silent in both.**
+
+**Two fixes work and one is weaker.** `?database=relay_analytics` on the URL sets
+`currentDatabase()` and an unqualified `CREATE` then lands correctly — but it lives in the
+connection, so the same statement pasted into `clickhouse-client`, which is how a reader of this
+chapter will run one, goes back to `default`. Qualified names travel with the statement. Both
+were checked; so was recovery (`CREATE DATABASE IF NOT EXISTS` after a drop, then a qualified
+create, both clean).
+
+**And `system.tables` is the honest place to verify a drop**: it reports **0** for a database
+that does not exist rather than erroring, so the after-check needs no branch and `--drop-all`
+needs no re-create.
+
+**What this pass did not find is the part worth recording.** Four premises were checked in the
+same pass and every one held: `specs/046-chapter-4-1/vi-placeholder.py` exists and its regex was
+generalised from `(3\.\d+)` to `(\d+\.\d+)`, so it works on a 4.2 header; `services/api/migrations/`
+ends at `0014_connection_minutes.sql`; all five gate scripts T060 names resolve; and the fence
+precedent is exactly four `diff title="compose.yaml"` hunks against chapter 1.2's one whole body.
+**The pass found no wrong fact. It found a missing one** — and a missing address is harder to see
+than a wrong one, because there is no sentence to disagree with.
+
 ## What research did not resolve
 
 - **The schema ledger's shape (FR-011/FR-012).** ClickHouse has `CREATE … IF NOT EXISTS`, which

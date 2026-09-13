@@ -50,6 +50,24 @@ per `(environment_id, day)` until a background merge, so `SELECT messages` retur
 a query whose correctness depends on somebody having run `OPTIMIZE` is right in a demo and wrong
 in production.
 
+**PASS 5 FOUND THAT `analytics/` HAD NO ADDRESS, AND THE DEFAULT IS NOT THE ONE COMPOSE
+PROVISIONS.** `CLICKHOUSE_DB=relay_analytics` **creates that database and does not make it the
+session default** — `currentDatabase()` over HTTP is `default`, so SAD §6.2's unqualified
+`CREATE TABLE` builds the whole analytical schema in **`default`**, with no error, while the
+provisioned database sits empty beside it. **And the cleanup cannot catch it from either side**:
+`DROP DATABASE relay_analytics` removes nothing and says nothing; `DROP DATABASE default`
+succeeds, the server still answers `SELECT 1`, and every unqualified statement then fails
+`Code: 81` with nothing to re-create it. Every statement names `relay_analytics` now and
+`apply.mjs` **refuses one that does not** — the case is made impossible rather than handled.
+**A missing address is harder to see than a wrong one: there is no sentence to disagree with**,
+and five artifacts described what the statements do without one of them saying where they go.
+
+**AND THE PASS FOUND NO WRONG FACT — IT FOUND A MISSING ONE.** Four premises checked in the same
+pass all held: the vi placeholder's regex was generalised from `(3\.\d+)` to `(\d+\.\d+)`, the
+migration tail is `0014`, all five gate scripts resolve, and the fence precedent is exactly four
+`diff` hunks against chapter 1.2's one whole body. **Checking a premise that holds is not a
+wasted pass**; it is the only way the clean ones become evidence.
+
 **PASS 4 OPENED `contracts/schema.md` AND FOUND 046'S DEFECT VERBATIM.** The invocation line
 read `RELAY_POSTGRES_PORT=15432 node scripts/scale/../../analytics/apply.mjs` — a **Postgres**
 variable on a ClickHouse-only script, and a traversal for a path the quickstart writes plainly.

@@ -40,26 +40,54 @@ So `analytics/*.sql` is a directory of **statements**, not of files that happen 
 `apply.mjs` refuses a file holding more than one rather than discovering it mid-run — and the
 ledger keyed on filename only means something if a filename is one change.
 
+### The statements carry their own address
+
+**The database is `relay_analytics`, and every statement names it.** Not because qualified
+names read better — because the unqualified form has a wrong answer that looks like a right one:
+
+    CLICKHOUSE_DB=relay_analytics          -> the database is created at first start
+    SELECT currentDatabase()  (HTTP, relay) -> default
+    CREATE TABLE message_events …           -> lands in `default`, no error
+
+**`CLICKHOUSE_DB` creates a database and does not make it the session's.** So SAD §6.2's DDL,
+posted exactly as published, builds the analytical schema in `default` while the database compose
+provisioned sits empty beside it — and every later statement, every query and every cleanup
+agrees with itself about the wrong place. `?database=relay_analytics` on the URL also works
+(verified), and it is the weaker fix: it lives in the connection, so a statement pasted into
+`clickhouse-client` — which is how a reader of this chapter will run one — goes back to landing
+in `default`.
+
+**`apply.mjs` refuses a statement that does not name the database**, in the same family as the
+one-statement rule below. A file without an address is refused rather than applied somewhere
+else: **the failure that was found here cannot arise rather than being handled.**
+
 | behaviour | |
 |---|---|
 | **Idempotence** | Each file applies once, keyed on filename in `schema_applied`. |
 | **Reporting** | Every run prints the files it applied and the files it skipped. **A run that applies nothing prints that it applied nothing** — a zero that proves it looked. |
 | **Checksums** | The ledger stores each file's checksum. An edited file that has already been applied is **reported as changed and refused**, not silently skipped: ClickHouse has no `ALTER` path for most of what these files do, and a schema the ledger claims is applied but is not is worse than one that has not been applied. |
 | **Isolation** | It writes to ClickHouse only. It does not touch `schema_migrations`, the Postgres runner, or any operational table (FR-012). |
-| **`--drop-all`** | `DROP DATABASE`, not a table-by-table sweep. **Dropping the source table under a live materialised view succeeds with no error** and leaves the view behind, still queryable and returning 0 — so a sweep that enumerates tables in an unlucky order leaves a view pointing at nothing. (Dropping the *view* by name does clean up its hidden `.inner_id` table; that half was checked and is not a leak.) |
-| **Ordering** | Filename order. `0001_daily_usage.sql` reads `message_events`, so `0000` must have run — the materialised view creation fails with `UNKNOWN_TABLE` otherwise, which was checked. |
+| **`--drop-all`** | **`DROP DATABASE IF EXISTS relay_analytics`** — one named database, not a table-by-table sweep, and **not an unqualified `DROP DATABASE`**: dropping the provisioned database while the tables are in `default` returns no error and removes nothing, and dropping `default` leaves the server answering `SELECT 1` while every unqualified statement fails `Code: 81 … UNKNOWN_DATABASE`. **Both directions of the unnamed version are wrong and neither reports anything.** It does not re-create: the bootstrap does that on the next run, and `system.tables` reports **0** for an absent database rather than erroring, so the after-check stays honest. **Dropping the source table under a live materialised view succeeds with no error** and leaves the view behind, still queryable and returning 0 — so a sweep that enumerates tables in an unlucky order leaves a view pointing at nothing. (Dropping the *view* by name does clean up its hidden `.inner_id` table; that half was checked and is not a leak.) |
+| **Ordering** | **Bootstrap first, then filename order.** The bootstrap is two statements the directory does not contain — `CREATE DATABASE IF NOT EXISTS relay_analytics`, then the ledger — and only then `0000`, `0001`, `0002` by filename. `0001_daily_usage.sql` reads `message_events`, so `0000` must have run: the materialised view creation fails with `UNKNOWN_TABLE` otherwise, which was checked. |
 
 ## The statements
 
 | file | creates | source |
 |---|---|---|
-| `0000_message_events.sql` | the raw event table | SAD §6.2, with `toDateTime(ts)` in the TTL |
-| `0001_daily_usage.sql` | the daily rollup | SAD §6.2, verbatim |
-| `0002_schema_applied.sql` | the ledger | this chapter's |
+| `0000_message_events.sql` | `relay_analytics.message_events` | SAD §6.2, with `toDateTime(ts)` in the TTL and the database named |
+| `0001_daily_usage.sql` | `relay_analytics.daily_usage` | SAD §6.2, with both its own name and its `FROM` qualified |
+| `0002_schema_applied.sql` | `relay_analytics.schema_applied` | this chapter's |
 
 **`0002` is applied before `0000` by the script's own bootstrap**, because a ledger cannot
 record its own creation from a table that does not exist. The script creates it unconditionally
 with `IF NOT EXISTS` and records everything after it.
+
+**And the same argument runs one level further up, which is where it was missing.** A ledger
+cannot be created in a database that does not exist either, so the bootstrap's first statement is
+`CREATE DATABASE IF NOT EXISTS relay_analytics` — and under the one-statement-per-file rule it
+cannot ride along inside `0002`. It is the script's, not the directory's: a `.sql` file for it
+would need a filename sorting before `0000`, and the ledger cannot record the creation of the
+database the ledger lives in.
 
 ## Column producers, stated
 

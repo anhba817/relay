@@ -3,6 +3,11 @@
 Two tables and a view, all new, all in a store that has been in `compose.yaml` since chapter
 1.2 and has never held a row.
 
+**They live in `relay_analytics`, and every statement says so.** The names below are written
+bare for readability; on disk each one is qualified. `CLICKHOUSE_DB` creates that database
+without making it the session default, so an unqualified `CREATE TABLE` builds this whole model
+in `default` and reports success — see [contracts/schema.md](./contracts/schema.md).
+
 ---
 
 ## 1. `message_events` — the raw table

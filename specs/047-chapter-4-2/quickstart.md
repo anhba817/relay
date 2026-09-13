@@ -25,8 +25,8 @@ context against a root-socket daemon needs `DOCKER_HOST=unix:///var/run/docker.s
 ## 1. Confirm ClickHouse is reachable — it was not before this chapter
 
 ```bash
-curl -s "http://localhost:8123/ping"
-curl -s "http://localhost:8123/?query=SELECT+version()"
+curl -s "http://localhost:${RELAY_CLICKHOUSE_HTTP_PORT:-8123}/ping"
+curl -s "http://localhost:${RELAY_CLICKHOUSE_HTTP_PORT:-8123}/?query=SELECT+version()"
 ```
 
 **Expected after this chapter's compose amendment:** `Ok.` and a version string.
@@ -50,7 +50,8 @@ nothing outside the container could query the store**, from chapter 1.2 until th
 node analytics/apply.mjs
 ```
 
-**Expected:** the three files named as applied. Run it again and **expect it to say it applied
+**Expected:** the database, the ledger, then the three files named as applied — the first two
+are the script's bootstrap and are not files in the directory. Run it again and **expect it to say it applied
 nothing** — see [contracts/schema.md](./contracts/schema.md). A run that is silent about having
 done nothing is the zero that means two things.
 

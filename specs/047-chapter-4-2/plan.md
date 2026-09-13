@@ -136,6 +136,10 @@ relay-tutorial/
 └── app/(vi)/vi/part-4/chapter-02/<slug>/page.mdx
 ```
 
+**Database**: `relay_analytics`, named in every statement rather than carried on the
+connection. `CLICKHOUSE_DB` provisions it and does not make it the session default, so the
+unqualified form applies to `default` successfully and silently.
+
 **Structure Decision**: the analytical schema lives in `relay-platform/analytics/` beside
 `services/api/migrations/`, not inside it — **the two stores' ledgers are separate** (FR-012),
 and putting ClickHouse DDL under a directory the Postgres runner reads is how one runner ends
