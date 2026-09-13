@@ -17,7 +17,9 @@ consumers**; the store and its schema runner landed in 4.2. This chapter joins t
 **Primary dependencies**: **none added.** `nats` is already a dependency; ClickHouse is
 reached by Node's own `fetch` against the HTTP interface, the transport 4.2 established.
 **Storage**: ClickHouse `relay_analytics` for writes; **PostgreSQL is not touched on the
-ingestion path** (constitution III, FR-009).
+ingestion path** (constitution III, FR-009). Deduplication is `ReplacingMergeTree` on the
+record's natural key — **not** `insert_deduplication_token`, which the analysis pass
+measured to be unusable here.
 **Testing**: the api lane's integration harness. Nothing under `analytics/` joins a lane —
 `vitest.coverage.config.mts`'s four include globs are `packages/*/src/**` and
 `services/*/src/**` — so **a consumer written under `services/` IS collected** and one
@@ -43,22 +45,46 @@ says which (FR-014).
 ## The design, in one paragraph
 
 Fetch a batch from a durable pull consumer on `analytics.>`. Shape the records. Insert them
-in one statement with an `insert_deduplication_token` derived from the batch's stream
-sequence range, into a table created with `non_replicated_deduplication_window` set.
-Acknowledge only after the insert returns. A redelivery replays the same sequence range,
-produces the same token, and the server refuses the block — **so the dedup is at insert, on
-the server, with no read-time cost and no dependence on anybody running `OPTIMIZE`.**
+in one statement into a `ReplacingMergeTree` ordered by
+**`(environment_id, ts, delivery_id, attempt)`** — the record's own natural key.
+Acknowledge only after the insert returns. A redelivery writes the same key again and the
+engine collapses it; reads take `FINAL`. **The dedup depends on nothing about how the
+records were grouped**, which is the property the first design silently assumed and did not
+have.
 
-## Why not the two obvious alternatives
+## The design this replaced, and why it does not work
 
-**ReplacingMergeTree.** Measured: after a redelivered batch, `SELECT count()` returns
-**2,000** where the truth is 1,000, and only `FINAL` returns 1,000. That is chapter 4.2's
-`SummingMergeTree` finding one engine over — the duplicate is physically present until a
-merge, and correctness moves into every read. A query whose correctness depends on somebody
-having run maintenance is right in a demo and wrong in production.
+The plan's first version derived an `insert_deduplication_token` from the batch's stream
+sequence range. **JetStream batch boundaries are not stable across a redelivery**, measured:
 
-**The existing consumer runtime's claim table.** It works, it is tested, and it writes to
-Postgres inside a transaction. On this path that is the one thing principle III forbids.
+    original batch, max_messages=5   seqs 1,2,3,4,5              token range 1-5
+    retry with     max_messages=3    seqs 1,2,3                  token range 1-3
+    retry with     max_messages=10   seqs 4,5,1,2,3,6,7,8,9,10   token range 4-10
+
+The retry comes back **out of order and interleaved with newer messages**, so the "range" is
+neither contiguous nor the same set. A different token means the duplicate is inserted, and
+DR-11's two-second bound makes it worse: batch boundaries then depend on arrival timing, so
+even a constant `max_messages` regroups.
+
+**And the token is more dangerous than it looks.** It keys on the token alone, not on the
+content: a second insert carrying the same token and 500 **completely different** rows was
+dropped, all 500, with no error. So a range like `4-10` colliding with another batch's range
+is **silent data loss**, not a duplicate.
+
+**One mechanism, verified against the failure case rather than the happy one.** Three
+differently-cut batches over the same 500 records: physical count 500 → 800 → 1,200,
+`FINAL` **500** every time.
+
+## What `FINAL` costs, and why it is acceptable here
+
+It is chapter 4.2's `SummingMergeTree` lesson again — correctness lives in the read, not in
+a merge somebody has to run. 4.2 paid it with `sum()` and `GROUP BY`; this table pays it
+with `FINAL`, and **the chapter measures the cost rather than asserting it is small**. What
+makes it acceptable is that the alternative is not "cheaper dedup", it is "no dedup".
+
+**The existing consumer runtime's claim table** would have avoided all of this, and it
+writes to Postgres inside a transaction. On this path that is the one thing principle III
+forbids.
 
 ## Project structure
 

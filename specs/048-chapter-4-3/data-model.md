@@ -25,24 +25,40 @@ attempts is published anywhere.** FR-008 amends that.
 | `outcome` | `LowCardinality(String)` | `outcome` | |
 
 ```
-ENGINE = MergeTree
-PARTITION BY toYYYYMM(ts)                    -- DR-07, as message_events
-ORDER BY (environment_id, ts)                -- the same tenant-then-time ordering
-TTL toDateTime(ts) + INTERVAL 90 DAY         -- DR-09, and toDateTime because the
-                                             -- published form is refused (4.2, SAD 1.2)
-SETTINGS non_replicated_deduplication_window = <n>
+ENGINE = ReplacingMergeTree
+PARTITION BY toYYYYMM(ts)                            -- DR-07, as message_events
+ORDER BY (environment_id, ts, delivery_id, attempt)  -- tenant-then-time, AND the
+                                                     -- record's natural key
+TTL toDateTime(ts) + INTERVAL 90 DAY                 -- DR-09, and toDateTime because
+                                                     -- the published form is refused
 ```
 
-**The `SETTINGS` line is the load-bearing one and it is the easiest to leave out.** Without
-it an `insert_deduplication_token` is accepted and ignored — the insert succeeds, the
-duplicate lands, and nothing reports anything (R5). `<n>` is a bound on how far back a
-redelivery can be recognised, so it is a number to choose against measured redelivery
-behaviour rather than a default to inherit.
+**The sorting key is the deduplication key, and it has to be both things at once.**
+`(environment_id, ts)` is the ordering 4.2's whole argument is about — tenant, then time.
+`(delivery_id, attempt)` is what makes a record unique. Putting all four in the sorting key
+gets the range scans and the dedup from one declaration, and it is safe **because `ts` comes
+from `attempted_at`, a field of the record** rather than from when it was consumed: the same
+record always sorts to the same place, however it was batched.
 
-**`ReplacingMergeTree` is not used**, and R4 is why: it leaves the duplicate physically
-present until a merge, so `SELECT count()` returns 2,000 where the truth is 1,000 and only
-`FINAL` is correct. That is chapter 4.2's rollup lesson one engine over, and this table can
-avoid it entirely by refusing the duplicate at insert instead.
+**Reads take `FINAL`.** The duplicate is physically present until a merge collapses it, so
+a bare `SELECT count()` over this table over-counts. That is chapter 4.2's rollup lesson one
+engine over — there the read contract became `sum()` with `GROUP BY`, here it becomes
+`FINAL` — and the chapter measures what it costs instead of asserting it is small.
+
+**Verified against the case that killed the first design**, not against the easy one. Three
+differently-cut batches covering the same 500 records:
+
+    batch {1..500}              count   500      FINAL 500
+    regrouped retry {1..300}    count   800      FINAL 500
+    regrouped retry {101..500}  count 1,200      FINAL 500
+
+**`insert_deduplication_token` is not used**, and the analysis pass is why. It would have
+been cheaper — the server refuses the duplicate block at insert, with no read cost — but it
+requires a token that is stable across a redelivery, and **JetStream batch boundaries are
+not**: a retry returned `4,5,1,2,3,6,7,8,9,10`, out of order and interleaved with newer
+messages. Worse, the token keys on **itself and not on the content**: the same token with
+500 completely different rows dropped all 500 and reported success. A token that is not
+provably unique per batch is not a weak deduplication, it is silent data loss.
 
 ## The dedup key, and why it is not the publisher's
 
@@ -52,10 +68,12 @@ into one message. That id stops a *publisher* sending the same record twice with
 broker's window. It does nothing about a *consumer* being handed the same record twice,
 which is what at-least-once delivery means.
 
-The ingester's token is therefore about the **batch**, not the record: derived from the
-stream sequence range the batch covers, so a redelivery of the same range reproduces it
-exactly. Two different mechanisms, two different failure modes, and the chapter has to say
-so or a reader will assume the first one covers the second.
+The ingester therefore dedups on the **record**, never on the batch. `{delivery_id,
+attempt}` is the same pair the publisher already treats as identity, which is the strongest
+argument for it: the two mechanisms then agree about what a distinct record is, at two
+different layers, for two different failure modes. The chapter has to say so, or a reader
+will assume the publisher's id already covers the consumer's problem — it does not, because
+at-least-once is about being handed the same record twice, not about sending it twice.
 
 ## What is not in this table
 

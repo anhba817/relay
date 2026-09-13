@@ -12,7 +12,7 @@ PostgreSQL on the ingestion path (constitution III, FR-009).
 |---|---|
 | **fetch** | A durable pull consumer on `analytics.>`. Batch bounded by **both** a row count and an elapsed interval — DR-11 publishes 2 s or 10,000 rows — because a count alone stalls a quiet tenant forever and an interval alone gives no bound under load. |
 | **shape** | Allow-list, mirroring the publisher's own. A field nobody mapped is dropped loudly at review time rather than silently at runtime. |
-| **insert** | One statement, one block, with `insert_deduplication_token` derived from the batch's stream sequence range. |
+| **insert** | One statement. No deduplication token: the table is a `ReplacingMergeTree` keyed on `(environment_id, ts, delivery_id, attempt)`, so a re-inserted record collapses regardless of how it was batched. **The insert carries no assumption about grouping**, which is the property the first design needed and did not have. |
 | **acknowledge** | **Only after the insert returns.** A record that was not written is not acknowledged (FR-003). |
 | **malformed** | Counted and set aside. Not retried forever, not dropped silently (FR-010). |
 
@@ -28,8 +28,10 @@ telling anyone. An ingester that has been down long enough cannot distinguish "t
 nothing" from "there was something and it is gone" — FR-011 requires the chapter to say so
 rather than imply completeness.
 
-**Does not guarantee** anything about redeliveries older than the dedup window. That window
-is finite; the chapter states its size and what falls outside it.
+**Does not guarantee** that a bare `SELECT` is correct. The duplicate is physically present
+until a merge, so every read of this table takes `FINAL`. A caller that forgets over-counts
+by however many redeliveries happened — which is the cost of buying deduplication that does
+not depend on batch boundaries, and the chapter publishes it rather than burying it.
 
 ## Isolation
 

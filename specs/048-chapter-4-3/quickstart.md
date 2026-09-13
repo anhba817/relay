@@ -36,11 +36,13 @@ for what it wrote.
 
 ```bash
 curl -s "http://localhost:${RELAY_CLICKHOUSE_HTTP_PORT:-8123}/" -u relay:relay \
-  --data-binary "SELECT count(), uniqExact((delivery_id, attempt)) FROM relay_analytics.webhook_attempts"
+  --data-binary "SELECT count(), count() FROM relay_analytics.webhook_attempts FINAL"
 ```
 
-**The two numbers must be equal.** If `count()` exceeds the distinct pairs, something was
-written twice.
+**Read this table with `FINAL`.** It is a `ReplacingMergeTree`, so a redelivered record is
+physically present until a merge collapses it and a bare `SELECT count()` over-counts.
+`FINAL` is the right answer at any moment; the bare count is right only after maintenance
+somebody has to remember to run.
 
 ## 4. Take the store away
 
@@ -59,14 +61,16 @@ analytical store is gone, the second store bought nothing.
 ## 5. Force a redelivery
 
 Stop the ingester after an insert but before the acknowledgement, then restart it so the
-broker redelivers the same sequence range.
+broker redelivers those records.
 
-**Expected:** the row count does not move, because the server refuses the duplicate block.
+**Expected:** `SELECT count() FINAL` does not move. The bare `SELECT count()` **does** move,
+and that is not a failure — it is the engine holding the duplicate until a merge, which is
+exactly what `FINAL` is for.
 
-**Check the negative control too.** Remove `non_replicated_deduplication_window` from the
-table and repeat: the token is accepted, the block is inserted, the count doubles, and
-**nothing reports an error**. A mechanism that fails silently when half-configured has to be
-shown failing, or a reader will assume the token alone was doing the work.
+**Force the regrouping, because that is the case that matters.** Restart the ingester with a
+different batch size so the redelivered records are cut differently from the originals. The
+count under `FINAL` still must not move. A redelivery test that replays the same batch shape
+proves the easy half; the first version of this design passed that half and was wrong.
 
 ## 6. Clean up
 

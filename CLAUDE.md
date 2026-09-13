@@ -51,14 +51,26 @@ in"* — and the dedup it has built in is `claimEvent`, a **PostgreSQL transacti
 Constitution III forbids that on this path. **The template describing this consumer is the
 one thing this consumer may not reuse**, which is the chapter's central argument.
 
-**`ReplacingMergeTree` IS 4.2's ROLLUP LESSON ONE ENGINE OVER.** A redelivered 1,000-row
-batch measured `SELECT count()` **2000**, `FINAL` 1000. The duplicate is physically present
-until a merge, so correctness moves into every read — and a bare count over an attempt table
-double-counts by a plausible number until somebody disputes a bill. **The design refuses the
-duplicate at INSERT instead**, with `insert_deduplication_token` plus
-`non_replicated_deduplication_window`: same token, second insert, block refused, no
-read-time cost. **The trap is that the token without the window dedups nothing and reports
-no error** — a mechanism that looks configured and does nothing.
+**AND ANALYSIS PASS 1 KILLED THE PLAN'S CENTRAL MECHANISM, WHICH IS THE CHEAPEST PLACE IT
+COULD HAVE DIED.** The design derived an `insert_deduplication_token` from a batch's stream
+sequence range. **JetStream batch boundaries are not stable across a redelivery**: a retry
+with a different `max_messages` returned `4,5,1,2,3,6,7,8,9,10` where the original batch was
+`1,2,3,4,5` — out of order and interleaved with newer messages. Different token, duplicate
+inserted. And the token **keys on itself, not the content**: the same token with 500
+completely different rows dropped all 500 and reported success, so a colliding range is
+**silent data loss, not a duplicate.**
+
+**THE PROBE WAS NOT WRONG. IT WAS RIGHT ABOUT ONE CONFIGURATION.** R5 proved the token works
+when the server is handed the same batch twice; it never asked whether the broker will hand
+you the same batch twice. **A design tested in one configuration is a design tested
+nowhere.** The replacement — `ReplacingMergeTree` on `(environment_id, ts, delivery_id,
+attempt)` — was verified against three *differently-cut* batches of the same 500 records:
+physical count 500 → 800 → 1,200, `FINAL` **500** every time. It works because `ts` is
+`attempted_at`, a field of the record rather than the time it was consumed.
+
+**SO IT IS 4.2's ROLLUP LESSON ONE ENGINE OVER AFTER ALL.** There the read contract became
+`sum()` with `GROUP BY`; here it is `FINAL`. Correctness lives in the read, and the chapter
+measures what that costs rather than asserting it is small.
 
 **AND THAT PROBE'S FIRST RUN MEASURED NOTHING.** It built both batches with
 `generateUUIDv4()` in the sorting key, so the two inserts were not duplicates at all, and it

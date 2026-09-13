@@ -43,9 +43,9 @@ wrong database.
 **Blocking for all three stories.** Nothing can be written to a table that does not exist,
 and this is the first statement file added since the chapter that built the runner.
 
-- [ ] T011 Create `relay-platform/analytics/0003_webhook_attempts.sql` from [data-model.md](./data-model.md): ten columns, `MergeTree`, `PARTITION BY toYYYYMM(ts)`, `ORDER BY (environment_id, ts)`, `TTL toDateTime(ts) + INTERVAL 90 DAY`. **Name `relay_analytics` in the statement** — `CLICKHOUSE_DB` creates a database without making it the session's, so an unqualified `CREATE TABLE` lands in `default` with no error, and `apply.mjs` refuses a statement that does not name it (047 R14).
+- [ ] T011 Create `relay-platform/analytics/0003_webhook_attempts.sql` from [data-model.md](./data-model.md): ten columns, **`ReplacingMergeTree`**, `PARTITION BY toYYYYMM(ts)`, **`ORDER BY (environment_id, ts, delivery_id, attempt)`** — the sorting key is also the dedup key, and it is safe because `ts` is `attempted_at`, a field of the record rather than the time it was consumed — `TTL toDateTime(ts) + INTERVAL 90 DAY`. **Name `relay_analytics` in the statement** — `CLICKHOUSE_DB` creates a database without making it the session's, so an unqualified `CREATE TABLE` lands in `default` with no error, and `apply.mjs` refuses a statement that does not name it (047 R14).
 - [ ] T012 In `relay-platform/analytics/0003_webhook_attempts.sql`, make **`status` and `error` `Nullable`** and comment why. The publisher spreads them in only when present, because *"an explicit `undefined` is not the same as an absent key, and the difference is the whole meaning of 'nothing answered'"*. A non-nullable `status` writes **0** and claims an endpoint answered with status zero — 4.2's argument arriving in a new table before anyone can get it wrong again.
-- [ ] T013 In `relay-platform/analytics/0003_webhook_attempts.sql`, add `SETTINGS non_replicated_deduplication_window = <n>` and **choose `<n>` deliberately**. It bounds how far back a redelivery can be recognised. Without this line the `insert_deduplication_token` in Phase 5 is accepted and ignored: the insert succeeds, the duplicate lands, nothing reports anything.
+- [ ] T013 Record in `specs/048-chapter-4-3/baseline.txt` **why there is no `insert_deduplication_token` and no `non_replicated_deduplication_window`** — the mechanism built for at-least-once consumers, rejected after measuring it. It needs a token stable across a redelivery and **JetStream batch boundaries are not** (T034a), and it keys on itself rather than on the content, so a colliding token is **silent data loss** rather than a duplicate (T034b). The road not taken is worth a paragraph in the chapter because it is the answer a reader will find first.
 - [ ] T014 Apply it with `node analytics/apply.mjs` and record the output in `specs/048-chapter-4-3/baseline.txt`: **`applied 1: 0003_webhook_attempts.sql`** and three skipped. Run it again and record **`applied nothing`**. This is the ledger's first use by somebody not trying to make it fire.
 - [ ] T015 Amend `docs/05-sad.md` §6.2 to publish `webhook_attempts` (FR-008), and sync it: **`pnpm sync:docs` in `relay-tutorial`, or `check:docs` fails** with `content/docs/05-sad.md differs from docs/05-sad.md`. 047 hit that gate and it caught the omission.
 - [ ] T016 Commit phase 2 — `relay-platform/analytics/`, `docs/05-sad.md`, `relay-tutorial/content/docs/`. Gates first: `pnpm lint && pnpm typecheck && pnpm test` in `relay-platform`.
@@ -61,11 +61,11 @@ compare the store's row count against the stream's delivered count.
 
 - [ ] T017 [US1] Decide where the ingester lives and **record the decision and its reason** in `specs/048-chapter-4-3/baseline.txt` (FR-014). `services/*/src/**` is collected by the coverage lane; `analytics/**` is collected by nothing. A fourth service directory is the SAD's shape.
 - [ ] T018 [US1] Create the ingester with a durable pull consumer on `analytics.>`. **State whether `createConsumerRuntime` is reused, parameterised or replaced, and why** — its claim is a Postgres transaction and constitution III forbids that here (T004). **The template written to stop a future consumer double-counting is the one this consumer may not reuse**, and that is the chapter's argument, not an inconvenience to route around.
-- [ ] T019 [US1] Bound the batch by **both** a row count and an elapsed interval (DR-11 publishes 2 s or 10,000 rows). A count alone never flushes for a quiet tenant; an interval alone has no bound under load. **Publish what each bound costs at a stated publish rate** (SC-004) rather than quoting DR-11.
+- [ ] T019 [US1] Bound the batch by **both** a row count and an elapsed interval (DR-11 publishes 2 s or 10,000 rows). A count alone never flushes for a quiet tenant; an interval alone has no bound under load. **Publish what each bound costs at a stated publish rate** (SC-004) rather than quoting DR-11. **The time bound is why deduplication may not depend on grouping**: with it, batch boundaries follow arrival timing, so the same records are cut differently on a retry even at a fixed batch size (T034a).
 - [ ] T020 [US1] Shape records with an **allow-list**, mirroring the publisher's own — *"An allow-list fails closed when somebody adds a field; a spread fails open."*
 - [ ] T021 [US1] Insert one batch as one statement, and **acknowledge only after the insert returns** (FR-003). A record that was not written is not acknowledged.
 - [ ] T022 [US1] Handle a malformed record: count it, set it aside, and **do not let it stall the stream behind it** (FR-010). The existing runtime's comment names this case — *"A payload that will never parse must not consume five delivery attempts"* — so there is a precedent to follow or to differ from deliberately.
-- [ ] T023 [US1] Run the drain and record in `specs/048-chapter-4-3/baseline.txt` **two counts side by side**: rows in `relay_analytics.webhook_attempts` and `uniqExact((delivery_id, attempt))`. **They must be equal.** A count alone cannot tell you whether something was written twice.
+- [ ] T023 [US1] Run the drain and record in `specs/048-chapter-4-3/baseline.txt` **three counts side by side**: `count()`, `count() FINAL`, and `uniqExact((environment_id, ts, delivery_id, attempt))`. On a clean first drain all three agree; **after any redelivery the first will exceed the other two, and that is the engine working rather than a defect.** Reading this table means `FINAL`.
 - [ ] T024 [US1] Record the consumer's pending count after the drain, from the broker rather than from the ingester's own log. **A process reporting that it finished is not evidence that the queue is empty.**
 - [ ] T025 [US1] Verify no request waits on an analytical write (FR-ANL-02) and record how it was verified. `publishAttempt` already *"never throws"* and is called after the outcome transaction commits; this task confirms the consumer added nothing to that path.
 - [ ] T026 [US1] Commit phase 3 — the ingester and `specs/048-chapter-4-3/baseline.txt`. Gates first.
@@ -95,10 +95,12 @@ and the queue grows; restart and confirm the backlog drains with no gap.
 
 **Independent test**: force a redelivery of a written batch, then compare counts.
 
-- [ ] T034 [US3] Derive the `insert_deduplication_token` from the batch's **stream sequence range**, so a redelivery of the same range reproduces it exactly. Record why the publisher's `{deliveryId}:{attempt}` id does not cover this: that is **broker-side publish dedup**, and at-least-once is about the consumer being handed the same record twice. **Two mechanisms, two failure modes.**
-- [ ] T035 [US3] Force a redelivery — stop the ingester after an insert and before the acknowledgement — and record the row count before and after. **It must not move.**
-- [ ] T036 [US3] **Test the mechanism red, and for its own reason.** Remove `non_replicated_deduplication_window` from the table, repeat the redelivery, and record that the count **doubles with no error reported**. Restore, repeat, confirm it holds again. A mechanism that fails silently when half-configured has to be shown failing, or a reader assumes the token alone was doing the work. **Clean up the probe before anything is counted.**
-- [ ] T037 [US3] Record what falls **outside** the dedup window: a redelivery older than `<n>` blocks slips through. State the number and what it bounds.
+- [ ] T034 [US3] Confirm the deduplication is on the **record**, not the batch: the `ReplacingMergeTree` key `(environment_id, ts, delivery_id, attempt)`. Record why the publisher's `{deliveryId}:{attempt}` id does not cover this — that is **broker-side publish dedup**, and at-least-once is about the consumer being handed the same record twice. **Two mechanisms, two failure modes**, agreeing about what a distinct record is.
+- [ ] T034a [US3] **Re-run the measurement that killed the first design** and record it in `specs/048-chapter-4-3/baseline.txt`: a pull consumer's retry with a different `max_messages` returns a different set, out of order and interleaved with newer messages — `4,5,1,2,3,6,7,8,9,10` where the original batch was `1,2,3,4,5`. Record the case that DOES work too (same `max_messages` replays the batch exactly), because **that is the one configuration the first design was tested in.**
+- [ ] T034b [US3] Record in `specs/048-chapter-4-3/baseline.txt` that `insert_deduplication_token` keys on **itself, not the content**: the same token with 500 completely different rows drops all 500 and reports success. **A token that is not provably unique per batch is silent data loss**, which is why it is not used even as a cheap first line.
+- [ ] T035 [US3] Force a redelivery — stop the ingester after an insert and before the acknowledgement — and record `count()` and `count() FINAL` before and after. **`FINAL` must not move; the bare count may, and the chapter says why that is the engine rather than a defect.**
+- [ ] T036 [US3] **Force the REGROUPING, because replaying the same batch shape proves only the easy half** — and the first design passed that half. Restart the ingester with a different batch size so the redelivered records are cut differently from the originals, then confirm `count() FINAL` is unchanged. Verified in analysis over three differently-cut batches of the same 500 records: physical count 500 → 800 → 1,200, `FINAL` **500** every time. **Clean up the probe before anything is counted.**
+- [ ] T037 [US3] **Measure what `FINAL` costs** on this table at the corpus's size and record it (SC-003's shape). It is the price of deduplication that does not depend on batch boundaries, and it is 4.2's rollup lesson one engine over — there the read contract became `sum()` with `GROUP BY`, here it is `FINAL`. **A query whose correctness depends on somebody having run `OPTIMIZE` is right in a demo and wrong in production.**
 - [ ] T038 [US3] Verify the ingester wrote nothing to PostgreSQL and issued no query against it on the ingestion path (FR-009, SC-005): `schema_migrations` unchanged, `consumed_events` unchanged, and the lane's row counts matching T009's. **Constitution III is the reason this chapter cannot reuse the obvious runtime**, so it is the claim most worth checking.
 - [ ] T039 [US3] Record in [contracts/ingester.md](./contracts/ingester.md) anything the contract gained after the code ran, **and which task forced it**. A contract written by one caller is a contract written by one caller's opinion.
 - [ ] T040 [US3] Commit phase 5 — the ingester, `specs/048-chapter-4-3/`. Gates first.
@@ -111,7 +113,7 @@ and the queue grows; restart and confirm the backlog drains with no gap.
 - [ ] T042 Write the opening: something has been publishing into a stream since chapter 3.20 and nothing has ever read it. **Open with the broker's own answer**, not with a description of it.
 - [ ] T043 Write the section on why the reusable runtime cannot be reused — `claimEvent` is a Postgres transaction and constitution III keeps the paths apart. **Name the subject, not the ordinal** (045 FR-008).
 - [ ] T044 Write the batching section with the measured cost of each bound, not DR-11's numbers restated.
-- [ ] T045 Write the redelivery section: `ReplacingMergeTree` at 2,000 against 1,000, the token-plus-window that refuses at insert, and **the half-configured case that reports success**.
+- [ ] T045 Write the redelivery section: why the obvious mechanism cannot be used here (a retry returns `4,5,1,2,3,6,7,8,9,10`, and a colliding token silently drops 500 rows), and why the key that works is the record's own. **Publish the `FINAL` cost.**
 - [ ] T046 Write the store-down section with the queue depths and the reconciliation, and what `discard: old` costs.
 - [ ] T047 Write the `<ForwardRef>`: no reconciliation job, no query surface, no latency percentiles, and `message_events.delivery_latency_ms` still with no producer. **Say plainly that `webhook_attempts.latency_ms` is not that column** — one is how long an endpoint took to answer, the other how long a message took to reach a client.
 - [ ] T048 Write the section amending SAD §6.2 to publish `webhook_attempts`, quoting what the publisher sends as the reason for each column.
@@ -173,6 +175,22 @@ numbers trustworthy; neither is optional for the chapter, both are separable for
   dropped, say so.
 
 ## Notes
+
+**ANALYSIS PASS 1 KILLED THE PLAN'S CENTRAL MECHANISM.** The design derived a deduplication
+token from a batch's stream sequence range, and **JetStream batch boundaries are not stable
+across a redelivery**: a retry returned `4,5,1,2,3,6,7,8,9,10` where the original batch was
+`1,2,3,4,5`, out of order and interleaved with newer messages. The token would differ, the
+duplicate would be inserted — and since the token keys on itself rather than on the content,
+a colliding range would have **silently dropped a different batch entirely.** Replaced by a
+`ReplacingMergeTree` on the record's natural key, verified against three differently-cut
+batches rather than against a replay of the same one.
+
+**THE FAILURE IS NOT THAT THE PROBE WAS WRONG. IT IS THAT IT WAS RIGHT ABOUT ONE
+CONFIGURATION.** R5 proved the token works when the server is handed the same batch twice.
+It never asked whether the broker will hand you the same batch twice. **A design tested in
+one configuration is a design tested nowhere**, and the plan had even flagged this as a stop
+point at T013/T036 — it just arrived four phases earlier than expected, which is the
+cheapest place it could have.
 
 **RESEARCH RAN SIX PROBES AND TWO OF THEM WERE WRONG FIRST.** The dedup probe built both
 batches with `generateUUIDv4()` in the sorting key, so its two inserts were not duplicates

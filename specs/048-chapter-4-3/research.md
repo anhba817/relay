@@ -61,7 +61,11 @@ that something does — and what `discard: old` at 1 GiB means for the records d
 an ingester is down. The stream drops them silently; whether the ingester can even notice is
 a question for Phase 4.
 
-## R4 — Does `ReplacingMergeTree` solve the redelivery problem? **Not without moving the cost into every read.**
+## R4 — Does `ReplacingMergeTree` solve the redelivery problem? **Yes, and R7 is why it is the only option that does.**
+
+**This entry was written as a rejection and R7 reversed it.** Read it as the measurement it
+is — the read-time cost is real — and read R7 for why that cost is the price of the only
+mechanism that works here.
 
 Measured on 25.3, a 1,000-row batch inserted twice with identical sorting keys:
 
@@ -81,10 +85,12 @@ sorting keys and were not duplicates at all. It reported 2,000 rows after `OPTIM
 and looked like a finding about ClickHouse. **A duplicate test whose rows are not
 duplicates measures nothing and says something.**
 
-## R5 — Is there a mechanism built for at-least-once consumers? **Yes, and it fails silently when half-configured.**
+## R5 — Is there a mechanism built for at-least-once consumers? **There is one, and it cannot be used here. See R7 and R8.**
 
-**Decision**: insert with an `insert_deduplication_token` derived from the batch's stream
-sequence range, into a table declared with `non_replicated_deduplication_window`.
+**Decision, SUPERSEDED**: insert with an `insert_deduplication_token` derived from the
+batch's stream sequence range, into a table declared with
+`non_replicated_deduplication_window`. **This does not work.** The measurements below are
+sound; the inference from them was not, and R7 is the question this entry never asked.
 
     plain MergeTree, no window
       same token twice                  -> 1000 rows    the token did NOTHING
@@ -114,10 +120,57 @@ consumer written under `analytics/` would be collected by nothing — the same f
 ships as a service directory or as a mode of an existing one is Phase 1's, but the coverage
 globs are an input rather than an afterthought.
 
+## R7 — Can a redelivery be handed back as the same batch? **No, and that kills R5's design.**
+
+**Decision**: dedup on the record's natural key with `ReplacingMergeTree`, never on the
+batch. `insert_deduplication_token` is not used.
+
+**Rationale**: R5 proved the token works when you hand the server the same batch twice. It
+never asked whether you *can*. Measured against a live JetStream pull consumer:
+
+    original batch, max_messages=5   seqs 1,2,3,4,5              range 1-5
+    retry with     max_messages=3    seqs 1,2,3                  range 1-3
+    retry with     max_messages=10   seqs 4,5,1,2,3,6,7,8,9,10   range 4-10
+
+**The retry comes back out of order and interleaved with newer messages.** The "sequence
+range" is neither contiguous nor the same set, so the token differs and the duplicate is
+inserted. DR-11's two-second bound makes it structural rather than incidental: with a time
+bound, batch boundaries depend on arrival timing, so even a fixed `max_messages` regroups.
+
+**One case does work**, and it is the one the plan had in mind: a retry with the *same*
+`max_messages` returned exactly `1:m1 … 5:m5`, ahead of three newer messages. **A design
+tested in one configuration is a design tested nowhere**, and that is the whole finding.
+
+**The replacement was verified against the failure case rather than the happy one.** Three
+differently-cut batches over the same 500 records, into a `ReplacingMergeTree` keyed on
+`(environment_id, ts, delivery_id, attempt)`:
+
+    batch {1..500}              count   500      FINAL 500
+    regrouped retry {1..300}    count   800      FINAL 500
+    regrouped retry {101..500}  count 1,200      FINAL 500
+
+It works because **`ts` is `attempted_at`, a field of the record**, not the time it was
+consumed — so the same record sorts to the same place however it arrives.
+
+## R8 — What does `insert_deduplication_token` actually key on? **Itself. Not the content.**
+
+    token tok-A, 500 rows 'first-*'    -> table holds 500
+    token tok-A, 500 rows 'SECOND-*'   -> table holds 500, and 0 rows start 'SECOND-'
+
+A second insert carrying the same token and **completely different data** was dropped
+entirely, with no error. The token is a promise the caller makes, not a fact the server
+checks.
+
+**That makes R5's broken derivation dangerous rather than merely useless.** A range token
+like `4-10` does not just fail to deduplicate its own batch — it can collide with a
+different batch's range and silently discard it. **A token that is not provably unique per
+batch is not weak deduplication; it is silent data loss**, and this is the second mechanism
+in two features that reports success while doing nothing.
+
 ## What research did not resolve
 
 - **How many records `discard: old` has already dropped.** The stream reports depth, not
   what it discarded. If the answer is "you cannot know", that belongs in the prose.
 - **Whether seven days is still right** now that something consumes the stream (FR-011).
-- **The dedup window's size.** R5 proves the mechanism at 100; the right number depends on
-  redelivery behaviour nobody has measured yet.
+- **What `FINAL` costs on this table at the corpus's size.** R7 settles that it is the only
+  mechanism that works; it does not say what the read is worth. The chapter measures it.
