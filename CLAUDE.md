@@ -41,6 +41,15 @@ draft.
 events instead. **The threshold is a cardinality, not a row count**, which is why testing at the
 corpus's 5,000 users would never have found it. Filed for movement IV.
 
+**PASS 3 WENT LOOKING FOR TWO DEFECTS AND FOUND NEITHER** — the first pass across two features
+whose named targets came back clean. `SummingMergeTree` does handle `uniqState` (1,500 against
+1,500 across three parts) and the event filter does survive the event-per-event load (1,210 mixed
+events roll to the 100 creations). **What it found instead**: the rollup holds one row per insert
+per `(environment_id, day)` until a background merge, so `SELECT messages` returned
+`1000 1000 1000` where the truth was 3000. **The read contract is `sum()` with `GROUP BY`**, and
+a query whose correctness depends on somebody having run `OPTIMIZE` is right in a demo and wrong
+in production.
+
 **AND PASS 2 ASKED PASS 1'S QUESTION OF THE COLUMNS PASS 1 SKIPPED.** `user_id` was not the
 only nullable source column — `text` is NULL for **4,057 tombstones** and `attachments` for
 **301,644 of 303,885 rows**, and both insert **0** into a non-nullable target. **A `text_length`

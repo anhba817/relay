@@ -97,8 +97,9 @@ the `EXPLAIN indexes=1` line beside the predecessor's figures.
 **Independent test**: query the rollup for the same ninety days and compare it, row for row and
 figure for figure, against the raw table.
 
-- [ ] T029 [US2] In `relay-platform/analytics/query.mjs`, add a rollup mode querying `daily_usage` for the same range, reporting duration and rows scanned.
-- [ ] T030 [US2] Compare the rollup's daily figures against the raw table's **row for row**, and record the comparison in `specs/047-chapter-4-2/baseline.txt`. A count that matches in total and not per day is a different defect.
+- [ ] T029 [US2] In `relay-platform/analytics/query.mjs`, add a rollup mode querying `daily_usage` for the same range with **`sum(messages)` and `GROUP BY day`**, reporting duration and rows scanned. **A bare `SELECT messages` is wrong**: the rollup holds one row per insert per key until a background merge, and three inserts on one day measured `1000 1000 1000` where the truth was 3000.
+- [ ] T030 [US2] Compare the rollup's daily figures against the raw table's **day by day** — not row by row, because the rollup holds more rows than days — and record the comparison in `specs/047-chapter-4-2/baseline.txt`. A count that matches in total and not per day is a different defect.
+- [ ] T030a [US2] **Record how many rows the rollup holds per `(environment_id, day)` before any `OPTIMIZE`**, in `specs/047-chapter-4-2/baseline.txt`. That number is the reason T029's query shape is not optional, and it is the figure a reader needs to understand why their own dashboard query returned a fraction.
 - [ ] T031 [US2] Record the row ratio: **1,000,000 raw rows became 89 rollup rows** in the probe. That ratio is DR-10's argument in one number.
 - [ ] T032 [US2] In `relay-platform/analytics/query.mjs`, add `--compare-exact`: `uniqMerge(active_users_state)` against `uniqExact(user_id)` over the raw table, reporting the difference as a number.
 - [ ] T033 [US2] Insert rows after the rollup exists and confirm it includes them **without being rebuilt** (FR-005). A view somebody refreshes is a table with extra steps.
@@ -193,6 +194,14 @@ is what lets movement II change the schema.
   publish the disagreement.
 
 ## Notes
+
+**ANALYSIS PASS 3 WENT LOOKING FOR TWO THINGS AND FOUND NEITHER**, which is worth recording
+because the eleven passes before it across two features all found what they went looking for.
+`SummingMergeTree` handles `uniqState` correctly — 1,500 against the raw table's 1,500, across
+three parts, before and after a merge — and the event filter survives pass 2's change, rolling
+1,210 mixed events down to the 100 creations among them. **What it did find** is that the rollup
+holds one row per insert per key until a merge, so the read contract is `sum()` with `GROUP BY`
+and SC-002's "row for row" was false of the rows.
 
 **ANALYSIS PASS 2 ASKED PASS 1'S QUESTION OF THE COLUMNS PASS 1 DID NOT ASK IT ABOUT.**
 `user_id` was not the only nullable source column: `text` is NULL for 4,057 tombstones and

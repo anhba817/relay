@@ -201,8 +201,11 @@ is a no-op that reports what it found; add a change and confirm it applies once.
 
 - **SC-001**: FR-ANL-05's question is answered by the analytical store and published beside
   4.1's 585.9 ms, with the rows each scanned stated.
-- **SC-002**: The rollup returns the same daily figures as the raw table for the same ninety
-  days, row for row, and any disagreement in the distinct-user column is published as a number.
+- **SC-002**: The rollup, **queried with `sum()` and `GROUP BY`**, returns the same daily figures
+  as the raw table for the same ninety days — one figure per day, and any disagreement in the
+  distinct-user column published as a number. **Not "row for row"**: the rollup holds one row per
+  insert per key until a background merge, so three inserts on one day leave three rows and a
+  bare `SELECT messages` reads one of them.
 - **SC-003**: The rollup's cost and the raw table's are both published, and the factor between
   them is stated.
 - **SC-004**: A query naming one environment reports how many parts it skipped, and that figure

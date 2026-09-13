@@ -278,6 +278,44 @@ lost the event.
 already broken. Pass 1 found the shape and fixed one instance of it — **the fix is where the
 next defect is**, and this is the second feature in a row to demonstrate that.
 
+## R12 — Does the rollup survive parts, and does the filter survive three event kinds? **Both yes — and the read contract is not one row per day.**
+
+Added by analysis pass 3, which went looking for two defects and found neither.
+
+**`SummingMergeTree` handles `uniqState` correctly.** It was expected to be a fifth divergence
+from SAD §6.2 — the engine sums numeric columns and an `AggregateFunction` is not one — and
+across three parts on a single key:
+
+    raw table   2,000 rows · uniqExact 1,500
+    rollup      uniqMerge(active_users_state) 1,500   before OPTIMIZE and after
+
+**The event filter survives pass 2's change.** A day holding 777 deletions, 333 edits and 100
+creations rolls up to **100**, which is what FR-ANL-05's *messages sent* asks for.
+
+**WHAT IT DID FIND IS THE ROW COUNT PER KEY.** The rollup holds one row per INSERT per
+`(environment_id, day)` until a background merge collapses them. Three inserts of 1,000 on one
+day:
+
+    SELECT messages                        ->  1000  1000  1000
+    SELECT any(messages)                   ->  1000
+    SELECT sum(messages)                   ->  3000
+    SELECT sum(messages) … GROUP BY day    ->  3000      truth: 3000
+
+**Decision**: the read contract is `sum()` with `GROUP BY`, stated in the contract and required
+by T029. SC-002's "row for row" was false of the rows and is corrected to "one figure per day".
+
+**Rationale**: `OPTIMIZE … FINAL` collapses them, so a bare-column query is right immediately
+after a merge and wrong the rest of the time. **A query whose correctness depends on somebody
+having run maintenance is right in a demo and wrong in production.**
+
+One shape is caught rather than silent: mixing the state column with a bare one is refused with
+`NOT_AN_AGGREGATE`, because `uniqMerge` forces an aggregate context. **The trap only bites when
+the state column is left out entirely**, which is exactly what a dashboard counting messages
+would do.
+
+**And the pass is worth recording for what it did not find.** Eleven passes across two features
+had all found what they went looking for; this is the first whose named targets came back clean.
+
 ## What research did not resolve
 
 - **The schema ledger's shape (FR-011/FR-012).** ClickHouse has `CREATE … IF NOT EXISTS`, which

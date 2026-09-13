@@ -157,6 +157,30 @@ never scans raw events."* SAD §6.2's view applies verbatim once the raw table e
 **Measured at the corpus's shape: 1,000,000 raw rows become 89 rollup rows.** That ratio is
 DR-10's argument in one number.
 
+### How it must be read, because the row count per key is not one
+
+**`SummingMergeTree` holds one row per INSERT per key until a background merge collapses them.**
+Three inserts of 1,000 messages on a single day leave **three rows** for that
+`(environment_id, day)`:
+
+    SELECT messages                        ->  1000  1000  1000
+    SELECT any(messages)                   ->  1000
+    SELECT sum(messages)                   ->  3000
+    SELECT sum(messages) … GROUP BY day    ->  3000        truth: 3000
+
+**The read contract is `sum()` with `GROUP BY`, and a bare column is wrong until a merge nobody
+scheduled has happened.** `OPTIMIZE … FINAL` collapses them, and a query whose correctness
+depends on somebody having run it is a query that is right in a demo and wrong in production.
+
+**One shape is caught rather than silent.** Mixing the state column with a bare column —
+`SELECT messages, uniqMerge(active_users_state) … LIMIT 1` — is refused with
+`NOT_AN_AGGREGATE`, because `uniqMerge` forces an aggregate context. The trap only bites when the
+state column is left out entirely.
+
+**And the engine is right.** SAD §6.2's `SummingMergeTree` was expected to be a fifth divergence
+and is not: across three parts, `uniqMerge(active_users_state)` returned **1,500** against the
+raw table's `uniqExact` of 1,500, before and after `OPTIMIZE … FINAL`.
+
 ### And the state is approximate, with a threshold that is a cardinality
 
 | distinct users | `uniqExact` | `uniq` | divergence |

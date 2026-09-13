@@ -71,6 +71,13 @@ insert time, not at merge** — 120,000 rows spanning 120 days became 90,000 imm
 no error and no report. An ingester replaying a backlog older than 90 days will write rows
 that vanish, and nothing will tell it.
 
+**MUST read the rollup with `sum()` and `GROUP BY`, never a bare column.** It holds one row per
+INSERT per `(environment_id, day)` until a background merge collapses them — three inserts on
+one day measured **three rows**, and `SELECT messages` returned `1000 1000 1000` where the truth
+was 3000. `OPTIMIZE … FINAL` collapses them, and **a query whose correctness depends on somebody
+having run that is right in a demo and wrong in production.** Mixing the state column with a
+bare one is refused (`NOT_AN_AGGREGATE`); leaving the state out is what goes quietly wrong.
+
 **MUST NOT assume one row per message.** The `event` column is `created|edited|deleted` and
 this table holds **one row per event** — 303,885 creations, 3,201 edits and 4,056 deletions from
 the lane's 303,885 messages, 311,142 rows. `daily_usage` filters `WHERE event = 'created'`, so
