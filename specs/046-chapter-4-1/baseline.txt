@@ -424,3 +424,86 @@ T041 — CLEANUP
     lane                                  31,685 env · 46,143 ch · 303,885 msg
                                           — identical to T007
     repository                            scripts/scale/measure.mjs only
+
+
+================================================================================
+PHASE 5 — THE SEEDER'S OWN VERIFICATION. Recorded 2026-09-13.
+
+T043 — WHY IT IS A DEMONSTRATION AND NOT A UNIT TEST, re-derived
+
+    vitest include   packages/*/src/**/*.test.ts   services/*/src/**/*.test.ts
+                     packages/*/src/**/*.itest.ts  services/*/src/**/*.itest.ts
+    pnpm test        turbo run test
+    workspace        packages/*  services/*
+
+    `scripts/` matches no glob and is not a workspace package, so a
+    `corpus.test.mjs` there is collected by nothing and passes by never running.
+    Verification is T047, which compares what the seeder reports against what the
+    database holds.
+
+T047 — THREE VOLUMES
+
+    requested  2,000 msg   20 ch   50 users   ->  2,000   20   50   MATCH
+    requested 20,000 msg  100 ch  200 users   -> 20,000  100  200   MATCH
+    requested 50,000 msg  200 ch  400 users   -> 50,000  200  400   MATCH
+
+T044 — AND THE FIRST TWO FALSIFICATIONS WERE WRONG
+
+    A falsification that fails for the wrong reason proves nothing, and both of
+    the first two did:
+
+      1. patched in a variable that does not exist. It refused — on
+         `seqBase is not defined`, a JS error, not the constraint. That says
+         nothing about whether T047 catches a sequence collision.
+      2. reduced the OUT-of-window count. `messages_in_window` does not read it,
+         so the check agreed and the break went unseen. The break was real; it
+         was outside what the check looks at.
+
+    Redone so each breaks something the check reads:
+
+      1. the same channel reuses sequences 1..n
+         REFUSED: duplicate key value violates unique constraint
+                  "messages_channel_id_sequence_unique"
+      2. in-window count short by one per channel
+         RAN, and the check disagreed: 1,980 against 2,000 requested,
+         subject 2,647 against 2,667
+      3. CORPUS_NULL_SENDER_RATIO=0
+         reports 0 null senders — counted, not derived from the ratio
+
+    corpus.mjs restored byte-identical to the saved original after each.
+
+T047a — THE REFUSAL, RUN TWICE ON PURPOSE
+
+    relay_corpus_twice already exists and holds 3199 messages; refusing.
+    Pass a different CORPUS_DATABASE, or drop it.
+
+T046 — PARTIAL STATE NAMED, AND A PROBE THAT FOUND THE MESSAGE LYING
+
+    A database name containing a quote produced
+
+        cause: unterminated quoted identifier at or near """
+
+    and the failure message then said the database was LEFT IN PLACE — a database
+    that had never been created. Harmless, and the wrong shape of harmless.
+
+    `CORPUS_DATABASE` is now refused unless it matches /^[a-z][a-z0-9_]{0,62}$/,
+    which makes both the injection and the false message impossible rather than
+    handled. The name goes into `create database "…"` and nothing else can escape
+    it.
+
+T048 — IMPORTED BY NOTHING
+
+    No importer of corpus.mjs or measure.mjs outside scripts/.
+
+T047b — CLEANUP
+
+    dropped 4: relay_corpus_v2000, relay_corpus_v20000, relay_corpus_v50000,
+               relay_corpus_twice
+    corpus databases remaining  0
+    lane                        31,685 env · 46,143 ch · 303,885 msg
+                                · 487,481 outbox — identical to T007
+
+T049 — WHAT THE CONTRACT GAINED AFTER IT WAS WRITTEN
+
+    `CORPUS_DATABASE`'s name rule, forced by T046's probe.
+    The Failure row now says what is named on stderr, forced by the same probe.

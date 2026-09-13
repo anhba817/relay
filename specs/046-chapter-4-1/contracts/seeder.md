@@ -24,7 +24,7 @@ this line showed a `DATABASE_URL` and contradicted three rows below it.
 
 | variable | default | meaning |
 |---|---|---|
-| `CORPUS_DATABASE` | `relay_corpus_<YYYYMMDDHHMMSS>` | **the database it creates.** A default nobody passes makes every run a fresh corpus; passing the same value twice is what reaches the refusal below, and is the only way to reach it |
+| `CORPUS_DATABASE` | `relay_corpus_<YYYYMMDDHHMMSS>` | **the database it creates**, matching `/^[a-z][a-z0-9_]{0,62}$/` and refused otherwise — the name goes into `create database "…"` and nothing else can escape it. A default nobody passes makes every run a fresh corpus; passing the same value twice is what reaches the refusal below, and is the only way to reach it |
 | `CORPUS_MESSAGES` | `1_000_000` | message rows the analytical query **scans**: in the subject environment **and inside the 90-day window**. The seeder writes `CORPUS_DAYS / 90` times that many across the full span — 1,333,334 at the defaults — so the date predicate has a quarter to exclude and the number still means what the query sees. Each non-subject environment receives a tenth of the subject's total |
 | `CORPUS_CHANNELS` | `2_000` | channels **in the subject environment**; neighbours get a tenth |
 | `CORPUS_USERS` | `5_000` | people **in the subject environment** the seeded messages are authored by; neighbours get a tenth. **Not senders** — a `kind = 'person'` user cannot send through an application credential, and the one row that can is `send_target.bot` |
@@ -117,7 +117,7 @@ derived from the ratio for the same reason.
 | | |
 |---|---|
 | **Idempotence** | It is **not** idempotent and does not pretend to be. A run naming a `CORPUS_DATABASE` that already holds a corpus **refuses** and names what it found. Adding to a corpus silently would make every published number unattributable. **The default makes this unreachable by accident and passing the same name makes it reachable on purpose**, which is what T047a does — a refusal nobody can trigger is a branch nobody can test. |
-| **Failure** | Partial state is left in place and named on stderr. A half-built corpus that looks empty is worse than one that says what it is. |
+| **Failure** | Partial state is left in place and named on stderr — the database, how to drop it, and the cause. A half-built corpus that looks empty is worse than one that says what it is, and dropping on failure would take the evidence with it. A half-built corpus that looks empty is worse than one that says what it is. |
 | **Schema** | It creates `CORPUS_DATABASE` **and migrates it**, by running `services/api/dist/db/migrate.js` with `DATABASE_URL` pointed at it — the one place a `DATABASE_URL` appears, set by the script rather than by the caller. It hand-writes no DDL: the corpus carries the schema the platform ships. Requires `pnpm build` first, because the runner is `dist`. |
 | **Ordering** | Parents before children, so no FK is ever violated and no constraint is deferred. |
 | **Sequences** | `(channel_id, sequence)` is unique (DR-01). Sequences are allocated per channel from 1. |
