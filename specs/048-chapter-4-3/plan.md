@@ -27,7 +27,9 @@ written under `analytics/` is not. That is an argument for where the ingester li
 **Scale**: DR-11 publishes 2 s or 10,000 rows. The stream is bounded at 7 days and 1 GiB
 with `discard: old`.
 **Constraints**: the analytical store being down must not touch messaging (NFR-REL-05); the
-queue must absorb at least 24 h (NFR-REL-08, and 7 days is what it actually holds).
+queue must absorb at least 24 h (NFR-REL-08, and 7 days is what it actually holds); and
+**the consumer sets no redelivery limit** — `max_deliver: -1`, bounded by that retention and
+nothing shorter.
 
 ## Constitution check
 
@@ -85,6 +87,25 @@ makes it acceptable is that the alternative is not "cheaper dedup", it is "no de
 **The existing consumer runtime's claim table** would have avoided all of this, and it
 writes to Postgres inside a transaction. On this path that is the one thing principle III
 forbids.
+
+## The redelivery limit is a bound on a different failure
+
+Both existing consumers set one — `MAX_DELIVER = 5` on the api's runtime, 10 on the
+dispatcher, both with a 30-second `ack_wait`. For a webhook dispatcher that is sound: an
+endpoint that has failed ten times is probably gone, and retrying it forever helps nobody.
+
+**It does not transfer.** Measured at `max_deliver: 3`: rounds 1–3 delivered, round 4
+delivered nothing, and nothing ever again — while the stream still held every message and
+the consumer reported **`num_pending 0`**. A store that is restarting is not an endpoint
+that is gone, and five attempts at thirty seconds is **two and a half minutes** before an
+outage becomes a silent strand.
+
+So this consumer sets `max_deliver: -1` and lets the queue's seven-day retention be the only
+bound. That makes the poison case load-bearing rather than tidy: a payload that will never
+parse has to be terminated where the defect is detectable, or it retries forever. The
+existing runtime already draws that line — *"A payload that will never parse must not consume
+five delivery attempts before being dropped anyway. The same bytes fail the same way every
+time."* **Retry forever on transport, terminate at parse. One rule, two arms.**
 
 ## Project structure
 

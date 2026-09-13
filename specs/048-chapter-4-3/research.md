@@ -167,6 +167,48 @@ different batch's range and silently discard it. **A token that is not provably 
 batch is not weak deduplication; it is silent data loss**, and this is the second mechanism
 in two features that reports success while doing nothing.
 
+## R9 — What happens to a record the ingester cannot write? **After `max_deliver`, nothing — and the consumer says it has nothing left.**
+
+**Decision**: `max_deliver: -1`. The queue's seven-day retention is the only bound on how
+long a record may wait, and a payload that will never parse is terminated at the parse
+rather than retried against a limit.
+
+**Rationale**: no artifact mentioned a redelivery limit, and both existing consumers set
+one — `MAX_DELIVER = 5` on the api's runtime, 10 on the dispatcher, both with a 30-second
+`ack_wait`. Measured against a live consumer at `max_deliver: 3`, fetching without
+acknowledging:
+
+    round 1: 1(delivery 1) 2(delivery 1) 3(delivery 1)
+    round 2: 1(delivery 2) 2(delivery 2) 3(delivery 2)
+    round 3: 1(delivery 3) 2(delivery 3) 3(delivery 3)
+    round 4: (NOTHING DELIVERED)
+    round 5: (NOTHING DELIVERED)
+
+    consumer: num_pending 0 · ack_pending 0 · redelivered 3
+    STREAM still holds 3 messages
+
+**FR-006 promises the records accumulate and drain on recovery. They accumulate.** At the
+existing settings, two and a half minutes of the store being down is enough to strand
+everything in flight, and nothing ever offers it again.
+
+**AND THE FAILURE IS INVISIBLE TO THE OBVIOUS INSTRUMENT.** Stream depth stays high — which
+reads as accumulation, exactly what NFR-REL-05 predicts. Consumer `num_pending` goes to
+**zero** — which reads as a consumer that has caught up. Each number alone is reassuring and
+wrong. **The disagreement between them is the only signal**, which is why T028 records the
+pair rather than either.
+
+**A limit that is right for one consumer is not a default.** The dispatcher gives up after
+ten attempts because an endpoint that has failed ten times is probably gone. That is a sound
+reason about endpoints and it says nothing about a store that is restarting. **Two analysis
+passes, two defects, both in a value inherited rather than decided** — the first a batch
+boundary assumed stable, the second a redelivery limit assumed portable.
+
+**The cost of removing the limit is that poison handling becomes load-bearing.** With no
+bound, a payload that will never parse retries until the retention expires. The existing
+runtime already draws the line this needs — *"A payload that will never parse must not
+consume five delivery attempts before being dropped anyway. The same bytes fail the same way
+every time."* Retry forever on transport or store failure; terminate at parse.
+
 ## What research did not resolve
 
 - **How many records `discard: old` has already dropped.** The stream reports depth, not

@@ -89,6 +89,10 @@ to zero with no gap in the rows.
    **Then** every record in the backlog is written and the count matches what was published.
 3. **Given** the store is unreachable, **When** the ingester tries to write, **Then** it
    does not acknowledge the records it failed to write.
+4. **Given** an outage longer than any redelivery limit would allow, **When** the store
+   returns, **Then** every record is still delivered — and the consumer's own pending count
+   and the queue's depth are reported together, because **a consumer that has given up
+   reports nothing outstanding while the queue is still full.**
 
 ### User Story 3 - A redelivered record does not become a second row (Priority: P3)
 
@@ -111,7 +115,10 @@ count and the per-key counts against the number of distinct records published.
 ### Edge Cases
 
 - A record whose payload does not parse — it must not stall the stream behind it, and it
-  must not be silently dropped without a count.
+  must not be silently dropped without a count. Under FR-006a it would otherwise retry
+  forever.
+- An outage long enough that records are stranded **and** then age out of the queue. That is
+  the only path to genuine loss, and it needs both bounds to line up.
 - A record naming an environment that no longer exists. The analytical store carries no
   foreign keys; the row is written and the orphan is a reporting question.
 - The stream reaching `max_bytes` with `discard: old` while the ingester is down: the
@@ -138,6 +145,14 @@ count and the per-key counts against the number of distinct records published.
   delivery path, or any request (NFR-REL-05, FR-ANL-02).
 - **FR-006**: Records MUST accumulate in the queue while the store is unreachable and drain
   on recovery, with the count reconciled against what was published.
+- **FR-006a**: The consumer MUST NOT impose a redelivery limit shorter than the queue's own
+  retention. A finite limit makes FR-006 false: once it is exhausted the consumer is never
+  offered the record again, and **it reports nothing outstanding while the record is still in
+  the queue.** The only bound on how long a record may wait is the queue's retention.
+- **FR-006b**: A record that can never be written MUST be terminated at the point the defect
+  is detectable rather than retried against the limit in FR-006a. Unlimited redelivery and
+  poison handling are one rule with two arms: **retry forever on transport or store failure,
+  terminate immediately on a payload that will fail the same way every time.**
 - **FR-007**: The target table MUST be added through the ledger chapter 4.2 built — a new
   statement file, applied and recorded by `analytics/apply.mjs`, never by hand.
 - **FR-008**: The target table's shape MUST be derived from the record the publisher

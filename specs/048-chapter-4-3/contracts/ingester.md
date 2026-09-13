@@ -10,17 +10,21 @@ PostgreSQL on the ingestion path (constitution III, FR-009).
 
 | step | behaviour |
 |---|---|
-| **fetch** | A durable pull consumer on `analytics.>`. Batch bounded by **both** a row count and an elapsed interval — DR-11 publishes 2 s or 10,000 rows — because a count alone stalls a quiet tenant forever and an interval alone gives no bound under load. |
+| **fetch** | A durable pull consumer on `analytics.>`, **`max_deliver: -1`**. Batch bounded by **both** a row count and an elapsed interval — DR-11 publishes 2 s or 10,000 rows — because a count alone stalls a quiet tenant forever and an interval alone gives no bound under load. The batch's shape carries no meaning: deduplication is on the record (see **insert**). |
 | **shape** | Allow-list, mirroring the publisher's own. A field nobody mapped is dropped loudly at review time rather than silently at runtime. |
 | **insert** | One statement. No deduplication token: the table is a `ReplacingMergeTree` keyed on `(environment_id, ts, delivery_id, attempt)`, so a re-inserted record collapses regardless of how it was batched. **The insert carries no assumption about grouping**, which is the property the first design needed and did not have. |
 | **acknowledge** | **Only after the insert returns.** A record that was not written is not acknowledged (FR-003). |
-| **malformed** | Counted and set aside. Not retried forever, not dropped silently (FR-010). |
+| **malformed** | Counted and **terminated at the parse** (FR-006b). With no redelivery limit this is what keeps a poison record from retrying forever: retry forever on transport or store failure, terminate on bytes that will fail the same way every time. |
 
 ## What it guarantees, and what it does not
 
 **Guarantees**: every record acknowledged is in the store; a redelivery of an
 already-written batch adds no row; the store being unreachable loses nothing that the
 stream still holds.
+
+**Does not guarantee**: that a record waits indefinitely. With `max_deliver: -1` the only
+bound is the queue's seven-day retention — which makes retention exhaustion the single path
+to actual loss, rather than one of two.
 
 **Does not guarantee**: that nothing was lost *before* it ran. The stream is bounded at
 seven days and 1 GiB with `discard: old`, and the broker drops the oldest records without

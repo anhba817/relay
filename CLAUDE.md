@@ -51,6 +51,23 @@ in"* — and the dedup it has built in is `claimEvent`, a **PostgreSQL transacti
 Constitution III forbids that on this path. **The template describing this consumer is the
 one thing this consumer may not reuse**, which is the chapter's central argument.
 
+**PASS 2 FOUND THE SAME CLASS ONE LAYER DOWN: A DEFAULT NOBODY CHOSE.** No artifact
+mentioned `max_deliver`, and with a finite one FR-006's "accumulate and drain on recovery"
+is false. Measured at `max_deliver: 3`: delivered on rounds 1–3, **nothing on round 4 or
+ever again**, then `num_pending 0 · ack_pending 0` **while the stream still held every
+message.** At the existing runtimes' `MAX_DELIVER = 5` and 30-second `ack_wait`, **two and a
+half minutes** of the store being down strands everything in flight.
+
+**AND THE LOSS HIDES FROM THE INSTRUMENT YOU WOULD REACH FOR.** Stream depth stays high,
+which reads as accumulation; consumer lag goes to zero, which reads as caught up. Each
+number alone is reassuring and wrong. **The disagreement between them is the signal.**
+
+**A LIMIT THAT IS RIGHT FOR ONE CONSUMER IS NOT A DEFAULT.** The dispatcher gives up after
+ten attempts because an endpoint that has failed ten times is probably gone — sound about
+endpoints, silent about a store that is restarting. `max_deliver: -1` now, bounded by the
+queue's seven-day retention, which makes poison handling load-bearing rather than tidy:
+**retry forever on transport, terminate at parse.**
+
 **AND ANALYSIS PASS 1 KILLED THE PLAN'S CENTRAL MECHANISM, WHICH IS THE CHEAPEST PLACE IT
 COULD HAVE DIED.** The design derived an `insert_deduplication_token` from a batch's stream
 sequence range. **JetStream batch boundaries are not stable across a redelivery**: a retry

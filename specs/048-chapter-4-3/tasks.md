@@ -60,11 +60,11 @@ and this is the first statement file added since the chapter that built the runn
 compare the store's row count against the stream's delivered count.
 
 - [ ] T017 [US1] Decide where the ingester lives and **record the decision and its reason** in `specs/048-chapter-4-3/baseline.txt` (FR-014). `services/*/src/**` is collected by the coverage lane; `analytics/**` is collected by nothing. A fourth service directory is the SAD's shape.
-- [ ] T018 [US1] Create the ingester with a durable pull consumer on `analytics.>`. **State whether `createConsumerRuntime` is reused, parameterised or replaced, and why** — its claim is a Postgres transaction and constitution III forbids that here (T004). **The template written to stop a future consumer double-counting is the one this consumer may not reuse**, and that is the chapter's argument, not an inconvenience to route around.
+- [ ] T018 [US1] Create the ingester with a durable pull consumer on `analytics.>`, **with `max_deliver: -1`** (FR-006a). Both existing consumers set a limit — `MAX_DELIVER = 5` on the api's runtime, 10 on the dispatcher, both at a 30-second `ack_wait` — and it is sound for a webhook endpoint that is probably gone. **A store that is restarting is not an endpoint that is gone**, and five attempts at thirty seconds is two and a half minutes before an outage becomes a silent strand (T027a). The queue's seven-day retention is the only bound. **State whether `createConsumerRuntime` is reused, parameterised or replaced, and why** — its claim is a Postgres transaction and constitution III forbids that here (T004). **The template written to stop a future consumer double-counting is the one this consumer may not reuse**, and that is the chapter's argument, not an inconvenience to route around.
 - [ ] T019 [US1] Bound the batch by **both** a row count and an elapsed interval (DR-11 publishes 2 s or 10,000 rows). A count alone never flushes for a quiet tenant; an interval alone has no bound under load. **Publish what each bound costs at a stated publish rate** (SC-004) rather than quoting DR-11. **The time bound is why deduplication may not depend on grouping**: with it, batch boundaries follow arrival timing, so the same records are cut differently on a retry even at a fixed batch size (T034a).
 - [ ] T020 [US1] Shape records with an **allow-list**, mirroring the publisher's own — *"An allow-list fails closed when somebody adds a field; a spread fails open."*
 - [ ] T021 [US1] Insert one batch as one statement, and **acknowledge only after the insert returns** (FR-003). A record that was not written is not acknowledged.
-- [ ] T022 [US1] Handle a malformed record: count it, set it aside, and **do not let it stall the stream behind it** (FR-010). The existing runtime's comment names this case — *"A payload that will never parse must not consume five delivery attempts"* — so there is a precedent to follow or to differ from deliberately.
+- [ ] T022 [US1] Handle a malformed record: count it, **terminate it at the parse**, and do not let it stall the stream behind it (FR-010, FR-006b). **This is load-bearing now, not tidy**: with `max_deliver: -1` a payload that will never parse retries forever. The existing runtime already draws the line — *"A payload that will never parse must not consume five delivery attempts before being dropped anyway. The same bytes fail the same way every time."* **Retry forever on transport or store failure, terminate at parse. One rule, two arms.**
 - [ ] T023 [US1] Run the drain and record in `specs/048-chapter-4-3/baseline.txt` **three counts side by side**: `count()`, `count() FINAL`, and `uniqExact((environment_id, ts, delivery_id, attempt))`. On a clean first drain all three agree; **after any redelivery the first will exceed the other two, and that is the engine working rather than a defect.** Reading this table means `FINAL`.
 - [ ] T024 [US1] Record the consumer's pending count after the drain, from the broker rather than from the ingester's own log. **A process reporting that it finished is not evidence that the queue is empty.**
 - [ ] T025 [US1] Verify no request waits on an analytical write (FR-ANL-02) and record how it was verified. `publishAttempt` already *"never throws"* and is called after the outcome transaction commits; this task confirms the consumer added nothing to that path.
@@ -80,10 +80,11 @@ compare the store's row count against the stream's delivered count.
 and the queue grows; restart and confirm the backlog drains with no gap.
 
 - [ ] T027 [US2] Stop ClickHouse and exercise the send and delivery paths. Record in `specs/048-chapter-4-3/baseline.txt` that neither reports an error attributable to the store, **with the requests counted** — "no errors" from a run that sent nothing is the zero that proves nothing.
-- [ ] T028 [US2] Record the stream's depth before, during and after the outage. The rise is the claim NFR-REL-05 makes.
-- [ ] T029 [US2] Confirm the ingester **does not acknowledge** what it could not write (FR-003), and record how that was confirmed rather than asserting it.
+- [ ] T028 [US2] Record **the stream's depth AND the consumer's `num_pending` together**, before, during and after the outage. The rise in depth is the claim NFR-REL-05 makes; **the pair is the only thing that can detect a strand.** A consumer that has exhausted its redeliveries reports `num_pending 0` while the stream still holds every record — measured — so stream depth alone looks like accumulation and consumer lag alone looks healthy. **Neither number is the signal; the disagreement between them is.**
+- [ ] T029 [US2] Confirm the ingester **does not acknowledge** what it could not write (FR-003), and record how that was confirmed rather than asserting it. Record `num_redelivered` climbing as the evidence that the record is being re-offered rather than quietly abandoned.
+- [ ] T027a [US2] **Re-run the measurement that found this** and record it in `specs/048-chapter-4-3/baseline.txt`: a consumer at `max_deliver: 3` delivered on rounds 1, 2 and 3, **delivered nothing on round 4 and after**, and then reported `num_pending 0 · ack_pending 0` **while the stream still held all three messages.** That is the failure FR-006a exists to prevent, and it is invisible to the instrument anyone would reach for.
 - [ ] T030 [US2] Restart the store, drain, and reconcile: every record published during the outage is in the table, counted against what was published. **Record both numbers.**
-- [ ] T031 [US2] Record what `discard: old` at 1 GiB means for records dropped while an ingester is down (FR-011), and **whether the ingester can tell**. The broker drops the oldest without telling anyone; if the honest answer is "it cannot know", that belongs in the prose rather than in a silence.
+- [ ] T031 [US2] Record what `discard: old` at 1 GiB means for records dropped while an ingester is down (FR-011), and **whether the ingester can tell**. The broker drops the oldest without telling anyone; if the honest answer is "it cannot know", that belongs in the prose rather than in a silence. **This is the same bound as T018's, from the other end**: with `max_deliver: -1` the retention is the only limit on how long a record may wait, so **retention exhaustion is now the single path to actual loss** — and the two bounds have to be reasoned about together or neither is a bound on anything.
 - [ ] T032 [US2] Record whether seven days is still the right retention now that something consumes the stream (FR-011). It was chosen while nothing did. **Do not presume the answer**; the chapter states it either way.
 - [ ] T033 [US2] Commit phase 4 — `specs/048-chapter-4-3/baseline.txt`. Gates first.
 
@@ -114,7 +115,7 @@ and the queue grows; restart and confirm the backlog drains with no gap.
 - [ ] T043 Write the section on why the reusable runtime cannot be reused — `claimEvent` is a Postgres transaction and constitution III keeps the paths apart. **Name the subject, not the ordinal** (045 FR-008).
 - [ ] T044 Write the batching section with the measured cost of each bound, not DR-11's numbers restated.
 - [ ] T045 Write the redelivery section: why the obvious mechanism cannot be used here (a retry returns `4,5,1,2,3,6,7,8,9,10`, and a colliding token silently drops 500 rows), and why the key that works is the record's own. **Publish the `FINAL` cost.**
-- [ ] T046 Write the store-down section with the queue depths and the reconciliation, and what `discard: old` costs.
+- [ ] T046 Write the store-down section with the queue depths and the reconciliation, what `discard: old` costs, and **why this consumer sets no redelivery limit where the other two do**. The measured strand — nothing delivered from round 4, `num_pending 0`, stream still full — is the argument, and it is a better one than the clause.
 - [ ] T047 Write the `<ForwardRef>`: no reconciliation job, no query surface, no latency percentiles, and `message_events.delivery_latency_ms` still with no producer. **Say plainly that `webhook_attempts.latency_ms` is not that column** — one is how long an endpoint took to answer, the other how long a message took to reach a client.
 - [ ] T048 Write the section amending SAD §6.2 to publish `webhook_attempts`, quoting what the publisher sends as the reason for each column.
 - [ ] T049 [P] Write `relay-tutorial/app/(en)/part-4/chapter-03/<slug>/figures.ts` — at least two figures: the stream with a publisher and no consumer, and the two dedup mechanisms against the two failure modes.
@@ -175,6 +176,22 @@ numbers trustworthy; neither is optional for the chapter, both are separable for
   dropped, say so.
 
 ## Notes
+
+**ANALYSIS PASS 2 FOUND A DEFAULT NOBODY CHOSE, WHICH IS WHERE PASS 1's DEFECT LIVED TOO.**
+No artifact mentioned `max_deliver`, and with a finite one FR-006 is simply false. Measured
+at `max_deliver: 3`: delivered on rounds 1–3, **nothing on round 4 or ever again**, and the
+consumer then reported `num_pending 0 · ack_pending 0` **while the stream still held every
+message.** At the existing runtimes' `MAX_DELIVER = 5` and 30-second `ack_wait`, two and a
+half minutes of the store being down strands everything in flight.
+
+**AND THE LOSS IS INVISIBLE TO THE INSTRUMENT YOU WOULD REACH FOR.** Stream depth stays high,
+consumer lag goes to zero, and each number on its own reads as healthy. **The disagreement
+between them is the signal**, which is why T028 records both.
+
+**A LIMIT THAT IS RIGHT FOR ONE CONSUMER IS NOT A DEFAULT.** The dispatcher gives up after
+ten attempts because an endpoint that has failed ten times is probably gone — sound, and it
+does not transfer to a store that is merely restarting. Two passes, two defects, both in a
+value inherited rather than decided.
 
 **ANALYSIS PASS 1 KILLED THE PLAN'S CENTRAL MECHANISM.** The design derived a deduplication
 token from a batch's stream sequence range, and **JetStream batch boundaries are not stable
