@@ -209,6 +209,50 @@ runtime already draws the line this needs — *"A payload that will never parse 
 consume five delivery attempts before being dropped anyway. The same bytes fail the same way
 every time."* Retry forever on transport or store failure; terminate at parse.
 
+## R10 — What does the publisher's payload do to this table? **The quietest failure empties it.**
+
+**Decision**: the ingester shapes and **renames**; every insert sets
+`input_format_skip_unknown_fields = 0` and `date_time_input_format = best_effort`; the table
+carries `CONSTRAINT ts_is_real CHECK ts > '2020-01-01'`.
+
+**Rationale**: the publisher sends `attempted_at` and the column is `ts`. Three failures,
+measured separately because a first probe conflated two of them:
+
+    A  key mismatch (attempted_at vs ts), default settings
+         no error · row inserted · ts = 1970-01-01 00:00:00.000        SILENT
+    B  key matches, date_time_input_format = basic (the default)
+         Code: 27. Cannot parse input: expected '"' before: 'Z"...'    LOUD, 0 rows
+    C  key matches, best_effort
+         ts = 2026-09-13 10:23:35.123, milliseconds preserved          correct
+
+**A is the one that matters, and it is the one that reports success.** An epoch timestamp is
+older than the ninety-day TTL, so the row is **deleted at insert** — verified, 0 rows before
+and after a merge. The insert returns OK, the consumer acknowledges, the stream drains to
+zero, and the table is empty. **Every instrument in the chain says it worked.**
+
+`input_format_skip_unknown_fields` defaults to **1**, which is exactly why A is silent. At 0:
+
+    Code: 117. DB::Exception: Unknown field found while parsing JSONEachRow: attempted_at
+
+**But that does not cover an ABSENT field**, only a misnamed one — `{"k":3}` with no `ts` at
+all inserted a row at the epoch with no complaint. The constraint is what covers that:
+
+    Code: 469. DB::Exception: Constraint `ts_is_real` ... violated       0 rows
+
+**Three guards, three different failures, and none of them is redundant.** A renamed field,
+an omitted field, and an unparseable value fail in three different ways, and only the last
+one would have been noticed without being asked about.
+
+**One thing came back clean.** An absent `status` key becomes **NULL**, not 0, in a
+`Nullable(UInt16)` column — even with `input_format_null_as_default = 1` at its default.
+4.2's argument survives the insert format, which is the way it could most plausibly have been
+undone.
+
+**And the probe that found all this was wrong first.** One run reported `ts = 1970` with no
+error and another reported nothing inserted at all; they were cause A and cause B, behaving
+in opposite directions, and until they were separated the report would have blamed one
+mechanism for the other's symptom. **Two failures of the same field are not the same bug.**
+
 ## What research did not resolve
 
 - **How many records `discard: old` has already dropped.** The stream reports depth, not

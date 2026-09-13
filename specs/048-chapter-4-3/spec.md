@@ -155,6 +155,11 @@ count and the per-key counts against the number of distinct records published.
   terminate immediately on a payload that will fail the same way every time.**
 - **FR-007**: The target table MUST be added through the ledger chapter 4.2 built — a new
   statement file, applied and recorded by `analytics/apply.mjs`, never by hand.
+- **FR-007a**: The write MUST refuse a record it cannot map, rather than accepting it with a
+  default. A column left at its default by a mismatched or missing field is indistinguishable
+  from a real value, and for the timestamp it is worse than indistinguishable: an epoch
+  timestamp is **older than the retention**, so the row is deleted at insert and the loss is
+  reported as success.
 - **FR-008**: The target table's shape MUST be derived from the record the publisher
   already sends, and the architecture document MUST be amended to publish it. SAD §6.2
   publishes `message_events` as *representative* and names `emoji_events`; no table for

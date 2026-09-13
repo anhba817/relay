@@ -31,7 +31,31 @@ ORDER BY (environment_id, ts, delivery_id, attempt)  -- tenant-then-time, AND th
                                                      -- record's natural key
 TTL toDateTime(ts) + INTERVAL 90 DAY                 -- DR-09, and toDateTime because
                                                      -- the published form is refused
+CONSTRAINT ts_is_real CHECK ts > toDateTime64('2020-01-01 00:00:00', 3, 'UTC')
 ```
+
+**THE CONSTRAINT IS NOT DEFENSIVE PROGRAMMING. IT IS THE ONLY THING BETWEEN A FIELD-NAME
+TYPO AND AN EMPTY TABLE.** The publisher's field is `attempted_at` and this column is `ts`.
+A `JSONEachRow` insert whose keys do not match column names leaves the column **at its
+default, with no error** — and the default for a `DateTime64` is the epoch, which is older
+than the ninety-day TTL, so the row is **deleted at insert**. Measured: a 1970 row into this
+table gives 0 rows, before and after a merge.
+
+The whole chain reports success. The insert returns OK, the consumer acknowledges, the
+stream drains to zero, and the table is empty. With the constraint:
+
+    Code: 469. DB::Exception: Constraint `ts_is_real` ... violated       0 rows
+
+**Two more settings on every insert, and they catch different halves:**
+
+    input_format_skip_unknown_fields = 0    a RENAMED field is Code: 117, loud
+                                            (the default is 1, which is why it was silent)
+    date_time_input_format = best_effort    the ISO-8601 string parses; the default
+                                            `basic` refuses it with Code: 27
+
+The constraint catches an **omitted** field, which `skip_unknown_fields` does not: a row with
+no `ts` at all is not an unknown field, it is an absent one, and it takes the default
+without complaint.
 
 **The sorting key is the deduplication key, and it has to be both things at once.**
 `(environment_id, ts)` is the ordering 4.2's whole argument is about — tenant, then time.

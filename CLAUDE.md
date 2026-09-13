@@ -51,6 +51,30 @@ in"* — and the dedup it has built in is `claimEvent`, a **PostgreSQL transacti
 Constitution III forbids that on this path. **The template describing this consumer is the
 one thing this consumer may not reuse**, which is the chapter's central argument.
 
+**PASS 3 FOUND THE QUIETEST FAILURE OF THE THREE, AND IT EMPTIES THE TABLE.** The publisher
+sends `attempted_at`; the column is `ts`. **`JSONEachRow` leaves an unmatched column at its
+default and reports success** — and a `DateTime64` default is the epoch, which is older than
+the ninety-day TTL, so **the row is deleted at insert.** Verified: 0 rows, before and after a
+merge. The insert returns OK, the consumer acks, the stream drains to zero, the table is
+empty, and **every instrument in the chain says it worked.**
+
+**THREE GUARDS, THREE DIFFERENT FAILURES, NONE REDUNDANT.** `input_format_skip_unknown_fields
+= 0` turns a RENAMED field into `Code: 117` (its default is 1, which is why this was silent);
+a `CHECK ts > '2020-01-01'` constraint turns an ABSENT one into `Code: 469`, which the
+setting does not cover; and `date_time_input_format = best_effort` is what parses ISO-8601 at
+all — the default `basic` refuses it with `Code: 27`. **One of those three was always loud,
+and it is the least destructive of them.**
+
+**AND THE CHECK THAT WAS SUPPOSED TO CATCH IT PASSED.** T023 compared `count()`,
+`count() FINAL` and `uniqExact(...)` and called them equal — at **0, 0, 0**, over an empty
+table. **A three-way equality with no floor is satisfied by nothing at all.** The count
+published to the stream is the fourth number now.
+
+**THE PROBE CONFLATED TWO CAUSES AND HAD TO BE SPLIT.** One run showed `ts = 1970` with no
+error, another showed nothing inserted — a key mismatch and a parse failure, opposite
+directions, same field. **Two failures of the same field are not the same bug**, and the
+separation was the finding.
+
 **PASS 2 FOUND THE SAME CLASS ONE LAYER DOWN: A DEFAULT NOBODY CHOSE.** No artifact
 mentioned `max_deliver`, and with a finite one FR-006's "accumulate and drain on recovery"
 is false. Measured at `max_deliver: 3`: delivered on rounds 1–3, **nothing on round 4 or
