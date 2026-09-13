@@ -275,3 +275,99 @@ errors for code that is correct. The config now reads
 That makes `eslint.config.mjs` THE SECOND FENCED FILE THIS CHAPTER AMENDS, and it is
 already amended in `fences/post-series.md`. T052 publishes two hunks now, and has to check
 that the appendix's own hunk still applies after the chapter's rather than assume it does.
+
+
+PHASE 3 — THE SAME QUESTION, ASKED OF A STORE SHAPED FOR IT
+============================================================
+
+T024 — THE CORPUS, AND THE LOAD
+--------------------------------
+    database      relay_corpus_20260913102333        built in 92.4 s
+    messages           1,600,000     edits (events)      33,549
+    null senders          16,013     edited 2+ times      11,170
+    deletions             21,072     edited AND deleted      223
+    with attachments      11,843     non-ASCII text      158,084
+    channels               2,400     outbox                    0
+
+    $ node scripts/scale/load-analytics.mjs --corpus corpus.json
+    events_sent   1,654,621          (1,600,000 + 33,549 + 21,072)
+    elapsed           1.2 s          ClickHouse reads Postgres itself; nothing streams
+                                     through node
+
+THE TTL IS NOT AN EVENT, IT IS A SCHEDULE — AND THE ARTIFACTS SAID OTHERWISE.
+
+    immediately after INSERT   1,387,654 rows over 121 days
+                                 146,582 already expired and STILL PRESENT, 9 parts
+    after OPTIMIZE ... FINAL   1,241,071 rows over  91 days, 0 expired, 5 parts
+    removed by the TTL           413,550 of which 146,583 went LATE
+
+R3 measured "the TTL removes rows at INSERT — 120,000 over 120 days became 90,000
+immediately" and that is true **of an insert that lands in one part.** This one lands in
+nine, and only some were TTL-processed on the way in; the part list shows it plainly, one
+part carrying a mutation suffix (`202606_4_4_1`) and the rest at `_0`.
+
+**So the row count straight after a load is a moment, not a steady state**, and a chapter
+that measured there would publish a figure that shrinks overnight on its own. The loader
+forces the merge and reports BOTH counts, with the difference named. A 25%-out-of-window
+corpus loses a quarter of itself either way; what changed is whether you can tell when.
+
+    text_length NULL    created 15,727    edited 165
+    attachment_count NULL          1,231,845 of 1,241,071
+
+
+T025 — THE MEASUREMENT, BESIDE 4.1's
+-------------------------------------
+Best of three both sides, because 4.1's 585.9 ms is itself a best of three and a single
+run against somebody else's minimum flatters whichever store you are selling.
+
+                          store        rows        best of 3     days returned
+    4.1  Postgres, lane's corpus   1,000,000       585.9 ms           91
+         runs [611.2, 585.9, 586.5]
+    4.2  ClickHouse, this corpus   1,241,071        13.22 ms          91
+         runs [14.97, 15.82, 13.22]     rows_read 1,052,655
+
+    ---------------------------------------------------------------------
+    44.3x, and the two questions are the same question.
+    ---------------------------------------------------------------------
+
+4.1 asked Postgres for `count(*)` and `count(DISTINCT user_id)` per day over ninety days
+for one environment, across a join. This asks the same of `message_events` with no join —
+`environment_id` is on the row — and `event = 'created'` standing in for "a message",
+because this table holds three rows per message and one of them is a send. It returns
+**999,962** messages where the corpus placed 1,000,000: thirty-eight sit the wrong side of
+a boundary that `now()` moved between seeding and querying, which is 0.0038% and is named
+rather than rounded away.
+
+    on disk   34.63 MiB, 4 parts, 1,241,071 rows
+    4.1's Postgres table was 179 MB plus 168 MB of indexes for 1,000,000 rows.
+
+
+T026 — WHERE THE SKIPPING ACTUALLY HAPPENS, AND WHERE IT CANNOT
+----------------------------------------------------------------
+    MinMax        Parts 4/4   Granules 154/154     skips nothing
+    Partition     Parts 4/4   Granules 154/154     skips nothing
+    PrimaryKey    Parts 4/4   Granules 131/154     skips 23
+
+TWO OF THE THREE STAGES CANNOT SKIP ANYTHING HERE, AND THE REASON IS THE TTL. DR-09
+expires raw events at ninety days and FR-ANL-05 asks about ninety days, so **after the
+merge every row in the table already satisfies the date predicate** — there is nothing
+for MinMax or the monthly partition to exclude. The date half of `ORDER BY (environment_id,
+ts)` earns nothing on this query against this table; the tenant half does all the work,
+and it is the half a reader would have been least sure about.
+
+`ProfileEvents['SelectedParts']` remains the wrong instrument (R5): it reports 0 for this
+query, silently. The plan is the evidence.
+
+
+T027 — WHAT THE 44x DOES NOT PROVE
+-----------------------------------
+It does not prove ClickHouse is 44 times faster than Postgres. It is one query, one shape,
+one tenant, on a machine doing nothing else, against a table built for exactly this
+question and holding nothing else. The honest claim is narrower and is the chapter's:
+**a question about a range of one tenant's rows, ordered by (tenant, time), costs 13 ms
+where the same question over a row store ordered by neither costs 586** — and 4.1 already
+showed that the index which would fix the row store buys a gap inside its own run-to-run
+spread for +49% storage.
+
+What it also does not prove is anything about writes. Nothing in this chapter writes to
+ClickHouse on the send path, and the ingester that would is two chapters out.
