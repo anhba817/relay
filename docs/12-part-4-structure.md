@@ -173,13 +173,27 @@ feature 045 being collected rather than paid for again.
 
 ```
     I    ch 1       The question one store can't answer
-    II   ch 2–4     The second store
-    III  ch 5–6     Everything else worth recording
-    IV   ch 7–10    What you can now answer                      ★
-    V    ch 11–13   Bytes we never touch
-    VI   ch 14–18   The one service that reads them              ★
-    VII  ch 19–23   The reckoning                                ★
+    II   ch 2–3     The second store
+    III  ch 4–5     Everything else worth recording
+    IV   ch 6–9     What you can now answer                      ★
+    V    ch 10–12   Bytes we never touch
+    VI   ch 13–17   The one service that reads them              ★
+    VII  ch 18–22   The reckoning                                ★
 ```
+
+**AMENDED 2026-09-13: 23 BECAME 22, AND THE SECOND CONTRACTION CAME FROM A CHAPTER DOING
+MORE THAN ITS BRIEF.** Chapter 3 was *"A second store needs a second ledger"* and §7.1 said
+to decide its identity scheme before chapter 2 was written. Chapter 4.2 decided it and
+**built** it — runner, filename-and-checksum ledger, reporting idempotence, and a checksum
+refusal tested red, all four items of chapter 3's brief, shipped at `part4-ch2`. Movement II
+had one subject left, so the ingester moved up and every ordinal after 3 moved down one.
+Milestones are at **9, 17 and 22**.
+
+Movement I contracted the same way during grooming. **Both corrections ran downward, and
+§3's warning that "23 will not be 23" has now been right twice in the direction it did not
+predict.** The table below keeps the original ordinals in its first column so the
+`gaps.md` and research references written against them still resolve; the movement column
+is the stable address, as §2.1 intended.
 
 | Ch | Mv | Title | Built |
 |---|---|---|---|
