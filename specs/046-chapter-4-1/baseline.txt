@@ -507,3 +507,53 @@ T049 — WHAT THE CONTRACT GAINED AFTER IT WAS WRITTEN
 
     `CORPUS_DATABASE`'s name rule, forced by T046's probe.
     The Failure row now says what is named on stderr, forced by the same probe.
+
+
+================================================================================
+PHASE 6 — THE CHAPTER. Recorded 2026-09-13.
+
+    slug            the-question-the-counters-cant-answer
+    prose words     2,132        bound 2,000-4,000, measured outside fences
+    figures         3            two shapes · where the time is · what it costs
+    TRAP boxes      3            the two predicates · the two wrong neighbour
+                                 measurements · the three wrong storage numbers
+    locales         2            en written, vi a marked placeholder
+    fence mirror    18 / 18      delimiters identical in both locales
+
+GATES
+
+    relay-platform   lint · typecheck · test · build            PASS
+    relay-tutorial   check:docs · check:srs · check:figures      PASS
+                     check:fences · check:errors                 PASS
+
+    check:errors was run AFTER the platform build, because it reads
+    packages/protocol/dist and would otherwise report on the previous one.
+
+T062 — THE FENCE DELTA
+
+    opening (T006)   110 problems — APPLY 74, HEAD 36
+    closing          110 problems — APPLY 74, HEAD 36
+    DELTA            0
+
+    The chapter fences no platform file. Its code blocks are a quoted comment,
+    SQL, and query plans — none is a file the chain tracks, and none carries a
+    `title="…"` so `check-fence-chain.mjs:77` never collects them. The total is
+    NOT claimed green: 110 is inherited from Part 3's close-out.
+
+WHAT check:figures CAUGHT
+
+    Three `<Figure>` elements passed the diagram as `src`. The component reads
+    `code`. All three would have rendered empty and nothing else would have said
+    so — the build passed, the fence gate passed, and the page looked finished.
+
+T068 — THE FINAL SWEEP
+
+    corpus databases   0
+    lane               31,685 env · 46,143 ch · 303,885 msg · 487,481 outbox
+                       identical to T007 in all four columns
+    migrations         end at 0014_connection_minutes.sql
+
+T066 — NOT RUN
+
+    The reader protocol needs a person and did not get one. gaps.md 046-2 carries
+    it as the fifteenth record to name this gap.

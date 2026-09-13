@@ -25,35 +25,51 @@ history; the replaced history is preserved on the remote as the tag
 tags. **Anyone holding an older clone of `relay-platform` must reset rather than pull.**
 
 <!-- SPECKIT START -->
-**ACTIVE: 046 — CHAPTER 4.1, "the question the counters can't answer".** Plan:
-`specs/046-chapter-4-1/plan.md`. Part 4 is **24 chapters in seven movements**, renamed
-**"Everywhere the data went"**; the structure record is `docs/12-part-4-structure.md` and it is
-newer than `docs/07-tutorial-plan.md` wherever they disagree.
+**046 — CHAPTER 4.1 IS WRITTEN AND MERGED. 74 OF 76 TASKS.** Record:
+`specs/046-chapter-4-1/` — `baseline.txt` first, then `gaps.md`, `traceability.md`,
+`tasks.md`. Part 4 is **24 chapters in seven movements**, renamed **"Everywhere the data
+went"**; `docs/12-part-4-structure.md` is the structure record and is newer than
+`docs/07-tutorial-plan.md` where they disagree.
 
-**THE PLANNED CHAPTER COULD NOT BE WRITTEN.** `docs/07` said *"run the metering query against
-Postgres under write load"* and **there is no metering query** — `quotas/credit.ts` is two pure
-functions and the module holds no aggregate at all. The real premise is a shape mismatch:
-`messages` carries no `environment_id` and nothing indexes `created_at`, so FR-ANL-05's daily
-question is a join and a scan, against a ClickHouse table ordered by exactly those two columns.
-**The chapter's argument is not that the query is slow — it is that the index which fixes it
-taxes every write for a question no write asks.**
+**THE CHAPTER'S HYPOTHESIS WAS FALSIFIED TWICE AND THE RESULT IS BETTER THAN THE PLAN.**
+There was no metering query to slow down — Part 3's counters are two pure functions on the
+send path — so the chapter became a shape mismatch. Then the measurement refused both
+halves of it: an analytical query does **not** tax the write path here (send p95 20.5 ms
+alone, **13.7 ms beside 102 of them**, four control loops agreeing inside 1.3 ms), and the
+index that should fix the query **buys a difference inside the run-to-run spread for +49%
+storage**. The join is 140 ms of a 698 ms plan and **the sort is 656**. You cannot index
+your way out of an analytical question when the cost is the aggregation.
 
-**TWO RESEARCH ASSUMPTIONS WERE WRONG AND BOTH ARE KEPT IN `research.md`.** The bot exemption
-was searched for in `quotas/` and `messages/` and lives in `repository.ts:assertWithinQuota` —
-`docs/10` §0 had already run that exact check, and reading it would have been cheaper than four
-greps. And "write load" is capped at **ten sends per second** by `DEFAULT_LIMITS.send`, so the
-chapter measures **latency, not throughput**, and says so.
+    M1 585.9 ms over 1,000,000 rows   ·   lane's busiest env 0.9 ms over 1,018   ·   651x
+    column 24.8 MB + index 62.0 MB = 86.8 MB permanent on a 178.6 MB table
+    check:fences 110 -> 110, delta 0   ·   2,132 prose words   ·   8 gates green
 
-**THE CHAPTER SHIPS NO PRODUCT CODE.** Three scripts in `scripts/scale/` and four numbers. The
-counterfactual column and index are applied to a throwaway copy and **must never become a
-migration** (045-69). Two gates Part 4 needs before its first split — a standing `check:redirects`
-and a gate refusing chapter ordinals in platform source — do not exist; all six Python
-instruments live in `specs/045-part-3-rework/` and are wired to nothing.
+**NINE ANALYSIS PASSES FOUND 27 THINGS AND, FROM PASS 4 ON, FOUND ONLY THEIR OWN
+PREDECESSORS' REPAIRS.** The last finding from the tree was pass 3's 403. Phase 2 then
+found six in ninety minutes and five were invisible to reading: **one application holds
+two environments, not three** (FR-TEN-04, `unique (application_id, kind)`); the table is
+**`members`**, not `channel_members`; `addMember` writes an outbox row; a small random
+formats as scientific notation and `interval` will not parse it; a uniform offset lands
+999,786 in a window asked for a million; and **`channels.last_sequence` is a counter the
+write path maintains**, so a bulk insert that leaves it at 0 makes every later send
+collide. **Reading cannot find what the schema refuses.**
 
-**AND THE CHAPTER CANNOT BE TAGGED YET.** `part3-ch18` (`54b2cd53`) and `rework/part3-ch18`
-(`3732d6cf`) both exist and resolve to different commits, so a reader following a published SKIP
-AHEAD box lands on the wrong chapter. Deciding Part 4's tag convention is not this chapter's work
-and blocks only tagging, not authoring.
+**AND EVERY MEASUREMENT WAS WRONG BEFORE IT WAS RIGHT.** The neighbour effect: one query
+beside a 60 s loop is 1% overlap, then quiet-then-busy confounded the neighbour with the
+cache — the fix is a warm-up and a **second quiet loop after busy**. The storage figure
+was wrong three times, each conflating a different pair: +204 MB was column plus dead
+tuples, +107 MB index plus un-vacuumed bloat, +4.3 MB index **minus** the compaction the
+vacuum had just done. **A delta between two totals is not a measurement of the thing that
+changed unless nothing else changed.** And two of T044's falsifications failed for the
+wrong reason — one on a JS error rather than the constraint, one on a count the check does
+not read.
+
+**TWO THINGS ARE OPEN AND NEITHER IS THE CHAPTER'S CONTENT.** `T066`, the reader protocol,
+**was not run** — the fifteenth record to name that gap, and it matters here because the
+argument changed twice and the prose was rewritten each time by the person holding the
+numbers. And **the chapter cannot be tagged**: `part3-ch18` (`54b2cd53`) and
+`rework/part3-ch18` (`3732d6cf`) both exist, so Part 4's tag convention has to be decided
+first. `gaps.md` 046-3.
 <!-- SPECKIT END -->
 
     045 "part 3 rework"           24 chapters -> 26, eight movements, English prose only
