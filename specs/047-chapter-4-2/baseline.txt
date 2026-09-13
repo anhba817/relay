@@ -124,3 +124,154 @@ T007 — THE ZERO-DEPENDENCY CLAIM, MEASURED
 So "this chapter adds no dependency" is a measurement taken before the work rather than an
 intention stated during it. T018 re-runs both counts at the end; if either moves, the claim
 moved with it.
+
+
+PHASE 2 — A REACHABLE STORE
+===========================
+
+T009/T010 — THE AMENDMENT WORKS, AND THREE THINGS THE TASK DID NOT EXPECT
+-------------------------------------------------------------------------
+    as relay, from the host      SELECT 1  ->  1
+    as default, from the host    SELECT 1  ->  Code: 194 ... (REQUIRED_PASSWORD)
+    container health                          healthy
+
+(1) `CLICKHOUSE_DB` CREATED NOTHING, AND THE LOG SAYS WHY.
+
+    clickhouse-1 | ClickHouse Database directory appears to contain a database;
+                   Skipping initialization
+
+    SHOW DATABASES  ->  INFORMATION_SCHEMA, default, information_schema, system
+
+The entrypoint honours `CLICKHOUSE_DB` only while INITIALISING an empty data directory.
+The `clickhouse-data` volume has held a database since chapter 1.2, so the variable is
+read and ignored — and it will be ignored for every reader who has followed the tutorial
+in order. **`apply.mjs`'s `CREATE DATABASE IF NOT EXISTS` is therefore not a belt-and-braces
+step; it is the only thing that creates the database on any stack that has ever been up.**
+Analysis pass 5 reasoned its way to that bootstrap from a different direction — that the
+variable does not set the SESSION default — and it turns out the variable is weaker still.
+
+(2) THE ENTRYPOINT REWROTE THE FILE T002 QUOTES AS EVIDENCE.
+
+`/etc/clickhouse-server/users.d/default-user.xml` now reads:
+
+    <default remove="remove"></default>
+    <relay><profile>default</profile><networks><ip>::/0</ip></networks>
+           <password><![CDATA[relay]]></password> ... </relay>
+
+So `default` is no longer network-restricted — **it is removed.** The chapter's opening
+quotes a file that this chapter's own fix overwrites, and a reader who applies the
+amendment and then looks will find something else. Both states have to appear in the prose,
+in that order, or the evidence contradicts the page it is on.
+
+(3) AND BOTH STATES RETURN THE SAME ERROR, WHICH MAKES T001's FALSIFICATION VACUOUS.
+
+Before: the user exists and the network is refused. After: there is no such user. The
+string a caller sees is `Code: 194 ... (REQUIRED_PASSWORD)` in both cases. T001 says *"if
+the query now succeeds, the amendment is already present"* — but the amendment never makes
+`default` succeed, so that clause cannot fire for the reason it names. **It is a test that
+cannot fail.** The discriminator that does work is whether `relay` answers, and T001 is
+amended to ask that instead.
+
+
+T011 — THE HEALTH CHECK, TESTED RED
+------------------------------------
+    healthcheck credential -> WRONG      docker compose up --wait  ->  container unhealthy
+    probe output    Code: 516. DB::Exception: relay: Authentication failed
+    restored                             docker compose up --wait  ->  healthy
+
+The old check ran `/ping`, which neither authenticates nor is network-restricted, and was
+green from chapter 1.2 until this chapter while every query from outside was refused. The
+new one fails for the reason it exists to detect. `clickhouse-client` is in the image;
+`curl` is not.
+
+
+T012-T018 — THE SCHEMA, THE LEDGER, AND THREE REFUSALS TESTED RED
+------------------------------------------------------------------
+    $ node analytics/apply.mjs            (first run)
+    database relay_analytics ready
+    applied 3: 0000_message_events.sql, 0001_daily_usage.sql, 0002_schema_applied.sql
+    skipped nothing
+
+    $ node analytics/apply.mjs            (second run)
+    database relay_analytics ready
+    applied nothing
+    skipped 3: 0000_message_events.sql, 0001_daily_usage.sql, 0002_schema_applied.sql
+
+    relay_analytics holds   message_events, daily_usage, schema_applied,
+                            .inner_id.885f0a19-...  (the view's hidden table)
+    default holds           0 of those names
+
+EVERY REFUSAL FIRES FOR ITS OWN REASON, which is the part that needed checking:
+
+    two statements in one file
+      -> 0003_probe.sql holds 2 statements; the HTTP interface allows one (Code: 62 ...)
+    a statement not naming the database
+      -> 0003_probe.sql does not name the relay_analytics database ...
+    an applied file whose bytes changed
+      -> 0000_message_events.sql changed after it was applied (ledger d3f967cd..., file
+         0f345e3e...)
+
+The second probe put the string `relay_analytics.` INSIDE A COMMENT and was refused anyway.
+That is what proves the check reads the statement rather than the file, and it is the
+difference between a refusal and a grep.
+
+    $ node analytics/apply.mjs --drop-all
+    dropped database relay_analytics
+    tables after: 0   (system.tables reports 0 for a database that does not exist, so
+                       the after-check needs no branch)
+    then apply.mjs again -> applied 3, tables restored to 4.
+
+A SIXTH DIVERGENCE FROM SAD 6.2 WAS FOUND WHILE WRITING THE DDL. `delivery_latency_ms`
+is published as a non-nullable `UInt32` and nothing produces it until FR-ANL-10's chapter
+(FR-006a). Left non-nullable, every row would read **0 ms** — a measured claim about a
+delivery nobody timed, which is the same defect as `text_length` 0 one column over. It is
+`Nullable(UInt32)`: an absent producer writes NULL.
+
+    T018 — pnpm-lock.yaml clickhouse hits 0, package.json 0, neither file modified.
+
+
+T018a/T018b — THE SEEDER NOW PRODUCES WHAT THE CHAPTER IS ABOUT
+----------------------------------------------------------------
+Four knobs, defaulting to the lane's own proportions: CORPUS_EDITED_RATIO 0.0105,
+CORPUS_DELETED_RATIO 0.0133, CORPUS_ATTACHMENT_RATIO 0.0074, CORPUS_NON_ASCII_RATIO 0.1.
+Two new refusals in the file's existing idiom: edited+deleted may not both be 0 (the
+rollup's event filter would exclude nothing) and attachments may not be 0 (JSONLength
+could not be shown to differ from length).
+
+A 29,333-message probe corpus, and the four findings as CLICKHOUSE sees them:
+
+    user_id IS NULL                                301
+    length(text) != lengthUTF8(text)             2,899     sample: 24 bytes vs 18 points
+    length(attachments) vs JSONLength()             78 vs 2
+    events that are not `created`                  745     (630 edit EVENTS, 425 deletes)
+    messages edited 1 / 2 / 3 times          117 / 96 / 107
+    edited and then deleted                          6
+
+AND THE FIRST BUILD OF THAT CORPUS WAS WRONG IN A WAY THAT LOOKED RIGHT. It reported 864
+edits over 288 messages — **exactly three each, every one of them**, and
+`messages_edited_twice_or_more` equal to `messages_edited`, which is what gave it away.
+
+    cross join lateral generate_series(1, 1 + floor(random() * 3)::int)
+
+evaluates the volatile argument **once for the whole query**, not once per row. A 10-row
+probe of the same shape returned 10 rows — one each. **It picks a constant at random per
+query**, so it reads as random if you run it once and never compare two runs. Precomputing
+`k` in a subquery makes it per-row: the same probe returns 19, and the corpus returns the
+117/96/107 above. Reporting the counts rather than asserting them is what caught it.
+
+
+T019 — PHASE 2 GATES
+---------------------
+    pnpm lint         green, after one fix
+    pnpm typecheck    13 of 13
+    pnpm test         11 tasks, all green (unit lane; the integration battery is T060's)
+
+LINT FAILED FIRST, WITH 13 ERRORS, AND THE FIX TOUCHES A FENCED FILE. `eslint.config.mjs`
+gives Node globals to `scripts/**/*.mjs` and nothing else, so `analytics/apply.mjs` drew
+`'fetch' is not defined`, `'process' is not defined`, `'console'`, `'Buffer'` — 13 no-undef
+errors for code that is correct. The config now reads
+`["scripts/**/*.mjs", "analytics/**/*.mjs"]`.
+
+That makes `eslint.config.mjs` THE SECOND FENCED FILE THIS CHAPTER AMENDS, and it is
+already amended in `fences/post-series.md`. T052 publishes two hunks now, and has to check
+that the appendix's own hunk still applies after the chapter's rather than assume it does.
