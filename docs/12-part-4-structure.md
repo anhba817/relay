@@ -1,0 +1,405 @@
+# Part 4 — Everywhere the data went
+
+**Status:** grooming record, written before `/speckit-specify`. Nothing here is built.
+**Supersedes:** `docs/07-tutorial-plan.md` §"Part 4 — The second data path", which is stale
+in its name, its chapter count, and its boundaries. **Amending that section is task one**,
+because two records of one structure disagree by default and this project has paid for that
+four times.
+
+---
+
+## 1. What this part is
+
+Three blocks of material that the SRS keeps apart and the tutorial should not: the
+analytical store, hosted media, and the moderation lifecycle.
+
+The argument that holds them together is that **each one moves data off the path everything
+else takes** — analytics leaves through a deliberately lossy stream, media bytes never enter
+Relay compute at all — and the part ends by asking what that costs. Compliance erasure
+(FR-MOD-04) deletes messages, memberships, profile, **media objects, and analytical rows**.
+It is the one chapter that has to know every path the data took, and it can only be written
+after all three exist.
+
+**That is why this is one part and not two.** A split at the media boundary puts erasure in a
+part that never taught two of the three paths it must reach.
+
+---
+
+## 2. The three decisions taken during grooming
+
+### 2.1 Chapter addresses keep the global ordinal
+
+    /part-4/chapter-11/the-upload-that-never-reaches-us
+
+Consistent with Parts 0–3. The known cost is that every chapter which splits at its word
+ceiling renumbers the tail: ~19 URLs and ~38 redirects for an insertion early in the part.
+
+**This is affordable only because of two things, and one of them does not exist yet.** See §6.
+
+The alternative considered and rejected was a slug-only address (`/part-4/the-upload-slot`),
+which makes insertion structurally free because the slug is already the stable identity —
+`the-message-that-is-not-only-text` survived 3.24 → new 18 unchanged. It was rejected for
+consistency with the three published parts. **If §6's gates are not built, revisit this.**
+
+### 2.2 The part is named *Everywhere the data went*
+
+The old name covers movements I–IV and stops. This one covers all three blocks and its
+meaning only completes at movement VII, which is the structure working as intended.
+
+**The name is a promise the last movement has to keep.** If erasure is deferred, the title
+lies and must change with it.
+
+Touches `docs/07-tutorial-plan.md` in two places — the §3 arc table and the Part 4 heading —
+and `lib/tutorial.ts`'s `partTitle`, which is locale-aware and needs a Vietnamese title.
+
+### 2.3 Milestone 1 makes two claims, not one
+
+FR-ANL-06 wants metered totals to agree with operational counts **within 0.1%**. The lane's
+largest membership set is five channels; 0.1% of a small number is an assertion that cannot
+fail for its own reason, which is the defect class this project keeps finding — `gaps.md` and CLAUDE.md's
+"tests that pass while proving nothing" carry the register.
+
+So the milestone splits:
+
+| half | claim | where |
+|---|---|---|
+| **CI gate** | a *planted* drift is detected and the reconciler raises | the lane, every run |
+| **recorded measurement** | the 0.1% figure, at a volume where 0.1% is a real threshold | once, in the chapter |
+
+The CI half is falsifiable and fails for its own reason. The recorded half follows the
+precedent of `docs/11-scalability-measurement-2026-09-06.md`, which discharged NFR-SCL-01
+the same way: its own document, the clause's own verification letter as the method, the
+harness named.
+
+**Two consequences for design, not for testing.** The reconciler must be callable in
+isolation so a drift can be planted — that is a constraint on the chapter that builds it.
+And `scripts/scale/` today generates connections and channels; it has no analytical-volume
+mode and needs one. **That harness is a chapter-1 dependency, not a chapter-8 one** — §2.4's
+demonstration needs it before the milestone does, and it must be introduced by the chapter
+that first uses it (045-73: a file created by chapterless work has nowhere to be introduced).
+
+### 2.4 Chapter 1's premise was wrong, and the true one is structural
+
+`docs/07-tutorial-plan.md` specified chapter 4.1 as *"run the metering query against Postgres
+under write load, watch it hurt."* **There is no metering query.** Verified at commit
+`52766091`:
+
+    services/api/src/quotas/credit.ts   high-water-mark arithmetic, nothing else
+      creditFor(reported, credited)   -> max(0, reported - credited)
+      highWaterMark(reported, credited) -> max(reported, credited)
+
+No `count(`, `sum(` or `countDistinct` anywhere in the quotas module. Part 3's counters rise
+on the send path — *"usage rises only on a send, so the send knows what it crossed"* — so
+there is nothing to put under load and watch slow down.
+
+**The true premise is a shape mismatch, and it is better.** The operational question is *give
+me the next 50 messages in this channel after cursor X*. The analytical question (FR-ANL-05,
+FR-ANL-09) is *messages and unique active users per environment per day, over 90 days*:
+
+```sql
+SELECT date_trunc('day', m.created_at), count(*), count(DISTINCT m.user_id)
+FROM messages m JOIN channels c ON c.id = m.channel_id
+WHERE c.environment_id = $1 AND m.created_at >= now() - interval '90 days'
+GROUP BY 1;
+```
+
+A join and a scan, because **`messages` carries no `environment_id`** — tenancy is reached
+only through `channels` — and **nothing indexes `created_at`**. SAD §6.2's ClickHouse table is
+`ORDER BY (environment_id, ts)`: precisely the two columns the Postgres table orders by
+neither of.
+
+**So the chapter shows that two questions want two shapes and one table cannot have both**,
+which is CON-01 as an artifact rather than a paragraph. Three measurements, in this order:
+
+| # | measured | why it is the right thing to measure |
+|---|---|---|
+| 1 | the query's own time at volume | the analytical question's direct cost |
+| 2 | **send p95 while it runs** | the neighbour effect, against NFR-PRF-02's published 150 ms |
+| 3 | **denormalise `environment_id`, index `(environment_id, created_at)`, re-measure 1 and 2** | the query gets fast and **every write now pays for a question no write asks** |
+
+Row 3 is the chapter's argument. Showing the query is slow proves little; **showing that the
+fix is worse** is the thing that cannot be answered with "add an index."
+
+**And it may not hurt enough.** A join-and-scan over a few million rows on a modern machine
+may come in under a second. The honest response is to publish the volume reached and say what
+it does not prove, the way NFR-SCL-01 was recorded rather than claimed. The fallback argument
+needs no measurement: FR-ANL-01 wants an event per **API request**, not per message, and
+90-day retention is `TTL ts + INTERVAL 90 DAY` against a partition-and-delete job.
+
+#### The index facts are a premise to re-run, not a number to carry
+
+The claim this rests on — *nothing indexes `created_at`, nothing reaches a tenant without a
+join* — is load-bearing for movement I. **If it is false when the chapter is written, movement
+I collapses and this document is wrong**, so it is recorded here as a premise with its
+derivation rather than as a fact:
+
+    sed -n '/export const messages = pgTable/,/^);/p' services/api/src/db/schema.ts
+
+**The COUNT of indexes belongs to the chapter, not to this document.** "Exactly two" is true
+of one commit, and a hand-carried count is the failure this project has already paid for —
+the nine hand-allocated api ports, and 045-49's comment that counted its own file correctly
+for exactly one commit. The chapter re-derives it at its own tag. This document carries the
+structural claim and the command that settles it.
+
+**Two things the chapter owns and this document should not pre-empt:**
+
+- **The callback to chapter 2.4.** The schema's own comment reads *"No dedicated (channel_id,
+  sequence DESC) index… Chapter 2.4 measured it and migration 0001 dropped the redundant
+  twin."* The reader watched an index get measured and removed; 4.1 is where the bill arrives.
+  That is writing, and it belongs to whoever writes it.
+- **Whether row 3's counterfactual ships as a migration.** It must not. See §2.5.
+
+### 2.5 The counterfactual is a probe, and probes have hygiene
+
+Measurement 3 adds a column and an index in order to throw them away. **That is a red probe,
+and a red probe writes to the lane** — 043 left two `javascript:alert(1)` rows behind and the
+next measurement read them as pre-existing data contradicting the plan.
+
+A discarded *migration* is worse than a discarded row: it enters `schema_migrations` and the
+migration numbering, and §7.1 records that the numbering is an open question with a cautionary
+history (045-69). So the constraint is on the method rather than on the prose:
+
+**Measurement 3 runs on a throwaway database, seeded by the harness, never on the lane and
+never at the chapter's tag.** The chapter fences no migration for it. What the chapter
+publishes is the numbers and the `EXPLAIN`, not a schema change it then reverts.
+
+---
+
+## 3. The shape — seven movements, 24 chapters, three milestones
+
+Chapter titles are provisional. Movement boundaries are not — they are what §5's rules
+produce, and they are declared **before** chapter one exists, which is the whole payoff of
+feature 045 being collected rather than paid for again.
+
+```
+    I    ch 1–2     The question one store can't answer
+    II   ch 3–5     The second store
+    III  ch 6–7     Everything else worth recording
+    IV   ch 8–11    What you can now answer                      ★
+    V    ch 12–14   Bytes we never touch
+    VI   ch 15–19   The one service that reads them              ★
+    VII  ch 20–24   The reckoning                                ★
+```
+
+| Ch | Mv | Title | Built |
+|---|---|---|---|
+| 1 | I | The question the counters can't answer | §2.4's shape mismatch, with the harness that makes it measurable. FR-ANL-05/09's query written against Postgres for the first time — a join and a scan, because `messages` carries no `environment_id` and nothing indexes `created_at`. Measurements 1 and 2: the query's own cost, and send p95 beside it against NFR-PRF-02's 150 ms |
+| 2 | I | The index that would fix it | Measurement 3 — denormalise, index, re-measure, and watch every write pay for a question no write asks. CON-01 as an artifact. Run on a throwaway database and fenced as numbers, never as a migration (§2.5) |
+| 3 | II | ClickHouse from zero | MergeTree, `PARTITION BY` (DR-07), `ORDER BY (environment_id, ts)` — the two columns chapter 1 showed Postgres orders by neither of — and TTL (DR-09). Schema only; nothing ingests yet |
+| 4 | II | A second store needs a second ledger | **Open — see §7.1.** A migration runner and an identity scheme for a store whose DDL the Postgres runner cannot execute |
+| 5 | II | The consumer that was promised | The ingester. Batching (DR-11), backpressure, and ClickHouse down → the stream absorbs 24 h (NFR-REL-05) |
+| 6 | III | Every request is an event | FR-ANL-07's producer. Generalises the pattern chapter 3.20 already taught rather than introducing it — see §4 |
+| 7 | III | The gateway's first stream | Connection open/close (FR-ANL-01). **The gateway has never touched NATS** — verified, zero references in `services/gateway/src`. Amends ADR-07 a second time; see §7.2 |
+| 8 | IV | Metering you can bill on | Daily rollup materialised views (DR-10) — billing never scans raw events |
+| 9 | IV | The job that checks the meter | FR-ANL-06's reconciliation job, built to be callable in isolation (§2.3) |
+| 10 | IV | The log a customer can search | FR-ANL-07's query surface; FR-ANL-10's latency percentiles |
+| 11 | IV | **★ Milestone: the meter agrees** | The planted drift is caught; the 0.1% figure is measured once and recorded (§2.3) |
+| 12 | V | The upload that never reaches us | FR-MED-01/02: the slot, the presigned URL, the four distinct refusals, the storage quota |
+| 13 | V | The half of the union that was refused | FR-MED-06. Chapter 3.24 shipped `media_not_available` (422) to refuse `media_id` **by name**, as a discriminated union built for this arm to be filled. This chapter fills it |
+| 14 | V | A link that expires, and who may hold it | FR-MED-08: signed delivery, one hour, authorisation following channel membership rather than a parallel ACL |
+| 15 | VI | The only service that reads the bytes | The media worker. FR-MED-03/04: verify against declaration, ClamAV, probe. **Open — see §7.3** |
+| 16 | VI | Pending, ready, rejected | The state machine and `media.updated` (FR-MED-07). A placeholder becomes real without polling. **Open — see §7.4** |
+| 17 | VI | What a thumbnail costs | FR-MED-05: derived objects sharing the parent's lifecycle |
+| 18 | VI | Storage on the bill | FR-MED-12: stored bytes metered per tenant per day, into the store movement IV built |
+| 19 | VI | **★ Milestone: an image, end to end** | Upload → scan → send → signed delivery. FR-MED-09's rejection marker renders as rejected, never as broken |
+| 20 | VII | The log that cannot be edited | FR-MOD-03's audit log. **First in its movement, not last** — everything after it writes to it. Registry-shaped, the same shape as *Errors that resolve*, which 045 moved to the front of Part 3 for this reason |
+| 21 | VII | Everything, including what was deleted | FR-MOD-01/02 via API key. **Check the premise first — see §7.5** |
+| 22 | VII | The messages that expire | FR-MOD-06's retention job. Expired messages take their media objects with them (FR-MED-11) |
+| 23 | VII | Erasure, and every path it must find | FR-MOD-04 and FR-MED-10. Messages, memberships, profile, media objects, analytical rows — the chapter this part is named for |
+| 24 | VII | **★ Milestone: the Priya test** | Journey 3 scripted: locate → reconstruct → act → audit |
+
+**Cadence.** Milestones at 11, 19 and 24, against Part 3's two at 25 and 26 of 26. The famine
+Part 3 ran — 25 chapters between the Tuan test and the isolation gauntlet — is not repeated.
+
+**Movement I is two chapters because §2.4 made it two.** The questions, the honest attempt and
+the harness are one sitting; the counterfactual and the verdict are another. A one-chapter
+movement was the alternative and it was an artefact of the wrong premise.
+
+**And 24 will not be 24.** Part 3 was planned at 7 and shipped 26 because chapters split at
+their word ceiling rather than compress. **This document has already done it once** — movement
+I gained a chapter during grooming and every ordinal after it moved, which is exactly the churn
+§2.1 accepted. Movements absorb it; the ordinal does not, which is why §6 is not optional.
+
+---
+
+## 4. What the reader already knows walking in
+
+Chapters must not re-teach these. The reader met all of them in Part 3.
+
+| already taught | where | what Part 4 does with it |
+|---|---|---|
+| The transactional outbox, and why it is in Postgres | movement II | contrasts it — ch 6 |
+| JetStream streams, durable pull consumers, the 503 a publisher gets from a stream nobody created | movements II, VI | reuses — ch 4 |
+| **The analytics subject grammar and the fire-and-forget tradeoff** | ch 3.20 | **generalises — ch 6, 7** |
+| Subject grammars as a design tool, five of them, each argued | movements IV, V | ch 15 may need a sixth (§7.4) |
+| The error registry and how a code is added to it | movement I | ch 12's four refusals |
+| The isolation harness and the global-operation guard | movement I | every new table |
+| Attachments as a discriminated union, `media_id` refused by name | ch 3.24 | ch 13 fills the arm |
+| **Monthly quota counters in Postgres** — `usage_periods`, `usage_active_users`, `usage_connections` | ch 3.23 | **ch 9 reconciles against them** |
+
+**The hardest idea in this part is already taught.** `packages/protocol/src/internal.ts:249`
+defines `analytics.{domain}.{action}.{environment_id}` as the third grammar in that file,
+on a stream deliberately separate from `EVENTS` and `DELIVERIES`, and its own comment says:
+
+> *Part 4's ingester is that consumer, and it does not exist yet, which is exactly when a
+> shared definition is cheapest to establish.*
+
+`services/api/src/webhooks/analytics.ts` argues the tradeoff in full and concludes
+*"so 'every attempt' is APPROXIMATE, and the chapter says so in the paragraph that
+introduces the feature rather than in a footnote."*
+
+So *there are two ways out of this system and they have different guarantees* is a thing the
+reader has already been told, at the right moment, with the cost stated. Movement III
+generalises it to two more producers. **It does not introduce it, and a chapter that
+re-derives it is a chapter that has not read Part 3.**
+
+### FR-ANL-06 has a concrete counterpart, and it is Part 3's
+
+**FR-RTL-05 and FR-ANL-05 meter the same three quantities.** FR-RTL-05 enforces *monthly
+quotas on messages sent, unique active persons, and connection-minutes*; FR-ANL-05 meters
+*per tenant per day: messages sent, unique active users, connection-minutes, and stored
+message count.*
+
+So chapter 8 builds in ClickHouse a daily view of what Part 3's quota chapter already counts
+monthly in Postgres — and **FR-ANL-06's reconciliation is the comparison between them.**
+*"Metered totals shall agree with counts derived from operational data to within 0.1%"* is not
+abstract: the operational data is `usage_periods`, `usage_active_users` and
+`usage_connections`, and the reconciler aggregates the daily rollups up to the period grain to
+meet them.
+
+`docs/07-tutorial-plan.md` predicted this tension before either side existed —
+*"Building monthly counters in 3.8 would mean building them in Postgres now and again in
+ClickHouse later, **or once in the wrong place**"* — and Part 3 built them in Postgres anyway,
+correctly: a quota must refuse a send synchronously, so its counter cannot live downstream of a
+lossy stream. **Two counters of one quantity is the right answer and the reconciler is the
+price.** Chapter 9 is where that is said out loud.
+
+This also sharpens §2.3: the CI half plants a drift **between two stores that both exist**,
+rather than against a figure invented for the test.
+
+---
+
+## 5. The rules this order obeys
+
+Feature 045 wrote these down and made them checkable, and rebuilding Part 3 to satisfy them
+replaced 228 commits with 230. They are FR-001…FR-005 of
+`specs/045-part-3-rework/spec.md`:
+
+1. Every subject occupies a **contiguous run** of chapters.
+2. A chapter must not teach a mechanism whose subject arrives **later**.
+3. A chapter teaching a **cross-cutting pattern** precedes every chapter that reuses it.
+4. A **milestone** appears after all the work it verifies.
+5. A **registry** appears before the first chapter that adds to it.
+
+Rule 3 asks what is cross-cutting here:
+
+    ClickHouse's query shape      →  metering · request log · percentiles · storage
+    the ingester                  →  every event type
+    a migration runner for it     →  every table added after the first
+    the audit log                 →  every moderation action
+    presigned object storage      →  upload · delivery · thumbnails · deletion
+
+Rule 2 forbids four orderings, and they are what makes this sequence less free than it looks:
+
+    FR-MED-12  storage metering   needs ClickHouse      →  media after analytics
+    FR-MOD-06  retention          deletes objects       →  retention after media
+    FR-MOD-04  erasure            reaches all three     →  last of everything
+    FR-MOD-03  the audit log      everything writes it  →  first of its movement
+
+Rule 4 permits three milestones inside one part: each appears after the work it verifies.
+The objection to three was cadence, and §3 shows the cadence is better than the precedent.
+
+---
+
+## 6. Two gates that must exist before chapter one
+
+**Keeping the global ordinal (§2.1) was justified by the claim that the churn is
+mechanically handled. It is not, yet.** Checked at grooming:
+
+```
+CI runs:   lint typecheck test build migrate test:integration coverage
+           check:docs check:srs check:figures check:fences check-error-codes
+
+wired to nothing:
+  check-redirects.py   check-movements.py   check-map.py
+  check-lane-scope.py  check-refs.py        check-chapter.py
+```
+
+All six live in `specs/045-part-3-rework/` and are referenced by no `package.json` script and
+no CI step. `check-redirects.py` — the instrument that makes renumbering safe — ran once, by
+hand, inside a feature that is now closed. And `lib/part3-chapter-map.json`'s own generated
+header claims *"check-movements.py compares it to the canonical map and fails on any
+drift"*, which describes an instrument nobody runs.
+
+**G1 — `check:redirects` as a standing gate.** Every `was_url` in the map resolves; every
+moved chapter carries both locales. Without it, §2.1's cost is unbounded rather than
+mechanical.
+
+**G2 — a gate that refuses a chapter ordinal in `relay-platform` source.** SC-002 took 1,429
+such references to 0 by hand. FR-008 states the rule and nothing enforces it. Part 4 will
+write new ordinals, and the only thing that stopped them leaking last time was a person.
+
+Both must be red-tested three ways before being trusted, per the checker rule: a checker's
+blind spot is worse than its absence.
+
+---
+
+## 7. Open questions, each owned by the chapter that needs it
+
+**7.1 — ClickHouse migration identity (ch 4).** The platform hand-writes `.sql` against a
+`schema_migrations` table keyed on filename, and 043 retired `drizzle-kit generate` and
+deleted `meta/`. A second store needs a second runner and a second identity scheme.
+`gaps.md` 045-69 is the record of what an identity scheme going wrong costs: seven
+byte-identical migrations under different numbers, and a lane that failed in 0.6 s three
+times. **Everything downstream of ch 4 anchors on this. Decide it before ch 3 is written.**
+
+**7.2 — ADR-07's second amendment (ch 7).** *"Clean mapping — gateway to Redis, api and
+workers to NATS."* Chapter 3.18's amendment already recorded that this stopped being exactly
+true in 3.8. Giving the gateway a publisher amends it again, and that is a chapter's worth of
+argument rather than a line of wiring.
+
+**7.3 — Constitution VII and the media worker (ch 15).** ClamAV and ffprobe are not
+TypeScript. The SAD calls this *"the one service where ADR-01's worker-thread posture matters
+from day one"* and ADR-13/14 bless the design — but nothing blesses the packaging. VII's
+subject is the language services are *implemented in*; a sidecar the worker talks to is
+arguably not that. Argue it explicitly rather than by silence, the way the PL/pgSQL guard was
+argued.
+
+**7.4 — Does `media.updated` take a sixth subject grammar (ch 16)?** Five exist, each argued
+individually, and the review asked for a consolidation threshold. **There is now a number to
+argue against**: `docs/11` measured the subscription law as `redis subjects = 5 × channels +
+1 × connected users`, exact on six rows to 20,000 connections.
+
+**7.5 — Check ch 21's premise before writing it.** FR-MOD-01/02 are **P2**, and chapter 3.23
+built edit history and tombstones. Some of this chapter may already exist. Run the premise;
+this project has found four tasks whose premise was wrong, including one that would have
+caused a defect.
+
+**7.6 — The SRS phase table disagrees with itself, and someone must amend it.** §7.3 annotates
+Phase 3 as *(P3)* while containing FR-DSH-01/02 at **P2** and FR-MED-05 at **P4**. Appendix A's
+prose says the pack system was deferred to Phase 3 *"where its browse/install surface and usage
+analytics arrive together"*, while the table puts usage analytics (FR-EMJ-11) in Phase 4. This
+part covers FR-ANL, FR-MED and FR-MOD; **FR-DSH and FR-EMJ-03→10 are Phase 3 by the SRS and
+Part 5 by the tutorial.** Amend the clause rather than diverge from it — the precedent is
+FR-RTM-09, FR-RTM-10 and 043's own FR-016.
+
+**7.7 — The fence chain opens at 109.** `pnpm check:fences` reports 109 problems on `main`
+(APPLY 74, HEAD 35). Part 4 appends to that chain. 045-66 decomposed the previous 296 into
+three causes and the largest contiguous block was `fences/post-series.md`, an appendix written
+against an end state the rework replaced underneath it. **Nobody has decomposed the 109.**
+
+---
+
+## 8. What this document does not decide
+
+- **Chapter titles.** Provisional, and the register is Part 3's.
+- **How many indexes `messages` carries.** §2.4 records the structural claim and the
+  command that settles it; the count belongs to chapter 1, re-derived at its own tag.
+- **Where FR-DSH and FR-EMJ-03→10 land.** Part 5 by the tutorial plan; see §7.6.
+- **Whether Part 4 is 24 chapters.** It will not be; it was 23 for a day. The movements are the commitment; the
+  count is an estimate, and every estimate this project has made about chapter counts has
+  been low in the same direction.
+- **Anything about the reader.** There is no page-view telemetry in `relay-tutorial` by
+  design, and the one reader instrument — `specs/036-chapter-3-18/reader-protocol.md` — has
+  been named by fourteen records and run zero times. Every claim in this document about what
+  is easy to understand is an inference from structure, not a measurement of a person.

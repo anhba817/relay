@@ -25,8 +25,35 @@ history; the replaced history is preserved on the remote as the tag
 tags. **Anyone holding an older clone of `relay-platform` must reset rather than pull.**
 
 <!-- SPECKIT START -->
-**NO ACTIVE FEATURE.** 045 closed and nothing is queued behind it. The next
-`/speckit-specify` writes this block.
+**ACTIVE: 046 — CHAPTER 4.1, "the question the counters can't answer".** Plan:
+`specs/046-chapter-4-1/plan.md`. Part 4 is **24 chapters in seven movements**, renamed
+**"Everywhere the data went"**; the structure record is `docs/12-part-4-structure.md` and it is
+newer than `docs/07-tutorial-plan.md` wherever they disagree.
+
+**THE PLANNED CHAPTER COULD NOT BE WRITTEN.** `docs/07` said *"run the metering query against
+Postgres under write load"* and **there is no metering query** — `quotas/credit.ts` is two pure
+functions and the module holds no aggregate at all. The real premise is a shape mismatch:
+`messages` carries no `environment_id` and nothing indexes `created_at`, so FR-ANL-05's daily
+question is a join and a scan, against a ClickHouse table ordered by exactly those two columns.
+**The chapter's argument is not that the query is slow — it is that the index which fixes it
+taxes every write for a question no write asks.**
+
+**TWO RESEARCH ASSUMPTIONS WERE WRONG AND BOTH ARE KEPT IN `research.md`.** The bot exemption
+was searched for in `quotas/` and `messages/` and lives in `repository.ts:assertWithinQuota` —
+`docs/10` §0 had already run that exact check, and reading it would have been cheaper than four
+greps. And "write load" is capped at **ten sends per second** by `DEFAULT_LIMITS.send`, so the
+chapter measures **latency, not throughput**, and says so.
+
+**THE CHAPTER SHIPS NO PRODUCT CODE.** Three scripts in `scripts/scale/` and four numbers. The
+counterfactual column and index are applied to a throwaway copy and **must never become a
+migration** (045-69). Two gates Part 4 needs before its first split — a standing `check:redirects`
+and a gate refusing chapter ordinals in platform source — do not exist; all six Python
+instruments live in `specs/045-part-3-rework/` and are wired to nothing.
+
+**AND THE CHAPTER CANNOT BE TAGGED YET.** `part3-ch18` (`54b2cd53`) and `rework/part3-ch18`
+(`3732d6cf`) both exist and resolve to different commits, so a reader following a published SKIP
+AHEAD box lands on the wrong chapter. Deciding Part 4's tag convention is not this chapter's work
+and blocks only tagging, not authoring.
 <!-- SPECKIT END -->
 
     045 "part 3 rework"           24 chapters -> 26, eight movements, English prose only

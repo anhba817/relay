@@ -81,13 +81,13 @@ Part 0   The idea and the paper          5 chapters   (docs 01–06 as curriculu
 Part 1   Foundations                     4 chapters   (repo, tooling, protocol, compose)
 Part 2   The core loop                   8 chapters   (SRS Phase 1 — the hardest part)
 Part 3   Becoming a platform            26 chapters   (SRS Phase 2)
-Part 4   The second data path            8 chapters   (SRS Phase 3 — ClickHouse + hosted media)
-Part 5   Developer experience            6 chapters   (SRS Phase 4 — SDK, emoji, dashboard)
+Part 4   Everywhere the data went       24 chapters   (analytics · hosted media · the paper trail)
+Part 5   Developer experience            6 chapters   (SDK, emoji, dashboard)
 Part 6   Shipping it                     5 chapters   (containers, k8s, CI/CD)
 Part 7   Running it                      6 chapters   (observability, load, chaos, incidents)
 Part 8   The retrospective               2 chapters   (what we'd change; where to go next)
                                         ─────────────
-                                        70 chapters
+                                        86 chapters
 ```
 
 ### Part 0 — The idea and the paper (5 chapters)
@@ -535,21 +535,70 @@ wagging the dog. If a later chapter wants the story, the twelve post-series entr
 and this feature's research are where it is kept.
 
 
-### Part 4 — The second data path (8 chapters)
+### Part 4 — Everywhere the data went (24 chapters, seven movements)
 
-SRS Phase 3. The ClickHouse material — likely the strongest search-traffic magnet, since
-"ClickHouse for SaaS analytics" is underserved territory.
+**Renamed, resized and regrouped during grooming.** The structure record is
+`docs/12-part-4-structure.md`; it carries the movement boundaries, the three decisions taken,
+the open questions and the two gates that must exist before chapter one. **That document is
+the working record and this section is the summary** — where they disagree, 12 is newer.
 
-| Ch | Title | Built |
-|---|---|---|
-| 4.1 | Why your database can't count | The OLTP/OLAP argument (CON-01) made concrete: run the metering query against Postgres under write load, watch it hurt |
-| 4.2 | ClickHouse from zero | Schema: MergeTree, partitions, ORDER BY, TTL (DR-07/09); ingester with batching |
-| 4.3 | Metering you can bill on | Daily rollup MVs (DR-10); the reconciliation job (FR-ANL-06) |
-| 4.4 | The request log | api_requests table; dashboard query surface (FR-ANL-07) |
-| 4.5 | Media without touching it | Presigned direct-to-storage uploads (ADR-13); MinIO; signed delivery URLs following channel membership; storage metering into ClickHouse (FR-MED-12) |
-| 4.6 | The scan pipeline | Media worker: ClamAV, probe, thumbnails; `pending → ready` gating bytes, never messages (ADR-14); the `media.updated` fan-out |
-| 4.7 | Moderation and the paper trail | Tombstone reads, edit history, audit log, compliance erasure — now including media objects (FR-MOD, FR-MED-10) — Priya's chapter |
-| 4.8 | **Milestone: the Priya test** | Journey 3 scripted: locate → reconstruct (edit history proves the case; a rejected upload renders as rejected, not broken) → act → audit |
+**It was "The second data path — 8 chapters, SRS Phase 3" and all three of those were wrong.**
+
+*The name* covered movements I–IV and stopped. The part carries three blocks, and what holds
+them together is that **each moves data off the path everything else takes** — analytics leaves
+through a deliberately lossy stream, media bytes never enter Relay compute — and the part ends
+by asking what that costs. Compliance erasure deletes messages, memberships, profile, media
+objects **and** analytical rows: the one chapter that must know every path the data took, and
+the chapter the part is named for. A split at the media boundary would have orphaned it.
+
+*The count.* Eight was an estimate made before Part 3 was written. Part 3 was planned as seven
+chapters and shipped 26, every extra one arriving the same way — a chapter that reached its
+word ceiling and split rather than compress. 24 is the movement structure costed at that rate,
+and **it will not be 24 either**: it was 23 for a day, until working through chapter 1's premise
+made movement I two chapters. The commitment is the movements; the count is an estimate, and
+every chapter-count estimate in this document has been low in the same direction.
+
+*The phase.* SRS §7.3 puts FR-ANL, FR-MOD, FR-DSH, FR-EMJ-03→10 and FR-MED-01→12 in Phase 3.
+This part carries three of those five; FR-DSH and the emoji packs are Part 5's. **The phase
+table also disagrees with itself** — it annotates Phase 3 as *(P3)* while containing FR-DSH-01
+and FR-DSH-02 at **P2** and FR-MED-05 at **P4**, and Appendix A's prose says the pack system
+was deferred to Phase 3 *"where its browse/install surface and usage analytics arrive
+together"* while the table puts usage analytics (FR-EMJ-11) in Phase 4. Amending §7.3 is
+Part 4's work, on the precedent of FR-RTM-09, FR-RTM-10 and 043's own FR-016. Until it is
+amended, **this part claims no phase.**
+
+The ClickHouse material is still likely the strongest search-traffic magnet — "ClickHouse for
+SaaS analytics" is underserved territory — and it is now movements I–IV rather than two rows.
+
+| Ch | Mv | Title | Built |
+|---|---|---|---|
+| 1 | I | The question the counters can't answer | CON-01 made concrete, and **not the way this table used to say**. Part 3's metering is high-water-mark arithmetic on the send path; there is no aggregation to slow down. FR-ANL-05/09's query written against Postgres for the first time — a join and a scan, because `messages` carries no `environment_id` and nothing indexes `created_at`. The query's cost, and send p95 beside it against NFR-PRF-02 |
+| 2 | I | The index that would fix it | Denormalise, index, re-measure: the query gets fast and every write pays for a question no write asks. Run on a throwaway database; the chapter fences numbers and an `EXPLAIN`, never a migration it reverts |
+| 3 | II | ClickHouse from zero | MergeTree, `PARTITION BY` (DR-07), `ORDER BY (environment_id, ts)` — the two columns chapter 1 showed Postgres orders by neither of — TTL (DR-09) |
+| 4 | II | A second store needs a second ledger | A migration runner and an identity scheme for a store the Postgres runner cannot serve. Open; everything downstream anchors on it |
+| 5 | II | The consumer that was promised | The ingester. Batching (DR-11), backpressure, ClickHouse down → the stream absorbs 24 h (NFR-REL-05) |
+| 6 | III | Every request is an event | FR-ANL-07's producer. **Generalises rather than introduces**: chapter 3.20 already shipped `analytics.{domain}.{action}.{env}` and argued the fire-and-forget tradeoff in full |
+| 7 | III | The gateway's first stream | Connection open/close (FR-ANL-01). The gateway has never touched NATS; amends ADR-07 a second time |
+| 8 | IV | Metering you can bill on | Daily rollup MVs (DR-10) — billing never scans raw events |
+| 9 | IV | The job that checks the meter | FR-ANL-06's reconciliation job, built callable in isolation so a drift can be planted |
+| 10 | IV | The log a customer can search | FR-ANL-07's query surface; FR-ANL-10's latency percentiles |
+| 11 | IV | **Milestone: the meter agrees** | Two claims, not one: CI catches a *planted* drift, and the 0.1% figure is measured once at volume and recorded — the lane's five-channel corpus cannot carry it |
+| 12 | V | The upload that never reaches us | FR-MED-01/02: the slot, the presigned URL (ADR-13), four distinct refusals, the storage quota |
+| 13 | V | The half of the union that was refused | FR-MED-06. Chapter 3.24 shipped `media_not_available` to refuse `media_id` **by name**, as a union built for this arm to be filled |
+| 14 | V | A link that expires, and who may hold it | FR-MED-08: signed delivery, one hour, authorisation following channel membership rather than a parallel ACL |
+| 15 | VI | The only service that reads the bytes | The media worker (ADR-14). FR-MED-03/04: verify against declaration, ClamAV, probe |
+| 16 | VI | Pending, ready, rejected | The state machine and `media.updated` (FR-MED-07) — gating bytes, never messages. A placeholder becomes real without polling |
+| 17 | VI | What a thumbnail costs | FR-MED-05: derived objects sharing the parent's lifecycle |
+| 18 | VI | Storage on the bill | FR-MED-12: stored bytes metered per tenant per day, into the store movement IV built |
+| 19 | VI | **Milestone: an image, end to end** | Upload → scan → send → signed delivery. FR-MED-09's rejection renders as rejected, never as broken |
+| 20 | VII | The log that cannot be edited | FR-MOD-03's audit log. **First in its movement, not last** — everything after writes to it, which makes it registry-shaped, the same shape as Part 3's *Errors that resolve* |
+| 21 | VII | Everything, including what was deleted | FR-MOD-01/02 via API key. Both are **P2**, and chapter 3.23 built edit history and tombstones — run the premise before writing it |
+| 22 | VII | The messages that expire | FR-MOD-06's retention job; expired messages take their media objects with them (FR-MED-11) |
+| 23 | VII | Erasure, and every path it must find | FR-MOD-04 and FR-MED-10 — messages, memberships, profile, media objects, analytical rows |
+| 24 | VII | **Milestone: the Priya test** | Journey 3 scripted: locate → reconstruct (edit history proves the case; a rejected upload renders as rejected, not broken) → act → audit |
+
+**Three milestones inside one part, at 11, 19 and 24.** Rule 4 permits it — each appears after
+the work it verifies — and Part 3's two both sat at the end, after a 25-chapter run with none.
 
 ### Part 5 — Developer experience (6 chapters)
 
@@ -628,11 +677,17 @@ everything before them.
 | A | Part 0 (docs exist — this is editing into chapters) + Part 1 | 3 weeks |
 | B | Part 2 code + chapters | 6–8 weeks |
 | C | Part 3 | 5–6 weeks |
-| D | Part 4 | 6–7 weeks |
+| D | Part 4 | **stale — written against 8 chapters, not 24** |
 | E | Part 5 | 5–6 weeks |
 | F | Parts 6–7 | 5–6 weeks |
 | G | Part 8 + full-series edit pass | 2 weeks |
 | | **Total** | **~8–10 months part-time** |
+
+**Stage D's estimate is not re-derived here, deliberately.** Part 3 was estimated at 5–6 weeks
+and took five — but for 26 chapters rather than the seven it was estimated for, at a pace this
+table's "~10 h/wk" does not describe. Two numbers in that row are wrong and only one of them is
+Part 4's; re-costing it would mean re-costing the assumption underneath every row, which is a
+measurement nobody has taken. The row is marked rather than replaced.
 
 The estimate is deliberately unflattering. If it motivates scope cuts, cut whole *parts*
 from the tutorial's v1 (ship Parts 0–2 as "Season 1"), never chapters from within a part —

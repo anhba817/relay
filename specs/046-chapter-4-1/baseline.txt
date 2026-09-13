@@ -1,0 +1,127 @@
+BASELINE — chapter 4.1, the question the counters can't answer
+Phase 1, recorded 2026-09-13.
+
+Every number this chapter publishes is quoted against this file. Two of the numbers
+below were inherited from CLAUDE.md by the plan and re-measured here; one of them had
+already moved.
+
+
+T008 — THE ENVIRONMENT
+
+    node        v22.23.2
+    pnpm        10.33.0
+    postgres    postgres:18-alpine        (compose.yaml)
+    cpus        10
+    ram         15 GB
+    kernel      6.18.33.2-microsoft-standard-WSL2
+    port        RELAY_POSTGRES_PORT=15432 — this machine's own Postgres holds 5432
+
+    relay-platform  52766091  chore(043): retire the migration generator, and keep …
+    relay-tutorial  0f4d8d6   chore(vi): the translation pipeline moves in beside …
+
+    docker: the selected context is `rootless` and the daemon runs on the root socket,
+    so `docker compose` needs DOCKER_HOST=unix:///var/run/docker.sock on this machine.
+    Recorded because the quickstart's first command fails without it.
+
+
+T002 — THE PREMISE, RE-DERIVED AT THIS CHAPTER'S TAG (FR-014)
+
+    sed -n '/export const messages = pgTable/,/^);/p' services/api/src/db/schema.ts
+
+    messages(id, channel_id, sequence, user_id, text, metadata, attachments,
+             idempotency_key, created_at, edited_at, deleted_at)
+
+    unique       (channel_id, sequence)                        DR-01
+    uniqueIndex  (channel_id, idempotency_key) WHERE NOT NULL  DR-03
+
+    INDEX COUNT: 2, both channel-scoped. Derived by grep over the block above, not
+    carried from docs/12-part-4-structure.md, where it would be true of one commit.
+
+    NO environment_id COLUMN. NO INDEX TOUCHING created_at.
+
+    THE PREMISE HOLDS AND THE CHAPTER'S ARGUMENT STANDS. Had either claim been false,
+    movement I collapses and the plan is wrong — that was T002's stop condition.
+
+
+T006 — check:fences, THE OPENING NUMBER (FR-015)
+
+    110 problem(s) — APPLY 74, HEAD 36
+
+    THE INHERITED FIGURE WAS 109 (APPLY 74, HEAD 35) AND IT WAS ALREADY STALE. CLAUDE.md
+    carries 109 from 045's close-out; analysis pass 1 ran the gate and confirmed it; the
+    tutorial repository has since moved to 0f4d8d6 and HEAD rose by one. APPLY is
+    unchanged.
+
+    FR-015 requires this chapter's contribution to be reported as a DELTA against 110,
+    not as a total, and the total is not claimed green. A delta computed against 109
+    would have been wrong by one in the direction that flatters the chapter.
+
+
+T007 — THE LANE'S ROW COUNTS, MEASURED (not inherited)
+
+                       measured 2026-09-13    CLAUDE.md, 045 close-out    drift
+    environments              31,685                    31,215            +470
+    channels                  46,143                    45,567            +576
+    messages                 303,885                   300,719          +3,166
+    users                    310,733                         —               —
+    outbox                   487,481                   481,251          +6,230
+    outbox pending             6,249                     5,253            +996
+
+    ALL FOUR CARRIED FIGURES HAD DRIFTED UPWARD. `reset-lane.mjs` purges lane debris and
+    not data, by design, so the lane accumulates between features. These counts are part
+    of the instrument for T029's lane comparison and for any whole-table assertion.
+
+    The stack was brought up for this measurement and taken down again afterwards.
+
+
+T009 — WHY A SEEDER HAS TO BE WRITTEN
+
+    scripts/scale/seed.mjs creates users and channels for NFR-SCL-01 and writes NO
+    message rows. The only comparable corpus this project has built —
+    specs/034-chapter-3-15/baseline.txt:153 — says of itself:
+
+        "The scratch database is not this lane and is not seeded by anything in the
+         repository."
+
+    So the instrument behind this project's one published million-row figure does not
+    exist. That is why T011 creates one rather than reusing one.
+
+
+T011 — THE SEEDER'S ARITHMETIC, EXECUTED
+
+    scripts/scale/corpus.mjs — eight variables, readConfig, and a pure planFor.
+
+    Its defaults reproduce the contract's example block, six of six:
+
+        subject.messages_in_window      1,000,000
+        subject.messages                1,333,334      ceil(1,000,000 x 120 / 90)
+        created.messages                1,600,000      + 2 neighbours at 10%
+        created.users                       6,000
+        created.channels                    2,400
+        created.channel_members            12,001      6,000 x 2, + the bot
+
+    AND WRITING IT FOUND TWO CONSTRAINTS NINE ANALYSIS PASSES DID NOT. The documents
+    said the neighbours and the extra thirty days exist "because a predicate that
+    excludes nothing is not being tested either" — a rationale, in prose, that nothing
+    enforced. CORPUS_ENVIRONMENTS=1 and CORPUS_DAYS=90 were both legal and both produce
+    a corpus that measures one of the query's two predicates and publishes a number
+    about both.
+
+    The first draft of the guards used `>= 1` and `>= 90`, accepting exactly the two
+    configurations the rationale forbids. Boundary probes caught it:
+
+        CORPUS_DAYS=90         refused        CORPUS_ENVIRONMENTS=1   refused
+        CORPUS_DAYS=91         accepted       CORPUS_ENVIRONMENTS=2   accepted
+        CORPUS_MESSAGES=abc    refused        CORPUS_MESSAGES=-1      refused
+        CORPUS_NULL_SENDER_RATIO=2  refused   defaults                accepted
+
+    Both bounds are now strict and refuse rather than warn. `pnpm lint` passes; the
+    first version failed it with two unused symbols written for T012's database work.
+
+
+WHAT PHASE 1 CHANGED IN THE REPOSITORY
+
+    relay-platform/.gitignore      + corpus.json, which quickstart §2 writes with `tee`
+    relay-platform/scripts/scale/corpus.mjs      new (T011)
+
+    No migration, no schema change, no row written to the lane.
