@@ -290,6 +290,45 @@ that fail silently. This one found nothing that would break the ingester and thr
 that would break the chapter — **an estimate, a precedent and a mechanism, none of them
 written down.**
 
+## R12 — What does constitution VI ask of this ingester? **Tests, and an honest number where 100% is not reachable.**
+
+**Decision**: unit tests for the shaping function, an integration test for the redelivery,
+per-file pins in `vitest.coverage.config.mts` at the measured figure, and the shortfall
+against the 100% clause recorded rather than left unstated.
+
+**Rationale**: the clause is explicit —
+
+> Automated test coverage of business logic MUST be at least 70%. Message ordering,
+> **idempotency**, and **tenant isolation** MUST have 100% branch coverage (NFR-MNT-02).
+
+US3 is idempotency and every row carries a tenant, so both named behaviours are this
+chapter's. **And the feature planned no automated tests at all**: twelve `test` matches in
+`tasks.md`, every one an "Independent test:" header describing a manual demonstration.
+
+**047's reasoning for having none does not carry.** It said *"Nothing here joins a test
+lane"* and it was right — `analytics/` matches no include glob. This chapter's own preamble
+says the opposite and treats it as an advantage. **Collected means measured**, and the
+advantage arrives with an obligation nobody had written down.
+
+**The project has already met this clause and chosen divergence over compliance.**
+`vitest.coverage.config.mts` says it plainly: `repository.ts` holds all three named
+behaviours, measures **89.51%**, and the per-file numbers are *"a RATCHET pinned at today's
+measurement, not the bar … deliberately not the 100% the constitution asks for, because a
+threshold nothing can pass makes CI permanently red and teaches everyone to ignore it."*
+So the standard to meet is not 100% — it is **measure, pin, and record the gap**, which is a
+harder standard to fake and an easier one to keep.
+
+**And the pin is a fenced-file amendment.** `vitest.coverage.config.mts` is fenced in
+**eleven** chapters, most recently 3.23. R11 counted the two amendments a fourth service does
+*not* need and missed the one it does. **Asking "what does this cost?" in one direction
+answers half the question** — the absent costs and the present ones are two searches, not
+one.
+
+**A demonstration and a test are not substitutes here.** The redelivery is verified both
+ways: **D** proves the system behaves once, **T** proves the branch that makes it behave is
+exercised. Choosing D alone would have been defensible; choosing it without noticing which
+clause it touches would not.
+
 ## What research did not resolve
 
 - **How many records `discard: old` has already dropped.** The stream reports depth, not

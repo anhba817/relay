@@ -51,6 +51,25 @@ in"* — and the dedup it has built in is `claimEvent`, a **PostgreSQL transacti
 Constitution III forbids that on this path. **The template describing this consumer is the
 one thing this consumer may not reuse**, which is the chapter's central argument.
 
+**PASS 5 FOUND NO TESTS AT ALL, IN A CHAPTER WHOSE SUBJECT THE CONSTITUTION NAMES.** Twelve
+`test` matches in `tasks.md`, every one an "Independent test:" header — a manual
+demonstration. **Constitution VI singles out idempotency and tenant isolation for 100% branch
+coverage**, and US3 is idempotency. 047's reason for shipping none does not carry: it said
+*"Nothing here joins a test lane"* and was right, `analytics/` matching no include glob. This
+chapter's own preamble says the opposite and calls it a benefit — **collected means
+measured**, and the benefit arrives with an obligation nobody wrote down.
+
+**AND THE STANDARD IS NOT 100%, WHICH IS ALREADY RECORDED.** `vitest.coverage.config.mts`
+pins `repository.ts` — ordering, idempotency and tenant isolation, all three — at **89.51%**,
+deliberately: *"a threshold nothing can pass makes CI permanently red and teaches everyone to
+ignore it."* **Measure, pin at the measurement, name the shortfall.** That is a harder
+standard to fake than a number nobody hits.
+
+**AND PASS 4 ASKED ITS QUESTION IN ONE DIRECTION ONLY.** It found `pnpm-workspace.yaml` and
+`turbo.json` need no amendment and recorded them as absent costs — then missed
+`vitest.coverage.config.mts`, fenced in **eleven** chapters, which pinning the new files
+amends. **Asking what something costs is two searches, not one.**
+
 **PASS 4 CHANGED SHAPE: THREE ESTIMATES NOBODY WROTE DOWN.** Passes 1–3 found runtime
 behaviours that fail silently. This one found nothing that would break the ingester and three
 things that would break the chapter. **Chapter 3.19 introduced `services/dispatcher` at 5,889

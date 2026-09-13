@@ -5,9 +5,15 @@
 **This chapter joins two things that already exist.** The `ANALYTICS` stream has been
 filling since chapter 3.20 and the store landed in 4.2. Nothing between them.
 
-**Verification methods, stated.** The drain and the redelivery are **D**. The store-down
+**Verification methods, decided rather than defaulted.** The drain is **D**. The store-down
 behaviour is **D** for the queue depth and **A** for the claim that messaging is unaffected.
 The Postgres-isolation claim is **I**.
+
+**The redelivery is D AND T, and that pair is a decision.** Constitution VI singles out
+**idempotency** — with ordering and tenant isolation — for 100% branch coverage, and the
+redelivery IS this chapter's idempotency. A demonstration proves the system behaves once; a
+test proves the branch that makes it behave is exercised. **They are not substitutes**, and
+choosing D alone here would have been choosing it without noticing which clause it touches.
 
 **AND THIS ONE DOES JOIN A TEST LANE, UNLIKE THE LAST TWO.**
 `vitest.coverage.config.mts` collects `packages/*/src/**` and `services/*/src/**`, so an
@@ -60,8 +66,8 @@ and this is the first statement file added since the chapter that built the runn
 **Independent test**: publish a known number of attempt records, run the ingester, and
 compare the store's row count against the stream's delivered count.
 
-- [ ] T017 [US1] Decide where the ingester lives and **record the decision, its reason, and its price** in `specs/048-chapter-4-3/baseline.txt` (FR-014). `services/*/src/**` is collected by the coverage lane; `analytics/**` is collected by nothing. A fourth service directory is the SAD's shape. **And a service is six files**: `Dockerfile`, `package.json`, `src/`, `tsconfig.json`, `tsconfig.build.json`, `vitest.integration.config.mts`.
-- [ ] T017a [US1] Record the precedent in `specs/048-chapter-4-3/baseline.txt` **before writing any prose**: chapter 3.19 introduced `services/dispatcher` at **5,889 prose words and 47 titled fences**, against SC-008's 2,000–4,000 bound and 4.2's 2,580 and 2. The ingester is a smaller job — fetch, shape, insert, acknowledge, against HTTP delivery with signing, retries and expansion — so **47 is a ceiling, not an estimate.** State the expected fence count here, and treat **a split as likely rather than merely permitted.**
+- [ ] T017 [US1] Decide where the ingester lives and **record the decision, its reason, and its price** in `specs/048-chapter-4-3/baseline.txt` (FR-014). `services/*/src/**` is collected by the coverage lane; `analytics/**` is collected by nothing. A fourth service directory is the SAD's shape. **And a service is six files**: `Dockerfile`, `package.json`, `src/`, `tsconfig.json`, `tsconfig.build.json`, `vitest.integration.config.mts` — plus tests, plus a pin in the **fenced** `vitest.coverage.config.mts` (T038b).
+- [ ] T017a [US1] Record the precedent in `specs/048-chapter-4-3/baseline.txt` **before writing any prose**: chapter 3.19 introduced `services/dispatcher` at **5,889 prose words and 47 titled fences**, against SC-008's 2,000–4,000 bound and 4.2's 2,580 and 2. The ingester is a smaller job — fetch, shape, insert, acknowledge, against HTTP delivery with signing, retries and expansion — so **47 is a ceiling, not an estimate.** State the expected fence count here — **counting `vitest.coverage.config.mts` as a second hunked amendment beside `compose.yaml`** — and treat **a split as likely rather than merely permitted.**
 - [ ] T017b [US1] Decide the **scaffolding fence policy** and record it (T051 depends on it). Chapter 3.19 fenced `services/dispatcher/package.json` and the sources and **skipped the `Dockerfile`, both tsconfigs and the vitest config** — four files a reader needs to build the service. **Follow that precedent knowingly or differ from it deliberately**; deciding at T051 means deciding it while writing prose, which is the worst moment for it.
 - [ ] T017c [US1] Record the two edits a fourth service does **not** need, checked because each would otherwise be a hunked amendment to a fenced file: `pnpm-workspace.yaml` globs `services/*`, and `turbo.json` names **no service at all** (0 occurrences of `dispatcher` or `gateway`). **Two anchoring risks that are not there** — worth a line, because an absent cost is invisible unless somebody looks for it.
 - [ ] T018 [US1] Create the ingester with a durable pull consumer on `analytics.>`, **with `max_deliver: -1`** (FR-006a). Both existing consumers set a limit — `MAX_DELIVER = 5` on the api's runtime, 10 on the dispatcher, both at a 30-second `ack_wait` — and it is sound for a webhook endpoint that is probably gone. **A store that is restarting is not an endpoint that is gone**, and five attempts at thirty seconds is two and a half minutes before an outage becomes a silent strand (T027a). The queue's seven-day retention is the only bound. **State whether `createConsumerRuntime` is reused, parameterised or replaced, and why** — its claim is a Postgres transaction and constitution III forbids that here (T004). **The template written to stop a future consumer double-counting is the one this consumer may not reuse**, and that is the chapter's argument, not an inconvenience to route around.
@@ -73,6 +79,7 @@ compare the store's row count against the stream's delivered count.
 - [ ] T023 [US1] Run the drain and record in `specs/048-chapter-4-3/baseline.txt` **four numbers side by side**: the count published to the stream, then `count()`, `count() FINAL`, and `uniqExact((environment_id, ts, delivery_id, attempt))`. **The published count is what makes this a check rather than a tautology** — the other three agree at 0, 0, 0 over an empty table, which is exactly what T011a's failure produces. After a redelivery the bare `count()` exceeds the rest, and that is the engine working rather than a defect. Reading this table means `FINAL`.
 - [ ] T024 [US1] Record the consumer's pending count after the drain, from the broker rather than from the ingester's own log. **A process reporting that it finished is not evidence that the queue is empty.**
 - [ ] T025 [US1] Verify no request waits on an analytical write (FR-ANL-02) and record how it was verified. `publishAttempt` already *"never throws"* and is called after the outcome transaction commits; this task confirms the consumer added nothing to that path.
+- [ ] T025a [US1] Write unit tests for the **shaping function** — the allow-list and the rename (T020). It is pure, it is decision-bearing, and it is where `attempted_at` becomes `ts`; a rename that silently stops happening is pass 3's failure returning by another route. The dispatcher's precedent is one `.test.ts` beside one `.itest.ts`.
 - [ ] T026 [US1] Commit phase 3 — the ingester and `specs/048-chapter-4-3/baseline.txt`. Gates first.
 
 ---
@@ -108,6 +115,8 @@ and the queue grows; restart and confirm the backlog drains with no gap.
 - [ ] T036 [US3] **Force the REGROUPING, because replaying the same batch shape proves only the easy half** — and the first design passed that half. Restart the ingester with a different batch size so the redelivered records are cut differently from the originals, then confirm `count() FINAL` is unchanged. Verified in analysis over three differently-cut batches of the same 500 records: physical count 500 → 800 → 1,200, `FINAL` **500** every time. **Clean up the probe before anything is counted.**
 - [ ] T037 [US3] **Measure what `FINAL` costs** on this table at the corpus's size and record it (SC-003's shape). It is the price of deduplication that does not depend on batch boundaries, and it is 4.2's rollup lesson one engine over — there the read contract became `sum()` with `GROUP BY`, here it is `FINAL`. **A query whose correctness depends on somebody having run `OPTIMIZE` is right in a demo and wrong in production.**
 - [ ] T038 [US3] Verify the ingester wrote nothing to PostgreSQL and issued no query against it on the ingestion path (FR-009, SC-005): `schema_migrations` unchanged, `consumed_events` unchanged, and the lane's row counts matching T009's. **Constitution III is the reason this chapter cannot reuse the obvious runtime**, so it is the claim most worth checking.
+- [ ] T038a [US3] Write the integration test for the **redelivery** (FR-012a, SC-005a): a batch written, redelivered under a different grouping, and `count() FINAL` unchanged. This is the chapter's idempotency and the clause constitution VI names. **Force the regrouping, as T036 does** — a test that replays the same batch shape proves the half the first design already passed.
+- [ ] T038b [US3] Pin the ingester's decision-bearing files in `relay-platform/vitest.coverage.config.mts` **at the measured figure, and record the gap against constitution VI's 100% branch clause** in `specs/048-chapter-4-3/baseline.txt`. The precedent is explicit and is not compliance: `repository.ts` holds ordering, idempotency and tenant isolation, measures **89.51%**, and is pinned there because *"a threshold nothing can pass makes CI permanently red and teaches everyone to ignore it."* **Measure, pin, name the shortfall.**
 - [ ] T039 [US3] Record in [contracts/ingester.md](./contracts/ingester.md) anything the contract gained after the code ran, **and which task forced it**. A contract written by one caller is a contract written by one caller's opinion.
 - [ ] T040 [US3] Commit phase 5 — the ingester, `specs/048-chapter-4-3/`. Gates first.
 
@@ -126,7 +135,7 @@ and the queue grows; restart and confirm the backlog drains with no gap.
 - [ ] T048 Write the section amending SAD §6.2 to publish `webhook_attempts`, quoting what the publisher sends as the reason for each column.
 - [ ] T049 [P] Write `relay-tutorial/app/(en)/part-4/chapter-03/<slug>/figures.ts` — at least two figures: the stream with a publisher and no consumer, and the two dedup mechanisms against the two failure modes.
 - [ ] T050 [P] Add at least one `TRAP` box. The strongest candidate is the deduplication token that is accepted and ignored without the window — a mechanism that looks configured, does nothing, and reports success.
-- [ ] T051 Publish the fences in **two kinds, because they are two mechanisms with two failure modes.** **New files take WHOLE-BODY fences** — `analytics/0003_webhook_attempts.sql` and every new service source — and carry no anchoring risk. **`compose.yaml` takes a HUNKED ```diff fence** if the ingester runs there; it is fenced in six chapters and 4.2's own amendment went through the same mechanism. Name the file rather than saying "any amended fenced file": 4.2's hunk was verified before pasting precisely because its task named it. **And generate the hunk from the checker's own replay**: copy `check-fence-chain.mjs`, truncate it at the HEAD comparison, dump its end state, diff that against the working tree, delete the copy. **Normalise the trailing newline** — `fileLines` strips it on both sides, and not doing so produced a spurious second hunk in 4.2. **Verify the hunk applies clean before pasting, not after.**
+- [ ] T051 Publish the fences in **two kinds, because they are two mechanisms with two failure modes.** **New files take WHOLE-BODY fences** — `analytics/0003_webhook_attempts.sql` and every new service source — and carry no anchoring risk. **`compose.yaml` takes a HUNKED ```diff fence** if the ingester runs there; it is fenced in six chapters and 4.2's own amendment went through the same mechanism. **So does `vitest.coverage.config.mts`** once T038b pins the ingester's files — it is fenced in **eleven** chapters, most recently 3.23, and it is the amendment pass 4 missed while counting the two that are not needed. Name the file rather than saying "any amended fenced file": 4.2's hunk was verified before pasting precisely because its task named it. **And generate the hunk from the checker's own replay**: copy `check-fence-chain.mjs`, truncate it at the HEAD comparison, dump its end state, diff that against the working tree, delete the copy. **Normalise the trailing newline** — `fileLines` strips it on both sides, and not doing so produced a spurious second hunk in 4.2. **Verify the hunk applies clean before pasting, not after.**
 - [ ] T052 Register the chapter in `relay-tutorial/lib/tutorial.ts` with a Vietnamese title.
 - [ ] T053 Create `relay-tutorial/app/(vi)/vi/part-4/chapter-03/<slug>/` with `specs/046-chapter-4-1/vi-placeholder.py`, mirroring every fence. **Invent no Vietnamese** beyond the standing notice and the registry's own title.
 - [ ] T054 Run `node scripts/prose-words.mjs` against the page and record the count. The bound is 2,000–4,000 outside fences (SC-008).
@@ -182,6 +191,25 @@ numbers trustworthy; neither is optional for the chapter, both are separable for
   dropped, say so.
 
 ## Notes
+
+**ANALYSIS PASS 5 FOUND NO TESTS, IN A CHAPTER WHOSE SUBJECT THE CONSTITUTION NAMES.**
+Twelve `test` matches in this file and every one an "Independent test:" header — manual
+demonstrations. Constitution VI singles out **idempotency** and **tenant isolation** for 100%
+branch coverage, and US3 is idempotency. **047's reason for shipping no tests does not
+carry**: it said *"Nothing here joins a test lane"* and was right, because `analytics/`
+matches no include glob. This chapter's preamble says the opposite and calls it a benefit —
+**collected means measured**, and the benefit arrives with an obligation.
+
+**THE STANDARD IS NOT 100%, AND THAT IS WRITTEN DOWN ALREADY.**
+`vitest.coverage.config.mts` records `repository.ts` — which holds all three named
+behaviours — at **89.51%**, pinned there deliberately because *"a threshold nothing can pass
+makes CI permanently red and teaches everyone to ignore it."* **Measure, pin, name the
+shortfall.** T038b does that.
+
+**AND PASS 4 COUNTED THE COSTS IN ONE DIRECTION ONLY.** It found `pnpm-workspace.yaml` and
+`turbo.json` need no amendment and recorded them as absent costs. It missed
+`vitest.coverage.config.mts`, fenced in **eleven** chapters, which the pin amends. **Asking
+what something costs is two searches, not one.**
 
 **ANALYSIS PASS 4 CHANGED SHAPE: THREE ESTIMATES NOBODY WROTE DOWN.** The first three
 passes found runtime behaviours that fail silently — a batch boundary, a redelivery limit, a

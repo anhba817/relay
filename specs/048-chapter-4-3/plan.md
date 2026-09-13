@@ -20,10 +20,19 @@ reached by Node's own `fetch` against the HTTP interface, the transport 4.2 esta
 ingestion path** (constitution III, FR-009). Deduplication is `ReplacingMergeTree` on the
 record's natural key — **not** `insert_deduplication_token`, which the analysis pass
 measured to be unusable here.
-**Testing**: the api lane's integration harness. Nothing under `analytics/` joins a lane —
-`vitest.coverage.config.mts`'s four include globs are `packages/*/src/**` and
-`services/*/src/**` — so **a consumer written under `services/` IS collected** and one
-written under `analytics/` is not. That is an argument for where the ingester lives.
+**Testing**: the api lane's integration harness. `vitest.coverage.config.mts`'s include
+globs are `packages/*/src/**` and `services/*/src/**`, so **a consumer written under
+`services/` IS collected** and one written under `analytics/` is not. That is an argument for
+where the ingester lives — **and collected means measured.** 047 shipped no tests because
+nothing collected its code; that reasoning does not carry here.
+
+**Constitution VI names idempotency for 100% branch coverage, and this chapter's US3 IS
+idempotency.** The project's handling of that clause is documented divergence rather than
+compliance: `repository.ts` holds ordering, idempotency and tenant isolation, measures
+**89.51%**, and is pinned there because *"a threshold nothing can pass makes CI permanently
+red and teaches everyone to ignore it."* So the rule followed here is **measure, pin at the
+measurement, name the shortfall** — not hit a number nobody hits. The precedent for a service
+is one `.itest.ts` and one `.test.ts`, with per-file pins for the decision-bearing files.
 **Scale**: DR-11 publishes 2 s or 10,000 rows. The stream is bounded at 7 days and 1 GiB
 with `discard: old`.
 **Constraints**: the analytical store being down must not touch messaging (NFR-REL-05); the

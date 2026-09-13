@@ -174,6 +174,12 @@ count and the per-key counts against the number of distinct records published.
 - **FR-012**: The chapter MUST NOT build the reconciliation job (FR-ANL-06), the query
   surface (FR-ANL-07), or latency percentiles (FR-ANL-10). It MUST NOT add a producer for
   `delivery_latency_ms`.
+- **FR-012a**: The ingester's decision-bearing code MUST carry automated tests, and the
+  measured branch coverage of the deduplication and tenant-carrying paths MUST be recorded
+  against constitution VI's 100% clause rather than left unstated. **Where it falls short the
+  gap is pinned at the measurement and named**, which is this project's established handling
+  of that clause — `vitest.coverage.config.mts` records `repository.ts` at 89.51% and says
+  why a threshold nothing can pass is worse than an honest one.
 - **FR-013**: Every gate MUST be green at close-out, with `check:fences` reported as a
   **delta** broken down by kind and locale, against an opening measured in this feature.
 - **FR-014**: The chapter MUST record whether the existing consumer runtime
@@ -209,6 +215,9 @@ count and the per-key counts against the number of distinct records published.
   interval and the row count each cost at a stated publish rate.
 - **SC-005**: The ingester writes no row to PostgreSQL and issues no query against it on
   the ingestion path, verified rather than asserted.
+- **SC-005a**: The deduplication path has automated tests, and its measured branch coverage
+  is published beside constitution VI's 100% requirement — met, or pinned with the shortfall
+  stated as a number.
 - **SC-006**: The new table is applied by `analytics/apply.mjs`, and a second run reports
   that it applied nothing.
 - **SC-007**: `check:fences` is reported as a delta against an opening measured in this
