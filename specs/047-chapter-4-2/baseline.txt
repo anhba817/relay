@@ -1,0 +1,126 @@
+BASELINE — chapter 4.2, "ClickHouse from zero"        taken 2026-09-13
+=====================================================================
+
+Phase 1 re-runs the three premises Phase 0 established by running, because a premise
+carried from a planning document and never re-run is what this project finds most often.
+All three hold. Nothing here is quoted from research.md; every line was produced by the
+command beside it.
+
+
+T006 — THE ENVIRONMENT, PINNED
+------------------------------
+node            v22.23.2
+pnpm            10.33.0
+clickhouse      image clickhouse/clickhouse-server:25.3, server reports 25.3.14.14
+postgres        18.6, on RELAY_POSTGRES_PORT=15432 (this machine's own Postgres holds 5432)
+cpus            10
+RAM             15 GB
+DOCKER_HOST     unix:///var/run/docker.sock
+                The selected context is `rootless` and the daemon listens on the root
+                socket, so every docker command in this feature needs the variable.
+
+
+T001 — CLICKHOUSE ANSWERS /ping AND REFUSES EVERY QUERY
+-------------------------------------------------------
+    $ curl -s "http://localhost:${RELAY_CLICKHOUSE_HTTP_PORT:-8123}/ping"
+    Ok.
+
+    $ curl -s "http://localhost:${RELAY_CLICKHOUSE_HTTP_PORT:-8123}/?query=SELECT+1"
+    Code: 194. DB::Exception: default: Authentication failed: password is incorrect,
+    or there is no user with such name. ... (REQUIRED_PASSWORD)
+
+The premise holds, and the chapter's opening stands: the store has been in compose since
+chapter 1.2, its health check has been green throughout, and nothing outside the container
+could ever query it.
+
+AND THE TWO HALVES DO NOT NAME THE SAME MECHANISM, which is worth writing down before the
+prose does. The document says `default` is restricted to ::1 and 127.0.0.1 — that is a
+NETWORK restriction, and T002 quotes it. What a caller from outside actually receives is an
+AUTHENTICATION error naming a password. Both are true of the same refusal; only one of them
+is what the reader will see in their terminal, and the chapter should show that one.
+
+
+T002 — WHERE THE RESTRICTION LIVES
+-----------------------------------
+    $ docker compose exec -T clickhouse cat /etc/clickhouse-server/users.d/default-user.xml
+
+    <clickhouse>
+      <!-- Docs: <https://clickhouse.com/docs/operations/settings/settings_users/> -->
+      <users>
+        <default>
+          <!-- User default is available only locally -->
+          <networks>
+            <ip>::1</ip>
+            <ip>127.0.0.1</ip>
+          </networks>
+        </default>
+      </users>
+    </clickhouse>
+
+It is in the IMAGE, not in this repository. Anyone who tries to fix `default` is editing
+somebody else's file, which is why T009 adds a user instead.
+
+
+T003 — SAD 6.2's DDL DOES NOT APPLY
+------------------------------------
+The statement was extracted from `docs/05-sad.md` and posted verbatim — not copied from
+research.md, because quoting a quotation cannot establish that a published document is wrong.
+
+    $ docker compose exec -T clickhouse clickhouse-client --multiquery < <the SAD's CREATE TABLE>
+
+    Received exception from server (version 25.3.14):
+    Code: 450. DB::Exception: Received from localhost:9000. DB::Exception: TTL expression
+    result column should have DateTime or Date type, but has DateTime64(3, 'UTC').
+    (BAD_TTL_EXPRESSION)
+
+`TTL ts + INTERVAL 90 DAY` on a `DateTime64(3, 'UTC')` column is refused. It has been
+published since the first draft. T047 amends it to `toDateTime(ts)`.
+
+
+T004 — THE FENCE CHAIN, OPENING
+--------------------------------
+    $ pnpm check:fences            (in relay-tutorial)
+    check-fence-chain: 110 problem(s) — APPLY 74, HEAD 36
+
+BROKEN DOWN, BECAUSE THE TOTAL HAS A NEIGHBOUR IN IT:
+
+    APPLY   30   app/(en)
+    APPLY   30   app/(vi)
+    APPLY   14   elsewhere (fences/post-series.md and friends)
+    HEAD    36   app/(en)
+    ----------
+            110
+
+046 inherited 109 and measured 110; this chapter inherits 110 and measures 110. THIRTY OF
+THEM ARE IN THE VIETNAMESE CHAIN, which is under active translation and is not this
+chapter's work — so FR-015's delta is reported per line at T059, not as one number. A total
+that moves in (vi) is somebody else's afternoon.
+
+
+T005 — THE LANE'S ROWS, WHICH ARE PART OF THE INSTRUMENT
+---------------------------------------------------------
+    environments      31,685
+    channels          46,143
+    messages         303,885
+    message_edits      3,935
+    users            310,733
+    outbox           487,481   (6,249 pending)
+
+EVERY ONE OF THESE IS IDENTICAL TO 046's CLOSE-OUT except the pending outbox, which moved
+5,253 -> 6,249. CLAUDE.md records that all four counts had drifted upward between 045 and
+046; between 046 and 047 they have not moved at all, because nothing has run the lane since.
+Recorded so the next feature can tell drift from stillness rather than assuming either.
+
+AND THESE ARE LANE NUMBERS. The chapter loads a corpus database (R17, FR-007a). They are
+here as the instrument's state, not as figures the chapter publishes.
+
+
+T007 — THE ZERO-DEPENDENCY CLAIM, MEASURED
+-------------------------------------------
+    source files naming ClickHouse      packages/config/src/infra.ts   (one, and only one)
+    `clickhouse` in pnpm-lock.yaml      0
+    `clickhouse` in package.json        0
+
+So "this chapter adds no dependency" is a measurement taken before the work rather than an
+intention stated during it. T018 re-runs both counts at the end; if either moves, the claim
+moved with it.
