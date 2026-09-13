@@ -41,32 +41,30 @@ or not at all.
 CLAUDE.md's "USE A PERSON" section is amended to record the decision rather than repeat
 the intention.
 
-## 046-3 · THE CHAPTER IS TAGGED `part4-ch1` — AND PART 3'S COLLISION IS STILL OPEN
+## 046-3 · THE TAG NAMESPACE IS CONSISTENT AGAIN — CLOSED
 
-**DECIDED: Part 4 uses the ordinary convention, `part4-chN`.** No `rework/` prefix — that
-was a rebuild artefact and it does not carry into new work. `part4-ch1` is cut as an
-annotated tag on `04fe516a`, matching `part3-chN`'s object type (Part 1 and 2's are
-lightweight; Part 3's are annotated).
+**Part 4 uses `part4-chN`.** No `rework/` prefix: that was a rebuild artefact and does not
+carry into new work. `part4-ch1` is cut as an annotated tag on `04fe516a`, matching
+`rework/part3-chN`'s object type.
 
-**WHAT THE DECISION DOES NOT SETTLE.** Twenty-one stale `part3-chN` tags still point into
-the replaced history:
+**AND THE TWENTY-ONE STALE `part3-chN` TAGS ARE DELETED, LOCAL AND REMOTE.** They pointed
+into the history the rework replaced, so a reader following `README.md:8`'s promise of one
+tag per chapter — or any published SKIP AHEAD box — landed on a chapter that no longer
+exists at that address. `part3-ch18` resolved to `54b2cd53`, a different chapter from the
+`rework/part3-ch18` a reader was holding.
 
-    part3-ch18          54b2cd53      the replaced history
-    rework/part3-ch18   3732d6cf      the published chapter
+    relay-platform   21 local · 19 remote  ->  0
+    relay-tutorial   10 local ·  8 remote  ->  0
+    relay            10 local ·  8 remote  ->  0
 
-Both exist. `README.md:8` promises one tag per chapter and every SKIP AHEAD box names
-one, so a reader following a published address today lands on a different chapter than
-the one they are reading. Twenty-one stale `part3-chN` tags sit beside twenty-seven
-`rework/*`.
+**Nothing was lost, and that was checked after the deletion rather than assumed before
+it.** Every one of the 21 commits is reachable from `backup/pre-main-move-20260911`, which
+is on the remote in all three repositories. `rework/part3-chN` (26) are untouched.
 
-`README.md:8` promises one tag per chapter and every SKIP AHEAD box names one. So the
-namespace is now **consistent for Parts 1, 2 and 4 and wrong for Part 3**: a reader
-following `part4-ch1` lands where they should, and one following `part3-ch18` lands on a
-chapter that was replaced.
-
-**That is a Part 3 problem, not this chapter's**, and it has three possible answers —
-delete the stale twenty-one, retarget them at the rebuilt commits, or leave them and say
-so on the `whats-moved` page. It is open.
+**THE DIVERGENCE IS EXACTLY WHERE CLAUDE.md SAYS.** `git merge-base main
+backup/pre-main-move-20260911` is `6b3423d6 feat: milestone the tuan test - chapter 2.8` —
+every Part 2 tag is on `main`, every Part 3 tag was not. The claim had never been checked
+against the tags themselves.
 
 ## 046-4 · TWO GATES PART 4 NEEDS BEFORE ITS FIRST CHAPTER SPLITS
 
@@ -111,3 +109,21 @@ is not contention, and a 179 MB table fits in cache. **What this chapter establi
 that the neighbour effect is not the argument at this volume** — not that it never
 happens. Resolving it needs either a rate-limit override (FR-RTL-04 permits one) or a
 corpus that does not fit in memory.
+
+## 046-8 · THREE PART 1 TAGS POINT AT COMMITS ON NEITHER `main` NOR THE BACKUP
+
+Found while verifying 046-3's deletion set, and deliberately not acted on.
+
+    part1-ch1   680ce7a4   not on main   NOT IN BACKUP
+    part1-ch2   e73e06d6   not on main   NOT IN BACKUP
+    part1-ch3   b7291250   not on main   NOT IN BACKUP
+    part1-ch4   624312ba   ON MAIN       in backup
+
+**Those three tags are the only thing keeping those commits reachable.** `part1-ch4` and
+every Part 2 tag are fine, so whatever rewrote them stopped at chapter 1.4 — most likely
+the stack refoundation, which predates every record in this directory.
+
+This is older than Part 3's rework and unrelated to it. **Deleting them would lose the
+commits**, which is the opposite of what deleting the Part 3 tags did, and it is why they
+were left alone. Someone should decide whether Part 1's tags should be re-cut against
+`main` or whether those three commits still matter.

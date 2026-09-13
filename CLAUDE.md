@@ -64,11 +64,21 @@ changed unless nothing else changed.** And two of T044's falsifications failed f
 wrong reason — one on a JS error rather than the constraint, one on a count the check does
 not read.
 
-**BOTH OPEN ITEMS WERE DECIDED AT CLOSE-OUT. 75 OF 76.** Part 4 tags as **`part4-chN`** —
-the ordinary convention, no `rework/` prefix, which was a rebuild artefact — and `part4-ch1`
-is cut, annotated, on `04fe516a`. **Part 3's twenty-one stale `part3-chN` tags remain** and
-are a separate question with three answers (delete, retarget, or document on `whats-moved`):
-`gaps.md` 046-3.
+**THE TAG NAMESPACE IS CONSISTENT AGAIN. 76 OF 76.** Part 4 tags as **`part4-chN`** — the
+ordinary convention; `rework/` was a rebuild artefact and does not carry forward — and
+`part4-ch1` is annotated on `04fe516a`. **The twenty-one stale `part3-chN` tags are deleted,
+local and remote, in all three repositories** (21/19, 10/8, 10/8 → 0). They resolved to the
+replaced history, so `README.md:8`'s promise of one tag per chapter was false for Part 3 and
+every SKIP AHEAD box with it. **Nothing was lost and it was checked after the deletion**:
+all 21 commits remain reachable from `backup/pre-main-move-20260911`, which is on the remote.
+`rework/part3-chN` (26) are untouched. `git merge-base main backup/…` is `6b3423d6`, chapter
+2.8's milestone — the "diverging at the end of Part 2" claim, verified against the tags for
+the first time.
+
+**AND THREE PART 1 TAGS ARE ON NEITHER `main` NOR THE BACKUP** — `part1-ch1`, `part1-ch2`,
+`part1-ch3`. Those tags are the only thing keeping those commits reachable, so deleting them
+would do the opposite of what deleting Part 3's did. Older than the rework and unrelated:
+`gaps.md` 046-8.
 
 **AND THE READER PROTOCOL IS RETIRED, NOT DEFERRED** — see the section below. The cost
 argument is the load-bearing part: a prose fix moves no tag and no chain, so the gate was
