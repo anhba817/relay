@@ -83,15 +83,26 @@ first version of the load wrote `'created'` for every message row — so **4,056
 3,201 edited messages were labelled as creations**, and `daily_usage` filters on exactly that
 label. FR-ANL-05 meters *messages sent*; the figure would have been over by 4,056.
 
-The load now derives three rows from each message's state:
+The load derives its rows from two tables, not one:
 
-    created  303,885   at created_at
-    edited     3,201   at edited_at, where it is not null
-    deleted    4,056   at deleted_at, where it is not null
-    total    311,142
+    created  303,885   messages, at created_at
+    edited     3,935   message_edits, one row per edit
+    deleted    4,056   messages, at deleted_at where it is not null
+    total    311,876
 
-**AND 3,282 OF THOSE CREATIONS HAVE NO RECOVERABLE `text_length`.** 4,057 messages are
-tombstones and only **775** carry an edit row holding `prior_text`; chapter 3.23's schema says
+**THE EDIT ROWS COME FROM `message_edits`, AND THE OBVIOUS COLUMN WOULD HAVE LOST 734 OF THEM.**
+`messages.edited_at` holds the **latest** edit, so it counts 3,201 — one per edited message —
+while `message_edits` holds one row per edit and counts **3,935**. The gap is the **428 messages
+edited more than once**, up to three times each. *One row per event* was already this table's
+rule; `edited_at` quietly reads it as one row per edited message, and the column exists, which
+is what makes it convincing.
+
+**AND 3,282 OF THOSE CREATIONS HAVE NO RECOVERABLE `text_length`.** **4,056 messages are
+tombstones, and a 4,057th is a live message with no text at all** — `text IS NULL` counts 4,057
+and `deleted_at IS NOT NULL` counts 4,056, the difference being one undeleted row with
+attachments and no words. Both take a NULL `text_length`; only one of them is a deletion, and
+**a chapter that says "NULL text means deleted" is wrong about a row it is showing.** Of the
+tombstones, only **775** carry an edit row holding `prior_text`; chapter 3.23's schema says
 why in as many words — *"writes no row here, because a tombstone has no text to preserve"*. The
 length the message had when it was sent is gone.
 

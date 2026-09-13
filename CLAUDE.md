@@ -50,6 +50,36 @@ per `(environment_id, day)` until a background merge, so `SELECT messages` retur
 a query whose correctness depends on somebody having run `OPTIMIZE` is right in a demo and wrong
 in production.
 
+**PASS 7 FOUND A COLUMN WHOSE NAME MATCHED THE CONCEPT AND WHOSE CONTENTS DID NOT.** T020a said
+*write one row per EVENT, not one per message* and then took the edit timestamp from
+`messages.edited_at` — which holds the **latest** edit, one per message. `message_edits` holds
+one per edit: **3,935 against 3,201, 734 events lost across the 428 messages edited more than
+once** (max 3). The total is **311,876**, not 311,142. **The rollup filters `event = 'created'`,
+so the headline figure never noticed** — which is why this survived two passes that were staring
+at that figure. Same shape as pass 2's finding one level down: **pass 2 caught the right number
+of rows with the wrong label, this is the right label on the wrong count.**
+
+**AND THE CONTRAST WITH THE TOMBSTONES IS THE PUBLISHABLE PART.** 3,282 lost `text_length`
+values are genuinely gone — a deletion preserves no prior text. These 734 were never lost; they
+sit in a table the loader already opens. **One is a limit of reconstructing from state, the
+other was a reading error**, and filing them together would teach the wrong lesson about both.
+Also resolved: **4,056 tombstones and one live message with no text** (`text IS NULL` 4,057,
+`deleted_at IS NOT NULL` 4,056) — so NULL text does not mean deleted, and the prose cannot say
+it does.
+
+**AND THE FENCE DELTA HAS A NEIGHBOUR.** 110 is **APPLY 74 — 30 `(en)`, 30 `(vi)`, 14
+elsewhere — and HEAD 36, all `(en)`.** Thirty live in the Vietnamese chain, which is under
+active translation and is not a chapter's work, so a bare total moves for reasons the chapter did
+not cause. **T004 and T059 record the breakdown now.** Third time in one feature that a delta
+needed the thing beside it held still.
+
+**FOUR PREMISES CAME BACK CLEAN AND TWO OF THEM COULD HAVE COST PHASE 6 A REBUILD.** The
+`compose.yaml` chain is **identical in both locales** — 1.2, 3.19, 3.21, 3.22, 3.24 — and clean
+in both, so a byte-identical Vietnamese mirror of 4.2's hunk applies in the vi chain too. And
+**`fences/post-series.md` never touches `compose.yaml`** (it amends `package.json`, three
+`.itest.ts` files and `eslint.config.mjs`), so there is no appendix hunk for a new chapter
+amendment to unanchor.
+
 **PASS 6 FOUND THE COMPARISONS HAD NO WINDOW, AND THE MATERIALISED VIEW COUNTS WHAT THE TTL IS
 ABOUT TO DELETE.** The view fires on the insert, the TTL deletes on the same insert, **and the
 view goes first**: 120,000 rows over 120 days leave `message_events` holding **90,000 over 90**
@@ -120,8 +150,8 @@ only nullable source column — `text` is NULL for **4,057 tombstones** and `att
 of 0 is a claim that a zero-length message was sent.** Pass 2 also found `event` written as the
 literal `'created'` for 4,056 deleted and 3,201 edited messages, in a table whose rollup filters
 on that label — **FR-ANL-05's messages-sent would have been over by 4,056.** SAD §6.2 means one
-row per EVENT: the load writes **311,142 rows from 303,885 messages**, and **3,282 creations have
-no recoverable `text_length`** because a tombstone preserves no prior text. **That is FR-ANL-02's
+row per EVENT: the load writes **311,876 rows from 303,885 messages** (pass 2 said 311,142; see
+pass 7), and **3,282 creations have no recoverable `text_length`** because a tombstone preserves no prior text. **That is FR-ANL-02's
 emit-at-the-time rule arriving three chapters before the ingester: a store reconstructed from
 current state cannot recover what the state no longer holds.** **THE FIX IS WHERE THE NEXT
 DEFECT IS** — two features running.

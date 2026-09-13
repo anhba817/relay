@@ -262,6 +262,7 @@ figure would have been over by 4,056**.
 **Decision**: three nullable columns, and three rows per message where the state supports them.
 
     created  303,885   ·  edited  3,201  ·  deleted  4,056   =   311,142 rows
+    ^ superseded by R15: the edit count is 3,935 from `message_edits`, total 311,876
 
 **AND 3,282 CREATIONS HAVE NO RECOVERABLE `text_length`.** 4,057 messages are tombstones and
 only 775 carry an edit row with `prior_text`; `schema.ts:454` says why — *"writes no row here,
@@ -406,6 +407,41 @@ ends at `0014_connection_minutes.sql`; all five gate scripts T060 names resolve;
 precedent is exactly four `diff title="compose.yaml"` hunks against chapter 1.2's one whole body.
 **The pass found no wrong fact. It found a missing one** — and a missing address is harder to see
 than a wrong one, because there is no sentence to disagree with.
+
+## R15 — Where do the edit events come from? **`message_edits`, not `messages.edited_at` — and the difference is 734 events.**
+
+**Decision**: the `edited` rows are one per row of `message_edits`. `messages.edited_at` is not
+read for the event stream.
+
+**Rationale**: R11 established that this table holds one row per event rather than one per
+message, and then took the edit timestamp from the column named after it. `messages.edited_at`
+holds the **latest** edit; `message_edits` has `(message_id, edited_at)` as its primary key and
+holds one row per edit. Asked of the lane:
+
+    messages with edited_at set        3,201
+    rows in message_edits              3,935
+    distinct messages in message_edits 3,201
+    messages edited more than once       428   (max 3)
+
+**So the rule and the column disagreed by 734 events**, and the total moves from 311,142 to
+**311,876**. The rollup filters `event = 'created'`, so FR-ANL-05's headline figure never
+noticed — which is exactly why this survived two passes that were looking at that figure.
+
+**This is the same shape as R11's own finding, one level down.** R11 caught a load writing the
+literal `'created'` for every row: right number of rows, wrong model. This is a load writing the
+right label on the wrong count of rows, for the same reason — **a column whose name matches the
+concept is not the same as a column that holds the concept.**
+
+**And the contrast with the tombstones is the part worth publishing.** T020b's 3,282 lost
+`text_length` values are lost: a deletion preserves no prior text, and nothing can recover them.
+These 734 were never lost. They are in a table the loader already opens for `prior_text`.
+**One is a limit of reconstructing from state; the other was a reading error**, and a chapter
+that files them together teaches the wrong lesson about both.
+
+**The pass also resolved an off-by-one in a published count.** `text IS NULL` is 4,057 and
+`deleted_at IS NOT NULL` is 4,056: **4,056 tombstones and one live message carrying attachments
+and no words.** Both get a NULL `text_length`, for different reasons, and the prose must not say
+NULL text means deleted.
 
 ## What research did not resolve
 

@@ -28,7 +28,8 @@ two requirements:
   column is `Nullable(UUID)`; `text_length` and `attachment_count` are nullable for the same
   reason, since a tombstone's `lengthUTF8(NULL)` inserts 0 and claims a zero-length message was
   sent. **The SAD is amended four times**, and §6.2's `event` column turns out to mean one row
-  per event rather than one per message — the load writes 311,142 rows from 303,885 messages.
+  per event rather than one per message — the load writes 311,876 rows from 303,885 messages,
+  taking its edit rows from `message_edits` rather than from `messages.edited_at`.
 - **DR-10 and FR-ANL-06 cannot both hold above ~65,000 distinct senders.** `uniq` is exact to
   60,000 and off by 0.51% at 70,000; FR-ANL-06's bound is 0.1%, and DR-10 forbids the
   reconciliation from reading raw events (R4).

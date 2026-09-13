@@ -139,8 +139,10 @@ having run that is right in a demo and wrong in production.** Mixing the state c
 bare one is refused (`NOT_AN_AGGREGATE`); leaving the state out is what goes quietly wrong.
 
 **MUST NOT assume one row per message.** The `event` column is `created|edited|deleted` and
-this table holds **one row per event** — 303,885 creations, 3,201 edits and 4,056 deletions from
-the lane's 303,885 messages, 311,142 rows. `daily_usage` filters `WHERE event = 'created'`, so
+this table holds **one row per event** — 303,885 creations, **3,935** edits and 4,056 deletions
+from the lane's 303,885 messages, **311,876** rows. The edit count comes from `message_edits`,
+one row per edit; `messages.edited_at` holds only the latest and would give 3,201, **losing 734
+events across the 428 messages edited more than once** (max 3). `daily_usage` filters `WHERE event = 'created'`, so
 an ingester that labels everything `created` inflates FR-ANL-05's *messages sent* by every
 deletion.
 
