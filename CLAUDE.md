@@ -25,8 +25,62 @@ history; the replaced history is preserved on the remote as the tag
 tags. **Anyone holding an older clone of `relay-platform` must reset rather than pull.**
 
 <!-- SPECKIT START -->
-**ACTIVE: 047 — CHAPTER 4.2, "ClickHouse from zero".** Plan:
-`specs/047-chapter-4-2/plan.md`; `research.md` first.
+**047 IS CLOSED at 74 of 74 — CHAPTER 4.2, "the store that was never listening".** Its
+record is `specs/047-chapter-4-2/` — `baseline.txt` first, then `gaps.md` (five entries),
+`traceability.md`, `tasks.md`. Tagged **`part4-ch2`** on `relay-platform`.
+
+    13.22 ms against 4.1's 585.9 ms   both best of 3, both 91 days, same question
+    315 rows read against 1,052,655   the rollup, for 19% less time
+    90 of 91 days agree exactly       the 91st cannot, by 4,941 — 0.49% vs a 0.1% bound
+    check:fences 110 -> 110, delta 0  2,580 prose words · 8 gates green · 6 fences, 0 problems
+
+**THE STORE HAD BEEN UNREACHABLE FOR SIXTEEN CHAPTERS BEHIND A GREEN TICK.** `/ping`
+neither authenticates nor is network-restricted, so it answered `Ok.` while every query
+from outside the container was refused. **A check that cannot fail for the reason you care
+about is not a check** — and the two halves do not even name the same mechanism: the image
+restricts by NETWORK and the caller sees an AUTHENTICATION error. Write down what the
+failure looks like from outside, not what the config file says.
+
+**FOUR TASK PREMISES WERE FALSIFIED BY RUNNING THEM, AND ALL FOUR ARE IN `baseline.txt`.**
+**(1)** `CLICKHOUSE_DB` creates nothing on a volume that already holds a database — the
+entrypoint prints `Skipping initialization` and the variable is read and ignored, so
+`apply.mjs`'s `CREATE DATABASE IF NOT EXISTS` is the only thing that ever makes it.
+**(2)** T001's falsification could not fire: `default` is refused identically before and
+after the fix, so the discriminator had to become whether `relay` answers. **A test whose
+condition cannot occur is a test that cannot fail.** **(3)** The TTL is a **schedule, not
+an event** — an insert landing in one part is cleaned immediately, one landing in nine is
+not: 121 days and 146,582 expired rows still present straight after the load, 91 days after
+the merge. **A row count taken the moment a load finishes shrinks overnight on its own.**
+**(4)** T059 predicted a non-zero fence delta; it is 0, because the chapter fenced exactly
+what it changed.
+
+**THE ROLLUP AND THE RAW TABLE DISAGREE ON ONE DAY AND ALWAYS WILL.** The TTL cuts at a
+TIMESTAMP and a daily rollup's finest grain is a DAY, so the oldest day in the window is
+counted whole by the view and then partly deleted from the source. 90 of 91 days agree
+exactly; the 91st differs by 4,941. **That is 0.49% against FR-ANL-06's 0.1%, at any
+cardinality** — a second, independent reason DR-10 and FR-ANL-06 conflict, and worse than
+the `uniq` one because no corpus size hides it. The distinct-user half came back
+**5,000 against 5,000, 0.0000%**, over a corpus of 5,000 users: `uniq` is exact to 65,000,
+so that zero is a fact about the corpus and is published beside the table proving it.
+
+**A CORPUS OF CREATIONS CANNOT SHOW WHAT THE CHAPTER IS ABOUT.** `corpus.mjs` wrote seven
+columns and no attachments, edits or deletions, so three of the four column findings were
+invisible in the store the chapter builds — every row `created`, `attachment_count`
+uniformly NULL, and `'corpus <n>'` ASCII where `length` and `lengthUTF8` agree exactly. It
+has four ratios now. **And its first extension was wrong in a way that looked right**:
+`cross join lateral generate_series(1, 1 + floor(random() * 3)::int)` evaluates the
+volatile argument ONCE PER QUERY, giving exactly three edits to every message. Reporting
+the counts rather than asserting them is what caught it.
+
+**THE LEDGER CAUGHT A FILE THAT CHANGED AND NOTHING THAT VANISHED.** Deleting a statement
+file left four ledger rows against three files, its table still in the store, and the
+runner saying `skipped 3` — because the run walks the DIRECTORY. **An instrument that walks
+one side of a relationship only tells you about that side.** It reports the orphan now.
+
+**AND `eslint.config.mjs` COULD NOT TAKE A FENCE.** The chain replays 206 lines where the
+tree holds 451 — a 243-line divergence predating this chapter, one of the 36 inherited HEAD
+problems. A hunk cannot anchor on it and regenerating it is the 111 -> 203 trap, so the
+chapter ships ONE fence and files the other. `gaps.md` 047-1 through 047-5.
 
 **PHASE 0 FOUND THREE PUBLISHED DOCUMENTS WRONG, ALL BY RUNNING THE STORE.**
 **(1) `compose.yaml`'s ClickHouse has never been reachable from outside its container** and its

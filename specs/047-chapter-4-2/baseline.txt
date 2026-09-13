@@ -517,3 +517,76 @@ T043 — EACH PHASE DROPS WHAT IT MADE
     tables in relay_analytics after --drop-all   0     (not an error: system.tables
     databases named relay_analytics              0      answers 0 for an absent database)
     lane rows                                    unchanged, all four
+
+
+PHASE 6 — THE CHAPTER, AND THE CLOSE-OUT
+=========================================
+
+T053 — THE HUNK, GENERATED FROM THE CHECKER'S OWN REPLAY
+---------------------------------------------------------
+A truncated copy of `check-fence-chain.mjs` dumped the chain's end state for the two files
+this chapter touches, and the copy was deleted afterwards.
+
+    compose.yaml        chain replays 188 lines · tree differs by 23
+    eslint.config.mjs   chain replays 206 lines · tree differs by 541
+
+**THE SECOND FILE WAS ALREADY BROKEN AND THIS CHAPTER DOES NOT FIX IT.** The tree's
+`eslint.config.mjs` was 449 lines before this chapter added 2; the chain replays 206. It
+was one of T004's 36 HEAD problems on the way in and is one on the way out. Publishing a
+hunk against a 243-line divergence is not possible, and regenerating the file is the
+111 -> 203 trap. T052 planned two fences; the chapter ships **one**, and the other is filed.
+
+AND THE FIRST GENERATED HUNK HAD A SECOND HUNK IN IT THAT WAS MINE. The dumper joined
+lines without a trailing newline while the tree file has one, so `diff` produced a spurious
+`\ No newline at end of file` hunk. `fileLines` strips the trailing empty line on BOTH
+sides, so the checker never sees it. Normalised, it is one hunk.
+
+    hunks 1 · pre-image matches exactly 1 time · applied to the chain state,
+    result == tree: True        <- verified BEFORE pasting, not after
+
+T059 — THE FENCE DELTA IS 0, AND THE TASK PREDICTED OTHERWISE
+---------------------------------------------------------------
+    opening (T004)   110   APPLY 74 (30 en · 30 vi · 14 other)   HEAD 36 en
+    closing (T059)   110   APPLY 74 (30 en · 30 vi · 14 other)   HEAD 36 en
+    delta              0
+
+The amendment made `compose.yaml` a HEAD problem — 110 became 111 — and publishing the
+chapter's hunk closed it again. 4.1's delta was 0 because it fenced nothing; **4.2's is 0
+because it fenced exactly what it changed.** The chapter contributes 6 titled fences and
+0 problems.
+
+T058 / T060 — THE BOUND AND THE GATES
+--------------------------------------
+    prose words   2,580      inside 2,000-4,000
+
+    relay-platform    lint 0 · typecheck 0 · test 0 · build 0
+    relay-tutorial    check:fences (110) · check:docs 0 · check:srs 0 ·
+                      check:figures 0 · check:errors 0
+
+`check:docs` failed first: `content/docs/05-sad.md differs from docs/05-sad.md`. The
+tutorial mirrors the documents, and amending the SAD without `pnpm sync:docs` leaves the
+published copy behind. Synced, then green. **The gate caught it, which is what it is for.**
+
+T047 — THE SAD IS AMENDED, NOT DIVERGED FROM
+----------------------------------------------
+`docs/05-sad.md` goes to revision 1.2: `TTL toDateTime(ts) + INTERVAL 90 DAY`, with the
+refusal quoted underneath and a note recording that four columns are `Nullable` in the
+implemented schema and why. The column list stays as the shape; the chapter carries the
+nullability and the measurements behind it.
+
+T033a — THE ROLLUP OUTLIVES THE EVENTS, AND THAT IS THE DESIGN
+---------------------------------------------------------------
+    message_events    91 days    TTL toDateTime(ts) + INTERVAL 90 DAY
+    daily_usage      121 days    no TTL, deliberately (FR-003a)
+
+DR-09 expires raw events at ninety days; DR-10 says metering never reads them. A rollup
+that expired with its source would lose exactly the billing history the pair exists to
+keep. **The thirty extra days are the design working, and a reader meets them first as a
+discrepancy unless the chapter says so beforehand** — which is why it does.
+
+T064 — CLOSE-OUT
+-----------------
+    analytical tables remaining        0
+    relay_corpus* databases remaining  0   (relay_corpus_20260913102333 dropped)
+    lane rows                          31,685 / 46,143 / 303,885 / 487,481 — T005 exactly
+    services/api/migrations/           15 files, ending 0014, 0 git changes
