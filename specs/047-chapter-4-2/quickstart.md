@@ -60,8 +60,8 @@ done nothing is the zero that means two things.
 ## 3. Build the corpus and load it
 
 ```bash
-node scripts/scale/corpus.mjs | tee corpus.json
-node scripts/scale/load-analytics.mjs --corpus corpus.json
+node scripts/scale/corpus.mjs | tee corpus.json     # builds relay_corpus_<timestamp>
+node scripts/scale/load-analytics.mjs --corpus corpus.json   # reads the database named in it
 ```
 
 **The load reads Postgres from inside ClickHouse.** No client, no export:

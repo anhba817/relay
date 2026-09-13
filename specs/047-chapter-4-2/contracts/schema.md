@@ -89,6 +89,15 @@ cannot ride along inside `0002`. It is the script's, not the directory's: a `.sq
 would need a filename sorting before `0000`, and the ledger cannot record the creation of the
 database the ledger lives in.
 
+## The loader needs a database, and it is not the lane
+
+`load-analytics.mjs` takes the Postgres database from the handle `corpus.mjs` emits and
+**refuses to run without one.** It does not default to `relay`: the seeder builds
+`relay_corpus_<timestamp>` and declines `CORPUS_DATABASE=relay` in as many words — *"is the
+lane's own database; refusing"* — so a default of `relay` would read the single database the
+seeder exists to keep out of the way. 4.1's 585.9 ms was taken on a `relay_corpus%` database,
+and a comparison whose two sides are different corpora is not a comparison.
+
 ## Comparing the two tables
 
 **Both sides take the same 90-day predicate, always.** The rollup outlives the raw table by

@@ -50,6 +50,32 @@ per `(environment_id, day)` until a background merge, so `SELECT messages` retur
 a query whose correctness depends on somebody having run `OPTIMIZE` is right in a demo and wrong
 in production.
 
+**PASS 9 ASKED WHICH DATABASE, AFTER EIGHT PASSES OF ASKING THE DATABASE.** Every number this
+feature measured is consistent, reproducible and correct — **about the lane `relay`, which is not
+what the chapter loads.** `corpus.mjs` builds `relay_corpus_<timestamp>` and **refuses
+`CORPUS_DATABASE=relay`** in as many words. Its writes, in full: `messages` (seven columns),
+`applications`, `environments`, an `update channels` and a `delete from outbox`. **Occurrences of
+`message_edits`, `attachments`, `edited_at` and `deleted_at` in that file: zero, all four.**
+
+**SO A STOCK CORPUS CANNOT SHOW THREE OF THE FOUR COLUMN FINDINGS.** Every row is `created`, so
+the event-literal defect has nothing to show; `attachments` is never written, so `JSONLength`
+against `length` is invisible; and `'corpus ' || s` is ASCII, where `length` and `lengthUTF8`
+agree exactly. **Only `user_id` nullability survives.** And 4.1's 585.9 ms came from a
+`relay_corpus%` database, so publishing it beside a measurement over the lane's 303,885 messages
+compares two corpora rather than two stores — **the third time this feature needed a neighbour
+held still**, after the rollup's window and the fence delta's locale.
+
+**THE MECHANISM THAT FINDS THE MOST HAS A PREMISE OF ITS OWN.** *Ask the database a question with
+a yes-or-no answer* was right eight times running and never asked **which database**. T024 named
+the corpus from the first draft; no pass opened the script to see what it writes. **A premise
+does not stop being a premise because it is the one your best instrument stands on** — and this
+is the first CRITICAL in nine passes, found by reading a file that had been cited all along.
+
+**THE REMEDY WAS CHEAP AND THE CHECK FOR THAT CAME FIRST.** `scripts/scale/` carries no titled
+fence in either locale, so extending the seeder costs the chain nothing; and `corpus.mjs` already
+runs the platform's migration runner against the database it creates, so `message_edits` exists
+there and is merely empty — an insert, not a schema change.
+
 **PASS 8 FOUND THAT PASS 7'S 3,935 NEW ROWS HAD NO DEFINED `text_length`, AND THE ANSWER IS IN
 THE NEXT ROW.** `message_edits` holds `message_id`, `edited_at`, `prior_text` and nothing else —
 **it records what a message used to say**, so the text an edit PRODUCED is only ever in the row

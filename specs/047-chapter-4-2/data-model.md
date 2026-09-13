@@ -3,6 +3,15 @@
 Two tables and a view, all new, all in a store that has been in `compose.yaml` since chapter
 1.2 and has never held a row.
 
+**EVERY POSTGRES FIGURE BELOW WAS COUNTED ON THE LANE DATABASE `relay`, AND THE CHAPTER LOADS A
+CORPUS.** They are here because they proved the *shapes* — which columns arrive nullable, what
+`postgresql()` does to jsonb, where the edit history lives — and **they are not the numbers the
+chapter publishes.** `corpus.mjs` builds `relay_corpus_<timestamp>`, refuses to be pointed at
+`relay`, and in its stock form writes only `(id, channel_id, sequence, user_id, text, metadata,
+created_at)`: no attachments, no edits, no deletions, and `'corpus <n>'` for text, which is
+ASCII. **Three of the four column findings cannot appear in such a corpus at all.** T018a extends
+the seeder so they can; T024 re-derives every count against what is actually loaded.
+
 **They live in `relay_analytics`, and every statement says so.** The names below are written
 bare for readability; on disk each one is qualified. `CLICKHOUSE_DB` creates that database
 without making it the session default, so an unqualified `CREATE TABLE` builds this whole model

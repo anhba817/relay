@@ -169,6 +169,10 @@ is a no-op that reports what it found; add a change and confirm it applies once.
   as such rather than created silently.
 - **FR-007**: FR-ANL-05's question MUST be asked of the analytical store and its answer published
   **beside chapter 4.1's 585.9 ms**, with the rows each scanned.
+- **FR-007a**: The corpus the chapter loads MUST contain all three event kinds, messages with
+  and without attachments, and text that is not pure ASCII, so that every figure the chapter
+  publishes is reproducible by a reader who builds the corpus from the seeder. A figure measured
+  on one database and published beside a store built from another is not reproducible.
 - **FR-008**: The same question MUST be asked of the rollup and compared against the raw table,
   both for agreement of the figures and for cost.
 - **FR-009**: The rollup's distinct-user figure MUST be compared against an exact count, and any

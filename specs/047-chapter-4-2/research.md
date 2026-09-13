@@ -481,6 +481,46 @@ environments; and `prior_text` arrives as a **non-nullable `String`**, so unlike
 comment — the benign member of pass 1's family, where the delivered type is not the one the
 name implies.
 
+## R17 — Which Postgres database does the chapter load? **The corpus — and the stock corpus cannot show most of what this feature found.**
+
+**Decision**: `load-analytics.mjs` takes its database from the corpus handle and refuses to run
+without one; `corpus.mjs` is extended so the corpus contains edits, deletions, attachments and
+non-ASCII text (FR-007a); every published figure is re-derived against it at T024.
+
+**Rationale**: eight passes measured the **lane** database `relay`. The chapter loads a corpus
+built by `corpus.mjs`, which creates `relay_corpus_<timestamp>` and **refuses
+`CORPUS_DATABASE=relay`** — *"is the lane's own database; refusing"*. Its writes are, in full:
+
+    insert into messages (id, channel_id, sequence, user_id, text, metadata, created_at)
+    insert into applications · insert into environments · update channels · delete from outbox
+
+    occurrences of `message_edits` in corpus.mjs   0
+    occurrences of `attachments`                   0
+    occurrences of `edited_at` / `deleted_at`      0
+
+**So a stock corpus cannot exhibit three of the four column findings.** Every row is `created`,
+so pass 2's event-literal defect has nothing to show; `attachments` is never written, so
+`JSONLength` against `length` is invisible; and `'corpus ' || s` is ASCII, where `length` and
+`lengthUTF8` agree exactly, so FR-EMJ-02's distinction disappears. **Only `user_id` nullability
+survives**, at the configured 0.01.
+
+**And 4.1's 585.9 ms was taken on a `relay_corpus%` database**, so publishing it beside a
+measurement over the lane's 303,885 messages compares two corpora rather than two stores. That
+is the third time in this feature a comparison needed its neighbour held still — after the
+rollup's TTL window and the fence delta's locale — and the first time the loose variable was
+*which database*.
+
+**The remedy is cheap for a reason worth checking first**: `scripts/scale/` carries no titled
+fence in either locale, so extending the seeder changes nothing in the chain. And `corpus.mjs`
+already runs the platform's own migration runner against the database it creates, so
+`message_edits` is present there and empty — an insert, not a schema change.
+
+**What this pass says about the previous eight.** Every number they produced was consistent,
+reproducible and correct. They were also all about a database the chapter does not load. **The
+mechanism that found the most — ask the database a question with a yes-or-no answer — has a
+premise of its own, and nobody had asked it: which database.** T024 named the corpus from the
+first draft, and no pass opened the script to see what it writes.
+
 ## What research did not resolve
 
 - **The schema ledger's shape (FR-011/FR-012).** ClickHouse has `CREATE … IF NOT EXISTS`, which
