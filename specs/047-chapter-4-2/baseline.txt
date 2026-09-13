@@ -371,3 +371,83 @@ spread for +49% storage.
 
 What it also does not prove is anything about writes. Nothing in this chapter writes to
 ClickHouse on the send path, and the ingester that would is two chapters out.
+
+
+PHASE 4 — A ROLLUP THAT NEVER SCANS RAW EVENTS
+===============================================
+
+T029 / T031 — WHAT THE ROLLUP COSTS
+------------------------------------
+                      best of 3      rows read        bytes read     days
+    raw table          13.22 ms      1,052,655         ~33 MB         91
+    rollup             10.66 ms            315          35,910        91
+    runs [10.91, 13.02, 10.66]
+
+    raw rows 1,241,029  ->  rollup rows 363          3,418 : 1
+    busiest tenant: 1,034,194 raw rows -> 121 rollup rows     8,547 : 1
+
+**IT READS 3,342 TIMES FEWER ROWS AND SAVES 19% OF THE TIME.** That is the honest pair and
+the second number is the interesting one: at a million rows this query is already dominated
+by something other than scanning, so the rollup's argument here is not latency. It is that
+315 rows is what the cost looks like when the tenant grows — the raw side's 1,052,655 is
+proportional to the corpus and the rollup's 315 is proportional to the calendar.
+
+T030a — ONE ROW PER KEY PER INSERT, NOT PER EVENT
+--------------------------------------------------
+The whole corpus arrives in one INSERT, so `daily_usage` landed at **363 rows over 363
+distinct keys** — one each — and a bare `SELECT messages` looks correct. Three separate
+inserts of 1,000 rows into one key then measured:
+
+    physical rows for that key     3
+    bare SELECT messages        1000        <- wrong, and it is a plausible number
+    sum(messages)               3000        <- right
+    raw table, same key         3000
+
+**The row count per key is the number of INSERTs, not the number of events.** A dashboard
+written against a quiet demo reads one insert's worth and is wrong on a busy day. FR-005
+confirmed in the same probe: the view included all three inserts with no rebuild.
+
+T030 — DAY BY DAY, AND ONE DAY CAN NEVER AGREE
+-----------------------------------------------
+    days compared   91
+    days agreeing   90
+    days differing   1     2026-06-15: raw 6,220 · rollup 11,161 · difference 4,941
+
+Ninety of ninety-one agree **exactly**. The one that does not is the oldest day in the
+window, and it is structural rather than a defect: the TTL cuts at a TIMESTAMP and the
+rollup's finest grain is a DAY. The view counted 2026-06-15 whole when it was inserted;
+the merge then removed the rows whose ninety days had elapsed. As `now()` advances the
+gap moves continuously through that day.
+
+**AND THE FIRST VERSION OF THIS COMPARISON WAS WRONG IN A THIRD WAY, WHICH WAS MINE.** The
+rollup side used `day >= toDate(now() - 90 DAY)` and the raw side `ts >= now() - 90 DAY` —
+a whole day against a partial one. That accounted for 5 rows of the gap, not 4,941, but it
+was still two windows rather than one. Both sides are day-aligned now; `rawQuery` keeps
+4.1's timestamp form, because that comparison is against Postgres and has to stay 4.1's
+question.
+
+T032 / T034 — THE DISTINCT-USER RECONCILIATION AGREES, AND THAT PROVES ALMOST NOTHING
+---------------------------------------------------------------------------------------
+    uniqMerge(active_users_state)   5,000
+    uniqExact(user_id)              5,000
+    difference                          0      0.0000%
+
+A perfect agreement, over a corpus holding exactly 5,000 users. `uniq` is exact to 65,000:
+
+    distinct     uniq          error
+      60,000     60,000        0%
+      65,000     65,000        0%
+      70,000     70,359        0.5129%
+     100,000    100,315        0.315%
+     500,000    502,646        0.5292%
+
+**The threshold is a cardinality and this corpus is three orders under it.** The zero above
+is a fact about the corpus, not about the reconciliation — which is why T034 exists and why
+the table is published beside the zero rather than instead of it.
+
+T035 — FILED
+-------------
+`gaps.md` 047-1 now carries TWO independent reasons DR-10 and FR-ANL-06 conflict. Phase 0
+found the cardinality one. This phase found the other, and it is worse: **the TTL boundary
+day breaks reconciliation at any cardinality**, by 0.49% against a 0.1% bound, on a corpus
+where the distinct-user half agrees perfectly.
