@@ -157,6 +157,9 @@ is a no-op that reports what it found; add a change and confirm it applies once.
   `(environment_id, ts)` (DR-07).
 - **FR-003**: The raw event table MUST carry a 90-day TTL (DR-09), and the chapter MUST state
   what that does to a corpus spanning more than 90 days.
+- **FR-003a**: The rollup MUST be stated to carry no TTL and to outlive the raw events it was
+  built from, and the chapter MUST say why that is DR-09 and DR-10 working as a pair rather than
+  a discrepancy: metering must not lose history when raw events expire.
 - **FR-004**: A daily per-tenant rollup MUST be maintained as a materialised view so that
   metering never scans raw events (DR-10).
 - **FR-005**: The rollup MUST include rows inserted after it was created, without being rebuilt.

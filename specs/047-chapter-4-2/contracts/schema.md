@@ -89,6 +89,15 @@ cannot ride along inside `0002`. It is the script's, not the directory's: a `.sq
 would need a filename sorting before `0000`, and the ledger cannot record the creation of the
 database the ledger lives in.
 
+## Comparing the two tables
+
+**Both sides take the same 90-day predicate, always.** The rollup outlives the raw table by
+however far the corpus reaches past the TTL, so an unwindowed comparison is between two
+populations and every number it reports carries the difference between them. That matters most
+where it is least visible: `uniqMerge` against `uniqExact` is supposed to measure `uniq`'s
+approximation, which is **0.51% at 70,000 distinct** — small enough that a TTL-shaped difference
+swallows it whole and still looks like an approximation error.
+
 ## Column producers, stated
 
 | column | source expression | when |

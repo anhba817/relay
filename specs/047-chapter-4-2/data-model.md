@@ -148,6 +148,21 @@ silence.
 DR-10: *"materialised views shall maintain daily per-tenant rollups for metering, so billing
 never scans raw events."* SAD §6.2's view applies verbatim once the raw table exists.
 
+**It has no TTL, and it counts what the raw table's TTL is about to delete.** The view fires on
+the insert; the TTL deletes on the same insert; the view goes first. One `INSERT … SELECT` of
+120,000 rows over 120 days:
+
+    message_events   90,000 rows over  90 days
+    daily_usage     120,000 rows over 120 days
+    days the rollup holds and the raw table does not   30
+    days in common, figures disagreeing                 0  (of 90)
+
+**So the rollup is the only surviving trace of a quarter of that corpus** — and it is right that
+it is. DR-09 expires raw events at 90 days; DR-10 says metering never reads them. A rollup that
+expired with its source would lose the billing history the pair exists to keep. **The 30 days
+are the design, not the defect they look like** in a comparison that forgets to name a window
+(FR-003a).
+
 | column | meaning |
 |---|---|
 | `environment_id` | the tenant |
@@ -160,7 +175,10 @@ never scans raw events."* SAD §6.2's view applies verbatim once the raw table e
     ORDER BY (environment_id, day)
 
 **Measured at the corpus's shape: 1,000,000 raw rows become 89 rollup rows.** That ratio is
-DR-10's argument in one number.
+DR-10's argument in one number — **and it is the figure T031 re-measures rather than carries.**
+The probe behind the 89 ran before the rollup was known to keep the days the TTL removes, so it
+counted in-window days only; the full corpus reaches 120 days back and every one of them leaves
+a rollup row.
 
 ### How it must be read, because the row count per key is not one
 

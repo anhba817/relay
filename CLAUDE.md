@@ -50,6 +50,27 @@ per `(environment_id, day)` until a background merge, so `SELECT messages` retur
 a query whose correctness depends on somebody having run `OPTIMIZE` is right in a demo and wrong
 in production.
 
+**PASS 6 FOUND THE COMPARISONS HAD NO WINDOW, AND THE MATERIALISED VIEW COUNTS WHAT THE TTL IS
+ABOUT TO DELETE.** The view fires on the insert, the TTL deletes on the same insert, **and the
+view goes first**: 120,000 rows over 120 days leave `message_events` holding **90,000 over 90**
+and `daily_usage` holding **120,000 over 120** — thirty days of figures for rows that never
+persisted. Two tasks compared the tables unwindowed, so both would have printed a real number
+about the TTL and handed it to FR-009 as `uniq`'s approximation error, **which is 0.51% at
+70,000 distinct and small enough to be swallowed whole.** Inside the window they agree exactly:
+90 days in common, 0 disagreements.
+
+**AND THE THIRTY DAYS ARE THE DESIGN.** `daily_usage` carries no TTL, so it outlives the events
+it was built from — DR-09 expires raw events and DR-10 says metering never reads them, and a
+rollup that expired with its source would lose the billing history the pair exists to keep. **No
+artifact said so**, which is why the only place a reader would have met it was as a thirty-day
+discrepancy in a comparison. It is FR-003a now.
+
+**SC-002 ALREADY CARRIED "FOR THE SAME NINETY DAYS" FROM PASS 3 — THE SPEC WAS AHEAD OF THE
+TASKS THAT VERIFY IT.** That is the reverse of this project's usual direction and worth noticing:
+**agreement between a criterion and its tasks is not the same as the tasks implementing it**, and
+nothing checks that direction. One premise came back clean: `uniqState`/`uniqMerge` ignore NULL
+exactly as `uniqExact` does, so pass 1's `Nullable(UUID)` fix survives into the rollup.
+
 **PASS 5 FOUND THAT `analytics/` HAD NO ADDRESS, AND THE DEFAULT IS NOT THE ONE COMPOSE
 PROVISIONS.** `CLICKHOUSE_DB=relay_analytics` **creates that database and does not make it the
 session default** — `currentDatabase()` over HTTP is `default`, so SAD §6.2's unqualified

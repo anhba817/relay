@@ -88,7 +88,7 @@ node analytics/query.mjs --environment "$(jq -r .subject_environment_id corpus.j
 | the duration | published beside 4.1's **585.9 ms** |
 | the rows scanned | beside 4.1's **1,000,000** |
 | `EXPLAIN indexes=1` | the parts and granules line |
-| the rollup's answer | the same daily figures, from 89 rows instead of a million |
+| the rollup's answer | the same daily figures **over the same ninety days**, from a few dozen rows instead of a million |
 
 **The parts line is the point, not the duration.** At this size ClickHouse answers a full scan
 quickly enough to look ordered. Only

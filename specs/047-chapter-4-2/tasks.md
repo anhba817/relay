@@ -100,12 +100,13 @@ the `EXPLAIN indexes=1` line beside the predecessor's figures.
 figure for figure, against the raw table.
 
 - [ ] T029 [US2] In `relay-platform/analytics/query.mjs`, add a rollup mode querying `daily_usage` for the same range with **`sum(messages)` and `GROUP BY day`**, reporting duration and rows scanned. **A bare `SELECT messages` is wrong**: the rollup holds one row per insert per key until a background merge, and three inserts on one day measured `1000 1000 1000` where the truth was 3000.
-- [ ] T030 [US2] Compare the rollup's daily figures against the raw table's **day by day** — not row by row, because the rollup holds more rows than days — and record the comparison in `specs/047-chapter-4-2/baseline.txt`. A count that matches in total and not per day is a different defect.
+- [ ] T030 [US2] Compare the rollup's daily figures against the raw table's **day by day and inside the 90-day window on BOTH sides** — not row by row, because the rollup holds more rows than days — and record the comparison in `specs/047-chapter-4-2/baseline.txt`. A count that matches in total and not per day is a different defect. **Without the window the comparison is between two different populations**: the materialised view counts rows the TTL deletes in the same insert, so a 120-day corpus leaves the raw table 90 days and the rollup 120. Measured: 120,000 rows in, **raw 90,000 over 90 days, rollup 120,000 over 120**, and **inside the window 90 days in common with 0 disagreements**.
 - [ ] T030a [US2] **Record how many rows the rollup holds per `(environment_id, day)` before any `OPTIMIZE`**, in `specs/047-chapter-4-2/baseline.txt`. That number is the reason T029's query shape is not optional, and it is the figure a reader needs to understand why their own dashboard query returned a fraction.
-- [ ] T031 [US2] Record the row ratio: **1,000,000 raw rows became 89 rollup rows** in the probe. That ratio is DR-10's argument in one number.
-- [ ] T032 [US2] In `relay-platform/analytics/query.mjs`, add `--compare-exact`: `uniqMerge(active_users_state)` against `uniqExact(user_id)` over the raw table, reporting the difference as a number.
+- [ ] T031 [US2] Record the row ratio and **re-measure it rather than carrying the 89**. The probe that produced *1,000,000 raw rows became 89 rollup rows* ran before it was known that the rollup keeps the days the TTL removes, so the full corpus adds out-of-window days the probe never counted. That ratio is DR-10's argument in one number, which is why it has to be this corpus's number.
+- [ ] T032 [US2] In `relay-platform/analytics/query.mjs`, add `--compare-exact`: `uniqMerge(active_users_state)` against `uniqExact(user_id)` over the raw table, **both restricted to the same 90-day window**, reporting the difference as a number. **Unwindowed, this instrument prints a real number about the wrong thing** — 120 days of rollup against 90 days of raw, a difference that is mostly TTL, handed to FR-009 and T034 as `uniq`'s approximation error. **A delta between two totals is not a measurement of the thing that changed unless nothing else changed.**
 - [ ] T033 [US2] Insert rows after the rollup exists and confirm it includes them **without being rebuilt** (FR-005). A view somebody refreshes is a table with extra steps.
-- [ ] T034 [US2] **Measure where `uniq` stops being exact** and record the table in `specs/047-chapter-4-2/baseline.txt`: exact to 60,000 distinct, **off by 0.51% at 70,000**. **The threshold is a cardinality, not a row count** — which is why the corpus's 5,000 users hide it completely.
+- [ ] T033a [US2] Record in `specs/047-chapter-4-2/baseline.txt` that **`daily_usage` carries no TTL and outlives the events it was built from** (FR-003a). The raw table drops a day at 90; the rollup keeps that day's figures forever, because it counted them at insert. **That is DR-09 and DR-10 working as a pair** — metering must not lose history when raw events expire — and it is the half a reader meets as a 30-day discrepancy in T030 unless the chapter says it first.
+- [ ] T034 [US2] **Measure where `uniq` stops being exact** and record the table in `specs/047-chapter-4-2/baseline.txt`: exact to 60,000 distinct, **off by 0.51% at 70,000**. **Take this from a population where the two sides hold the same rows** — T032's window — or the approximation error arrives with the TTL folded into it, and 0.51% is small enough for that to swamp it. **The threshold is a cardinality, not a row count** — which is why the corpus's 5,000 users hide it completely.
 - [ ] T035 [US2] Record the conflict in `specs/047-chapter-4-2/gaps.md`: **FR-ANL-06 wants 0.1% and DR-10 forbids reading raw events**, so above roughly 65,000 distinct senders neither path satisfies both. **File it for movement IV** — there is no reconciler here to test an amendment against, and amending a clause without one is deciding before measuring.
 - [ ] T036 [US2] Commit phase 4 — `relay-platform/analytics/query.mjs`, `specs/047-chapter-4-2/baseline.txt`, `specs/047-chapter-4-2/gaps.md`. Gates first.
 
@@ -141,7 +142,7 @@ file — and confirm the fourth is refused.
 - [ ] T052 **Publish the `compose.yaml` amendment as a hunked ```diff fence** in `.../page.mdx`, following the four Part 3 chapters that already amend that file. **Do not regenerate chapter 1.2's whole-body fence** — that satisfies the per-chapter checker and unanchors ninety-two downstream hunks.
 - [ ] T053 **Generate the hunk from the checker's own replay, not from `git diff`.** Copy `check-fence-chain.mjs`, truncate it at the HEAD comparison, dump its end state, diff that against the working tree, delete the copy. `-U6` is a default and not a rule: **verify the hunk applies clean before pasting, not after.**
 - [ ] T054 [P] Write `relay-tutorial/app/(en)/part-4/chapter-02/<slug>/figures.ts` — at least two figures: the two orderings against the two questions, and where the rollup's row count comes from.
-- [ ] T055 [P] Add at least one `TRAP` box to `.../page.mdx`. The strongest candidate is the TTL removing rows at insert with no error, which cost a quarter of a corpus in the probe.
+- [ ] T055 [P] Add at least one `TRAP` box to `.../page.mdx`. The strongest candidate is the TTL removing rows at insert with no error, which cost a quarter of a corpus in the probe — **and its sharper half: the rollup counted those rows on the way past**, so the only surviving trace of a deleted quarter is a figure in the view.
 - [ ] T056 Register the chapter in `relay-tutorial/lib/tutorial.ts` with a Vietnamese title.
 - [ ] T057 Create `relay-tutorial/app/(vi)/vi/part-4/chapter-02/<slug>/` with `specs/046-chapter-4-1/vi-placeholder.py`, mirroring every fence (045 FR-010/FR-011). **Invent no Vietnamese** beyond the standing notice and the registry's own title.
 - [ ] T058 Run `node scripts/prose-words.mjs` in `relay-tutorial` against `.../page.mdx` and record the count. The bound is 2,000–4,000 outside fences (SC-008).
@@ -196,6 +197,18 @@ is what lets movement II change the schema.
   publish the disagreement.
 
 ## Notes
+
+**ANALYSIS PASS 6 FOUND THE COMPARISONS HAD NO WINDOW.** The materialised view fires on the
+insert and the TTL deletes on the same insert, **and the view goes first**: 120,000 rows over
+120 days leave the raw table holding 90,000 over 90 and the rollup holding **120,000 over 120**,
+with 30 days of figures for rows that never persisted. T030 compared day by day over everything
+and T032 compared whole table to whole table, so both would have printed a real number about the
+TTL and handed it to FR-009 as `uniq`'s error. **Inside the window the two agree exactly — 90
+days in common, 0 disagreements.** SC-002 already carried "for the same ninety days" from pass 3;
+**the spec was ahead of the tasks that verify it**, which is the reverse of this feature's usual
+direction. One thing came back clean: `uniqState`/`uniqMerge` ignore NULL exactly as `uniqExact`
+does, both returning 5 over a population holding 500 NULL senders, so pass 1's `Nullable(UUID)`
+fix survives into the rollup.
 
 **ANALYSIS PASS 5 FOUND THAT `analytics/` HAD NO ADDRESS.** Every artifact described what
 the statements do and none said **where they go**, and the default is not the one compose
