@@ -125,3 +125,105 @@ WHAT PHASE 1 CHANGED IN THE REPOSITORY
     relay-platform/scripts/scale/corpus.mjs      new (T011)
 
     No migration, no schema change, no row written to the lane.
+
+
+================================================================================
+PHASE 2 — THE CORPUS. Recorded 2026-09-13.
+
+The seeder was written against documents and then run. THE DOCUMENTS WERE WRONG
+ABOUT THE SCHEMA IN THREE PLACES AND THE CODE WAS WRONG IN THREE MORE. Each is
+recorded with what found it, because five of the six were invisible to reading.
+
+
+WHAT THE SCHEMA SAID THAT NO DOCUMENT KNEW
+
+  1. ONE APPLICATION CANNOT HOLD THREE ENVIRONMENTS.
+     `unique (application_id, kind)` — and the schema's own comment names the
+     clause: "FR-TEN-04 says exactly two environments per application."
+     Every artifact said organisations 1, applications 1, environments 3.
+     Found by: the first run, 23505, `Key (application_id, kind)=(…, development)
+     already exists`. Corrected to one organisation, one application per
+     environment — which is also what the product means.
+
+  2. THE TABLE IS `members`, NOT `channel_members`.
+     `memberships` exists and is a different table: humans in organisations.
+     Every artifact named a table that does not exist.
+     Found by: 42P01 on the first count.
+
+  3. `addMember` WRITES AN OUTBOX ROW.
+     The contract said "no outbox row, no event. The corpus is data, not
+     history." The first floor run left 12,001 outbox rows — exactly one per
+     membership, `channel.member_added` (FR-WHK-02). Nothing drains them against
+     a scratch database, so they would sit as bait in a corpus claimed to hold
+     none.
+     Found by: counting, not reading. The seeder now clears them and REPORTS
+     `created.outbox` rather than the contract asserting zero.
+
+
+WHAT ONLY VOLUME FOUND
+
+  4. A SMALL RANDOM FORMATS AS SCIENTIFIC NOTATION.
+         invalid input syntax for type interval: "3.191957288484204e-05 days"
+     `(random() * 90 || ' days')::interval` round-trips through text. A 2,000-row
+     smoke test never produced a value small enough; 1.6 million rows did, on the
+     first floor run. Replaced with `random() * 90 * interval '1 day'`, which
+     stays numeric and has no text form to get wrong.
+
+  5. A UNIFORM OFFSET CANNOT PUT AN EXACT COUNT IN THE WINDOW.
+     First floor run: 999,786 in-window against a requested 1,000,000 — binomial
+     noise around three quarters, 0.02% low, and still short of a floor stated as
+     "≥1,000,000". The two segments are now placed separately: `inWindow` rows
+     over 90 days and the rest over the remaining 30. Density is identical by
+     construction — measured at 1,111 rows/day either side — and the count is
+     exact. A design in which the tolerance cannot arise beats one that states a
+     tolerance.
+
+  6. THE REFUSAL REFUSED BY CRASHING.
+     The "database already exists" path opened a second pool with
+     `require("pg")`, which does not resolve from `scripts/` — `pg` belongs to
+     `services/api`, not the root. It printed `Cannot find module 'pg'` instead
+     of its message, and nothing reaches that path on a normal run because
+     nothing seeds the same database twice.
+     Found by: running it twice on purpose.
+
+
+THE CORPUS AT THE FLOOR — every number counted from the database
+
+    elapsed                     82.2 s
+    subject.messages_in_window  1,000,000   EXACT, and it is the count the query scans
+    subject.messages            1,333,334   ceil(1,000,000 x 120 / 90)
+    subject.channels                2,000
+    subject.users                   5,000
+    created.organisations               1
+    created.applications                3   one per environment — FR-TEN-04
+    created.environments                3
+    created.users                   6,000
+    created.bot_users                   1
+    created.channels                2,400
+    created.members                12,001   6,000 x 2, + the bot
+    created.api_keys                    1
+    created.messages            1,600,000
+    created.messages_null_sender   16,002   counted, not derived from the ratio
+    created.outbox                      0   reported, not asserted
+    created.usage_periods               0
+    created_at_range            2026-05-16 -> 2026-09-13
+
+INVARIANTS CHECKED AGAINST THE BUILT CORPUS
+
+    sequence unique per channel        0 duplicates
+    channels starting at sequence 1    2,400 of 2,400
+    in-window vs out-of-window density 1,111 vs 1,111 rows/day
+    usage_periods / usage_active_users 0 / 0
+    the bot is a member of send_target yes
+
+BOTH REFUSALS FIRE ON PURPOSE
+
+    CORPUS_DATABASE=<existing>   "already exists and holds 1600000 messages; refusing"
+    CORPUS_DATABASE=relay        "is the lane's own database; refusing"
+
+CLEANUP
+
+    corpus databases remaining   0
+    lane after Phase 2           31,685 env · 46,143 ch · 303,885 msg · 487,481 outbox
+                                 — identical to T007, nothing written to it
+    stack                        taken back down

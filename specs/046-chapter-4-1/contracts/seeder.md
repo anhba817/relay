@@ -62,8 +62,8 @@ One JSON object on stdout, and it is the record every measurement quotes:
     "channels": 2000, "users": 5000
   },
   "created": {
-    "organisations": 1, "applications": 1, "environments": 3,
-    "users": 6000, "bot_users": 1, "channels": 2400, "channel_members": 12001,
+    "organisations": 1, "applications": 3, "environments": 3,
+    "users": 6000, "bot_users": 1, "channels": 2400, "members": 12001,
     "api_keys": 1, "messages": 1600000, "messages_null_sender": 16047
   },
   "created_at_range": ["2026-05-15T…", "2026-09-12T…"],
@@ -88,6 +88,15 @@ is every row in the database. `subject.messages` is the measured environment's. 
     created.messages            1,600,000   every row
       └ environment_id = $1     1,333,334   the tenant predicate excludes the neighbours
           └ >= now() - 90d      1,000,000   the date predicate excludes a quarter
+
+**Three things in this block were wrong until the seeder ran.** `applications` was 1:
+`unique (application_id, kind)` is FR-TEN-04 — exactly two environments per application —
+so three environments need three applications under one organisation, and the first run
+died on 23505. `channel_members` was a table that does not exist; it is `members`, and
+`memberships` is a different table holding humans in organisations. And
+`messages_in_window` is **approximate**: `created_at` is a uniform random offset, so the
+count inside the window is binomial around three quarters rather than exactly it — at the
+defaults that is ±0.05%, and the seeder reports what landed rather than what was asked for.
 
 **Rounding is `ceil` on the subject and `floor` on each neighbour**, stated because the three
 numbers above only add up under that pair — `round` on the subject gives 1,333,333 and the total

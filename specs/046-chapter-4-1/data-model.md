@@ -13,13 +13,14 @@ existing columns.
 
 | table | how many | shape |
 |---|---|---|
-| `organisations`, `applications` | 1 each | the seeder's own, named so it is recognisable and droppable |
+| `organisations` | 1 | the seeder's own, named so it is recognisable and droppable |
+| `applications` | one per environment | **not one.** `unique (application_id, kind)` is FR-TEN-04 — an application holds at most one `development` and one `production` — so three environments need three applications. The schema said so by refusing the first run with 23505 |
 | `environments` | `ENVIRONMENTS` (default 3) | one is the subject of every measurement; the others exist so the tenant predicate has something to exclude |
 | `api_keys` | 1, on the subject environment | **the send loop has to authenticate.** The precedent emits one for the same reason — `scripts/scale/seed.mjs:22` mints a key and its output block carries `credential`, because a harness that spawns an api and cannot call it measures nothing |
 | `users` | `USERS` (default 5,000) **in the subject environment** | `kind = 'person'`; each neighbour environment gets a tenth |
 | `users` — the sender | 1, on the subject environment | **`kind = 'bot'`, with a description.** `repo.createUser` takes no `kind` and cannot make one; `repo.upsertUser(externalId, { kind: "bot", description })` is the path, and the schema's `users_bot_description_check` requires the description |
 | `channels` | `CHANNELS` (default 2,000) **in the subject environment** | neighbours get a tenth |
-| `channel_members` | `MEMBERSHIPS_PER_USER` (default 2) per user | the FK the send path needs. **Not read by the analytical query**, which joins `messages` to `channels` only — it is a parameter because the bot must belong to the channel it sends to, and it arrived with the opposite reason written beside it |
+| `members` | `MEMBERSHIPS_PER_USER` (default 2) per user | the FK the send path needs. **Not read by the analytical query**, which joins `messages` to `channels` only — it is a parameter because the bot must belong to the channel it sends to, and it arrived with the opposite reason written beside it |
 | `messages` | `MESSAGES` (default 1,000,000) **inside the subject's 90-day window** | the seeder writes `DAYS / 90` times that many — 1,333,334 at the defaults — across the full span, so the date predicate excludes a quarter and the variable still means what the query scans. Neighbours get a tenth of the subject's total |
 
 **Every volume above is what the query SCANS, and getting there took two passes finding the same
