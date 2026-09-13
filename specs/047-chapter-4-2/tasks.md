@@ -155,8 +155,8 @@ file — and confirm the fourth is refused.
 - [X] T060 [P] Run the remaining gates and record each in `specs/047-chapter-4-2/baseline.txt`: `lint`, `typecheck`, `test`, **`build`** in `relay-platform` **first**, then `check:docs`, `check:srs`, `check:figures`, `check:errors` in `relay-tutorial`. `check:errors` reads `packages/protocol/dist`.
 - [X] T061 Write `specs/047-chapter-4-2/traceability.md`: FR-001…FR-015 and SC-001…SC-008 against the tasks that verify them, with the method actually used.
 - [X] T062 Complete `specs/047-chapter-4-2/gaps.md` — starting with T035's clause conflict, `delivery_latency_ms`'s missing producer, the three Part 1 tags from `046-8`, and the two gates `docs/12` §6 still says must exist.
-- [ ] T063 Tag the chapter `part4-ch2`, annotated, following the convention 046 settled.
-- [ ] T064 Confirm no analytical table and no `relay_corpus*` database remains, the lane's counts match T005's, and `services/api/migrations/` is unchanged. Then commit phase 6 across all three repositories and update `CLAUDE.md`'s `<!-- SPECKIT -->` block with the close-out figures.
+- [X] T063 Tag the chapter `part4-ch2`, annotated, following the convention 046 settled.
+- [X] T064 Confirm no analytical table and no `relay_corpus*` database remains, the lane's counts match T005's, and `services/api/migrations/` is unchanged. Then commit phase 6 across all three repositories and update `CLAUDE.md`'s `<!-- SPECKIT -->` block with the close-out figures.
 
 ---
 
