@@ -98,6 +98,20 @@ lane's own database; refusing"* — so a default of `relay` would read the singl
 seeder exists to keep out of the way. 4.1's 585.9 ms was taken on a `relay_corpus%` database,
 and a comparison whose two sides are different corpora is not a comparison.
 
+## What implementation added to this contract, and what forced it
+
+A contract written by one caller is a contract written by one caller's opinion. Six things
+changed once the code ran, each named with the task that found it.
+
+| change | forced by |
+|---|---|
+| **`delivery_latency_ms` is `Nullable(UInt32)`**, not SAD's `UInt32`. Nothing produces it until FR-ANL-10's chapter, and a non-nullable column would read **0 ms** on every row — a measured claim about a delivery nobody timed. It is the same defect as `text_length` 0, one column over, and it was found by writing the DDL rather than by reading it. | T013 |
+| **The bootstrap's `CREATE DATABASE` is load-bearing, not a precaution.** `CLICKHOUSE_DB` is honoured only while initialising an EMPTY data directory; the compose volume has held a database since chapter 1.2, so the variable is read and ignored (`Skipping initialization`). On any stack that has been up before — which is every reader following in order — `apply.mjs` is the only thing that creates the database. | T009 |
+| **The loader forces a merge and reports two row counts.** The TTL is a schedule, not an event: an insert landing in one part is cleaned immediately, one landing in nine is not. Straight after the load the table held 1,387,654 rows over **121 days** with 146,582 already expired; after `OPTIMIZE … FINAL`, 1,241,071 over 91. A count taken at the first moment shrinks overnight on its own. | T024 |
+| **Ledger rows whose file is gone are reported.** The checksum catches a file that CHANGED; nothing caught one that VANISHED, because the run walks the directory and a deleted file simply stops being mentioned while its table stays in the store. Removing a statement file is legitimate, so this reports rather than refuses — but it does not stay silent. | T039 / T042 |
+| **`eslint.config.mjs` grants Node globals to `analytics/**/*.mjs`.** Without it `pnpm lint` fails with 13 `no-undef` errors on `fetch`, `process`, `console` and `Buffer` — correct code, uncovered config. It makes `eslint.config.mjs` the second fenced file this chapter amends. | T019 |
+| **The rollup comparison is day-aligned on both sides**; `rawQuery` keeps 4.1's timestamp form. A daily rollup's finest grain is a day and cannot answer a window opening mid-morning, so comparing a timestamp window against it charges the rollup for a boundary it cannot express. | T030 |
+
 ## Comparing the two tables
 
 **Both sides take the same 90-day predicate, always.** The rollup outlives the raw table by

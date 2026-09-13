@@ -451,3 +451,69 @@ T035 — FILED
 found the cardinality one. This phase found the other, and it is worse: **the TTL boundary
 day breaks reconciliation at any cardinality**, by 0.49% against a 0.1% bound, on a corpus
 where the distinct-user half agrees perfectly.
+
+
+PHASE 5 — A LEDGER OF ITS OWN
+==============================
+
+T037 / T038 / T039 — IDEMPOTENCE, AND THE ZERO THAT PROVES IT LOOKED
+---------------------------------------------------------------------
+    $ node analytics/apply.mjs --drop-all
+    dropped database relay_analytics                 databases named it afterwards: 0
+
+    $ node analytics/apply.mjs                       (empty store)
+    database relay_analytics ready
+    applied 3: 0000_message_events.sql, 0001_daily_usage.sql, 0002_schema_applied.sql
+    skipped nothing                                  ledger rows: 3
+
+    $ node analytics/apply.mjs                       (again)
+    applied nothing
+    skipped 3: ...
+
+    $ node analytics/apply.mjs                       (after adding 0003_emoji_events.sql)
+    applied 1: 0003_emoji_events.sql
+    skipped 3: ...
+
+"Empty" means the database does not exist, which is exactly what `--drop-all` leaves.
+The bootstrap makes it again; nothing else does.
+
+T040 — THE CHECKSUM REFUSAL, RED, AND FOR ITS OWN REASON
+---------------------------------------------------------
+The edit was a single COMMENT LINE: still one statement, still naming the database, so the
+checksum is the only thing that changed and the refusal cannot be firing on something
+incidental. 046's first two falsifications failed for the wrong reason; this one is built
+so it cannot.
+
+    apply failed: 0001_daily_usage.sql changed after it was applied
+                  (ledger 385b775b5df80d89, file e676989c630ad7c9). ClickHouse has no
+                  ALTER path for most of this; add a new statement file instead
+    exit 1 · ledger rows still 4 · tables still 4        <- it applied NOTHING
+    restored -> applied nothing, skipped 4, exit 0       <- and went quiet again
+
+T042 — WHAT THE LEDGER COULD NOT SEE, FOUND BY CLEANING UP AFTER T039
+-----------------------------------------------------------------------
+Removing `0003_emoji_events.sql` left the ledger with 4 rows against 3 files, the
+`emoji_events` table still in the store, and `apply.mjs` reporting **"skipped 3"** with no
+mention of any of it. The run walks the DIRECTORY, so a file that vanishes simply stops
+being spoken about, while its table and its ledger row both remain.
+
+**The checksum catches a file that changed and nothing caught one that disappeared.** It
+reports now rather than refusing — retiring a statement is a legitimate act — but it does
+not stay silent:
+
+    ledger names 1 file(s) no longer on disk: 0003_emoji_events.sql — their tables are
+    still in relay_analytics and nothing here will drop them
+
+T041 — POSTGRES IS UNTOUCHED, AND THE TIMESTAMP SAYS SO
+---------------------------------------------------------
+    schema_migrations                 15 rows, last 0014_connection_minutes.sql
+    applied at                        2026-09-10 00:05:15 — three days before this feature
+    services/api/migrations/          15 files, ending 0014, 0 git changes
+    analytical tables in Postgres     0
+    lane rows                         31,685 / 46,143 / 303,885 / 487,481 — T005 exactly
+
+T043 — EACH PHASE DROPS WHAT IT MADE
+--------------------------------------
+    tables in relay_analytics after --drop-all   0     (not an error: system.tables
+    databases named relay_analytics              0      answers 0 for an absent database)
+    lane rows                                    unchanged, all four

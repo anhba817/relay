@@ -124,14 +124,14 @@ figure for figure, against the raw table.
 **Independent test**: apply to an empty store, apply again, add a statement, edit an applied
 file — and confirm the fourth is refused.
 
-- [ ] T037 [US3] Apply the schema to an empty ClickHouse and record what `apply.mjs` printed in `specs/047-chapter-4-2/baseline.txt`, **including the database and ledger the bootstrap created before the first file**. "Empty" here means the database does not exist, which is the state `--drop-all` leaves behind.
-- [ ] T038 [US3] Apply it again and record the output. **It must say it applied nothing**, not print nothing.
-- [ ] T039 [US3] Add a fourth statement file, apply, and confirm **only that statement runs**.
-- [ ] T040 [US3] **Test the checksum refusal red**: edit an already-applied file's bytes, run `apply.mjs`, and confirm it refuses and names the file. Restore afterwards and confirm `apply.mjs` is quiet again. **046's first two falsifications failed for the wrong reason** — one on a JS error rather than the constraint, one on a count the check does not read — so confirm the refusal fires on the checksum and not on something incidental.
-- [ ] T041 [US3] Verify `analytics/apply.mjs` writes nothing to Postgres: `schema_migrations` is unchanged and `services/api/migrations/` still ends at `0014_connection_minutes.sql` (FR-012, SC-007).
-- [ ] T042 [US3] Record in [contracts/schema.md](./contracts/schema.md) any field or behaviour added after the contract was written, and say which task forced it. **A contract written by one caller is a contract written by one caller's opinion.**
-- [ ] T043 [US3] Run `--drop-all`, then verify with **`SELECT count() FROM system.tables WHERE database = 'relay_analytics'`** and confirm the lane's row counts match T005's. **Name the database in the check**: `system.tables` returns **0** for a database that does not exist rather than erroring, which is what makes this honest — while a check that counted tables in whichever database the connection happened to be on would have reported a clean drop with `message_events` still standing. Each phase drops what it made.
-- [ ] T044 [US3] Commit phase 5 — `relay-platform/analytics/`, `specs/047-chapter-4-2/`. Gates first.
+- [X] T037 [US3] Apply the schema to an empty ClickHouse and record what `apply.mjs` printed in `specs/047-chapter-4-2/baseline.txt`, **including the database and ledger the bootstrap created before the first file**. "Empty" here means the database does not exist, which is the state `--drop-all` leaves behind.
+- [X] T038 [US3] Apply it again and record the output. **It must say it applied nothing**, not print nothing.
+- [X] T039 [US3] Add a fourth statement file, apply, and confirm **only that statement runs**.
+- [X] T040 [US3] **Test the checksum refusal red**: edit an already-applied file's bytes, run `apply.mjs`, and confirm it refuses and names the file. Restore afterwards and confirm `apply.mjs` is quiet again. **046's first two falsifications failed for the wrong reason** — one on a JS error rather than the constraint, one on a count the check does not read — so confirm the refusal fires on the checksum and not on something incidental.
+- [X] T041 [US3] Verify `analytics/apply.mjs` writes nothing to Postgres: `schema_migrations` is unchanged and `services/api/migrations/` still ends at `0014_connection_minutes.sql` (FR-012, SC-007).
+- [X] T042 [US3] Record in [contracts/schema.md](./contracts/schema.md) any field or behaviour added after the contract was written, and say which task forced it. **A contract written by one caller is a contract written by one caller's opinion.**
+- [X] T043 [US3] Run `--drop-all`, then verify with **`SELECT count() FROM system.tables WHERE database = 'relay_analytics'`** and confirm the lane's row counts match T005's. **Name the database in the check**: `system.tables` returns **0** for a database that does not exist rather than erroring, which is what makes this honest — while a check that counted tables in whichever database the connection happened to be on would have reported a clean drop with `message_events` still standing. Each phase drops what it made.
+- [X] T044 [US3] Commit phase 5 — `relay-platform/analytics/`, `specs/047-chapter-4-2/`. Gates first.
 
 ---
 
