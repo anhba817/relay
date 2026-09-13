@@ -26,7 +26,8 @@ tags. **Anyone holding an older clone of `relay-platform` must reset rather than
 
 <!-- SPECKIT START -->
 **ACTIVE: 048 — CHAPTER 4.3, "the consumer that was promised".** Plan:
-`specs/048-chapter-4-3/plan.md`; `research.md` first.
+`specs/048-chapter-4-3/plan.md`; `research.md` first. **60 tasks, six phases**,
+MVP at phases 1–3.
 
 **THE PLANNED CHAPTER 3 WAS ALREADY BUILT, SO PART 4 IS 22.** `docs/12` planned *"A second
 store needs a second ledger"* and §7.1 said to decide its identity scheme before chapter 2
