@@ -240,6 +240,44 @@ says so. The shipped `users.d/default-user.xml` is left alone.
 user reachable from outside it" and trying to fix `default` ends up editing a file the image
 owns, which the next image tag overwrites.
 
+## R11 — Is the analytical table one row per message, or one per event? **One per event, and the load cannot reconstruct them all.**
+
+Added by analysis pass 2, which asked pass 1's nullable question of the two columns pass 1 had
+not asked it about — and found a third thing while counting.
+
+**`user_id` was not the only nullable source column.**
+
+    text NULL (tombstones)      4,057 of 303,885
+    attachments NULL          301,644 of 303,885
+    user_id NULL               20,541 of 303,885
+
+`lengthUTF8(NULL)` and `JSONLength(NULL)` both insert **0** into a non-nullable target, without
+complaint. **A `text_length` of 0 is a claim that a zero-length message was sent.**
+
+**And `event` was a literal.** SAD §6.2's column is `created|edited|deleted` — one row per
+event — and the load wrote `'created'` for every message row, including 4,056 deleted and 3,201
+edited ones. `daily_usage` filters `WHERE event = 'created'`, so **FR-ANL-05's messages-sent
+figure would have been over by 4,056**.
+
+**Decision**: three nullable columns, and three rows per message where the state supports them.
+
+    created  303,885   ·  edited  3,201  ·  deleted  4,056   =   311,142 rows
+
+**AND 3,282 CREATIONS HAVE NO RECOVERABLE `text_length`.** 4,057 messages are tombstones and
+only 775 carry an edit row with `prior_text`; `schema.ts:454` says why — *"writes no row here,
+because a tombstone has no text to preserve"*.
+
+**Rationale, and it is the ingester's argument arriving three chapters early.** FR-ANL-02 says
+analytical events are emitted asynchronously **at the time they happen**. The reason is visible
+here: **a store reconstructed from current state cannot recover what the state no longer
+holds.** Every NULL `text_length` in this corpus is an artefact of reconstruction; an ingester
+that sees the send writes a length every time, and a NULL from one would mean something upstream
+lost the event.
+
+**How it was found**: by counting the nulls in every source column rather than the one that had
+already broken. Pass 1 found the shape and fixed one instance of it — **the fix is where the
+next defect is**, and this is the second feature in a row to demonstrate that.
+
 ## What research did not resolve
 
 - **The schema ledger's shape (FR-011/FR-012).** ClickHouse has `CREATE … IF NOT EXISTS`, which

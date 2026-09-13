@@ -18,9 +18,9 @@ of eight were wrong before it was.** The source types are not the ones the colum
 | `channel_id` | `UUID` | `messages.channel_id` | — arrives as `UUID` |
 | **`user_id`** | **`Nullable(UUID)`** | `messages.user_id` | **arrives as `Nullable(UUID)`; SAD §6.2 says `UUID` and a NULL inserts as the ZERO UUID, silently** |
 | `ts` | `DateTime64(3, 'UTC')` | `messages.created_at` | arrives as `DateTime64(6)`; microseconds truncate to milliseconds, no timezone shift — the server is UTC |
-| `event` | `LowCardinality(String)` | `'created'` literal | — `edited` and `deleted` have Part 3 producers and no analytical writer yet |
-| `text_length` | `UInt32` | **`lengthUTF8(text)`** | **`length()` is BYTES; FR-EMJ-02 counts code points** |
-| `attachment_count` | `UInt8` | **`JSONLength(attachments)`** | **jsonb arrives as `Nullable(String)`; `length()` returned 151 for a 2-attachment row** |
+| **`event`** | `LowCardinality(String)` | **three rows per message, not one** | **the load wrote `'created'` for 4,056 deleted and 3,201 edited messages** |
+| **`text_length`** | **`Nullable(UInt32)`** | **`lengthUTF8(text)`** | **`length()` is BYTES (FR-EMJ-02 counts code points), and `lengthUTF8(NULL)` inserts 0 into a non-nullable column** |
+| **`attachment_count`** | **`Nullable(UInt8)`** | **`JSONLength(attachments)`** | **jsonb arrives as `Nullable(String)`; `length()` gave 151 for a 2-attachment row, and `JSONLength(NULL)` inserts 0** |
 | `delivery_latency_ms` | `UInt32` | — | **NO PRODUCER.** See below |
 
 ### The three that were wrong, with what each returned
@@ -58,6 +58,45 @@ deleted user's messages would gain one phantom active user, in silence.
 `count(DISTINCT user_id)` does too**, so the two sides of movement IV's reconciliation agree on
 the one input `gaps.md` 046-1 filed as their divergence. The nullable column is not a
 concession; it is the only shape under which the two stores can be compared.
+
+**AND `user_id` WAS NOT THE ONLY NULLABLE SOURCE COLUMN.** Analysis pass 1 found this shape,
+fixed that column, and did not ask the same question of the two beside it. `text` is NULL for
+**4,057 tombstones** and `attachments` for **301,644 of 303,885 rows**, and both
+`lengthUTF8(NULL)` and `JSONLength(NULL)` insert **0** into a non-nullable target without
+complaint:
+
+    tombstone rows in    text_length [0,0,0,0,0]    attachment_count [0,0,0,0,0]
+    rows with content    text_length [3,14,12]      attachment_count [10,2,2]
+
+**A `text_length` of 0 is a claim that a zero-length message was sent.** Both columns are
+nullable now, and NULL means *not recoverable* rather than *zero*.
+
+## 1a. The load reconstructs an event log from current state, and it cannot do it completely
+
+**SAD §6.2's `event` column is `created|edited|deleted`, which means one row per EVENT.** The
+first version of the load wrote `'created'` for every message row — so **4,056 deleted and
+3,201 edited messages were labelled as creations**, and `daily_usage` filters on exactly that
+label. FR-ANL-05 meters *messages sent*; the figure would have been over by 4,056.
+
+The load now derives three rows from each message's state:
+
+    created  303,885   at created_at
+    edited     3,201   at edited_at, where it is not null
+    deleted    4,056   at deleted_at, where it is not null
+    total    311,142
+
+**AND 3,282 OF THOSE CREATIONS HAVE NO RECOVERABLE `text_length`.** 4,057 messages are
+tombstones and only **775** carry an edit row holding `prior_text`; chapter 3.23's schema says
+why in as many words — *"writes no row here, because a tombstone has no text to preserve"*. The
+length the message had when it was sent is gone.
+
+**This is the argument for the ingester, arriving three chapters early.** FR-ANL-02 says
+analytical events are emitted asynchronously **at the time they happen**, and the reason is
+visible here: a store reconstructed from current state cannot recover what the state no longer
+holds. **Every NULL `text_length` in this corpus is an artefact of reconstruction, and a real
+ingester produces none** — it sees the send.
+
+The chapter publishes the count rather than filling it in.
 
     ENGINE = MergeTree
     PARTITION BY toYYYYMM(ts)                     -- DR-07

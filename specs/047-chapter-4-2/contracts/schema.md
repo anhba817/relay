@@ -44,10 +44,13 @@ with `IF NOT EXISTS` and records everything after it.
 |---|---|---|
 | `environment_id`, `channel_id`, `ts` | `channels.environment_id`, `messages.channel_id`, `messages.created_at` | this chapter, then movement II |
 | **`user_id`** | `messages.user_id` into a **`Nullable(UUID)`** column | this chapter |
-| `event` | `'created'` literal | `edited`/`deleted` have Part 3 producers and no analytical writer |
-| `text_length` | **`lengthUTF8(text)`** — code points, not bytes | this chapter |
-| `attachment_count` | **`JSONLength(attachments)`** — the jsonb arrives as a String | this chapter |
+| **`event`** | **three rows per message** — `created` at `created_at`, `edited` at `edited_at`, `deleted` at `deleted_at` | this chapter |
+| `text_length` | **`lengthUTF8(text)`** into a **`Nullable(UInt32)`** — code points, not bytes | this chapter |
+| `attachment_count` | **`JSONLength(attachments)`** into a **`Nullable(UInt8)`** — the jsonb arrives as a String | this chapter |
 | **`delivery_latency_ms`** | **NONE** | FR-ANL-10, a later chapter |
+
+**Five of those were wrong across two analysis passes**, and the last three were found by
+asking pass 1's own question of the columns pass 1 did not ask it about.
 
 **Three of those expressions were wrong in this contract's first version**, and every one was
 wrong in the same way: the column name implied a type the data does not arrive as.
@@ -67,6 +70,18 @@ needs no refresh.
 insert time, not at merge** — 120,000 rows spanning 120 days became 90,000 immediately, with
 no error and no report. An ingester replaying a backlog older than 90 days will write rows
 that vanish, and nothing will tell it.
+
+**MUST NOT assume one row per message.** The `event` column is `created|edited|deleted` and
+this table holds **one row per event** — 303,885 creations, 3,201 edits and 4,056 deletions from
+the lane's 303,885 messages, 311,142 rows. `daily_usage` filters `WHERE event = 'created'`, so
+an ingester that labels everything `created` inflates FR-ANL-05's *messages sent* by every
+deletion.
+
+**MUST NOT assume `text_length` is always known.** It is `Nullable(UInt32)`, and **3,282 rows
+in this corpus carry NULL** — tombstoned messages whose original length is unrecoverable,
+because chapter 3.23 preserves no prior text for a deletion. **Those NULLs are an artefact of
+reconstructing an event log from current state.** An ingester sees the send and writes a length
+every time; if it ever writes NULL, something upstream lost the event.
 
 **May not assume a NULL sender survives as a NULL.** `message_events.user_id` is
 `Nullable(UUID)` **because SAD §6.2's `UUID` silently becomes the zero UUID** for every message

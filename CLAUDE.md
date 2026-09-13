@@ -41,7 +41,19 @@ draft.
 events instead. **The threshold is a cardinality, not a row count**, which is why testing at the
 corpus's 5,000 users would never have found it. Filed for movement IV.
 
-**AND ANALYSIS PASS 1 FOUND THREE OF THE LOAD'S EIGHT COLUMN EXPRESSIONS WRONG, FROM ONE
+**AND PASS 2 ASKED PASS 1'S QUESTION OF THE COLUMNS PASS 1 SKIPPED.** `user_id` was not the
+only nullable source column — `text` is NULL for **4,057 tombstones** and `attachments` for
+**301,644 of 303,885 rows**, and both insert **0** into a non-nullable target. **A `text_length`
+of 0 is a claim that a zero-length message was sent.** Pass 2 also found `event` written as the
+literal `'created'` for 4,056 deleted and 3,201 edited messages, in a table whose rollup filters
+on that label — **FR-ANL-05's messages-sent would have been over by 4,056.** SAD §6.2 means one
+row per EVENT: the load writes **311,142 rows from 303,885 messages**, and **3,282 creations have
+no recoverable `text_length`** because a tombstone preserves no prior text. **That is FR-ANL-02's
+emit-at-the-time rule arriving three chapters before the ingester: a store reconstructed from
+current state cannot recover what the state no longer holds.** **THE FIX IS WHERE THE NEXT
+DEFECT IS** — two features running.
+
+**ANALYSIS PASS 1 FOUND THREE OF THE LOAD'S EIGHT COLUMN EXPRESSIONS WRONG, FROM ONE
 `SELECT`.** `postgresql()` delivers jsonb as `Nullable(String)`, so `length(attachments)` gives
 **151** for a two-attachment row; `length(text)` is **bytes** where FR-EMJ-02 counts code points;
 and a NULL `user_id` inserted into SAD §6.2's non-nullable `UUID` becomes the **zero UUID**
