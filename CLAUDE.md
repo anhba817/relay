@@ -50,6 +50,36 @@ per `(environment_id, day)` until a background merge, so `SELECT messages` retur
 a query whose correctness depends on somebody having run `OPTIMIZE` is right in a demo and wrong
 in production.
 
+**PASS 8 FOUND THAT PASS 7'S 3,935 NEW ROWS HAD NO DEFINED `text_length`, AND THE ANSWER IS IN
+THE NEXT ROW.** `message_edits` holds `message_id`, `edited_at`, `prior_text` and nothing else —
+**it records what a message used to say**, so the text an edit PRODUCED is only ever in the row
+after it, or in the message itself. It chains: edit *k*'s result is edit *k+1*'s `prior_text`,
+and the last edit's result is `messages.text`. Measured: **3,160 recoverable, 775 NULL.**
+
+**AND THE 775 ARE THE SAME 775.** Messages edited once and then deleted. For the `created` event
+that edit row is exactly what makes the original length recoverable; for the `edited` event the
+deletion is what destroys the resulting one. **One row, two events, opposite outcomes** — which
+is FR-ANL-02's emit-at-the-time rule as a figure rather than a sentence. **The same artefact is
+evidence for the rule and against the workaround, depending on which event you ask about.**
+
+**TWO ORDERING TRAPS, ONE ON EACH SIDE, AND THE SECOND WAS THE PROBE'S OWN.** The creation text
+is the **earliest** edit's `prior_text` (`argMin` on `edited_at`) and **428 messages carry more
+than one edit row**, so `any()` is wrong for up to 428 creations. And the probe that produced the
+3,160/775 split tested `prior_text != ''` — right about this corpus, wrong about the rule, since
+`prior_text` is `NOT NULL` and empty string is legal. **The counts survived only because an
+independent Postgres computation agreed**; the expression did not.
+
+**AND THE LOAD OPENS THREE TABLES, WHERE TWO ARTIFACTS STILL SAID TWO.** `message_edits` carries
+**no tenant column**, so an edit event's `environment_id` arrives through two joins —
+`message_edits → messages → channels`, checked at 3,935 rows over 505 environments. It is the
+first row in this feature that does not get its tenant directly. `prior_text` arrives as a
+non-nullable `String`; `edited_at` arrives as `DateTime64(6)` into a `(3)` column and the
+microseconds go quietly.
+
+**EVERY FINDING IN PASS 8 WAS DOWNSTREAM OF PASS 7'S FIX** — the fourth time in one feature.
+Going from 3,201 edit rows to 3,935 did not just change a number: **it turned a by-product into a
+population with its own recoverability story**, and nothing had been written for it.
+
 **PASS 7 FOUND A COLUMN WHOSE NAME MATCHED THE CONCEPT AND WHOSE CONTENTS DID NOT.** T020a said
 *write one row per EVENT, not one per message* and then took the edit timestamp from
 `messages.edited_at` — which holds the **latest** edit, one per message. `message_edits` holds

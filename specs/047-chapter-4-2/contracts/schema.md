@@ -102,10 +102,10 @@ swallows it whole and still looks like an approximation error.
 
 | column | source expression | when |
 |---|---|---|
-| `environment_id`, `channel_id`, `ts` | `channels.environment_id`, `messages.channel_id`, `messages.created_at` | this chapter, then movement II |
+| `environment_id`, `channel_id`, `ts` | `channels.environment_id`, `messages.channel_id`, and the event's own timestamp. **`message_edits` has no tenant column**, so an edit event's tenant comes through two joins — `message_edits → messages → channels`. Postgres delivers these as `DateTime64(6)`; the column is `(3)`, and the microseconds are dropped | this chapter, then movement II |
 | **`user_id`** | `messages.user_id` into a **`Nullable(UUID)`** column | this chapter |
 | **`event`** | **three rows per message** — `created` at `created_at`, `edited` at `edited_at`, `deleted` at `deleted_at` | this chapter |
-| `text_length` | **`lengthUTF8(text)`** into a **`Nullable(UInt32)`** — code points, not bytes | this chapter |
+| `text_length` | **`lengthUTF8(…)`** into a **`Nullable(UInt32)`** — code points, not bytes, and **a different argument on each event**: the earliest `prior_text` for `created`, the *next* edit's `prior_text` for `edited`, nothing for `deleted`. NULL for **3,282** creations and **775** edits | this chapter |
 | `attachment_count` | **`JSONLength(attachments)`** into a **`Nullable(UInt8)`** — the jsonb arrives as a String | this chapter |
 | **`delivery_latency_ms`** | **NONE** | FR-ANL-10, a later chapter |
 

@@ -130,7 +130,8 @@ relay-platform/
 │   ├── 0001_daily_usage.sql          NEW — DR-10's rollup
 │   └── apply.mjs                     NEW — applies what has not been applied, and says so
 └── scripts/scale/
-    └── load-analytics.mjs            NEW — one INSERT … SELECT through postgresql() (R6)
+    └── load-analytics.mjs            NEW — one INSERT … SELECT through postgresql() (R6),
+                                      over THREE tables: messages, channels, message_edits
 
 relay-tutorial/
 ├── app/(en)/part-4/chapter-02/<slug>/{page.mdx,figures.ts}

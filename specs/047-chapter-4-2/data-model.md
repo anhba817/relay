@@ -24,7 +24,7 @@ of eight were wrong before it was.** The source types are not the ones the colum
 | **`user_id`** | **`Nullable(UUID)`** | `messages.user_id` | **arrives as `Nullable(UUID)`; SAD §6.2 says `UUID` and a NULL inserts as the ZERO UUID, silently** |
 | `ts` | `DateTime64(3, 'UTC')` | `messages.created_at` | arrives as `DateTime64(6)`; microseconds truncate to milliseconds, no timezone shift — the server is UTC |
 | **`event`** | `LowCardinality(String)` | **three rows per message, not one** | **the load wrote `'created'` for 4,056 deleted and 3,201 edited messages** |
-| **`text_length`** | **`Nullable(UInt32)`** | **`lengthUTF8(text)`** | **`length()` is BYTES (FR-EMJ-02 counts code points), and `lengthUTF8(NULL)` inserts 0 into a non-nullable column** |
+| **`text_length`** | **`Nullable(UInt32)`** | **`lengthUTF8(…)`, and the argument differs per event** — see below | **`length()` is BYTES (FR-EMJ-02 counts code points), and `lengthUTF8(NULL)` inserts 0 into a non-nullable column** |
 | **`attachment_count`** | **`Nullable(UInt8)`** | **`JSONLength(attachments)`** | **jsonb arrives as `Nullable(String)`; `length()` gave 151 for a 2-attachment row, and `JSONLength(NULL)` inserts 0** |
 | `delivery_latency_ms` | `UInt32` | — | **NO PRODUCER.** See below |
 
@@ -85,7 +85,7 @@ label. FR-ANL-05 meters *messages sent*; the figure would have been over by 4,05
 
 The load derives its rows from two tables, not one:
 
-    created  303,885   messages, at created_at
+    created  303,885   messages, at created_at (DateTime64(6) -> the column's (3))
     edited     3,935   message_edits, one row per edit
     deleted    4,056   messages, at deleted_at where it is not null
     total    311,876
@@ -96,6 +96,29 @@ while `message_edits` holds one row per edit and counts **3,935**. The gap is th
 edited more than once**, up to three times each. *One row per event* was already this table's
 rule; `edited_at` quietly reads it as one row per edited message, and the column exists, which
 is what makes it convincing.
+
+### `text_length` is a different expression on each of the three events
+
+| event | the text it means | where that lives | NULL |
+|---|---|---|---|
+| `created` | the text as sent | the **earliest** `message_edits.prior_text` if the message was ever edited, else `messages.text` | **3,282** |
+| `edited` | the text **after** that edit | the **next** edit's `prior_text`, or `messages.text` for the last edit | **775** |
+| `deleted` | nothing was written | — | all 4,056 |
+
+**`message_edits` holds `message_id`, `edited_at`, `prior_text` and nothing else** — it records
+what the message *used to* say, so the text an edit produced is only ever in the next row, or in
+the message itself. Measured: **3,160 of the 3,935 edit events recover a length; 775 do not.**
+
+**And the 775 are the same 775.** They are the messages edited once and then deleted. For the
+`created` event that edit row is precisely what makes the original length recoverable; for the
+`edited` event the deletion is what destroys the resulting one. **One row, two events, opposite
+outcomes** — which is FR-ANL-02's emit-at-the-time rule argued rather than asserted.
+
+**Two ordering traps, one on each side.** The creation text is the **earliest** edit's
+`prior_text` (`argMin` on `edited_at`) and **428 messages carry more than one edit row**, so an
+`any()` is wrong for up to 428 creations. The chain needs a **null-safe** "is there a next edit"
+test: the probe behind the 3,160/775 split used `prior_text != ''` and was right only because no
+row in this corpus has empty prior text.
 
 **AND 3,282 OF THOSE CREATIONS HAVE NO RECOVERABLE `text_length`.** **4,056 messages are
 tombstones, and a 4,057th is a live message with no text at all** — `text IS NULL` counts 4,057

@@ -443,6 +443,44 @@ that files them together teaches the wrong lesson about both.
 and no words.** Both get a NULL `text_length`, for different reasons, and the prose must not say
 NULL text means deleted.
 
+## R16 — What is `text_length` on an `edited` row? **The text after that edit, which is in the next row — and 775 times in no row at all.**
+
+**Decision**: `created` takes the earliest `message_edits.prior_text` (else `messages.text`);
+`edited` takes the **next** edit's `prior_text` (else `messages.text`); `deleted` takes nothing.
+
+**Rationale**: R15 added 3,935 `edited` rows and no artifact said what their length meant.
+`message_edits` holds `message_id`, `edited_at`, `prior_text` and nothing else — **it records
+what a message used to say**, so the text an edit *produced* is only ever in the row after it, or
+in the message itself. Measured through `postgresql()`:
+
+    edit events                              3,935
+      resulting length recoverable           3,160
+      resulting length NULL                    775
+
+**And the 775 are the same 775 T020b names.** Messages edited once and then deleted. For the
+`created` event that edit row is exactly what makes the original length recoverable; for the
+`edited` event the deletion is what destroys the resulting one. **One row, two events, opposite
+outcomes.** FR-ANL-02 says emit at the time rather than reconstruct later, and this is that
+argument as a figure instead of a sentence — the same artefact is evidence for the rule and
+evidence against the workaround, depending on which event you ask about.
+
+**Two ordering traps, one on each side, and the second one is this pass's own.** The creation
+text is the **earliest** edit's `prior_text` — `argMin` on `edited_at` — and **428 messages carry
+more than one edit row**, so an `any()` is wrong for up to 428 creations. And the chain needs a
+null-safe "is there a next edit" test: **the probe that produced the 3,160/775 split used
+`prior_text != ''`**, which is right about this corpus and not about the rule, because
+`prior_text` is `NOT NULL` in Postgres and an empty string is a legal value. The counts stand —
+they were confirmed against an independent Postgres computation — but the expression is not
+the one to ship.
+
+**Three things came back clean.** `postgresql()` reaches `message_edits` and returns 3,935; the
+three-table chain `message_edits → messages → channels` runs and yields 3,935 rows over **505**
+environments; and `prior_text` arrives as a **non-nullable `String`**, so unlike `text` and
+`attachments` it needs no `Nullable` target. One thing arrives narrower than it left:
+`edited_at` is `DateTime64(6)` and the column is `(3)`, so microseconds are dropped without
+comment — the benign member of pass 1's family, where the delivered type is not the one the
+name implies.
+
 ## What research did not resolve
 
 - **The schema ledger's shape (FR-011/FR-012).** ClickHouse has `CREATE … IF NOT EXISTS`, which
