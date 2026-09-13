@@ -1,0 +1,191 @@
+# Tasks — chapter 4.2, ClickHouse from zero
+
+**Feature**: `specs/047-chapter-4-2/` · **Plan**: [plan.md](./plan.md) · **Spec**: [spec.md](./spec.md)
+
+**This chapter builds a schema and a comparison, not a pipeline.** Two ClickHouse tables, a
+view, a ledger, and one `INSERT … SELECT` that reads Postgres from inside ClickHouse. **No new
+dependency** — `postgresql()` was checked before it was planned and returned the lane's exact
+message count (R6).
+
+**Verification methods, stated.** The comparison against 4.1's recorded numbers is **A**. The
+ledger's idempotence and its checksum refusal are **D**. **Nothing here joins a test lane**:
+`vitest.coverage.config.mts`'s four `include` globs are all `packages/*/src/**` or
+`services/*/src/**`, so a test under `analytics/` would be collected by nothing — the same
+finding 046 paid for.
+
+**AND THIS CHAPTER'S FENCE DELTA WILL NOT BE ZERO.** 4.1 fenced no platform file and closed at
+a delta of 0. This one amends `compose.yaml`, which chapter 1.2 fences as a whole body — so it
+carries a **hunked `diff` fence**, the mechanism four Part 3 chapters already use for that file.
+**It does not regenerate chapter 1.2's body**: bringing a foundation fence up to date satisfies
+the per-chapter checker and takes the cumulative chain from 111 problems to 203 by unanchoring
+ninety-two downstream hunks.
+
+---
+
+## Phase 1: Premises, and the numbers this feature inherited
+
+**Everything blocks on this.** Phase 0 found three published documents wrong by running them;
+this phase re-runs each at the chapter's own tag, because a premise carried from a planning
+document and never re-run is what this project finds most often.
+
+- [ ] T001 Re-run R1 at this chapter's tag and record both halves in `specs/047-chapter-4-2/baseline.txt`: `curl -s "http://localhost:8123/ping"` returns `Ok.` and `curl -s "http://localhost:8123/?query=SELECT+1"` returns `Code: 194 … (REQUIRED_PASSWORD)`. **If the query now succeeds, the compose amendment is already present and the chapter's opening is wrong** — that is the finding, not an inconvenience.
+- [ ] T002 Record the restriction's source in `specs/047-chapter-4-2/baseline.txt`: `docker exec relay-clickhouse-1 cat /etc/clickhouse-server/users.d/default-user.xml`, which limits `default` to `::1` and `127.0.0.1`. Quote it rather than describing it.
+- [ ] T003 Re-run R2 and record the exact refusal in `specs/047-chapter-4-2/baseline.txt`: SAD §6.2's `CREATE TABLE` verbatim gives `Code: 450 … BAD_TTL_EXPRESSION`. **Copy the DDL from `docs/05-sad.md` rather than from `research.md`** — the point is that the published document does not apply, and quoting a quotation cannot establish that.
+- [ ] T004 [P] Run `pnpm check:fences` in `relay-tutorial` and record the opening in `specs/047-chapter-4-2/baseline.txt`. **046 inherited 109 and measured 110**; this chapter inherits 110 and re-measures rather than carrying it. FR-015's delta is computed against whatever this run says.
+- [ ] T005 [P] Record the lane's row counts fresh in `specs/047-chapter-4-2/baseline.txt`. 046 measured 31,685 environments · 46,143 channels · 303,885 messages · 487,481 outbox on 2026-09-13, **and all four had drifted upward from 045's close-out**. They are part of the instrument for the corpus load.
+- [ ] T006 [P] Pin the environment in `specs/047-chapter-4-2/baseline.txt`: node, pnpm, the ClickHouse image tag from `compose.yaml`, the version `SELECT version()` reports, cpus, RAM, and the `DOCKER_HOST` this machine needs.
+- [ ] T007 [P] Record in `specs/047-chapter-4-2/baseline.txt` that `packages/config/src/infra.ts` is the only source file naming ClickHouse, and that the lockfile contains no client — so the "zero dependencies" claim is a measurement rather than an intention.
+- [ ] T008 Commit phase 1 — `specs/047-chapter-4-2/baseline.txt` only. No platform change yet.
+
+---
+
+## Phase 2: Foundational — a reachable store, and a schema with a ledger
+
+**Blocking for all three stories.** Nothing can be loaded into a store nothing can connect to,
+and nothing can be measured against a schema that has not been applied.
+
+- [ ] T009 Amend `relay-platform/compose.yaml`: add an `environment:` block giving the ClickHouse container a user reachable from outside it. **Additive**, per chapter 1.2's rule.
+- [ ] T010 In `relay-platform/compose.yaml`, replace the health check's command so it **runs a query** rather than `/ping`. This is the one non-additive edit in the chapter and it is a correction: the current check passes while every query is refused, and **a check that cannot fail for the reason you care about is not a check**.
+- [ ] T011 **Prove the new health check can fail.** Point it at a deliberately wrong credential, confirm `docker compose up --wait` reports the container unhealthy, restore. **Test it red, or it is the old check with a longer command** — and clean up the probe before anything is counted.
+- [ ] T012 Create `relay-platform/analytics/0002_schema_applied.sql` — the ledger: `filename`, `applied_at`, `checksum`, `ENGINE = MergeTree ORDER BY filename`. It is applied first and unconditionally, because a ledger cannot record its own creation from a table that does not exist ([contracts/schema.md](./contracts/schema.md)).
+- [ ] T013 Create `relay-platform/analytics/0000_message_events.sql` from SAD §6.2, **with `toDateTime(ts)` in the TTL and a comment saying why**. Every other line is the published DDL.
+- [ ] T014 Create `relay-platform/analytics/0001_daily_usage.sql` — DR-10's materialised view, verbatim from SAD §6.2. It applies only after `0000`: the creation fails with `UNKNOWN_TABLE` otherwise, which was checked.
+- [ ] T015 Create `relay-platform/analytics/apply.mjs`: read `analytics/*.sql` in filename order, apply what the ledger does not record, and **print what it applied and what it skipped**. A run that applies nothing prints that it applied nothing — a zero that proves it looked.
+- [ ] T016 In `relay-platform/analytics/apply.mjs`, store each file's checksum and **refuse a file whose bytes changed after it was applied**, naming it. ClickHouse has no `ALTER` path for most of what these files do, so a ledger claiming a schema is applied when it is not is worse than one that has not run.
+- [ ] T017 In `relay-platform/analytics/apply.mjs`, implement `--drop-all` for the quickstart's cleanup step.
+- [ ] T018 Verify `relay-platform/analytics/apply.mjs` uses no ClickHouse client package: `grep -c clickhouse relay-platform/pnpm-lock.yaml` stays at 0 and `package.json`'s dependencies are unchanged (R6).
+- [ ] T019 Commit phase 2 — `relay-platform/compose.yaml`, `relay-platform/analytics/`. Gates first: `pnpm lint && pnpm typecheck && pnpm test` in `relay-platform`.
+
+---
+
+## Phase 3: User Story 1 — the same question, answered by a store shaped for it (Priority: P1) 🎯 MVP
+
+**Goal**: FR-ANL-05's question asked of ClickHouse and published beside 4.1's 585.9 ms.
+
+**Independent test**: load the corpus, run the query, publish the duration, the rows scanned and
+the `EXPLAIN indexes=1` line beside the predecessor's figures.
+
+- [ ] T020 [US1] Create `relay-platform/scripts/scale/load-analytics.mjs`: one `INSERT INTO message_events SELECT … FROM postgresql('postgres:5432', …)` joining `messages` to `channels`. **`length(text)`, never `text`** (FR-ANL-11, DR-08).
+- [ ] T021 [US1] In `relay-platform/scripts/scale/load-analytics.mjs`, report **what the table holds after the load, not what was sent**. The TTL removes rows **at insert** — 120,000 over 120 days became 90,000 immediately, with no error — so a loader quoting its own INSERT is quoting an intention (R3).
+- [ ] T022 [US1] Create `relay-platform/analytics/query.mjs` taking `--environment`: FR-ANL-05's daily question against `message_events`, reporting duration, rows scanned, and `EXPLAIN indexes=1`.
+- [ ] T023 [US1] In `relay-platform/analytics/query.mjs`, publish the **parts and granules** line from `EXPLAIN indexes=1`. **`ProfileEvents['SelectedParts']` returned 0 for the same query** (R5), so the obvious instrument reports nothing and reports it silently — and at this size a full scan answers quickly enough to look ordered.
+- [ ] T024 [US1] Build the corpus with `scripts/scale/corpus.mjs` and load it. Record the emitted JSON and the post-load ClickHouse count in `specs/047-chapter-4-2/baseline.txt`, **with the difference between them named as the TTL**.
+- [ ] T025 [US1] Take the measurement and record it in `specs/047-chapter-4-2/baseline.txt` **beside 4.1's 585.9 ms and its 1,000,000 rows**, quoted from `specs/046-chapter-4-1/baseline.txt` with the corpus and machine they were taken on. **4.1's Postgres measurement is not re-run** (FR-014, constitution III).
+- [ ] T026 [US1] Record the `EXPLAIN indexes=1` output in `specs/047-chapter-4-2/baseline.txt` with all three stages — MinMax, partition, primary key — because two of the three skip nothing and only the third is the ordering doing work.
+- [ ] T027 [US1] **If the second store is not faster, publish that.** Record the volume, the plan and what it does not prove rather than tuning the query until it agrees. 4.1's hypothesis was falsified twice and the chapter was better for it.
+- [ ] T028 [US1] Commit phase 3 — `relay-platform/scripts/scale/load-analytics.mjs`, `relay-platform/analytics/query.mjs`, `specs/047-chapter-4-2/baseline.txt`. Gates first.
+
+---
+
+## Phase 4: User Story 2 — a rollup that never scans raw events (Priority: P2)
+
+**Goal**: DR-10's claim, measured — and the conflict it has with FR-ANL-06, recorded.
+
+**Independent test**: query the rollup for the same ninety days and compare it, row for row and
+figure for figure, against the raw table.
+
+- [ ] T029 [US2] In `relay-platform/analytics/query.mjs`, add a rollup mode querying `daily_usage` for the same range, reporting duration and rows scanned.
+- [ ] T030 [US2] Compare the rollup's daily figures against the raw table's **row for row**, and record the comparison in `specs/047-chapter-4-2/baseline.txt`. A count that matches in total and not per day is a different defect.
+- [ ] T031 [US2] Record the row ratio: **1,000,000 raw rows became 89 rollup rows** in the probe. That ratio is DR-10's argument in one number.
+- [ ] T032 [US2] In `relay-platform/analytics/query.mjs`, add `--compare-exact`: `uniqMerge(active_users_state)` against `uniqExact(user_id)` over the raw table, reporting the difference as a number.
+- [ ] T033 [US2] Insert rows after the rollup exists and confirm it includes them **without being rebuilt** (FR-005). A view somebody refreshes is a table with extra steps.
+- [ ] T034 [US2] **Measure where `uniq` stops being exact** and record the table in `specs/047-chapter-4-2/baseline.txt`: exact to 60,000 distinct, **off by 0.51% at 70,000**. **The threshold is a cardinality, not a row count** — which is why the corpus's 5,000 users hide it completely.
+- [ ] T035 [US2] Record the conflict in `specs/047-chapter-4-2/gaps.md`: **FR-ANL-06 wants 0.1% and DR-10 forbids reading raw events**, so above roughly 65,000 distinct senders neither path satisfies both. **File it for movement IV** — there is no reconciler here to test an amendment against, and amending a clause without one is deciding before measuring.
+- [ ] T036 [US2] Commit phase 4 — `relay-platform/analytics/query.mjs`, `specs/047-chapter-4-2/baseline.txt`, `specs/047-chapter-4-2/gaps.md`. Gates first.
+
+---
+
+## Phase 5: User Story 3 — a second store's schema needs a ledger of its own (Priority: P3)
+
+**Goal**: schema changes that are idempotent and say what they did.
+
+**Independent test**: apply to an empty store, apply again, add a statement, edit an applied
+file — and confirm the fourth is refused.
+
+- [ ] T037 [US3] Apply the schema to an empty ClickHouse and record what `apply.mjs` printed in `specs/047-chapter-4-2/baseline.txt`.
+- [ ] T038 [US3] Apply it again and record the output. **It must say it applied nothing**, not print nothing.
+- [ ] T039 [US3] Add a fourth statement file, apply, and confirm **only that statement runs**.
+- [ ] T040 [US3] **Test the checksum refusal red**: edit an already-applied file's bytes, run `apply.mjs`, and confirm it refuses and names the file. Restore afterwards and confirm `apply.mjs` is quiet again. **046's first two falsifications failed for the wrong reason** — one on a JS error rather than the constraint, one on a count the check does not read — so confirm the refusal fires on the checksum and not on something incidental.
+- [ ] T041 [US3] Verify `analytics/apply.mjs` writes nothing to Postgres: `schema_migrations` is unchanged and `services/api/migrations/` still ends at `0014_connection_minutes.sql` (FR-012, SC-007).
+- [ ] T042 [US3] Record in [contracts/schema.md](./contracts/schema.md) any field or behaviour added after the contract was written, and say which task forced it. **A contract written by one caller is a contract written by one caller's opinion.**
+- [ ] T043 [US3] Run `--drop-all`, verify no analytical tables remain and the lane's row counts match T005's. Each phase drops what it made.
+- [ ] T044 [US3] Commit phase 5 — `relay-platform/analytics/`, `specs/047-chapter-4-2/`. Gates first.
+
+---
+
+## Phase 6: The chapter, the amendments, and closing out
+
+- [ ] T045 Choose the slug and create `relay-tutorial/app/(en)/part-4/chapter-02/<slug>/page.mdx`.
+- [ ] T046 Write the opening of `.../page.mdx`: 4.1 ended with a 656 ms sort no index removes. This chapter builds the ordering that is that sort's answer.
+- [ ] T047 Write the section that **amends SAD §6.2 in `docs/05-sad.md`** — `TTL toDateTime(ts)` — and quotes the refusal. A published DDL that does not apply is amended, not silently diverged from.
+- [ ] T048 Write the health-check section of `.../page.mdx`: the store has been in compose since chapter 1.2, `/ping` has been green throughout, and nothing outside the container could query it. **Name the subject, not the ordinal** (045 FR-008).
+- [ ] T049 Write the measurement sections of `.../page.mdx` carrying the query, the rollup, both `EXPLAIN indexes=1` lines and the comparison against 4.1, each with the rows it scanned.
+- [ ] T050 Write the rollup-accuracy section: exact to 60,000, off by 0.51% at 70,000, and **FR-ANL-06's 0.1% against DR-10's prohibition**. State the conflict; do not resolve it.
+- [ ] T051 Write the `<ForwardRef>` in `.../page.mdx`: no ingester, no emission path, no reconciliation, and `delivery_latency_ms` created with no producer until FR-ANL-10's chapter.
+- [ ] T052 **Publish the `compose.yaml` amendment as a hunked ```diff fence** in `.../page.mdx`, following the four Part 3 chapters that already amend that file. **Do not regenerate chapter 1.2's whole-body fence** — that satisfies the per-chapter checker and unanchors ninety-two downstream hunks.
+- [ ] T053 **Generate the hunk from the checker's own replay, not from `git diff`.** Copy `check-fence-chain.mjs`, truncate it at the HEAD comparison, dump its end state, diff that against the working tree, delete the copy. `-U6` is a default and not a rule: **verify the hunk applies clean before pasting, not after.**
+- [ ] T054 [P] Write `relay-tutorial/app/(en)/part-4/chapter-02/<slug>/figures.ts` — at least two figures: the two orderings against the two questions, and where the rollup's row count comes from.
+- [ ] T055 [P] Add at least one `TRAP` box to `.../page.mdx`. The strongest candidate is the TTL removing rows at insert with no error, which cost a quarter of a corpus in the probe.
+- [ ] T056 Register the chapter in `relay-tutorial/lib/tutorial.ts` with a Vietnamese title.
+- [ ] T057 Create `relay-tutorial/app/(vi)/vi/part-4/chapter-02/<slug>/` with `specs/046-chapter-4-1/vi-placeholder.py`, mirroring every fence (045 FR-010/FR-011). **Invent no Vietnamese** beyond the standing notice and the registry's own title.
+- [ ] T058 Run `node scripts/prose-words.mjs` in `relay-tutorial` against `.../page.mdx` and record the count. The bound is 2,000–4,000 outside fences (SC-008).
+- [ ] T059 Run `pnpm check:fences` and record the closing number. **Report the delta against T004's opening** (FR-015). **It will not be 0** — this chapter amends a fenced file, unlike 4.1.
+- [ ] T060 [P] Run the remaining gates and record each in `specs/047-chapter-4-2/baseline.txt`: `lint`, `typecheck`, `test`, **`build`** in `relay-platform` **first**, then `check:docs`, `check:srs`, `check:figures`, `check:errors` in `relay-tutorial`. `check:errors` reads `packages/protocol/dist`.
+- [ ] T061 Write `specs/047-chapter-4-2/traceability.md`: FR-001…FR-015 and SC-001…SC-008 against the tasks that verify them, with the method actually used.
+- [ ] T062 Complete `specs/047-chapter-4-2/gaps.md` — starting with T035's clause conflict, `delivery_latency_ms`'s missing producer, the three Part 1 tags from `046-8`, and the two gates `docs/12` §6 still says must exist.
+- [ ] T063 Tag the chapter `part4-ch2`, annotated, following the convention 046 settled.
+- [ ] T064 Confirm no analytical table and no `relay_corpus*` database remains, the lane's counts match T005's, and `services/api/migrations/` is unchanged. Then commit phase 6 across all three repositories and update `CLAUDE.md`'s `<!-- SPECKIT -->` block with the close-out figures.
+
+---
+
+## Dependencies & Execution Order
+
+```
+Phase 1  premises        ──> everything. T001 can falsify the chapter's opening.
+Phase 2  store + schema  ──> US1, US2, US3 all need it
+Phase 3  US1 (P1) 🎯     ──> US2 needs the corpus loaded
+Phase 4  US2 (P2)        ──> independent of US3
+Phase 5  US3 (P3)        ──> independent of US2; both need Phase 2
+Phase 6  the chapter     ──> needs US1 and US2's numbers
+```
+
+### User story dependencies
+
+- **US1** depends on Phase 2 only. It is the MVP: the question answered by a store shaped for
+  it, beside 4.1's number, is the chapter's reason to exist.
+- **US2** depends on US1's loaded corpus. The rollup is compared against the raw table, and
+  both need rows.
+- **US3** depends on Phase 2 and nothing else. It could run before US1.
+
+### Parallel opportunities
+
+- Phase 1: T004–T007 are four independent recordings — `[P]`.
+- Phase 6: T054, T055 and T060 touch different files from the prose tasks — `[P]`.
+- **Phases 2 to 5 have none that matter.** The schema files are ordered by dependency, and
+  measurements are serial: nothing else runs on the machine during one.
+
+## Implementation strategy
+
+**MVP is Phases 1 + 2 + 3.** That yields a chapter that asks 4.1's question of a store built
+for it and publishes both answers with what each scanned. The rollup strengthens it; the ledger
+is what lets movement II change the schema.
+
+**Stop points that are real:**
+
+- **T001 can falsify the chapter's opening.** If ClickHouse is already reachable, the
+  health-check finding is not this chapter's to make and §1 of the prose changes.
+- **T003 likewise.** If SAD §6.2's DDL now applies, someone amended it and the chapter says so
+  rather than claiming the discovery.
+- **T027 and T034 are where the chapter may disagree with its own plan**, and both say to
+  publish the disagreement.
+
+## Notes
+
+**Three numbers in this feature are inherited and T004, T005 and T025 exist to replace or quote
+them properly**: `check:fences` at 110, the lane's row counts, and 4.1's 585.9 ms. The first two
+are re-measured; the third is **quoted with the corpus and machine it was taken on**, because
+re-running 4.1's measurement is not this chapter's work and re-deriving it would be.
+
+**The compose amendment is the riskiest artefact here and it is one hunk.** Four Part 3 chapters
+already amend that file the same way, so the mechanism is precedent rather than invention — but
+`resume.itest.ts` needed `-U10` where `-U8` was worse, and the rule is to verify before pasting.
