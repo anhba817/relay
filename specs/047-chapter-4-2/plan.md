@@ -22,8 +22,10 @@ two requirements:
 - **`compose.yaml`'s ClickHouse has never been reachable from outside its container** and its
   health check has been green since chapter 1.2, because `/ping` neither authenticates nor is
   network-restricted while the `default` user is loopback-only (R1).
-- **SAD §6.2's DDL does not apply.** `TTL ts + INTERVAL 90 DAY` on a `DateTime64` is refused
-  with `BAD_TTL_EXPRESSION` (R2).
+- **SAD §6.2's DDL does not apply, in two places.** `TTL ts + INTERVAL 90 DAY` on a
+  `DateTime64` is refused with `BAD_TTL_EXPRESSION` (R2); and `user_id UUID` **silently converts
+  a deleted author's NULL to the zero UUID**, which `uniqExact` counts as a distinct user. The
+  column is `Nullable(UUID)`, and the SAD is amended twice.
 - **DR-10 and FR-ANL-06 cannot both hold above ~65,000 distinct senders.** `uniq` is exact to
   60,000 and off by 0.51% at 70,000; FR-ANL-06's bound is 0.1%, and DR-10 forbids the
   reconciliation from reading raw events (R4).
@@ -133,7 +135,7 @@ relay-tutorial/
 and putting ClickHouse DDL under a directory the Postgres runner reads is how one runner ends
 up with a version string it has never seen, which `gaps.md` 045-69 is the record of.
 
-Nothing under `services/` changes. `docs/05-sad.md` gains an amendment for R2's TTL.
+Nothing under `services/` changes. `docs/05-sad.md` gains **two** amendments to §6.2 — the TTL's cast and `user_id`'s nullability.
 
 ## Complexity Tracking
 

@@ -41,6 +41,16 @@ draft.
 events instead. **The threshold is a cardinality, not a row count**, which is why testing at the
 corpus's 5,000 users would never have found it. Filed for movement IV.
 
+**AND ANALYSIS PASS 1 FOUND THREE OF THE LOAD'S EIGHT COLUMN EXPRESSIONS WRONG, FROM ONE
+`SELECT`.** `postgresql()` delivers jsonb as `Nullable(String)`, so `length(attachments)` gives
+**151** for a two-attachment row; `length(text)` is **bytes** where FR-EMJ-02 counts code points;
+and a NULL `user_id` inserted into SAD §6.2's non-nullable `UUID` becomes the **zero UUID**
+silently — **one phantom active user per environment holding a deleted author's messages**. The
+column is `Nullable(UUID)` now, which makes `uniqExact` ignore NULLs exactly as Postgres's
+`count(DISTINCT user_id)` does. **R6 proved `postgresql()` could READ Postgres and stopped there:
+reachability is not mapping**, and three artifacts then agreed with each other about a type none
+of them had checked.
+
 Also measured: the **TTL removes rows at INSERT, not at merge** — 120,000 rows over 120 days
 became 90,000 immediately, silently. `EXPLAIN indexes=1` is the only honest instrument for
 skipping (`Parts: 4/12 · Granules: 49/147`); `ProfileEvents['SelectedParts']` returned **0** for

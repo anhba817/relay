@@ -44,11 +44,11 @@ document and never re-run is what this project finds most often.
 **Blocking for all three stories.** Nothing can be loaded into a store nothing can connect to,
 and nothing can be measured against a schema that has not been applied.
 
-- [ ] T009 Amend `relay-platform/compose.yaml`: add an `environment:` block giving the ClickHouse container a user reachable from outside it. **Additive**, per chapter 1.2's rule.
+- [ ] T009 Amend `relay-platform/compose.yaml`: add an `environment:` block with `CLICKHOUSE_USER`, `CLICKHOUSE_PASSWORD` and `CLICKHOUSE_DB`. **This adds a NEW user; it does not lift `default`'s restriction** — verified: with `CLICKHOUSE_USER=relay`, `relay` answers from the host and `default` still returns `REQUIRED_PASSWORD`. Anyone trying to fix `default` will edit `users.d/` instead and be editing the image. **Additive**, per chapter 1.2's rule.
 - [ ] T010 In `relay-platform/compose.yaml`, replace the health check's command so it **runs a query** rather than `/ping`. This is the one non-additive edit in the chapter and it is a correction: the current check passes while every query is refused, and **a check that cannot fail for the reason you care about is not a check**.
 - [ ] T011 **Prove the new health check can fail.** Point it at a deliberately wrong credential, confirm `docker compose up --wait` reports the container unhealthy, restore. **Test it red, or it is the old check with a longer command** — and clean up the probe before anything is counted.
 - [ ] T012 Create `relay-platform/analytics/0002_schema_applied.sql` — the ledger: `filename`, `applied_at`, `checksum`, `ENGINE = MergeTree ORDER BY filename`. It is applied first and unconditionally, because a ledger cannot record its own creation from a table that does not exist ([contracts/schema.md](./contracts/schema.md)).
-- [ ] T013 Create `relay-platform/analytics/0000_message_events.sql` from SAD §6.2, **with `toDateTime(ts)` in the TTL and a comment saying why**. Every other line is the published DDL.
+- [ ] T013 Create `relay-platform/analytics/0000_message_events.sql` from SAD §6.2 with **two divergences, each commented**: `toDateTime(ts)` in the TTL (the published statement is refused with `BAD_TTL_EXPRESSION`), and **`user_id Nullable(UUID)`** — `messages.user_id` is nullable and SAD's non-nullable column turns every deleted-author message into the **zero UUID** without failing, which `uniqExact` then counts as one distinct user.
 - [ ] T014 Create `relay-platform/analytics/0001_daily_usage.sql` — DR-10's materialised view, verbatim from SAD §6.2. It applies only after `0000`: the creation fails with `UNKNOWN_TABLE` otherwise, which was checked.
 - [ ] T015 Create `relay-platform/analytics/apply.mjs`: read `analytics/*.sql` in filename order, apply what the ledger does not record, and **print what it applied and what it skipped**. A run that applies nothing prints that it applied nothing — a zero that proves it looked.
 - [ ] T016 In `relay-platform/analytics/apply.mjs`, store each file's checksum and **refuse a file whose bytes changed after it was applied**, naming it. ClickHouse has no `ALTER` path for most of what these files do, so a ledger claiming a schema is applied when it is not is worse than one that has not run.
@@ -65,7 +65,16 @@ and nothing can be measured against a schema that has not been applied.
 **Independent test**: load the corpus, run the query, publish the duration, the rows scanned and
 the `EXPLAIN indexes=1` line beside the predecessor's figures.
 
-- [ ] T020 [US1] Create `relay-platform/scripts/scale/load-analytics.mjs`: one `INSERT INTO message_events SELECT … FROM postgresql('postgres:5432', …)` joining `messages` to `channels`. **`length(text)`, never `text`** (FR-ANL-11, DR-08).
+- [ ] T020 [US1] Create `relay-platform/scripts/scale/load-analytics.mjs`: one `INSERT INTO message_events SELECT … FROM postgresql('postgres:5432', …)` joining `messages` to `channels` — the join across two table functions was checked and returns 303,885. **Three expressions are not the obvious ones**, and `data-model.md` §1 carries the measurements:
+
+        text_length        lengthUTF8(text)        NOT length() — that is bytes, and
+                                                   FR-EMJ-02 counts code points
+        attachment_count   JSONLength(attachments)  NOT length() — jsonb arrives as
+                                                   Nullable(String); a 2-attachment
+                                                   row measured 151
+        user_id            straight through into a Nullable(UUID) column
+
+  **Never the text itself** (FR-ANL-11, DR-08).
 - [ ] T021 [US1] In `relay-platform/scripts/scale/load-analytics.mjs`, report **what the table holds after the load, not what was sent**. The TTL removes rows **at insert** — 120,000 over 120 days became 90,000 immediately, with no error — so a loader quoting its own INSERT is quoting an intention (R3).
 - [ ] T022 [US1] Create `relay-platform/analytics/query.mjs` taking `--environment`: FR-ANL-05's daily question against `message_events`, reporting duration, rows scanned, and `EXPLAIN indexes=1`.
 - [ ] T023 [US1] In `relay-platform/analytics/query.mjs`, publish the **parts and granules** line from `EXPLAIN indexes=1`. **`ProfileEvents['SelectedParts']` returned 0 for the same query** (R5), so the obvious instrument reports nothing and reports it silently — and at this size a full scan answers quickly enough to look ordered.
@@ -180,6 +189,14 @@ is what lets movement II change the schema.
   publish the disagreement.
 
 ## Notes
+
+**ANALYSIS PASS 1 FOUND FOUR THINGS AND ALL FOUR CAME FROM ONE `SELECT`.** Three of the load's
+eight column expressions were wrong — `length(attachments)` gives 151 for two attachments,
+`length(text)` gives bytes where FR-EMJ-02 counts code points, and a NULL `user_id` becomes the
+**zero UUID** in SAD §6.2's non-nullable column, inventing one active user per environment. The
+fourth was that the compose fix adds a user rather than lifting `default`'s restriction.
+**`data-model.md`, `contracts/schema.md` and `tasks.md` agreed with each other that `length()`
+gave what the column meant**, and the data arrives as a different type than the name implies.
 
 **Three numbers in this feature are inherited and T004, T005 and T025 exist to replace or quote
 them properly**: `check:fences` at 110, the lane's row counts, and 4.1's 585.9 ms. The first two

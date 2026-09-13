@@ -9,23 +9,67 @@ Two tables and a view, all new, all in a store that has been in `compose.yaml` s
 
 SAD §6.2's DDL, with **one divergence**, and the divergence is the document's:
 
-| column | type | filled by this chapter? |
-|---|---|---|
-| `environment_id` | `UUID` | yes — from `channels.environment_id` |
-| `channel_id` | `UUID` | yes |
-| `user_id` | `UUID` | yes, including the nulls the corpus plants |
-| `ts` | `DateTime64(3, 'UTC')` | yes — `messages.created_at` |
-| `event` | `LowCardinality(String)` | `'created'` only; `edited` and `deleted` have producers in Part 3 and no analytical writer yet |
-| `text_length` | `UInt32` | yes — `length(text)`, **never the text** (FR-ANL-11, DR-08) |
-| `attachment_count` | `UInt8` | yes — the corpus writes no attachments, so every row is 0 |
-| `delivery_latency_ms` | `UInt32` | **NO PRODUCER.** See below |
+**Every row of this table was checked against what `postgresql()` actually delivers, and three
+of eight were wrong before it was.** The source types are not the ones the column names imply.
+
+| column | type | source expression | what was wrong |
+|---|---|---|---|
+| `environment_id` | `UUID` | `channels.environment_id` | — arrives as `UUID` |
+| `channel_id` | `UUID` | `messages.channel_id` | — arrives as `UUID` |
+| **`user_id`** | **`Nullable(UUID)`** | `messages.user_id` | **arrives as `Nullable(UUID)`; SAD §6.2 says `UUID` and a NULL inserts as the ZERO UUID, silently** |
+| `ts` | `DateTime64(3, 'UTC')` | `messages.created_at` | arrives as `DateTime64(6)`; microseconds truncate to milliseconds, no timezone shift — the server is UTC |
+| `event` | `LowCardinality(String)` | `'created'` literal | — `edited` and `deleted` have Part 3 producers and no analytical writer yet |
+| `text_length` | `UInt32` | **`lengthUTF8(text)`** | **`length()` is BYTES; FR-EMJ-02 counts code points** |
+| `attachment_count` | `UInt8` | **`JSONLength(attachments)`** | **jsonb arrives as `Nullable(String)`; `length()` returned 151 for a 2-attachment row** |
+| `delivery_latency_ms` | `UInt32` | — | **NO PRODUCER.** See below |
+
+### The three that were wrong, with what each returned
+
+**`attachment_count`.** `attachments` is jsonb and arrives serialised as `Nullable(String)`, so
+`length()` counts characters:
+
+    attachments                                          length()   JSONLength()
+    [{...first.png...},{...second.png...}]                    151              2
+    [{...preview.png...}]                                      77              1
+
+A `UInt8` holds 151 without complaint, so the wrong value would have been stored and charted.
+
+**`text_length`.** ClickHouse's `length` is byte length and `lengthUTF8` is code points:
+
+    'hello'       length 5    lengthUTF8 5
+    'héllo 👋🏽'    length 15   lengthUTF8 8
+
+FR-EMJ-02 says *"the message length limit (FR-MSG-01) shall be counted in Unicode code points,
+and this shall be documented"*. **A `text_length` in bytes looks exactly like one in code points
+until somebody charts it against FR-MSG-01's limit.**
+
+**`user_id`, and this one invents data.** `messages.user_id` is nullable — FR-USR-05 keeps a
+deleted user's messages *"as authored by a deleted user"*, and the corpus plants nulls at
+`CORPUS_NULL_SENDER_RATIO` for exactly this reason. Inserting a NULL into SAD §6.2's
+non-nullable `UUID` column **does not fail**:
+
+    into UUID            10,000 rows in ·  2,928 became 00000000-0000-0000-0000-000000000000
+    into Nullable(UUID)  10,000 rows in ·  3,226 stayed NULL
+
+and `uniqExact` counts the zero UUID as **one distinct user**. Every environment holding a
+deleted user's messages would gain one phantom active user, in silence.
+
+**With `Nullable(UUID)`, `uniqExact` ignores the NULLs — which is what Postgres's
+`count(DISTINCT user_id)` does too**, so the two sides of movement IV's reconciliation agree on
+the one input `gaps.md` 046-1 filed as their divergence. The nullable column is not a
+concession; it is the only shape under which the two stores can be compared.
 
     ENGINE = MergeTree
     PARTITION BY toYYYYMM(ts)                     -- DR-07
     ORDER BY (environment_id, ts)                 -- DR-07, and 4.1's whole argument
     TTL toDateTime(ts) + INTERVAL 90 DAY          -- DR-09, and the divergence
 
-**THE DIVERGENCE IS `toDateTime(ts)`, AND SAD §6.2 IS WRONG WITHOUT IT.** Copied verbatim the
+**THERE ARE TWO DIVERGENCES FROM SAD §6.2, AND THE SECOND IS `user_id`.** The first is
+`toDateTime(ts)`; the second is `Nullable(UUID)`, above. **A column that cannot hold what the
+operational store holds cannot mirror it**, and the failure mode is silent invention rather
+than a refusal.
+
+**THE FIRST DIVERGENCE IS `toDateTime(ts)`, AND SAD §6.2 IS WRONG WITHOUT IT.** Copied verbatim the
 statement is refused:
 
     Code: 450. TTL expression result column should have DateTime or Date type,

@@ -193,6 +193,53 @@ Building the one 4.1's question needs keeps this chapter to a schema and a compa
 
 ---
 
+## R9 — What does `postgresql()` actually deliver? **Three of eight columns are not the type the name implies.**
+
+Added by analysis pass 1, which ran the mapping R6 had only proved *reachable*.
+
+    source column      arrives as            the obvious expression, and what it gives
+    id, channel_id     UUID                  —
+    user_id            Nullable(UUID)        into SAD's `UUID`: the ZERO UUID, silently
+    created_at         DateTime64(6)         truncates to (3); no shift, the server is UTC
+    text               Nullable(String)      length() = BYTES, not code points
+    attachments        Nullable(String)      length() = 151 for a two-attachment row
+
+**Decision**: `lengthUTF8(text)`, `JSONLength(attachments)`, and **`user_id Nullable(UUID)`** —
+a second amendment to SAD §6.2.
+
+**Rationale, measured:**
+
+    into UUID            10,000 rows ·  2,928 became 00000000-0000-0000-0000-000000000000
+    into Nullable(UUID)  10,000 rows ·  3,226 stayed NULL
+
+`uniqExact` counts the zero UUID as one distinct value, so **every environment holding a
+deleted author's messages would gain one phantom active user** with no error anywhere. With the
+nullable column, `uniqExact` ignores the NULLs — which is exactly what Postgres's
+`count(DISTINCT user_id)` does, so the two sides of movement IV's reconciliation agree on the
+one input `gaps.md` 046-1 filed as their divergence.
+
+`length('héllo 👋🏽')` is **15** and `lengthUTF8` is **8**. FR-EMJ-02 requires the message length
+limit to be counted in code points, so a byte-valued `text_length` disagrees with the platform's
+own definition for every non-ASCII message — **and looks identical to a correct one**.
+
+**How it was found, because the method is the finding**: R6 asked whether `postgresql()` could
+*read* Postgres and stopped when it returned the right count. **Reachability is not mapping.**
+`data-model.md`, `contracts/schema.md` and `tasks.md` then agreed with each other that
+`length()` gave what the column meant, which is three artifacts consistent about a type none of
+them had checked.
+
+## R10 — Does the compose fix lift `default`'s restriction? **No. It adds a user.**
+
+    CLICKHOUSE_USER=relay  ->  relay answers from the host
+                               default still returns REQUIRED_PASSWORD
+
+**Decision**: the amendment adds `CLICKHOUSE_USER`, `CLICKHOUSE_PASSWORD`, `CLICKHOUSE_DB` and
+says so. The shipped `users.d/default-user.xml` is left alone.
+
+**Rationale**: the two are different repairs and only one is ours to make. Someone reading "a
+user reachable from outside it" and trying to fix `default` ends up editing a file the image
+owns, which the next image tag overwrites.
+
 ## What research did not resolve
 
 - **The schema ledger's shape (FR-011/FR-012).** ClickHouse has `CREATE … IF NOT EXISTS`, which
