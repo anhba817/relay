@@ -25,6 +25,45 @@ history; the replaced history is preserved on the remote as the tag
 tags. **Anyone holding an older clone of `relay-platform` must reset rather than pull.**
 
 <!-- SPECKIT START -->
+**ACTIVE: 048 — CHAPTER 4.3, "the consumer that was promised".** Plan:
+`specs/048-chapter-4-3/plan.md`; `research.md` first.
+
+**THE PLANNED CHAPTER 3 WAS ALREADY BUILT, SO PART 4 IS 22.** `docs/12` planned *"A second
+store needs a second ledger"* and §7.1 said to decide its identity scheme before chapter 2
+was written. **4.2 decided it and built it** — runner, filename-and-checksum ledger,
+reporting idempotence, checksum refusal tested red, all four items of the brief. Movement II
+had one subject left, so the ingester moved up, every ordinal after 3 moved down one, and
+milestones are at **9, 17 and 22**. Second contraction; movement I did the same. `docs/12`
+§3 is amended and keeps the old ordinals in its first column so existing references resolve.
+
+**THE STREAM HAS BEEN FILLING SINCE CHAPTER 3.20 AND NOTHING HAS EVER READ IT.** Asked of
+the broker: `ANALYTICS messages 31 · consumers 0`. Every reference to `ANALYTICS_STREAM`
+outside the protocol package is in the publisher that CREATES the stream, and the one
+consumer runtime in the repository filters on `events.>`. The stream's own comment says
+*"nothing consumes this stream in this chapter."* **The planned title turned out to be
+literal.**
+
+**AND THE TEMPLATE BUILT TO STOP THIS EXACT DEFECT CANNOT BE USED.**
+`services/api/src/consumer/runtime.ts` exists because *"a future consumer forgets to dedupe
+→ double webhooks / double metering"*, mitigated by *"a consumer template with dedup built
+in"* — and the dedup it has built in is `claimEvent`, a **PostgreSQL transaction**.
+Constitution III forbids that on this path. **The template describing this consumer is the
+one thing this consumer may not reuse**, which is the chapter's central argument.
+
+**`ReplacingMergeTree` IS 4.2's ROLLUP LESSON ONE ENGINE OVER.** A redelivered 1,000-row
+batch measured `SELECT count()` **2000**, `FINAL` 1000. The duplicate is physically present
+until a merge, so correctness moves into every read — and a bare count over an attempt table
+double-counts by a plausible number until somebody disputes a bill. **The design refuses the
+duplicate at INSERT instead**, with `insert_deduplication_token` plus
+`non_replicated_deduplication_window`: same token, second insert, block refused, no
+read-time cost. **The trap is that the token without the window dedups nothing and reports
+no error** — a mechanism that looks configured and does nothing.
+
+**AND THAT PROBE'S FIRST RUN MEASURED NOTHING.** It built both batches with
+`generateUUIDv4()` in the sorting key, so the two inserts were not duplicates at all, and it
+reported 2,000 rows after `OPTIMIZE FINAL` as if that were a fact about ClickHouse. **A
+duplicate test whose rows are not duplicates measures nothing and says something.**
+
 **047 IS CLOSED at 74 of 74 — CHAPTER 4.2, "the store that was never listening".** Its
 record is `specs/047-chapter-4-2/` — `baseline.txt` first, then `gaps.md` (five entries),
 `traceability.md`, `tasks.md`. Tagged **`part4-ch2`** on `relay-platform`.
