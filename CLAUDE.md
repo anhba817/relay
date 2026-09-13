@@ -25,7 +25,27 @@ history; the replaced history is preserved on the remote as the tag
 tags. **Anyone holding an older clone of `relay-platform` must reset rather than pull.**
 
 <!-- SPECKIT START -->
-**ACTIVE: 047 — CHAPTER 4.2, "ClickHouse from zero".** Spec: `specs/047-chapter-4-2/spec.md`.
+**ACTIVE: 047 — CHAPTER 4.2, "ClickHouse from zero".** Plan:
+`specs/047-chapter-4-2/plan.md`; `research.md` first.
+
+**PHASE 0 FOUND THREE PUBLISHED DOCUMENTS WRONG, ALL BY RUNNING THE STORE.**
+**(1) `compose.yaml`'s ClickHouse has never been reachable from outside its container** and its
+health check has been green since chapter 1.2 — the image restricts `default` to `::1` and
+`127.0.0.1`, and `/ping` neither authenticates nor is network-restricted. **A check that cannot
+fail for the reason you care about is not a check.**
+**(2) SAD §6.2's DDL does not apply**: `TTL ts + INTERVAL 90 DAY` on a `DateTime64` is refused
+with `BAD_TTL_EXPRESSION`; it needs `toDateTime(ts)` and has been published since the first
+draft.
+**(3) DR-10 AND FR-ANL-06 CANNOT BOTH HOLD.** `uniq` is exact to 60,000 distinct and **off by
+0.51% at 70,000**; FR-ANL-06's reconciliation bound is **0.1%**, and DR-10 forbids reading raw
+events instead. **The threshold is a cardinality, not a row count**, which is why testing at the
+corpus's 5,000 users would never have found it. Filed for movement IV.
+
+Also measured: the **TTL removes rows at INSERT, not at merge** — 120,000 rows over 120 days
+became 90,000 immediately, silently. `EXPLAIN indexes=1` is the only honest instrument for
+skipping (`Parts: 4/12 · Granules: 49/147`); `ProfileEvents['SelectedParts']` returned **0** for
+the same query. And **ClickHouse reads Postgres directly** through `postgresql()`, so the
+chapter adds **zero dependencies** — 1,000,000 raw rows become **89 rollup rows**.
 **046 IS CLOSED at 76 of 76**; its record is `specs/046-chapter-4-1/` — `baseline.txt` first,
 then `gaps.md` (eight entries, two closed), `traceability.md`, `tasks.md`.
 
