@@ -37,8 +37,11 @@ two requirements:
 
 **Language/Version**: TypeScript 5.x / Node 22 where any script is needed — and **this chapter
 needs almost none**. The schema is SQL; the load is one `INSERT … SELECT`.
-**Primary Dependencies**: **none added.** The lockfile contains no ClickHouse client and gains
-none (R6). `@clickhouse/client` belongs to the ingester, two chapters out.
+**Primary Dependencies**: **none added**, and the mechanism is named rather than implied:
+`apply.mjs` and `query.mjs` talk to ClickHouse through **Node's own `fetch` against the HTTP
+interface**, and the corpus load goes through ClickHouse's `postgresql()` table function. The
+lockfile contains no ClickHouse client and gains none (R6). `@clickhouse/client` belongs to the
+ingester, two chapters out.
 **Storage**: PostgreSQL, read-only and unmodified; ClickHouse 25.3, single node (ADR-08).
 **Testing**: no lane runs against ClickHouse. Verification is **A** — the comparison against
 4.1's recorded numbers — and **D** for the schema ledger's idempotence.

@@ -50,6 +50,31 @@ per `(environment_id, day)` until a background merge, so `SELECT messages` retur
 a query whose correctness depends on somebody having run `OPTIMIZE` is right in a demo and wrong
 in production.
 
+**PASS 4 OPENED `contracts/schema.md` AND FOUND 046'S DEFECT VERBATIM.** The invocation line
+read `RELAY_POSTGRES_PORT=15432 node scripts/scale/../../analytics/apply.mjs` — a **Postgres**
+variable on a ClickHouse-only script, and a traversal for a path the quickstart writes plainly.
+**046 carried the identical defect and it took six passes to find; this took four, and only
+because the hiding place was known.** The contracts directory is the artifact nothing else reads.
+
+**THE SAME PASS SETTLED THE SCRIPT'S SHAPE BY ASKING THE SERVER, AND WAS WRONG ABOUT THE
+INTERESTING HALF.** The HTTP interface refuses a multi-statement body (`Code: 62 …
+Multi-statements are not allowed`), so one statement per `.sql` file is **the interface's rule**,
+not a tidiness convention — and a ledger keyed on filename means something only under it. The
+transport had never been named in any artifact: it is Node's own `fetch`, which is what makes
+the zero-dependency check a confirmation rather than a discovery.
+
+**AND THE `--drop-all` HAZARD WAS THE OPPOSITE OF THE ONE EXPECTED.** The hypothesis was that a
+materialised view's hidden `.inner_id.<uuid>` table outlives its view and leaks; it does not —
+dropping the view by name leaves **0** of them. **The real hazard is the quiet direction**:
+`DROP TABLE` on the source under a live view **succeeds with no error** and leaves an orphan that
+still answers queries, with zeros. Inserting into the missing source errors loudly (`Code: 60`).
+`--drop-all` is `DROP DATABASE` for that reason. **The direction that errors is the safe one.**
+
+**AND THAT PROBE'S FIRST RUN REPORTED AN AUTHENTICATION ERROR THREE TIMES AS DATA** —
+`clickhouse-server:25.3` refuses `default` without `CLICKHOUSE_SKIP_USER_SETUP=1`, and the probe
+read `curl`'s output without checking it. `SELECT 1` -> `1` caught it. **Second broken probe this
+feature, second caught by its own positive control, and neither was visible by reading.**
+
 **AND PASS 2 ASKED PASS 1'S QUESTION OF THE COLUMNS PASS 1 SKIPPED.** `user_id` was not the
 only nullable source column — `text` is NULL for **4,057 tombstones** and `attachments` for
 **301,644 of 303,885 rows**, and both insert **0** into a non-nullable target. **A `text_length`

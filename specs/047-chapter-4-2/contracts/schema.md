@@ -11,12 +11,34 @@ marked as having none**, so that chapter inherits a schedule rather than a surpr
 ## Applying it
 
 ```
-RELAY_POSTGRES_PORT=15432 node scripts/scale/../../analytics/apply.mjs
+node analytics/apply.mjs            # from relay-platform/
+node analytics/apply.mjs --drop-all
 ```
 
 Reads `analytics/*.sql` in filename order, applies what the ledger does not record, and prints
 what it applied. **A second run applies nothing and says so.** That is the half
 `CREATE … IF NOT EXISTS` cannot give: it is idempotent and silent about whether it did anything.
+
+**The transport is Node's own `fetch` against the HTTP interface**, and that is what makes the
+zero-dependency claim true rather than lucky — no `@clickhouse/client`, no driver, nothing in
+the lockfile. Verified: a single statement carrying SQL comments posts `200 OK`, with or without
+a trailing semicolon.
+
+**The first version of this line read `RELAY_POSTGRES_PORT=15432 node
+scripts/scale/../../analytics/apply.mjs`** — a Postgres variable on a script that never touches
+Postgres, and a path traversal for a file two directories up. The quickstart wrote it plainly
+and the two disagreed. **046's contract carried the identical defect and it took six analysis
+passes to open the file.**
+
+### One statement per file, and the script refuses more
+
+The HTTP interface **rejects a multi-statement body**:
+
+    Code: 62. DB::Exception: Syntax error (Multi-statements are not allowed)
+
+So `analytics/*.sql` is a directory of **statements**, not of files that happen to contain some.
+`apply.mjs` refuses a file holding more than one rather than discovering it mid-run — and the
+ledger keyed on filename only means something if a filename is one change.
 
 | behaviour | |
 |---|---|
@@ -24,6 +46,7 @@ what it applied. **A second run applies nothing and says so.** That is the half
 | **Reporting** | Every run prints the files it applied and the files it skipped. **A run that applies nothing prints that it applied nothing** — a zero that proves it looked. |
 | **Checksums** | The ledger stores each file's checksum. An edited file that has already been applied is **reported as changed and refused**, not silently skipped: ClickHouse has no `ALTER` path for most of what these files do, and a schema the ledger claims is applied but is not is worse than one that has not been applied. |
 | **Isolation** | It writes to ClickHouse only. It does not touch `schema_migrations`, the Postgres runner, or any operational table (FR-012). |
+| **`--drop-all`** | `DROP DATABASE`, not a table-by-table sweep. **Dropping the source table under a live materialised view succeeds with no error** and leaves the view behind, still queryable and returning 0 — so a sweep that enumerates tables in an unlucky order leaves a view pointing at nothing. (Dropping the *view* by name does clean up its hidden `.inner_id` table; that half was checked and is not a leak.) |
 | **Ordering** | Filename order. `0001_daily_usage.sql` reads `message_events`, so `0000` must have run — the materialised view creation fails with `UNKNOWN_TABLE` otherwise, which was checked. |
 
 ## The statements

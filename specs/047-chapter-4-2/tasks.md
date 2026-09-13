@@ -50,10 +50,11 @@ and nothing can be measured against a schema that has not been applied.
 - [ ] T012 Create `relay-platform/analytics/0002_schema_applied.sql` — the ledger: `filename`, `applied_at`, `checksum`, `ENGINE = MergeTree ORDER BY filename`. It is applied first and unconditionally, because a ledger cannot record its own creation from a table that does not exist ([contracts/schema.md](./contracts/schema.md)).
 - [ ] T013 Create `relay-platform/analytics/0000_message_events.sql` from SAD §6.2 with **four divergences, each commented**: `toDateTime(ts)` in the TTL (the published statement is refused with `BAD_TTL_EXPRESSION`), **`text_length Nullable(UInt32)`** and **`attachment_count Nullable(UInt8)`** (a tombstone's `lengthUTF8(NULL)` inserts **0**, which claims a zero-length message was sent), and **`user_id Nullable(UUID)`** — `messages.user_id` is nullable and SAD's non-nullable column turns every deleted-author message into the **zero UUID** without failing, which `uniqExact` then counts as one distinct user.
 - [ ] T014 Create `relay-platform/analytics/0001_daily_usage.sql` — DR-10's materialised view, verbatim from SAD §6.2. It applies only after `0000`: the creation fails with `UNKNOWN_TABLE` otherwise, which was checked.
-- [ ] T015 Create `relay-platform/analytics/apply.mjs`: read `analytics/*.sql` in filename order, apply what the ledger does not record, and **print what it applied and what it skipped**. A run that applies nothing prints that it applied nothing — a zero that proves it looked.
+- [ ] T015 Create `relay-platform/analytics/apply.mjs`: read `analytics/*.sql` in filename order, apply what the ledger does not record, and **print what it applied and what it skipped**. A run that applies nothing prints that it applied nothing — a zero that proves it looked. **The transport is Node's own `fetch` against the HTTP interface** — no client package, which is what makes T018's lockfile check pass by design rather than by luck. Verified: one statement with SQL comments posts `200 OK`, with or without a trailing semicolon.
+- [ ] T015a In `relay-platform/analytics/apply.mjs`, **refuse a `.sql` file containing more than one statement**, naming the file. The HTTP interface rejects a multi-statement body with `Code: 62 … Multi-statements are not allowed`, so `analytics/*.sql` is a directory of statements rather than of files that happen to hold some — **and a ledger keyed on filename only means something if a filename is one change.** Refuse up front rather than discover it mid-run.
 - [ ] T016 In `relay-platform/analytics/apply.mjs`, store each file's checksum and **refuse a file whose bytes changed after it was applied**, naming it. ClickHouse has no `ALTER` path for most of what these files do, so a ledger claiming a schema is applied when it is not is worse than one that has not run.
-- [ ] T017 In `relay-platform/analytics/apply.mjs`, implement `--drop-all` for the quickstart's cleanup step.
-- [ ] T018 Verify `relay-platform/analytics/apply.mjs` uses no ClickHouse client package: `grep -c clickhouse relay-platform/pnpm-lock.yaml` stays at 0 and `package.json`'s dependencies are unchanged (R6).
+- [ ] T017 In `relay-platform/analytics/apply.mjs`, implement `--drop-all` as **`DROP DATABASE`, not a table-by-table sweep**. **Dropping the source table under a live materialised view succeeds with no error** and leaves the view queryable and returning 0, so a sweep in an unlucky order leaves a view pointing at nothing. Dropping the *view* by name does clean up its hidden `.inner_id` table — that half was checked and is not a leak.
+- [ ] T018 Verify `relay-platform/analytics/apply.mjs` uses no ClickHouse client package: `grep -c clickhouse relay-platform/pnpm-lock.yaml` stays at 0 and `package.json`'s dependencies are unchanged (R6). **The check passes because the transport is native `fetch`** — T015 names it, so this task confirms a design rather than discovering an absence.
 - [ ] T019 Commit phase 2 — `relay-platform/compose.yaml`, `relay-platform/analytics/`. Gates first: `pnpm lint && pnpm typecheck && pnpm test` in `relay-platform`.
 
 ---
@@ -194,6 +195,14 @@ is what lets movement II change the schema.
   publish the disagreement.
 
 ## Notes
+
+**ANALYSIS PASS 4 WENT TO THE ARTIFACT THAT WAS WRONG IN 046 AND WAS READ LAST.** The
+contract's invocation line said `RELAY_POSTGRES_PORT=15432 node scripts/scale/../../analytics/apply.mjs`
+— a Postgres variable on a ClickHouse script, and a traversal for a path the quickstart writes
+plainly. **046 carried the identical defect and it took six passes to open the file**; knowing
+where it hid is the only reason this took four. The same pass found that the HTTP interface
+refuses multi-statement bodies, which decides the shape of every `.sql` file, and that dropping
+a source table under a live view succeeds silently.
 
 **ANALYSIS PASS 3 WENT LOOKING FOR TWO THINGS AND FOUND NEITHER**, which is worth recording
 because the eleven passes before it across two features all found what they went looking for.

@@ -316,6 +316,54 @@ would do.
 **And the pass is worth recording for what it did not find.** Eleven passes across two features
 had all found what they went looking for; this is the first whose named targets came back clean.
 
+## R13 — What shape does `apply.mjs` have to be, and what does `--drop-all` have to drop? **One statement per file, native `fetch`, and `DROP DATABASE`.**
+
+**Decision**: `analytics/*.sql` holds exactly one statement per file; the script talks to the
+HTTP interface through Node's own `fetch`; `--drop-all` issues `DROP DATABASE`.
+
+**Rationale**: three separate probes, one of which corrected the thing this pass went in
+believing.
+
+**The HTTP interface refuses a multi-statement body:**
+
+    Code: 62. DB::Exception: Syntax error (Multi-statements are not allowed)
+
+A single statement carrying SQL comments posts `200 OK`, with or without a trailing semicolon.
+So the one-statement-per-file rule is not a style choice about tidy files — **it is the
+interface's rule**, and it happens to be the only rule under which a ledger keyed on filename
+means anything: one filename, one change, one row.
+
+**The transport had never been named.** "Zero dependencies" was asserted in the plan and checked
+by a task grepping the lockfile, and no artifact said what the script would use instead. It is
+Node 22's native `fetch`, and saying so turns T018 from a discovery into a confirmation. A
+reader who is not told reaches for `@clickhouse/client`, which is what T018 exists to catch —
+after the fact.
+
+**And `--drop-all` had a real ordering hazard, one direction only.** Dropping the source table
+under a live materialised view **succeeds, silently**:
+
+    DROP TABLE analytics.ev        -> no error
+    SELECT * FROM analytics.daily  -> 0 rows, still queryable
+    INSERT INTO analytics.ev …     -> Code: 60. Table analytics.ev does not exist
+
+So a sweep that enumerates table names leaves, in the unlucky order, a view pointing at nothing
+that answers queries with a zero. `DROP DATABASE` removes the lot — including the
+`.inner_id.<uuid>` table a materialised view creates and nobody named.
+
+**The hypothesis this pass carried in was wrong**, and it is worth writing down because it is
+the more attractive of the two stories: that the hidden inner table survives its view and leaks.
+It does not. `DROP TABLE analytics.daily` — the view, by name — leaves **0** tables matching
+`.inner%`. The leak is not the hidden table; it is the **orphaned view**, and the direction that
+errors loudly (inserting into a dropped source) is the safe one. The direction that is quiet is
+the one that does damage.
+
+**And the first run of this probe produced three "results" that were all the same
+authentication error.** `clickhouse-server:25.3` refuses the `default` user without
+`CLICKHOUSE_SKIP_USER_SETUP=1`, and a probe reading `curl` output as data reported the error
+text as its answer. The positive control — `SELECT 1` must return `1` — is what stopped it.
+**That is the second broken probe in this feature caught by its own control, and neither would
+have been caught by reading the script.**
+
 ## What research did not resolve
 
 - **The schema ledger's shape (FR-011/FR-012).** ClickHouse has `CREATE … IF NOT EXISTS`, which
