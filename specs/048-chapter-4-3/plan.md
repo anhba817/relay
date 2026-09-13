@@ -129,6 +129,24 @@ relay-platform/
 long-running, because it is the first thing to write to ClickHouse without a human present,
 and because `services/*/src/**` is what the coverage lane collects.
 
+**AND A SERVICE IS SIX FILES AND A PRECEDENT NOBODY HAD PRICED.** `services/dispatcher/`
+holds `Dockerfile`, `package.json`, `src/`, `tsconfig.json`, `tsconfig.build.json` and
+`vitest.integration.config.mts`. Chapter 3.19 introduced it at **5,889 prose words and 47
+titled fences** — against SC-008's 2,000–4,000 bound and 4.2's 2,580 words and 2 fences.
+It fenced `package.json` and the sources and **skipped the Dockerfile, both tsconfigs and
+the vitest config**; that is the established precedent for scaffolding, and it is followed
+knowingly here rather than rediscovered while writing prose.
+
+The ingester is a much smaller job than the dispatcher — fetch, shape, insert, acknowledge,
+against HTTP delivery with signing, retries and expansion — so 47 is a ceiling rather than
+an estimate. **But a split is likely rather than merely permitted**, and the chapter is
+planned on that basis.
+
+**Two edits a fourth service does NOT need**, checked because each would have been a hunked
+amendment to a fenced file with its own anchoring risk: `pnpm-workspace.yaml` globs
+`services/*`, and `turbo.json` names **no service at all** — zero occurrences of
+`dispatcher` or `gateway`.
+
 ## Phases
 
 - **Phase 1 — premises.** Re-run every number in `research.md` at this chapter's tag,

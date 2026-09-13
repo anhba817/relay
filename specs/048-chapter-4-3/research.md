@@ -253,6 +253,43 @@ error and another reported nothing inserted at all; they were cause A and cause 
 in opposite directions, and until they were separated the report would have blamed one
 mechanism for the other's symptom. **Two failures of the same field are not the same bug.**
 
+## R11 — What does a fourth service cost the chapter? **The only precedent is 5,889 words and 47 fences.**
+
+**Decision**: the ingester is still a service; the cost is stated up front and **a split is
+planned for rather than permitted.**
+
+**Rationale**: chapter 3.19 introduced `services/dispatcher`, and it is the one comparable
+event in the series:
+
+    chapter 3.19  (introduces a service)     5,889 prose words    47 titled fences
+    chapter 4.2   (no new service)           2,580 prose words     2 titled fences
+    SC-008's bound                           2,000-4,000 words
+
+3.19 did more than introduce a service — it built the whole webhook feature — and the
+ingester is a far smaller job: fetch, shape, insert, acknowledge, against HTTP delivery with
+signing, retries and expansion. **So 47 is a ceiling rather than an estimate.** What matters
+is that nothing in this feature had a figure at all, and the bound it has to fit inside was
+written without one.
+
+**A SERVICE IS SIX FILES, AND 3.19 ALREADY DECIDED WHICH OF THEM A CHAPTER SHOWS.**
+`services/dispatcher/` holds `Dockerfile`, `package.json`, `src/`, `tsconfig.json`,
+`tsconfig.build.json` and `vitest.integration.config.mts`. The chapter fenced the
+`package.json` and the sources and **skipped the other four** — files a reader needs in
+order to build the thing. That is the precedent; this chapter follows it deliberately
+rather than arriving at the question with prose half-written.
+
+**AND TWO COSTS ARE NOT THERE, WHICH IS ONLY KNOWABLE BY LOOKING.** `pnpm-workspace.yaml`
+globs `services/*`, and `turbo.json` names **no service at all** — zero occurrences of
+`dispatcher` or `gateway`. Both files are fenced (1 chapter and 10 chapters), so each would
+have been a hunked amendment carrying its own anchoring risk. **An absent cost is invisible
+unless somebody goes to check**, which is the same reason the clean premises in 047's pass 5
+were worth recording.
+
+**This pass changed shape and that is worth noting.** Passes 1 to 3 found runtime behaviours
+that fail silently. This one found nothing that would break the ingester and three things
+that would break the chapter — **an estimate, a precedent and a mechanism, none of them
+written down.**
+
 ## What research did not resolve
 
 - **How many records `discard: old` has already dropped.** The stream reports depth, not

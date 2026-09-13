@@ -214,7 +214,11 @@ count and the per-key counts against the number of distinct records published.
 - **SC-007**: `check:fences` is reported as a delta against an opening measured in this
   feature, broken down by kind and locale.
 - **SC-008**: The chapter's prose stays inside the 2,000–4,000 word bound measured outside
-  code fences.
+  code fences — **and the bound is expected to decide a split rather than be met quietly.**
+  The only precedent for introducing a service is chapter 3.19, which brought
+  `services/dispatcher` in at **5,889 prose words and 47 titled fences** against 4.2's 2,580
+  and 2. The ingester is a smaller job than the dispatcher was, and the figure to beat is on
+  record rather than assumed.
 
 ---
 

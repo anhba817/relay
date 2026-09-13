@@ -60,7 +60,10 @@ and this is the first statement file added since the chapter that built the runn
 **Independent test**: publish a known number of attempt records, run the ingester, and
 compare the store's row count against the stream's delivered count.
 
-- [ ] T017 [US1] Decide where the ingester lives and **record the decision and its reason** in `specs/048-chapter-4-3/baseline.txt` (FR-014). `services/*/src/**` is collected by the coverage lane; `analytics/**` is collected by nothing. A fourth service directory is the SAD's shape.
+- [ ] T017 [US1] Decide where the ingester lives and **record the decision, its reason, and its price** in `specs/048-chapter-4-3/baseline.txt` (FR-014). `services/*/src/**` is collected by the coverage lane; `analytics/**` is collected by nothing. A fourth service directory is the SAD's shape. **And a service is six files**: `Dockerfile`, `package.json`, `src/`, `tsconfig.json`, `tsconfig.build.json`, `vitest.integration.config.mts`.
+- [ ] T017a [US1] Record the precedent in `specs/048-chapter-4-3/baseline.txt` **before writing any prose**: chapter 3.19 introduced `services/dispatcher` at **5,889 prose words and 47 titled fences**, against SC-008's 2,000–4,000 bound and 4.2's 2,580 and 2. The ingester is a smaller job — fetch, shape, insert, acknowledge, against HTTP delivery with signing, retries and expansion — so **47 is a ceiling, not an estimate.** State the expected fence count here, and treat **a split as likely rather than merely permitted.**
+- [ ] T017b [US1] Decide the **scaffolding fence policy** and record it (T051 depends on it). Chapter 3.19 fenced `services/dispatcher/package.json` and the sources and **skipped the `Dockerfile`, both tsconfigs and the vitest config** — four files a reader needs to build the service. **Follow that precedent knowingly or differ from it deliberately**; deciding at T051 means deciding it while writing prose, which is the worst moment for it.
+- [ ] T017c [US1] Record the two edits a fourth service does **not** need, checked because each would otherwise be a hunked amendment to a fenced file: `pnpm-workspace.yaml` globs `services/*`, and `turbo.json` names **no service at all** (0 occurrences of `dispatcher` or `gateway`). **Two anchoring risks that are not there** — worth a line, because an absent cost is invisible unless somebody looks for it.
 - [ ] T018 [US1] Create the ingester with a durable pull consumer on `analytics.>`, **with `max_deliver: -1`** (FR-006a). Both existing consumers set a limit — `MAX_DELIVER = 5` on the api's runtime, 10 on the dispatcher, both at a 30-second `ack_wait` — and it is sound for a webhook endpoint that is probably gone. **A store that is restarting is not an endpoint that is gone**, and five attempts at thirty seconds is two and a half minutes before an outage becomes a silent strand (T027a). The queue's seven-day retention is the only bound. **State whether `createConsumerRuntime` is reused, parameterised or replaced, and why** — its claim is a Postgres transaction and constitution III forbids that here (T004). **The template written to stop a future consumer double-counting is the one this consumer may not reuse**, and that is the chapter's argument, not an inconvenience to route around.
 - [ ] T019 [US1] Bound the batch by **both** a row count and an elapsed interval (DR-11 publishes 2 s or 10,000 rows). A count alone never flushes for a quiet tenant; an interval alone has no bound under load. **Publish what each bound costs at a stated publish rate** (SC-004) rather than quoting DR-11. **The time bound is why deduplication may not depend on grouping**: with it, batch boundaries follow arrival timing, so the same records are cut differently on a retry even at a fixed batch size (T034a).
 - [ ] T020 [US1] Shape records with an **allow-list**, mirroring the publisher's own — *"An allow-list fails closed when somebody adds a field; a spread fails open."* **And it RENAMES: `attempted_at` becomes `ts`.** Build the row explicitly; never forward the publisher's JSON, because key-matching is what makes the mismatch silent.
@@ -123,7 +126,7 @@ and the queue grows; restart and confirm the backlog drains with no gap.
 - [ ] T048 Write the section amending SAD §6.2 to publish `webhook_attempts`, quoting what the publisher sends as the reason for each column.
 - [ ] T049 [P] Write `relay-tutorial/app/(en)/part-4/chapter-03/<slug>/figures.ts` — at least two figures: the stream with a publisher and no consumer, and the two dedup mechanisms against the two failure modes.
 - [ ] T050 [P] Add at least one `TRAP` box. The strongest candidate is the deduplication token that is accepted and ignored without the window — a mechanism that looks configured, does nothing, and reports success.
-- [ ] T051 Publish any amended fenced file as a **hunked ```diff fence**, and **generate the hunk from the checker's own replay**: copy `check-fence-chain.mjs`, truncate it at the HEAD comparison, dump its end state, diff that against the working tree, delete the copy. **Normalise the trailing newline** — `fileLines` strips it on both sides, and not doing so produced a spurious second hunk in 4.2. **Verify the hunk applies clean before pasting, not after.**
+- [ ] T051 Publish the fences in **two kinds, because they are two mechanisms with two failure modes.** **New files take WHOLE-BODY fences** — `analytics/0003_webhook_attempts.sql` and every new service source — and carry no anchoring risk. **`compose.yaml` takes a HUNKED ```diff fence** if the ingester runs there; it is fenced in six chapters and 4.2's own amendment went through the same mechanism. Name the file rather than saying "any amended fenced file": 4.2's hunk was verified before pasting precisely because its task named it. **And generate the hunk from the checker's own replay**: copy `check-fence-chain.mjs`, truncate it at the HEAD comparison, dump its end state, diff that against the working tree, delete the copy. **Normalise the trailing newline** — `fileLines` strips it on both sides, and not doing so produced a spurious second hunk in 4.2. **Verify the hunk applies clean before pasting, not after.**
 - [ ] T052 Register the chapter in `relay-tutorial/lib/tutorial.ts` with a Vietnamese title.
 - [ ] T053 Create `relay-tutorial/app/(vi)/vi/part-4/chapter-03/<slug>/` with `specs/046-chapter-4-1/vi-placeholder.py`, mirroring every fence. **Invent no Vietnamese** beyond the standing notice and the registry's own title.
 - [ ] T054 Run `node scripts/prose-words.mjs` against the page and record the count. The bound is 2,000–4,000 outside fences (SC-008).
@@ -179,6 +182,24 @@ numbers trustworthy; neither is optional for the chapter, both are separable for
   dropped, say so.
 
 ## Notes
+
+**ANALYSIS PASS 4 CHANGED SHAPE: THREE ESTIMATES NOBODY WROTE DOWN.** The first three
+passes found runtime behaviours that fail silently — a batch boundary, a redelivery limit, a
+field name. This one found what the chapter costs. **Chapter 3.19 introduced
+`services/dispatcher` at 5,889 prose words and 47 titled fences**, against SC-008's
+2,000–4,000 and 4.2's 2,580 and 2, and no artifact had said so. The ingester is a smaller
+job, so 47 is a ceiling — but **a split is likely rather than permitted**, and the plan
+carries that now instead of Phase 6 discovering it.
+
+**AND 3.19 ALREADY DECIDED THE SCAFFOLDING QUESTION.** It fenced the service's
+`package.json` and its sources and skipped the `Dockerfile`, both tsconfigs and the vitest
+config — four files a reader needs. That is the precedent, and T017b follows it knowingly
+rather than meeting the question at T051 with prose half-written.
+
+**TWO COSTS THAT ARE NOT THERE, CHECKED BECAUSE AN ABSENT COST IS INVISIBLE.**
+`pnpm-workspace.yaml` globs `services/*` and `turbo.json` names no service at all, so a
+fourth service amends neither — two hunked amendments to fenced files that do not have to
+happen.
 
 **ANALYSIS PASS 3 FOUND THE QUIETEST FAILURE OF THE THREE.** The publisher's field is
 `attempted_at` and the column is `ts`. `JSONEachRow` leaves an unmatched column **at its

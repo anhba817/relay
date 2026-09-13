@@ -51,6 +51,24 @@ in"* — and the dedup it has built in is `claimEvent`, a **PostgreSQL transacti
 Constitution III forbids that on this path. **The template describing this consumer is the
 one thing this consumer may not reuse**, which is the chapter's central argument.
 
+**PASS 4 CHANGED SHAPE: THREE ESTIMATES NOBODY WROTE DOWN.** Passes 1–3 found runtime
+behaviours that fail silently. This one found nothing that would break the ingester and three
+things that would break the chapter. **Chapter 3.19 introduced `services/dispatcher` at 5,889
+prose words and 47 titled fences** — against SC-008's 2,000–4,000 bound and 4.2's 2,580 and 2 —
+and no artifact in the feature had a figure at all. The ingester is a smaller job, so 47 is a
+ceiling; but **a split is planned for now rather than permitted.**
+
+**AND 3.19 HAD ALREADY DECIDED THE SCAFFOLDING QUESTION.** A service is six files — Dockerfile,
+package.json, src/, two tsconfigs, a vitest config — and 3.19 fenced the package.json and the
+sources and **skipped the other four**, which a reader needs to build it. Following a precedent
+knowingly costs nothing; meeting it at fence-writing time costs a decision made with prose
+half-written.
+
+**TWO COSTS THAT ARE NOT THERE, AND ONLY LOOKING SHOWS IT.** `pnpm-workspace.yaml` globs
+`services/*` and `turbo.json` names **no service at all**, so a fourth service amends neither —
+two hunked amendments to fenced files that simply do not have to happen. **An absent cost is
+invisible unless somebody checks for it.**
+
 **PASS 3 FOUND THE QUIETEST FAILURE OF THE THREE, AND IT EMPTIES THE TABLE.** The publisher
 sends `attempted_at`; the column is `ts`. **`JSONEachRow` leaves an unmatched column at its
 default and reports success** — and a `DateTime64` default is the epoch, which is older than
