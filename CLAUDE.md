@@ -64,12 +64,15 @@ changed unless nothing else changed.** And two of T044's falsifications failed f
 wrong reason — one on a JS error rather than the constraint, one on a count the check does
 not read.
 
-**TWO THINGS ARE OPEN AND NEITHER IS THE CHAPTER'S CONTENT.** `T066`, the reader protocol,
-**was not run** — the fifteenth record to name that gap, and it matters here because the
-argument changed twice and the prose was rewritten each time by the person holding the
-numbers. And **the chapter cannot be tagged**: `part3-ch18` (`54b2cd53`) and
-`rework/part3-ch18` (`3732d6cf`) both exist, so Part 4's tag convention has to be decided
-first. `gaps.md` 046-3.
+**BOTH OPEN ITEMS WERE DECIDED AT CLOSE-OUT. 75 OF 76.** Part 4 tags as **`part4-chN`** —
+the ordinary convention, no `rework/` prefix, which was a rebuild artefact — and `part4-ch1`
+is cut, annotated, on `04fe516a`. **Part 3's twenty-one stale `part3-chN` tags remain** and
+are a separate question with three answers (delete, retarget, or document on `whats-moved`):
+`gaps.md` 046-3.
+
+**AND THE READER PROTOCOL IS RETIRED, NOT DEFERRED** — see the section below. The cost
+argument is the load-bearing part: a prose fix moves no tag and no chain, so the gate was
+guarding the cheap thing.
 <!-- SPECKIT END -->
 
     045 "part 3 rework"           24 chapters -> 26, eight movements, English prose only
@@ -422,13 +425,24 @@ its per-suite times stayed identical, which is how you tell interference from a 
 batteries were also killed by the host's own memory supervisor at ~20 s in, with 12 GB free;
 detaching the driver is what let the twenty runs finish.
 
-**USE A PERSON.** Chapters 3.14 onward each named this gap and 045 is the fourteenth record to
-name it and not close it. **044 has the sharpest evidence for why the substitute fails**:
-reading the published text with the spec and source closed found a real hole — FR-008's client
-half was missing — because that exercise finds information that is ABSENT. It cannot find
-information that is present and unclear, since the person running it wrote the sentence.
-`specs/036-chapter-3-18/reader-protocol.md`: 45 minutes, six questions, one person who has not
-read the work.
+**THE READER PROTOCOL IS RETIRED.** Chapters 3.14 onward each named this gap, 045 was the
+fourteenth record to name it and not close it, and 046 is where it was **decided rather than
+deferred again**. Fifteen intentions and no runs is not a gap, it is a habit.
+
+**THE ARGUMENT IS ABOUT COST.** A chapter's tag is cut on `relay-platform` and its prose lives
+in `relay-tutorial`, so a prose correction after publication moves no platform commit and
+invalidates no tag. A chapter contributing no TITLED fences changes `check:fences` by nothing —
+4.1 contributes 0 and its close-out delta was 0. **Feedback on the writing comes from readers
+and is applied then**, and a gate earns its cost only when the thing it guards is expensive to
+change. Prose here is cheap; the fence chain is not, and that is where the gates are.
+
+**WHAT IS GIVEN UP, AND IT IS REAL.** 044 had the sharpest evidence for what the exercise
+finds: reading the published text with the spec and source closed found a hole — FR-008's
+client half was missing — **because that exercise finds information that is ABSENT**. Nothing
+now finds that. 046 accepted the risk with its eyes open: **its argument changed twice during
+measurement and the prose was rewritten each time by the person holding the numbers.**
+`specs/036-chapter-3-18/reader-protocol.md` stays in the tree as a procedure anyone can pick
+up; it is no longer a criterion any chapter has to satisfy.
 
 Every check in these three repositories compares bytes. Twelve Python instruments and five
 `check:*` scripts — and not one can say whether a paragraph is understandable to somebody who

@@ -246,11 +246,16 @@ carries the platform's schema; and send one message with what it emitted.
   run by no lane, and it produces the requested corpus at three different volumes. **The claim that
   a later chapter reuses it unmodified is not verifiable here** — it is a property of movement IV,
   recorded in this feature's `gaps.md` for the chapter that can settle it.
-- **SC-007**: One person who has not read this specification, given the published chapter and
-  nothing else, answers three questions from it in their own words: which question Postgres
-  answered slowly, what the index fixed and what it cost, and what the chapter did not do. The
-  procedure is `specs/036-chapter-3-18/reader-protocol.md`; unanswered questions are recorded
-  verbatim whether or not they are acted on.
+- **SC-007**: ~~One person who has not read this specification answers three questions from the
+  published chapter.~~ **RETIRED BY DECISION, 2026-09-13.** Prose feedback arrives after
+  publication and is acted on then. The criterion asked for a gate that fifteen records had
+  named and none had run; retiring it is more honest than carrying it a sixteenth time.
+
+  **The decision rests on a cost, and the cost was checked.** A chapter's tag sits on
+  `relay-platform`; its prose sits in `relay-tutorial`. Chapter 4.1 contributes **0 titled
+  fences** to the chain, so editing its prose moves no platform commit, invalidates no tag, and
+  changes `check:fences` by nothing. **A late prose fix is free here, and a gate is only worth
+  its cost when the thing it guards is expensive to change.**
 - **SC-008**: The chapter's prose stays inside the 2,000–4,000 word bound measured outside code
   fences, and carries at least one `TRAP` box and two figures.
 

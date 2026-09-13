@@ -37,14 +37,14 @@ verification column says the method actually used, not the one the template assu
 | SC-004 four figures, one worse than before | T036–T038 | storage +49% is the worse one |
 | SC-005 every database gone, no schema change | T041, T047b | 0 remain; lane identical to T007 |
 | SC-006 interface published, imported by nothing | T048, T049 | no importer outside `scripts/` |
-| SC-007 one person, three questions | T066 | **NOT RUN — see gaps.md** |
+| SC-007 one person, three questions | — | **RETIRED by decision — gaps.md 046-2** |
 | SC-008 2,000–4,000 words, a TRAP, two figures | T057, T058, T061 | **2,132 words**, 3 TRAPs, 3 figures |
 
 ## 3. What this table cannot say
 
-Every row above was checked by running something, except SC-007, which needs a
-person and did not get one. That is the fifteenth record in this project to name
-that gap and the fifteenth not to close it.
+Every row above was checked by running something. SC-007 is not among them: it was
+retired rather than run, on the ground that a prose fix here costs nothing structural —
+0 titled fences, no tag moved, no chain re-run.
 
 `check-refs` compares ids. `check-chapter` compares bytes. Neither can say whether
 the argument in the prose is the argument the numbers support — and this chapter's

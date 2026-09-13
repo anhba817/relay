@@ -16,19 +16,30 @@ that builds the reconciler meets this rather than discovering it.
 
 Filed at research R4, before a line of the reconciler exists.
 
-## 046-2 · SC-007 WAS NOT RUN, AND THAT IS THE FIFTEENTH TIME
+## 046-2 · THE READER PROTOCOL IS RETIRED, NOT DEFERRED — CLOSED
 
-One person who has not read this specification, given the published chapter and nothing
-else, answering three questions in their own words. `specs/036-chapter-3-18/reader-protocol.md`
-is the procedure: 45 minutes, six questions, one person.
+**DECIDED 2026-09-13: dropped.** Fifteen records named this gap and none closed it. A
+sixteenth entry saying "still open" would have been an intention, not a plan.
 
-**It did not happen.** Fourteen records named this gap before this one.
+**THE ARGUMENT IS ABOUT COST, AND IT HOLDS.** A chapter's tag is cut on `relay-platform`
+and its prose lives in `relay-tutorial`. Chapter 4.1 contributes **0 titled fences** to the
+chain — `check-fence-chain.mjs:77` collects a fence only when it matches `title="…"`, and
+the close-out delta was 0. So a prose correction after publication moves no platform
+commit, invalidates no tag, and re-runs no chain. **Feedback on the writing arrives from
+readers and is applied then.**
 
-It matters more here than usual. **This chapter's argument changed twice during
-measurement** — the neighbour effect was falsified, then the index's benefit was
-falsified — and the prose was rewritten each time by the person who took the
-measurements. Nothing in either repository can say whether the argument in the prose is
-the argument the numbers support. Every check compares bytes.
+A gate earns its cost when the thing it guards is expensive to change. This one guards
+prose, and prose here is cheap.
+
+**WHAT IS GIVEN UP, STATED PLAINLY.** No instrument in these three repositories now reaches
+comprehensibility at all. `check-refs` compares ids, `check-chapter` compares bytes,
+`check-lane-scope` reads SQL text. The specific risk this chapter carried — **its argument
+changed twice during measurement and the prose was rewritten each time by the person
+holding the numbers** — is accepted rather than mitigated, and will be caught by a reader
+or not at all.
+
+CLAUDE.md's "USE A PERSON" section is amended to record the decision rather than repeat
+the intention.
 
 ## 046-3 · THE CHAPTER IS TAGGED `part4-ch1` — AND PART 3'S COLLISION IS STILL OPEN
 
