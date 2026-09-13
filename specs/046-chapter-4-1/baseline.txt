@@ -227,3 +227,120 @@ CLEANUP
     lane after Phase 2           31,685 env · 46,143 ch · 303,885 msg · 487,481 outbox
                                  — identical to T007, nothing written to it
     stack                        taken back down
+
+
+================================================================================
+PHASE 3 — THE MEASUREMENTS. Recorded 2026-09-13.
+
+THE CHAPTER'S HYPOTHESIS WAS FALSIFIED TWICE, AND THE RESULT IS BETTER THAN THE
+ONE THAT WAS PLANNED.
+
+Corpus: 1,000,000 messages in the subject environment's 90-day window, of
+1,333,334 in the environment and 1,600,000 in the database. 2,000 channels,
+5,000 people, 120 days ending at seed time. Environment as pinned in Phase 1.
+
+
+THE FOUR NUMBERS
+
+                        baseline      counterfactual      delta
+    query, best of 3     585.9 ms         560.2 ms       -4.4%
+    query runs         [611.2, 585.9,   [579.5, 560.6,
+                         586.5]           560.2]
+    send p95, quiet       20.5 ms          19.0 ms       mean of two control loops
+    send p95, beside      13.7 ms          11.6 ms       102 queries alongside
+    table                  179 MB           383 MB       +204 MB (the UPDATE rewrote
+                                                          every row; no VACUUM)
+    indexes                168 MB           275 MB       +107 MB
+
+
+1. THE ANALYTICAL QUERY DOES NOT TAX THE WRITE PATH HERE. IT CORRELATES WITH THE
+   WRITE PATH BEING FASTER.
+
+   Beside 102 analytical queries over a 60-second window, the send path's p95 was
+   13.7 ms against 20.5 ms alone — 6.8 ms FASTER, reproducibly, on both the
+   baseline and the counterfactual database.
+
+   THE MEASUREMENT WAS WRONG TWICE BEFORE IT WAS RIGHT, and both are worth more
+   than the result:
+
+   - The first version ran the query ONCE beside a sixty-second loop. At ~600 ms
+     that is about 1% overlap: 6 of 599 sends had anything running beside them.
+     It reported "no effect" from a measurement that could not have shown one.
+   - The second ran it continuously and reported 7.9 ms faster — but quiet ran
+     first on a cold cache and busy second on a warm one. The comparison
+     confounded "beside a query" with "second".
+
+   The third adds a discarded warm-up and a SECOND quiet loop after busy. The two
+   quiet loops agree within 0.7 ms (20.9 and 20.2), so ordering is not carrying
+   the result. The effect is real and its sign is the opposite of the hypothesis.
+
+   WHAT THIS DOES NOT PROVE (FR-010): that an analytical query never taxes a write
+   path. One backend on ten cores against a 179 MB table that fits in cache, at
+   ten sends a second because `DEFAULT_LIMITS.send` is 600 a minute. It proves
+   that at this volume, on this machine, the neighbour effect is not the argument.
+
+
+2. THE INDEX THAT WOULD FIX IT BUYS 4.4%, AND THE PLANS SAY WHY.
+
+   baseline        Seq Scan on messages        ~140 ms
+                   Hash Join                    277 ms
+                   Sort, external merge 33 MB   656 ms
+                   GroupAggregate               698 ms
+
+   counterfactual  the join is gone
+                   Sort, external merge 33 MB   577 ms
+                   GroupAggregate               619 ms
+
+   Removing the join saved about 25 ms of 586. THE SORT IS THE COST AND NO INDEX
+   REMOVES IT, because `count(DISTINCT user_id)` per day has to sort a million
+   rows by (day, user_id) every time the question is asked. It spills 33 MB to
+   disk on both sides.
+
+   SO THE CHAPTER'S ARGUMENT IS SHARPER THAN THE ONE IT WAS PLANNED WITH. It is
+   not "the index fixes it and taxes your writes". It is: you cannot index your
+   way out of an analytical question when the cost is the aggregation. ClickHouse
+   answers it with `uniqState` in an aggregating engine — the distinct count is
+   maintained as rows arrive and never sorted at read time. That is the OLAP
+   argument, and it survived the measurement that was supposed to make a
+   different one.
+
+   The column and index cost +107 MB of index and a full table rewrite for 25 ms.
+
+
+3. THE LANE WOULD HAVE DECIDED IT WRONGLY, BY A FACTOR OF 651.
+
+                          rows in environment    query best
+    lane, busiest env                  1,018        0.9 ms   1 day returned
+    corpus                         1,000,000      585.9 ms   91 days returned
+
+   The lane holds 303,885 messages across 31,685 environments — about ten each —
+   so its busiest environment is three orders of magnitude short of the question.
+   The predecessor's pair was 0.87 ms against 159 ms, a factor of 183. This one is
+   651, and the lane's answer rounds to nothing.
+
+   T029's environment was CHOSEN, not assumed: the one with the most messages,
+   named in the output with its own row count beside the duration.
+
+
+VERIFICATION
+
+    corpus databases after --drop-all    0
+    lane after Phase 3                   31,685 env · 46,143 ch · 303,885 msg
+                                         · 487,481 outbox — identical to T007
+    migrations directory                 ends at 0014_connection_minutes.sql
+    repository                           scripts/scale/ only; no migration, no
+                                         column, no index (T031)
+
+
+A THIRD DEFECT THE SEEDER CARRIED, FOUND BY SENDING ONE MESSAGE
+
+    `channels.last_sequence` is where the next message's sequence comes from. The
+    corpus wrote sequences 1..N directly and left the counter at 0, so the api
+    allocated 1 and collided on `(channel_id, sequence)`. EVERY SEND RETURNED 500
+    `internal_error` AND THE LOG LINE CARRIED ONLY THE STATUS. `last_activity_at`
+    was the same shape.
+
+    Both are now advanced after the bulk write, and `created` reports
+    `channels_with_last_sequence`. A counter maintained on the write path is cheap
+    for the write and invisible to anything that writes around it — which is the
+    chapter's own subject, one level down.
