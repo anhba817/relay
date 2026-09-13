@@ -25,64 +25,54 @@ history; the replaced history is preserved on the remote as the tag
 tags. **Anyone holding an older clone of `relay-platform` must reset rather than pull.**
 
 <!-- SPECKIT START -->
-**046 — CHAPTER 4.1 IS WRITTEN AND MERGED. 74 OF 76 TASKS.** Record:
-`specs/046-chapter-4-1/` — `baseline.txt` first, then `gaps.md`, `traceability.md`,
-`tasks.md`. Part 4 is **24 chapters in seven movements**, renamed **"Everywhere the data
-went"**; `docs/12-part-4-structure.md` is the structure record and is newer than
-`docs/07-tutorial-plan.md` where they disagree.
+**ACTIVE: 047 — CHAPTER 4.2, "ClickHouse from zero".** Spec: `specs/047-chapter-4-2/spec.md`.
+**046 IS CLOSED at 76 of 76**; its record is `specs/046-chapter-4-1/` — `baseline.txt` first,
+then `gaps.md` (eight entries, two closed), `traceability.md`, `tasks.md`.
 
-**THE CHAPTER'S HYPOTHESIS WAS FALSIFIED TWICE AND THE RESULT IS BETTER THAN THE PLAN.**
-There was no metering query to slow down — Part 3's counters are two pure functions on the
-send path — so the chapter became a shape mismatch. Then the measurement refused both
-halves of it: an analytical query does **not** tax the write path here (send p95 20.5 ms
-alone, **13.7 ms beside 102 of them**, four control loops agreeing inside 1.3 ms), and the
-index that should fix the query **buys a difference inside the run-to-run spread for +49%
-storage**. The join is 140 ms of a 698 ms plan and **the sort is 656**. You cannot index
-your way out of an analytical question when the cost is the aggregation.
+**PART 4 IS 23 CHAPTERS, NOT 24, AND IT GOT THERE BY CONTRACTING.** `docs/12` split movement I
+in two; **chapter 4.1 shipped with both halves at 2,132 prose words**, inside the bound, so
+movement I is one chapter and every ordinal after the first moved down by one. **It is the first
+estimate this project has made that was TOO HIGH** — Part 3 was planned as seven and shipped 26 —
+and `docs/12` and `docs/07` were both amended before 047's spec was written rather than after
+they disagreed with it. **4.2 is "ClickHouse from zero", not "the index that would fix it".**
+
+**WHAT 4.1 MEASURED, AND IT FALSIFIED ITS OWN PLAN TWICE.** There was no metering query to slow
+down — Part 3's counters are two pure functions on the send path. Then: an analytical query does
+**not** tax the write path here (send p95 20.5 ms alone, **13.7 ms beside 102 of them**, four
+control loops inside 1.3 ms), and the index that should fix the query **buys a gap inside the
+run-to-run spread for +49% storage**. The join is 140 ms of a 698 ms plan and **the sort is 656**.
+**You cannot index your way out of an analytical question when the cost is the aggregation** —
+which is what 4.2's `ORDER BY (environment_id, ts)` and its rollup exist to answer.
 
     M1 585.9 ms over 1,000,000 rows   ·   lane's busiest env 0.9 ms over 1,018   ·   651x
     column 24.8 MB + index 62.0 MB = 86.8 MB permanent on a 178.6 MB table
-    check:fences 110 -> 110, delta 0   ·   2,132 prose words   ·   8 gates green
+    check:fences 110 -> 110, delta 0   ·   2,132 prose words   ·   8 gates green   ·   part4-ch1
 
-**NINE ANALYSIS PASSES FOUND 27 THINGS AND, FROM PASS 4 ON, FOUND ONLY THEIR OWN
-PREDECESSORS' REPAIRS.** The last finding from the tree was pass 3's 403. Phase 2 then
-found six in ninety minutes and five were invisible to reading: **one application holds
-two environments, not three** (FR-TEN-04, `unique (application_id, kind)`); the table is
-**`members`**, not `channel_members`; `addMember` writes an outbox row; a small random
-formats as scientific notation and `interval` will not parse it; a uniform offset lands
-999,786 in a window asked for a million; and **`channels.last_sequence` is a counter the
-write path maintains**, so a bulk insert that leaves it at 0 makes every later send
-collide. **Reading cannot find what the schema refuses.**
+**NINE ANALYSIS PASSES FOUND 27 THINGS AND, FROM PASS 4 ON, ONLY THEIR OWN PREDECESSORS'
+REPAIRS.** The last finding from the tree was pass 3's 403. **Phase 2 then found six in ninety
+minutes and five were invisible to reading**: an application holds two environments, not three
+(FR-TEN-04, `unique (application_id, kind)`); the table is **`members`**, not `channel_members`;
+`addMember` writes an outbox row; a small random formats as scientific notation and `interval`
+will not parse it; a uniform offset lands 999,786 in a window asked for a million; and
+**`channels.last_sequence` is a counter the write path maintains**, so a bulk insert that leaves
+it at 0 makes every later send collide. **Reading cannot find what the schema refuses.**
 
-**AND EVERY MEASUREMENT WAS WRONG BEFORE IT WAS RIGHT.** The neighbour effect: one query
-beside a 60 s loop is 1% overlap, then quiet-then-busy confounded the neighbour with the
-cache — the fix is a warm-up and a **second quiet loop after busy**. The storage figure
-was wrong three times, each conflating a different pair: +204 MB was column plus dead
-tuples, +107 MB index plus un-vacuumed bloat, +4.3 MB index **minus** the compaction the
-vacuum had just done. **A delta between two totals is not a measurement of the thing that
-changed unless nothing else changed.** And two of T044's falsifications failed for the
-wrong reason — one on a JS error rather than the constraint, one on a count the check does
-not read.
+**AND EVERY MEASUREMENT WAS WRONG BEFORE IT WAS RIGHT.** One query beside a 60 s loop is 1%
+overlap; quiet-then-busy confounds the neighbour with the cache — the fix is a warm-up and a
+**second quiet loop after busy**. The storage figure was wrong three times, each conflating a
+different pair: +204 MB column plus dead tuples, +107 MB index plus un-vacuumed bloat, +4.3 MB
+index **minus** the compaction the vacuum had just done. **A delta between two totals is not a
+measurement of the thing that changed unless nothing else changed.** Two of three falsifications
+also failed for the wrong reason — one on a JS error rather than the constraint, one on a count
+the check does not read.
 
-**THE TAG NAMESPACE IS CONSISTENT AGAIN. 76 OF 76.** Part 4 tags as **`part4-chN`** — the
-ordinary convention; `rework/` was a rebuild artefact and does not carry forward — and
-`part4-ch1` is annotated on `04fe516a`. **The twenty-one stale `part3-chN` tags are deleted,
-local and remote, in all three repositories** (21/19, 10/8, 10/8 → 0). They resolved to the
-replaced history, so `README.md:8`'s promise of one tag per chapter was false for Part 3 and
-every SKIP AHEAD box with it. **Nothing was lost and it was checked after the deletion**:
-all 21 commits remain reachable from `backup/pre-main-move-20260911`, which is on the remote.
-`rework/part3-chN` (26) are untouched. `git merge-base main backup/…` is `6b3423d6`, chapter
-2.8's milestone — the "diverging at the end of Part 2" claim, verified against the tags for
-the first time.
-
-**AND THREE PART 1 TAGS ARE ON NEITHER `main` NOR THE BACKUP** — `part1-ch1`, `part1-ch2`,
-`part1-ch3`. Those tags are the only thing keeping those commits reachable, so deleting them
-would do the opposite of what deleting Part 3's did. Older than the rework and unrelated:
+**THE TAG NAMESPACE IS CONSISTENT AGAIN.** Part 4 tags as **`part4-chN`**; `rework/` was a
+rebuild artefact and does not carry forward. **The twenty-one stale `part3-chN` tags are deleted,
+local and remote, in all three repositories** — they resolved to the replaced history, so
+`README.md:8`'s promise was false for Part 3 and every SKIP AHEAD box with it. All 21 commits
+remain reachable from `backup/pre-main-move-20260911`, checked after the deletion. **Three Part 1
+tags are on neither `main` nor the backup** and are the only thing keeping those commits alive:
 `gaps.md` 046-8.
-
-**AND THE READER PROTOCOL IS RETIRED, NOT DEFERRED** — see the section below. The cost
-argument is the load-bearing part: a prose fix moves no tag and no chain, so the gate was
-guarding the cheap thing.
 <!-- SPECKIT END -->
 
     045 "part 3 rework"           24 chapters -> 26, eight movements, English prose only
