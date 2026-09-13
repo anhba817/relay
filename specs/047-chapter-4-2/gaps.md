@@ -72,11 +72,44 @@ Not this chapter's to decide.
 
 ---
 
-## 047-4 — THE THREE PART 1 TAGS (carried from 046-8)
+## 047-4 — THE THREE PART 1 TAGS — **CLOSED 2026-09-13**
 
-`part1-ch1`, `part1-ch2`, `part1-ch3` are on neither `main` nor
-`backup/pre-main-move-20260911`, and are the only thing keeping those commits reachable.
-Unchanged by this chapter, restated so it is not lost.
+Carried from 046-8, which recorded them as orphaned. Opening the question found something
+worse than orphaned: **they pointed at a superseded lineage.** `main` carries rebuilt
+equivalents with byte-identical commit subjects and different trees, and `part1-ch4`
+already sat on the new lineage while 1.1-1.3 sat on the old one — which is why no single
+check ever looked inconsistent.
+
+    tag          was         now         trees differing   fenced files among them
+    part1-ch1    680ce7a4    10db3fc7          11                    7
+    part1-ch2    e73e06d6    2ae869c5          13                    7
+    part1-ch3    b7291250    3b41246a          13                    7
+
+Measured against the published chapters, fence by fence: **the old tags matched 14 of 20
+whole-body fences and the new ones match 19 of 20.** Chapter 1.2 publishes `INFRA_SERVICES`
+across five lines and the old `part1-ch2` held it on one.
+
+**No gate could see this.** `check-fence-chain` replays chapters onto the working tree and
+compares against `HEAD`; it never resolves a tag, so the chain was green throughout. The
+tags are annotated now, matching the `part4-chN` convention; `part1-ch4` is still
+lightweight and still correct.
+
+The old lineage is preserved as `backup/part1-orphan-lineage-20260913`, pushed **before**
+the tags moved. Nothing else references those three commits.
+
+---
+
+## 047-6 — `turbo.json` AT CHAPTER 1.1 MATCHES NEITHER LINEAGE
+
+Found while verifying 047-4's targets. The fence chapter 1.1 publishes is the one
+whole-body fence of twenty that matches neither the old tag nor `main`, and it differs from
+them in **opposite** directions — compact arrays where `main` has them expanded, expanded
+`inputs` where the old tag has them compact. Prettier drift in both directions.
+
+It is invisible to `check:fences`, which compares only the chain's END state against `HEAD`
+and never the state after chapter 1.1 against that chapter's tag. **Nothing in these three
+repositories checks that a chapter's tag matches the chapter**, which is the gate
+`README.md`'s promise — *"check it out and the toolchain checks pass"* — actually needs.
 
 ---
 

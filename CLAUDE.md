@@ -77,6 +77,21 @@ file left four ledger rows against three files, its table still in the store, an
 runner saying `skipped 3` — because the run walks the DIRECTORY. **An instrument that walks
 one side of a relationship only tells you about that side.** It reports the orphan now.
 
+**THE THREE PART 1 TAGS WERE NOT ORPHANED, THEY WERE WRONG.** 046-8 recorded them as
+unreachable. They also pointed at a **superseded lineage**: `main` carries rebuilt
+equivalents with byte-identical subjects and trees differing by 11-13 files, seven of them
+fenced — and `part1-ch4` already sat on the new lineage while 1.1-1.3 sat on the old, which
+is why no single angle looked wrong. Chapter 1.2 publishes `INFRA_SERVICES` over five lines
+and the old `part1-ch2` held it on one. Measured fence by fence, **old tags matched 14 of 20
+whole-body fences, the new ones match 19 of 20.** Moved, annotated, pushed; the old lineage
+is kept as `backup/part1-orphan-lineage-20260913`, pushed first.
+
+**AND NOTHING COULD HAVE CAUGHT IT.** `check-fence-chain` replays onto the working tree and
+compares against `HEAD` — it never resolves a tag, so the chain was green the whole time.
+**No gate in these three repositories checks that a chapter's tag matches the chapter**,
+which is exactly what `relay-platform/README.md:8` promises. `gaps.md` 047-6 files the one
+fence that matches neither lineage (`turbo.json` at 1.1, prettier drift in both directions).
+
 **AND `eslint.config.mjs` COULD NOT TAKE A FENCE.** The chain replays 206 lines where the
 tree holds 451 — a 243-line divergence predating this chapter, one of the 36 inherited HEAD
 problems. A hunk cannot anchor on it and regenerating it is the 111 -> 203 trap, so the
