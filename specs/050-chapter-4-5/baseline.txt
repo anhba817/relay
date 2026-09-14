@@ -309,3 +309,110 @@ AND ITS ZERO DOES NOT COVER THIS CHAPTER. Its SHARED array is the lane's POSTGRE
 tables; relay_analytics.connection_events is in neither that list nor that database,
 and the tool's own last line is "SQL text only". T056 is where this chapter's
 whole-table risk is actually handled.
+
+================================================================================
+PHASE 2 — THE RECORDS EXIST
+================================================================================
+
+T018 — THE DEPENDENCY COUNT, AFTER
+    5 -> 6.  nats ^2.29.3, the version api, dispatcher and ingester already pin.
+    There is no pnpm catalog in this workspace, so four packages agree only by
+    being typed the same. `pnpm install` warns `deprecated nats@2.29.3` — carried,
+    not introduced: the other three services already hold it.
+
+T023/T024 — THE FLUSH INTERVAL, AND THE BUDGET IT SPENDS
+    FLUSH_INTERVAL_MS = 5_000
+
+        gateway flush            5 s
+        ingester batch bound     up to 2 s   (docs/05-sad.md §4 — DR-11 names neither)
+        insert                   small
+                                 ---------
+        FR-ANL-04 allows         60 s, "under normal conditions"
+
+    53 seconds of headroom. Copying METER_INTERVAL_MS (60_000) would breach the
+    clause before the record left the gateway, and it is the obvious number precisely
+    because this module's posture is *be like the meter*.
+    The measured justification for a short interval is T004's and is PENDING.
+
+T025/T026 — THE CAP, AND THE DIRECTION
+    MAX_BUFFERED = 4_000, the meter's number, and it means the same thing only
+    because of the retention rule: a buffer that emptied on every flush regardless of
+    outcome could never reach a cap at all.
+    TWO RECORDS PER CONNECTION here against the meter's one per (connection, period).
+
+    DROP THE OLDEST — and the meter's ARGUMENT DOES NOT TRANSFER. The meter drops
+    the oldest because under-counting is "the same direction as every other loss in
+    this design": it is a bill, and billing for a socket nobody holds is the worse
+    error. A connection log is not a bill; both directions lose a fact.
+    Oldest anyway, for a different reason: dropping the NEWEST discards the records
+    describing the outage itself, which is the window an operator opens this log to
+    see.
+
+T029a — THE BATCHED-PAYLOAD FORM, FALSIFIED AGAINST THE REAL ROUTER
+    route([{type:"connection.opened",…},…])  ->  kind "malformed"   -> m.term()
+    route( {type:"connection.opened",…}   )  ->  kind "unclaimed"   -> retained
+
+    Two assertions in services/ingester/src/shape.test.ts, no broker needed. The
+    contrast is the finding: the arm that KEEPS a record for a consumer that does not
+    yet write it is reached by a record with an unrecognised `type`, never by a batch.
+    Phase 2 publishes into that window on purpose, and a batched message would have
+    proved the opposite of what the window was built to prove.
+
+T034 — THE SHUTDOWN LIST
+    before 7   sessions, fanout, presence, membership, typing, connections, limits
+    after  8   + connectionLog, closed SECOND, immediately after sessions.close()
+
+    `main.ts` is excluded from the coverage ratchet, so no figure could show a
+    shutdown that closed seven of eight. The count is the check.
+
+    AND THE GUARD CAUGHT IT FIRST, WHICH IS THE POINT. `main.test.ts` reads main.ts's
+    source and asserts every `const x = createY(` is both injected into
+    `attachSessions` and awaited in `shutdown()`. It went red on all three assertions
+    the moment the eighth fabric arrived — its own comment says it is "the property
+    that breaks when somebody adds an eighth".
+
+    The first wiring had TWO consts, `connectionPublisher` and `connectionLog`, and
+    satisfied neither half for the publisher. The fix was the design the guard was
+    asking for: ONE fabric with one close(), the log owning its publisher's lifetime.
+    The guard gained no exemption.
+
+T036 — THE UNAUTHENTICATED CASE CANNOT ARISE
+    open() (session.ts:912) is the only function that builds a Connection and the only
+    caller of registry.add. It takes `identity: Identity`, NOT optional. Its single
+    call site is reached only after every refusal has returned:
+
+        429 on the upgrade    over the establishment limit
+        4001                  invalid or expired token
+        1011                  the api could not answer
+        4003                  user banned
+        4008                  quota exhausted
+
+    Three of those COMPLETE the handshake in order to close it, so an unauthenticated
+    SOCKET exists and an unauthenticated CONNECTION does not. There is no record for a
+    tenantless arm to carry, and 4.4's `_none` arm is unnecessary rather than declined.
+    Not a decision this phase made — one the anchor choice had already made, on
+    grounds (the meter's asymmetry) that nobody had connected to this question.
+
+    AND `MAX_CONNECTIONS_PER_USER = 5` REFUSES THE SAME WAY. The sixth socket for one
+    user gets close 4004 on that same path, before open(), so it produces no record
+    either. T037's N has to be spread across users or the 2N assertion measures the
+    cap.
+
+T039 — THE LANES, INCLUDING WHAT IS RED
+    pnpm typecheck     14 of 14 successful
+    pnpm lint          0 errors, 1 warning
+    pnpm test          gateway 133/133 · protocol 144/144 · ingester 29/29 ·
+                       dispatcher 8/8 · config 7/7 · service-kit 3/3
+                       api 273 passed, 1 FAILED
+    pnpm test:integration   PENDING — stack down
+
+    TWO REDS, BOTH INHERITED, BOTH CHECKED RATHER THAN ASSUMED:
+
+      FAIL services/api/src/main.test.ts > api skeleton > logs exactly one structured
+           line per request, carrying the response's id
+      WARN services/api/src/internal/session.perf.itest.ts:120:5
+           Unused eslint-disable directive (no problems reported from 'no-console')
+
+    Both reproduce with this feature's work stashed (`git stash` -> same failure, same
+    warning count). Neither is in a file this chapter touches. Recorded here rather
+    than reported as green, and carried to gaps.md if still open at the close.
