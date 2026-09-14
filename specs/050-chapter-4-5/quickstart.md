@@ -62,10 +62,10 @@ The number that decides where the publish goes. From `research.md` R3, 2,000 clo
 three ways:
 
 ```
-awaited, one at a time   : 2000 publishes in 458 ms  -> 0.229 ms each
-  extrapolated to 10,000 closing at once: 2.3 s of awaited publishes
-core publish + flush     : 2000 publishes in   6 ms  -> 0.0030 ms each
-pipelined, 500 in flight : 2000 publishes in   7 ms  -> 0.0034 ms each
+awaited, one at a time   : 2000 publishes in 574 ms  -> 0.2870 ms each
+  extrapolated to 10,000 closing at once: 2.87 s of awaited publishes
+core publish + flush     : 2000 publishes in   5 ms  -> 0.0025 ms each
+pipelined, 500 in flight : 2000 publishes in  52 ms  -> 0.0260 ms each
 ```
 
 The third row is **one message per record with 500 publishes in flight**, not 500 records in

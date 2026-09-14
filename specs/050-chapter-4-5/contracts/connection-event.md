@@ -65,10 +65,14 @@ than assigned, and the columns are `Nullable` because 4.4 measured that
 handler.** Measured, 2,000 close records three ways:
 
 ```
-awaited, one at a time   : 0.229 ms each   -> 2.3 s for 10,000 closing at once
-core publish + flush     : 0.0030 ms each  -> at-most-once, no ack, no dedup
-pipelined, 500 in flight : 0.0034 ms each  -> 67x faster than awaiting, keeps both
+awaited, one at a time   : 0.2870 ms each  -> 2.87 s for 10,000 closing at once
+core publish + flush     : 0.0025 ms each  -> at-most-once, no ack, no dedup
+pipelined, 500 in flight : 0.0260 ms each  -> 11x faster than awaiting, keeps both
 ```
+
+Measured at T004 in the shape that ships. Planning read 0.0034 ms for the third row and
+that figure was a property of 500 records in one message; one message per record costs
+**ten times core** rather than 1.13 times, and the decision survives on that margin.
 
 `session.ts`'s close handler already carries the argument, from chapter 3.24: *"a mass
 disconnect would turn one event into a burst of HTTP requests."* A burst of awaited publishes is
@@ -127,7 +131,7 @@ meter feeds a monthly quota and has no latency clause over it; this feeds an ana
 that does.
 
 **And the two pressures are less opposed than they look.** The tick's win comes from removing
-the serial round trip from whatever accumulated, not from waiting longer: at 0.0034 ms a record
+the serial round trip from whatever accumulated, not from waiting longer: at 0.0260 ms a record
 the publish is effectively free at any interval, and R3's 2.3-second burst is a property of
 publishing **per close**, not of a short tick. So a short interval costs almost nothing and buys the whole
 budget. **5 seconds** leaves 53 of headroom, and FR-004d measures the real figure rather than

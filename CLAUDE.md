@@ -48,9 +48,17 @@ tick do the sending.
 **A PUBLISH PER CLOSE IS THE SAME BURST ON A DIFFERENT TRANSPORT, MEASURED.** 2,000 close
 records, three ways:
 
-    awaited, one at a time   : 0.229 ms each  -> 2.3 s for 10,000 closing at once
-    core publish + flush     : 0.0030 ms each -> at-most-once, no ack, no dedup
-    pipelined, 500 in flight : 0.0034 ms each -> 67x faster, keeps ack AND dedup
+    awaited, one at a time   : 0.2870 ms each -> 2.87 s for 10,000 closing at once
+    core publish + flush     : 0.0025 ms each -> at-most-once, no ack, no dedup
+    pipelined, 500 in flight : 0.0260 ms each -> 11x faster, keeps ack AND dedup
+
+**AND THE THIRD ROW MOVED 7.6x WHEN THE SHAPE WAS CORRECTED.** Planning read 0.0034 ms;
+T004 measured **0.0260**. The old figure was 500 records in ONE message — four publishes,
+four acks — which is why it sat "within 13% of core speed". One message per record is
+2,000 publishes and 2,000 acks and costs **ten times core**, not 1.13 times. Analysis
+pass 5 removed the batched shape on three structural grounds and this is the same finding
+arriving as a number. **The decision survives on the smaller margin**, which is worth more
+than the old figure was.
 
 **Buffer and publish on a tick, exactly as the meter does.** Core publish is faster still and
 gives up the recoverability this stream exists for — 3.20 chose JetStream over core for that

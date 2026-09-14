@@ -484,3 +484,138 @@ T053 (PARTIAL) — THE LANES
     because a record missing `ts` and `user_external_id` IS malformed. A thin fixture would
     have made the batch assertion pass for the wrong reason: an array is not malformed
     because it is short of fields.
+
+================================================================================
+THE STACK CAME UP — WHAT PHASE 1 AND PHASE 3 COULD NOT MEASURE BEFORE
+================================================================================
+`uidmap` installed; rootless Docker 29.8.0 starts. `RELAY_POSTGRES_PORT=15432
+docker compose --profile services up -d`, eight containers.
+
+    nats   2.12-alpine     postgres  18-alpine        redis  8-alpine
+    clickhouse/clickhouse-server:25.3   (server 25.3.14.14)
+    mailpit v1.28           api / dispatcher / gateway  built from this tree
+    PostgreSQL 18.6         DOCKER_HOST unset, context `rootless`
+
+Three positive controls, because 047 read three authentication errors as data:
+    localhost:8222/healthz   {"status":"ok"}
+    localhost:4000/healthz   {"status":"ok","service":"api",...}
+    SELECT 1                 1
+
+================================================================================
+T012 — THE STORE WAS EMPTY, AND EVERY PREMISE ABOUT ITS CONTENTS WAS WRONG
+================================================================================
+    SHOW DATABASES                                    relay_analytics EXISTS
+    system.tables WHERE database='relay_analytics'    0 rows
+    relay_analytics.schema_applied                    Code: 60, UNKNOWN_TABLE
+    select count(*) from environments                 relation does not exist
+    jsz streams / consumers / messages                0 / 0 / 0
+
+The volume is fresh: reinstalling Docker for `uidmap` took `relay_clickhouse-data`,
+`relay_postgres-data` and `relay_nats-data` with it. So T012's "the row counts of the
+three existing tables" and "the ledger, tail 0004_api_requests.sql" describe a store
+that no longer exists. 047 measured that `CLICKHOUSE_DB` creates nothing on a volume
+that already holds a database; on a FRESH one it does, which is why the database is
+there and empty.
+
+15 Postgres migrations applied, tail `0014_connection_minutes.sql`.
+
+================================================================================
+049-2 REPRODUCED FROM A CLEAN VOLUME, AND THIS IS BETTER EVIDENCE THAN 049 HAD
+================================================================================
+    api-1 | {"level":"error","service":"consumer","msg":"consumer.poll_failed",
+             "consumer":"recorder",
+             "error":"NatsError: replicas > 1 not supported in non-clustered mode"}
+
+Five times a second, from boot, with NOTHING else in the log. 049 inferred this from
+474 accumulated failures on a stack whose streams already existed; here the streams do
+not exist, the api cannot create them, and the error is the only thing happening.
+
+    replicaCount()  =  RELAY_NATS_REPLICAS, else NODE_ENV === "production" ? 3 : 1
+    services/api/Dockerfile:43  sets NODE_ENV=production
+    compose.yaml                sets no RELAY_NATS_REPLICAS
+
+NOT FIXED HERE, AND THE COST IS THE REASON. 049-2's remedy is one line on three compose
+services. `compose.yaml` carries **12 titled fences** (10 diff, 2 whole body) and is not
+on T010a's list of the eight this chapter edits; taking it makes a NINTH, for a change to
+the shared development environment rather than to this chapter's subject.
+
+AND CREATING THE STREAMS FROM OUTSIDE THE CONTAINER IS EXACTLY THE MECHANISM 049-2 SAYS
+HIDES IT. That is what unblocked this run, and saying so is the difference between
+working around a defect and re-burying it. Carried to gaps.md with this evidence.
+
+================================================================================
+T047/T048 — THE LEDGER, AND A PREMISE FALSIFIED THE WAY 048's T014 WAS
+================================================================================
+    node analytics/apply.mjs
+      database relay_analytics ready
+      applied 6: 0000_message_events.sql, 0001_daily_usage.sql,
+                 0002_schema_applied.sql, 0003_webhook_attempts.sql,
+                 0004_api_requests.sql, 0005_connection_events.sql
+      skipped nothing                                              exit 0
+
+T047 EXPECTED `applied 1`. It applied SIX — five statements plus the ledger's own file,
+which counts itself. 048's T014 expected `applied 1` and got 4, for the same reason one
+chapter earlier: the store had been dropped between the writing and the running.
+
+    second run:  applied nothing · skipped 6                       exit 0
+
+T048, RED: one byte appended to 0005, re-run:
+      apply failed: 0005_connection_events.sql changed after it was applied
+      (ledger 2702615facd07e77, file 782ff609b74e88a8). ClickHouse has no ALTER path
+      for most of this; add a new statement file instead                exit 1
+Byte removed, re-run green. Both checksums named, which is what makes the message
+actionable rather than an assertion.
+
+================================================================================
+T052 — ASK THE SERVER, NOT THE FILE YOU JUST WROTE
+================================================================================
+`SHOW CREATE TABLE relay_analytics.connection_events` agrees with data-model.md §1 on
+every column, the engine, the partition and the sorting key. Two normalisations:
+
+    TTL toDateTime(ts) + INTERVAL 90 DAY  ->  TTL toDateTime(ts) + toIntervalDay(90)
+    (none)                                ->  SETTINGS index_granularity = 8192
+
+Neither changes meaning, and neither would have been visible by re-reading the file.
+No `allow_nullable_key`, because no column in the sorting key is nullable -- the
+difference from `api_requests`, confirmed by the server rather than by the comment.
+
+================================================================================
+T004 — THE BURST PROBE RE-RUN, AND IT FALSIFIES THE PLANNING FIGURE
+================================================================================
+2,000 close records, three SHAPES, against a stream of their own, on a subject
+length-matched to the real one (64 chars) because the stream's accounting counts it.
+
+    awaited, one at a time    : 2000 publishes in  574 ms  -> 0.2870 ms each
+      extrapolated to 10,000 closing at once: 2.87 s of awaited publishes
+    core publish + flush      : 2000 publishes in    5 ms  -> 0.0025 ms each
+    pipelined, 500 in flight  : 2000 publishes in   52 ms  -> 0.0260 ms each
+
+    pipelined is 11.0x faster than awaited, and 10.40x core's time
+    bytes per record: 375.4        (4.4 measured 320 for a request record)
+
+**THE PIPELINED FIGURE IS 0.0260 ms, NOT THE 0.0034 ms PLANNING RECORDED — 7.6x
+SLOWER — AND THAT CONFIRMS ANALYSIS PASS 5 FROM THE OTHER DIRECTION.** 0.0034 ms was
+measured for 500 records in ONE message, which is why it sat within 13% of core speed:
+four publishes, four acks. One message per record is 2,000 publishes and 2,000 acks,
+and it costs ten times core rather than 1.13 times.
+
+So two published claims are wrong and are corrected: "67x faster than awaiting" is
+**11x**, and "within 13% of core speed" is **10.4x core's time**.
+
+THE DECISION SURVIVES ON A SMALLER MARGIN, WHICH IS WORTH MORE THAN THE OLD NUMBER.
+A deploy closing NFR-SCL-01's 10,000 sockets costs 2.87 s of awaited publishes through
+close handlers -- 3.24's HTTP burst argument on a new transport -- against 260 ms
+pipelined. Core is faster still and gives up the ack and the deduplication id, which is
+what this stream exists to keep. The shape that ships is the shape that was measured.
+
+    UNBLOCKED, AND THE DEMONSTRATION IS THE SAME FUNCTION TWICE. The api's own
+    `ensureStream` and `ensureAnalyticsStream`, run from a host shell against the same
+    broker:
+
+        NODE_ENV = <unset>   RELAY_NATS_REPLICAS = <unset>
+        ensured via ensureStream · ensured via ensureAnalyticsStream
+          ANALYTICS    replicas=1 subjects=analytics.>  msgs=0
+          EVENTS       replicas=1 subjects=events.>     msgs=0
+
+    Inside the container the identical call fails five times a second. One function, one
+    broker, and the only difference is where it runs.

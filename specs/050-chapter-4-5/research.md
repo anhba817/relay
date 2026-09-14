@@ -40,24 +40,35 @@ do.** The argument 3.24 made was about HTTP. Whether it survives a broker is R3'
 **Probe**: 2,000 connection-close records, three ways, against a stream of their own.
 
 ```
-awaited, one at a time   : 2000 publishes in 458 ms  -> 0.229 ms each
-  extrapolated to 10,000 closing at once: 2.3 s of awaited publishes
-core publish + flush     : 2000 publishes in   6 ms  -> 0.0030 ms each
-pipelined, 500 in flight : 2000 publishes in   7 ms  -> 0.0034 ms each
+awaited, one at a time   : 2000 publishes in 574 ms  -> 0.2870 ms each
+  extrapolated to 10,000 closing at once: 2.87 s of awaited publishes
+core publish + flush     : 2000 publishes in   5 ms  -> 0.0025 ms each
+pipelined, 500 in flight : 2000 publishes in  52 ms  -> 0.0260 ms each
 ```
+
+**RE-RUN AT T004, AND THE THIRD ROW MOVED BY 7.6x.** Planning recorded 7 ms and
+0.0034 ms for that row; the shape that ships costs **52 ms and 0.0260 ms**. The old
+figure was measured for 500 records in ONE message — four publishes, four acks — which
+is why it sat within 13% of core speed. One message per record is 2,000 publishes and
+2,000 acks. **Analysis pass 5 removed the batched-payload shape on three structural
+grounds; this is the same finding arriving as a number.**
 
 **Decision**: buffer in the gateway and publish on a tick, exactly as `meter.ts` already does —
 **one JetStream message per record**, with up to 500 publishes in flight and their acks
 collected together.
 
-**A JetStream publish awaits an ack.** At 0.229 ms each, a deploy that closes NFR-SCL-01's
-10,000 connections serialises **2.3 seconds** of awaited publishes through close handlers —
+**A JetStream publish awaits an ack.** At 0.2870 ms each, a deploy that closes NFR-SCL-01's
+10,000 connections serialises **2.87 seconds** of awaited publishes through close handlers —
 which is 3.24's burst argument arriving on a new transport, and its answer is the same one.
 
-**Pipelining is 67× faster than awaiting per close and keeps what core publish gives up.** Core
-`nc.publish` is faster still — 0.0030 ms — but it is at-most-once with no ack and no
-deduplication id, so a record lost in the gap is lost silently. Pipelined JetStream publishes
-are within 13% of core speed and keep the ack and the deduplication id on **every** record.
+**Pipelining is 11× faster than awaiting per close and keeps what core publish gives up.**
+Core `nc.publish` is faster still — 0.0025 ms, **a tenth of pipelined's cost** — but it is
+at-most-once with no ack and no deduplication id, so a record lost in the gap is lost
+silently. **The margin over core is real and the decision survives it**: a deploy closing
+10,000 sockets is 2.87 s of awaited publishes against 260 ms pipelined, and the ack and the
+deduplication id are what this stream exists to keep. The earlier claim of "within 13% of
+core speed" described the batched-payload shape and does not survive one message per
+record.
 
 ### CORRECTED IN ANALYSIS PASS 5 — THE THIRD ROW READ "batched 500 per publish"
 
