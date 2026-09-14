@@ -92,9 +92,15 @@ Open: the session handshake, where `identity` is resolved — so the environment
 Close: `socket.on("close", (code) => …)`, which carries the close **code** and runs before
 `registry.remove`.
 
-**Decision**: the open record is written where `meter.opened` is already called and the close
-record where `meter.closed` is, so both sit beside an existing hand-over rather than
-introducing a second place that knows about connection lifecycle.
+**Decision**: the open record is written beside `registry.add(connection)` (`session.ts:959`)
+and the close beside `meter.closed(...)` (`session.ts:1146`).
+
+**CORRECTED IN ANALYSIS PASS 1 — THERE IS NO `meter.opened`.** This item first said both records
+sit beside an existing meter hand-over. The `Meter` interface is `closed`, `reportOnce`,
+`retained`, `dropped` and `stop`, and its comment says why: *"A socket closed. Its final totals
+are handed over here, because the registry has already forgotten it by the time anything else
+could ask."* **The meter is told about closes and walks the registry for opens**, so the
+symmetry this item assumed is not there and the two records take two different anchors.
 
 **Open**: whether a connection that never authenticates has an open event at all. It has no
 environment and no identity, and the `_none` arm 4.4 built is for requests rather than
