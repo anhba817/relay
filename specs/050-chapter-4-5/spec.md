@@ -241,7 +241,15 @@ side of it is now zero.
 - **FR-007**: `/internal/usage/connections` and the Postgres quota counters shall be unchanged
   in shape, cadence and meaning.
 - **FR-008**: The chapter shall state why both paths exist rather than implying the new one
-  supersedes the old, and shall name what each is unable to do.
+  supersedes the old, and shall name what each is unable to do. **The argument is already
+  published and shall be cited rather than re-derived** — `docs/12` §4's subsection *"FR-ANL-06
+  has a concrete counterpart, and it is Part 3's"* carries it: *"a quota must refuse a send
+  synchronously, so its counter cannot live downstream of a lossy stream"*, and therefore
+  **"Two counters of one quantity is the right answer and the reconciler is the price."**
+  `docs/07` predicted the tension before either side existed — building the counters *"in
+  Postgres now and again in ClickHouse later, or once in the wrong place"*. What this chapter
+  adds is the pair of limits: the meter cannot say a connection existed, and the records cannot
+  refuse one.
 - **FR-009**: The two shall be reconcilable: the connection-minutes derivable from open and
   close records shall be comparable to what the meter reports, and any structural reason they
   cannot agree exactly shall be published as a number rather than asserted as small.

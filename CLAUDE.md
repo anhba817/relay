@@ -237,6 +237,29 @@ buckets-from-records against buckets-from-the-meter — one quantity computed tw
 publishes the duration/bucket gap as a number so nobody reads it as a defect. **4.2's boundary
 day, one domain over.**
 
+**AND THE CHAPTER'S OWN INTEGRATION SUITE HAD NO GATE — ELEVEN NOW, NOT NINE.** `.itest.ts`
+files load `vitest.integration.config.mts`, which `pnpm test` never opens, so they run under
+**`pnpm test:integration`** alone. **Zero tasks ran it.** `connection-log.itest.ts` carries
+every one of US1's proofs — 2N records on the stream, the `unclaimed` arm on a real record, 2N
+rows after the drain, the pair as two rows, the redelivery collapse — and discharges SC-001,
+SC-004 and SC-007. `pnpm coverage` was missing for the same reason, and it is the only lane
+that enforces T058's per-file pins. **T062 would have closed the MVP without either**, leaving
+three phases that could break the suite silently. *A check that cannot fail for the reason you
+care about is not a check* — and a test nothing runs is one step further out.
+
+**AND PASS 13's OWN FIX WAS PASS 14's DEFECT.** T005 was corrected to say *"049 found five
+stale cross-references in §3"*. They were in **§4**, and §4's amendment says so while also
+certifying the section pass 13 spent a probe vindicating: *"THE ORDINALS IN THIS SECTION WERE
+ONE AHEAD OF §3's … **§7's references were written against §3's table and are unaffected.**"*
+The document had already answered the question the probe was built to answer. **The fix is
+where the next defect is** — now including this cycle's own repairs.
+
+**AND `docs/12` §4 ALREADY ARGUES FR-008.** Its subsection *"FR-ANL-06 has a concrete
+counterpart, and it is Part 3's"* carries it whole: *"a quota must refuse a send synchronously,
+so its counter cannot live downstream of a lossy stream"*, therefore **"Two counters of one
+quantity is the right answer and the reconciler is the price."** §4 is the section headed
+*"Chapters must not re-teach these"*. T087 cites it now rather than deriving it again.
+
 **AND A DOCUMENT THE CHAPTER MAKES INCOMPLETE IS FALSIFIED BY NOTHING.** FR-017 amended a
 published document when a measurement contradicted it, which is the case every previous chapter
 hit. **This chapter's three SAD debts are the other kind**: §6.2 declares the analytical schema
