@@ -676,3 +676,35 @@ T039 — THE INTEGRATION LANE, AND typing.itest.ts IS RED
     Isolating that needs a run at `ef1daf1c~`, which has not been done. Three green runs
     would not have settled it either -- this project has already recorded 8 of 8 green as
     insufficient evidence that a load-dependent flake was gone.
+
+T054/T055/T056 — THE RECORDS BECOME ROWS
+    services/ingester/src/ingest.itest.ts     Test Files 1 passed · Tests 8 passed
+
+    Driven by calling `ingestOnce` directly, because compose runs no ingester service.
+    The gateway's suite proves the records reach the stream; this proves they become rows.
+
+    drain        writtenConnections 8 · writtenAttempts 0 · writtenRequests 0
+                 malformed 0 · unclaimed 0 · rows for this environment 8
+    the pair     closed  1000  1000
+                 opened  ~absent  ~absent        two rows under one connection_id
+    redelivery   physical 3 · FINAL 1, merges stopped, both counts scoped to RED_ENV,
+                 `finally` restarting merges AND deleting the probe's rows
+
+**A FETCH WINDOW LONGER THAN `ack_wait` IS A BATCH THAT REDELIVERS INTO ITSELF.** The
+first draft gave the consumer `ack_wait: 1_000_000_000` ns -- one second, copied from the
+suites above it -- and opened a 2,000 ms fetch. `ingestOnce` acknowledges only after every
+insert returns, so the first records went unacknowledged past one second WHILE THE SAME
+FETCH WAS STILL OPEN, came back as redeliveries, and were shaped again:
+
+    stream depth 8   ->   writtenConnections 16
+
+Reasoning about the consumer did not settle it; reading the stream's own depth beside the
+result did, in one line. The other suites do not hit it because their fetch is 1,000 ms,
+which is not longer than their `ack_wait` -- they are inside the bound by a margin nobody
+measured. This consumer takes 60 seconds.
+
+**AND 4.4's TWO WHOLE-OBJECT EQUALITIES BROKE, WHICH IS THE CHECK WORKING.** Adding
+`writtenConnections` to `IngestResult` failed `expect(first).toEqual({...})` and
+`expect(second).toEqual({...})`. A `toMatchObject` would have absorbed the new field
+silently; a whole-object equality makes a field appearing in a reported result a decision
+somebody writes down. Both updated with `writtenConnections: 0` rather than loosened.
