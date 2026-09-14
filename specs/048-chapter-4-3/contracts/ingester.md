@@ -55,3 +55,12 @@ A second run of the runner reports that it applied nothing.
 **This is the ledger's first real use since the chapter that built it**, which makes it the
 first chance to find out whether the refusals 4.2 tested red fire for somebody who is not
 trying to make them fire.
+
+## What implementation added, and what forced it
+
+| change | forced by |
+|---|---|
+| **`ingestOnce` takes its stream and durable as parameters.** The defaults are the real ones; the integration test uses its own rather than publishing probe records into the platform's stream. | T038a — a test that has to contort around a hardcoded name is a test that will be written badly or not at all. |
+| **`main.ts` exports `ingestOnce` separately from `main()`.** The loop, the connection and the signal handlers are started by a process; the part that decides anything is called directly by the test. | T038b — `main()` reads 37.50% branches for the same reason three dispatcher files do, and the honest place for that fact is the pin's comment. |
+| **The malformed path logs `stream_sequence` and nothing else**, and it ran for real on a record created by a probe rather than by a test. | T029 — publishing `{}` to check NATS was alive produced a genuinely malformed record at sequence 32. |
+| **`FINAL` is measured on a scratch table, not the real one.** 36 rows cannot show the cost; 1,000,000 plus 100,000 duplicates can. | T037 — the first measurement was 1.4 ms against 1.5 ms, which is noise wearing a number's clothes. |

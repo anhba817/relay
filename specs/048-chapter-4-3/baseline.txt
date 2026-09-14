@@ -349,3 +349,89 @@ become the analytical database it is supposed to feed."*
 wait**, which raises the stake without changing the answer: seven days is still the window
 in which a stopped ingester loses nothing, and T031 now gives a way to detect the case where
 it does. At 17,618 bytes against 1 GiB, size is not the binding constraint here; age is.
+
+
+PHASE 5 — THE REDELIVERY
+=========================
+
+T034a / T034b — THE TWO MEASUREMENTS THAT KILLED THE FIRST DESIGN, RE-RUN
+--------------------------------------------------------------------------
+    original  max_messages=5   seqs 1,2,3,4,5                range 1-5
+    retry     max_messages=3   seqs 1,2,3                    range 1-3    different
+    retry     max_messages=10  seqs 4,5,1,2,3,6,7,8,9,10     range 4-10   different
+
+The retry comes back **out of order and interleaved with newer messages**. A token derived
+from that range differs every time, so the duplicate inserts.
+
+    token tok-A, 500 rows 'first-*'     ->  500 rows
+    token tok-A, 500 DIFFERENT rows     ->  500 rows · 'SECOND-' present: 0
+
+And the token keys on **itself**, not the content: a colliding token is silent data loss
+rather than a duplicate. Both reproduce exactly.
+
+T035 / T036 / T038a — THE REGROUPED REDELIVERY, AS A TEST
+-----------------------------------------------------------
+`src/ingest.itest.ts` publishes ten records to its own stream, then:
+
+    1. offers them at max_messages=5 to a store that REFUSES      -> 0 rows, nothing acked
+    2. lets ack_wait expire, replays at max_messages=3            -> written
+    3. drains the remainder at max_messages=10
+
+    ten distinct records, three different groupings, final count: 10
+
+**It forces the regrouping on purpose**, because replaying the same batch shape proves only
+the half the first design already passed. 15 tests green across both lanes; the probe stream
+and the probe rows are removed in `afterAll`, and the table returned to 36.
+
+T037 — WHAT `FINAL` COSTS, MEASURED WHERE IT CAN BE SEEN
+----------------------------------------------------------
+On the real table — 36 rows — `bare` and `FINAL` were 1.39-1.53 ms and 1.43-1.52 ms:
+**indistinguishable, and that measures nothing.** So it was measured on a scratch table of
+1,000,000 distinct rows plus 100,000 redelivered duplicates:
+
+                    elapsed        rows_read      answer
+    bare count()    0.84-0.91 ms           1      1,100,000   WRONG by the duplicates
+    FINAL           4.97-5.46 ms   1,200,000      1,000,000   right
+
+**The bare count is O(1) and wrong; `FINAL` is O(n) and right.** ClickHouse answers a bare
+`count()` from part metadata without reading a row, which is why it is free and why it
+cannot see a duplicate. The cost of correctness is 4.4 ms and 1.2 million row reads on a
+query that was otherwise answered by one.
+
+The scratch table was dropped; `relay_analytics` holds the same four tables as before.
+
+T038 — POSTGRES IS UNTOUCHED
+------------------------------
+    schema_migrations              15        unchanged from T009
+    messages / channels / outbox / message_edits   unchanged
+    environments             31,685 -> 31,695
+    ingester imports of pg, drizzle or @relay/api        0
+    ingester dependencies    @relay/protocol, @relay/service-kit, nats
+
+**The ten new environments are T027's five webhook walks**, which run through the api and
+create tenants. Attributed rather than left as an unexplained delta.
+
+T038b — THE PINS, AND THE CLAUSE THAT DOES NOT REACH THE THING IT IS ABOUT
+----------------------------------------------------------------------------
+    src/shape.ts        stmts 100.00   branches 100.00   funcs 100.00
+    src/clickhouse.ts   stmts  88.23   branches  84.21   funcs  80.00
+    src/main.ts         stmts  45.45   branches  37.50   funcs  28.57
+    TOTAL               stmts  60.97   branches  77.19   funcs  60.00
+
+**`shape.ts` is at 100% branches and it is the file that matters**: the rename, and
+absent-means-NULL. It is where being wrong looks exactly like success.
+
+`main.ts` is low for the reason three dispatcher files above it are low — its `main()` is
+started by a process, not by a suite, and the part that decides anything is called directly
+by the integration test.
+
+**AND CONSTITUTION VI's 100%-BRANCH CLAUSE DOES NOT REACH THIS SERVICE'S IDEMPOTENCY.** The
+clause names idempotency; this idempotency is a `ReplacingMergeTree` sorting key. **A schema
+has no branches to cover.** Branch coverage is the wrong instrument for a guarantee that is
+not implemented in code, and the integration test is the right one. The pins are set below
+the measurement, as the file's own convention requires.
+
+**AND THE COVERAGE REPORTER HIDES FILES THAT PASS.** `shape.ts` did not appear in the text
+table at all, which read as though it had not been measured; the JSON summary shows it at
+100 on every metric. **A reporter that omits its best result looks identical to one that
+missed a file.**
