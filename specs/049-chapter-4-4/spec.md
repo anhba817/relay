@@ -234,6 +234,14 @@ neither written as an attempt nor terminated.
 - **FR-005b**: The record shall state **which layer decided the response** — handler, guard,
   middleware, or no match. Without it the api's two sources of 429 are one undifferentiated
   population, and only one of the two can carry an endpoint.
+- **FR-005b1**: Two of those four arms are **not observable from the producer**. A guard
+  refusal and a handler response are identical at `finish` — same status, same `req.route`,
+  same request properties. `middleware` and `guard` shall therefore be **stamped by the layer
+  that refuses**; `unmatched` and `handler` are inferred from the absence of a stamp.
+- **FR-005b2**: The inference in FR-005b1 holds only while every refusing layer stamps. A
+  layer that refuses without stamping is recorded as `handler`, which is wrong in the
+  direction that looks normal. The rule shall be written where a future guard's author will
+  meet it, and a test shall fail if a guard refuses without stamping.
 - **FR-006**: No request body, response body, header value or credential shall appear in the
   record (FR-ANL-11, constitution VI, NFR-SEC-06). **This contradicts FR-ANL-07's "truncated
   payload" as written; FR-018 governs.**

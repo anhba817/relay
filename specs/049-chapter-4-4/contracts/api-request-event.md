@@ -56,7 +56,7 @@ was.
 | `endpoint` | string | **only when the router ran** | the template, e.g. `/v1/channels/:channelId/messages`. Absent for a 404 and for every middleware refusal — two different facts, separated by `refused_at` |
 | `environment_id` | string (uuid) | when one resolved | absent, never null and never a sentinel |
 | `principal_kind` | string | always | `application` \| `user` \| `platform` \| `none` |
-| `refused_at` | string | always | `handler` \| `guard` \| `middleware` \| `unmatched` — **where the response was decided** |
+| `refused_at` | string | always | `handler` \| `guard` \| `middleware` \| `unmatched`. **`middleware` and `guard` are STAMPED by the refusing layer; `unmatched` and `handler` are inferred** — see below |
 | `limited_operation` | string | when the rate limiter refused | `send` \| `rest` \| `signup` — the limiter's own granularity, which is the finest true answer about its refusals |
 
 ### `refused_at`, and why `endpoint` needs a second source
@@ -89,6 +89,26 @@ independent path matcher to manufacture one would disagree with the real router 
 which is a worse bug than the gap (constitution VII).
 
 `unmatched` is the honest arm: a 404 matched nothing, and its `endpoint` stays absent.
+
+**Two of the four arms cannot be observed, and the producer must be told.** Measured — a guard
+refusal and a handler response are identical from `finish`:
+
+```
+/v1/fine         status=200 route=set  own keys=["body","route"]
+/v1/guard401     status=401 route=set  own keys=["body","route"]
+/v1/handler401   status=401 route=set  own keys=["body","route"]
+```
+
+So `middleware` and `guard` are **stamped** by the layer that refuses, and `handler` and
+`unmatched` are **inferred** from the absence of a stamp plus whether the router ran. The cost
+is one line in one file: `CredentialGuard` is the only class implementing `CanActivate` in this
+api, applied across 11 controllers, and it throws both the 401 and the `OVER_AUTH_THRESHOLD`
+429.
+
+**The inference is only as good as the stamping.** A guard added later that refuses without
+stamping is recorded as `handler` — a plausible value, silently wrong, in a column nothing
+would flag. That is the fence-chain checker's failure shape: the answer that means *"clean"*
+and the answer that means *"never looked"* printed the same line.
 
 **Absent, not empty.** `exactOptionalPropertyTypes` is on in this workspace and 3.20's
 `shape()` spreads optional fields in rather than assigning them, because *"an explicit

@@ -607,7 +607,12 @@ is not reading it.
 
 ## R21 — What the `limited_operation` values actually are
 
-`DEFAULT_LIMITS`'s keys, plus the signup family the limiter handles separately:
+**A subset of `DEFAULT_LIMITS`'s keys, plus the signup family the limiter handles separately.**
+The first version of this item said "`DEFAULT_LIMITS`'s keys" and that is wrong: it has
+**three** — `rest: 600`, `send: 600` and `connect: 3_000` — and `operationsFor` returns only
+`["rest"]` or `["rest", "send"]`. **`connect` is unreachable on this path**; it is the gateway's
+connection limit, counted through `/internal/usage/connections`. Typing `limited_operation` as
+`LimitedOperation` would admit a value this producer can never emit.
 
 | value | set by | path |
 |---|---|---|
@@ -618,3 +623,62 @@ is not reading it.
 
 Requests outside `/v1/` get `[]` and are never limited, `/healthz` included — R19 records why
 that one is deliberate.
+
+**And the value is not merely available, it is already named to the customer.**
+`rate-limit.middleware.ts:212`:
+
+```
+const what = refusal.operation === "send" ? "messages" : "requests";
+```
+
+The limiter tracks **which single operation tripped** — `refusal.operation`, not the array — and
+words the 429 body as *"too many messages"* or *"too many requests"* from it. R20 concluded the
+limiter had no usable knowledge to stamp; that was right about the route template and
+understated about the operation. **`limited_operation` is one field on one object that already
+exists**, which is the cheapest kind of finding to act on and the easiest to miss by reading the
+function that computes the array instead of the one that uses it.
+
+
+---
+
+## R22 — `refused_at` names four layers and the producer can see two
+
+Found in analysis pass 5, by asking whether the producer can observe the value pass 3 required
+it to record.
+
+FR-005b said the record *"shall state which layer decided the response — handler, guard,
+middleware, or no match."* At `finish` the producer holds the request and the response and
+nothing else. Measured:
+
+```
+can the producer tell a GUARD refusal from a HANDLER one?
+  /v1/fine         status=200 route=set  own keys=["body","route"]
+  /v1/guard401     status=401 route=set  own keys=["body","route"]
+  /v1/handler401   status=401 route=set  own keys=["body","route"]
+```
+
+**Identical.** Same status, same `route=set`, same own properties. Nest's guard pipeline leaves
+no trace on the request that outlives it.
+
+| arm | how |
+|---|---|
+| `unmatched` | observed — no `req.route`, status 404 |
+| `middleware` | stamped — no `req.route`, and the refusing middleware says so |
+| `guard` | **stamped** — indistinguishable otherwise |
+| `handler` | inferred — the router ran and nothing stamped |
+
+**Decision**: stamp in `CredentialGuard`. It is the only class implementing `CanActivate` in
+this api, applied across 11 controllers, and it throws both the 401 and the
+`OVER_AUTH_THRESHOLD` 429 — so the cooperation cost is one line in one file.
+
+**And the constraint underneath has to be written where the next author will meet it.** The
+`handler` arm is an inference from silence, so a guard added later that refuses without stamping
+is recorded as `handler`: a plausible value, wrong, in a column nothing would flag. That is the
+fence-chain checker's shape — *the zero that means "clean" and the zero that means "never
+looked" printed the same line* — and the answer is the same one 045 reached: make the checker
+fail on an unknown member rather than trust its inputs.
+
+**Three of the last three findings have been in the repairs rather than in the artifacts under
+repair** — pass 3's remedy, pass 3's requirement, pass 4's column type. A repair is written
+under the same pressure as the thing it repairs and gets less scrutiny, because it arrives
+labelled as the answer.
