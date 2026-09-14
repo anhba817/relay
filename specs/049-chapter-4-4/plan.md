@@ -85,10 +85,10 @@ relay-platform/
 ├── packages/protocol/src/internal.ts        API_REQUEST_ACTION, apiRequestSubject,
 │                                            and the tenantless arm
 ├── services/api/src/
-│   ├── analytics/request-event.ts           NEW — shape() + publishRequest()
-│   ├── analytics/request-event.test.ts      NEW — unit, the tenancy branch at 100%
-│   ├── analytics/request-analytics.middleware.ts   NEW — assembles on finish
-│   ├── analytics/request-analytics.itest.ts NEW — integration against the broker
+│   ├── request-log/event.ts                 NEW — toRequestEvent() + publishRequest()
+│   ├── request-log/event.test.ts            NEW — unit, the tenancy branch at 100%
+│   ├── request-log/request-log.middleware.ts       NEW — assembles on finish
+│   ├── request-log/request-log.itest.ts     NEW — integration against the broker
 │   └── app.module.ts                        the middleware chain gains one entry
 ├── services/ingester/src/
 │   ├── shape.ts                             route by `type`; absent means attempt
@@ -107,11 +107,19 @@ relay-tutorial/
 └── app/(en)/part-4/chapter-04/<slug>/       page.mdx + figures.ts
 ```
 
-**Structure Decision**: the producer lives in a new `services/api/src/analytics/` directory
+**Structure Decision**: the producer lives in a new `services/api/src/request-log/` directory
 rather than inside `request-context.middleware.ts`. R9 has the argument: that middleware's
 contract is a log line and a header, it is cited by EIR-API-05 and NFR-OBS-06, and it is
 fenced in the tutorial. A second middleware registered after it reads the request id the
 first one set.
+
+**`request-log/`, not `analytics/`, and `toRequestEvent()`, not `shape()`.** Both were
+`analytics`/`shape` in the first draft of this plan, which would have put a second "analytics"
+home in a service that already has `webhooks/analytics.ts`, and made `shape()` the **third**
+function of that name on one data path — record-to-wire in `webhooks/analytics.ts`,
+wire-to-row in `ingester/src/shape.ts`, and this one. FR-ANL-07's own word is *request log*,
+and 048's central defect was a silent mismatch across exactly the wire-to-row boundary those
+three names straddle.
 
 ## Phases
 
@@ -148,6 +156,12 @@ constitution I argument and US2 is the constitution III one — and phase 7 is t
   live consumer, and that is a phase of its own rather than a line.
 - **`req.route.path` is safe because of how these controllers are declared.** R6 measured
   both arrangements; a task asserts the property rather than assuming it survives.
+- **A premise that came back clean, recorded because a clean one is evidence.**
+  `app/(vi)/part-4/` is **empty** — Part 4 has no Vietnamese chapters, and 4.1 through 4.3
+  shipped `(en)` only. So this chapter adds no vi page and the thirty vi fences in the
+  opening 110 are all Part 3 and earlier. That is what makes the locale breakdown the right
+  instrument rather than a precaution: the vi total moves under translation and this chapter
+  can never be the cause.
 - **The 2,000–4,000 word bound.** Movement III's first chapter carries R7's constitutional
   argument, R8's clause conflict and R4's number. 4.3 came in under the floor at 1,659 words
   on its first draft and 4.1's estimate ran high. **Every Part 4 estimate so far has been

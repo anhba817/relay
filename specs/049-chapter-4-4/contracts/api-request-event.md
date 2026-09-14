@@ -101,6 +101,15 @@ At this tag the live `ANALYTICS` stream holds **37 records with no `type` field*
 a binary that never heard of one. The absent case is a compatibility rule with a test, not a
 default.
 
+## The producer's function is `toRequestEvent()`
+
+Not `shape()`. Two functions of that name already sit on this path and do different things:
+`services/api/src/webhooks/analytics.ts::shape` takes a record to the wire, and
+`services/ingester/src/shape.ts::shape` takes the wire to a row. **The boundary between those
+two is where 048's central defect lived** — the publisher sent `attempted_at`, the column was
+`ts`, and `JSONEachRow` left the column at a default older than the TTL. A third `shape()`
+astride that boundary is a naming choice this chapter in particular should not make.
+
 ## Running it
 
 Stack up, on the documented ports:

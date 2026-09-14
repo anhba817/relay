@@ -28,7 +28,23 @@ ENGINE = ReplacingMergeTree
 PARTITION BY toYYYYMM(ts)
 ORDER BY (environment_id, ts, request_id)
 TTL toDateTime(ts) + INTERVAL 30 DAY
+SETTINGS allow_nullable_key = 1
 ```
+
+**THE LAST LINE WAS MISSING AND THE STATEMENT DID NOT APPLY.** The first version of this
+section published the DDL without `SETTINGS`, and ClickHouse 25.3 refuses it:
+
+```
+Code: 44. DB::Exception: Sorting key contains nullable columns, but merge tree
+setting `allow_nullable_key` is disabled. (ILLEGAL_COLUMN)
+```
+
+**This section cited 047's identical finding three lines below the statement that repeated
+it.** 047 found SAD §6.2's DDL refused with `BAD_TTL_EXPRESSION` after it had been published
+since the first draft; this one was written in the same hour as the sentence recording that,
+and was refused for a different reason by the same server. A DDL that has not been run is a
+DDL that has not been checked, and the citation of a previous failure is not a substitute for
+running this one.
 
 **Every line of that carries a measurement from a previous chapter.**
 
@@ -60,6 +76,25 @@ conclusion**. Two shapes are live:
 R7 chose the *reading*; this chooses the *storage*, and phase 3 decides it with the isolation
 test in hand rather than here.
 
+**Both arms were measured before this was written, which is what the first version skipped.**
+With `SETTINGS allow_nullable_key = 1` and merges stopped so the neighbour is held still, six
+inserts — three tenantless and three tenant, each identical to its pair:
+
+```
+physical count()   6      count() FINAL      2
+tenantless FINAL   1      tenant A FINAL     1      tenant B FINAL  0
+```
+
+So deduplication works with a NULL in the sorting key, and the tenantless row is invisible to
+both tenant filters — **FR-010 holds at the storage layer, not only at the subject layer.**
+The one-table arm is therefore available; it costs one non-default merge-tree setting, and
+the setting has to be argued in the chapter rather than pasted.
+
+**`SYSTEM STOP MERGES` is part of that measurement, not hygiene.** The first run of this probe
+read `count()` between two insert batches and got **2 after six inserts**, because a merge ran
+in the gap — which reads as four inserts vanishing. That is 047's TTL lesson in a different
+costume: a row count taken the moment a load finishes is a moment, not a measurement.
+
 **What is not open**: no sentinel value. Not the zero UUID — 047 measured it producing one
 phantom active user per environment, holding a deleted author's messages. Not an empty
 string. A value that means "unknown" inside the tenant column is the failure this whole
@@ -87,6 +122,11 @@ that are data-model decisions:
   full template for this api because Nest registers on the root instance. A 404 has no
   `req.route`, so `endpoint` is absent and the consumer stores a stated sentinel rather than
   guessing — an unmatched request genuinely has no endpoint.
+- **The producer's function is `toRequestEvent()`, not `shape()`.** Two functions named
+  `shape` already sit on this path doing different transforms — `webhooks/analytics.ts::shape`
+  takes a record to the wire, `ingester/src/shape.ts::shape` takes the wire to a row. A third
+  would make `grep 'shape('` return three answers across the exact boundary whose silent
+  mismatch was 048's central defect.
 - **`ts` is the field name on the wire**, not `started_at` or `at`. 048's whole argument was
   one rename that fails silently; this chapter declines to introduce a second one. Where the
   publisher and the column can share a name, they share it.

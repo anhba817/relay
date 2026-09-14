@@ -38,7 +38,7 @@ measurement had been about the wrong database.
 - [ ] T004 [P] Re-run R3b and record in `specs/049-chapter-4-4/baseline.txt` what each filter saw: tenant A exact **1**, tenant B exact **0**, single-token wildcard **6 of 7**. **The 6 is the finding** — the five-token `no.tenant` subject is the one the wildcard missed.
 - [ ] T005 [P] Re-run R6 against Nest and record both arrangements in `specs/049-chapter-4-4/baseline.txt`: root-registered controllers give `req.baseUrl=""` and the full template; a mounted router drops the prefix; a 404 gives `undefined`. **Record that this api is the first case and why** — the controllers declare `v1` themselves.
 - [ ] T006 [P] Re-run R5 against the running api and record in `specs/049-chapter-4-4/baseline.txt` that all six probe requests produced a `"msg":"request"` line, with the logged `path` for the param route quoted verbatim. **The raw channel id in that line is the reason FR-005 exists.**
-- [ ] T007 [P] Count the api's routes by principal class into `specs/049-chapter-4-4/baseline.txt` — total decorators, controllers, and which carry `@Accepts({ platform: [...] })`. Planning counted 41 across 13. **Say plainly that this is a fact about the surface and not about traffic**; the volume-weighted share is T049's and they are different numbers.
+- [ ] T007 [P] Count the api's routes by principal class into `specs/049-chapter-4-4/baseline.txt` — total decorators, controllers, and which carry `@Accepts({ platform: [...] })`. Planning counted 41 across 13. **Say plainly that this is a fact about the surface and not about traffic**; the volume-weighted share is T052's and they are different numbers.
 - [ ] T008 [P] Run `pnpm check:fences` in `relay-tutorial` and record the opening in `specs/049-chapter-4-4/baseline.txt` **broken down by kind and locale** — APPLY and HEAD, `(en)` and `(vi)`. 047 and 048 both opened and closed at 110. Thirty live in the Vietnamese chain, which is under active translation and is not this chapter's work.
 - [ ] T009 [P] Pin the environment in `specs/049-chapter-4-4/baseline.txt`: node, pnpm, the NATS and ClickHouse image tags, `SELECT version()`, **the Nest and Express versions** (11.1.28 and 5.2.1 — Express 5 is why the middleware mounts with `{*path}`), cpus, RAM, `DOCKER_HOST`.
 - [ ] T010 [P] Record the analytical store's state fresh in `specs/049-chapter-4-4/baseline.txt`: `system.tables` for `relay_analytics`, the `schema_applied` ledger (tail `0003_webhook_attempts.sql`), and `webhook_attempts` row count. Record the lane's Postgres row counts beside them.
@@ -75,16 +75,17 @@ R1 measured that the window leaves no trace either instrument can see.
 
 **Blocking for US1, US2 and US3.** Nothing can be written to a table that does not exist.
 
-- [ ] T022 Decide `environment_id`'s nullability and record the decision **and its loser** in `specs/049-chapter-4-4/baseline.txt`: one table with `Nullable(UUID)`, or two tables. `data-model.md` §1 states both cases. **No sentinel value is on the table** — 047 measured the zero UUID producing one phantom active user per environment.
+- [ ] T022 Decide `environment_id`'s nullability and record the decision **and its loser** in `specs/049-chapter-4-4/baseline.txt`: one table with `Nullable(UUID)`, or two tables. `data-model.md` §1 states both cases **and both are now measured**: the one-table arm needs `SETTINGS allow_nullable_key = 1`, and with it, three identical tenantless rows collapse to `FINAL 1` while tenant B still sees 0. **No sentinel value is on the table** — 047 measured the zero UUID producing one phantom active user per environment.
 - [ ] T023 Write `analytics/0004_api_requests.sql` per `data-model.md` §1. One statement, qualified `relay_analytics.` — `apply.mjs` refuses both otherwise, and each refusal exists because the alternative was silent.
-- [ ] T024 Use `TTL toDateTime(ts) + INTERVAL 30 DAY`, not `TTL ts + INTERVAL`. 047 measured the second refused with `BAD_TTL_EXPRESSION` on a `DateTime64`, after the SAD had published the broken form since its first draft.
-- [ ] T025 Include the `ts_is_real` CHECK constraint. 048 measured that an absent column takes its default, a `DateTime64` default is the epoch, and the epoch is older than any TTL — **so the row is deleted at insert while the insert returns OK**.
-- [ ] T026 Run `node analytics/apply.mjs` and record `applied 1: 0004_api_requests.sql` in `specs/049-chapter-4-4/baseline.txt`. Run it a second time and record `applied nothing` — SC-007, and the line `CREATE TABLE IF NOT EXISTS` cannot produce.
-- [ ] T027 [P] Test the checksum refusal red: change one byte of `0004_api_requests.sql`, re-run, record the refusal text, restore. A ledger that claims a schema is applied when it is not is worse than one that has not run.
-- [ ] T028 Extend `services/ingester/src/clickhouse.ts` with the second table, keeping `input_format_skip_unknown_fields=0` and `date_time_input_format=best_effort`. 048 measured all three guards catching **different** failures: `Code: 117` for a renamed field, `Code: 469` for an absent one, `Code: 27` for an ISO string under the default parser.
-- [ ] T029 Give `services/ingester/src/main.ts` two row buffers on one fetch loop, and **acknowledge only after both inserts return**. 048's rule: nothing is acked until the write it belongs to has landed.
-- [ ] T030 Verify the table's shape against `data-model.md` with `SHOW CREATE TABLE relay_analytics.api_requests` and record it in `specs/049-chapter-4-4/baseline.txt`. **Ask the database rather than reading the file you just wrote.**
-- [ ] T031 Run the three gates and commit phase 3.
+- [ ] T024 If `environment_id` is nullable, the statement **must** carry `SETTINGS allow_nullable_key = 1`. Without it ClickHouse 25.3 answers `Code: 44 … Sorting key contains nullable columns … (ILLEGAL_COLUMN)`. **The first draft of `data-model.md` omitted it and cited 047's identical finding three lines below the statement that repeated it** — and `apply.mjs`'s checksum refusal means fixing this after it is applied costs a second statement file, not an edit.
+- [ ] T025 Use `TTL toDateTime(ts) + INTERVAL 30 DAY`, not `TTL ts + INTERVAL`. 047 measured the second refused with `BAD_TTL_EXPRESSION` on a `DateTime64`, after the SAD had published the broken form since its first draft.
+- [ ] T026 Include the `ts_is_real` CHECK constraint. 048 measured that an absent column takes its default, a `DateTime64` default is the epoch, and the epoch is older than any TTL — **so the row is deleted at insert while the insert returns OK**.
+- [ ] T027 Run `node analytics/apply.mjs` and record `applied 1: 0004_api_requests.sql` in `specs/049-chapter-4-4/baseline.txt`. Run it a second time and record `applied nothing` — SC-007, and the line `CREATE TABLE IF NOT EXISTS` cannot produce.
+- [ ] T028 [P] Test the checksum refusal red: change one byte of `0004_api_requests.sql`, re-run, record the refusal text, restore. A ledger that claims a schema is applied when it is not is worse than one that has not run.
+- [ ] T029 Extend `services/ingester/src/clickhouse.ts` with the second table, keeping `input_format_skip_unknown_fields=0` and `date_time_input_format=best_effort`. 048 measured all three guards catching **different** failures: `Code: 117` for a renamed field, `Code: 469` for an absent one, `Code: 27` for an ISO string under the default parser.
+- [ ] T030 Give `services/ingester/src/main.ts` two row buffers on one fetch loop, and **acknowledge only after both inserts return**. 048's rule: nothing is acked until the write it belongs to has landed.
+- [ ] T031 Verify the table's shape against `data-model.md` with `SHOW CREATE TABLE relay_analytics.api_requests` and record it in `specs/049-chapter-4-4/baseline.txt`. **Ask the database rather than reading the file you just wrote.**
+- [ ] T032 Run the three gates and commit phase 3.
 
 ---
 
@@ -95,19 +96,21 @@ R1 measured that the window leaves no trace either instrument can see.
 **Independent test**: issue a known set of requests, count them, count the rows, publish both
 numbers side by side.
 
-- [ ] T032 [P] [US1] Add `API_REQUEST_ACTION` and `apiRequestSubject(environmentId)` to `packages/protocol/src/internal.ts`, beside the webhook pair and using `analyticsSubjectFor` unchanged.
-- [ ] T033 [P] [US1] Add tests to `packages/protocol/src/internal.test.ts`: the subject matches `ALL_ANALYTICS_SUBJECT`, and a non-UUID environment is refused. **Assert the refusal, not only the success** — a validator tested on valid input is a validator untested.
-- [ ] T034 [US1] Write `services/api/src/analytics/request-event.ts` with a `shape()` that **names every field individually**. FR-002: an allow-list fails closed when somebody adds a field and a spread fails open. 3.20's `shape()` makes the same argument in its own comment; cite it rather than restating it.
-- [ ] T035 [US1] Add `publishRequest()` to `services/api/src/analytics/request-event.ts`, modelled on `publishAttempt` — never throws, logs once, no payload in the log line, dedup id is the request id.
-- [ ] T036 [US1] Write `services/api/src/analytics/request-analytics.middleware.ts`: capture the start instant on entry, assemble on `res.on("finish")`, read the request id from `req.requestId` rather than minting one.
-- [ ] T037 [US1] Take `endpoint` from `req.route.path` and **assert `req.baseUrl` is empty** rather than assuming it. R6 measured the same field dropping the `/v1` under a mounted router, which is the failure `request-context.middleware.ts` already carries a comment about from chapter 2.2.
-- [ ] T038 [US1] Omit `endpoint` when `req.route` is undefined. Absent, never `""` — `exactOptionalPropertyTypes` is on, and 3.20's comment says why an explicit `undefined` is not an absent key.
-- [ ] T039 [US1] Register the middleware in `services/api/src/app.module.ts` **after** `RequestContextMiddleware`, so the request id exists when it runs. Record the resulting chain in `specs/049-chapter-4-4/baseline.txt`.
-- [ ] T040 [P] [US1] Unit-test `shape()` in `services/api/src/analytics/request-event.test.ts`: every field, the absent-`endpoint` case, and that no body, header or credential can reach the output.
-- [ ] T041 [US1] Write `services/api/src/analytics/request-analytics.itest.ts`: issue N requests, drain with the ingester, count rows with `FINAL`, assert equality **against a non-zero floor**. 047's T023 compared three counts over an empty table and called them equal at `0, 0, 0` — a three-way equality with no floor is satisfied by nothing at all.
-- [ ] T042 [US1] Run the quickstart's §5 block verbatim and record its output in `specs/049-chapter-4-4/baseline.txt`. Constitution VI requires the quickstart to run unmodified; the way to know is to run it.
-- [ ] T043 [US1] Pin the new files in `vitest.coverage.config.mts` with the observed numbers and the swing, per the ratchet rule. **Run both halves of the key-matching probe** — a per-file threshold whose key matches no file is silent.
-- [ ] T044 [US1] Run the three gates and commit phase 4. **MVP ends here.**
+- [ ] T033 [P] [US1] Add `API_REQUEST_ACTION` and `apiRequestSubject(environmentId)` to `packages/protocol/src/internal.ts`, beside the webhook pair and using `analyticsSubjectFor` unchanged.
+- [ ] T034 [P] [US1] Add tests to `packages/protocol/src/internal.test.ts`: the subject matches `ALL_ANALYTICS_SUBJECT`, and a non-UUID environment is refused. **Assert the refusal, not only the success** — a validator tested on valid input is a validator untested.
+- [ ] T035 [US1] Write `services/api/src/request-log/event.ts` with a `toRequestEvent()` that **names every field individually**. FR-002: an allow-list fails closed when somebody adds a field and a spread fails open. 3.20's `shape()` makes the same argument in its own comment; cite it rather than restating it.
+- [ ] T036 [US1] Add `publishRequest()` to `services/api/src/request-log/event.ts`, modelled on `publishAttempt` — never throws, logs once, no payload in the log line, dedup id is the request id.
+- [ ] T037 [US1] Write `services/api/src/request-log/request-log.middleware.ts`: capture the start instant on entry, assemble on `res.on("finish")`, read the request id from `req.requestId` rather than minting one.
+- [ ] T038 [US1] Take `endpoint` from `req.route.path` and **assert `req.baseUrl` is empty** rather than assuming it. R6 measured the same field dropping the `/v1` under a mounted router, which is the failure `request-context.middleware.ts` already carries a comment about from chapter 2.2.
+- [ ] T039 [US1] Omit `endpoint` when `req.route` is undefined. Absent, never `""` — `exactOptionalPropertyTypes` is on, and 3.20's comment says why an explicit `undefined` is not an absent key.
+- [ ] T040 [US1] Register the middleware in `services/api/src/app.module.ts` **after** `RequestContextMiddleware`, so the request id exists when it runs. Record the resulting chain in `specs/049-chapter-4-4/baseline.txt`.
+- [ ] T041 [P] [US1] Unit-test `toRequestEvent()` in `services/api/src/request-log/event.test.ts`: every field, the absent-`endpoint` case, and that no body, header or credential can reach the output.
+- [ ] T042 [US1] Write `services/api/src/request-log/request-log.itest.ts`: issue N requests, drain with the ingester, count rows with `FINAL`, assert equality **against a non-zero floor**. 047's T023 compared three counts over an empty table and called them equal at `0, 0, 0` — a three-way equality with no floor is satisfied by nothing at all.
+- [ ] T043 [US1] Discharge **FR-017**: publish one request record, let the ingester take it, force a redelivery, and assert the store's `FINAL` count is unchanged. Publish physical `count()` and `FINAL` as a pair. **FR-017 had no task until this analysis pass** — it is the idempotency requirement, and 048 gave its equivalent a dedicated test for the reason constitution VI names idempotency by name.
+- [ ] T044 [US1] Run that count with `SYSTEM STOP MERGES` on the table. **A physical count taken while a background merge is running measures the merge.** This pass's own first probe read `2` after six inserts and it read as four rows vanishing; with merges stopped the same probe reads `6` physical and `2` FINAL.
+- [ ] T045 [US1] Run the quickstart's §5 block verbatim and record its output in `specs/049-chapter-4-4/baseline.txt`. Constitution VI requires the quickstart to run unmodified; the way to know is to run it.
+- [ ] T046 [US1] Pin the new files in `vitest.coverage.config.mts` with the observed numbers and the swing, per the ratchet rule. **Run both halves of the key-matching probe** — a per-file threshold whose key matches no file is silent.
+- [ ] T047 [US1] Run the three gates and commit phase 4. **MVP ends here.**
 
 ---
 
@@ -120,14 +123,14 @@ returns the second and not the first.
 
 **Depends on US1.** There is no tenantless record until there is a record.
 
-- [ ] T045 [P] [US3] Add the tenantless subject to `packages/protocol/src/internal.ts` as **its own function** returning the `_none` token, not as a relaxed argument to `analyticsSubjectFor`. R3a measured what a permissive token does: `no.tenant` published a five-token subject, `*` published a literal asterisk, and **neither failed at publish time**.
-- [ ] T046 [P] [US3] Test in `packages/protocol/src/internal.test.ts` that the tenantless subject is matched by `ALL_ANALYTICS_SUBJECT` and by **no** exact per-tenant filter.
-- [ ] T047 [US3] Resolve the environment in `services/api/src/analytics/request-analytics.middleware.ts` from `req.principal?.environmentId`, and record `principal_kind` as `application` | `user` | `platform` | `none`. **`platform` and `none` are different facts** and collapsing them loses the chapter's central number.
-- [ ] T048 [US3] Cover the tenancy branch in `services/api/src/analytics/request-event.test.ts` — environment present and absent — and publish the measured branch coverage beside constitution VI's 100%. **Met, or pinned with the shortfall stated as a number.** This is the clause 048 could not reach; this chapter can.
-- [ ] T049 [US3] Measure the **volume-weighted** tenantless share and record it in `specs/049-chapter-4-4/baseline.txt`, split by cause. Say which traffic produced it. T007's route count is a fact about the surface; this is a fact about one workload, and the lane is the least representative instrument here.
-- [ ] T050 [US3] Write the isolation test in `services/api/src/analytics/request-analytics.itest.ts`: a tenant-scoped read returns that tenant's rows and **zero** tenantless ones. Verification method **T**, because constitution I does not take a demonstration.
-- [ ] T051 [US3] Run `check-lane-scope.py` after adding the integration tests, and record its report. Every whole-table assertion is a neighbour's problem on a lane that no longer serialises.
-- [ ] T052 [US3] Run the three gates and commit phase 5.
+- [ ] T048 [P] [US3] Add the tenantless subject to `packages/protocol/src/internal.ts` as **its own function** returning the `_none` token, not as a relaxed argument to `analyticsSubjectFor`. R3a measured what a permissive token does: `no.tenant` published a five-token subject, `*` published a literal asterisk, and **neither failed at publish time**.
+- [ ] T049 [P] [US3] Test in `packages/protocol/src/internal.test.ts` that the tenantless subject is matched by `ALL_ANALYTICS_SUBJECT` and by **no** exact per-tenant filter.
+- [ ] T050 [US3] Resolve the environment in `services/api/src/request-log/request-log.middleware.ts` from `req.principal?.environmentId`, and record `principal_kind` as `application` | `user` | `platform` | `none`. **`platform` and `none` are different facts** and collapsing them loses the chapter's central number.
+- [ ] T051 [US3] Cover the tenancy branch in `services/api/src/request-log/event.test.ts` — environment present and absent — and publish the measured branch coverage beside constitution VI's 100%. **Met, or pinned with the shortfall stated as a number.** This is the clause 048 could not reach; this chapter can.
+- [ ] T052 [US3] Measure the **volume-weighted** tenantless share and record it in `specs/049-chapter-4-4/baseline.txt`, split by cause. Say which traffic produced it. T007's route count is a fact about the surface; this is a fact about one workload, and the lane is the least representative instrument here.
+- [ ] T053 [US3] Write the isolation test in `services/api/src/request-log/request-log.itest.ts`: a tenant-scoped read returns that tenant's rows and **zero** tenantless ones. Verification method **T**, because constitution I does not take a demonstration.
+- [ ] T054 [US3] Run `specs/045-part-3-rework/check-lane-scope.py` after adding the integration tests, and record its report. Every whole-table assertion is a neighbour's problem on a lane that no longer serialises.
+- [ ] T055 [US3] Run the three gates and commit phase 5.
 
 ---
 
@@ -138,13 +141,14 @@ returns the second and not the first.
 **Independent test**: two latency distributions, broker up and broker stopped, published side
 by side against NFR-PRF-02's 150 ms.
 
-- [ ] T053 [US2] Verify by inspection that the publish is not awaited on the request path, and record the call site in `specs/049-chapter-4-4/baseline.txt`. **Verification method I**: a timing test passes on a fast broker whether or not the await is there.
-- [ ] T054 [US2] Measure request latency with the broker healthy — a warm-up, then the sample — and record the distribution in `specs/049-chapter-4-4/baseline.txt`. 046 published a wrong number twice by comparing a cold run against a warm one.
-- [ ] T055 [US2] Stop NATS, repeat the measurement, and record both distributions. **Stop it gracefully.** 048's `EVENTS` store was left unrecoverable by an abrupt `down` mid-write, and the replacement built on the broken one inherited the failure invisibly.
-- [ ] T056 [US2] Record the status codes served during the broker-down run. **Latency is half the claim**; a response that is fast and wrong satisfies a timing assertion.
-- [ ] T057 [US2] Confirm the api logged its publish failure once per request and that the line carries no payload. A failure path that floods is a failure path that will be turned off.
-- [ ] T058 [US2] Restart NATS, confirm `/healthz` returns `{"status":"ok"}` and the container is healthy, and record it. 048-6's lesson: the check that proves a store recovered is **a deliberate restart**, not the fact that it answered once.
-- [ ] T059 [US2] Run the three gates and commit phase 6.
+- [ ] T056 [US2] Verify by inspection that the publish is not awaited on the request path, and record the call site in `specs/049-chapter-4-4/baseline.txt`. **Verification method I**: a timing test passes on a fast broker whether or not the await is there.
+- [ ] T057 [US2] Discharge **FR-007**: record the latency interval's two endpoints in `specs/049-chapter-4-4/baseline.txt` and confirm `contracts/api-request-event.md` states them. Entry to the request-log middleware, to the response's `finish`. **Say what is excluded** — connection accept, TLS, request-body transfer, and any middleware registered earlier. A duration compared against another duration measures the thing that changed only if both use the same endpoints.
+- [ ] T058 [US2] Measure request latency with the broker healthy — a warm-up, then the sample — and record the distribution in `specs/049-chapter-4-4/baseline.txt`. 046 published a wrong number twice by comparing a cold run against a warm one.
+- [ ] T059 [US2] Stop NATS, repeat the measurement, and record both distributions. **Stop it gracefully.** 048's `EVENTS` store was left unrecoverable by an abrupt `down` mid-write, and the replacement built on the broken one inherited the failure invisibly.
+- [ ] T060 [US2] Record the status codes served during the broker-down run. **Latency is half the claim**; a response that is fast and wrong satisfies a timing assertion.
+- [ ] T061 [US2] Confirm the api logged its publish failure once per request and that the line carries no payload. A failure path that floods is a failure path that will be turned off.
+- [ ] T062 [US2] Restart NATS, confirm `/healthz` returns `{"status":"ok"}` and the container is healthy, and record it. 048-6's lesson: the check that proves a store recovered is **a deliberate restart**, not the fact that it answered once.
+- [ ] T063 [US2] Run the three gates and commit phase 6.
 
 ---
 
@@ -153,23 +157,26 @@ by side against NFR-PRF-02's 150 ms.
 **Where the chapter's argument gets its evidence, and where three published documents get
 corrected.**
 
-- [ ] T060 [P] Measure the eviction rate in this environment and record it in `specs/049-chapter-4-4/baseline.txt`: bytes per record, capacity at 1 GiB, the sustained req/s at which seven days stops fitting, and the req/s at which the SAD's 24 h stops fitting. **If the answer is that it does not bite at this platform's scale, publish that too** — SC-006 asks for the number, not for a problem.
-- [ ] T061 [P] Record the `/healthz` share of the request log in `specs/049-chapter-4-4/baseline.txt`. R14 decided to record health checks and let the read exclude them; the share is what makes that decision visible rather than implied.
-- [ ] T062 Amend **FR-ANL-07** in `docs/04-srs.md` to drop "truncated payload", with the revision-history entry the governance clause requires. R8: the clause conflicts with FR-ANL-11 and constitution VI, and `POST /messages` has a body that is message text.
-- [ ] T063 Grep the amended claim everywhere before calling it done — `docs/`, `specs/`, both locales of the tutorial. **Fix the file that describes the thing and the one that instructs it.**
-- [ ] T064 Amend `docs/05-sad.md` lines 184 and 919: the stream's absorption is a function of the record rate, not a constant, and the retention is seven days rather than 24 h. Give the crossover number from T060. Bump the revision and run `pnpm sync:docs` — `check:docs` failed after a SAD amendment in both 047 and 048.
-- [ ] T065 Amend `docs/12-part-4-structure.md` §4's five cross-references against §3's table (R16). Add a line saying **why** they drifted — the interim 24-chapter numbering — so the next reader does not re-derive it.
-- [ ] T066 Record the decision on R12 in `specs/049-chapter-4-4/baseline.txt` — one consumer or two — with T060's number as the reason. If the stream splits, R2's constraint applies: `ANALYTICS` owns `analytics.>`, so a second stream needs that list narrowed on a published stream with a live consumer.
-- [ ] T067 Draft the chapter at `relay-tutorial/app/(en)/part-4/chapter-04/<slug>/page.mdx`. **Generalise 3.20's fire-and-forget argument, do not re-derive it** (FR-021) — and note that `docs/12` §4 pointed a writer at the wrong chapter for exactly this instruction.
-- [ ] T068 Put every mermaid source in `figures.ts`, never in `page.mdx`, and take every number in a figure from `specs/049-chapter-4-4/baseline.txt`. **No checker reads prose, and a mermaid block is prose.**
-- [ ] T069 Measure prose words outside code fences against the 2,000–4,000 bound and record the figure whether or not it forces a split. Every Part 4 estimate so far has been wrong downward; this chapter carries three arguments and is expected to run the other way.
-- [ ] T070 Publish titled fences as **whole bodies** where the file is new, and as `diff` hunks generated from the checker's own replay where it is not. 048 shipped one as an excerpt and the chain caught it in one run.
-- [ ] T071 Run `pnpm check:fences` and report the close as a **delta against T008's opening, broken down by kind and locale**. A bare total moves for reasons this chapter did not cause.
-- [ ] T072 Run all eight gates — five `check:*` in `relay-tutorial`, and `lint`, `typecheck`, `test` in `relay-platform`. **Build before `check:errors`**; it reads the built `dist`. `pnpm` in the wrong repository exits silently and reads as green.
-- [ ] T073 Write `specs/049-chapter-4-4/gaps.md` for everything found and not closed, each entry naming what it would cost to close.
-- [ ] T074 Write `specs/049-chapter-4-4/traceability.md` mapping FR-001…FR-023 and SC-001…SC-011 to tasks and to the artifacts that discharge them. **Record the requirements nothing discharged**, if any.
-- [ ] T075 Rewrite `CLAUDE.md`'s `<!-- SPECKIT -->` block for the close, including every task premise this feature falsified by running it.
-- [ ] T076 Commit phase 7, tag `part4-ch4` on `relay-platform`, and push all three repositories.
+- [ ] T064 [P] Measure the eviction rate in this environment and record it in `specs/049-chapter-4-4/baseline.txt`: bytes per record, capacity at 1 GiB, the sustained req/s at which seven days stops fitting, and the req/s at which the SAD's 24 h stops fitting. **If the answer is that it does not bite at this platform's scale, publish that too** — SC-006 asks for the number, not for a problem.
+- [ ] T065 [P] Record the `/healthz` share of the request log in `specs/049-chapter-4-4/baseline.txt`. R14 decided to record health checks and let the read exclude them; the share is what makes that decision visible rather than implied.
+- [ ] T066 Amend **FR-ANL-07** in `docs/04-srs.md` to drop "truncated payload", with the revision-history entry the governance clause requires. R8: the clause conflicts with FR-ANL-11 and constitution VI, and `POST /messages` has a body that is message text.
+- [ ] T067 Grep the amended claim everywhere before calling it done — `docs/`, `specs/`, both locales of the tutorial. **Fix the file that describes the thing and the one that instructs it.**
+- [ ] T068 Amend `docs/05-sad.md` lines 184 and 919: the stream's absorption is a function of the record rate, not a constant, and the retention is seven days rather than 24 h. Give the crossover number from T064. Bump the revision and run `pnpm sync:docs` — `check:docs` failed after a SAD amendment in both 047 and 048.
+- [ ] T069 Amend `docs/12-part-4-structure.md` §4's five cross-references against §3's table (R16). Add a line saying **why** they drifted — the interim 24-chapter numbering — so the next reader does not re-derive it.
+- [ ] T070 Record the decision on R12 in `specs/049-chapter-4-4/baseline.txt` — one consumer or two — with T064's number as the reason. If the stream splits, R2's constraint applies: `ANALYTICS` owns `analytics.>`, so a second stream needs that list narrowed on a published stream with a live consumer.
+- [ ] T071 If T070 decides **one consumer**, record the measured rate that makes one sufficient and file the crossover in `specs/049-chapter-4-4/gaps.md` as the condition under which a later chapter must revisit it. A decision that holds at today's volume is a decision with an expiry date.
+- [ ] T072 If T070 decides **split the stream**, narrow `ANALYTICS`'s subjects to `analytics.webhook.>` in `ensureAnalyticsStream` **before** creating the second stream — R2 measured the broker refusing an overlapping subject space with `err_code 10065`. `subjects` is in the `mutable` set, so it is an update; the live `analytics-ingester` durable and the records already on the stream are what make it a phase rather than a line. **T070 had only one outcome staffed until this analysis pass.**
+- [ ] T073 Draft the chapter at `relay-tutorial/app/(en)/part-4/chapter-04/<slug>/page.mdx`. **Generalise 3.20's fire-and-forget argument, do not re-derive it** (FR-021) — and note that `docs/12` §4 pointed a writer at the wrong chapter for exactly this instruction.
+- [ ] T074 Put every mermaid source in `figures.ts`, never in `page.mdx`, and take every number in a figure from `specs/049-chapter-4-4/baseline.txt`. **No checker reads prose, and a mermaid block is prose.**
+- [ ] T075 Measure prose words outside code fences against the 2,000–4,000 bound and record the figure whether or not it forces a split. Every Part 4 estimate so far has been wrong downward; this chapter carries three arguments and is expected to run the other way.
+- [ ] T076 Publish titled fences as **whole bodies** where the file is new, and as `diff` hunks generated from the checker's own replay where it is not. 048 shipped one as an excerpt and the chain caught it in one run.
+- [ ] T077 Run `pnpm check:fences` and report the close as a **delta against T008's opening, broken down by kind and locale**. A bare total moves for reasons this chapter did not cause.
+- [ ] T078 Run all eight gates. The five in `relay-tutorial` are **`check:fences`, `check:docs`, `check:srs`, `check:figures`, `check:errors`** — read off `package.json`, not remembered: an earlier draft of `quickstart.md` named `check:refs` and `check:revisions`, **and neither exists** (`pnpm check:refs` exits 254). Revision ordering lives inside `check:docs`. Then `lint`, `typecheck` and `test` in `relay-platform`. **Build before `check:errors`**; it reads the built `dist`.
+- [ ] T079 Write `specs/049-chapter-4-4/gaps.md` for everything found and not closed, each entry naming what it would cost to close.
+- [ ] T080 Discharge **SC-009**: audit every test this feature added and confirm none asserts only that a record was published. Idempotence, tenancy and redelivery are each asserted on what the store *holds*. **Two 204s prove nothing**, and a conditional assertion is an assertion that may not run. Record the count audited in `specs/049-chapter-4-4/baseline.txt`.
+- [ ] T081 Write `specs/049-chapter-4-4/traceability.md` mapping FR-001…FR-023 and SC-001…SC-011 to tasks and to the artifacts that discharge them. **Record the requirements nothing discharged**, if any.
+- [ ] T082 Rewrite `CLAUDE.md`'s `<!-- SPECKIT -->` block for the close, including every task premise this feature falsified by running it.
+- [ ] T083 Commit phase 7, tag `part4-ch4` on `relay-platform`, and push all three repositories.
 
 ---
 
@@ -197,9 +204,9 @@ Phase 7  numbers + chapter   ── needs 4; needs 5 and 6 for its figures
 ### Parallel opportunities
 
 - Phase 1: T004–T010 are all `[P]` — independent probes writing to separate sections.
-- Phase 4: T032 and T033 (protocol) run beside T040 (unit tests).
-- Phase 5: T045 and T046 (protocol) run beside T047's middleware work.
-- Phase 7: T060 and T061 are independent measurements.
+- Phase 4: T033 and T034 (protocol) run beside T041 (unit tests).
+- Phase 5: T048 and T049 (protocol) run beside T050's middleware work.
+- Phase 7: T064 and T065 are independent measurements.
 
 ---
 

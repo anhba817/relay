@@ -175,11 +175,36 @@ silently and reads as green.
 ```bash
 cd ../relay-tutorial
 pnpm check:fences      # report as a delta, broken down by kind and locale
-pnpm check:docs
-pnpm check:refs
+pnpm check:docs        # check-docs-drift.sh AND check-revision-order.mjs
+pnpm check:srs
+pnpm check:figures     # the gate over figures.ts — this chapter has three
 pnpm check:errors      # reads the BUILT dist — build first
-pnpm check:revisions
 ```
+
+**Four of those five exit 0. `check:fences` exits 1, and that is the inherited baseline
+rather than a break.** Run at the opening of this feature:
+
+```
+check-fence-chain: 110 problem(s) — APPLY 74, HEAD 36        exit 1
+pnpm check:docs      exit 0    11 revisions ascend, 1.0 to 1.10
+pnpm check:srs       exit 0    classes checked: ASM CON DR EIR FR NFR
+pnpm check:figures   exit 0    263 figures, every diagram passed as `code`
+pnpm check:errors    exit 0    27 codes, 27 sections, each with a cause
+```
+
+110 is the number 047 and 048 both opened and closed at. **The chain gate's exit code carries
+no information about this chapter** — it has been 1 since long before it, and it stays 1 until
+the inherited 110 are gone. What this chapter is answerable for is the **delta**, which is why
+FR-023 and SC-010 ask for the breakdown by kind and locale rather than for a pass. A reader
+who takes the exit code as the signal concludes they broke the chain by checking it out.
+
+**Those are the five, checked against `package.json` rather than remembered.** An earlier
+draft of this file listed `check:refs` and `check:revisions`, and neither exists:
+`pnpm check:refs` exits **254** with *Command "check:refs" not found*. Revision ordering is
+inside `check:docs`; `check-refs.py` is one of the Python instruments under
+`specs/045-part-3-rework/`, not a gate. **The two it omitted were `check:srs` and
+`check:figures`** — and `check:figures` is the gate over the `figures.ts` this chapter's
+figure task is entirely about, so the one that was missing was the one that mattered.
 
 And in `relay-platform`:
 
