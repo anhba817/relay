@@ -304,3 +304,138 @@ PHASE 2 — the consumer stops destroying records (US4)
     pnpm lint       exit 0   (after the three errors above were fixed)
     pnpm typecheck  exit 0
     pnpm test       exit 0   -- gateway 116, dispatcher 8, ingester 20, all suites green
+
+===============================================================================
+PHASE 3 — the table
+===============================================================================
+
+## T029 — `environment_id` is nullable, one table. The loser is recorded.
+
+    CHOSEN: one table, `Nullable(UUID)`, `SETTINGS allow_nullable_key = 1`.
+    REJECTED: two tables, tenant and tenantless, with a NOT NULL column on the first.
+
+    Both arms were measured before the choice. With merges stopped so the neighbour is held
+    still, six inserts -- three tenantless and three tenant, each identical to its pair:
+
+      physical count()   6      count() FINAL      2
+      tenantless FINAL   1      tenant A FINAL     1      tenant B FINAL  0
+
+    Deduplication works with a NULL in the sorting key, and the tenantless row is invisible
+    to both tenant filters. So FR-010 holds at the storage layer and not only at the subject
+    layer, which is what the two-table arm was there to guarantee. The two-table arm costs
+    two TTLs to keep in step, two inserts and a reconciliation that has to union them; it
+    buys a NOT NULL column and nothing else that was not already measured true.
+
+    The cost of the arm taken, stated rather than glossed: one non-default merge-tree
+    setting, which the chapter has to argue rather than paste.
+
+## T030-T035 — the statement
+
+    `analytics/0004_api_requests.sql`. One statement, every name qualified `relay_analytics.`
+    -- `apply.mjs` refuses both otherwise.
+
+    The server normalised two spellings on the way in, which is why T046 asks the database
+    rather than the file: `UUID NULL` was stored as `Nullable(UUID)`, and
+    `INTERVAL 30 DAY` as `toIntervalDay(30)`. The source was rewritten to the stored
+    spelling so the fenced file and `data-model.md` agree character for character.
+
+## T036/T037 — the ledger, and a refusal that fired for a real reason
+
+    Rewriting that spelling AFTER the file had been applied is exactly what the checksum
+    exists to catch, so the refusal was not staged:
+
+      apply failed: 0004_api_requests.sql changed after it was applied
+      (ledger 568bb415363ffd7d, file f40e1effacd5f304). ClickHouse has no ALTER path for
+      most of this; add a new statement file instead
+      exit code 1
+
+    Read the exit code OUTSIDE the pipeline. Reading it through `| sed` reported 0 -- sed's
+    status, not the script's -- which is the trap this project has now reproduced twice in
+    one feature and three times overall.
+
+    After dropping the table and its ledger row:
+      run 1   applied 1: 0004_api_requests.sql        exit 0
+      run 2   applied nothing                          exit 0     <- SC-007
+
+## T038-T041 — R12 settled here, and R24's framing corrected by building it
+
+    DECIDED: ONE consumer, one fetch loop, two row buffers.
+
+    R24 claimed the split "makes DR-11's prohibited single-row insert the quieter table's
+    routine case". Implementing it shows that overstated the novelty. 048's batch bound is
+    2 seconds OR 10,000 rows, and the interval arm exists precisely because "a row count
+    never flushes for a quiet tenant" -- so a quiet producer was ALREADY getting small
+    inserts, split or no split. Two consumers would not have fixed that: a second durable
+    on its own 2-second interval writes one row just as often.
+
+    WHAT THE SPLIT ACTUALLY CHANGES IS THE RATE, NOT THE SIZE. A fetch returns when either
+    bound is hit, so with requests plentiful the loop iterates faster than every 2 seconds,
+    and the attempt table gets an insert per iteration rather than per interval. Bounded by
+    max(batchMs, batchRows / request-rate): at 5,000 req/s a 10,000-row fetch takes 2 s and
+    nothing changes; at 50,000 req/s it takes 0.2 s and the attempt table sees five inserts
+    a second where it used to see one every two.
+
+    The measurement that makes it matter, merges stopped:
+      20 single-row inserts -> 20 parts, 20 rows
+      1 batch of 20 rows    -> 1 part,   20 rows
+
+    So the mitigation is the empty-buffer guard, and that guard was already there --
+    `clickhouse.ts` has carried `if (rows.length === 0) return;` since 048. It was tidiness
+    then and it is load-bearing now: most batches carry requests and no attempts at all.
+    T041 is satisfied by code this chapter did not write, and saying so is the point.
+
+    NOT TAKEN: per-table batch bounds, holding each buffer across fetches. It would cap the
+    insert rate, and it costs the thing 048 spent a phase getting right -- a message cannot
+    be acked until its row is written, so a buffer that spans fetches holds acknowledgements
+    open across them.
+
+## T046 — the table, asked of the database rather than read from the file
+
+    CREATE TABLE relay_analytics.api_requests
+    (
+        `environment_id` Nullable(UUID),
+        `ts` DateTime64(3, 'UTC'),
+        `request_id` UUID,
+        `endpoint` LowCardinality(Nullable(String)),
+        `method` LowCardinality(String),
+        `status` UInt16,
+        `latency_ms` UInt32,
+        `principal_kind` LowCardinality(String),
+        `refused_at` LowCardinality(String),
+        `limited_operation` LowCardinality(Nullable(String)),
+        CONSTRAINT ts_is_real CHECK ts > toDateTime64('2020-01-01 00:00:00', 3, 'UTC')
+    )
+    ENGINE = ReplacingMergeTree
+    PARTITION BY toYYYYMM(ts)
+    ORDER BY (environment_id, ts, request_id)
+    TTL toDateTime(ts) + toIntervalDay(30)
+    SETTINGS allow_nullable_key = 1, index_granularity = 8192
+
+    Matches `data-model.md` §1 column for column, with the two server normalisations noted
+    in T030-T035.
+
+## T042-T045 — the code
+
+    clickhouse.ts   a second insert and a second count. Separate calls rather than a `table`
+                    parameter, so the compiler names the call site when the row shapes differ.
+    ingest.ts       two buffers on one fetch; BOTH inserts before ANY ack, so a failure in
+                    the second replays the whole batch -- safe because both tables collapse
+                    on the record's own key.
+    shape.ts        `shapeRequest` names all ten columns and DROPS `type`.
+
+    T043 named `main.ts`; the file is `ingest.ts` after phase 2's move. The task text was
+    written before the move existed.
+
+    27 unit tests, 4 integration tests. The three that carry the argument:
+      - absent endpoint -> NULL, explicit "" -> '', a template -> itself. Two of those three
+        are indistinguishable under the wrong column type, so a test checking only the third
+        passes either way.
+      - a record forwarded with `type` still on it is refused:
+        Code: 117. Unknown field found while parsing JSONEachRow format: type
+      - a request record missing `refused_at` is malformed, not unclaimed.
+
+## T047 — the gates
+
+    pnpm lint       exit 0
+    pnpm typecheck  exit 0
+    pnpm test       exit 0   -- config 7, dispatcher 8, gateway 116, ingester 27

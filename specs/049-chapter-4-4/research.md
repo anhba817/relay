@@ -785,6 +785,24 @@ insert is almost entirely fixed cost, 1.5 ms for one row and 1.5 ms for a hundre
 quieter table's insert size becomes a function of the **louder** table's arrival rate — a
 dependency nobody chose and no artifact named.
 
+**CORRECTED IN PHASE 3, BY BUILDING IT.** The claim above — that the split *makes* single-row
+inserts the quieter table's routine case — overstates the novelty. 048's bound is 2 seconds OR
+10,000 rows, and the interval arm exists because *"a row count never flushes for a quiet
+tenant"*: a quiet producer was already getting small inserts, split or not. **And two consumers
+would not have fixed it** — a second durable on its own 2-second interval writes one row just as
+often.
+
+**What the split changes is the insert RATE, not the size.** A fetch returns when either bound is
+hit, so with requests plentiful the loop iterates faster than every 2 seconds and the attempt
+table gets an insert per iteration rather than per interval. Bounded by
+`max(batchMs, batchRows / request-rate)`: at 5,000 req/s a 10,000-row fetch still takes 2 s and
+nothing moves; at 50,000 req/s it takes 0.2 s and the attempt table sees five inserts a second
+where it saw one every two.
+
+So the mitigation is the empty-buffer guard — and **that guard was already in `clickhouse.ts`,
+written by 048 as tidiness.** It is load-bearing now, because most batches carry requests and no
+attempts at all.
+
 **Decision**: this is a second input to R12, and it moves that decision out of phase 7 and into
 phase 3, ahead of the two-buffer loop. The alternative that keeps one consumer is to apply the
 batch bound **per table** rather than per fetch, holding each buffer across fetches — and its
