@@ -439,3 +439,110 @@ PHASE 3 — the table
     pnpm lint       exit 0
     pnpm typecheck  exit 0
     pnpm test       exit 0   -- config 7, dispatcher 8, gateway 116, ingester 27
+
+===============================================================================
+PHASE 4 — the producer (US1). MVP.
+===============================================================================
+
+## THE COLUMN TYPE WAS WRONG, AND ONLY A RUNNING INGESTER SAID SO
+
+    Every gate was green -- lint, typecheck, 27 unit tests, the schema applied, the table
+    verified against `data-model.md` with SHOW CREATE. Then the ingester was started against
+    real traffic:
+
+      Code: 27. DB::Exception: Cannot parse input: expected ',' before:
+      '.556,"principal_kind":"none","refused_at":"handler","limited_operation":null}'
+
+    `latency_ms` was `UInt32`. The producer measures with `process.hrtime.bigint()` and
+    reports fractional milliseconds. Nothing in the type system connects a TypeScript `number`
+    to an unsigned integer column, and the contract's "latency_ms | number" is true of both.
+
+    NOTHING WAS LOST, WHICH IS 048's DESIGN WORKING. The insert threw, so nothing was
+    acknowledged: `ANALYTICS 38 messages · analytics-ingester pending 0 redelivered 2`. The
+    records sat on the stream until the column could take them.
+
+    THE CHEAPER FIX WOULD HAVE BEEN THE WRONG ONE. Rounding to whole milliseconds in the
+    producer keeps `UInt32` and destroys the resolution the log exists for. Measured after
+    the change, on real traffic through the rebuilt stack:
+
+      /healthz      GET  200  0.56   none  handler    ~absent
+      /v1/x         GET  404  0.921  none  unmatched  ~absent
+      /healthz      GET  200  0.41   none  handler    ~absent
+      /v1/webhooks  GET  401  2.29   none  guard      /v1/webhooks
+
+    Three of those four are under one millisecond. Under `UInt32` they would all read 0 and
+    FR-ANL-10's percentiles would be computed over a column that had thrown its own
+    resolution away. `Float32` now; `0004_api_requests.sql` was dropped and re-applied rather
+    than amended, because the ledger refuses an edit to an applied file and the schema had
+    not shipped.
+
+## WHAT THE ROW SAYS ABOUT WHICH LAYER DECIDED
+
+    401 from the guard  -> refused_at `guard`,     endpoint PRESENT   (the router ran)
+    404, no match       -> refused_at `unmatched`, endpoint ABSENT    (nothing to name)
+    429 from the limiter-> refused_at `middleware`, limited_operation `rest`
+    200 from a handler  -> refused_at `handler`
+
+    The 429 is the one that could not exist before. `RateLimitMiddleware` refuses with
+    `res.end(); return;` and never calls `next()`, so a producer registered last never runs
+    for it. Registered SECOND it does, and reads `req.principal` when the listener fires
+    rather than when it attached.
+
+## FR-017 — a redelivered request record, merges stopped
+
+    physical count 3 · FINAL 1
+
+    Three separate inserts of one record, not one insert of three rows -- which would have
+    proved nothing about redelivery. The physical count is the positive control: at 1 the
+    test would be measuring an insert that never happened.
+
+## LINT CAUGHT AN ARCHITECTURE VIOLATION, NOT A STYLE PROBLEM
+
+    src/request-log/request-log.itest.ts:5  error  'drizzle-orm' import is restricted from
+    being used. The query engine lives inside the repository layer only (constitution I,
+    ADR-16)
+
+    The test had reached for `sql` to set a per-environment rate limit. The fix is
+    `setEnvironmentLimits` in `db/repository.ts` -- the legal place -- rather than an
+    exemption. Three `_drop` destructures and three `as Record<string, unknown>` casts were
+    style; this one was the rule doing its job.
+
+    And the column it wanted did not exist: `rest_limit` came from reading a CONSTRAINT name
+    (`environments_rest_limit_non_negative`); the column is `rest_limit_per_minute`. Asked of
+    `information_schema` rather than inferred, after the failure.
+
+## COVERAGE, AND THE CLAUSE 048 COULD NOT REACH
+
+    services/api/src/request-log/event.ts                  st 100    br 100    fn 100  ln 100
+    services/api/src/request-log/request-log.middleware.ts st 100    br  88.46 fn 100  ln 100
+    packages/protocol/src/internal.ts                      st  92    br  85.71 fn  71.42 ln 93.33
+
+    Constitution VI names TENANT ISOLATION for 100% branch coverage. The tenancy branch --
+    a tenant's subject against the `_none` arm -- is in `event.ts`, and it measures 100%.
+    048 recorded the same clause as unreachable because its idempotency was a sorting key and
+    a schema has no branches to cover. This chapter's is a branch in TypeScript, so it is
+    covered rather than pinned with a shortfall.
+
+    The middleware's uncovered 11.54% is the defensive reads -- an absent `req.requestId`, an
+    absent `req.method` -- which no route can produce through the running app.
+
+    Both halves of the probe, again:
+      101%  ->  ERROR: Coverage for branches (100%) does not meet
+                "services/api/src/request-log/event.ts" threshold (101%)
+       100% ->  errors naming event.ts: 0
+
+## T074 — the quickstart section 5, verbatim
+
+    Ran against the rebuilt compose stack. THE FIRST RUN MEASURED THE OLD IMAGE: the api
+    container was still the pre-change build, so the two requests produced no rows at all and
+    the table showed older records instead. `docker compose build api` first; the output
+    above is the second run.
+
+## T076 — the gates
+
+    pnpm lint       exit 0   (after the four errors above)
+    pnpm typecheck  exit 0   (after three TS2352 casts)
+    pnpm test       exit 0   -- api 274, protocol 139, gateway 116, ingester 27,
+                                dispatcher 8, service-kit 3, config 7
+    api integration (request-log)  4 passed
+    ingester integration           5 passed

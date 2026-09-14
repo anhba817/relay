@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS relay_analytics.api_requests (
     endpoint       LowCardinality(Nullable(String)),
     method         LowCardinality(String),
     status         UInt16,
-    latency_ms     UInt32,
+    latency_ms     Float32,
     principal_kind LowCardinality(String),
     refused_at     LowCardinality(String),
     limited_operation LowCardinality(Nullable(String)),

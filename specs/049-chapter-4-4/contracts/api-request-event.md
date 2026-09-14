@@ -52,7 +52,7 @@ was.
 | `ts` | string (ISO-8601) | always | when the response finished |
 | `method` | string | always | |
 | `status` | number | always | |
-| `latency_ms` | number | always | R10's interval, stated below |
+| `latency_ms` | number | always | R10's interval, stated below. **Fractional** — the column is `Float32`, because the producer measures in nanoseconds and a whole-millisecond column would read 0 for every fast request |
 | `endpoint` | string | **only when the router ran** | the template, e.g. `/v1/channels/:channelId/messages`. Absent for a 404 and for every middleware refusal — two different facts, separated by `refused_at` |
 | `environment_id` | string (uuid) | when one resolved | absent, never null and never a sentinel |
 | `principal_kind` | string | always | `application` \| `user` \| `platform` \| `none` |
