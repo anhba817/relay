@@ -69,21 +69,51 @@ and the toolchain checks pass."* Nothing checks it.
 
 ---
 
-## 048-6 — THE NATS HEALTH CHECK IS RED, AND THE SERVICES RUN AROUND IT
+## 048-6 — CLOSED: A STREAM RECREATED ON A BROKEN STORE IS BROKEN TOO, AND SAYS NOTHING
 
 An abrupt `docker compose down` mid-write left the `EVENTS` stream unrecoverable:
-`JetStream stream '$G > EVENTS' could not be recovered`. The store was moved to
-`/data/quarantine/EVENTS.broken-20260914` inside the `nats-data` volume and `EVENTS` was
-recreated with the platform's own `ensureStream`, so all three streams work and every
-measurement in this feature ran against a functioning broker.
+`JetStream stream '$G > EVENTS' could not be recovered`. The broken store was renamed in
+place to `EVENTS.broken-20260914` and `EVENTS` was recreated with the platform's own
+`ensureStream`. All three streams then worked, and every measurement in this feature ran
+against that broker.
 
-**The quarantined directory is still scanned**, so `/healthz` reports unavailable and
-`docker compose --profile services up` fails its dependency gate. Phase 4 onward ran the
-services with `--no-deps`.
+**THIS ENTRY'S FIRST VERSION WAS WRONG ABOUT BOTH HALVES, AND CLOSING IT IS WHAT FOUND
+OUT.** It recorded the broken store as moved to `/data/quarantine/EVENTS.broken-20260914`
+and proposed `rm -rf /data/quarantine` as the remedy. `/data/quarantine` was **empty** —
+the move into it had failed and the rename happened inside the streams directory instead —
+so the recorded remedy would have deleted nothing and reported success. **A remedy nobody
+runs is a remedy nobody checks**, and this one was written from what was attempted rather
+than from what the directory held.
 
-Clearing it needs a delete inside the data volume. Closing this is one
-`docker compose exec nats rm -rf /data/quarantine`, or recreating the `nats-data` volume —
-which would discard the lane debris this feature already drained into ClickHouse.
+**AND REMOVING THE REAL CULPRIT DID NOT RESTORE HEALTH.** With `EVENTS.broken-20260914`
+gone, `/healthz` reported the identical error for **`EVENTS` itself** — the stream
+`ensureStream` had recreated. The replacement was written while the server's JetStream
+store was already failing recovery, and it inherited the failure: 96K of `meta.inf`,
+`meta.sum`, `msgs/index.db`, `msgs/1.blk` and six consumer directories that the server
+would not read back. `jsz` stopped listing `EVENTS` at all while the directory sat on disk.
 
-**And the health check did its job.** It went red for a real reason, on a stream that was
-genuinely broken, which is more than the ClickHouse check managed for sixteen chapters.
+**EVERY INSTRUMENT SAID IT WORKED.** `ensureStream` returned. `streams.info` answered with
+the right subjects and retention. Publishes and consumes ran through it for three phases.
+The store's inability to survive a restart was invisible until something restarted — which
+is this chapter's own lesson arriving one layer below the chapter: **a component verified
+only in the state it was created in is verified in one state.** The ingester's dedup token
+failed the same way, and so did the `attempted_at`/`ts` rename.
+
+**THE FIX WAS THE SAME ACT, DONE ON A CLEAN STORE.** `EVENTS` moved out of
+`/data/jetstream/$G/streams/`, NATS restarted to `{"status":"ok"}`, then the same
+`ensureStream` call — `events.>`, `max_age` 604800s, `discard old`. Verified by a
+**deliberate restart**, which is the check the first recreation never got:
+
+    healthz {"status":"ok"} · container healthy
+    ANALYTICS   37 messages · consumers 1
+    DELIVERIES  69 messages · consumers 11
+    EVENTS       0 messages · consumers 0
+
+The two real streams kept their contents across all of it; `--no-deps` is no longer needed
+and `docker compose --profile services up` passes its dependency gate again.
+
+**AND THE HEALTH CHECK DID ITS JOB TWICE.** It went red for a real reason on a genuinely
+broken stream, stayed red when the obvious culprit was removed and the problem was not,
+and went green only when the store could actually be read back. That is more than the
+ClickHouse check managed for sixteen chapters — and the difference is that this one asks a
+question whose answer can be no.

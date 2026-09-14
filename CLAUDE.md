@@ -98,12 +98,20 @@ chain replays 317 lines where the tree holds 944, and **591 of those lines diver
 this chapter touched it**. `gaps.md` 048-3 notes the shape — the chain's largest inherited
 HEAD problems are configuration files every chapter edits and no chapter owns.
 
-**THE NATS HEALTH CHECK IS RED AND THE SERVICES RUN AROUND IT (048-6).** An abrupt
-`compose down` mid-write left `EVENTS` unrecoverable; its store is quarantined inside the
-`nats-data` volume and `EVENTS` was recreated with the platform's own `ensureStream`. The
-quarantined directory is still scanned, so `/healthz` is unavailable and Phase 4 onward ran
-`--no-deps`. **The check went red for a real reason on a genuinely broken stream**, which is
-more than the ClickHouse check managed for sixteen chapters.
+**A STREAM RECREATED ON A BROKEN STORE IS BROKEN TOO, AND EVERY INSTRUMENT SAID IT WORKED
+(048-6, CLOSED).** An abrupt `compose down` mid-write left `EVENTS` unrecoverable, so it was
+renamed aside and recreated with the platform's own `ensureStream` — which **returned**,
+answered `streams.info` with the right subjects and retention, and carried three phases of
+publishes. Removing the original broken store then left `/healthz` reporting the **identical
+error for the replacement**: it had been written while JetStream was already failing recovery
+and inherited the failure, invisible until something restarted. **A component verified only
+in the state it was created in is verified in one state** — the same shape as this feature's
+dedup token and its `attempted_at`/`ts` rename, one layer below the chapter. The fix was the
+same act on a clean store, and the check that proves it is a **deliberate restart**: healthz
+`ok`, container healthy, ANALYTICS 37 · DELIVERIES 69 · EVENTS 0 all recovered, `--no-deps` no
+longer needed. **The health check went red twice for real reasons and stayed red when the
+obvious culprit was removed and the problem was not** — more than the ClickHouse check managed
+for sixteen chapters, because this one asks a question whose answer can be no.
 
 **047 IS CLOSED at 74 of 74 — CHAPTER 4.2, "the store that was never listening".** Its
 record is `specs/047-chapter-4-2/` — `baseline.txt` first, then `gaps.md` (five entries),
