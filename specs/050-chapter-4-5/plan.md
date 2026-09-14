@@ -36,8 +36,13 @@ gateway writes to neither directly.
 
 **Target Platform**: Linux, `compose.yaml`, `RELAY_POSTGRES_PORT=15432`.
 
-**Performance Goals**: NFR-SCL-01 is 10,000 concurrent connections per gateway instance at
-160 MB RSS. A publisher that moves either number is a publisher that has to justify it.
+**Performance Goals**: NFR-SCL-01 is one sentence — *"The system shall sustain 10,000
+concurrent WebSocket connections per gateway instance"* — and **carries no memory figure**. The
+160 MB comes from **SRS revision 1.9 (2026-09-06)**, which discharged the clause by
+measurement, and from `docs/11-scalability-measurement-2026-09-06.md`. That is the citation,
+and it also supplies the headroom: the measured RSS is **157 MB against 160**, and ADR-25
+records the revisit threshold at six per-channel SUBSCRIBEs or 250,000 projected subjects per
+instance. A publisher that moves either number is a publisher that has to justify it.
 
 **Constraints**: no publish inside a socket handler; no credential or message content in a
 record; the meter and the quota path unchanged.
@@ -188,9 +193,14 @@ different order from the one the tasks assume.
 - **The gateway's lane runs four files at a time**, so any whole-table or whole-registry
   assertion is a neighbour's problem. `check-lane-scope.py` is the instrument and 049-3 records
   that it points at a deleted worktree — retarget it or it reports zero for the wrong reason.
-- **NFR-SCL-01's 160 MB RSS** is a published number measured without a broker client in the
-  gateway. Adding one may move it, and the chapter should say by how much rather than leave the
-  figure to be re-derived by whoever next runs that battery.
+- **The 160 MB RSS is `docs/11`'s, not NFR-SCL-01's**, and it was measured without a broker
+  client in the gateway. Adding one may move it, and the chapter should say by how much rather
+  than leave the figure to be re-derived by whoever next runs that battery. The comparison to
+  make is against **157 MB**, the measured figure, with ADR-25's threshold beside it — *"a
+  sixth grammar costs about 3 MB in the worst ratio"* is the nearest published analogue for
+  what one more client might cost. **SRS open issue 3 also records NFR-SCL-01's neighbour as
+  undischarged**: ADR-10's revisit trigger, presence fan-out above ~30% of gateway publish
+  volume, which the lane cannot measure.
 
 ## Constitution re-check after Phase 1 design
 

@@ -169,6 +169,38 @@ makes **the missing sentence the defect rather than either choice**. VII's own l
 at the new-ADR form: *disagreement attacks the driver, not the choice*, and what changed here is
 a driver's price. FR-016a and T080a decide it out loud.
 
+**AND THREE CITATIONS POINTED AT CLAUSES THAT DO NOT SAY IT — 044'S LESSON REACHING SHIPPED
+SOURCE.** Eleven passes read the platform, the tutorial and the structure record; the twelfth
+opened the SRS the quotations point at.
+
+**DR-11 SAYS NEITHER NUMBER.** In full: *"Inserts shall be batched or use asynchronous insert
+mode; single-row synchronous inserts are prohibited."* No interval, no row count. `ingest.ts:21`
+says *"DR-11 publishes 2 s or 10,000 rows"* and 050's contract inherited it. The figures are
+**`docs/05-sad.md:182`**'s — *"batch-inserts to ClickHouse every 2 s or 10k rows (DR-11)"* —
+which chose them and credited a clause governing only the **shape** of the insert. Two hops, and
+the code comment is the furthest-travelled copy. **T081a amends DR-11 to carry them**, with
+049's crossover at 5,000 records/second as the measurement behind it.
+
+**NFR-SCL-01 CARRIES NO MEMORY FIGURE.** It is one sentence about 10,000 concurrent connections
+per gateway instance. The **160 MB** is SRS **revision 1.9** and
+`docs/11-scalability-measurement-2026-09-06.md`, which measured **157 MB against a 160 MB
+budget** and recorded ADR-25's revisit threshold — six per-channel SUBSCRIBEs, or 250,000
+projected subjects per instance. Cite the source that holds the number, and compare against 157
+rather than the rounded ceiling.
+
+**AND NO CLAUSE FORBADE A CREDENTIAL IN AN ANALYTICAL RECORD.** FR-003 cited **FR-ANL-11**,
+which governs message text (*"shall store only length and metadata, never message text"*), and
+**NFR-SEC-06**, which governs **application logs**. Neither reaches the record. The authority
+that does is **constitution III's allow-list** — *"only lengths, identifiers, and metadata"* —
+which refuses a credential by construction rather than by prohibition. **An allow-list is the
+citation; a deny-list about something else is not.**
+
+**AND FR-ANL-04's QUALIFIER WAS DROPPED FOUR TIMES.** The clause is *"within 60 seconds of the
+originating operation **under normal conditions**"*, method **A**. Every quotation stopped one
+phrase early — and FR-004e's retry rule is what makes the qualifier load-bearing, because a
+record published during a broker outage is queryable minutes late and that is not a breach.
+FR-004d measures where the clause asks only for analysis, deliberately.
+
 **TWO CONNECTION-MINUTE COUNTERS THAT MEASURE DIFFERENT QUANTITIES.** `meter.ts`: *"A
 CONNECTION IS CHARGED FOR EVERY CALENDAR MINUTE IT WAS OPEN FOR ANY PART OF. Open at 00:00:59
 and closed at 00:01:01 is two seconds of wall clock and TWO connection-minutes."* Records give

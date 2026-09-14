@@ -174,8 +174,15 @@ side of it is now zero.
   closes (FR-ANL-01).
 - **FR-002**: The record shall be assembled by naming every field individually, never by
   spreading a connection, session or socket object.
-- **FR-003**: No credential, token, header or message content shall appear in the record
-  (FR-ANL-11, constitution VI, NFR-SEC-06).
+- **FR-003**: No credential, token, header or message content shall appear in the record.
+  **The authority is constitution III's allow-list**: *"The analytical store MUST NOT contain
+  message text — only lengths, identifiers, and metadata."* A credential is none of those
+  three, so the allow-list refuses it by construction. An earlier draft cited **FR-ANL-11** and
+  **NFR-SEC-06** for the credential half, and neither reaches it: FR-ANL-11 governs message
+  text — *"shall store only length and metadata, never message text"* — and NFR-SEC-06 governs
+  **application logs**, not analytical records. FR-ANL-11 remains the authority for the
+  message-content half; NFR-SEC-06 is the argument by analogy, and it is a strong one, because
+  a stream with seven-day retention is at least as exposed as a log line.
 - **FR-004**: Publishing shall not block a socket handler, and its failure shall not close,
   refuse or delay a connection (constitution III, FR-ANL-03).
 - **FR-004a**: The buffer of unpublished records shall be **bounded**, and reaching the bound
@@ -188,11 +195,19 @@ side of it is now zero.
   and argues the direction; this is the same problem and gets the same treatment rather than a
   new one.
 - **FR-004c**: The buffer's flush interval shall be **named**, and the end-to-end budget shown:
-  FR-ANL-04 allows **60 seconds** from the originating operation to the record being
-  queryable, and the ingester's own batch bound spends up to 2 of them. An interval chosen for
-  batching alone spends a budget nothing else in this chapter is watching.
+  FR-ANL-04 allows **60 seconds** from the originating operation to the record being queryable
+  **"under normal conditions"**, and the ingester's own batch bound spends up to 2 of them. An
+  interval chosen for batching alone spends a budget nothing else in this chapter is watching.
+  **The qualifier is load-bearing and shall be quoted rather than dropped**: FR-004e retains a
+  failed record for a later tick, so a record published during a broker outage becomes
+  queryable minutes late — which reads as a breach of a bare 60-second bound and is not one.
+  Four quotations in this feature dropped it before analysis pass 11.
 - **FR-004d**: The end-to-end latency shall be **measured**, not derived — one connection
-  closing to its row being readable — and published against FR-ANL-04's 60 seconds.
+  closing to its row being readable — and published against FR-ANL-04's 60 seconds, with the
+  conditions of the measurement stated. **This is deliberately stricter than the clause.**
+  FR-ANL-04's verification method is **A**, analysis; a measurement satisfies A and analysis
+  does not satisfy a measurement, and this is the first chapter in Part 4 where the clause can
+  be breached at all.
 - **FR-004e**: A record whose publish **failed** shall be retained and retried on a later tick,
   within FR-004a's bound, rather than discarded at the flush. `meter.ts` drops a report that
   cannot be delivered — *"a lost report is repaired by the next one"* — and makes ONE exception:

@@ -98,18 +98,28 @@ destroyed, 500 records at a time, and counted as one.
 
 ## The flush interval, and the budget it spends
 
-**FR-ANL-04 allows 60 seconds** from the originating operation to the event being queryable.
+**FR-ANL-04 allows 60 seconds** from the originating operation to the event being queryable
+**"under normal conditions"** — the qualifier is the clause's, and it is what reconciles the
+bound with FR-004e's retry of a record the broker refused.
 This is the first buffered producer in Part 4 — chapter 4.4's publishes per request, straight
 from a `finish` listener, so the clause was satisfied without anyone choosing anything — and
 buffering is the first thing here that can spend the budget:
 
 ```
 gateway flush interval   <- named below
-ingester batch bound     up to 2 s   (BATCH_MS = 2_000)
+ingester batch bound     up to 2 s   (BATCH_MS = 2_000, `docs/05-sad.md` §4 — NOT DR-11)
 insert                   small
                          ---------
-FR-ANL-04 allows         60 s
+FR-ANL-04 allows         60 s  (under normal conditions)
 ```
+
+**THE INGESTER'S TWO BOUNDS ARE THE SAD'S, NOT DR-11's.** `ingest.ts` says *"DR-11 publishes
+2 s or 10,000 rows"* and DR-11 says no such thing — in full: *"Inserts shall be batched or use
+asynchronous insert mode; single-row synchronous inserts are prohibited."* No interval, no row
+count. The numbers are `docs/05-sad.md:182` — *"batch-inserts to ClickHouse every 2 s or 10k
+rows (DR-11)"* — which chose them and credited a clause that governs only the **shape** of the
+insert. Two hops, and the shipped comment is the furthest-travelled copy. The bounds are right
+and 049 measured where they cross, at **5,000 records/second**.
 
 **Copying `METER_INTERVAL_MS` would breach it.** The meter ticks every 60,000 ms, and the whole
 posture of this chapter is *be like the meter* — so the obvious number is the wrong one. The
