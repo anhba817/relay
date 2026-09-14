@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS relay_analytics.api_requests (
     status         UInt16,
     latency_ms     UInt32,
     principal_kind LowCardinality(String),
+    refused_at     LowCardinality(String),
     CONSTRAINT ts_is_real CHECK ts > toDateTime64('2020-01-01 00:00:00', 3, 'UTC')
 )
 ENGINE = ReplacingMergeTree
@@ -119,9 +120,16 @@ Full field list, types and the tenantless arm in `contracts/api-request-event.md
 that are data-model decisions:
 
 - **`endpoint` is the matched route template**, `req.route.path`, measured in R6 to be the
-  full template for this api because Nest registers on the root instance. A 404 has no
-  `req.route`, so `endpoint` is absent and the consumer stores a stated sentinel rather than
-  guessing — an unmatched request genuinely has no endpoint.
+  full template for this api because Nest registers on the root instance.
+- **And `req.route` is absent for two different reasons, which the first draft of this section
+  treated as one.** It said *"an unmatched request genuinely has no endpoint"* — true of a 404,
+  and false of a request refused in middleware. `req.route` is set by the router; a middleware
+  refusal ends the response before the router runs. A **defined** route refused by the rate
+  limiter therefore records no endpoint, and that is the request an operator most wants
+  attributed.
+- **`refused_at` carries the distinction**: `handler`, `guard`, `middleware`, `unmatched`. It is
+  the column that makes *"which endpoint is being rate-limited"* answerable at all, because
+  without it the two kinds of 429 this api produces are one undifferentiated population.
 - **The producer's function is `toRequestEvent()`, not `shape()`.** Two functions named
   `shape` already sit on this path doing different transforms — `webhooks/analytics.ts::shape`
   takes a record to the wire, `ingester/src/shape.ts::shape` takes the wire to a row. A third

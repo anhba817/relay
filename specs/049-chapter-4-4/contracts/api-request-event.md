@@ -53,9 +53,36 @@ was.
 | `method` | string | always | |
 | `status` | number | always | |
 | `latency_ms` | number | always | R10's interval, stated below |
-| `endpoint` | string | when the route matched | the template, e.g. `/v1/channels/:channelId/messages` |
+| `endpoint` | string | when the router ran, **or** when a middleware stamped what it matched | the template, e.g. `/v1/channels/:channelId/messages` |
 | `environment_id` | string (uuid) | when one resolved | absent, never null and never a sentinel |
 | `principal_kind` | string | always | `application` \| `user` \| `platform` \| `none` |
+| `refused_at` | string | always | `handler` \| `guard` \| `middleware` \| `unmatched` — **where the response was decided** |
+
+### `refused_at`, and why `endpoint` needs a second source
+
+`req.route` is set by **Express's router**. A middleware that refuses ends the response before
+the router runs, so the template is not there yet — not because there is no route. Measured:
+
+```
+/v1/fine       status=200  route=/v1/fine
+/v1/mw429      status=429  route=undefined      <- rate-limit.middleware.ts:122, :221
+/v1/guard429   status=429  route=/v1/guard429   <- credential.guard.ts:115
+```
+
+**The api has two sources of 429 and they are not the same record.** A guard runs after routing
+and keeps the template; the rate limiter runs before it and does not. Same status code, same
+meaning to a customer, and only one of them attributable to an endpoint — so *"which endpoint is
+being rate-limited"*, the question a request log exists to answer, would be unanswerable for
+exactly the 429s the rate limiter produces.
+
+`refused_at` makes that visible instead of silent. And the endpoint is recoverable without
+building a second router: `rate-limit.middleware.ts:109` already computes
+`operationsFor(req.method, path)` and tests `SIGNUP_PATH` — **it resolves the request to a
+logical operation before it decides to refuse it.** It stamps what it matched; the producer
+reads it. A second matcher of our own would disagree with the real router eventually, which is a
+worse bug than the gap.
+
+`unmatched` is the honest arm: a 404 matched nothing, and its `endpoint` stays absent.
 
 **Absent, not empty.** `exactOptionalPropertyTypes` is on in this workspace and 3.20's
 `shape()` spreads optional fields in rather than assigning them, because *"an explicit

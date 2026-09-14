@@ -224,6 +224,13 @@ neither written as an attempt nor terminated.
 - **FR-005**: `endpoint` shall be the matched route template, not the request's path. A raw
   path carries channel ids, message ids and user external ids — customer data at unbounded
   cardinality — and FR-ANL-07's word is "endpoint".
+- **FR-005a**: A request refused before the router runs shall still be attributable to an
+  endpoint where the refusing layer already knows which one it matched. The rate limiter
+  resolves the request to a logical operation before it decides; that resolution shall be
+  recorded rather than recomputed.
+- **FR-005b**: The record shall state **which layer decided the response** — handler, guard,
+  middleware, or no match. Without it the api's two sources of 429 are one undifferentiated
+  population, and only one of the two can carry an endpoint.
 - **FR-006**: No request body, response body, header value or credential shall appear in the
   record (FR-ANL-11, constitution VI, NFR-SEC-06). **This contradicts FR-ANL-07's "truncated
   payload" as written; FR-018 governs.**

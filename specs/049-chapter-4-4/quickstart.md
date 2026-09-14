@@ -148,7 +148,7 @@ curl -s -o /dev/null -w '%{http_code}\n' localhost:4000/v1/webhooks       # 401,
 curl -s -o /dev/null -w '%{http_code}\n' localhost:4000/healthz           # 200, no tenant
 
 curl -s -X POST http://localhost:8123/ -u relay:relay --data-binary \
-  "SELECT endpoint, method, status, latency_ms, principal_kind,
+  "SELECT endpoint, method, status, latency_ms, principal_kind, refused_at,
           isNull(environment_id) AS tenantless
      FROM relay_analytics.api_requests FINAL
     ORDER BY ts DESC LIMIT 10 FORMAT TSV"

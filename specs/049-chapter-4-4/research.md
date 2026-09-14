@@ -215,9 +215,11 @@ external id. FR-005 says endpoint, and this is why.
 ```
 
 **Decision**: `req.route.path` at `finish` is the template, and for this api it is the whole
-template because Nest registers on the root instance and `req.baseUrl` is empty. A 404 has no
+template because Nest registers on the root instance and `req.baseUrl` is empty.
+
+**AND THIS ITEM WAS WRONG ABOUT WHY IT CAN BE ABSENT — SEE R18.** It concluded *"a 404 has no
 `req.route` at all, which is correct rather than awkward: an unmatched request has no
-endpoint.
+endpoint."* A 404 is one of two cases, not the case.
 
 **The two probes disagree for a reason worth keeping.** Under a mounted router the same field
 gives `/channels/:channelId/messages` — no `/v1` — so a producer written against Express's
@@ -499,3 +501,67 @@ this record is the case that shows what that choice does — **terminating it is
 compared subject and body before deleting, because a cleanup that trusts a sequence number deletes
 whatever happens to hold it later. The stream is now 36 messages, 17,529 bytes, 487 bytes per
 record, 0 keyless, 0 carrying `type`.
+
+
+---
+
+## R18 — `endpoint` is absent for two different reasons, and the artifacts had one
+
+Found in analysis pass 3, by running pass 2's own prescription instead of asserting it.
+
+**First, the prescription holds.** The producer registered second captures every request,
+including the one a later middleware refuses without calling `next()`:
+
+```
+records the producer captured: 4 of 4 requests
+  /v1/ok     status=200 principal=application route=/v1/ok
+  /v1/ok     status=200 principal=none        route=/v1/ok
+  /v1/burst  status=429 principal=application route=undefined
+  /v1/nope   status=404 principal=none        route=undefined
+```
+
+`principal` reads correctly at fire time in both directions, which is what *attach early, read
+late* was for. **That is the positive control, and it is also the finding**: `/v1/burst` is a
+defined route with a controller handler, and its record has no endpoint.
+
+**`req.route` is set by Express's router.** A middleware refusal ends the response before the
+router runs, so the template is not there *yet* — which is a different fact from there being no
+route. R6, `data-model.md` and the contract all stated the 404 case as though it were the only
+one.
+
+**The api has two sources of 429 and they record differently:**
+
+```
+/v1/fine       status=200  route=/v1/fine
+/v1/mw429      status=429  route=undefined      <- rate-limit.middleware.ts:122, :221
+/v1/guard429   status=429  route=/v1/guard429   <- credential.guard.ts:115
+```
+
+A guard runs after routing and keeps the template. **So the 429s that come from the actual rate
+limiter are the ones that cannot be attributed to an endpoint** — and *"which endpoint is being
+rate-limited"* is the canonical reason to open a request log.
+
+**No middleware position gives both properties.** Position 4 loses the record entirely (that was
+pass 2's finding); position 2 keeps the record and loses the route. **The fix is where the next
+defect is**, for the fourth time in this feature.
+
+**And the remedy does not need a second router.** `rate-limit.middleware.ts:109` already computes
+`operationsFor(req.method, path)` and tests `SIGNUP_PATH` — it resolves the request to a logical
+operation *before* deciding to refuse it. It stamps what it matched and the producer reads it.
+Building an independent matcher would eventually disagree with the real router, which is worse
+than the gap it closes. `refused_at` records which layer decided, so the remaining gap is a
+published column rather than a silence.
+
+---
+
+## R19 — `/healthz` is never rate-limited, and that premise came back clean
+
+`rate-limit.middleware.ts:54`: *"`/healthz` never limited. Docker polls it every five seconds and
+`up -d --wait` depends on the answer; a limiter that can refuse it turns a busy minute into a
+failed deploy."*
+
+So R14's health-check share is a fact about the prober's interval alone — the limiter never
+removes health checks from the population and never adds 429s to it. **Checking a premise that
+holds is not a wasted pass**; it is the only way the clean ones become evidence, and this one
+means the health-check share can be compared across runs without asking what the limiter was
+doing.
