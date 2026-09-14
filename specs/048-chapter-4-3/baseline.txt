@@ -1,0 +1,141 @@
+BASELINE — chapter 4.3, "the consumer that was promised"       taken 2026-09-14
+==============================================================================
+
+Every figure in `research.md` came from a probe run during planning. Phase 1 re-runs each
+at this chapter's tag. **All nine hold.** Two of them are re-run specifically because the
+planning probe was wrong the first time and the corrected version is the one that counts.
+
+
+T008 — THE ENVIRONMENT, PINNED
+-------------------------------
+node            v22.23.2
+pnpm            10.33.0
+nats            nats:2.12-alpine
+clickhouse      image clickhouse/clickhouse-server:25.3, server 25.3.14.14
+postgres        18.6, on RELAY_POSTGRES_PORT=15432
+cpus            10        RAM  15 GB
+DOCKER_HOST     unix:///var/run/docker.sock
+
+
+T001 — THE STREAM HAS MESSAGES AND NO CONSUMER
+-----------------------------------------------
+    $ curl -s 'localhost:8222/jsz?streams=1&consumers=1'
+
+    ANALYTICS    messages     31  bytes  15,139  consumers 0
+    DELIVERIES   messages     46  bytes  14,490  consumers 0
+    EVENTS       messages     56  bytes  23,582  consumers 0
+
+**ALL THREE READ ZERO CONSUMERS, AND ONLY ONE OF THEM MEANS ANYTHING.** The compose stack
+runs `clickhouse mailpit nats postgres redis`; the api, gateway and dispatcher run from the
+lane or the CLI and were not up. So `EVENTS` and `DELIVERIES` show zero because their
+consumers are not running, and `ANALYTICS` shows zero because none exists.
+
+The planning probe read this table as evidence before noticing that. **A number that is
+right for two different reasons is evidence for neither until you separate them** — which is
+what T002 is for.
+
+
+T002 — THE CLAIM THE RUNTIME CHECK CANNOT MAKE
+------------------------------------------------
+Every `ANALYTICS_STREAM` reference outside `packages/protocol`, tests excluded:
+
+    services/api/src/outbox/jetstream.publisher.ts:10    import
+    services/api/src/outbox/jetstream.publisher.ts:135   streams.info
+    services/api/src/outbox/jetstream.publisher.ts:138   streams.add
+    services/api/src/outbox/jetstream.publisher.ts:147   streams.update
+
+Four references, one file, and all four CREATE or UPDATE the stream. Nothing reads it. The
+one consumer runtime in the repository:
+
+    services/api/src/consumer/runtime.ts:107    filterSubject = ALL_EVENTS_SUBJECT,
+
+
+T003 — THE STREAM'S BOUNDS, AND ITS OWN ACCOUNT OF ITSELF
+-----------------------------------------------------------
+    ANALYTICS_MAX_AGE_NS = 7 * 24 * 60 * 60 * SECOND_NS          (seven days)
+    MAX_BYTES            = 1024 * 1024 * 1024                    (1 GiB)
+    retention Limits · storage File · discard Old
+
+Quoted from `jetstream.publisher.ts`, not from `research.md`:
+
+    SEVEN DAYS, `discard: old`, and no acknowledgement anywhere: nothing consumes
+    this stream in this chapter. Seven days is long enough for an ingester to be
+    down over a long weekend and short enough that the stream does not quietly
+    become the analytical database it is supposed to feed.
+
+**"In this chapter" was chapter 3.20. This is the chapter it was waiting for.**
+
+
+T004 — THE TEMPLATE THIS CONSUMER MAY NOT REUSE
+-------------------------------------------------
+`runtime.ts:195` calls `claimEvent(db, durable, parsed!.id, effect)`. The function itself,
+read rather than cited:
+
+    return db.transaction(async (tx) => {
+      const claimed = await tx
+        .insert(consumedEvents)
+        .values({ consumer, eventId })
+        .onConflictDoNothing({ target: [consumedEvents.consumer, consumedEvents.eventId] })
+        .returning({ eventId: consumedEvents.eventId });
+      if (claimed.length === 0) return "duplicate";
+      await effect();
+      return "handled";
+    });
+
+A **PostgreSQL transaction**. Constitution III forbids it on this path, and the runtime's own
+header says it exists because *"a future consumer forgets to dedupe → double webhooks /
+double metering"*. This is that consumer.
+
+
+T005 — ReplacingMergeTree, WITH IDENTICAL SORTING KEYS
+--------------------------------------------------------
+    after 1 insert of 1,000 rows              count 1,000
+    after an IDENTICAL redelivery             count 2,000   ·   FINAL 1,000
+
+**The planning probe put `generateUUIDv4()` in the sorting key**, so its two batches were not
+duplicates at all and it reported 2,000 after `OPTIMIZE FINAL` as though that were a fact
+about ClickHouse. A duplicate test whose rows are not duplicates measures nothing and says
+something. This run uses one fixed environment id.
+
+
+T006 — THE DEDUPLICATION TOKEN, AND THE LINE THAT MATTERS
+-----------------------------------------------------------
+    1. plain MergeTree, same token twice          1,000 rows   the token did NOTHING
+                                                               and reported no error
+    2. non_replicated_deduplication_window = 100,
+       first insert                                 500 rows
+    3. same window, REDELIVERY, same token          500 rows   the block is refused
+
+**Line 1 is the finding.** The token without the window deduplicates nothing and says
+nothing. The mechanism is not used in this chapter anyway — R7 and R8 are why — but the
+failure shape is worth carrying: **a setting that looks configured and does nothing.**
+
+
+T007 — THE FENCE CHAIN, OPENING
+---------------------------------
+    check-fence-chain: 110 problem(s) — APPLY 74, HEAD 36
+
+    APPLY   30   app/(en)
+    APPLY   30   app/(vi)
+    APPLY   14   elsewhere
+    HEAD    36   app/(en)
+    ----------
+            110
+
+Identical to 047's opening and its close. **Thirty are in the Vietnamese chain**, under
+active translation and not this chapter's work, so FR-013's delta is reported per line at
+T055 rather than as one number.
+
+
+T009 — THE LANE, AND THE STORE
+--------------------------------
+    environments      31,685        message_edits   3,935
+    channels          46,143        outbox        487,481
+    messages         303,885
+
+    relay_analytics tables     0     (047's --drop-all left the database gone)
+    relay_corpus* databases    0     (047's close-out dropped it)
+
+**Every one of these is identical to 047's close-out.** 047 recorded the same figures as
+identical to 046's, so the lane has not moved across three features — nothing has run it.
+Recorded so the next feature can tell stillness from drift rather than assuming either.
