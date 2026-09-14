@@ -619,3 +619,60 @@ what this stream exists to keep. The shape that ships is the shape that was meas
 
     Inside the container the identical call fails five times a second. One function, one
     broker, and the only difference is where it runs.
+
+================================================================================
+PHASE 4 — THE RECORDS LAND (PARTIAL)
+================================================================================
+
+T037 — THE FIRST CONNECTIONS BECOME RECORDS
+    services/gateway/src/connection-log/connection-log.itest.ts
+        Test Files 1 passed · Tests 1 passed · 3.99 s
+
+    Six connections across SIX USERS, opened and closed, flushed once, read back off
+    ANALYTICS through an ephemeral consumer filtered to
+    `analytics.connection.*.{environment_id}`:
+
+        opened 6 · closed 6 · against a non-zero floor asserted first
+
+    N IS SPREAD ACROSS USERS BECAUSE FIVE IS A CEILING. `MAX_CONNECTIONS_PER_USER = 5`
+    is enforced by claiming one of five Redis slot keys per user per environment; the
+    sixth socket for one user is refused with close 4004 on a path that returns before
+    `open()`, so it produces no Connection and no record. Six sockets as one user would
+    have asserted 12 and measured 10, and the failure would have read as two lost
+    records rather than one refused connection.
+
+    AND THE FILTER IS THE TENANCY CLAIM, NOT A CONVENIENCE. The subject carries the
+    environment, so a per-run scope is expressible at all -- and `check-lane-scope.py`
+    cannot see any of this: its SHARED list is the lane's Postgres tables and its own
+    last line is "SQL text only". The scope is this file's job, not the sweeper's.
+    `afterAll` deletes this run's rows.
+
+T038 — CANNOT BE EXERCISED, AND THE REASON IS PHASE 3
+    `route()` claims `connection.opened` and `connection.closed` now, so a connection
+    record can no longer reach the `unclaimed` arm. The assertion that used to prove it
+    is in `shape.test.ts` as a diff between two lines -- `unclaimed` before phase 3,
+    `connection` after -- with `media.scanned` keeping the arm honest for the next
+    producer. Filed with T041.
+
+T039 — THE INTEGRATION LANE, AND typing.itest.ts IS RED
+    gateway integration lane, three full runs:
+
+        run 1 (with the new file)     typing 2 failed, 223 passed
+        run 2 (with the new file)     typing 2 failed, 223 passed
+        run 3 (new file stashed)      typing 1 failed, 223 passed
+
+    THREE RUNS, THREE DIFFERENT TEST NAMES, ONE FILE:
+        "delivers to a member added to the channel mid-connection"
+        "sends the signaller nothing while another member receives"
+        "keeps four kinds apart over one channel, each arriving once under its own type"
+
+    Alone it passes 23 of 23 in 13.75 s. That is the flake this project already records:
+    `vitest.integration.config.mts` names `maxWorkers: 4` as the measured knee and says
+    that above it "typing.itest.ts starts missing a presence frame it waits for".
+
+    WHAT IS NOT ISOLATED, SAID PLAINLY. Run 3 removed the new TEST FILE and kept the
+    committed producer, so it shows the extra file is not the cause and says nothing
+    about whether an eighth fabric and a NATS client per gateway contribute to the load.
+    Isolating that needs a run at `ef1daf1c~`, which has not been done. Three green runs
+    would not have settled it either -- this project has already recorded 8 of 8 green as
+    insufficient evidence that a load-dependent flake was gone.
