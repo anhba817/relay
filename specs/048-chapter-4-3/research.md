@@ -329,6 +329,50 @@ ways: **D** proves the system behaves once, **T** proves the branch that makes i
 exercised. Choosing D alone would have been defensible; choosing it without noticing which
 clause it touches would not.
 
+## R13 — Where does a malformed record go? **Named by its sequence, never by its bytes.**
+
+**Decision**: count it, log its **stream sequence number**, terminate it at the parse. The
+payload never reaches a log.
+
+**Rationale**: FR-010 said "counted and set aside" and named no destination, and the obvious
+destination is a log line. Constitution VI's last bullet forbids that:
+
+> Secrets, tokens, and message content never appear in logs.
+
+The attempt record carries **`error`** — *"Already capped at 2000 characters by the seam's
+schema"* — which is a third-party endpoint's response body and can contain whatever that
+endpoint chose to echo back. **A malformed payload is the case where quoting the bytes is
+most tempting**, because it is the case where you most want to see them.
+
+The sequence number resolves it without a tradeoff. The record stays in the queue for the
+retention window, so **anyone who needs the bytes fetches them by sequence as a deliberate
+act** — which is the difference between an investigation and a leak.
+
+**The precedent is three files away and already written.** `publishAttempt`'s own failure
+path logs `delivery_id`, `attempt` and the error string, under the comment *"One line, no
+payload, no secret."* The publisher solved this for itself in chapter 3.20 and the consumer
+inherited the problem without inheriting the answer.
+
+## R14 — What the env-access convention actually is, and a correction
+
+**Decision**: read `process.env` directly with named defaults, as every service does. No
+change needed.
+
+**Rationale**: this was checked expecting a divergence and there is none.
+`services/dispatcher/src/main.ts` does `process.env["RELAY_NATS_URL"] ?? DEFAULT_NATS_URL`,
+and **no service imports `@relay/config`** at all. The analytics scripts already match.
+`tsconfig.base.json` sets `noUncheckedIndexedAccess` but **not**
+`noPropertyAccessFromIndexSignature`, so the bracket style is convention rather than
+compiler-enforced — worth knowing before someone "fixes" it.
+
+**AND A CARRIED CLAIM WAS WRONG.** 047's T007 recorded
+`packages/config/src/infra.ts` as *"the only source file naming ClickHouse"*, and this
+feature carried it forward as though it held connection configuration. **It holds two lists
+of names** — `INFRA_SERVICES` and `DURABLE_VOLUMES` — and no configuration at all. There is
+no central ClickHouse config to extend, which is why this came back clean rather than as a
+fourth fenced-file amendment. **A true sentence, reused in a context that changed what it
+implied.**
+
 ## What research did not resolve
 
 - **How many records `discard: old` has already dropped.** The stream reports depth, not

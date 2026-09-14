@@ -166,8 +166,16 @@ count and the per-key counts against the number of distinct records published.
   delivery attempts is published anywhere.
 - **FR-009**: The ingester MUST NOT write to PostgreSQL, and MUST NOT read it on the
   ingestion path (constitution III).
-- **FR-010**: A malformed record MUST be counted and set aside rather than retried forever
-  or dropped silently.
+- **FR-010**: A malformed record MUST be counted and identified by its **stream sequence
+  number**, never by its contents. The record stays in the queue for the retention window, so
+  anyone who needs the bytes fetches them by sequence as a deliberate act.
+- **FR-010a**: The ingester MUST NOT write a record's payload to a log. Constitution VI:
+  *"Secrets, tokens, and message content never appear in logs."* The attempt record carries
+  **`error`, up to 2000 characters of a third-party endpoint's response**, which can contain
+  anything that endpoint echoed back — and a malformed payload is the case where logging the
+  bytes is most tempting. The publisher already solved this for itself: its failure path logs
+  `delivery_id`, `attempt` and the error string under the comment *"One line, no payload, no
+  secret."*
 - **FR-011**: The chapter MUST state what `discard: old` at `max_bytes` means for the
   records that are dropped, and whether seven days is the right retention now that
   something consumes the stream.

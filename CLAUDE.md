@@ -51,6 +51,22 @@ in"* — and the dedup it has built in is `claimEvent`, a **PostgreSQL transacti
 Constitution III forbids that on this path. **The template describing this consumer is the
 one thing this consumer may not reuse**, which is the chapter's central argument.
 
+**PASS 6 FOUND A DESTINATION NOBODY NAMED, AND THE DEFAULT ONE IS A LOG.** FR-010 said a
+malformed record is "counted and set aside" and named no where. The record carries **`error`
+— up to 2000 characters of a third-party endpoint's response**, and constitution VI says
+*"Secrets, tokens, and message content never appear in logs."* **Name it by stream sequence
+and never by contents**: the record survives in the queue for the retention window, so
+fetching the bytes becomes a deliberate act rather than an accident in a log file. **The
+publisher solved this for itself in 3.20** — `delivery_id`, `attempt`, the error string,
+under *"One line, no payload, no secret"* — and the consumer inherited the problem without
+inheriting the answer.
+
+**AND A CARRIED CLAIM WAS TRUE AND MISLEADING.** 047's T007 recorded
+`packages/config/src/infra.ts` as *"the only source file naming ClickHouse"*. It is — as two
+lists of compose service and volume names, holding **no configuration at all**. Carried into
+048 it read as "there is a central ClickHouse config", and there is not. **A true sentence
+reused in a context that changed what it implied.**
+
 **PASS 5 FOUND NO TESTS AT ALL, IN A CHAPTER WHOSE SUBJECT THE CONSTITUTION NAMES.** Twelve
 `test` matches in `tasks.md`, every one an "Independent test:" header — a manual
 demonstration. **Constitution VI singles out idempotency and tenant isolation for 100% branch
