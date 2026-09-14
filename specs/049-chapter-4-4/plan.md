@@ -115,21 +115,28 @@ first one set.
 
 ## Phases
 
-Six, and the order is an argument. **The consumer is fixed before the producer exists**,
+Seven, and the order is an argument. **The consumer is fixed before the producer exists**,
 because publishing into a consumer that terminates the record is shipping a defect and then
 fixing it.
 
-| # | Phase | What it settles |
-|---|---|---|
-| 1 | **Baseline and the premises** | `baseline.txt`: the stack's state, the fence-chain opening broken down by kind and locale, the api's route inventory by principal class, and R4's eviction number re-run in this environment. Re-run every premise the spec cites. |
-| 2 | **The consumer stops destroying records** | R11's `type` routing in `shape.ts`, with the absent-`type`-means-attempt compatibility rule tested. Proves R1's finding red first, then green. Nothing publishes yet. |
-| 3 | **The table** | `0004_api_requests.sql` through 4.2's ledger; `toDateTime` TTL, the `ts_is_real` constraint, the sorting key ending at `request_id`. The ingester writes it. |
-| 4 | **The producer** | The protocol function and its tenantless arm; the middleware; the tenancy branch at the coverage constitution VI asks for. The first end-to-end request-to-row. |
-| 5 | **The numbers and the amendments** | Latency with the broker up and stopped; the tenantless share, volume-weighted; the health-check share; the eviction rate against the SAD's 24 h. Then FR-ANL-07, the SAD and `docs/12` §4. |
-| 6 | **The chapter** | Prose, figures, fences, the eight gates, the fence delta, the tag. |
+**This was six when the plan was first written.** `/speckit-tasks` split the producer phase in
+two: US1 (a record for every request) and US3 (a record for the requests with no tenant) have
+different independent tests, and US3 carries the constitution I argument. Folding them into
+one phase would have made the gate on principle I a task inside somebody else's phase.
 
-**MVP is phases 1–4.** A record for every request, in a table, not destroyed. Phase 5 is what
-makes the chapter worth reading and phase 6 is the chapter.
+| # | Phase | Story | What it settles |
+|---|---|---|---|
+| 1 | **Premises and the numbers inherited** | — | `baseline.txt`: the stack, the fence-chain opening by kind and locale, the route inventory by principal class, and every `research.md` figure re-run at this tag. |
+| 2 | **The consumer stops destroying records** | US4 | R11's `type` routing, with the absent-`type`-means-attempt compatibility rule tested. R1's finding proved red, then green. Nothing publishes yet. |
+| 3 | **The table** | — | `0004_api_requests.sql` through 4.2's ledger; `toDateTime` TTL, `ts_is_real`, the sorting key ending at `request_id`. |
+| 4 | **The producer** | US1 | The protocol function, the middleware, the first request-to-row. **MVP ends here.** |
+| 5 | **The requests with no tenant** | US3 | The `_none` arm, `principal_kind`, the isolation test, and the tenancy branch at the coverage constitution VI names. |
+| 6 | **The path never costs a response** | US2 | Latency with the broker up and stopped, as two distributions; the status codes served while it was down. |
+| 7 | **The numbers, the amendments, the chapter** | — | The eviction rate, the health-check share, FR-ANL-07, the SAD's 24 h, `docs/12` §4, then prose, fences, gates and the tag. |
+
+**MVP is phases 1–4.** A record for every request, in a table, not destroyed by the consumer
+that was there first. Phases 5 and 6 are what make it correct rather than working — US3 is the
+constitution I argument and US2 is the constitution III one — and phase 7 is the chapter.
 
 ## Risks carried into tasks
 
