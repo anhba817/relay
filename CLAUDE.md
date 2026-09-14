@@ -159,6 +159,34 @@ gateway holds two clients anyway now, so NATS fan-out would **add none and remov
 cost side of the refusal goes to zero and the refusal survives on Redis alone. *Read the
 clauses, not the identifiers* — on a record the feature cites in five places.
 
+**AND AN ADR LIVES IN TWO DOCUMENTS — THE SAD'S SUMMARY AND `docs/06`'s ARGUMENT.** Ten passes
+amended the summary and none opened the deep dive, which holds ADR-07 over 98 lines with its own
+dated amendment block. **It also states the two lines this chapter falsifies, more fully than
+the SAD**: *"fan-out on NATS gives the gateway two broker clients where it had one"* — after
+this chapter, two where it had **two** — and *"Choosing Redis keeps a clean mapping — gateway to
+Redis, api and workers to NATS."*
+
+**THE MAPPING IS THE ARGUMENT, AND THE GATEWAY HALF IS THE HALF IT IS NAMED FOR.** 3.8 and 3.18
+broke the api half, and the deep dive records the consequence in one sentence: the two-client
+cost was *"relocated rather than avoided."* **This chapter puts it on the gateway, which is
+where the analysis refused to put it**, and afterwards the mapping describes nothing. That is
+sharper than the client-library count (nine passes) and than "remove none" (pass 10), and
+`docs/12` §7.2 has been waiting for it: *"giving the gateway a publisher amends it again, and
+that is a chapter's worth of argument rather than a line of wiring."*
+
+**AND 3.18 ALREADY WROTE THE AMENDMENT'S SHAPE.** Its block leaves the **Decision** and the
+**Revisit when** clauses explicitly untouched and claims only that *"the selection argument's
+tidiest line is no longer literally true, and a reader comparing it against `05-sad.md`'s
+component diagram deserves to be told so rather than left to reconcile them."* FR-016b holds
+that shape; T080b amends the deep dive.
+
+**AND `docs/12` §7 IS OPEN QUESTIONS, EACH OWNED BY A CHAPTER — 7.2 IS THIS ONE'S.** §7.1
+belonged to the ledger chapter, 4.2 built all four items of its brief, and §3's amendment
+records the closure. **T085 amended §3's row and nothing touched §7** until pass 13; T085a
+closes it. And a task had been steering the implementer AWAY from §7.2, calling its *"clean
+mapping"* quotation a paraphrase *"that appears nowhere in the SAD"* — true of `docs/05`,
+verbatim in `docs/06`.
+
 **AND CONSTITUTION VII SAYS ADRs ARE IMMUTABLE.** *"ADRs are immutable once accepted;
 superseding requires a new ADR."* ADR-07 carries **both** forms — in-place amendments dated
 2026-08-04 and 2026-09-03, and a status line reading *"extended by ADR-20 … and by ADR-22"* —

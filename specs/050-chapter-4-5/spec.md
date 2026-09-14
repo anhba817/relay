@@ -274,12 +274,24 @@ side of it is now zero.
 
 **The clauses**
 
-- **FR-016**: ADR-07's record shall be corrected where this chapter falsifies it. The clause
-  that stops being true is the body's **"would leave that service holding two broker clients
-  and remove none"** — after this chapter the gateway holds two regardless, so NATS fan-out
-  would add none and remove none, and the cost side of the refusal is zero. "Redis is mandatory
-  regardless (ADR-10)" is **not** a reason this chapter restores: the body has carried it since
-  the decision was accepted, and an earlier draft of this clause said otherwise.
+- **FR-016**: ADR-07's record shall be corrected where this chapter falsifies it, **in both
+  documents that hold it** — `docs/05-sad.md`'s summary and
+  `docs/06-adr-deep-dives.md`'s argument. What stops being true is the **selection argument**,
+  in two lines the deep dive states most fully: *"fan-out on NATS gives the gateway two broker
+  clients where it had one"* — after this chapter, two where it had **two** — and *"Choosing
+  Redis keeps a clean mapping — gateway to Redis, api and workers to NATS."* **The mapping is
+  the thing, and the gateway half is the half it is named for.** 3.8 and 3.18 broke the api
+  half, which the deep dive already records as *"the cost this analysis rejected core NATS for
+  imposing on the gateway, relocated rather than avoided"*; this chapter breaks the other one,
+  and afterwards the mapping describes nothing. "Redis is mandatory regardless (ADR-10)" is
+  **not** a reason this chapter restores: the body has carried it since the decision was
+  accepted, and an earlier draft of this clause said otherwise.
+- **FR-016b**: The correction shall leave the **Decision** and the **Revisit when** clauses
+  untouched and say so. Chapter 3.18 amended this same record from the api's side and wrote the
+  shape down: *"The Decision below is untouched by that … The Revisit when clauses are untouched
+  too … What changed is that the selection argument's tidiest line is no longer literally true,
+  and a reader comparing it against `05-sad.md`'s component diagram deserves to be told so
+  rather than left to reconcile them."*
 - **FR-016a**: The form of that correction shall be **chosen and stated**, not defaulted.
   Constitution VII says *"ADRs are immutable once accepted; superseding requires a new ADR"*,
   and ADR-07 carries both forms already — two in-place amendments (2026-08-04, 2026-09-03) and
