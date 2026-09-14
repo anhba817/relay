@@ -131,7 +131,9 @@ one.
 - A connection open at the moment the gateway process stops — its close event has no author.
 - A gateway instance killed with connections open: every one of them closes without a close
   record, so opens and closes do not balance.
-- A connection that never authenticates — is there an environment to attribute it to?
+- A connection that never authenticates. Not an open question: it never becomes a `Connection`,
+  so it reaches neither anchor and produces no record. The socket exists; the connection does
+  not.
 - The broker unreachable at gateway boot. **The gateway does not create the stream** —
   `ensureAnalyticsStream` belongs to the api (`services/api/src/outbox/jetstream.publisher.ts`)
   — so there is nothing for the gateway to retry and it must serve sockets against a client
@@ -171,19 +173,33 @@ one.
   batching alone spends a budget nothing else in this chapter is watching.
 - **FR-004d**: The end-to-end latency shall be **measured**, not derived — one connection
   closing to its row being readable — and published against FR-ANL-04's 60 seconds.
+- **FR-004e**: A record whose publish **failed** shall be retained and retried on a later tick,
+  within FR-004a's bound, rather than discarded at the flush. `meter.ts` drops a report that
+  cannot be delivered — *"a lost report is repaired by the next one"* — and makes ONE exception:
+  *"a connection that has CLOSED has no next report to repair a lost one, so its final total is
+  retained until a report carrying it is accepted."* **Every connection event is in that
+  exception.** An open is sent once and a close is sent once; neither has a next report
+  carrying it again. So the meter's exception is this producer's rule, and that is also what
+  makes FR-004a's bound bind for the meter's reason rather than for a new one.
+- **FR-004f**: The flush's outcome shall be recorded **per record**, because publishing is one
+  message per record and a flush of 500 has 500 outcomes rather than one. A flush that treats
+  a partial failure as total loss discards records the broker accepted; one that treats it as
+  total success discards records it did not.
 - **FR-005a**: The open record's instant shall be the connection's own `openedAt` — the
   instant the meter uses — not the moment the record is assembled or published. Two instants
   for one open would make FR-009's reconciliation disagree for a reason that is neither of the
   two the chapter explains.
 - **FR-005**: A close record shall carry the connection's duration, and the interval's two
   endpoints shall be stated rather than implied.
-- **FR-006**: A connection with no resolvable environment shall be given a decision of its own,
-  recorded with the option it rejects. **4.4's `_none` arm is not inherited.** That arm exists
-  because a request can be made by nobody; a connection event is emitted after a handshake, so
-  reusing it here needs an argument rather than a precedent — and the alternative, that such a
-  connection produces no record at all, is the one the contract currently assumes. An earlier
-  draft of this clause mandated 4.4's rule, which the contract, the data model and the plan all
-  contradict.
+- **FR-006**: The chapter shall record that a connection with no resolvable environment
+  **cannot reach either producer anchor**, and name the line that makes it so, rather than
+  deciding a policy for it. `open()` — the only function that builds a `Connection` and the only
+  caller of `registry.add` — takes a non-optional `Identity`, and its one call site reaches it
+  only after every refusal has returned: 429 on the upgrade, 4001 on a bad token, 1011 when the
+  api cannot answer, 4003 on a ban, 4008 on quota. An unauthenticated **socket** exists — three
+  of those complete the handshake in order to close it — but it never becomes a connection.
+  **4.4's `_none` arm is therefore not needed rather than not inherited.** Two earlier drafts of
+  this clause mandated a policy: the first 4.4's, the second a decision of the chapter's own.
 
 **The existing path**
 

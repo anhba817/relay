@@ -49,8 +49,13 @@ TTL toDateTime(ts) + INTERVAL 90 DAY
 **`environment_id` is NOT nullable here, unlike `api_requests`.** That is the difference
 between the two chapters and it is worth stating rather than inheriting: a request can be
 made by nobody, but a *connection* that has an event has completed a handshake, and a
-handshake produces an identity. R5 leaves one case open — a socket that never authenticates —
-and phase 1 decides whether it has an event at all rather than whether it has a tenant.
+handshake produces an identity.
+
+**And that is enforced by the type rather than assumed.** `open()` is the only function that
+builds a `Connection`, it takes a non-optional `Identity`, and its one call site reaches it
+after five refusal paths have each returned. A socket that never authenticates is closed at the
+door and reaches neither anchor. R5 called this an open case and three other artifacts carried
+it as one; analysis pass 6 read the door.
 
 **`event` in the sorting key, after `connection_id`.** One connection produces two rows with
 the same `connection_id`, so without it a `ReplacingMergeTree` would collapse the open into

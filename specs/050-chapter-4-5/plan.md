@@ -51,7 +51,7 @@ amendment, one chapter.
 
 | Principle | Bearing | Verdict |
 |---|---|---|
-| **I. Tenant isolation (NON-NEGOTIABLE)** | Every record carries an environment, taken from the resolved identity. | **PASS, with one open case.** A connection that never authenticates has no identity; R5 leaves whether it produces a record to phase 1 rather than assuming. 4.4's `_none` arm is for requests and is not reused without an argument. |
+| **I. Tenant isolation (NON-NEGOTIABLE)** | Every record carries an environment, taken from the resolved identity. | **PASS, and the open case was not one.** `open()` takes a non-optional `Identity` and is the only builder of a `Connection`; the 429 upgrade refusal, 4001, 1011, 4003 and 4008 each return before it. An unauthenticated socket never reaches either anchor, so no record can exist without a tenant and 4.4's `_none` arm is unnecessary rather than declined. This row read **"PASS, with one open case"** for five passes. |
 | **III. Two data paths** | The gateway is the service where a blocking publisher is most expensive: it holds long-lived sockets. | **PASS by construction, verified by measurement.** Nothing publishes from a handler; SC-002 measures connection outcomes with the broker stopped. |
 | **III, separation** | The quota counter must refuse synchronously and cannot move downstream of a lossy queue. | **PASS.** FR-007 keeps `/internal/usage/connections` unchanged; the two counters coexist and movement IV reconciles them. |
 | **VI. Requirement-driven** | 70% coverage; tenant isolation at 100% branches. | **PASS with a stated measurement**, as 4.4 did — the tenancy branch is coverable here too. |

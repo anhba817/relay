@@ -144,9 +144,15 @@ are handed over here, because the registry has already forgotten it by the time 
 could ask."* **The meter is told about closes and walks the registry for opens**, so the
 symmetry this item assumed is not there and the two records take two different anchors.
 
-**Open**: whether a connection that never authenticates has an open event at all. It has no
-environment and no identity, and the `_none` arm 4.4 built is for requests rather than
-connections. Left to the plan's phase 1 rather than assumed here.
+**CLOSED IN ANALYSIS PASS 6 — THE UNAUTHENTICATED CASE CANNOT REACH EITHER ANCHOR.** This item
+left open "whether a connection that never authenticates has an open event at all", and four
+other artifacts carried it as open. `open()` (`session.ts:912`) is the only function that builds
+a `Connection` and the only caller of `registry.add`; it takes `identity: Identity`, not
+optional; and its single call site is reached only after every refusal has returned — 429 on the
+upgrade, 4001 on a bad token, 1011 when the api cannot answer, 4003 on a ban, 4008 on quota.
+Three of those complete the handshake in order to close it, so an unauthenticated **socket**
+exists and an unauthenticated **connection** does not. The case is decided by the anchor choice,
+which R5 made for the meter's reasons and not for this one.
 
 ---
 
@@ -198,11 +204,19 @@ proof that `unclaimed` works on a real record rather than a synthetic one.
 
 ## R9 — What the close code can and cannot say
 
-The handler receives a WebSocket close code. `CLOSE_CODES` is a published registry — `check:errors`
-compares it in both directions — so the code is a controlled vocabulary rather than free text.
+The handler receives a WebSocket close code.
 
 **Decision**: record the code, not a reason string. A reason is a sentence somebody writes; a
-code is a value a checker already guards.
+code is an integer the protocol defines.
+
+**CORRECTED IN ANALYSIS PASS 1, AND THIS ITEM WAS NOT — PASS 6 FOUND IT STILL STANDING.** The
+paragraph here said `CLOSE_CODES` is a published registry that `check:errors` compares in both
+directions, *"so the code is a controlled vocabulary"* and *"a value a checker already guards"*.
+It is not this column's vocabulary. `CLOSE_CODES` holds **4001, 4002, 4003, 4004, 4008 and
+4009** — the platform's own 4xxx range. A clean close is **1000** and an abnormal one is 1006,
+and neither is in it, so `check:errors` guards nothing here and the field holds whatever close
+code the socket reports. `data-model.md` §2 and the contract were corrected in pass 1 and this
+item, which `plan.md` tells the reader to open first, kept the falsified claim for five passes.
 
 ---
 

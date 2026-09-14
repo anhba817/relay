@@ -66,6 +66,27 @@ also inverts R8, because a batch never reaches the `unclaimed` arm phase 2 exist
 **The surviving reading is one message per record, pipelined**, and the units in the three rows
 were the only tell: two said *publishes* and the third said *records*.
 
+**AND THE METER'S CAP BOUNDS A RETRY QUEUE, NOT A FLUSH BUFFER.** The contract copied
+`MAX_RETAINED_CLOSED = 4_000` and its drop direction and left behind the rule eleven lines
+above it: *"a report that cannot be delivered is DROPPED rather than queued"* — **with one
+exception**, *"a connection that has CLOSED has no next report to repair a lost one, so its
+final total is retained until a report carrying it is accepted."* **Every connection event is
+in that exception**: an open is sent once, a close is sent once, neither has a later report
+carrying it again. So a failed publish goes back in the buffer (FR-004e) and the outcomes are
+collected **per record** (FR-004f), because one message per record means a flush of 500 has 500
+answers where the meter has one. A buffer that emptied on every flush could never reach the cap
+at all — an unreachable broker would drain it every five seconds into failures.
+
+**AND THE UNAUTHENTICATED CONNECTION CANNOT ARISE.** Five artifacts carried it as a decision for
+phase 1, and the plan's constitution check read *"PASS, with one open case"*. `open()`
+(`session.ts:912`) is the only function that builds a `Connection` and the only caller of
+`registry.add`; it takes a **non-optional** `Identity`, and its one call site is reached only
+after 429-on-upgrade, 4001, 1011, 4003 and 4008 have each returned. Three of those complete the
+handshake in order to close it — so **an unauthenticated socket exists and an unauthenticated
+connection does not**, and 4.4's `_none` arm is unnecessary rather than declined. **A design in
+which a case cannot arise beats a branch that handles it**, and here the design had already
+done it on grounds nobody connected to this question.
+
 **ADR-07 NAMES THE ARGUMENT THIS CHAPTER SPENDS.** Its v1.1 amendment: *"That refusal is
 deliberately weaker than the others: **it is an argument about how many client libraries the
 gateway holds**, not about whether the mechanism fits."* This chapter takes the count from

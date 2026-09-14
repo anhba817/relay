@@ -21,9 +21,13 @@ get a bypass**. 4.4 measured what a permissive token does: `no.tenant` publishes
 subject the four-token wildcard does not match, and `*` publishes a literal asterisk — neither
 fails at publish time.
 
-**There is no `_none` arm here.** 4.4 needed one because a request can be made by nobody. A
-connection event is emitted after a handshake, and a handshake produces an identity. If phase 1
-finds a case that contradicts that, it gets its own decision rather than borrowing 4.4's.
+**There is no `_none` arm here, and the code is what says so.** 4.4 needed one because a
+request can be made by nobody. A connection event is emitted from `registry.add` and from
+`meter.closed`, and the only function that reaches either takes a non-optional `Identity` — its
+call site passes `result.identity` after the 429, 4001, 1011, 4003 and 4008 refusals have each
+returned. An unauthenticated socket never becomes a connection, so there is no record for a
+tenantless arm to carry. This paragraph said "if phase 1 finds a case that contradicts that"
+until analysis pass 6 went and looked.
 
 ## Deduplication id
 
@@ -136,6 +140,34 @@ violates it at the service level.
 So: a stated cap, drop on reaching it, **count the drops**, and say which direction the loss
 runs. Dropping the oldest loses the earliest events; dropping the newest loses the ones that
 describe the outage. Neither is free and the chapter picks one out loud.
+
+### What the cap is bounding, which is not what a flush buffer is
+
+**The number above bounds a retry queue, and copying it without that changes what it means.**
+Eleven lines above the constant, `meter.ts` states the rule the constant serves:
+
+> A lost report is repaired by the next one; a repeated one credits nothing; **a report that
+> cannot be delivered is DROPPED rather than queued.** The gateway holds no outbox…
+>
+> **WITH ONE EXCEPTION, AND IT IS THE HONEST HALF OF THAT CLAIM.** A connection that has CLOSED
+> has no next report to repair a lost one, so its final total is **retained until a report
+> carrying it is accepted.**
+
+`reportOnce` implements it: a closed entry is deleted only after `api.reportUsage` returns, and
+on a throw *"the closed ones stay."*
+
+**Every connection event is in that exception.** An open is sent once and a close is sent once;
+there is no later record that carries the same fact again. So the meter's rule for its one
+special case is this producer's rule for all of it: **a record whose publish failed stays in the
+buffer and goes again on the next tick**, and the cap is what stops that queue growing while the
+broker is away. A buffer that emptied on every flush regardless of outcome would never reach the
+cap at all — an unreachable broker would drain it every five seconds into failures — so the
+bound would be unreachable by construction and the losses would all be somewhere else.
+
+**And the outcomes are per record.** One message per record means a flush of 500 has 500
+answers, not one. The failed ones are the ones retained; the accepted ones are gone. The meter
+never faces this, because it sends one report for everything and gets one answer — which is
+another place where copying its shape needs the question it was answering, not just its code.
 
 ## Delivery guarantees
 
