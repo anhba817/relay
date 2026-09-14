@@ -167,12 +167,31 @@ v1.1, verbatim:
 **Decision**: amend ADR-07 a third time, and the amendment's job is to say what the fan-out
 decision now rests on — not to change it.
 
-**What survives once the library count is spent**: ADR-10 puts presence in Redis, so Redis is
-mandatory for the gateway regardless; the v1.1 text says a NATS-only proposal would have to
-move presence too and would be "a larger decision than this ADR". That is the surviving
-argument, and it was always the stronger one. The chapter's job is to make the record rest on
-it explicitly, because a reason that no longer holds is worse than no reason: it reads as
-settled.
+**CORRECTED IN ANALYSIS PASS 10 — THE BODY ALREADY SAYS WHAT THIS ITEM PROPOSED TO ADD.** This
+item read: *"What survives once the library count is spent: ADR-10 puts presence in Redis, so
+Redis is mandatory for the gateway regardless … That is the surviving argument … The chapter's
+job is to make the record rest on it explicitly."* ADR-07's **body** — not the amendment — has
+carried it since the decision was accepted:
+
+> core NATS pub/sub (technically apt — at-most-once, subject-based, comparable latency — and
+> **refused on dependency shape rather than mechanism: Redis is mandatory for the gateway
+> regardless, since ADR-10 puts presence in Redis with TTLs, so fan-out on NATS would leave
+> that service holding two broker clients and remove none**)
+
+Four artifacts quoted the v1.1 amendment and none opened the paragraph above it. *Read the
+clauses, not the identifiers*, on a record this feature cites in five places.
+
+**What this chapter actually falsifies is the arithmetic**: "would leave that service holding
+two broker clients and **remove none**". After this chapter the gateway holds two anyway, so
+NATS fan-out would add none and remove none — **the cost side of the refusal is zero**, and
+what is left is Redis's mandatory-ness on its own. v1.1's "how many client libraries" framing
+is the same clause restated, and it goes the same way.
+
+**Decision**: correct ADR-07, and decide the FORM rather than defaulting to it. Constitution VII
+says ADRs are immutable once accepted and superseding requires a new ADR; ADR-07 carries two
+in-place amendments and is **extended by ADR-20 and ADR-22**, so both forms have precedent on
+this exact record. VII's last line — *disagreement attacks the driver, not the choice* — points
+at the new-ADR form, because a driver's price is what changed.
 
 ---
 

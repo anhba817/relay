@@ -29,6 +29,24 @@
 - [X] Feature meets measurable outcomes defined in Success Criteria
 - [X] No implementation details leak into specification
 
+## Validity
+
+**This was validated on 2026-09-14 against a spec holding 25 functional requirements. It now
+holds 29**, and every one of the additions came from an analysis pass rather than from a
+redraft: FR-004a through FR-004f, FR-005a, FR-009a, FR-009b and FR-016a. **Nothing re-runs this
+file**, and `/speckit-implement` reads only the checkbox state, which has not changed since the
+day it was written.
+
+Two items are worth re-reading against the current text rather than trusting the ticks.
+*"Requirements are testable and unambiguous"* now has to hold for clauses added to settle
+arguments — FR-004e's retain-until-accepted rule and FR-006's cannot-arise finding among them.
+*"No implementation details leak into specification"* is the one the Notes below already argue
+on this project's terms, and FR-006 now cites `open()`, `Identity` and five WebSocket close
+codes by number, which is further into the tree than anything the original argument covered.
+
+The ticks are kept as the record of what was true on 2026-09-14. **Re-validate at close-out**,
+beside the traceability matrix, where the final requirement set is known.
+
 ## Notes
 
 **Two items pass on this project's terms, as they did for 046 through 049.** This specifies a

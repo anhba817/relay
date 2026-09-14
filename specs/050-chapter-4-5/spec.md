@@ -65,8 +65,25 @@ and this chapter increases that count by one.** After this chapter the gateway h
 client — so the stated reason for rejecting NATS as the fan-out fabric is spent, on ADR-07's
 own terms, by a chapter that is not about fan-out at all.
 
-That does not mean the fan-out decision should change. It means the record must stop resting
-on a reason that no longer holds, and say what it now rests on.
+**AND THE BODY ABOVE THAT AMENDMENT ALREADY CARRIES THE REASON THIS CHAPTER THOUGHT IT WAS
+SUPPLYING.** Four artifacts quoted the v1.1 block and none opened the paragraph it amends.
+ADR-07's original rejected list, verbatim:
+
+> core NATS pub/sub (technically apt — at-most-once, subject-based, comparable latency — and
+> **refused on dependency shape rather than mechanism: Redis is mandatory for the gateway
+> regardless, since ADR-10 puts presence in Redis with TTLs, so fan-out on NATS would leave
+> that service holding two broker clients and remove none**)
+
+So "Redis is mandatory regardless" is not a surviving argument this chapter restores — it has
+been in the record since the decision was accepted. **What this chapter falsifies is the
+arithmetic in the same parenthesis.** "Would leave that service holding two broker clients and
+remove none" describes a gateway that holds one client; after this chapter it holds two anyway,
+so moving fan-out to NATS would **add none and still remove none**. The cost side of the
+refusal goes to zero and the refusal survives on Redis's mandatory-ness alone.
+
+That does not mean the fan-out decision should change. It means the sentence that priced the
+decision stops being true, and the record has to say what it costs now — which is nothing, and
+is therefore no longer an argument at all.
 
 ### 4. And 4.4's finding lands squarely on this gateway
 
@@ -119,11 +136,14 @@ the same amounts as before.
 A reader of ADR-07 can tell why NATS is still not the fan-out fabric, given that the gateway now
 holds a NATS client.
 
-**Why this priority**: the ADR names the client-library count as its reason. Leaving that in
-place after the count changes is the silent divergence the governance clause forbids.
+**Why this priority**: the ADR prices its refusal of NATS in gateway broker clients — "two …
+and remove none" in the body, "how many client libraries the gateway holds" in v1.1 — and this
+chapter makes both counts wrong. Leaving them is the silent divergence the governance clause
+forbids.
 
-**Independent test**: the amendment exists, names the spent argument, and states the surviving
-one.
+**Independent test**: the record names the clause that stopped being true (**"remove none"**,
+not merely the library count), states what the refusal now rests on, and says that the cost
+side of it is now zero.
 
 ### Edge Cases
 
@@ -239,8 +259,18 @@ one.
 
 **The clauses**
 
-- **FR-016**: ADR-07 shall be amended to record that the client-library argument is spent, and
-  to state what the fan-out decision now rests on.
+- **FR-016**: ADR-07's record shall be corrected where this chapter falsifies it. The clause
+  that stops being true is the body's **"would leave that service holding two broker clients
+  and remove none"** — after this chapter the gateway holds two regardless, so NATS fan-out
+  would add none and remove none, and the cost side of the refusal is zero. "Redis is mandatory
+  regardless (ADR-10)" is **not** a reason this chapter restores: the body has carried it since
+  the decision was accepted, and an earlier draft of this clause said otherwise.
+- **FR-016a**: The form of that correction shall be **chosen and stated**, not defaulted.
+  Constitution VII says *"ADRs are immutable once accepted; superseding requires a new ADR"*,
+  and ADR-07 carries both forms already — two in-place amendments (2026-08-04, 2026-09-03) and
+  two extending records, **ADR-20** and **ADR-22**. VII's own closing line — *"disagreement
+  attacks the driver, not the choice"* — bears on it, because what changes here is a driver's
+  arithmetic rather than the choice.
 - **FR-017**: Where a measurement in this chapter falsifies a published document, that document
   shall be amended in this feature.
 

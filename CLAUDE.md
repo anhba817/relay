@@ -147,9 +147,27 @@ plainly rather than implying by a short list.
 **ADR-07 NAMES THE ARGUMENT THIS CHAPTER SPENDS.** Its v1.1 amendment: *"That refusal is
 deliberately weaker than the others: **it is an argument about how many client libraries the
 gateway holds**, not about whether the mechanism fits."* This chapter takes the count from
-**5 to 6**. The fan-out decision should not change; the record must stop resting on a reason
-that no longer holds, and say what it now rests on — ADR-10 puts presence in Redis, so Redis is
-mandatory regardless, and that was always the stronger half.
+**5 to 6**.
+
+**AND THE PARAGRAPH ABOVE THAT AMENDMENT ALREADY SAID WHAT FIVE ARTIFACTS PROPOSED TO ADD.**
+They all quoted v1.1 and none opened the body it amends, for nine passes. ADR-07's original
+rejected list: *"refused on dependency shape rather than mechanism: **Redis is mandatory for
+the gateway regardless, since ADR-10 puts presence in Redis with TTLs**, so fan-out on NATS
+would leave that service holding two broker clients and remove none."* So the "surviving
+argument" was never lost. **What this chapter falsifies is the arithmetic beside it**: the
+gateway holds two clients anyway now, so NATS fan-out would **add none and remove none** — the
+cost side of the refusal goes to zero and the refusal survives on Redis alone. *Read the
+clauses, not the identifiers* — on a record the feature cites in five places.
+
+**AND CONSTITUTION VII SAYS ADRs ARE IMMUTABLE.** *"ADRs are immutable once accepted;
+superseding requires a new ADR."* ADR-07 carries **both** forms — in-place amendments dated
+2026-08-04 and 2026-09-03, and a status line reading *"extended by ADR-20 … and by ADR-22"* —
+so precedent does not decide it and the constitution names only one. The plan's Constitution
+Check cited VII for scope and never for the clause governing the act FR-016 requires; governance
+demands the conflict *"resolved explicitly by amendment rather than silent divergence"*, which
+makes **the missing sentence the defect rather than either choice**. VII's own last line points
+at the new-ADR form: *disagreement attacks the driver, not the choice*, and what changed here is
+a driver's price. FR-016a and T080a decide it out loud.
 
 **TWO CONNECTION-MINUTE COUNTERS THAT MEASURE DIFFERENT QUANTITIES.** `meter.ts`: *"A
 CONNECTION IS CHARGED FOR EVERY CALENDAR MINUTE IT WAS OPEN FOR ANY PART OF. Open at 00:00:59
