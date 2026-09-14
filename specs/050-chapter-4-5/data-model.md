@@ -88,6 +88,19 @@ somebody writes.
 
 ## 3. The quantity computed twice
 
+**And over a population the two sides do not share.** `reportOnce` builds its report from
+`[...closedNow, ...open]` — it walks the registry and bills connections that are **still open**,
+because `bucketsFor` counts from `openedAt`'s bucket through now inclusive and *"returning zero
+for a fresh socket would make a report for it indistinguishable from no report at all."*
+
+A connection that has not closed has **no close record**, so nothing can be derived for it. Any
+comparison that does not scope to connections with both records differs by every open one. The
+window has to be closed long enough that every connection in it has ended, and the derivation
+has to split by period the way the meter does — a socket spanning a month boundary owes two
+periods, credited independently.
+
+
+
 `meter.ts` reports **minute buckets touched**: a connection open at 00:00:59 and closed at
 00:01:01 owes **two** connection-minutes. The records above give **elapsed duration**: 2,000 ms.
 

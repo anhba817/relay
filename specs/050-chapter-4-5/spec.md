@@ -188,6 +188,14 @@ one.
 
 **The broker client**
 
+- **FR-009a**: The reconciliation shall cover **only connections with both records present**.
+  The meter reports minutes for connections that are still open — `reportOnce` walks the
+  registry and includes them — and a connection that has not closed has no close record. Over
+  an unscoped population the two sides differ by every open connection, which is a third cause
+  in a comparison built to have two.
+- **FR-009b**: Derived buckets shall be **split by period** the way the meter splits them. A
+  socket open across a month boundary owes minutes to two periods and each is credited
+  independently; a derivation that does not split the same way disagrees for a fourth reason.
 - **FR-010**: The gateway shall hold exactly one broker client, created once and shared, with a
   lazy connection.
 - **FR-011**: The dependency added to `services/gateway` shall be counted and named, because
