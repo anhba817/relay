@@ -152,6 +152,19 @@ one.
   (FR-ANL-11, constitution VI, NFR-SEC-06).
 - **FR-004**: Publishing shall not block a socket handler, and its failure shall not close,
   refuse or delay a connection (constitution III, FR-ANL-03).
+- **FR-004a**: The buffer of unpublished records shall be **bounded**, and reaching the bound
+  shall drop records rather than grow. An unbounded buffer on a service holding 10,000 sockets
+  satisfies FR-004 at the record level and violates it at the service level: the process dies
+  and takes every connection with it.
+- **FR-004b**: Drops shall be **counted and reported**, and the chapter shall state **which
+  direction the loss runs** — dropping the oldest loses the earliest events, dropping the
+  newest loses the ones describing the outage. `meter.ts` bounds its own retention at 4,000
+  and argues the direction; this is the same problem and gets the same treatment rather than a
+  new one.
+- **FR-005a**: The open record's instant shall be the connection's own `openedAt` — the
+  instant the meter uses — not the moment the record is assembled or published. Two instants
+  for one open would make FR-009's reconciliation disagree for a reason that is neither of the
+  two the chapter explains.
 - **FR-005**: A close record shall carry the connection's duration, and the interval's two
   endpoints shall be stated rather than implied.
 - **FR-006**: A connection with no resolvable environment shall be handled by the rule chapter
