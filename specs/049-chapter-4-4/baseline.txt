@@ -203,3 +203,104 @@ Node.js v22.23.2
     nats container    : healthy
     brought up with `docker compose --profile services up -d` and NO --no-deps.
     048 closed with that gate red (048-6); this is the confirmation it was closed rather than quarantined.
+
+===============================================================================
+PHASE 2 — the consumer stops destroying records (US4)
+===============================================================================
+
+## T015 — the red run, before `route` existed
+
+    FAIL  services/ingester/src/shape.test.ts > route tells the record types apart
+    TypeError: route is not a function
+    Tests  1 failed | 14 passed (15)
+
+    The failure is a missing function rather than a wrong answer, which is the weakest
+    kind of red. It is recorded as such: what makes the test meaningful is T018's arm,
+    where a malformed attempt must stay malformed after the router is in front of it.
+
+## T016-T018 — routing, and the two arms that must not merge
+
+    `route(raw)` returns a discriminated result, so "not mine" and "malformed" stop being
+    the same value. `shape` is unchanged and still the attempt shaper.
+
+      type absent            -> shape() -> attempt | malformed
+      type "api.request"     -> request
+      anything else          -> unclaimed, carrying the type
+
+    20 tests pass. The two that carry the argument:
+      - an absent `type` is an attempt, and produces the same row `shape` does
+      - a malformed attempt is still malformed, not unclaimed
+
+## T020-T022 — `ingestOnce` moved to `services/ingester/src/ingest.ts`
+
+    `main.ts` keeps `bootstrap`, the consumer creation and the loop. `ingest.ts` holds the
+    batch bounds, the routing, the acknowledgement ordering and the poison rule.
+
+    LINT FAILED FIRST, 3 errors, recorded rather than only the green re-run:
+      main.ts       'NatsConnection' is defined but never used
+      main.ts       'BATCH_ROWS' is defined but never used
+      shape.test.ts '_omitted' is assigned a value but never used
+
+    Two were the move's own leftovers. The third was a destructuring idiom this config
+    does not exempt by underscore prefix; replaced with a spread and a delete.
+
+    One warning survives and is NOT this chapter's: an unused eslint-disable in
+    `services/api/src/internal/session.perf.itest.ts:120`.
+
+## T022 — the pin, measured for the first time
+
+    services/ingester/src/clickhouse.ts   st  88.23  br  84.21  fn   80  ln  93.33
+    services/ingester/src/ingest.ts       st  76.66  br  75     fn  100  ln  75
+    services/ingester/src/shape.ts        st 100     br 100     fn  100  ln 100
+    main.ts present in the report: false
+
+    048 pinned `services/ingester/src/main.ts` at branches 33, functions 25, lines 40,
+    statements 41. Those numbers describe a file the config never collected. The real
+    figures are roughly double, and they are not carried across: pinned at branches 71,
+    functions 100, lines 71, statements 72.
+
+## T023 — BOTH HALVES OF THE PROBE, which is the step 048 skipped
+
+    half 1, demanding 101%:
+      ERROR: Coverage for branches (75%) does not meet
+             "services/ingester/src/ingest.ts" threshold (101%)     exit 1
+
+    half 2, restored to 71%:
+      errors naming ingest.ts: 0
+
+    The key binds. Before the move it did not, and the failing half is the only half that
+    can tell the difference -- a threshold whose key matches nothing passes quietly.
+
+## T024 — the sweep
+
+    per-file pins: 45
+    unbindable (key excluded from collection): 0     (was 1 at this feature's opening)
+
+## T025 — the integration test
+
+    Four records on one stream: an attempt, a media.scanned, an api.request, and a
+    no-type record missing its fields.
+
+      pass 1   { written: 1, malformed: 1, unclaimed: 2 }
+      pass 2   { written: 0, malformed: 0, unclaimed: 2 }   after ack_wait
+
+    The attempt in the batch is the positive control. Without it, "nothing was written"
+    would also pass with a consumer that had stopped working entirely.
+
+## T026 — the same probe, before and after (SC-005)
+
+    BEFORE (phase 1, T001):
+      pass 1: written 1  malformed 1
+      pass 2: written 0  malformed 0          <- terminated, gone for good
+      stream still holds 2 of 2 · num_pending 0
+
+    AFTER:
+    pass 1: written 1  malformed 0  unclaimed 1
+    pass 2: written 0  malformed 0  unclaimed 1   <- it came back
+    consumer num_pending 0 · num_redelivered 1
+
+## T027 — the gates
+
+    pnpm lint       exit 0   (after the three errors above were fixed)
+    pnpm typecheck  exit 0
+    pnpm test       exit 0   -- gateway 116, dispatcher 8, ingester 20, all suites green
