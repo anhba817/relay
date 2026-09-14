@@ -62,11 +62,16 @@ The number that decides where the publish goes. From `research.md` R3, 2,000 clo
 three ways:
 
 ```
-awaited, one at a time : 2000 publishes in 458 ms  -> 0.229 ms each
+awaited, one at a time   : 2000 publishes in 458 ms  -> 0.229 ms each
   extrapolated to 10,000 closing at once: 2.3 s of awaited publishes
-core publish + flush   : 2000 publishes in   6 ms  -> 0.0030 ms each
-batched 500 per publish: 2000 records  in   7 ms  -> 0.0034 ms each
+core publish + flush     : 2000 publishes in   6 ms  -> 0.0030 ms each
+pipelined, 500 in flight : 2000 publishes in   7 ms  -> 0.0034 ms each
 ```
+
+The third row is **one message per record with 500 publishes in flight**, not 500 records in
+one message. Analysis pass 5 found the original wording read as the second, which the ingester
+terminates: an array has no `type`, so `route()` shapes it to `null` and `ingest.ts` calls
+`m.term()`. Re-run the probe in the shape you are going to ship.
 
 `session.ts`'s close handler already argues the conclusion, for HTTP:
 

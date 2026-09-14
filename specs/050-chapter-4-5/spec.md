@@ -132,7 +132,11 @@ one.
 - A gateway instance killed with connections open: every one of them closes without a close
   record, so opens and closes do not balance.
 - A connection that never authenticates — is there an environment to attribute it to?
-- The broker unreachable at gateway boot, which is when `ensureStream` would run.
+- The broker unreachable at gateway boot. **The gateway does not create the stream** —
+  `ensureAnalyticsStream` belongs to the api (`services/api/src/outbox/jetstream.publisher.ts`)
+  — so there is nothing for the gateway to retry and it must serve sockets against a client
+  that has never connected. Giving it an `ensureStream` of its own would also walk into 049-2:
+  the containerised service asks for `replicas > 1` and is refused in non-clustered mode.
 - 10,000 concurrent connections closing at once during a deploy, against the stream's
   `max_bytes`.
 
@@ -173,8 +177,13 @@ one.
   two the chapter explains.
 - **FR-005**: A close record shall carry the connection's duration, and the interval's two
   endpoints shall be stated rather than implied.
-- **FR-006**: A connection with no resolvable environment shall be handled by the rule chapter
-  4.4 established, not by a second one invented here.
+- **FR-006**: A connection with no resolvable environment shall be given a decision of its own,
+  recorded with the option it rejects. **4.4's `_none` arm is not inherited.** That arm exists
+  because a request can be made by nobody; a connection event is emitted after a handshake, so
+  reusing it here needs an argument rather than a precedent — and the alternative, that such a
+  connection produces no record at all, is the one the contract currently assumes. An earlier
+  draft of this clause mandated 4.4's rule, which the contract, the data model and the plan all
+  contradict.
 
 **The existing path**
 

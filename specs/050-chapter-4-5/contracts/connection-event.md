@@ -61,15 +61,36 @@ than assigned, and the columns are `Nullable` because 4.4 measured that
 handler.** Measured, 2,000 close records three ways:
 
 ```
-awaited, one at a time : 0.229 ms each   -> 2.3 s for 10,000 closing at once
-core publish + flush   : 0.0030 ms each  -> at-most-once, no ack, no dedup
-batched 500 per publish: 0.0034 ms each  -> 67x faster than awaiting, keeps both
+awaited, one at a time   : 0.229 ms each   -> 2.3 s for 10,000 closing at once
+core publish + flush     : 0.0030 ms each  -> at-most-once, no ack, no dedup
+pipelined, 500 in flight : 0.0034 ms each  -> 67x faster than awaiting, keeps both
 ```
 
 `session.ts`'s close handler already carries the argument, from chapter 3.24: *"a mass
 disconnect would turn one event into a burst of HTTP requests."* A burst of awaited publishes is
 the same shape on a different transport, and `meter.ts` already shows the answer — hand over,
 and let a tick do the sending.
+
+### One message per record. The tick batches the WAITING, not the payload
+
+**500 records in one message is not the shape here**, and an earlier draft of this section said
+it was. What the tick removes is the serial round trip: 500 publishes go out without awaiting
+each one and their acks are collected together. Every record keeps its own message, and that is
+load-bearing three times over.
+
+**The subject carries the tenant.** `analytics.connection.{opened|closed}.{environment_id}` —
+one message has one subject, and a flush spans many tenants and both events. There is no
+subject a mixed batch could be published on, and putting one tenant's records where another
+tenant's filter reaches them is what `analyticsSubjectFor` refuses a non-UUID to prevent.
+
+**The deduplication id is per record.** One message carries one `Nats-Msg-Id`, so a batched
+payload would have to key on the batch — 048 measured that exactly: *"the same token with 500
+different rows dropped all 500 and reported success."*
+
+**The consumer takes one record per message.** `route()` is handed a parsed body; an array has
+no `type`, falls to the attempt arm, shapes to `null`, and is **terminated**. A batched message
+would not land in the `unclaimed` arm this chapter's phase 2 exists to exercise — it would be
+destroyed, 500 records at a time, and counted as one.
 
 ## The flush interval, and the budget it spends
 
@@ -91,10 +112,10 @@ posture of this chapter is *be like the meter* — so the obvious number is the 
 meter feeds a monthly quota and has no latency clause over it; this feeds an analytical store
 that does.
 
-**And the two pressures are less opposed than they look.** Batching's win comes from grouping
-whatever has accumulated, not from waiting longer: at 0.0034 ms a record the publish is
-effectively free at any interval, and R3's 2.3-second burst is a property of publishing **per
-close**, not of a short tick. So a short interval costs almost nothing and buys the whole
+**And the two pressures are less opposed than they look.** The tick's win comes from removing
+the serial round trip from whatever accumulated, not from waiting longer: at 0.0034 ms a record
+the publish is effectively free at any interval, and R3's 2.3-second burst is a property of
+publishing **per close**, not of a short tick. So a short interval costs almost nothing and buys the whole
 budget. **5 seconds** leaves 53 of headroom, and FR-004d measures the real figure rather than
 trusting this arithmetic.
 

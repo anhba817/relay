@@ -126,19 +126,25 @@ constraint: that handler is documented as the last place that should throw.
 
 ## Phases
 
-Six. The order puts the dependency decision first, because it is the one that cannot be undone
-quietly.
+Eight. The order puts the dependency decision first, because it is the one that cannot be
+undone quietly.
 
 | # | Phase | Story | What it settles |
 |---|---|---|---|
-| 1 | **Premises and the dependency** | — | `baseline.txt`: the gateway's dependency count, R3's burst numbers re-run, the fence-chain opening by kind and locale, and the ADR-07 text quoted from the document rather than from `docs/12`. |
+| 1 | **Premises and the dependency** | — | `baseline.txt`: the gateway's dependency count, R3's burst numbers re-run in the shape that ships, the fence-chain opening by kind and locale, and the ADR-07 text quoted from the document rather than from `docs/12`. |
 | 2 | **The records exist** | US1 | The protocol subjects, the event shapes, the buffer, and the hand-overs in `session.ts`. Published to a stream nothing writes yet — R8 says the ingester's `unclaimed` arm makes that safe, and this is the proof on a real record. |
-| 3 | **The gateway keeps serving** | US2 | Broker stopped: connections open, carry messages and close. Outcomes published beside latencies. |
-| 4 | **The store** | US1 | `0005_connection_events.sql`, the ingester's third arm, and the first connection that becomes a row. |
-| 5 | **The two counters** | US3 | The meter untouched and proven so; the reconciliation computed, and the structural disagreement published as a number. |
-| 6 | **ADR-07, the numbers, and the chapter** | US4 | The amendment naming the spent argument; the combined byte rate; prose, figures, fences, gates, tag. |
+| 3 | **The table and the third arm** | — | `0005_connection_events.sql`, `route()`'s third arm, the third buffer. Blocking for phase 4, and it closes the `unclaimed` window phase 2 opened. |
+| 4 | **The records land** 🎯 | US1 | The first connection that becomes two rows, the redelivery proof, and the coverage pins. **MVP ends here.** |
+| 5 | **The gateway keeps serving** | US2 | Broker stopped: connections open, carry messages and close. Outcomes published beside latencies. |
+| 6 | **The two counters** | US3 | The meter untouched and proven so; the reconciliation computed and scoped, and the structural disagreement published as a number. |
+| 7 | **ADR-07** | US4 | The amendment naming the spent argument and the surviving one. Needs only the dependency count. |
+| 8 | **The numbers and the chapter** | — | The combined byte rate; prose, figures, fences, gates, tag. |
 
 **MVP is phases 1–4.** A connection that opens and closes becomes two rows.
+
+**This table said six until analysis pass 5**, and it was not a coarser view of the same order:
+its phase 3 was US2 and `tasks.md`'s is the table, so anyone building from this file built in a
+different order from the one the tasks assume.
 
 ## Risks carried into tasks
 

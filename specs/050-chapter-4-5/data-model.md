@@ -24,11 +24,19 @@ CREATE TABLE IF NOT EXISTS relay_analytics.connection_events (
     -- at 49.7 days; UInt64 is past any plausible connection. The cost is four bytes on a
     -- column that is null on every open record.
     duration_ms    Nullable(UInt64),
-    -- NOT nullable. It comes from the same `Identity` as `environment_id`, whose fields
-    -- are `environmentId: string` and `userExternalId: string` -- neither optional -- and a
-    -- connection event only exists after a handshake. An earlier draft made this
-    -- `Nullable(String)` beside a non-null `environment_id`, which assumed an identity
-    -- existed for one field and not for the other, from one object.
+    -- NOT nullable. It comes from the same `Identity` as `environment_id`, and both of those
+    -- fields are declared `string` rather than `string | undefined` -- so a connection event,
+    -- which only exists after a handshake, has both or neither. An earlier draft made this
+    -- `Nullable(String)` beside a non-null `environment_id`, which assumed an identity existed
+    -- for one field and not for the other, from one object.
+    --
+    -- AND `Identity` HAS THREE FIELDS, NOT TWO. An earlier draft of this comment enumerated it
+    -- as `environmentId` and `userExternalId` and stopped. `api-client.ts:67` also declares
+    -- `token: string` -- "the token the client presented at connect, carried so the internal
+    -- hop can FORWARD it". The non-null conclusion survives; the enumeration did not, and it
+    -- was an enumeration of the object the shaper is handed, in a chapter whose FR-003 forbids
+    -- exactly that field from reaching the stream. FR-002's allow-list is what keeps it out,
+    -- which is why the rule is "name every field" rather than "the input looks safe".
     user_external_id String,
     CONSTRAINT ts_is_real CHECK ts > toDateTime64('2020-01-01 00:00:00', 3, 'UTC')
 )

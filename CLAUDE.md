@@ -27,7 +27,7 @@ tags. **Anyone holding an older clone of `relay-platform` must reset rather than
 <!-- SPECKIT START -->
 **ACTIVE: 050 — CHAPTER 4.5, "the gateway's first stream".** Plan:
 `specs/050-chapter-4-5/plan.md`; **`research.md` first — four of its ten items were measured
-and two changed the design.** Six phases, MVP at 1–4.
+and two changed the design.** Eight phases, MVP at 1–4.
 
 **THE GATEWAY ALREADY REPORTS CONNECTION DATA, WHICH `docs/12` DOES NOT SAY.** Its one-line
 description is *"the gateway has never touched NATS"* — true, zero references and five
@@ -45,13 +45,26 @@ tick do the sending.
 **A PUBLISH PER CLOSE IS THE SAME BURST ON A DIFFERENT TRANSPORT, MEASURED.** 2,000 close
 records, three ways:
 
-    awaited, one at a time : 0.229 ms each  -> 2.3 s for 10,000 closing at once
-    core publish + flush   : 0.0030 ms each -> at-most-once, no ack, no dedup
-    batched 500 per publish: 0.0034 ms each -> 67x faster, keeps ack AND dedup
+    awaited, one at a time   : 0.229 ms each  -> 2.3 s for 10,000 closing at once
+    core publish + flush     : 0.0030 ms each -> at-most-once, no ack, no dedup
+    pipelined, 500 in flight : 0.0034 ms each -> 67x faster, keeps ack AND dedup
 
-**Batch and publish on a tick, exactly as the meter does.** Core publish is faster still and
+**Buffer and publish on a tick, exactly as the meter does.** Core publish is faster still and
 gives up the recoverability this stream exists for — 3.20 chose JetStream over core for that
 reason.
+
+**AND "BATCHED" MEANT THE WAITING, NOT THE PAYLOAD — FOUR PASSES DID NOT ASK WHICH.** The third
+row read *"batched 500 per publish"*, which is **500 records in one message**, and three
+artifacts adopted it in that form while FR-004a, FR-004b and FR-004c were built on top. It
+breaks three claims this feature had already published. **One message carries one subject** and
+the subject carries the tenant, so a flush spanning tenants has no subject to go on. **One
+message carries one `Nats-Msg-Id`**, so `{connection_id}:{event}` cannot hold across 500 — and
+a batch-derived token is 048's measured silent data loss verbatim. **And the shipped ingester
+destroys it**: an array has no `type`, so `route()` takes the attempt arm, `shape()` returns
+`null`, and `ingest.ts` calls `m.term()` — 500 records gone, counted as one malformed. That
+also inverts R8, because a batch never reaches the `unclaimed` arm phase 2 exists to exercise.
+**The surviving reading is one message per record, pipelined**, and the units in the three rows
+were the only tell: two said *publishes* and the third said *records*.
 
 **ADR-07 NAMES THE ARGUMENT THIS CHAPTER SPENDS.** Its v1.1 amendment: *"That refusal is
 deliberately weaker than the others: **it is an argument about how many client libraries the
