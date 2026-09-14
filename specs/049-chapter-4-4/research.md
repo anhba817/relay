@@ -545,12 +545,10 @@ rate-limited"* is the canonical reason to open a request log.
 pass 2's finding); position 2 keeps the record and loses the route. **The fix is where the next
 defect is**, for the fourth time in this feature.
 
-**And the remedy does not need a second router.** `rate-limit.middleware.ts:109` already computes
-`operationsFor(req.method, path)` and tests `SIGNUP_PATH` — it resolves the request to a logical
-operation *before* deciding to refuse it. It stamps what it matched and the producer reads it.
-Building an independent matcher would eventually disagree with the real router, which is worse
-than the gap it closes. `refused_at` records which layer decided, so the remaining gap is a
-published column rather than a silence.
+**The first version of this item then prescribed a remedy built on a function nobody had
+opened — see R20.** It claimed `operationsFor` resolves the request to a logical operation the
+producer could read. It does not: it returns `[]`, `["rest"]` or `["rest", "send"]`, which are
+quota classes. `refused_at` records which layer decided, and that part stands.
 
 ---
 
@@ -565,3 +563,58 @@ removes health checks from the population and never adds 429s to it. **Checking 
 holds is not a wasted pass**; it is the only way the clean ones become evidence, and this one
 means the health-check share can be compared across runs without asking what the limiter was
 doing.
+
+
+---
+
+## R20 — The remedy in R18 was built on a function nobody opened
+
+Found in analysis pass 4, checking pass 3's own repair.
+
+R18 prescribed: *"`rate-limit.middleware.ts:109` already computes `operationsFor(req.method,
+path)` … it resolves the request to a logical operation before deciding to refuse it … the
+knowledge exists and is being thrown away."* Four artifacts carried that claim. The function:
+
+```
+export function operationsFor(method: string, path: string): LimitedOperation[] {
+  if (!path.startsWith(PUBLIC_PREFIX)) return [];
+  if (method === "POST" && SEND_PATH.test(path)) return ["rest", "send"];
+  return ["rest"];
+}
+```
+
+`LimitedOperation = keyof typeof DEFAULT_LIMITS` — quota classes. **The limiter's entire route
+knowledge is three-valued**: outside `/v1/`, the send route, everything else. `"rest"` is not an
+endpoint, and there is no knowledge to stamp.
+
+**The question was mis-posed as well as the answer.** R18 called *"which endpoint is being
+rate-limited"* the canonical operator question. This platform does not limit per endpoint; it
+limits `send` and `rest`. A per-endpoint breakdown of rate-limit refusals asks about a
+granularity the mechanism does not have, and a dashboard offering one would be describing
+something that does not exist.
+
+**Decision**: record `limited_operation` — the class the limiter actually decided on — and state
+in the chapter that a finer breakdown is unavailable and why. Do not build a path matcher to
+manufacture a template: an independent matcher eventually disagrees with the real router, and
+constitution VII is against a second mechanism for a question that was wrong.
+
+**This is the first finding in this feature that is a defect in its own analysis rather than in
+the artifacts under analysis.** It has the shape the project keeps meeting: 047's pass 9 found
+that eight passes of correct measurement had been about the wrong database; this feature's D1
+cited 047's identical finding three lines above repeating it. **A premise does not stop being a
+premise because it is the one your own last repair stands on** — and citing a function by name
+is not reading it.
+
+## R21 — What the `limited_operation` values actually are
+
+`DEFAULT_LIMITS`'s keys, plus the signup family the limiter handles separately:
+
+| value | set by | path |
+|---|---|---|
+| `send` | `operationsFor` | `POST /v1/channels/{id}/messages` (`SEND_PATH`) |
+| `rest` | `operationsFor` | anything else under `/v1/` |
+| `signup` | `SIGNUP_PATH` | `/auth/{provider}/start` and `/callback` |
+| absent | — | the request was not refused by the limiter |
+
+Requests outside `/v1/` get `[]` and are never limited, `/healthz` included — R19 records why
+that one is deliberate.

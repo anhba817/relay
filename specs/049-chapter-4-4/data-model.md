@@ -17,12 +17,13 @@ CREATE TABLE IF NOT EXISTS relay_analytics.api_requests (
     environment_id Nullable(UUID),
     ts             DateTime64(3, 'UTC'),
     request_id     UUID,
-    endpoint       LowCardinality(String),
+    endpoint       LowCardinality(Nullable(String)),
     method         LowCardinality(String),
     status         UInt16,
     latency_ms     UInt32,
     principal_kind LowCardinality(String),
     refused_at     LowCardinality(String),
+    limited_operation LowCardinality(Nullable(String)),
     CONSTRAINT ts_is_real CHECK ts > toDateTime64('2020-01-01 00:00:00', 3, 'UTC')
 )
 ENGINE = ReplacingMergeTree
@@ -63,6 +64,40 @@ running this one.
   `1,2,3,4,5`. **Idempotence belongs to the record's own key.**
 - `LowCardinality(String)` on `endpoint` because FR-005 makes it a route template — 41 of
   them at this tag — rather than a path with ids in it, which would be unbounded.
+
+### `endpoint` is nullable, and the first draft made 048's mistake on a new column
+
+The contract defends this distinction in a paragraph: *"an absent `endpoint` means the route did
+not match, which is a fact, and `""` would be a claim about a route named the empty string."*
+The first draft of this table then gave it `LowCardinality(String)`, which cannot hold the
+difference. Measured through `JSONEachRow`:
+
+```
+                    LowCardinality(String)   Nullable(String)
+absent field                ''  (len 0)            NULL
+explicit ""                 ''  (len 0)            ""
+```
+
+**Indistinguishable.** A field the publisher omits takes the column's default silently — 048's
+defect exactly, on a different column. 048's version was fatal because a `DateTime64` default is
+the epoch and the epoch falls outside the TTL; this one is quieter, because the row survives and
+only the value is wrong.
+
+**And none of 048's three guards reaches it.** `input_format_skip_unknown_fields=0` catches an
+*unknown* field, not an absent one. `ts_is_real` catches an absent `ts`. A CHECK cannot help
+here at all, because **absent is legal for `endpoint`** — which is the whole point.
+
+`LowCardinality(Nullable(String))` holds all three cases and keeps the encoding, measured:
+
+```
+NULL          <- absent
+"" (empty)    <- explicit empty string
+/v1/webhooks  <- a real template
+```
+
+**The sweep is complete rather than illustrative.** The contract has exactly two optional
+fields plus `limited_operation`. `environment_id` was already `Nullable(UUID)`; `endpoint` was
+the only one landing in a column that could not say "absent".
 
 ### The one open decision: `Nullable(UUID)`
 

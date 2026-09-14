@@ -53,10 +53,11 @@ was.
 | `method` | string | always | |
 | `status` | number | always | |
 | `latency_ms` | number | always | R10's interval, stated below |
-| `endpoint` | string | when the router ran, **or** when a middleware stamped what it matched | the template, e.g. `/v1/channels/:channelId/messages` |
+| `endpoint` | string | **only when the router ran** | the template, e.g. `/v1/channels/:channelId/messages`. Absent for a 404 and for every middleware refusal — two different facts, separated by `refused_at` |
 | `environment_id` | string (uuid) | when one resolved | absent, never null and never a sentinel |
 | `principal_kind` | string | always | `application` \| `user` \| `platform` \| `none` |
 | `refused_at` | string | always | `handler` \| `guard` \| `middleware` \| `unmatched` — **where the response was decided** |
+| `limited_operation` | string | when the rate limiter refused | `send` \| `rest` \| `signup` — the limiter's own granularity, which is the finest true answer about its refusals |
 
 ### `refused_at`, and why `endpoint` needs a second source
 
@@ -75,12 +76,17 @@ meaning to a customer, and only one of them attributable to an endpoint — so *
 being rate-limited"*, the question a request log exists to answer, would be unanswerable for
 exactly the 429s the rate limiter produces.
 
-`refused_at` makes that visible instead of silent. And the endpoint is recoverable without
-building a second router: `rate-limit.middleware.ts:109` already computes
-`operationsFor(req.method, path)` and tests `SIGNUP_PATH` — **it resolves the request to a
-logical operation before it decides to refuse it.** It stamps what it matched; the producer
-reads it. A second matcher of our own would disagree with the real router eventually, which is a
-worse bug than the gap.
+`refused_at` makes that visible instead of silent. **The endpoint is not recoverable**, and an
+earlier draft of this file said it was, on the strength of a function it had not read.
+`operationsFor` returns `[]`, `["rest"]` or `["rest", "send"]` — quota classes, not templates.
+The limiter's entire route knowledge is three-valued.
+
+**Which also means the question was wrong.** *"Which endpoint is being rate-limited"* presumes
+per-endpoint limits; this platform limits `send` and `rest`. So the record carries
+`limited_operation` — the class the limiter actually decided on — and the chapter says plainly
+that a finer breakdown of its refusals describes a mechanism that does not exist. Building an
+independent path matcher to manufacture one would disagree with the real router eventually,
+which is a worse bug than the gap (constitution VII).
 
 `unmatched` is the honest arm: a 404 matched nothing, and its `endpoint` stays absent.
 

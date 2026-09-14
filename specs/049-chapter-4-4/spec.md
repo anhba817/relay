@@ -224,10 +224,13 @@ neither written as an attempt nor terminated.
 - **FR-005**: `endpoint` shall be the matched route template, not the request's path. A raw
   path carries channel ids, message ids and user external ids — customer data at unbounded
   cardinality — and FR-ANL-07's word is "endpoint".
-- **FR-005a**: A request refused before the router runs shall still be attributable to an
-  endpoint where the refusing layer already knows which one it matched. The rate limiter
-  resolves the request to a logical operation before it decides; that resolution shall be
-  recorded rather than recomputed.
+- **FR-005a**: A request refused before the router runs has **no route template available**,
+  and none shall be invented for it. The record shall instead carry the **operation class the
+  refusing layer decided on** — the rate limiter's own granularity is `send`, `rest` or
+  signup, and that is the finest true answer about one of its refusals.
+- **FR-005a1**: The chapter shall state that a per-endpoint breakdown of rate-limit refusals
+  is not available, and why: **the limiter does not limit per endpoint.** A dashboard that
+  offers one would be answering a question about a mechanism that does not exist.
 - **FR-005b**: The record shall state **which layer decided the response** — handler, guard,
   middleware, or no match. Without it the api's two sources of 429 are one undifferentiated
   population, and only one of the two can carry an endpoint.
