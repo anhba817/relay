@@ -132,7 +132,12 @@ curl -s -X POST http://localhost:8123/ -u relay:relay --data-binary \
 ```
 
 Compare the **minute buckets** those timestamps touch against what the meter reported for the
-same connections. Do **not** compare duration against minutes: the meter charges every calendar
+same connections, **split by period the way `entriesFor` splits them** — a socket open across a
+month boundary owes minutes to two periods and each is credited independently, so a derivation
+that does not split disagrees for a reason that is neither of the two this comparison exists to
+show (FR-009b). The `HAVING` above is the other half: it keeps only connections with a close
+record, because the meter also bills connections that are still open (FR-009a). Do **not**
+compare duration against minutes: the meter charges every calendar
 minute a connection was open for any part of, so a two-second connection across a boundary is
 two connection-minutes. Those are different quantities sharing a name, and the chapter publishes
 the difference rather than calling it small.
@@ -150,7 +155,13 @@ pnpm check:docs
 pnpm check:srs
 pnpm check:figures     # the gate over figures.ts — pass diagrams as `code`, not `chart`
 pnpm check:errors      # reads the BUILT dist — build first
+pnpm build             # the one that catches a chapter missing from lib/tutorial.ts
 ```
+
+**`pnpm build` is a gate.** Chapter 4.4 shipped without an entry in `lib/tutorial.ts`, and
+`<ChapterHeader id="4.4" />` calls `getChapter`, which throws on an unregistered id — so the
+site failed to build from the moment 4.4 closed at 112 of 112 with every other gate green.
+**None of the five above renders a page.**
 
 `check:fences` exited 1 at **110** for 047, 048 and 049, and the exit code carries no
 information about this chapter. The delta is what the chapter answers for.
@@ -158,12 +169,30 @@ information about this chapter. The delta is what the chapter answers for.
 ```bash
 cd ../relay-platform
 pnpm lint && pnpm typecheck && pnpm test
+pnpm test:integration    # the ONLY lane that runs *.itest.ts
+pnpm coverage            # the only lane that enforces the per-file pins
 ```
 
-**Expect to owe fence hunks.** This chapter edits `session.ts`, `main.ts`, `shape.ts`,
-`ingest.ts` and the protocol, all of which earlier chapters publish as whole bodies. 049
-discovered at its close that this costs six problems until the diffs are published; do not
-discover it again in phase 6.
+**Eleven gates, and the last two run every test this chapter writes.** `.itest.ts` files load
+`vitest.integration.config.mts`, which `pnpm test` never opens, so
+`connection-log.itest.ts` — which carries all of US1's proofs and discharges SC-001, SC-004 and
+SC-007 — executes under `test:integration` alone.
+
+**Expect to owe fence hunks — for eight files, and `ingest.ts` is not one of them.** Counted
+rather than remembered:
+
+```
+32 session.ts · 25 internal.ts · 23 vitest.coverage.config.mts · 22 main.ts
+10 services/gateway/package.json · 4 internal.test.ts · 3 clickhouse.ts · 3 shape.ts
+ 0 services/ingester/src/ingest.ts
+```
+
+`ingest.ts` carries no titled fence anywhere, because 049 created it by moving `ingestOnce` out
+of `main.ts` and fenced `main.ts` and `clickhouse.ts` instead. **`vitest.coverage.config.mts`
+is the one that cannot be paid**: 048-3 records that the chain replays 317 lines where the tree
+holds 944, so it takes a gaps entry rather than a hunk. 049 discovered at its close that
+editing a fenced file costs six problems until the diffs are published; **phase 8** publishes
+them, deliberately.
 
 ## 7. Bringing it down
 
@@ -172,3 +201,14 @@ cd relay-platform && docker compose --profile services down
 ```
 
 Volumes are kept, which preserves the corpus.
+
+**Check the order this stops things in before trusting it.** §0 states the hazard — 049-1
+measured that the stream being *written* when the broker stops is the one that fails to
+recover, graceful or not, and 4.4 made the api write on every request so `ANALYTICS` is never
+idle. `compose down` stops containers in reverse dependency order, which should take the api
+before NATS, but **this file has never verified that it does**. If `/healthz` comes back
+degraded on the next `up`, stop the writers explicitly first:
+
+```bash
+docker compose stop api gateway dispatcher ingester && docker compose --profile services down
+```

@@ -237,6 +237,28 @@ buckets-from-records against buckets-from-the-meter — one quantity computed tw
 publishes the duration/bucket gap as a number so nobody reads it as a defect. **4.2's boundary
 day, one domain over.**
 
+**AND THE QUICKSTART WAS FOUR PASSES BEHIND — THE ONE ARTIFACT WITH A CONSTITUTION MUST ON
+IT.** Constitution VI: *"The quickstart MUST run unmodified."* It listed **eight** gates where
+T095 lists eleven, missing `pnpm build` (added at pass 9, the gate that caught 4.4 absent from
+`lib/tutorial.ts`) and `test:integration` and `coverage` (added at pass 14, and between them
+they run every test this chapter writes). It carried the fenced-file list **pass 7 measured
+wrong**, `ingest.ts` and all. It said fence work happens in *"phase 6"* when the phases became
+eight at pass 5. And its comparison had FR-009a's scoping and not FR-009b's period split.
+
+**Four passes corrected those facts where they were ARGUED and left them where they were
+INSTRUCTED.** *Fix the file that describes the thing AND the one that instructs it, then grep
+the claim everywhere* — the memory rule, and four passes of this cycle broke it in the same
+direction.
+
+**AND `MAX_CONNECTIONS_PER_USER = 5` IS A CEILING ON "N CONNECTIONS".** T037 said *"open and
+close N connections … assert 2N records"* and never said across how many users. The cap is
+enforced by claiming one of five Redis slot keys per user per environment, across instances,
+and the sixth socket is refused with close **4004** — which returns before `open()`, so it
+produces no `Connection` and **no record**, exactly as the unauthenticated case does. Ten
+sockets as one user assert 20 and measure 10, and the failure reads as ten lost records rather
+than five refused connections. **Reading cannot find what the schema refuses**, and a cap is
+the same kind of refusal.
+
 **AND A PROBE COPIED FROM 049 KEPT THE HAZARD AND DROPPED THE GUARDS.** T056 read *"insert the
 same close record three times and assert physical `count()` 3 against `FINAL` 1, with `SYSTEM
 STOP MERGES` on the table."* 049's own test (`ingest.itest.ts:281–318`) does four things and
