@@ -1,0 +1,311 @@
+BASELINE — feature 050, chapter 4.5 "the gateway's first stream"
+Phase 1. Measured, not carried. Every number here was produced by the command beside it.
+
+================================================================================
+BLOCKED, AND SAID PLAINLY: T004, T012, T013 AND HALF OF T011 NEED THE STACK
+================================================================================
+The stack is down and cannot be brought up on this machine as it stands.
+
+    systemctl --user start docker
+    -> [rootlesskit:parent] error: failed to setup UID/GID map:
+       newuidmap 5414 [0 1000 1 1 100000 65536] failed:
+       exec: "newuidmap": executable file not found in $PATH
+
+    ls /usr/bin/newuidmap /usr/bin/newgidmap  ->  No such file or directory
+    command -v newuidmap                      ->  not on PATH
+
+Rootless Docker needs the setuid helpers from the `uidmap` package. They are not
+installed, and installing them is a root change. NOT a PATH problem: this machine
+resolves `grep` to ugrep rather than /usr/bin/grep, so off-PATH was the first
+hypothesis and it was checked and refuted above.
+
+Outstanding, with what each needs:
+    T004  R3's burst probe, three shapes                      NATS
+    T011  image tags, SELECT version(), DOCKER_HOST           the stack
+    T012  system.tables, schema_applied ledger, row counts    ClickHouse
+    T013  stream state + which services were running          NATS
+
+================================================================================
+T001 — THE GATEWAY'S DEPENDENCY COUNT, BEFORE
+================================================================================
+    node -e 'const p=require("./services/gateway/package.json");
+             const d=Object.keys(p.dependencies||{});
+             console.log(d.length, "-", d.join(", "))'
+
+    5 - @relay/protocol, @relay/service-kit, ioredis, jose, ws
+
+The number is the subject, not a detail: ADR-07 rejects NATS for the gateway on an
+argument about how many client libraries it holds. T018 takes it to 6.
+
+================================================================================
+T002 — R1 CONFIRMED, WITH A POSITIVE CONTROL
+================================================================================
+    grep -rn "nats\|jetstream" --include=*.ts services/gateway/src   ->  no matches
+
+`grep` on this machine is ugrep, not GNU grep, so the zero is only a claim about the
+corpus if the pattern can be shown to match something. The control:
+
+    grep -rn "nats\|jetstream" --include=*.ts services/ingester/src  ->  12 matches
+
+Same pattern, same engine, same flags, a corpus that holds the string. The zero
+above is a fact about the gateway rather than about the pattern.
+
+================================================================================
+T003 — THE CLOSE HANDLER ALREADY REFUSED TO DO WHAT THIS CHAPTER WANTS
+================================================================================
+Quoted from services/gateway/src/session.ts, not from research.md:
+
+    // AND THE METER BEFORE THE REGISTRY, WHICH IS THE ORDER THAT MATTERS. The line
+    // below removes this connection from the registry the meter walks, so a socket
+    // that opened and closed between two reports would otherwise be counted zero.
+    //
+    // Handing over totals rather than reporting them. This handler is already
+    // documented as the last place that should throw, and a mass disconnect would
+    // turn one event into a burst of HTTP requests.
+    meter.closed(connection, new Date());
+    registry.remove(connection.id);
+
+Chapter 3.24 asked "should the close handler report?" and answered no. This chapter
+wants to emit an event there, which is the thing that handler declined to do.
+
+================================================================================
+T005 — ADR-07, FROM ALL THREE PLACES THAT HOLD IT
+================================================================================
+(a) docs/05-sad.md, ADR-07's BODY — the rejected list, which carries the argument
+    five artifacts thought this chapter was supplying:
+
+    core NATS pub/sub (technically apt -- at-most-once, subject-based, comparable
+    latency -- and refused on dependency shape rather than mechanism: Redis is
+    mandatory for the gateway regardless, since ADR-10 puts presence in Redis with
+    TTLs, so fan-out on NATS would leave that service holding two broker clients
+    and remove none); gateway-to-gateway mesh (O(n^2) connections, ...)
+
+(b) docs/05-sad.md, the v1.1 amendment (2026-08-04):
+
+    Core NATS pub/sub was added to the rejected list. ... That refusal is
+    deliberately weaker than the others: it is an argument about how many client
+    libraries the gateway holds, not about whether the mechanism fits. A NATS-only
+    proposal that also moves presence off Redis (NATS KV) would reopen it
+    legitimately, and would be a larger decision than this ADR.
+
+(c) docs/06-adr-deep-dives.md:401-499, where the ARGUMENT lives:
+
+    Choosing Redis keeps a clean mapping -- gateway to Redis, api and workers to
+    NATS -- where each broker's guarantee matches its cargo.
+
+    That mapping has an exception, and it is older than the chapter that made it
+    obvious. Chapter 3.8 gave the api its own Redis client ... chapter 3.18 gave the
+    api a second one ... The api now holds two broker clients -- which is the cost
+    this analysis rejected core NATS for imposing on the gateway, relocated rather
+    than avoided.
+
+    The Decision below is untouched by that ... The Revisit when clauses are
+    untouched too ... What changed is that the selection argument's tidiest line is
+    no longer literally true, and a reader comparing it against 05-sad.md's
+    component diagram deserves to be told so rather than left to reconcile them.
+
+(d) docs/12-part-4-structure.md §7.2, this chapter's own open question:
+
+    7.2 -- ADR-07's second amendment (ch 6). "Clean mapping -- gateway to Redis, api
+    and workers to NATS." Chapter 3.18's amendment already recorded that this
+    stopped being exactly true in 3.8. Giving the gateway a publisher amends it
+    again, and that is a chapter's worth of argument rather than a line of wiring.
+
+THE "clean mapping" PHRASE IS VERBATIM IN docs/06, NOT A PARAPHRASE. An earlier
+version of T005 called it "a phrase that appears nowhere in the SAD" -- true of
+docs/05 and misleading, and it steered away from the section that owns this
+chapter's ADR question.
+
+================================================================================
+T006 — THE METER'S MINUTE RULE, VERBATIM
+================================================================================
+services/gateway/src/meter.ts:56:
+
+    A CONNECTION IS CHARGED FOR EVERY CALENDAR MINUTE IT WAS OPEN FOR ANY PART OF.
+    Open at 00:00:59 and closed at 00:01:01 is two seconds of wall clock and TWO
+    connection-minutes, because it was present in both minutes.
+
+Worked: open 00:00:59, close 00:01:01 -> 2 connection-minutes, 2,000 ms elapsed.
+Two quantities sharing a name. FR-009 compares buckets against buckets.
+
+================================================================================
+T007 — connection.id IS SERVER-MINTED AND ALWAYS A UUID
+================================================================================
+    session.ts:933   id: claimedId ?? randomUUID(),
+    session.ts:794   const pendingId = randomUUID();   (what claimedId carries)
+
+So `connection_id UUID` is safe and the id is NOT caller-controlled -- the question
+4.4 had to settle about X-Request-Id, asked again here and answered by the type.
+A premise that holds is evidence only once it is written down.
+
+================================================================================
+T008 — THE METER'S TICK IS STOPPED, NOT unref'd
+================================================================================
+    meter.ts:218   stop: () => clearInterval(timer),
+
+Cleared by stop() from shutdown. The publisher follows the same pattern, which is
+what T033's shutdown-ordering task already covers -- so nothing needs adding, and
+this line is why.
+
+================================================================================
+T009 — THE EXISTING USAGE PATH, WHICH docs/12 §3 DOES NOT MENTION
+================================================================================
+    route     POST /internal/usage/connections     api-client.ts:226
+    cadence   METER_INTERVAL_MS = 60_000           meter.ts:90
+    bounds    z.array(entry).min(1).max(5000)      internal.ts:454
+    entry     connection_id (uuid)                 internal.ts:441-451
+              environment_id (uuid)
+              period  /^\d{4}-\d{2}-01$/  -- the first of a calendar month, UTC,
+                      refined rather than merely typed, "because a report that
+                      named the 14th would create a period nothing reads"
+              minutes int, non-negative
+
+Four fields. The chapter's whole framing depends on this path existing.
+
+================================================================================
+T010 — THE FENCE-CHAIN OPENING, BY KIND AND LOCALE
+================================================================================
+    cd relay-tutorial && pnpm check:fences     exit 1
+
+    check-fence-chain: 110 problem(s) — APPLY 74, HEAD 36
+
+    APPLY en 30 · APPLY vi 30 · APPLY elsewhere 14
+    HEAD  en 36 · HEAD  vi  0 · HEAD  elsewhere  0
+
+Identical to 047, 048 and 049. Exit 1 is the inherited baseline and carries no
+information about this chapter; the DELTA is what the chapter answers for.
+Part 4 contributes 0 problems in BOTH locales today.
+
+================================================================================
+T010a — FENCE EXPOSURE PER FILE, COUNTED RATHER THAN CARRIED
+================================================================================
+    grep -rl 'title="<path>"' app fences   (in relay-tutorial, both locales)
+
+    32  services/gateway/src/session.ts
+    25  packages/protocol/src/internal.ts
+    23  vitest.coverage.config.mts            <- 048-3: cannot take a hunk
+    22  services/gateway/src/main.ts
+    10  services/gateway/package.json
+     4  packages/protocol/src/internal.test.ts
+     3  services/ingester/src/clickhouse.ts
+     3  services/ingester/src/shape.ts
+     0  services/ingester/src/ingest.ts       <- carries NO fence anywhere
+
+EIGHT fenced files, not the five the plan and tasks carried. `ingest.ts` was on that
+list and carries none: 049 created it by moving ingestOnce out of main.ts and fenced
+main.ts and clickhouse.ts instead. A list of fenced files goes stale every time a
+chapter moves code between files.
+
+================================================================================
+T010b — THE APPENDIX'S HOLD ON vitest.coverage.config.mts
+================================================================================
+`fences/post-series.md` carries NINE diff hunks against that file. Their anchors:
+
+    @@ -18,8 +18,33 @@   @@ -41,8 +41,10 @@   @@ -271,6 +271,46 @@
+    @@ -55,7 +55,23 @@   @@ -551,6 +551,54 @@   @@ -646,6 +646,37 @@
+    @@ -671,6 +671,30 @@  @@ -467,6 +467,42 @@   (+1 more)
+
+ALL ARE MID-FILE INSERTIONS INTO THE `thresholds` OBJECT. **None is anchored on the
+file's last line**, so the hazard CLAUDE.md names -- an appendix hunk that forbids
+any chapter from appending -- does not apply here. 047 asked this of compose.yaml and
+published the clean answer; this is the same question for the file this chapter
+actually edits.
+
+What remains is narrower and real: T058 inserts new per-file pins into the same
+`thresholds` object, and if an insertion lands inside one of those three-line context
+windows the pre-image stops matching. That is decidable only by running the chain
+after the edit, which is what T058 now does rather than waiting for T094.
+
+And 048-3 stands: the chain replays 317 lines of this file where the tree holds 944,
+591 of them diverged before any chapter touched it, so the edit owes a gaps entry
+rather than a hunk.
+
+================================================================================
+T010c — THE VIETNAMESE PART 4 CHAIN, AT THE PATH IT IS ACTUALLY ON
+================================================================================
+It is `app/(vi)/vi/part-4/`. `app/(vi)/part-4/` HAS NEVER EXISTED -- an assumption
+checked against it came back empty for five passes, which is a fact about the path
+rather than about the corpus.
+
+    app/(vi)/vi/part-4/chapter-01/the-question-the-counters-cant-answer/page.mdx
+    app/(vi)/vi/part-4/chapter-02/the-store-that-was-never-listening/page.mdx
+    app/(vi)/vi/part-4/chapter-03/the-consumer-that-was-promised/page.mdx
+
+Seven titled fences, and the KIND is what matters:
+
+    diff  compose.yaml
+    json  services/ingester/package.json          <- whole body
+    sql   analytics/0000_message_events.sql       <- whole body
+    sql   analytics/0003_webhook_attempts.sql     <- whole body
+    ts    services/ingester/src/clickhouse.ts     <- whole body, T051 edits it
+    ts    services/ingester/src/main.ts           <- whole body
+    ts    services/ingester/src/shape.ts          <- whole body, T049 edits it
+
+Part 4 contributes 0 problems today (T010), so those whole bodies MATCH THE TREE now
+and breaking them is this chapter's doing. A whole body takes no hunk, and the hunk
+would have to be written into a Vietnamese chapter, which is not this feature's work.
+Expect the vi half of the delta to move by up to 2, and pay it with a gaps entry.
+
+================================================================================
+T010d — THREE LANE PREMISES, ALL HELD
+================================================================================
+Each was a plausible repeat of a defect this project has already paid for.
+
+(1) services/gateway/vitest.integration.config.mts
+        include: ["src/**/*.itest.ts"]        RECURSIVE
+    Every existing gateway itest sits directly in src/. `connection-log/` is the
+    first subdirectory any of them has used, and a single-star glob would have
+    collected nothing new and passed green.
+
+(2) vitest.coverage.config.mts
+        include: ["packages/*/src/**/*.ts", "services/*/src/**/*.ts"]
+    So T058's nested pin binds. 4.4's services/api/src/request-log/event.ts is the
+    precedent; 049 found exactly 1 unbindable pin in 45, which is why this was
+    checked rather than assumed.
+
+(3) connection-log.itest.ts needs NO exempt.ts entry.
+    The global-operation guard throws only under RELAY_HARNESS_BAIT=on, and the
+    gateway lane's config says it "gets exemption handling and NO bait".
+    exempt.test.ts asserts that list in both directions, so a needless entry would
+    have been a defect of its own.
+
+================================================================================
+T011 (PARTIAL) — THE ENVIRONMENT, STACK-FREE HALF
+================================================================================
+    node            v22.23.2
+    pnpm            10.33.0
+    cpus            10
+    RAM             15 GB
+    kernel          6.18.33.2-microsoft-standard-WSL2
+    ws              ^8.21.1
+    nats            ^2.29.3 in api, dispatcher, ingester; NOT yet in gateway (T018)
+                    no pnpm catalog in this workspace, so four packages agree only
+                    by being typed the same
+    RELAY_POSTGRES_PORT  15432 (this machine's own Postgres holds 5432)
+
+    image tags, SELECT version(), DOCKER_HOST     PENDING -- stack down
+
+================================================================================
+T014 — check-lane-scope.py REPORTED ZERO BECAUSE IT LOOKED AT NOTHING
+================================================================================
+Both readings, because the difference is the finding.
+
+  STALE (line 28 hardcodes /home/dong/work/relay/tmp/part3-refactor, a worktree 045
+  deleted):
+    controls: 10 of 10 fired
+    check-lane-scope: 0 integration files, 0 unscoped read(s) ... in 0 file(s)
+    exit 0
+
+  RETARGETED (WT = /home/dong/work/relay/relay-platform):
+    controls: 10 of 10 fired
+    check-lane-scope: 50 integration files, 0 unscoped read(s) ... in 0 file(s)
+    exit 0
+
+Same controls, same exit code, same zero -- and one of them read 50 files and the
+other read none. A control that proves the checker WORKS says nothing about whether
+it LOOKED. 049-3 measured the same 50/0 and the item is still open upstream.
+
+AND ITS ZERO DOES NOT COVER THIS CHAPTER. Its SHARED array is the lane's POSTGRES
+tables; relay_analytics.connection_events is in neither that list nor that database,
+and the tool's own last line is "SQL text only". T056 is where this chapter's
+whole-table risk is actually handled.
