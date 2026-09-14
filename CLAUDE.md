@@ -209,6 +209,23 @@ buckets-from-records against buckets-from-the-meter — one quantity computed tw
 publishes the duration/bucket gap as a number so nobody reads it as a defect. **4.2's boundary
 day, one domain over.**
 
+**AND A DOCUMENT THE CHAPTER MAKES INCOMPLETE IS FALSIFIED BY NOTHING.** FR-017 amended a
+published document when a measurement contradicted it, which is the case every previous chapter
+hit. **This chapter's three SAD debts are the other kind**: §6.2 declares the analytical schema
+and gained a table at revision 1.3 (*"this document named no table for FR-ANL-01's webhook
+delivery attempts"*) and another at 1.4 — `connection_events` is the same series' next entry
+and the same clause's **last arm**, and no task added it. §4's gateway entry will describe a
+service that publishes analytical events and holds a broker client while mentioning neither;
+the dispatcher's entry already carries the sentence to copy. **And that entry never mentioned
+the sixty-second usage report either** — which is spec.md §2's own framing finding, true of the
+SAD as well, while T085 amended only `docs/12`. **The chapter found the omission in one
+document and fixed it there.** FR-017a covers the class now; T081b and T081c pay it.
+
+**AND `TRAP` IS A COUNTED BOX CLASS THAT NO GATE COUNTS.** `docs/07` §line 70: **≥1 per code
+chapter**. Zero mentions in 050's spec or tasks, honoured by habit in every chapter so far —
+4.4 carries four. `check:figures` counts figures and no checker reads prose, so this is one
+draft away from being missed. T086 names it and T091 counts it beside the prose words.
+
 **AND THE RECORD'S KEY NEEDS `event` IN IT.** One connection produces two rows with one
 `connection_id`; without `event` in the sorting key a `ReplacingMergeTree` collapses the open
 into the close. Verified against the server: `count() FINAL` 2, not 1.

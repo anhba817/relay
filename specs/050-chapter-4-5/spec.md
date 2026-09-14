@@ -288,6 +288,14 @@ side of it is now zero.
   arithmetic rather than the choice.
 - **FR-017**: Where a measurement in this chapter falsifies a published document, that document
   shall be amended in this feature.
+- **FR-017a**: Where this chapter makes a published document **incomplete** rather than wrong,
+  that document shall be amended too. A record that describes an analytical schema, or a
+  service, or a movement's chapters, is falsified by nothing when a table, a fabric or a
+  responsibility is simply added beside it — it just stops being the whole list, silently, and
+  the next reader takes it for one. **`docs/05-sad.md` §6.2 gained a table at revision 1.3 and
+  another at 1.4** for precisely this reason, both times because the document *"named no
+  table"* for an arm the platform was already writing. FR-017 covered neither of those cases
+  and covered none of this chapter's until analysis pass 12.
 
 **The chapter**
 
