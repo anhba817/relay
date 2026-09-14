@@ -44,7 +44,7 @@ same mistake here would collapse a close into its open.
 | `type` | string | always | `"connection.opened"` or `"connection.closed"` — the router's discriminator. **Dropped before the insert; it has no column** |
 | `connection_id` | string (uuid) | always | |
 | `environment_id` | string (uuid) | always | from the resolved identity, never from a header |
-| `user_external_id` | string | always | the customer's own id for the person |
+| `user_external_id` | string | always | the customer's own id for the person. Non-null in the table too — it and `environment_id` come from the same non-optional `Identity` |
 | `ts` | string (ISO-8601) | always | the instant of the event, not of the publish. **On an open this is `connection.openedAt`** — the same field the meter reads, stamped before the resume and the ack so a reconnect storm gets no free window. On a close it is the instant the socket closed |
 | `close_code` | number | close only | the WebSocket close code the socket reported — an integer, not a reason string. **Not drawn from `CLOSE_CODES`**: that registry is the platform's own 4001–4009, and a clean close is 1000 |
 | `duration_ms` | number | close only | close `ts` − open `ts`, in milliseconds |
@@ -70,6 +70,33 @@ batched 500 per publish: 0.0034 ms each  -> 67x faster than awaiting, keeps both
 disconnect would turn one event into a burst of HTTP requests."* A burst of awaited publishes is
 the same shape on a different transport, and `meter.ts` already shows the answer — hand over,
 and let a tick do the sending.
+
+## The flush interval, and the budget it spends
+
+**FR-ANL-04 allows 60 seconds** from the originating operation to the event being queryable.
+This is the first buffered producer in Part 4 — chapter 4.4's publishes per request, straight
+from a `finish` listener, so the clause was satisfied without anyone choosing anything — and
+buffering is the first thing here that can spend the budget:
+
+```
+gateway flush interval   <- named below
+ingester batch bound     up to 2 s   (BATCH_MS = 2_000)
+insert                   small
+                         ---------
+FR-ANL-04 allows         60 s
+```
+
+**Copying `METER_INTERVAL_MS` would breach it.** The meter ticks every 60,000 ms, and the whole
+posture of this chapter is *be like the meter* — so the obvious number is the wrong one. The
+meter feeds a monthly quota and has no latency clause over it; this feeds an analytical store
+that does.
+
+**And the two pressures are less opposed than they look.** Batching's win comes from grouping
+whatever has accumulated, not from waiting longer: at 0.0034 ms a record the publish is
+effectively free at any interval, and R3's 2.3-second burst is a property of publishing **per
+close**, not of a short tick. So a short interval costs almost nothing and buys the whole
+budget. **5 seconds** leaves 53 of headroom, and FR-004d measures the real figure rather than
+trusting this arithmetic.
 
 ## The buffer is bounded, and the bound is part of the contract
 

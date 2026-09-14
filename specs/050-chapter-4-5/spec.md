@@ -161,6 +161,12 @@ one.
   newest loses the ones describing the outage. `meter.ts` bounds its own retention at 4,000
   and argues the direction; this is the same problem and gets the same treatment rather than a
   new one.
+- **FR-004c**: The buffer's flush interval shall be **named**, and the end-to-end budget shown:
+  FR-ANL-04 allows **60 seconds** from the originating operation to the record being
+  queryable, and the ingester's own batch bound spends up to 2 of them. An interval chosen for
+  batching alone spends a budget nothing else in this chapter is watching.
+- **FR-004d**: The end-to-end latency shall be **measured**, not derived — one connection
+  closing to its row being readable — and published against FR-ANL-04's 60 seconds.
 - **FR-005a**: The open record's instant shall be the connection's own `openedAt` — the
   instant the meter uses — not the moment the record is assembled or published. Two instants
   for one open would make FR-009's reconciliation disagree for a reason that is neither of the

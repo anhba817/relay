@@ -20,8 +20,16 @@ CREATE TABLE IF NOT EXISTS relay_analytics.connection_events (
     -- called it a number, and ClickHouse coerces BOTH ways through JSONEachRow -- so the
     -- disagreement landed silently in whichever spelling the producer happened to send.
     close_code     Nullable(UInt16),
-    duration_ms    Nullable(UInt32),
-    user_external_id Nullable(String),
+    -- UInt64, not UInt32. Nothing caps a socket's lifetime and UInt32 milliseconds wraps
+    -- at 49.7 days; UInt64 is past any plausible connection. The cost is four bytes on a
+    -- column that is null on every open record.
+    duration_ms    Nullable(UInt64),
+    -- NOT nullable. It comes from the same `Identity` as `environment_id`, whose fields
+    -- are `environmentId: string` and `userExternalId: string` -- neither optional -- and a
+    -- connection event only exists after a handshake. An earlier draft made this
+    -- `Nullable(String)` beside a non-null `environment_id`, which assumed an identity
+    -- existed for one field and not for the other, from one object.
+    user_external_id String,
     CONSTRAINT ts_is_real CHECK ts > toDateTime64('2020-01-01 00:00:00', 3, 'UTC')
 )
 ENGINE = ReplacingMergeTree
