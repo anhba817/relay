@@ -170,14 +170,14 @@ returns the second and not the first.
 **Independent test**: two latency distributions, broker up and broker stopped, published side
 by side against NFR-PRF-02's 150 ms.
 
-- [ ] T085 [US2] Verify by inspection that the publish is not awaited on the request path, and record the call site in `specs/049-chapter-4-4/baseline.txt`. **Verification method I**: a timing test passes on a fast broker whether or not the await is there.
-- [ ] T086 [US2] Discharge **FR-007**: record the latency interval's two endpoints in `specs/049-chapter-4-4/baseline.txt` and confirm `contracts/api-request-event.md` states them. Entry to the request-log middleware, to the response's `finish`. **Say what is excluded** — connection accept, TLS, request-body transfer, and any middleware registered earlier. A duration compared against another duration measures the thing that changed only if both use the same endpoints.
-- [ ] T087 [US2] Measure request latency with the broker healthy — a warm-up, then the sample — and record the distribution in `specs/049-chapter-4-4/baseline.txt`. 046 published a wrong number twice by comparing a cold run against a warm one.
-- [ ] T088 [US2] Stop NATS, repeat the measurement, and record both distributions. **Stop it gracefully.** 048's `EVENTS` store was left unrecoverable by an abrupt `down` mid-write, and the replacement built on the broken one inherited the failure invisibly.
-- [ ] T089 [US2] Record the status codes served during the broker-down run. **Latency is half the claim**; a response that is fast and wrong satisfies a timing assertion.
-- [ ] T090 [US2] Confirm the api logged its publish failure once per request and that the line carries no payload. A failure path that floods is a failure path that will be turned off.
-- [ ] T091 [US2] Restart NATS, confirm `/healthz` returns `{"status":"ok"}` and the container is healthy, and record it. 048-6's lesson: the check that proves a store recovered is **a deliberate restart**, not the fact that it answered once.
-- [ ] T092 [US2] Run the three gates and commit phase 6.
+- [X] T085 [US2] Verify by inspection that the publish is not awaited on the request path, and record the call site in `specs/049-chapter-4-4/baseline.txt`. **Verification method I**: a timing test passes on a fast broker whether or not the await is there.
+- [X] T086 [US2] Discharge **FR-007**: record the latency interval's two endpoints in `specs/049-chapter-4-4/baseline.txt` and confirm `contracts/api-request-event.md` states them. Entry to the request-log middleware, to the response's `finish`. **Say what is excluded** — connection accept, TLS, request-body transfer, and any middleware registered earlier. A duration compared against another duration measures the thing that changed only if both use the same endpoints.
+- [X] T087 [US2] Measure request latency with the broker healthy — a warm-up, then the sample — and record the distribution in `specs/049-chapter-4-4/baseline.txt`. 046 published a wrong number twice by comparing a cold run against a warm one.
+- [X] T088 [US2] Stop NATS, repeat the measurement, and record both distributions. **Stop it gracefully.** 048's `EVENTS` store was left unrecoverable by an abrupt `down` mid-write, and the replacement built on the broken one inherited the failure invisibly.
+- [X] T089 [US2] Record the status codes served during the broker-down run. **Latency is half the claim**; a response that is fast and wrong satisfies a timing assertion.
+- [X] T090 [US2] Confirm the api logged its publish failure once per request and that the line carries no payload. A failure path that floods is a failure path that will be turned off.
+- [X] T091 [US2] Restart NATS, confirm `/healthz` returns `{"status":"ok"}` and the container is healthy, and record it. 048-6's lesson: the check that proves a store recovered is **a deliberate restart**, not the fact that it answered once.
+- [X] T092 [US2] Run the three gates and commit phase 6.
 
 ---
 

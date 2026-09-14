@@ -123,7 +123,8 @@ text, and truncation keeps the part a person wrote.
 
 ## Latency — the interval, named
 
-Start: entry to the analytics middleware. End: the response's `finish` event.
+Start: entry to the request-log middleware (position 2 in the chain). End: the response's
+`finish` event.
 
 **Excluded**: connection accept, TLS, request-body transfer, and any middleware registered
 before it. NFR-PRF-02 takes the same posture with *"excluding network"*. Any figure compared

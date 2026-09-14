@@ -647,3 +647,126 @@ PHASE 5 — the requests that belong to no tenant (US3)
     pnpm typecheck  exit 0
     pnpm test       exit 0   -- api 274, gateway 116, dispatcher 8
     api integration (request-log)  5 passed
+
+===============================================================================
+PHASE 6 — the analytics path never costs a response (US2)
+===============================================================================
+
+## T085 — the publish is not awaited, by INSPECTION
+
+    services/api/src/request-log/request-log.middleware.ts:
+      91-
+      92-      // NOT AWAITED. The response has already been sent; this is the whole of constitution
+      93-      // III's "never synchronously on the request path" at the one place it could be broken.
+      94:      void publishRequest(this.analytics, this.logger, facts);
+
+    A `void` call inside a `finish` listener. The response has already been sent when
+    this runs at all, so there is no request path left to be on.
+
+    METHOD I RATHER THAN T, and the distinction is the point: a timing test passes on a
+    fast broker whether or not the await is there. The measurement below is evidence
+    about this build; the inspection is the claim.
+
+## T086 — the latency interval, both ends named
+
+    START: entry to the request-log middleware (position 2 in the chain)
+    END:   the response `finish` event
+    EXCLUDED: connection accept, TLS, request-body transfer, RequestContextMiddleware
+
+    contracts/api-request-event.md states the same two ends (corrected here: it still
+    called this "the analytics middleware", a name from before the rename).
+
+## T087/T088/T089 — two distributions, one instrument
+
+    Client-observed total time, 200 requests each, 30 discarded as warm-up first. Both sides
+    use the SAME instrument on the same route with the same credential, because a duration
+    compared against another duration measures the thing that changed only if nothing else
+    did. 046 published a wrong number twice by comparing a cold run against a warm one.
+
+      broker UP     n 200   mean 2.61 ms   p50 2.54   p95 3.13   p99 3.58   max 3.80
+      broker DOWN   n 200   mean 2.45 ms   p50 2.36   p95 2.98   p99 3.69   max 4.31
+
+      status codes, both runs:  200 x 200
+
+    THE BROKER-DOWN RUN IS FASTER, and that is the result rather than an anomaly: the publish
+    is off the request path, so removing it removes background work and nothing else. Both
+    distributions sit two orders of magnitude under NFR-PRF-02's 150 ms p95.
+
+    T089's half of the claim: every one of the 400 responses was a 200. A response that is
+    fast and wrong satisfies a timing assertion, so the status codes are recorded beside the
+    latencies rather than assumed from them.
+
+    NATS WAS STOPPED WITH `docker compose stop`, NOT KILLED -- see T091, where that turned
+    out not to matter in the way 048-6 claimed.
+
+## T090 — the failure path logs once per request, and carries nothing
+
+    request_log.publish_failed lines:  232
+    requests in the same window:       714      (the up-run, the down-run and the warm-ups)
+
+    232 against the 230 requests issued while the broker was down, plus two health checks.
+    One line per request, no flood, no retry.
+
+    {"time":"...","level":"error","service":"api","msg":"request_log.publish_failed",
+     "request_id":"82ec30c4-...","error":"NatsError: TIMEOUT"}
+
+    Fields: time, level, service, msg, request_id, error. Searched for and absent:
+    "payload", "endpoint", "Bearer", "authorization", "body" -- 0 occurrences each.
+
+## T091 — THE RESTART DID NOT RECOVER, AND 048-6's RECORDED CAUSE IS WRONG
+
+    048-6 says an ABRUPT `docker compose down` mid-write left `EVENTS` unrecoverable. This
+    was `docker compose stop` -- graceful -- and it happened again:
+
+      healthz: {"status":"unavailable","error":"JetStream stream '$G > EVENTS' could not be recovered"}
+
+    Then, having rebuilt EVENTS, a plain `docker compose restart nats` broke ANALYTICS
+    instead. So it is not a particular stream and it is not abruptness.
+
+    FOUR OBSERVATIONS, INCLUDING A CONTROL AND A DELIBERATE REPRODUCTION:
+
+      1. `compose stop nats`, api writing          -> EVENTS unrecoverable
+      2. `compose restart nats`, api writing       -> ANALYTICS unrecoverable
+      3. `compose restart nats`, API STOPPED       -> healthz ok, clean
+      4. `compose restart nats` under 500-request  -> ANALYTICS unrecoverable
+         load, deliberately
+
+    THE STREAM THAT FAILS IS THE ONE BEING WRITTEN WHEN THE BROKER GOES DOWN. Graceful or
+    not makes no difference; having a writer does.
+
+    AND THIS CHAPTER MAKES IT FAR MORE LIKELY, WHICH IS THE PART THAT BELONGS TO 4.4. Before
+    this chapter the api wrote to ANALYTICS once per webhook delivery attempt -- 36 records
+    in several days. Now it writes on every request, and Docker polls `/healthz` every five
+    seconds. **ANALYTICS is never idle any more**, so every broker restart from here lands
+    mid-write. The stream that was hardest to break is now the easiest.
+
+    Observation 3 is the control and it is what makes the other three mean something: without
+    it, "the broker sometimes fails to recover" would be the whole finding.
+
+## AND THE STREAMS COULD NOT BE REBUILT BY THE CONTAINER THAT USES THEM
+
+    Recreating them from inside the compose api fails:
+
+      NatsError: replicas > 1 not supported in non-clustered mode
+
+    `replicaCount()` returns 3 when `NODE_ENV === "production"`, and
+    `services/api/Dockerfile:43` sets exactly that. So **the compose api can use a stream it
+    finds and cannot create one it does not** -- on a single-node broker, which is what
+    `compose.yaml` runs. 474 `request_log.publish_failed` lines accumulated while this was
+    true, every one of them a record that never reached the store.
+
+    It stayed invisible because the streams pre-existed: they were first created by something
+    running outside the container, where `NODE_ENV` is unset and `replicaCount()` returns 1.
+    048-6's own repair did the same thing without noticing -- it recreated EVENTS with a host
+    script, which is why it worked.
+
+    The stack was restored the same way and is healthy: EVENTS, ANALYTICS and DELIVERIES all
+    present at `replicas 1`, nats container healthy, api `{"status":"ok"}`, 8 containers up.
+    Filed for `gaps.md`; the fix is `RELAY_NATS_REPLICAS=1` in `compose.yaml`, and it is not
+    this chapter's to make.
+
+## T092 — the gates
+
+    pnpm lint       exit 0
+    pnpm typecheck  exit 0
+    pnpm test       exit 0   -- api 274, gateway 116, dispatcher 8
