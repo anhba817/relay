@@ -1,0 +1,205 @@
+BASELINE — 049, chapter 4.4, "every request is an event"
+Phase 1. Measured 2026-09-14 against the running stack, at the tip of `main` after 048 closed.
+
+Every figure below was RE-RUN here rather than carried from research.md. Two came back
+different from planning and one premise was already satisfied; all three are recorded as
+they came out.
+
+## T001 — R1 re-run: the ingester terminates an API request record
+      [error] ingester.malformed_record {"stream_sequence":2}
+    pass 1: written 1  malformed 1   <- written 1 is the positive control
+    pass 2: written 0  malformed 0   <- terminated, never comes back
+    stream still holds 2 of 2 · consumer num_pending 0 · ack_pending 0
+
+## T002 — what makes shape() return null, and what main.ts does with it
+    read from the files, not cited from research.md.
+
+    shape() refuses unless ALL of these are present and the right type:
+      environment_id   string
+      attempted_at     string
+      delivery_id      string
+      endpoint_id      string
+      event_id         string
+      attempt          number
+      latency_ms       number
+      outcome          string
+
+    An API request record carries none of delivery_id, endpoint_id, event_id, attempt, outcome.
+
+    main.ts's null branch:
+            malformed += 1;
+            logger.log("error", "ingester.malformed_record", { stream_sequence: m.seq });
+            m.term();
+            continue;
+
+    filter_subject on the durable:
+      128:    filter_subject: ALL_ANALYTICS_SUBJECT,
+      ALL_ANALYTICS_SUBJECT = "`${ANALYTICS_SUBJECT_PREFIX}.>`"
+      — the widest filter the grammar admits, so every record on the stream reaches it.
+
+## T003 — R4 re-run: what a request record costs on the stream
+
+    1000 records = 315,000 bytes -> 315.0 bytes/record   (probe subject 53 chars)
+
+    AND THAT NUMBER INCLUDES THE INSTRUMENT. Planning measured 313.0 on a subject 51 chars
+    long; this probe's subject is 53 and read 315.0. Exactly one byte per subject character.
+    Measured across three subject lengths against the same 1,000 records:
+
+      p4.api.request.<uuid>          51 chars -> 313.0 bytes/record   (planning)
+      p1r4.api.request.<uuid>        53 chars -> 315.0 bytes/record   (this probe)
+      probeanal.api.request.<uuid>   58 chars -> 320.0 bytes/record   (length-matched)
+
+    The real subject is `analytics.api.request.<uuid>` — 58 characters. So the honest figure
+    is 320.0 bytes/record, and every number research.md R4 derived from 313.0 is 2% light.
+    A probe stream cannot use `analytics.>` at all (R2: subjects overlap with an existing
+    stream), so the length-matched prefix is how the real figure is reachable without
+    publishing into the live stream.
+
+    At 320.0 bytes/record:
+      1 GiB holds                      3,355,443 records
+      7-day retention is reached at    5.5 requests/second sustained
+      the SAD's 24 h absorption holds  only to 38.8 requests/second
+
+    Planning's 5.7 and 39.7 were both derived from the short-subject figure. The correction is
+    small and in the direction that makes the problem arrive sooner.
+
+## T004 — every record on the live ANALYTICS stream, by key set
+    36 messages · 17,529 bytes · 487 bytes/record
+    read 36 · carrying a "type" field: 0 · distinct key sets: 2
+      x 29  attempt,attempted_at,delivery_id,endpoint_id,environment_id,event_id,latency_ms,outcome,status
+      x  7  attempt,attempted_at,delivery_id,endpoint_id,environment_id,error,event_id,latency_ms,outcome
+
+## T005 — the debris
+    already cleared — 0 keyless records remain
+
+    T005 — THE PREMISE WAS ALREADY SATISFIED, AND THAT IS THE RECORD.
+
+    The task says to clear seq 32, `analytics.probe.ping.<uuid>` carrying `{}` in 2 bytes,
+    published 2026-09-14T00:58:31Z by 048's probe work. Analysis pass 2 found it and removed
+    it before this phase ran, so the stream reads 36 rather than 37 and there are 0 keyless
+    records. Nothing to do here.
+
+    What the removal was worth: under this chapter's routing that record shapes as an attempt,
+    fails every required-field check, and terminates. The first ingester run of this chapter
+    would have reported `malformed 1` for a record the LAST chapter wrote. `A red probe writes
+    to the lane` — 043 left two rows behind and the next measurement read them as data
+    contradicting the plan.
+
+    Two key sets remain and both are 3.20's: 29 records carry `status`, 7 carry `error`
+    instead, because the publisher omits `status` when nothing answered. 0 of 36 carry `type`,
+    which is the compatibility rule's premise and it holds.
+
+## T006 — R3b re-run: what each filter sees
+    tenant A exact      num_pending 1
+    tenant B exact      num_pending 0
+    one-token wildcard  num_pending 6
+    (7 published; the one the wildcard misses is the five-token 'no.tenant' subject)
+
+## T007 — R6 re-run: the matched route at finish
+  Nest 11.1.28 + Express 5.2.1, controllers declaring the version prefix themselves:
+    POST /v1/channels/abc123/messages       status 201  baseUrl=""  route.path="/v1/channels/:channelId/messages"
+    GET  /healthz                           status 200  baseUrl=""  route.path="/healthz"
+    GET  /v1/does-not-exist                 status 404  baseUrl=""  route.path=undefined
+  baseUrl is empty because Nest registers on the root instance, so route.path is the WHOLE template.
+  A 404 has no req.route at all. Under a MOUNTED router the same field drops the /v1 —
+  the failure request-context.middleware.ts already survived once, when req.url was / for every request.
+
+## T008 — R5 re-run: which requests the middleware logs
+    GET    /healthz                           -> 200
+    GET    /v1/webhooks                       -> 401
+    GET    /v1/does-not-exist                 -> 404
+    GET    /v1/channels/abc123/messages       -> 401
+    POST   /internal/dispatch/expand          -> 401
+    what the api logged:
+      {"time":"2026-09-14T06:53:48.573Z","level":"info","service":"api","msg":"request","request_id":"e9e060fa-d414-432f-b90c-3912c5d6cd34","method":"GET","path":"/he
+      {"time":"2026-09-14T06:53:48.577Z","level":"info","service":"api","msg":"request","request_id":"8a6a9ef3-cb5a-4f0c-9281-b79e0f188358","method":"GET","path":"/v1
+      {"time":"2026-09-14T06:53:48.581Z","level":"info","service":"api","msg":"request","request_id":"6d30feb3-51f1-438f-845a-0d1d5cb930e3","method":"GET","path":"/v1
+      {"time":"2026-09-14T06:53:48.585Z","level":"info","service":"api","msg":"request","request_id":"e716b2a4-8510-40ec-979a-43af9f9f838f","method":"GET","path":"/v1
+      {"time":"2026-09-14T06:53:48.589Z","level":"info","service":"api","msg":"request","request_id":"5bc70eef-ca1c-4498-98c9-774f83fad0a6","method":"POST","path":"/i
+    every one logged, 401s and the 404 included — the producer belongs in the middleware layer.
+    and the param route logs the RAW path, channel id and all. That is why FR-005 says endpoint.
+
+## T009 — the api's route surface by principal class
+    route decorators : 41
+    controllers      : 13
+    guards           : 1 (CredentialGuard), applied on 11 controllers
+    @Accepts({platform:...}):
+      isolation/gauntlet.itest.ts:1117:    // `@Accepts({ platform: ["gateway"] })` and dispatch is the dispatcher's.
+      internal/dispatch.controller.ts:59:@Accepts({ platform: ["dispatcher"] })
+      internal/usage.controller.ts:50:@Accepts({ platform: ["gateway"] })
+    A count of the SURFACE, not of traffic. The volume-weighted share is T063's.
+
+    nest            11.1.28
+
+## T010 — check:fences opening, by kind and locale
+    check-fence-chain: 110 problem(s) — APPLY 74, HEAD 36
+    exit 1 — the inherited baseline, not a break. 047 and 048 both opened and closed at 110.
+
+    APPLY total : 74
+      (en)      : 30
+      (vi)      : 30
+      elsewhere : 14
+    HEAD total  : 36
+      (en)      : 36
+      (vi)      : 0
+      elsewhere : 0
+
+    The (vi) chain is under active translation and Part 4 has no Vietnamese chapters at all
+    (app/(vi)/part-4/ is empty; 4.1-4.3 shipped en only). A bare total moves for reasons
+    this chapter cannot cause, which is why the close is reported as a delta by kind and locale.
+
+## T011 — environment
+    node            v22.23.2
+    pnpm            10.33.0
+    nats image      nats:2.12-alpine
+    clickhouse image clickhouse/clickhouse-server:25.3
+    postgres image  postgres:18-alpine
+node:internal/modules/cjs/loader:1433
+  throw err;
+  ^
+
+Error: Cannot find module './node_modules/@nestjs/core/package.json'
+Require stack:
+- /home/dong/work/relay/relay-platform/[eval]
+    at Function._resolveFilename (node:internal/modules/cjs/loader:1430:15)
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1040:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1045:22)
+    at Function._load (node:internal/modules/cjs/loader:1216:25)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
+    at Module.require (node:internal/modules/cjs/loader:1527:12)
+    at require (node:internal/modules/helpers:147:16)
+    at [eval]:1:13
+    at runScriptInThisContext (node:internal/vm:209:10)
+    at node:internal/process/execution:446:12 {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [ '/home/dong/work/relay/relay-platform/[eval]' ]
+}
+
+Node.js v22.23.2
+    nest            
+    express         5.2.1
+    clickhouse ver  25.3.14.14
+    cpus / RAM      10 / 15 GB
+    DOCKER_HOST     unix:///var/run/docker.sock (required on this machine)
+    RELAY_POSTGRES_PORT=15432 (this machine's own Postgres holds 5432)
+
+## T012 — the analytical store
+    tables in relay_analytics:
+      .inner_id.113806c8-b214-4351-86ee-45fe228dc2eb
+      daily_usage
+      message_events
+      schema_applied
+      webhook_attempts
+    ledger:
+      0000_message_events.sql
+      0001_daily_usage.sql
+      0002_schema_applied.sql
+      0003_webhook_attempts.sql
+    webhook_attempts rows (FINAL): 36
+
+## T013 — the stack
+    containers running: 8
+    nats healthz      : {"status":"ok"}
+    nats container    : healthy
+    brought up with `docker compose --profile services up -d` and NO --no-deps.
+    048 closed with that gate red (048-6); this is the confirmation it was closed rather than quarantined.

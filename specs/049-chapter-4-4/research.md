@@ -151,10 +151,35 @@ error.
 
 **And it falsifies a published number.** `docs/05-sad.md:184` and `:919` both say the stream
 absorbs **24 h** while the store is down (NFR-REL-05). At 313 bytes a record, 24 hours fits
-only up to **39.7 requests/second**. Above that the SAD's claim is false, and nothing in the
+only up to **39.7 requests/second** — **38.8** at the corrected 320 bytes, below. Above that the SAD's claim is false, and nothing in the
 platform would say so. NFR-REL-05's own text names no duration — the 24 h is the SAD's, and
 the SAD also calls the retention "24 h" where the stream is configured at 7 days. Two numbers
 in one sentence, one of which was never the configuration.
+
+**AND THE NUMBER ABOVE INCLUDES THE INSTRUMENT — CORRECTED IN PHASE 1.** The stream's byte
+accounting counts the subject, and this probe's subject was shorter than the real one. Measured
+across three lengths against the same 1,000 records:
+
+```
+p4.api.request.<uuid>          51 chars -> 313.0 bytes/record   (this probe)
+p1r4.api.request.<uuid>        53 chars -> 315.0 bytes/record
+probeanal.api.request.<uuid>   58 chars -> 320.0 bytes/record   (length-matched)
+```
+
+Exactly one byte per subject character. The real subject `analytics.api.request.<uuid>` is **58
+characters**, so the honest figure is **320.0 bytes/record** and every number derived above is
+about 2% light:
+
+```
+1 GiB holds                     3,355,443 records
+7-day retention reached at      5.5 requests/second sustained
+the SAD's 24 h holds only to    38.8 requests/second
+```
+
+A probe stream cannot take `analytics.>` at all (R2), so a length-matched prefix is the only way
+to the real figure without publishing into the live stream. **The correction is small and runs in
+the direction that makes the problem arrive sooner** — which is the direction a measurement error
+should never be allowed to run unnoticed.
 
 **This does not by itself choose a second stream.** It chooses that the question is answered
 with a number in the chapter. R12 takes the topology.
@@ -426,7 +451,7 @@ The container runtime polls `/healthz`. Measured in the probe window: **three he
 six seconds** from one container's health check alone, with the gateway and dispatcher adding
 their own.
 
-At R4's 313 bytes, a 5-second health check is 5.4 MB a week per prober — small. The cost is
+At R4's corrected 320 bytes, a 5-second health check is 5.5 MB a week per prober — small. The cost is
 not bytes, it is that **the request log's largest endpoint by count is the one nobody wants to
 read**, and every percentile computed over the whole table is dominated by it.
 
