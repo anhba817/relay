@@ -46,7 +46,7 @@ same mistake here would collapse a close into its open.
 | `environment_id` | string (uuid) | always | from the resolved identity, never from a header |
 | `user_external_id` | string | always | the customer's own id for the person |
 | `ts` | string (ISO-8601) | always | the instant of the event, not of the publish |
-| `close_code` | number | close only | a value from `CLOSE_CODES`, not a reason string |
+| `close_code` | number | close only | the WebSocket close code the socket reported — an integer, not a reason string. **Not drawn from `CLOSE_CODES`**: that registry is the platform's own 4001–4009, and a clean close is 1000 |
 | `duration_ms` | number | close only | close `ts` − open `ts`, in milliseconds |
 
 **Absent, not empty.** `exactOptionalPropertyTypes` is on; optional fields are spread in rather

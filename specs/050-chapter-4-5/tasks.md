@@ -19,7 +19,7 @@ ADR-07's amendment is **I**.
 **AND THIS CHAPTER EXPECTS TO OWE FENCE HUNKS.** It edits `session.ts`, `main.ts`, `shape.ts`,
 `ingest.ts` and the protocol — every one published as a whole body by an earlier chapter. 049
 discovered at its close that this costs the chain six problems until the diffs are published.
-T077 and T078 do it deliberately in phase 8 rather than discovering it.
+T079 and T080 do it deliberately in phase 8 rather than discovering it.
 
 ---
 
@@ -62,7 +62,7 @@ directly and count the open and close records. Nothing consumes them yet.
 - [ ] T019 [US1] Write the buffer in `services/gateway/src/connection-log/event.ts`: records accumulate and a tick publishes them. **Not one publish per close** — T004's 0.229 ms is 2.3 s for 10,000, which is `session.ts`'s own HTTP argument on a new transport.
 - [ ] T020 [US1] Use the batched form measured in T004, not core publish. Core is 0.0030 ms against 0.0034 and gives up the ack and the deduplication id — and this stream exists to be recoverable, which is why 3.20 chose JetStream over core in the first place.
 - [ ] T021 [US1] Write `services/gateway/src/connection-log/publisher.ts`: **one** client, created once, shared, lazily connected. An unreachable broker must leave the gateway serving sockets, which is the same posture every other publisher in this platform takes.
-- [ ] T022 [US1] Hand over in `services/gateway/src/session.ts` beside `meter.opened` and `meter.closed` — not inside them. The meter's contract is connection-minutes for a quota, it is fenced in chapter 3.24, and it reports to the api; hanging a broker off it would couple three things that are currently separate.
+- [ ] T022 [US1] Hand over in `services/gateway/src/session.ts` at **two different anchors**, because the meter is asymmetric by design: the open beside `registry.add(connection)` (`session.ts:959`) and the close beside `meter.closed(...)` (`session.ts:1146`). **There is no `meter.opened`** — the `Meter` interface is `closed`, `reportOnce`, `retained`, `dropped`, `stop`, and it learns about open connections by walking the registry. Not inside the meter either: its contract is connection-minutes for a quota and it is fenced in 3.24.
 - [ ] T023 [US1] The close-side hand-over must not throw and must not await. `session.ts`'s close handler is documented as the last place that should throw — **assert that in a test rather than trusting the comment**, by making the publisher throw and checking the socket still closes cleanly.
 - [ ] T024 [US1] Wire the publisher's lifecycle in `services/gateway/src/main.ts`: started with the server, and **flushed on shutdown** so a clean stop does not discard a buffer. Record what a clean stop does to in-flight records in `specs/050-chapter-4-5/baseline.txt`.
 - [ ] T025 [US1] Decide the unauthenticated-socket case and record the decision **and its loser** in `specs/050-chapter-4-5/baseline.txt`. A connection that never completes a handshake has no identity and no environment. 4.4's `_none` arm is for requests; reusing it here needs an argument or a different answer.
@@ -81,7 +81,7 @@ directly and count the open and close records. Nothing consumes them yet.
 - [ ] T031 Write `analytics/0005_connection_events.sql` per `data-model.md` §1. One statement, qualified `relay_analytics.` — `apply.mjs` refuses both otherwise.
 - [ ] T032 Put `event` in the sorting key after `connection_id`. **One connection produces two rows with one `connection_id`**, and without it a `ReplacingMergeTree` collapses the open into the close. Verified against the server during planning: `count() FINAL` 2, not 1.
 - [ ] T033 Use `TTL toDateTime(ts) + INTERVAL 90 DAY`, not `TTL ts + INTERVAL` — 047 measured the second refused with `BAD_TTL_EXPRESSION` on a `DateTime64`. **And record that 90 is a default rather than a derivation**: FR-ANL-07 fixes 30 for the request log and nothing fixes this one.
-- [ ] T034 Give `close_code` and the other close-only columns `Nullable`. 4.4 measured that `LowCardinality(String)` cannot tell an absent field from an explicit empty one — both land as `''` — and an open record has no close code.
+- [ ] T034 Give `close_code` the type **`Nullable(UInt16)`**, not a string. A close code is a small integer, and a String column answers `WHERE close_code = 1000` with nothing and no error. **Measured: ClickHouse coerces a JSON number into a String column AND a JSON string into a UInt16, so a type disagreement between the producer and the table lands silently.** The other close-only column, `duration_ms`, is `Nullable(UInt32)`; an open record carries neither.
 - [ ] T035 Include the `ts_is_real` CHECK constraint. 048 measured that an absent column takes its default, a `DateTime64` default is the epoch, and the epoch is older than any TTL, so the row is deleted at insert while the insert returns OK.
 - [ ] T036 Run `node analytics/apply.mjs` and record `applied 1: 0005_connection_events.sql`, then a second run reporting `applied nothing`. **Capture the exit code outside any pipeline** — 049 read it through `| sed` twice and got sed's status.
 - [ ] T037 [P] Test the checksum refusal red: change one byte, re-run, record the refusal text, restore.
@@ -168,18 +168,20 @@ one. Verification method **I**.
 - [ ] T071 [P] Measure the connection-event rate against the request-event rate and record it. `research.md` R7 **assumed** connection events are rarer and did not measure it; if a reconnect storm makes them commoner the crossover moves.
 - [ ] T072 Amend `docs/12-part-4-structure.md` §3's one-line description of this chapter, which says the gateway has never touched NATS and does not say it already reports connection data every sixty seconds.
 - [ ] T073 Draft the chapter at `relay-tutorial/app/(en)/part-4/chapter-05/<slug>/page.mdx`. **Do not re-derive** 3.20's fire-and-forget argument, 4.3's routing or 4.4's tenantless rule.
-- [ ] T074 Put every mermaid source in `figures.ts`, never in `page.mdx`, and pass each to `<Figure>` as **`code=`**, not `chart=` — 049 shipped three as `chart` and `check:figures` named every line.
-- [ ] T075 Take every number in a figure from `specs/050-chapter-4-5/baseline.txt`. No checker reads prose, and a mermaid block is prose.
-- [ ] T076 Measure prose words outside code fences against the 2,000–4,000 bound and record the figure whether or not it forces a split.
-- [ ] T077 Publish the SQL file as a whole body — it is new — and everything else as `diff` hunks against `part4-ch4`.
-- [ ] T078 Generate the hunks from the checker's own replay, or from `git diff -U6 part4-ch4 -- <file>` where the file has not changed since that tag. **Verify they apply before pasting, not after.**
-- [ ] T079 Run `pnpm check:fences` and report the close as a **delta against T008's opening**, broken down by kind and locale.
-- [ ] T080 Run all eight gates: `check:fences`, `check:docs`, `check:srs`, `check:figures`, `check:errors` in `relay-tutorial`, then `lint`, `typecheck`, `test` in `relay-platform`. **Build before `check:errors`.**
-- [ ] T081 Write `specs/050-chapter-4-5/gaps.md` for everything found and not closed, each entry naming what it would cost to close. **Carry 049-1, 049-2 and 049-3 forward if they are still open**, re-measured rather than copied.
-- [ ] T082 Audit every test this feature added and confirm none asserts only that a record was published. Record the count audited.
-- [ ] T083 Write `specs/050-chapter-4-5/traceability.md` mapping FR-001…FR-020 and SC-001…SC-011 to tasks and to the artifacts that discharge them. **Record the requirements nothing discharged**, if any.
-- [ ] T084 Rewrite `CLAUDE.md`'s `<!-- SPECKIT -->` block for the close, including every task premise this feature falsified by running it.
-- [ ] T085 Commit phase 7, tag `part4-ch5` on `relay-platform`, and push all three repositories.
+- [ ] T074 Discharge **FR-008**: state in the chapter why BOTH paths exist and **what each cannot do**. The meter cannot say a connection existed, only how many minutes it owed; the records cannot refuse a connection, because a quota refusal is synchronous and these are not. Name both limits rather than implying the new path supersedes the old.
+- [ ] T075 Say plainly that `close_code` is **not** drawn from `CLOSE_CODES`. That registry is the platform's own 4001–4009 and a clean close is 1000, so `check:errors` does not guard this column — the claim that it did was in two artifacts before analysis pass 1 ran.
+- [ ] T076 Put every mermaid source in `figures.ts`, never in `page.mdx`, and pass each to `<Figure>` as **`code=`**, not `chart=` — 049 shipped three as `chart` and `check:figures` named every line.
+- [ ] T077 Take every number in a figure from `specs/050-chapter-4-5/baseline.txt`. No checker reads prose, and a mermaid block is prose.
+- [ ] T078 Measure prose words outside code fences against the 2,000–4,000 bound and record the figure whether or not it forces a split.
+- [ ] T079 Publish the SQL file as a whole body — it is new — and everything else as `diff` hunks against `part4-ch4`.
+- [ ] T080 Generate the hunks from the checker's own replay, or from `git diff -U6 part4-ch4 -- <file>` where the file has not changed since that tag. **Verify they apply before pasting, not after.**
+- [ ] T081 Run `pnpm check:fences` and report the close as a **delta against T008's opening**, broken down by kind and locale.
+- [ ] T082 Run all eight gates: `check:fences`, `check:docs`, `check:srs`, `check:figures`, `check:errors` in `relay-tutorial`, then `lint`, `typecheck`, `test` in `relay-platform`. **Build before `check:errors`.**
+- [ ] T083 Write `specs/050-chapter-4-5/gaps.md` for everything found and not closed, each entry naming what it would cost to close. **Carry 049-1, 049-2 and 049-3 forward if they are still open**, re-measured rather than copied.
+- [ ] T084 Audit every test this feature added and confirm none asserts only that a record was published. Record the count audited.
+- [ ] T085 Write `specs/050-chapter-4-5/traceability.md` mapping FR-001…FR-020 and SC-001…SC-011 to tasks and to the artifacts that discharge them. **Record the requirements nothing discharged**, if any.
+- [ ] T086 Rewrite `CLAUDE.md`'s `<!-- SPECKIT -->` block for the close, including every task premise this feature falsified by running it.
+- [ ] T087 Commit phase 7, tag `part4-ch5` on `relay-platform`, and push all three repositories.
 
 ---
 

@@ -87,7 +87,7 @@ relay-platform/
 │       ├── connection-log/event.test.ts       NEW — unit, tenancy branch at 100%
 │       ├── connection-log/publisher.ts        NEW — one client, lazy, shared
 │       ├── connection-log/connection-log.itest.ts  NEW
-│       ├── session.ts                         two hand-overs beside meter.opened/closed
+│       ├── session.ts                         two hand-overs: registry.add and meter.closed
 │       └── main.ts                            the publisher's lifecycle
 ├── services/ingester/src/
 │   ├── shape.ts                               a third arm on route()
@@ -109,6 +109,20 @@ fenced in chapter 3.24, and it reports to the api — three reasons not to hang 
 The two sit side by side and `session.ts` hands to both, which is also what makes the
 reconciliation in FR-009 a comparison of two independent computations rather than of one
 computation with itself.
+
+**THE TWO RECORDS HAVE TWO DIFFERENT ANCHORS, BECAUSE THE METER IS ASYMMETRIC BY DESIGN.** An
+earlier draft of this section said the producer sits *"beside `meter.opened` and
+`meter.closed`"*. **There is no `meter.opened`.** The `Meter` interface is `closed`,
+`reportOnce`, `retained`, `dropped` and `stop`, and its own comment says why: *"A socket closed.
+Its final totals are handed over here, because the registry has already forgotten it by the time
+anything else could ask."* The meter learns about **open** connections by walking the registry
+and only needs telling when one leaves.
+
+    open   ->  beside `registry.add(connection)`   services/gateway/src/session.ts:959
+    close  ->  beside `meter.closed(...)`          services/gateway/src/session.ts:1146
+
+Both are in `session.ts` and neither is in the meter. The close-side anchor carries the extra
+constraint: that handler is documented as the last place that should throw.
 
 ## Phases
 

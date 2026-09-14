@@ -14,10 +14,12 @@ CREATE TABLE IF NOT EXISTS relay_analytics.connection_events (
     ts             DateTime64(3, 'UTC'),
     connection_id  UUID,
     event          LowCardinality(String),
-    -- Only on a close. Absent on an open, and `LowCardinality(Nullable(...))` because
-    -- 4.4 measured that `LowCardinality(String)` cannot hold the difference between an
-    -- absent field and an explicit empty one -- both land as ''.
-    close_code     LowCardinality(Nullable(String)),
+    -- Only on a close. `Nullable(UInt16)` and NOT a string: a close code is a small
+    -- integer, and a String column answers `WHERE close_code = 1000` with nothing and no
+    -- error. An earlier draft made it `LowCardinality(Nullable(String))` while the contract
+    -- called it a number, and ClickHouse coerces BOTH ways through JSONEachRow -- so the
+    -- disagreement landed silently in whichever spelling the producer happened to send.
+    close_code     Nullable(UInt16),
     duration_ms    Nullable(UInt32),
     user_external_id Nullable(String),
     CONSTRAINT ts_is_real CHECK ts > toDateTime64('2020-01-01 00:00:00', 3, 'UTC')
@@ -65,9 +67,14 @@ chapter states that it is a default rather than a derivation.
 **No credential, no token, no message content, no channel list.** The allow-list is built by
 naming every field, as 3.20's shaper and 4.4's both are.
 
-**`close_code` is a code and not a reason.** `CLOSE_CODES` is a published registry that
-`check:errors` compares in both directions, so the vocabulary is already guarded. A reason
-string is a sentence somebody writes.
+**`close_code` is a code and not a reason** — but **it is not drawn from `CLOSE_CODES`**, and an
+earlier draft of this section claimed it was. That registry holds **4001, 4002, 4003, 4004, 4008
+and 4009**: the platform's own 4xxx range. A clean close is **1000** and an abnormal one is 1006,
+and neither is in it. So `check:errors` does not guard this column's vocabulary, and the field
+holds any WebSocket close code the socket reports.
+
+What survives is the narrower claim: it is an integer the protocol defines, not a sentence
+somebody writes.
 
 ---
 
