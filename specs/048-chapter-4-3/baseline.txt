@@ -139,3 +139,57 @@ T009 — THE LANE, AND THE STORE
 **Every one of these is identical to 047's close-out.** 047 recorded the same figures as
 identical to 046's, so the lane has not moved across three features — nothing has run it.
 Recorded so the next feature can tell stillness from drift rather than assuming either.
+
+
+PHASE 2 — A TABLE, THROUGH THE LEDGER THAT WAS BUILT FOR IT
+============================================================
+
+T014 — THE LEDGER'S FIRST USE BY SOMEBODY NOT TRYING TO MAKE IT FIRE
+----------------------------------------------------------------------
+    $ node analytics/apply.mjs
+    database relay_analytics ready
+    applied 4: 0000_message_events.sql, 0001_daily_usage.sql,
+               0002_schema_applied.sql, 0003_webhook_attempts.sql
+    skipped nothing
+
+    $ node analytics/apply.mjs
+    applied nothing
+    skipped 4: ...
+
+**FOUR APPLIED, NOT ONE, AND THE TASK SAID ONE.** T014 expected `applied 1` with three
+skipped. 047's close-out ran `--drop-all`, so this chapter starts from a database that does
+not exist rather than from 4.2's three tables — the bootstrap made it and all four files
+applied. **The task's premise was about a state the previous chapter deliberately removed.**
+Nothing is wrong; the expectation was written from the wrong end of a drop.
+
+T011 / T011a / T012 — THE TABLE, AND BOTH GUARDS FIRING
+---------------------------------------------------------
+    engine         ReplacingMergeTree
+    sorting key    environment_id, ts, delivery_id, attempt
+    partition      toYYYYMM(ts)
+    constraint     ts_is_real                                    present
+
+Each guard was tested against the failure it exists for, and they are different failures:
+
+    absent `ts`      Code: 469. Constraint `ts_is_real` for table
+                     relay_analytics.webhook_attempts ... violated
+    renamed key      Code: 117. Unknown field found while parsing JSONEachRow
+                     format: attempted_at
+    correct row      inserted · ts = 2026-09-14 10:00:00.500, milliseconds preserved
+
+`input_format_skip_unknown_fields = 0` catches the rename; it does **not** catch the absent
+field, which takes the epoch default without complaint. The constraint catches that one.
+`date_time_input_format = best_effort` is what parses the ISO-8601 string at all.
+
+**The probe row was truncated before anything else was counted** — 0 rows afterwards.
+
+T015 — THE SAD PUBLISHES THE TABLE NOW
+----------------------------------------
+`docs/05-sad.md` goes to revision **1.3**. §6.2 labelled `message_events` *representative*
+and named no table for FR-ANL-01's delivery attempts, while the publisher has been writing
+one record per attempt since chapter 3.20. The DDL is published with the sorting key, the
+engine and the reason for both.
+
+`pnpm sync:docs` synced 7 files; `check:docs` green. **047 hit that gate the same way** —
+amending a document without syncing leaves the published copy behind, and the gate is what
+notices.
