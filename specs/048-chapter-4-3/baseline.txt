@@ -193,3 +193,77 @@ engine and the reason for both.
 `pnpm sync:docs` synced 7 files; `check:docs` green. **047 hit that gate the same way** —
 amending a document without syncing leaves the published copy behind, and the gate is what
 notices.
+
+
+PHASE 3 — THE DRAIN
+====================
+
+T017 — WHERE IT LIVES, AND WHAT THAT COST
+-------------------------------------------
+`services/ingester/` — six files, the shape every service here has:
+
+    package.json · tsconfig.json · tsconfig.build.json · src/{main,shape,clickhouse}.ts
+    src/shape.test.ts
+
+It uses `@relay/service-kit`'s `createLogger` and reads `process.env` directly with named
+defaults, which is what `services/dispatcher/src/main.ts` does and what **no service does
+through `@relay/config`** — checked, because the convention was worth confirming rather than
+assuming.
+
+**AND `services/*` IS ALREADY GLOBBED.** `pnpm-workspace.yaml` needed no edit and
+`turbo.json` names no service, so neither was amended — two hunked fences that did not have
+to happen.
+
+T023 / T024 — THE FIRST DRAIN, AND THE FOURTH NUMBER IS THE ONE THAT MATTERS
+------------------------------------------------------------------------------
+    published to the stream        31
+    count()                        31
+    count() FINAL                  31
+    uniqExact(the key)             31
+
+    ts range   2026-09-11 12:45:32.846  ..  2026-09-11 12:46:43.205
+    status     7 NULL · 24 not-null
+    outcomes   delivered, rescheduled
+
+**The `ts` range is the rename passing.** A failed rename lands every row at the epoch, the
+ninety-day TTL deletes them at insert, and all three internal counts agree at 0 — which is
+why the published count is here as the anchor and not as decoration.
+
+**And the 7 NULL statuses are the nullable columns earning their place on real data**: seven
+of thirty-one attempts had nothing answer them. A non-nullable column would have written
+status 0 for each and asserted that an endpoint replied with status zero.
+
+T024 — A CORRECTION TO ANALYSIS PASS 2, FOUND BY RUNNING IT
+-------------------------------------------------------------
+    stream still holds 31 messages
+    consumer analytics-ingester: num_pending 0 · ack_pending 0 · redelivered 0
+
+Pass 2 found that an exhausted `max_deliver` leaves `num_pending 0` while the stream is
+full, and concluded: **"the disagreement between them is the signal."** That is wrong, and
+running the healthy case is what shows it.
+
+`ANALYTICS` is `retention: Limits`, so **acknowledged messages stay in the stream until
+`max_age` or `max_bytes`** — unlike a work-queue. So `num_pending 0` beside a full stream is
+the NORMAL state, and it is also the stranded state. The two are indistinguishable from
+those two numbers alone.
+
+**The signal is the row count against the published count**, which is what T023 measures.
+`num_redelivered` separates them as a secondary: a strand climbs it and a clean drain leaves
+it at 0. T028 is corrected to record all three rather than the pair.
+
+T025 — NOTHING ON THE REQUEST PATH KNOWS THIS SERVICE EXISTS
+--------------------------------------------------------------
+    imports of `@relay/ingester` outside its own directory: 0
+
+The publisher's own contract already carried the other half: *"Publish one attempt record.
+Never throws"*, called *"AFTER the outcome transaction has committed, never inside it."*
+The consumer is a separate process that adds nothing to that path.
+
+T025a — THE SHAPING TESTS
+---------------------------
+    14 tests, 1 file, 103 ms
+
+The assertion the file exists for is `expect(row).not.toHaveProperty("attempted_at")`. The
+rest cover the absent-means-NULL pair in both directions — an absent `status` becomes NULL,
+and a genuine `status: 0` stays 0 — and eight malformed shapes that must return null rather
+than be retried until the retention expires.
