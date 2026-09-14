@@ -247,14 +247,26 @@ Chapters must not re-teach these. The reader met all of them in Part 3.
 
 | already taught | where | what Part 4 does with it |
 |---|---|---|
-| The transactional outbox, and why it is in Postgres | movement II | contrasts it — ch 6 |
+| The transactional outbox, and why it is in Postgres | movement II | contrasts it — ch 5 |
 | JetStream streams, durable pull consumers, the 503 a publisher gets from a stream nobody created | movements II, VI | reuses — ch 4 |
-| **The analytics subject grammar and the fire-and-forget tradeoff** | ch 3.20 | **generalises — ch 6, 7** |
+| **The analytics subject grammar and the fire-and-forget tradeoff** | ch 3.20 | **generalises — ch 5, 6** |
 | Subject grammars as a design tool, five of them, each argued | movements IV, V | ch 15 may need a sixth (§7.4) |
-| The error registry and how a code is added to it | movement I | ch 12's four refusals |
+| The error registry and how a code is added to it | movement I | ch 11's four refusals |
 | The isolation harness and the global-operation guard | movement I | every new table |
-| Attachments as a discriminated union, `media_id` refused by name | ch 3.24 | ch 13 fills the arm |
-| **Monthly quota counters in Postgres** — `usage_periods`, `usage_active_users`, `usage_connections` | ch 3.23 | **ch 9 reconciles against them** |
+| Attachments as a discriminated union, `media_id` refused by name | ch 3.24 | ch 12 fills the arm |
+| **Monthly quota counters in Postgres** — `usage_periods`, `usage_active_users`, `usage_connections` | ch 3.23 | **ch 8 reconciles against them** |
+
+**THE ORDINALS IN THIS SECTION WERE ONE AHEAD OF §3's, AND THEY ARE CORRECTED ABOVE.** Five
+cross-references pointed one chapter too far: the outbox contrast, the analytics grammar, the
+error registry, the union arm and the quota reconciler. They fit the interim **24-chapter**
+numbering that existed for a day while §2.4 had movement I as two chapters — §3's table was
+renumbered when movement I contracted and this section was not. §7's references were written
+against §3's table and are unaffected.
+
+**It matters more here than anywhere else in this document**, because §4 is the section that
+tells a chapter what it must not re-teach. A writer following it literally would have concluded
+that chapter 4.4 is *not* the one that generalises 3.20's fire-and-forget argument — and 4.4 is
+exactly that chapter.
 
 **The hardest idea in this part is already taught.** `packages/protocol/src/internal.ts:249`
 defines `analytics.{domain}.{action}.{environment_id}` as the third grammar in that file,
@@ -279,7 +291,7 @@ quotas on messages sent, unique active persons, and connection-minutes*; FR-ANL-
 *per tenant per day: messages sent, unique active users, connection-minutes, and stored
 message count.*
 
-So chapter 8 builds in ClickHouse a daily view of what Part 3's quota chapter already counts
+So chapter 7 builds in ClickHouse a daily view of what Part 3's quota chapter already counts
 monthly in Postgres — and **FR-ANL-06's reconciliation is the comparison between them.**
 *"Metered totals shall agree with counts derived from operational data to within 0.1%"* is not
 abstract: the operational data is `usage_periods`, `usage_active_users` and
@@ -291,7 +303,7 @@ meet them.
 ClickHouse later, **or once in the wrong place**"* — and Part 3 built them in Postgres anyway,
 correctly: a quota must refuse a send synchronously, so its counter cannot live downstream of a
 lossy stream. **Two counters of one quantity is the right answer and the reconciler is the
-price.** Chapter 9 is where that is said out loud.
+price.** Chapter 8 is where that is said out loud.
 
 This also sharpens §2.3: the CI half plants a drift **between two stores that both exist**,
 rather than against a figure invented for the test.

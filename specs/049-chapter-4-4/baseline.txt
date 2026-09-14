@@ -770,3 +770,73 @@ PHASE 6 — the analytics path never costs a response (US2)
     pnpm lint       exit 0
     pnpm typecheck  exit 0
     pnpm test       exit 0   -- api 274, gateway 116, dispatcher 8
+
+## T102-T107 — the chapter
+
+    app/(en)/part-4/chapter-04/the-requests-that-belong-to-nobody/
+      page.mdx     2,393 prose words outside code fences, against a 2,000-4,000 bound
+      figures.ts   3 figures, every number from this file
+
+    SIX TITLED FENCES, ALL `diff`, AND THE CHAIN IS WHY THERE ARE SIX. The chapter's first
+    draft carried none, and check:fences went 110 -> 116: this feature changed six files that
+    earlier chapters fence as whole bodies, so the chain's end state no longer matched the
+    tree. Adding four hunks took it to 112; the last two -- `repository.ts` and the protocol --
+    took it to 110.
+
+      opening   110   APPLY 74 (en 30 · vi 30 · other 14)   HEAD 36 (all en)
+      close     110   APPLY 74 (en 30 · vi 30 · other 14)   HEAD 36 (all en)
+      delta       0
+
+    The fences are diffs against `part4-ch3` rather than whole bodies, because every one of
+    these files was published by an earlier chapter and a whole body would unanchor everything
+    downstream of it -- 047's 111 -> 203 trap.
+
+    AND check:figures CAUGHT A PROP NAME. The three figures were passed as `chart=`; `<Figure>`
+    reads `code=`. Three problems, all this chapter's, and the gate named the line each time.
+    Chapter 4.3 uses `code=` and reading it was not enough to notice.
+
+## T107 — all eight gates
+
+    relay-tutorial:
+      pnpm check:fences   exit 1   110 problem(s) -- the inherited baseline, delta 0
+      pnpm check:docs     exit 0   12 revisions ascend, 1.0 to 1.11
+      pnpm check:srs      exit 0   classes checked: ASM CON DR EIR FR NFR
+      pnpm check:figures  exit 0   266 figures, every diagram passed as `code`
+      pnpm check:errors   exit 0   27 codes, 27 sections
+    relay-platform:
+      pnpm lint           exit 0
+      pnpm typecheck      exit 0
+      pnpm test           exit 0
+
+## T109 — SC-009 audit: does any test assert only that a record was published?
+
+    Tests this feature added, and what each asserts ON:
+
+    test                                           asserts on
+    ----                                           ----------
+    shape.test.ts route/* (7)                      the returned discriminant and row
+    shape.test.ts shapeRequest/* (6)               the row's keys and null-vs-absent
+    internal.test.ts subjects (3)                  the subject string and the THROW
+    event.test.ts toRequestEvent (5)               the emitted object's exact keys
+    event.test.ts publishRequest (3)               the publisher's arguments, and the log
+    event.test.ts guards stamp (2)                 the api's own source, by scanning
+    ingest.itest.ts unclaimed                      written/malformed/unclaimed AND a second pass
+    ingest.itest.ts columns                        what the TABLE holds, three cases
+    ingest.itest.ts type rejection                 the server's Code: 117
+    ingest.itest.ts redelivery                     physical count AND FINAL, merges stopped
+    request-log.itest.ts served                    rows in the store, against a floor
+    request-log.itest.ts guard/handler             refused_at in the STORE
+    request-log.itest.ts unmatched                 refused_at and an ABSENT endpoint
+    request-log.itest.ts isolation                 a tenant-scoped read, and a foreign one
+    request-log.itest.ts 429                       refused_at and limited_operation in the store
+
+    15 tests. NONE asserts only that a publish happened.
+    Every integration assertion reads the table back; every unit assertion reads the
+    value produced. The two that come closest are publishRequest's -- they assert on the
+    publisher's ARGUMENTS -- and they are unit tests of a function whose whole job is to
+    choose a subject and an id, which is the thing being asserted.
+
+    Three carry an explicit positive control, because the claim is a negative:
+      unclaimed        written 1 beside malformed 1 -- without it, a dead consumer passes
+      redelivery       physical 3 beside FINAL 1 -- at physical 1 the insert never happened
+      isolation        a non-zero floor on the tenant's own count

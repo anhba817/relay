@@ -25,167 +25,112 @@ history; the replaced history is preserved on the remote as the tag
 tags. **Anyone holding an older clone of `relay-platform` must reset rather than pull.**
 
 <!-- SPECKIT START -->
-**ACTIVE: 049 — CHAPTER 4.4, "every request is an event".** Plan:
-`specs/049-chapter-4-4/plan.md`; **`research.md` first — six of its sixteen items were
-measured against the running stack and three changed the design.** Six phases, MVP at 1–4.
+**049 IS CLOSED at 112 of 112 — CHAPTER 4.4, "the requests that belong to nobody".** Its
+record is `specs/049-chapter-4-4/` — `baseline.txt` first (842 lines), then `gaps.md` (six
+entries), `traceability.md`, `tasks.md`. Tagged **`part4-ch4`** on `relay-platform`.
 
-**THE CONSUMER BUILT LAST CHAPTER DESTROYS WHAT THIS ONE PUBLISHES, AND BOTH INSTRUMENTS SAY
-NOTHING IS WRONG.** `services/ingester` filters on `analytics.>` — the widest the grammar
-admits — and `shape()` returns `null` for anything without `delivery_id`, `endpoint_id`,
-`event_id`, `attempt` and `outcome`. `null` is `m.term()`: never redelivered. Measured with
-one attempt record and one API request record on one stream:
+    54 requests · 34 with no tenant    application 20/20 attributed, platform 18/18 tenantless
+    broker up 2.61 ms · down 2.45      200 each side, all 200s — down is FASTER
+    320 bytes a record                 5.5 req/s fills 7 days · 38.8 breaks the SAD's 24 h
+    check:fences 110 -> 110, delta 0   2,393 prose words · 8 gates · 6 fences, all diffs
+
+**"EVERY REQUEST" AND "PER TENANT" ARE NOT THE SAME POPULATION.** FR-ANL-01 wants an event for
+every API request; FR-ANL-07 wants a log per tenant. Every 404, every 401, `/healthz`, signup —
+and **every call the dispatcher and gateway make on the internal seam**, because
+`PlatformPrincipal` carries `environmentId?: undefined` BY DESIGN and its own comment says the
+absence is what stops it being usable where a tenant is expected. **The gap is widest exactly
+where the traffic is.**
+
+**CONSTITUTION I FORBIDS THE RECORD FR-ANL-01 REQUIRES, AND THE THIRD READING IS THE ONE THAT
+HOLDS.** Drop them and "every" is false for the busiest routes; invent an environment and 047's
+zero-UUID phantom user is back; **or the clause governs tenant DATA, and a record with no tenant
+is not tenant data.** Only worth anything because it is testable: tenant A's exact filter saw 1
+and tenant B's 0 over a stream of six candidate tokens, and a tenant-scoped read returns that
+tenant's rows and **zero** tenantless ones.
+
+**THE CONSUMER SHIPPED LAST CHAPTER DESTROYED EVERYTHING THIS ONE SENDS, AND BOTH INSTRUMENTS
+SAID NOTHING WAS WRONG.** `analytics-ingester` filters on `analytics.>` and `shape()` knows one
+record type; `null` means `m.term()`.
 
     pass 1: written 1  malformed 1      the attempt wrote — that is the positive control
-    pass 2: written 0  malformed 0      terminated, so it never comes back
+    pass 2: written 0  malformed 0      terminated, never comes back
     stream still holds 2 of 2 · consumer num_pending 0 · ack_pending 0
 
-**The stream says both records are there and the consumer says there is nothing to do.** That
-is 048's strand signature from a different cause — 048 disproved depth-versus-pending as a
-detector because a clean drain looks identical, and it looks identical here too, where the
-record really is gone. The only trace is one `error` line carrying a stream sequence.
+`retention: Limits` keeps a terminated message, so depth says the record is there and lag says
+there is nothing to do. **`route()` now decides what a record IS before anything shapes it**, so
+"not mine" stops being the same answer as "malformed".
 
-**"EVERY REQUEST" AND "PER TENANT" ARE NOT THE SAME POPULATION, AND THE GAP IS WIDEST WHERE
-THE TRAFFIC IS.** `PlatformPrincipal` carries `environmentId?: undefined` **by design** — its
-own comment says the absence is what stops it being usable where a tenant is expected — and
-it sits on `@Accepts({ platform: [...] })`: the fan-out expand, the delivery material, the
-outcome, the replay, and the gateway's connection reporting. **The routes the platform calls
-on every message and every connection.** Add every 401, every 404, `/healthz` and signup.
+**NO MIDDLEWARE POSITION GIVES BOTH PROPERTIES, AND FINDING THAT OUT TOOK THREE ANALYSIS
+PASSES.** `RateLimitMiddleware` refuses a 429 with `res.end(); return;` and **never calls
+`next()`**, so a producer registered last never runs for a rate-limited request — the one an
+operator opens a request log to find. Registered SECOND it does, because **the listener's
+registration point and its read point are different moments**: it attaches before anything can
+short-circuit and reads `req.principal` when `finish` fires. **Attach early, read late.**
 
-**AND CONSTITUTION I FORBIDS THE RECORD FR-ANL-01 REQUIRES.** *"Every persisted operational
-and analytical record MUST carry a non-null tenant identifier"* — non-negotiable. Three
-readings, two wrong: drop them and "every" is false for the busiest routes; invent an
-environment and 047's zero-UUID phantom user is back; or **the clause governs tenant data,
-and a record with no tenant is not tenant data.** The third, argued in an SRS amendment
-rather than assumed in code, with R3b's measurement as the test: tenant A's exact filter saw
-1 record, tenant B's saw 0, over a stream holding six tenantless candidates.
+**AND TWO OF `refused_at`'s FOUR ARMS ARE NOT OBSERVABLE.** A guard refusal and a handler
+response are byte-identical from the producer — same status, same `req.route`, same properties —
+so `middleware` and `guard` are STAMPED and `unmatched` and `handler` inferred. **The `handler`
+arm is an inference from silence**, so a future guard that refuses without stamping is recorded
+as a plausible wrong value. The guard against that walks the api's source for every
+`CanActivate` and was run red by deleting the stamp.
 
-**THE UUID GUARD IS RIGHT AND A PERMISSIVE TOKEN PROVES IT.** `no.tenant` published a
-**five-token** subject that the four-token wildcard did not match; `*` published a literal
-asterisk. **Neither failed at publish time.** A malformed token does not reach the wrong
-tenant — it goes where no intended filter reaches, which is the quiet direction. The
-tenantless arm is a separate function returning `_none`, not a relaxed argument to the
-validator: a validator with an escape hatch is a validator with a hole.
+**A REMEDY BUILT ON A FUNCTION NOBODY OPENED.** Pass 3 prescribed "the limiter already knows
+which route it matched" across four artifacts. `operationsFor` returns `[]`, `["rest"]` or
+`["rest","send"]` — quota classes, three-valued. **The question was mis-posed too**: this
+platform does not limit per endpoint, so a per-endpoint breakdown of its refusals describes a
+mechanism that does not exist. The record carries `limited_operation` from `refusal.operation`,
+which the limiter already narrows to word the 429 body.
 
-**313 BYTES A RECORD, AND IT TURNS `max_bytes` INTO THE BINDING CONSTRAINT.** Measured over
-1,000 records. 1 GiB holds 3,430,485 of them, so **seven-day retention is reached at 5.7
-requests per second sustained** and at 100 req/s the stream fills in 9.5 hours. Under
-`discard: old` a busy tenant's request records evict a quiet tenant's webhook attempts, with
-no error at either end. **And it falsifies a published number**: `docs/05-sad.md:184` and
-`:919` claim the stream absorbs 24 h, which holds only to **39.7 req/s** — in a sentence that
-also calls the retention "24 h" where the stream is configured at seven days.
+**THE COLUMN TYPE WAS WRONG AND ONLY TRAFFIC SAID SO.** Lint, typecheck, 27 unit tests, the
+schema applied and `SHOW CREATE` verified — then `Code: 27. Cannot parse input: expected ','
+before '.556'`. `latency_ms` was `UInt32`; the producer reports fractional milliseconds.
+**Rounding would have been one line and the wrong fix**: three of four real requests are under
+1 ms and would have read 0. Nothing was lost — the insert threw, nothing was acked, and the
+records waited on the stream.
 
-**THE MIDDLEWARE SEES EVERY REQUEST; AN INTERCEPTOR WOULD MISS THE INTERESTING ONES.** All six
-probe requests — 200, two 401s, a 404, a param-route 401, an internal-seam 401 — produced a
-`"msg":"request"` line. Nest's order is middleware → guards → interceptors, so a guard's 401
-short-circuits before an interceptor runs and an unmatched route never reaches one. **And the
-logged line holds `"path":"/v1/channels/abc123/messages"`** — the raw path with the channel id
-in it, which is why FR-005 says endpoint.
+**AND `LowCardinality(String)` CANNOT SAY "ABSENT".** An absent field and an explicit `""` both
+land as `''`, which is 048's defect on a different column — and **none of 048's three guards
+reaches it**: skip-unknown-fields catches an UNKNOWN field, not an absent one, and a CHECK
+cannot help because absent is legal for `endpoint`.
 
-**`req.route.path` IS THE TEMPLATE, AND IT IS SAFE HERE FOR A REASON THAT IS NOT GENERAL.**
-Nest 11 on Express 5 with controllers declaring full paths: `req.baseUrl=""` and
-`req.route.path="/v1/channels/:channelId/messages"` at `finish`; a 404 has no `req.route` at
-all. **Under a mounted router the same field drops the `/v1`** — which is the failure the
-middleware beside it already survived, when `req.url` was `/` for every request from chapter
-2.2 until the rate-limiter chapter. A task asserts the property rather than assuming it.
+**THE BYTE COUNT INCLUDED THE INSTRUMENT.** Two probes read 313 and 315 bytes a record; the
+stream's accounting counts the SUBJECT and the probes' subjects differed by two characters.
+Measured across three lengths: 51 chars → 313.0, 53 → 315.0, **58 → 320.0**, which is the real
+subject. Every figure derived from 313 was 2% light.
 
-**FR-ANL-07 ASKS FOR SOMETHING TWO CLAUSES FORBID.** It records a *"truncated payload"*;
-FR-ANL-11 and constitution III forbid message text in the analytical store and constitution VI
-forbids it in logs. `POST /messages` has a body that **is** message text, and truncation keeps
-the first characters — the part a person wrote. Amended, not narrowed: an endpoint allow-list
-fails open, which is 3.20's own argument about fields.
+**048-6's RECORDED CAUSE IS WRONG, AND THIS CHAPTER MADE THE FAILURE PERMANENT.** It blamed an
+ABRUPT `compose down`. A graceful `compose stop` does it too, and so does `restart` — **the
+stream that fails to recover is whichever is being WRITTEN**, proven with a control (api
+stopped → clean) and a deliberate reproduction under load. Before 4.4 the api wrote to
+`ANALYTICS` once per webhook attempt; it now writes on every request and Docker polls `/healthz`
+every five seconds, so **the stream is never idle and every restart lands mid-write** (049-1).
 
-**AND `docs/12` §4 IS ONE ORDINAL AHEAD OF §3, IN THE SECTION THAT TELLS A CHAPTER WHAT NOT TO
-RE-TEACH.** Five cross-references, all +1, matching the interim 24-chapter numbering that
-existed while movement I was two chapters. §7 matches §3 and is unaffected. **A writer
-following §4 concludes this chapter is not the one that generalises 3.20's pattern.**
+**AND THE COMPOSE API CANNOT CREATE A STREAM IT DOES NOT HAVE.** `replicas > 1 not supported in
+non-clustered mode` — `replicaCount()` returns 3 under `NODE_ENV=production` and the Dockerfile
+sets it. 474 publish failures accumulated while the streams were missing. It hid because the
+streams were first created from OUTSIDE the container, which is also why 048-6's own repair
+appeared to work (049-2).
 
-**048 IS CLOSED at 73 of 73 — CHAPTER 4.3, "the consumer that was promised".** Its record is
-`specs/048-chapter-4-3/` — `baseline.txt` first (519 lines), then `gaps.md` (six entries),
-`traceability.md`, `tasks.md`. Tagged **`part4-ch3`** on `relay-platform`.
+**`check-lane-scope.py` REPORTS ZERO BECAUSE IT LOOKS AT NOTHING.** Line 28 hardcodes a worktree
+045 deleted; the glob matches nothing and it exits 0 with all ten controls firing. **That is the
+rule its own feature wrote**, and the controls cannot catch it: synthetic strings checked in
+memory fire whether or not the corpus is empty. **A control that proves the checker WORKS says
+nothing about whether it LOOKED.** Retargeted: 50 files, 0 unscoped reads (049-3).
 
-    31 published · 31 written           the first drain, all four counts agreeing
-    5 walks with the store stopped      5 succeeded, 0 failed, depth 32 -> 37
-    10 records, 3 groupings, 10 rows    the regrouped redelivery
-    check:fences 110 -> 110, delta 0    2,087 prose words · 8 gates · 5 fences, 0 problems
+**CONSTITUTION VI's 100%-BRANCH CLAUSE IS MET RATHER THAN PINNED, FOR THE FIRST TIME IN PART
+4.** It names tenant isolation, and this chapter's tenancy branch — a tenant's subject against
+the `_none` arm — is in `event.ts` at 100/100/100/100. 048 recorded the same clause as
+unreachable because its idempotency was a sorting key and **a schema has no branches to cover**.
 
-**THE TEMPLATE BUILT TO PREVENT THIS DEFECT IS THE ONE THING THIS CONSUMER MAY NOT USE.**
-`runtime.ts` exists because *"a future consumer forgets to dedupe → double webhooks / double
-metering"*, mitigated by *"a consumer template with dedup built in"* — and that dedup is
-`claimEvent`, a PostgreSQL transaction. Constitution III forbids it on the analytical path.
-**The comment was right about the risk and could not have known which principle would bar
-the remedy.**
+**AND A PIN THAT COULD NOT FAIL WAS FOUND BY SWEEPING FOR IT.** `vitest.coverage.config.mts`
+excluded `**/main.ts` and also pinned `services/ingester/src/main.ts` — 45 per-file pins, exactly
+1 unbindable. `ingestOnce` moved to `ingest.ts`, measured 76.66/75/100/75 against 048's silent
+41/33/25/40, and **both halves of the probe were run**, which is the step 048 skipped.
 
-**SIX TASK PREMISES WERE FALSIFIED BY RUNNING THEM.** (1) T014 expected `applied 1`; it
-applied **4**, because 047's close-out dropped the database. (2) **T028's strand detector was
-wrong twice** — see below. (3) T031 expected "the ingester cannot know" what `discard: old`
-dropped; **`first_seq` makes it computable**. (4) T017a predicted an overrun and the draft
-came in at **1,659 words, below the floor**. (5) T051 expected a hunked `compose.yaml` fence;
-the ingester needs no compose entry, so there is none. (6) The SQL fence shipped as an
-excerpt and the chain caught it in one run.
-
-**BOTH PROPOSED STRAND DETECTORS WERE WRONG, AND IMPLEMENTATION FOUND IT.** Analysis pass 2
-concluded *"the disagreement between stream depth and `num_pending` is the signal"*. Phase 3
-disproved it: `retention: Limits` keeps acknowledged messages, so a clean drain of 31 records
-left `stream 31 · num_pending 0` — byte-identical to a strand. Phase 4 disproved the
-fallback: five records that were definitely redelivered left `num_redelivered` at **0**,
-because it counts OUTSTANDING redeliveries. **The rows written against the rows published is
-the only signal that works** — both others describe the consumer's present state, and a
-strand is a fact about the past.
-
-**A LIMIT THAT IS RIGHT FOR ONE CONSUMER IS NOT A DEFAULT.** The api's runtime gives up after
-5 attempts and the dispatcher after 10, at a 30-second `ack_wait` — sound for an endpoint
-that is probably gone, silent about a store that is restarting. Measured at `max_deliver: 3`:
-delivered rounds 1-3, **nothing from round 4**, `num_pending 0` while the stream stayed full.
-`max_deliver: -1` now, which makes poison handling load-bearing: **retry forever on
-transport, terminate at parse.**
-
-**AND THE QUIETEST FAILURE EMPTIES THE TABLE.** The publisher sends `attempted_at`; the
-column is `ts`. `JSONEachRow` leaves an unmatched column at its default, a `DateTime64`
-default is the epoch, and the epoch is older than the 90-day TTL — so **the row is deleted at
-insert while every instrument reports success.** Three guards, three different failures:
-`input_format_skip_unknown_fields = 0` catches a RENAMED field (`Code: 117`, and its default
-is 1); `CHECK ts_is_real` catches an ABSENT one (`Code: 469`), which the setting cannot; and
-`date_time_input_format = best_effort` parses the ISO string at all. **The loud one is the
-least dangerous.**
-
-**`shape.ts` IS 100% BRANCHES AND THE CLAUSE STILL DOES NOT REACH THE THING IT IS ABOUT.**
-Constitution VI names idempotency for 100% branch coverage, and this idempotency is a
-`ReplacingMergeTree` sorting key. **A schema has no branches to cover.** Branch coverage is
-the wrong instrument for a guarantee not implemented in code; the integration test replaying
-a batch under three groupings is the right one.
-
-**AND `FINAL` IS NOT FREE.** A bare `count()` is answered from part metadata without reading
-a row — which is exactly why it is fast and why it cannot see a duplicate. At 1,000,000 rows
-plus 100,000 redelivered: **bare 0.9 ms reading 1 row and wrong by 100,000; FINAL 5.3 ms
-reading 1.2 M rows and right.**
-
-**AN INSERT IS ALMOST ENTIRELY FIXED COST** — 1.5 ms for one row and 1.5 ms for a hundred,
-0.3 us/row at ten thousand. DR-11's two bounds cross at **5,000 records/second**: one bound
-for the quiet tenant, one for the loud one.
-
-**PART 4's THIRD ESTIMATE RAN THE SAME WAY AS THE OTHER TWO.** Movement I contracted,
-chapter 3 turned out already built, and this chapter undershot a bound it was warned it might
-overrun. **All three corrections ran downward.**
-
-**AND `vitest.coverage.config.mts` COULD NOT TAKE A FENCE**, for 4.2's reason exactly: the
-chain replays 317 lines where the tree holds 944, and **591 of those lines diverged before
-this chapter touched it**. `gaps.md` 048-3 notes the shape — the chain's largest inherited
-HEAD problems are configuration files every chapter edits and no chapter owns.
-
-**A STREAM RECREATED ON A BROKEN STORE IS BROKEN TOO, AND EVERY INSTRUMENT SAID IT WORKED
-(048-6, CLOSED).** An abrupt `compose down` mid-write left `EVENTS` unrecoverable, so it was
-renamed aside and recreated with the platform's own `ensureStream` — which **returned**,
-answered `streams.info` with the right subjects and retention, and carried three phases of
-publishes. Removing the original broken store then left `/healthz` reporting the **identical
-error for the replacement**: it had been written while JetStream was already failing recovery
-and inherited the failure, invisible until something restarted. **A component verified only
-in the state it was created in is verified in one state** — the same shape as this feature's
-dedup token and its `attempted_at`/`ts` rename, one layer below the chapter. The fix was the
-same act on a clean store, and the check that proves it is a **deliberate restart**: healthz
-`ok`, container healthy, ANALYTICS 37 · DELIVERIES 69 · EVENTS 0 all recovered, `--no-deps` no
-longer needed. **The health check went red twice for real reasons and stayed red when the
-obvious culprit was removed and the problem was not** — more than the ClickHouse check managed
-for sixteen chapters, because this one asks a question whose answer can be no.
+**THE FENCE CHAIN CHARGED FOR SIX FILES THIS CHAPTER TOUCHED.** The first draft carried no
+fences and the chain went 110 → 116: six files that earlier chapters publish as whole bodies no
+longer matched the tree. Six `diff` hunks against `part4-ch3` took it back to **110, delta 0**.
+A whole body would have been the 111 → 203 trap.
 
 **047 IS CLOSED at 74 of 74 — CHAPTER 4.2, "the store that was never listening".** Its
 record is `specs/047-chapter-4-2/` — `baseline.txt` first, then `gaps.md` (five entries),
