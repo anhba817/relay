@@ -106,6 +106,26 @@ already says it cannot take a hunk, and nine of its 23 fences live in `fences/po
 the appendix that applies after every chapter — the question 047 asked of `compose.yaml` and
 published clean, never asked of this file.
 
+**AND THE TUTORIAL HAD NOT BUILT SINCE 4.4 SHIPPED — NINE GATES NOW, NOT EIGHT.**
+`lib/tutorial.ts` calls itself *"the single source of truth … the landing table of contents,
+ChapterHeader, and ChapterFooter all render exclusively from this manifest."* **Chapter 4.4 was
+never added to it.** `<ChapterHeader id="4.4" />` calls `getChapter`, which throws on an
+unregistered id, so `pnpm build` exited 1 with `Error: Unknown chapter id: 4.4` from the moment
+049 closed — **at 112 of 112, eight gates green, tagged `part4-ch4`.**
+
+**NONE OF THE EIGHT RENDERS A PAGE.** Five compare bytes and identifiers in `relay-tutorial`;
+the other three are `lint`, `typecheck` and `test` in `relay-platform` and never touch the
+tutorial. The manifest entry is repaired, the build exits 0, the chain is unmoved at 110
+(`lib/tutorial.ts` carries no titled fence), and **`pnpm build` is the ninth gate**. It costs
+90 seconds and names the page it failed on. *An instrument that is easy to run tells you what it
+measures, not what you wanted to know* — and this one measured everything about the chapter
+except whether it existed.
+
+**REGISTERING THE CHAPTER IS A STEP NO REQUIREMENT NAMED.** Not in 049's 112 tasks, not in
+050's until pass 9. Also fixed: 4.1, 4.2 and 4.3 have Vietnamese bodies and carried no
+`translatedIn`, which the manifest says is *"the ONLY signal that a chapter BODY exists"* and
+gates every vi link — three translated chapters unreachable from Vietnamese navigation.
+
 **AND THE VIETNAMESE PART 4 CHAIN IS NOT EMPTY — THE PATH THAT WAS CHECKED HAS NEVER EXISTED.**
 An assumption read *"`app/(vi)/part-4/` is still empty, so the vi fences are not this chapter's
 to move."* The vi tree is **`app/(vi)/vi/part-N/`**, so that check could only ever come back

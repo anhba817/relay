@@ -101,8 +101,22 @@ relay/
 └── docs/04-srs.md                             only if a measurement falsifies a clause
 
 relay-tutorial/
-└── app/(en)/part-4/chapter-05/<slug>/         page.mdx + figures.ts
+├── app/(en)/part-4/chapter-05/the-gateways-first-stream/   page.mdx + figures.ts
+└── lib/tutorial.ts                            the series manifest — REQUIRED, see below
 ```
+
+**`lib/tutorial.ts` IS NOT OPTIONAL, AND A SHIPPED CHAPTER ALREADY PROVED IT.** The file calls
+itself *"the single source of truth for the Building Relay series structure — the landing table
+of contents, ChapterHeader, and ChapterFooter all render exclusively from this manifest."*
+`<ChapterHeader id="4.5" />` calls `getChapter("4.5")`, which **throws** on an id the manifest
+does not hold. Chapter 4.4 shipped without an entry, tagged `part4-ch4` with eight gates green,
+and `pnpm build` has failed from that moment with `Error: Unknown chapter id: 4.4` — found in
+analysis pass 9 by running the build, because **none of the eight gates renders a page**. The
+entry is repaired and `pnpm build` joins the gate list (T095).
+
+The slug is `the-gateways-first-stream` — kebab-case of the title's main clause, apostrophe
+dropped rather than replaced, the way `the-question-the-counters-cant-answer` does it. It has to
+match in three places: the directory, the manifest's `path`, and the MDX `metadata.alternates`.
 
 **Structure Decision**: the producer lives in `services/gateway/src/connection-log/`, beside
 `meter.ts` rather than inside it. The meter's contract is connection-minutes for a quota, it is
