@@ -9,8 +9,11 @@ numbers exist before and after pointing at different content — so **name a cha
 number it**. `specs/045-part-3-rework/chapter-map.json` is the one record; the mapping page
 `relay-tutorial/app/(en)/part-3/whats-moved` publishes it and carries the fresh-start
 database instruction. Everything deferred is still Part 4's: hosted media
-(`media_not_available`) is 4.5 and 4.6, the queryable attempt log is 4.2, FR-MOD-03's audit
-log is 4.7.
+(`media_not_available`) is **4.10 and 4.11** — this line said 4.5 and 4.6 until analysis pass 8,
+which is `docs/12` §3's table rows 11 and 12 read as current when the table deliberately keeps
+pre-contraction ordinals — the queryable attempt log is 4.2, FR-MOD-03's audit log is 4.7.
+**Name a Part 4 chapter by its movement and title, not its number**, for the reason Part 3
+already taught.
 
 **THE REBUILT CHAIN IS `main` NOW.** 228 commits replaced by 230, diverging at the end of
 Part 2; the old history is tagged `backup/pre-main-move-20260911` in all three repositories.
@@ -102,6 +105,18 @@ directions. **`vitest.coverage.config.mts` is the omission that costs**: T058 ed
 already says it cannot take a hunk, and nine of its 23 fences live in `fences/post-series.md`,
 the appendix that applies after every chapter — the question 047 asked of `compose.yaml` and
 published clean, never asked of this file.
+
+**AND THE VIETNAMESE PART 4 CHAIN IS NOT EMPTY — THE PATH THAT WAS CHECKED HAS NEVER EXISTED.**
+An assumption read *"`app/(vi)/part-4/` is still empty, so the vi fences are not this chapter's
+to move."* The vi tree is **`app/(vi)/vi/part-N/`**, so that check could only ever come back
+empty. `app/(vi)/vi/part-4/` holds three chapters and seven fences, and **three are whole
+bodies** — `services/ingester/src/shape.ts`, `clickhouse.ts` and `main.ts`. This chapter edits
+the first two. Measured with the gate: the opening is **110 — APPLY 74 (30 en, 30 vi, 14
+elsewhere), HEAD 36, all en**, exactly as T010 predicted, and **part-4 contributes 0 in both
+locales**, so those bodies match the tree today and breaking them is this chapter's doing. **A
+whole body in the vi chain cannot be repaired by an English chapter**, so it is a gaps entry
+rather than a hunk. *A zero from an instrument is a claim about the corpus only if the
+instrument can be shown to have read it* — and here the instrument was a path.
 
 **AND THE CARRIED LEDGER WAS A SHORT LIST TWICE.** T096 said carry 049-1, 049-2 and 049-3;
 **049 has six**, and 049-4 is this chapter's own subject — the 5.5 requests/second crossover
@@ -509,10 +524,17 @@ chapter adds **zero dependencies** — 1,000,000 raw rows become **89 rollup row
 **046 IS CLOSED at 76 of 76**; its record is `specs/046-chapter-4-1/` — `baseline.txt` first,
 then `gaps.md` (eight entries, two closed), `traceability.md`, `tasks.md`.
 
-**PART 4 IS 23 CHAPTERS, NOT 24, AND IT GOT THERE BY CONTRACTING.** `docs/12` split movement I
-in two; **chapter 4.1 shipped with both halves at 2,132 prose words**, inside the bound, so
-movement I is one chapter and every ordinal after the first moved down by one. **It is the first
-estimate this project has made that was TOO HIGH** — Part 3 was planned as seven and shipped 26 —
+**PART 4 IS 22 CHAPTERS, AND IT CONTRACTED TWICE.** `docs/12` split movement I in two;
+**chapter 4.1 shipped with both halves at 2,132 prose words**, inside the bound, so movement I
+is one chapter and every ordinal after the first moved down by one — 24 to 23. Then **4.2 built
+all four items of the ledger chapter's brief** (runner, filename-and-checksum ledger, reporting
+idempotence, a checksum refusal tested red), movement II had one subject left, and every ordinal
+after 3 moved down again — 23 to 22, amended 2026-09-13. Milestones are at **9, 17 and 22**.
+**§3's own heading still says 23** and this block said so until analysis pass 8; the specs' "of
+22" was right. **§3's table keeps the ORIGINAL ordinals in column one on purpose** so older
+references resolve — the movement column is the stable address, and reading the table's first
+column as current is how a chapter number goes wrong. **Both corrections ran downward** —
+Part 3 was planned as seven and shipped 26 —
 and `docs/12` and `docs/07` were both amended before 047's spec was written rather than after
 they disagreed with it. **4.2 is "ClickHouse from zero", not "the index that would fix it".**
 

@@ -308,8 +308,17 @@ one.
   with a number and this one should be too.
 - **Connection events are lower volume than request events.** One pair per connection against
   one per request. Assumed, not measured, and FR-015 measures it.
-- **`app/(vi)/part-4/` is still empty**, so this chapter adds no Vietnamese page and the vi
-  fences in the opening total are not this chapter's to move.
+- **This chapter adds no Vietnamese page, and the vi chain will still move.** An earlier draft
+  said *"`app/(vi)/part-4/` is still empty, so … the vi fences in the opening total are not this
+  chapter's to move."* **That path does not exist.** The Vietnamese tree is
+  `app/(vi)/vi/part-N/`, so the check could only ever come back empty, and
+  `app/(vi)/vi/part-4/` holds three chapters. Its 4.3 publishes
+  `services/ingester/src/shape.ts` and `services/ingester/src/clickhouse.ts` as **whole
+  bodies** — both files this chapter edits — and the gate reports part-4 contributing **0**
+  problems today in either locale, so those bodies match the tree right now. Editing the files
+  breaks them, a whole body cannot take a hunk, and there is no vi 4.5 to write one. The vi
+  delta is this chapter's to move by up to two, and the cost is a gaps entry rather than a
+  fence.
 - **Constitution VII applies.** A broker client in the gateway is the same client three other
   services already hold.
 
