@@ -267,3 +267,85 @@ The assertion the file exists for is `expect(row).not.toHaveProperty("attempted_
 rest cover the absent-means-NULL pair in both directions — an absent `status` becomes NULL,
 and a genuine `status: 0` stays 0 — and eight malformed shapes that must return null rather
 than be retried until the retention expires.
+
+
+PHASE 4 — THE STORE CAN BE GONE
+================================
+
+T027 — MESSAGING IS UNAFFECTED, AND THE REQUESTS ARE COUNTED
+--------------------------------------------------------------
+    clickhouse                       stopped · /ping unreachable
+    webhook walks attempted                5
+    succeeded                              5
+    failed                                 0
+    walk output mentioning clickhouse      0
+    ANALYTICS depth                   32 -> 37   (grew by exactly 5)
+
+NFR-REL-05 measured rather than asserted. **"No errors" from a run that sent nothing is the
+zero that proves nothing**, so the walks are counted and the stream's growth is the
+independent confirmation that the work actually happened.
+
+T029 — NOTHING IS ACKNOWLEDGED THAT WAS NOT WRITTEN
+-----------------------------------------------------
+    before   depth 37 · num_pending 6 · ack_pending 0 · redelivered 0
+    run      ingester.malformed_record  stream_sequence: 32
+             ingester.batch_failed      TypeError: fetch failed
+    after    depth 37 · num_pending 0 · ack_pending 5 · redelivered 0
+
+The five real records moved to `ack_pending` and stayed there: delivered, unacknowledged,
+waiting for `ack_wait` to expire. FR-003 holds.
+
+**AND THE MALFORMED-RECORD PATH RAN FOR REAL, ON A RECORD I CREATED BY ACCIDENT.** Probing
+whether NATS was functional published `{}` to an analytics subject — a genuinely malformed
+attempt record at sequence 32. The ingester terminated it and logged
+`stream_sequence: 32` **and nothing else**. FR-010a's rule got its first exercise from a
+probe rather than a test, which is the most honest way for it to happen.
+
+T030 — THE BACKLOG DRAINS
+---------------------------
+    clickhouse restarted, ack_wait (30 s) allowed to expire
+    ingester.batch  written 5, malformed 0
+    rows   31 -> 36
+    after  depth 37 · num_pending 0 · ack_pending 0 · redelivered 0
+
+    RECONCILIATION   37 published · 1 terminated as malformed · 36 written   exact
+
+T028 — AND `num_redelivered` DOES NOT DISTINGUISH A STRAND EITHER
+-------------------------------------------------------------------
+Phase 3 corrected pass 2's claim that stream depth against `num_pending` is the signal:
+under `retention: Limits` acknowledged messages stay in the stream, so a clean drain and a
+strand look identical from those two.
+
+**This phase corrects the fallback too.** The five records above were definitely
+redelivered — delivered once during the outage, again after `ack_wait` expired — and
+`num_redelivered` reads **0** afterwards. It is a **gauge of outstanding redeliveries, not a
+cumulative counter**, so it reads zero once everything is acknowledged, exactly as it would
+after a strand.
+
+**The row count against the published count is the only signal that works**, which is what
+T023 and T030's reconciliation measure. Two instruments were proposed and measured, and
+both were wrong for the same reason: they describe the consumer's present state, and a
+strand is a fact about the past.
+
+T031 — WHAT `discard: old` DROPPED IS COMPUTABLE, NOT INVISIBLE
+-----------------------------------------------------------------
+The task expected the honest answer to be "the ingester cannot know". It can.
+
+    first_seq  1        first_ts  2026-09-11T12:45:32.859Z
+    last_seq   37       messages  37        bytes 17,618 of 1 GiB
+
+**`first_seq` is the instrument.** `discard: old` drops from the front, so `first_seq`
+advances past 1. A consumer knows the sequence it last acknowledged; if `first_seq` has
+moved beyond it, the difference is exactly how many records were dropped while it was away.
+Here `last_seq - first_seq + 1 == messages`, so nothing has been discarded.
+
+T032 — SEVEN DAYS, AND NOW SOMETHING CONSUMES IT
+--------------------------------------------------
+The retention was chosen in chapter 3.20 while nothing read the stream: *"long enough for
+an ingester to be down over a long weekend and short enough that the stream does not quietly
+become the analytical database it is supposed to feed."*
+
+**With `max_deliver: -1` the retention is now the ONLY bound on how long a record may
+wait**, which raises the stake without changing the answer: seven days is still the window
+in which a stopped ingester loses nothing, and T031 now gives a way to detect the case where
+it does. At 17,618 bytes against 1 GiB, size is not the binding constraint here; age is.
