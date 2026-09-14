@@ -386,6 +386,11 @@ the quiet one.
 **What decides it is R4's measurement in this environment, not preference**, and the chapter
 publishes the number either way.
 
+**AND THERE IS A SECOND INPUT, FOUND IN PASS 7 — SEE R24.** The split makes DR-11's prohibited
+single-row insert the quieter table's routine case. It points the same way R4 does, and it moves
+the decision earlier: settling it in phase 7, after the two-buffer loop is written, would make it
+a decision about the code rather than about the numbers.
+
 ---
 
 ## R13 — The table
@@ -726,3 +731,60 @@ makes the next `main.ts` the same argument again.
 return), and SC-008 promises measured branch coverage published beside constitution VI's 100%,
 *"met, or pinned with the shortfall stated as a number."* Without the split there is no number to
 state.
+
+
+---
+
+## R24 — Splitting one fetch across two tables couples the quiet table to the loud one's rate
+
+DR-11: *"Inserts shall be batched or use asynchronous insert mode; **single-row synchronous
+inserts are prohibited**."* No artifact in this feature had cited it against the two-table design.
+
+`ingestOnce` draws up to 10,000 messages or 2 seconds from one stream and splits them by record
+type. The two producers differ by about two orders of magnitude — `ANALYTICS` accumulated **36
+attempt records over days**, while request records fill the stream at 5.7/s sustained (R4). So
+nearly every batch is requests plus zero or one attempt, and **the attempt table's normal insert
+is one row.**
+
+Measured, merges stopped so the neighbour is held still:
+
+```
+20 single-row inserts -> parts: 20  rows: 20
+1 batch of 20 rows    -> parts: 1   rows: 20
+```
+
+One part per insert, which is what DR-11 exists to prevent. 048 measured the other half: an
+insert is almost entirely fixed cost, 1.5 ms for one row and 1.5 ms for a hundred.
+
+**The coupling is the finding, not the cost.** Today a batch is a batch. After the split, the
+quieter table's insert size becomes a function of the **louder** table's arrival rate — a
+dependency nobody chose and no artifact named.
+
+**Decision**: this is a second input to R12, and it moves that decision out of phase 7 and into
+phase 3, ahead of the two-buffer loop. The alternative that keeps one consumer is to apply the
+batch bound **per table** rather than per fetch, holding each buffer across fetches — and its
+cost has to be stated rather than glossed: a message cannot be acked until its row is written, so
+a per-table buffer holds acknowledgements open across fetches, which is the coupling 048 spent a
+phase removing in the other direction.
+
+## R25 — Two premises that came back clean
+
+**The deduplication id is not caller-controlled.** The contract makes the request id the broker's
+dedup key and calls it unique by design — which is exactly the claim 3.20's id was before it
+collapsed seven retries into one message. Run against the live api:
+
+```
+sent X-Request-Id: aaaaaaaa-...-aaaa  ->  got 60da23f0-2e84-48fc-96c7-7b59adac430a
+sent X-Request-Id: aaaaaaaa-...-aaaa  ->  got 9e9e1aec-cd6e-416c-a9a8-a88ea6ef4048
+```
+
+The header is ignored and a fresh v4 is minted every time; nothing in the tree reads an inbound
+request-id header. So a client cannot collapse its own request records by repeating one.
+
+**And `apply.mjs` accepts the new statement.** `SETTINGS allow_nullable_key = 1` survives the
+one-statement and must-name-the-database refusals: `applied 1: 0004_api_requests.sql`, then
+`applied nothing` on a second run. **Testing that wrote a real table and a real ledger row during
+a read-only pass**, and both were reverted — file deleted, table dropped, ledger row removed,
+ledger back to `0003`. Left in place it would have made T028 report `applied nothing` where it
+expects `applied 1`: the contamination this feature filed as 048-adjacent debris in pass 2,
+reproduced by the pass that filed it.

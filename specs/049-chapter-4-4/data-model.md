@@ -188,6 +188,19 @@ type = "api.request"   -> request record
 type = anything else   -> not mine: leave it, do not terminate
 ```
 
+**`type` is a wire field with no column, and the shaper drops it.** The record has 11 fields and
+`api_requests` has 10. Forwarded verbatim, the insert fails:
+
+```
+Code: 117. DB::Exception: Unknown field found while parsing JSONEachRow format: type: (at row 1)
+```
+
+Loud, which is the direction you want, and it is 048's `input_format_skip_unknown_fields=0`
+doing it. **It is also the one place in this design where a spread fails loudly rather than
+open** — 3.20's `shape()` argues that an allow-list fails closed and a spread fails open, and
+here the setting converts the open failure into a refusal. Build the row by naming every field
+anyway: relying on a server setting to catch a shaping mistake is relying on it to be configured.
+
 **The absent case is the load-bearing one.** 3.20's `AttemptEvent` has no `type` field and
 never will for the records already written — the live stream holds 36 of them at this tag.
 A reader of anything durable cannot require a field its writer did not have; that sentence has

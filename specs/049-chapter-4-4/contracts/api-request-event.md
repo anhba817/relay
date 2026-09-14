@@ -47,7 +47,7 @@ was.
 
 | field | type | present | notes |
 |---|---|---|---|
-| `type` | string | always | the constant `"api.request"`. R11: the payload says what the payload is, not the subject |
+| `type` | string | always | the constant `"api.request"`. R11: the payload says what the payload is, not the subject. **Consumed by the router and dropped before the insert — it has no column** |
 | `request_id` | string (uuid) | always | the same id as `X-Request-Id` and the api's own log line — **read**, never re-minted |
 | `ts` | string (ISO-8601) | always | when the response finished |
 | `method` | string | always | |
