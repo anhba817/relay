@@ -25,6 +25,53 @@ history; the replaced history is preserved on the remote as the tag
 tags. **Anyone holding an older clone of `relay-platform` must reset rather than pull.**
 
 <!-- SPECKIT START -->
+**ACTIVE: 050 — CHAPTER 4.5, "the gateway's first stream".** Plan:
+`specs/050-chapter-4-5/plan.md`; **`research.md` first — four of its ten items were measured
+and two changed the design.** Six phases, MVP at 1–4.
+
+**THE GATEWAY ALREADY REPORTS CONNECTION DATA, WHICH `docs/12` DOES NOT SAY.** Its one-line
+description is *"the gateway has never touched NATS"* — true, zero references and five
+dependencies, none a broker client. But `meter.ts` has shipped connection-minutes to
+`/internal/usage/connections` every sixty seconds since 3.24. **So the chapter is not "the
+gateway has no way to report", it is "the one it has was built for a different question and
+goes through the service the analytical path is supposed to be independent of."**
+
+**AND THE CLOSE HANDLER ALREADY REFUSED TO DO WHAT THIS CHAPTER WANTS.** `session.ts`'s
+`socket.on("close")` says, from 3.24: *"Handing over totals rather than reporting them. This
+handler is already documented as the last place that should throw, and **a mass disconnect
+would turn one event into a burst of HTTP requests.**"* It calls `meter.closed(...)` and lets a
+tick do the sending.
+
+**A PUBLISH PER CLOSE IS THE SAME BURST ON A DIFFERENT TRANSPORT, MEASURED.** 2,000 close
+records, three ways:
+
+    awaited, one at a time : 0.229 ms each  -> 2.3 s for 10,000 closing at once
+    core publish + flush   : 0.0030 ms each -> at-most-once, no ack, no dedup
+    batched 500 per publish: 0.0034 ms each -> 67x faster, keeps ack AND dedup
+
+**Batch and publish on a tick, exactly as the meter does.** Core publish is faster still and
+gives up the recoverability this stream exists for — 3.20 chose JetStream over core for that
+reason.
+
+**ADR-07 NAMES THE ARGUMENT THIS CHAPTER SPENDS.** Its v1.1 amendment: *"That refusal is
+deliberately weaker than the others: **it is an argument about how many client libraries the
+gateway holds**, not about whether the mechanism fits."* This chapter takes the count from
+**5 to 6**. The fan-out decision should not change; the record must stop resting on a reason
+that no longer holds, and say what it now rests on — ADR-10 puts presence in Redis, so Redis is
+mandatory regardless, and that was always the stronger half.
+
+**TWO CONNECTION-MINUTE COUNTERS THAT MEASURE DIFFERENT QUANTITIES.** `meter.ts`: *"A
+CONNECTION IS CHARGED FOR EVERY CALENDAR MINUTE IT WAS OPEN FOR ANY PART OF. Open at 00:00:59
+and closed at 00:01:01 is two seconds of wall clock and TWO connection-minutes."* Records give
+elapsed duration. **2 against 0.03 for the same connection.** The reconciliation compares
+buckets-from-records against buckets-from-the-meter — one quantity computed twice — and
+publishes the duration/bucket gap as a number so nobody reads it as a defect. **4.2's boundary
+day, one domain over.**
+
+**AND THE RECORD'S KEY NEEDS `event` IN IT.** One connection produces two rows with one
+`connection_id`; without `event` in the sorting key a `ReplacingMergeTree` collapses the open
+into the close. Verified against the server: `count() FINAL` 2, not 1.
+
 **049 IS CLOSED at 112 of 112 — CHAPTER 4.4, "the requests that belong to nobody".** Its
 record is `specs/049-chapter-4-4/` — `baseline.txt` first (842 lines), then `gaps.md` (six
 entries), `traceability.md`, `tasks.md`. Tagged **`part4-ch4`** on `relay-platform`.
