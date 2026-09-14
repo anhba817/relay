@@ -16,10 +16,25 @@ untouched is the only evidence that means anything about a path this chapter del
 not modify. The tenancy claim is **T**, because constitution I does not take a demonstration.
 ADR-07's amendment is **I**.
 
-**AND THIS CHAPTER EXPECTS TO OWE FENCE HUNKS.** It edits `session.ts`, `main.ts`, `shape.ts`,
-`ingest.ts` and the protocol — every one published as a whole body by an earlier chapter. 049
-discovered at its close that this costs the chain six problems until the diffs are published.
-T092 and T093 do it deliberately in phase 8 rather than discovering it.
+**AND THIS CHAPTER EXPECTS TO OWE FENCE HUNKS — FOR EIGHT FILES, NOT FIVE.** This note named
+`session.ts`, `main.ts`, `shape.ts`, `ingest.ts` and the protocol until analysis pass 7 counted
+the titles instead of remembering them, and it was wrong in both directions:
+
+    32  services/gateway/src/session.ts            named
+    25  packages/protocol/src/internal.ts          named
+    23  vitest.coverage.config.mts                 NOT named   <- 048-3: cannot take a hunk
+    22  services/gateway/src/main.ts               named
+    10  services/gateway/package.json              NOT named   (T018)
+     4  packages/protocol/src/internal.test.ts     NOT named   (T017)
+     3  services/ingester/src/clickhouse.ts        NOT named   (T051)
+     3  services/ingester/src/shape.ts             named
+     0  services/ingester/src/ingest.ts            named — and it carries no fence at all
+
+`ingest.ts` has no titled fence in either locale, because 049 created it by moving `ingestOnce`
+out of `main.ts` and fenced `services/ingester/src/main.ts` and `clickhouse.ts` instead. 049
+discovered at its close that editing a fenced file costs the chain six problems until the diffs
+are published. T010a measures this list rather than carrying it, T092 and T093 pay it in phase 8,
+and `vitest.coverage.config.mts` is the one that cannot be paid — see T010b.
 
 ---
 
@@ -39,6 +54,8 @@ project finds most often.
 - [ ] T008 [P] Record that the meter's tick is **stopped, not unref'd** (`meter.ts:218`, cleared by `stop()` from shutdown). The publisher follows the same pattern, which is what the shutdown-ordering task already says — so nothing needs adding, and this line is why.
 - [ ] T009 [P] Record the existing usage path in `specs/050-chapter-4-5/baseline.txt`: the route, the cadence (`METER_INTERVAL_MS`), the batch bounds (1..5000), and the entry's four fields. **`docs/12` §3 does not mention that this path exists**, and the chapter's whole framing depends on it.
 - [ ] T010 [P] Run `pnpm check:fences` in `relay-tutorial` and record the opening in `specs/050-chapter-4-5/baseline.txt` **broken down by kind and locale**. 047, 048 and 049 all opened and closed at 110 — APPLY 74 (30 en, 30 vi, 14 elsewhere), HEAD 36 (all en).
+- [ ] T010a [P] **Count the fence exposure per file rather than carrying a list.** For every file this chapter edits, `grep -rl 'title="<path>"' app fences` in `relay-tutorial` and record the count by locale in `specs/050-chapter-4-5/baseline.txt`. Analysis pass 7 found the carried list wrong in both directions — it named `ingest.ts`, which carries no fence, and omitted four that do, including the one that cannot be paid. **A list of fenced files is a measurement, and it goes stale every time a chapter moves code between files.**
+- [ ] T010b [P] **Ask whether this chapter's edit to `vitest.coverage.config.mts` unanchors the appendix.** Nine of that file's hunks live in `fences/post-series.md`, which applies after every chapter, and CLAUDE.md's rule is that an appendix hunk anchored on a file's last line forbids any chapter from appending. 047 asked this of `compose.yaml`, found `post-series.md` never touches it, and published the clean premise. Record the answer for **this** file in `specs/050-chapter-4-5/baseline.txt` — and record that 048-3 already says the file cannot take a hunk, so the chapter will owe chain problems it pays with a gaps entry rather than a diff. **Decide that in phase 1; 048 and 049 both found it at the ratchet.**
 - [ ] T011 [P] Pin the environment in `specs/050-chapter-4-5/baseline.txt`: node, pnpm, the NATS/ClickHouse/Postgres image tags, `SELECT version()`, the `ws` and `nats` versions, cpus, RAM, `DOCKER_HOST`, `RELAY_POSTGRES_PORT=15432`.
 - [ ] T012 [P] Record the analytical store's state fresh in `specs/050-chapter-4-5/baseline.txt`: `system.tables` for `relay_analytics`, the `schema_applied` ledger (tail `0004_api_requests.sql`), and the row counts of the three existing tables.
 - [ ] T013 Record the stream state and **name which services were running when it was taken**. 048's planning probe reported `consumers 0` without saying that, and a zero consumer count on a stream whose consumer is simply not started proves nothing.
@@ -58,7 +75,7 @@ directly and count the open and close records. Nothing consumes them yet.
 
 - [ ] T016 [P] [US1] Add `CONNECTION_OPENED_ACTION`, `CONNECTION_CLOSED_ACTION` and their subject functions to `packages/protocol/src/internal.ts`, beside the webhook and api-request pairs, using `analyticsSubjectFor` unchanged.
 - [ ] T017 [P] [US1] Test them in `packages/protocol/src/internal.test.ts`: each subject matches `ALL_ANALYTICS_SUBJECT`, and a non-UUID environment is **refused**. Assert the refusal, not only the success.
-- [ ] T018 [US1] Add `nats` to `services/gateway/package.json` and record the new dependency count in `specs/050-chapter-4-5/baseline.txt`. **5 → 6**, and T001's number is what it is compared against.
+- [ ] T018 [US1] Add `nats` at **`^2.29.3`** to `services/gateway/package.json` and record the new dependency count in `specs/050-chapter-4-5/baseline.txt`. **5 → 6**, and T001's number is what it is compared against. The version is the one `services/api`, `services/dispatcher` and `services/ingester` already pin; **there is no pnpm catalog in this workspace**, so nothing makes four packages agree except typing the same string, and `pnpm add nats` would resolve to whatever is current. Constitution VII is the argument: the same client three other services hold is boring, a fourth major version is not. **This file is fenced ten times** (T010a) and owes a hunk.
 - [ ] T019 [US1] Write `services/gateway/src/connection-log/event.ts`: `toConnectionEvent()` building each record by **naming every field**. A spread would carry a socket, an identity or a token onto a stream with seven-day retention; an allow-list fails closed when somebody adds a field.
 - [ ] T020 [US1] Discharge **FR-005a**: the open record's `ts` is **`connection.openedAt`**, the field the meter reads — not `new Date()` at hand-over. It is stamped two lines before `registry.add`, *"BEFORE the resume and before the ack, because the socket is already open and already costing a minute"*. Two instants for one open would make T073's reconciliation disagree for a reason the chapter does not explain.
 - [ ] T021 [US1] Assert in `services/gateway/src/connection-log/event.test.ts` that no credential, token, channel list or message content can reach the record — **by handing the shaper a real `Connection`, not a synthetic object carrying four invented fields.** All four are genuinely on it: `identity.token` is the bearer token the client presented (`api-client.ts:70-73`), `buffer` holds frames, `channelIds` is the channel list, and `socket` is the socket. Check the serialised output for each.
@@ -118,7 +135,7 @@ non-zero floor, and show one connection's pair as two rows rather than one.
 - [ ] T055 [US1] Assert one connection's pair is **two rows**, with the open carrying no `close_code` and no `duration_ms` and the close carrying both. That is the `event`-in-the-key decision, checked rather than assumed.
 - [ ] T056 [US1] Discharge **FR-014**: insert the same close record three times and assert physical `count()` 3 against `FINAL` 1, with `SYSTEM STOP MERGES` on the table. **A physical count taken while a merge runs measures the merge** — 049's own first probe read 2 after six inserts.
 - [ ] T057 [US1] Assert the tenancy branch in `services/gateway/src/connection-log/event.test.ts` and publish the measured branch coverage beside constitution VI's 100%, met or pinned with the shortfall stated as a number.
-- [ ] T058 [US1] Pin the new files in `vitest.coverage.config.mts` with freshly measured numbers, and **run both halves of the threshold probe** — demand 101%, confirm red, restore, confirm green. 049 found a pin that could not fail because its key was excluded from collection.
+- [ ] T058 [US1] Pin the new files in `vitest.coverage.config.mts` with freshly measured numbers, and **run both halves of the threshold probe** — demand 101%, confirm red, restore, confirm green. 049 found a pin that could not fail because its key was excluded from collection. **This edit costs the fence chain and cannot be paid with a hunk** (048-3, and T010b's reading): the file carries 23 fences and the chain replays a third of the lines the tree holds. Run `pnpm check:fences` straight after this task rather than at T094, and record the delta this one file causes on its own.
 - [ ] T059 [US1] Sweep every per-file pin against the exclude patterns and record the count. 049 measured 45 pins, 1 unbindable, then 0.
 - [ ] T060 [US1] Run the quickstart's §4 block verbatim and record its output. **Rebuild the gateway image first** — 049's equivalent measured the old image and produced no rows at all.
 - [ ] T061 [US1] Run `specs/045-part-3-rework/check-lane-scope.py` **retargeted per T014** after adding the integration tests, and record its report.
@@ -189,11 +206,11 @@ one. Verification method **I**.
 - [ ] T089 Put every mermaid source in `figures.ts`, never in `page.mdx`, and pass each to `<Figure>` as **`code=`**, not `chart=` — 049 shipped three as `chart` and `check:figures` named every line.
 - [ ] T090 Take every number in a figure from `specs/050-chapter-4-5/baseline.txt`. No checker reads prose, and a mermaid block is prose.
 - [ ] T091 Measure prose words outside code fences against the 2,000–4,000 bound and record the figure whether or not it forces a split.
-- [ ] T092 Publish the SQL file as a whole body — it is new — and everything else as `diff` hunks against `part4-ch4`.
+- [ ] T092 Publish the SQL file as a whole body — it is new — and everything else as `diff` hunks against `part4-ch4`. **The set is T010a's eight minus the one that cannot take a hunk**: `session.ts`, `internal.ts`, `main.ts`, `services/gateway/package.json`, `internal.test.ts`, `clickhouse.ts` and `shape.ts`. `ingest.ts` needs none — it carries no fence. `vitest.coverage.config.mts` gets a gaps entry instead, and a whole body would be the 111 → 203 trap.
 - [ ] T093 Generate the hunks from the checker's own replay, or from `git diff -U6 part4-ch4 -- <file>` where the file has not changed since that tag. **Verify they apply before pasting, not after.**
 - [ ] T094 Run `pnpm check:fences` and report the close as a **delta against T010's opening**, broken down by kind and locale.
 - [ ] T095 Run all eight gates: `check:fences`, `check:docs`, `check:srs`, `check:figures`, `check:errors` in `relay-tutorial`, then `lint`, `typecheck`, `test` in `relay-platform`. **Build before `check:errors`.**
-- [ ] T096 Write `specs/050-chapter-4-5/gaps.md` for everything found and not closed, each entry naming what it would cost to close. **Carry 049-1, 049-2 and 049-3 forward if they are still open**, re-measured rather than copied.
+- [ ] T096 Write `specs/050-chapter-4-5/gaps.md` for everything found and not closed, each entry naming what it would cost to close. **Re-measure all eleven carried items and say plainly what each one is now** — 049-1 through 049-6 and 048-1 through 048-5. This task named three of 049's six until analysis pass 7 counted them, and **049 itself dropped 048-1 to 048-5 without a word**: its file opens "Six entries" and never mentions the previous feature's open ledger. *Measure the carried ledger; do not copy it* — and 044's other half, *said plainly rather than implied by a short list*. **049-4 is this chapter's own subject**: it files the 5.5 requests/second crossover as unenforced, and FR-015 and T083 move that number. 048-3 is `vitest.coverage.config.mts`, which T010b and T058 make this chapter's problem again.
 - [ ] T097 Audit every test this feature added and confirm none asserts only that a record was published. Record the count audited.
 - [ ] T098 Write `specs/050-chapter-4-5/traceability.md` mapping FR-001…FR-020 and SC-001…SC-011 to tasks and to the artifacts that discharge them. **Record the requirements nothing discharged**, if any.
 - [ ] T099 Rewrite `CLAUDE.md`'s `<!-- SPECKIT -->` block for the close, including every task premise this feature falsified by running it.
@@ -223,7 +240,7 @@ Phase 8  the numbers + the chapter  ── needs 4; needs 5, 6 and 7 for its fig
 
 ### Parallel opportunities
 
-- Phase 1: T005–T014 are independent probes writing to separate sections.
+- Phase 1: T005–T014 are independent probes writing to separate sections, T010a and T010b included.
 - Phase 2: T016 and T017 (protocol) run beside T019 (the shaper) and T021 (its allow-list test).
 - Phase 8: T083 and T084 are independent measurements.
 

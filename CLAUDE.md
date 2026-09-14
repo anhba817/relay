@@ -87,6 +87,28 @@ connection does not**, and 4.4's `_none` arm is unnecessary rather than declined
 which a case cannot arise beats a branch that handles it**, and here the design had already
 done it on grounds nobody connected to this question.
 
+**AND THE FENCED-FILE LIST WAS REMEMBERED, NOT COUNTED — EIGHT FILES, NOT FIVE.** Both the
+plan and the tasks named `session.ts`, `main.ts`, `shape.ts`, `ingest.ts` and the protocol.
+Counted:
+
+    32 session.ts · 25 internal.ts · 23 vitest.coverage.config.mts · 22 main.ts
+    10 services/gateway/package.json · 4 internal.test.ts · 3 clickhouse.ts · 3 shape.ts
+     0 services/ingester/src/ingest.ts          — the one the list named
+
+`ingest.ts` carries **no titled fence anywhere**, because 049 created it by moving `ingestOnce`
+out of `main.ts` and fenced `main.ts` and `clickhouse.ts` instead. **A list of fenced files goes
+stale every time a chapter moves code between files**, and this one was wrong in both
+directions. **`vitest.coverage.config.mts` is the omission that costs**: T058 edits it, 048-3
+already says it cannot take a hunk, and nine of its 23 fences live in `fences/post-series.md`,
+the appendix that applies after every chapter — the question 047 asked of `compose.yaml` and
+published clean, never asked of this file.
+
+**AND THE CARRIED LEDGER WAS A SHORT LIST TWICE.** T096 said carry 049-1, 049-2 and 049-3;
+**049 has six**, and 049-4 is this chapter's own subject — the 5.5 requests/second crossover
+that FR-015 moves. **049 itself dropped 048-1 to 048-5 without a word**, opening "Six entries"
+over a previous feature's five open ones. *Measure the carried ledger; do not copy it*, and say
+plainly rather than implying by a short list.
+
 **ADR-07 NAMES THE ARGUMENT THIS CHAPTER SPENDS.** Its v1.1 amendment: *"That refusal is
 deliberately weaker than the others: **it is an argument about how many client libraries the
 gateway holds**, not about whether the mechanism fits."* This chapter takes the count from

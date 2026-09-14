@@ -91,7 +91,8 @@ relay-platform/
 │       └── main.ts                            the publisher's lifecycle
 ├── services/ingester/src/
 │   ├── shape.ts                               a third arm on route()
-│   └── ingest.ts                              a third buffer
+│   ├── ingest.ts                              a third buffer — the one unfenced file here
+│   └── clickhouse.ts                          a third insert (T051); fenced, omitted until pass 7
 ├── analytics/0005_connection_events.sql       NEW
 └── vitest.coverage.config.mts                 per-file pins for the new files
 
@@ -153,9 +154,21 @@ different order from the one the tasks assume.
 - **R7's volume assumption is unmeasured.** Connection events are *assumed* rarer than request
   events. If a reconnect storm makes them commoner, the shared stream's crossover moves and
   4.4's number stops being the binding one.
-- **4.4 discovered at its close that editing a fenced file costs the chain.** This chapter
-  edits `session.ts`, `main.ts`, `shape.ts`, `ingest.ts` and the protocol — all fenced. FR-020
-  says the chapter expects to owe hunks; phase 6 should not discover that.
+- **4.4 discovered at its close that editing a fenced file costs the chain, and this list was
+  remembered rather than counted.** Measured in analysis pass 7: **eight** of the files this
+  chapter edits carry titled fences, not five. `session.ts` (32), the protocol (25),
+  **`vitest.coverage.config.mts` (23)**, `main.ts` (22), **`services/gateway/package.json`
+  (10)**, **`packages/protocol/src/internal.test.ts` (4)**, **`clickhouse.ts` (3)** and
+  `shape.ts` (3) — while `ingest.ts`, which this list named, carries **none**. FR-020 says the
+  chapter expects to owe hunks; T010a measures the exposure in phase 1 so phase 8 does not
+  discover it.
+- **`vitest.coverage.config.mts` cannot take a hunk and this chapter edits it.** 048-3 filed
+  that: the chain replays 317 lines where the tree holds 944, and 591 diverged before that
+  chapter touched the file. T058 pins the new files in it. Its 23 fences are 22 chapter hunks —
+  eleven `(en)`, eleven `(vi)` — plus **nine in `fences/post-series.md`**, the appendix that
+  applies after every chapter. 047 asked exactly this of `compose.yaml` and published the clean
+  answer; nobody has asked it of this file. T010b asks it, and the answer is a gaps entry
+  either way.
 - **The gateway's lane runs four files at a time**, so any whole-table or whole-registry
   assertion is a neighbour's problem. `check-lane-scope.py` is the instrument and 049-3 records
   that it points at a deleted worktree — retarget it or it reports zero for the wrong reason.
