@@ -164,6 +164,11 @@ constitution I argument and US2 is the constitution III one — and phase 7 is t
 
 ## Risks carried into tasks
 
+- **A coverage pin on the ingester cannot fail, and this chapter edits the file it names.**
+  `services/ingester/src/main.ts` is pinned and excluded in the same config; measured, 1 of 45
+  pins is unbindable and it is that one. Phase 2 splits `ingestOnce` into `ingest.ts` before
+  touching it, and runs **both halves** of the threshold probe — the half that proves the key
+  binds is the one 048 skipped (R23).
 - **The ingester change touches a live consumer.** `analytics-ingester` exists on the real
   stream with 36 records written by a binary that never heard of `type`. R11's compatibility
   rule is the mitigation and it needs a test that plants one of those records.

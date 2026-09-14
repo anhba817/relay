@@ -682,3 +682,47 @@ fail on an unknown member rather than trust its inputs.
 repair** — pass 3's remedy, pass 3's requirement, pass 4's column type. A repair is written
 under the same pressure as the thing it repairs and gets less scrutiny, because it arrives
 labelled as the answer.
+
+
+---
+
+## R23 — A coverage pin that cannot fail, on the file this chapter edits
+
+Found in analysis pass 6, by running the probe CLAUDE.md says to run every time the ratchet is
+re-pinned — and by running **both** halves of it.
+
+`vitest.coverage.config.mts` pins `services/ingester/src/main.ts` at branches 33, functions 25,
+lines 40, statements 41. Its `coverage.exclude` contains `**/main.ts`. One test file, run under
+that config:
+
+```
+ingester files measured: services/ingester/src/clickhouse.ts, services/ingester/src/shape.ts
+main.ts present: false
+```
+
+**No error fired for `main.ts`** despite 0% coverage in that run, while measured files at 0%
+errored in the same output — `credit.ts`, `quota-relay.ts`, `meter.ts`, `usage.controller.ts`.
+That is the positive control, and it arrived in the transcript rather than being asked for.
+
+**The sweep is complete rather than illustrative: 45 per-file pins, exactly 1 unbindable.** A
+specific inherited defect, not a systemic one.
+
+**And the exclusion's stated reason does not describe this file.** `**/main.ts` is excluded
+because entry points are *"reached by running the service, not by asserting on it. Counting them
+measures how much of `main.ts` a test happened to touch."* But `ingestOnce` is **exported**,
+imported directly by `ingest.itest.ts`, and holds the batching bounds, the ack ordering, the
+poison rule and the `term()` branch. **It is the one thing in that service worth measuring,
+sitting in the one file excluded for being wiring.**
+
+048's comment reads *"`main.ts` reads 37.50 branches for the reason three files above it read
+low"* — a number about a file the config was not measuring. The numbers are not carried across;
+the re-pin measures the new path.
+
+**Decision**: split `ingestOnce` into `services/ingester/src/ingest.ts` before this chapter
+changes it. The alternative — narrowing the exclude — keeps business logic in an entry point and
+makes the next `main.ts` the same argument again.
+
+**This chapter reaches that code directly** (two row buffers, acknowledge only after both inserts
+return), and SC-008 promises measured branch coverage published beside constitution VI's 100%,
+*"met, or pinned with the shortfall stated as a number."* Without the split there is no number to
+state.
