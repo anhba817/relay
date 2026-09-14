@@ -237,6 +237,33 @@ buckets-from-records against buckets-from-the-meter — one quantity computed tw
 publishes the duration/bucket gap as a number so nobody reads it as a defect. **4.2's boundary
 day, one domain over.**
 
+**AND A PROBE COPIED FROM 049 KEPT THE HAZARD AND DROPPED THE GUARDS.** T056 read *"insert the
+same close record three times and assert physical `count()` 3 against `FINAL` 1, with `SYSTEM
+STOP MERGES` on the table."* 049's own test (`ingest.itest.ts:281–318`) does four things and
+that task named one — **the one with the lane-wide side effect.** The other three are a
+`finally` carrying `SYSTEM START MERGES`, a `DELETE` of the probe's own rows, and both counts
+scoped by a dedicated environment id. A bare `count()` is a whole-table assertion and the
+gateway lane runs **four files at a time**; a failed assertion between stop and end leaves the
+table never collapsing duplicates for every later reader. **Copy the shape, not the sentence.**
+
+**AND THE INSTRUMENT FOR THAT CLASS CANNOT SEE THIS STORE.** `check-lane-scope.py`'s `SHARED`
+array is the lane's **Postgres** tables, and its own last line is *"SQL text only."*
+`relay_analytics.connection_events` is in neither the list nor the database, so T061's zero is
+true about Postgres and silent about the only shared table this chapter touches. **4.2, 4.3,
+4.4 and 4.5 all write shared ClickHouse tables from integration tests and no gaps.md records
+that the analytical store has no lane guard** — Postgres has a trigger, an exemption list
+asserted both ways, and a sweeper; ClickHouse has none of the three.
+
+**AND THREE PREMISES HELD, EACH A PLAUSIBLE REPEAT.** The gateway's integration `include` is
+`src/**/*.itest.ts`, recursive — `connection-log/` is the first subdirectory any gateway itest
+has used, and a single-star glob would have run nothing new and passed green. The coverage
+`include` is `services/*/src/**/*.ts`, so T058's nested pin binds, with 4.4's
+`request-log/event.ts` as the precedent and 049's 1-unbindable-in-45 as the reason to check.
+And `connection-log.itest.ts` needs **no** `EXEMPT_FILES` entry: the guard fires only under
+`RELAY_HARNESS_BAIT=on` and the gateway lane carries no bait, while `exempt.test.ts` asserts
+that list in both directions — so a needless entry would have been a defect of its own. T010d
+records all three.
+
 **AND THE CHAPTER'S OWN INTEGRATION SUITE HAD NO GATE — ELEVEN NOW, NOT NINE.** `.itest.ts`
 files load `vitest.integration.config.mts`, which `pnpm test` never opens, so they run under
 **`pnpm test:integration`** alone. **Zero tasks ran it.** `connection-log.itest.ts` carries
