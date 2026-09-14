@@ -546,3 +546,104 @@ PHASE 4 — the producer (US1). MVP.
                                 dispatcher 8, service-kit 3, config 7
     api integration (request-log)  4 passed
     ingester integration           5 passed
+
+===============================================================================
+PHASE 5 — the requests that belong to no tenant (US3)
+===============================================================================
+
+## T077-T080 — already satisfied in phase 4, and recorded rather than re-done
+
+    The tenantless subject, its test, the principal resolution and the tenancy branch's
+    coverage all landed in phase 4. They had to: the middleware cannot publish a record for
+    a request with no environment without the `_none` arm, and phase 4's own MVP issues 404s
+    and 401s. The task ordering assumed the producer could ship tenant-only first. It cannot.
+
+      apiRequestSubjectWithoutTenant()   packages/protocol/src/internal.ts:327
+      NO_TENANT_TOKEN = "_none"          packages/protocol/src/internal.ts:325
+      principalKind resolution           request-log.middleware.ts:83
+      event.ts branch coverage           100%, pinned at 100
+
+## T081 — the volume-weighted tenantless share, for a STATED workload
+
+    by principal kind:
+      application	20	0	20	0
+      platform	18	18	0	100
+      none	16	16	0	100
+
+    by refused_at:
+      handler	41	21
+      guard	8	8
+      unmatched	5	5
+
+    totals:
+      54	34	63
+
+    the busiest endpoint:
+      /v1/webhooks	28
+      /internal/dispatch/expand	12
+      /internal/usage/connections	6
+      ~absent	5
+
+    WHAT IS STRUCTURAL AND WHAT IS THE WORKLOAD. The 63% is a fact about the mix ISSUED
+    ABOVE and nothing else -- 20 authenticated, 8 unauthenticated, 5 unmatched, 18 internal
+    seam. Change the mix and the number changes. What does not change with the mix:
+
+      application  20 requests, 0 tenantless    -- a tenant credential always resolves
+      platform     18 requests, 18 tenantless   -- 100%, BY CONSTRUCTION
+      none         16 requests, 16 tenantless   -- 100%, there is no principal to ask
+
+    `PlatformPrincipal` carries no `environmentId` and its own comment says the absence is
+    what stops it being usable where a tenant is expected. So the internal seam's share of
+    the request log is tenantless no matter how much of it there is -- and the dispatcher
+    and gateway call that seam on every message and every connection.
+
+    AND THE FIRST MEASUREMENT OF THIS TABLE WAS 400 ROWS, ALL TENANTLESS, ALL `/healthz`.
+    Docker polls the health check every five seconds, so a table left running overnight is
+    a health-check log with some requests in it. R14 decided to record health checks and let
+    the read exclude them; this is what that decision looks like in the data.
+
+## T082 — the isolation test, method T
+
+    A tenant-scoped read returns that tenant's rows and zero tenantless ones, with a
+    non-zero floor on the first number -- without it, "no tenantless rows" is satisfied by a
+    query that returned nothing. The tenantless row written in the same test is then shown
+    to exist under no tenant, so the zero is isolation rather than absence, and a foreign
+    tenant is shown to see neither.
+
+    Verification method T rather than D, because constitution I is the one principle this
+    project does not accept a demonstration for.
+
+## T083 — THE CHECKER REPORTED ZERO BECAUSE IT LOOKED AT NOTHING
+
+    python3 specs/045-part-3-rework/check-lane-scope.py
+      controls: 10 of 10 fired
+      check-lane-scope: 0 integration files, 0 unscoped read(s) ...      exit 0
+
+    ZERO FILES. Line 28 of that script reads
+
+      WT = pathlib.Path("/home/dong/work/relay/tmp/part3-refactor")
+
+    a worktree 045 deleted when it closed. The glob matches nothing, the report says zero,
+    and the exit code is 0.
+
+    THIS IS THE DEFECT THE SCRIPT'S OWN FEATURE WROTE THE RULE ABOUT. 045-81: "a checker
+    handed a ref that does not resolve compared nothing and exited 0 -- twenty-six times...
+    The zero that means 'clean' and the zero that means 'never looked' printed the same
+    line." The instrument built after that lesson has the same shape.
+
+    AND ITS TEN CONTROLS DID NOT CATCH IT, because they cannot: the controls are synthetic
+    strings checked in memory, so they fire whether or not the corpus is empty. A control
+    that proves the checker WORKS says nothing about whether it LOOKED.
+
+    Re-run against the real tree, with the path corrected in a copy:
+      check-lane-scope: 50 integration files, 0 unscoped read(s) of a shared table in 0 file(s)
+
+    So this chapter's integration tests are correctly scoped. Filed for `gaps.md`: the
+    committed script cannot report that about anything.
+
+## T084 — the gates
+
+    pnpm lint       exit 0
+    pnpm typecheck  exit 0
+    pnpm test       exit 0   -- api 274, gateway 116, dispatcher 8
+    api integration (request-log)  5 passed

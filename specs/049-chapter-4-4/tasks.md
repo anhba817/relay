@@ -152,14 +152,14 @@ returns the second and not the first.
 
 **Depends on US1.** There is no tenantless record until there is a record.
 
-- [ ] T077 [P] [US3] Add the tenantless subject to `packages/protocol/src/internal.ts` as **its own function** returning the `_none` token, not as a relaxed argument to `analyticsSubjectFor`. R3a measured what a permissive token does: `no.tenant` published a five-token subject, `*` published a literal asterisk, and **neither failed at publish time**.
-- [ ] T078 [P] [US3] Test in `packages/protocol/src/internal.test.ts` that the tenantless subject is matched by `ALL_ANALYTICS_SUBJECT` and by **no** exact per-tenant filter.
-- [ ] T079 [US3] Resolve the environment in `services/api/src/request-log/request-log.middleware.ts` from `req.principal?.environmentId`, and record `principal_kind` as `application` | `user` | `platform` | `none`. **`platform` and `none` are different facts** and collapsing them loses the chapter's central number.
-- [ ] T080 [US3] Cover the tenancy branch in `services/api/src/request-log/event.test.ts` — environment present and absent — and publish the measured branch coverage beside constitution VI's 100%. **Met, or pinned with the shortfall stated as a number.** This is the clause 048 could not reach; this chapter can.
-- [ ] T081 [US3] Measure the **volume-weighted** tenantless share and record it in `specs/049-chapter-4-4/baseline.txt`, split by cause. Say which traffic produced it. T009's route count is a fact about the surface; this is a fact about one workload, and the lane is the least representative instrument here.
-- [ ] T082 [US3] Write the isolation test in `services/api/src/request-log/request-log.itest.ts`: a tenant-scoped read returns that tenant's rows and **zero** tenantless ones. Verification method **T**, because constitution I does not take a demonstration.
-- [ ] T083 [US3] Run `specs/045-part-3-rework/check-lane-scope.py` after adding the integration tests, and record its report. Every whole-table assertion is a neighbour's problem on a lane that no longer serialises.
-- [ ] T084 [US3] Run the three gates and commit phase 5.
+- [X] T077 [P] [US3] Add the tenantless subject to `packages/protocol/src/internal.ts` as **its own function** returning the `_none` token, not as a relaxed argument to `analyticsSubjectFor`. R3a measured what a permissive token does: `no.tenant` published a five-token subject, `*` published a literal asterisk, and **neither failed at publish time**.
+- [X] T078 [P] [US3] Test in `packages/protocol/src/internal.test.ts` that the tenantless subject is matched by `ALL_ANALYTICS_SUBJECT` and by **no** exact per-tenant filter.
+- [X] T079 [US3] Resolve the environment in `services/api/src/request-log/request-log.middleware.ts` from `req.principal?.environmentId`, and record `principal_kind` as `application` | `user` | `platform` | `none`. **`platform` and `none` are different facts** and collapsing them loses the chapter's central number.
+- [X] T080 [US3] Cover the tenancy branch in `services/api/src/request-log/event.test.ts` — environment present and absent — and publish the measured branch coverage beside constitution VI's 100%. **Met, or pinned with the shortfall stated as a number.** This is the clause 048 could not reach; this chapter can.
+- [X] T081 [US3] Measure the **volume-weighted** tenantless share and record it in `specs/049-chapter-4-4/baseline.txt`, split by cause. Say which traffic produced it. T009's route count is a fact about the surface; this is a fact about one workload, and the lane is the least representative instrument here.
+- [X] T082 [US3] Write the isolation test in `services/api/src/request-log/request-log.itest.ts`: a tenant-scoped read returns that tenant's rows and **zero** tenantless ones. Verification method **T**, because constitution I does not take a demonstration.
+- [X] T083 [US3] Run `specs/045-part-3-rework/check-lane-scope.py` after adding the integration tests, and record its report. Every whole-table assertion is a neighbour's problem on a lane that no longer serialises.
+- [X] T084 [US3] Run the three gates and commit phase 5.
 
 ---
 
