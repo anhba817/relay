@@ -25,6 +25,80 @@ history; the replaced history is preserved on the remote as the tag
 tags. **Anyone holding an older clone of `relay-platform` must reset rather than pull.**
 
 <!-- SPECKIT START -->
+**ACTIVE: 049 — CHAPTER 4.4, "every request is an event".** Plan:
+`specs/049-chapter-4-4/plan.md`; **`research.md` first — six of its sixteen items were
+measured against the running stack and three changed the design.** Six phases, MVP at 1–4.
+
+**THE CONSUMER BUILT LAST CHAPTER DESTROYS WHAT THIS ONE PUBLISHES, AND BOTH INSTRUMENTS SAY
+NOTHING IS WRONG.** `services/ingester` filters on `analytics.>` — the widest the grammar
+admits — and `shape()` returns `null` for anything without `delivery_id`, `endpoint_id`,
+`event_id`, `attempt` and `outcome`. `null` is `m.term()`: never redelivered. Measured with
+one attempt record and one API request record on one stream:
+
+    pass 1: written 1  malformed 1      the attempt wrote — that is the positive control
+    pass 2: written 0  malformed 0      terminated, so it never comes back
+    stream still holds 2 of 2 · consumer num_pending 0 · ack_pending 0
+
+**The stream says both records are there and the consumer says there is nothing to do.** That
+is 048's strand signature from a different cause — 048 disproved depth-versus-pending as a
+detector because a clean drain looks identical, and it looks identical here too, where the
+record really is gone. The only trace is one `error` line carrying a stream sequence.
+
+**"EVERY REQUEST" AND "PER TENANT" ARE NOT THE SAME POPULATION, AND THE GAP IS WIDEST WHERE
+THE TRAFFIC IS.** `PlatformPrincipal` carries `environmentId?: undefined` **by design** — its
+own comment says the absence is what stops it being usable where a tenant is expected — and
+it sits on `@Accepts({ platform: [...] })`: the fan-out expand, the delivery material, the
+outcome, the replay, and the gateway's connection reporting. **The routes the platform calls
+on every message and every connection.** Add every 401, every 404, `/healthz` and signup.
+
+**AND CONSTITUTION I FORBIDS THE RECORD FR-ANL-01 REQUIRES.** *"Every persisted operational
+and analytical record MUST carry a non-null tenant identifier"* — non-negotiable. Three
+readings, two wrong: drop them and "every" is false for the busiest routes; invent an
+environment and 047's zero-UUID phantom user is back; or **the clause governs tenant data,
+and a record with no tenant is not tenant data.** The third, argued in an SRS amendment
+rather than assumed in code, with R3b's measurement as the test: tenant A's exact filter saw
+1 record, tenant B's saw 0, over a stream holding six tenantless candidates.
+
+**THE UUID GUARD IS RIGHT AND A PERMISSIVE TOKEN PROVES IT.** `no.tenant` published a
+**five-token** subject that the four-token wildcard did not match; `*` published a literal
+asterisk. **Neither failed at publish time.** A malformed token does not reach the wrong
+tenant — it goes where no intended filter reaches, which is the quiet direction. The
+tenantless arm is a separate function returning `_none`, not a relaxed argument to the
+validator: a validator with an escape hatch is a validator with a hole.
+
+**313 BYTES A RECORD, AND IT TURNS `max_bytes` INTO THE BINDING CONSTRAINT.** Measured over
+1,000 records. 1 GiB holds 3,430,485 of them, so **seven-day retention is reached at 5.7
+requests per second sustained** and at 100 req/s the stream fills in 9.5 hours. Under
+`discard: old` a busy tenant's request records evict a quiet tenant's webhook attempts, with
+no error at either end. **And it falsifies a published number**: `docs/05-sad.md:184` and
+`:919` claim the stream absorbs 24 h, which holds only to **39.7 req/s** — in a sentence that
+also calls the retention "24 h" where the stream is configured at seven days.
+
+**THE MIDDLEWARE SEES EVERY REQUEST; AN INTERCEPTOR WOULD MISS THE INTERESTING ONES.** All six
+probe requests — 200, two 401s, a 404, a param-route 401, an internal-seam 401 — produced a
+`"msg":"request"` line. Nest's order is middleware → guards → interceptors, so a guard's 401
+short-circuits before an interceptor runs and an unmatched route never reaches one. **And the
+logged line holds `"path":"/v1/channels/abc123/messages"`** — the raw path with the channel id
+in it, which is why FR-005 says endpoint.
+
+**`req.route.path` IS THE TEMPLATE, AND IT IS SAFE HERE FOR A REASON THAT IS NOT GENERAL.**
+Nest 11 on Express 5 with controllers declaring full paths: `req.baseUrl=""` and
+`req.route.path="/v1/channels/:channelId/messages"` at `finish`; a 404 has no `req.route` at
+all. **Under a mounted router the same field drops the `/v1`** — which is the failure the
+middleware beside it already survived, when `req.url` was `/` for every request from chapter
+2.2 until the rate-limiter chapter. A task asserts the property rather than assuming it.
+
+**FR-ANL-07 ASKS FOR SOMETHING TWO CLAUSES FORBID.** It records a *"truncated payload"*;
+FR-ANL-11 and constitution III forbid message text in the analytical store and constitution VI
+forbids it in logs. `POST /messages` has a body that **is** message text, and truncation keeps
+the first characters — the part a person wrote. Amended, not narrowed: an endpoint allow-list
+fails open, which is 3.20's own argument about fields.
+
+**AND `docs/12` §4 IS ONE ORDINAL AHEAD OF §3, IN THE SECTION THAT TELLS A CHAPTER WHAT NOT TO
+RE-TEACH.** Five cross-references, all +1, matching the interim 24-chapter numbering that
+existed while movement I was two chapters. §7 matches §3 and is unaffected. **A writer
+following §4 concludes this chapter is not the one that generalises 3.20's pattern.**
+
 **048 IS CLOSED at 73 of 73 — CHAPTER 4.3, "the consumer that was promised".** Its record is
 `specs/048-chapter-4-3/` — `baseline.txt` first (519 lines), then `gaps.md` (six entries),
 `traceability.md`, `tasks.md`. Tagged **`part4-ch3`** on `relay-platform`.
