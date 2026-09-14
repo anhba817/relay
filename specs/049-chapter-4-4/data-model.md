@@ -146,7 +146,7 @@ type = anything else   -> not mine: leave it, do not terminate
 ```
 
 **The absent case is the load-bearing one.** 3.20's `AttemptEvent` has no `type` field and
-never will for the records already written — the live stream holds 37 of them at this tag.
+never will for the records already written — the live stream holds 36 of them at this tag.
 A reader of anything durable cannot require a field its writer did not have; that sentence has
 cost this project a production incident already, when a required `attachments` on
 `outboxEventSchema` terminated every in-flight `message.created` written by the previous

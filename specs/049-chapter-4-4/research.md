@@ -138,8 +138,9 @@ and the stream's own byte accounting read back.
      and at 100 req/s the stream fills in 9.5 hours
 ```
 
-Measured beside it, the live `ANALYTICS` stream: **37 messages, 17,618 bytes, 476 bytes per
-attempt record.** A request record is about two thirds the size of an attempt record and
+Measured beside it, the live `ANALYTICS` stream: **36 messages, 17,529 bytes, 487 bytes per
+attempt record.** (It read 37 / 17,618 / 476 during planning; the 37th was probe debris, removed
+— see R17.) A request record is about two thirds the size of an attempt record and
 arrives orders of magnitude more often.
 
 **Decision**: `max_bytes` becomes the binding constraint instead of `max_age`, above **5.7
@@ -301,6 +302,33 @@ the same request.
 wrapper around `res.end` — rejected, the api already has a `finish` listener and two
 listeners racing to read `res.statusCode` is a bug waiting for a slow response.
 
+**AND THE FIRST VERSION OF THIS ITEM GOT THE POSITION WRONG, WHICH IS R5's OWN FINDING INVERTED.**
+R9 said "a second middleware in the same chain, registered after it" and stopped there. The chain
+is `RequestContext → Authenticate → RateLimit`, so "after" reads as fourth — and
+`RateLimitMiddleware` refuses a 429 with `res.statusCode = 429; res.end(...); return;` at two
+points and **never calls `next()`**. A producer in position 4 is never reached.
+
+**R5 established that the middleware layer sees requests an interceptor cannot, and then this item
+put the producer where one middleware can hide requests from it.** The requests it would hide are
+429s — a tenant hammering the API, which is the canonical reason to open a request log.
+
+**Position 2 is the answer, and the reason is a distinction no artifact had drawn**: the listener's
+registration point and its read point are different moments. Attached second, it registers before
+anything can short-circuit; when `finish` fires, `req.principal` is set if `AuthenticateMiddleware`
+ran and absent if it did not. **Attach early, read late.**
+
+**And the publisher is not reachable from there.** `ANALYTICS_PUBLISHER` is declared in
+`webhooks/analytics.ts` and provided in `internal/internal.module.ts:60` — a module with **no
+`exports:` array at all**. Middleware configured in `AppModule.configure()` resolves from
+AppModule's injector, so the injection fails at boot. The file states the rule itself, twelve lines
+below the provider, about `LOGGER`:
+
+> `AppModule` provides this too, but a provider is visible to the module that declares it and to
+> nothing it imports — so the controllers here would have nothing to inject.
+
+Same factory, provided twice, is therefore the codebase's own precedent. The cost is two publisher
+instances, two NATS connections, and two idempotent `ensureAnalyticsStream` calls racing at boot.
+
 ---
 
 ## R10 — Latency: which interval, and stated rather than implied
@@ -337,7 +365,7 @@ them, and the failure is silent misclassification rather than a refusal.
 question. The consumer must therefore treat an absent `type` as the attempt record —
 a compatibility rule that is written down and tested, because **a reader of anything durable
 cannot require a field its writer did not have.** That sentence is CLAUDE.md's most-repaid
-lesson and the stream holds 37 records written by a binary that never heard of `type`.
+lesson and the stream holds 36 records written by a binary that never heard of `type`.
 
 ---
 
@@ -421,3 +449,53 @@ affected. **§4 is the section that tells a chapter what it must not re-teach**,
 following it concludes this chapter is not the one that generalises 3.20's pattern.
 
 **Decision**: amend §4 against §3's table in this feature.
+
+
+---
+
+## R17 — One of the 37 records was not a record
+
+Found in analysis pass 2 by reading the live stream instead of citing its count. Four artifacts
+said "37 records written by a binary that never heard of `type`". The `type` half was right — 0
+of 37 carried one. The **population** was not homogeneous:
+
+```
+read 37 records · carrying a "type" field: 0
+distinct key sets: 3
+  x 29  attempt,attempted_at,delivery_id,endpoint_id,environment_id,event_id,latency_ms,outcome,status
+  x  7  attempt,attempted_at,delivery_id,endpoint_id,environment_id,error,event_id,latency_ms,outcome
+  x  1  (no keys)
+```
+
+The 7 are timeouts — 3.20's publisher omits `status` when nothing answered and sends `error`
+instead, which is the design. **The one with no keys was debris:**
+
+```
+seq 32
+  subject : analytics.probe.ping.11111111-1111-4111-8111-111111111111
+  time    : Mon Sep 14 2026 00:58:31 GMT+0000
+  bytes   : 2
+  raw     : "{}"
+```
+
+**A probe from the previous feature published an empty object onto the production stream and left
+it there**, on a `probe` domain the grammar does not define. *A red probe writes to the lane* —
+043 left two `javascript:alert(1)` rows behind and the next measurement read them as data
+contradicting the plan. This is the same thing on a different substrate, and it was one analysis
+pass away from contaminating this chapter's opening numbers.
+
+**It would have terminated, and the blame would have landed here.** Under R11's payload routing,
+`type` is absent, so it shapes as an attempt, fails every required-field check, and is terminated.
+The first ingester run of this chapter would have reported `malformed 1` for a record written by
+the last one.
+
+**And the record argues both sides of R11.** Its *subject* says `probe`; its *payload* says
+nothing at all. A subject-based router would call it "not mine" and leave it on the stream
+forever; the payload-based router calls it malformed and terminates it. R11 chose the payload, and
+this record is the case that shows what that choice does — **terminating it is right**, because a
+2-byte empty object will never parse no matter how many times it comes back.
+
+**Removed**, with the cleanup refusing to act on the sequence number alone: it re-read seq 32 and
+compared subject and body before deleting, because a cleanup that trusts a sequence number deletes
+whatever happens to hold it later. The stream is now 36 messages, 17,529 bytes, 487 bytes per
+record, 0 keyless, 0 carrying `type`.

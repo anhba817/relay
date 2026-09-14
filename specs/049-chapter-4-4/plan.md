@@ -113,6 +113,22 @@ contract is a log line and a header, it is cited by EIR-API-05 and NFR-OBS-06, a
 fenced in the tutorial. A second middleware registered after it reads the request id the
 first one set.
 
+**The producer is registered SECOND in the chain, not last.** `RateLimitMiddleware` refuses a
+429 with `res.end(); return;` and never calls `next()`, so a middleware in position 4 is never
+reached — and a rate-limited request is exactly the one an operator opens a request log to find.
+Registered second it attaches its `finish` listener before anything can short-circuit, and reads
+`req.principal` when the listener fires rather than when it is attached. **Attach early, read
+late**; the gap between the two moments is what makes both the authenticated and the refused
+request produce a correct record.
+
+**And `ANALYTICS_PUBLISHER` has to be provided in `AppModule`.** It is declared in
+`webhooks/analytics.ts` but *provided* only in `InternalModule`, which has **no `exports:`
+array** — so a middleware configured in `AppModule.configure()` cannot inject it and Nest fails
+at boot. `internal.module.ts` writes the rule down twelve lines below that provider: *"a
+provider is visible to the module that declares it and to nothing it imports."* A second
+provider with the same factory follows `LOGGER`'s precedent in the same file, and costs a second
+NATS connection and a second `ensureAnalyticsStream` call at boot.
+
 **`request-log/`, not `analytics/`, and `toRequestEvent()`, not `shape()`.** Both were
 `analytics`/`shape` in the first draft of this plan, which would have put a second "analytics"
 home in a service that already has `webhooks/analytics.ts`, and made `shape()` the **third**
@@ -149,7 +165,7 @@ constitution I argument and US2 is the constitution III one — and phase 7 is t
 ## Risks carried into tasks
 
 - **The ingester change touches a live consumer.** `analytics-ingester` exists on the real
-  stream with 37 records written by a binary that never heard of `type`. R11's compatibility
+  stream with 36 records written by a binary that never heard of `type`. R11's compatibility
   rule is the mitigation and it needs a test that plants one of those records.
 - **R4 may force a stream split mid-feature.** R12 is deliberately unsettled. If the measured
   rate says split, R2 says the split is a subject-list narrowing on a published stream with a

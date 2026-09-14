@@ -52,10 +52,14 @@ At the opening of this feature:
 ```
 EVENTS           0 msgs        0 bytes consumers 2
 DELIVERIES      69 msgs    21735 bytes consumers 11
-ANALYTICS       37 msgs    17618 bytes consumers 1
+ANALYTICS       36 msgs    17529 bytes consumers 1
 ```
 
-**476 bytes per attempt record** — the number R4 compares a request record against.
+**487 bytes per attempt record** — the number R4 compares a request record against.
+
+**It was 37 messages at 476 bytes until this feature's second analysis pass**, which found one of
+them was probe debris from 048 — `analytics.probe.ping.<uuid>` carrying `{}` — and removed it. The
+per-record average moved because the record removed was 2 bytes.
 
 **The consumer counts move with the profile and the reading above is the one taken after
 §0**, with `--profile services` up: the api and dispatcher create their `EVENTS` consumers on

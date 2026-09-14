@@ -188,7 +188,10 @@ neither written as an attempt nor terminated.
 - A request whose principal is resolved *after* the record's fields are captured — the
   middleware chain is `RequestContext → Authenticate → RateLimit`, and the record is assembled
   on `finish`, so the principal exists by then. This is a premise to run, not an assumption.
-- A request refused by `AuthenticateMiddleware`'s allowance before any handler runs.
+- A request refused by `AuthenticateMiddleware`'s allowance before any handler runs — served
+  as a **429 by `RateLimitMiddleware`, which does not call `next()`**. A producer registered
+  after it in the chain never runs, so this edge case is not about the record's contents but
+  about whether the record exists at all. It decides where in the chain the producer goes.
 - A request whose route did not match any controller — a 404 has a method and a status but no
   route template.
 - A request that is still open when the process shuts down. No response finished, so no

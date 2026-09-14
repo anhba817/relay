@@ -97,7 +97,7 @@ type "api.request"   -> request record; shape to relay_analytics.api_requests
 type unknown         -> not mine; do not terminate
 ```
 
-At this tag the live `ANALYTICS` stream holds **37 records with no `type` field**, written by
+At this tag the live `ANALYTICS` stream holds **36 records with no `type` field**, written by
 a binary that never heard of one. The absent case is a compatibility rule with a test, not a
 default.
 
