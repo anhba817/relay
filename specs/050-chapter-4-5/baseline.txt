@@ -416,3 +416,71 @@ T039 — THE LANES, INCLUDING WHAT IS RED
     Both reproduce with this feature's work stashed (`git stash` -> same failure, same
     warning count). Neither is in a file this chapter touches. Recorded here rather
     than reported as green, and carried to gaps.md if still open at the close.
+
+================================================================================
+PHASE 3 — THE TABLE AND THE THIRD ARM
+================================================================================
+
+T041 — THE `unclaimed` COUNT IS LOST, AND SAYING SO IS THE HONEST VERSION
+    The window phase 2 opened could only be measured with a running broker and a running
+    ingester, and the stack has been down for this feature's whole implementation. Phase 3
+    closes the window by teaching `route()` the type, so the number cannot be taken now and
+    cannot be taken later.
+
+    WHAT SURVIVES IS THE MECHANISM, PROVEN WITHOUT A BROKER. `shape.test.ts` asserts that a
+    record with an unrecognised `type` routes to `unclaimed` -- retained, neither acked nor
+    terminated -- and that an ARRAY routes to `malformed`, which terminates. The assertion
+    that used to name `connection.opened` as unclaimed now names it as claimed, and the diff
+    between those two lines is the window opening and closing. A type nobody claims
+    (`media.scanned`) keeps the arm honest for the next producer.
+
+    Recorded as a gap rather than reported as a measurement.
+
+T042-T046 — analytics/0005_connection_events.sql
+    Checked against apply.mjs's OWN two refusals by replicating its `strip` and `check`:
+        statements: 1        (the HTTP interface allows one; Code: 62 otherwise)
+        names the database:  true
+    Not by reading the script and believing it.
+
+    event LAST in the sorting key       one connection, two rows, one connection_id
+    close_code  Nullable(UInt16)        a String column answers `= 1000` with silence
+    duration_ms Nullable(UInt64)        UInt32 ms wraps at 49.7 days; nothing caps a socket
+    user_external_id String NOT NULL    same Identity as environment_id, both non-optional
+    CONSTRAINT ts_is_real               an absent column takes the epoch, older than any TTL
+    TTL toDateTime(ts) + INTERVAL 90 DAY    `TTL ts + INTERVAL` is BAD_TTL_EXPRESSION
+    no SETTINGS allow_nullable_key      every column in the sorting key is non-nullable,
+                                        which is the difference from api_requests
+
+T049/T050/T051 — THE THIRD ARM, THE THIRD BUFFER, THE THIRD TABLE
+    route()            two types, one arm -- the subject separates open from close for a
+                       consumer that wants one; this consumer wants both
+    shapeConnection()  reads `type`, RENAMES it to `event`, and drops it. Three things,
+                       one more than shapeRequest does. A closed set rather than
+                       `split(".")[1]`: a shaper that cannot be wrong about a record it has
+                       never seen is the wrong kind of robust
+    ingest.ts          third buffer, inserted before any ack, `writtenConnections` reported
+    clickhouse.ts      insertConnections + countConnections, empty-guarded
+
+    AND THE DR-11 COMMENT IS CORRECTED WHERE IT LIVES. `ingest.ts` said "DR-11 publishes
+    2 s or 10,000 rows". DR-11 says neither number; the figures are `docs/05-sad.md` §4's,
+    which chose them and credited a clause that governs only the SHAPE of the insert.
+
+    THE COMPILER NAMED TWO CONSTRUCTION SITES, WHICH IS WHY `ClickHouse` IS A REQUIRED
+    INTERFACE. Adding `insertConnections` broke `ingest.itest.ts`'s stub store with
+    TS2739 -- "missing the following properties" -- on the one suite that proves an
+    unacknowledged batch. A partial stub would have given that up silently.
+
+T053 (PARTIAL) — THE LANES
+    pnpm typecheck  14 of 14        pnpm lint  0 errors
+    pnpm test       ingester 33/33 (was 29) · gateway 133/133 · protocol 144/144 ·
+                    test-harness 24/24 · dispatcher 8/8 · config 7/7 · service-kit 3/3
+                    api 273 passed, 1 FAILED -- the same inherited red as phase 2
+    pnpm test:integration   PENDING -- stack down
+
+    AND A TEST FAILED FOR A GOOD REASON BEFORE IT PASSED. T029a's control asserted that
+    `connection.opened` routes to `unclaimed`; phase 3 makes that false, and the suite said
+    so. The first repair then failed too: the fixture carried `type`, `connection_id` and
+    `environment_id` only, so the "claimed" assertion came back `malformed` -- correctly,
+    because a record missing `ts` and `user_external_id` IS malformed. A thin fixture would
+    have made the batch assertion pass for the wrong reason: an array is not malformed
+    because it is short of fields.
