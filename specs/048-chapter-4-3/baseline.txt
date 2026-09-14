@@ -435,3 +435,99 @@ the measurement, as the file's own convention requires.
 table at all, which read as though it had not been measured; the JSON summary shows it at
 100 on every metric. **A reporter that omits its best result looks identical to one that
 missed a file.**
+
+
+PHASE 6 — THE CHAPTER, AND THE CLOSE-OUT
+=========================================
+
+T044 — WHY IT BATCHES, MEASURED RATHER THAN QUOTED
+----------------------------------------------------
+      rows      elapsed     per row
+         1      1.5 ms      1500 us
+       100      1.5 ms        15 us
+     1,000      1.8 ms       1.8 us
+    10,000      3.2 ms       0.3 us
+
+**An insert is almost entirely fixed cost.** One row and a hundred rows take the same
+1.5 ms; the per-row cost falls 5,000x from one to ten thousand and almost all of it is won
+by the first hundred. That is the argument for batching in one measurement.
+
+DR-11's two bounds cross at **5,000 records per second** — 10,000 rows over 2 s. Below that
+the timer fires and latency is capped; above it the row count fires and the timer never
+matters. **One bound for the quiet case and one for the loud one**, and a tenant moves
+between them without anybody changing a setting.
+
+T041-T050 / T054 — THE CHAPTER
+--------------------------------
+    slug          the-consumer-that-was-promised
+    prose words   2,087        bound 2,000-4,000
+    figures       3            TRAP boxes 3 · Why 3
+
+**AND THE ESTIMATE RAN THE OTHER WAY AGAIN.** T017a priced a new service at chapter 3.19's
+precedent — 5,889 prose words, 47 fences — and warned a split was likely. The first draft
+came in at **1,659 words, below the floor**, and needed two sections added (T044's batching
+and T048's SAD amendment, both required and both unwritten) to reach 2,087.
+
+Part 4 has now made three estimates about chapter size and **all three were too high**:
+movement I contracted, chapter 3 was already built, and this one undershot a bound it was
+warned it might overrun. The correction has run downward every time.
+
+T051 — FIVE WHOLE-BODY FENCES, AND THE HUNKED ONE COULD NOT BE WRITTEN
+------------------------------------------------------------------------
+    analytics/0003_webhook_attempts.sql      whole body
+    services/ingester/src/shape.ts           whole body
+    services/ingester/src/clickhouse.ts      whole body
+    services/ingester/src/main.ts            whole body
+    services/ingester/package.json           whole body
+
+Following 3.19's precedent, the Dockerfile, both tsconfigs and the vitest configs are not
+fenced. `compose.yaml` needed no amendment: the ingester is run by hand and by the lane, not
+by a compose entry, so **the one hunked fence this chapter expected does not exist.**
+
+**AND `vitest.coverage.config.mts` COULD NOT TAKE ONE EITHER, FOR 4.2's REASON EXACTLY.**
+The coverage pins amend it, and it is fenced in eleven chapters — but the chain replays
+**317 lines where the tree holds 944**. Measured against the commit before Phase 5, the
+divergence was **591 lines before this chapter touched it**: 37 lines of pins cannot explain
+it, and a hunk cannot anchor on it. Filed as 048-3, the same call 4.2 made for
+`eslint.config.mjs`.
+
+**The first version of the SQL fence was an excerpt and the chain caught it** — four lines
+of `ENGINE`/`ORDER BY`/`TTL` against a file the checker compares byte for byte. 111 for one
+run, and the fix was to publish the whole body rather than to add an `(excerpt)` suffix,
+because the file is the chapter's core artifact.
+
+T055 — THE FENCE DELTA IS 0, PER LINE
+---------------------------------------
+    opening (T007)   APPLY 30 en · 30 vi · 14 other · HEAD 36 en   = 110
+    closing (T055)   APPLY 30 en · 30 vi · 14 other · HEAD 36 en   = 110
+    delta                 0        0         0            0            0
+
+The chapter contributes **5 titled fences and 0 problems**. Reported per line because thirty
+of those problems live in the Vietnamese chain, which is under active translation and is not
+this chapter's work.
+
+T053 — THE VIETNAMESE MIRROR
+------------------------------
+    8 EN fences copied · 8 on disk · identical: True
+
+Eight rather than five, because the mirror counts untitled fences too.
+
+T056 — THE GATES
+------------------
+    relay-platform    lint 0 · typecheck 0 · test 0 · build 0
+    relay-tutorial    check:docs 0 · check:srs 0 · check:figures 0 · check:errors 0
+                      check:fences exits 1 at the inherited 110, as it has since 046
+
+T060 — CLOSE-OUT
+------------------
+    relay_corpus* databases      0
+    relay_analytics tables       4    daily_usage · message_events · schema_applied ·
+                                      webhook_attempts
+    webhook_attempts rows       36
+    scratch tables left          0    (final_cost and batch_cost both dropped)
+    services/api/migrations/    15 files, ending 0014, 0 git changes
+    lane rows            31,695 / 46,143 / 303,885 / 487,481 / 3,935
+
+**`environments` is 31,695 against T009's 31,685.** The ten are T027's five webhook walks,
+which create tenants through the api. Attributed rather than left as an unexplained delta —
+every other count is unchanged.

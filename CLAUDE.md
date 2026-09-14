@@ -25,151 +25,85 @@ history; the replaced history is preserved on the remote as the tag
 tags. **Anyone holding an older clone of `relay-platform` must reset rather than pull.**
 
 <!-- SPECKIT START -->
-**ACTIVE: 048 — CHAPTER 4.3, "the consumer that was promised".** Plan:
-`specs/048-chapter-4-3/plan.md`; `research.md` first. **60 tasks, six phases**,
-MVP at phases 1–3.
+**048 IS CLOSED at 73 of 73 — CHAPTER 4.3, "the consumer that was promised".** Its record is
+`specs/048-chapter-4-3/` — `baseline.txt` first (519 lines), then `gaps.md` (six entries),
+`traceability.md`, `tasks.md`. Tagged **`part4-ch3`** on `relay-platform`.
 
-**THE PLANNED CHAPTER 3 WAS ALREADY BUILT, SO PART 4 IS 22.** `docs/12` planned *"A second
-store needs a second ledger"* and §7.1 said to decide its identity scheme before chapter 2
-was written. **4.2 decided it and built it** — runner, filename-and-checksum ledger,
-reporting idempotence, checksum refusal tested red, all four items of the brief. Movement II
-had one subject left, so the ingester moved up, every ordinal after 3 moved down one, and
-milestones are at **9, 17 and 22**. Second contraction; movement I did the same. `docs/12`
-§3 is amended and keeps the old ordinals in its first column so existing references resolve.
+    31 published · 31 written           the first drain, all four counts agreeing
+    5 walks with the store stopped      5 succeeded, 0 failed, depth 32 -> 37
+    10 records, 3 groupings, 10 rows    the regrouped redelivery
+    check:fences 110 -> 110, delta 0    2,087 prose words · 8 gates · 5 fences, 0 problems
 
-**THE STREAM HAS BEEN FILLING SINCE CHAPTER 3.20 AND NOTHING HAS EVER READ IT.** Asked of
-the broker: `ANALYTICS messages 31 · consumers 0`. Every reference to `ANALYTICS_STREAM`
-outside the protocol package is in the publisher that CREATES the stream, and the one
-consumer runtime in the repository filters on `events.>`. The stream's own comment says
-*"nothing consumes this stream in this chapter."* **The planned title turned out to be
-literal.**
+**THE TEMPLATE BUILT TO PREVENT THIS DEFECT IS THE ONE THING THIS CONSUMER MAY NOT USE.**
+`runtime.ts` exists because *"a future consumer forgets to dedupe → double webhooks / double
+metering"*, mitigated by *"a consumer template with dedup built in"* — and that dedup is
+`claimEvent`, a PostgreSQL transaction. Constitution III forbids it on the analytical path.
+**The comment was right about the risk and could not have known which principle would bar
+the remedy.**
 
-**AND THE TEMPLATE BUILT TO STOP THIS EXACT DEFECT CANNOT BE USED.**
-`services/api/src/consumer/runtime.ts` exists because *"a future consumer forgets to dedupe
-→ double webhooks / double metering"*, mitigated by *"a consumer template with dedup built
-in"* — and the dedup it has built in is `claimEvent`, a **PostgreSQL transaction**.
-Constitution III forbids that on this path. **The template describing this consumer is the
-one thing this consumer may not reuse**, which is the chapter's central argument.
+**SIX TASK PREMISES WERE FALSIFIED BY RUNNING THEM.** (1) T014 expected `applied 1`; it
+applied **4**, because 047's close-out dropped the database. (2) **T028's strand detector was
+wrong twice** — see below. (3) T031 expected "the ingester cannot know" what `discard: old`
+dropped; **`first_seq` makes it computable**. (4) T017a predicted an overrun and the draft
+came in at **1,659 words, below the floor**. (5) T051 expected a hunked `compose.yaml` fence;
+the ingester needs no compose entry, so there is none. (6) The SQL fence shipped as an
+excerpt and the chain caught it in one run.
 
-**PASS 6 FOUND A DESTINATION NOBODY NAMED, AND THE DEFAULT ONE IS A LOG.** FR-010 said a
-malformed record is "counted and set aside" and named no where. The record carries **`error`
-— up to 2000 characters of a third-party endpoint's response**, and constitution VI says
-*"Secrets, tokens, and message content never appear in logs."* **Name it by stream sequence
-and never by contents**: the record survives in the queue for the retention window, so
-fetching the bytes becomes a deliberate act rather than an accident in a log file. **The
-publisher solved this for itself in 3.20** — `delivery_id`, `attempt`, the error string,
-under *"One line, no payload, no secret"* — and the consumer inherited the problem without
-inheriting the answer.
+**BOTH PROPOSED STRAND DETECTORS WERE WRONG, AND IMPLEMENTATION FOUND IT.** Analysis pass 2
+concluded *"the disagreement between stream depth and `num_pending` is the signal"*. Phase 3
+disproved it: `retention: Limits` keeps acknowledged messages, so a clean drain of 31 records
+left `stream 31 · num_pending 0` — byte-identical to a strand. Phase 4 disproved the
+fallback: five records that were definitely redelivered left `num_redelivered` at **0**,
+because it counts OUTSTANDING redeliveries. **The rows written against the rows published is
+the only signal that works** — both others describe the consumer's present state, and a
+strand is a fact about the past.
 
-**AND A CARRIED CLAIM WAS TRUE AND MISLEADING.** 047's T007 recorded
-`packages/config/src/infra.ts` as *"the only source file naming ClickHouse"*. It is — as two
-lists of compose service and volume names, holding **no configuration at all**. Carried into
-048 it read as "there is a central ClickHouse config", and there is not. **A true sentence
-reused in a context that changed what it implied.**
+**A LIMIT THAT IS RIGHT FOR ONE CONSUMER IS NOT A DEFAULT.** The api's runtime gives up after
+5 attempts and the dispatcher after 10, at a 30-second `ack_wait` — sound for an endpoint
+that is probably gone, silent about a store that is restarting. Measured at `max_deliver: 3`:
+delivered rounds 1-3, **nothing from round 4**, `num_pending 0` while the stream stayed full.
+`max_deliver: -1` now, which makes poison handling load-bearing: **retry forever on
+transport, terminate at parse.**
 
-**PASS 5 FOUND NO TESTS AT ALL, IN A CHAPTER WHOSE SUBJECT THE CONSTITUTION NAMES.** Twelve
-`test` matches in `tasks.md`, every one an "Independent test:" header — a manual
-demonstration. **Constitution VI singles out idempotency and tenant isolation for 100% branch
-coverage**, and US3 is idempotency. 047's reason for shipping none does not carry: it said
-*"Nothing here joins a test lane"* and was right, `analytics/` matching no include glob. This
-chapter's own preamble says the opposite and calls it a benefit — **collected means
-measured**, and the benefit arrives with an obligation nobody wrote down.
+**AND THE QUIETEST FAILURE EMPTIES THE TABLE.** The publisher sends `attempted_at`; the
+column is `ts`. `JSONEachRow` leaves an unmatched column at its default, a `DateTime64`
+default is the epoch, and the epoch is older than the 90-day TTL — so **the row is deleted at
+insert while every instrument reports success.** Three guards, three different failures:
+`input_format_skip_unknown_fields = 0` catches a RENAMED field (`Code: 117`, and its default
+is 1); `CHECK ts_is_real` catches an ABSENT one (`Code: 469`), which the setting cannot; and
+`date_time_input_format = best_effort` parses the ISO string at all. **The loud one is the
+least dangerous.**
 
-**AND THE STANDARD IS NOT 100%, WHICH IS ALREADY RECORDED.** `vitest.coverage.config.mts`
-pins `repository.ts` — ordering, idempotency and tenant isolation, all three — at **89.51%**,
-deliberately: *"a threshold nothing can pass makes CI permanently red and teaches everyone to
-ignore it."* **Measure, pin at the measurement, name the shortfall.** That is a harder
-standard to fake than a number nobody hits.
+**`shape.ts` IS 100% BRANCHES AND THE CLAUSE STILL DOES NOT REACH THE THING IT IS ABOUT.**
+Constitution VI names idempotency for 100% branch coverage, and this idempotency is a
+`ReplacingMergeTree` sorting key. **A schema has no branches to cover.** Branch coverage is
+the wrong instrument for a guarantee not implemented in code; the integration test replaying
+a batch under three groupings is the right one.
 
-**AND PASS 4 ASKED ITS QUESTION IN ONE DIRECTION ONLY.** It found `pnpm-workspace.yaml` and
-`turbo.json` need no amendment and recorded them as absent costs — then missed
-`vitest.coverage.config.mts`, fenced in **eleven** chapters, which pinning the new files
-amends. **Asking what something costs is two searches, not one.**
+**AND `FINAL` IS NOT FREE.** A bare `count()` is answered from part metadata without reading
+a row — which is exactly why it is fast and why it cannot see a duplicate. At 1,000,000 rows
+plus 100,000 redelivered: **bare 0.9 ms reading 1 row and wrong by 100,000; FINAL 5.3 ms
+reading 1.2 M rows and right.**
 
-**PASS 4 CHANGED SHAPE: THREE ESTIMATES NOBODY WROTE DOWN.** Passes 1–3 found runtime
-behaviours that fail silently. This one found nothing that would break the ingester and three
-things that would break the chapter. **Chapter 3.19 introduced `services/dispatcher` at 5,889
-prose words and 47 titled fences** — against SC-008's 2,000–4,000 bound and 4.2's 2,580 and 2 —
-and no artifact in the feature had a figure at all. The ingester is a smaller job, so 47 is a
-ceiling; but **a split is planned for now rather than permitted.**
+**AN INSERT IS ALMOST ENTIRELY FIXED COST** — 1.5 ms for one row and 1.5 ms for a hundred,
+0.3 us/row at ten thousand. DR-11's two bounds cross at **5,000 records/second**: one bound
+for the quiet tenant, one for the loud one.
 
-**AND 3.19 HAD ALREADY DECIDED THE SCAFFOLDING QUESTION.** A service is six files — Dockerfile,
-package.json, src/, two tsconfigs, a vitest config — and 3.19 fenced the package.json and the
-sources and **skipped the other four**, which a reader needs to build it. Following a precedent
-knowingly costs nothing; meeting it at fence-writing time costs a decision made with prose
-half-written.
+**PART 4's THIRD ESTIMATE RAN THE SAME WAY AS THE OTHER TWO.** Movement I contracted,
+chapter 3 turned out already built, and this chapter undershot a bound it was warned it might
+overrun. **All three corrections ran downward.**
 
-**TWO COSTS THAT ARE NOT THERE, AND ONLY LOOKING SHOWS IT.** `pnpm-workspace.yaml` globs
-`services/*` and `turbo.json` names **no service at all**, so a fourth service amends neither —
-two hunked amendments to fenced files that simply do not have to happen. **An absent cost is
-invisible unless somebody checks for it.**
+**AND `vitest.coverage.config.mts` COULD NOT TAKE A FENCE**, for 4.2's reason exactly: the
+chain replays 317 lines where the tree holds 944, and **591 of those lines diverged before
+this chapter touched it**. `gaps.md` 048-3 notes the shape — the chain's largest inherited
+HEAD problems are configuration files every chapter edits and no chapter owns.
 
-**PASS 3 FOUND THE QUIETEST FAILURE OF THE THREE, AND IT EMPTIES THE TABLE.** The publisher
-sends `attempted_at`; the column is `ts`. **`JSONEachRow` leaves an unmatched column at its
-default and reports success** — and a `DateTime64` default is the epoch, which is older than
-the ninety-day TTL, so **the row is deleted at insert.** Verified: 0 rows, before and after a
-merge. The insert returns OK, the consumer acks, the stream drains to zero, the table is
-empty, and **every instrument in the chain says it worked.**
-
-**THREE GUARDS, THREE DIFFERENT FAILURES, NONE REDUNDANT.** `input_format_skip_unknown_fields
-= 0` turns a RENAMED field into `Code: 117` (its default is 1, which is why this was silent);
-a `CHECK ts > '2020-01-01'` constraint turns an ABSENT one into `Code: 469`, which the
-setting does not cover; and `date_time_input_format = best_effort` is what parses ISO-8601 at
-all — the default `basic` refuses it with `Code: 27`. **One of those three was always loud,
-and it is the least destructive of them.**
-
-**AND THE CHECK THAT WAS SUPPOSED TO CATCH IT PASSED.** T023 compared `count()`,
-`count() FINAL` and `uniqExact(...)` and called them equal — at **0, 0, 0**, over an empty
-table. **A three-way equality with no floor is satisfied by nothing at all.** The count
-published to the stream is the fourth number now.
-
-**THE PROBE CONFLATED TWO CAUSES AND HAD TO BE SPLIT.** One run showed `ts = 1970` with no
-error, another showed nothing inserted — a key mismatch and a parse failure, opposite
-directions, same field. **Two failures of the same field are not the same bug**, and the
-separation was the finding.
-
-**PASS 2 FOUND THE SAME CLASS ONE LAYER DOWN: A DEFAULT NOBODY CHOSE.** No artifact
-mentioned `max_deliver`, and with a finite one FR-006's "accumulate and drain on recovery"
-is false. Measured at `max_deliver: 3`: delivered on rounds 1–3, **nothing on round 4 or
-ever again**, then `num_pending 0 · ack_pending 0` **while the stream still held every
-message.** At the existing runtimes' `MAX_DELIVER = 5` and 30-second `ack_wait`, **two and a
-half minutes** of the store being down strands everything in flight.
-
-**AND THE LOSS HIDES FROM THE INSTRUMENT YOU WOULD REACH FOR.** Stream depth stays high,
-which reads as accumulation; consumer lag goes to zero, which reads as caught up. Each
-number alone is reassuring and wrong. **The disagreement between them is the signal.**
-
-**A LIMIT THAT IS RIGHT FOR ONE CONSUMER IS NOT A DEFAULT.** The dispatcher gives up after
-ten attempts because an endpoint that has failed ten times is probably gone — sound about
-endpoints, silent about a store that is restarting. `max_deliver: -1` now, bounded by the
-queue's seven-day retention, which makes poison handling load-bearing rather than tidy:
-**retry forever on transport, terminate at parse.**
-
-**AND ANALYSIS PASS 1 KILLED THE PLAN'S CENTRAL MECHANISM, WHICH IS THE CHEAPEST PLACE IT
-COULD HAVE DIED.** The design derived an `insert_deduplication_token` from a batch's stream
-sequence range. **JetStream batch boundaries are not stable across a redelivery**: a retry
-with a different `max_messages` returned `4,5,1,2,3,6,7,8,9,10` where the original batch was
-`1,2,3,4,5` — out of order and interleaved with newer messages. Different token, duplicate
-inserted. And the token **keys on itself, not the content**: the same token with 500
-completely different rows dropped all 500 and reported success, so a colliding range is
-**silent data loss, not a duplicate.**
-
-**THE PROBE WAS NOT WRONG. IT WAS RIGHT ABOUT ONE CONFIGURATION.** R5 proved the token works
-when the server is handed the same batch twice; it never asked whether the broker will hand
-you the same batch twice. **A design tested in one configuration is a design tested
-nowhere.** The replacement — `ReplacingMergeTree` on `(environment_id, ts, delivery_id,
-attempt)` — was verified against three *differently-cut* batches of the same 500 records:
-physical count 500 → 800 → 1,200, `FINAL` **500** every time. It works because `ts` is
-`attempted_at`, a field of the record rather than the time it was consumed.
-
-**SO IT IS 4.2's ROLLUP LESSON ONE ENGINE OVER AFTER ALL.** There the read contract became
-`sum()` with `GROUP BY`; here it is `FINAL`. Correctness lives in the read, and the chapter
-measures what that costs rather than asserting it is small.
-
-**AND THAT PROBE'S FIRST RUN MEASURED NOTHING.** It built both batches with
-`generateUUIDv4()` in the sorting key, so the two inserts were not duplicates at all, and it
-reported 2,000 rows after `OPTIMIZE FINAL` as if that were a fact about ClickHouse. **A
-duplicate test whose rows are not duplicates measures nothing and says something.**
+**THE NATS HEALTH CHECK IS RED AND THE SERVICES RUN AROUND IT (048-6).** An abrupt
+`compose down` mid-write left `EVENTS` unrecoverable; its store is quarantined inside the
+`nats-data` volume and `EVENTS` was recreated with the platform's own `ensureStream`. The
+quarantined directory is still scanned, so `/healthz` is unavailable and Phase 4 onward ran
+`--no-deps`. **The check went red for a real reason on a genuinely broken stream**, which is
+more than the ClickHouse check managed for sixteen chapters.
 
 **047 IS CLOSED at 74 of 74 — CHAPTER 4.2, "the store that was never listening".** Its
 record is `specs/047-chapter-4-2/` — `baseline.txt` first, then `gaps.md` (five entries),
