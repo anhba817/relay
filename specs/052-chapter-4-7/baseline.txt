@@ -189,3 +189,59 @@ T018 — AND THE `max(a, o)` DENOMINATOR MAKES THE THRESHOLD ASYMMETRIC
   correct pair (99,900 / 100,000) and the trap.
 
   Neither of these was visible in the design; both came from running the arithmetic.
+
+================================================================================
+PHASE 3 — THE JOB READS BOTH STORES, AND TWO RULES REFUSED THE FIRST DRAFT
+================================================================================
+
+T020a/T020b — THE API'S OWN CLICKHOUSE CALLER
+  `services/api/src/metering/clickhouse.ts`, read-only: one `query()` over `fetch`. The
+  ingester's interface is exported from no package and the api depends on `@relay/protocol`
+  and `@relay/service-kit` only. Moving it into `service-kit` was refused on counts — zero
+  dependencies, five dependents, and four fences on the file it would come from.
+
+T026a — AND THE API CONTAINER COULD NOT REACH THE STORE
+  Its compose block carried `RELAY_NATS_URL` and `RELAY_REDIS_URL` and no ClickHouse address.
+  It has one now. **This makes the api the first operational service to read the analytical
+  store**, which is the concrete form of the constitution III question phase 6 answers.
+
+T021-T026 — THE GATHERING, AND A LINT RULE THAT IS A CONSTITUTION CLAUSE
+  The first draft put the Postgres read inline in `metering/reconcile.ts` and **failed lint**:
+
+    'drizzle-orm' import is restricted from being used. The query engine lives inside the
+    repository layer only (constitution I, ADR-16)
+
+  `eslint.config.mjs` exempts `services/api/src/db/**` and nothing else. **The plan placed the
+  job in the api BECAUSE the api owns the repository, and never noticed the wall between
+  them.** The read lives in a new `services/api/src/db/usage-reads.ts` — a new file rather
+  than a method on `Repository`, because that class is tenant-scoped around
+  `this.environmentId` while this read takes the tenant as an argument, and because
+  `repository.ts` carries 24 titled fences in English and 23 in Vietnamese, both already
+  stale.
+
+T028-T030 — THE SUITE, AND A FACT 4.6 USED TO DELETE A BRANCH
+  Two of seven failed on the first run, both the same cause:
+
+    expected 'breach' to be 'no-data'
+    expected +0 to be null
+
+  **A bare aggregate with no GROUP BY always returns exactly one row.** Chapter 4.6 asked the
+  server that question and used the answer to delete an unreachable guard; here the same fact
+  means an **empty result set is not reachable**, so a tenant with no rollup rows came back as
+  `0` rather than as nothing — and "holds nothing" and "holds zero" became the same answer, in
+  a report whose whole point is that they are not.
+
+  The fix is `count()` as the first column of both reads, and the count decides absence rather
+  than the sum. **7 passed (7)** after it.
+
+T031 — THE LANES
+    lint GREEN · typecheck GREEN · test GREEN
+    api integration   7 failed | 626 passed (633)
+      the seven are T008's inherited list exactly; the +7 passing are this suite
+
+    check:fences  110 -> **111**, and the +1 is `compose.yaml differs at line 150`
+
+  T026a predicted this in as many words. `compose.yaml` carries 13 titled fences and the edit
+  moved the chain; the `diff` hunk is owed and cannot be placed until the chapter exists
+  (phase 7). **Recorded as a known debt with its exact cost rather than discovered at the
+  ratchet**, which is the difference the task was written to make.
