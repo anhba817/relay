@@ -772,3 +772,112 @@ one-line workaround that suggests itself does not exist.
 AND PASS 14 ADDED THIS GATE TO T062 AND T095 WITHOUT RUNNING IT. The finding was right --
 `coverage` is the only lane that enforces the pins -- and the gate it named was already
 dead. **A gate added to a list is not a gate until somebody runs it.**
+
+T060 — THE QUICKSTART'S §4 BLOCK, RUN VERBATIM AGAINST THE COMPOSED STACK
+    A real socket through the composed gateway, closed with 1000 after 1.5 s, drained by
+    the real ingester:
+
+        closed  1c80e3ec-f6be-446c-9425-f4e49aadb08c  02:12:16.217  1000     1505
+        opened  1c80e3ec-f6be-446c-9425-f4e49aadb08c  02:12:14.712  ~absent  ~absent
+        count() FINAL: 41
+
+    Two rows, one `connection_id`, the open carrying neither close column. `duration_ms`
+    1505 for a socket closed 1.5 s after the ack.
+
+    AND THE OLDER ROWS CARRY 1005, NOT 1000. The integration suite's sockets close with
+    `ws.close()` and no code, which the receiving side reports as 1005 ("no status
+    received"); the deliberate `ws.close(1000)` gives 1000. Their durations are 0 and 1 ms
+    -- the "opens and closes inside one metering tick" edge case, arriving for real rather
+    than as a hypothetical.
+
+**AND THE GATEWAY HAD NO BROKER ADDRESS IN compose.yaml.** Its entry carried
+`RELAY_API_URL` and `RELAY_REDIS_URL` and no `RELAY_NATS_URL`, so inside the container
+`createConnectionPublisher` would default to `nats://localhost:4222` -- the gateway's own
+loopback, not the broker -- and a connection-log publish failure is SWALLOWED by design.
+The records would go nowhere and nothing would say so.
+
+That is 047's pass-5 finding one chapter later: **a missing address is harder to see than
+a wrong one, because there is no sentence to disagree with.** The api's own entry carries
+the same note about Redis. Added, and it makes `compose.yaml` the NINTH fenced file this
+chapter edits (12 titled fences) -- one T010a's list could not have predicted, because
+the need for it is a property of the producer rather than of the files.
+
+    AND `docker compose up -d --build gateway` LEFT THE REST OF THE PROFILE DOWN.
+    ClickHouse, the dispatcher and mailpit were `Exited` afterwards, so the first drain
+    attempt failed with `TypeError: fetch failed` -- which reads as a ClickHouse fault and
+    was a stopped container. `curl` to the same port failed identically once checked, and
+    `docker compose port clickhouse 8123` answered "service is not running", which is the
+    question that settled it in one line. Re-run the whole profile after building one
+    service.
+
+**AND THE INGESTER REPORTED TWO TABLES WHERE THERE ARE THREE.** `main.ts` logged
+`written: 1, attempts: 0, requests: 1` for batches that also carried connection records:
+`IngestResult` gained `writtenConnections` in phase 3 and this line did not. Found by
+draining the real stream and then querying the table -- **41 rows in `connection_events`
+that no log line had ever mentioned.** A reporter that omits an arm turns "one number
+cannot say which table moved" into three numbers that do not add up. Fixed.
+
+================================================================================
+A THIRD INHERITED RED, AND TURBO'S CACHE IS WHY IT LOOKED GREEN
+================================================================================
+    FAIL packages/test-harness/src/bound-port.test.ts
+      > services/ingester/src/main.ts reads the bound address back
+      > services/ingester/src/main.ts does not log the port it asked for
+
+`bound-port.test.ts` globs `services/*/src/main.ts` and asserts each reads its bound port
+back, with `BINDS_NOTHING` declaring the exceptions BY NAME rather than filtering them --
+its own comment argues for that: *"a list checked one way can only grow."* It declared the
+dispatcher and not the ingester, which chapter 4.3 added. The ingester has never had
+`.address()` or `PORT`: verified on both sides of the change, 0 matches each.
+
+**SO IT HAS BEEN FAILING SINCE 4.3 AND REPORTING GREEN FROM CACHE.** `turbo.json`'s `test`
+task has `inputs: ["$TURBO_DEFAULT$", "$TURBO_ROOT$/compose.yaml"]`. `$TURBO_DEFAULT$` is
+the package's OWN files, and this test reads three files in OTHER packages. So its hash
+does not cover what it asserts on, and the task stayed cached green from before 4.3 added
+the file.
+
+**IT SURFACED NOW BECAUSE THIS CHAPTER EDITED `compose.yaml`** -- the one out-of-package
+input turbo is told about. `cache miss, executing da0929c537b0b563`, and then two
+failures that had been waiting two chapters.
+
+Fixed the test the way its own design asks: one `BINDS_NOTHING` entry with a reason. The
+deeper defect is the cache key, and it is filed rather than fixed -- `turbo.json` is a
+shared file and the fix wants a moment's thought about which of the three `main.ts` paths
+belong in `inputs` versus whether a test that reads another package's source should live
+in that package instead.
+
+================================================================================
+AND THE CACHE LESSON LANDED ON THIS RECORD ONE COMMAND LATER
+================================================================================
+Straight after documenting the cache-key defect above, `pnpm test` reported
+
+    Tasks:    12 successful, 12 total
+
+and the next line was
+
+    Cached:   12 cached, 12 total
+
+**So "12 successful" was a replay of twelve earlier runs and said nothing about the
+current tree.** Read as a green lane it is the same mistake, one command after writing it
+down. `turbo` prints both lines; only one of them is a measurement.
+
+TWO CORRECTIONS TO EARLIER ENTRIES IN THIS FILE:
+
+**(1) The api's `main.test.ts` is a load-dependent FLAKE, not a standing red.** Phases 2,
+3 and 4 recorded it as "inherited red", verified by stashing -- which was right about it
+not being this chapter's and wrong about what it is. Run alone: `Tests 3 passed (3)`. It
+fails inside the full twelve-package turbo run and passes on its own, which is
+`typing.itest.ts`'s signature and the condition CLAUDE.md already names. Neither run
+settles it; what settles it is that the same test passes and fails with the tree held
+still.
+
+**(2) `bound-port.test.ts` was the third red and is now fixed**, so the standing count of
+inherited reds in this feature is: one broken gate (`pnpm coverage`, filed), one
+load-dependent flake in the api, one load-dependent flake in `typing.itest.ts`, and one
+genuine two-chapter-old failure that turbo's cache hid and this chapter's `compose.yaml`
+edit exposed.
+
+THE UNIT LANE, RUN UNCACHED AND PER PACKAGE:
+    gateway 136 · api 274 · protocol 144 · ingester 33 · test-harness 22 ·
+    dispatcher 8 · config 7 · service-kit 3
+    `bound-port.test.ts` 6 of 6 after the exemption entry (was 6 of 8)
