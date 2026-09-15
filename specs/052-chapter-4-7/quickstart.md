@@ -94,8 +94,8 @@ while read e; do
 done
 ```
 
-All four come back `NOT IN POSTGRES`: they are `metering.itest.ts`'s and `ingest.itest.ts`'s
-fixtures. **So every one of the 675 operational tenants is one-sided, not 671.** Chapter 4.6
+All four come back `NOT IN POSTGRES` — executed, not assumed: they are `metering.itest.ts`'s
+and `ingest.itest.ts`'s fixtures. **So every one of the 675 operational tenants is one-sided, not 671.** Chapter 4.6
 measured the reason: `message_events` has no producer, so three of FR-ANL-05's four quantities
 have nothing on the analytical side to compare.
 

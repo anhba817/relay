@@ -216,6 +216,13 @@ ran the threshold probe both ways for the fifth time and the silent half was sil
 The job is called directly with a tenant and a period, returns its report as a value, and two
 identical invocations produce identical reports because it writes nothing.
 
+**AND EVERY FIGURE IN THIS CHAPTER COMES FROM PLANTED DATA OR A CORPUS.** No period in this
+lane holds real tenant data on either side: 2026-08 is 216 fixture rows with zero messages,
+2026-09 is open and also fixtures, `1999-01-01` is sentinels, and the four analytical
+environments are test ids absent from Postgres. That is §2.3's premise as a measurement rather
+than a warning, and it is why phase 4 plants a drift and phase 5 loads a corpus. A lane run
+shows the job working; it does not show a reconciliation.
+
 ### Phase 5 — The four obstacles, measured and published
 
 R1's two operational counters, R4's 671 one-sided tenants, and R9's two carried items re-run at

@@ -96,6 +96,26 @@ demonstration that makes FR-006 necessary, and the reason the job compares per t
 aggregate reads 0.2694% and nobody looks; the per-tenant split shows one tenant wrong by
 everything it has, which is what sends somebody to find the cause.
 
+## 2a. Every figure in this chapter comes from planted data or a corpus
+
+**No period in this lane holds real tenant data on either side**, measured:
+
+```
+2026-08-01    216 rows, messages_sent 0, connection_minutes 5,736   all fixtures
+2026-09-01    458 rows                                              the open period
+1999-01-01     31 rows                                              __sentinel__ applications
+analytical      4 environments                                      absent from Postgres entirely
+```
+
+`Fleet Ops` is `quotas/quota-email.test.ts`'s, `period-roundtrip` is `quotas/period.itest.ts`'s,
+the rest are `conn-<uuid>` connection tests, and the four analytical ids are `metering.itest.ts`'s
+and `ingest.itest.ts`'s.
+
+**This is not a fifth obstacle. It is §2.3's premise arriving as a number** — *"0.1% of a small
+number is an assertion that cannot fail for its own reason"* — and it is why the lane gets a
+planted drift and the chapter gets a corpus. Stated here so no reader expects a lane run to
+show a real reconciliation.
+
 ## 3. What §2.3 has already decided, and this chapter must not re-litigate
 
 `docs/12` §2.3 splits the milestone into two claims and gives the reason:
