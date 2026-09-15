@@ -196,9 +196,12 @@ then record the decision and amend the SRS.
 
 **The rollup**
 
-- **FR-001**: The analytical store shall carry, per tenant per day, every quantity of
-  FR-ANL-05's four that **has a producer**: connection-minutes from chapter 4.5's records, and
-  messages sent, unique active users and stored message count from `message_events`.
+- **FR-001**: The analytical store shall carry, per tenant per day, the FR-ANL-05 quantity
+  that **has a producer**: connection-minutes, derived from chapter 4.5's connection records.
+- **FR-001b**: The rollup shall also carry columns and views for the three quantities whose
+  source is `message_events` — messages sent, unique active users, stored message count — so
+  that the rollup is complete the day a producer exists. **These are built and unpopulated**,
+  which FR-001a governs.
 - **FR-001a**: **`message_events` has no producer, and the chapter shall say so rather than
   publish a column that reads zero.** Research R9 measured it: the table appears in no file
   under `services/`, its only writer is `scripts/scale/load-analytics.mjs`, and it holds 0

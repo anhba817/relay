@@ -62,8 +62,14 @@ sitting exactly where constitution VI's coverage clause gets decided. Three thin
   the rollup is what makes the read verified rather than demonstrated, and 4.8 wires it to a
   route when the query surface needs one.
 
-It sits beside `services/ingester/src/clickhouse.ts`, which already owns the store's client
-and connection settings — one client per service, the argument 4.5 made for NATS.
+It sits beside `services/ingester/src/clickhouse.ts` — **and the one-client property has to be
+built, not claimed.** A first draft of this note said that file *"already owns the store's
+client"*; measured, `ClickHouse` exposes `insert`, `insertRequests`, `insertConnections`,
+`count`, `countRequests` and `countConnections`, and its `post()` helper is a private closure.
+**It is an insert-and-count interface**, so a read placed beside it opens a second client
+unless the interface gains a query method. It gains one: the interface has grown a method per
+chapter since 4.3 and a fourth fits the shape it already has. Then the claim is a property of
+the code rather than a sentence about it.
 
 **No NEEDS CLARIFICATION remain.** The three the spec could have carried were settled by
 running them: R1 (can one rollup be fed from several sources), R3 (are both connection-minute
@@ -234,6 +240,17 @@ Rows read reported beside the raw tables' counts, and the empty-day distinction 
 tested: an MV emits no row for a day with no inserts, so "no activity" is always a missing row
 and the read is what has to tell it from zero.
 
+**THE CORPUS IS LOADED HERE, MEASURED HERE, AND REMOVED HERE.** The store holds 0
+`message_events` and 154 `connection_events`, so a rows-read figure against it is not a
+measurement — 4.2's 315-against-1,052,655 exists because that chapter loaded one. Two things
+follow, and both are the chapter's material rather than its overhead. **The loader is
+`postgresql()`**, so demonstrating the rollup requires executing the prohibition phase 6
+amends: the clause is not merely unmet, it is unmeetable, and the demonstration needs the
+forbidden path. **And the loader writes into the shared `relay_analytics`**, which every later
+suite reads and which 050-2 records as having none of the three guards Postgres has — so the
+rows come out again in the same phase, verified in both directions, before anything else is
+counted.
+
 ### Phase 5 — Attribution
 
 Channel added to the key (R6: it is on the row, so it costs a key column). Application
@@ -263,7 +280,9 @@ the form, choose it out loud, leave the clauses that still hold untouched.
 
 ### Phase 8 — The numbers, and the chapter
 
-Prose and traps counted, figures from `baseline.txt`, fences generated from the checker's own
+Phase 4's figures published rather than re-measured — the corpus is gone by then, and
+re-loading would give a second corpus rather than a second reading of the first. Prose and
+traps counted, figures from `baseline.txt`, fences generated from the checker's own
 replay, eleven gates, `gaps.md` with **every carried item re-measured** — 050's eight and
 049's and 048's survivors — `traceability.md`, the SPECKIT block, the tag.
 
