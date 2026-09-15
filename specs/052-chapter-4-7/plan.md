@@ -180,6 +180,14 @@ planted drift raises.
 
 Everything in `research.md` re-run into `baseline.txt`, plus:
 
+- **Feature 030's guard, and the api lane's bait.** Both operational tables this chapter writes
+  — `usage_periods` and `usage_active_users` — carry the sentinel trigger, and
+  `services/api/vitest.integration.config.mts:32` sets `RELAY_HARNESS_BAIT: "on"`. **The gateway
+  lane carries none, which is what 4.5 checked and recorded**, so its answer does not transfer.
+  The rule that follows: every statement against either table names its own environment ids. A
+  scoped statement never reaches a sentinel row and never raises — the same constraint 050-2
+  imposes on the analytical side for a different reason, and the one R1's per-tenant design
+  already wanted.
 - The two operational counters' gap, aggregate and per tenant, with the number of tenants over
   the bound. **And the cause of the 26**, which R1 left open: one `insert(messages)` path
   increments the counter in the same transaction, so something else writes messages.
