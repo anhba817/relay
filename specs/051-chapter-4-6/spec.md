@@ -66,33 +66,64 @@ questions in two of four dimensions, and nothing bills on it."**
 
 ## User Scenarios & Testing *(mandatory)*
 
-### User Story 1 - The four quantities FR-ANL-05 names are all in the rollup (Priority: P1)
+### User Story 1 - Connection-minutes are in the rollup, and the other three have a place waiting (Priority: P1)
 
-An operator asks the analytical store for one tenant's usage for one day and gets all four
-metered quantities — messages sent, unique active users, connection-minutes and stored
-message count — from rollup rows, without reading a raw event table.
+An operator asks the analytical store for one tenant's usage for one day and gets
+connection-minutes from rollup rows, without reading a raw event table. The rollup also
+carries columns and views for messages sent, unique active users and stored message count, so
+it is complete the day `message_events` gains a producer.
 
-**Why this priority**: it is the clause the chapter is named for, and two of the four have
-never existed anywhere but Postgres.
+**Why this priority**: connection-minutes is the one FR-ANL-05 quantity this chapter can
+populate from live traffic, and it has never existed outside the Postgres meter. The other
+three are FR-001b — built and unpopulated — because their source has no producer, which
+FR-001a governs and the chapter states rather than hides.
 
-**Independent test**: load a known corpus, read the rollup for a chosen
-`(environment_id, day)`, and compare each of the four against the same quantity computed
-from the raw tables over the same window.
+**Independent test**: open and close connections, drain, read connection-minutes for that
+environment and day from rollup rows, and compare against the same minutes computed directly
+from `connection_events`.
 
 **Acceptance scenarios**:
 
-1. **Given** a day with a known number of messages sent, **When** the rollup is read for that
-   environment and day, **Then** `messages` equals the count of `event = 'created'` rows in
-   `message_events` for that environment and day.
-2. **Given** connection open and close records for that environment and day, **When** the
+1. **Given** connection open and close records for an environment and day, **When** the
    rollup is read, **Then** connection-minutes are present and derived from those records
    rather than from the Postgres meter.
-3. **Given** messages created and deleted across several days, **When** the rollup is read
-   for a given day, **Then** stored message count reflects creations minus deletions up to
-   and including that day, not that day's creations alone.
-4. **Given** a tenant with no activity on a day, **When** the rollup is read for that day,
+2. **Given** connections with no close record, **When** the rollup is read, **Then** they
+   contribute zero minutes and their count is reported beside the figure rather than folded
+   into it.
+3. **Given** a tenant with no activity on a day, **When** the rollup is read for that day,
    **Then** the absence is distinguishable from a zero — a missing row and a row of zeros
    must not be the same answer.
+4. **Given** a tenant's connections in two environments, **When** one environment's rollup is
+   read, **Then** the other's rows are unreachable from that filter.
+
+---
+
+### User Story 1a - The unpopulated three are proved correct in one window (Priority: P1)
+
+The message-sourced columns cannot be demonstrated by live traffic, because nothing produces
+`message_events`. They are demonstrated once, against a loaded corpus, and the corpus is then
+removed.
+
+**Why this priority**: a column nobody has ever seen hold a correct value is a claim. This is
+the only window in the chapter where messages sent, unique active users and stored message
+count can be checked against raw data, and it closes when the corpus does.
+
+**Independent test**: load a corpus, read the rollup for a chosen `(environment_id, day)`,
+compare each of the three against the same quantity computed from `message_events`, then
+remove the corpus and verify both the source and the rollup are back to their openings.
+
+**Acceptance scenarios**:
+
+1. **Given** a loaded corpus, **When** the rollup is read for an environment and day, **Then**
+   `messages` equals the count of `event = 'created'` rows in `message_events` for that
+   environment and day.
+2. **Given** messages created and deleted across several days, **When** the rollup is read for
+   a given day, **Then** stored message count reflects creations minus deletions up to and
+   including that day, not that day's creations alone.
+3. **Given** a corpus whose authors include a deleted one, **When** unique active users is
+   read, **Then** the NULL author is ignored rather than counted as a user.
+4. **Given** the corpus has been removed, **When** the tables are counted, **Then** both the
+   source and the rollup are back to the figures phase 1 recorded.
 
 ---
 
