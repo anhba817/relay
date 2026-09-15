@@ -68,3 +68,103 @@ Full write-ups in research.md R1-R11. The figures, so later phases can compare:
     DROP DATABASE r051_probe -> count()=0 in system.databases
     planted row removed from message_events AND from the view's inner table
     message_events 0 · daily_usage rows for the probe environment 0
+
+================================================================================
+PHASE 1 — THE PREMISES, RE-RUN, AND THE OPENINGS THIS CHAPTER IS MEASURED AGAINST
+================================================================================
+
+T001 — THE CENSUS, AND THE STREAM BESIDE IT
+    message_events          0        no producer
+    api_requests       11,683
+    connection_events     154
+    webhook_attempts       64
+    daily_usage             0        the rollup, over message_events
+
+    stream held         13,517  then  13,518 five seconds later
+
+  IDENTICAL TO PLANNING'S FIGURES, AFTER A FULL SESSION OF TRAFFIC. The tables move
+  when an INGESTER DRAINS, not when the api serves -- the stream climbs and the tables
+  hold still. That is constitution III's independence claim demonstrated in two
+  commands, and the next drain will move api_requests by the whole backlog at once.
+
+T002 — R9 FROM BOTH SIDES
+    repository-wide, files mentioning message_events:
+      scripts/scale/load-analytics.mjs        the batch loader
+      analytics/0000_message_events.sql       the DDL
+      analytics/0001_daily_usage.sql          the view
+      analytics/query.mjs                     the unwired script
+      analytics/0003_webhook_attempts.sql     a comment
+    under services/:  0
+
+  The chapter's spine, checked rather than cited.
+
+T003 — CONNECTIONS WITH BOTH RECORDS
+    both 55 · one only 44 · total 99        44% contribute no minutes
+
+T004 — A CLOSE ROW CARRIES BOTH ENDPOINTS
+    2026-09-15 02:58:03.876 · 1000 · 252 ms -> derived open 02:58:03.624
+
+T005 — THE FENCE-CHAIN OPENING
+    APPLY  en 30 · vi 30 · elsewhere 14      = 74
+    HEAD   en 36                              = 36
+    total 110
+
+    HEAD split (050-4):  differs at line 25 · does not exist 11
+    The 11 are fences titled with a prose phrase; they name no file and can never be
+    repaired by editing relay-platform. 25 is the number this chapter is compared against.
+
+T006 — FENCE EXPOSURE, COUNTED FOR EVERY FILE THIS CHAPTER TOUCHES
+    services/ingester/src/clickhouse.ts     en 1 whole + 2 diff · vi 1 whole
+    vitest.coverage.config.mts              en 1 whole + 10 diff · vi 1 whole + 10 diff
+    analytics/0001_daily_usage.sql          none
+    analytics/apply.mjs, analytics/query.mjs none
+    the three new .sql files, metering.ts, ingest.itest.ts, lib/tutorial.ts  none
+
+  TWO OF THE ELEVEN CARRY FENCES, AND BOTH CARRY A VIETNAMESE WHOLE BODY.
+
+T007 — AND BOTH VI WHOLE BODIES ARE ALREADY STALE, BEFORE THIS CHAPTER TOUCHES THEM
+    STALE  services/ingester/src/clickhouse.ts   vi 4.3
+    STALE  vitest.coverage.config.mts            vi 4.6-of-part-3
+
+  So this chapter does not break them -- it adds to a debt no gate reports.
+  check-fence-chain.mjs compares the vi chain to the ENGLISH chapter's fences and never
+  to the tree (050-3), so neither staleness appears in the 110 above.
+
+T008 — THE ELEVEN GATES, AT THE OPENING
+    check:fences       RED   110, the inherited baseline
+    check:docs         GREEN
+    check:srs          GREEN
+    check:figures      GREEN
+    pnpm build (tut)   GREEN
+    check:errors       GREEN
+    pnpm build (plat)  GREEN
+    lint               GREEN
+    typecheck          GREEN
+    test               GREEN
+    test:integration   RED   7 tests, 3 files
+    coverage           RED   7 of 1,545 failed, 3 of 108 files, 545.85 s
+
+  THE SAME INHERITED REDS 050 CLOSED WITH, plus one outbox flake that moved:
+    request-log.itest.ts   5   needs an ingester nobody starts (050-8)
+    limits.itest.ts        1   RELAY_INTERNAL_CREDENTIAL unset
+    session.perf.itest.ts  -   present in the log; a Seq Scan on an empty table
+    outbox.itest.ts        1   invariant 4 this time, invariant 8 at 050's close
+
+  The outbox invariant moved between runs, which is what a flake looks like from the
+  outside. Recorded so that a later red is compared against this list rather than blamed
+  on this chapter.
+
+T009 — THE LEDGER, TWICE ON AN UNCHANGED TREE
+    applied nothing · skipped 6     both runs, identically
+
+T010 — AND ITS CHECKSUM REFUSAL, FORCED RED
+    apply failed: 0005_connection_events.sql changed after it was applied
+      (ledger 2702615facd07e77, file 397df7b2c0be7339). ClickHouse has no ALTER path
+      for most of this; add a new statement file instead
+
+  Restored, re-run clean, `git diff` on analytics/ empty. The whole "a new numbered
+  statement rather than an edit" design rests on this refusal, and a refusal nobody has
+  seen fire is a promise.
+
+T011 — THE POSTGRES METER'S OPENING
+    usage_periods: 295 rows · sum(messages_sent) 3,466
