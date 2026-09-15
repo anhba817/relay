@@ -10,18 +10,24 @@ and two changed what the chapter is — including one that changed the job's sha
 Movement IV's second chapter. `docs/12` row 8: *"FR-ANL-06's reconciliation job, built to be
 callable in isolation (§2.3)."*
 
-The clause asks for metered totals to agree with operational counts within 0.1%. Four things
-stand in the way, and **three of them are not the analytical path's fault**:
+The clause asks for metered totals to agree with operational counts within 0.1%. **Three
+things stand in the way, and none of them is the reconciler's to fix:**
 
     message_events has no producer      analytical 0 vs operational 9,624      100%
     uniq is approximate above ~65,000 distinct                                 0.51%
     the TTL boundary, at any cardinality                                       0.49%
-    two OPERATIONAL counters disagree with each other                        0.2694%
 
-The fourth is the new one and it reframes the job. `messages` holds 9,650 and
-`usage_periods.messages_sent` holds 9,624, and FR-ANL-06 does not say which is *"counts derived
-from operational data"*. Worse, **the aggregate hides the shape**: 0.2694% overall, 19 tenants
-over the bound, and one tenant wrong by 100%.
+And one thing the clause simply does not say: **which number is *"counts derived from
+operational data"***. There are two, `messages` at 9,650 and `usage_periods.messages_sent` at
+9,624, and FR-ANL-06 chooses neither.
+
+**That ambiguity reshaped the job, and its measured divergence did not survive contact with
+analysis pass 1.** The 0.2694% is a fixture artifact — raw-SQL writers and a sentinel cleanup
+that deletes counter rows, with all 31 disagreeing tenants belonging to test applications and
+none to anything else. A first draft of this plan carried it as a fourth obstacle. **What
+survives is the shape it forced**: the aggregate reads 0.2694% and nobody looks, while the
+per-tenant split shows one tenant wrong by 100% — so the job compares one tenant at a time and
+never aggregates before a verdict. That decision is what found the fixtures.
 
 So the chapter builds the job, runs it, and has it correctly alert on its own platform — and
 publishes why a green number here would have been the most misleading artifact in the series.
@@ -129,12 +135,33 @@ relay-tutorial/
 └── lib/tutorial.ts
 ```
 
-**Why `services/api/` and not the ingester.** The operational side lives in Postgres and the
-api owns that client, `periodOf`, and the quota code this job checks. 4.6 put its read in the
-ingester because the analytical client lives there; this job needs both, and the api is the
-service that already holds a ClickHouse-free Postgres pool plus the definitions the comparison
-depends on. The analytical read goes over HTTP, which is what `analytics/apply.mjs` and
-`load-analytics.mjs` already do without a client library.
+**Why `services/api/` and not the ingester — counted, not asserted.** The job needs both
+stores, so the question is which service is cheaper to give the half it lacks.
+
+    services/ingester  3 dependencies: @relay/protocol, @relay/service-kit, nats
+                       reads ClickHouse over `fetch`, no client library
+                       has NO `pg` — Postgres would be a fourth dependency plus a
+                       whole data-access layer
+    services/api      14 dependencies including `pg` and `drizzle-orm`
+                       owns the repository, `periodOf`, and the quota code this job checks
+                       needs NO new dependency: ClickHouse speaks HTTP
+
+**Zero new dependencies against one, and the api already holds the definitions the comparison
+is made of.** That is the same shape of argument ADR-07 is made of, and the reason 4.5 could
+spend it: a dependency count is checkable and a preference is not.
+
+**BUT THE READ IS NOT FREE, AND A FIRST DRAFT OF THIS SECTION SAID IT WAS.** It claimed the
+analytical read is routine *"because `analytics/apply.mjs` and `load-analytics.mjs` already do
+it without a client library"* — and both of those run on the **host**. Measured: `services/api/src`
+contains exactly one reference to ClickHouse and it is inside a `.itest.ts`; the api's compose
+block carries `RELAY_NATS_URL` and `RELAY_REDIS_URL` and **no `RELAY_CLICKHOUSE_*`, and no
+`depends_on: clickhouse`**. So the api container cannot reach the store today.
+
+**Which makes this chapter's compose change the same event 4.5's was**: the gateway gained
+`RELAY_NATS_URL` and with it a place in ADR-07's argument. Here **the api becomes the first
+operational service to read the analytical store**, which is the sharpest available form of the
+constitution III question the Check above already has to answer — and a better one than the
+abstract auditor argument, because it names the service that *is* the operational path.
 
 ## Phases
 

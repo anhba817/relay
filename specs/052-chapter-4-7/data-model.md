@@ -35,21 +35,37 @@ call it "missing data" is exactly what would hide the defect this movement exist
 | quantity | analytical | operational | source named in the report |
 |---|---|---|---|
 | messages | `sum(messages)` | `usage_periods.messages_sent` | `usage_periods` |
-| active users | `uniqMerge(active_users_state)` | `usage_active_users` row count | `usage_active_users` |
+| active users | `uniqMerge(active_users_state)` | `count(*)` over `usage_active_users` for that `(environment_id, period)` | `usage_active_users` |
 | connection-minutes | `sum(connection_minutes)` | `usage_periods.connection_minutes` | `usage_periods` |
 | stored messages | `sum(stored_delta)` up to the period's end | **none** | — |
+
+**`usage_active_users` is `(environment_id, period, user_id, first_seen_at)`** — one row per
+user per period, so its total is a count of rows rather than a stored number. **That makes the
+active-user comparison the only one comparing two different kinds of thing**: an exact count on
+the operational side against `uniqMerge`'s approximate sketch on the analytical one. 047-1's
+0.51% lives exactly here, and the report says so rather than presenting the difference as drift.
 
 **`usage_periods.messages_sent` is chosen over a count of `messages`, and the reason is in the
 code.** `repository.ts:4325`: *"the alternative is a read over `messages`, which carries no
 `environment_id` and no index on `created_at` … proportional to lifetime traffic forever."*
 Chapter 4.1 measured that read at 585.9 ms over 1,000,000 rows. **The rejected candidate is
-published with its gap** (0.2694% aggregate, 100% worst tenant) rather than left unmentioned,
-because a reconciler that silently picks one of two disagreeing numbers is asserting the other
-does not exist.
+published with its gap AND ITS CAUSE** rather than left unmentioned, because a reconciler that
+silently picks one of two disagreeing numbers is asserting the other does not exist.
+
+In this lane the gap is 0.2694% aggregate and 100% for one tenant, and **it is fixtures** —
+raw-SQL writers and a sentinel cleanup that deletes counter rows, with every disagreeing tenant
+a test application and none anything else. Publishing the number without the cause would make a
+lane artifact read as a platform defect, which is 047's pass-9 lesson in a new feature.
 
 ## The threshold
 
-`0.1%`, a named constant citing FR-ANL-06, not a literal. The comparison is
+`0.1%`, a named constant citing FR-ANL-06, not a literal.
+
+**The verdict is decided before any arithmetic runs.** `no-data` and `not-comparable` are
+settled from the presence of each side, and only a row with both sides present reaches a
+division — which stops `0 / 0` from being a case anyone has to think about.
+
+For those rows the comparison is
 `abs(a − o) / max(a, o)` — **not divided by the operational side**, because the 671 one-sided
 tenants have an operational total of zero for some quantities and a denominator of zero is a
 crash where a verdict belongs.

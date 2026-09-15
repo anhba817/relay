@@ -23,9 +23,11 @@ belong to nobody in particular.
 
 ## 2. The job's first honest run fails, and three of the four reasons are not the analytical path's fault
 
-Four obstacles stand between this clause and a green reconciliation. Three were measured by
-earlier chapters and filed *for this movement*; the fourth was measured while writing this
-spec and is the one that reframes the chapter.
+**Three obstacles** stand between this clause and a green reconciliation, all measured by
+earlier chapters and filed *for this movement*. A fourth item — two operational counters that
+disagree — is a question the clause leaves open rather than an obstacle, and its measured
+divergence turned out to belong to the test lane; both facts are below, because a first draft
+of this spec had it as obstacle four.
 
 **(1) One side has no producer.** Chapter 4.6 measured `message_events` at **0 rows**, with
 zero occurrences under `services/`. The operational side holds **9,624** in
@@ -44,19 +46,33 @@ and partly deleted from the source. 047-1 measured 90 of 91 days agreeing exactl
 direction: a view counted 242,667 messages over 92 days where a backfill minutes later found
 239,997 over 91.
 
-**(4) "Counts derived from operational data" is not one number, and the two candidates
-already disagree by more than the bound.** Measured on the lane while writing this spec:
+**(4) "Counts derived from operational data" is not one number.** The clause names two
+candidates and chooses neither, and they can diverge. Measured on the lane:
 
 ```
 messages table            9,650
 usage_periods.messages_sent  9,624
-gap                             26      0.2694%
+gap                             26      0.2694%   aggregate
+                                       100%       worst tenant
+                                        19        tenants over the bound
 ```
 
-**Both of those are operational.** Nearly three times FR-ANL-06's bound, before the
-analytical store is consulted at all. A reconciler cannot be written until somebody says
-which number "counts derived from operational data" means, and that is a decision this
-chapter must make rather than inherit.
+**Both of those are operational.** A reconciler cannot be written until somebody says which
+number the clause means, and that is a decision this chapter must make rather than inherit.
+
+**THE DIVERGENCE ITSELF IS THIS LANE'S, NOT THE PLATFORM'S** — established at analysis pass 1
+and stated here so the chapter never publishes it the other way. The send path cannot drift:
+the counter is incremented inside the same transaction as the insert, behind the same early
+return. The gap comes from raw-SQL fixtures (`backfill.itest.ts`, `repository.itest.ts`,
+`dual-write-walk.mjs`, `corpus.mjs`) and from `test-harness/sentinel.ts:159`, which deletes
+counter rows while leaving messages. **All 31 disagreeing tenants belong to fixtures or walk
+scripts; zero do not.**
+
+So this is **not** a fourth obstacle to FR-ANL-06 — there are three — and the chapter says so
+rather than publishing a lane artifact as a platform defect. What it is instead is the
+demonstration that makes FR-006 necessary, and the reason the job compares per tenant: the
+aggregate reads 0.2694% and nobody looks; the per-tenant split shows one tenant wrong by
+everything it has, which is what sends somebody to find the cause.
 
 ## 3. What §2.3 has already decided, and this chapter must not re-litigate
 
@@ -210,9 +226,10 @@ chapter.
 
 - **FR-006**: The chapter shall decide and record which number *"counts derived from
   operational data"* means for messages sent, and shall publish the gap to the rejected
-  candidate. Measured before this spec: `messages` 9,650 against
-  `usage_periods.messages_sent` 9,624 — **0.2694%**, nearly three times the bound, both
-  operational.
+  candidate with **what causes it**. Measured: `messages` 9,650 against
+  `usage_periods.messages_sent` 9,624 — 0.2694% aggregate, 100% for one tenant — and every
+  disagreeing tenant is a test fixture. **Publishing the gap without the cause would make a
+  lane artifact read as a platform defect.**
 - **FR-007**: The same decision shall be made and recorded for every other FR-ANL-05 quantity
   that has more than one operational candidate, or the absence of a second candidate stated.
 
@@ -234,9 +251,10 @@ chapter.
 
 **The obstacles**
 
-- **FR-013**: The chapter shall publish all four obstacles with their measurements: the
-  missing producer, `uniq`'s approximation, the TTL boundary, and the two disagreeing
-  operational counters.
+- **FR-013**: The chapter shall publish all three obstacles with their measurements — the
+  missing producer, `uniq`'s approximation and the TTL boundary — and shall publish the two
+  operational candidates separately, as the question FR-006 answers rather than as a fourth
+  obstacle.
 - **FR-014**: Where an obstacle makes the 0.1% bound unreachable for a quantity, the chapter
   shall say so and shall not publish a percentage that implies otherwise.
 - **FR-015**: `gaps.md` 047-1 and 048-1 shall be **re-measured and closed or restated** — they
@@ -292,7 +310,7 @@ chapter.
 - **SC-006**: A tenant with no data on either side reports not-compared, shown by a test.
 - **SC-007**: The chosen operational source for each quantity is named, with the gap to any
   rejected candidate published.
-- **SC-008**: All four obstacles are published with their measurements.
+- **SC-008**: All three obstacles are published with their measurements, and the two operational candidates are published as a separate finding with their cause.
 - **SC-009**: The 0.1% figure is measured once at a volume where it is a real threshold, with
   the volume stated.
 - **SC-010**: `gaps.md` 047-1 and 048-1 are re-measured, and each is closed or restated with

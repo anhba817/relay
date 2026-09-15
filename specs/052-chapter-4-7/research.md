@@ -31,12 +31,40 @@ a reader rounds away — while 19 tenants breach and one is wrong by everything 
 The chosen operational source is named in the report, and the rejected one is published with
 its gap.
 
-**Cause: unresolved, and it is a phase-1 task rather than a guess.** `repository.ts` holds one
-`insert(messages)` at line 4214 and increments `usagePeriods` at 4344, inside the same
-transaction, on the inserted branch only — *"a recognised idempotent retry wrote no message and
-must consume no quota either"*. That path keeps the two equal. Something else writes messages,
-the gap is entirely inside the current period rather than historical, and its shape is too
-regular to be incidental.
+**CAUSE: FOUND AT ANALYSIS PASS 1, AND IT CHANGES WHAT THE NUMBER MEANS.** The send path
+cannot drift: `repository.ts` inserts at 4214, returns early on `if (inserted.length === 0)`,
+and increments `usagePeriods` at 4344 inside the same transaction. The drift comes from writers
+that never touch the counter at all —
+
+    services/api/src/internal/backfill.itest.ts:222   raw INSERT INTO messages
+    services/api/src/db/repository.itest.ts:656       raw INSERT INTO messages
+    scripts/dual-write-walk.mjs:71                    raw INSERT INTO messages
+    scripts/scale/corpus.mjs:308, 328                 raw insert into messages
+
+— and from `packages/test-harness/src/sentinel.ts:159`, which **deletes `usage_periods` rows**
+for its environment while the messages survive.
+
+**Attributed, and every one is a fixture:**
+
+    tenant-a              7 environments
+    history-itest         6
+    backfill-itest        6
+    history-drift-itest   6
+    dual-write-<ts>       1 each
+
+    disagreeing tenants that are NOT fixtures or walk scripts:  0
+
+**SO THE 0.2694% IS A FACT ABOUT THIS LANE AND NOT ABOUT THE PLATFORM**, and a first draft of
+this document published it as one of four obstacles to FR-ANL-06. That is 047's pass-9 defect
+arriving in a new feature: *"every number this feature measured is consistent, reproducible and
+correct — about the lane, which is not what the chapter loads."*
+
+**WHAT SURVIVES, AND IT IS THE PART THAT MATTERED.** The clause still names two candidates and
+does not choose; they still *can* diverge, and a reconciler that silently picks one is asserting
+the other does not exist. **And the per-tenant decision is stronger for this, not weaker**: the
+aggregate says 0.2694% and nobody looks; the per-tenant split says one tenant is 100% wrong,
+which is what sent anyone to find out why. A reconciler that aggregates would have hidden its
+own lane's fixtures.
 
 ## R2 — What does the counter count? **INSERTED MESSAGES, BY DESIGN AND FOR A MEASURED REASON**
 
@@ -156,9 +184,11 @@ agreement claim belongs to the milestone at chapter 4.9.
 
 ## What the research changed
 
-1. **R1 turned "build a reconciler" into "decide what it compares against".** Two operational
-   numbers, 0.2694% apart in aggregate and 100% apart for one tenant, and the clause names
-   neither.
+1. **R1 turned "build a reconciler" into "decide what it compares against".** The clause names
+   two candidates and chooses neither, and they can diverge — measured here at 0.2694% in
+   aggregate and 100% for one tenant, **for lane reasons that analysis pass 1 then identified**
+   (see above). The decision the job has to make is unchanged; the evidence for it is a
+   demonstration rather than an indictment.
 2. **R1's per-tenant split changed the job's shape.** Aggregating before the verdict turns 19
    breaches into one number below a threshold nobody would question.
 3. **R4 made "not compared" a first-class outcome.** 671 tenants have one side only, and a
