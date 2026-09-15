@@ -216,18 +216,31 @@ ran the threshold probe both ways for the fifth time and the silent half was sil
 The job is called directly with a tenant and a period, returns its report as a value, and two
 identical invocations produce identical reports because it writes nothing.
 
-**AND EVERY FIGURE IN THIS CHAPTER COMES FROM PLANTED DATA OR A CORPUS.** No period in this
+**AND EVERY FIGURE IN THIS CHAPTER COMES FROM PLANTED DATA.** No period in this
 lane holds real tenant data on either side: 2026-08 is 216 fixture rows with zero messages,
 2026-09 is open and also fixtures, `1999-01-01` is sentinels, and the four analytical
 environments are test ids absent from Postgres. That is §2.3's premise as a measurement rather
-than a warning, and it is why phase 4 plants a drift and phase 5 loads a corpus. A lane run
-shows the job working; it does not show a reconciliation.
+than a warning, and it is why phase 4 plants a drift and phase 5 plants matched totals at
+volume. A lane run shows the job working; it does not show a reconciliation.
 
 ### Phase 5 — The four obstacles, measured and published
 
-R1's two operational counters, R4's 671 one-sided tenants, and R9's two carried items re-run at
-today's corpus. FR-012's 0.1% measurement needs a corpus, and with it `gaps.md` 051-2's bind:
-the loader is the cross-path read constitution III's first prohibition names.
+R1's two operational counters, R4's one-sided tenants — **all 675, not 671** — and R9's two
+carried items, re-measured.
+
+**FR-012's 0.1% figure is measured by planting matched totals in the lane, not by loading a
+corpus** — and a first version of this phase spent four tasks on the corpus before anyone asked
+what it writes. It writes `applications`, `environments`, `messages` and `message_edits`, and
+**never `usage_periods`**; `load-analytics.mjs` does not touch it either. So a corpus populates
+only the analytical side, and the obvious patch is blocked by a foreign key: `usage_periods`
+references `environments(id)` in the **lane** database while corpus environments live in
+`relay_corpus_<ts>`.
+
+What replaces it is smaller and answers the question better. §2.3 asks for *"the 0.1% figure, at
+a volume where 0.1% is a real threshold"* — **a claim about resolution**, measurable by planting
+N matched tenant-periods and finding the smallest drift the threshold detects. It also means
+this chapter does not re-run the cross-path load, so `gaps.md` 051-2 is cited rather than
+re-experienced.
 
 ### Phase 6 — The amendments
 
@@ -265,10 +278,11 @@ Phase 7  the chapter               ── needs all
 
 - **The chapter publishes a percentage that reads as agreement.** FR-014 forbids it and phase 5
   is where it would happen. The guard is that every quantity's verdict carries its reason.
-- **The 0.1% measurement is taken at lane volume.** §2.3 names this exact defect. Phase 5 uses
-  a corpus and states the volume.
-- **The corpus is loaded and not removed.** 4.6's cleanup had to reach three rollups and an
-  inner table, and a mutation is not a delete. Phase 5 plans the removal with the load.
+- **The 0.1% measurement is taken at lane volume.** §2.3 names this exact defect. Phase 5
+  plants N matched tenant-periods and states N beside the smallest detectable drift.
+- **The planted data is not removed.** 4.6's cleanup had to reach three rollups and an inner
+  table, and a mutation is not a delete. Phase 5 plans the removal with the planting, on both
+  sides.
 - **`check:fences` charges for a file this chapter edits.** Phase 1 counts the exposure before
   phase 2 writes anything; 4.6's first draft went 110 → 113 for two excerpts published with a
   `title=`.

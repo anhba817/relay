@@ -96,7 +96,7 @@ demonstration that makes FR-006 necessary, and the reason the job compares per t
 aggregate reads 0.2694% and nobody looks; the per-tenant split shows one tenant wrong by
 everything it has, which is what sends somebody to find the cause.
 
-## 2a. Every figure in this chapter comes from planted data or a corpus
+## 2a. Every figure in this chapter comes from planted data
 
 **No period in this lane holds real tenant data on either side**, measured:
 
@@ -112,9 +112,10 @@ the rest are `conn-<uuid>` connection tests, and the four analytical ids are `me
 and `ingest.itest.ts`'s.
 
 **This is not a fifth obstacle. It is §2.3's premise arriving as a number** — *"0.1% of a small
-number is an assertion that cannot fail for its own reason"* — and it is why the lane gets a
-planted drift and the chapter gets a corpus. Stated here so no reader expects a lane run to
-show a real reconciliation.
+number is an assertion that cannot fail for its own reason"* — and it is why both halves of the
+chapter's evidence are constructed: a planted drift for detection, and matched planted totals at
+volume for the threshold's resolution. Stated here so no reader expects a lane run to show a
+real reconciliation.
 
 ## 3. What §2.3 has already decided, and this chapter must not re-litigate
 
@@ -288,8 +289,11 @@ chapter.
 - **FR-011**: The tolerance boundary shall be exercised from both sides — a drift just over
   the threshold raises and one just under does not.
 - **FR-012**: The 0.1% figure shall be measured **once, at a volume where 0.1% is a real
-  threshold**, and recorded. §2.3: *"0.1% of a small number is an assertion that cannot fail
-  for its own reason."*
+  threshold**, and recorded, as **the smallest drift the threshold detects at that volume**.
+  §2.3: *"0.1% of a small number is an assertion that cannot fail for its own reason."* The
+  measurement shall use **matched totals planted on both sides in the lane**; a corpus cannot
+  serve it, because `corpus.mjs` never writes `usage_periods` and corpus environments cannot
+  own lane rows (foreign key to `environments(id)`).
 
 **The obstacles**
 
@@ -355,8 +359,8 @@ chapter.
 - **SC-008**: All four obstacles are published with their measurements, kept apart rather than
   generalised, and the two operational candidates are published as a separate finding with
   their cause.
-- **SC-009**: The 0.1% figure is measured once at a volume where it is a real threshold, with
-  the volume stated.
+- **SC-009**: The smallest detectable drift is measured once at a stated volume of matched
+  tenant-periods, with the volume and the drift both published.
 - **SC-010**: `gaps.md` 047-1 and 048-1 are re-measured, and each is closed or restated with
   its current number.
 - **SC-011**: `check:fences` reported as a delta against an opening measured in this feature,
@@ -389,6 +393,8 @@ chapter.
 - Postgres `usage_periods` and `usage_active_users`, and `periodOf`.
 - The composed stack with ClickHouse reachable from outside its container, and
   `RELAY_POSTGRES_PORT=15432`.
-- **A corpus for FR-012's measurement**, and with it the bind `gaps.md` 051-2 records: the
-  loader is `postgresql()`, which constitution III's first prohibition forbids.
+- **Matched planted data for FR-012's measurement**, against real lane environments (there are
+  1,487). **Not a corpus**: `corpus.mjs` writes only the analytical side's source, and its
+  environments cannot own `usage_periods` rows across the foreign key. This also means the
+  chapter does not re-run the cross-path load `gaps.md` 051-2 records; it cites it.
 - **An ingester for any integration test that waits on a row** (051-3, 050-8).
