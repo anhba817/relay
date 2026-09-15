@@ -522,3 +522,63 @@ T045 — FR-ANL-09's FOUR DIMENSIONS
   mapping lives in Postgres, across the boundary constitution III draws. Closing it is an
   argument about the constitution rather than a join, which is why it is a gaps entry (T046)
   and not a task.
+
+================================================================================
+PHASE 6 — THE UNIT, AND A CLAUSE NOBODY HAD RECONCILED
+================================================================================
+
+T048/T049 — BOTH DEFINITIONS, OVER THE STORE'S 55 REAL CLOSES
+
+    calendar buckets (what the rollup computes)    56 minutes
+    elapsed duration                                0.6513 minutes
+    ratio                                          86x
+    median connection                             252 ms
+
+    and the boundary case planted in phase 3:
+    2 s of wall clock, 00:00:59 -> 00:01:01        calendar 2 · elapsed 0.03
+
+  4.5 measured 2 against 0.03 for ONE connection. Over a real population the factor is 86,
+  because almost every connection here is shorter than a minute and each one occupies a
+  whole one.
+
+T050/T051/T052 — DECIDED, AND THE SRS AMENDED
+  **Calendar buckets bill.** SRS revision 1.13 closes Appendix C open question 4, open since
+  before Part 4 and owned by *Product / Billing*, and FR-ANL-05 carries the unit rather than
+  leaving it to an appendix.
+
+  The argument is the 86x. A client reconnecting every quarter-second consumes a connection
+  slot continuously and, billed on elapsed duration, pays almost nothing -- and what a
+  connection costs is a handshake, a slot claim and a Redis round trip rather than the
+  seconds it then sits idle. **What is given up is stated in the clause**: the calendar
+  bucket over-reports short connections against wall-clock intuition, and a customer
+  comparing their own timings against an invoice finds the invoice larger.
+
+  It also means `meter.ts` and the rollup agree BY CONSTRUCTION rather than by
+  reconciliation, which is worth more than either number.
+
+T053/T054/T055 — CONSTITUTION III, RECORDED RATHER THAN AMENDED
+  The clause, whole: *"Analytical queries MUST NEVER execute against the operational
+  database (PostgreSQL); billing, metering, and dashboard analytics read only from the
+  analytical store (ClickHouse), fed via a durable queue (SRS CON-01)."*
+
+  Measured: metering reads ONLY Postgres, and `message_events` -- the source of three of
+  FR-ANL-05's four quantities -- has no producer at all, its one writer being
+  `load-analytics.mjs:53`, `postgresql('${PG_HOST}', …)`. **So the only way to demonstrate
+  the rollup the clause asks for is to run the thing the clause forbids.**
+
+  THE FORM WAS CHOSEN OUT LOUD. Three were available: amend the constitution, write a new
+  ADR, or record an exception. **The amendment is the constitution's own and not the SRS's**,
+  so the SRS records the conflict with its measurements and names what `docs/12` §4 does and
+  does not justify -- it justifies the Postgres counter existing and says nothing about the
+  sentence above it. Constitution VII requires the conflict resolved by amendment rather
+  than silent divergence, and a feature that cannot make that amendment can at least stop
+  the next one from having to rediscover it.
+
+T051 (continued) — AND THE REVISION REPRODUCED 1.12's OWN DEFECT WHILE BEING WRITTEN
+  1.12 records the header reading `Version: 1.3` while the table ran to `1.11`, for eight
+  revisions, because `check-revision-order` reads the table and never the header.
+
+  Row 1.13 was added and the header left at 1.12. **`check:docs` passed.** The pattern used
+  to update it was `**Version**: 1.12` and the document says `**Version:** 1.12 (draft)` --
+  the colon is inside the bold. Caught by looking at the line rather than by the gate, one
+  revision after the gate's blind spot was written down.
