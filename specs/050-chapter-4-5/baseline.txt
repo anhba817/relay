@@ -1042,3 +1042,93 @@ would have compared 8 against 0.
     deploy posture NFR-REL-03 and `releaseAll` were built around, and this chapter's
     producer follows the meter rather than changing it. It is a property a dashboard
     built on these records must tolerate, and the number a reader needs is above.
+
+================================================================================
+PHASE 7 — ADR-07, IN BOTH DOCUMENTS THAT HOLD IT
+================================================================================
+
+T080/T080b — THE CLAUSE THAT CHANGED, CORRECTED WHERE IT IS ARGUED AND WHERE IT IS
+SUMMARISED
+    docs/05-sad.md          ADR-07's third dated amendment, 2026-09-15
+    docs/06-adr-deep-dives.md   the Analysis, amended beside 3.18's block
+
+    Both leave the **Decision** and the **Revisit when** clauses explicitly untouched,
+    which is the shape chapter 3.18 wrote when it amended this same record from the api's
+    side. What changed is the selection argument, and only that.
+
+    The body's *"fan-out on NATS would leave that service holding two broker clients and
+    remove none"* describes a gateway that held one. It holds two. **NATS fan-out would
+    now add none and remove none**, so the cost side of the refusal is zero and what
+    survives is that Redis does not leave (ADR-10). And the clean mapping — *"gateway to
+    Redis, api and workers to NATS"* — lost its api half in 3.8 and 3.18, which the deep
+    dive already records as *"relocated rather than avoided"*; this chapter takes the
+    gateway half, **which is the half it is named for**, and afterwards it describes no
+    service in this platform.
+
+T080a — AMENDED RATHER THAN SUPERSEDED, WITH THE LOSER NAMED
+    Constitution VII: *"ADRs are immutable once accepted; superseding requires a new
+    ADR."* ADR-07 carries both forms already — two dated amendments, and `extended by`
+    ADR-20 and ADR-22 — so precedent decides nothing and the constitution names one.
+
+    **The rejected alternative was a new extending ADR.** Declined because the DECISION
+    has not changed: ADR-20 and ADR-22 extend this record because each carries a new
+    payload whose recovery properties differ, which is a new decision every time, and this
+    chapter carries none. VII's closing line — *"disagreement attacks the driver, not the
+    choice"* — describes a proposal to change the choice, and nobody is proposing one. A
+    fact a driver rested on became false, which is what a dated amendment is for. Written
+    into the amendment itself rather than left in this file.
+
+T081 — SAD 1.4 -> 1.5, synced
+    check-docs-drift: all mirrored docs match their sources
+    check-revision-order: 13 revisions ascend, 1.0 to 1.12
+
+T081a — DR-11 CARRIES ITS OWN NUMBERS NOW, AND THE HEADER WAS EIGHT REVISIONS STALE
+    The clause gained *"2 seconds or 10,000 rows, whichever comes first … the two cross at
+    5,000 records/second"*, with the reason it takes both. SRS revision **1.12**.
+
+    **AND THE SRS HEADER HAD READ `Version: 1.3` SINCE THAT REVISION** while the table
+    below it ran to 1.11. `check-revision-order` reads the TABLE and never the header, so
+    eight revisions passed with nothing able to notice. Corrected in the same pass and
+    recorded in 1.12's row. A checker that reads one of two places that carry a version
+    tells you about one of them.
+
+T081b — connection_events IS IN §6.2 NOW, AS THE FIFTH TABLE
+    The same series as revision 1.3's `webhook_attempts` and 1.4's `api_requests`, and the
+    same clause's last arm. Carries the five decisions worth arguing: `event` in the
+    sorting key, `environment_id` non-nullable where `api_requests` is nullable and why,
+    `Nullable(UInt16)` for the close code, `UInt64` for the duration, and the buffered
+    producer with its retention rule.
+
+T081c — §4's GATEWAY ENTRY DESCRIBES BOTH COUNTERS
+    It listed JWT validation, slot claims, Redis subscription, resume through the api and
+    frames over internal HTTP. It now also carries the sixty-second usage report -- which
+    it had never mentioned, and which spec.md §2 found missing from `docs/12` -- and the
+    analytical events, in the dispatcher entry's own words.
+
+T082 — THE SPENT ARGUMENT, EVERYWHERE
+    Eleven occurrences across five files. The two in `docs/06`'s Analysis are the ORIGINAL
+    text and stay: 3.18's shape leaves the argument standing and adds a dated correction
+    below it, because a reader following the record from 3.8 should see the line and then
+    see what happened to it. The rest are quotations in this feature's own artifacts.
+
+    AND THE CHAIN MOVED, EXACTLY AS FR-020 SAID IT WOULD
+        opening   110 — APPLY 74, HEAD 36
+        now       118 — APPLY 74, HEAD 44          delta +8, all on the HEAD side
+
+    APPLY is unchanged, which is the half that would move if a hunk stopped applying to
+    its predecessor's state. HEAD is the half that moves when a fenced file no longer
+    matches the tree, and this chapter has edited nine of them:
+
+        packages/protocol/src/internal.ts            services/ingester/src/shape.ts
+        packages/protocol/src/internal.test.ts       services/ingester/src/clickhouse.ts
+        services/gateway/package.json                services/ingester/src/main.ts
+        services/gateway/src/session.ts              compose.yaml
+        services/gateway/src/main.ts
+
+    `services/ingester/src/ingest.ts` carries no fence and cost nothing, as T010a
+    predicted. **`vitest.coverage.config.mts` cost nothing either -- because T058 could
+    not run.** The file with 23 fences and no way to take a hunk is untouched, which is
+    the one piece of luck in that blockage.
+
+    T092 and T093 pay this in phase 8. Discovering it here rather than at the ratchet is
+    what FR-020 asked for, and 049 is the chapter that learned it the other way.
