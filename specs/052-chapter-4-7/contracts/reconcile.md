@@ -88,6 +88,11 @@ constitution must settle, and this is the second.
 - **Making the numbers agree.** `docs/12` §2.3 gives agreement to the milestone at chapter 4.9
   and gives this chapter detection.
 - **A sweep across all tenants.** A loop in the caller, and the summary shape it needs is not
-  specified here because no requirement asks for one.
+  specified here because no requirement asks for one. **Two things a sweep will meet and a
+  single-tenant call cannot**, both measured: the analytical store holds environment ids that
+  exist in no Postgres row — four today, all test fixtures — because nothing enforces
+  referential integrity across a stream; and `usage_periods` holds a **`1999-01-01`** period
+  with 31 rows belonging to applications named `__sentinel__:…`, planted by the lane's own
+  guard. A caller that iterates either side needs to know both before it reports anything.
 - **A schedule.** FR-ANL-06 says *"daily"*; nothing in this platform schedules anything, and
   inventing a scheduler to satisfy an adverb would be the kind of scope this project refuses.

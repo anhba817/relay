@@ -80,9 +80,27 @@ PGPASSWORD=relay psql -h 127.0.0.1 -p 15432 -U relay -d relay -At -c \
 675
 ```
 
-**671 tenants have an operational history and no analytical rows at all.** Every one is a 100%
-breach, and chapter 4.6 measured the reason: `message_events` has no producer, so three of
-FR-ANL-05's four quantities have nothing on the analytical side to compare.
+Four against 675 — and **the four are not tenants.** Attribute them before believing the
+number:
+
+```bash
+curl -s -X POST http://localhost:8123/ -u relay:relay --data-binary \
+  "SELECT DISTINCT environment_id FROM relay_analytics.daily_usage_billing FORMAT TSV" |
+while read e; do
+  echo -n "$e -> "
+  PGPASSWORD=relay psql -h 127.0.0.1 -p 15432 -U relay -d relay -At -c \
+    "select coalesce((select a.name from environments e join applications a on a.id=e.application_id
+                       where e.id='$e'),'NOT IN POSTGRES')"
+done
+```
+
+All four come back `NOT IN POSTGRES`: they are `metering.itest.ts`'s and `ingest.itest.ts`'s
+fixtures. **So every one of the 675 operational tenants is one-sided, not 671.** Chapter 4.6
+measured the reason: `message_events` has no producer, so three of FR-ANL-05's four quantities
+have nothing on the analytical side to compare.
+
+**Run that join before believing any count in this chapter.** Three numbers in this feature
+were about the lane rather than the platform, and this one query settled all three.
 
 That is why `not-comparable` and `no-data` are separate verdicts from `breach`. Collapsing
 them would let the platform's largest defect read as an absence of data.

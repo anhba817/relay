@@ -35,6 +35,10 @@ zero occurrences under `services/`. The operational side holds **9,624** in
 `usage_periods.messages_sent`. That is not a 0.1% disagreement; it is **100%**, and no
 reconciler can be written that does not report it.
 
+**And it is every tenant, not most of them.** 675 environments have operational usage rows and
+**zero real ones have analytical rollup data** — the four ids in the rollup are test fixtures
+that do not exist in Postgres at all.
+
 **(2) `uniq` is approximate above the corpus size that hides it.** 047-1 measured it exact to
 roughly 60,000–65,000 distinct and **off by 0.51% at 70,000** — five times the bound. DR-10
 forbids reading raw events instead, so the reconciliation has to use the approximate figure

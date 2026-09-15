@@ -94,15 +94,32 @@ created_at, connection_minutes`, and `usage_active_users` is a separate membersh
 error. Three of four quantities have an operational side; the stored count has none, and
 saying so is more useful than omitting the row.
 
-## R4 — How many tenants have data on both sides? **FOUR AGAINST SIX HUNDRED AND SEVENTY-FIVE**
+## R4 — How many tenants have data on both sides? **NONE**
 
-**Measured.**
+**Measured, then attributed** — and the attribution is the finding.
 
     environments in daily_usage_billing      4
     environments in usage_periods          675
 
-So 671 tenants have an operational history and no analytical rows at all. Every one of them is
-a 100% breach, and the reason is chapter 4.6's: `message_events` has no producer.
+A first version of this item read that as *"671 tenants have one side only"*. **All four of
+the analytical environments are test fixtures, and none of them exists in Postgres at all:**
+
+    6a000000-…51a6   metering.itest.ts      chapter 4.6's suite
+    6a000000-…51b7   metering.itest.ts      its second-tenant case
+    9f000000-…beef   ingest.itest.ts
+    9f000000-…c0de   ingest.itest.ts
+
+The rollups were truncated during 4.6's corpus cleanup, so these are what has been planted
+since. **The honest figure is zero real tenants with analytical rollup data against 675
+operational — all 675 one-sided, not 671.**
+
+Every one is a 100% breach, and chapter 4.6 measured the reason: `message_events` has no
+producer.
+
+**AND IT EXPOSES A CASE THE VERDICTS DID NOT COVER.** The analytical store holds environment
+ids that do not exist operationally, because nothing enforces referential integrity across the
+boundary — the store is fed by a stream. A one-sided tenant can therefore be one-sided in
+*either* direction, and `data-model.md` had pictured only one of them.
 
 **Decision**: the report distinguishes **not compared** (no data on either side) from
 **breach** (data on one side only). Collapsing them would let the platform's largest defect
@@ -191,8 +208,15 @@ agreement claim belongs to the milestone at chapter 4.9.
    demonstration rather than an indictment.
 2. **R1's per-tenant split changed the job's shape.** Aggregating before the verdict turns 19
    breaches into one number below a threshold nobody would question.
-3. **R4 made "not compared" a first-class outcome.** 671 tenants have one side only, and a
-   reconciler that treats that as missing data hides the defect this movement exists to expose.
+3. **R4 made "not compared" a first-class outcome, and then moved again.** Every one of the 675
+   operational tenants is one-sided, not 671 — the four on the analytical side are test
+   fixtures absent from Postgres. A reconciler that treats one-sidedness as missing data hides
+   the defect this movement exists to expose, **and one-sidedness has two directions.**
+
+**THREE NUMBERS IN THIS FEATURE HAVE TURNED OUT TO BE ABOUT THE LANE RATHER THAN THE PLATFORM**
+— the 0.2694%, the producer-age hypothesis, and this one. All three were settled by joining the
+rows to the application that owns them, which is one query and is a phase-1 step now rather
+than a reaction.
 
 **R2, R5, R7 and R10 came back confirming what a document already said**, which is what makes
 R1 and R4 worth acting on.

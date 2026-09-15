@@ -26,9 +26,20 @@ One row per tenant, per period, per quantity.
 | `not-comparable` | the quantity has no operational counterpart at all | Reporting this as a breach would blame the analytical path for a column Postgres never had. R3: the **stored message count** is in this state permanently. |
 | `no-data` | neither side has anything for this tenant and period | **Zero against zero is not agreement.** A reconciler that reports 0% here publishes a green number about a tenant it knows nothing about. |
 
-**A tenant with data on exactly one side is a `breach`, not `no-data`.** R4 measured 675
-operational tenants against 4 analytical, so 671 are in that state — and the temptation to
-call it "missing data" is exactly what would hide the defect this movement exists to expose.
+**A tenant with data on exactly one side is a `breach`, not `no-data`** — and **one-sidedness
+has two directions**, which a first version of this document pictured only one of.
+
+**Operational with nothing analytical** is the common case and the one the movement exists to
+expose: R4 measured **675 operational tenants and zero real analytical ones**, so every tenant
+in this platform is in that state. Calling it "missing data" would hide the defect.
+
+**Analytical with nothing operational** is the other, and it is not hypothetical: the store
+holds `6a000000-…51a6`, `6a000000-…51b7`, `9f000000-…beef` and `9f000000-…c0de`, **none of
+which exists in Postgres**. Nothing enforces referential integrity across the boundary, because
+the analytical side is fed by a stream rather than by a foreign key. A single-tenant call
+cannot reach this — the caller supplies the id — but **a caller sweeping the analytical side
+will**, and it should get an outcome that says "this is not a tenant" rather than a breach
+blaming a missing counter.
 
 ## What each quantity compares
 
