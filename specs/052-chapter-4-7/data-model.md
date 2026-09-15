@@ -90,6 +90,24 @@ crash where a verdict belongs.
 - **No writes anywhere.** Two invocations with the same arguments produce the same report, and
   a test asserts it.
 
+## A period is a month; the rollup is keyed by day
+
+`reconcile({ period })` takes `periodOf`'s shape — the first day of a calendar month, UTC —
+and `daily_usage_billing` is keyed by `day`. So the job derives a range, and **it is
+half-open**:
+
+    day >= period  AND  day < nextPeriod(period)
+
+`nextPeriod('2026-08-01')` returns **`'2026-09-01'`**, the first day of the *next* month.
+Writing `day BETWEEN period AND nextPeriod(period)` puts 1 September in August's total.
+
+**That off-by-one does not crash; it reports drift.** A comparison job whose range is one day
+wide at the boundary invents a discrepancy and then publishes it as a breach, which is the one
+failure mode a reconciler must not have. `nextPeriod` already exists in
+`services/api/src/quotas/period.ts` beside `periodOf`, for the same reason the latter is a
+single definition: *"a quota that disagrees with itself about which month it is counts a tenant
+twice in one and not at all in the other."*
+
 ## Period boundaries
 
 `periodOf` is the single definition — *"a quota that disagrees with itself about which month it

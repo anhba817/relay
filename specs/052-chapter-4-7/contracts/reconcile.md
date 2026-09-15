@@ -69,6 +69,16 @@ is `quotas/quota-email.ts`, whose failure mode is already visible in the lane as
 not an alert**, and the chapter says what a real one would cost rather than implying the exit
 code is one.
 
+## The day range, and why it is half-open
+
+The caller passes a **month**; the rollup is keyed by **day**. The job derives the range as
+
+    day >= period  AND  day < nextPeriod(period)
+
+using `nextPeriod` from `services/api/src/quotas/period.ts`, which returns the first day of the
+following month. **`BETWEEN period AND nextPeriod(period)` is wrong by one day** and would put
+1 September into August — a discrepancy the job would then report as a breach.
+
 ## What comes back
 
 Four rows, one per FR-ANL-05 quantity, each carrying both totals, the named operational source,
