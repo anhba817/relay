@@ -37,3 +37,123 @@ Full write-ups in research.md R1-R10.
         one-sided                           671
 
   R7  A CLOSED PERIOD, at the time of writing:  2026-08-01
+
+================================================================================
+PHASE 1 — THE PREMISES, RE-RUN
+================================================================================
+
+T001 — THE TWO OPERATIONAL COUNTERS
+    messages 9,650 · counter 9,624 · gap 26
+    aggregate 0.2694% · worst tenant 100% · tenants over 0.1%: 19
+
+  The per-tenant split is the figure that decided the design. The aggregate alone reads as
+  a number nobody would question.
+
+T002 — THE CAUSE, CONFIRMED, AND THE NUMBER THAT MATTERS IS ZERO
+    disagreeing tenants 31 · NON-FIXTURE disagreeing tenants **0**
+
+  The send path cannot drift: `repository.ts` inserts at 4214, returns early on
+  `if (inserted.length === 0)`, and increments `usagePeriods` at 4344 in the same
+  transaction. The drift is raw-SQL writers (`backfill.itest.ts:222`,
+  `repository.itest.ts:656`, `dual-write-walk.mjs:71`, `corpus.mjs:308,328`) and
+  `test-harness/sentinel.ts:159`, which deletes counter rows while the messages survive.
+
+  **If that non-fixture count is ever above zero the chapter's framing changes.** It is 0.
+
+T003 — TENANT COUNTS, ATTRIBUTED
+    analytical environments in daily_usage_billing   4
+      6a000000-…51a6   NOT IN POSTGRES     metering.itest.ts
+      6a000000-…51b7   NOT IN POSTGRES     metering.itest.ts
+      9f000000-…beef   NOT IN POSTGRES     ingest.itest.ts
+      9f000000-…c0de   NOT IN POSTGRES     ingest.itest.ts
+    operational environments in usage_periods      675
+
+  **Zero real tenants have analytical rollup data.** All 675 are one-sided.
+
+T004/T005 — WHICH QUANTITIES HAVE AN OPERATIONAL SIDE
+    usage_periods:       environment_id, period, messages_sent, created_at, connection_minutes
+    usage_active_users:  environment_id, period, user_id, first_seen_at
+
+    messages            usage_periods.messages_sent
+    connection-minutes  usage_periods.connection_minutes
+    active users        count(*) over usage_active_users     an EXACT count against a sketch
+    stored messages     NONE                                 permanently not-comparable
+
+T006 — THE FENCE-CHAIN OPENING
+    APPLY  en 30 · vi 30 · elsewhere 14   = 74
+    HEAD   en 36                          = 36     total 110
+    HEAD split: differs at line 25 · does not exist 11
+
+T007 — FENCE EXPOSURE, AND ONE OF THE FOUR IS CLEAN
+    services/api/src/db/repository.ts           en 1 whole + 23 diff · vi 1 whole + 22 diff   STALE both
+    compose.yaml                                en 1 whole +  6 diff · vi 1 whole +  5 diff   STALE both
+    services/api/vitest.integration.config.mts  en 1 whole +  4 diff · vi 1 whole +  4 diff   STALE both
+    packages/test-harness/src/exempt.ts         en 1 whole           · vi 1 whole             **MATCHES both**
+    reconcile.ts · clickhouse.ts · reconcile-usage.mjs · lib/tutorial.ts                      none
+
+  **AND THAT CHANGES WHAT T010c COSTS.** `exempt.ts` is the only whole body among these that
+  still matches the tree, in BOTH locales. Adding an `EXEMPT_FILES` entry would break a
+  currently-correct Vietnamese whole body — **permanently and invisibly**, because an English
+  chapter cannot repair a vi fence and `check-fence-chain` never compares the vi chain to the
+  tree (050-3). The other three are already stale, so this chapter's edits add to an existing
+  debt rather than creating one.
+
+  So "a needless entry is a defect of its own" now has a price attached rather than being a
+  principle.
+
+T010a — THE GUARD, LIVE, AND THE LANE THAT ARMS IT
+    __sentinel_guard triggers on: channels, quota_notifications, read_positions,
+      **usage_active_users**, usage_connections, **usage_periods**, users
+
+    services/api/vitest.integration.config.mts:32   RELAY_HARNESS_BAIT: "on"
+    services/gateway/vitest.integration.config.mts  no bait line at all
+
+  4.5 checked this for the gateway and recorded no bait. **The answer does not transfer.**
+
+T010b — THE RULE THAT FOLLOWS
+  The guard fires only on a SENTINEL row. Every statement this chapter writes against
+  `usage_periods` or `usage_active_users` names its own environment ids; a scoped statement
+  never reaches a sentinel and never raises. `sentinel.ts:159` is the pattern.
+
+T010c — THE EXEMPTION LIST
+    exempt.test.ts   4 passed (4)     asserted in both directions, green today
+
+T008 — THE ELEVEN GATES, AT THE OPENING, EACH LANE RUN DIRECTLY
+    check:docs · check:srs · check:figures                GREEN
+    pnpm build (tutorial) · check:errors                   GREEN
+    pnpm build (platform) · lint · typecheck · test        GREEN
+    check:fences                                           RED  110, the inherited baseline
+
+    test:integration, BY LANE rather than by turbo's summary (051-3):
+      api            7 failed | 619 passed (626)
+      gateway                   225 passed (225)
+      ingester                   19 passed  (19)
+      test-harness               41 passed  (41)
+
+    the api's seven, all inherited:
+      outbox invariant 8 · outbox invariant 9 · limits "does not count the dispatcher"
+      request-log x4 at 5 s each — the poll deadline, no ingester draining (050-8)
+
+  **TURBO REPORTS ONE `FAIL` LINE FOR THIS.** Running the four lanes directly took four
+  commands and produced the whole picture, which is what 051-3 asks for and why T008 says to.
+
+T009/T009a — THE PERIODS, AND NONE OF THEM HOLDS REAL TENANT DATA
+    1999-01-01     31 rows   messages 0       minutes 0        __sentinel__ applications
+    2026-08-01    288 rows   messages 0       minutes 7,648    fixtures, 0 analytical days
+    2026-09-01    591 rows   messages 12,703  minutes 708      the OPEN period
+
+  **AND THESE NUMBERS MOVED WHILE PHASE 1 RAN.** The spec measured 216 rows and 5,736 minutes
+  in August; the integration lanes run for T008 took it to 288 and 7,648. The lane's figures
+  are a function of what has just been executed on it — which is the same caveat T001 carries
+  and the reason every figure this chapter publishes names when it was taken.
+
+T010 — RETENTION, ASKED OF THE SERVER RATHER THAN OF A PATTERN
+    message_events        TTL toDateTime(ts)  + toIntervalDay(90)
+    daily_usage_billing   TTL toDateTime(day) + toIntervalMonth(25)
+    daily_usage_v2        TTL toDateTime(day) + toIntervalMonth(25)
+
+  A first version of this check grepped `create_table_query` for `25 MONTH` and reported
+  `message_events` as having **no TTL** — it has a 90-day one, and the check was asking the
+  wrong question. `SHOW CREATE TABLE` answers it. **Third time in two features that a
+  string-matching check returned a confident wrong answer about a schema**, after 4.6's
+  `engine_full LIKE '%25 MONTH%'` and the `require.resolve('pg')` probe.
