@@ -10,12 +10,20 @@ and two changed what the chapter is — including one that changed the job's sha
 Movement IV's second chapter. `docs/12` row 8: *"FR-ANL-06's reconciliation job, built to be
 callable in isolation (§2.3)."*
 
-The clause asks for metered totals to agree with operational counts within 0.1%. **Three
+The clause asks for metered totals to agree with operational counts within 0.1%. **Four
 things stand in the way, and none of them is the reconciler's to fix:**
 
     message_events has no producer      analytical 0 vs operational 9,624      100%
+    connection-minutes count a different population than the meter bills       98.7%
     uniq is approximate above ~65,000 distinct                                 0.51%
     the TTL boundary, at any cardinality                                       0.49%
+
+**The second was found at analysis pass 2, on the one quantity whose producer has shipped.**
+80 analytical minutes against 6,286 operational, and both sides start within twenty-three
+seconds of each other — so it is not a history gap. `gaps.md` 050-5: the meter bills every
+calendar minute a connection is **open** and the records bill only connections that **closed**,
+with 44 of 99 connections here in the first state because `wss.close()` does not close
+established sockets by design.
 
 And one thing the clause simply does not say: **which number is *"counts derived from
 operational data"***. There are two, `messages` at 9,650 and `usage_periods.messages_sent` at

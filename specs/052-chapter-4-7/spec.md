@@ -23,11 +23,12 @@ belong to nobody in particular.
 
 ## 2. The job's first honest run fails, and three of the four reasons are not the analytical path's fault
 
-**Three obstacles** stand between this clause and a green reconciliation, all measured by
-earlier chapters and filed *for this movement*. A fourth item — two operational counters that
-disagree — is a question the clause leaves open rather than an obstacle, and its measured
-divergence turned out to belong to the test lane; both facts are below, because a first draft
-of this spec had it as obstacle four.
+**Four obstacles** stand between this clause and a green reconciliation, and the count has
+been wrong in both directions while this spec was written. A first draft had four and the
+fourth was a test-lane artifact; removing it left three; analysis pass 2 then measured a real
+fourth on the one quantity whose analytical side has a shipped producer. **Two of the four are
+near-total breaches for structurally different reasons**, and keeping them apart is what makes
+each testable.
 
 **(1) One side has no producer.** Chapter 4.6 measured `message_events` at **0 rows**, with
 zero occurrences under `services/`. The operational side holds **9,624** in
@@ -46,7 +47,24 @@ and partly deleted from the source. 047-1 measured 90 of 91 days agreeing exactl
 direction: a view counted 242,667 messages over 92 days where a backfill minutes later found
 239,997 over 91.
 
-**(4) "Counts derived from operational data" is not one number.** The clause names two
+**(4) Connection-minutes count two different populations, and the gap is 98.7%.** Measured:
+**80 analytical against 6,286 operational**, on the quantity whose producer shipped in chapter
+4.5. Both sides start within twenty-three seconds of each other, so this is not a history gap.
+`gaps.md` 050-5 is the cause: the meter bills **every calendar minute a connection is open**,
+and the records bill only connections that **closed** — and 44 of 99 connections here have an
+open with no close, because `sessions.close()` calls `wss.close()`, which does not close
+established sockets **by design**. So FR-ANL-06's 0.1% cannot hold for connection-minutes while
+any deploy leaves opens behind.
+
+**This is not obstacle (1) generalised.** Messages breach because `message_events` has no
+producer at all; connection-minutes breach because the producer that exists records a different
+population than the meter bills. A single "the analytical side is incomplete" would lose what
+makes each of them testable.
+
+---
+
+**And one thing the clause simply does not say, which is a question rather than an obstacle:
+"counts derived from operational data" is not one number.** The clause names two
 candidates and chooses neither, and they can diverge. Measured on the lane:
 
 ```
@@ -251,10 +269,10 @@ chapter.
 
 **The obstacles**
 
-- **FR-013**: The chapter shall publish all three obstacles with their measurements — the
-  missing producer, `uniq`'s approximation and the TTL boundary — and shall publish the two
-  operational candidates separately, as the question FR-006 answers rather than as a fourth
-  obstacle.
+- **FR-013**: The chapter shall publish all four obstacles with their measurements — the
+  missing producer, `uniq`'s approximation, the TTL boundary, and connection-minutes counting a
+  different population from the meter — **each with its own cause**, and shall publish the two
+  operational candidates separately as the question FR-006 answers rather than as an obstacle.
 - **FR-014**: Where an obstacle makes the 0.1% bound unreachable for a quantity, the chapter
   shall say so and shall not publish a percentage that implies otherwise.
 - **FR-015**: `gaps.md` 047-1 and 048-1 shall be **re-measured and closed or restated** — they
@@ -310,7 +328,9 @@ chapter.
 - **SC-006**: A tenant with no data on either side reports not-compared, shown by a test.
 - **SC-007**: The chosen operational source for each quantity is named, with the gap to any
   rejected candidate published.
-- **SC-008**: All three obstacles are published with their measurements, and the two operational candidates are published as a separate finding with their cause.
+- **SC-008**: All four obstacles are published with their measurements, kept apart rather than
+  generalised, and the two operational candidates are published as a separate finding with
+  their cause.
 - **SC-009**: The 0.1% figure is measured once at a volume where it is a real threshold, with
   the volume stated.
 - **SC-010**: `gaps.md` 047-1 and 048-1 are re-measured, and each is closed or restated with

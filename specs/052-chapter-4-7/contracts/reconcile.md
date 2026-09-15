@@ -12,11 +12,22 @@ somebody can paste.
 ```ts
 import { reconcile } from "./reconcile.js";
 
-const report = await reconcile({
+const report = await reconcile(db, store, {
   environmentId: "…",   // one tenant; the job never sweeps
   period: "2026-08-01", // periodOf's shape: the first day of a calendar month, UTC
 });
 ```
+
+**BOTH HANDLES ARE PARAMETERS, AND THAT IS WHAT "IN ISOLATION" MEANS.** A first draft of this
+contract took only the two arguments and left the function to construct its own Postgres pool
+and its own ClickHouse caller — which would make it untestable except against live stores, and
+would open a second pool inside a service whose pool is already a NestJS provider
+(`internal.module.ts:48`).
+
+Chapter 4.6 set the precedent one chapter ago: `metering.ts`'s reads take `store` first. Here
+there are two stores, so there are two. **The thin script constructs them; the function
+receives them**, which is also what lets `reconcile.itest.ts` plant a drift without a live send
+path.
 
 **It returns its report as a value.** Not a log line a test greps, not a side effect: §2.3's CI
 half plants a drift and asserts the raise, and that assertion needs something to hold.
