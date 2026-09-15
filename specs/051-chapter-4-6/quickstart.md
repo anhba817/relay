@@ -27,13 +27,9 @@ authentication errors.
 **One statement per request.** The HTTP interface refuses a multi-statement body with
 `Code: 62`, which is the interface's rule rather than a tidiness convention.
 
-**And start an ingester if you intend to wait on a row.** There is no ingester service in
-`compose.yaml` and 050-8 measured 4.4's suite passing 5 of 5 with one running and failing 5 of
-5 without:
-
-```bash
-RELAY_NATS_URL=nats://localhost:4222 node services/ingester/dist/main.js
-```
+**Do not start an ingester yet.** There is no ingester service in `compose.yaml`, so nothing
+is draining, and §1's census below is taken in that state. Starting one first would move the
+numbers §1 publishes before you read them. §1 says when to start it.
 
 ## 1. Which tables have producers, and which do not
 
@@ -47,13 +43,32 @@ for t in message_events api_requests connection_events webhook_attempts; do
 done
 ```
 
-Measured 2026-09-15:
+Measured 2026-09-15, **with nothing draining**:
 
 ```
 message_events: 0
 api_requests: 11683
 connection_events: 154
 webhook_attempts: 64
+```
+
+**Those numbers hold still, and that is the finding rather than a convenience.** Ask the
+broker what it is holding:
+
+```bash
+curl -s localhost:8222/jsz | python3 -c "import sys,json;print(json.load(sys.stdin)['messages'],'held')"
+```
+
+`13265 held` while this was written. **The api had served all session and the store had
+learned nothing** — the tables move when an ingester drains, not when the platform works. So
+the next drain moves `api_requests` by the whole backlog at once, which is worth knowing
+before you read it as something you caused.
+
+**Start one now**, after the census, for anything that waits on a row — 050-8 measured 4.4's
+suite passing 5 of 5 with one running and failing 5 of 5 without:
+
+```bash
+RELAY_NATS_URL=nats://localhost:4222 node services/ingester/dist/main.js
 ```
 
 **The one table the rollup reads is the one table nothing writes.** Confirm it from the other
