@@ -168,3 +168,56 @@ T010 — AND ITS CHECKSUM REFUSAL, FORCED RED
 
 T011 — THE POSTGRES METER'S OPENING
     usage_periods: 295 rows · sum(messages_sent) 3,466
+
+================================================================================
+PHASE 2 — THE TABLE, AND THE VIEW THAT WAITS FOR A PRODUCER
+================================================================================
+
+T013 — `daily_usage` IS LEFT IN PLACE, NOT SUPERSEDED
+  Four reasons, in the order they decided it:
+
+    1. Chapter 4.2 publishes it and its readers have it. A chapter cannot delete the
+       artefact an earlier chapter's reader built without telling that reader.
+    2. `analytics/query.mjs` reads it. Unfenced, so the chain does not care -- but a file
+       in the tree would stop working silently, and this chapter's whole argument is about
+       a script nothing runs. Breaking a second one would be a poor way to make the point.
+    3. The ledger refuses an edit to `0001` on its checksum (T010, run red), so
+       superseding means a DROP in its own numbered file.
+    4. 047 measured `DROP TABLE` on a live view's source succeeding with NO error and
+       leaving an orphan answering queries with zeros. The direction that errors is the
+       safe one, and here neither direction errors.
+
+  WHAT IT COSTS, AND IT IS PAID IN PHASE 4: both rollups now fill from one
+  `message_events` insert, because `0001_daily_usage.sql:19` reads the same source. The
+  corpus cleanup cleans both, and a delete on the source reaches neither -- a materialised
+  view does not propagate deletes.
+
+T014-T017b — APPLIED, AND THE SERVER ASKED RATHER THAN THE FILE
+    applied 1: 0006_daily_usage_v2.sql
+    applied 1: 0007_mv_messages.sql
+
+    environment_id      UUID
+    channel_id          UUID
+    day                 Date
+    messages            UInt64
+    active_users_state  AggregateFunction(uniq, Nullable(UUID))
+    stored_delta        Int64
+    connection_minutes  UInt64
+
+    engine SummingMergeTree · sorting key (environment_id, channel_id, day)
+    partition key toYYYYMM(day)
+
+T018 — THE `applied 2` EXPECTATION IS UNVERIFIED, AND SAYING SO IS THE POINT
+  The task expects one run applying both files in sorted order. Both were applied, but in
+  TWO runs, because the files were written one at a time -- so the single-run ordering was
+  never exercised. The premise behind it was checked by reading the loop instead
+  (`for (const f of files) { ... await run(body) }`, sequential over a sorted list), which
+  is weaker than running it. A reader starting from an empty store WILL get the single
+  run, and this record is what tells them their output differing from the task text is
+  the task's fault rather than theirs.
+
+T020/T021 — THE CHAIN AND THE LANES AFTER PHASE 2
+    check:fences  110 -> 110, delta 0      two new files cost the chain nothing (R11)
+    lint GREEN · typecheck GREEN · test GREEN
+    test:integration and coverage unchanged from T008's opening and not re-run here;
+    nothing in this phase is TypeScript.
