@@ -624,3 +624,111 @@ T061 — DR-17 NEEDED NOTHING
   *"summing `media_events` deltas (uploaded/deleted)"* is the technique this chapter used for
   `stored_delta`, unchanged and correctly cited. A clean check, recorded because that is
   what makes the other two mean something.
+
+================================================================================
+PHASE 8 — THE NUMBERS AND THE CHAPTER
+================================================================================
+
+T064 — THE COST COMPARISON, PUBLISHED FROM T036a's MEASUREMENT
+  Corpus: 248,155 rows in `message_events`, 91 days, 2,400 channels, 3 environments.
+  One tenant's 91-day bill, from `system.query_log`:
+
+    against daily_usage_v2 (env, channel, day)   32,778 rows · 3.56 MiB · 4 ms
+    against message_events, same question        32,768 rows · 1.31 MiB · 3 ms
+
+  Not re-run: the corpus was removed at T036b and re-loading would give a second corpus
+  rather than a second reading of the first.
+
+T065 — WHAT THE ROLLUP COMPRESSES, AND WHAT IT DOES NOT
+
+    raw message_events rows                      248,155
+    daily_usage_billing (environment_id, day)        281      884x
+    daily_usage_v2 (env, channel, day)           147,534      1.7x
+
+  4.1 published 1,000,000 raw rows becoming 89 rollup rows. **The billing rollup is in that
+  family and the channel-keyed one is not** -- 1.7x is not a rollup, it is an index with
+  extra steps, and it is the right shape for the question it answers and the wrong one for
+  billing. That is the whole argument for two tables in one pair of numbers.
+
+T065a — THE TITLE AND THE SLUG, FIXED ONCE
+    title       The rollup nobody read
+    slug        the-rollup-nobody-read
+    directory   relay-tutorial/app/(en)/part-4/chapter-06/the-rollup-nobody-read/
+    manifest    path: "/part-4/chapter-06/the-rollup-nobody-read"
+    metadata    alternates canonical the same
+
+  `docs/12` §3 calls its titles provisional and names this one "Metering you can bill on".
+  4.4 shipped "the requests that belong to nobody" against a brief reading "Every request is
+  an event", so a different title is the norm rather than a departure. This one names what
+  the chapter found rather than what it set out to build.
+
+T066/T067/T073 — THE CHAPTER
+    title       The rollup nobody read
+    slug        the-rollup-nobody-read
+    prose       2,302 words outside code fences        bound 2,000-4,000
+    <Trap>      2                                      docs/07 wants >= 1
+    <Figure>    3, all passed as `code=`
+    fences      3 titled: two whole bodies (both new files) and one `diff`
+
+  THE FIRST DRAFT CAME IN AT 1,970 WORDS -- thirty under the floor. What closed the gap was
+  material already measured and left out: the two views writing disjoint columns into one
+  row, and the `AggregateFunction` that could have refused an insert from a view omitting it.
+  **Padding would have been the wrong repair and the measurement was sitting in
+  `baseline.txt`.**
+
+T067 — AND THE MANIFEST STEP FAILED FIRST, EXACTLY AS FR-018a PREDICTS
+  The registration edit matched two places and was refused, so the entry was never written --
+  and the next command said:
+
+    Error occurred prerendering page "/part-4/chapter-06/the-rollup-nobody-read"
+    Error: Unknown chapter id: 4.6
+
+  **That is 4.4's failure reproduced on purpose.** The page existed, the manifest did not
+  know it, and `pnpm build` is the only one of the eleven gates that notices. Registered
+  against a unique anchor: 120 static pages, green.
+
+T074-T077 — THE FENCE CHAIN
+
+    opening (T005)  110 — APPLY 74 (30 en, 30 vi, 14 elsewhere) · HEAD 36
+                    HEAD split: differs at line 25 · does not exist 11
+    after drafting  113 — HEAD 39
+    close           110 — identical to the opening in every cell, HEAD split unchanged
+
+  THREE NEW HEAD PROBLEMS, AND TWO WERE THE SAME MISTAKE. `clickhouse.ts` genuinely changed
+  and owed a `-U6` hunk. The other two were **excerpts published as titled fences**:
+  `metering.ts` and `0006_daily_usage_v2.sql` were each fenced with a `title=` while showing
+  part of the file. A titled non-`diff` fence is read as a WHOLE BODY -- CLAUDE.md records
+  this as "a diff body inside a ```ts fence is read as a whole file" and it arrives the same
+  way for any partial quote. Both are new files, so publishing them whole costs the chain
+  nothing; the second quotation of `metering.ts` lost its title instead.
+
+  `vitest.coverage.config.mts differs at line 29` is in the close and was in the opening:
+  048-3, unchanged, and this chapter's pin did not make it worse.
+
+T078 — THE ELEVEN GATES
+
+    check:fences       RED    110, delta 0 against T005
+    check:docs         GREEN
+    check:srs          GREEN
+    check:figures      GREEN
+    pnpm build (tut)   GREEN  120 static pages
+    check:errors       GREEN
+    pnpm build (plat)  GREEN
+    lint               GREEN
+    typecheck          GREEN
+    test               GREEN
+    test:integration   RED    3 of 9 tasks
+    coverage           RED    7 of 1,556 tests, 3 of 109 files, 554.69 s
+
+  NO THRESHOLD ERROR FOR `metering.ts`: the pin holds at 100 on all four in the full lane.
+
+  AND `pnpm test:integration` REPORTED ONE FAILURE WHERE THREE LANES FAILED. The log holds
+  exactly one `FAIL` line -- `reset-lane.itest.ts` -- while the summary says `Tasks: 6
+  successful, 9 total`. The api lane printed `cache bypass, force executing` and no test
+  output at all. **A reader taking the visible line at face value would conclude one test
+  failed.** Asked directly instead:
+
+    request-log.itest.ts alone    5 failed (5)     no ingester running — 050-8, unchanged
+    reset-lane.itest.ts alone     3 passed (3)     a flake under lane load, not a failure
+
+  Both are inherited and neither is this chapter's. The gate's legibility is a new gaps entry.
