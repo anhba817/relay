@@ -42,10 +42,14 @@ changed one, so every schema change is a **new numbered statement** — `0001` c
 **Scale/Scope**: one new rollup table, two views, one read, one SRS amendment, two `docs/12`
 amendments, one chapter
 
-**THE FILE NUMBERS ABOVE FOLLOW THE PHASES, AND `tasks.md` IS AUTHORITATIVE.** A first draft
-of this tree had `0007` as the message view and `0008` as the connection one — the reverse of
-the order the phases build them. **The ledger keys on filename**, so a tree and a task list
-that disagree produce a `schema_applied` row nobody can match to a file.
+**THE FILE NUMBERS FOLLOW THE PHASES, AND `tasks.md` IS AUTHORITATIVE.** This has been wrong
+twice in opposite directions. A first draft had the message view at `0007` and the connection
+one at `0008`, the reverse of the order the phases built them; then the message view moved
+into phase 2 and the numbers were reversed again without the tree being told, so the sentence
+you are reading was false while asserting itself. **The ledger keys on filename**, and a tree
+and a task list that disagree produce a `schema_applied` row nobody can match to a file.
+**A claim that a document is self-consistent is the first thing an edit to that document
+breaks.**
 
 **AND THE READ IS `services/ingester/src/metering.ts`, NOT A SCRIPT.** A first draft left it
 as *"`analytics/metering.mjs`, or a module if phase 5 needs it testable"* — an either/or
@@ -174,9 +178,9 @@ specs/051-chapter-4-6/
 ```
 relay-platform/
 ├── analytics/
-│   ├── 0006_daily_usage_v2.sql        # the rollup table, explicit target
-│   ├── 0007_mv_connection_minutes.sql  # connection_events -> rollup  (phase 3)
-│   ├── 0008_mv_messages.sql            # message_events -> rollup     (phase 5, no producer)
+│   ├── 0006_daily_usage_v2.sql        # the rollup table, explicit target   (phase 2)
+│   ├── 0007_mv_messages.sql            # message_events -> rollup            (phase 2, no producer)
+│   ├── 0008_mv_connection_minutes.sql  # connection_events -> rollup         (phase 3)
 │   └── (no read here — see services/ingester/src/metering.ts below)
 ├── services/ingester/src/metering.ts  # the read, and metering.itest.ts its caller
 ├── services/…                        # otherwise unchanged — no producer, no send-path edit
@@ -216,7 +220,7 @@ view with an inline engine. R7 measured that 4.2's implicit inner table is what 
 shipped view unextendable; this one is built the way R1 requires.
 
 **Both views over sources that already exist are built here too**, the message one included —
-`0008_mv_messages.sql`, over a table with no producer. It belongs in the foundation rather than
+`0007_mv_messages.sql`, over a table with no producer. It belongs in the foundation rather than
 in phase 5 because the corpus proof in phase 4 is the only window in which its three columns
 can be checked against raw data, and a corpus flowing through a rollup with no message view
 proves nothing. A first draft had the view in phase 5 and the corpus in phase 4, which would

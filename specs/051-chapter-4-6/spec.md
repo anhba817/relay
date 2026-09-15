@@ -122,8 +122,10 @@ remove the corpus and verify both the source and the rollup are back to their op
    including that day, not that day's creations alone.
 3. **Given** a corpus whose authors include a deleted one, **When** unique active users is
    read, **Then** the NULL author is ignored rather than counted as a user.
-4. **Given** the corpus has been removed, **When** the tables are counted, **Then** both the
-   source and the rollup are back to the figures phase 1 recorded.
+4. **Given** the corpus has been removed, **When** the tables are counted, **Then** the source
+   is back to the figure phase 1 recorded and **both rollups** hold nothing for the corpus's
+   environments — the one this chapter builds, which had no phase-1 figure because it did not
+   exist, and chapter 4.2's, which reads the same source and fills on the same load.
 
 ---
 
