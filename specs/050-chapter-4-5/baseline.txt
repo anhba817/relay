@@ -1132,3 +1132,341 @@ T082 — THE SPENT ARGUMENT, EVERYWHERE
 
     T092 and T093 pay this in phase 8. Discovering it here rather than at the ratchet is
     what FR-020 asked for, and 049 is the chapter that learned it the other way.
+
+================================================================================
+PHASE 8 — THE NUMBERS
+================================================================================
+
+T083 — THE COMBINED BYTE BUDGET, AND THE SYNTHETIC FIGURE IS 26% LIGHT
+    `ensureAnalyticsStream`: max_bytes 1 GiB, max_age 7 days. So the budget is
+
+        7 days   1,775.4 B/s        24 h   12,427.6 B/s
+
+    Reconstructed from 4.4's 320 B/record, the crossovers come back 5.55 rec/s and
+    38.8 rec/s -- 4.4's published figures to two decimal places, which is what makes the
+    method trustworthy before it is applied to anything new.
+
+        request record       320.0 B   7d 5.55 rec/s   24h 38.8
+        connection record    375.4 B   7d 4.73 rec/s   24h 33.1
+        a connection PAIR    750.8 B   7d 2.36 pairs/s
+
+        combined:  320·r_req + 750.8·r_pairs = 1,775.4 B/s
+
+          at 0   pairs/s   requests may run at 5.55/s
+          at 0.5 pairs/s                       4.37/s
+          at 1   pairs/s                       3.20/s
+          at 2   pairs/s                       0.86/s
+
+    **TWO CONNECTION-PAIRS A SECOND TAKES THE REQUEST BUDGET FROM 5.55/s TO 0.86/s.**
+
+    **AND THE STREAM'S OWN ACCOUNTING SAYS EVERY ONE OF THOSE NUMBERS IS OPTIMISTIC.**
+    Over 3,992 real messages it holds 1,610,885 bytes -- **403.5 B/record, 26.1% heavier
+    than the 320 the synthetic probe measured**, on a stream that is 97% request records.
+    Recomputed from the real figure the 7-day crossover is **4.40 rec/s, not 5.55**, and
+    the 24-hour one **30.8, not 38.8**.
+
+    4.4 already corrected this figure once -- its first probe was 2% light for using a
+    shorter subject than production. The probe is still lighter than production traffic,
+    by a further quarter, and the likeliest reasons are the fields a real record carries
+    that a fixture does not (`endpoint`, `limited_operation`) and the deduplication header.
+    **Published as a pair with the synthetic one**, because the synthetic figure is what
+    two chapters have in print.
+
+T084 — THE VOLUME ASSUMPTION IS RIGHT BY COUNT AND WRONG BY BYTES
+    Measured on this stack: **3,770 request records against 120 connection records**, 31
+    to 1 by count. R7's assumption -- *"connection events are assumed lower volume ... one
+    pair per connection against one per request"* -- holds.
+
+    **By bytes it inverts below 2.35 requests per session.** A connection pair is 750.8 B
+    and a request record is 320 B, so one session costs the stream what 2.35 requests do.
+    A WebSocket client that connects, receives pushes and closes makes very few HTTP
+    requests -- which is the shape this platform is FOR. So the assumption is true of the
+    corpus this stack happens to generate (health polls, no real clients) and says nothing
+    about a deployment with users on it.
+
+    THIS IS 049-6's SHAPE: a share is a fact about a workload, and no production workload
+    exists. The number that survives is the break-even -- 2.35 requests per session -- not
+    the ratio measured here.
+
+================================================================================
+T091 — THE CHAPTER, MEASURED
+================================================================================
+
+  prose words outside code fences   2,330      bound 2,000–4,000, inside, no split
+  <Trap> boxes                          2      docs/07 §line 70 wants >= 1
+  <Figure code={...}>                   3      all three sourced from figures.ts
+  titled fences                        11      1 sql whole body, 8 diff, 2 ts whole body
+
+Word count taken with fences stripped, imports and `export const` blocks removed,
+JSX tags and expressions dropped. 4.4 measured 2,393 the same way.
+
+================================================================================
+T094 — THE FENCE DELTA, AND THE PREDICTION IT FALSIFIED
+================================================================================
+
+  open  (T010)   110 — APPLY 74 (30 en, 30 vi, 14 elsewhere) · HEAD 36, all en
+  close (T094)   110 — APPLY 74 (30 en, 30 vi, 14 elsewhere) · HEAD 36, all en
+  delta            0 in every cell, and part-4 contributes 0 in both locales
+
+T094 SAID A ZERO WOULD MEAN THE MEASUREMENT WAS WRONG. It is not. What is wrong is
+T010c's prediction that the Vietnamese whole bodies would show up as problems:
+
+    "T010c's whole bodies for shape.ts and clickhouse.ts break when T049 and T051
+     land, and no English hunk repairs a Vietnamese fence. A delta of 0 here would
+     mean something is wrong with the measurement, not that the chapter was free."
+
+The bodies DID break. The instrument does not compare them.
+
+`check-fence-chain.mjs:265` — "HEAD: the chain's end state must be the repository,
+byte for byte" — iterates `en.state`. The vi chain is replayed at :300 and then
+compared against the ENGLISH CHAPTER'S FENCES (MIRROR), never against
+`relay-platform`. So the vi locale is checked for two properties — does its chain
+replay self-consistently (APPLY), and does the translation carry byte-identical
+fences (MIRROR) — and for neither of the two that would notice this.
+
+MEASURED DIRECTLY, comparing each vi whole body against the tree:
+
+    STALE    services/ingester/src/shape.ts        (vi 4.3)
+    STALE    services/ingester/src/clickhouse.ts   (vi 4.3)
+    STALE    services/ingester/src/main.ts         (vi 4.3)
+    MATCHES  services/ingester/package.json        (vi 4.3)
+    MATCHES  analytics/0003_webhook_attempts.sql   (vi 4.3)
+    MATCHES  analytics/0000_message_events.sql     (vi 4.2)
+
+THREE, NOT TWO. T010c named shape.ts and clickhouse.ts and missed
+`services/ingester/src/main.ts`, which this chapter amended for the three-arm log
+line. `git diff part4-ch4` confirms all three changed and `package.json` did not.
+
+And MIRROR cannot catch it either, in either direction: vi 4.3 still carries fences
+byte-identical to en 4.3's, which is exactly what MIRROR asks. The staleness is
+invisible to all three kinds by construction, which makes this a gap in the
+instrument rather than a debt this chapter could pay. gaps.md 050-3.
+
+A zero from an instrument is a claim about the corpus only if the instrument can be
+shown to have read it — third time in three features, and this time the corpus was
+read and the COMPARISON was the half that was missing.
+
+================================================================================
+T028 — FR-004d MEASURED: ONE CONNECTION CLOSING, TO ITS ROW BEING READABLE
+================================================================================
+Six connections against the composed stack with the ingester running continuously,
+each polled at 100 ms until its `closed` row answered `FINAL`:
+
+    2020   5776   3742   5796   3711   5723   ms
+
+    n=6   min 2020   p50 5723   p95 5796   max 5796   mean 4461 ms
+
+    FR-ANL-04 budget 60,000 ms -- the worst sample uses 9.7%.
+
+THE SPREAD IS THE DESIGN, NOT NOISE. A close waits for the gateway's next tick
+(`FLUSH_INTERVAL_MS` 5,000, so a uniform 0-5 s depending on where in the cycle it
+lands) and then for the ingester's next fetch window (`BATCH_MS` 2,000). The
+ceiling is 5,000 + 2,000 + the insert, and the observed max of 5,796 sits under it.
+The 2,020 ms sample is a close that landed just before a flush and paid only the
+ingester's window -- which is the same instrument reading its own floor.
+
+MEASURED, NOT DERIVED. T028 says so in as many words, and the arithmetic above
+would have produced "about 7 s worst case" without ever showing that the row
+arrives at all. The probe carried a `SELECT 1` positive control first (047 read
+three authentication errors as data) and keyed the poll on `user_external_id`,
+because `connection.ack` carries no connection id -- the id is server-minted and
+never leaves the gateway, which is a fact about the protocol that only writing the
+probe surfaces.
+
+AND THE 60 SECONDS IS NOT THE INTERESTING BOUND. FR-ANL-04's clause is "within 60
+seconds of the originating operation UNDER NORMAL CONDITIONS", method A. Eight and
+a half times the headroom under normal conditions, and FR-004e's retry rule is what
+puts a record minutes late when the broker is gone -- which the qualifier covers
+and which this measurement deliberately does not contradict.
+
+================================================================================
+T035 — WHAT A CLEAN STOP DOES TO IN-FLIGHT RECORDS, AND WHAT A KILL DOES
+================================================================================
+Ten connections per round, opened and closed inside 70 ms -- so every record is
+still in the buffer -- then the process ended two ways. Rows after a 12-second
+drain:
+
+    clean stop (SIGTERM)   opened 10 | closed  0      of 20 expected
+    kill      (SIGKILL)    opened  0 | closed  0      of 20 expected
+
+    control: sockets LEFT OPEN, clean stop    opened 10 | closed 0
+
+THE MISSING CLOSES ARE T078's FINDING AND NOT NEW. `sessions.close()` calls
+`wss.close()`, which does not close established sockets, so no per-socket `close`
+handler fires and `connectionLog.closed(...)` is never called. The control above is
+what proves this round did not simply lose a race with its own `ws.close(1000)`:
+sockets left open give the identical 10/0.
+
+WHAT IS NEW IS THE KILL, AND IT IS THE NUMBER A DASHBOARD HAS TO TOLERATE. T078's
+five connections were held past two flush intervals, so their opens had ALREADY
+been published and the kill cost nothing further -- 5 opens on both paths. These
+ten never reached a tick, and SIGKILL took all twenty records with it. So the two
+rounds bound the loss from both ends:
+
+    already flushed        a kill costs nothing              T078
+    still in the buffer    a kill costs everything in it     T035
+
+The exposure is one flush interval's worth of records, up to `MAX_BUFFERED`
+(4,000). A clean stop pays the open half of that and the close half is lost for the
+separate reason above.
+
+AND THE CLEAN STOP IS THE ONE THAT PUBLISHES AN UNBALANCED LEDGER. Zero of twenty
+is visibly wrong; ten opens with no closes reads as ten connections that are still
+open. A dashboard counting live connections as opens-minus-closes drifts up by the
+full instance on every deploy, and nothing in the record says the instance went
+away. FR-009a's scoping -- compare only connections with BOTH records, over a
+window they closed inside -- is what keeps that out of the reconciliation, and
+gaps.md 050-5 files the dashboard-facing half, which this chapter does not close.
+
+================================================================================
+T097 — EVERY TEST THIS FEATURE ADDED, AUDITED
+================================================================================
+Seven files changed against `part4-ch4`, **35 new tests** plus two existing
+assertions given new data:
+
+     5  packages/protocol/src/internal.test.ts             the subject grammar
+    20  services/gateway/src/connection-log/event.test.ts  the producer
+     1  services/gateway/src/connection-log/connection-log.itest.ts
+     3  services/ingester/src/ingest.itest.ts               rows, pairs, FINAL
+     6  services/ingester/src/shape.test.ts                 routing and NULLs
+     0  services/gateway/src/main.test.ts                   +1 fabric in the list
+     0  packages/test-harness/src/bound-port.test.ts        +1 BINDS_NOTHING entry
+
+NONE ASSERTS ONLY THAT A RECORD WAS PUBLISHED. The one with that shape --
+*"puts 2N records on the stream for N connections"* -- asserts `opened === N` AND
+`closed === N` separately, which holds only if the subject grammar tells the two
+apart, and it asserts `N > 0` first. A three-way equality at zero is satisfied by
+nothing at all, which is the failure the floor exists to catch.
+
+ASSERTION-FREE TESTS: 0 of 35, scanned mechanically rather than by reading.
+
+FOUR CONDITIONAL ASSERTIONS, ALL CLEARED, AND THE REASON IS WORTH WRITING DOWN.
+`shape.test.ts` carries `if (routed.kind === "connection") expect(...)` four times
+-- the shape this project files as *"a conditional assertion is an assertion that
+may not run."* Every one is preceded on the line above by an unconditional
+`expect(routed.kind).toBe("connection")` on the same value. The `if` is
+TypeScript's discriminated-union narrowing, not a skippable assertion: a wrong kind
+fails the line above before the guard is reached. **A conditional assertion whose
+condition is asserted unconditionally immediately above it is a narrowing, not a
+hole** -- and the audit has to read the line above to tell the two apart, which a
+grep for the pattern cannot.
+
+================================================================================
+T095 — ALL ELEVEN GATES
+================================================================================
+
+    relay-tutorial
+      check:fences        PASS   110 — APPLY 74, HEAD 36 · delta 0 against T010
+      check:docs          PASS   13 revisions ascend, 1.0 to 1.12
+      check:srs           PASS   classes ASM CON DR EIR FR NFR
+      check:figures       PASS   269 figures, every diagram passed as `code`;
+                                 271 imported bindings resolve
+      check:errors        PASS   27 codes, 27 sections, 6 close codes documented
+      pnpm build          PASS   119 static pages, compiled in 21.7 s
+
+    relay-platform
+      lint                PASS   1 task
+      typecheck           PASS   14 tasks
+      test                PASS   12 tasks — api 30 files, gateway 11, dispatcher 1
+      test:integration    RED    api 4 of 30 files failed; every other task green
+      coverage            RED    108 files, 1,545 tests, 511.55 s
+                                 4 files failed, 9 tests — the same api failures
+
+NINE GATES GREEN, TWO RED, AND THE SAME FOUR SUITES ARE BEHIND BOTH. **This feature
+touched no api and no dispatcher file** -- `git diff --name-only part4-ch4 HEAD` is
+twenty files, all gateway, ingester, protocol, test-harness, `compose.yaml` and the
+new SQL. All four failing suites are unchanged since `part4-ch4`. Each red diagnosed
+rather than counted:
+
+  request-log.itest.ts   5 of 5 failed, each at its 20-second poll deadline.
+                         **AN UNSTATED PRECONDITION, NOT A BROKEN SUITE.** The suite
+                         polls `relay_analytics.api_requests` for a row only an
+                         INGESTER can write, and nothing starts one -- there is no
+                         ingester service in `compose.yaml`. Measured both ways:
+
+                             ingester running     5 passed (5)
+                             ingester stopped     5 failed (5)
+
+                         This is 4.4's own suite, and it discharges 4.4's SC-001.
+                         Neither 049's gate list nor 050's says the lane needs a
+                         draining ingester. gaps.md 050-8.
+
+  limits.itest.ts        `RELAY_INTERNAL_CREDENTIAL` is undefined. `turbo.json:48`
+                         passes the variable THROUGH and nothing sets it; the test's
+                         own message is "the lane must configure a platform
+                         credential". Fails identically in both lanes, 3 ms.
+
+  session.perf.itest.ts  "reads the cap with index lookups, not a scan" -- the plan
+                         contains `Seq Scan on usage_periods`, because that table is
+                         EMPTY for the period. Postgres is right and the assertion is
+                         scoped to a table whose size the lane controls. **An
+                         assertion that fails for somebody else's reason**, this
+                         project's own class.
+
+  outbox.itest.ts        invariant 8, two concurrent relays -- in the turbo lane only,
+                         not in the coverage lane. The known concurrency flake.
+
+THIS CHAPTER'S OWN INTEGRATION SUITES NEED NO INGESTER, CHECKED RATHER THAN ASSUMED:
+`connection-log.itest.ts` reads the stream directly and `ingest.itest.ts` calls
+`ingestOnce` itself, and the two run **9 passed (9)** with no ingester process alive.
+
+AND `pnpm coverage` RAN, WHICH CONTRADICTS THIS FEATURE'S OWN EARLIER RECORD. The
+phase-4 entry above has it printing "No test files found" and blocks T058 and T059 on
+that, with a `part4-ch4` worktree reproducing it. The same command against the same
+config now executes 1,545 tests in 511 seconds. **The lane is not dead**; the
+conclusion drawn there is withdrawn in gaps.md 050-1. T058 and T059 stay undone for
+this chapter -- the pins were never written while the lane was believed dead -- and
+they are cheap for the next one.
+
+================================================================================
+T058/T059 — UNBLOCKED BY T095, AND BOTH HALVES OF THE PROBE RUN
+================================================================================
+The phase-4 entry above blocked these on a lane that printed "No test files found".
+T095 ran that lane for 511 seconds over 1,545 tests, so the block is gone.
+
+THE NUMBERS, TWO OBSERVATIONS EACH, IDENTICAL BOTH TIMES:
+
+    services/gateway/src/connection-log/event.ts        100 / 100 / 100 / 100
+    services/gateway/src/connection-log/publisher.ts    56 / 44.44 / 66.66 / 60.86
+                                                        (stmts / branches / funcs / lines)
+
+`event.ts` at 100 on all four is T057's figure arriving from the WORKSPACE lane rather
+than from the gateway's own vitest with `--coverage.include` -- the two agree, which is
+what the phase-4 entry could not establish.
+
+The swing is **0** across two runs, which is worth saying because this project pins below
+the lower observation by the observed swing: `session.ts` measured 87.80 and 85.36 on
+identical code twenty minutes apart. These two did not move, so the pins sit at the
+measurement for `event.ts` and a little under it for `publisher.ts`.
+
+`publisher.ts` IS PINNED BELOW 70 DELIBERATELY. Constitution VI's 70% is about business
+logic; a file whose whole job is holding one broker client is not that. Pinning it at 70
+would buy either a test that mocks a reconnect to move a number or a ratchet somebody
+lowers later, and this project has already written down which of those is worse.
+
+BOTH HALVES OF THE THRESHOLD PROBE, WHICH IS THE STEP 048 SKIPPED:
+
+    the real key, demanded 99 branches against a measured 44.44:
+      ERROR: Coverage for branches (44.44%) does not meet
+             "services/gateway/src/connection-log/publisher.ts" threshold (99%)
+
+    a key naming no file, demanded 101 of everything:
+      occurrences in the output: 0
+
+**The first proves the pin binds. The second confirms the blind spot again** -- a per-file
+threshold whose key matches no file is silent, no error, no warning, nothing. Fourth time
+this project has run that probe and fourth time it has come back silent.
+
+T059 — THE SWEEP
+
+    per-file pins             49        (47 at part4-ch4, plus this chapter's two)
+    bind                      49
+    file does not exist        0
+    exists but unmeasured      0
+    measurable files in lane 111
+
+049 measured 45 with 1 unbindable and then 0. The sweep is run against the include and
+exclude globs expanded over the real tree rather than pattern-matched in memory -- the
+first version of it reported 16 false unbindables because `fnmatch` cannot do `**`, which
+is the same class of error as every other instrument in this project that was checked
+before it was believed.

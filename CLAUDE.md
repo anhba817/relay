@@ -28,315 +28,182 @@ history; the replaced history is preserved on the remote as the tag
 tags. **Anyone holding an older clone of `relay-platform` must reset rather than pull.**
 
 <!-- SPECKIT START -->
-**ACTIVE: 050 — CHAPTER 4.5, "the gateway's first stream".** Plan:
-`specs/050-chapter-4-5/plan.md`; **`research.md` first — four of its ten items were measured
-and two changed the design.** Eight phases, MVP at 1–4.
+**050 IS CLOSED at 114 of 114 — CHAPTER 4.5, "the gateway's first stream".** Its record is
+`specs/050-chapter-4-5/` — `baseline.txt` first, then `gaps.md` (**19 entries: 8 new and all
+11 carried items re-measured**), `traceability.md`, `tasks.md`. Tagged **`part4-ch5`**.
 
-**THE GATEWAY ALREADY REPORTS CONNECTION DATA, WHICH `docs/12` DOES NOT SAY.** Its one-line
-description is *"the gateway has never touched NATS"* — true, zero references and five
-dependencies, none a broker client. But `meter.ts` has shipped connection-minutes to
-`/internal/usage/connections` every sixty seconds since 3.24. **So the chapter is not "the
-gateway has no way to report", it is "the one it has was built for a different question and
-goes through the service the analytical path is supposed to be independent of."**
+    close -> row readable   min 2.0 s · p50 5.7 · max 5.8   9.7% of FR-ANL-04's 60 s
+    60/60 acked broker down · 139 retained · 0 dropped
+    403.5 B a record on the real stream — 26% heavier than the synthetic 320
+    check:fences 110 -> 110, delta 0 · 2,330 prose words · 11 gates, 9 green
+    dependency count 5 -> 6 · event.ts 100/100/100/100 · 35 tests added
 
-**AND THE CLOSE HANDLER ALREADY REFUSED TO DO WHAT THIS CHAPTER WANTS.** `session.ts`'s
-`socket.on("close")` says, from 3.24: *"Handing over totals rather than reporting them. This
-handler is already documented as the last place that should throw, and **a mass disconnect
-would turn one event into a burst of HTTP requests.**"* It calls `meter.closed(...)` and lets a
-tick do the sending.
+**THE GATEWAY ALREADY REPORTED CONNECTION DATA, WHICH `docs/12` DID NOT SAY.** `meter.ts` has
+shipped connection-minutes to `/internal/usage/connections` every sixty seconds since 3.24. So
+the chapter is not *"the gateway has no way to report"* — it is **"the one it has was built for
+a different question and goes through the service the analytical path is supposed to be
+independent of."** And `session.ts`'s close handler had already refused to do what this chapter
+wanted, in writing since 3.24: *"a mass disconnect would turn one event into a burst of HTTP
+requests."* **A publish per close is the same burst on a different transport**, so the records
+buffer and flush on a tick exactly as the meter does.
 
-**A PUBLISH PER CLOSE IS THE SAME BURST ON A DIFFERENT TRANSPORT, MEASURED.** 2,000 close
-records, three ways:
+**"BATCHED" MEANT THE WAITING, NOT THE PAYLOAD, AND FOUR PASSES DID NOT ASK WHICH.** A research
+row read *"batched 500 per publish"* — which is 500 records in ONE message — and three
+artifacts adopted it in that form with three requirements built on top. It breaks three claims
+the feature had already published: one message carries one subject and the subject carries the
+tenant; one message carries one `Nats-Msg-Id`, so `{connection_id}:{event}` cannot hold across
+500; and **the shipped ingester destroys it** — an array has no `type`, so `route()` takes the
+attempt arm and `ingest.ts` calls `m.term()`, 500 records gone counted as one malformed. **The
+units in the three rows were the only tell**: two said *publishes* and the third said *records*.
 
-    awaited, one at a time   : 0.2870 ms each -> 2.87 s for 10,000 closing at once
-    core publish + flush     : 0.0025 ms each -> at-most-once, no ack, no dedup
-    pipelined, 500 in flight : 0.0260 ms each -> 11x faster, keeps ack AND dedup
+**AND THE MEASUREMENT THEN MOVED 7.6x WHEN THE SHAPE WAS CORRECTED.** Planning read 0.0034 ms
+a record; measured in the shape that shipped it is **0.0260** — 11x faster than awaited, not
+67x, and **ten times core speed, not 1.13 times**. The decision survives on the smaller margin,
+which is worth more than the old figure was. Corrected in six places.
 
-**AND THE THIRD ROW MOVED 7.6x WHEN THE SHAPE WAS CORRECTED.** Planning read 0.0034 ms;
-T004 measured **0.0260**. The old figure was 500 records in ONE message — four publishes,
-four acks — which is why it sat "within 13% of core speed". One message per record is
-2,000 publishes and 2,000 acks and costs **ten times core**, not 1.13 times. Analysis
-pass 5 removed the batched shape on three structural grounds and this is the same finding
-arriving as a number. **The decision survives on the smaller margin**, which is worth more
-than the old figure was.
+**AND THE UNAUTHENTICATED CONNECTION CANNOT ARISE.** Five artifacts carried it as a decision and
+the plan's constitution check read *"PASS, with one open case"*. `open()` is the only function
+that builds a `Connection`, it takes a **non-optional** `Identity`, and its one call site is
+reached only after 429, 4001, 1011, 4003 and 4008 have each returned — three of which complete
+the handshake in order to close it. **An unauthenticated socket exists and an unauthenticated
+connection does not**, so 4.4's `_none` arm is unnecessary rather than declined. **A design in
+which a case cannot arise beats a branch that handles it.**
 
-**Buffer and publish on a tick, exactly as the meter does.** Core publish is faster still and
-gives up the recoverability this stream exists for — 3.20 chose JetStream over core for that
-reason.
-
-**AND "BATCHED" MEANT THE WAITING, NOT THE PAYLOAD — FOUR PASSES DID NOT ASK WHICH.** The third
-row read *"batched 500 per publish"*, which is **500 records in one message**, and three
-artifacts adopted it in that form while FR-004a, FR-004b and FR-004c were built on top. It
-breaks three claims this feature had already published. **One message carries one subject** and
-the subject carries the tenant, so a flush spanning tenants has no subject to go on. **One
-message carries one `Nats-Msg-Id`**, so `{connection_id}:{event}` cannot hold across 500 — and
-a batch-derived token is 048's measured silent data loss verbatim. **And the shipped ingester
-destroys it**: an array has no `type`, so `route()` takes the attempt arm, `shape()` returns
-`null`, and `ingest.ts` calls `m.term()` — 500 records gone, counted as one malformed. That
-also inverts R8, because a batch never reaches the `unclaimed` arm phase 2 exists to exercise.
-**The surviving reading is one message per record, pipelined**, and the units in the three rows
-were the only tell: two said *publishes* and the third said *records*.
-
-**AND THE METER'S CAP BOUNDS A RETRY QUEUE, NOT A FLUSH BUFFER.** The contract copied
-`MAX_RETAINED_CLOSED = 4_000` and its drop direction and left behind the rule eleven lines
-above it: *"a report that cannot be delivered is DROPPED rather than queued"* — **with one
-exception**, *"a connection that has CLOSED has no next report to repair a lost one, so its
-final total is retained until a report carrying it is accepted."* **Every connection event is
-in that exception**: an open is sent once, a close is sent once, neither has a later report
-carrying it again. So a failed publish goes back in the buffer (FR-004e) and the outcomes are
-collected **per record** (FR-004f), because one message per record means a flush of 500 has 500
-answers where the meter has one. A buffer that emptied on every flush could never reach the cap
-at all — an unreachable broker would drain it every five seconds into failures.
-
-**AND THE UNAUTHENTICATED CONNECTION CANNOT ARISE.** Five artifacts carried it as a decision for
-phase 1, and the plan's constitution check read *"PASS, with one open case"*. `open()`
-(`session.ts:912`) is the only function that builds a `Connection` and the only caller of
-`registry.add`; it takes a **non-optional** `Identity`, and its one call site is reached only
-after 429-on-upgrade, 4001, 1011, 4003 and 4008 have each returned. Three of those complete the
-handshake in order to close it — so **an unauthenticated socket exists and an unauthenticated
-connection does not**, and 4.4's `_none` arm is unnecessary rather than declined. **A design in
-which a case cannot arise beats a branch that handles it**, and here the design had already
-done it on grounds nobody connected to this question.
-
-**AND THE FENCED-FILE LIST WAS REMEMBERED, NOT COUNTED — EIGHT FILES, NOT FIVE.** Both the
-plan and the tasks named `session.ts`, `main.ts`, `shape.ts`, `ingest.ts` and the protocol.
-Counted:
-
-    32 session.ts · 25 internal.ts · 23 vitest.coverage.config.mts · 22 main.ts
-    10 services/gateway/package.json · 4 internal.test.ts · 3 clickhouse.ts · 3 shape.ts
-     0 services/ingester/src/ingest.ts          — the one the list named
-
-`ingest.ts` carries **no titled fence anywhere**, because 049 created it by moving `ingestOnce`
-out of `main.ts` and fenced `main.ts` and `clickhouse.ts` instead. **A list of fenced files goes
-stale every time a chapter moves code between files**, and this one was wrong in both
-directions. **`vitest.coverage.config.mts` is the omission that costs**: T058 edits it, 048-3
-already says it cannot take a hunk, and nine of its 23 fences live in `fences/post-series.md`,
-the appendix that applies after every chapter — the question 047 asked of `compose.yaml` and
-published clean, never asked of this file.
-
-**AND THE TUTORIAL HAD NOT BUILT SINCE 4.4 SHIPPED — NINE GATES NOW, NOT EIGHT.**
-`lib/tutorial.ts` calls itself *"the single source of truth … the landing table of contents,
-ChapterHeader, and ChapterFooter all render exclusively from this manifest."* **Chapter 4.4 was
-never added to it.** `<ChapterHeader id="4.4" />` calls `getChapter`, which throws on an
-unregistered id, so `pnpm build` exited 1 with `Error: Unknown chapter id: 4.4` from the moment
-049 closed — **at 112 of 112, eight gates green, tagged `part4-ch4`.**
-
-**NONE OF THE EIGHT RENDERS A PAGE.** Five compare bytes and identifiers in `relay-tutorial`;
-the other three are `lint`, `typecheck` and `test` in `relay-platform` and never touch the
-tutorial. The manifest entry is repaired, the build exits 0, the chain is unmoved at 110
-(`lib/tutorial.ts` carries no titled fence), and **`pnpm build` is the ninth gate**. It costs
-90 seconds and names the page it failed on. *An instrument that is easy to run tells you what it
-measures, not what you wanted to know* — and this one measured everything about the chapter
-except whether it existed.
-
-**REGISTERING THE CHAPTER IS A STEP NO REQUIREMENT NAMED.** Not in 049's 112 tasks, not in
-050's until pass 9. Also fixed: 4.1, 4.2 and 4.3 have Vietnamese bodies and carried no
-`translatedIn`, which the manifest says is *"the ONLY signal that a chapter BODY exists"* and
-gates every vi link — three translated chapters unreachable from Vietnamese navigation.
-
-**AND THE VIETNAMESE PART 4 CHAIN IS NOT EMPTY — THE PATH THAT WAS CHECKED HAS NEVER EXISTED.**
-An assumption read *"`app/(vi)/part-4/` is still empty, so the vi fences are not this chapter's
-to move."* The vi tree is **`app/(vi)/vi/part-N/`**, so that check could only ever come back
-empty. `app/(vi)/vi/part-4/` holds three chapters and seven fences, and **three are whole
-bodies** — `services/ingester/src/shape.ts`, `clickhouse.ts` and `main.ts`. This chapter edits
-the first two. Measured with the gate: the opening is **110 — APPLY 74 (30 en, 30 vi, 14
-elsewhere), HEAD 36, all en**, exactly as T010 predicted, and **part-4 contributes 0 in both
-locales**, so those bodies match the tree today and breaking them is this chapter's doing. **A
-whole body in the vi chain cannot be repaired by an English chapter**, so it is a gaps entry
-rather than a hunk. *A zero from an instrument is a claim about the corpus only if the
-instrument can be shown to have read it* — and here the instrument was a path.
-
-**AND THE CARRIED LEDGER WAS A SHORT LIST TWICE.** T096 said carry 049-1, 049-2 and 049-3;
-**049 has six**, and 049-4 is this chapter's own subject — the 5.5 requests/second crossover
-that FR-015 moves. **049 itself dropped 048-1 to 048-5 without a word**, opening "Six entries"
-over a previous feature's five open ones. *Measure the carried ledger; do not copy it*, and say
-plainly rather than implying by a short list.
-
-**ADR-07 NAMES THE ARGUMENT THIS CHAPTER SPENDS.** Its v1.1 amendment: *"That refusal is
-deliberately weaker than the others: **it is an argument about how many client libraries the
-gateway holds**, not about whether the mechanism fits."* This chapter takes the count from
-**5 to 6**.
-
-**AND THE PARAGRAPH ABOVE THAT AMENDMENT ALREADY SAID WHAT FIVE ARTIFACTS PROPOSED TO ADD.**
-They all quoted v1.1 and none opened the body it amends, for nine passes. ADR-07's original
-rejected list: *"refused on dependency shape rather than mechanism: **Redis is mandatory for
-the gateway regardless, since ADR-10 puts presence in Redis with TTLs**, so fan-out on NATS
-would leave that service holding two broker clients and remove none."* So the "surviving
-argument" was never lost. **What this chapter falsifies is the arithmetic beside it**: the
-gateway holds two clients anyway now, so NATS fan-out would **add none and remove none** — the
-cost side of the refusal goes to zero and the refusal survives on Redis alone. *Read the
-clauses, not the identifiers* — on a record the feature cites in five places.
-
-**AND AN ADR LIVES IN TWO DOCUMENTS — THE SAD'S SUMMARY AND `docs/06`'s ARGUMENT.** Ten passes
-amended the summary and none opened the deep dive, which holds ADR-07 over 98 lines with its own
-dated amendment block. **It also states the two lines this chapter falsifies, more fully than
-the SAD**: *"fan-out on NATS gives the gateway two broker clients where it had one"* — after
-this chapter, two where it had **two** — and *"Choosing Redis keeps a clean mapping — gateway to
-Redis, api and workers to NATS."*
-
-**THE MAPPING IS THE ARGUMENT, AND THE GATEWAY HALF IS THE HALF IT IS NAMED FOR.** 3.8 and 3.18
-broke the api half, and the deep dive records the consequence in one sentence: the two-client
-cost was *"relocated rather than avoided."* **This chapter puts it on the gateway, which is
-where the analysis refused to put it**, and afterwards the mapping describes nothing. That is
-sharper than the client-library count (nine passes) and than "remove none" (pass 10), and
-`docs/12` §7.2 has been waiting for it: *"giving the gateway a publisher amends it again, and
-that is a chapter's worth of argument rather than a line of wiring."*
-
-**AND 3.18 ALREADY WROTE THE AMENDMENT'S SHAPE.** Its block leaves the **Decision** and the
-**Revisit when** clauses explicitly untouched and claims only that *"the selection argument's
-tidiest line is no longer literally true, and a reader comparing it against `05-sad.md`'s
-component diagram deserves to be told so rather than left to reconcile them."* FR-016b holds
-that shape; T080b amends the deep dive.
-
-**AND `docs/12` §7 IS OPEN QUESTIONS, EACH OWNED BY A CHAPTER — 7.2 IS THIS ONE'S.** §7.1
-belonged to the ledger chapter, 4.2 built all four items of its brief, and §3's amendment
-records the closure. **T085 amended §3's row and nothing touched §7** until pass 13; T085a
-closes it. And a task had been steering the implementer AWAY from §7.2, calling its *"clean
-mapping"* quotation a paraphrase *"that appears nowhere in the SAD"* — true of `docs/05`,
-verbatim in `docs/06`.
-
-**AND CONSTITUTION VII SAYS ADRs ARE IMMUTABLE.** *"ADRs are immutable once accepted;
-superseding requires a new ADR."* ADR-07 carries **both** forms — in-place amendments dated
-2026-08-04 and 2026-09-03, and a status line reading *"extended by ADR-20 … and by ADR-22"* —
-so precedent does not decide it and the constitution names only one. The plan's Constitution
-Check cited VII for scope and never for the clause governing the act FR-016 requires; governance
-demands the conflict *"resolved explicitly by amendment rather than silent divergence"*, which
-makes **the missing sentence the defect rather than either choice**. VII's own last line points
-at the new-ADR form: *disagreement attacks the driver, not the choice*, and what changed here is
-a driver's price. FR-016a and T080a decide it out loud.
-
-**AND THREE CITATIONS POINTED AT CLAUSES THAT DO NOT SAY IT — 044'S LESSON REACHING SHIPPED
-SOURCE.** Eleven passes read the platform, the tutorial and the structure record; the twelfth
-opened the SRS the quotations point at.
-
-**DR-11 SAYS NEITHER NUMBER.** In full: *"Inserts shall be batched or use asynchronous insert
-mode; single-row synchronous inserts are prohibited."* No interval, no row count. `ingest.ts:21`
-says *"DR-11 publishes 2 s or 10,000 rows"* and 050's contract inherited it. The figures are
-**`docs/05-sad.md:182`**'s — *"batch-inserts to ClickHouse every 2 s or 10k rows (DR-11)"* —
-which chose them and credited a clause governing only the **shape** of the insert. Two hops, and
-the code comment is the furthest-travelled copy. **T081a amends DR-11 to carry them**, with
-049's crossover at 5,000 records/second as the measurement behind it.
-
-**NFR-SCL-01 CARRIES NO MEMORY FIGURE.** It is one sentence about 10,000 concurrent connections
-per gateway instance. The **160 MB** is SRS **revision 1.9** and
-`docs/11-scalability-measurement-2026-09-06.md`, which measured **157 MB against a 160 MB
-budget** and recorded ADR-25's revisit threshold — six per-channel SUBSCRIBEs, or 250,000
-projected subjects per instance. Cite the source that holds the number, and compare against 157
-rather than the rounded ceiling.
-
-**AND NO CLAUSE FORBADE A CREDENTIAL IN AN ANALYTICAL RECORD.** FR-003 cited **FR-ANL-11**,
-which governs message text (*"shall store only length and metadata, never message text"*), and
-**NFR-SEC-06**, which governs **application logs**. Neither reaches the record. The authority
-that does is **constitution III's allow-list** — *"only lengths, identifiers, and metadata"* —
-which refuses a credential by construction rather than by prohibition. **An allow-list is the
-citation; a deny-list about something else is not.**
-
-**AND FR-ANL-04's QUALIFIER WAS DROPPED FOUR TIMES.** The clause is *"within 60 seconds of the
-originating operation **under normal conditions**"*, method **A**. Every quotation stopped one
-phrase early — and FR-004e's retry rule is what makes the qualifier load-bearing, because a
-record published during a broker outage is queryable minutes late and that is not a breach.
-FR-004d measures where the clause asks only for analysis, deliberately.
-
-**TWO CONNECTION-MINUTE COUNTERS THAT MEASURE DIFFERENT QUANTITIES.** `meter.ts`: *"A
-CONNECTION IS CHARGED FOR EVERY CALENDAR MINUTE IT WAS OPEN FOR ANY PART OF. Open at 00:00:59
-and closed at 00:01:01 is two seconds of wall clock and TWO connection-minutes."* Records give
-elapsed duration. **2 against 0.03 for the same connection.** The reconciliation compares
-buckets-from-records against buckets-from-the-meter — one quantity computed twice — and
-publishes the duration/bucket gap as a number so nobody reads it as a defect. **4.2's boundary
-day, one domain over.**
-
-**AND THE QUICKSTART WAS FOUR PASSES BEHIND — THE ONE ARTIFACT WITH A CONSTITUTION MUST ON
-IT.** Constitution VI: *"The quickstart MUST run unmodified."* It listed **eight** gates where
-T095 lists eleven, missing `pnpm build` (added at pass 9, the gate that caught 4.4 absent from
-`lib/tutorial.ts`) and `test:integration` and `coverage` (added at pass 14, and between them
-they run every test this chapter writes). It carried the fenced-file list **pass 7 measured
-wrong**, `ingest.ts` and all. It said fence work happens in *"phase 6"* when the phases became
-eight at pass 5. And its comparison had FR-009a's scoping and not FR-009b's period split.
-
-**Four passes corrected those facts where they were ARGUED and left them where they were
-INSTRUCTED.** *Fix the file that describes the thing AND the one that instructs it, then grep
-the claim everywhere* — the memory rule, and four passes of this cycle broke it in the same
-direction.
-
-**AND `MAX_CONNECTIONS_PER_USER = 5` IS A CEILING ON "N CONNECTIONS".** T037 said *"open and
-close N connections … assert 2N records"* and never said across how many users. The cap is
-enforced by claiming one of five Redis slot keys per user per environment, across instances,
-and the sixth socket is refused with close **4004** — which returns before `open()`, so it
-produces no `Connection` and **no record**, exactly as the unauthenticated case does. Ten
+**AND `MAX_CONNECTIONS_PER_USER = 5` IS A CEILING ON "N CONNECTIONS".** A task said *"open and
+close N connections, assert 2N records"* and never said across how many users. The sixth socket
+is refused with close **4004**, which returns before `open()` and produces no record — so ten
 sockets as one user assert 20 and measure 10, and the failure reads as ten lost records rather
 than five refused connections. **Reading cannot find what the schema refuses**, and a cap is
 the same kind of refusal.
 
-**AND A PROBE COPIED FROM 049 KEPT THE HAZARD AND DROPPED THE GUARDS.** T056 read *"insert the
-same close record three times and assert physical `count()` 3 against `FINAL` 1, with `SYSTEM
-STOP MERGES` on the table."* 049's own test (`ingest.itest.ts:281–318`) does four things and
-that task named one — **the one with the lane-wide side effect.** The other three are a
-`finally` carrying `SYSTEM START MERGES`, a `DELETE` of the probe's own rows, and both counts
-scoped by a dedicated environment id. A bare `count()` is a whole-table assertion and the
-gateway lane runs **four files at a time**; a failed assertion between stop and end leaves the
-table never collapsing duplicates for every later reader. **Copy the shape, not the sentence.**
+## WHAT RUNNING IT FOUND THAT READING COULD NOT
 
-**AND THE INSTRUMENT FOR THAT CLASS CANNOT SEE THIS STORE.** `check-lane-scope.py`'s `SHARED`
-array is the lane's **Postgres** tables, and its own last line is *"SQL text only."*
-`relay_analytics.connection_events` is in neither the list nor the database, so T061's zero is
-true about Postgres and silent about the only shared table this chapter touches. **4.2, 4.3,
-4.4 and 4.5 all write shared ClickHouse tables from integration tests and no gaps.md records
-that the analytical store has no lane guard** — Postgres has a trigger, an exemption list
-asserted both ways, and a sweeper; ClickHouse has none of the three.
+**A CLEAN STOP PUBLISHES A LEDGER SAYING TEN CONNECTIONS ARE STILL OPEN.** Ten connections
+opened and closed inside one flush window, then the process ended two ways:
 
-**AND THREE PREMISES HELD, EACH A PLAUSIBLE REPEAT.** The gateway's integration `include` is
-`src/**/*.itest.ts`, recursive — `connection-log/` is the first subdirectory any gateway itest
-has used, and a single-star glob would have run nothing new and passed green. The coverage
-`include` is `services/*/src/**/*.ts`, so T058's nested pin binds, with 4.4's
-`request-log/event.ts` as the precedent and 049's 1-unbindable-in-45 as the reason to check.
-And `connection-log.itest.ts` needs **no** `EXEMPT_FILES` entry: the guard fires only under
-`RELAY_HARNESS_BAIT=on` and the gateway lane carries no bait, while `exempt.test.ts` asserts
-that list in both directions — so a needless entry would have been a defect of its own. T010d
-records all three.
+    clean stop (SIGTERM)   opened 10 | closed 0      of 20 expected
+    kill      (SIGKILL)    opened  0 | closed 0      of 20 expected
 
-**AND THE CHAPTER'S OWN INTEGRATION SUITE HAD NO GATE — ELEVEN NOW, NOT NINE.** `.itest.ts`
-files load `vitest.integration.config.mts`, which `pnpm test` never opens, so they run under
-**`pnpm test:integration`** alone. **Zero tasks ran it.** `connection-log.itest.ts` carries
-every one of US1's proofs — 2N records on the stream, the `unclaimed` arm on a real record, 2N
-rows after the drain, the pair as two rows, the redelivery collapse — and discharges SC-001,
-SC-004 and SC-007. `pnpm coverage` was missing for the same reason, and it is the only lane
-that enforces T058's per-file pins. **T062 would have closed the MVP without either**, leaving
-three phases that could break the suite silently. *A check that cannot fail for the reason you
-care about is not a check* — and a test nothing runs is one step further out.
+`sessions.close()` calls `wss.close()`, which **does not close established sockets**, so no
+per-socket close handler fires and no close record is ever enqueued — which `session.ts` says
+at :335 for a different reason entirely. **Zero of twenty is visibly wrong; ten opens with no
+closes is not**, and a dashboard subtracting closes from opens drifts up by a full instance on
+every deploy. Held past two flush intervals the kill costs nothing, because the opens have
+already gone; inside the window it costs everything. The two bound the loss from both ends.
 
-**AND PASS 13's OWN FIX WAS PASS 14's DEFECT.** T005 was corrected to say *"049 found five
-stale cross-references in §3"*. They were in **§4**, and §4's amendment says so while also
-certifying the section pass 13 spent a probe vindicating: *"THE ORDINALS IN THIS SECTION WERE
-ONE AHEAD OF §3's … **§7's references were written against §3's table and are unaffected.**"*
-The document had already answered the question the probe was built to answer. **The fix is
-where the next defect is** — now including this cycle's own repairs.
+**THE COVERAGE LANE WAS RECORDED DEAD AND IS NOT.** Phase 4 measured `pnpm coverage` printing
+`No test files found, exiting with code 1`, reproduced it in a `part4-ch4` worktree, and blocked
+two tasks on it. T095 ran the same command against the same config: **108 files, 1,545 tests,
+511 seconds.** The conclusion drawn from the dead lane — that 049's 100/100/100/100 must have
+come from somewhere else — is withdrawn; the workspace lane now reports the same figure. **One
+instrument here produced a false "nothing to see" and nobody can yet say why** (050-1).
 
-**AND `docs/12` §4 ALREADY ARGUES FR-008.** Its subsection *"FR-ANL-06 has a concrete
-counterpart, and it is Part 3's"* carries it whole: *"a quota must refuse a send synchronously,
-so its counter cannot live downstream of a lossy stream"*, therefore **"Two counters of one
-quantity is the right answer and the reconciler is the price."** §4 is the section headed
-*"Chapters must not re-teach these"*. T087 cites it now rather than deriving it again.
+**AND 4.4's INTEGRATION SUITE NEEDS A PROCESS NO GATE STARTS.** `request-log.itest.ts` polls
+ClickHouse for a row only the ingester can write, to a 20-second deadline, and **there is no
+ingester service in `compose.yaml`**. Measured: 5 passed with one running, 5 failed without.
+That suite discharges 4.4's SC-001 and is green only for an operator who happens to have a
+process alive (050-8). This chapter's own suites were checked the same way and need nothing.
 
-**AND A DOCUMENT THE CHAPTER MAKES INCOMPLETE IS FALSIFIED BY NOTHING.** FR-017 amended a
-published document when a measurement contradicted it, which is the case every previous chapter
-hit. **This chapter's three SAD debts are the other kind**: §6.2 declares the analytical schema
-and gained a table at revision 1.3 (*"this document named no table for FR-ANL-01's webhook
-delivery attempts"*) and another at 1.4 — `connection_events` is the same series' next entry
-and the same clause's **last arm**, and no task added it. §4's gateway entry will describe a
-service that publishes analytical events and holds a broker client while mentioning neither;
-the dispatcher's entry already carries the sentence to copy. **And that entry never mentioned
-the sixty-second usage report either** — which is spec.md §2's own framing finding, true of the
-SAD as well, while T085 amended only `docs/12`. **The chapter found the omission in one
-document and fixed it there.** FR-017a covers the class now; T081b and T081c pay it.
+**THE VIETNAMESE CHAIN IS NEVER COMPARED TO THE TREE.** `check-fence-chain.mjs:265` iterates
+**`en.state`**; the vi chain is replayed and then compared against the ENGLISH chapter's fences
+(MIRROR), never against `relay-platform`. So three vi whole bodies are stale today —
+`shape.ts`, `clickhouse.ts` and `main.ts`, all in vi 4.3 — and every gate is green. T010c
+predicted two and missed the third. **A prediction that the instrument would show something is
+a claim about the instrument**, and the delta of 0 was real (050-3).
 
-**AND `TRAP` IS A COUNTED BOX CLASS THAT NO GATE COUNTS.** `docs/07` §line 70: **≥1 per code
-chapter**. Zero mentions in 050's spec or tasks, honoured by habit in every chapter so far —
-4.4 carries four. `check:figures` counts figures and no checker reads prose, so this is one
-draft away from being missed. T086 names it and T091 counts it beside the prose words.
+**ELEVEN OF THE 36 INHERITED HEAD PROBLEMS ARE NOT DRIFT.** Split by what the checker says:
+**25 are `<path> differs at line N`** and **11 are `<title> does not exist in relay-platform`**
+— fences titled with a prose phrase rather than a path (*"the ladder against the registry"*,
+*"the typo, now"*). They can never be repaired by editing the platform. The headline 110 is
+eleven units pessimistic, and 25 is the number a chapter should be measured against (050-4).
+
+**A BATCH REDELIVERED INTO ITSELF AND THE COUNT WAS THE ONLY TELL.** `ingestOnce` reported 16
+for a stream holding 8: `ack_wait` of 1 s against a 2,000 ms fetch window. Diagnosed by printing
+the stream's own depth, not by reasoning about the consumer.
+
+**AND TURBO'S CACHE HID A TWO-CHAPTER-OLD RED.** `bound-port.test.ts` had been failing since
+4.3 — the ingester arrived and its `BINDS_NOTHING` entry did not — and the `test` task's cache
+key does not cover another package's `main.ts`. This chapter's `compose.yaml` edit busted the
+key and the failure appeared. **A green lane is a claim about what was re-run.**
+
+## READ THE CLAUSES, NOT THE IDENTIFIERS — THREE CITATIONS POINTED AT CLAUSES THAT DO NOT SAY IT
+
+Eleven passes read the platform, the tutorial and the structure record; the twelfth opened the
+SRS the quotations point at.
+
+- **DR-11 names neither number.** It governs the SHAPE of an insert — *"batched or asynchronous;
+  single-row synchronous inserts are prohibited"*. The 2 s and 10,000 rows are
+  `docs/05-sad.md:182`'s, and `ingest.ts`'s comment is the furthest-travelled copy of a figure
+  credited to the wrong clause. DR-11 carries them now.
+- **NFR-SCL-01 carries no memory figure.** The 160 MB is SRS revision 1.9 and `docs/11`, which
+  measured **157 against a 160 budget**. Cite the source that holds the number and compare
+  against 157, not the rounded ceiling.
+- **No clause forbade a credential in an analytical record.** FR-ANL-11 governs message text and
+  NFR-SEC-06 governs application logs; neither reaches it. The authority is **constitution III's
+  allow-list** — *"only lengths, identifiers, and metadata"* — which refuses by construction.
+  **An allow-list is the citation; a deny-list about something else is not.**
+- **FR-ANL-04's qualifier was dropped four times.** The clause is *"within 60 seconds … **under
+  normal conditions**"*, and the retry rule is what makes the qualifier load-bearing: a record
+  published during a broker outage is queryable minutes late and that is not a breach.
+
+**AND AN ADR LIVES IN TWO DOCUMENTS — THE SAD'S SUMMARY AND `docs/06`'s ARGUMENT.** Ten passes
+amended the summary and none opened the 98-line deep dive, which states the two lines this
+chapter falsifies more fully than the SAD does. **The mapping is the argument and the gateway
+half is the half it is named for**: *"Choosing Redis keeps a clean mapping — gateway to Redis,
+api and workers to NATS."* 3.8 and 3.18 broke the api half and the deep dive records the cost as
+*"relocated rather than avoided"*; this chapter puts it on the gateway, which is where the
+analysis refused to put it, and afterwards the mapping describes nothing. **What is falsified is
+the arithmetic beside the refusal**, not the refusal: the gateway holds two clients either way,
+so NATS fan-out would now add none and remove none, and ADR-07 survives on Redis alone.
+
+**AND CONSTITUTION VII SAYS ADRs ARE IMMUTABLE** — *"superseding requires a new ADR"* — while
+ADR-07 carries two in-place amendments. Precedent does not decide it and the constitution names
+only one form, which makes **the missing sentence the defect rather than either choice**.
+Decided out loud rather than defaulted.
+
+## THE MEASUREMENTS WORTH CARRYING
+
+**403.5 BYTES A RECORD, 26% HEAVIER THAN THE SYNTHETIC FIGURE TWO CHAPTERS HAVE IN PRINT.**
+Reconstructing 4.4's method reproduced 5.55 and 38.8 rec/s exactly from 320 B — which is what
+made the method trustworthy before it was applied to anything new. Then the stream's own
+accounting over 3,992 real messages said 403.5. **The 7-day crossover is 4.40 rec/s, not 5.55.**
+And a third producer spends the budget outright: **two connection-pairs a second takes the
+request allowance from 5.55/s to 0.86/s.** 4.4 corrected this figure once already for a 2%
+subject-length error; it is still a quarter light of production.
+
+**TWO CONNECTION-MINUTE COUNTERS THAT MEASURE DIFFERENT QUANTITIES.** The meter charges every
+calendar minute a connection was open for any part of; the records give elapsed duration. **2
+against 0.03 for the same connection.** The reconciliation compares buckets against buckets —
+one quantity computed twice — and publishes the duration/bucket gap as a number so nobody reads
+it as a defect. Scoped to connections with BOTH records present, because unscoped it would have
+compared 8 against 0.
 
 **AND THE RECORD'S KEY NEEDS `event` IN IT.** One connection produces two rows with one
 `connection_id`; without `event` in the sorting key a `ReplacingMergeTree` collapses the open
 into the close. Verified against the server: `count() FINAL` 2, not 1.
+
+## THE HABITS THIS FEATURE PAID FOR AGAIN
+
+- **The fenced-file list was remembered, not counted — eight files, not five.** Both the plan and
+  the tasks named a set that was wrong in both directions: `ingest.ts` carries no titled fence
+  anywhere, and `vitest.coverage.config.mts` carries 23. **A list of fenced files goes stale
+  every time a chapter moves code between files.**
+- **The tutorial had not built since 4.4 shipped.** `<ChapterHeader id="4.4" />` throws on an
+  unregistered id, so `pnpm build` exited 1 from the moment 049 closed — at 112 of 112 with
+  eight gates green. **None of the eight rendered a page.** `pnpm build` is a gate now, and
+  registering the chapter is a task no requirement had named.
+- **The vi path that was checked has never existed.** An assumption read *"`app/(vi)/part-4/` is
+  still empty"*; the tree is **`app/(vi)/vi/part-N/`**, so that check could only come back empty.
+  **A zero from an instrument is a claim about the corpus only if the instrument can be shown to
+  have read it** — and here the instrument was a path.
+- **A probe copied from 049 kept the hazard and dropped the guards.** A task named the
+  `SYSTEM STOP MERGES` and not the `finally`, the scoped `DELETE` or the dedicated environment
+  id. **Copy the shape, not the sentence.**
+- **A pass's own fix was the next pass's defect**, twice. The fix is where the next defect is,
+  now including this cycle's own repairs.
+- **Sixteen analysis passes, and none of the last four found anything in the tree** — they found
+  the artifacts' own agreement with each other. **The pass that RUNS the premise finds the most.**
+
 
 **049 IS CLOSED at 112 of 112 — CHAPTER 4.4, "the requests that belong to nobody".** Its
 record is `specs/049-chapter-4-4/` — `baseline.txt` first (842 lines), then `gaps.md` (six

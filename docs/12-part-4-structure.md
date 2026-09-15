@@ -165,7 +165,7 @@ publishes is the numbers and the `EXPLAIN`, not a schema change it then reverts.
 
 ---
 
-## 3. The shape — seven movements, 23 chapters, three milestones
+## 3. The shape — seven movements, 22 chapters, three milestones
 
 Chapter titles are provisional. Movement boundaries are not — they are what §5's rules
 produce, and they are declared **before** chapter one exists, which is the whole payoff of
@@ -202,7 +202,7 @@ is the stable address, as §2.1 intended.
 | 3 | II | A second store needs a second ledger | **Open — see §7.1.** A migration runner and an identity scheme for a store whose DDL the Postgres runner cannot execute |
 | 4 | II | The consumer that was promised | The ingester. Batching (DR-11), backpressure, and ClickHouse down → the stream absorbs 24 h (NFR-REL-05) |
 | 5 | III | Every request is an event | FR-ANL-07's producer. Generalises the pattern chapter 3.20 already taught rather than introducing it — see §4 |
-| 6 | III | The gateway's first stream | Connection open/close (FR-ANL-01). **The gateway has never touched NATS** — verified, zero references in `services/gateway/src`. Amends ADR-07 a second time; see §7.2 |
+| 6 | III | The gateway's first stream | Connection open/close (FR-ANL-01). **The gateway had never touched NATS** — verified at the time, zero references in `services/gateway/src`, five dependencies and none a broker client. **What this line did not say is that the gateway already reported connection data**: `meter.ts` has shipped connection-minutes to `POST /internal/usage/connections` every sixty seconds since chapter 3.24. So the chapter is not *"the gateway has no way to report"* — it is *"the one it has was built for a different question and goes through the service the analytical path is supposed to be independent of"*. Amends ADR-07 a THIRD time, in both documents that hold it, and closes §7.2 |
 | 7 | IV | Metering you can bill on | Daily rollup materialised views (DR-10) — billing never scans raw events |
 | 8 | IV | The job that checks the meter | FR-ANL-06's reconciliation job, built to be callable in isolation (§2.3) |
 | 9 | IV | The log a customer can search | FR-ANL-07's query surface; FR-ANL-10's latency percentiles |
@@ -384,10 +384,20 @@ deleted `meta/`. A second store needs a second runner and a second identity sche
 byte-identical migrations under different numbers, and a lane that failed in 0.6 s three
 times. **Everything downstream of ch 3 anchors on this. Decide it before ch 2 is written.**
 
-**7.2 — ADR-07's second amendment (ch 6).** *"Clean mapping — gateway to Redis, api and
-workers to NATS."* Chapter 3.18's amendment already recorded that this stopped being exactly
-true in 3.8. Giving the gateway a publisher amends it again, and that is a chapter's worth of
-argument rather than a line of wiring.
+**7.2 — ~~ADR-07's second amendment (ch 6)~~ — CLOSED by chapter 4.5.** *"Clean mapping —
+gateway to Redis, api and workers to NATS."* Chapter 3.18's amendment already recorded that
+this stopped being exactly true in 3.8. Giving the gateway a publisher amends it again, and
+that is a chapter's worth of argument rather than a line of wiring.
+
+> **Closed 2026-09-15.** It was a chapter's worth of argument, and the argument turned out
+> to be sharper than this brief. Two lines stop being true rather than one. The body's
+> *"fan-out on NATS would leave that service holding two broker clients and remove none"*
+> prices the refusal, and after this chapter the gateway holds two anyway — **so the price
+> is zero and the refusal survives on ADR-10 alone**. And the mapping does not merely stop
+> being *exactly* true: 3.8 and 3.18 took its api half, this chapter takes its gateway
+> half, and afterwards **it describes no service in this platform**. Amended in place in
+> both `docs/05-sad.md` and `docs/06-adr-deep-dives.md`, with the new-ADR alternative named
+> and declined — the decision has not changed, only a driver's price.
 
 **7.3 — Constitution VII and the media worker (ch 14).** ClamAV and ffprobe are not
 TypeScript. The SAD calls this *"the one service where ADR-01's worker-thread posture matters
