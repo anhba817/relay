@@ -209,11 +209,18 @@ chapter is measured against:
 - The eleven gates' current colours, so an inherited red is not mistaken for a new one. Four
   api suites were red at 050's close for reasons no chapter caused.
 
-### Phase 2 — The rollup table, with a named target
+### Phase 2 — The rollup table with a named target, and the view that waits for a producer
 
 `0006` creates the rollup as a `SummingMergeTree` table with an explicit key, and **not** as a
 view with an inline engine. R7 measured that 4.2's implicit inner table is what makes the
 shipped view unextendable; this one is built the way R1 requires.
+
+**Both views over sources that already exist are built here too**, the message one included —
+`0008_mv_messages.sql`, over a table with no producer. It belongs in the foundation rather than
+in phase 5 because the corpus proof in phase 4 is the only window in which its three columns
+can be checked against raw data, and a corpus flowing through a rollup with no message view
+proves nothing. A first draft had the view in phase 5 and the corpus in phase 4, which would
+have loaded and removed a corpus that nothing was reading.
 
 Decided here and recorded: what happens to `daily_usage`. The options are leave it beside the
 new table, or supersede it. **A bare `DROP` of a source under a live view is the hazard 047
@@ -253,8 +260,10 @@ counted.
 
 ### Phase 5 — Attribution
 
-Channel added to the key (R6: it is on the row, so it costs a key column). Application
-recorded as an open item with its cost named — it is on no row, the store holds no
+**Channel is in the key from phase 2**, because R6 measured it on the row — so this phase
+prices the dimension rather than adding it: the rollup's rows become
+`environments x channels x days`, and a tenant-day read sums across a tenant's channels.
+Application recorded as an open item with its cost named — it is on no row, the store holds no
 `applications` table, and the mapping lives in Postgres, so closing it means arguing
 constitution III rather than writing a join.
 
@@ -290,7 +299,7 @@ replay, eleven gates, `gaps.md` with **every carried item re-measured** — 050'
 
 ```
 Phase 1  premises                 ── blocks everything
-Phase 2  the rollup table         ── blocks 3, 4
+Phase 2  the table + both views   ── blocks 3, 4
 Phase 3  connection-minutes       ── blocks 4
 Phase 4  the read        🎯MVP    ── blocks 5
 Phase 5  attribution              ── independent of 6

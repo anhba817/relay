@@ -36,7 +36,7 @@ subshell and dies with it; 049 reproduced that twice in one feature.
 
 ---
 
-## Phase 2: Foundational — the rollup table with a named target
+## Phase 2: Foundational — the rollup table with a named target, and the view that waits for a producer
 
 **Blocks every user story.** R1 measured that the four quantities can share one row only if a
 named target table exists for several views to write into; R7 measured that 4.2's view owns an
@@ -178,7 +178,7 @@ shipped platform is decided out loud.
 
 ```
 Phase 1  premises + the openings   ── blocks everything
-Phase 2  the rollup table          ── blocks 3, 4, 5
+Phase 2  the table + both views    ── blocks 3, 4, 5
 Phase 3  US1 connection-minutes    ── blocks 4
 Phase 4  US1/US2 the read  🎯MVP   ── blocks 5
 Phase 5  US3 attribution           ── independent of 6
@@ -191,6 +191,8 @@ Phase 8  the numbers + the chapter ── needs all
 
 - **US1** spans phases 3 and 4: the minutes have to be in the table before a read can answer
   from it.
+- **US1a** is the corpus window inside phase 4 — the only place the three message-sourced
+  columns can be checked against raw data, which is why phase 2 builds their view.
 - **US2** is the rows-read claim and rides on phase 4's read.
 - **US3** and **US4** both need the MVP and are independent of each other.
 
