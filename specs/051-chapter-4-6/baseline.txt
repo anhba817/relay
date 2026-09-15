@@ -1,0 +1,49 @@
+================================================================================
+BASELINE — 051, chapter 4.6, "metering you can bill on"
+================================================================================
+The measurement record. Written as phases run; everything here was executed.
+
+Lane environment: RELAY_POSTGRES_PORT=15432 (this machine's own Postgres holds 5432).
+ClickHouse on 8123, relay/relay. One statement per HTTP request (Code: 62 otherwise).
+
+================================================================================
+PLANNING — THE PROBES THAT DECIDED THE DESIGN
+================================================================================
+Full write-ups in research.md R1-R11. The figures, so later phases can compare:
+
+  THE STORE, 2026-09-15
+    message_events          0     no producer — zero occurrences under services/
+    api_requests       11,683     producer since 4.4
+    connection_events     154     producer since 4.5
+    webhook_attempts       64     producer since 4.3
+    daily_usage             0     the rollup, over message_events
+
+  CONNECTIONS
+    both records      55
+    one only          44        44% contribute no minutes
+    total             99
+
+  A CLOSE ROW CARRIES BOTH ENDPOINTS
+    ts 2026-09-15 02:58:03.876 · close_code 1000 · duration_ms 252
+    ts - duration_ms -> 2026-09-15 02:58:03.624
+
+  TWO VIEWS, TWO SOURCES, ONE TARGET
+    message source -> 1 · connection source -> 100 · sum(delta) 101
+
+  SIGNED DELTAS
+    2 created, 1 deleted, 1 edited -> sum(delta) 1
+
+  CALENDAR-MINUTE EXPANSION IN A VIEW
+    connection 00:00:59 -> 00:01:01 (2 s wall clock) -> 2 minutes
+
+  FENCE EXPOSURE, analytics/
+    2 analytics/0000_message_events.sql
+    2 analytics/0003_webhook_attempts.sql
+    1 analytics/0005_connection_events.sql
+    0 analytics/0001_daily_usage.sql
+    0 analytics/apply.mjs
+
+  PROBE CLEANUP, VERIFIED
+    DROP DATABASE r051_probe -> count()=0 in system.databases
+    planted row removed from message_events AND from the view's inner table
+    message_events 0 · daily_usage rows for the probe environment 0

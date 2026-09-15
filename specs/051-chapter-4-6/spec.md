@@ -196,9 +196,17 @@ then record the decision and amend the SRS.
 
 **The rollup**
 
-- **FR-001**: The analytical store shall carry, per tenant per day, all four quantities
-  FR-ANL-05 names: messages sent, unique active users, connection-minutes, and stored message
-  count.
+- **FR-001**: The analytical store shall carry, per tenant per day, every quantity of
+  FR-ANL-05's four that **has a producer**: connection-minutes from chapter 4.5's records, and
+  messages sent, unique active users and stored message count from `message_events`.
+- **FR-001a**: **`message_events` has no producer, and the chapter shall say so rather than
+  publish a column that reads zero.** Research R9 measured it: the table appears in no file
+  under `services/`, its only writer is `scripts/scale/load-analytics.mjs`, and it holds 0
+  rows while `api_requests` holds 11,683 and `connection_events` 154. Three of FR-ANL-05's
+  four quantities are derived from it. A rollup column that reports 0 messages for a tenant
+  that sent messages is worse than an absent column, so any quantity whose source has no
+  producer shall be **either** left out with the gap recorded **or** present and documented as
+  unpopulated until a producer exists — decided once, in the chapter, not per column.
 - **FR-002**: Connection-minutes shall be derived from the connection records chapter 4.5
   publishes, not from the Postgres meter, and the chapter shall say which of the two
   definitions of a connection-minute it uses.
@@ -283,9 +291,12 @@ then record the decision and amend the SRS.
 
 ### Measurable Outcomes
 
-- **SC-001**: All four of FR-ANL-05's quantities are readable from the rollup for a chosen
-  tenant and day, and each is compared against the same quantity computed from raw data over
-  the same window, with the difference published.
+- **SC-001**: Every FR-ANL-05 quantity with a producer is readable from the rollup for a
+  chosen tenant and day and is compared against the same quantity computed from raw data over
+  the same window, with the difference published. Every quantity without one is named, with
+  its row counts, and the decision of FR-001a applied to it.
+- **SC-001a**: The four analytical tables' row counts are published together, so a reader can
+  see which sources have producers and which do not.
 - **SC-002**: The metering read's rows-read figure is published beside the raw tables' row
   count, with the corpus size stated.
 - **SC-003**: The two connection-minute definitions are published side by side for one window
@@ -323,9 +334,13 @@ then record the decision and amend the SRS.
   a close.** 4.5 measured that neither a clean stop nor a kill produces close records, so a
   window containing a deploy has opens with no closes. The metering read is expected to need
   the same scoping FR-009a gave the reconciliation.
-- **The stored-message-count arm has no producer yet in the sense that matters.**
-  `message_events` carries `created|edited|deleted`, so the deltas exist; what does not exist
-  is anything that accumulates them.
+- **`message_events` has no producer at all — measured after this spec's first draft.**
+  Research R9: zero occurrences under `services/`, one batch loader, 0 rows on the running
+  stack. This is stronger than the draft assumed: it is not that nothing accumulates the
+  deltas, it is that nothing emits the events. **Building that producer is a send-path change
+  and is not this chapter** (R9 records the alternative and why it was declined); naming it is.
+- **Both connection-minute definitions are computable in a materialised view**, measured in
+  R3, so the choice FR-011 asks for is a decision rather than a constraint.
 - **Part 4 is 22 chapters and this is the 6th**, movement IV of seven, with the milestone at
   the 9th. Movement IV is four chapters: this one, the reconciler, the customer-facing log,
   and the milestone.
