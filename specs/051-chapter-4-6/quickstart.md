@@ -59,10 +59,14 @@ broker what it is holding:
 curl -s localhost:8222/jsz | python3 -c "import sys,json;print(json.load(sys.stdin)['messages'],'held')"
 ```
 
-`13265 held` while this was written. **The api had served all session and the store had
-learned nothing** — the tables move when an ingester drains, not when the platform works. So
-the next drain moves `api_requests` by the whole backlog at once, which is worth knowing
-before you read it as something you caused.
+`13265 held` while this was written, and `13481` a few minutes later with the table counts
+unchanged. **Run it twice and watch the stream climb while the tables hold still** — that is
+constitution III's independence in two commands, and it is worth more than the sentence
+describing it. The api had served all session and the store had learned nothing.
+
+The tables move when an ingester drains, not when the platform works, so the next drain moves
+`api_requests` by the whole backlog at once — worth knowing before you read it as something
+you caused.
 
 **Start one now**, after the census, for anything that waits on a row — 050-8 measured 4.4's
 suite passing 5 of 5 with one running and failing 5 of 5 without:
