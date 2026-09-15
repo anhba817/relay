@@ -28,7 +28,28 @@ Full write-ups in research.md R1-R11. The figures, so later phases can compare:
     ts - duration_ms -> 2026-09-15 02:58:03.624
 
   TWO VIEWS, TWO SOURCES, ONE TARGET
-    message source -> 1 · connection source -> 100 · sum(delta) 101
+    SUPERSEDED, and kept because the reason is the finding:
+      message source -> 1 · connection source -> 100 · sum(delta) 101
+    Both views wrote the SAME column. The design needs DISJOINT column sets, one of them
+    an AggregateFunction with no trivial default, so that probe validated a shape that was
+    never going to ship. Analysis pass 1 re-ran it properly.
+
+  TWO VIEWS, DISJOINT COLUMNS, ONE TARGET  (the figure a chapter may publish)
+    target exactly as data-model.md specifies it; connection view names only
+    connection_minutes and omits messages / stored_delta / active_users_state:
+
+      row lands   channel_id 00000000-…  messages 0  stored_delta 0  connection_minutes 1
+      uniqMerge(active_users_state) over the omitted column -> 0, not an error
+
+    then the message view, 3 created · 1 deleted · 1 author NULL:
+
+      per row     channel aaaa…   messages 3  stored 2  minutes 0  users 2
+                  channel 0000…   messages 0  stored 0  minutes 1  users 0
+      tenant-day  messages 3 · stored 2 · minutes 1 · users 2
+
+    An omitted AggregateFunction column reads as an empty state rather than throwing, and
+    uniqMerge ignores the NULL author -- so 046's Nullable(UUID) fix survives a rollup fed
+    by two views.
 
   SIGNED DELTAS
     2 created, 1 deleted, 1 edited -> sum(delta) 1

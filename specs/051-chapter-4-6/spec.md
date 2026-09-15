@@ -219,6 +219,13 @@ then record the decision and amend the SRS.
   so a deletion is a row rather than a missing row. A stored count built by counting rows
   that still exist would be reconstructing from state, which is the failure FR-ANL-02's
   emit-at-the-time rule exists to prevent.
+- **A corpus longer than the TTL disagrees with its own rollup, for a reason that is not this
+  chapter's.** `message_events` carries `TTL toDateTime(ts) + INTERVAL 90 DAY`, and 046
+  measured the TTL removing rows **at insert, not at merge** — 120,000 rows over 120 days
+  became 90,000 immediately and silently. The view fires first, so the rollup counts rows that
+  never persist, and 047 published the result as thirty days of figures for rows that were
+  never there. **The corpus is configured inside 90 days** so that a raw-against-rollup
+  comparison is a comparison; `CORPUS_DAYS` defaults to 120 and would produce the gap silently.
 - **Connection-minutes may span days.** A connection opening at 23:59 and closing at 00:02
   belongs to two days. Whichever definition bills, the day boundary must be decided rather
   than inherited from whichever timestamp happened to be indexed.
@@ -401,3 +408,10 @@ then record the decision and amend the SRS.
 - **An ingester process for any integration test that waits on a row.** 050-8 measured 4.4's
   suite passing 5 of 5 with one running and failing 5 of 5 without, and there is no ingester
   service in `compose.yaml`.
+- **A loaded corpus, for one window.** `message_events` holds 0 rows and `connection_events`
+  154, so SC-002's rows-read figure and every one of US1a's scenarios need
+  `scripts/scale/corpus.mjs` and `scripts/scale/load-analytics.mjs`. The loader writes into the
+  shared `relay_analytics` — `DB` is hardcoded — so the rows come out again in the same phase.
+- **`services/ingester/src/metering.ts`**, over a query method added to the `ClickHouse`
+  interface. That interface is insert-and-count today, so the read is not merely placed beside
+  the client; the interface gains a method, as it has once per chapter since 4.3.
