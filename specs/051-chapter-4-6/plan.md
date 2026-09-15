@@ -39,8 +39,31 @@ busiest path in the platform, and by §3's table it is not this chapter.
 event count, published with the corpus size beside it (4.2 published 315 against 1,052,655)
 **Constraints**: the `analytics/` ledger keys on filename with a checksum and refuses a
 changed one, so every schema change is a **new numbered statement** — `0001` cannot be edited
-**Scale/Scope**: one new rollup table, one to three views, one read, one SRS amendment, two
-`docs/12` amendments, one chapter
+**Scale/Scope**: one new rollup table, two views, one read, one SRS amendment, two `docs/12`
+amendments, one chapter
+
+**THE FILE NUMBERS ABOVE FOLLOW THE PHASES, AND `tasks.md` IS AUTHORITATIVE.** A first draft
+of this tree had `0007` as the message view and `0008` as the connection one — the reverse of
+the order the phases build them. **The ledger keys on filename**, so a tree and a task list
+that disagree produce a `schema_applied` row nobody can match to a file.
+
+**AND THE READ IS `services/ingester/src/metering.ts`, NOT A SCRIPT.** A first draft left it
+as *"`analytics/metering.mjs`, or a module if phase 5 needs it testable"* — an either/or
+sitting exactly where constitution VI's coverage clause gets decided. Three things settle it:
+
+- **A script under `analytics/` can carry no pin.** The coverage include is
+  `packages/*/src/**/*.ts` and `services/*/src/**/*.ts`; `analytics/` is in neither, so a
+  `.mjs` there is unreachable by the one lane that enforces the ratchet.
+- **An unwired script is the defect this chapter is about.** `analytics/query.mjs` opens
+  *"FR-ANL-05's daily question, asked of the analytical store"* and is referenced by nothing.
+  Shipping a second one would repeat, in the same directory, the thing the chapter spends its
+  argument on.
+- **It has a caller from day one, and the caller is the test.** `metering.itest.ts` reading
+  the rollup is what makes the read verified rather than demonstrated, and 4.8 wires it to a
+  route when the query surface needs one.
+
+It sits beside `services/ingester/src/clickhouse.ts`, which already owns the store's client
+and connection settings — one client per service, the argument 4.5 made for NATS.
 
 **No NEEDS CLARIFICATION remain.** The three the spec could have carried were settled by
 running them: R1 (can one rollup be fed from several sources), R3 (are both connection-minute
@@ -66,9 +89,14 @@ Two facts against it, both measured:
    send path. Nothing reads the analytical store for metering — the only file that ever asked
    FR-ANL-05's question of it is `analytics/query.mjs`, referenced by no script, service or
    config.
-2. **`message_events` is not fed via a durable queue.** Its one writer is
-   `scripts/scale/load-analytics.mjs`, which reads Postgres directly through ClickHouse's
-   `postgresql()` function — a batch pull, not a queue, and a cross-path read at that.
+2. **The only path message data has into the store is the one the clause forbids
+   outright.** Its one writer is `scripts/scale/load-analytics.mjs:53`, which is
+   `postgresql('${PG_HOST}', …)` — **ClickHouse executing a query against Postgres.** The
+   clause's first prohibition is *"Analytical queries MUST NEVER execute against the
+   operational database (PostgreSQL)"*, and that is this, not merely its `CON-01` queue
+   qualifier. A first draft of this section read *"a batch pull, not a queue"* and cited the
+   qualifier; the qualifier is the weaker half of the sentence it appears in. **Read the
+   clauses, not the identifiers** — including the clause you are the one quoting.
 
 **And this chapter cannot fix it.** After everything below ships, billing still cannot read
 messages-sent from ClickHouse, because nothing emits the event. So the chapter makes the
@@ -140,15 +168,16 @@ specs/051-chapter-4-6/
 ```
 relay-platform/
 ├── analytics/
-│   ├── 0006_daily_usage_v2.sql      # the rollup table, explicit target
-│   ├── 0007_mv_messages.sql         # message_events -> rollup   (source has no producer)
-│   ├── 0008_mv_connection_minutes.sql # connection_events -> rollup
-│   └── metering.mjs                 # the read, or a test-only helper
-├── services/…                        # unchanged — no producer, no send-path edit
+│   ├── 0006_daily_usage_v2.sql        # the rollup table, explicit target
+│   ├── 0007_mv_connection_minutes.sql  # connection_events -> rollup  (phase 3)
+│   ├── 0008_mv_messages.sql            # message_events -> rollup     (phase 5, no producer)
+│   └── (no read here — see services/ingester/src/metering.ts below)
+├── services/ingester/src/metering.ts  # the read, and metering.itest.ts its caller
+├── services/…                        # otherwise unchanged — no producer, no send-path edit
 └── vitest.coverage.config.mts        # pins, if the read is a module
 
 relay-tutorial/
-├── app/(en)/part-4/chapter-06/<slug>/{page.mdx,figures.ts}
+├── app/(en)/part-4/chapter-06/<the chapter's slug>/{page.mdx,figures.ts}
 └── lib/tutorial.ts                   # register 4.6 — a step no requirement named until 050
 ```
 

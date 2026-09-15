@@ -268,6 +268,14 @@ then record the decision and amend the SRS.
   `uniq` approximation finding, or Part 3's quota counters. It cites them.
 - **FR-018**: Prose shall stay inside the 2,000–4,000 word bound measured outside code
   fences, with at least one `<Trap>` box (`docs/07` §line 70), and both counted.
+- **FR-018a**: The chapter shall be **registered in `relay-tutorial/lib/tutorial.ts`**, whose
+  own comment calls it *"the single source of truth … the landing table of contents,
+  ChapterHeader, and ChapterFooter all render exclusively from this manifest"*.
+  `<ChapterHeader id="4.6" />` calls `getChapter`, which throws on an unregistered id, and
+  `pnpm build` is the only gate that would catch it. **Chapter 4.4 shipped at 112 of 112 with
+  eight gates green and a site that did not build**, because registering it was a step no
+  requirement named. The chapter's title and slug shall be fixed once and shall match across
+  the directory name, the manifest `path` and the MDX `metadata.alternates`.
 - **FR-019**: `pnpm check:fences` shall be reported as a delta against an opening measured in
   this feature, broken down by kind and locale — and, following 050-4, **separating the
   `differs at line` class from the `does not exist` class**, because 11 of the inherited 36
@@ -315,6 +323,8 @@ then record the decision and amend the SRS.
   by kind and locale, with the two HEAD classes separated.
 - **SC-011**: Prose measured outside code fences against the 2,000–4,000 bound, with the
   `<Trap>` count beside it.
+- **SC-012**: `pnpm build` exits 0 with the chapter rendering, which is the only gate that
+  proves the manifest entry, the directory name and the MDX metadata agree.
 
 ## Assumptions
 

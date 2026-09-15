@@ -24,6 +24,31 @@ Two views, two different sources, one `TO` target:
     view over the connection source -> delta 100
     SELECT sum(delta) FROM target -> 101
 
+**THAT FIRST PROBE DID NOT TEST THE DESIGN, AND ANALYSIS PASS 1 RE-RAN IT IN THE RIGHT
+SHAPE.** Both views wrote the *same* column. The design needs **disjoint** column sets — the
+connection view writes `connection_minutes` and omits `messages`, `stored_delta` and
+`active_users_state`, and that last one is an `AggregateFunction` with no trivial default, so
+an insert through a view that omits it is the case that could have failed. Re-run against the
+target exactly as `data-model.md` specifies it:
+
+    INSERT through the connection view, which names only connection_minutes
+      -> row lands: channel_id 00000000-…  messages 0  stored_delta 0  connection_minutes 1
+      -> uniqMerge(active_users_state) over the omitted column: 0, not an error
+
+    then the message view, which names messages / active_users_state / stored_delta:
+      3 created, 1 deleted, one author NULL
+      -> per row: channel aaaa… messages 3  stored 2  minutes 0  users 2
+                  channel 0000… messages 0  stored 0  minutes 1  users 0
+      -> the contract's tenant-day read:
+                  messages 3 · stored 2 · minutes 1 · users 2
+
+**The design holds and the original evidence did not reach it.** A probe that validates a
+different shape is how *"batched 500 per publish"* survived four passes of the previous
+feature — the shape was never the one that would ship. Two things the stronger probe also
+settled: an omitted `AggregateFunction` column reads as an empty state rather than throwing,
+and `uniqMerge` ignores the NULL author, so 046's `Nullable(UUID)` fix survives into a rollup
+fed by two views.
+
 **Decision**: one rollup table with an explicit `TO` target, and one view per source table
 feeding it. This is the ClickHouse idiom rather than a trick, and it is the only shape in
 which "per tenant per day" is one row rather than a join across four.
