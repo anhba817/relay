@@ -881,3 +881,87 @@ THE UNIT LANE, RUN UNCACHED AND PER PACKAGE:
     gateway 136 · api 274 · protocol 144 · ingester 33 · test-harness 22 ·
     dispatcher 8 · config 7 · service-kit 3
     `bound-port.test.ts` 6 of 6 after the exemption entry (was 6 of 8)
+
+================================================================================
+PHASE 5 — THE GATEWAY KEEPS SERVING WHEN THE BROKER IS GONE
+================================================================================
+
+T063 — BY INSPECTION, BECAUSE A TIMING TEST PASSES ON A FAST BROKER EITHER WAY
+    session.ts:980    connectionLog?.opened(connection)      beside registry.add
+    session.ts:1180   connectionLog?.closed(connection, …)   beside meter.closed
+    `await connectionLog` anywhere in session.ts:  0 occurrences
+    `publisher.publish` is reached from `flushOnce` (event.ts:244) and from `close`
+    (event.ts:299). Neither is on a socket path.
+
+T064/T065/T066 — LATENCY AND OUTCOMES, 60 CONNECTIONS A SIDE, WARMED FIRST
+    Outcomes beside latencies, because a connection that is fast and refused satisfies a
+    timing assertion.
+
+        broker up     acked 60/60   min 3.55  p50 4.92  p95 5.59  max 6.11  mean 4.88
+        broker down   acked 60/60   min 4.60  p50 5.42  p95 6.99  max 8.47  mean 5.58
+
+        buffered at end 139 · dropped 0        (both runs)
+
+    **EVERY CONNECTION ACKED WITH THE BROKER STOPPED**, and 139 records were RETAINED
+    rather than lost -- FR-004e's rule measured rather than asserted. The 70 sockets of
+    each run produce 140 records; one flush had left before the count was taken.
+
+    THE DOWN RUN IS SLOWER, NOT FASTER, AND 4.4 MEASURED THE OPPOSITE (2.61 ms up
+    against 2.45 down). The difference here is 0.70 ms of mean and 0.50 of p50 over 60
+    samples a side -- one run each, no repetition, and this project has already recorded
+    that 60 samples of a crowded middle is a thin instrument. **Published as a pair with
+    its resolution stated rather than as a finding about direction.**
+
+T067 — ONE LINE PER FLUSH, CARRYING COUNTS AND NOTHING ELSE
+    16 records enqueued, one flush against a stopped broker:
+
+      {"level":"error","service":"gateway","msg":"connection_log.publish_failed",
+       "attempted":16,"failed":16,"buffered":16,"error":"NatsError: CONNECTION_REFUSED"}
+
+      publish_failed lines: 1        carries the token: false
+      buffered after: 16             carries message content: false
+      dropped: 0                     carries a subject: false
+
+================================================================================
+T068 — 049-1's STATED CAUSE JUST FAILED A CONTROL
+================================================================================
+`docker compose start nats` after the broker-down run:
+
+    {"status":"unavailable","error":"JetStream stream '$G > EVENTS' could not be recovered"}
+    streams 1 · ANALYTICS 3601 msgs · EVENTS gone
+
+**THE STREAM BEING WRITTEN SURVIVED AND THE IDLE ONE DID NOT.** 049-1 records the rule as
+*"the stream that fails to recover is whichever is being WRITTEN"*, proven there with a
+control and a deliberate reproduction. This run stopped the gateway and dispatcher first
+and left the api up, so:
+
+    ANALYTICS   written continuously -- 4.4's producer fires on every request, and Docker
+                polls /healthz every five seconds        -> RECOVERED, 3601 messages
+    EVENTS      idle -- the outbox relay had no rows to publish        -> UNRECOVERABLE
+
+That is the opposite of the recorded rule, from one observation. **It does not falsify
+049-1 on its own** -- one run against one run, and neither controlled for how much each
+stream had recently flushed to disk. What it does is remove "whichever is being written"
+as a settled explanation: the rule now has a counter-example and needs a mechanism.
+Carried to gaps.md with both observations rather than re-writing the entry from this one.
+
+    REPAIRED FROM OUTSIDE THE CONTAINER, the same way the streams were created:
+      delete: stream not found        (already gone from the listing)
+      ensureStream ->  ANALYTICS 3607 · EVENTS 1182, replicas 1 both
+      healthz -> {"status":"ok"}
+
+T069 — RSS, AND WHAT IT IS NOT COMPARABLE TO
+    relay-gateway-1   24.63 MiB   at rest, zero connections held
+
+    `docs/11-scalability-measurement-2026-09-06.md` measured **157 MB against a 160 MB
+    budget at 10,000 concurrent connections**. These two numbers are not comparable and
+    the figure above is not evidence about NFR-SCL-01. **The battery was not run, and
+    saying so is the point**: the clause's cost after a sixth dependency is UNMEASURED,
+    and `docs/11`'s nearest published analogue for one more thing in the gateway is
+    "a sixth grammar costs about 3 MB in the worst ratio".
+
+AND THE COMPOSED GATEWAY REACHES THE BROKER NOW
+    One socket through relay-gateway-1 after the `RELAY_NATS_URL` fix:
+      ANALYTICS 3615 -> 3621        (two connection records plus four request records)
+    The only `connection_log` line in its log is `publisher_never_connected`, from the
+    shutdown before the fix. No publish failures.
