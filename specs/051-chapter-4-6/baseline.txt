@@ -452,3 +452,73 @@ T040 — THE LANES AFTER PHASE 4
 
   T039a and T039b (the coverage pins) are the two tasks phase 4 leaves open: the read is
   written and tested but not yet pinned, and 050-1 assigned that to this chapter.
+
+T039a — THE PIN, AND 100 ON ALL FOUR REACHED BY DELETING BRANCHES
+  `metering.ts` measured **100 / 50 / 100 / 100** twice. Both uncovered halves were
+  defensive reads that cannot arise:
+
+    `?? ""` and `?? 0` per column   the SELECT names four columns, so a short row
+                                    cannot arrive and no test can reach the absent arm
+    `rows.length === 0`             **a bare aggregate with no GROUP BY always returns
+                                    exactly one row.** Asked of the server: `sum()` over a
+                                    tenant with nothing stored answers `0`, not an empty
+                                    result.
+
+  The second one carried a comment I had written claiming a test drove both arms. It did
+  not -- the test passed through the else, and the comment was wrong in the same commit
+  that introduced it. Removing both:
+
+    100 / 100 / 100 / 100, two observations, identical
+
+  4.5 reached the same figure the same way. **A branch that cannot go both ways is a
+  branch nothing checks**, and deleting it is better than pinning under it.
+
+  BOTH HALVES OF THE THRESHOLD PROBE:
+
+    the real key, demanded 101 against a measured 100:
+      ERROR: Coverage for branches (100%) does not meet
+             "services/ingester/src/metering.ts" threshold (101%)
+
+    a key naming no file, demanded 101 of everything:
+      occurrences in the output: 0
+
+  Fifth time this project has run that probe and fifth time the second half is silent.
+
+T039b — THE SWEEP
+    per-file pins           50      (49 at part4-ch5, plus this chapter's one)
+    bind                    50
+    file does not exist      0
+    exists but unmeasured    0
+    measurable files       112
+
+================================================================================
+PHASE 5 — ATTRIBUTION, PRICED
+================================================================================
+
+T044 — WHAT THE CHANNEL DIMENSION COSTS
+  Over phase 4's corpus: 248,155 rows, 91 days, 2,400 channels, 3 environments.
+
+    rollup rows keyed (environment_id, channel_id, day)   147,534
+    rollup rows keyed (environment_id, day)                   281
+    ratio                                                     525x
+
+    billing read against the channel-keyed table   32,778 rows · 3.56 MiB · 4 ms
+    the same question against the raw table        32,768 rows · 1.31 MiB · 3 ms
+
+  T044 was written as "add channel to the key and measure what it costs", then corrected at
+  analysis pass 3 to "measure what the dimension costs -- it is already in the key". Both
+  framings asked about storage. **The answer that mattered was about the READ**, and it did
+  not arrive until a corpus existed: 525x the rows, and a billing query that touches more of
+  them than the raw table it replaces.
+
+T045 — FR-ANL-09's FOUR DIMENSIONS
+    environment   ANSWERED    the first key column of both rollups
+    day           ANSWERED    the day column of both
+    channel       ANSWERED    daily_usage_v2's key, at the cost above
+    application   NO          on no analytical row
+
+  Three of four. Application holds two environments (FR-TEN-04, `unique (application_id,
+  kind)`), so application-level usage is a sum over a tenant's environments -- and that
+  mapping lives in Postgres, across the boundary constitution III draws. Closing it is an
+  argument about the constitution rather than a join, which is why it is a gaps entry (T046)
+  and not a task.
