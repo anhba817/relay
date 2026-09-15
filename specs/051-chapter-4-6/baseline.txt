@@ -732,3 +732,27 @@ T078 — THE ELEVEN GATES
     reset-lane.itest.ts alone     3 passed (3)     a flake under lane load, not a failure
 
   Both are inherited and neither is this chapter's. The gate's legibility is a new gaps entry.
+
+T082 — EVERY TEST THIS FEATURE ADDED, AUDITED
+  Two files, **11 new tests**, 21 assertions, plus one line added to an existing stub.
+
+    11  services/ingester/src/metering.itest.ts    the rollup and the read
+     0  services/ingester/src/ingest.itest.ts      +1 stub method (T031b)
+
+  NONE ASSERTS ONLY THAT A ROW EXISTS. Every one names a quantity and a reason: the
+  calendar-minute rule, an open with no close contributing zero while staying in the raw
+  table, a midnight split, the zero channel, the omitted aggregate state reading 0, tenancy
+  in both directions, the `sum()` contract, a missing row that is not a zero, a balance with
+  no lower bound, an empty tenant, and a NULL author ignored.
+
+  CONDITIONALS: three, none of them an assertion. One is the `ch()` helper's HTTP check,
+  two are the mutation-settle loop's exits. **No conditional wraps an `expect`** -- 050's
+  audit had to read the line above each one to tell a narrowing from a hole, and there is
+  nothing of that shape here.
+
+  AND TWO OF THE ELEVEN EXIST BECAUSE THE FIRST VERSION WAS WRONG:
+    - "needs sum() and GROUP BY" asserted a merge state twice before it asserted the
+      invariant. Recorded at T033.
+    - "gives a tenant with no rows a stored balance of 0" was written to drive a branch that
+      does not exist, because a bare aggregate always returns one row. The test is right and
+      its stated reason was not; the comment says so now.

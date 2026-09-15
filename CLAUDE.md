@@ -28,87 +28,116 @@ history; the replaced history is preserved on the remote as the tag
 tags. **Anyone holding an older clone of `relay-platform` must reset rather than pull.**
 
 <!-- SPECKIT START -->
-**ACTIVE: 051 — CHAPTER 4.6, "metering you can bill on".** Plan:
-`specs/051-chapter-4-6/plan.md`; **`research.md` first — nine of its eleven items were
-measured and three changed the design.** Eight phases, MVP at 1–4.
+**051 IS CLOSED at 94 of 94 — CHAPTER 4.6, "the rollup nobody read".** Its record is
+`specs/051-chapter-4-6/` — `baseline.txt` first, then `gaps.md` (**15 entries: 6 new, 8
+carried re-measured, and 047-3/048-4 closed**), `traceability.md`, `tasks.md`. Tagged
+**`part4-ch6`**.
 
-**THE NUMBER HAD TO BE DERIVED, AND BOTH COLUMNS DISAGREE BY DESIGN.** `docs/12` §3's table
-keeps **pre-contraction** ordinals in column one; its movement map uses **current** ones. The
-five shipped chapters reconcile as 4.1=row 1, 4.2=row 2, 4.3=row 4, 4.4=row 5, 4.5=row 6, so
-**4.6 is row 7 — "Metering you can bill on", movement IV's first chapter.**
+    the rollup read 32,778 rows · the raw table 32,768   for the same tenant-month
+    147,534 rows keyed (env, channel, day) · 281 keyed (env, day)      525x
+    56 calendar minutes against 0.6513 elapsed                          86x
+    check:fences 110 -> 110, delta 0 · 2,302 prose words · 11 gates, 9 green
 
-**THE BRIEF ASKS FOR A VIEW THAT HAS EXISTED SINCE 4.2.** *"Daily rollup materialised views
-(DR-10) — billing never scans raw events."* `analytics/0001_daily_usage.sql` shipped with
-chapter 4.2, measured at 13.22 ms against the raw table's 585.9 ms.
+**THE BRIEF ASKED FOR A ROLLUP THAT HAD EXISTED SINCE 4.2, AND NOTHING READ IT.**
+`analytics/0001_daily_usage.sql` shipped two chapters earlier. `grep` finds two references: a
+comment, and `analytics/query.mjs`, which opens *"FR-ANL-05's daily question, asked of the
+analytical store"* and is referenced by no script, service or config.
 
-**AND THE ONE TABLE IT READS IS THE ONE TABLE NOTHING WRITES.**
+**AND THE ONE TABLE IT READS IS THE ONE TABLE NOTHING WRITES.** `message_events` 0 rows,
+`api_requests` 11,683, `connection_events` 154, `webhook_attempts` 64 — and **zero occurrences
+of `message_events` under `services/`**. Three of FR-ANL-05's four quantities come from it. So
+DR-10's *"billing never scans raw events"* was satisfied, for two chapters, by a rollup over a
+table that receives no events, read by a file nothing runs. Both halves conform to the clause.
 
-    api_requests       11,683      producer since 4.4
-    connection_events     154      producer since 4.5
-    webhook_attempts       64      producer since 4.3
-    message_events          0      NO producer — a batch loader and nothing else
-    daily_usage             0      the rollup, over message_events
+**THE COUNTS HOLD STILL WHILE THE STREAM CLIMBS, AND THAT IS THE CHAPTER'S FIRST FIGURE.**
+13,265 held, then 13,481 minutes later, every table count unchanged. **The tables move when an
+ingester drains, not when the platform works** — constitution III's independence in two
+commands. T001 had blamed `/healthz` polls for a drift that does not happen.
 
-`message_events` occurs in **zero files under `services/`**; its only writer is
-`scripts/scale/load-analytics.mjs`. The view is not broken — planting one row produced exactly
-one rollup row — it has never had input on this stack, which is also 047's pass-9 finding
-(4.2's numbers were about `relay_corpus_<timestamp>`, not the lane). **Three of FR-ANL-05's
-four quantities are derived from that table**, so DR-10's *"billing never scans raw events"*
-is currently satisfied by a rollup over a table that receives no events.
+## WHAT A CORPUS SAID THAT SEVEN ANALYSIS PASSES DID NOT
 
-**AND THE ONLY FILE THAT EVER ASKED FR-ANL-05's QUESTION OF THE STORE IS ONE NOTHING RUNS.**
-`analytics/query.mjs` opens *"FR-ANL-05's daily question, asked of the analytical store"* and
-is referenced by no `package.json` script, no service and no config.
+**THE ROLLUP READ MORE ROWS THAN THE RAW TABLE.** One tenant's 91-day bill, from
+`system.query_log`:
 
-**CONSTITUTION III SAYS METERING READS ONLY CLICKHOUSE, AND TODAY IT READS ONLY POSTGRES.**
-The clause: *"billing, metering, and dashboard analytics read only from the analytical store
-(ClickHouse), **fed via a durable queue** (SRS CON-01)."* `usage_periods` is a meter in the
-operational database, maintained synchronously on the send path; and `message_events` is fed
-by a batch pull through `postgresql()`, not a queue. **This chapter cannot close that gap** —
-nothing emits the event — so phase 6 decides it out loud in the shape 4.5 used for ADR-07.
-`docs/12` §4 justifies the Postgres counter existing (*"a quota must refuse a send
-synchronously"*); it does not justify the constitution's sentence, and nobody has reconciled
-the two.
+    against daily_usage_v2 (env, channel, day)   32,778 rows · 3.56 MiB · 4 ms
+    against message_events, the same question    32,768 rows · 1.31 MiB · 3 ms
 
-**FR-ANL-05 NAMES FOUR QUANTITIES AND FR-ANL-09 FOUR DIMENSIONS; THE VIEW HAS TWO OF EACH.**
-*"messages sent, unique active users, **connection-minutes**, and **stored message count**"*
-against `messages` and `active_users_state`; *"application, environment, channel, and day"*
-against `ORDER BY (environment_id, day)`. **`channel_id` is on the row** and nothing groups by
-it — a key column, not a join. **Application is on no row** and the mapping lives in Postgres.
+4.2 published 315 rows against 1,052,655 for this clause. **The cause is the key and not an
+unmerged table**: 147,534 distinct `(env, channel, day)` keys against 286 `(env, day)` keys
+over 2,400 channels, and `OPTIMIZE FINAL` changes nothing. **FR-ANL-09's channel dimension
+and DR-10's cheap read cannot share a key.** Two rollups ship. The compression says it in one
+pair: 248,155 raw rows become **281** at `(env, day)` — 884× — and **147,534** with channel —
+1.7×, which is an index with extra steps.
 
-**WHAT THE PROBES SETTLED.** Two views over two sources write into one `TO` target and sum
-(1 + 100 = 101), which is the only shape where a tenant-day is one row — and 4.2's view owns
-an **implicit inner table** (`.inner_id.3f6e34d9-…`), so it cannot be extended that way
-without being recreated. `SummingMergeTree` sums a signed `Int64` delta (2 created − 1 deleted
-= 1), which is DR-17's stated technique for stored counts. **And `arrayJoin` inside a view
-reproduces the meter's own rule**: a connection 00:00:59 → 00:01:01 bills **2** calendar
-minutes, computed from a close record alone.
+**R6 ASKED THE WRONG QUESTION AND WAS RIGHT.** It measured `channel_id` on the row and
+concluded it *"costs a key column, not a join"*. True, and about storage. **What it costs the
+READ needed a corpus**, and no analysis pass loaded one.
 
-**SO SRS APPENDIX C QUESTION 4 IS ANSWERABLE AND MUST BE ANSWERED.** *"Does connection-minute
-metering need per-second precision, or is per-minute rounding acceptable?"* — open since
-before Part 4, owner *Product / Billing*, and 4.5 measured the gap it turns on (2 against
-0.03 for one connection). Both definitions are computable, so it is a decision, not a
-constraint. A chapter that puts a number in a billing table cannot leave its unit undefined.
+**A MATERIALISED VIEW IS A TRIGGER ON FUTURE INSERTS, NOT A QUERY OVER HISTORY.** The first
+comparison of the chapter failed: rollup 0, raw 56, over records already in the table. Proven
+with a control — one new close moved it to 2 while the rest stayed at 0. **So DR-10 is empty
+without a backfill on any store that already holds data, and it reads as working without one**,
+because every new record appears.
 
-**AND 44% OF CONNECTIONS HAVE NO CLOSE RECORD.** 55 of 99 have both; 44 have one. A close row
-alone carries both endpoints (`ts - duration_ms` recovers the open), so the read is defined
-over closes — and the opens-without-closes count is published beside the minutes rather than
-silently dropping the population. 4.5 measured the cause and 050-5 files it.
+**AND A BACKFILL RECOVERS ONLY WHAT STILL EXISTS.** The view counted 242,667 messages over 92
+days; a backfill minutes later found 239,997 over 91. The difference is one day — the one the
+90-day TTL removed **during the insert**, because the view fires first. The rollups carry no
+raw TTL precisely so they outlive it, which means **a rollup created late is permanently
+short**. Build it with the table, not after.
 
-**AND `docs/12` §7.1 IS STILL OPEN WHILE §3 RECORDS IT BUILT.** 4.2 built all four items of
-its brief and §3's 2026-09-13 amendment says so. **This is the defect 4.5 found at §7.2 — one
-entry over, and it survived the chapter that found it.** No §7 entry owns this chapter, so the
-housekeeping falls here.
+## THE UNIT, DECIDED AT 86x, AND A CLAUSE THAT FORBIDS ITS OWN DEMONSTRATION
 
-**`analytics/0001_daily_usage.sql` CARRIES NO TITLED FENCE**, in either locale. Every fenced
-`analytics/` file is a whole body of a file its own chapter created — the cheapest class. The
-ledger keys on filename **and checksum** and refuses a changed one, so the change is a new
-numbered statement rather than an edit.
+**SRS APPENDIX C QUESTION 4 IS CLOSED** — open since before Part 4, owner *Product /
+Billing*. A connection-minute is a **calendar minute during any part of which a connection was
+open**, which is what `meter.ts` has billed since 3.24, so the two agree by construction rather
+than by reconciliation. The argument is 56 against 0.6513 over 55 real closes, median
+connection **252 ms**: a client reconnecting every quarter-second holds a slot continuously and
+pays almost nothing on elapsed duration. What is given up is in the clause — short connections
+over-report against wall-clock intuition.
 
-**NOT THIS CHAPTER'S:** the reconciliation job is 4.7, the customer-facing log is 4.8, the
-milestone is 4.9. **047-1 and 048-1 — DR-10 and FR-ANL-06 cannot both hold, for two
-independent reasons — are filed for movement IV and are handed forward untouched.**
+**AND THE CORPUS COMMAND IS THE VIOLATION.** Constitution III forbids analytical queries
+against Postgres; `load-analytics.mjs:53` is `postgresql('${PG_HOST}', …)`. **The only way to
+demonstrate the rollup the clause asks for is to run the thing the clause forbids** — which is
+the strongest available argument that `message_events` needs a producer. Recorded in SRS 1.13
+rather than amended, because the amendment is the constitution's own (051-2).
 
+**AND DR-09 HAD SAID IT ALL ALONG.** *"Raw events shall be retained for 90 days; **daily
+aggregates for 25 months**."* `gaps.md` 047-3 and 048-4 both read *"no clause says how long
+metering history is kept"* — while quoting DR-10, **the next row down in the same table**.
+Three features, two entries, an adjacent clause. Applied at `0014`/`0015`; it does not
+contradict FR-003a, because 25 months against 90 days outlives the source eightfold and *"not
+the raw table's TTL"* is all that decision asked for.
+
+## WHAT RUNNING IT COST, AND EVERY ONE WAS AN INSTRUMENT
+
+- **`corpus.mjs` REFUSES `CORPUS_DAYS=60`** — it needs more than the 90-day query window, and
+  `message_events` TTLs at 90. **They cannot both be satisfied**, so a conforming corpus always
+  produces the rollup/raw discrepancy. Analysis pass 5 wrote 60 into the quickstart and nobody
+  ran it. `load-analytics.mjs` also needs `--corpus <corpus.json>`, which the same block omitted.
+- **A TEST THAT ASSERTS THE WRONG READ IS WRONG DEPENDS ON A MERGE NOT HAVING HAPPENED.** Three
+  versions: three rows of 1000 (failed, already merged), `{1000, 3000}` (failed, a *partial*
+  merge gives 2000 and 1000), then the invariant — the rows sum to 3000 in every state.
+- **A MUTATION IS NOT A DELETE.** `clean()` used `ALTER TABLE … DELETE` and returned; the next
+  test read three creations where it planted two. It polls `system.mutations` now.
+- **100/100/100/100 BY DELETING BRANCHES.** `metering.ts` measured 50% branches twice. Both
+  arms were unreachable, and one carried a comment I had written in the same commit claiming a
+  test drove it. **A bare aggregate with no GROUP BY always returns exactly one row.**
+- **TWO CHECKS RETURNED A CONFIDENT ZERO ABOUT THE WRONG QUESTION.** `engine_full LIKE '%25
+  MONTH%'` read as a failed `ALTER` — the server normalises to `toIntervalMonth(25)` and the TTL
+  is not in `engine_full`. And `require.resolve('pg')` from the workspace root read as a broken
+  `corpus.mjs`, which imports the api's pool and loads fine.
+- **A TITLED FENCE IS A WHOLE-BODY CLAIM.** Two excerpts published with `title=` took the chain
+  to 113. Both are new files, so publishing them whole cost nothing (051-6).
+- **AND `pnpm test:integration` REPORTED ONE FAILURE WHERE THREE LANES FAILED** — one `FAIL`
+  line against `Tasks: 6 successful, 9 total`, with the api lane printing no test output at all.
+  Asked directly: `request-log.itest.ts` 5 of 5 red (050-8, no ingester), `reset-lane.itest.ts`
+  3 of 3 green alone. **The gate a chapter is told to run and believe** (051-3).
+
+**AND THE MANIFEST STEP FAILED FIRST, ON PURPOSE-ADJACENT GROUNDS.** The registration edit
+matched two anchors and was refused, so `pnpm build` said `Error: Unknown chapter id: 4.6` —
+4.4's failure reproduced, and the only one of eleven gates that notices.
+
+**050 IS CLOSED at 114 of 114
 **050 IS CLOSED at 114 of 114 — CHAPTER 4.5, "the gateway's first stream".** Its record is
 `specs/050-chapter-4-5/` — `baseline.txt` first, then `gaps.md` (**19 entries: 8 new and all
 11 carried items re-measured**), `traceability.md`, `tasks.md`. Tagged **`part4-ch5`**.
