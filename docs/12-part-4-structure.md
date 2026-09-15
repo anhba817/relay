@@ -203,7 +203,7 @@ is the stable address, as §2.1 intended.
 | 4 | II | The consumer that was promised | The ingester. Batching (DR-11), backpressure, and ClickHouse down → the stream absorbs 24 h (NFR-REL-05) |
 | 5 | III | Every request is an event | FR-ANL-07's producer. Generalises the pattern chapter 3.20 already taught rather than introducing it — see §4 |
 | 6 | III | The gateway's first stream | Connection open/close (FR-ANL-01). **The gateway had never touched NATS** — verified at the time, zero references in `services/gateway/src`, five dependencies and none a broker client. **What this line did not say is that the gateway already reported connection data**: `meter.ts` has shipped connection-minutes to `POST /internal/usage/connections` every sixty seconds since chapter 3.24. So the chapter is not *"the gateway has no way to report"* — it is *"the one it has was built for a different question and goes through the service the analytical path is supposed to be independent of"*. Amends ADR-07 a THIRD time, in both documents that hold it, and closes §7.2 |
-| 7 | IV | Metering you can bill on | Daily rollup materialised views (DR-10) — billing never scans raw events |
+| 7 | IV | Metering you can bill on | Daily rollup materialised views (DR-10). **One has existed since chapter 4.2** — `analytics/0001_daily_usage.sql`, a `SummingMergeTree` over `message_events`. What this line did not say is that **nothing reads it and nothing writes its source**: the only file that ever asked FR-ANL-05's question of the analytical store is `analytics/query.mjs`, referenced by no script, service or config, and `message_events` occurs in zero files under `services/` while `api_requests` holds 11,683 rows and `connection_events` 154. So the chapter is not *"build the rollup"* — it is **"the rollup satisfies DR-10 over a table that receives no events, and FR-ANL-09's channel dimension costs the billing read 525x"**. Two rollups ship, not one. Closes SRS Appendix C question 4 and records constitution III's conflict with the shipped platform |
 | 8 | IV | The job that checks the meter | FR-ANL-06's reconciliation job, built to be callable in isolation (§2.3) |
 | 9 | IV | The log a customer can search | FR-ANL-07's query surface; FR-ANL-10's latency percentiles |
 | 10 | IV | **★ Milestone: the meter agrees** | The planted drift is caught; the 0.1% figure is measured once and recorded (§2.3) |
@@ -377,12 +377,22 @@ blind spot is worse than its absence.
 
 ## 7. Open questions, each owned by the chapter that needs it
 
-**7.1 — ClickHouse migration identity (ch 3).** The platform hand-writes `.sql` against a
-`schema_migrations` table keyed on filename, and 043 retired `drizzle-kit generate` and
-deleted `meta/`. A second store needs a second runner and a second identity scheme.
-`gaps.md` 045-69 is the record of what an identity scheme going wrong costs: seven
-byte-identical migrations under different numbers, and a lane that failed in 0.6 s three
-times. **Everything downstream of ch 3 anchors on this. Decide it before ch 2 is written.**
+**7.1 — ~~ClickHouse migration identity (ch 3)~~ — CLOSED by chapter 4.2.** The platform
+hand-writes `.sql` against a `schema_migrations` table keyed on filename, and 043 retired
+`drizzle-kit generate` and deleted `meta/`. A second store needs a second runner and a second
+identity scheme. `gaps.md` 045-69 is the record of what an identity scheme going wrong costs.
+
+> **Closed 2026-09-15, and it was closed in code two features earlier.** Chapter 4.2 built all
+> four items of the brief — the runner, a ledger keyed on filename and checksum, reporting
+> idempotence, and a checksum refusal tested red — and §3's own 2026-09-13 amendment records
+> the chapter it belonged to disappearing as a result. **§3 was amended and §7 was not**, which
+> is the defect chapter 4.5 found one entry down at §7.2 and fixed there; it survived the
+> chapter that found it, and nothing in §7 says an entry can be closed by a chapter other than
+> the one that owns it. Chapter 4.6 ran the refusal again to be sure it was real:
+> `0005_connection_events.sql changed after it was applied (ledger 2702615facd07e77, file
+> 397df7b2c0be7339)`. **The whole "a new numbered statement rather than an edit" discipline
+> this movement depends on rests on that one throw**, and a refusal nobody has seen fire is a
+> promise rather than a mechanism.
 
 **7.2 — ~~ADR-07's second amendment (ch 6)~~ — CLOSED by chapter 4.5.** *"Clean mapping —
 gateway to Redis, api and workers to NATS."* Chapter 3.18's amendment already recorded that

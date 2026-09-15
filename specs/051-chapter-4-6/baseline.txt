@@ -582,3 +582,45 @@ T051 (continued) — AND THE REVISION REPRODUCED 1.12's OWN DEFECT WHILE BEING W
   to update it was `**Version**: 1.12` and the document says `**Version:** 1.12 (draft)` --
   the colon is inside the bold. Caught by looking at the line rather than by the gate, one
   revision after the gate's blind spot was written down.
+
+================================================================================
+PHASE 7 — THE DOCUMENTS, AND A CLAUSE THAT HAD SAID IT ALL ALONG
+================================================================================
+
+T057 — `docs/05-sad.md` §6.2
+  Gained the two rollups with the table that forced them apart, and the
+  view-is-not-a-query-over-history finding with its backfill caveat. The *incomplete rather
+  than wrong* class: no measurement falsified §6.2, it simply stopped describing the schema.
+
+T058 — `docs/12` §3's row 7
+  Said "Daily rollup materialised views (DR-10) -- billing never scans raw events". One has
+  existed since 4.2 over a table nothing writes, read by nothing.
+
+T059 — `docs/12` §7.1, CLOSED
+  4.2 built all four items of its brief and §3's 2026-09-13 amendment records the chapter
+  disappearing. §7 was never touched. **This is the defect 4.5 found one entry down at §7.2
+  and fixed there, and it survived the chapter that found it.**
+
+T060/T062 — DR-09's SECOND HALF HAD BEEN THERE THE WHOLE TIME
+
+    DR-09  "Raw events shall be retained for 90 days; daily aggregates for 25 months."
+
+  `gaps.md` 047-3: *"no clause says how long metering history is kept"*. 048-4 carried it
+  verbatim. **Both were quoting DR-10, which is the next row down in the same table.**
+  Three features, two gaps entries, and the clause was adjacent to the one they cited.
+
+  Applied: `TTL toDateTime(day) + INTERVAL 25 MONTH` on both rollups (`0014`, `0015`). It
+  does not contradict FR-003a -- 25 months against the raw 90 days outlives the source
+  roughly eightfold, and *"not the raw table's TTL"* is all that decision ever asked for.
+
+  AND THE VERIFICATION WAS WRONG BEFORE IT WAS RIGHT. `engine_full LIKE '%25 MONTH%'`
+  returned 0 for all three tables and read as "the ALTER did not take". `SHOW CREATE TABLE`
+  says `TTL toDateTime(day) + toIntervalMonth(25)`: the server normalises the literal, and
+  the TTL is not in `engine_full` at all. **A check that asks the wrong question returns a
+  confident zero** -- the same shape as pass 7's `require.resolve('pg')`, twice in one
+  feature.
+
+T061 — DR-17 NEEDED NOTHING
+  *"summing `media_events` deltas (uploaded/deleted)"* is the technique this chapter used for
+  `stored_delta`, unchanged and correctly cited. A clean check, recorded because that is
+  what makes the other two mean something.
