@@ -18,6 +18,23 @@ const report = await reconcile(db, store, {
 });
 ```
 
+**`db` IS THE API'S `Db`; `store` IS THE API'S OWN CLICKHOUSE CALLER, AND IT HAS TO BE NEW.**
+Measured: the api depends on `@relay/protocol` and `@relay/service-kit` only — not on the
+ingester, and a service depending on another service is not a shape this repository has — and
+the `ClickHouse` interface chapter 4.6 extended is exported from no package at all. So the type
+does not exist where this code will be written.
+
+It gets a minimal one: a `fetch` and a `query()`, about fifteen lines, the same shape as
+`services/ingester/src/clickhouse.ts`'s private `post()`. **The alternative was moving that
+interface into `@relay/service-kit`**, which has zero dependencies and five dependents — it
+would give the logging package a network client and push it onto five services — and would
+touch a file carrying four fences across four chapters. A cross-service refactor is not what a
+chapter about reconciliation should spend.
+
+**And that means 4.6's "one client per service" is a per-service claim**, which is what it
+always said. This chapter makes the api the second service to hold a ClickHouse caller, and the
+argument survives unchanged.
+
 **BOTH HANDLES ARE PARAMETERS, AND THAT IS WHAT "IN ISOLATION" MEANS.** A first draft of this
 contract took only the two arguments and left the function to construct its own Postgres pool
 and its own ClickHouse caller — which would make it untestable except against live stores, and

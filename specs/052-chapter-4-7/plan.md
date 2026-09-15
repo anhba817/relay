@@ -132,6 +132,7 @@ specs/052-chapter-4-7/
 ```
 relay-platform/
 ├── services/api/src/metering/
+│   ├── clickhouse.ts          # the api's own caller — fetch + query(), ~15 lines
 │   ├── reconcile.ts           # the comparison, callable in isolation
 │   ├── reconcile.test.ts      # the verdict logic, no store
 │   └── reconcile.itest.ts     # both stores, and the planted drift
@@ -164,6 +165,16 @@ it without a client library"* — and both of those run on the **host**. Measure
 contains exactly one reference to ClickHouse and it is inside a `.itest.ts`; the api's compose
 block carries `RELAY_NATS_URL` and `RELAY_REDIS_URL` and **no `RELAY_CLICKHOUSE_*`, and no
 `depends_on: clickhouse`**. So the api container cannot reach the store today.
+
+**AND THE API GETS ITS OWN CLICKHOUSE CALLER, WHICH 4.6's ARGUMENT PREDICTS RATHER THAN
+FORBIDS.** That chapter gave `ClickHouse` a `query()` method so a read placed beside it would
+not open a second client — **in the ingester**. This chapter cannot reuse it: the api depends on
+`@relay/protocol` and `@relay/service-kit` only, and the interface is exported from no package.
+So the api writes a minimal caller of its own, about fifteen lines, and **"one client per
+service" survives as the per-service claim it always was.** The alternative, moving the
+interface into `@relay/service-kit`, is refused on counts: that package has **zero dependencies
+and five dependents**, so it would gain a network client and push it onto five services, and the
+file it would come from carries four fences across four chapters.
 
 **Which makes this chapter's compose change the same event 4.5's was**: the gateway gained
 `RELAY_NATS_URL` and with it a place in ADR-07's argument. Here **the api becomes the first
