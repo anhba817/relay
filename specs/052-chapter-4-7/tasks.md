@@ -43,7 +43,7 @@ this is it: two numbers, a threshold, and a source name in; a verdict out.
 - [ ] T013 The threshold is a **named constant citing FR-ANL-06**, not a literal (FR-009). A number with a clause beside it is the difference between a decision and a guess.
 - [ ] T014 The percentage is `abs(a - o) / max(a, o)`, **not divided by the operational side**. 671 tenants have an operational total of zero for some quantities, and a zero denominator is a crash where a verdict belongs.
 - [ ] T015 The percentage is **null whenever either side is null** (`data-model.md`). A number computed against an absent counterpart reads as a measurement and is not one.
-- [ ] T016 A quantity with no operational counterpart at all returns `not-comparable`, and **both sides absent returns `no-data`**. Discharge **FR-004**: zero against zero is not agreement.
+- [ ] T016 A quantity with no operational counterpart at all returns `not-comparable`, and **both sides absent returns `no-data`**. Discharge **FR-004** and **SC-006**: zero against zero is not agreement.
 - [ ] T017 **Data on exactly one side is a `breach`, not `no-data`.** R4 measured 671 tenants in that state, and calling it missing data would let the platform's largest defect read as an absence.
 - [ ] T018 [P] Write `reconcile.test.ts` — unit, no store. Cover all four verdicts and **both sides of the tolerance boundary** (FR-011): a difference just over the threshold breaches and one just under passes.
 - [ ] T019 [P] Assert the null-percentage rule and the `max()` denominator with a case where the operational side is zero, which is the one that would have divided by zero.
@@ -58,9 +58,9 @@ named operational source, a percentage and a verdict.
 
 **Independent test**: call it against the lane and read its report.
 
-- [ ] T021 [US1] Extend `reconcile.ts` with the gathering: analytical totals from `relay_analytics.daily_usage_billing` over HTTP, operational totals from Postgres. **Not `daily_usage_v2`** — 147,534 rows against 281 for the same data (chapter 4.6), and the reconciler has no use for the channel dimension.
-- [ ] T022 [US1] Discharge **FR-002**: the job takes a tenant and an explicit period and **returns its report as a value**. `docs/12` row 8 says *"callable in isolation"*, and §2.3's CI half plants a drift and needs something to assert on.
-- [ ] T023 [US1] Discharge **FR-003**: every row names the operational table it used. Two candidates disagree by 0.2694%, so a report that does not say which one it read is asserting the other does not exist.
+- [ ] T021 [US1] Discharge **FR-001** and **SC-001**: extend `reconcile.ts` with the gathering: analytical totals from `relay_analytics.daily_usage_billing` over HTTP, operational totals from Postgres. **Not `daily_usage_v2`** — 147,534 rows against 281 for the same data (chapter 4.6), and the reconciler has no use for the channel dimension.
+- [ ] T022 [US1] Discharge **FR-002** and **SC-004**: the job takes a tenant and an explicit period and **returns its report as a value**. `docs/12` row 8 says *"callable in isolation"*, and §2.3's CI half plants a drift and needs something to assert on.
+- [ ] T023 [US1] Discharge **FR-003**, **FR-005** and **SC-007**: every breach carries its reason where one is known, and every row names the operational table it used. Two candidates disagree by 0.2694%, so a report that does not say which one it read is asserting the other does not exist.
 - [ ] T024 [US1] Discharge **FR-006**: choose `usage_periods.messages_sent` over a count of `messages`, and record the reason from the code rather than from preference — `repository.ts:4325`, *"a read over `messages` … proportional to lifetime traffic forever"*, which 4.1 measured at 585.9 ms over 1,000,000 rows. **Publish the rejected candidate's gap.**
 - [ ] T025 [US1] Discharge **FR-007**: do the same for every other quantity, or state that it has only one candidate. Active users comes from `usage_active_users`; connection-minutes from `usage_periods.connection_minutes`; the stored count has no operational side at all.
 - [ ] T026 [US1] **One tenant per call.** A sweep is a loop in the caller. R1 measured that aggregating across tenants turns 19 breaches into 0.2694%, which is why this is a constraint rather than a convenience.
@@ -91,11 +91,11 @@ not firing once it is removed.
 
 ## Phase 5: User Story 4 — the four obstacles, measured and published (Priority: P2)
 
-- [ ] T041 [US4] Publish R1's two operational counters with the per-tenant split and T002's cause (FR-013).
+- [ ] T041 [US4] Discharge **SC-008**: publish R1's two operational counters with the per-tenant split and T002's cause (FR-013).
 - [ ] T042 [US4] Publish R4's one-sided tenants: 4 analytical against 675 operational, and what the job reports for each of the 671.
 - [ ] T043 [US4] **Re-measure 047-1's `uniq` obstacle** at today's corpus: exact to roughly 60,000–65,000 distinct, off by 0.51% at 70,000, against a 0.1% bound. Carried since chapter 4.2 and filed *for this movement*.
 - [ ] T044 [US4] **Re-measure 047-1's TTL obstacle**: 90 of 91 days agreeing and the 91st differing by 4,941 — 0.49% at any cardinality. Chapter 4.6 measured the same effect from the other side, a view counting 242,667 over 92 days where a backfill found 239,997 over 91.
-- [ ] T045 [US4] Load a corpus for **FR-012's measurement at a volume where 0.1% is a real threshold**. §2.3: *"0.1% of a small number is an assertion that cannot fail for its own reason."* Set every value explicitly — `CORPUS_DAYS` must **exceed** 90 or the script refuses, and 4.6 shipped `CORPUS_DAYS=60` in a quickstart having never run it.
+- [ ] T045 [US4] Discharge **SC-009**: load a corpus for **FR-012's measurement at a volume where 0.1% is a real threshold**. §2.3: *"0.1% of a small number is an assertion that cannot fail for its own reason."* Set every value explicitly — `CORPUS_DAYS` must **exceed** 90 or the script refuses, and 4.6 shipped `CORPUS_DAYS=60` in a quickstart having never run it.
 - [ ] T046 [US4] `corpus.mjs` writes its report to stdout and `load-analytics.mjs` requires `--corpus <corpus.json>`; capture the first and pass it to the second. 4.6's quickstart omitted the flag.
 - [ ] T047 [US4] **Record the bind this creates.** The loader is `postgresql('${PG_HOST}', …)`, the cross-path read constitution III's first prohibition names, and `gaps.md` 051-2 already carries it. The chapter measures its own clause by running what the clause forbids, for the second feature running.
 - [ ] T048 [US4] **Remove the corpus and verify both directions**, before anything else is counted. It reaches three rollup tables and 4.2's inner table, and a source delete does not propagate to a materialised view's target.
@@ -107,7 +107,7 @@ not firing once it is removed.
 ## Phase 6: The amendments
 
 - [ ] T051 Discharge **FR-015** and **SC-010**: close or restate `gaps.md` 047-1 and 048-1 with their current numbers. Filed *for movement IV*, carried through four features, and this is the movement.
-- [ ] T052 Discharge **FR-017**: amend **FR-ANL-06** where this chapter's measurements show the clause as written cannot hold. **Read the clause before amending it** — DR-11 and DR-09 were both amended on this precedent, and 4.6 found two gaps entries quoting the wrong row of the same table.
+- [ ] T052 Discharge **FR-016** and **FR-017**: amend **FR-ANL-06** where this chapter's measurements show the clause as written cannot hold. **Read the clause before amending it** — DR-11 and DR-09 were both amended on this precedent, and 4.6 found two gaps entries quoting the wrong row of the same table.
 - [ ] T053 State the constitution III reading the plan's Check names: the reconciler is not billing, metering or dashboard analytics, and **an auditor confined to one side of a fence cannot check the fence**. Name the alternative readings and say which document owns the amendment. Second conflict in this family after 051-2.
 - [ ] T054 Discharge **FR-018**: amend `docs/12` §3's row 8 where this chapter falsifies its one-line description. **Leave the table's first column alone** — §3 keeps the original ordinals on purpose.
 - [ ] T055 [P] Check whether `docs/05-sad.md` needs the job, in the *incomplete rather than wrong* class 050 filed as FR-017a. §6.2 gained two rollups at chapter 4.6 and a checker over them is the same series' next entry.
