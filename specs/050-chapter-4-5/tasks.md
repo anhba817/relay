@@ -159,7 +159,7 @@ per-connection outcomes published beside them.
 - [X] T067 [US2] Confirm the publish failure is logged once per flush rather than once per record, and that the line carries no payload, no token and no channel list. The line reports the **counts** T026b collects — accepted, failed, retained — which is the meter's own shape: `meter.report_failed` carries `connections`, `retained` and the error and nothing else.
 - [X] T068 [US2] Restart NATS and confirm `/healthz` is `{"status":"ok"}` and the container healthy, **by a deliberate restart** — 048-6's lesson, and 049 found that check failing for a reason 048-6 had recorded wrongly.
 - [X] T069 [US2] Record what the gateway's RSS looks like after the sixth dependency. **Cite the source that holds the number**: NFR-SCL-01 is one sentence about 10,000 concurrent connections and carries **no memory figure** — the 160 MB is SRS **revision 1.9** and `docs/11-scalability-measurement-2026-09-06.md`, which measured **157 MB against a 160 MB budget** and recorded ADR-25's revisit threshold. Compare against 157, not against the rounded ceiling. **If the battery is not run, say that the figure is unmeasured rather than implying it holds** — and note that `docs/11`'s nearest published analogue for one more thing in the gateway is *"a sixth grammar costs about 3 MB in the worst ratio."*
-- [ ] T070 [US2] Run the four lanes — `lint`, `typecheck`, `test`, `test:integration` and commit phase 5.
+- [X] T070 [US2] Run the four lanes — `lint`, `typecheck`, `test`, `test:integration` and commit phase 5.
 
 ---
 
@@ -171,14 +171,14 @@ compared.
 **Independent test**: the existing meter suite passes untouched, and the quota counters move by
 the same amounts as before the chapter.
 
-- [ ] T071 [US3] Run the meter's existing suite and record that it passes **unmodified**, with the file's git status proving it was not edited. Verification method T, and an untouched suite passing is the only evidence that means anything here.
-- [ ] T072 [US3] Record the quota counters before and after a known workload, and show they move by the same amounts as a run of the same workload from `part4-ch4`.
-- [ ] T073 [US3] Discharge **FR-009**: derive minute buckets from the open and close records and compare them against what the meter reported for the same connections. **Compare buckets against buckets** — one quantity computed twice.
-- [ ] T074 [US3] Discharge **FR-009a**: scope the comparison to **connections with both records present**, over a window every one of them closed inside. `reportOnce` builds its report from `[...closedNow, ...open]` — **the meter bills connections that are still open** — and a connection with no close record can derive nothing. Unscoped, the two sides differ by every open connection: a third cause in a comparison built to have two.
-- [ ] T075 [US3] Discharge **FR-009b**: split derived buckets **by period**, as `entriesFor` does. A socket open across a month boundary owes minutes to two periods, credited independently, and a derivation that does not split the same way disagrees for a fourth reason.
-- [ ] T076 [US3] Publish the **duration-against-buckets** gap as a number in `specs/050-chapter-4-5/baseline.txt`, with the worked example: a connection open 00:00:59 to 00:01:01 is 2 connection-minutes and 2,000 ms. **They are different quantities sharing a name**, and the chapter says so rather than letting a reader treat the difference as a defect.
-- [ ] T077 [US3] Record any connection where the two bucket counts disagree, with the cause. A disagreement there **is** a defect, unlike the one above.
-- [ ] T078 [US3] Measure the open/close **balance** for a clean run and for a killed gateway. A killed instance produces opens with no closes, and the number is what a dashboard built on these records must tolerate.
+- [X] T071 [US3] Run the meter's existing suite and record that it passes **unmodified**, with the file's git status proving it was not edited. Verification method T, and an untouched suite passing is the only evidence that means anything here.
+- [X] T072 [US3] Record the quota counters before and after a known workload, and show they move by the same amounts as a run of the same workload from `part4-ch4`.
+- [X] T073 [US3] Discharge **FR-009**: derive minute buckets from the open and close records and compare them against what the meter reported for the same connections. **Compare buckets against buckets** — one quantity computed twice.
+- [X] T074 [US3] Discharge **FR-009a**: scope the comparison to **connections with both records present**, over a window every one of them closed inside. `reportOnce` builds its report from `[...closedNow, ...open]` — **the meter bills connections that are still open** — and a connection with no close record can derive nothing. Unscoped, the two sides differ by every open connection: a third cause in a comparison built to have two.
+- [X] T075 [US3] Discharge **FR-009b**: split derived buckets **by period**, as `entriesFor` does. A socket open across a month boundary owes minutes to two periods, credited independently, and a derivation that does not split the same way disagrees for a fourth reason.
+- [X] T076 [US3] Publish the **duration-against-buckets** gap as a number in `specs/050-chapter-4-5/baseline.txt`, with the worked example: a connection open 00:00:59 to 00:01:01 is 2 connection-minutes and 2,000 ms. **They are different quantities sharing a name**, and the chapter says so rather than letting a reader treat the difference as a defect.
+- [X] T077 [US3] Record any connection where the two bucket counts disagree, with the cause. A disagreement there **is** a defect, unlike the one above.
+- [X] T078 [US3] Measure the open/close **balance** for a clean run and for a killed gateway. A killed instance produces opens with no closes, and the number is what a dashboard built on these records must tolerate.
 - [ ] T079 [US3] Run the four lanes — `lint`, `typecheck`, `test`, `test:integration` and commit phase 6.
 
 ---

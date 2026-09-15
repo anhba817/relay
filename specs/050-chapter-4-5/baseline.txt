@@ -965,3 +965,80 @@ AND THE COMPOSED GATEWAY REACHES THE BROKER NOW
       ANALYTICS 3615 -> 3621        (two connection records plus four request records)
     The only `connection_log` line in its log is `publisher_never_connected`, from the
     shutdown before the fix. No publish failures.
+
+================================================================================
+PHASE 6 — THE TWO COUNTERS
+================================================================================
+
+T071 — THE METER IS UNTOUCHED, AND `git` IS THE EVIDENCE
+    git diff --stat part4-ch4 HEAD -- services/gateway/src/meter.ts meter.test.ts
+        meter.itest.ts api-client.ts            (no output: byte-identical)
+    meter.test.ts    20 of 20 passed
+    meter.itest.ts    3 of  3 passed
+    An untouched suite passing is the only evidence that means anything about a path this
+    chapter deliberately did not modify.
+
+T073/T074/T075 — BUCKETS AGAINST BUCKETS, THREE RUNS
+    A fresh environment per run, every connection closed before anything is read, and the
+    derivation splitting by period the way `entriesFor` does.
+
+        run   pairs   meter   derived   agree
+          1       8       8         8   yes
+          2      10      10        10   yes
+          3      10      11        11   yes
+
+    **RUN 3 IS THE ONE THAT MATTERS: ten connections, ELEVEN buckets.** One socket crossed
+    a calendar-minute boundary and was charged for both minutes -- and the derivation
+    found the same eleven. That is FR-009b's split measured rather than assumed; the two
+    earlier runs could each have been satisfied by a derivation that counted connections.
+
+T076 — THE DURATION/BUCKET GAP, AS A NUMBER
+        11,728 ms of wall clock  =  0.1955 connection-minutes if counted naively
+        the meter charges                11 connection-minutes
+                                         -------------------------
+                                         a factor of 56
+
+    Different quantities sharing a name. The chapter publishes this so nobody reads the
+    difference as a defect -- and 4.2's boundary day is the same shape one domain over.
+
+T077 — NO DISAGREEMENT TO RECORD, AND THE GRAIN IS WHY
+    The meter's side is one Postgres row per (environment, period): `usageFor` returns a
+    TOTAL, not a per-connection breakdown. So the comparison available is aggregate, and
+    it agreed three times out of three. A per-connection disagreement is not something
+    this pair of stores can express today; saying so beats reporting a zero.
+
+================================================================================
+T078 — A CLEAN STOP AND A KILL BOTH PRODUCE OPENS WITH NO CLOSES
+================================================================================
+Five connections held past two flush intervals, then the process ended two ways:
+
+    balance-clean    5 connections -> records: opened 5 | meter billed:  5 connection-minutes
+    balance-killed   5 connections -> records: opened 5 | meter billed:  0 connection-minutes
+
+**THE ARTIFACTS PREDICTED THAT A CLEAN RUN BALANCES AND A KILLED ONE DOES NOT. NEITHER
+BALANCES.** `sessions.close()` is, in full: stop the heartbeat, stop the meter, send a
+final report, `releaseAll` the held slots, and `wss.close()`. **`wss.close()` stops the
+server accepting and does NOT close established sockets** -- which `session.ts` already
+says in the comment that put `releaseAll` there. So no per-socket `close` handler fires,
+`connectionLog.closed(...)` is never called, and there are no close records on either
+path.
+
+**AND THE METERS DIVERGE IN OPPOSITE DIRECTIONS.** On the clean stop `reportOnce` walks
+the registry, which still holds all five, and bills **5**. On the kill there is no
+shutdown, no final report, and it bills **0**. So against the records:
+
+    clean   meter 5, records 5 opens / 0 closes    the meter over-reports the pair
+    killed  meter 0, records 5 opens / 0 closes    the RECORDS over-report the pair
+
+**THIS IS FR-009a's WHOLE ARGUMENT, MEASURED.** Analysis pass 4 found that `reportOnce`
+builds from `[...closedNow, ...open]` and therefore bills connections that have no close
+record. Here that is a number, and the kill case supplies its mirror image. Scoping the
+reconciliation to connections with BOTH records present -- over a window every one of
+them closed inside -- is what leaves the comparison with two causes instead of four. The
+three runs above agreed precisely because they were scoped that way; unscoped, run 1
+would have compared 8 against 0.
+
+    NOT A DEFECT TO FIX HERE. Leaving established sockets to the process exit is the
+    deploy posture NFR-REL-03 and `releaseAll` were built around, and this chapter's
+    producer follows the meter rather than changing it. It is a property a dashboard
+    built on these records must tolerate, and the number a reader needs is above.
