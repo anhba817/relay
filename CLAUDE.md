@@ -28,6 +28,54 @@ history; the replaced history is preserved on the remote as the tag
 tags. **Anyone holding an older clone of `relay-platform` must reset rather than pull.**
 
 <!-- SPECKIT START -->
+**ACTIVE: 052 — CHAPTER 4.7, "the job that checks the meter".** Plan:
+`specs/052-chapter-4-7/plan.md`; **`research.md` first — eight of its ten items were measured
+and two changed the job's shape.** Seven phases, MVP at 1–4.
+
+**`docs/12` ROW 8, MOVEMENT IV, AND NO §7 ENTRY OWNS IT.** *"FR-ANL-06's reconciliation job,
+built to be callable in isolation (§2.3)."* The clause: *"Metered totals shall agree with counts
+derived from operational data to within 0.1%, verified by a daily reconciliation job that raises
+an alert on breach."*
+
+**THE JOB'S FIRST HONEST RUN FAILS FOUR WAYS, AND THREE ARE NOT THE ANALYTICAL PATH'S FAULT.**
+
+    message_events has no producer       analytical 0 vs operational 9,624     100%
+    uniq is approximate above ~65,000 distinct                                 0.51%
+    the TTL boundary, at any cardinality                                       0.49%
+    two OPERATIONAL counters disagree with each other                        0.2694%
+
+**THE FOURTH IS NEW AND IT RESHAPED THE JOB.** *"Counts derived from operational data"* is not
+one number: `messages` holds **9,650** and `usage_periods.messages_sent` holds **9,624**. And
+the aggregate hides the shape — **0.2694% overall, 19 tenants over the bound, one tenant wrong
+by 100%**, on 31 environments at an identical 70-against-68. **A reconciler that aggregates
+before its verdict reports a number nobody would question.** So it compares one tenant at a
+time, and the report names which operational table it used and publishes the gap to the other.
+
+**AND 671 OF 675 TENANTS HAVE ONE SIDE ONLY** — 4 environments in `daily_usage_billing`
+against 675 in `usage_periods`. `not-comparable` and `no-data` are verdicts of their own,
+because collapsing them into "missing data" lets the platform's largest defect read as an
+absence.
+
+**THE COUNTER IS AN INCREMENT FOR A MEASURED REASON**, and it is the argument against the other
+candidate: `repository.ts:4325` — *"the alternative is a read over `messages`, which carries no
+`environment_id` and no index on `created_at` … proportional to lifetime traffic forever."* 4.1
+measured that read at 585.9 ms over 1,000,000 rows.
+
+**§2.3 ALREADY SPLIT THE MILESTONE AND THE PLAN OBEYS IT.** *"0.1% of a small number is an
+assertion that cannot fail for its own reason"* — so the lane gets a **planted-drift** gate and
+the 0.1% figure is measured **once, at real volume**. Agreement belongs to the milestone at 4.9,
+not here.
+
+**AND A RECONCILER CANNOT OBEY CONSTITUTION III WHILE DOING ITS JOB.** The clause says billing,
+metering and dashboard analytics read only from ClickHouse; FR-ANL-06 requires comparing against
+Postgres. The reading that makes both true is that **the reconciler is none of those three
+roles** — an auditor confined to one side of a fence cannot check the fence — and that reading
+is written down nowhere. Second conflict in this family after 051-2.
+
+**047-1 AND 048-1 ARE THIS CHAPTER'S TO CLOSE OR RESTATE.** Filed *for movement IV*, carried
+through four features: `uniq` off by 0.51% at 70,000 against a 0.1% bound, and the TTL boundary
+at 0.49% at any cardinality.
+
 **051 IS CLOSED at 94 of 94 — CHAPTER 4.6, "the rollup nobody read".** Its record is
 `specs/051-chapter-4-6/` — `baseline.txt` first, then `gaps.md` (**15 entries: 6 new, 8
 carried re-measured, and 047-3/048-4 closed**), `traceability.md`, `tasks.md`. Tagged

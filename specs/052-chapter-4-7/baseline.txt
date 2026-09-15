@@ -1,0 +1,39 @@
+================================================================================
+BASELINE — 052, chapter 4.7, "the job that checks the meter"
+================================================================================
+The measurement record. Written as phases run; everything here was executed.
+
+Lane: RELAY_POSTGRES_PORT=15432, ClickHouse 8123 relay/relay.
+
+================================================================================
+PLANNING — THE PROBES THAT DECIDED THE DESIGN
+================================================================================
+Full write-ups in research.md R1-R10.
+
+  R1  TWO OPERATIONAL COUNTERS, AND THEY DISAGREE
+        messages (joined to channels)          9,650
+        usage_periods.messages_sent            9,624
+        gap                                       26      0.2694%
+
+        aggregate gap                                     0.2694%
+        worst tenant                                       100%
+        tenants over 0.1%                                    19
+        the common shape          31 environments at exactly 70 / 68
+
+        cause UNRESOLVED — one insert(messages) path at repository.ts:4214
+        increments usagePeriods at :4344 in the same transaction. Phase 1 task.
+
+  R3  WHICH QUANTITIES HAVE AN OPERATIONAL SIDE
+        usage_periods columns: environment_id, period, messages_sent,
+                               created_at, connection_minutes
+        messages            usage_periods.messages_sent
+        connection-minutes  usage_periods.connection_minutes
+        active users        usage_active_users
+        stored messages     NONE
+
+  R4  HOW MANY TENANTS HAVE BOTH SIDES
+        daily_usage_billing environments      4
+        usage_periods environments          675
+        one-sided                           671
+
+  R7  A CLOSED PERIOD, at the time of writing:  2026-08-01
