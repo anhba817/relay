@@ -64,16 +64,16 @@ rollup.
 **Independent test**: open and close connections, drain, and read connection-minutes for that
 environment and day from rollup rows.
 
-- [ ] T022 [US1] Write `relay-platform/analytics/0008_mv_connection_minutes.sql`: a materialised view `TO relay_analytics.daily_usage_v2` over `connection_events`, writing `connection_minutes` and leaving every other column at its type's zero for `SummingMergeTree` to add.
-- [ ] T023 [US1] Discharge **FR-002**: the view reads **close rows only** — `WHERE event = 'closed' AND duration_ms IS NOT NULL`. R4 measured that a close carries the closing instant and the duration, so `ts - duration_ms` recovers the open and the open row adds nothing.
-- [ ] T024 [US1] Implement whichever definition phase 6 will decide, and **say in the file that the decision is phase 6's and where it is recorded**. R3 measured both computable: `arrayJoin` over the minute range gives the meter's calendar buckets, `sum(duration_ms)` gives elapsed. Ship one, cite the other, and do not let the file imply the question was never asked.
-- [ ] T025 [US1] The view must not write `channel_id`. A connection belongs to a tenant and not to a channel, so its rows carry the zero UUID in that column — **and that is a value a reader will meet**, so `data-model.md` and the contract say what it means before anybody queries it.
-- [ ] T026 [US1] Apply, then verify with `SHOW CREATE` and by planting one close record and reading the rollup back. Clean the planted record out of both the source and the target, and verify the cleanup. 043's rule: clean up a probe before anything is counted.
-- [ ] T027 [P] [US1] Write an integration test at **`relay-platform/services/ingester/src/metering.itest.ts`** asserting **N connections opened and closed produce the expected minutes for a dedicated environment id**. Use a dedicated environment id and scope every count by it — the analytical store has no lane guard (050-2) and this chapter writes a table every later suite reads.
-- [ ] T028 [US1] In the same test, assert the **opens-without-closes** case: plant an open with no close and assert it contributes zero minutes rather than a wrong number. R5 measured 44 of 99 connections in that state.
-- [ ] T029 [US1] Assert tenancy in both directions: a second environment's connections are unreachable from the first environment's filter. Constitution I, and the shape 4.4 and 4.5 both wrote.
-- [ ] T030 [US1] Measure and record in `baseline.txt`: connection-minutes computed from the rollup against the same minutes computed directly from `connection_events`, over one window, with the opens-without-closes count beside them.
-- [ ] T031 [US1] Run the four lanes and commit phase 3.
+- [X] T022 [US1] Write `relay-platform/analytics/0008_mv_connection_minutes.sql`: a materialised view `TO relay_analytics.daily_usage_v2` over `connection_events`, writing `connection_minutes` and leaving every other column at its type's zero for `SummingMergeTree` to add.
+- [X] T023 [US1] Discharge **FR-002**: the view reads **close rows only** — `WHERE event = 'closed' AND duration_ms IS NOT NULL`. R4 measured that a close carries the closing instant and the duration, so `ts - duration_ms` recovers the open and the open row adds nothing.
+- [X] T024 [US1] Implement whichever definition phase 6 will decide, and **say in the file that the decision is phase 6's and where it is recorded**. R3 measured both computable: `arrayJoin` over the minute range gives the meter's calendar buckets, `sum(duration_ms)` gives elapsed. Ship one, cite the other, and do not let the file imply the question was never asked.
+- [X] T025 [US1] The view must not write `channel_id`. A connection belongs to a tenant and not to a channel, so its rows carry the zero UUID in that column — **and that is a value a reader will meet**, so `data-model.md` and the contract say what it means before anybody queries it.
+- [X] T026 [US1] Apply, then verify with `SHOW CREATE` and by planting one close record and reading the rollup back. Clean the planted record out of both the source and the target, and verify the cleanup. 043's rule: clean up a probe before anything is counted.
+- [X] T027 [P] [US1] Write an integration test at **`relay-platform/services/ingester/src/metering.itest.ts`** asserting **N connections opened and closed produce the expected minutes for a dedicated environment id**. Use a dedicated environment id and scope every count by it — the analytical store has no lane guard (050-2) and this chapter writes a table every later suite reads.
+- [X] T028 [US1] In the same test, assert the **opens-without-closes** case: plant an open with no close and assert it contributes zero minutes rather than a wrong number. R5 measured 44 of 99 connections in that state.
+- [X] T029 [US1] Assert tenancy in both directions: a second environment's connections are unreachable from the first environment's filter. Constitution I, and the shape 4.4 and 4.5 both wrote.
+- [X] T030 [US1] Measure and record in `baseline.txt`: connection-minutes computed from the rollup against the same minutes computed directly from `connection_events`, over one window, with the opens-without-closes count beside them.
+- [X] T031 [US1] Run the four lanes and commit phase 3.
 
 ---
 

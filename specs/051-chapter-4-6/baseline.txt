@@ -221,3 +221,83 @@ T020/T021 — THE CHAIN AND THE LANES AFTER PHASE 2
     lint GREEN · typecheck GREEN · test GREEN
     test:integration and coverage unchanged from T008's opening and not re-run here;
     nothing in this phase is TypeScript.
+
+================================================================================
+PHASE 3 — CONNECTION-MINUTES, AND A VIEW THAT KNEW NOTHING ABOUT HISTORY
+================================================================================
+
+T022-T026 — THE VIEW, AND THE METER'S RULE REPRODUCED
+  One close planted at 00:01:01 with duration 2,000 ms -- two seconds of wall clock,
+  crossing a minute boundary:
+
+    connection_minutes            2        `meter.ts`: "TWO connection-minutes"
+    channel_id                    00000000-…   a connection has no channel
+    messages / stored_delta       0  0     omitted by this view
+    uniqMerge(active_users_state) 0        an omitted AggregateFunction, not an error
+
+  Cleaned up and both sides verified at 0.
+
+T030 — THE ROLLUP SAID 0 AND THE RAW TABLE SAID 56
+  The first comparison of the chapter, and it failed:
+
+    rollup, all environments      0
+    computed direct from raw     56
+    closes that fed it           55
+    opens with no close          44
+
+  **A MATERIALISED VIEW IS A TRIGGER ON FUTURE INSERTS, NOT A QUERY OVER HISTORY.** The 154
+  connection rows were inserted before `0008` existed, so the view never saw them. Proven
+  with a control rather than assumed: one NEW close inserted afterwards moved the rollup to
+  2 while the pre-existing rows stayed at 0.
+
+  **SO DR-10's "billing never scans raw events" IS EMPTY WITHOUT A BACKFILL**, and nothing
+  in the schema says so. Any deployment applying this migration to a store that already
+  holds data gets a rollup that knows only what arrived after the migration -- and it would
+  read as working, because every new connection appears.
+
+T030 (continued) — `0009_backfill_connection_minutes.sql`, AND THE AGREEMENT
+
+    rollup minutes            56
+    computed direct from raw  56        exact
+
+  THE RACE IS NAMED IN THE FILE RATHER THAN HIDDEN: rows inserted between the view's
+  creation and the backfill are counted twice. `apply.mjs` runs the two files milliseconds
+  apart in one sorted pass and a migration runs against an idle store, so the window is
+  small -- and small is not zero. The correct order in a live system is create the view,
+  read the source's watermark, backfill strictly below it.
+
+  **THIS WAS NOT IN THE PLAN.** Seven analysis passes, eleven research items and a probe
+  that planted a row and read it back -- and every one of them tested the view against data
+  inserted AFTER the view existed, which is the only case that works. The first comparison
+  against data that was already there found it in one query.
+
+T027-T029 — THE INTEGRATION SUITE
+    services/ingester/src/metering.itest.ts      6 passed (6), 529 ms
+
+  Six assertions: the calendar-minute rule; an open with no close contributing zero while
+  remaining in the raw table; a connection crossing midnight splitting across two days; the
+  zero channel; the omitted columns reading 0 including the aggregate state; and a second
+  tenant's rows unreachable from the first tenant's filter, asserted in both directions.
+
+  A dedicated environment id, every count scoped by it, and a `SELECT 1` positive control
+  before anything -- the analytical store has no lane guard (050-2).
+
+T031 — THE LANES AFTER PHASE 3
+    lint        RED then GREEN — `CHANNEL` assigned and never used in the new suite,
+                a constant left behind when the tests stopped needing it
+    typecheck   GREEN
+    test        GREEN
+    test:integration  RED, 7 tests — **exactly T008's inherited list**, none in the
+                ingester, none new: request-log x5, limits x1, outbox invariant 4
+
+  AND THE GATE REACHES THE NEW SUITE, CHECKED RATHER THAN ASSUMED. The turbo lane prints
+  `cache bypass, force executing` for the ingester and no per-file lines, which says
+  nothing about what ran inside it. Asked directly:
+
+    services/ingester $ pnpm test:integration
+      Test Files  2 passed (2)
+      Tests      14 passed (14)
+
+  Two files: `ingest.itest.ts` and `metering.itest.ts`. 4.5 shipped three phases before
+  finding its own integration suite had no gate; this one is checked in the phase that
+  wrote it.
