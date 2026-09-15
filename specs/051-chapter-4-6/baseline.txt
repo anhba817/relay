@@ -301,3 +301,154 @@ T031 — THE LANES AFTER PHASE 3
   Two files: `ingest.itest.ts` and `metering.itest.ts`. 4.5 shipped three phases before
   finding its own integration suite had no gate; this one is checked in the phase that
   wrote it.
+
+================================================================================
+PHASE 4 — THE READ, AND TWO BUGS IN THE TEST THAT ASSERTED IT
+================================================================================
+
+T031a/T031b — THE INTERFACE GAINED A READ, AND THE COMPILER NAMED THE SITE
+  `ClickHouse` was insert-and-count: insert, insertRequests, insertConnections, count,
+  countRequests, countConnections, with `post()` a private closure. It has `query()` now.
+
+    src/ingest.itest.ts(107,11): error TS2741: Property 'query' is missing in type
+    '{ insert: ...; insertRequests: ...; insertConnections: ...; count: ...;
+       countRequests: ...; countConnections: ... }' but required in type 'ClickHouse'
+
+  Predicted by T031b before it happened, from 4.5 measuring TS2739 for the same event one
+  method earlier. **Stub completed, not widened** -- a `Partial<>` or an `as` cast would
+  silence the one property that makes a growing interface safe.
+
+T033 — THE WRONG READ, SHOWN FAILING FIRST
+  Three separate inserts for one key:
+
+    physical rows                   3
+    bare SELECT, no GROUP BY        1000  1000  1000
+    sum() with GROUP BY             3000
+    bare SELECT after OPTIMIZE      3000        <- the trap
+
+  047's figure reproduced exactly. **And the last line is the part worth publishing**: the
+  wrong read starts agreeing once somebody merges, so a query that is wrong in production
+  is right in a demo and gets shipped.
+
+T033 (continued) — AND THE TEST THAT ASSERTED IT WAS WRONG TWICE
+  **First version**: asserted three rows of 1000. Failed -- a background merge had already
+  collapsed them into one row of 3000. **An assertion that the wrong read is wrong depends
+  on a merge not having happened**, which is the same non-determinism the contract exists
+  to remove. Pinning it would need `SYSTEM STOP MERGES`, a lane-wide side effect on a table
+  every later suite reads (050-2).
+
+  **Second version**: enumerated the states -- 1000 or 3000 -- and failed again, because a
+  PARTIAL merge gives 2000 and 1000. There are as many shapes as there are ways to
+  partition three parts.
+
+  **Third version asserts the invariant**: the bare rows SUM to 3000 in every merge state,
+  and only the contract's read says so in one number. The pre-merge observation lives here,
+  taken by hand, rather than in an assertion that cannot be made deterministic without
+  harming the lane.
+
+T035 — AND `clean()` WAS NOT CLEANING
+  The stored-balance test read **3** creations where it had planted 2. Not a rollup fault:
+  `ALTER TABLE ... DELETE` is a MUTATION, queued and applied in the background, so the
+  suite's `beforeAll` returned while the previous run's rows were still there. It polls
+  `system.mutations` for `is_done = 0` now and throws if they do not finish.
+
+  **A mutation is not a delete**, and the failure arrives as a wrong number rather than as
+  an error -- which is the shape that gets attributed to the thing under test.
+
+T032/T034/T035 — THE READ
+    services/ingester/src/metering.ts          dailyUsage() · storedMessages()
+    10 passed (10), three runs, identical
+
+  `storedMessages` takes no lower bound: the column holds a day's delta and the stored
+  count is the sum of every delta up to a day. Measured: 2 as of the 22nd, 1 as of the
+  23rd after a deletion, and the period's CHANGE over the 23rd alone is -1 -- which is the
+  different question a `BETWEEN` would have answered.
+
+  Active users came back 2 over two authors, with the third arm NULL: 046's
+  `Nullable(UUID)` fix surviving into a rollup fed by two views.
+
+T035a — THE CORPUS, AND TWO COMMANDS THE QUICKSTART HAD WRONG
+  `CORPUS_DAYS=60` was REFUSED:
+
+    CORPUS_DAYS (60) must exceed the query window (90), or the date predicate excludes
+    nothing and its cost is measured as zero
+
+  **So `corpus.mjs` and the TTL cannot both be satisfied.** The script requires more than
+  90 days so a date predicate has something to exclude; `message_events` carries
+  `TTL toDateTime(ts) + INTERVAL 90 DAY` and 046 measured the TTL removing rows AT INSERT.
+  A corpus that satisfies the script necessarily produces the rollup/raw discrepancy.
+  Analysis pass 5 wrote `CORPUS_DAYS=60` into the quickstart to avoid that, and nobody ran
+  it -- the quickstart is the file with a constitution MUST on it.
+
+  And `load-analytics.mjs` needs `--corpus <corpus.json>`, which the quickstart's
+  invocation omitted:
+
+    --corpus <corpus.json> is required. The database is the one corpus.mjs reports;
+    there is no default, because the only plausible default is the lane.
+
+  Run at the script's minimum: CORPUS_ENVIRONMENTS=3 CORPUS_MESSAGES=200000 CORPUS_DAYS=91
+    242,667 messages in Postgres · 248,155 rows in message_events · 2,400 channels
+
+T036/T036a — THE ROLLUP READ MORE ROWS THAN THE RAW TABLE
+  One tenant's 91-day bill, from the server's own accounting:
+
+    rollup  32,778 rows · 3.56 MiB · 4 ms
+    raw     32,768 rows · 1.31 MiB · 3 ms
+
+  **DR-10's "billing never scans raw events" was true in the letter and worth nothing.**
+  4.2 published 315 rows against 1,052,655 for the same clause.
+
+  THE CAUSE IS THE KEY, AND IT IS NOT AN UNMERGED TABLE:
+
+    daily_usage_v2, distinct (environment_id, channel_id, day)   147,534
+    the same rows, distinct (environment_id, day)                    286
+    4.2's daily_usage, keyed (environment_id, day)                   276
+    channels in the corpus                                         2,400
+
+  `OPTIMIZE FINAL` changed nothing -- every row is already a distinct key. **Channel
+  multiplied the rollup by 515**, and a tenant-day total has to sum across that tenant's
+  channels.
+
+  FR-ANL-09's channel dimension and DR-10's cheap read are in tension, and one table cannot
+  be both. `0010`-`0013` add `daily_usage_billing`, keyed (environment_id, day), with its
+  own two views and a backfill. 281 rows where the channel-keyed table has 147,534.
+
+  **NOTHING IN SEVEN ANALYSIS PASSES FOUND THIS.** R6 measured `channel_id` on the row and
+  concluded it "costs a key column, not a join", which is true and was the wrong question.
+  The question is what it costs the READ, and that needed a corpus.
+
+T036a (continued) — AND THE TWO ROLLUPS DISAGREED, BY EXACTLY ONE DAY
+
+    message_events, event='created' now     239,997   91 days   oldest 2026-06-17
+    daily_usage_v2   (the VIEW saw it)      242,667   92 days   oldest 2026-06-16
+    daily_usage_billing (BACKFILLED after)  239,997   91 days   oldest 2026-06-17
+
+  The difference is 2,670 rows on 2026-06-16 -- the day the TTL deleted during the insert.
+  **The view counted it because a view fires before the TTL; the backfill could not,
+  because by then the rows were gone.**
+
+  SO A BACKFILL IS NOT A REPAIR FOR A ROLLUP THAT SHOULD HAVE BEEN THERE. It recovers what
+  still exists and nothing else, and for metering the VIEW's number is the correct one --
+  FR-003a gives the rollup no TTL precisely so it keeps history the raw events lose. A
+  rollup created late is permanently short by whatever the TTL has already eaten, and no
+  amount of backfilling closes that.
+
+T036b — THE CORPUS REMOVED, VERIFIED AGAINST T001
+
+    message_events 0 · api_requests 11,683 · connection_events 154 · webhook_attempts 64
+    daily_usage 0 · daily_usage_v2 0 · daily_usage_billing 0
+    relay_corpus_20260915092346 dropped
+
+  TRUNCATE rather than ALTER DELETE, because the corpus reached three rollup tables and
+  4.2's inner table, and a mutation is queued rather than applied. **It also removed the
+  connection-minutes the `0009` backfill had put there**, and the ledger will not re-run
+  that statement -- so the lane's rollups are empty of the 154 connections until something
+  inserts again. Recorded rather than repaired: the integration suite plants its own data.
+
+T040 — THE LANES AFTER PHASE 4
+    lint GREEN · typecheck GREEN · test GREEN
+    services/ingester test:integration   2 files, 18 tests, all passing
+    coverage and the full integration lane deferred to T078's eleven-gate run
+
+  T039a and T039b (the coverage pins) are the two tasks phase 4 leaves open: the read is
+  written and tested but not yet pinned, and 050-1 assigned that to this chapter.
