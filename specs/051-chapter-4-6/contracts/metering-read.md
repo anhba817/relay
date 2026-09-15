@@ -9,6 +9,21 @@ passes — so every invocation line here is one somebody can paste.
 For one tenant and one period, FR-ANL-05's quantities: messages sent, unique active users,
 connection-minutes, and stored message count.
 
+## Where it lives
+
+`relay-platform/services/ingester/src/metering.ts`, over a query method on `ClickHouse` —
+beside `clickhouse.ts`, which owns the store's client and its four environment variables. That
+interface was insert-and-count when this chapter opened (`insert`, `insertRequests`,
+`insertConnections`, `count`, `countRequests`, `countConnections`, with `post()` a private
+closure), so the read is not merely placed beside it: the interface gains a method, the way it
+has gained one per chapter since 4.3. **Otherwise a read "beside the client" opens a second
+one**, and the one-client claim is a sentence rather than a property.
+
+Its caller from day one is `services/ingester/src/metering.itest.ts`, which the ingester's
+`test:integration` reaches — `include: ["src/**/*.itest.ts"]`, recursive. **A read with no
+caller is `analytics/query.mjs`**, which opens *"FR-ANL-05's daily question, asked of the
+analytical store"* and is referenced by no script, service or config.
+
 ## The invocation
 
 ClickHouse over HTTP, `relay` / `relay`, port 8123, one statement per request — the HTTP
@@ -45,6 +60,19 @@ somebody having run `OPTIMIZE` is right in a demo and wrong in production.
 **No lower bound, deliberately.** The stored message count is a running balance, so it sums
 every delta up to the day asked for. A `BETWEEN` here would report the period's *change* in
 stored messages, which is a different question and reads as a plausible wrong answer.
+
+## The rows-read claim needs a corpus, and the corpus fills two rollups
+
+**The store cannot answer this question unloaded.** `message_events` holds 0 rows and
+`connection_events` 154; 4.2's published 315-against-1,052,655 exists because that chapter
+loaded a corpus. So the figure below is taken inside one window, against a corpus whose size
+and day-span are stated, and the corpus is removed afterwards.
+
+**And the load fills `daily_usage` as well.** `analytics/0001_daily_usage.sql:19` reads
+`FROM relay_analytics.message_events`, so chapter 4.2's view gains rows from the same insert.
+Anything that cleans up after this measurement cleans both — and a delete on the source does
+not propagate to a materialised view's target, so 4.2's inner table is cleaned by its own
+name.
 
 ## What the read may not touch
 

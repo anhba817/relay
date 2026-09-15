@@ -133,15 +133,81 @@ curl -s -X POST http://localhost:8123/ -u relay:relay --data-binary \
 **Forty-four percent have no close record.** Chapter 4.5 measured why — a clean stop produces
 opens with no closes and a kill produces neither — and 050-5 files it.
 
-## 4. After phase 2 — the rollup table
+## 4. After phase 2 — the rollup table and the view that waits for a producer
 
 ```bash
 node analytics/apply.mjs
 ```
 
-Expect `applied 1: 0006_daily_usage_v2.sql`, then `applied nothing` on a second run.
+Expect **`applied 2`** — `0006_daily_usage_v2.sql` then `0007_mv_messages.sql`, in that order,
+because `apply.mjs` sorts filenames and a view cannot target a table that does not exist yet.
+A second run says `applied nothing`.
 
-## 5. After phase 4 — the metering read
+**The message view is built here even though its source has no producer.** §1 measured
+`message_events` at 0 rows. The view exists so the rollup is complete the day something
+writes that table, and so that §5's corpus has something to flow through — a corpus passing
+through a rollup with no message view proves nothing.
+
+After phase 3 a third statement joins them:
+
+```bash
+node analytics/apply.mjs     # applied 1: 0008_mv_connection_minutes.sql
+```
+
+## 5. After phase 4 — the corpus, and the bind it puts you in
+
+**The store cannot answer the rows-read question as it stands.** §1 measured `message_events`
+at 0 and `connection_events` at 154; 4.2's published 315-against-1,052,655 exists because that
+chapter loaded a corpus. So load one, measure, and take it out again.
+
+```bash
+CORPUS_ENVIRONMENTS=3 CORPUS_MESSAGES=200000 CORPUS_DAYS=60 \
+  node scripts/scale/corpus.mjs
+node scripts/scale/load-analytics.mjs
+```
+
+**Every value set, none defaulted** — SC-002 asks for the corpus size stated, and the defaults
+are 3 environments, 1,000,000 messages and 120 days. **`CORPUS_DAYS=60` is the one that is not
+a size choice.** `message_events` carries `TTL toDateTime(ts) + INTERVAL 90 DAY` and 046
+measured the TTL removing rows **at insert, not at merge** — 120,000 rows over 120 days became
+90,000 immediately and silently. A 120-day corpus therefore loses its oldest 30 days on the
+way in, while the rollup counts them, because the view fires before the TTL. 047 published that
+gap as thirty days of figures for rows that never persisted. Staying inside 90 days keeps the
+raw-against-rollup comparison a comparison.
+
+**Record the corpus database name and the environment ids.** `corpus.mjs` builds
+`relay_corpus_<timestamp>` and refuses the lane's own database by name; 047 spent nine passes
+measuring a store the chapter had not loaded.
+
+**AND READ THE SECOND COMMAND AGAIN BEFORE RUNNING IT.** `load-analytics.mjs:53` is
+`postgresql('${PG_HOST}', …)` — ClickHouse executing a query against Postgres, which is
+constitution III's first prohibition in as many words: *"Analytical queries MUST NEVER execute
+against the operational database."* **The only way to demonstrate that this rollup works is to
+run the thing the chapter is about.** That is the chapter's argument, not an obstacle to it.
+
+It also writes into the shared store — `const DB = "relay_analytics"`, hardcoded, no override —
+so the rows come out again in this same step:
+
+```bash
+# two rollups filled, not one: 0001_daily_usage.sql reads the same source
+curl -s -X POST http://localhost:8123/ -u relay:relay --data-binary \
+  "SELECT name, engine FROM system.tables WHERE database='relay_analytics' FORMAT TSV"
+```
+
+Delete the corpus rows from `message_events`, from `daily_usage_v2`, and from
+`daily_usage`'s implicit inner table — **a delete on a source does not propagate to a
+materialised view's target**, which research R8 measured by planting one row and having to
+remove it from both. Then assert `message_events` is back to §1's figure and neither rollup
+holds anything for those environment ids.
+
+## 6. After phase 4 — the metering read
+
+The read lives at `services/ingester/src/metering.ts`, over the query method phase 3 adds to
+`ClickHouse` — beside `clickhouse.ts`, which owns the store's client. Its integration test is
+`services/ingester/src/metering.itest.ts`, which the ingester's `test:integration` reaches
+(`include: ["src/**/*.itest.ts"]`, recursive).
+
+The wire form it produces:
 
 ```bash
 curl -s -X POST http://localhost:8123/ -u relay:relay --data-binary \
@@ -156,7 +222,10 @@ curl -s -X POST http://localhost:8123/ -u relay:relay --data-binary \
 key per insert until a merge. See `contracts/metering-read.md` for the full contract,
 including why the stored count is a separate read with no lower bound.
 
-## 6. The eleven gates
+**Outside §5's window, `messages` and the stored count read 0** — their source has no
+producer. That is the chapter's subject, not a broken setup.
+
+## 7. The eleven gates
 
 **Eleven, and the last two are the ones a chapter can ship without.** `.itest.ts` files load
 `vitest.integration.config.mts`, which `pnpm test` never opens, and `coverage` is the only
@@ -191,7 +260,7 @@ flake. Measure the colours at phase 1 so an inherited red is not read as a new o
 worktree and then not reproducible (050-1). If it says that, it is not evidence the lane is
 broken.
 
-## 7. The fence chain
+## 8. The fence chain
 
 ```bash
 cd relay-tutorial && pnpm check:fences
