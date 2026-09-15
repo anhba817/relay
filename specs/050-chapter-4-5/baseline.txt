@@ -708,3 +708,67 @@ measured. This consumer takes 60 seconds.
 `expect(second).toEqual({...})`. A `toMatchObject` would have absorbed the new field
 silently; a whole-object equality makes a field appearing in a reported result a decision
 somebody writes down. Both updated with `writtenConnections: 0` rather than loosened.
+
+T057 — CONSTITUTION VI's 100%-BRANCH CLAUSE, MET BY DELETING A BRANCH
+    services/gateway/src/connection-log/event.ts
+
+        first measurement    90.00 / 93.75 / 86.66 / 88.88   (stmts/branch/funcs/lines)
+        + close() covered    97.50 / 93.75 / 93.33 / 97.22
+        + the tick covered  100.00 / 93.75 / 100.0 / 100.0   uncovered: line 262 only
+        + the arm DELETED   100.00 / 100.0 / 100.0 / 100.0
+
+    Line 262 was `String(first?.status === "rejected" ? first.reason : "unknown")`, and
+    the `"unknown"` arm CANNOT RUN: inside `failed.length > 0` there is always a
+    rejection. It was not a missing test, it was an unreachable branch. Pairing each
+    record with its own outcome in one pass deletes it. **A design in which a case cannot
+    arise beats a branch that handles it, because the branch is the thing that rots.**
+
+    Two of the three gains were tests for arms only production reaches: `close()`, whose
+    other caller is `main.ts` and therefore excluded from the ratchet, and the timer
+    callback, which every other test in the file suppresses with `intervalMs: 1e9`. The
+    tick test polls to a deadline rather than sleeping flat, and then asserts that
+    `stop()` really stops it.
+
+    `event.ts` no longer appears in v8's text table at all, which is what a file at 100
+    on all four looks like. `publisher.ts` measures 0 in the unit lane by design: only
+    the integration suite exercises a real broker client.
+
+================================================================================
+T058/T059 BLOCKED — `pnpm coverage` FINDS NO TEST FILES, AND HAS NOT SINCE 4.4
+================================================================================
+    cd relay-platform && pnpm coverage
+      RUN  v4.1.10 /home/dong/work/relay/relay-platform
+           Coverage enabled with v8
+      No test files found, exiting with code 1
+      include: packages/*/src/**/*.test.ts, services/*/src/**/*.test.ts,
+               packages/*/src/**/*.itest.ts, services/*/src/**/*.itest.ts
+
+**AND IT PRINTS A FULL COVERAGE TABLE OF ZEROS BESIDE THAT LINE**, plus every per-file
+threshold as an ERROR. A reader skimming the output sees a catastrophic regression rather
+than a run that never happened. This project's own rule, one level further out: the zero
+that means "clean" and the zero that means "never looked" printed the same line -- here
+the zero that means "never looked" is dressed as a measurement.
+
+**THE SAME CONFIG'S `vitest list` FINDS 108 FILES, INCLUDING BOTH NEW ONES** (lines 107
+and 108 of its output). So the include is not wrong and the files are not missing; `list`
+and `run` disagree under vitest 4.1.10.
+
+NOT THIS CHAPTER'S DOING, CHECKED RATHER THAN ARGUED:
+    git diff --stat part4-ch4 HEAD -- vitest.coverage.config.mts     (no output)
+    git worktree add --detach /tmp/cov-check part4-ch4
+      cd /tmp/cov-check && npx vitest run --config vitest.coverage.config.mts
+      -> No test files found, exiting with code 1
+
+**So the lane has been broken since at least 4.4's close** -- at 112 of 112 with eight
+gates green, and 049's record publishes `request-log/event.ts` at 100/100/100/100 from
+it. Either that figure came from a different invocation or it came from somewhere else.
+
+T058 and T059 cannot be discharged: pins can be written but nothing enforces them, and a
+sweep for unbindable keys is a sweep over a lane that runs nothing. This chapter's own
+number (T057) came from the gateway's own vitest with `--coverage.include`, which works.
+Filed for gaps.md. Root cause unknown; `--include` is not a CLI flag in vitest 4, so the
+one-line workaround that suggests itself does not exist.
+
+AND PASS 14 ADDED THIS GATE TO T062 AND T095 WITHOUT RUNNING IT. The finding was right --
+`coverage` is the only lane that enforces the pins -- and the gate it named was already
+dead. **A gate added to a list is not a gate until somebody runs it.**
