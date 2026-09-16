@@ -28,6 +28,44 @@ history; the replaced history is preserved on the remote as the tag
 tags. **Anyone holding an older clone of `relay-platform` must reset rather than pull.**
 
 <!-- SPECKIT START -->
+**ACTIVE: 053 — CHAPTER 4.8, "the log a customer can search".** Plan:
+`specs/053-chapter-4-8/plan.md`; **`research.md` first — eight of its ten items were measured
+and two change the chapter's shape.** Seven phases, MVP at 1–4.
+
+**`docs/12` ROW 9, MOVEMENT IV.** *"FR-ANL-07's query surface; FR-ANL-10's latency percentiles."*
+**The brief pairs a clause that can be built with one that cannot.** 4.4 built FR-ANL-07's
+producer and nothing reads it; FR-ANL-10's column `message_events.delivery_latency_ms` has **0
+rows and 0 writers** and has carried as `gaps.md` 048-2 through five features.
+
+**AND THE ONE LATENCY THE STORE HOLDS MEASURES SOMETHING ELSE, BY A COMMENT WRITTEN AT THE
+TIME.** `deliver.ts` sets `latencyMs = Date.now() - started` around the `fetch` alone, and
+`analytics/0003_webhook_attempts.sql:20` says *"How long the ENDPOINT took to answer. NOT
+`message_events.delivery_latency_ms`."* So FR-ANL-10 asks for percentiles of a quantity **this
+platform has never defined**, and "delivery" has three readings for a relay that delivers three
+ways.
+
+    total rows 11,684 · tenantless 7,063 (60.5%) · attributed 4,621
+    of the attributed: /internal 1,656 (35.8%) · /v1 1,857 · busiest is /internal/session 1,423
+    a 50-row page reads 8,194 — one granule, and the tenant owns 208 rows in total
+    per-tenant rows: median 10 · p95 155 · max 208 · 152 tenants
+
+**SO A CUSTOMER'S OWN LOG OPENS ON THE GATEWAY'S INTERNAL CALLS**, made with the end user's
+principal. Hiding them makes the log incomplete against FR-ANL-01's *"every request"*; showing
+them puts `/internal/session` at the top. The chapter decides and says which.
+
+**AND `quantile()` IS APPROXIMATE AT EVERY SAMPLE SIZE — 0.9896% AT n=100** — which is the
+opposite shape from 4.7's `uniq`, exact below 65,536 and wrong above. There is no exact regime,
+and the error is **worst at the smallest sample**, which is exactly what a per-tenant-per-hour
+bucket is. `quantileExact` if percentiles happen at all.
+
+**FR-ANL-08 NAMES 90 DAYS AND FR-ANL-07 RETAINS 30**, and the lane's largest tenant holds 208
+rows — so the performance clause cannot fail here for its own reason, which is §2.3's argument
+one movement on.
+
+**THIS CHAPTER IS INSIDE CONSTITUTION III**, centrally: *"dashboard analytics read only from
+the analytical store"* is what a customer-facing request log is. 4.7's conflict was an auditor
+reading BOTH stores and stays `gaps.md` 052-6's.
+
 **052 IS CLOSED at 87 of 87 — CHAPTER 4.7, "the job that checks the meter".** Its record is
 `specs/052-chapter-4-7/` — `baseline.txt` first, then `gaps.md` (**23 entries: 7 new, 15
 carried and re-measured, and 047-1/048-1 closed by amendment**), `traceability.md`, `tasks.md`.

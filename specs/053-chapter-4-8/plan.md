@@ -1,0 +1,177 @@
+# Implementation Plan: chapter 4.8, "the log a customer can search"
+
+**Branch**: `053-chapter-4-8` | **Date**: 2026-09-16 | **Spec**: [spec.md](./spec.md)
+**Input**: Feature specification from `specs/053-chapter-4-8/spec.md`
+
+**Read `research.md` first.** Eight of its ten items were measured against the running store or
+the tree, and two of them change the chapter's shape: `quantile()` is approximate at every
+sample size and worst at the smallest, and the platform's existing pagination cursor stands on a
+column the analytical log does not have.
+
+---
+
+## Summary
+
+Chapter 4.4 built FR-ANL-07's producer and nothing reads it. This chapter builds the read: a
+tenant-scoped, paged, windowed query over `relay_analytics.api_requests`, served by the api
+behind the same guard every customer-facing route already uses.
+
+FR-ANL-10 is the other half of the brief and it cannot be built as written. The quantity it
+names has never been defined, its column has never had a producer, and the one latency the store
+holds measures a different thing by a comment written at the time. The chapter defines the
+quantity, records the two readings it does not take, and amends FR-ANL-10 rather than publishing
+a percentile of something else.
+
+## Technical Context
+
+**Language/Version**: TypeScript, Node 22, as the rest of the platform
+**Primary dependencies**: NestJS (api only, ADR-15), Zod for the query schema,
+`services/api/src/metering/clickhouse.ts` for the store read — no new dependency
+**Storage**: `relay_analytics.api_requests` — 11,684 rows, 152 attributed tenants, 30-day TTL,
+`ReplacingMergeTree` ordered `(environment_id, ts, request_id)` with `allow_nullable_key = 1`
+**Testing**: vitest, unit for the schema and cursor arithmetic, integration against the store
+**Target platform**: the api service, one new controller and one new reader
+**Project type**: three repositories — `relay` (docs/specs), `relay-platform` (code),
+`relay-tutorial` (chapters and gates)
+**Performance goals**: FR-ANL-08's 2 s at p95 over 90 days. **Not exercisable at lane volume**
+— the largest tenant holds 208 rows (R7) — so the chapter states the bound it measures against
+**Constraints**: 60.5% of the log has no tenant and can never be served (R5); the page read
+floor is one granule, 8,194 rows (R6); a caller-supplied window reaches a SQL string (R9)
+**Scale/Scope**: one controller, one reader, one schema, one contract document, one chapter
+
+---
+
+## Constitution Check
+
+| Principle | Verdict | Reason |
+|---|---|---|
+| **I — Tenant isolation** | **PASS, and it is the feature's core assertion** | Every statement filters on the principal's `environmentId`. The surface can reach neither another tenant's rows nor the 7,063 tenantless ones. The isolation test asserts on a second tenant's planted rows rather than on a count, which is the form 4.4 and 4.7 both used. |
+| **II — No acknowledged message lost** | **N/A** | Read-only. No write path is touched. |
+| **III — Two data paths, never crossed** | **PASS, centrally** | *"…billing, metering, and **dashboard analytics** read only from the analytical store."* A customer-facing request log is dashboard analytics reading ClickHouse — the clause's central case. Chapter 4.7's conflict was about an auditor reading **both** stores (`gaps.md` 052-6); nothing here reopens it, and the plan does not inherit that argument. |
+| **IV — Single writer** | **PASS** | Nothing is written. The api already holds the only ClickHouse client an operational service has (chapter 4.7); this adds a second caller of it, not a second client. |
+| **V — API-first** | **PASS, and it is the chapter's subject** | The surface is a documented contract with a stated order, a stated page bound and a stated retention edge. `contracts/request-log.md` is written before the route. |
+| **VI — Test coverage** | **PASS with a pin** | New files pinned per-file in `vitest.coverage.config.mts` with two observations each, and both halves of the threshold probe run. The lane now reports on a red run (`reportOnFailure`, chapter 4.7), so the pins bind. |
+| **VII — Governance** | **PASS, with one amendment owed** | FR-ANL-10 is amended rather than approximated, following revisions 1.12–1.14. Constitution III's own amendment stays 052-6's. |
+
+**No violation requires justification.** The one gate that is weaker than it looks is VI's
+100%-branch clause for tenant isolation: the branch here is a `WHERE` predicate rather than a
+conditional, so it is met by a test that proves the filter, not by a covered arm.
+
+---
+
+## Phases
+
+### Phase 1 — Premises and openings (blocks everything)
+
+Every number this chapter publishes is taken twice: once now and once at the close. Chapter
+4.7's opening figures moved while its own phases ran, and its record says so.
+
+- The eleven gates, each lane run **directly** — `pnpm test:integration` runs three of its six
+  lanes (`gaps.md` 051-3), so turbo's summary is not the opening.
+- `check:fences` with both HEAD classes split (`gaps.md` 050-4).
+- The store: row counts, tenantless share, internal share, per-tenant distribution, TTL read
+  from `SHOW CREATE TABLE` rather than from a pattern (chapter 4.6's `engine_full` lesson).
+- Re-check every premise in `research.md` that was measured more than a day before this phase.
+
+### Phase 2 — The query contract, with no store in sight (blocks 3)
+
+The same split chapter 4.7 used, and for the same reason: the half that can be unit-tested is
+the half worth separating.
+
+- The Zod schema: window, cursor, direction, limit — reusing `historyQuerySchema`'s shape
+  (R3) rather than inventing a second one.
+- Cursor encode/decode over `(ts, request_id)`, with the millisecond-tie case (R3: 43 pairs,
+  91 rows, worst 3) driven by a unit test.
+- The refusal cases: a limit above the maximum, a window whose end precedes its start, a
+  malformed cursor, and a window older than retention.
+- **A hostile-window test that goes red against an unvalidated version first** (R9).
+
+### Phase 3 — The reader and the route (blocks 4) 🎯 MVP begins
+
+- A reader beside `services/api/src/metering/` that takes a validated query and returns rows —
+  read-only, and the tenant id is an argument rather than a string in the SQL.
+- The controller: `@UseGuards(CredentialGuard)` and the `Accepts` decision from R4, stated with
+  its argument rather than copied.
+- The response envelope, matching the contract document written in phase 2.
+- Integration tests against the real store, every statement naming its own environment ids
+  (`gaps.md` 050-2 — the analytical store has no lane guard).
+
+### Phase 4 — What the log can and cannot show 🎯 MVP (Priority: P1)
+
+- Tenant isolation: two planted tenants, the assertion on the second's rows.
+- Tenantless rows unreachable from every tenant.
+- The `/internal/*` decision, implemented and asserted whichever way it goes (R5).
+- The retention edge: "no requests" told apart from "outside retention" (R8).
+- Paging: two consecutive pages, no row in both, every row once.
+- Coverage pins with two observations and both halves of the threshold probe.
+- Run the four lanes and `pnpm coverage`; commit.
+
+### Phase 5 — The percentile requirement, resolved rather than approximated
+
+- Define "end-to-end delivery latency" by naming its two instants, and record the two readings
+  not taken with what each would cost (R1).
+- Measure `quantile` against `quantileExact` at the bucket sizes FR-ANL-10 actually produces,
+  and publish the table (R2 measured it at 100–1,000,000; this phase measures it at the sizes a
+  per-tenant-per-hour bucket has).
+- If the chosen reading has a source: compute per tenant per hour and test it. If it does not:
+  record what the producer would cost and amend the clause.
+- Close or restate `gaps.md` 048-2, carried through five features.
+
+### Phase 6 — The amendments
+
+- Amend FR-ANL-10 to what the platform can produce, or to the definition it was missing.
+- Record FR-ANL-08's 90 days against FR-ANL-07's 30 where the two are read over this table.
+- `docs/12` §3 row 9, first column untouched.
+- `docs/05-sad.md`: the query surface in the data view, and the FR-ANL-10 sentence at :758
+  re-checked — it says the column has no producer *"until FR-ANL-10"*, which this chapter
+  either satisfies or falsifies.
+- Re-check every cited clause by opening the SRS. Chapter 4.7 found `FR-003a` cited as a clause
+  in two published documents and there is no `FR-003`.
+- `check:docs` and `check:srs`, and **check the SRS version header by looking at it**.
+
+### Phase 7 — The numbers, and the chapter
+
+- Title and slug fixed once, four strings recorded.
+- The chapter, at least one `<Trap>`, 2,000–4,000 prose words outside code fences.
+- Registration in `lib/tutorial.ts` — **assert the anchor is unique before editing** (4.4 shipped
+  a site that did not build; 4.6 and 4.7 both checked first).
+- Figures in `figures.ts`, passed as `code=`, every number from `baseline.txt`.
+- Fences: new files whole, changed files as `diff` hunks against `part4-ch7`. **A `diff` fence
+  carries the `@@` hunks only** — chapter 4.7 lost two attempts to the `--- a/` headers.
+- Eleven gates, `gaps.md`, `traceability.md`, `CLAUDE.md`, tag `part4-ch8`, push.
+
+---
+
+## Dependency order
+
+```
+Phase 1  premises + openings         ── blocks everything
+Phase 2  the contract, pure          ── blocks 3
+Phase 3  the reader and the route    ── blocks 4
+Phase 4  what the log can show  🎯MVP ── blocks 5
+Phase 5  the percentile              ── needs 4's shape, not its data
+Phase 6  the amendments              ── needs 5's decision
+Phase 7  the chapter                 ── needs all
+```
+
+**MVP is phases 1–4**: a customer can read their own request log, paged and windowed, and
+cannot read anyone else's.
+
+---
+
+## Complexity tracking
+
+**One new dependency: none.** The store client exists (chapter 4.7), the guard exists, Zod
+exists, and the pagination shape exists. The only new code is a schema, a reader, a controller
+and their tests.
+
+**One thing that looks like scope and is not.** Phase 5 may end with no percentile computed at
+all. That is a complete outcome rather than an abandoned phase: FR-ANL-10's quantity has never
+been defined, and defining it — with the readings not taken and the cost of each recorded — is
+the work. Chapter 4.6 closed Appendix C question 4 the same way, by settling a unit before
+anything billed one.
+
+**And one risk the plan names rather than discovers.** The `/internal/*` decision (R5) is a
+product question wearing a filter's clothes. Whichever way it goes, one of FR-ANL-01's *"every
+request"* and FR-ANL-07's *"per tenant"* is served less well, and the chapter's job is to say
+which and why — the same shape as 4.4's third reading of constitution I.

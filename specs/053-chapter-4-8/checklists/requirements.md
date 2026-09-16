@@ -47,7 +47,7 @@ FR-ANL-08's 90-day window can be exercised against a 30-day retention. They are 
 both branches, and writing them unconditionally would be deciding the measurement in advance,
 which is the failure mode this project files against itself.
 
-**One number in §2a is a fact about the lane rather than about the platform.** The 60.4%
+**One number in §2a is a fact about the lane rather than about the platform.** The 60.5%
 tenantless share was measured on a store holding 11,684 rows written by test traffic. SC-010
 requires it re-taken at the close, because chapter 4.7's opening figures moved while its own
 phases ran.

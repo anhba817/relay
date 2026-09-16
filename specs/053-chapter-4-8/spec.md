@@ -61,7 +61,7 @@ Taken at this feature's opening against the lane's store.
 **(1) SIXTY PER CENT OF THE REQUEST LOG BELONGS TO NO TENANT.**
 
     total rows                    11,684
-    environment_id IS NULL         7,063     60.4%   platform 5,916 · none 1,147
+    environment_id IS NULL         7,063     60.5%   platform 5,916 · none 1,147
     environment_id present         4,621     39.6%
 
 That is chapter 4.4's finding arriving as a product constraint. FR-ANL-01 wants an event for
@@ -311,7 +311,7 @@ than what it says.
   with the readings not chosen recorded.
 - **SC-009**: Either per-tenant per-hour percentiles are computed over a source that exists, or
   FR-ANL-10 is amended and the cost of its producer recorded.
-- **SC-010**: The three opening measurements — 60.4% tenantless, 35.8% internal, 8,194 rows for
+- **SC-010**: The three opening measurements — 60.5% tenantless, 35.8% internal, 8,194 rows for
   50 — are re-taken at the close and published with any movement.
 - **SC-011**: `check:fences` reported as a delta against an opening measured in this feature,
   with the two HEAD classes split.
