@@ -326,3 +326,45 @@ is the wrong shape, which is a stronger statement and a different remedy.
 **Decision**: the chapter records the measurement and amends the clause rather than building a
 fixture the schema refuses. The probe's rows were deleted and the count verified at 0.
 
+---
+
+## R15 — NEITHER CLICKHOUSE CLIENT HAS A TIMEOUT, AND ONE OF THEM IS ABOUT TO SERVE A CUSTOMER
+
+**Read in the tree.** `services/api/src/metering/clickhouse.ts` and
+`services/ingester/src/clickhouse.ts` both call `fetch` with no `signal` and no deadline.
+`grep` for `timeout`, `signal` and `AbortSignal` over both returns nothing.
+
+Chapter 4.7 put the first of those on a batch reconciler, where an unbounded wait costs a job
+that was going to take minutes anyway. **This chapter puts it on a customer request**, where it
+holds a Nest worker until the operating system gives up, and constitution III's second sentence
+is a MUST: *"Failure or backlog of the analytical pipeline MUST NOT affect message delivery,
+API availability, or webhook dispatch."*
+
+The platform already has the pattern one outbound call over — `services/dispatcher/src/deliver.ts`:
+
+    signal: AbortSignal.timeout(timeoutMs)
+
+**Decision**: the deadline is an **option on `createAnalyticalStore`, defaulting to none**, so
+4.7's reconciler keeps the behaviour it was measured with and only this route passes one. The
+route answers **503** on expiry rather than an empty page: an empty page is a claim about the
+tenant, and a refusal is a claim about the platform.
+
+`metering/clickhouse.ts` carries **0 titled fences in either locale**, checked rather than
+assumed, so the edit costs the fence chain nothing.
+
+**Alternatives considered**: a hard-coded deadline inside the client (changes 4.7's job without
+its consent), and a wrapper in the reader (cannot reach the `fetch` that is actually hanging).
+
+---
+
+## R16 — FOUR PREMISES THAT HELD, AND THE PASS THAT CHECKED THEM
+
+Recorded because a premise that holds is only evidence once somebody has run it.
+
+| premise | measured | result |
+|---|---|---|
+| Does `FINAL` deduplicate before or after `LIMIT`? | a two-part probe table | **Before.** raw 20 · `FINAL` 10 · `LIMIT 5` returns 5 with and without, so a short page still means the last page |
+| Is `request_id` unique, or does the cursor need a third column? | the whole table | **11,683 rows, 11,683 distinct.** `(ts, request_id)` is a total order, and the duplicate R13 found was one request written twice rather than an id collision |
+| Does `@Controller("v1/request-log")` serve `/v1/request-log`? | `main.ts` | **Yes** — no `setGlobalPrefix` |
+| Can a merge-stop leak between lanes? | the two vitest configs | **Not in the coverage lane** (`fileParallelism: false`). The hazard is the api lane's `maxWorkers: 2`, which is where the duplicate test's `finally` earns its place |
+

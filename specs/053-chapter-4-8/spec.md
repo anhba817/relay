@@ -225,8 +225,11 @@ than what it says.
   one duplicate key when this feature opened — 11,684 rows against 11,683 distinct
   `(environment_id, ts, request_id)`. Until a merge runs, a read without `FINAL` returns it
   twice, which makes "no row appears in two consecutive pages" an assertion about merge timing.
-- The analytical store is down. FR-ANL-03 and constitution III say the API must keep serving;
-  a query surface that cannot answer is different from an API that cannot serve.
+- The analytical store is down, or answers slowly enough to matter. FR-ANL-03 and constitution
+  III say the API must keep serving, and **a query surface that cannot answer is different from
+  an API that cannot serve** — but neither ClickHouse client sets a timeout, so an unbounded
+  read makes them the same thing. This was an edge case with no requirement behind it until
+  analysis pass 3; it is FR-025 now.
 - A tenant asks for a page size of zero, or a negative one.
 - An hour with no deliveries at all, when percentiles are computed per hour.
 
@@ -289,6 +292,10 @@ than what it says.
 - **FR-024**: Every statement this feature issues against `api_requests`, `webhook_attempts` or
   any rollup shall name its own environment ids. The analytical store has no lane guard
   (`gaps.md` 050-2).
+- **FR-025**: The read against the analytical store shall be bounded by a stated deadline, and
+  a store that does not answer within it shall produce a refusal naming that cause — never an
+  empty page, which is a claim about the tenant rather than about the platform. Neither
+  ClickHouse client sets a timeout today.
 
 ### Key Entities
 
@@ -327,6 +334,8 @@ than what it says.
 - **SC-012**: Prose measured outside code fences against the 2,000–4,000 bound, with the
   `<Trap>` count.
 - **SC-013**: `pnpm build` exits 0 with the chapter rendering.
+- **SC-014**: A store that does not answer produces the stated refusal rather than a hang or an
+  empty page, shown by a test.
 
 ---
 

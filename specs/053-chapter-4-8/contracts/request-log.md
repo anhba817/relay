@@ -93,6 +93,14 @@ asking a reasonable question the data cannot answer.
 | 400 | `limit` out of bounds, `to` before `from`, malformed `cursor`, unparseable instant |
 | 401 | no credential |
 | 403 | a credential whose principal carries no `environmentId` |
+| 503 | **the analytical store did not answer within the deadline.** The API is up and this surface is not, which is the distinction constitution III's second clause turns on — and it is why the refusal is explicit rather than an empty page. An empty page would say the tenant made no requests, a claim about them rather than about the platform |
+
+**The deadline is the route's, not the client's.** Neither ClickHouse client in this repository
+sets a timeout — both call `fetch` with no `signal` — which is tolerable for chapter 4.7's
+batch reconciler and is not for a customer request: an unbounded read holds a worker until the
+operating system gives up, and *"failure or backlog of the analytical pipeline MUST NOT affect
+… API availability"* is a MUST. `services/dispatcher/src/deliver.ts` already carries the
+pattern with `AbortSignal.timeout(timeoutMs)` on the webhook POST.
 
 ### What the surface never returns
 
