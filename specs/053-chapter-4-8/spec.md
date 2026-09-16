@@ -298,7 +298,8 @@ than what it says.
   with at least one `<Trap>`.
 - **FR-022**: `pnpm check:fences` shall be reported as a delta against an opening measured in
   this feature, with the two HEAD classes split.
-- **FR-023**: All eleven gates shall run, and every red shall be diagnosed against an opening
+- **FR-023**: Every gate shall run, enumerated rather than counted, and every red shall be
+  diagnosed against an opening
   measured in this feature by running the suites directly — `pnpm test:integration` runs three
   of its six lanes (`gaps.md` 051-3).
 - **FR-024**: Every statement this feature issues against `api_requests`, `webhook_attempts` or

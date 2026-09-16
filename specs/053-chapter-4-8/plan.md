@@ -80,7 +80,9 @@ conditional, so it is met by a test that proves the filter, not by a covered arm
 Every number this chapter publishes is taken twice: once now and once at the close. Chapter
 4.7's opening figures moved while its own phases ran, and its record says so.
 
-- The eleven gates, each lane run **directly** — `pnpm test:integration` runs three of its six
+- **Every gate, enumerated in T002 rather than counted** — the number has been wrong since
+  feature 043 and `CLAUDE.md` states both "fourteen" and "eleven". Each lane run **directly**:
+  `pnpm test:integration` runs three of its six
   lanes (`gaps.md` 051-3), so turbo's summary is not the opening.
 - `check:fences` with both HEAD classes split (`gaps.md` 050-4).
 - The store: row counts, tenantless share, internal share, per-tenant distribution, TTL read

@@ -403,7 +403,7 @@ that registry against `docs/08-error-reference.md` **both ways** — a code in t
 not the catalogue is red, and so is the reverse. The catalogue holds no 503 and no
 service-unavailable entry.
 
-`check:errors` is one of the eleven gates, so an omission here surfaces at phase 7 for work
+`check:errors` is one of the gates T002 enumerates, so an omission here surfaces at phase 7 for work
 that belongs in phase 3.
 
 **Decision**: `analytics_unavailable`, added to both in phase 3. The name passes the test the
@@ -841,4 +841,38 @@ if the instrument can be shown to have read it.* It has cost a wrong published c
 times now — `grep` under ugrep's alternation, `require.resolve('pg')` from the wrong root,
 `engine_full LIKE '%25 MONTH%'`, and this. **Every one was a search whose corpus did not contain
 the thing being searched for**, and every one read as an absence.
+
+---
+
+## R33 — "THE ELEVEN GATES" IS A NUMBER THE PROJECT'S OWN RECORD CONTRADICTS
+
+`CLAUDE.md:1159`, a lesson carried from feature 043, in capitals:
+
+> **FOURTEEN GATES, NOT ELEVEN**
+
+`CLAUDE.md:288`, in the same document:
+
+> the only one of **eleven** gates that notices
+
+Features 050, 051 and 052 each wrote "eleven gates" in their task lists; 051 also wrote
+"eight". This feature inherited "eleven" in two tasks and one requirement — **while adding four
+more checks**: `check-lane-scope.py`, the cross-tenant gauntlet, `pnpm coverage` and the sealed
+outsider suite.
+
+**Decision: enumerate, do not count.** T002 lists eighteen by name and command, T073 runs what
+T002 listed, and FR-023 asks for every gate rather than a number. A count is the smallest
+possible hand-maintained table, and feature 045 deleted a nine-row one — the api port map —
+rather than correcting it, for exactly this reason.
+
+**AND THE ENUMERATION IMMEDIATELY CAUGHT ONE.** `packages/outsider` is excluded from
+`pnpm test:integration` by `--filter=!@relay/outsider` and from the coverage config, so the
+sealed assertion added at pass 12 was run by **nothing in this feature's lists** — only by CI's
+third job. That is the fifth check in this feature found to exist and not be reached, after the
+coverage report on a red lane, the error registry behind a failing step, the isolation gauntlet,
+and the lane-scope checker.
+
+**One premise checked clean**: the sealed suite authenticates with `RELAY_DEMO_CREDENTIAL`,
+seeded by `scripts/seed-demo-tenant.mjs` as an **API key** — an application credential — and it
+already drives `/v1/channels`, members and sends. An `application`-only request-log route works
+there without a second credential.
 

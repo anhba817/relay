@@ -22,7 +22,39 @@ has no lane guard (`gaps.md` 050-2) and this feature plants rows in it.
 - [ ] T001b **Add the ClickHouse service to the `platform` job**, matching `compose.yaml` so a lane that passes locally passes there — `clickhouse/clickhouse-server:25.3`, `CLICKHOUSE_USER: relay`, `CLICKHOUSE_PASSWORD: relay`, `CLICKHOUSE_DB: relay_analytics`, port 8123 — plus `RELAY_CLICKHOUSE_HOST` in the job's `env` and a **`node analytics/apply.mjs`** step after the Postgres migration, because the schema does not exist until something applies it. **Provision rather than declare the suites local-only**: constitution VI's third bullet makes the cross-tenant suite and the scans release gates, and four chapters of analytical work being ungated is the larger of the two costs.
 - [ ] T001c **Unblock the two gates that sit behind the failing lane** (Y2). `pnpm test:integration` runs at `ci.yml:112`, `pnpm coverage` at `:117` and `check-error-codes.mjs` at `:135` — same job, sequential, **no `continue-on-error`** — so whenever the lane fails, constitution VI's measurable half and the error-registry gate never execute. That registry gate is the one T029a's code and catalogue entry are written for. Move `check-error-codes.mjs` above the lane (it needs only `pnpm build`, already at `:108`) and give `pnpm coverage` `if: always()`.
 - [ ] T001d Record what CI **still** cannot do after T001b, rather than implying it is now complete: `pnpm test:integration` is `turbo … --concurrency=1` and stops scheduling at the first failure (`gaps.md` 051-3), so a single red suite still hides every lane ordered after it — in CI exactly as locally.
-- [ ] T002 Record the eleven gates at the opening, **each integration lane run directly**. `pnpm test:integration` plans 18 tasks, attempts 9, and prints `Tasks: 7 successful, 9 total` while three lanes never start (`gaps.md` 051-3). Use `pnpm run <script>`, never `pnpm -s` (052's instrument note).
+- [ ] T002 Record **every gate** at the opening, **each integration lane run directly**. `pnpm test:integration` plans 18 tasks, attempts 9, and prints `Tasks: 7 successful, 9 total` while three lanes never start (`gaps.md` 051-3). Use `pnpm run <script>`, never `pnpm -s` (052's instrument note).
+  **THE LIST, ENUMERATED, BECAUSE THE COUNT HAS BEEN WRONG SINCE FEATURE 043.** `CLAUDE.md:1159`
+  carries the lesson in capitals — *"FOURTEEN GATES, NOT ELEVEN"* — and `CLAUDE.md:288` says
+  *"the only one of eleven gates that notices"*, so **the same document says both**. Features
+  050, 051 and 052 each wrote "eleven". A number is the smallest possible hand-maintained table,
+  and feature 045 deleted a nine-row one rather than correcting it.
+
+      relay-platform
+        1  pnpm lint
+        2  pnpm typecheck
+        3  pnpm test
+        4  pnpm build
+        5  api integration lane              --filter @relay/api
+        6  gateway integration lane          --filter @relay/gateway
+        7  ingester integration lane         --filter @relay/ingester
+        8  test-harness integration lane     --filter @relay/test-harness
+        9  pnpm coverage
+       10  targets.itest.ts                  the cross-tenant gauntlet, BOTH directions
+       11  check-lane-scope.py               with its positive control
+       12  packages/outsider                 the sealed suite — needs RELAY_API_URL,
+                                             RELAY_WS_URL and RELAY_DEMO_CREDENTIAL, and is
+                                             excluded from `pnpm test:integration` by
+                                             `--filter=!@relay/outsider`, so nothing else runs it
+      relay-tutorial
+       13  pnpm run check:docs
+       14  pnpm run check:srs
+       15  pnpm run check:figures
+       16  pnpm build
+       17  pnpm run check:errors             AFTER the build
+       18  pnpm check:fences
+
+  **Eighteen, and the number is not the point** — the list is. Anything this feature adds joins
+  it, and a count nobody can check is what carried "eleven" through four chapters.
 - [ ] T003 Record `check:fences` with both HEAD classes split — `differs at line` against `does not exist in relay-platform` (`gaps.md` 050-4). The second class can never be repaired by editing the platform.
 - [ ] T004 [P] Re-measure R5's three shares: total rows, tenantless, attributed, and the `/internal` / `/v1` / other split. State the date beside them.
 - [ ] T005 [P] Re-measure R7's per-tenant distribution — median, p95, max, tenant count — and name the busiest tenant's id for later phases.
@@ -193,7 +225,7 @@ else's. This is the MVP.
 - [ ] T070 Generate hunks from `git diff -U6 part4-ch7 -- <file>` or from the checker's own replay, and **verify they apply before pasting**.
 - [ ] T071 For any file T011 flagged as carrying a Vietnamese fence, file it rather than repairing it — an English chapter cannot fix a Vietnamese fence and the checker will not report it broken either (050-3).
 - [ ] T072 Discharge **FR-022** and **SC-011**: report the fence close as a delta against T003's opening, by kind and locale, with the two HEAD classes split. **Name `services/api/src/app.module.ts` explicitly.** It carries 11 titled fences in each locale, this chapter must edit it to register the controller, and it is **already** a HEAD problem — `differs at line 20` — so the edit will read as costing nothing while the file drifts further. That is 4.7's `vitest.coverage.config.mts` measured in advance instead of discovered at the close.
-- [ ] T073 Discharge **FR-023**: run all eleven gates. **Build before `check:errors`.** Diagnose every red against T002's opening by running the suites directly.
+- [ ] T073 Discharge **FR-023**: run **every gate T002 enumerated**, the sealed outsider suite included. **Build before `check:errors`.** Diagnose every red against T002's opening by running the suites directly.
 - [ ] T073a Discharge **SC-010**: re-take T004, T005 and T006's measurements at the close and publish them beside the opening figures with any movement. Chapter 4.7's opening numbers changed while its own phases ran, because the integration lanes write to the store this chapter reads — and this feature plants rows in it deliberately.
 - [ ] T074 Write `specs/053-chapter-4-8/gaps.md`. **Re-measure every carried item**: 052's seven, and 051's, 050's and 048's survivors. *Measure the carried ledger; do not copy it.*
 - [ ] T074b In `gaps.md`, file the two EIR gaps this chapter uncovered and does not close. **EIR-API-06's `has_more` is absent from `messages.service.ts`** — the platform's other list endpoint, non-conforming since chapter 2.4, and not this chapter's file to change (6 titled fences per locale). **And EIR-API-07** — *"an OpenAPI 3.1 specification shall be published, machine-readable and complete for every public endpoint"* (P4) — has no implementation anywhere in the tree, and this chapter grows the surface it would have to cover by one route.
