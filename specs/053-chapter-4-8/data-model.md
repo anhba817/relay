@@ -23,7 +23,7 @@ because chapter 4.6 learned that the server normalises what a file says.
 | `refused_at` | `LowCardinality(String)` | `middleware`, `guard`, `unmatched`, `handler` |
 | `limited_operation` | `LowCardinality(Nullable(String))` | the quota class a 429 refused on |
 
-    ENGINE      ReplacingMergeTree
+    ENGINE      ReplacingMergeTree     ← every read carries FINAL; see the contract
     PARTITION   toYYYYMM(ts)
     ORDER BY    (environment_id, ts, request_id)
     TTL         toDateTime(ts) + toIntervalDay(30)
@@ -60,7 +60,7 @@ caller-supplied value this platform puts into a ClickHouse statement.
 | `rows` | array | at most `limit`, in `direction` order. `endpoint` is `null` for an unmatched route, which the **statement** establishes with an `endpoint IS NULL` column rather than the transport: TSV writes NULL as the literal `\N` and `AnalyticalStore.query` returns strings |
 | `next_cursor` | string \| null | null when the page is the last one |
 | `window` | `{ from, to }` | echoed, because a defaulted window a caller did not send is a window they will misread |
-| `retention_edge` | ISO instant | **the answer to R8.** A window older than this returned 0 rows because the data is gone, not because nothing happened |
+| `retention_edge` | ISO instant | **the answer to R8, and it is the NOMINAL edge** — `now() - 30 days`, the guarantee rather than the oldest surviving row. The TTL is a schedule, not an event, so rows older than it exist for a while; a caller needs what the platform promises, not what a merge has left |
 
 ---
 

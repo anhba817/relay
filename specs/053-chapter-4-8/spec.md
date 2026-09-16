@@ -221,6 +221,10 @@ than what it says.
 - A row whose `environment_id` is NULL sitting between two of a tenant's rows in key order,
   given `allow_nullable_key = 1`.
 - Two requests in the same millisecond, which a `ts`-ordered cursor cannot separate.
+- **The same request stored twice.** `api_requests` is a `ReplacingMergeTree` and the lane held
+  one duplicate key when this feature opened — 11,684 rows against 11,683 distinct
+  `(environment_id, ts, request_id)`. Until a merge runs, a read without `FINAL` returns it
+  twice, which makes "no row appears in two consecutive pages" an assertion about merge timing.
 - The analytical store is down. FR-ANL-03 and constitution III say the API must keep serving;
   a query surface that cannot answer is different from an API that cannot serve.
 - A tenant asks for a page size of zero, or a negative one.

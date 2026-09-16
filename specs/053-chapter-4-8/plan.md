@@ -39,8 +39,11 @@ measured in advance this time). Everything else the feature adds is a new file.
 `relay-tutorial` (chapters and gates)
 **Performance goals**: FR-ANL-08's 2 s at p95 over 90 days. **Not exercisable at lane volume**
 — the largest tenant holds 208 rows (R7) — so the chapter states the bound it measures against
-**Constraints**: 60.5% of the log has no tenant and can never be served (R5); the page read
-floor is one granule, 8,194 rows (R6); a caller-supplied window reaches a SQL string (R9)
+**Constraints**: 60.45% of the log has no tenant and can never be served (R5); the page read
+floor is one granule, 8,194 rows (R6); a caller-supplied window reaches a SQL string (R9);
+**every read carries `FINAL`** because the engine is a `ReplacingMergeTree` that held a
+duplicate key when this feature opened (R13); and **FR-ANL-08's 90-day window cannot be
+reached in this table at any volume** — a row inserted 60 days old vanishes on INSERT (R14)
 **Scale/Scope**: one controller, one reader, one schema, one contract document, one chapter
 
 ---
@@ -96,6 +99,10 @@ the half worth separating.
   created for the producer — taking a validated query and returning rows. Read-only, and the
   tenant id is an argument rather than a string in the SQL. It calls
   `services/api/src/metering/clickhouse.ts`'s client; it does not open a second one.
+- **Every read carries `FINAL`.** The engine is a `ReplacingMergeTree` and the lane held one
+  duplicate key at this feature's opening; without it a page repeats a request until a merge
+  runs, which would make FR-007's assertion a statement about merge timing. Same rule as
+  chapter 4.6's `sum()` with `GROUP BY`, one engine over.
 - **The statement carries a presence column, because TSV cannot say null.**
   `AnalyticalStore.query` returns `string[][]` split from a TSV body, and ClickHouse writes
   NULL as the two characters `\N`. Selecting `endpoint IS NULL` beside `endpoint` is the same
@@ -177,6 +184,13 @@ number, and a log that cannot tell them apart answers the wrong question confide
 **One new dependency: none.** The store client exists (chapter 4.7), the guard exists, Zod
 exists, and the pagination shape exists. The only new code is a schema, a reader, a controller
 and their tests.
+
+**And one task premise was false before implementation started.** The first draft of phase 4
+said to plant a tenant at a volume where FR-ANL-08's 90-day clause means something. The table
+refuses it: a row inserted at `now() - 60 DAY` is gone before the statement returns, because
+the 30-day TTL removes rows at INSERT. So there is no fixture that makes that clause meaningful
+here, and the phase records the measurement and hands the clause to the amendments instead of
+building something that cannot exist.
 
 **One thing that looks like scope and is not.** Phase 5 may end with no percentile computed at
 all. That is a complete outcome rather than an abandoned phase: FR-ANL-10's quantity has never

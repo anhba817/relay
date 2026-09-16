@@ -272,3 +272,57 @@ customer's product reading it.
 **Decision**: the decorator is written explicitly whichever way the decision goes, and the
 contract says which and why.
 
+---
+
+## R13 — THE ENGINE DEDUPLICATES AND THE READ HAS TO ASK FOR IT
+
+**Measured**, before anything was written:
+
+    rows                                       11,684
+    distinct (environment_id, ts, request_id)  11,683
+    duplicate keys                                  1
+    active parts                                    2
+
+`api_requests` is a `ReplacingMergeTree`. Chapter 4.4 chose it because a redelivered batch
+writes the same request twice — chapter 4.5 measured `ingestOnce` reporting 16 for a stream
+holding 8 — and the engine removes the copy **at merge time**. Until then a read returns both.
+
+So a page of this log can repeat a request, and FR-007's *"no row appears in two consecutive
+pages"* would pass on a merged table and fail on an unmerged one.
+
+**Decision**: every read carries `FINAL`, and the chapter says so beside chapter 4.6's sentence
+about the other engine — there the read contract was `sum()` with `GROUP BY`, here it is
+`FINAL`, and in both **a query whose correctness depends on somebody having run `OPTIMIZE` is
+right in a demo and wrong in production.**
+
+**Alternatives considered**: `LIMIT BY (environment_id, ts, request_id)`, which deduplicates
+within the read but silently changes what `LIMIT` counts; and documenting the duplicate as
+acceptable, which is a contract that says a customer's log may show a request twice and cannot
+say when.
+
+**A NOTE ON THE MEASUREMENT.** The probe that found the duplicate then ran `OPTIMIZE TABLE …
+FINAL` to test the TTL question in R14, which took the table to **1 part and 0 duplicates**.
+The finding is no longer reproducible on this lane, and phase 1's T007a records that rather
+than reporting the merged number as the opening state.
+
+---
+
+## R14 — FR-ANL-08's NINETY DAYS CANNOT BE PLANTED, LET ALONE MEASURED
+
+**Measured.** Two rows inserted for a dedicated environment id:
+
+    ts = now() - INTERVAL 60 DAY     ─┐
+    ts = now() - INTERVAL  1 DAY     ─┴─ planted 2, surviving 1
+
+The survivor is the one-day-old row. `OPTIMIZE TABLE … FINAL` afterwards changed nothing —
+**the 30-day TTL removes rows at INSERT**, which is chapter 4.2's finding reproduced on this
+table (120,000 rows over 120 days became 90,000 immediately, silently).
+
+FR-ANL-08 asks that *"analytical queries over 90 days of a single tenant's data return within 2
+seconds at p95."* Over `api_requests` there is **no fixture that can make that clause
+meaningful**: the data cannot be put there. R7 said the lane is too small; this says the table
+is the wrong shape, which is a stronger statement and a different remedy.
+
+**Decision**: the chapter records the measurement and amends the clause rather than building a
+fixture the schema refuses. The probe's rows were deleted and the count verified at 0.
+

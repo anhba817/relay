@@ -69,12 +69,22 @@ asking a reasonable question the data cannot answer.
   decides, exactly as chapter 4.7 put `count()` in front of a bare aggregate to tell "holds
   nothing" from "holds zero". A reader that translated the string `\N` would work today and
   break the first time a column can legitimately contain it.
+
+  **This applies to every nullable column the surface returns, not to `endpoint` alone.**
+  `system.columns` lists three on this table — `environment_id`, `endpoint` and
+  `limited_operation` — and the last is the one chapter 4.4 added so a 429 says which quota
+  class it refused on.
 - `latency_ms` is fractional. Rounding it to an integer would read `0` for three of four real
   requests (4.4, measured).
 - `next_cursor` is null on the last page.
-- `retention_edge` is the oldest instant the log can answer for. A window older than it returns
-  no rows **because the data is gone**, and this field is how a caller tells that apart from a
-  quiet period (R8).
+- `retention_edge` is **the nominal guarantee, `now() - 30 days`**, and it is nominal on
+  purpose. A window older than it returns no rows **because the data is gone**, and this field
+  is how a caller tells that apart from a quiet period (R8). It is not the oldest surviving
+  row: the TTL is a schedule rather than an event — chapter 4.2 measured 121 days and 146,582
+  expired rows still present straight after a load — so rows older than this instant can exist
+  for a while. **A caller needs the promise, not the leftovers.** Answering with the oldest
+  surviving row would hand them a number that moves when a merge runs and that they must not
+  build on.
 
 ### Refusals
 
@@ -98,6 +108,26 @@ asking a reasonable question the data cannot answer.
 platform calling itself on that tenant's behalf, with the end user's principal —
 `/internal/session` alone is 1,423. Whichever way the decision goes, it is asserted by a test,
 and this section carries the argument rather than the outcome alone.
+
+---
+
+## Deduplication, and why every read carries `FINAL`
+
+`api_requests` is a **`ReplacingMergeTree`** keyed `(environment_id, ts, request_id)`. Chapter
+4.4 chose that engine for a reason this surface inherits: a redelivered batch writes the same
+request twice, and chapter 4.5 measured `ingestOnce` reporting 16 for a stream holding 8.
+
+Measured on the lane before this contract was written: **11,684 rows against 11,683 distinct
+keys — one duplicate, across two active parts.** A read without `FINAL` returns it twice, so a
+page can repeat a request and the repeat disappears whenever a merge happens to run.
+
+So the read contract is `FINAL`, and it is the same rule chapter 4.6 wrote for the other
+engine: there `sum()` with `GROUP BY`, here `FINAL`, and in both cases **a query whose
+correctness depends on somebody having run `OPTIMIZE` is right in a demo and wrong in
+production.**
+
+What it costs is a function of the number of parts, and the chapter measures it against a table
+that has some.
 
 ---
 
