@@ -653,3 +653,45 @@ agreeing with each other rather than with the tree, one layer out: here the tree
 agreed with each other and not with the requirement. This project's rule is *read the clauses*;
 pass 6 read the code.
 
+---
+
+## R27 — CI HAS NO CLICKHOUSE, AND FOUR CHAPTERS OF ANALYTICAL WORK HAVE NEVER BEEN GATED
+
+**Read in the file.** `.github/workflows/ci.yml`, job `platform` — the one that runs
+`pnpm test:integration`, `pnpm coverage` and the error-registry gate — declares three service
+containers:
+
+    postgres:18-alpine · redis:8-alpine · nats:2.12-alpine
+
+**`clickhouse` occurs zero times in the whole workflow**: no service, no environment variable,
+no job. The suites that reach the analytical store, and therefore cannot pass there:
+
+    services/ingester/src/ingest.itest.ts       chapter 4.3
+    services/ingester/src/metering.itest.ts     chapter 4.6
+    services/api/src/request-log/request-log.itest.ts   chapter 4.4
+    services/api/src/metering/reconcile.itest.ts        chapter 4.7
+
+This feature plans a fifth. And **"CI" appears in none of its artifacts** — nine analysis
+passes cited the workflow's gates without opening the workflow.
+
+**AND THE TWO GATES AFTER THE LANE ARE UNREACHABLE WHEN IT FAILS.**
+`pnpm test:integration` at `:112`, `pnpm coverage` at `:117`, `check-error-codes.mjs` at
+`:135` — one job, sequential, **no `continue-on-error`**. So constitution VI's measurable half
+and the error-registry gate do not execute, and that registry gate is precisely the one R18's
+`analytics_unavailable` code and catalogue entry were written to satisfy. **A gate that exists
+and cannot be reached is the same as no gate**, which is 050-8's shape one layer up.
+
+**Decision**: provision the store rather than declare the suites local-only. Constitution VI
+makes the cross-tenant suite and the scans release gates, and four chapters ungated is the
+larger cost. The service matches `compose.yaml` so a lane that passes locally passes there, and
+`analytics/apply.mjs` runs after the Postgres migration because the schema does not exist until
+something applies it.
+
+**And what stays broken is recorded rather than implied fixed**: `pnpm test:integration` is
+`turbo … --concurrency=1` and stops scheduling at the first failure (051-3), so one red suite
+still hides every lane after it — in CI exactly as locally.
+
+**`docs/07-tutorial-plan.md` §6 says CI "runs both lanes against real stores."** That has been
+false for the analytical store since chapter 4.2 introduced it, and the sentence is the basis
+on which defense 1 was called closed.
+

@@ -315,6 +315,12 @@ than what it says.
   route fails it.
 - **FR-030**: The response envelope shall match the one this API already serves for a paged
   read — the array named for the resource, with a cursor for each direction the query supports.
+- **FR-033**: The integration suite this feature adds shall be runnable by the project's CI,
+  and where CI cannot run it the gap shall be closed or stated. CI provides no analytical store
+  today, so four existing suites cannot pass there and this feature would add a fifth.
+- **FR-034**: The chapter shall carry at least one `<Why>` box linking the code to its
+  requirement identifier and its ADR, which `docs/07-tutorial-plan.md` §4 requires of every
+  chapter.
 - **FR-032**: The surface shall conform to the published REST interface requirements for a list
   endpoint and an error response: opaque cursor pagination returning `next_cursor` and
   `has_more`, and the five top-level error fields. Where the platform already diverges from
@@ -373,6 +379,8 @@ than what it says.
   own reads, are each asserted by a test and stated in the chapter.
 - **SC-018**: The cross-tenant access suite passes with the new route classified, shown by
   running it rather than by the entry existing.
+- **SC-021**: The new integration suite runs in CI, shown by the workflow providing the store
+  it needs and by the gates after the lane being reachable.
 - **SC-020**: The response carries `has_more`, and an error response carries the five fields
   EIR-API-04 names, each shown by a test.
 - **SC-019**: The architecture decision is recorded in `docs/05-sad.md` and
