@@ -93,7 +93,18 @@ asking a reasonable question the data cannot answer.
 | 400 | `limit` out of bounds, `to` before `from`, malformed `cursor`, unparseable instant |
 | 401 | no credential |
 | 403 | a credential whose principal carries no `environmentId` |
-| 503 | **the analytical store did not answer within the deadline.** The API is up and this surface is not, which is the distinction constitution III's second clause turns on — and it is why the refusal is explicit rather than an empty page. An empty page would say the tenant made no requests, a claim about them rather than about the platform |
+| 503 `analytics_unavailable` | **the analytical store did not answer within the deadline.** The API is up and this surface is not, which is the distinction constitution III's second clause turns on — and it is why the refusal is explicit rather than an empty page. An empty page would say the tenant made no requests, a claim about them rather than about the platform |
+
+The 503 carries the code **`analytics_unavailable`**, registered in `ERROR_CODES`
+(`packages/protocol/src/codes.ts`) and documented in `docs/08-error-reference.md`, because
+`scripts/check-error-codes.mjs` compares those two in both directions and a code in one and
+not the other is a red gate. The name says what a client does about it — retry — where a bare
+`internal_error` would say nothing and `unauthorized` would say something false.
+
+**The body names the subsystem and never the store's answer.** `Code: 159 … elapsed
+1000.760448 ms` is infrastructure detail, and a refusal that carries it puts a ClickHouse
+error string into a customer's support ticket. That is the argument `codes.ts` already makes
+about credentials, one subsystem over.
 
 **The deadline is the route's, not the client's.** Neither ClickHouse client in this repository
 sets a timeout — both call `fetch` with no `signal` — which is tolerable for chapter 4.7's
@@ -101,6 +112,38 @@ batch reconciler and is not for a customer request: an unbounded read holds a wo
 operating system gives up, and *"failure or backlog of the analytical pipeline MUST NOT affect
 … API availability"* is a MUST. `services/dispatcher/src/deliver.ts` already carries the
 pattern with `AbortSignal.timeout(timeoutMs)` on the webhook POST.
+
+**AND IT HAS TWO HALVES, BECAUSE ABORTING A `fetch` DOES NOT STOP A QUERY.** The client stops
+waiting; ClickHouse keeps executing, so a tenant retrying a slow page accumulates server-side
+work — the amplification the deadline exists to prevent. The second half rides in the SQL and
+needs no interface change:
+
+```text
+SETTINGS max_execution_time = N
+→ Code: 159. DB::Exception: Timeout exceeded: elapsed 1000.760448 ms, maximum: 1000 ms
+```
+
+The **server limit is set shorter than the client's**, so the server's refusal wins the race
+and the route receives a code it can map. The other ordering yields an `AbortError` carrying
+nothing, and a refusal that names no cause is the empty page this contract refuses to send.
+
+### What it costs the tenant, and what it records about itself
+
+**Reading the log spends the tenant's REST budget.** `operationsFor` returns `["rest"]` for
+every path under `/v1` — there is no route list and no exemption — so this route is counted
+from the moment it exists. It stays counted: an exemption list is a hand-maintained table, and
+feature 045 deleted one of those rather than correcting it after two hand-allocated port bands
+turned out to contain services the lane itself runs.
+
+The consequence is worth stating rather than hiding: **a customer investigating 429s reads
+their request log, the reads spend the budget they are investigating, and the log then shows
+the 429s the reading caused.**
+
+**And reading the log writes to the log.** `RequestLogMiddleware` records on `res.on("finish")`
+for every request including GETs, so each page adds a row that appears in the next one. Whether
+the surface excludes its own route is decided in phase 4 with the same argument the
+`/internal/*` decision gets — excluding makes the log incomplete against FR-ANL-01's *"every
+request"*, and including means a reader sees their own reads.
 
 ### What the surface never returns
 

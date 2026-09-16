@@ -368,3 +368,76 @@ Recorded because a premise that holds is only evidence once somebody has run it.
 | Does `@Controller("v1/request-log")` serve `/v1/request-log`? | `main.ts` | **Yes** — no `setGlobalPrefix` |
 | Can a merge-stop leak between lanes? | the two vitest configs | **Not in the coverage lane** (`fileParallelism: false`). The hazard is the api lane's `maxWorkers: 2`, which is where the duplicate test's `finally` earns its place |
 
+---
+
+## R17 — ABORTING A `fetch` DOES NOT STOP A QUERY, AND THE SERVER HALF IS FREE
+
+**Measured.** A deliberately slow query with a server-side limit:
+
+    SELECT count() FROM (SELECT number, sipHash64(toString(number)) h
+                           FROM numbers(300000000) WHERE h % 7 = 0)
+    SETTINGS max_execution_time = 1
+
+    → Code: 159. DB::Exception: Timeout exceeded: elapsed 1000.760448 ms, maximum: 1000 ms
+    → real 1.023s
+
+R15 put an `AbortSignal.timeout` on the caller. That stops the api waiting; **ClickHouse keeps
+executing**, so a tenant retrying a slow page accumulates server-side work — which is the
+amplification a deadline is supposed to prevent, arriving one layer down.
+
+`SETTINGS max_execution_time` is the other half and it **needs no interface change**:
+`AnalyticalStore.query` takes a SQL string, and a `SETTINGS` clause is part of the statement.
+
+**Decision**: both halves, with the **server limit shorter than the client's**, so the server's
+refusal wins the race and the route receives `Code: 159` to map onto `analytics_unavailable`.
+The other ordering yields an `AbortError` carrying nothing, and a refusal that names no cause
+is the empty page FR-025 exists to prevent.
+
+---
+
+## R18 — THE REFUSAL NEEDS A REGISTERED CODE, AND A GATE COMPARES BOTH DIRECTIONS
+
+**Read in the tree.** `ProtocolErrorFilter` maps a status onto a code from `ERROR_CODES`
+(`packages/protocol/src/codes.ts`), and `relay-tutorial/scripts/check-error-codes.mjs` compares
+that registry against `docs/08-error-reference.md` **both ways** — a code in the registry and
+not the catalogue is red, and so is the reverse. The catalogue holds no 503 and no
+service-unavailable entry.
+
+`check:errors` is one of the eleven gates, so an omission here surfaces at phase 7 for work
+that belongs in phase 3.
+
+**Decision**: `analytics_unavailable`, added to both in phase 3. The name passes the test the
+registry sets on itself — its own comments argue three refusals apart because *"a client acts
+on them differently"* — and a client retries this one.
+
+`codes.ts` carries **12 titled fences in each locale and is already a HEAD problem at line
+209**, so the edit costs the fence chain nothing visible. That is the third file in this
+feature with that property, after `app.module.ts` and `vitest.coverage.config.mts`.
+
+---
+
+## R19 — THE ROUTE COSTS THE TENANT A BUDGET AND RECORDS ITS OWN READS
+
+**Measured in the tree**, two mechanisms nobody chose:
+
+`services/api/src/limits/rate-limit.middleware.ts:79` —
+
+    if (!path.startsWith(PUBLIC_PREFIX)) return [];
+    if (method === "POST" && SEND_PATH.test(path)) return ["rest", "send"];
+    return ["rest"];
+
+**Every** path under `/v1` spends the REST budget. There is no route list to add to and no
+exemption to grant, so this route is counted from the moment it exists.
+
+And `services/api/src/request-log/request-log.middleware.ts:51` records on `res.on("finish")`
+for every request including GETs, so **reading the log writes to the log** — each page adds a
+row that appears in the next.
+
+**Decisions**: the route stays counted, because an exemption list is a hand-maintained table
+and feature 045 deleted one of those rather than correcting it. The self-recording question is
+decided in phase 4 with the measurement beside it, on the same argument as `/internal/*`.
+
+**And the loop is published rather than smoothed over**: a customer investigating 429s reads
+their request log, the reads spend the budget they are investigating, and the log shows the
+429s the reading caused.
+

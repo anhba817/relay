@@ -292,10 +292,17 @@ than what it says.
 - **FR-024**: Every statement this feature issues against `api_requests`, `webhook_attempts` or
   any rollup shall name its own environment ids. The analytical store has no lane guard
   (`gaps.md` 050-2).
-- **FR-025**: The read against the analytical store shall be bounded by a stated deadline, and
-  a store that does not answer within it shall produce a refusal naming that cause — never an
-  empty page, which is a claim about the tenant rather than about the platform. Neither
-  ClickHouse client sets a timeout today.
+- **FR-025**: The read against the analytical store shall be bounded by a stated deadline on
+  **both sides** — the caller's wait and the query's own execution — and a store that does not
+  answer within it shall produce a refusal naming that cause, never an empty page. An empty
+  page is a claim about the tenant; a refusal is a claim about the platform. Neither ClickHouse
+  client sets a timeout today, and aborting the caller's request does not stop the query.
+- **FR-026**: The refusal shall carry a registered error code, documented in the published
+  error reference, and its message shall name the subsystem rather than repeat the store's
+  answer.
+- **FR-027**: The chapter shall decide and state what reading the log costs the tenant and
+  what it records about itself: every path under `/v1` spends the REST budget by default, and
+  the producer records this route's own reads. Both decisions shall be asserted by a test.
 
 ### Key Entities
 
@@ -336,6 +343,10 @@ than what it says.
 - **SC-013**: `pnpm build` exits 0 with the chapter rendering.
 - **SC-014**: A store that does not answer produces the stated refusal rather than a hang or an
   empty page, shown by a test.
+- **SC-015**: The refusal's code is in the registry and in the error reference, and
+  `check:errors` is green.
+- **SC-016**: What a read costs the tenant's REST budget, and whether the surface returns its
+  own reads, are each asserted by a test and stated in the chapter.
 
 ---
 
