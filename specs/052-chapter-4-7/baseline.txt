@@ -451,3 +451,213 @@ T040 — THE LANES, AND `pnpm coverage` WAS ANSWERING WITH SILENCE
   four tutorial gates; `pnpm run check:docs` reports GREEN for the same script in the same
   directory. The `-s` form does not resolve these script names at all. Every gate figure above
   was taken with `pnpm run`.
+
+
+═══════════════════════════════════════════════════════════════════════════════
+PHASE 5 — THE FOUR OBSTACLES, MEASURED (T041-T050).
+═══════════════════════════════════════════════════════════════════════════════
+
+T041 — THE TWO OPERATIONAL CANDIDATES, RE-MEASURED, AND THE AGGREGATE STILL HIDES THE SHAPE
+    messages (through channels)          19,012
+    usage_periods.messages_sent          18,962
+    aggregate                            0.2630%
+    tenant-periods                        1,385
+      disagreeing                            61
+      over the 0.1% bound                    49
+      one-sided                             584
+
+  Phase 1 measured 0.2694% and 19 over the bound on a smaller lane; the shape is the same and
+  it is the point of FR-006. **A reconciler that aggregates before its verdict reports 0.26% —
+  a number nobody would question — while 49 tenant-periods breach.**
+
+  AND EVERY DISAGREEING TENANT IS A FIXTURE, in five families:
+
+    tenant-a             13     910 vs   884
+    history-itest        12   1,176 vs 1,164
+    backfill-itest       12  12,216 vs 12,204
+    dual-write           12      12 vs     0
+    history-drift-itest  12   1,464 vs 1,476
+
+  **0 non-fixture disagreeing tenant-periods**, out of 1,385.
+
+  TWO MECHANISMS, AND THEY PUSH IN OPPOSITE DIRECTIONS — which a single "fixtures write raw
+  SQL" sentence would have flattened. A raw `INSERT INTO messages` bypasses the counter, so
+  `messages` reads high: `backfill.itest.ts:222`, `repository.itest.ts:656` and `:1392`,
+  `history.itest.ts:52`, `dual-write-walk.mjs:71`, `corpus.mjs:308` and `:328`. A **hard**
+  `DELETE FROM messages` removes a row the counter already counted, so `usage_periods` reads
+  high: `history-drift.itest.ts:85`, and it is the only family in the table that leans that way.
+
+  **NEITHER IS REACHABLE FROM THE SHIPPED WRITE PATH.** `sendMessage` writes the message and
+  increments `usage_periods` in one transaction, and the platform soft-deletes. So the two
+  counters agree by construction in production, and every gap measured here is an artefact of
+  a test that reached around the repository.
+
+T042 — 1,317 TENANTS, AND NOT ONE OF THEM IS COMPARABLE
+    analytical (daily_usage_billing)        4 environment ids
+      of which exist in Postgres at all     0
+    operational (usage_periods)         1,313 environment ids
+      of which have analytical rows           0
+
+  The four are `metering.itest.ts`'s (`6a000000-…51a6`, `…51b7`) and `ingest.itest.ts`'s
+  (`9f000000-…beef`, `…c0de`) — ids a stream carried and no foreign key ever checked. **So
+  `not-comparable` and `no-data` are not edge cases in this platform: they are every case.**
+  Collapsing them into "missing data" would have let the defect movement IV exists to expose
+  read as an absence of evidence.
+
+T042a — THE CONNECTION-MINUTES OBSTACLE, AND IT HAS TWO CAUSES RATHER THAN ONE
+    connection_events            154 records · 99 connections · 55 closed · 44 open with NO close
+    usage_connections          2,084 connections · 12,499 minutes (this chapter's plants removed)
+    scoped to the 71 present on BOTH sides:
+      operational calendar minutes     72
+      analytical elapsed minutes        0.6513          110x
+      median connection                252 ms
+
+  **IT IS NOT A HISTORY GAP, AND THAT WAS CHECKED RATHER THAN ASSERTED.** 2,083 of the 2,084
+  operational connections were first seen AFTER the first analytical record — first operational
+  report 21:55:14.371, first analytical record 21:55:18.788, **4.4 seconds apart**. A first
+  version of this finding proposed producer age as the cause and was wrong; this is the same
+  question asked of the connection population instead of the table's `min(ts)`.
+
+  CAUSE ONE, 050-5: the meter bills every calendar minute a connection was OPEN for any part
+  of; the records bill only connections that CLOSED. **44 of 99 hold an open and no close**,
+  and `wss.close()` not closing established sockets is 4.5's decision rather than its bug.
+
+  CAUSE TWO, AND IT IS NEW: **the rollup and its source have disjoint tenant sets.** The
+  backfill expansion run against `connection_events` today yields 8 rows, 56 minutes, 8
+  environments. `daily_usage_billing` holds 7 rows, 144 minutes, 4 environments — and the four
+  are the ingester fixtures, which appear in `connection_events` for none of them. The cause is
+  in `metering.itest.ts:65`: `clean()` deletes the suite's rows from `connection_events`,
+  `message_events`, `daily_usage_v2` and every `.inner_id.*` table, **and not from
+  `daily_usage_billing`, which chapter 4.6 added after that suite was written**. So every run
+  leaves rollup rows behind whose source rows it removed. A cleanup enumerates tables by hand,
+  and the next chapter's table is not on the list.
+
+T042b — WHAT THAT MEANS FOR FR-ANL-06
+  The 0.1% bound cannot hold for connection-minutes while any deploy leaves established sockets
+  open, and chapter 4.5 decided that leaving them to the process exit is correct. **This is a
+  clause that cannot be met, not a defect to fix** — which is the distinction T049 exists to
+  keep, and the reason this chapter publishes no connection-minutes agreement figure.
+
+T043 — `uniq`'s CLIFF IS AT 2^16 AND IT IS ONE DISTINCT VALUE WIDE
+    cardinality       uniq    uniqExact   uniqMerge      error
+         1,000       1,000       1,000       1,000     0.0000%
+        10,000      10,000      10,000      10,000     0.0000%
+        50,000      50,000      50,000      50,000     0.0000%
+        60,000      60,000      60,000      60,000     0.0000%
+        65,000      65,000      65,000      65,000     0.0000%
+        65,536      65,536      65,536      65,536     0.0000%
+        65,537      65,909      65,537      65,909     0.5676%
+        70,000      70,449      70,000      70,449     0.6414%
+       100,000     100,517     100,000     100,517     0.5170%
+     1,000,000   1,005,409   1,000,000   1,005,409     0.5409%
+
+  047-1 recorded *"exact to 60,000, off by 0.51% at 70,000"*. Sharpened: the boundary is
+  **65,536 exactly**, and **one distinct user later the error is 5.7x the bound it has to sit
+  under**. `uniqMerge` over the rollup's `AggregateFunction(uniq, …)` returns the same figure
+  as `uniq` at every cardinality, so the rollup inherits the error rather than smoothing it.
+
+  **NO CORPUS, AND 047 LOADED ONE IT DID NOT NEED.** The error is a property of the sketch at a
+  cardinality, so `reinterpretAsUUID(toUInt128(number))` over `numbers(n)` is the whole
+  instrument. Six cardinalities returned exactly 0, which is what makes the seventh a
+  measurement rather than a reading.
+
+T044 — THE TTL BOUNDARY IS A FUNCTION OF THE CLOCK, AND THE MODEL PREDICTS 047's NUMBER
+  A probe table with `TTL toDateTime(ts) + INTERVAL 90 DAY`, 92,000 rows, 1,000 per calendar
+  day, midnight-aligned, oldest = today − 91.
+
+    straight after the insert     0 deleted · 92 days present
+    after OPTIMIZE ... FINAL  1,053 deleted · 2026-06-17 gone whole (1,000)
+                                             2026-06-18 short by 53 of 1,000
+
+  **THE TTL IS A SCHEDULE, NOT AN EVENT** — 047's finding, reproduced as the control: every
+  expired row was still there until a merge was forced.
+
+  AND THE 53 ARE EXACTLY THE ROWS BEFORE THE WALL CLOCK. The server's clock at the cut read
+  **01:16:07**; the rows are 86 seconds apart, and 53 x 86 s = 4,558 s = 1 h 16 m. So a rollup
+  computed before the cut carries 1,000 for that day where the source holds 947 — **53 / 90,947
+  = 0.0583%** — and that percentage climbs through the day to a ceiling of one whole day's share
+  of the window, **1,000 / 91,000 = 1.0989%**, then resets at midnight.
+
+  047 published 0.49% as *the* figure. It is one point on this curve: 4,941 of a day's ~11,000
+  rows is 45% of a day, which is a run at about 10:48. **The obstacle is not "0.49%" — it is a
+  discrepancy that is zero at midnight and 1.1% just before it, on the same data.**
+
+T045/T046 — MATCHED TOTALS AT VOLUME, AGAINST 50 REAL LANE ENVIRONMENTS
+  Period 2026-03-01, which held no rows on either side. Environments chosen from the lane with
+  `quota_config = '{}'` so the credit fires no crossing and sends no mail.
+
+    operational plant   50 x 100,000 connection-minutes through `creditConnectionMinutes`   111 ms
+    analytical plant    50 rollup rows
+    reconciled          50 of 50 `pass` at 0.0000%
+
+  THEN THE RESOLUTION, WHICH IS WHAT §2.3 ACTUALLY ASKS FOR — measured by walking the drift up
+  one unit at a time against the real job:
+
+    tenant volume   smallest breaching shortfall    that drift, as a %   one unit is
+                9                              1            11.111111%   11.111111%
+              100                              1             1.000000%    1.000000%
+            1,000                              2             0.200000%    0.100000%
+           10,000                             11             0.110000%    0.010000%
+          100,000                            101             0.101000%    0.001000%
+
+  **At the lane's real scale the smallest possible drift is 11.11%, a hundred times the bound.**
+  Every drift breaches and none can sit inside the threshold, so a green 0.1% assertion there is
+  a claim that nothing drifted at all — not a claim about a tolerance. The threshold only starts
+  behaving like one at 10,000, where the smallest detectable drift is within 1.1x of it.
+
+T045a/T047 — THE CORPUS IS THE WRONG INSTRUMENT, AND 051-2 IS CITED RATHER THAN RE-RUN
+  `corpus.mjs` writes `applications`, `environments`, `messages` and `message_edits` and never
+  writes `usage_periods`; `load-analytics.mjs` does not touch it either. So a corpus populates
+  the analytical side only, and every comparison at corpus volume is a 100% breach. The obvious
+  patch is refused by the schema: `usage_periods.environment_id` references `environments(id)`
+  in the LANE database while corpus environments live in `relay_corpus_<ts>`.
+
+  **AND THIS CHAPTER RAN NO CROSS-PATH READ.** Chapter 4.6 had to run `load-analytics.mjs` —
+  `postgresql('${PG_HOST}', …)`, the thing constitution III's first sentence prohibits — to
+  measure its own clause, and filed it as 051-2. Planting into the lane instead of loading a
+  corpus is what keeps that bind 051-2's rather than this chapter's.
+
+T048 — BOTH SIDES REMOVED, BOTH SIDES VERIFIED, EVERY STATEMENT SCOPED
+    operational   55 usage_periods + 55 usage_connections rows for 2026-03-01      -> 0
+                  19 usage_periods rows for 2026-04-01 (phase 4's probes)          -> 0
+    analytical    55 rollup rows, 5,110,891 minutes                                -> 0
+    the rollup, after                7 rows · 4 environments · 144 minutes  (as found)
+    usage_periods.connection_minutes 12,499                                 (as found)
+    1999-01-01 sentinel rows                       32, untouched — no trigger raised
+
+  The delete named environment ids and a period, and the 24 `usage_periods` rows those same
+  environments hold for August and September are still there. **A scope that removes the right
+  rows and leaves the neighbouring ones is the only evidence that it was a scope.**
+
+  AN INSTRUMENT NOTE. `uniqState` cannot appear in a `VALUES` list — the server answers
+  `Code: 36 … not a constant expression`. `INSERT ... SELECT` over `arrayJoin` with a
+  `GROUP BY` is the shape that takes it.
+
+T050 — THE LANES
+    lint GREEN · typecheck GREEN · test GREEN
+
+    api            7 failed | 635 passed (642)
+    gateway                   225 passed (225)
+    ingester                   19 passed  (19)
+    test-harness   1 failed |  40 passed  (41)
+
+  The api's seven: `request-log` x5 (050-8), `limits` "does not count the dispatcher", and
+  `notifications` "does not send a delivered row twice". Same total as phase 4 at 642, one
+  fewer red.
+
+  **AND THE HARNESS LANE WENT RED, WHICH IT WAS NOT AT T040.** `reset-lane.itest.ts` —
+  *"removes a stale pending delivery it planted, and nothing a tenant owns"*:
+
+    AssertionError: the reset removed an organisation: expected 3092 to be 3094
+
+  Reproduces alone, twice. **It is not this chapter's doing and it is not the script's**:
+  `scripts/reset-lane.mjs` deletes from `webhook_deliveries` and JetStream consumers and
+  nothing else. The deletion is `guard.itest.ts:292` — `DELETE FROM organisations WHERE id = $1`
+  — running in the other file of the same two-file lane.
+
+  **THIS IS 045-74's CLASS, NINTH INSTANCE, AND THE SCOPE LOOKS LIKE A SCOPE.** The assertion
+  counts `organisations WHERE created_at <= pinned`, which is 044's own rule — *"pin one instant
+  before the script runs"* — applied to the CREATION side only. A neighbour deleting a fixture
+  it created before that pin moves the number, and no predicate about this test's own rows was
+  ever written. `check-lane-scope.py` reports it clean because the query carries a predicate.
+  Filed rather than fixed: the repair is one predicate in another chapter's file.
