@@ -55,6 +55,23 @@ has no lane guard (`gaps.md` 050-2) and this feature plants rows in it.
 
   **Eighteen, and the number is not the point** — the list is. Anything this feature adds joins
   it, and a count nobody can check is what carried "eleven" through four chapters.
+  **AND A GREEN IS NOT A PASS UNTIL IT IS SHOWN TO HAVE LOOKED.** Four of the six tutorial gates
+  `exit 0` when their corpus is absent, printing a warning nobody reads on a passing step:
+
+      check-fence-chain.mjs:199    relay-platform not found
+      check-error-codes.mjs:39     reference or built protocol package not found
+      check-srs-ids.sh:41          SRS not found (standalone clone?)
+      check-docs-drift.sh:36       parent docs directory not found
+
+  **The skip is correct for one caller and wrong for this one.** A standalone `relay-tutorial`
+  clone should not fail on a missing sibling repository, which is why the scripts are not the
+  thing to change — the gate list is. **Capture each gate's output and treat the word
+  `skipping` as red.** It matters most for `check:errors`, the gate this feature added
+  `analytics_unavailable` and its catalogue entry to satisfy, and which already has a second way
+  to not run at all (T001c, CI's ordering).
+
+  This is `gaps.md` 045-81 in the gates 045 did not reach: *"the zero that means clean and the
+  zero that means never looked printed the same line."*
 - [ ] T003 Record `check:fences` with both HEAD classes split — `differs at line` against `does not exist in relay-platform` (`gaps.md` 050-4). The second class can never be repaired by editing the platform.
 - [ ] T004 [P] Re-measure R5's three shares: total rows, tenantless, attributed, and the `/internal` / `/v1` / other split. State the date beside them.
 - [ ] T005 [P] Re-measure R7's per-tenant distribution — median, p95, max, tenant count — and name the busiest tenant's id for later phases.
@@ -225,7 +242,7 @@ else's. This is the MVP.
 - [ ] T070 Generate hunks from `git diff -U6 part4-ch7 -- <file>` or from the checker's own replay, and **verify they apply before pasting**.
 - [ ] T071 For any file T011 flagged as carrying a Vietnamese fence, file it rather than repairing it — an English chapter cannot fix a Vietnamese fence and the checker will not report it broken either (050-3).
 - [ ] T072 Discharge **FR-022** and **SC-011**: report the fence close as a delta against T003's opening, by kind and locale, with the two HEAD classes split. **Name `services/api/src/app.module.ts` explicitly.** It carries 11 titled fences in each locale, this chapter must edit it to register the controller, and it is **already** a HEAD problem — `differs at line 20` — so the edit will read as costing nothing while the file drifts further. That is 4.7's `vitest.coverage.config.mts` measured in advance instead of discovered at the close.
-- [ ] T073 Discharge **FR-023**: run **every gate T002 enumerated**, the sealed outsider suite included. **Build before `check:errors`.** Diagnose every red against T002's opening by running the suites directly.
+- [ ] T073 Discharge **FR-023**: run **every gate T002 enumerated**, the sealed outsider suite included, **and refuse a skip as a pass** — capture each gate's output and treat `skipping` as red, for the four that exit 0 with an absent corpus. **Build before `check:errors`**, which is the one where a skip is indistinguishable from success and where this feature's own error code is verified. Diagnose every red against T002's opening by running the suites directly.
 - [ ] T073a Discharge **SC-010**: re-take T004, T005 and T006's measurements at the close and publish them beside the opening figures with any movement. Chapter 4.7's opening numbers changed while its own phases ran, because the integration lanes write to the store this chapter reads — and this feature plants rows in it deliberately.
 - [ ] T074 Write `specs/053-chapter-4-8/gaps.md`. **Re-measure every carried item**: 052's seven, and 051's, 050's and 048's survivors. *Measure the carried ledger; do not copy it.*
 - [ ] T074b In `gaps.md`, file the two EIR gaps this chapter uncovered and does not close. **EIR-API-06's `has_more` is absent from `messages.service.ts`** — the platform's other list endpoint, non-conforming since chapter 2.4, and not this chapter's file to change (6 titled fences per locale). **And EIR-API-07** — *"an OpenAPI 3.1 specification shall be published, machine-readable and complete for every public endpoint"* (P4) — has no implementation anywhere in the tree, and this chapter grows the surface it would have to cover by one route.

@@ -876,3 +876,54 @@ seeded by `scripts/seed-demo-tenant.mjs` as an **API key** — an application cr
 already drives `/v1/channels`, members and sends. An `application`-only request-log route works
 there without a second credential.
 
+---
+
+## R34 — FOUR OF SIX TUTORIAL GATES REPORT SUCCESS WHEN THEY CANNOT LOOK
+
+    check-fence-chain.mjs:199    relay-platform not found                       exit 0
+    check-error-codes.mjs:39     reference or built protocol package not found  exit 0
+    check-srs-ids.sh:41          SRS not found (standalone clone?)              exit 0
+    check-docs-drift.sh:36       parent docs directory not found                exit 0
+
+Each prints a warning first, and `check-error-codes.mjs`'s own comment shows the author saw the
+risk — *"Saying which of the two is missing is the difference between a skip somebody
+investigates and a skip somebody ignores"* — and chose `exit 0` anyway. **On a green CI step
+nobody reads the warning**, which makes it the second kind.
+
+**The skip is correct for one caller and wrong for this one.** A standalone `relay-tutorial`
+clone should not fail because a sibling repository is absent; that is what the comments protect
+and it is real. So the scripts are not what changes — **the gate list is**: capture each gate's
+output and treat `skipping` as red.
+
+It matters most for `check:errors`. This feature added `analytics_unavailable` to `ERROR_CODES`
+and an entry to `docs/08-error-reference.md` specifically so that gate would verify both
+directions, and the gate now has **two** ways to verify nothing: an unbuilt platform, which
+reports success, and CI's step ordering (R27), which never reaches it.
+
+`gaps.md` 045-81 already stated the rule — *"the zero that means clean and the zero that means
+never looked printed the same line"*, and *"a checker must refuse a run that compares nothing"*.
+That was written about the fence checker after it passed twenty-six times on a ref that did not
+resolve. **These are the four gates 045 did not reach.**
+
+---
+
+## R35 — THE CACHE SWEEP, AND 4.5's REPAIR IS IN THE CONFIG
+
+Checked because chapter 4.5 lost two chapters to a cached green — `bound-port.test.ts` failing
+since 4.3 because the `test` task's cache key did not cover another package's `main.ts` — and
+this feature adds a code to `packages/protocol/src/codes.ts` that the api's tests assert.
+
+    build              dependsOn ^build · outputs dist/**
+    test               dependsOn ^build · inputs $TURBO_DEFAULT$, $TURBO_ROOT$/compose.yaml
+    typecheck          dependsOn ^build
+    test:integration   dependsOn ^build, build · cache: false
+    lint, coverage     not turbo tasks — root scripts
+    relay-tutorial     no turbo.json at all
+
+`compose.yaml` in `test`'s inputs **is 4.5's repair**, still there. And `dependsOn: ["^build"]`
+means a change to `codes.ts` changes the protocol's build hash, which changes the api's `test`
+hash — so this feature's new error code cannot be verified by a stale cached run.
+
+**No gate in this feature can pass from cache without running.** A clean sweep, recorded because
+the alternative was assuming it.
+
