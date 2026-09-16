@@ -29,7 +29,7 @@ files against itself: a decision nobody wrote down, taken by a default.
 | `cursor` | opaque string | — | from a previous response's `next_cursor` |
 | `direction` | `older` \| `newer` | `older` | |
 | `limit` | integer | `50` | `1..200` |
-| `endpoint` | route template | — | must be one of the templates the running router exposes |
+| `endpoint` | route template, or `unmatched` | — | one of the templates the running router exposes, or `unmatched` for the request that matched none |
 | `status` | integer | — | a valid HTTP status |
 
 **`endpoint` also accepts the literal `unmatched`**, which maps to `endpoint IS NULL` — the

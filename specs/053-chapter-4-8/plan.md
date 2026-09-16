@@ -27,11 +27,13 @@ a percentile of something else.
 **Language/Version**: TypeScript, Node 22, as the rest of the platform
 **Primary dependencies**: NestJS (api only, ADR-15), Zod for the query schema,
 `services/api/src/metering/clickhouse.ts` for the store read — no new dependency
-**CI**: `.github/workflows/ci.yml`'s `platform` job provides postgres, redis and nats and
-**no ClickHouse** — the word appears nowhere in the workflow. Four analytical suites cannot
-pass there today and this feature adds a fifth, so phase 1 provisions the service and unblocks
-the two gates that sit behind the failing lane. Found at analysis pass 9; the workflow file had
-not been opened in the first eight.
+**CI**: `.github/workflows/ci.yml`'s **`platform` job** provides postgres, redis and nats and
+no ClickHouse. Four analytical suites cannot pass there today and this feature adds a fifth, so
+phase 1 provisions the service and unblocks the two gates that sit behind the failing lane.
+Found at analysis pass 9, which first published it as *"CI has no ClickHouse"* — **wrong, and
+corrected at pass 12**: the `outsider` job starts the full compose stack, where `clickhouse`
+carries no `profiles:` key. The word is missing from `ci.yml` because the service is named in
+`compose.yaml`, and a grep for a word is not a check for a capability.
 **Files this touches that carry titled fences**: `services/api/src/app.module.ts` — **11 per
 locale, and already a HEAD problem at line 20**, so registering the controller will read as
 costing the chain nothing while the file drifts further (4.7's `vitest.coverage.config.mts`,

@@ -326,6 +326,9 @@ than what it says.
   FR-DSH-03 asks the dashboard's request log for all three and EIR-DSH-02 permits the dashboard
   no other source, so a surface offering only a time range makes that clause unbuildable. An
   unknown endpoint shall be refused rather than answered with an empty page.
+- **FR-038**: The route shall appear in the sealed customer's-eye integration suite, which
+  covers every other public capability. Where that suite cannot demonstrate the feature, the
+  reason shall be the assertion rather than a skipped test.
 - **FR-037**: The chapter shall state which questions this log can and cannot answer. It
   records no user and no channel, so it answers what a tenant called and what happened, not
   what happened to one of their users — which is the capability `docs/03-journey-map.md`'s
@@ -401,6 +404,8 @@ than what it says.
 - **SC-022**: Filtering by endpoint and by status is shown by a test, including an unknown
   endpoint refused rather than answered empty, with the cost measured against the unfiltered
   read.
+- **SC-025**: The sealed suite exercises the route, and what it finds — including an empty log
+  where the platform ships no ingester — is asserted rather than skipped.
 - **SC-024**: The chapter states what the log cannot answer, and `gaps.md` carries the
   journey-map gap with the cost of closing it.
 - **SC-023**: FR-DSH-03 is amended or the conflict is recorded, with FR-ANL-07's own reasoning

@@ -663,8 +663,19 @@ containers:
 
     postgres:18-alpine · redis:8-alpine · nats:2.12-alpine
 
-**`clickhouse` occurs zero times in the whole workflow**: no service, no environment variable,
-no job. The suites that reach the analytical store, and therefore cannot pass there:
+**`clickhouse` occurs zero times in `ci.yml`** — and that sentence was read as *"CI has no
+ClickHouse"*, which is **wrong**. Corrected at analysis pass 12: the workflow's third job,
+`outsider`, runs `docker compose up -d --wait`, and the compose `clickhouse` service carries no
+`profiles:` key, so it is in the default set and starts. The word is absent from `ci.yml`
+because the service is named in `compose.yaml`.
+
+**A GREP FOR A WORD IS NOT A CHECK FOR A CAPABILITY**, which is this project's own rule — *a
+zero from an instrument is a claim about the corpus only if the instrument can be shown to have
+read it* — met here on a corpus that was one file short. The finding holds for **the `platform`
+job**, which is the one that runs `pnpm test:integration`, `pnpm coverage` and the error
+registry gate; it never held for CI as a whole.
+
+The suites that reach the analytical store and therefore cannot pass **in that job**:
 
     services/ingester/src/ingest.itest.ts       chapter 4.3
     services/ingester/src/metering.itest.ts     chapter 4.6
@@ -681,11 +692,18 @@ and the error-registry gate do not execute, and that registry gate is precisely 
 `analytics_unavailable` code and catalogue entry were written to satisfy. **A gate that exists
 and cannot be reached is the same as no gate**, which is 050-8's shape one layer up.
 
-**Decision**: provision the store rather than declare the suites local-only. Constitution VI
-makes the cross-tenant suite and the scans release gates, and four chapters ungated is the
-larger cost. The service matches `compose.yaml` so a lane that passes locally passes there, and
-`analytics/apply.mjs` runs after the Postgres migration because the schema does not exist until
-something applies it.
+**Decision**: provision the store in the `platform` job rather than declare the suites
+local-only. Constitution VI makes the cross-tenant suite and the scans release gates, and four
+chapters ungated is the larger cost. The service matches `compose.yaml` so a lane that passes
+locally passes there, and `analytics/apply.mjs` runs after the Postgres migration because the
+schema does not exist until something applies it.
+
+**AND THE ALTERNATIVE PASS 9 DID NOT SEE IS THE ONE THE NEIGHBOURING JOB ALREADY USES.** The
+`outsider` job brings the whole stack up with `docker compose up -d --wait` instead of declaring
+service containers — which is exactly what the `platform` job's own comment aspires to, *"the
+same images as compose.yaml, so a lane that passes here passes there."* Either shape works; the
+service-container form is kept because it matches the three that job already declares, and the
+choice is recorded rather than defaulted.
 
 **And what stays broken is recorded rather than implied fixed**: `pnpm test:integration` is
 `turbo … --concurrency=1` and stops scheduling at the first failure (051-3), so one red suite
@@ -781,4 +799,46 @@ request; the choice and the window are stated rather than left to be found.
 **The pattern**: this is the third time in this feature that a repair created the next finding —
 pass 1's null fix covered one column of three, pass 2's duplicate test lacked the merge stop,
 and pass 10's safe filter lost the diagnostic value. *The fix is where the next defect is.*
+
+---
+
+## R31 — THE SEALED SUITE IS THE CUSTOMER'S VIEW, AND IT WOULD FIND THE LOG EMPTY
+
+`packages/outsider/src/integrate.itest.ts` runs against a platform it does not start —
+`RELAY_API_URL`, `RELAY_WS_URL`, `RELAY_DEMO_CREDENTIAL` — and walks the public API as an
+integrator would: channels, private channels, members, tokens, bots, the two send refusals,
+REST send with a history read back, socket delivery, attachments in order. CI's third job runs
+it against a full compose stack.
+
+**`outsider` and `sealed` appear in no artifact of this feature** until pass 12, and a new `/v1`
+endpoint belongs in that suite by the same argument every other one is in it.
+
+**And it will find the log empty.** `grep ingester relay-platform/compose.yaml` returns **0**, so
+the sealed stack drains nothing either. That is not a reason to skip the route: a customer's-eye
+test showing an empty log **because the platform ships no ingester** is the freshness finding
+(R20) arriving where a customer would actually meet it, and it asserts something true rather
+than nothing at all.
+
+---
+
+## R32 — A GREP FOR A WORD IS NOT A CHECK FOR A CAPABILITY
+
+Recorded as a correction rather than a finding, because it is one of this feature's own
+published conclusions.
+
+Pass 9 searched `.github/workflows/ci.yml` for `clickhouse`, got **0**, and published **"CI has
+no ClickHouse."** Pass 12 read the neighbouring job: `outsider` runs `docker compose up -d
+--wait`, and compose's `clickhouse` service carries **no `profiles:` key**, so it is in the
+default set and starts.
+
+The word is absent from `ci.yml` because the service is named in `compose.yaml`. **The search
+was correct and the corpus was one file short.** What holds is the narrower statement — the
+`platform` job, which runs `pnpm test:integration`, `pnpm coverage` and the error-registry gate,
+has no analytical store — and that is what the remedy addresses.
+
+This project already had the rule: *a zero from an instrument is a claim about the corpus only
+if the instrument can be shown to have read it.* It has cost a wrong published conclusion four
+times now — `grep` under ugrep's alternation, `require.resolve('pg')` from the wrong root,
+`engine_full LIKE '%25 MONTH%'`, and this. **Every one was a search whose corpus did not contain
+the thing being searched for**, and every one read as an absence.
 
