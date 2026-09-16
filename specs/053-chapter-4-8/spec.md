@@ -156,8 +156,21 @@ on what this page may contain.
    does not appear for any of them.
 4. **Given** a tenant with no requests, **when** it asks, **then** the answer is an empty page
    rather than an error.
+5. **Given** the same request stored twice — the engine deduplicates on merge and the merge has
+   not run — **when** a page is returned, **then** the request appears once.
+6. **Given** an analytical store that does not answer within the deadline, **when** a tenant
+   asks, **then** the surface refuses with a named code rather than hanging or returning an
+   empty page.
+7. **Given** any page, **when** it is returned, **then** its envelope matches the one this API
+   already serves for a paged read.
 
-### User Story 2 - The page is bounded, ordered and resumable (Priority: P1)
+**These four were written before thirty of this feature's requirements existed.** Scenarios 5
+through 7 were added at analysis pass 15, when `US1: 4 scenarios · 39 tasks` made the drift
+countable. The requirements list is the contract; these scenarios are the questions a reader
+should be able to ask of the finished route, and the process requirements — CI, the ADR, the
+gauntlet entry, the fences — are tracked by requirement rather than by scenario.
+
+### User Story 2 - The page is bounded, ordered, filtered and resumable (Priority: P1)
 
 A log with 30 days of a busy tenant's traffic cannot be returned in one response. The surface
 takes a window and a page size, returns them in a stated order, and lets a caller continue.
@@ -174,6 +187,11 @@ movement exists to prevent, and a first page that works at lane scale hides it.
    surface refuses or clamps it, and the behaviour is stated rather than discovered.
 3. **Given** a time window, **when** the surface is asked, **then** rows outside it do not
    appear, and the window's boundary handling is asserted from both sides.
+4. **Given** rows of several statuses and endpoints, **when** the surface is asked for one
+   status, one endpoint, or both, **then** only matching rows appear — and an endpoint the
+   platform does not route is refused rather than answered with an empty page.
+5. **Given** a request that matched no route, **when** the surface is asked for `unmatched`,
+   **then** that row appears and no routed row does.
 
 ### User Story 3 - The log says what it contains and what it cannot (Priority: P1)
 

@@ -927,3 +927,46 @@ hash — so this feature's new error code cannot be verified by a stale cached r
 **No gate in this feature can pass from cache without running.** A clean sweep, recorded because
 the alternative was assuming it.
 
+---
+
+## R36 — A TEST SCHEDULED TWICE AND RUNNABLE ONCE
+
+`packages/outsider` needs `RELAY_API_URL`, `RELAY_WS_URL` and `RELAY_DEMO_CREDENTIAL` — a
+running api and gateway and a seeded tenant. **Nothing in phases 1–4 stands any of that up**:
+the integration lanes boot the app in process, and the quickstart's first step is
+`docker compose up -d`, stores only.
+
+So the sealed-suite tasks added at pass 12 sat in a phase that could not execute them. The
+omission was invisible because the suite is **scheduled twice** — written in phase 4, listed as
+a gate at T073 — and runnable in neither place without four commands nobody had written.
+
+**Decision**: stand it up in phase 4, with the same four steps CI's `outsider` job runs, so the
+test is exercised when it is written. A test written in one phase and first run five phases
+later is a test nobody has seen fail.
+
+---
+
+## R37 — THE SCENARIOS WERE WRITTEN BEFORE THIRTY OF THE REQUIREMENTS EXISTED
+
+Counted at pass 15, before the repair:
+
+    US1   4 acceptance scenarios · 39 tasks
+    US2   3 acceptance scenarios ·  5 tasks
+    US3   2 acceptance scenarios ·  7 tasks
+    US4   3 acceptance scenarios ·  8 tasks
+
+US1's four covered the six fields, isolation, tenantless rows and an empty page. Its 39 tasks by
+then also asserted the duplicate a merge had not collapsed, the deadline and its refusal, and
+the envelope. **US2's three never mentioned filtering**, and the filter test is labelled `[US2]`.
+
+Fourteen analysis passes added thirty requirements and none revisited the scenarios, because
+every pass checked requirement-to-task coverage — which read **100%** throughout — and coverage
+of the requirement list says nothing about whether the questions at the top of the spec still
+describe it.
+
+**Decision**: US1 gains three scenarios, US2 gains two and a word in its title, and the spec
+states plainly that the requirement list is the contract while the scenarios are the questions a
+reader should be able to ask of the finished route. The thirteen process-shaped requirements —
+CI, the ADR, the gauntlet, the fences, the prose bound — are tracked by requirement rather than
+by scenario, which is what previous chapters did and is recorded rather than left implicit.
+
