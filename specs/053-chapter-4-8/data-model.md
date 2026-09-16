@@ -47,6 +47,13 @@ inventing a second pagination vocabulary for the same product.
 | `cursor` | opaque string | absent | encodes `(ts, request_id)`; the platform's other cursor stands on a monotonic sequence and this table has none |
 | `direction` | `older` \| `newer` | `older` | |
 | `limit` | integer | 50 | 1–200, the bound the message history already uses |
+| `endpoint` | route template, or `unmatched` | — | **validated against the live router**, not escaped: `AnalyticalStore.query` takes a SQL string with no parameter binding, and `deriveTargets(app.getHttpAdapter().getInstance())` already enumerates the route set. `unmatched` maps to `endpoint IS NULL` — the router holds no route for the request that matched none, and that is the 404 query |
+| `status` | integer | — | a valid HTTP status |
+
+**FR-DSH-03 asks for all three** — *"filterable by endpoint, status, and time range"* — and
+EIR-DSH-02 permits the dashboard no other source than this API. **These two rows reached
+`contracts/request-log.md` at analysis pass 10 and this table at pass 17**: one half of the pair
+was carried and the other was not.
 
 **Validation happens before any value reaches a SQL string** (R9). This is the first
 caller-supplied value this platform puts into a ClickHouse statement.

@@ -1001,3 +1001,31 @@ it is not the one the rounds were looking for. Each round changed artifacts that
 round's checks did not fully re-read — and the one check that would have caught the duplicate
 had been run fourteen times and was skipped once.
 
+---
+
+## R39 — FOUR ARTIFACTS WENT STALE THE SAME WAY, AND THE GUARD IS A VALIDATION THAT DOES NOT CHANGE
+
+    pass 15   spec.md      acceptance scenarios written before 30 of the 38 requirements
+    pass 16   plan.md      scope section still said "a schema, a reader, a controller"
+    pass 17   data-model   the two filters reached the contract and not the model
+    pass 17   quickstart   step 7 lists a subset of the eighteen gates T002 enumerates
+
+Each artifact was correct when written and was not revisited when the feature changed underneath
+it. **Every one of the sixteen passes checked requirement-to-task coverage, which read 100%
+throughout**, and coverage says nothing about whether the rest of the document still describes
+the thing.
+
+**AND THE TASK IDS DRIFTED OUT OF EXECUTION ORDER**, nine pairs of them, from sixteen rounds of
+insertion — `T029c` before `T028a`, and a phase-4 run reading `T035a, T035b, T036, T036a,
+T035e, … T035c, T035d, T036b`. The template calls the id *"a sequential number in execution
+order"*, and `/speckit-implement continue` reads ids as order. Renumbered: the sealed trio
+becomes `T035c` (stand up), `T035d` (add the test), `T035e` (assert the result), which is both
+id order and execution order.
+
+**The guard is the part worth carrying.** Pass 16 found a duplicate id because pass 15's
+validation had dropped the duplicate check it had run fourteen times; this pass found nine
+ordering defects because the ordering check had been dropped the same way. **A validation
+assembled per pass checks what that pass was thinking about.** The one that catches drift is the
+one that runs unchanged every time: ids unique, ids ascending, every FR and SC named, no task
+line shorter than its description.
+

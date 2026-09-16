@@ -113,6 +113,12 @@ one tenant's deliveries. The error does not shrink with size the way `uniq`'s do
 
 ## 7. The gates, run the way this project has to run them
 
+**`tasks.md` T002 enumerates all eighteen and this step lists a subset.** The ones not below —
+the cross-tenant gauntlet, `check-lane-scope.py`, `pnpm coverage` and the sealed outsider suite
+— arrived across sixteen analysis passes, and **a count is what carried "eleven gates" through
+four chapters**, so T002's list is the one to run and this is an entry point rather than the
+record.
+
 ```bash
 cd relay-platform
 pnpm lint && pnpm typecheck && pnpm test
