@@ -61,8 +61,11 @@ Taken at this feature's opening against the lane's store.
 **(1) SIXTY PER CENT OF THE REQUEST LOG BELONGS TO NO TENANT.**
 
     total rows                    11,684
-    environment_id IS NULL         7,063     60.5%   platform 5,916 · none 1,147
-    environment_id present         4,621     39.6%
+    environment_id IS NULL         7,063    60.45%   platform 5,916 · none 1,147
+    environment_id present         4,621    39.55%
+
+Two decimals, fixed here once, because SC-010 asks for the figure again at the close and
+`round(…, 1)` reports 60.5 for the same rows.
 
 That is chapter 4.4's finding arriving as a product constraint. FR-ANL-01 wants an event for
 every API request and FR-ANL-07 wants a log **per tenant**; they are not the same population,
@@ -172,14 +175,16 @@ movement exists to prevent, and a first page that works at lane scale hides it.
 3. **Given** a time window, **when** the surface is asked, **then** rows outside it do not
    appear, and the window's boundary handling is asserted from both sides.
 
-### User Story 3 - The log says what it contains and what it cannot (Priority: P2)
+### User Story 3 - The log says what it contains and what it cannot (Priority: P1)
 
 The surface is honest about the three measurements in §2a: the tenantless majority, the
 internal share, and the retention window.
 
-**Why this priority**: A log a customer can search is a product claim, and the difference
-between "your requests" and "requests carrying your environment id" is the difference between a
-useful answer and a confusing one.
+**Why this priority**: **P1, and it was P2 in the first draft.** The retention edge is not a
+nicety on top of a working log — a query for a window the TTL has already emptied returns zero
+rows, which is the same answer a quiet week returns. Telling those apart is a correctness claim
+about what the surface says, not a refinement of it, and the same is true of a log whose top
+entry is a call the customer did not make. Both belong inside the MVP with US1 and US2.
 
 **Acceptance scenarios**:
 

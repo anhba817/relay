@@ -57,7 +57,7 @@ caller-supplied value this platform puts into a ClickHouse statement.
 
 | field | type | note |
 |---|---|---|
-| `rows` | array | at most `limit`, in `direction` order |
+| `rows` | array | at most `limit`, in `direction` order. `endpoint` is `null` for an unmatched route, which the **statement** establishes with an `endpoint IS NULL` column rather than the transport: TSV writes NULL as the literal `\N` and `AnalyticalStore.query` returns strings |
 | `next_cursor` | string \| null | null when the page is the last one |
 | `window` | `{ from, to }` | echoed, because a defaulted window a caller did not send is a window they will misread |
 | `retention_edge` | ISO instant | **the answer to R8.** A window older than this returned 0 rows because the data is gone, not because nothing happened |

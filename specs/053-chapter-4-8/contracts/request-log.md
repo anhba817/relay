@@ -15,6 +15,11 @@ configuration than to content, which argues for `application` only — the same 
 `WebhooksController` carries: an end-user token on this route would let any logged-in person in
 a customer's product read that customer's whole API history.
 
+**And there is no neutral option.** `CredentialGuard` falls back to `EITHER` — application and
+user both — when no `Accepts` decorator is present (`credential.guard.ts:92`). Leaving the
+decorator off is the permissive choice made silently, which is the shape of defect this project
+files against itself: a decision nobody wrote down, taken by a default.
+
 ### Query parameters
 
 | name | type | default | bounds |
@@ -52,6 +57,18 @@ asking a reasonable question the data cannot answer.
 - `rows` holds at most `limit` entries, in `direction` order.
 - `endpoint` is **null** for an unmatched route — 22 rows in the lane today. Null, not `""`:
   chapter 4.4 paid for the difference between an absent field and an empty one.
+  **And the transport cannot carry that distinction on its own.** The store client returns
+  `string[][]` split from a TSV body, and ClickHouse writes NULL as the two characters `\N` —
+  asked of the server directly:
+
+  ```text
+  \N<TAB>GET<TAB>200
+  ```
+
+  So the statement selects `endpoint IS NULL` as a column of its own and the presence column
+  decides, exactly as chapter 4.7 put `count()` in front of a bare aggregate to tell "holds
+  nothing" from "holds zero". A reader that translated the string `\N` would work today and
+  break the first time a column can legitimately contain it.
 - `latency_ms` is fractional. Rounding it to an integer would read `0` for three of four real
   requests (4.4, measured).
 - `next_cursor` is null on the last page.

@@ -117,8 +117,8 @@ is closer to configuration than to content.
 **Measured.**
 
     total                       11,684
-    environment_id IS NULL       7,063    60.5%    platform 5,916 · none 1,147
-    environment_id present       4,621    39.6%
+    environment_id IS NULL       7,063   60.45%    platform 5,916 · none 1,147
+    environment_id present       4,621   39.55%
 
     of the attributed 4,621
       /internal/*                1,656    35.8%
@@ -225,3 +225,50 @@ reading both stores, which `gaps.md` 052-6 still carries; nothing in this chapte
 
 **Decision**: the plan's constitution check says PASS on III with the reason, and does not
 inherit 4.7's argument.
+
+---
+
+## R11 — THE STORE CLIENT CANNOT RETURN NULL, AND THE CONTRACT PROMISED IT WOULD
+
+**Measured.** `services/api/src/metering/clickhouse.ts` ends its `query` with
+
+    trimmed.split("\n").map((line) => line.split("\t"))
+
+so every cell is a string. ClickHouse writes NULL into a TSV body as the two characters `\N`.
+Asked of the server, for one of the 22 rows whose route matched nothing:
+
+    \N<TAB>GET<TAB>200
+
+So a reader that selects `endpoint` alone reports an endpoint of `"\N"` for every unmatched
+route — the string, not the absence. This is chapter 4.4's defect one layer up: that chapter
+established that `LowCardinality(String)` cannot say "absent", and the transport underneath it
+cannot either.
+
+**Decision**: the statement selects `endpoint IS NULL` as a column of its own and the presence
+column decides. That is chapter 4.7's `count()` move against the same class of problem — give
+absence its own signal rather than a value someone has to interpret.
+
+**Alternatives considered**: translating the literal `\N` in the reader (correct for TSV today,
+and wrong the first time a column can legitimately hold those two characters), and switching the
+client to `JSONEachRow` (correct, and it changes a file two chapters depend on for a problem one
+extra column solves).
+
+---
+
+## R12 — THE GUARD'S DEFAULT IS THE PERMISSIVE ONE
+
+**Read in the tree.** `services/api/src/auth/credential.guard.ts:92`:
+
+    this.reflector.getAllAndOverride<AcceptSpec[]>(ACCEPTS, […]) ?? EITHER
+
+and `EITHER` is `["application", "user"]`. **A route with no `Accepts` decorator accepts
+end-user tokens.**
+
+R4 read the decorator as an open decision and it is not: omitting it is the permissive choice,
+taken silently. On a route that returns a tenant's entire API history that is the difference
+between the customer's software reading its own log and every logged-in person in the
+customer's product reading it.
+
+**Decision**: the decorator is written explicitly whichever way the decision goes, and the
+contract says which and why.
+

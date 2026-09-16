@@ -27,6 +27,10 @@ a percentile of something else.
 **Language/Version**: TypeScript, Node 22, as the rest of the platform
 **Primary dependencies**: NestJS (api only, ADR-15), Zod for the query schema,
 `services/api/src/metering/clickhouse.ts` for the store read — no new dependency
+**Files this touches that carry titled fences**: `services/api/src/app.module.ts` — **11 per
+locale, and already a HEAD problem at line 20**, so registering the controller will read as
+costing the chain nothing while the file drifts further (4.7's `vitest.coverage.config.mts`,
+measured in advance this time). Everything else the feature adds is a new file.
 **Storage**: `relay_analytics.api_requests` — 11,684 rows, 152 attributed tenants, 30-day TTL,
 `ReplacingMergeTree` ordered `(environment_id, ts, request_id)` with `allow_nullable_key = 1`
 **Testing**: vitest, unit for the schema and cursor arithmetic, integration against the store
@@ -88,8 +92,15 @@ the half worth separating.
 
 ### Phase 3 — The reader and the route (blocks 4) 🎯 MVP begins
 
-- A reader beside `services/api/src/metering/` that takes a validated query and returns rows —
-  read-only, and the tenant id is an argument rather than a string in the SQL.
+- A reader at `services/api/src/request-log/reader.ts` — the directory chapter 4.4 already
+  created for the producer — taking a validated query and returning rows. Read-only, and the
+  tenant id is an argument rather than a string in the SQL. It calls
+  `services/api/src/metering/clickhouse.ts`'s client; it does not open a second one.
+- **The statement carries a presence column, because TSV cannot say null.**
+  `AnalyticalStore.query` returns `string[][]` split from a TSV body, and ClickHouse writes
+  NULL as the two characters `\N`. Selecting `endpoint IS NULL` beside `endpoint` is the same
+  move chapter 4.7 made with `count()`: give absence its own signal instead of a value someone
+  has to interpret.
 - The controller: `@UseGuards(CredentialGuard)` and the `Accepts` decision from R4, stated with
   its argument rather than copied.
 - The response envelope, matching the contract document written in phase 2.
@@ -154,8 +165,10 @@ Phase 6  the amendments              ── needs 5's decision
 Phase 7  the chapter                 ── needs all
 ```
 
-**MVP is phases 1–4**: a customer can read their own request log, paged and windowed, and
-cannot read anyone else's.
+**MVP is phases 1–4**: a customer can read their own request log, paged and windowed, cannot
+read anyone else's, and is told when the window they asked for is older than the log. US3 is P1
+for that last clause — a zero from an emptied window and a zero from a quiet week are the same
+number, and a log that cannot tell them apart answers the wrong question confidently.
 
 ---
 

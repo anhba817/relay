@@ -53,7 +53,7 @@ CH() { curl -sS -u relay:relay 'http://localhost:8123/' --data-binary "$1"; }
 # the tenantless share
 CH "SELECT count() AS total,
            countIf(environment_id IS NULL) AS tenantless,
-           round(countIf(environment_id IS NULL)/count()*100, 1) AS pct
+           round(countIf(environment_id IS NULL)/count()*100, 2) AS pct
       FROM relay_analytics.api_requests FORMAT TSV"
 
 # how much of the attributed half is the platform calling itself
@@ -71,7 +71,11 @@ CH "SELECT quantileExact(0.5)(n), quantileExact(0.95)(n), max(n), count() AS ten
              GROUP BY environment_id) FORMAT TSV"
 ```
 
-Measured 2026-09-16: `11684 7063 60.5`, `1656 1857 4621`, `10 155 208 152`.
+Measured 2026-09-16: `11684 7063 60.45`, `1656 1857 4621`, `10 155 208 152`.
+
+**Two decimals, not one.** `round(…, 1)` reports 60.5 for the same rows, and SC-010 asks for
+this figure again at the close — a criterion measured at two precisions is a criterion that
+looks like it moved.
 
 **These are facts about the lane on that day and they will move.** Chapter 4.7's opening figures
 changed while its own phases ran, because integration lanes write to the store this chapter
