@@ -117,13 +117,13 @@ not firing once it is removed.
 
 ## Phase 6: The amendments
 
-- [ ] T051 Discharge **FR-015** and **SC-010**: close or restate `gaps.md` 047-1 and 048-1 with their current numbers. Filed *for movement IV*, carried through four features, and this is the movement.
-- [ ] T052 Discharge **FR-016** and **FR-017**: amend **FR-ANL-06** where this chapter's measurements show the clause as written cannot hold. **Read the clause before amending it** — DR-11 and DR-09 were both amended on this precedent, and 4.6 found two gaps entries quoting the wrong row of the same table.
-- [ ] T053 State the constitution III reading the plan's Check names: the reconciler is not billing, metering or dashboard analytics, and **an auditor confined to one side of a fence cannot check the fence**. Name the alternative readings and say which document owns the amendment. Second conflict in this family after 051-2.
-- [ ] T054 Discharge **FR-018**: amend `docs/12` §3's row 8 where this chapter falsifies its one-line description. **Leave the table's first column alone** — §3 keeps the original ordinals on purpose.
-- [ ] T055 [P] Check whether `docs/05-sad.md` needs the job, in the *incomplete rather than wrong* class 050 filed as FR-017a. §6.2 gained two rollups at chapter 4.6 and a checker over them is the same series' next entry.
-- [ ] T056 [P] Re-check every clause this feature cites by opening the SRS rather than the artifacts. 4.6 found DR-09's second half unimplemented for three features and filed as absent twice, by two entries quoting the adjacent row.
-- [ ] T057 Run `check:docs` and `check:srs` after the amendments, and commit phase 6. **Check the SRS's version header by looking at it** — `check-revision-order` reads the table and never the header, and chapter 4.6 reproduced that defect one revision after recording it.
+- [X] T051 Discharge **FR-015** and **SC-010**: close or restate `gaps.md` 047-1 and 048-1 with their current numbers. Filed *for movement IV*, carried through four features, and this is the movement.
+- [X] T052 Discharge **FR-016** and **FR-017**: amend **FR-ANL-06** where this chapter's measurements show the clause as written cannot hold. **Read the clause before amending it** — DR-11 and DR-09 were both amended on this precedent, and 4.6 found two gaps entries quoting the wrong row of the same table.
+- [X] T053 State the constitution III reading the plan's Check names: the reconciler is not billing, metering or dashboard analytics, and **an auditor confined to one side of a fence cannot check the fence**. Name the alternative readings and say which document owns the amendment. Second conflict in this family after 051-2.
+- [X] T054 Discharge **FR-018**: amend `docs/12` §3's row 8 where this chapter falsifies its one-line description. **Leave the table's first column alone** — §3 keeps the original ordinals on purpose.
+- [X] T055 [P] Check whether `docs/05-sad.md` needs the job, in the *incomplete rather than wrong* class 050 filed as FR-017a. §6.2 gained two rollups at chapter 4.6 and a checker over them is the same series' next entry.
+- [X] T056 [P] Re-check every clause this feature cites by opening the SRS rather than the artifacts. 4.6 found DR-09's second half unimplemented for three features and filed as absent twice, by two entries quoting the adjacent row.
+- [X] T057 Run `check:docs` and `check:srs` after the amendments, and commit phase 6. **Check the SRS's version header by looking at it** — `check-revision-order` reads the table and never the header, and chapter 4.6 reproduced that defect one revision after recording it.
 
 ---
 

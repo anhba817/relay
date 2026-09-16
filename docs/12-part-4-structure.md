@@ -204,7 +204,7 @@ is the stable address, as §2.1 intended.
 | 5 | III | Every request is an event | FR-ANL-07's producer. Generalises the pattern chapter 3.20 already taught rather than introducing it — see §4 |
 | 6 | III | The gateway's first stream | Connection open/close (FR-ANL-01). **The gateway had never touched NATS** — verified at the time, zero references in `services/gateway/src`, five dependencies and none a broker client. **What this line did not say is that the gateway already reported connection data**: `meter.ts` has shipped connection-minutes to `POST /internal/usage/connections` every sixty seconds since chapter 3.24. So the chapter is not *"the gateway has no way to report"* — it is *"the one it has was built for a different question and goes through the service the analytical path is supposed to be independent of"*. Amends ADR-07 a THIRD time, in both documents that hold it, and closes §7.2 |
 | 7 | IV | Metering you can bill on | Daily rollup materialised views (DR-10). **One has existed since chapter 4.2** — `analytics/0001_daily_usage.sql`, a `SummingMergeTree` over `message_events`. What this line did not say is that **nothing reads it and nothing writes its source**: the only file that ever asked FR-ANL-05's question of the analytical store is `analytics/query.mjs`, referenced by no script, service or config, and `message_events` occurs in zero files under `services/` while `api_requests` holds 11,683 rows and `connection_events` 154. So the chapter is not *"build the rollup"* — it is **"the rollup satisfies DR-10 over a table that receives no events, and FR-ANL-09's channel dimension costs the billing read 525x"**. Two rollups ship, not one. Closes SRS Appendix C question 4 and records constitution III's conflict with the shipped platform |
-| 8 | IV | The job that checks the meter | FR-ANL-06's reconciliation job, built to be callable in isolation (§2.3) |
+| 8 | IV | The job that checks the meter | FR-ANL-06's reconciliation job, built to be callable in isolation (§2.3). **What this line did not say is that the job cannot pass, and that three of the four reasons are not the analytical path's fault.** Measured at chapter 4.7: `message_events` has no producer (100%); `uniq` is exact to **65,536** distinct and 0.5676% at 65,537; the raw-retention boundary makes the oldest day in any window disagree by **0% at midnight rising to 1.0989% just before it**; and the two OPERATIONAL counters of messages sent disagree with **each other** by 0.2630%. So the chapter is not *"build the comparison"* — it is **"the comparison has to say which operational table it read, one tenant at a time, and publish no percentage where the bound is unreachable"**. **And `not-comparable` and `no-data` are verdicts of their own**, because every tenant in the platform is one-sided: 4 rollup environment ids that exist in no Postgres row, against 1,313 with operational usage and no rollup rows. *"Callable in isolation"* split in two — the verdict runs with no store, no database and no broker, and the gathering reads both. Amends FR-ANL-06 (SRS 1.14), closes `gaps.md` 047-1 and 048-1, and names constitution III's conflict a second time after 051-2 |
 | 9 | IV | The log a customer can search | FR-ANL-07's query surface; FR-ANL-10's latency percentiles |
 | 10 | IV | **★ Milestone: the meter agrees** | The planted drift is caught; the 0.1% figure is measured once and recorded (§2.3) |
 | 11 | V | The upload that never reaches us | FR-MED-01/02: the slot, the presigned URL, the four distinct refusals, the storage quota |
@@ -294,9 +294,15 @@ message count.*
 So chapter 7 builds in ClickHouse a daily view of what Part 3's quota chapter already counts
 monthly in Postgres — and **FR-ANL-06's reconciliation is the comparison between them.**
 *"Metered totals shall agree with counts derived from operational data to within 0.1%"* is not
-abstract: the operational data is `usage_periods`, `usage_active_users` and
-`usage_connections`, and the reconciler aggregates the daily rollups up to the period grain to
-meet them.
+abstract: the operational data is `usage_periods` and `usage_active_users`, and the reconciler
+aggregates the daily rollups up to the period grain to meet them.
+
+**This paragraph named three tables until chapter 4.7 and the job reads two.**
+`usage_connections` is one row per connection per period and `usage_periods.connection_minutes`
+is its rollup, written in the same transaction that credits it — so reading both would compare
+a number against its own source. And the list was short in the other direction at the same
+time: **the fourth quantity, stored message count, has no operational counterpart in any of
+them**, which is why the report carries a `not-comparable` verdict rather than a zero.
 
 `docs/07-tutorial-plan.md` predicted this tension before either side existed —
 *"Building monthly counters in 3.8 would mean building them in Postgres now and again in

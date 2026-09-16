@@ -661,3 +661,68 @@ T050 — THE LANES
   it created before that pin moves the number, and no predicate about this test's own rows was
   ever written. `check-lane-scope.py` reports it clean because the query carries a predicate.
   Filed rather than fixed: the repair is one predicate in another chapter's file.
+
+
+═══════════════════════════════════════════════════════════════════════════════
+PHASE 6 — THE AMENDMENTS (T051-T057).
+═══════════════════════════════════════════════════════════════════════════════
+
+T051 — 047-1 AND 048-1 CLOSED BY AMENDMENT, AND BOTH NUMBERS MOVED
+  Filed at 4.2 *for movement IV*, carried unchanged through four features. Closed here with
+  **neither** of the numbers it was filed with: the `uniq` cliff is 65,536 rather than "about
+  65,000" and one distinct value wide, and the TTL boundary is a curve from 0% to 1.0989%
+  rather than 0.49%. 047-1 offered four ways to close — widen the tolerance, exempt the
+  boundary day, add an exact-distinct column, or let metering read raw events and amend DR-10
+  — and **none was taken**. The clause states where its own bound is unreachable instead.
+
+T052/T053 — SRS REVISION 1.14
+  FR-ANL-06 amended in four directions, each one a thing the clause left to the reader: which
+  operational count, per tenant rather than in aggregate, absence as a verdict of its own, and
+  the three quantities whose bound cannot be met. The revision row also carries the
+  constitution III reading, a second time after 051-2.
+
+  **AND THE ARCHITECTURE HAD ALREADY ASSUMED THE ANSWER.** `docs/05-sad.md:1131`, inside
+  ADR-06's accepted trade-off: *"mitigated because the only strict consumer (metering)
+  reconciles daily against Postgres (FR-ANL-06)"*. So the cross-path read is the mitigation
+  that makes choosing NATS over Kafka acceptable — the conflict is written into an accepted
+  decision, and removing the read would cost that ADR its argument. **Eleven analysis passes
+  and five features had not read the two documents beside each other.**
+
+T054 — `docs/12` §3 ROW 8, AND A LIST THAT WAS WRONG IN BOTH DIRECTIONS
+  Row 8 amended in the shape rows 6 and 7 already carry: what the line did not say. The table's
+  first column is untouched — §3 keeps the pre-contraction ordinals on purpose.
+
+  And §"FR-ANL-06 has a concrete counterpart" named **three** operational tables where the job
+  reads **two**. `usage_connections` is one row per connection per period and
+  `usage_periods.connection_minutes` is its rollup, written in the same transaction that
+  credits it, so reading both would compare a number against its own source. The same sentence
+  was short in the other direction: the fourth quantity has no operational counterpart in any
+  of the three.
+
+T055/T056 — READ THE CLAUSES, AND ONE OF THEM POINTED AT NOTHING
+  Every SRS clause this feature cites was opened rather than quoted from an artifact:
+  FR-ANL-05, FR-ANL-06, FR-ANL-07, FR-ANL-10, DR-09, DR-10, DR-11.
+
+  **`FR-003a` IS NOT A CLAUSE IN THE SRS, AND TWO PUBLISHED DOCUMENTS CITED IT AS ONE.**
+  `docs/04-srs.md`'s DR-09 and `docs/05-sad.md:879` both wrote it as a requirement id. There is
+  no `FR-003` in that document at all, and `FR-003a` is feature-local: a refusal message in 042,
+  a channel read in 034, a rollup TTL in 047, a corpus report in 046.
+
+  **AND THE SENTENCE IT SAT IN WAS FALSE.** `docs/05-sad.md:879` read *"the rollups carry no
+  TTL (FR-003a) precisely so they outlive the raw events"*. Chapter 4.6 gave both rollups a
+  **25-month** TTL under DR-09 — in the same feature that paragraph was written in. The
+  argument survives and its mechanism was inverted: they outlive the raw events by carrying a
+  longer TTL, not by carrying none. Corrected in both documents.
+
+  The SAD also gained the job itself in §6.2, with what it can and cannot compare — 050's
+  *"incomplete rather than wrong"* class, which this time turned up something wrong.
+
+T057 — THE GATES
+    check:docs GREEN   ·   check-revision-order: 15 revisions ascend, 1.0 to 1.14
+    check:srs GREEN · check:figures GREEN · check:errors GREEN
+
+  `check:docs` went RED first, correctly: `content/docs/04-srs.md` and `05-sad.md` are mirrors
+  and `pnpm sync:docs` had not been run. **The header was checked by looking**, which is the
+  only instrument for it — `check-revision-order` reads the table and never the header, and
+  1.13 reproduced that defect one revision after recording it. Source and mirror both read
+  `**Version:** 1.14 (draft)` and the table's last row is 1.14.
