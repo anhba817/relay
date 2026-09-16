@@ -191,8 +191,29 @@ number, and a log that cannot tell them apart answers the wrong question confide
 ## Complexity tracking
 
 **One new dependency: none.** The store client exists (chapter 4.7), the guard exists, Zod
-exists, and the pagination shape exists. The only new code is a schema, a reader, a controller
-and their tests.
+exists, and the pagination shape exists.
+
+**AND THE FILE SET IS LARGER THAN THE FIRST DRAFT SAID, WITHOUT THE SCOPE HAVING GROWN.** That
+draft read *"the only new code is a schema, a reader, a controller and their tests"*, and sixteen
+analysis passes later the feature also touches:
+
+    services/api/src/request-log/     reader, controller, schema, cursor, query.itest   NEW
+    services/api/src/metering/clickhouse.ts     a deadline option, defaulting to none
+    services/api/src/app.module.ts              registration
+    services/api/src/isolation/targets.ts       the cross-tenant classification
+    packages/protocol/src/codes.ts              analytics_unavailable
+    packages/outsider/src/integrate.itest.ts    the sealed customer's-eye test
+    vitest.coverage.config.mts                  per-file pins
+    .github/workflows/ci.yml                    a ClickHouse service, two steps reordered
+    docs/04-srs.md · 05-sad.md · 06-adr-deep-dives.md · 07-tutorial-plan.md
+    docs/08-error-reference.md · docs/12-part-4-structure.md
+    relay-tutorial: lib/tutorial.ts, the chapter, its figures
+
+**None of it is a decision to build more.** A public route must be classified in the gauntlet or
+the suite fails; a new refusal must be registered or `check:errors` fails; a suite must have a
+store to run against. **Each was required by the first sentence of the scope rather than added
+to it** — but the document that holds scope said none of it, and a reader comparing plan to work
+would have concluded the feature tripled.
 
 **And one task premise was false before implementation started.** The first draft of phase 4
 said to plant a tenant at a volume where FR-ANL-08's 90-day clause means something. The table

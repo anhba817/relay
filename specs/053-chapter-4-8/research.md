@@ -970,3 +970,34 @@ reader should be able to ask of the finished route. The thirteen process-shaped 
 CI, the ADR, the gauntlet, the fences, the prose bound — are tracked by requirement rather than
 by scenario, which is what previous chapters did and is recorded rather than left implicit.
 
+---
+
+## R38 — THREE DEFECTS FROM FIFTEEN ROUNDS OF REPAIR, AND THE CHECK THAT WOULD HAVE CAUGHT ONE WAS DROPPED
+
+**A duplicate task id.** `T035b` was used twice — pass 3's *"say what this proves that
+`ingest.itest.ts:299` does not"* and pass 15's *"stand up what the sealed suite needs"*. Every
+validation from pass 1 to pass 14 ran a duplicate-id check; **pass 15's final validation printed
+story counts and requirement coverage and omitted it.** The instrument was dropped in the pass
+that needed it. Renamed to `T035e`.
+
+**A command two pieces short.** Pass 15 wrote *"then `node scripts/seed-demo-tenant.mjs`, then
+export `RELAY_DEMO_CREDENTIAL`"*. The script **prints the credential to stdout** — its own
+comment says *"stdout is the interface"* — so it must be captured, and it takes
+`RELAY_POSTGRES_PORT`, not `DATABASE_URL`, for that call. CI has the correct form at `ci.yml:57`:
+
+    RELAY_DEMO_CREDENTIAL=$(RELAY_POSTGRES_PORT=15432 node scripts/seed-demo-tenant.mjs)
+
+**The task cited CI's job as the model and did not copy it** — *copy the shape, not the
+sentence*, the sixth time in this feature that a fix needed a fix.
+
+**And the plan's scope section was never updated.** It still said *"a schema, a reader, a
+controller and their tests"* while the feature had come to touch sixteen files across three
+repositories and six published documents. **The additions are not scope creep** — each is a
+mechanism the original scope already required — **and the document that holds scope said none of
+them**, which is the same staleness as the acceptance scenarios (R37), one document over.
+
+**The pattern worth carrying**: fifteen rounds of remediation have their own failure mode, and
+it is not the one the rounds were looking for. Each round changed artifacts that the next
+round's checks did not fully re-read — and the one check that would have caught the duplicate
+had been run fourteen times and was skipped once.
+
