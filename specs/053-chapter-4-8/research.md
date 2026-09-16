@@ -555,3 +555,58 @@ counterpart to drift from.
 **The pattern worth naming**: the query half of the convention was copied and the response half
 was invented, from the same file, in the same task.
 
+---
+
+## R24 — THE DECISION THIS CHAPTER MAKES IS AN ADR, AND CHAPTER 4.7's PRECEDENT DOES NOT COVER IT
+
+Constitution VII: *"Every architecture decision is recorded as an ADR stating its drivers,
+rejected alternatives, and reversal condition. ADRs are immutable once accepted."* The SAD
+holds **25**, ADR-01 through ADR-25, and `docs/06-adr-deep-dives.md` carries the arguments for
+the recent ones.
+
+Chapter 4.7 made the api read ClickHouse and recorded it in SRS revision 1.14 and the SAD's
+data view rather than as an ADR. **That was a batch job**: an unbounded wait costs a job that
+was going to take minutes. This chapter puts the store on the request path, which is a new
+runtime dependency and a failure mode the platform did not have — FR-025's 503 exists because
+of it.
+
+**Decision**: ADR-26, in both documents. Chapter 4.5 found ten analysis passes amending the
+SAD's summary of ADR-07 and none opening the 98-line deep dive that held the two lines the
+chapter falsified, so the summary alone is not the record.
+
+The rejected alternatives are already measured and go in as measurements rather than as
+opinions: a client-side deadline alone (R17), `LIMIT BY` instead of `FINAL` (R13), and serving
+the log from Postgres (constitution III's first sentence, and the producer writes nowhere
+else).
+
+**And the reversal condition is the part nobody had written.** An ADR without one is a decision
+with no exit. The candidate: the analytical store's availability appearing in the API's error
+budget, which FR-025's 503 is what makes visible.
+
+---
+
+## R25 — READ THE PRINCIPLE, NOT ITS HEADING
+
+Three of this feature's findings were constitution bullets that no artifact had examined, and
+each was found in a different pass by accident before the seventh pass went looking
+systematically:
+
+| principle | the bullet that binds | found at |
+|---|---|---|
+| **III** | *"Failure or backlog of the analytical pipeline MUST NOT affect … API availability"* | pass 3 |
+| **I** | *"An automated cross-tenant access test suite MUST attack every endpoint with foreign IDs on every build"* | pass 6 |
+| **VII** | *"Every architecture decision is recorded as an ADR stating its drivers, rejected alternatives, and reversal condition"* | pass 7 |
+
+In each case the plan's Constitution Check row read PASS, correctly, about the principle's
+first idea — tenant isolation is asserted, the analytical path is the right store, the clause
+amendment follows precedent — and the row was written against the heading.
+
+**This project already has the rule and had not applied it to the constitution**: *read the
+clauses, not the identifiers.* A principle's name is an identifier.
+
+One premise checked clean in the same pass: constitution VII's non-goals include *"no
+threads/reactions/search in v1"*, and a chapter titled *"the log a customer can search"* invites
+the question. The non-goal is **message** search — `docs/01-product-vision.md` line 218 lists
+*"Moderation hooks, message search, native SDKs"* — so a filtered read of a request log does not
+touch it.
+

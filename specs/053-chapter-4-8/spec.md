@@ -315,6 +315,10 @@ than what it says.
   route fails it.
 - **FR-030**: The response envelope shall match the one this API already serves for a paged
   read — the array named for the resource, with a cursor for each direction the query supports.
+- **FR-031**: Putting the analytical store on a customer request path shall be recorded as an
+  architecture decision with its drivers, its rejected alternatives and **a reversal
+  condition**, in both documents that hold an ADR. It is a new runtime dependency and a new
+  failure mode on a path that had neither.
 - **FR-028**: The surface shall state how recent its answer is. A request made now is not in
   the log now — FR-ANL-04 allows 60 seconds under normal conditions — so a caller shall be told
   what the log promises about recency rather than left to conclude that a missing request never
@@ -365,6 +369,8 @@ than what it says.
   own reads, are each asserted by a test and stated in the chapter.
 - **SC-018**: The cross-tenant access suite passes with the new route classified, shown by
   running it rather than by the entry existing.
+- **SC-019**: The architecture decision is recorded in `docs/05-sad.md` and
+  `docs/06-adr-deep-dives.md`, carrying a reversal condition.
 - **SC-017**: The end-to-end lag between a request and its appearance in the log is measured
   once, with an ingester running, and published against FR-ANL-04's 60 seconds.
 
