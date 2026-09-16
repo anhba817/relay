@@ -216,6 +216,11 @@ than what it says.
 
 ### Edge Cases
 
+- **A tenant reads their log immediately after making a request, and it is not there.** The
+  data arrives through a durable queue and an ingester; FR-ANL-04 allows 60 seconds, and in this
+  lane `compose.yaml` runs no ingester at all (`gaps.md` 050-8), so the log never updates
+  without one started by hand. An empty answer for a request that certainly happened is the
+  most likely first experience of this surface.
 - A tenant asks for a window entirely inside the TTL's deleted range.
 - A row whose `endpoint` is absent — 22 of them — because a 404 matched no route.
 - A row whose `environment_id` is NULL sitting between two of a tenant's rows in key order,
@@ -303,6 +308,10 @@ than what it says.
 - **FR-027**: The chapter shall decide and state what reading the log costs the tenant and
   what it records about itself: every path under `/v1` spends the REST budget by default, and
   the producer records this route's own reads. Both decisions shall be asserted by a test.
+- **FR-028**: The surface shall state how recent its answer is. A request made now is not in
+  the log now — FR-ANL-04 allows 60 seconds under normal conditions — so a caller shall be told
+  what the log promises about recency rather than left to conclude that a missing request never
+  happened.
 
 ### Key Entities
 
@@ -347,6 +356,8 @@ than what it says.
   `check:errors` is green.
 - **SC-016**: What a read costs the tenant's REST budget, and whether the surface returns its
   own reads, are each asserted by a test and stated in the chapter.
+- **SC-017**: The end-to-end lag between a request and its appearance in the log is measured
+  once, with an ingester running, and published against FR-ANL-04's 60 seconds.
 
 ---
 

@@ -127,6 +127,21 @@ The **server limit is set shorter than the client's**, so the server's refusal w
 and the route receives a code it can map. The other ordering yields an `AbortError` carrying
 nothing, and a refusal that names no cause is the empty page this contract refuses to send.
 
+### How recent the answer is
+
+**A request made now is not in the log now.** Records reach `api_requests` through a durable
+queue and the ingester, and FR-ANL-04 allows *"within 60 seconds of the originating operation
+under normal conditions."* So a caller who sends a request and immediately reads their log
+finds nothing, and the correct conclusion is "not yet" rather than "never happened".
+
+The surface states the guarantee and **does not compute a lag**. A per-response lag would need
+a second query over the whole table on every page, and it would measure the ingester rather
+than the tenant — a number that moves for reasons the caller cannot act on.
+
+**And in the development stack there is no ingester at all.** `compose.yaml` runs none
+(`gaps.md` 050-8), so the log does not update until somebody starts one. A reader following
+this chapter meets an empty log before they meet a wrong one, which the chapter says out loud.
+
 ### What it costs the tenant, and what it records about itself
 
 **Reading the log spends the tenant's REST budget.** `operationsFor` returns `["rest"]` for

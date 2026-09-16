@@ -441,3 +441,53 @@ decided in phase 4 with the measurement beside it, on the same argument as `/int
 their request log, the reads spend the budget they are investigating, and the log shows the
 429s the reading caused.
 
+---
+
+## R20 — THE CLAUSE THAT GOVERNS WHEN THE LOG IS SEARCHABLE WAS CITED BY NOTHING
+
+**Counted across all seven artifacts of this feature**, before this pass: `FR-ANL-04` **0**,
+`60 second` **0**, `freshness` **0**.
+
+The clause: *"Analytical events shall be available for query within 60 seconds of the
+originating operation under normal conditions."* It is the one that decides what a customer
+sees when they make a request and immediately read their log — the surface's most likely first
+experience — and the chapter that builds the log had not named it.
+
+**And in this stack the gap is not 60 seconds, it is unbounded.** `grep ingester
+relay-platform/compose.yaml` returns **0**: nothing drains the queue unless an operator starts
+a process by hand (`gaps.md` 050-8). Chapter 4.4's own suite over this table fails 5 of 5 at
+5,001 ms each for the same reason.
+
+**Decisions**: the contract states the guarantee and **computes no lag** — a per-response lag
+needs a second query over the whole table and measures the ingester rather than the tenant. The
+chapter measures the real figure once, with an ingester deliberately started, in the shape
+chapter 4.5 used for `close -> row readable`.
+
+**And the absence changed a task.** T039c planned to measure the log recording its own reads by
+reading a page twice and publishing the difference. With nothing draining, that difference is
+**zero**, and zero reads as *"the surface excludes its own reads"* rather than *"nothing filled
+the table."* It has a positive control now.
+
+---
+
+## R21 — THE FILTER'S LADDER STOPS AT 404, AND THE STORE CLIENT DISCARDS THE ONE SIGNAL THAT HELPS
+
+Two mechanics, both read in the tree, both changing how the 503 is built.
+
+**`ProtocolErrorFilter`'s status ladder covers 400, 401, 403 and 404 and nothing else.** A 503
+falls into the fallback, so registering `analytics_unavailable` in `ERROR_CODES` is necessary
+and not sufficient — the code has to be **named on the thrown `HttpException`**, which the
+filter supports and then **checks against the registry rather than trusting**, because "a
+thrower can put any string in `code`". The same comment records that `docs_url` is derived from
+the code, so an undocumented one ships a link to a page that cannot exist.
+
+**And `createAnalyticalStore` keeps `text.trim().split("\n")[0]` and drops the HTTP status.**
+Distinguishing a timeout from a malformed query therefore means string-matching `Code: 159` out
+of a server message. The server already separates them:
+
+    TIMEOUT_EXCEEDED      → HTTP 408
+    unknown identifier    → HTTP 404
+
+**Decision**: carry the status out of the client beside the message, map on the status, and keep
+the message for the log and never for the response.
+
