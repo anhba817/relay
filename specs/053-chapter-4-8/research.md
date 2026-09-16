@@ -695,3 +695,36 @@ still hides every lane after it — in CI exactly as locally.
 false for the analytical store since chapter 4.2 introduced it, and the sentence is the basis
 on which defense 1 was called closed.
 
+---
+
+## R28 — THE DASHBOARD'S CLAUSES DESCRIBE THIS ROUTE, AND ONE OF THEM ASKS FOR SOMETHING THE PLATFORM REFUSES TO RECORD
+
+Three clauses bind, and **`FR-DSH` appeared in no artifact of this feature** before pass 10.
+
+    EIR-DSH-02   the dashboard shall consume ONLY the same public API available to customers
+    FR-DSH-03    a searchable request log filterable by endpoint, status, and time range,
+                 WITH FULL REQUEST AND RESPONSE DETAIL
+    FR-DSH-02    API calls as they occur, WITH A LATENCY UNDER 2 SECONDS
+
+EIR-DSH-02 is what makes the other two this chapter's problem rather than a future one: the
+dashboard has no other source, so whatever it needs, this route provides.
+
+**FR-DSH-03's payload half cannot be built, and the reason is already written down.** SRS
+revision 1.11 amended FR-ANL-07 to forbid recording bodies — *"FR-ANL-11 keeps message content
+out of the analytical store, and constitution VI keeps it out of logs"* — and stated the cost
+in the same breath: *"a request log with no payload cannot answer what exactly did they send,
+only what did they call and what happened."* **It did not carry that to FR-DSH-03.** An
+amendment that fixes one clause and leaves its twin standing is this project's recurring shape:
+DR-09's second half was filed as absent twice while its own row said otherwise, and `FR-003a`
+was cited as a clause in two published documents.
+
+**FR-DSH-03's filter half can be built and was not planned.** The surface took a time range and
+nothing else. `endpoint` and `status` are added, and `endpoint` is **validated against the live
+router rather than escaped** — `deriveTargets(app.getHttpAdapter().getInstance())` is the
+cross-tenant suite's own mechanism, already in this feature at T028a, and a value from a closed
+derived set is not caller text reaching a SQL string.
+
+**And FR-DSH-02 puts a number on the freshness question** R20 opened and W4 filed forward: two
+seconds, against FR-ANL-04's sixty, over a queue-fed store. The gap is **30x** rather than
+rhetorical, and it belongs to the dashboard chapter with that figure attached.
+

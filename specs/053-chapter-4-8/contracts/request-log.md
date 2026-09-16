@@ -29,6 +29,19 @@ files against itself: a decision nobody wrote down, taken by a default.
 | `cursor` | opaque string | — | from a previous response's `next_cursor` |
 | `direction` | `older` \| `newer` | `older` | |
 | `limit` | integer | `50` | `1..200` |
+| `endpoint` | route template | — | must be one of the templates the running router exposes |
+| `status` | integer | — | a valid HTTP status |
+
+**`endpoint` is validated against the live router, not escaped.** `AnalyticalStore.query` takes
+a SQL string and has no parameter binding, so this is the sharpest caller-supplied value the
+surface handles. The platform already derives the route set —
+`deriveTargets(app.getHttpAdapter().getInstance())`, the cross-tenant suite's own mechanism —
+and a value from a closed derived set is not text reaching SQL. An unknown endpoint is a **400**,
+not an empty page: the same distinction the retention edge draws between "nothing matched" and
+"this question cannot be answered".
+
+**Both filters exist because FR-DSH-03 asks for all three** — *"filterable by endpoint, status,
+and time range"* — and EIR-DSH-02 permits the dashboard no other source than this API.
 
 A value outside its bounds is **refused with 400**, not clamped — except `from`, which is
 clamped to the retention edge and reported in `window`, because a caller asking for 90 days is

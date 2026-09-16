@@ -315,6 +315,14 @@ than what it says.
   route fails it.
 - **FR-030**: The response envelope shall match the one this API already serves for a paged
   read — the array named for the resource, with a cursor for each direction the query supports.
+- **FR-035**: The surface shall filter by endpoint and by status as well as by time range.
+  FR-DSH-03 asks the dashboard's request log for all three and EIR-DSH-02 permits the dashboard
+  no other source, so a surface offering only a time range makes that clause unbuildable. An
+  unknown endpoint shall be refused rather than answered with an empty page.
+- **FR-036**: Where a published clause requires detail this platform deliberately does not
+  record, the clause shall be amended rather than left standing. FR-ANL-07 was amended to
+  forbid recording request and response bodies; FR-DSH-03 still asks the dashboard to show
+  them.
 - **FR-033**: The integration suite this feature adds shall be runnable by the project's CI,
   and where CI cannot run it the gap shall be closed or stated. CI provides no analytical store
   today, so four existing suites cannot pass there and this feature would add a fifth.
@@ -379,6 +387,11 @@ than what it says.
   own reads, are each asserted by a test and stated in the chapter.
 - **SC-018**: The cross-tenant access suite passes with the new route classified, shown by
   running it rather than by the entry existing.
+- **SC-022**: Filtering by endpoint and by status is shown by a test, including an unknown
+  endpoint refused rather than answered empty, with the cost measured against the unfiltered
+  read.
+- **SC-023**: FR-DSH-03 is amended or the conflict is recorded, with FR-ANL-07's own reasoning
+  cited rather than restated.
 - **SC-021**: The new integration suite runs in CI, shown by the workflow providing the store
   it needs and by the gates after the lane being reachable.
 - **SC-020**: The response carries `has_more`, and an error response carries the five fields
