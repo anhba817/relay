@@ -308,6 +308,13 @@ than what it says.
 - **FR-027**: The chapter shall decide and state what reading the log costs the tenant and
   what it records about itself: every path under `/v1` spends the REST budget by default, and
   the producer records this route's own reads. Both decisions shall be asserted by a test.
+- **FR-029**: The route shall be classified in the cross-tenant access suite's target list in
+  the same phase that registers it, and both directions of that suite's assertion shall be run.
+  Constitution I requires every endpoint to be attacked with foreign identifiers on every
+  build, and the suite derives its targets from the running application, so an unclassified
+  route fails it.
+- **FR-030**: The response envelope shall match the one this API already serves for a paged
+  read — the array named for the resource, with a cursor for each direction the query supports.
 - **FR-028**: The surface shall state how recent its answer is. A request made now is not in
   the log now — FR-ANL-04 allows 60 seconds under normal conditions — so a caller shall be told
   what the log promises about recency rather than left to conclude that a missing request never
@@ -356,6 +363,8 @@ than what it says.
   `check:errors` is green.
 - **SC-016**: What a read costs the tenant's REST budget, and whether the surface returns its
   own reads, are each asserted by a test and stated in the chapter.
+- **SC-018**: The cross-tenant access suite passes with the new route classified, shown by
+  running it rather than by the entry existing.
 - **SC-017**: The end-to-end lag between a request and its appearance in the log is measured
   once, with an ingester running, and published against FR-ANL-04's 60 seconds.
 

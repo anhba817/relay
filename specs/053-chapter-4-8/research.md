@@ -491,3 +491,67 @@ of a server message. The server already separates them:
 **Decision**: carry the status out of the client beside the message, map on the status, and keep
 the message for the log and never for the response.
 
+---
+
+## R22 — THE ROUTE IS ATTACKED BY A SUITE THAT DERIVES ITS OWN TARGETS, AND NOTHING PLANNED FOR IT
+
+**Read in the tree.** Constitution I's fourth bullet is a MUST: *"An automated cross-tenant
+access test suite MUST attack every endpoint with foreign IDs on every build. A build that
+fails this suite MUST NOT ship."*
+
+`services/api/src/isolation/targets.ts` is that suite's classification list, and its own comment
+is the mechanism:
+
+> *"A LIST OF CLASSIFICATIONS, NOT A LIST OF TARGETS. The targets themselves are derived from
+> the running application — `app.getHttpAdapter().getInstance().router.stack` — because the
+> fault this suite exists to prevent is a route that exists and is unattacked … NOTHING MAY BE
+> EXEMPT BY OMISSION. A derived target matching no entry fails the suite, and an entry matching
+> no derived target fails it too."*
+
+`targets.itest.ts:40` derives; `:71` collects the unclassified and fails. **So the suite turns
+red the moment this controller is registered**, in the api lane, in phase 3.
+
+Across all seven artifacts before this pass, every occurrence of "isolation" was about this
+feature's own two-tenant assertion. None named the gauntlet, `targets.ts`, `deriveTargets` or
+NFR-SEC-09 — and the plan's Principle I row read **PASS** through five analysis passes, marked
+on the clause's first three bullets.
+
+**Decision**: `{ method: "GET", path: "/v1/request-log", accepts: "application", shape: "list" }`.
+`GET /v1/webhooks` at `targets.ts:134` is the precedent word for word — *"There is no identifier
+in the path at all — the tenant comes from the key — so what the attack shows is that a key for
+one environment sees none of another's endpoints in a 200."*
+
+`targets.ts` carries 6 titled fences in each locale and is **already a HEAD problem at line
+130**, so the edit is invisible to `check:fences` — the fourth such file in this feature.
+
+---
+
+## R23 — THIS API ALREADY HAS A PAGE ENVELOPE, AND THE FIRST DRAFT INVENTED A SECOND
+
+**Read in the tree.** `services/api/src/messages/messages.service.ts:327`:
+
+    Promise<{
+      messages: MessageWithSender[];
+      next_cursor: string | null;
+      prev_cursor: string | null;
+    }>
+
+The array is named for the resource and there are **two** cursors. The first draft of this
+chapter's contract returned `{ rows, next_cursor, window, retention_edge }` — `rows` is a
+storage word, and it carried one cursor while copying `direction: older | newer` from the same
+feature's query schema. **Two-way paging with one cursor leaves a caller reading `newer` with
+no way back.**
+
+And `repository.ts:3823` already states how the end of a page is known:
+
+> *"ONE ROW MORE THAN ASKED FOR, which is how the caller learns whether there is a next page
+> without a second count query. The extra row is dropped before returning and its predecessor
+> becomes the cursor."*
+
+**Decision**: `{ requests, next_cursor, prev_cursor, window, retention_edge }`, with the
+`limit + 1` derivation named. The two extra fields are this surface's own and have no
+counterpart to drift from.
+
+**The pattern worth naming**: the query half of the convention was copied and the response half
+was invented, from the same file, in the same task.
+

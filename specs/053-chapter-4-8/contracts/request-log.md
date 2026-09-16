@@ -38,7 +38,7 @@ asking a reasonable question the data cannot answer.
 
 ```json
 {
-  "rows": [
+  "requests": [
     {
       "request_id": "…",
       "ts": "2026-09-16T01:02:03.456Z",
@@ -49,12 +49,19 @@ asking a reasonable question the data cannot answer.
     }
   ],
   "next_cursor": "…",
+  "prev_cursor": "…",
   "window": { "from": "…", "to": "…" },
   "retention_edge": "…"
 }
 ```
 
-- `rows` holds at most `limit` entries, in `direction` order.
+**The envelope matches the one this API already serves.** `messages.service.ts:327` returns
+`{ messages, next_cursor, prev_cursor }` — the array named for the resource, and **two**
+cursors. A first draft of this contract called the array `rows`, which is a storage word, and
+carried `next_cursor` alone while copying `direction: older | newer` from the same schema —
+**two-way paging with one cursor, so a caller reading `newer` had no way back.**
+
+- `requests` holds at most `limit` entries, in `direction` order.
 - `endpoint` is **null** for an unmatched route — 22 rows in the lane today. Null, not `""`:
   chapter 4.4 paid for the difference between an absent field and an empty one.
   **And the transport cannot carry that distinction on its own.** The store client returns
@@ -76,7 +83,12 @@ asking a reasonable question the data cannot answer.
   class it refused on.
 - `latency_ms` is fractional. Rounding it to an integer would read `0` for three of four real
   requests (4.4, measured).
-- `next_cursor` is null on the last page.
+- `next_cursor` and `prev_cursor` are null at the respective ends.
+- **The last page is known by asking for one row more than `limit` and dropping it**, which is
+  the convention `repository.ts:3823` already states: *"ONE ROW MORE THAN ASKED FOR, which is
+  how the caller learns whether there is a next page without a second count query. The extra
+  row is dropped before returning and its predecessor becomes the cursor."* Without it, a page
+  that exactly exhausts the window claims a next page that turns out empty.
 - `retention_edge` is **the nominal guarantee, `now() - 30 days`**, and it is nominal on
   purpose. A window older than it returns no rows **because the data is gone**, and this field
   is how a caller tells that apart from a quiet period (R8). It is not the oldest surviving

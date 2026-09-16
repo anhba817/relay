@@ -57,8 +57,9 @@ caller-supplied value this platform puts into a ClickHouse statement.
 
 | field | type | note |
 |---|---|---|
-| `rows` | array | at most `limit`, in `direction` order. `endpoint` is `null` for an unmatched route, which the **statement** establishes with an `endpoint IS NULL` column rather than the transport: TSV writes NULL as the literal `\N` and `AnalyticalStore.query` returns strings |
-| `next_cursor` | string \| null | null when the page is the last one |
+| `requests` | array | at most `limit`, in `direction` order — **named for the resource, as `messages.service.ts:327` names its own**. `endpoint` is `null` for an unmatched route, which the **statement** establishes with an `endpoint IS NULL` column rather than the transport: TSV writes NULL as the literal `\N` and `AnalyticalStore.query` returns strings |
+| `next_cursor` | string \| null | null at the end. Derived by fetching `limit + 1` and dropping the extra, the convention `repository.ts:3823` states |
+| `prev_cursor` | string \| null | null at the other end. `direction` is two-way, so one cursor would leave a `newer` reader with no way back |
 | `window` | `{ from, to }` | echoed, because a defaulted window a caller did not send is a window they will misread |
 | `retention_edge` | ISO instant | **the answer to R8, and it is the NOMINAL edge** — `now() - 30 days`, the guarantee rather than the oldest surviving row. The TTL is a schedule, not an event, so rows older than it exist for a while; a caller needs what the platform promises, not what a merge has left |
 
