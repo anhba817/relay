@@ -245,3 +245,209 @@ T031 — THE LANES
   moved the chain; the `diff` hunk is owed and cannot be placed until the chapter exists
   (phase 7). **Recorded as a known debt with its exact cost rather than discovered at the
   ratchet**, which is the difference the task was written to make.
+
+
+═══════════════════════════════════════════════════════════════════════════════
+PHASE 4 — THE PLANTED DRIFT (T032-T040).  §2.3's CI half.
+═══════════════════════════════════════════════════════════════════════════════
+
+T032/T033 — THE QUANTITY WAS CHOSEN BY WHAT THE REPOSITORY CAN PLANT
+  `usage_periods.messages_sent` is incremented ONE AT A TIME by `sendMessage`, inside the
+  transaction that writes the message, so an operational total of 100,000 messages costs
+  100,000 sends. `creditConnectionMinutes` takes the number as an argument — the gateway
+  reports a TOTAL rather than a tick — so the same figure costs one call.
+
+  That is why the planted drift is in connection-minutes, and it is also why this suite needs
+  no driver exemption: nothing here is a raw `INSERT`, so `reconcile.itest.ts` stays off
+  `eslint.config.mjs`'s list where `period.itest.ts`, `quotas.itest.ts` and
+  `connections.itest.ts` all sit.
+
+    planted   operational 100,000  ·  analytical 99,000        1.0000%   breach
+    removed   operational 100,000  ·  analytical 100,000       0.0000%   pass
+
+  AND THE OTHER THREE QUANTITIES DO NOT RAISE IN THE SAME REPORT, which is the half that makes
+  the first one mean anything: `messages` and `activeUsers` are two present zeroes — agreement
+  — and `storedMessages` is `not-comparable`.
+
+T034 — THE BOUNDARY, AND **BOTH OBVIOUS PLANTINGS PASS**
+  Against an operational 100,000, measured:
+
+    analytical    difference       pct      verdict
+        99,900          -100   0.100000%    pass      "0.1% under" — the naive shortfall
+        99,899          -101   0.101000%    breach
+       100,100          +100   0.099900%    pass      "0.1% over"  — the naive excess
+       100,101          +101   0.100898%    breach
+
+  Phase 2 predicted the excess half from arithmetic alone; the shortfall half is the same trap
+  from the other side, and it is the comparison being `<=` that makes it one. **Anyone planting
+  `operational * 1.001` to make the job fire gets a pass and concludes the job is broken, and
+  `operational * 0.999` does it too.** The smallest breaching drift is 101 in BOTH directions —
+  the asymmetry is in the percentage, not in the absolute, and only because `max(a, o)` is the
+  denominator.
+
+  A FALSIFICATION PROBE, BOTH HALVES. Changing `pct <= threshold` to `pct < threshold` turned
+  exactly one test red — `analytical 99900 … expected 'breach' to be 'pass'` — and nothing
+  else. The boundary cases sit ON the bound rather than near it.
+
+T035 — THE CLEANUP IS ASSERTED, NOT POLLED
+  4.6's suite read three creations where it had planted two, because `ALTER TABLE … DELETE` is
+  a queued mutation; its repair was to poll `system.mutations`. This suite keeps the poll and
+  then **reads `count()` for the tenant and asserts 0** — checking the outcome instead of the
+  queue.
+
+  AND ONLY ONE SIDE IS DELETED, WHICH IS DELIBERATE. The analytical rows must go: the target is
+  a `SummingMergeTree` and the read is `sum()`, so a second plant on the same day ADDS to the
+  first. The operational rows stay — `reset-lane.mjs` purges lane debris and not data by design
+  (Postgres held 31,215 environments at 045's close-out), they belong to an environment id
+  nothing else in the lane can name, and deleting them would mean a raw `DELETE` in the one
+  file that currently needs no exemption.
+
+T036 — THE LINE THAT DECIDES WHETHER THE ALERT FIRES LIVED IN A FILE NOTHING TESTS
+  `scripts/reconcile-usage.mjs` closed with `process.exit(breached.length > 0 ? 1 : 0)`. One
+  expression, no test, and the whole of FR-008's observable behaviour. It is `exitCodeFor` in
+  `metering/reconcile.ts` now, with four unit tests, and the script calls it.
+
+  Run against a real environment, both halves, through the script:
+
+    analytical 99,000 vs operational 100,000   connectionMinutes  1.0000%  breach   exit=1
+    analytical 100,000 vs operational 100,000  connectionMinutes  0.0000%  pass     exit=0
+
+  `not-comparable` and `no-data` DO NOT RAISE. Every real tenant in this platform is in one of
+  those two states today, and a job that exits 1 every day is one nobody reads.
+
+T037 — WHAT "RAISES AN ALERT" CANNOT MEAN HERE
+  There is no alerting integration in these three repositories. What exists is **two** mail
+  paths — `quotas/quota-email.ts` for a quota crossing and `notifications/notification-relay.ts`
+  for a disabled webhook endpoint — and they share one transport, `notifications/mailer.ts`,
+  whose default is `smtp://localhost:1025`: **Mailpit, the catcher `compose.yaml` runs for the
+  lane.** So the platform's existing notion of "alert" is an email to a development mail
+  catcher, addressed to organisation members, and its own failure mode is already in the lane
+  as `quotas.unaddressable` / `notifications.unaddressable` — *no member has an email address*.
+
+  A notification with no recipient is not an alert, and neither is an exit code. What a real
+  one costs, named rather than hand-waved: a delivery target that is not a person's inbox
+  (a pager or a webhook), a deduplication key so a daily job breaching for thirty days sends
+  one alert rather than thirty, and a severity that distinguishes 0.2% from 100% — none of
+  which this platform has anywhere.
+
+T038 — COVERAGE, TWO OBSERVATIONS EACH, AND THE SAME UNCOVERED ARM THREE TIMES
+                                    stmts  branch  funcs  lines   pinned
+    metering/reconcile.ts             100   97.14    100    100   100/96/100/100
+    metering/clickhouse.ts            100   94.73    100    100   100/93/100/100
+    db/usage-reads.ts                 100   83.33    100    100   100/82/100/100
+
+  Both observations identical on all three files.
+
+  EVERY UNCOVERED BRANCH IS 4.6's FACT, AND ALL THREE ARE KEPT WHERE 4.6 DELETED ITS OWN.
+  `rollup[0] === undefined`, `(active.rows[0])?.n ?? 0` and `split("\n")[0] ?? "clickhouse
+  refused"` are each unreachable — a bare aggregate returns one row, `String.split` returns at
+  least one element. 4.6 could delete its arm because the code stayed valid without it. Here
+  `noUncheckedIndexedAccess` is on, so removing any of these three means asserting a type the
+  signature does not promise. **An uncovered arm is cheaper than a lie about a type.**
+
+  AND THE POSTGRES HALF WAS ASKED RATHER THAN ASSUMED. 4.6 established the rule against
+  ClickHouse; this lane's Postgres was asked the same question directly —
+
+    select count(*)::int from usage_active_users where environment_id = <matches nothing>
+     n
+    ---
+     0
+    (1 row)
+
+  AND `metering/clickhouse.ts` WAS 88.88 / 78.94 UNTIL TWO TESTS WERE WRITTEN. The refusal path
+  and the empty result set: real behaviour, neither exercised by a reconciliation suite that
+  only ever asks well-formed questions. The empty-result test is the one that matters most,
+  because it proves `query` really does answer `[]` — **for a filtered NON-aggregate** — which
+  is precisely why `reconcile` counts rows instead of testing the result for emptiness.
+
+    SELECT 1 WHERE 0        -> []          the arm that is reachable
+    SELECT sum(1) WHERE 0   -> [["0"]]     the arm that is not
+
+  THE THRESHOLD PROBE, BOTH HALVES:
+
+    reconcile.ts branches pinned at 101   ERROR: Coverage for branches (97.14%) does not meet
+                                          "services/api/src/metering/reconcile.ts" threshold (101%)
+    metering/does-not-exist.ts at 101     nothing. no error, no warning, no line.
+
+T039 — THE PIN SWEEP, AND THE INSTRUMENT WAS WRONG FIRST
+    pins            53      (50 at 4.6's close, +3 this chapter)
+    binding         53
+    unbindable       0
+    files in scope 115
+    pinned share  46.1%
+
+  **THE FIRST RUN REPORTED 17 UNBINDABLE PINS AND ALL 17 ARE REAL FILES.**
+  `git ls-files 'services/*/src/**/*.ts'` returns 152 paths and misses every file sitting
+  DIRECTLY in a `src/` — `services/ingester/src/metering.ts` among them — because git's
+  pathspec wants a path segment for `**/` where picomatch, which is what vitest actually uses,
+  matches none. The sweep now filters `git ls-files` with a regex and carries a positive
+  control that throws if `metering.ts` is absent from its file list. **A glob is an
+  instrument, and this one disagreed with the tool it was auditing.**
+
+T040 — THE LANES, AND `pnpm coverage` WAS ANSWERING WITH SILENCE
+    lint GREEN · typecheck GREEN · test GREEN
+    check:docs · check:srs · check:figures · check:errors          GREEN
+    check:fences  111, unchanged from phase 3
+
+    test:integration, by lane:
+      api            8 failed | 634 passed (642)
+      gateway                   225 passed (225)
+      ingester                   19 passed  (19)
+      test-harness               41 passed  (41)
+
+    pnpm coverage   111 files · 1,589 tests · 577.03 s
+                    6 failed | 1,583 passed
+                    93.14 stmts · 88.88 branches · 92.23 funcs · 94.45 lines
+
+  **ALL NINE NEW TESTS PASS.** The api lane went 626 -> 634 passing against 633 -> 642 total:
+  nine added, eight net, one more pre-existing test red than last phase.
+
+  **AND THE FAILURE SET IS NOT STABLE, WHICH PHASE 3 SAID IT WAS.** That phase recorded *"the
+  seven are T008's inherited list exactly"*. Measured across three runs this phase, the api's
+  reds were: request-log x5 + limits + notifications x2 (8); request-log x5 + limits (6, the
+  coverage lane); and T008's own seven were request-log x4 + limits + outbox invariants 8 and 9.
+  **Three runs, three different sets, one overlapping core** — `request-log` (050-8, no ingester)
+  and `limits` "does not count the dispatcher". Everything else drifts. The phase 3 sentence was
+  a claim about a set nobody enumerated, and it is withdrawn.
+
+  `notifications.itest.ts` *"does not send a delivered row twice (FR-019)"* reproduces ALONE,
+  twice, as `Test timed out in 5000ms` — so it is not lane interference. Mailpit was asked
+  directly rather than assumed full: **164 messages, 0 rejected, 430 KB.** Nothing this chapter
+  touches is imported by that suite.
+
+**`pnpm coverage` PRODUCED NO NUMBERS AT ALL, AND HAS NOT SINCE CHAPTER 4.4.**
+  The first full run of this phase printed exactly one line about coverage —
+  `Coverage enabled with v8` — and then nothing: no table, no per-file threshold errors, no
+  `coverage/` directory. Not a zero. Silence.
+
+  THE CAUSE, WITH BOTH HALVES RUN over the same three files:
+
+    all tests green   the table, and every per-file threshold ERROR
+    one test red      neither
+
+  `coverage.reportOnFailure` defaults to **false**. The api's `request-log.itest.ts` has been
+  red on any machine with no ingester process since chapter 4.4 shipped it (050-8), so the gate
+  that measures constitution VI has been answering with silence — **and silence is
+  indistinguishable from a pass at a glance.** Set to `true` in `vitest.coverage.config.mts`.
+
+  AND THE FIRST REPORTING RUN IMMEDIATELY FOUND A PIN THAT HAS BEEN FAILING:
+
+    ERROR: Coverage for statements (95.12%) does not meet
+           "services/ingester/src/shape.ts" threshold (100%)
+    ERROR: Coverage for branches (95.12%) does not meet ... threshold (100%)
+
+  39 of 41 statements and 78 of 82 branches, at 100% lines and 100% functions — so every
+  function in the file runs and two statements inside them do not. The pin is chapter 4.5's and
+  the uncovered arms are `shapeConnection`'s, which `shape.test.ts` reaches only through
+  `route` and never constructs a connection record for. **Left at 100 rather than lowered**:
+  this chapter did not measure it down, it made it visible, and lowering another chapter's
+  ratchet is the move this project's own notes call the failure mode. Filed for `gaps.md`.
+
+  So `pnpm coverage` now exits 1 for two reasons, both recorded: tests that were already red,
+  and a threshold that was already failing. **The gate got worse-looking and more honest in the
+  same commit.**
+
+  A FOOTNOTE ON INSTRUMENTS, THE THIRD THIS PHASE. `pnpm -s check:docs` reported RED for all
+  four tutorial gates; `pnpm run check:docs` reports GREEN for the same script in the same
+  directory. The `-s` form does not resolve these script names at all. Every gate figure above
+  was taken with `pnpm run`.

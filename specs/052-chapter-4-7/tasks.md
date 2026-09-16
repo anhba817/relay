@@ -85,15 +85,15 @@ named operational source, a percentage and a verdict.
 **Goal**: §2.3's CI half. A deliberate discrepancy is detected, and the same assertion is shown
 not firing once it is removed.
 
-- [ ] T032 [US2] Plant a drift larger than the threshold on one side for a dedicated tenant, run the job, and assert it raises for that tenant and quantity (FR-010, SC-002).
-- [ ] T033 [US2] **Remove the drift and assert it does not raise.** Both halves, because a check that only ever fires is not a check — and this project has run the coverage-threshold probe both ways five times for the same reason.
-- [ ] T034 [US2] Exercise the tolerance boundary from both sides at integration scale as well as in the unit test (FR-011, SC-003).
-- [ ] T035 [US2] Clean the planted drift up and **verify the cleanup**, before anything else is counted, **scoped by environment id on both sides** (T010b). A mutation is not a delete — chapter 4.6's suite read three creations where it had planted two, because `ALTER TABLE … DELETE` is queued.
-- [ ] T036 [US3] Discharge **FR-008**: the raise is observable by a test rather than only by a human reading output. Assert on the returned report and on the caller's exit code.
-- [ ] T037 [US3] Record what "raises an alert" cannot mean here: there is no alerting integration, and the one notification path is `quotas/quota-email.ts`, whose failure mode is already in the lane as `quotas.unaddressable: no member has an email address`. **A notification with no recipient is not an alert** — name what a real one would cost.
-- [ ] T038 [US1] Pin `services/api/src/metering/reconcile.ts` in `vitest.coverage.config.mts` with freshly measured numbers, **two observations**, and **run both halves of the threshold probe**. Unlike chapter 4.6's read this file has real branches, so constitution VI's clause has something to bind to.
-- [ ] T039 [US1] Sweep every per-file pin against the include and exclude globs and record the count. 4.6 measured 50 pins, 50 binding. **Expand the globs over the real tree** rather than pattern-matching in memory.
-- [ ] T040 [US1] Run all four lanes **and `pnpm coverage`**, record failures in `baseline.txt`, and commit phase 4.
+- [X] T032 [US2] Plant a drift larger than the threshold on one side for a dedicated tenant, run the job, and assert it raises for that tenant and quantity (FR-010, SC-002).
+- [X] T033 [US2] **Remove the drift and assert it does not raise.** Both halves, because a check that only ever fires is not a check — and this project has run the coverage-threshold probe both ways five times for the same reason.
+- [X] T034 [US2] Exercise the tolerance boundary from both sides at integration scale as well as in the unit test (FR-011, SC-003).
+- [X] T035 [US2] Clean the planted drift up and **verify the cleanup**, before anything else is counted, **scoped by environment id on both sides** (T010b). A mutation is not a delete — chapter 4.6's suite read three creations where it had planted two, because `ALTER TABLE … DELETE` is queued.
+- [X] T036 [US3] Discharge **FR-008**: the raise is observable by a test rather than only by a human reading output. Assert on the returned report and on the caller's exit code.
+- [X] T037 [US3] Record what "raises an alert" cannot mean here: there is no alerting integration, and the one notification path is `quotas/quota-email.ts`, whose failure mode is already in the lane as `quotas.unaddressable: no member has an email address`. **A notification with no recipient is not an alert** — name what a real one would cost.
+- [X] T038 [US1] Pin `services/api/src/metering/reconcile.ts` in `vitest.coverage.config.mts` with freshly measured numbers, **two observations**, and **run both halves of the threshold probe**. Unlike chapter 4.6's read this file has real branches, so constitution VI's clause has something to bind to.
+- [X] T039 [US1] Sweep every per-file pin against the include and exclude globs and record the count. 4.6 measured 50 pins, 50 binding. **Expand the globs over the real tree** rather than pattern-matching in memory.
+- [X] T040 [US1] Run all four lanes **and `pnpm coverage`**, record failures in `baseline.txt`, and commit phase 4.
 
 ---
 
