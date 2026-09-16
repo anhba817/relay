@@ -175,3 +175,133 @@ published document resolves in that document. `check-srs-ids.sh` checks the reve
 It is how 044 shipped four artifacts agreeing on two clauses that do not exist, and how this
 chapter found a sentence — *"the rollups carry no TTL"* — that chapter 4.6 had falsified in
 the same feature that wrote it.
+
+---
+
+# Carried, re-measured
+
+*Measure the carried ledger; do not copy it.* Every entry below was asked of the tree or the
+store again; two of them moved.
+
+## 051-1 — `message_events` still has no producer — **AND NOW ONE FILE UNDER `services/` NAMES IT**
+
+`message_events` holds **0 rows**. 051-1 recorded *"zero occurrences of `message_events` under
+`services/`"*; there is one now — `services/ingester/src/metering.itest.ts`, an
+`ALTER TABLE … DELETE` in a test's cleanup. **The only code in the services tree that names
+the table is code that deletes from it.** Three of FR-ANL-05's four quantities still come from
+it, so this chapter's reconciler reports a 100% discrepancy for messages the moment a tenant
+has analytical rows at all.
+
+## 051-2 — Constitution III forbids the only way to demonstrate its own clause — **SUPERSEDED BY 052-6**
+
+Met from the other side this chapter and carried forward with what it gained: ADR-06's
+accepted trade-off already assumed the cross-path read. See 052-6.
+
+## 051-3 — `pnpm test:integration` reports one failure where several lanes fail — **SECOND READING, AND IT IS WORSE THAN A SUMMARY BUG**
+
+Two features have now had to work around this. Feature 051 found one `FAIL` line against
+`Tasks: 6 successful, 9 total`; this chapter's T008 and T069 both ran the four lanes directly
+rather than trusting the summary, and T008's task text says to.
+
+**THE SECOND READING IS WORSE THAN A SUMMARY BUG: THE GATE DOES NOT RUN TWO THIRDS OF WHAT IT
+CLAIMS TO.** Measured this chapter, with `--dry=json` for the plan and the run's own output for
+what happened:
+
+    planned                    18 tasks  (9 build + 9 test:integration)
+    attempted                   9 tasks
+    integration lanes that ran  3 of 6   api · ingester · test-harness
+    never started               3        gateway · dispatcher · e2e
+    summary                     Tasks: 7 successful, 9 total
+                                Failed: @relay/api#test:integration
+
+`pnpm test:integration` is `turbo run test:integration --concurrency=1`, and turbo stops
+scheduling when a task fails. The api lane has been red since chapter 4.4 (050-8), **so every
+lane ordered after it has not executed under this command since that chapter shipped** — the
+gateway's 225 tests among them. Run directly on the same tree minutes earlier, the gateway lane
+had a failure of its own; the gate reported one failing package.
+
+`Tasks: 7 successful, 9 total` is the line a reader sees, and it reads as *"seven of nine
+passed"* rather than *"nine of eighteen were attempted and the rest were abandoned."*
+
+Closes with `--continue`, or per-package reporting. **Until then the workaround is the
+documented procedure**, which is the part worth noticing: four commands where the repository
+provides one, and a reader following the tutorial runs the one.
+
+## 051-4 — Two rollups now, and nothing checks they agree — **AND THEY DO NOT**
+
+Filed as a missing check. Asked directly:
+
+    daily_usage_v2        80 connection-minutes ·  0 messages
+    daily_usage_billing  176 connection-minutes · 32 messages
+
+052-3 explains it: the ingester suite's cleanup reaches `daily_usage_v2` and not
+`daily_usage_billing`. **A missing check filed one chapter ago now has a measured
+disagreement to find**, which is the argument for writing it.
+
+## 051-5 — A backfill cannot recover what the TTL already took — **UNCHANGED, AND MEASURED FROM THE OTHER END**
+
+This chapter's T044 probe is the same effect at the row level: 92 calendar days inserted, the
+oldest day removed whole and 53 rows removed from the next, **and nothing deleted at all until
+a merge was forced**. A rollup computed before that merge is permanently ahead of its source by
+exactly the rows the merge took.
+
+## 051-6 — The excerpt-as-whole-body trap — **DID NOT RETURN, AND A SECOND FORM DID**
+
+No excerpt in this chapter carries a `title=`. A different format defect cost the same two
+attempts: a `diff` hunk pasted complete from `git diff -U6`, with its `--- a/` and `+++ b/`
+headers, took the chain to 112 with `hunk pre-image matched 0 times — starts "-- a/compose.yaml"`.
+**The checker's fences carry the `@@` hunks only.**
+
+## 050-2 — The analytical store has no lane guard — **UNCHANGED, AND THIS CHAPTER LEANED ON THE CONVENTION HARDER THAN ANY BEFORE IT**
+
+Feature 030's sentinel guard covers seven Postgres tables and nothing in ClickHouse. This
+chapter planted 55 rollup rows against real lane environment ids and removed them by hand;
+nothing but the statements' own `WHERE environment_id` clauses stood between that and the
+whole table. Every statement named its ids and the cleanup was verified by count, which is a
+convention rather than a guard.
+
+## 050-3 — The vi chain is never compared to the tree — **UNCHANGED, AND TWO MORE FILES DRIFTED**
+
+`compose.yaml` and `vitest.coverage.config.mts` both changed this chapter and both carry
+Vietnamese fences (6 and 11). The vi chain stops at part-4 chapter 3, so there is no
+Vietnamese 4.7 to carry the amendment, and `check-fence-chain.mjs:265` iterates `en.state`.
+Both vi copies are further from the platform than they were and every gate is green.
+
+## 050-4 — Eleven HEAD problems are fences whose title names no file — **UNCHANGED, AND USED**
+
+Re-counted: **11 of 36**. They can never be repaired by editing the platform, so 25 is the
+number a chapter is actually measured against, and this chapter's close of 110 with delta 0
+is a claim about the 25.
+
+## 050-5 — A clean stop publishes a ledger saying connections are still open — **CONFIRMED, AND IT IS NOW A CLAUSE-LEVEL PROBLEM**
+
+44 of 99 connections in the store hold an open and no close. This chapter measured what that
+costs FR-ANL-06: the two connection-minute counters are over different populations, so the
+0.1% bound cannot hold for that quantity while any deploy leaves established sockets to the
+process exit. SRS revision 1.14 records it.
+
+## 050-6 / 050-7 — `internal.test.ts` has no base, `bound-port.test.ts` diverged before 4.5 — **UNCHANGED**
+
+Both still in the APPLY and HEAD counts respectively; neither is reachable from this chapter.
+
+## 050-8 — 4.4's integration suite needs a process no gate starts — **CONFIRMED IN EVERY RUN OF THIS FEATURE**
+
+`request-log.itest.ts` failed 5 of 5 in every lane run this feature made, at 5,001 ms each —
+the poll deadline, with no ingester draining. It is the one stable member of the api lane's
+red set.
+
+## 048-2 — `message_events.delivery_latency_ms` still has no producer — **UNCHANGED**
+
+Zero files under `services/` write it. FR-ANL-10's chapter is next in this movement.
+
+## 048-3 — `vitest.coverage.config.mts` cannot take a fence — **UNCHANGED, AND IT HID TWO EDITS**
+
+The file diverged at line 29 before Part 4 and carries 11 titled fences in each locale. This
+chapter added `reportOnFailure` and three per-file pins to it and **the fence delta did not
+move**, because a checker reports the first failure per file. The zero is real and it counts
+one divergence where there are now three.
+
+## 048-5 — No gate checks that a chapter's tag matches the chapter — **UNCHANGED**
+
+`part4-ch7` is cut by hand at this chapter's close, exactly as the six before it, and
+`relay-platform/README.md:8` still promises a correspondence nothing verifies.

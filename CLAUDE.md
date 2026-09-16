@@ -28,53 +28,117 @@ history; the replaced history is preserved on the remote as the tag
 tags. **Anyone holding an older clone of `relay-platform` must reset rather than pull.**
 
 <!-- SPECKIT START -->
-**ACTIVE: 052 — CHAPTER 4.7, "the job that checks the meter".** Plan:
-`specs/052-chapter-4-7/plan.md`; **`research.md` first — eight of its ten items were measured
-and two changed the job's shape.** Seven phases, MVP at 1–4.
+**052 IS CLOSED at 87 of 87 — CHAPTER 4.7, "the job that checks the meter".** Its record is
+`specs/052-chapter-4-7/` — `baseline.txt` first, then `gaps.md` (**23 entries: 7 new, 15
+carried and re-measured, and 047-1/048-1 closed by amendment**), `traceability.md`, `tasks.md`.
+Tagged **`part4-ch7`**.
 
-**`docs/12` ROW 8, MOVEMENT IV, AND NO §7 ENTRY OWNS IT.** *"FR-ANL-06's reconciliation job,
-built to be callable in isolation (§2.3)."* The clause: *"Metered totals shall agree with counts
-derived from operational data to within 0.1%, verified by a daily reconciliation job that raises
-an alert on breach."*
+    the aggregate 0.2630% · 49 of 1,385 tenant-periods over the bound · 0 non-fixture
+    uniq exact to 65,536 · 0.5676% at 65,537                    the cliff is one user wide
+    the TTL gap is 0% at midnight and 1.0989% before the next   047's 0.49% is one point on it
+    check:fences 110 -> 110, delta 0 · 2,265 prose words · 11 gates · 33 tests · SRS 1.14
 
-**THE JOB'S FIRST HONEST RUN FAILS FOUR WAYS, AND THREE ARE NOT THE ANALYTICAL PATH'S FAULT.**
+**FR-ANL-06 CANNOT PASS, AND THREE OF THE FOUR REASONS ARE NOBODY'S FAULT.** So the chapter's
+product is a clause amendment, not a green number. SRS 1.14 states which operational table the
+job means per quantity, that the comparison is per tenant, that absence has verdicts of its
+own, and where its own bound is unreachable. **Amending the requirement is the whole of what a
+chapter can do about an obstacle that is a design decision.**
 
-    message_events has no producer       analytical 0 vs operational 9,624     100%
-    uniq is approximate above ~65,000 distinct                                 0.51%
-    the TTL boundary, at any cardinality                                       0.49%
-    two OPERATIONAL counters disagree with each other                        0.2694%
+**"COUNTS DERIVED FROM OPERATIONAL DATA" IS NOT ONE NUMBER.** `messages` through `channels`
+holds 19,012 and `usage_periods.messages_sent` holds 18,962 — 0.2630% aggregated, **49 of
+1,385 tenant-periods over the bound**, and every disagreement attributable to a fixture. **Two
+mechanisms pushing opposite ways**: a raw `INSERT INTO messages` bypasses the counter (seven
+call sites), and `history-drift.itest.ts:85`'s hard `DELETE FROM messages` removes a row the
+counter already counted. **0 of 1,385 disagree for a non-fixture reason**, because `sendMessage`
+writes the message and increments the counter in one transaction.
 
-**THE FOURTH IS NEW AND IT RESHAPED THE JOB.** *"Counts derived from operational data"* is not
-one number: `messages` holds **9,650** and `usage_periods.messages_sent` holds **9,624**. And
-the aggregate hides the shape — **0.2694% overall, 19 tenants over the bound, one tenant wrong
-by 100%**, on 31 environments at an identical 70-against-68. **A reconciler that aggregates
-before its verdict reports a number nobody would question.** So it compares one tenant at a
-time, and the report names which operational table it used and publishes the gap to the other.
+**AND 1,317 TENANTS ARE ONE-SIDED, WHICH IS ALL OF THEM.** 4 environment ids in
+`daily_usage_billing`, none of which exist in Postgres at all; 1,313 with operational usage and
+none with a rollup row. `not-comparable` and `no-data` are not edge cases here — they are the
+answer, and collapsing them into "missing data" lets the platform's largest defect read as an
+absence of evidence.
 
-**AND 671 OF 675 TENANTS HAVE ONE SIDE ONLY** — 4 environments in `daily_usage_billing`
-against 675 in `usage_periods`. `not-comparable` and `no-data` are verdicts of their own,
-because collapsing them into "missing data" lets the platform's largest defect read as an
-absence.
+## BOTH OBVIOUS WAYS TO PLANT A 0.1% DRIFT PASS
 
-**THE COUNTER IS AN INCREMENT FOR A MEASURED REASON**, and it is the argument against the other
-candidate: `repository.ts:4325` — *"the alternative is a read over `messages`, which carries no
-`environment_id` and no index on `created_at` … proportional to lifetime traffic forever."* 4.1
-measured that read at 585.9 ms over 1,000,000 rows.
+Against an operational 100,000, measured against the real job:
 
-**§2.3 ALREADY SPLIT THE MILESTONE AND THE PLAN OBEYS IT.** *"0.1% of a small number is an
-assertion that cannot fail for its own reason"* — so the lane gets a **planted-drift** gate and
-the 0.1% figure is measured **once, at real volume**. Agreement belongs to the milestone at 4.9,
-not here.
+    99,900   -100   0.100000%   pass      "0.1% under" — the naive shortfall
+    99,899   -101   0.101000%   breach
+   100,100   +100   0.099900%   pass      "0.1% over"  — the naive excess
+   100,101   +101   0.100898%   breach
 
-**AND A RECONCILER CANNOT OBEY CONSTITUTION III WHILE DOING ITS JOB.** The clause says billing,
-metering and dashboard analytics read only from ClickHouse; FR-ANL-06 requires comparing against
-Postgres. The reading that makes both true is that **the reconciler is none of those three
-roles** — an auditor confined to one side of a fence cannot check the fence — and that reading
-is written down nowhere. Second conflict in this family after 051-2.
+`max(a, o)` is the denominator and the comparison is `<=`, so **the smallest breaching drift is
+101 in both directions** and a drift computed off the smaller side lands inside the bound.
+Changing `<=` to `<` turns exactly one test red, which is how you know the boundary cases sit
+ON the bound. **AND THE THRESHOLD HAS NO RESOLUTION AT LANE SCALE**: at a tenant's real nine
+connection-minutes the smallest possible drift is **11.11%**, a hundred times the bound — every
+drift breaches, so a green 0.1% assertion there claims nothing drifted at all.
 
-**047-1 AND 048-1 ARE THIS CHAPTER'S TO CLOSE OR RESTATE.** Filed *for movement IV*, carried
-through four features: `uniq` off by 0.51% at 70,000 against a 0.1% bound, and the TTL boundary
-at 0.49% at any cardinality.
+    volume        9    100    1,000   10,000   100,000
+    smallest      1      1        2       11       101
+    as a %   11.111  1.000    0.200    0.110     0.101
+
+## `pnpm coverage` WAS ANSWERING WITH SILENCE, AND HAD SINCE 4.4
+
+`coverage.reportOnFailure` defaults to **false**, so one red test suppresses the whole report:
+no table, no per-file threshold errors, no `coverage/` directory — only `Coverage enabled with
+v8`. Run both ways over the same three files: green printed the table and every threshold
+error, one red printed neither. `request-log.itest.ts` has been red on any machine with no
+ingester since 4.4 (050-8). **Silence is indistinguishable from a pass at a glance.** Turned on,
+and the first reporting run found `services/ingester/src/shape.ts` failing its 100% pin at
+95.12 — left at 100 rather than lowered, because this chapter made it visible rather than
+measuring it down.
+
+**AND `pnpm test:integration` RUNS THREE OF ITS SIX LANES.** `--dry=json` plans 18 tasks; the
+run attempts **9** and prints `Tasks: 7 successful, 9 total`. `--concurrency=1` means turbo
+stops scheduling at the first failure, so **every lane ordered after the api has not executed
+under that command since 4.4** — the gateway's 225 tests among them, and the gateway lane had a
+red of its own that run. 051-3 read this as a summary that collapses lanes; it is worse.
+
+## READ THE CLAUSES, AND ONE OF THEM POINTED AT NOTHING
+
+**`FR-003a` IS NOT A CLAUSE, AND TWO PUBLISHED DOCUMENTS CITED IT AS ONE.** `docs/04-srs.md`'s
+DR-09 and `docs/05-sad.md:879` both wrote it as a requirement id. **There is no `FR-003` in the
+SRS**; `FR-003a` is feature-local and four features use it to mean four different things. And
+the sentence it sat in was false: *"the rollups carry no TTL"*, when 4.6 gave both a 25-month
+TTL **in the same feature that paragraph was written in**.
+
+**AND ADR-06 HAD ASSUMED CONSTITUTION III's ANSWER ALL ALONG.** Its accepted trade-off reads
+*"mitigated because the only strict consumer (metering) reconciles daily against Postgres
+(FR-ANL-06)"* — so the cross-store read is **the mitigation that makes choosing NATS over Kafka
+acceptable**, not an oversight. Five features cited both documents without reading them beside
+each other. The reading that holds: **the reconciler is none of the three roles III names — an
+auditor confined to one side of a fence cannot check the fence.** Recorded in SRS 1.14 and the
+SAD; the amendment is still the constitution's (`gaps.md` 052-6, after 051-2).
+
+## WHAT RUNNING IT COST, AND EVERY ONE WAS AN INSTRUMENT
+
+- **A LINT RULE IS A CONSTITUTION CLAUSE.** The Postgres read went inline in `metering/` and
+  failed: *"'drizzle-orm' import is restricted … the query engine lives inside the repository
+  layer only (constitution I, ADR-16)"*. **The plan put the job in the api BECAUSE the api owns
+  the repository and never noticed the wall between them.** It lives in `db/usage-reads.ts`.
+- **4.6's FACT RAN THE OTHER WAY.** *A bare aggregate with no `GROUP BY` always returns exactly
+  one row* — 4.6 used it to delete a guard; here it made an empty result set unreachable, so
+  "holds nothing" and "holds zero" became the same answer. `count()` is the first column now.
+  And the arm is reachable for a non-aggregate: `SELECT 1 WHERE 0` really does answer `[]`.
+- **A `diff` FENCE CARRIES THE `@@` HUNKS ONLY.** Pasted complete from `git diff -U6`, the
+  `--- a/` and `+++ b/` headers are read as body text: 112 problems, `hunk pre-image matched 0
+  times — starts "-- a/compose.yaml"`. Dropping two lines took it to 110, delta 0.
+- **A GLOB IS AN INSTRUMENT.** The coverage-pin sweep's first run named 17 pins unbindable and
+  **all 17 are real files**: `git ls-files 'services/*/src/**/*.ts'` misses every file directly
+  in a `src/`, where picomatch — which is what vitest uses — matches it. 53 pins, 53 binding.
+- **`pnpm -s <script>` REPORTS RED FOR A GREEN GATE.** All four tutorial gates read RED under
+  `-s` and GREEN under `pnpm run`. Every figure was re-taken.
+- **A FIRE-AND-FORGET `ALTER … DELETE` LEFT A ROW FROM AN EARLIER RUN.** Issued by hand the same
+  statement removed it in under four seconds. **What the fire-and-forget form lacks is evidence
+  that it ran**, so the cleanup polls AND asserts a count of 0.
+- **A TITLE OVERCLAIMED AND THE AUDIT CAUGHT IT.** *"however much analytical data exists"*
+  asserted only the empty case. Fixed by making the title true. 33 tests audited, 0 with no
+  assertion, 0 conditional.
+- **AND AN EDIT WAS INVISIBLE TO THE FENCE CHAIN.** `vitest.coverage.config.mts` gained four
+  changes and the delta did not move, because **a checker reports the first failure per file**
+  and that file has diverged at line 29 since before Part 4 (048-3). The zero is real and it
+  counts one divergence where there are now three.
 
 **051 IS CLOSED at 94 of 94 — CHAPTER 4.6, "the rollup nobody read".** Its record is
 `specs/051-chapter-4-6/` — `baseline.txt` first, then `gaps.md` (**15 entries: 6 new, 8

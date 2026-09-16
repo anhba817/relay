@@ -726,3 +726,158 @@ T057 — THE GATES
   only instrument for it — `check-revision-order` reads the table and never the header, and
   1.13 reproduced that defect one revision after recording it. Source and mirror both read
   `**Version:** 1.14 (draft)` and the table's last row is 1.14.
+
+
+═══════════════════════════════════════════════════════════════════════════════
+PHASE 7 — THE CHAPTER (T058-T076).
+═══════════════════════════════════════════════════════════════════════════════
+
+T058 — THE TITLE AND SLUG, FOUR STRINGS, FIXED ONCE
+    directory   relay-tutorial/app/(en)/part-4/chapter-07/the-job-that-checks-the-meter/
+    manifest    path  "/part-4/chapter-07/the-job-that-checks-the-meter"
+    manifest    title "The job that checks the meter"
+    mdx         metadata.alternates.canonical "/part-4/chapter-07/the-job-that-checks-the-meter"
+
+  `docs/12` §3 row 8's title is taken as written. The last three chapters all renamed
+  themselves; this one did not need to, because the brief's title survived what the chapter
+  found.
+
+T059/T062/T063/T064 — THE DRAFT
+    prose words outside code fences   2,265     (bound 2,000-4,000)
+    <Trap> boxes                          2     (FR-021 asks for at least one)
+    figures                               3     all mermaid sources in figures.ts, passed as code=
+    titled fences                         4
+
+  Every number in every figure is from this file. The two Traps are the aggregate that hides
+  49 breaches, and the boundary — both obvious ways to plant a 0.1% drift produce a pass.
+
+T060 — REGISTRATION, AND THE ANCHOR WAS CHECKED FOR UNIQUENESS FIRST
+  `lib/tutorial.ts` gained 4.7. The edit asserted its anchor occurs exactly once before
+  writing — 4.4's registration edit matched two anchors, was refused, and `pnpm build` then
+  said `Error: Unknown chapter id: 4.4` at 112 of 112 with eight gates green. `pnpm build`
+  renders 121 pages including `/part-4/chapter-07/the-job-that-checks-the-meter`, exit 0.
+
+T065/T066/T068 — THE FENCE CHAIN, BACK TO THE OPENING
+    T006 opening   110   APPLY 74 · HEAD 36
+    phase 3        111   APPLY 74 · HEAD 37   (+1, compose.yaml differs at line 150)
+    close          110   APPLY 74 · HEAD 36   delta 0
+
+  Four titled fences: three new files published as whole bodies — `metering/reconcile.ts`,
+  `db/usage-reads.ts`, `scripts/reconcile-usage.mjs` — and one `diff` hunk against
+  `part4-ch6` for `compose.yaml`, which pays phase 3's debt exactly as T026a predicted.
+
+  **THE HUNK FAILED FIRST, AND THE FORMAT IS THE REASON.** Pasted from `git diff -U6`
+  complete, it took the chain to 112 with
+  `hunk pre-image matched 0 times — starts "-- a/compose.yaml"`. The checker's fences carry
+  the `@@` hunks ONLY; the `--- a/` and `+++ b/` headers are read as body text. Dropping the
+  two lines took it to 110.
+
+  AND ONE EDIT IS INVISIBLE TO THE CHAIN FOR A REASON WORTH KNOWING.
+  `vitest.coverage.config.mts` gained `reportOnFailure` and three pins and carries 11 titled
+  fences in each locale — and the delta did not move, because **a checker reports the FIRST
+  failure per file** and that file has diverged at line 29 since before Part 4 (048-3). The
+  zero is real and it hides two new divergences in a file already counted once.
+
+T067 — THE VIETNAMESE SIDE, FILED RATHER THAN REPAIRED
+    compose.yaml                  en 8 chapters · vi 6
+    vitest.coverage.config.mts    en 11 · vi 11
+    the three new files           en 1 each · vi 0
+
+  The vi chain stops at part-4 chapter 3, so there is no Vietnamese 4.7 to mirror into, and
+  `check-fence-chain.mjs:265` iterates `en.state` — the vi chain is replayed and compared
+  against the English chapter's fences, never against the tree (050-3). So the vi copies of
+  both edited files are further from the platform than they were this morning and every gate
+  is green.
+
+T069 — ELEVEN GATES
+    check:docs · check:srs · check:figures · check:errors          GREEN
+    pnpm build (tutorial) · pnpm build (platform)                  GREEN
+    lint · typecheck · test                                        GREEN
+    check:fences                                                   RED  110, delta 0
+
+    test:integration, by lane rather than by turbo's summary (051-3):
+      api            6 failed | 636 passed (642)
+      gateway        1 failed | 224 passed (225)
+      ingester                   19 passed  (19)
+      test-harness               41 passed  (41)
+
+  The api's six are `request-log` x5 (050-8, no ingester) and `limits` "does not count the
+  dispatcher" — the stable core that every run of this feature has produced. The gateway's one
+  is `typing.itest.ts` *"sends nothing at all after the signal"*: `only 0 of 1 typing frames
+  … saw connection.ack`, a frame that had not arrived, in the file that flaked in phase 4's
+  coverage run on a different test.
+
+  **AND THE HARNESS LANE IS GREEN AGAIN AT 41 OF 41**, which settles 052-4's character: the
+  organisation-count assertion fails when a neighbour's delete lands inside its window and
+  passes when it does not. It is a race, not a permanent red, which is why the class survives
+  — it is green most of the time.
+
+T070 — THE CARRIED LEDGER, RE-MEASURED
+    051-1  message_events rows                                        0
+           files under services/ mentioning it                        1  — and it is a TEST
+    051-4  daily_usage_v2      80 connection-minutes ·  0 messages
+           daily_usage_billing 176 connection-minutes · 32 messages   THEY DISAGREE
+    048-2  files under services/ writing delivery_latency_ms          0
+    050-4  HEAD problems of the "does not exist" class               11  of 36
+
+  **051-1 IS SHARPER THAN ITS FILING.** That entry recorded *"zero occurrences of
+  `message_events` under `services/`"*. There is one now — `metering.itest.ts`, a cleanup
+  statement in a test. The producer is still absent and the only code in the services tree
+  that names the table is code that deletes from it.
+
+  **051-4 MOVED FROM "NOTHING CHECKS" TO "AND THEY DISAGREE."** The entry was filed as a
+  missing check. Asked directly, the two rollups hold different totals — which 052-3 explains:
+  the ingester suite's cleanup reaches `daily_usage_v2` and not `daily_usage_billing`.
+
+T071 — 051-3's SECOND READING, AND THE GATE DOES NOT RUN TWO THIRDS OF WHAT IT CLAIMS TO
+    planned (turbo --dry=json)     18 tasks  (9 build + 9 test:integration)
+    attempted                       9 tasks
+    integration lanes that RAN      3 of 6   api · ingester · test-harness
+    never started                   3        gateway · dispatcher · e2e
+    what it printed                 Tasks: 7 successful, 9 total
+                                    Failed: @relay/api#test:integration
+    what the lanes actually say     api 6 failed | 636 passed
+                                    gateway 1 failed | 224 passed  ← never ran under the gate
+
+  `pnpm test:integration` is `turbo run test:integration --concurrency=1`, and turbo stops
+  scheduling once a task fails. **The api lane has been red since chapter 4.4 (050-8), so every
+  lane ordered after it has not executed under this command since that chapter shipped.**
+  Feature 051 read this as a summary that collapses lanes. It is not: three lanes' tests do not
+  run at all, and `Tasks: 7 successful, 9 total` reads as *"seven of nine passed"* rather than
+  *"nine of eighteen were attempted and the rest abandoned."*
+
+T072 — THE TWO THINGS THE CHAPTER CANNOT DECIDE
+  What a real alert costs is in `gaps.md` 052-5; whether the reconciler's cross-store read needs
+  a constitution amendment of its own is 052-6, with ADR-06's trade-off as the new evidence.
+
+T073 — THE TEST AUDIT, AND ONE TITLE OVERCLAIMED
+    tests added                33   (17 unit, 16 integration — one `it.each` of four)
+    tests with no assertion     0
+    conditional assertions      0
+    weakest assertion           `expect(b).toEqual(a)` — idempotence, which is what it claims
+
+  **ONE TITLE CLAIMED MORE THAN ITS BODY CHECKED.** *"calls the stored count not-comparable,
+  however much analytical data exists"* asserted only the empty case: the suite plants nothing
+  until the fourth test, so "however much" was never exercised. Fixed by making the title true
+  — the test now plants 250 messages, asserts the verdict is unchanged, and asserts the
+  analytical side really is present, so the verdict cannot be coming from emptiness. 16 of 16
+  pass.
+
+  That is the class this project files against itself — *"a title that overclaims is the same
+  defect"* — found by reading every title beside its body rather than by running anything.
+
+T074/T075/T076 — THE CLOSE
+    tasks                 87 of 87
+    gaps.md               23 entries — 7 new, 15 carried and re-measured, 047-1/048-1 closed
+    traceability.md       23 FR + 13 SC, every row naming an artifact
+    tag                   part4-ch7 on relay-platform
+    check:fences (final)  110 — APPLY 74, HEAD 36, delta 0
+
+  Nothing in the feature is undischarged. Two requirements are discharged in a weaker form than
+  their words suggest and both say so where they are claimed: FR-008's "raise" is an exit code
+  because no alerting exists, and FR-012's "0.1% figure" is a resolution rather than an
+  agreement, because three of the four quantities cannot reach the bound.
+
+  **THE CHAPTER'S PRODUCT IS A CLAUSE AMENDMENT.** SRS revision 1.14 is the only thing that
+  could be done about three of the four obstacles, and saying so is the difference between a
+  chapter that measured something and one that published a number.

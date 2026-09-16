@@ -129,25 +129,25 @@ not firing once it is removed.
 
 ## Phase 7: The numbers, and the chapter
 
-- [ ] T058 **Fix the chapter's title and derive its slug, once.** `docs/12` calls its titles provisional and the last three chapters all shipped different ones. Three places must agree exactly: the directory, the manifest `path`, and the MDX `metadata.alternates`. Record all four strings in `baseline.txt`.
-- [ ] T059 Draft the chapter at `relay-tutorial/app/(en)/part-4/chapter-07/<T058's slug>/page.mdx`. **At least one `<Trap>`** (FR-021). Candidates already measured: the aggregate that hides 19 breaches, zero against zero reading as agreement, and a reconciler that may only stand on one side of the fence it checks.
-- [ ] T060 Discharge **FR-020** and **SC-013**: register the chapter in `relay-tutorial/lib/tutorial.ts`. `<ChapterHeader id="4.7" />` throws on an unregistered id and **`pnpm build` is the only gate that notices** — 4.4 shipped at 112 of 112 with a site that did not build, and 4.6 reproduced it before registering.
-- [ ] T061 Discharge **FR-019**: do not re-derive 4.2's rollup mechanics, 4.6's two-rollup argument, or `docs/12` §4's two-counters argument. Cite them.
-- [ ] T062 [P] Put every mermaid source in `figures.ts`, never in `page.mdx`, and pass each as **`code=`**.
-- [ ] T063 [P] Take every number in a figure from `baseline.txt`. No checker reads prose.
-- [ ] T064 Discharge **FR-021** and **SC-012**: measure prose words outside code fences against the 2,000–4,000 bound and count the `<Trap>` boxes in the same pass. 4.6's first draft came in at 1,970 — thirty under the floor — and what closed the gap was a measurement already in `baseline.txt`.
-- [ ] T065 Publish new files as whole bodies and changed ones as `diff` hunks against `part4-ch6`. **A titled fence is a whole-body claim**: 4.6 published two partial quotes with a `title=` and the chain went 110 → 113 (051-6).
-- [ ] T066 Generate hunks from the checker's own replay, or from `git diff -U6 part4-ch6 -- <file>`. **Verify they apply before pasting.**
-- [ ] T067 For any file T007 flagged as a vi whole body, file it rather than repairing it — an English chapter cannot fix a Vietnamese fence and the checker will not report it broken either (050-3).
-- [ ] T068 Discharge **FR-022** and **SC-011**: report the fence close as a delta against T006's opening, by kind and locale, with the two HEAD classes split.
-- [ ] T069 Discharge **FR-023**: run all eleven gates. **Build before `check:errors`.** Diagnose every red against T008's opening **by running the suites directly**, because the integration gate's summary hides two thirds of its failures.
-- [ ] T070 Write `specs/052-chapter-4-7/gaps.md`. **Re-measure every carried item**: 051-1 through 051-6, and 050's and 048's survivors. *Measure the carried ledger; do not copy it.*
-- [ ] T071 In `gaps.md`, give **051-3 its second reading** — the integration gate that reports one failure where three lanes fail. T008 and T069 both had to work around it, which is two data points rather than one.
-- [ ] T072 In `gaps.md`, record what a real alert would cost (T037), and whether the reconciler's cross-store read needs a constitution amendment of its own (T053).
-- [ ] T073 Audit every test this feature added and confirm none asserts only that the job ran. Record the count audited. **A conditional assertion whose condition is asserted unconditionally above it is a narrowing, not a hole.**
-- [ ] T074 Write `specs/052-chapter-4-7/traceability.md` mapping every FR and SC to tasks and artifacts. **Record the requirements nothing discharged**, if any.
-- [ ] T075 Rewrite `CLAUDE.md`'s `<!-- SPECKIT -->` block for the close, including every task premise this feature falsified by running it.
-- [ ] T076 Commit phase 7, tag `part4-ch7` on `relay-platform`, and push all three repositories.
+- [X] T058 **Fix the chapter's title and derive its slug, once.** `docs/12` calls its titles provisional and the last three chapters all shipped different ones. Three places must agree exactly: the directory, the manifest `path`, and the MDX `metadata.alternates`. Record all four strings in `baseline.txt`.
+- [X] T059 Draft the chapter at `relay-tutorial/app/(en)/part-4/chapter-07/<T058's slug>/page.mdx`. **At least one `<Trap>`** (FR-021). Candidates already measured: the aggregate that hides 19 breaches, zero against zero reading as agreement, and a reconciler that may only stand on one side of the fence it checks.
+- [X] T060 Discharge **FR-020** and **SC-013**: register the chapter in `relay-tutorial/lib/tutorial.ts`. `<ChapterHeader id="4.7" />` throws on an unregistered id and **`pnpm build` is the only gate that notices** — 4.4 shipped at 112 of 112 with a site that did not build, and 4.6 reproduced it before registering.
+- [X] T061 Discharge **FR-019**: do not re-derive 4.2's rollup mechanics, 4.6's two-rollup argument, or `docs/12` §4's two-counters argument. Cite them.
+- [X] T062 [P] Put every mermaid source in `figures.ts`, never in `page.mdx`, and pass each as **`code=`**.
+- [X] T063 [P] Take every number in a figure from `baseline.txt`. No checker reads prose.
+- [X] T064 Discharge **FR-021** and **SC-012**: measure prose words outside code fences against the 2,000–4,000 bound and count the `<Trap>` boxes in the same pass. 4.6's first draft came in at 1,970 — thirty under the floor — and what closed the gap was a measurement already in `baseline.txt`.
+- [X] T065 Publish new files as whole bodies and changed ones as `diff` hunks against `part4-ch6`. **A titled fence is a whole-body claim**: 4.6 published two partial quotes with a `title=` and the chain went 110 → 113 (051-6).
+- [X] T066 Generate hunks from the checker's own replay, or from `git diff -U6 part4-ch6 -- <file>`. **Verify they apply before pasting.**
+- [X] T067 For any file T007 flagged as a vi whole body, file it rather than repairing it — an English chapter cannot fix a Vietnamese fence and the checker will not report it broken either (050-3).
+- [X] T068 Discharge **FR-022** and **SC-011**: report the fence close as a delta against T006's opening, by kind and locale, with the two HEAD classes split.
+- [X] T069 Discharge **FR-023**: run all eleven gates. **Build before `check:errors`.** Diagnose every red against T008's opening **by running the suites directly**, because the integration gate's summary hides two thirds of its failures.
+- [X] T070 Write `specs/052-chapter-4-7/gaps.md`. **Re-measure every carried item**: 051-1 through 051-6, and 050's and 048's survivors. *Measure the carried ledger; do not copy it.*
+- [X] T071 In `gaps.md`, give **051-3 its second reading** — the integration gate that reports one failure where three lanes fail. T008 and T069 both had to work around it, which is two data points rather than one.
+- [X] T072 In `gaps.md`, record what a real alert would cost (T037), and whether the reconciler's cross-store read needs a constitution amendment of its own (T053).
+- [X] T073 Audit every test this feature added and confirm none asserts only that the job ran. Record the count audited. **A conditional assertion whose condition is asserted unconditionally above it is a narrowing, not a hole.**
+- [X] T074 Write `specs/052-chapter-4-7/traceability.md` mapping every FR and SC to tasks and artifacts. **Record the requirements nothing discharged**, if any.
+- [X] T075 Rewrite `CLAUDE.md`'s `<!-- SPECKIT -->` block for the close, including every task premise this feature falsified by running it.
+- [X] T076 Commit phase 7, tag `part4-ch7` on `relay-platform`, and push all three repositories.
 
 ---
 
