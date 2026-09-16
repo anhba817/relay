@@ -32,6 +32,16 @@ files against itself: a decision nobody wrote down, taken by a default.
 | `endpoint` | route template | — | must be one of the templates the running router exposes |
 | `status` | integer | — | a valid HTTP status |
 
+**`endpoint` also accepts the literal `unmatched`**, which maps to `endpoint IS NULL` — the
+request that matched no route. The router contains no route for it, so a set derived from the
+router alone cannot express it, and it is the query a 404 investigation opens the log for: 32
+rows carry it today.
+
+**And a route retired later becomes unfilterable before it expires.** The accepted set is
+derived from the router as it is now; the log holds 30 days. Rows for a removed route are still
+returned and can no longer be named. Deriving the set from the data instead would cover them and
+costs a query per request; the window is stated here rather than discovered in a support ticket.
+
 **`endpoint` is validated against the live router, not escaped.** `AnalyticalStore.query` takes
 a SQL string and has no parameter binding, so this is the sharpest caller-supplied value the
 surface handles. The platform already derives the route set —
@@ -167,6 +177,20 @@ SETTINGS max_execution_time = N
 The **server limit is set shorter than the client's**, so the server's refusal wins the race
 and the route receives a code it can map. The other ordering yields an `AbortError` carrying
 nothing, and a refusal that names no cause is the empty page this contract refuses to send.
+
+### What this log cannot answer
+
+It records **no user and no channel**. The producer stores `principal_kind` — `application`,
+`user`, `platform`, `none` — which says what kind of caller made the request and never which
+one. So the surface answers *"what did this tenant call, and what happened"*, and it cannot
+answer *"what happened to this user"*.
+
+That second question is the one `docs/03-journey-map.md`'s Stage 8 names as the opportunity —
+*"per-user and per-channel message tracing for support investigations"*, against a pain point
+of *"no way to trace a specific user's reported problem."* FR-ANL-07's six fields never asked
+for it, so no clause is broken; a motivating document names a capability no requirement carried.
+Closing it needs a column, a producer change and the tenancy argument chapter 4.4 settled by
+recording a kind instead of an identity.
 
 ### How recent the answer is
 

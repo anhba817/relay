@@ -216,6 +216,13 @@ than what it says.
 
 ### Edge Cases
 
+- **A support engineer asks which requests one of their users made.** The log cannot say: it
+  records `principal_kind` and never an identity, so `user` is a category rather than a person.
+  The window, endpoint and status filters answer a different question well and this one not at
+  all.
+- **A caller filters for the requests that matched no route.** 32 rows carry a null endpoint,
+  and a filter validated against the router has no member for them — the router contains no
+  route for the request that matched none.
 - **A tenant reads their log immediately after making a request, and it is not there.** The
   data arrives through a durable queue and an ingester; FR-ANL-04 allows 60 seconds, and in this
   lane `compose.yaml` runs no ingester at all (`gaps.md` 050-8), so the log never updates
@@ -319,6 +326,10 @@ than what it says.
   FR-DSH-03 asks the dashboard's request log for all three and EIR-DSH-02 permits the dashboard
   no other source, so a surface offering only a time range makes that clause unbuildable. An
   unknown endpoint shall be refused rather than answered with an empty page.
+- **FR-037**: The chapter shall state which questions this log can and cannot answer. It
+  records no user and no channel, so it answers what a tenant called and what happened, not
+  what happened to one of their users — which is the capability `docs/03-journey-map.md`'s
+  Stage 8 names as the opportunity.
 - **FR-036**: Where a published clause requires detail this platform deliberately does not
   record, the clause shall be amended rather than left standing. FR-ANL-07 was amended to
   forbid recording request and response bodies; FR-DSH-03 still asks the dashboard to show
@@ -390,6 +401,8 @@ than what it says.
 - **SC-022**: Filtering by endpoint and by status is shown by a test, including an unknown
   endpoint refused rather than answered empty, with the cost measured against the unfiltered
   read.
+- **SC-024**: The chapter states what the log cannot answer, and `gaps.md` carries the
+  journey-map gap with the cost of closing it.
 - **SC-023**: FR-DSH-03 is amended or the conflict is recorded, with FR-ANL-07's own reasoning
   cited rather than restated.
 - **SC-021**: The new integration suite runs in CI, shown by the workflow providing the store

@@ -728,3 +728,57 @@ derived set is not caller text reaching a SQL string.
 seconds, against FR-ANL-04's sixty, over a queue-fed store. The gap is **30x** rather than
 rhetorical, and it belongs to the dashboard chapter with that figure attached.
 
+---
+
+## R29 — THE LOG ANSWERS A DIFFERENT QUESTION FROM THE ONE THE JOURNEY MAP ASKS
+
+`docs/03-journey-map.md` and `docs/02-personas.md` are cited by **no artifact of this feature**.
+Mai's Stage 8 — Operate:
+
+    pain point    "No way to trace a specific user's reported problem"
+    opportunity   "Per-user and per-channel message tracing for support investigations"
+
+`api_requests`, every column:
+
+    environment_id · ts · request_id · endpoint · method · status
+    latency_ms · principal_kind · refused_at · limited_operation
+
+**No user. No channel.** `principal_kind` says `application`, `user`, `platform` or `none` — a
+category, never a person. So this surface answers *"what did this tenant call and what
+happened"* and cannot answer *"what happened to this user."*
+
+FR-ANL-07's six fields never asked for the second, so nothing is broken. **A motivating document
+names a capability no requirement carried**, and the chapter that builds the surface is where
+that becomes visible. Closing it costs a column on `api_requests`, a producer change in chapter
+4.4's `event.ts`, a migration, and the tenancy question 4.4 answered by recording a kind rather
+than an identity.
+
+**One premise checked clean in the same pass**: Journey 3, *"Priya resolves a dispute"*, has its
+starred stage at *"Reconstruct what happened"* and names four SRS decisions — tombstones,
+immutable edit history, server-assigned sequence numbers, complete history via API key. **None
+is this route's.** Priya reconstructs from message history, not from the request log.
+
+---
+
+## R30 — THE FILTER'S CLOSED SET HAS NO MEMBER FOR THE REQUEST THAT MATCHED NOTHING
+
+R28 made `endpoint` safe by validating it against the live router. Measured afterwards:
+
+    rows                  11,683
+    endpoint IS NULL          32
+    distinct endpoints        34
+
+**The router contains no route for the request that matched none**, so the closed set cannot
+express the 404 investigation — which is the question a support engineer opens a request log
+for. `unmatched` joins the set as an explicit member; it is closed-set like any other value, so
+the injection argument is unchanged.
+
+**And the set is derived from now while the data spans thirty days.** A route removed in a later
+release leaves rows that are returned and cannot be named until they expire. Deriving the set
+from `SELECT DISTINCT endpoint` in the window would cover them at the cost of a query per
+request; the choice and the window are stated rather than left to be found.
+
+**The pattern**: this is the third time in this feature that a repair created the next finding —
+pass 1's null fix covered one column of three, pass 2's duplicate test lacked the merge stop,
+and pass 10's safe filter lost the diagnostic value. *The fix is where the next defect is.*
+
