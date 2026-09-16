@@ -315,6 +315,10 @@ than what it says.
   route fails it.
 - **FR-030**: The response envelope shall match the one this API already serves for a paged
   read — the array named for the resource, with a cursor for each direction the query supports.
+- **FR-032**: The surface shall conform to the published REST interface requirements for a list
+  endpoint and an error response: opaque cursor pagination returning `next_cursor` and
+  `has_more`, and the five top-level error fields. Where the platform already diverges from
+  them, the divergence shall be filed rather than copied.
 - **FR-031**: Putting the analytical store on a customer request path shall be recorded as an
   architecture decision with its drivers, its rejected alternatives and **a reversal
   condition**, in both documents that hold an ADR. It is a new runtime dependency and a new
@@ -369,6 +373,8 @@ than what it says.
   own reads, are each asserted by a test and stated in the chapter.
 - **SC-018**: The cross-tenant access suite passes with the new route classified, shown by
   running it rather than by the entry existing.
+- **SC-020**: The response carries `has_more`, and an error response carries the five fields
+  EIR-API-04 names, each shown by a test.
 - **SC-019**: The architecture decision is recorded in `docs/05-sad.md` and
   `docs/06-adr-deep-dives.md`, carrying a reversal condition.
 - **SC-017**: The end-to-end lag between a request and its appearance in the log is measured

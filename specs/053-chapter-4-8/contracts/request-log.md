@@ -50,6 +50,7 @@ asking a reasonable question the data cannot answer.
   ],
   "next_cursor": "…",
   "prev_cursor": "…",
+  "has_more": true,
   "window": { "from": "…", "to": "…" },
   "retention_edge": "…"
 }
@@ -84,6 +85,15 @@ carried `next_cursor` alone while copying `direction: older | newer` from the sa
 - `latency_ms` is fractional. Rounding it to an integer would read `0` for three of four real
   requests (4.4, measured).
 - `next_cursor` and `prev_cursor` are null at the respective ends.
+- **`has_more` is required by EIR-API-06** — *"List endpoints shall use opaque cursor pagination
+  with `limit` and `cursor` parameters, returning `next_cursor` and `has_more`."* It reports the
+  direction the query ran, which is the only well-defined reading once `direction` is two-way,
+  and the `limit + 1` fetch below already computes it.
+  **`grep has_more` over the platform returns nothing**: `messages.service.ts` has not carried it
+  since chapter 2.4, so this is the first list endpoint to conform. It is added rather than
+  amended away, and the precedent settles which: EIR-API-04's worked example was brought to the
+  code in SRS 1.3 **because changing the shape would have been breaking under CON-05's
+  URL-versioning rule**. Adding a field is not breaking, so that argument does not reach here.
 - **The last page is known by asking for one row more than `limit` and dropping it**, which is
   the convention `repository.ts:3823` already states: *"ONE ROW MORE THAN ASKED FOR, which is
   how the caller learns whether there is a next page without a second count query. The extra
@@ -106,6 +116,12 @@ carried `next_cursor` alone while copying `direction: older | newer` from the sa
 | 401 | no credential |
 | 403 | a credential whose principal carries no `environmentId` |
 | 503 `analytics_unavailable` | **the analytical store did not answer within the deadline.** The API is up and this surface is not, which is the distinction constitution III's second clause turns on — and it is why the refusal is explicit rather than an empty page. An empty page would say the tenant made no requests, a claim about them rather than about the platform |
+
+The body carries the five fields **EIR-API-04** names, top-level and not nested: `code`,
+`message`, `docs_url`, `request_id`, and `field` where one applies. `ProtocolErrorFilter`
+already assembles exactly that — `docs_url: docsUrl(code)` and
+`request_id: String(res.getHeader("X-Request-Id") ?? "")` — so the route's work is to throw
+with the code named, and the test's work is to assert the five rather than the status alone.
 
 The 503 carries the code **`analytics_unavailable`**, registered in `ERROR_CODES`
 (`packages/protocol/src/codes.ts`) and documented in `docs/08-error-reference.md`, because

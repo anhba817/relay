@@ -610,3 +610,46 @@ the question. The non-goal is **message** search — `docs/01-product-vision.md`
 *"Moderation hooks, message search, native SDKs"* — so a filtered read of a request log does not
 touch it.
 
+---
+
+## R26 — SRS §3 GOVERNS EXACTLY WHAT THIS CHAPTER ADDS, AND EIGHT PASSES DID NOT OPEN IT
+
+**Counted.** Across every artifact of this feature, the non-FR identifiers cited were
+**NFR-SEC-06** and **NFR-SEC-09**. EIR citations: **zero**. SRS §3 is titled *"External
+interface requirements"*; this chapter adds an external interface.
+
+What §3.1 binds, read in full:
+
+| clause | what it says | state |
+|---|---|---|
+| EIR-API-03 | conventional statuses, *"…429, 500, **503**"* | **clean** — the refusal status is sanctioned, not invented |
+| EIR-API-04 | five error fields, **top-level, not nested** | the filter already assembles them; the contract said only what the body must NOT carry |
+| EIR-API-05 | `X-Request-Id` on every response | **clean** — `request-context.middleware.ts` sets it centrally |
+| EIR-API-06 | *"returning `next_cursor` **and `has_more`**"* | **`has_more` exists nowhere in the platform** |
+| EIR-API-07 | OpenAPI 3.1, complete for every public endpoint (P4) | no implementation anywhere; filed forward |
+
+**EIR-API-06 IS THE ONE THAT COST SOMETHING, AND IT COST IT AT PASS 6.** That pass fixed this
+chapter's envelope by matching `messages.service.ts` — which added `prev_cursor` and, in the
+same edit, carried the shipped endpoint's **non-conformance** with it. `messages.service.ts`
+has not returned `has_more` since chapter 2.4.
+
+**Decision: add it rather than amend the clause**, and the precedent decides which way.
+`protocol-error.filter.ts:85` records the only time this project moved an EIR to meet the code:
+
+> *"EIR-API-04's worked example wrapped these in an `error` key until this chapter checked what
+> the platform actually sends; it never sent that shape. Wrapping every error response would be
+> a breaking change and CON-05 makes breaking changes a URL-versioning event, so the document
+> was brought to the code — SRS 1.3."*
+
+The argument there was that the change **would be breaking**. Adding a field is not, so the
+escape does not reach EIR-API-06.
+
+`has_more` reports the direction the query ran — the only well-defined reading once `direction`
+is two-way — and the `limit + 1` fetch computes it already.
+
+**AND THE METHOD IS THE FINDING.** Matching what the codebase already does is a good instinct
+that produces conformity to a non-conforming precedent. It is the same failure as artifacts
+agreeing with each other rather than with the tree, one layer out: here the tree and the feature
+agreed with each other and not with the requirement. This project's rule is *read the clauses*;
+pass 6 read the code.
+
