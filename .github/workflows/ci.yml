@@ -44,10 +44,32 @@ jobs:
         options: >-
           --health-cmd "wget -q -O - http://localhost:8222/healthz"
           --health-interval 5s --health-timeout 3s --health-retries 10
+      # THE ANALYTICAL STORE, ADDED AT CHAPTER 4.8 — AND FOUR CHAPTERS OF WORK HAD
+      # NEVER RUN HERE. `ingest.itest.ts` (4.3), `request-log.itest.ts` (4.4),
+      # `metering.itest.ts` (4.6) and `reconcile.itest.ts` (4.7) all read
+      # `relay_analytics`, and this job provided postgres, redis and nats. The word
+      # `clickhouse` appeared nowhere in this file.
+      #
+      # THE IMAGE AND CREDENTIALS MATCH `compose.yaml` so a lane that passes locally
+      # passes here — the same argument the three above are chosen on. `CLICKHOUSE_DB`
+      # creates the database and does NOT make it the session default (chapter 4.2), so
+      # every statement names `relay_analytics` and `analytics/apply.mjs` below is what
+      # actually builds the schema.
+      clickhouse:
+        image: clickhouse/clickhouse-server:25.3
+        env:
+          CLICKHOUSE_USER: relay
+          CLICKHOUSE_PASSWORD: relay
+          CLICKHOUSE_DB: relay_analytics
+        ports: ["8123:8123"]
+        options: >-
+          --health-cmd "wget -q -O - 'http://relay:relay@localhost:8123/?query=SELECT%201'"
+          --health-interval 5s --health-timeout 3s --health-retries 20
 
     env:
       DATABASE_URL: postgres://relay:relay@localhost:5432/relay
       RELAY_REDIS_URL: redis://localhost:6379
+      RELAY_CLICKHOUSE_HOST: localhost
       RELAY_NATS_URL: nats://localhost:4222
       # The outbox relay stays off in the test lane, for the reason chapter 3.3
       # found the hard way: a background daemon draining the table two suites
@@ -109,30 +131,35 @@ jobs:
       - run: pnpm build
       - run: node services/api/dist/db/migrate.js
 
+      # THE ANALYTICAL SCHEMA, WHICH NOTHING ELSE CREATES. `CLICKHOUSE_DB` makes the
+      # database and not its tables; four chapters' suites read tables this statement
+      # runner is the only thing that builds (chapter 4.2).
+      - run: node analytics/apply.mjs
+
+      # ── THE ERROR REGISTRY GATE MOVED ABOVE THE LANE (chapter 4.8) ──────────────
+      #
+      # It used to run last in this job, after `pnpm test:integration`. There is no
+      # `continue-on-error` here, so a red lane meant this step never executed — and it
+      # is the gate that compares `ERROR_CODES` against `docs/08-error-reference.md` in
+      # both directions. A gate that exists and cannot be reached is the same as no
+      # gate. It needs only `pnpm build`, which ran above.
+      - run: node ../relay-tutorial/scripts/check-error-codes.mjs
+
       - run: pnpm test:integration
 
       # Constitution VI's measurable half. Runs both lanes again under
       # instrumentation, which is slower and is the only honest way to measure
       # code that integration tests reach.
-      - run: pnpm coverage
+      #
+      # `if: always()` FOR THE SAME REASON THE GATE ABOVE MOVED: this figure is what
+      # constitution VI's 70% clause is measured in, and without the guard it is skipped
+      # on exactly the runs where something is already wrong.
+      - if: always()
+        run: pnpm coverage
 
-      # Every error code the platform can emit has a section in the published
-      # reference, and every section names a code that exists — both directions,
-      # or a docs_url 404s for a customer and a retired code goes on being
-      # documented (chapter 3.12, SC-011, SC-012).
-      #
-      # A CI STEP, NOT A TURBO TASK, and not in `pnpm test`. Two measured reasons
-      # (R26): `docs/` sits above `$TURBO_ROOT$`, so it cannot be a turbo input,
-      # and a gate whose input turbo cannot see passes from CACHE after the
-      # reference changes; and relay-platform is independently clonable with a
-      # README promising its own checks pass from a clean checkout, where
-      # `../docs` does not exist.
-      #
-      # It runs HERE rather than in the tutorial job because it needs the protocol
-      # package's build output, which this job has and that one would need a
-      # second full install to get. The script itself uses only node builtins, so
-      # it needs nothing from the tutorial's dependency tree — only its path.
-      - run: node ../relay-tutorial/scripts/check-error-codes.mjs
+      # (The error-registry gate that used to close this job now runs above the lane;
+      # its full argument — why it is a CI step rather than a turbo task, and why it
+      # lives in this job rather than the tutorial's — is unchanged and sits there.)
 
   tutorial:
     name: relay-tutorial — build, docs drift, fence chain

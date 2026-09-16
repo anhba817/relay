@@ -1,0 +1,158 @@
+BASELINE — feature 053, chapter 4.8, "the log a customer can search"
+Lane: RELAY_POSTGRES_PORT=15432, ClickHouse 8123 relay/relay. Opened 2026-09-16.
+
+═══════════════════════════════════════════════════════════════════════════════
+PHASE 1 — PREMISES AND OPENINGS (T001-T012).
+═══════════════════════════════════════════════════════════════════════════════
+
+T001 — THE QUICKSTART, ALL EIGHT STEPS, AND STEP 2 CAUGHT STEP 1
+  Step 1 is `docker compose up -d`; step 2's positive control answered
+  `curl: (52) Empty reply from server`. **ClickHouse was up and not yet answering**, and the
+  control is what said so — the quickstart's own instrument working the first time it was run
+  as written. CI uses `--wait` and the quickstart does not. Polled to ready, then `SELECT 1`
+  -> `1`.
+
+T007 — THE TABLE, FROM THE SERVER
+    ORDER BY (environment_id, ts, request_id)
+    TTL     toDateTime(ts) + toIntervalDay(30)
+
+  FR-ANL-07's thirty days, not DR-09's ninety, exactly as `0005_connection_events.sql:4` says:
+  *"one TTL clause cannot express two."*
+
+T004 — THE THREE SHARES
+    total rows                    11,683
+    environment_id IS NULL         7,062   60.45%
+    attributed                     4,621   39.55%
+
+    of the attributed
+      /internal                    1,656   35.84%
+      /v1                          1,857   40.19%
+      other                        1,108   23.98%
+      endpoint absent                 22
+    endpoint absent, WHOLE TABLE       32   ← the figure T015c's filter has to reach
+
+T005 — PER-TENANT DISTRIBUTION
+    median 10 · p95 155 · max 208 · 152 tenants
+    busiest  af628f4e-8be5-497b-8793-9a8a8a011455, 208 rows
+
+T006 — THE TIE RATE
+    distinct (environment_id, ts) pairs   11,636
+    pairs holding more than one row           42
+    rows inside a tied pair                   89    0.76%
+    worst pair                                 3
+
+T007a — PARTS AND DUPLICATE KEYS, AND THE PROBE'S EFFECT IS VISIBLE
+    rows 11,683 · distinct keys 11,683 · duplicates 0 · active parts 1
+
+  **This is the state analysis pass 2's probe left**, not the state it found. That pass measured
+  11,684 rows against 11,683 keys over 2 parts — one duplicate — and then ran
+  `OPTIMIZE TABLE … FINAL` while testing the TTL question, which merged the table and removed
+  it. The finding is recorded and no longer reproducible here, which is why T035a plants its
+  own.
+
+T008 — `quantile` AT THE SIZES A PER-TENANT-PER-HOUR BUCKET ACTUALLY HAS
+    n        quantile(0.95)   quantileExact(0.95)    error
+       4            3.85              4            3.7500%
+      10            9.55             10            4.5000%
+      25           23.80             24            0.8333%
+      50           47.55             48            0.9375%
+     100           95.05             96            0.9896%
+     200          190.05            191            0.4974%
+     500          475.05            476            0.1996%
+
+  **R2 measured 0.9896% at n=100 and called that the worst. The real worst in this range is
+  4.50%, at n=10** — and the median tenant holds ten rows in total, let alone per hour. The
+  error does not fall monotonically with size either: 3.75% at four samples, 4.50% at ten,
+  0.83% at twenty-five. `quantileExact` is the decision and this table is why.
+
+T009 — `message_events`
+    rows 0 · files under services/ naming it 1 — `metering.itest.ts`, a cleanup statement
+
+  Unchanged from 4.7's close. The only code in the services tree that names the table is code
+  that deletes from it.
+
+T010 — `deliver.ts`, QUOTED RATHER THAN SUMMARISED
+    82:  const started = Date.now();      ← immediately before the fetch
+    104: const latencyMs = Date.now() - started;
+
+  The endpoint's response time and nothing else. R1 holds.
+
+T011 — THE FENCED FILES THIS FEATURE TOUCHES, COUNTED
+    services/api/src/app.module.ts                  en 11 · vi 11
+    packages/protocol/src/codes.ts                  en 12 · vi 12
+    vitest.coverage.config.mts                      en 11 · vi 11
+    services/api/src/isolation/targets.ts           en  6 · vi  6
+    packages/outsider/src/integrate.itest.ts        en  1 · vi  1
+    services/api/src/metering/clickhouse.ts         en  0 · vi  0
+    services/api/src/request-log/{event,middleware} en  0 · vi  0
+
+T003 — THE FENCE CHAIN AT THE OPENING, AND ONE FILE IS NOT LIKE THE OTHERS
+    110 problems — APPLY 74 · HEAD 36
+    HEAD splits 25 `differs at line` · 11 `does not exist in relay-platform`
+
+  **FOUR OF THE FIVE FENCED FILES THIS FEATURE EDITS ARE ALREADY HEAD PROBLEMS, AND THE FIFTH
+  IS NOT.**
+
+    packages/protocol/src/codes.ts          differs at line 209   edit is invisible
+    services/api/src/app.module.ts          differs at line  20   edit is invisible
+    services/api/src/isolation/targets.ts   differs at line 130   edit is invisible
+    vitest.coverage.config.mts              differs at line  29   edit is invisible
+    packages/outsider/src/integrate.itest.ts        CLEAN         **an edit costs the chain**
+
+  Seventeen analysis passes named the four invisible ones — T028d, T029c and T072 each say so —
+  and **none of them named the fifth**, which is the only one the checker can see. T035d edits
+  it. The cost is one, it is owed a `diff` hunk in phase 7, and it is recorded here rather than
+  discovered at the ratchet.
+
+T002 — EVERY GATE AT THE OPENING, ENUMERATED RATHER THAN COUNTED
+    relay-platform
+      pnpm build · lint · typecheck · test                      GREEN
+      api integration lane          6 failed | 636 passed (642)
+      gateway integration lane                225 passed (225)
+      ingester integration lane                19 passed  (19)
+      test-harness integration lane            41 passed  (41)
+    relay-tutorial
+      check:docs · check:srs · check:figures · check:errors     GREEN, none skipped
+      pnpm build                                                GREEN
+      check:fences                                              RED — 110, the inherited baseline
+
+  **AND THE SKIP-REFUSAL RAN AND HAD NOTHING TO REFUSE**, which is the positive control for it:
+  four of the six tutorial gates exit 0 when their corpus is absent, and each was checked for
+  the word `skipping` rather than for its exit code alone.
+
+T012 — THE API LANE'S INHERITED REDS, BY NAME
+    request-log.itest.ts   records a served request, against a non-zero floor
+    request-log.itest.ts   records an unmatched route with no endpoint, and says why
+    request-log.itest.ts   records the rate limiter's 429 at all, and names the operation
+    request-log.itest.ts   returns this tenant's rows and ZERO tenantless ones
+    request-log.itest.ts   tells a guard refusal from a handler response at the same status
+    limits.itest.ts        does not count the dispatcher, which reaches every environment
+
+  Six, all inherited: five are 050-8 (no ingester draining) over the table this chapter reads,
+  and the sixth has been red since before Part 4.
+
+T001a/T001b/T001c/T001d — CI, AND THE CORRECTION PASS 12 MADE TO PASS 9
+  All three jobs read. The `platform` job — which runs `pnpm test:integration`, `pnpm coverage`
+  and the error-registry gate — provided `postgres:18-alpine`, `redis:8-alpine`,
+  `nats:2.12-alpine` and **no ClickHouse**. The `outsider` job runs `docker compose up -d
+  --wait`, and compose's `clickhouse` carries no `profiles:` key, so it starts there. **Pass 9
+  published "CI has no ClickHouse" from a grep of `ci.yml`; the word lives in `compose.yaml`.**
+  A grep for a word is not a check for a capability.
+
+  Applied:
+    + a `clickhouse/clickhouse-server:25.3` service on the `platform` job, credentials and
+      `CLICKHOUSE_DB` matching `compose.yaml`, health-checked with a real query rather than
+      `/ping` (chapter 4.2's lesson)
+    + `RELAY_CLICKHOUSE_HOST: localhost` in the job env
+    + `node analytics/apply.mjs` after the Postgres migration — `CLICKHOUSE_DB` makes the
+      database and not its tables
+    ~ `check-error-codes.mjs` moved ABOVE `pnpm test:integration`. It used to close the job,
+      after a step that has been red since 4.4 and carries no `continue-on-error`, so the gate
+      that compares `ERROR_CODES` against the published reference **never executed**
+    ~ `pnpm coverage` gained `if: always()`, for the same reason
+
+  **WHAT CI STILL CANNOT DO (T001d).** `pnpm test:integration` is
+  `turbo run … --concurrency=1` and stops scheduling at the first failure: it plans 18 tasks,
+  attempts 9, and prints `Tasks: 7 successful, 9 total`. One red suite still hides every lane
+  ordered after it, in CI exactly as locally (`gaps.md` 051-3). Provisioning the store does not
+  fix that and this line exists so nobody reads it as fixed.
