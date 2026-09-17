@@ -172,6 +172,7 @@ clean fenced files it had not counted. **Fence counts are checked at phase 1, no
     file                                    fences en/vi  HEAD problem?  in the APPENDIX?
     scripts/scale/corpus.mjs                    0 / 0        —              no    free
     scripts/reconcile-usage.mjs                 1 / 0        no             no    chapter hunk
+    services/api/src/metering/reconcile.ts      1 / 0        no             no    chapter hunk
     compose.yaml                                8 / 6        no             no    chapter hunk
     services/api/src/limits/limits.itest.ts     1 / 1        no             no    chapter hunk
     package.json                                4 / 4        YES, line 15   YES   APPENDIX ONLY
@@ -185,6 +186,12 @@ clean fenced files it had not counted. **Fence counts are checked at phase 1, no
 
 **Counted, not remembered, and the last column is the one that decides where an edit goes.**
 `corpus.mjs` is free, which is why the harness extends it.
+
+**`services/api/src/metering/reconcile.ts` was added to this table at phase 2**, when the
+arithmetic landed there rather than in `scripts/`: a per-file coverage pin on a file no lane
+includes is silent — probed, both halves — so a harness function in `scripts/` would be
+unmeasured and unpinnable. It is chapter 4.7's own precedent, which moved `exitCodeFor` out of
+that script for the same reason.
 
 **THE GATE'S DEFINITION IS PUBLISHED IN THE APPENDIX AND NOWHERE ELSE** (R1a).
 `fences/post-series.md` carries a `package.json` hunk whose `-`/`+` pair **is the

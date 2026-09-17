@@ -207,3 +207,118 @@ T011b — NOTHING RUNS THE RECONCILER
   the corpus is named. **FR-ANL-06 asks for a daily job and there is no runner of any kind** —
   while the platform has five background loops, so the pattern exists and the reconciler is the
   one recurring job built as a hand-run script.
+
+═══════════════════════════════════════════════════════════════════════════════
+PHASE 2 — THE HARNESS'S ARITHMETIC, WITH NO STORE IN SIGHT (T013-T019).
+═══════════════════════════════════════════════════════════════════════════════
+
+T013/T014 — THE SMALLEST EXPRESSIBLE DRIFT, AND THE TWO DIRECTIONS ARE NOT THE SAME NUMBER
+  `smallestExpressibleDrift(volume, threshold = RECONCILE_THRESHOLD)` in
+  `services/api/src/metering/reconcile.ts`, returning `{ under, over }`. It **searches with
+  `differencePct`** rather than restating the closed form, so there is one copy of the rule
+  `verdictFor` applies.
+
+  **T006's table sampled six volumes and all six land on the agreeing side.**
+
+    volume      under    over
+       999          1       2    a surplus of one message PASSES; a shortfall BREACHES
+     1,000          2       2
+     1,017          2       2    the lane's largest tenant-period
+    10,000         11      11
+   100,000        101     101    chapter 4.7's published pair
+ 1,000,000      1,001   1,002    and every volume above a million differs
+
+  `max(analytical, operational)` is the denominator, so a surplus of `d` divides by
+  `volume + d` and a shortfall by `volume` — **the surplus is always the harder one to
+  breach.** 500,500 of the 999,999 volumes below a million differ, and every volume at or
+  above 1,000,000 differs. 999 is the first, which is **eighteen below the lane's largest
+  tenant-period and one below a row of the table**.
+
+  So chapter 4.7's *"the smallest breaching drift is 101 in both directions"* is true at
+  100,000 and is not a general fact, and phase 1's *"over and under give the same integer at
+  every volume"* is false. **Six samples agreeing is not a rule**; the function is, and it was
+  written by asking the comparison rather than by reading the table.
+
+  `under` is null at volume 0 — nothing can be short of nothing — and that state is reachable:
+  `usage_periods` holds 288 rows for 2026-08 with `messages_sent = 0`.
+
+  Eleven tests, each driving `verdictFor` at `d` and at `d - 1` rather than asserting the
+  integer alone. api unit lane 35 files / **369 tests**, green.
+
+T017 — BOTH INJECTIONS RUN RED, AND THE GUARD WENT WHERE NO CALLER CAN SKIP IT
+    --period "2026-09-01') OR 1=1 --"
+      Error: period must be YYYY-MM-01, got "2026-09-01')" — it is interpolated into an
+      analytical statement, where toDate() is not a guard
+    --environment "x' OR 1=1 --"
+      Error: environment id must be a UUID, got "x'" — it is interpolated into an analytical
+      statement, where toUUID() is not a guard
+    --period absent
+      Error: --period is required
+
+  **The check is inside `reconcile()`, not only in the script**, which is a change from the
+  contract's shape and strictly stronger: a guard on the caller protects that caller, a guard
+  on the function protects every caller there will ever be. `assertEnvironmentId` and
+  `assertPeriod` are exported so the script can refuse at parse time and name the flag — one
+  rule, two call sites, one implementation.
+
+T016 — THE ADDRESS, AND IT COULD NOT HAVE BEEN A PARAMETER
+    node scripts/reconcile-usage.mjs --environment <uuid> --period 2026-09-01
+      reconcile: <uuid> 2026-09-01 against postgres://localhost:15432/relay
+      …four rows, exit 0
+    …the same with --database postgres://relay:relay@localhost:15432/relay
+      byte-identical output
+
+  `--database` sets `process.env.DATABASE_URL` before the pool is built, because
+  `createPool()` takes no arguments and `pg` does not resolve from `scripts/` — the trap
+  `corpus.mjs` already records at its refusal path. The header line is new: **a figure copied
+  out of this output into a published document is unattributable without it**, and the point of
+  the flag is that the answer is no longer "the lane, obviously". The password is redacted.
+
+T015 — THE PREMISE IS FALSE, AND THE TASK IS THE THING THAT WAS WRONG
+  *"Add the counter-derivation as a pure function: given messages grouped by
+  `(environment_id, period)`, produce the `usage_periods` rows and the `usage_active_users`
+  rows."* **There is no point in the run at which those rows exist in Node.** `corpus.mjs`
+  writes messages with one `INSERT … SELECT FROM generate_series` per channel, and `created_at`
+  and `user_id` are chosen by `random()` inside the server — so which environment-month a row
+  landed in, and who sent it, is known only to PostgreSQL.
+
+  A pure function would therefore be **a second implementation of a `GROUP BY` that nothing
+  runs** — chapter 4.6's shape, one level down. The derivation is two statements against the
+  rows just written, and it moves to phase 3 where it belongs (T020/T021). What phase 2 owes it
+  instead is the positive control T026b already asks for, plus an independent recount, and that
+  is added there rather than pretended here.
+
+  **What is genuinely pure and genuinely used is `periodOf`, and it already exists.**
+  `quotas/period.ts` is UTC and says why: *"`date_trunc('month', now())` without a zone answers
+  September on a server running ahead of UTC on the last evening of August, and the row lands
+  in a period nobody reads."* The harness's SQL has to match it — `date_trunc('month',
+  created_at at time zone 'UTC')::date` — and that agreement is checkable only against a
+  database, which is phase 3's job and is written down here so it is not lost.
+
+T018 — THE COVERAGE DECISION, WITH BOTH HALVES OF THE PROBE RUN
+  **`scripts/` carries no per-file pin, and it carries no test either.** `corpus.mjs:167` says
+  *"Everything above is arithmetic and testable without one"*, the file exports
+  `readConfig` and `planFor`, and **nothing anywhere imports them**: no vitest project includes
+  `scripts/`, and `pnpm test` is turbo over packages, which `scripts/` is not.
+
+  The probe, both halves in one run — `scripts/scale/corpus.mjs` pinned at an impossible
+  `lines: 101` against a control of the real pins:
+
+    scripts/scale/corpus.mjs   lines 101%   **SILENT — no ERROR line at all**
+    services/api/src/metering/reconcile.ts   FIRED, 68.18% lines against its 100
+
+  So **a pin on a real file that no lane includes is as silent as 045's pin on a path that does
+  not exist.** A pin for `scripts/` would be a decoration, not a ratchet.
+
+  **THE DECISION: the arithmetic does not live in `scripts/`.** It went into
+  `services/api/src/metering/reconcile.ts`, which the coverage lane already measures and pins
+  at 96/100/100/100 — which is chapter 4.7's own precedent applied a second time: that chapter
+  moved `exitCodeFor` out of this same script *"so a test can ask it directly instead of a
+  human reading output"*. Making `scripts/` measurable is a lane change and a feature of its
+  own; **inheriting the absence without saying which of the two it is** is what this task
+  existed to prevent. Filed for `gaps.md`.
+
+T019 — THE GATES THIS PHASE CAN RUN
+    pnpm lint        0 errors, 1 warning — pre-existing, `session.perf.itest.ts:120`
+    pnpm typecheck   14 of 14
+    pnpm test        12 of 12 tasks · api 35 files / 369 tests · gateway 11 / 136
