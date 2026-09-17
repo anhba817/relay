@@ -322,3 +322,105 @@ T019 — THE GATES THIS PHASE CAN RUN
     pnpm lint        0 errors, 1 warning — pre-existing, `session.perf.itest.ts:120`
     pnpm typecheck   14 of 14
     pnpm test        12 of 12 tasks · api 35 files / 369 tests · gateway 11 / 136
+
+═══════════════════════════════════════════════════════════════════════════════
+PHASE 3 — BOTH SIDES, FOR ONE TENANT, AT VOLUME (T020-T029, US3).
+═══════════════════════════════════════════════════════════════════════════════
+
+T020/T021/T022 — THE COUNTERS, WRITTEN BY THE HARNESS FOR THE FIRST TIME
+  Two statements in `corpus.mjs`, over the rows it has just written:
+
+    usage_periods       (environment_id, date_trunc('month', created_at at time zone 'UTC'),
+                         count(*), 0)
+    usage_active_users  the same key plus user_id, `where m.user_id is not null`
+
+  `at time zone 'UTC'` matches `quotas/period.ts`, which is the one definition of which month
+  an instant belongs to and says why it is UTC. A counter written in the server's local month
+  is **invisible** to the reconciler — it asks for a period and gets `no-data`, which reads as
+  an absence of data rather than as a harness that put the row somewhere else.
+
+T021a — THE RECOUNT, AND THE CONTROL THAT SAYS THE LANE CANNOT SHOW THE ZONE FAILURE
+    sum(messages_sent) from usage_periods      389,277
+    count(*) from messages                     389,277      equal, or the run refuses
+    usage_active_users rows                     21,999
+    the same count derived by GROUP BY          21,999      equal, or the run refuses
+    periods with the UTC zone                        8
+    periods without it                               8      `show timezone` = UTC
+
+  The last pair is a control, not a check: **this lane's server runs UTC, so the two
+  expressions cannot disagree here.** Reported rather than asserted, because a green equality
+  between two identical things is not evidence the zone is unnecessary.
+
+T025 — THE CORPUS, TWICE, AND THE TIMING IS REPRODUCIBLE
+    run 1   relay_corpus_20260917151241   51,932 ms   389,277 messages   subject 353,889
+    run 2   relay_corpus_20260917151443   51,336 ms   389,277 messages
+    subject window 350,000 · 2,000 channels · 5,000 users · 2 environments · 91 days
+    periods 2026-06-01 … 2026-09-01, four of them, eight counter rows
+
+  **The largest tenant-period holds 121,057 messages**, where the smallest expressible drift is
+  **122 — 0.1008% under and 0.1007% over**, the first volume in this project's history where
+  0.1% is a threshold a whole number can sit either side of. The lane's own largest is 1,017,
+  where it is 0.197%.
+
+T026/T026a/T026b — THE ORDER, AND BOTH POSITIVE CONTROLS
+    apply.mjs first                    applied nothing / skipped 16 — the views already exist
+    load-analytics.mjs                 402,424 events, 573 ms
+    the analytical side, for THIS tenant-period:
+      count() 31 days · sum(messages) 121,057 · uniqMerge 5,000 · connection_minutes 0
+    the counter side, asserted before the reconciler was asked anything (T021a)
+
+  **The store before the load held 7 `daily_usage_billing` rows over 4 environment ids**, none
+  of which exists in Postgres — the state chapter 4.7 recorded, unchanged.
+
+T027 — THE VERDICT NO TENANT IN THIS PLATFORM HAS EVER PRODUCED
+    messages           analytical 121057  operational 121057   0.0000%  pass
+    activeUsers        analytical   5000  operational   5000   0.0000%  pass
+    connectionMinutes  analytical      0  operational      0   0.0000%  pass
+    storedMessages     analytical 285187  operational absent        —   not-comparable
+    exit 0
+
+  **And three of the four passes are not evidence, which is the table `docs/13` has to carry.**
+  `messages` is the measurement. `activeUsers` agrees by construction — `uniq` is exact below
+  65,536 and the corpus holds 5,000 users. `connectionMinutes` is **0 against 0**, which
+  `differencePct` returns 0 for because both-zero is agreement. `storedMessages` has no
+  operational source anywhere in the platform and never will until somebody adds one.
+
+T028 — INDEPENDENCE, SHOWN WITH BOTH CORPORA IN THE SAME STORE
+  The second corpus was built, loaded and reconciled while the first's 398,000 rows sat in
+  `relay_analytics`, and answered `121,057 → 120,904 pass` for its own tenant-period. The
+  first's verdict was then re-read and was **byte-identical**. The reconciler scopes by
+  environment id, so a neighbour corpus is a neighbour.
+
+T028a — THE CLEANUP, AND IT FOUND A TABLE NO DOCUMENT NAMES
+    .inner_id.3f6e34d9-d701-42a3-8d17-4190849c92e5       184
+    daily_usage_billing                                  184
+    daily_usage_v2                                   172,965
+    message_events                                   398,000
+    after                                                  0   ·  0.7 s  ·  0 mutations pending
+
+  **571,333 rows from one corpus run, in the lane's own store**, and the first entry is chapter
+  4.2's `daily_usage` — a `MATERIALIZED VIEW` with no `TO`, so its rows live in an inner table
+  whose name is a UUID. A hand-written list of tables would have missed it; the cleanup asks
+  `system.columns` which tables carry an `environment_id` and `system.tables` which of those
+  are not views. It polls `system.mutations` **and** counts, because a mutation is not a delete.
+
+**AND THE LOADER'S OWN REPORT WAS A WHOLE-TABLE COUNT, WHICH THE SECOND CORPUS EXPOSED.**
+`removed_by_ttl` is `events_sent - count(*)` over the whole store, so loading a second corpus
+beside the first printed:
+
+    removed_by_ttl   -393,562
+
+A negative TTL. **A delta between two totals is not a measurement of the thing that changed
+unless nothing else changed** (feature 046), and 045-74's whole-table-assertion class turns out
+to have a reporting half nobody had looked for. Every count in that script is scoped to the
+corpus's own environment ids now, which is also what makes the cleanup possible — the ids come
+from the handle, which is why `corpus.mjs` prints them.
+
+Re-run scoped, on the same corpus:
+
+    events_sent 402,424 · at insert 402,424 over 92 days, 4,446 already expired and present
+    after OPTIMIZE FINAL 397,978 over 91 days · removed_by_ttl 4,446 · removed_late 4,446
+
+**And the TTL behaved differently on the two loads of the same data**: the first removed its
+4,425 rows at INSERT, this one removed none there and all of them at the merge. Chapter 4.2's
+*"a schedule, not an event"*, now observed in both directions rather than one.
