@@ -596,3 +596,127 @@ T045 — THE LANES
     check:fences               112 -> 113, delta +1 — `integrate.itest.ts` at line 654,
                                the third and last of the clean fenced files this feature
                                edits. Total from the 110 opening: +3, all three named.
+
+═══════════════════════════════════════════════════════════════════════════════
+PHASE 5 — THE PERCENTILE REQUIREMENT, RESOLVED RATHER THAN APPROXIMATED (T046-T054).
+═══════════════════════════════════════════════════════════════════════════════
+
+T046/T047 — R1's THREE READINGS, VERIFIED IN THE TREE RATHER THAN COPIED
+    deliver.ts:82    const started = Date.now();            immediately before the fetch
+    deliver.ts:104   const latencyMs = Date.now() - started; immediately after it
+    deliver.ts:115   latency_ms: latencyMs                   and again at :126
+
+  So `webhook_attempts.latency_ms` is **the endpoint's response time and nothing else** —
+  no commit, no outbox, no JetStream, no claim, no retry gap. The schema said so when it
+  was written and nothing had checked since: `0003_webhook_attempts.sql:20` reads *"How
+  long the ENDPOINT took to answer. NOT `message_events.delivery_latency_ms`, which is how
+  long a message took to reach a client and still has no producer."*
+
+T048 — THE READING CHOSEN, AND THE TWO NOT CHOSEN
+  **Socket fan-out: commit → the frame written to a subscriber's socket.** It is the
+  real-time path constitution II is about, and it is the reading
+  `message_events.delivery_latency_ms` was created for — the schema comment above names it
+  by that description.
+
+  *Webhook delivery* is the last leg only and already has a column and a name; relabelling
+  it would publish a number under a name that means something else, which is what chapter
+  4.6 avoided by defining a connection-minute before billing one. *A REST history read* has
+  no delivery in it — a read nobody made has no latency, and it is pull rather than push.
+
+  Written into FR-ANL-10. The revision row is phase 6's (T060), so the clause moves once
+  for this whole feature rather than twice.
+
+T051/T053 — THE PRODUCER DOES NOT EXIST, AND 048-2 IS RESTATED RATHER THAN CLOSED
+    message_events                       0 rows · 0 rows carrying a latency
+    occurrences under services/          3 — and 4.7's re-measurement said 0
+
+  **THE THREE ARE NOT PRODUCERS.** All three are in `services/ingester/src/metering.itest.ts`:
+  a comment saying the table has no producer, a cleanup `DELETE`, and a test's own `INSERT`.
+  So the item holds and its wording does not: *"0 occurrences"* is now false and *"0
+  producers"* is what was always meant. **Re-measured rather than copied, which is what
+  found it** — six features have now carried this item.
+
+  **AND THE ONE THING THAT WRITES THE TABLE WRITES NULL INTO THAT COLUMN ON PURPOSE.**
+  `scripts/scale/load-analytics.mjs` names `delivery_latency_ms` in its column list and
+  supplies `CAST(NULL AS Nullable(UInt32))` for it, in both halves of its `UNION ALL`. That
+  is stronger evidence than an absence: the loader had the chance and declined.
+
+  What building it would cost: both instants carried across a service boundary — the commit
+  is the api's and the socket write is the gateway's — on the busiest path in the platform.
+  The same cost chapter 4.6 weighed and deferred for a different column.
+
+T049 — `quantile` HAS NO EXACT REGIME, AND ON A SKEWED SAMPLE THE ERROR GROWS WITH n
+  Uniform 1..n, against the server:
+
+    n        p50 err%   p95 err%   p99 err%
+    4        16.6667     3.7500     0.7500
+    10        8.3333     4.5000     0.9000
+    20        4.5455     4.7500     0.9500
+    50        1.9231     0.9375     0.9800
+    100       0.9804     0.9896     0.9900     ← R2's single published figure
+    155       0          0.4730     0.3506
+    171       0          0.3067     0.4118
+    1,000     0.0998     0.0999     0.0999
+    10,000    0.8998     0.1216     0.0900
+
+  **It is not monotone.** The p50 error falls to exactly 0 at n=155 and rises again by
+  n=10,000, so "it gets better with more data" is false and the zeros are a coincidence of
+  that distribution rather than a threshold.
+
+  And on a bounded skewed sample — which is what a latency is — it is worse and it climbs:
+
+    n        p50 err%   p95 err%   p99 err%
+    4         2.6162     0.8200     0.1640
+    20        3.4785     7.8642     1.5728
+    100       4.7263     9.0398     9.4206
+    1,000     4.7579     9.0404     9.4211
+    10,000    9.5158     9.5163     9.5163
+
+  **THIS IS THE OPPOSITE SHAPE FROM 4.7's `uniq`**, which is exact below 65,536 and wrong
+  above. There is no n above which `quantile` is safe.
+
+  AND THE SHARPEST FIGURE IS THE REAL ONE. `webhook_attempts`, the only latency sample this
+  platform holds, n=64:
+
+    quantile(0.50)  2          quantileExact(0.50)      2
+    quantile(0.95)  2001       quantileExact(0.95)   2001
+    quantile(0.99)  4961.26    quantileExact(0.99)  10000    ← 50.39% LOW
+
+  Only the p99 diverges, and it diverges by half — **in the direction that matters**,
+  because an alert threshold set on that number never fires. The distribution is why: 43 of
+  64 attempts answer in 0–2 ms and one took 10,000, so the tail is one row and an
+  approximation that smooths it reports a platform that is fine.
+
+T050 — NOT TAKEN, AND THE BUCKET SIZE IS WHY IT WOULD NOT HAVE HELPED
+  Per tenant per hour over the request log, which is the bucket FR-ANL-10 asks for:
+
+    buckets 178 · rows 4,760 · median 10 · p95 155 · max 171
+    buckets holding fewer than   5 rows    73 of 178
+    buckets holding fewer than  20 rows   125 of 178
+    buckets holding fewer than 100 rows   163 of 178
+
+  **A p99 over four samples is a maximum wearing a percentile's name**, and 73 of 178
+  buckets are in that state. The clause's own grain is what makes the number weak, which is
+  independent of which function computes it — so any implementation publishes `n` beside
+  every percentile, and the amended clause says so.
+
+T052 — NOTHING PUBLISHES A PERCENTILE UNDER THIS CLAUSE'S NAME, CHECKED
+  `grep FR-ANL-10` over `relay-platform/` returns two hits, both comments in `analytics/`
+  SQL, neither computing anything. The percentiles that do exist —
+  `scripts/scale/measure.mjs` and `session.perf.itest.ts` — are send latency and connect
+  latency, each labelled as what it measures. **The phase publishes no percentile at all**,
+  which is the only way to satisfy the requirement while the producer is absent.
+
+  AND CHAPTER 4.2 PREDICTED OTHERWISE IN PRINT. Its prose reads *"will keep writing NULL
+  until FR-ANL-10's chapter builds one"* — and FR-ANL-10's chapter is this one, which does
+  not. Filed as **T058b** for phase 6; the prose costs the chain nothing, and the identical
+  sentence inside a fence is the platform's own file and moves with the clause.
+
+T054 — THE LANES
+    pnpm lint         green
+    pnpm typecheck    14 of 14
+    pnpm test         12 of 12 lanes
+    api integration   6 failed | 670 passed (676) — T012's six, unchanged
+
+  This phase changed no platform code. Its product is a clause and four tables of numbers,
+  which is what a chapter can do about a requirement whose quantity was never defined.

@@ -205,15 +205,15 @@ else's. This is the MVP.
 
 **Goal**: FR-ANL-10's quantity is defined before anything computes it.
 
-- [ ] T046 [US4] Publish the three readings of "end-to-end delivery latency" with the instants each needs and what exists for it today (FR-012, SC-008). R1's table is the starting point; verify each row rather than copying it.
-- [ ] T047 [US4] Quote `deliver.ts`'s two lines — `const started = Date.now()` before the fetch and `const latencyMs = Date.now() - started` after it — as the evidence that `webhook_attempts.latency_ms` is the last leg only. `analytics/0003_webhook_attempts.sql:20` said so at the time and nothing has checked since.
-- [ ] T048 [US4] Choose one reading, write it into the SRS as the definition FR-ANL-10 was missing, and record the two not chosen with what each would cost.
-- [ ] T049 [US4] Publish T008's `quantile` vs `quantileExact` table at the bucket sizes FR-ANL-10 produces (FR-014). **`quantile` has no exact regime** — 0.9896% at n=100 — which is the opposite shape from 4.7's `uniq`, and the reason is worth one sentence rather than a generalisation about sketches.
-- [ ] T050 [US4] If the chosen reading has a source that exists: compute p50, p95 and p99 per tenant per hour using `quantileExact`, and publish `n` beside them — a p99 over four samples is a maximum wearing a percentile's name.
-- [ ] T051 [US4] If it does not: record what building the producer would cost, in the same terms chapter 4.6 used to defer it — a send-path change on the busiest path in the platform — and amend the clause instead (FR-013).
-- [ ] T052 [US4] Publish no percentile under a label naming a quantity it does not measure (FR-014, SC-009). This is the task that fails the phase if T050 was taken for the wrong reading.
-- [ ] T053 [US4] Close or restate `gaps.md` 048-2, carried through five features and re-measured at 0 files at 4.7's close. **Re-measure it here rather than copying the re-measurement.**
-- [ ] T054 Run the four lanes and commit phase 5.
+- [X] T046 [US4] Publish the three readings of "end-to-end delivery latency" with the instants each needs and what exists for it today (FR-012, SC-008). R1's table is the starting point; verify each row rather than copying it.
+- [X] T047 [US4] Quote `deliver.ts`'s two lines — `const started = Date.now()` before the fetch and `const latencyMs = Date.now() - started` after it — as the evidence that `webhook_attempts.latency_ms` is the last leg only. `analytics/0003_webhook_attempts.sql:20` said so at the time and nothing has checked since.
+- [X] T048 [US4] Choose one reading, write it into the SRS as the definition FR-ANL-10 was missing, and record the two not chosen with what each would cost.
+- [X] T049 [US4] Publish T008's `quantile` vs `quantileExact` table at the bucket sizes FR-ANL-10 produces (FR-014). **`quantile` has no exact regime** — 0.9896% at n=100 — which is the opposite shape from 4.7's `uniq`, and the reason is worth one sentence rather than a generalisation about sketches.
+- [X] T050 [US4] If the chosen reading has a source that exists: compute p50, p95 and p99 per tenant per hour using `quantileExact`, and publish `n` beside them — a p99 over four samples is a maximum wearing a percentile's name.
+- [X] T051 [US4] If it does not: record what building the producer would cost, in the same terms chapter 4.6 used to defer it — a send-path change on the busiest path in the platform — and amend the clause instead (FR-013).
+- [X] T052 [US4] Publish no percentile under a label naming a quantity it does not measure (FR-014, SC-009). This is the task that fails the phase if T050 was taken for the wrong reading.
+- [X] T053 [US4] Close or restate `gaps.md` 048-2, carried through five features and re-measured at 0 files at 4.7's close. **Re-measure it here rather than copying the re-measurement.**
+- [X] T054 Run the four lanes and commit phase 5.
 
 ---
 
@@ -232,6 +232,7 @@ else's. This is the MVP.
 - [ ] T057b [P] Fix `docs/07` §3's Part 4 heading, which reads *"23 chapters"* where Part 4 is 22, and `docs/12` §3's heading, which reads the same. **Known and disclaimed** — §3 says *"where they disagree, 12 is newer"* — so this is tidying a recorded staleness rather than a discovery, and the two headings are fixed together or not at all.
 - [ ] T058 [P] Add the query surface to `docs/05-sad.md`'s data view, and **re-check its FR-ANL-10 sentence at :758** — it says the column has no producer *"until FR-ANL-10"*, which this chapter either satisfies or falsifies.
 - [ ] T058a [P] **Cite the external interface requirements, and record why nobody did for eight analysis passes.** Across all artifacts this feature named two non-FR identifiers — NFR-SEC-06 and NFR-SEC-09 — and **zero EIR**, while SRS §3 is titled *"External interface requirements"* and this chapter adds an external interface. Bind EIR-API-03 (503 is in its status list), 04 (the five error fields), 05 (`X-Request-Id`, set centrally by `request-context.middleware.ts`), 06 (`has_more`) and 07 as a forward note.
+- [ ] T058b [P] **Correct chapter 4.2's published prediction about this chapter**, found at phase 5. `relay-tutorial/app/(en)/part-4/chapter-02/.../page.mdx:490` reads *"producer at all, and will keep writing NULL until FR-ANL-10's chapter builds one"* — and FR-ANL-10's chapter is this one, which does **not** build one: the producer needs both instants carried across a service boundary, on the busiest path in the platform. It is prose rather than a fence, so the correction costs the chain nothing; the `-- comment` saying the same thing at line 203 is INSIDE a fence and is the platform's own file, so leave it and let T057/T058's clause amendments carry the correction. Check the vi mirror at the same line.
 - [ ] T059 [P] Re-check every clause this feature cites by opening the SRS rather than the artifacts. Chapter 4.7's pass found a citation pointing at nothing and a sentence its own feature had already falsified.
 - [ ] T060 Bump the SRS revision and **check the version header by looking at it** — `check-revision-order` reads the table and never the header, and 1.13 reproduced that defect one revision after recording it.
 - [ ] T061 Run `sync:docs`, then `check:docs` and `check:srs`, and commit phase 6. `check:docs` goes red first when the mirrors are stale, which is correct.
