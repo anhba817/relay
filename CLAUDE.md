@@ -28,43 +28,188 @@ history; the replaced history is preserved on the remote as the tag
 tags. **Anyone holding an older clone of `relay-platform` must reset rather than pull.**
 
 <!-- SPECKIT START -->
-**ACTIVE: 053 — CHAPTER 4.8, "the log a customer can search".** Plan:
-`specs/053-chapter-4-8/plan.md`; **`research.md` first — eight of its ten items were measured
-and two change the chapter's shape.** Seven phases, MVP at 1–4.
+**053 IS CLOSED at 139 of 139 — CHAPTER 4.8, "the log a customer can search".** Its record is
+`specs/053-chapter-4-8/` — `baseline.txt` first, then `gaps.md` (**21 entries: 9 new, 12
+carried and re-measured, and 048-2's own wording corrected**), `traceability.md`, `tasks.md`.
+Tagged **`part4-ch8`**.
 
-**`docs/12` ROW 9, MOVEMENT IV.** *"FR-ANL-07's query surface; FR-ANL-10's latency percentiles."*
-**The brief pairs a clause that can be built with one that cannot.** 4.4 built FR-ANL-07's
-producer and nothing reads it; FR-ANL-10's column `message_events.delivery_latency_ms` has **0
-rows and 0 writers** and has carried as `gaps.md` 048-2 through five features.
+    a scoped query returning 0 rows returns 11,683 under ' OR 1=1 --   across all 152 tenants
+    quantile(0.99) 4,961 where quantileExact reads 10,000             50.39% low, n=64
+    a 50-row page reads 11,695 — the whole table                      the part is Compact
+    check:fences 110 -> 110, delta 0 · 3,606 prose words · 11 gates · 66 tests · SRS 1.15
 
-**AND THE ONE LATENCY THE STORE HOLDS MEASURES SOMETHING ELSE, BY A COMMENT WRITTEN AT THE
-TIME.** `deliver.ts` sets `latencyMs = Date.now() - started` around the `fetch` alone, and
-`analytics/0003_webhook_attempts.sql:20` says *"How long the ENDPOINT took to answer. NOT
-`message_events.delivery_latency_ms`."* So FR-ANL-10 asks for percentiles of a quantity **this
-platform has never defined**, and "delivery" has three readings for a relay that delivers three
-ways.
+**THE BRIEF PAIRED A CLAUSE THAT COULD BE BUILT WITH ONE THAT COULD NOT, AND BOTH HALVES WERE
+THE CHAPTER.** FR-ANL-07's surface ships. FR-ANL-10 gains the definition it never had —
+**commit to the frame written to a subscriber's socket** — and nothing is computed, because the
+column has 0 rows, 0 producers, and the one thing that writes that table supplies
+`CAST(NULL AS Nullable(UInt32))` for it in both halves of its `UNION ALL`, on purpose.
 
-    total rows 11,684 · tenantless 7,063 (60.5%) · attributed 4,621
-    of the attributed: /internal 1,656 (35.8%) · /v1 1,857 · busiest is /internal/session 1,423
-    a 50-row page reads 8,194 — one granule, and the tenant owns 208 rows in total
-    per-tenant rows: median 10 · p95 155 · max 208 · 152 tenants
+## THE INJECTION, ASKED OF THE SERVER RATHER THAN REASONED ABOUT
 
-**SO A CUSTOMER'S OWN LOG OPENS ON THE GATEWAY'S INTERNAL CALLS**, made with the end user's
-principal. Hiding them makes the log incomplete against FR-ANL-01's *"every request"*; showing
-them puts `/internal/session` at the top. The chapter decides and says which.
+**"THE PAYLOAD REACHES THE PARSER" IS THE WEAK VERSION OF THIS CLAIM.** The hostile-window test
+ran red 10 of 10 against a version that validates the window as a string. Then the statements
+went to ClickHouse:
 
-**AND `quantile()` IS APPROXIMATE AT EVERY SAMPLE SIZE — 0.9896% AT n=100** — which is the
-opposite shape from 4.7's `uniq`, exact below 65,536 and wrong above. There is no exact regime,
-and the error is **worst at the smallest sample**, which is exactly what a per-tenant-per-hour
-bucket is. `quantileExact` if percentiles happen at all.
+    scoped, honest window (1 hour)                       0 rows
+    the same query, from carrying ' OR 1=1 --       11,683 rows   the whole table
+    distinct environment_id under the payload          152        the query names ONE
+    ' UNION ALL SELECT name FROM system.users --   relay, then the request ids
 
-**FR-ANL-08 NAMES 90 DAYS AND FR-ANL-07 RETAINS 30**, and the lane's largest tenant holds 208
-rows — so the performance clause cannot fail here for its own reason, which is §2.3's argument
-one movement on.
+**It does not widen the window — it defeats the tenant predicate**, because `OR` binds looser
+than the `AND` chain the scope is written in. Constitution I, broken by a query parameter. One
+payload of the five is refused by something else and that is worth saying rather than claiming:
+`'; DROP TABLE …; --` dies on `Code: 62. Multi-statements are not allowed` — 4.2's finding as a
+second wall, which does nothing about the four single-statement reads.
 
-**THIS CHAPTER IS INSIDE CONSTITUTION III**, centrally: *"dashboard analytics read only from
-the analytical store"* is what a customer-facing request log is. 4.7's conflict was an auditor
-reading BOTH stores and stays `gaps.md` 052-6's.
+**THE REMEDY IS A TYPE, NOT AN ESCAPE.** What leaves the schema is a `Date`, and the only
+function that turns one into SQL takes a `Date`. There is no path from a query string to a
+statement, so there is nothing to escape and nothing to forget to escape. The `endpoint` filter
+is the same argument through a closed set **derived from the running router** — and the repair
+that made it safe removed the most diagnostic question it could ask, so `unmatched` is a member
+of the set.
+
+## `index_granularity = 8192` IS DECLARED AND IS NOT IN FORCE
+
+Every query reads the whole table — 11,695 rows for a 51-row page, whatever the window and
+whatever the filter — and `EXPLAIN` says `PrimaryKey … Granules: 1/1`. Built two ways rather
+than argued: same rows, same declared granularity, differing only in `min_bytes_for_wide_part`.
+
+    granule_probe_compact   Compact   11,695 rows   marks 2   -> 1 granule
+    granule_probe_wide      Wide      11,695 rows   marks 3   -> 2 granules
+
+**The part type decides.** The table is Compact because it is under 10 MiB, so the per-tenant
+key skips nothing until it crosses that line. R6's published *"8,194 read — one granule, the
+engine's floor"* was a measurement of a Wide part, and "the engine's floor" generalised a number
+that depends on how much data there is.
+
+`FINAL` costs **3 ms against 2 ms at seven parts** — measured with merges stopped, because the
+obvious measurement is taken on a table that has just been merged and proves nothing.
+
+## `quantile` HAS NO EXACT REGIME, WHICH IS THE OPPOSITE SHAPE FROM `uniq`
+
+    uniform      n=4      n=100    n=155    n=10,000
+      p50     16.6667%   0.9804%       0%     0.8998%     not monotone
+    skewed       n=4      n=100    n=1,000  n=10,000
+      p95      0.8200%   9.0398%   9.0404%   9.5163%     it GROWS with n
+
+On the platform's one real latency sample, `webhook_attempts` at n=64: `quantile(0.99)` answers
+**4,961.26** where `quantileExact(0.99)` answers **10,000**. **50.39% low**, which is the
+direction where an alert threshold never fires — 43 of the 64 attempts answer in 0–2 ms and one
+took ten seconds, so the tail is one row and an approximation that smooths it reports a platform
+that is fine.
+
+**AND THE CLAUSE'S OWN GRAIN IS THE SMALL ONE.** Per tenant per hour: **178 buckets, median 10
+rows, 73 of them under five.** A p99 over four samples is a maximum wearing a percentile's name,
+whichever function computes it.
+
+## THINGS THAT HAD NEVER PASSED, NEVER LOOKED, OR NEVER BEEN TRUE
+
+- **THE SEALED SUITE HAD NEVER PASSED.** `integrate.itest.ts` asserted `docs_url` contains
+  `/not_found` under a comment ending *"Asserted as this platform actually answers."* It was
+  not: `docsUrl` returns `${base}#${code}`, and `git merge-base --is-ancestor` puts the anchor
+  commit **before** the commit that wrote the suite. Nothing said so because it needs a running
+  platform no lane starts. 18 of 18 after, the first time.
+- **`check-lane-scope.py` STILL POINTED AT A WORKTREE 045 DELETED** — 0 integration files, 0
+  unscoped reads, ten controls firing. **049 measured the retarget and never landed it.** A
+  measurement is not a repair. 55 files now, and a run that reads nothing **refuses with exit 2**.
+- **`docs/07` §6's "runs both lanes against real stores" WAS FALSE FOR CLICKHOUSE FOR SIX
+  CHAPTERS**, and it is the sentence defense 1 is called closed on. Corrected with the date.
+- **CHAPTER 2.4 PUBLISHED A CLAMP THE CODE HAS NEVER DONE.** `.max(200)` is a validation;
+  `limit=500` is a 400. The comment sits in eight fences across four chapters in each locale,
+  three of them as `diff` CONTEXT. **A block replacement caught four and missed four**, because
+  two `-U6` windows end mid-comment. Fixed line by line; the words changed, not the code.
+- **THE SAD AND CHAPTER 4.2 BOTH PREDICTED FR-ANL-10's CHAPTER WOULD BUILD THE PRODUCER.** It is
+  this one and it does not.
+
+## THE APPENDIX APPLIES AFTER EVERY CHAPTER, AND THAT IS WHY A GOOD HUNK FAILED
+
+Three `diff` hunks were owed for the three CLEAN fenced files this feature edited. Two applied;
+the third reported `hunk pre-image matched 0 times`. **The hunk was right and the state was
+not what it was written against**: instrumenting the checker showed the chain's state for
+`gauntlet.itest.ts` at that point is **993 lines** where `part4-ch7` holds 1,235 — the
+difference being `fences/post-series.md`, which carries a 298-line diff for that file and
+applies last.
+
+So a chapter hunk for a file the appendix also edits must be written against a state no reader
+sees. The change went into the appendix instead, regenerated from the 993-line pre-state and
+asserted byte-identical to the tree before it was pasted. **Check which state a hunk is written
+against before blaming the hunk.**
+
+## THE DERIVATION FOUND THE ROUTE FIRST, FOR THE SEVENTH TIME — AND THE SUITE HAS A THIRD DIRECTION
+
+`43 derived, 42 classified, unclassified: ["GET /v1/request-log"]`, on the build that registered
+the module. Adding the entry turned that green and turned the gauntlet red: **"classified but
+never attacked"** — a third accounting direction the plan named two of. Naming a route is not
+covering it.
+
+**AND THE ATTACK PLANTS ITS OWN ROWS, WHICH NO OTHER ONE IN THAT FILE HAS TO.** No ingester
+runs, so both tenants' logs are empty and **an empty log passes a leak check for the same reason
+an empty page does**. Three rows: the attacker's, the victim's, and one with a NULL tenant — so
+the attack shows that no other tenant's row comes back AND no tenantless row does.
+
+## "DERIVE, DON'T LIST" HAS A PRECONDITION, AND AN EXISTING TEST ENFORCED IT
+
+`rowsOf` in `attack.ts` knew two body shapes and this chapter served a third. The first repair
+replaced the lookup with *"the first array-valued property"* — this project's own reflex — and
+`rowsOf({ items: [1,2,3] })` must equal `[]` went red. **The reflex assumes nothing checks the
+table, and this one is checked twice**: by that assertion and by the `count > 0` control every
+list attack carries. The derived version was worse in the direction that matters — it would
+count any array in the body as rows, a false pass where an unrecognised shape is a loud failure.
+
+## ABSENCE IS NOT A STRING, AND THE COLUMN THAT WOULD HAVE HURT IS THE QUIET ONE
+
+The store client returns `string[][]` from a TSV body and ClickHouse writes NULL as `\N`. A
+reader taking the value column alone reports an endpoint of `"\N"` — truthy, and
+indistinguishable from a route name downstream.
+
+    endpoint             NULL on     31 real rows (23 rate-limited, 8 unmatched)
+    limited_operation    NULL on 11,660 of 11,683 — 99.8% of the table
+
+The first version handled `endpoint` and stopped. **The fix is where the next defect is**, one
+column over. Both tests go red against a value-column reader — `expected '\N' to be null` — and
+the suite asserts the server really does answer `\N`, so the tests are about the reader.
+
+## WHAT RUNNING IT COST, AND EVERY ONE WAS AN INSTRUMENT
+
+- **`Number.isSafeInteger` IS NOT A BOUND ON AN INSTANT.** The cursor's own refusal block caught
+  it: `rl:999999999999999:<uuid>` is a safe integer and decodes to **the year 33658**. Both ends
+  are the column's facts now — the DDL's `CHECK ts > '2020-01-01'` and `DateTime64`'s 2299.
+- **`direction: newer` HAD NEVER RUN**, in the contract and the schema since phase 2, with every
+  test using the default. Two expressions flip with it. The branch report is what said so, and
+  `reader.ts` went 79.24 -> 83.01 -> 86.79 with only the last step being rounding.
+- **THE RATCHET CAUGHT A REGRESSION OF MINE.** `metering/clickhouse.ts` fell 94.73 -> 91.3
+  against a pin of 93, from a new `catch` whose `cause` is typed `unknown`. Lowered to 91 with
+  both unreachable arms named — the pin working, not the pin in the way.
+- **A FILTER TEST FAILED FOR ANOTHER TEST'S REASON, EIGHT LINES UP.** It asserted the endpoint
+  filter returned exactly `["/healthz"]` and got two, because the dedup test above it plants a
+  second one and they shared a tenant. **What a filter promises is that nothing ELSE comes
+  back**; the count of what does is the plant's business.
+- **A FEATURE-LOCAL ID REACHED TWO PUBLISHED DOCUMENTS, THREE COMMITS AFTER READING 1.14's
+  CORRECTION OF THE SAME DEFECT.** `FR-025` and `FR-007` are this feature's ids. The mechanism
+  was copying the task line — a task is feature-local and uses them correctly. Caught by diffing
+  `docs/` for `FR-0\d\d`, and **nothing runs that check** (`gaps.md` 052-7).
+- **A MEDIAN MOVED BECAUSE THIS FEATURE MOVED THE POPULATION.** Per-tenant median 10 -> 7, from
+  152 tenants to 177, every new one a fixture with a handful of rows. Opening and close are
+  published side by side rather than either alone.
+
+## THE ROUTE'S OWN ARITHMETIC, AND WHAT IT COSTS THE TENANT
+
+**FR-ANL-08's NINETY DAYS CANNOT EXIST OVER THIS TABLE AT ANY VOLUME.** Two rows planted at
+`now - 60 days` and `now - 1 day` leave **one survivor**, and `OPTIMIZE FINAL` changes nothing:
+the TTL cuts at INSERT. No fixture can put the clause's window in front of it, which is stronger
+than the lane being small.
+
+**READING THE LOG SPENDS THE TENANT'S REST BUDGET, AND NOBODY CHOSE THAT.** `operationsFor`
+returns `["rest"]` for every `/v1` path. Left counted — an exemption list is a hand-maintained
+table — and the loop is published rather than routed around: **a customer investigating 429s
+reads their log, the reads spend the budget they are investigating, and the log then shows the
+429s the reading caused.**
+
+**AND THE LOG IS 1.60 s BEHIND AT p50** — 2.7% of FR-ANL-04's 60 — measured with an ingester
+started for the purpose and stopped after. Starting one drained 188 rows over 15 batches, the
+first alone writing a 137-row backlog. **On the stack this series ships, a customer reading
+their own request log finds it empty**, because the records are published and nothing drains
+them (`gaps.md` 050-8).
 
 **052 IS CLOSED at 87 of 87 — CHAPTER 4.7, "the job that checks the meter".** Its record is
 `specs/052-chapter-4-7/` — `baseline.txt` first, then `gaps.md` (**23 entries: 7 new, 15

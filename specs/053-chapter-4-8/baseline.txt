@@ -823,3 +823,112 @@ T060/T061 — THE GATES
 
   The header is checked by looking at it because `check-revision-order` reads the table and
   never the header — a defect 1.13 reproduced one revision after recording it.
+
+═══════════════════════════════════════════════════════════════════════════════
+PHASE 7 — THE CHAPTER (T062-T080).
+═══════════════════════════════════════════════════════════════════════════════
+
+T062 — THE FOUR STRINGS, AND THEY AGREE
+    directory   relay-tutorial/app/(en)/part-4/chapter-08/the-log-a-customer-can-search/
+    manifest    /part-4/chapter-08/the-log-a-customer-can-search
+    canonical   /part-4/chapter-08/the-log-a-customer-can-search
+    title       The log a customer can search
+
+T069/T070 — THE APPENDIX APPLIES AFTER EVERY CHAPTER, AND THAT IS WHY A HUNK FAILED
+  Three `diff` hunks were owed, for the three CLEAN fenced files this feature edited. Two
+  applied from `git diff -U6 part4-ch7` and the third did not:
+
+    [APPLY] chapter-08/page.mdx:652
+            hunk pre-image matched 0 times — starts "import type { INestApplication } …"
+
+  **The hunks were right and the state was not what they were written against.** Instrumented
+  the checker: at the point this chapter's fence is applied, the chain's state for
+  `gauntlet.itest.ts` is **993 lines**, where `part4-ch7` and the repository hold 1,235 and
+  1,292. The difference is `fences/post-series.md` — the appendix — which carries a 298-line
+  `diff` for that file and **applies after every chapter**.
+
+  So a chapter hunk for a file the appendix also edits has to be written against a state the
+  reader never sees, and then the appendix's hunk has to still apply on top. The repair is
+  045-81's: the change went into the APPENDIX, regenerated from the 993-line pre-appendix state
+  to the current tree — 4 hunks, every pre-image unique, and the result asserted byte-identical
+  to the file on disk before it was pasted.
+
+  The chapter keeps the prose and says where the hunk went, which is the honest form: a reader
+  following along needs to know the appendix exists.
+
+    110 (opening) -> 113 (phases 3-4) -> 112 -> 110 (close)   delta 0
+
+T069a — THE CLAMP, CORRECTED ACROSS FIVE CHAPTERS IN TWO LOCALES
+  The comment appears in 2.4 (added), and in 3.11, 3.17 and 3.18 as `diff` CONTEXT — eight
+  fence occurrences, plus the tree. **A block replacement caught four and missed four**,
+  because 3.11's and 3.18's `-U6` windows end mid-comment and carry only its first two lines.
+  Fixed line by line; `grep "CLAMPS rather than"` returns 0 across both repositories.
+
+  Prose corrected in 2.4 in both locales, and the paragraph arguing FOR the clamp rewritten
+  rather than deleted — it argued for a behaviour, described it, and sat above code that has
+  always done the other thing. `check:fences` 110 before and 110 after.
+
+T073 — EVERY GATE
+    pnpm lint                  green, 0 errors
+    pnpm typecheck             14 of 14
+    pnpm build (platform)      exit 0
+    pnpm test (unit)           12 of 12 lanes
+    pnpm build (tutorial)      renders /part-4/chapter-08/the-log-a-customer-can-search
+    check:docs                 mirrors match · 16 revisions ascend, 1.0 to 1.15
+    check:srs                  245 clause rows, 245 unique identifiers
+    check:figures              278 figures, every diagram passed as `code`; 280 bindings resolve
+    check:errors               28 codes, 28 sections
+    check:fences               110 — APPLY 74, HEAD 36 (25 differs + 11 title-names-no-file)
+    api integration            6 failed | 670 passed — T012's six, by name
+    gateway integration        1 failed | 224 passed — a flake, green once and red once alone
+    dispatcher / ingester / test-harness   16, 19, 41 — all green
+    outsider (sealed)          18 of 18
+    pnpm coverage              1,684 passed; `shape.ts` 95.12 vs 100 inherited (052-2)
+
+T073a — THE OPENING FIGURES, RE-TAKEN AT THE CLOSE
+                              opening      close     why
+    total rows                 11,683     11,895     this feature's suites, and T040b's ingester
+    tenantless                  7,062      7,133     60.45% -> 59.97%
+    attributed                  4,621      4,762
+      /internal                 1,656      1,676
+      /v1                       1,857      1,975
+    endpoint absent, table         32         39
+    per-tenant median              10          7     152 -> 177 tenants, each new one small
+    per-tenant p95 / max      155 / 208  155 / 208
+    tied (env, ts) pairs        42 / 89    42 / 89   unchanged
+    duplicate keys                   0          0
+    active parts                     1          2
+
+  The median moved because **25 new tenants arrived and every one of them is a fixture with a
+  handful of rows**. A median over a population this feature changed is a measurement of the
+  feature, which is why the opening and the close are published side by side rather than
+  either alone.
+
+T077 — THE TEST AUDIT
+    63 `it()` blocks across the six files this feature added
+    with no assertion            0
+    with a conditional assertion 0
+  Plus one cross-tenant attack and two sealed-suite tests. Every title read beside its body.
+
+T072 — THE FENCE DELTA, BY KIND AND LOCALE, AND THE FOUR EDITS THE GATE CANNOT SEE
+    opening   110 = APPLY 74 (30 en, 30 vi, 14 elsewhere) + HEAD 36, all en
+    close     110 = APPLY 74 + HEAD 36 — 25 `differs at line`, 11 `does not exist`
+    delta     0
+
+  **FOUR FILES THIS FEATURE EDITED ARE INVISIBLE TO THE CHECKER**, because each was already a
+  HEAD problem and a checker reports the first failure per file:
+
+    services/api/src/app.module.ts        11 fences per locale · differs at line 20
+    packages/protocol/src/codes.ts        12 fences per locale · differs at line 209
+    services/api/src/isolation/targets.ts  6 fences per locale · differs at line 130
+    vitest.coverage.config.mts            23 fences          · differs at line 29 (048-3)
+
+  `app.module.ts` is the one worth naming twice: this chapter had to edit it to register the
+  controller, and the registration is the edit whose absence `pnpm build` catches and the fence
+  chain does not. The other three carry a new error code, a route classification and five
+  coverage pins, and the chain's number did not move for any of them.
+
+  **AND THREE FILES WERE CLEAN**, which is why they cost anything at all:
+  `packages/outsider/src/integrate.itest.ts`, `services/api/src/isolation/attack.ts` and
+  `services/api/src/isolation/gauntlet.itest.ts`. Two took a chapter hunk and the third took an
+  appendix hunk, for the reason T069 records.
