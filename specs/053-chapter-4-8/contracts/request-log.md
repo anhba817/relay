@@ -259,6 +259,30 @@ log is a route they have never heard of**, and the chapter says so.
 
 ---
 
+## The external interface requirements this surface is bound by
+
+**SRS §3 is titled "External interface requirements" and this chapter adds an external
+interface.** Across every artifact of this feature, eight analysis passes named exactly two
+non-FR identifiers — NFR-SEC-06 and NFR-SEC-09 — and **zero EIR**. The cause is the one this
+project keeps paying for: the artifacts cited each other, and §3 is a section nobody opened
+because no FR pointed at it.
+
+| clause | what it binds | where this surface satisfies it |
+|---|---|---|
+| **EIR-API-03** | *"conventional HTTP status codes: 200, 201, 204, 400, 401, 403, 404, 409, 422, 429, 500, **503**"* | 503 is in the list, so `analytics_unavailable` needs no new status — only a code and a catalogue entry |
+| **EIR-API-04** | `code`, `message`, `docs_url`, `request_id`, and `field` where one applies, **top-level and not nested** | `ProtocolErrorFilter` assembles four; the thrower names `code` and `field`. Asserted as five, not as a status |
+| **EIR-API-05** | *"Every response shall include a unique `X-Request-Id` header, referenced in all error responses **and in the request log**"* | The clause names this log by name. `request-context.middleware.ts` sets the header centrally and the producer records the same value, so the id a customer quotes from an error is the id they find here |
+| **EIR-API-06** | *"List endpoints shall use opaque cursor pagination with `limit` and `cursor`, returning `next_cursor` and `has_more`"* | The whole envelope. **`grep has_more` over the platform returns nothing**, so this is the first list endpoint to conform and `messages.service.ts` has not since chapter 2.4 |
+| **EIR-API-07** | *"An OpenAPI 3.1 specification shall be published, machine-readable and complete for every public endpoint"* (P4) | **Not satisfied, and this chapter grows the surface it would have to cover by one route.** Filed forward rather than claimed |
+| **EIR-DSH-02** | *"The dashboard shall consume only the same public API available to customers"* | This route is what FR-DSH-03's dashboard reads. It is also why FR-DSH-03's *"full request and response detail"* had to be struck: the dashboard has no other source, and this API returns no bodies |
+
+**EIR-API-05 is the one worth reading twice.** It says the request id is *"referenced … in the
+request log"* — a clause written before the log existed, naming the join between an error a
+customer received and the row that records it. Nothing in this feature's artifacts had cited it,
+and it is the sentence that makes the surface useful for the thing a support ticket is about.
+
+---
+
 ## Deduplication, and why every read carries `FINAL`
 
 `api_requests` is a **`ReplacingMergeTree`** keyed `(environment_id, ts, request_id)`. Chapter

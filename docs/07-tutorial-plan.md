@@ -81,7 +81,7 @@ Part 0   The idea and the paper          5 chapters   (docs 01–06 as curriculu
 Part 1   Foundations                     4 chapters   (repo, tooling, protocol, compose)
 Part 2   The core loop                   8 chapters   (SRS Phase 1 — the hardest part)
 Part 3   Becoming a platform            26 chapters   (SRS Phase 2)
-Part 4   Everywhere the data went       23 chapters   (analytics · hosted media · the paper trail)
+Part 4   Everywhere the data went       22 chapters   (analytics · hosted media · the paper trail)
 Part 5   Developer experience            6 chapters   (SDK, emoji, dashboard)
 Part 6   Shipping it                     5 chapters   (containers, k8s, CI/CD)
 Part 7   Running it                      6 chapters   (observability, load, chaos, incidents)
@@ -535,7 +535,7 @@ wagging the dog. If a later chapter wants the story, the twelve post-series entr
 and this feature's research are where it is kept.
 
 
-### Part 4 — Everywhere the data went (23 chapters, seven movements)
+### Part 4 — Everywhere the data went (22 chapters, seven movements)
 
 **Renamed, resized and regrouped during grooming.** The structure record is
 `docs/12-part-4-structure.md`; it carries the movement boundaries, the three decisions taken,
@@ -730,7 +730,13 @@ all verified by hand or not at all. Chapter 3.1 deferred the coverage measuremen
 its own feature rather than allowed to lapse quietly.
 
 **Closed by feature 024 (2026-08-08), with one clause still open.** Defense 1 now exists:
-`.github/workflows/ci.yml` in the parent repository runs both lanes against real stores,
+`.github/workflows/ci.yml` in the parent repository runs both lanes against real stores —
+**and "real stores" meant Postgres, Redis and NATS only until 2026-09-16.** ClickHouse arrived
+with chapter 4.2 and the `platform` job never provisioned one, so four chapters of analytical
+suites could not pass in CI and this sentence, which is what defense 1 is called closed on, was
+false for that store for six chapters. Chapter 4.8 added the service, the `RELAY_CLICKHOUSE_HOST`
+the lanes read, and the `analytics/apply.mjs` step that builds the tables `CLICKHOUSE_DB` does
+not. The claim holds from that date forward;
 the coverage run, the site build, and the docs and fence checks. Coverage is measurable
 for the first time, and the answer is mixed — Principle VI's 70% clause is **met**
 (86.55% statements, 78.07% branches across both lanes), while its 100%-branch clause for

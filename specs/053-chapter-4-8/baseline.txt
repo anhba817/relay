@@ -720,3 +720,106 @@ T054 — THE LANES
 
   This phase changed no platform code. Its product is a clause and four tables of numbers,
   which is what a chapter can do about a requirement whose quantity was never defined.
+
+═══════════════════════════════════════════════════════════════════════════════
+PHASE 6 — THE AMENDMENTS (T055-T061).
+═══════════════════════════════════════════════════════════════════════════════
+
+T059 — THE CHECK CAUGHT ME REPRODUCING 1.14's OWN DEFECT, THREE COMMITS LATER
+  Every prefixed identifier this feature cites — 17 of them, FR-ANL-*, FR-DSH-*, EIR-*,
+  NFR-*, DR-* — resolves against the SRS's 239. **The bare-numbered ones are the class that
+  does not**, and I had just written three into published documents:
+
+    docs/05-sad.md           FR-025's 503 is the instrument that makes it visible
+    docs/06-adr-deep-dives.md  FR-025's 503 … / FR-007's "no row appears in two pages"
+
+  `FR-025` and `FR-007` are **this feature's own local ids**, not clauses in the SRS —
+  which is exactly what revision 1.14 corrected `FR-003a` for, in this document, one
+  feature ago. **Written by copying the task line**, which uses the local id correctly
+  because a task is a feature-local document and a published one is not.
+
+  What found it was the instrument rather than the reading: a diff of `docs/` for
+  `FR-0\d\d` added by this feature. All three corrected to name the decision instead of the
+  id — *"the 503 `analytics_unavailable` refusal"*, *"the surface's promise that no row
+  appears in two consecutive pages"*.
+
+T055a/T055b — AN AMENDMENT THAT FIXED ONE CLAUSE AND LEFT ITS TWIN STANDING
+  Revision 1.11 struck *"truncated payload"* from FR-ANL-07 for two reasons that reach
+  further than that clause — FR-ANL-11 keeps message content out of the analytical store,
+  constitution VI keeps it out of logs. **FR-DSH-03 went on asking the dashboard for a
+  request log *"with full request and response detail"***, and EIR-DSH-02 permits the
+  dashboard no source but the public API. The three could not all hold, for six chapters.
+
+  Struck, carrying 1.11's own sentence rather than writing a new argument. **Third time
+  this project has found this shape**: DR-09's second half filed as absent twice, `FR-003a`
+  cited as a clause in two documents, and now a twin left standing.
+
+T056 — FR-ANL-08's NINETY DAYS, AMENDED WHERE IT IS READ OVER THIS TABLE
+  Recorded with T042's measurement rather than with the lane's size: the clause is
+  unreachable over `api_requests` **at any volume**, because the TTL cuts at INSERT. Left
+  unchanged for the tables DR-09 retains for ninety days, which is what it was written for.
+
+T056a-d — ADR-26, IN BOTH DOCUMENTS
+  `docs/05-sad.md` gets the summary and `docs/06-adr-deep-dives.md` the 106-line argument —
+  chapter 4.5's finding that ten analysis passes amended a summary and none opened the deep
+  dive, applied in advance for once.
+
+  The three rejected alternatives go in as measurements: a client-side deadline alone
+  (`SETTINGS max_execution_time = 1` → HTTP 408 in 1.002 s, and the abort leaves the query
+  running), `LIMIT BY` instead of `FINAL` (it changes what `LIMIT` counts, and `FINAL` costs
+  **3 ms against 2 ms at seven parts**), and Postgres (nothing to serve, and constitution
+  III's first sentence).
+
+  **THE REVERSAL CONDITION IS THE PART THAT IS USUALLY MISSING**: reverse when the
+  analytical store's availability appears in the API's error budget — when
+  `analytics_unavailable` stops being rare and becomes a number somebody reports. The
+  instrument shipped in the same chapter as the route, so the signal exists before the
+  decision needs reviewing. **Not a reversal: the store being slow.** A page inside the
+  deadline is the trade the record accepts.
+
+T057a — "AGAINST REAL STORES" WAS FALSE FOR SIX CHAPTERS, AND IT IS WHAT DEFENSE 1 IS
+  CALLED CLOSED ON
+  `docs/07` §6 says CI *"runs both lanes against real stores"*. ClickHouse arrived with
+  chapter 4.2 and the `platform` job never provisioned one, so the sentence was false for
+  that store from 4.2 to 4.8 — and it is the basis of the claim that defense 1 is closed.
+  Corrected with the date it became true rather than silently.
+
+T057b — ONE OF THE TWO HEADINGS WAS ALREADY RIGHT, WHICH THE TASK DID NOT KNOW
+  `docs/07` said *"23 chapters"* in two places (§3's heading and the summary block); both
+  moved to 22. **`docs/12` §3's heading already read *"22 chapters"*** — corrected at 4.7's
+  analysis pass 8 — so the task's *"reads the same"* was stale. The remaining `23` in
+  `docs/12:457` is a historical note about how the estimate moved and is correct as written.
+
+T058/T058b — A PREDICTION ABOUT THIS CHAPTER, IN TWO DOCUMENTS, BOTH WRONG
+  `docs/05-sad.md:758` read *"`delivery_latency_ms` has no producer at all **until
+  FR-ANL-10**"* and chapter 4.2's prose read *"will keep writing NULL **until FR-ANL-10's
+  chapter builds one**"*. FR-ANL-10's chapter is this one and it does not build one.
+  Both corrected; the chapter's is prose, so the fence chain did not move.
+
+  The Vietnamese 4.2 carries the fenced comment and not that paragraph, so there was
+  nothing to mirror — left alone, as the translation is the reader's own work.
+
+  §6.2 gained the reader: the cursor's composite key, the three things the read does that
+  the schema does not show (`FINAL`, a presence column per nullable column, the two-sided
+  deadline), and the Compact-part measurement.
+
+T058a — SRS §3 IS TITLED "EXTERNAL INTERFACE REQUIREMENTS" AND NOBODY OPENED IT
+  Across every artifact of this feature, eight analysis passes named two non-FR identifiers
+  and **zero EIR**. Six are bound now in `contracts/request-log.md`, and one is worth
+  reading twice: **EIR-API-05 says the request id is referenced *"in the request log"*** —
+  written before the log existed, naming the join between an error a customer received and
+  the row that records it. It is the sentence that makes this surface useful for what a
+  support ticket is actually about, and no artifact had cited it.
+
+  EIR-API-07's OpenAPI specification has no implementation anywhere in the tree, and this
+  chapter grows the surface it would have to cover by one route. Filed forward, not claimed.
+
+T060/T061 — THE GATES
+    SRS header, read by looking     **Version:** 1.15 (draft)
+    sync:docs                       6 mirrors synced
+    check:docs                      all mirrored docs match · 16 revisions ascend, 1.0 to 1.15
+    check:srs                       245 clause rows, 245 unique identifiers, no duplicates
+    check:fences                    113 -> 113, delta 0
+
+  The header is checked by looking at it because `check-revision-order` reads the table and
+  never the header — a defect 1.13 reproduced one revision after recording it.
