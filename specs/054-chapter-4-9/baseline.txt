@@ -653,3 +653,105 @@ T037 — THE COVERAGE GATE, WITH BOTH CONFIGS FIXED
 
   **The new arithmetic raised the file's branch coverage from 96 to 97.91** rather than needing
   the pin lowered. 117 files and 1,701 tests against chapter 4.5's 108 and 1,545.
+
+═══════════════════════════════════════════════════════════════════════════════
+PHASE 7 — THE CHAPTER, AND THE CLOSE (T053-T069, US4).
+═══════════════════════════════════════════════════════════════════════════════
+
+T053 — THE FOUR STRINGS, AND THEY AGREE
+    directory   relay-tutorial/app/(en)/part-4/chapter-09/milestone-the-meter-agrees/
+    manifest    path: "/part-4/chapter-09/milestone-the-meter-agrees"
+    metadata    canonical: "/part-4/chapter-09/milestone-the-meter-agrees"
+    title       "Milestone: the meter agrees"
+
+T059/T057 — THE CHAPTER'S OWN FLOORS
+    prose words   2,826    against docs/07 §2's 2,000–4,000
+    figures           3    against 2–4, one in the first half and two in the second
+    boxes         2 Trap · 1 Why · 1 Checkpoint · 1 ForwardRef · 1 SkipAhead
+
+T066 — THE TEST AUDIT
+  **10 tests added**, all in `services/api/src/metering/reconcile.test.ts`, and every one
+  asserts a value rather than that something ran. Seven drive `smallestExpressibleDrift` —
+  and each drives `verdictFor` at `d` and at `d-1` beside it, so the integer is checked
+  against the comparison it describes rather than against a formula restated in the test.
+  Three drive the two validators, two of them on the refusal path.
+
+  **Three existing tests had their bodies changed and one its title**, each recorded with why:
+  `typing.itest.ts`'s four-kind test (a five-field payload against a three-field strict schema,
+  and a 400 ms sleep replaced by `PUBSUB NUMSUB`), `request-log.itest.ts` (it starts the
+  ingester it needs), and `integrate.itest.ts` — *"and it is empty"* became *"and every row is
+  this tenant's"*, because **the old title asserted that a defect was still present**.
+
+T063 — THE FENCE CLOSE, AND THE OPENING WAS NOT WHAT PHASE 1 MEASURED
+    phase 1 opening                110 — APPLY 74 (en 30 · vi 30 · post-series 14), HEAD 36
+    after this feature's PLATFORM edits, before any fence   113 — APPLY 74, HEAD 39
+    with the chapter's five hunks                           110 — APPLY 74, HEAD 36
+    delta 0
+
+  **The +3 was four files and only three problems**, which is the checker reporting the first
+  failure per file: `reconcile.ts`, `reconcile-usage.mjs` and `vitest.integration.config.mts`
+  each became a new HEAD problem, and `typing.itest.ts` did not — **it has diverged at line 133
+  since before this chapter**, so my edit at line 1250 was invisible behind an older one.
+
+  Five hunks published: `services/api/vitest.integration.config.mts` (1),
+  `services/gateway/src/typing.itest.ts` (4), `services/api/src/metering/reconcile.ts` (3),
+  `scripts/reconcile-usage.mjs` (1), `packages/outsider/src/integrate.itest.ts` (2).
+
+**AND A TITLED EXCERPT COST TWO PROBLEMS, WHICH IS 051-6 REPRODUCED.** The three-line quotation
+from `gauntlet.itest.ts` was published as ````ts title="services/api/src/isolation/gauntlet.itest.ts"````
+— **a titled fence is a whole-body claim**, so the chain's state for that file became three
+lines. That broke the HEAD comparison (+1) **and the appendix's own hunk for the same file**,
+whose pre-image `import "reflect-metadata";` no longer existed (+1 APPLY). Removing the title
+fixed both. The excerpt is now untitled, which puts it in 043-1's class of fences no gate reads,
+and the prose says which file it is from.
+
+**AND THE APPENDIX COULD NOT CARRY THE COVERAGE CONFIG'S EDIT AT ALL.** A hunk generated from
+the tree failed to apply (+1), so the chain's own state was dumped from a copy of the checker
+(rule 1a): **`vitest.coverage.config.mts`'s chain state has no `env` block**, because the
+appendix hunk that would add it is itself one of the fourteen that no longer apply. There is no
+anchor for two more lines, and recreating the block would be the 111-to-203 trap. The appendix
+describes the edit in prose instead, and `gaps.md` 048-3 gains the sharper reading.
+
+T064 — EVERY GATE
+    relay-platform   lint GREEN · typecheck 14/14 · test 12/12 · build 6/6
+                     test:integration 54 of 54 suites, EXIT 0
+                     coverage 117 files / 1,701 tests, EXIT 1 for `shape.ts` alone (052-2)
+                     test:outsider 18 of 18, against a platform started by hand
+    relay-tutorial   lint · check:docs · check:srs · check:figures · check:errors · build GREEN
+                     check:fences 110 → 110, delta 0
+
+  **The sealed suite refused rather than skipping** when the platform was absent — *"this suite
+  integrates against a RUNNING platform and starts nothing. Missing: RELAY_API_URL,
+  RELAY_WS_URL, RELAY_DEMO_CREDENTIAL"* — which is what T064 asks a gate to do and is chapter
+  4.8's own repair working.
+
+  **And running it red found this feature's own consequence.** The suite asserted the customer's
+  request log comes back **empty**; it came back with 42 rows. They are this feature's doing:
+  the ingester the api lane now starts drained a backlog that included this demo tenant's
+  requests from chapter 4.8's run. **An assertion that a defect is still present fails the
+  moment somebody fixes the defect**, which is the honest cost of fixing it, and the assertion
+  is now about the property FR-ANL-07 actually asks for.
+
+T064a — THE CLOSE-OUT RE-MEASUREMENTS
+    usage_periods        opening 2,440 rows / 2,330 envs   close 3,278 / 3,133
+    usage_active_users   opening 3,516 / 1,481             close 4,765 / 2,007
+    max(messages_sent)   opening 1,017                     close 1,017   ← unchanged
+
+  **The counts moved because this feature ran the lane thirty times**, and a count over a
+  population the feature changed is a measurement of the feature (chapter 4.8's lesson). The
+  figure the argument rests on — the lane's largest tenant-period, and therefore the resolution
+  0.1% has there — did not move.
+
+═══════════════════════════════════════════════════════════════════════════════
+CLOSE — 114 of 114 tasks.
+═══════════════════════════════════════════════════════════════════════════════
+
+    the figure            121,057 vs 121,057 · 0.0000% · smallest expressible drift 122
+    the gate              54 of 54 suites · EXIT 0 · one assertion of 676 moves when broken
+    the fence chain       110 -> 110, delta 0 · five hunks published
+    the chapter           2,826 prose words · 3 figures · 2 Trap · 1 Why · 1 Checkpoint
+    the documents         SRS 1.16 · ADR-27 · ADR-28 · docs/13 · docs/12 §2.3 and row 10 ·
+                          docs/07 §6 · a constitution amendment written and not applied
+    the ledger            gaps.md — 8 new, 14 carried, 2 closed, 1 corrected twice
+    every gate            19 commands, all green except `coverage` (052-2) and
+                          `check:fences` (the standing 110, unchanged)

@@ -28,97 +28,119 @@ history; the replaced history is preserved on the remote as the tag
 tags. **Anyone holding an older clone of `relay-platform` must reset rather than pull.**
 
 <!-- SPECKIT START -->
-**ACTIVE: 054 — CHAPTER 4.9, "Milestone: the meter agrees" (movement IV's close).** Plan:
-`specs/054-chapter-4-9/plan.md`; **`research.md` first — two of `docs/12` §2.3's four premises
-are falsified there.** Seven phases, MVP at 4.
+**054 IS CLOSED at 114 of 114 — CHAPTER 4.9, "Milestone: the meter agrees".** Its record is
+`specs/054-chapter-4-9/` — `baseline.txt` first (it carries every phase's measurements), then
+`gaps.md` (**8 new, 14 carried and re-measured, 2 closed, 1 corrected twice**),
+`constitution-amendment.md`, `traceability.md`, `tasks.md`. Tagged **`part4-ch9`**.
+Movement IV is closed.
 
-**THE MILESTONE MAKES TWO CLAIMS AND NEITHER IS TRUE TODAY.** §2.3: a CI gate that catches a
-planted drift every run, and the 0.1% figure recorded once at a volume where 0.1% is a real
-threshold.
+    121,057 vs 121,057 · 0.0000%   the first volume where 0.1% is a real threshold
+    smallest expressible drift 122 · 121 passes and 122 breaches, both directions
+    54 of 54 suites · EXIT 0       the first green test:integration since chapter 4.4
+    one assertion of 676 moves when `<=` becomes `<`
+    check:fences 110 -> 110, delta 0 · 2,826 prose words · 3 figures · SRS 1.16
 
-**THE GATE CANNOT FAIL FOR ITS OWN REASON, AND THE REASON IS NOT THE ONE FIVE ARTIFACTS GAVE.**
-The planted-drift suite **runs on every `pnpm test:integration` and passes** — `reconcile.itest.ts`
-is one of the api lane's 33 files and vitest runs them all. What was true is worse: **the gate
-was already red**, on every run since chapter 4.4, so a planted drift changed nothing anybody
-could see. Six failures: five in `request-log.itest.ts`, which needs an ingester `compose.yaml`
-does not ship (050-8), and one in `limits.itest.ts` — *"the lane must configure a platform
-credential: expected undefined to be truthy"*. **The signal was not absent; it was
-indistinguishable.** And `--concurrency=1` stopped scheduling at the first failure, so the
-gateway's 12 suites, the e2e journey, the ingester, the dispatcher and the harness had not run
-since 4.4 either.
+**THE PREMISE FIVE ARTIFACTS CARRIED WAS FALSE, AND THE TRUTH IS WORSE.** *"The planted-drift
+test has existed since 4.7 and the gate has never reached it"* — it runs on every push and
+passes; `reconcile.itest.ts` is one of the api's 33 suites. **The gate was already red**, on
+every run since 4.4, so a planted drift deepened a red rather than turning one. **The signal
+was not absent, it was indistinguishable** — and fifteen analysis passes read that sentence
+without running the lane.
 
-**AND THE SUMMARY LINE FOUR CHAPTERS HAVE READ AS A LANE COUNT DOES NOT REPRODUCE.** `7
-successful, 11 total` here, `8 of 10` at 4.8, `7 of 9` at 4.7 — same tree, same command. Which
-tasks were already in flight when the first failure arrived decides the total, so the number is
-not a count of anything a requirement can be written against.
+**ONE UNSET VARIABLE WAS COSTING MORE THAN THE TEST THAT REPORTED IT.**
+`RELAY_INTERNAL_CREDENTIAL` failed `limits.itest.ts` loudly; it also made **three attacks in
+`isolation/gauntlet.itest.ts` return at their first line and report green** — the suite
+constitution VI names as gating releases. Its own accounting test cannot catch that, because
+`attacked.add(...)` runs **before** the early return, so the check written to find unattacked
+routes is satisfied by the route that was skipped. Measured: **1ms, 0ms, 1ms → 27ms, 6ms, 33ms**.
+**0ms is what a skipped attack looks like in a green suite.**
 
-**AND 0.1% HAS NO RESOLUTION ANYWHERE IN THIS LANE, ON EITHER SIDE.**
+**AND THE FIX WAS RIGHT IN ONE CONFIG AND MISSING FROM ITS TWIN.** Two configs run `.itest.ts`
+files — the api's integration config and `vitest.coverage.config.mts` — and the first version
+went into one. `pnpm coverage` stayed red and kept the gauntlet skipped **in the run that
+measures constitution VI's own coverage bar**, until eight minutes of a coverage run said so.
 
-    analytical   daily_usage_billing      7 rows over 4 environment ids
-                 of those 4, in Postgres:            0
-    operational  usage_periods        2,440 rows over 2,330 environments
-                 max messages_sent    1,017 · mean 14
-                 usage_active_users   3,516 rows over 1,481 environments
+**A GATEWAY TEST HAD NEVER DELIVERED THE FRAME IT PUBLISHED.** `typing.itest.ts` publishes a
+five-field presence payload; `presenceFabricSchema` is a `z.strictObject` of three, so
+`safeParse` fails and nothing reaches the socket. **It passed on a frame the gateway sends at
+connect**, elected by `SET … NX`, at whatever rate Redis had forgotten the previous run — 0 of 3
+alone, about 2 of 3 in its file. It also carried `await settle(400)` before publishing;
+`PUBSUB NUMSUB` is the same question as a condition. Fixed: 23 of 23 three times, and the file
+is **ten seconds faster** because a test stopped burning a ten-second arrival deadline.
 
-    volume        9    100    1,000   10,000   100,000
-    smallest      1      1        2       11       101
-    as a %   11.111  1.000    0.200    0.110     0.101
+**THE INGESTER DID NOT NEED A COMPOSE SERVICE AND BOTH OBVIOUS FIXES WERE WRONG.**
+`services/ingester` has **no Dockerfile**, and `api`, `gateway` and `dispatcher` all carry
+`profiles: ["services"]` — so `docker compose up -d` starts the stores and nothing else. And
+`--filter` selects **packages**: the five red suites sit inside `@relay/api` beside the
+reconciler's own. **The suite spawns the process it needs** (050-8 CLOSED, five features on),
+and reports what it drained: **8 batches, 1,038 records** the first run, 12 the second.
 
-At 1,017 the smallest expressible drift is **0.197% — twice the bound**. No tenant has both
-sides. 0.1% first resolves at 10,000 and is only comfortable at 100,000.
+**AND THAT CHANGED WHAT THE SEALED SUITE SEES.** `integrate.itest.ts` asserted a customer's
+request log comes back **empty** — true, and an assertion that a defect is still present, which
+**fails the moment somebody fixes the defect**. It came back with 42 rows.
 
-**THE HARNESS §2.3 ASKED FOR EXISTS FOR ONE SIDE ONLY.** *"`scripts/scale/` … has no
-analytical-volume mode and needs one"* is **stale** — 4.1 and 4.2 built it, and 1.6M messages
-build in 92.4 s and load in 1.2 s. What it lacks is the **operational counter**: `usage_periods`
-appears once in `corpus.mjs`, as a row count in its own report, and `usage_active_users` not at
-all. §2.3 could not have anticipated that, because 4.7 had not yet found every tenant one-sided.
+## THE ARITHMETIC, AND SIX SAMPLES AGREEING IS NOT A RULE
 
-**AND BOTH SIDES FROM ONE SOURCE IS A TAUTOLOGY.** A harness that derives the counter from the
-same rows the analytical side is loaded from makes the two agree by construction. The figure is
-then about **the reconciler's arithmetic at volume and the bound's resolution**, not about the
-platform agreeing with itself — which a mechanism establishes instead (`sendMessage` writes both
-in one transaction; 4.7 found 0 of 1,385 disagreeing for a non-fixture reason). The chapter says
-what the figure does not prove.
+**THE TWO DIRECTIONS OF THE SMALLEST EXPRESSIBLE DRIFT ARE NOT THE SAME NUMBER.** 4.7 published
+*"101 in both directions"* at 100,000 and phase 1 re-derived the table at 9, 100, 1,000, 10,000,
+100,000 and the lane's 1,017 — equal at all six, **by luck**:
 
-**CONSTITUTION III STILL SAYS 0.1% FLAT AND THE SRS NO LONGER DOES.** The bullet —
-*"Metered totals MUST reconcile against operational counts to within 0.1%, verified by a daily
-job that alerts on breach"* — was not amended when SRS 1.14 amended FR-ANL-06 to record that the
-bound is unreachable for three of four quantities and that *"raises an alert"* has no mechanism
-here. Governance: *"where it conflicts with the SRS or SAD, the conflict MUST be resolved
-explicitly by amendment rather than ignored."* **This is the third constitution III item this
-movement has produced and the first about the clause a chapter exists to verify** (051-2, 052-6
-carry the other two).
+    volume      999    1,000    1,017   121,057   1,000,000
+    under         1        2        2       122       1,001
+    over          2        2        2       122       1,002
 
-**THE FENCE COSTS ARE COUNTED, AND THE GATE'S DEFINITION IS NOT IN A CHAPTER AT ALL.**
-`corpus.mjs` 0/0 — free. `reconcile-usage.mjs` and `reconcile.ts` **1 en and 0 vi**, which is
-the translation frontier rather than a shape needing handling: the Vietnamese Part 4 holds
-`chapter-01` through `chapter-03` and stops. `compose.yaml` 8/6, `limits.itest.ts` 1/1.
-**`package.json` and `turbo.json` are APPENDIX ONLY** — `fences/post-series.md` carries 28
-fence blocks over 18 files, and its `package.json` hunk's `-`/`+` pair **is the
-`test:integration` line**, published there and nowhere else. The appendix applies after every
-chapter, so a chapter hunk touching that line would anchor on a pre-appendix state and then be
-**overwritten silently** — unlike 4.8's failure, which reported only because its edit and the
-appendix's did not overlap.
+`max(analytical, operational)` is the denominator, so a surplus of `d` divides by `volume + d`
+and a shortfall by `volume`. **500,500 of the volumes below a million differ**, and every volume
+above a million does. At 999 a surplus of one message passes and a shortfall of one breaches.
+Found by writing the function, not by reading the table.
 
-**AND FR-ANL-06's DAILY JOB HAS NO RUNNER OF ANY KIND.** Zero occurrences of `reconcile-usage`
-in `relay-platform/package.json`, `turbo.json`, `ci.yml`, the tutorial's `package.json` or any
-`*.sh`; `ci.yml` triggers on `push` and `pull_request` and carries no `schedule:`. The platform
-runs five background loops — `RELAY_OUTBOX_RELAY`, `RELAY_DELIVERY_RELAY`, `RELAY_QUOTA_RELAY`,
-`RELAY_NOTIFICATION_RELAY`, `RELAY_EVENT_CONSUMER` — so the pattern exists and the reconciler is
-the one recurring job built as a hand-run script. **FR-ANL-06 is three requirements in one
-sentence and the platform has one**: the comparison exists, the alert has no mechanism (SRS
-1.14), and the daily job has no runner.
+**FR-ANL-06 IS THREE OBLIGATIONS AND THE PLATFORM HAS ONE.** The comparison exists and is
+exercised on every push. **The daily job has no runner of any kind** — zero hits for
+`reconcile-usage` in either `package.json`, `turbo.json`, `ci.yml` or any `*.sh`, and no
+`schedule:` trigger — which no document had recorded. The alert has no mechanism (SRS 1.14).
+**ADR-28** records the absence rather than building a sixth relay: a daily sweep today would
+report `no-data` for every tenant, because **no environment has both sides**. **ADR-27** is the
+gate. The constitution III amendment is **written in full and not applied**
+(`specs/054-chapter-4-9/constitution-amendment.md`) — three items now stand against one
+principle (051-2, 052-6, 054-3).
 
-**AND THE WORKFLOW HAS BEEN RED ON EVERY PUSH SINCE 045.** `check-fence-chain.mjs:337` exits 1
-whenever the count is non-zero, `ci.yml:205` runs `pnpm check:fences` with no
-`continue-on-error`, and the standing count is **110**. Nothing is stranded behind it — it is
-the tutorial job's last step — but *"the build fails"* is not a signal a planted drift can
-change, which is this milestone's own subject one level up.
+**AND THE WORKFLOW IS STILL RED AT THE TOP.** `check:fences` exits 1 at the standing 110 as its
+job's last step, on every push since feature 045. The ratchet that would fix it — a per-kind
+baseline in `fences/baseline.json` — was written and **refused by this environment's guard as a
+CI bypass**, which is the right reflex for a change that makes a failing checker exit 0. It is
+the user's call; `gaps.md` 054-1 carries the design.
 
-**AND BOTH PUBLISHED MILESTONES FAIL `docs/07` §2's FLOORS, IN BOTH DIRECTIONS.** 3,151 words
-and **0 figures**; 1,873 and 1. §2 asks for 2,000–4,000 words and 2–4 figures, and
-**`check:figures` does not enforce the count** — it verifies the `code=` prop and the import
-bindings, so a chapter with no figures passes it.
+## WHAT RUNNING IT COST, AND EVERY ONE WAS AN INSTRUMENT
+
+- **A TITLED EXCERPT IS A WHOLE-BODY CLAIM, AND IT COST TWO PROBLEMS.** Three quoted lines from
+  `gauntlet.itest.ts` under ```` title="…gauntlet.itest.ts" ```` made the chain's state for that
+  file three lines — breaking the HEAD comparison **and the appendix's own hunk for it**, whose
+  pre-image `import "reflect-metadata";` had vanished. 051-6, reproduced.
+- **THE APPENDIX COULD NOT CARRY THE COVERAGE CONFIG'S EDIT.** A hunk from the tree failed;
+  dumping the chain's own state (rule 1a) showed **it has no `env` block at all**, because the
+  appendix hunk that would add it is one of the fourteen that no longer apply. Described in
+  prose there instead; 048-3 is sharper than "diverged at line 29".
+- **THE LOADER'S REPORT WAS A WHOLE-TABLE COUNT AND A SECOND CORPUS EXPOSED IT** —
+  `removed_by_ttl: -393,562`. A delta between two totals is not a measurement of the thing that
+  changed unless nothing else changed. Every count it prints is scoped now, which is also what
+  made the cleanup possible.
+- **A BARE `count()` ON A `SummingMergeTree` IS A MOMENT, NOT A STATE.** The before-and-after
+  read 15 immediately after a cleanup and **9** after the merge, with `FINAL` and
+  `uniqExact((environment_id, day))` both 9. Nothing was deleted in between.
+- **ONE CLEANUP FOUND A TABLE NO DOCUMENT NAMES.** Deleting by `system.columns` rather than by a
+  list caught `.inner_id.3f6e34d9-…` — chapter 4.2's `daily_usage`, a view with no `TO`, whose
+  rows live in a table named after a UUID. **571,333 rows from one corpus run.**
+- **T015's PREMISE WAS FALSE AND THE TASK WAS THE THING THAT WAS WRONG.** *"A pure function over
+  messages grouped by (environment_id, period)"* — those rows never exist in Node: `created_at`
+  and `user_id` are chosen by `random()` inside the insert. A pure function would have been a
+  second implementation of a `GROUP BY` that nothing runs.
+- **A PIN ON A REAL FILE NO LANE INCLUDES IS SILENT.** Probed both ways: `corpus.mjs` at an
+  impossible `lines: 101` produced no error while the control fired at 68.18%. `scripts/` has no
+  tests at all, so the arithmetic went where the ratchet reaches it (054-7).
+- **AND ONE RED WAS MINE.** The gateway timed out during a gate run while I was running three
+  other suites on the same machine; 4 of 4 green asked again with nothing else running.
+  045's rule about timing batteries applies to a correctness run too, because a timeout is a
+  measurement.
 
 **053 IS CLOSED at 139 of 139 — CHAPTER 4.8, "the log a customer can search".** Its record is
 `specs/053-chapter-4-8/` — `baseline.txt` first, then `gaps.md` (**21 entries: 9 new, 12
