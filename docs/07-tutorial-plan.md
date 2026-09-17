@@ -719,15 +719,29 @@ defenses, in priority order:
    tag lineage, re-run all checkpoints, and add a `REVISED` note to affected chapters —
    never let prose and code disagree silently.
 
-**Status of these defenses (as of 2026-08-08).** Defense 2 exists in a stronger form
-than planned: fences are byte-verified against the repo by `pnpm check:fences`, which
-replays every published chapter (95 files, 18 chapters) rather than resolving line-range
-markers at build time. Defense 1 does **not** exist — there is no CI anywhere in the three
-repositories, so chapter checkpoints, the quickstart's NFR-USE-03 run, and the
-constitution's 100% branch-coverage bar for isolation code (Principle VI, NFR-MNT-02) are
-all verified by hand or not at all. Chapter 3.1 deferred the coverage measurement; chapter
-3.2 deferred it a second time by explicit decision, and 3.3 a third — each recorded in
-its own feature rather than allowed to lapse quietly.
+**Status of these defenses, written 2026-08-08 and superseded ten lines below.** Defense 2
+exists in a stronger form than planned: fences are byte-verified against the repo by `pnpm
+check:fences`, which replays every published chapter (95 files, 18 chapters) rather than
+resolving line-range markers at build time. **Defense 1 did not exist when this paragraph was
+written** — there was no CI anywhere in the three repositories, so chapter checkpoints, the
+quickstart's NFR-USE-03 run, and the constitution's 100% branch-coverage bar for isolation code
+(Principle VI, NFR-MNT-02) were verified by hand or not at all. Chapter 3.1 deferred the
+coverage measurement; chapter 3.2 deferred it a second time by explicit decision, and 3.3 a
+third — each recorded in its own feature rather than allowed to lapse quietly.
+
+**That paragraph and the next one contradicted each other for thirteen months of project time**,
+both dated 2026-08-08, ten lines apart: *"Defense 1 does **not** exist"* against *"Defense 1 now
+exists"*. Chapter 4.8 corrected the second and did not read the first, so a repair strengthened
+one side of a contradiction. Read them in order now — the first is the state before feature 024
+and the second is the state after.
+
+**AND DEFENSE 1 IS NOT THE THING §6 SPECIFIED.** The plan asked for *"a checkpoint script per
+tag"*: each chapter's tag checked out and verified on its own. What exists is a workflow against
+the **tip** — three jobs that build and test `main`, which says nothing about whether chapter
+3.12's tag still typechecks. The per-tag sweep has been run by hand, twice, by the features that
+needed it (045 ran all 26 Part 3 tags; 047 re-ran Part 1's). **What is verified continuously is
+the tip; what is verified per tag is whatever somebody last ran**, and `relay-platform/README.md`
+promises a reader the tags work.
 
 **Closed by feature 024 (2026-08-08), with one clause still open.** Defense 1 now exists:
 `.github/workflows/ci.yml` in the parent repository runs both lanes against real stores —

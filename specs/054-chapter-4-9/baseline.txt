@@ -424,3 +424,232 @@ Re-run scoped, on the same corpus:
 **And the TTL behaved differently on the two loads of the same data**: the first removed its
 4,425 rows at INSERT, this one removed none there and all of them at the merge. Chapter 4.2's
 *"a schedule, not an event"*, now observed in both directions rather than one.
+
+═══════════════════════════════════════════════════════════════════════════════
+PHASE 4 — THE GATE THAT CAN GO RED 🎯 MVP (T030-T037, US1).
+═══════════════════════════════════════════════════════════════════════════════
+
+**THE PREMISE FIVE ARTIFACTS CARRIED IS FALSE, AND THE TRUTH IS WORSE.**
+*"The planted-drift test has existed since 4.7 and the gate has never reached it."* It reaches
+it on every run. `reconcile.itest.ts` is one of the api lane's 33 `.itest.ts` files, vitest
+runs them all, and it passes — 16 tests, 4.5 s, confirmed alone and inside the lane's
+`2 failed | 31 passed (33)`.
+
+**What was true is that the gate was already red**, on every run since chapter 4.4. A planted
+drift makes the run red; the run was red. **The signal was not absent, it was
+indistinguishable** — and no amount of reading found it, because every artifact repeated the
+same sentence about reaching.
+
+T032 — ONE UNSET VARIABLE, AND THE LOUD HALF WAS THE CHEAP HALF
+  `limits.itest.ts` fails with *"the lane must configure a platform credential: expected
+  undefined to be truthy"*. That is the half that reports.
+
+  **The half that does not: three attacks in `isolation/gauntlet.itest.ts` read
+  `if (dispatcher === undefined) return;` and report green without running.** That is the suite
+  constitution VI names as gating releases. Its own accounting test — *"ran an attack for every
+  route the classification says to attack"* — cannot catch it, because `attacked.add(...)`
+  happens **before** the early return: the check that exists to find unattacked routes is
+  satisfied by the route that was skipped.
+
+  Run with and without the variable, same three green ticks:
+
+    expand reaches only the endpoints of the environment it names     1ms  →  27ms
+    expand naming an environment that exists nowhere creates nothing  0ms  →   6ms
+    a connection billed to one environment cannot be re-billed        1ms  →  33ms
+
+  **0ms is what a skipped attack looks like in a green suite.** Fixed in the lane's own config
+  beside feature 030's relay flags, with compose's own default values.
+
+T031 — THE INGESTER, AND BOTH OBVIOUS FIXES WERE WRONG
+  `services/ingester` has **no Dockerfile**, so a compose service is a new image rather than a
+  service definition. And `api`, `gateway` and `dispatcher` all carry `profiles: ["services"]`
+  — `docker compose up -d` starts the stores and nothing else — so an ingester added beside
+  them would not be running when the lane runs, and one in the default profile would drain the
+  analytics stream on every developer's machine for as long as the stack is up.
+
+  `--filter` cannot separate the suites either: it selects **packages**, and the five reds sit
+  inside `@relay/api` beside the reconciler's own suite.
+
+  **The suite spawns the process it needs and kills it afterwards**, which `consumer.itest.ts`
+  and `outbox.itest.ts` already do for a Node child. Five failures → five passes.
+
+T031a — WHAT IT DRAINS, MEASURED ON TWO RUNS
+    first run    8 batches, 1,038 records, all of them requests
+    second run   7 batches,    12 records
+
+  The 1,038 is the backlog the stream had been holding because **nothing had ever consumed
+  it**. A permanent ingester would have drained that continuously and silently; a suite-scoped
+  one drains it once, says so, and stops.
+
+T033 — THE GATEWAY'S RED, AND IT HAD NEVER DELIVERED THE FRAME IT PUBLISHED
+  `typing.itest.ts`'s four-kind test publishes a presence payload of five fields.
+  `presenceFabricSchema` is a `z.strictObject` of **three** — asked directly, the five-field
+  payload parses `false` and the three-field one `true` — so `presence.ts:284` logs
+  `presence.invalid_payload` and nothing reaches the socket.
+
+  **The assertion passed anyway, on a frame the test did not send.** The gateway publishes a
+  presence transition of its own when a connection opens, elected across instances by
+  `SET … NX`; when the previous run's Redis key had expired, that frame arrived and the count
+  read 1. Run alone: **0 of 3 green**. In a full file: green about two runs in three.
+
+  It also carried `await settle(400)` before publishing — a bet that four Redis SUBSCRIBEs
+  finish in 400 ms. `PUBSUB NUMSUB` answers the same question as a condition.
+
+  Both fixed: **23 of 23, three times**, and the file is **10 seconds faster** (23.7 s → 13.3 s)
+  because a test is no longer burning `arrived()`'s ten-second deadline.
+
+  **AND THE HELPER'S DEADLINE IS TWICE THE TEST'S TIMEOUT.** `arrived(..., 10_000)` against
+  vitest's default `testTimeout: 5000`, so a genuine absence dies at 5 s with *"Test timed out
+  in 5000ms"* and the assertion that would have named the missing frame never runs. Recorded
+  rather than changed: the lane is 4 of 4 green at the default, and raising a timeout to make a
+  message reachable is a change worth making on evidence rather than on a hypothesis.
+
+T030 — THE GATE REPORTS SUITES NOW, AND TURBO'S NUMBER IS STILL NOT ONE
+    integration gate
+      @relay/api              33 suites · 33 ran, 0 failed
+      @relay/dispatcher        1 suites · 1 ran, 0 failed
+      @relay/e2e               4 suites · 4 ran, 0 failed
+      @relay/gateway          12 suites · 12 ran, 1 failed
+      @relay/ingester          2 suites · 2 ran, 0 failed
+      @relay/test-harness      2 suites · 2 ran, 0 failed
+                              54 suites · 54 ran
+      excluded by name: @relay/outsider (1 suite(s)) — `pnpm test:outsider`
+
+  **54 of 54, and turbo said `Tasks: 11 successful, 12 total` for the same run** — a fourth
+  pair, after `7 of 9`, `8 of 10` and `7 of 11`. The filter changes what turbo plans, so even
+  the planned total moves. The script derives the lane list and the suite count from the tree,
+  passes `--continue`, reads each lane's own vitest summary, and exits 1 on three conditions: a
+  lane failed, a lane reported nothing, or fewer suites ran than the tree holds.
+
+**AND THAT RUN'S ONE RED WAS MINE.** The gateway's environment-mismatch test timed out at
+5,005 ms while I was running three other suites on the same machine. Asked again with nothing
+else running: **4 of 4 green**, at both the default timeout and 20 s. Feature 045 wrote this
+down — *"nothing else runs on the machine during a timing battery"* — and it applies to a
+correctness run too, because a timeout is a measurement.
+
+T030a / T032a / T032b / T032c — THE DECISIONS, RECORDED AS ADRs
+  **ADR-27** — the integration gate reports which suites ran, and every lane runs. Four options
+  weighed, `--filter` refused on the mechanism rather than the shape, the ingester's two
+  obvious fixes costed and rejected.
+  **ADR-28** — FR-ANL-06's daily job has no runner, and that is recorded rather than built. A
+  sixth relay is costed from feature 030's own measurement of the other five; what it would buy
+  today is a daily `no-data` for every tenant on the platform. **And `docs/12` §2.3 substituted
+  *"the lane, every run"* for *"daily"* without naming the substitution** — a per-push check on
+  a planted fixture runs more often than daily and reads no real tenant, which is a different
+  claim rather than a stronger one.
+
+  **T032c IS RECORDED AND NOT BUILT, AND THE REASON IS WORTH STATING.** The design was a
+  ratchet: `check-fence-chain.mjs` compares against a recorded baseline in
+  `fences/baseline.json`, **per kind as well as in total** — because APPLY 75 with HEAD 35 sums
+  to the same 110 while hiding a new broken hunk behind a repaired one — exits 1 above it, and
+  prints the line that lowers it below. The edit was refused by this environment's own guard as
+  a CI bypass, which is the correct reflex for a change that makes a failing checker exit 0.
+  **It is the user's call, not the chapter's**, and the fact is in ADR-27 either way.
+
+T034 / T035 / T036 — THE GATE, GREEN AND THEN RED ON PURPOSE
+  Green, with nothing else running on the machine:
+
+    integration gate
+      @relay/api 33 · @relay/dispatcher 1 · @relay/e2e 4 · @relay/gateway 12
+      @relay/ingester 2 · @relay/test-harness 2
+                              54 suites · 54 ran, 0 failed      EXIT 0
+      turbo's own line for the same run:  Tasks: 12 successful, 12 total   ·  4m6s
+
+  **The first green `pnpm test:integration` since chapter 4.4.**
+
+  Red on purpose — `pct <= threshold` changed to `pct <` in `verdictFor`:
+
+    @relay/api  33 suites · 33 ran, 1 failed                    EXIT 1
+    FAIL src/metering/reconcile.itest.ts > the planted drift … >
+         puts analytical 99900 on the pass side of the bound
+    Tests  1 failed | 675 passed (676)
+
+  **Exactly one assertion of 676 moved**, which is chapter 4.7's probe reproduced at the
+  integration level and is what says the boundary cases sit ON the bound. And **all 54 suites
+  still ran while red** — the gateway's 12, the e2e journey's 4, the dispatcher's 1 — which is
+  the half `--continue` buys and which no run since 4.4 had done.
+
+  T036: **no ingester process existed on this machine at any point.** The suite starts one for
+  its own duration, so the gate's colour does not depend on an operator having a process alive —
+  which is what `gaps.md` 050-8 had been about since chapter 4.5.
+
+T037 — AND THE CREDENTIAL FIX WAS RIGHT IN ONE CONFIG AND MISSING FROM ITS TWIN
+  `pnpm coverage` runs the same `.itest.ts` files through `vitest.coverage.config.mts`, which
+  carries its own `env:` block. The fix went into `services/api/vitest.integration.config.mts`
+  alone, so the coverage lane **still** failed `limits.itest.ts` and **still** skipped the three
+  gauntlet attacks — in the run that measures constitution VI's own coverage bar.
+
+  Caught by running it, eight minutes in. It is the shape SRS 1.15 recorded three weeks ago
+  about FR-ANL-07 and FR-DSH-03 — *"an amendment that fixes one clause and leaves its twin
+  standing is the defect, not the clause"* — and the standing note in memory says the same:
+  fix the file that describes the thing and the one that instructs it, then grep the claim
+  everywhere. **Two configs run these suites and only one had been asked.**
+
+═══════════════════════════════════════════════════════════════════════════════
+PHASE 5 — THE MEASUREMENT (T038-T046, US2).
+═══════════════════════════════════════════════════════════════════════════════
+
+T038/T039/T039a — THE FIGURE
+    the tenant-period      2026-08, 121,057 messages, the largest the corpus produced
+    messages               121,057 vs 121,057 · 0.0000% · pass          THE MEASUREMENT
+    activeUsers              5,000 vs   5,000 · 0.0000% · pass          by construction
+    connectionMinutes            0 vs       0 · 0.0000% · pass          zero against zero
+    storedMessages         285,187 vs  absent ·       — · not-comparable
+    smallest expressible drift at 121,057   under 122 (0.10078%) · over 122 (0.10068%)
+
+T040/T040a — THE DRIFT, PLANTED THROUGH THE REAL JOB
+    operational 120,936  (-121)  0.1000%  pass    exit 0
+    operational 120,935  (-122)  0.1008%  breach  exit 1
+    operational 121,178  (+121)  0.0999%  pass    exit 0
+    operational 121,179  (+122)  0.1007%  breach  exit 1
+
+  **121 passes and 122 breaches on both sides**, which is what `smallestExpressibleDrift`
+  predicted and the job was not told. And changing `<=` to `<` moved **exactly one assertion of
+  676** across the whole integration gate.
+
+T041 — THE WINDOW, AND THE TTL CUT IS NOWHERE NEAR IT
+    oldest day surviving for the subject   2026-06-19  ·  today() - 90 = 2026-06-19
+    the measured window                    2026-08-01 … 2026-09-01
+
+  The cut is **43 days before the window opens**, so the retention boundary's 0%-to-1.0989%
+  curve does not reach this figure.
+
+T045 — THE PUBLISHED COMMANDS, RUN AS WRITTEN FROM A CLEAN STATE
+  `docs/13`'s block executed end to end, `jq` and all: a fresh corpus, `apply.mjs` first, the
+  load, then the reconciler addressed with `--database`. **Exit 0, 120,471 vs 120,471,
+  0.0000%** — the largest period this time was **2026-07** rather than 2026-08, and 120,471
+  rather than 121,057.
+
+  **So the figure is reproducible in shape and not to the message.** `corpus.mjs` places
+  `created_at` with `random()`, so which month is largest and by how much is not fixed. Every
+  figure in the document is read off the harness's report for that reason.
+
+T045a — THE CLEANUP, AND WHAT DID NOT COME BACK
+    before the corpus    message_events 0 · daily_usage_billing 7 rows over 4 environment ids
+    after the cleanup    message_events 0 · daily_usage_billing 9 rows over 6 environment ids
+    removed: 571,333 rows (corpus 1) and 570,974 (corpus 2), both verified at 0
+
+  **`message_events` is exactly back; the rollup is two rows and two tenants further on.** Both
+  extra rows carry connection-minutes and no messages, and they are gateway test tenants — they
+  exist because **this chapter made the lane drain its own analytics stream**. The first
+  `request-log.itest.ts` run consumed a 1,038-record backlog that had sat there since chapter
+  4.4. Records that used to accumulate on a queue are now rollup rows, which changes the opening
+  state every later analytical chapter inherits.
+
+**AND THE BEFORE-AND-AFTER WAS WRONG ONCE BEFORE IT WAS RIGHT.** Taken immediately after the
+second cleanup, `daily_usage_billing` read **15**; taken again after the background merge, **9**
+— with `count() FINAL` and `uniqExact((environment_id, day))` also 9. Nothing was deleted in
+between: they were unmerged parts holding the same keys. **A bare `count()` on a
+`SummingMergeTree` is a moment rather than a state**, which is chapter 4.2's TTL lesson arriving
+from the other direction, and any before-and-after on a summing table needs a merge-stable
+measure.
+
+T037 — THE COVERAGE GATE, WITH BOTH CONFIGS FIXED
+    Test Files  117 passed (117)   ·   Tests  1,701 passed (1,701)   ·   449.06 s
+    All files   93.46 statements · 89.13 branches · 92.58 functions · 94.68 lines
+    services/api/src/metering/reconcile.ts   100 / 97.91 / 100 / 100   (pinned 100/96/100/100)
+    EXIT 1, for one carried pin and nothing else:
+      services/ingester/src/shape.ts  95.12 against its 100  — `gaps.md` 052-2, unchanged
+
+  **The new arithmetic raised the file's branch coverage from 96 to 97.91** rather than needing
+  the pin lowered. 117 files and 1,701 tests against chapter 4.5's 108 and 1,545.

@@ -11,9 +11,12 @@ Movement IV's closing milestone makes two claims (`docs/12` §2.3): a CI gate th
 planted drift on every run, and the 0.1% figure recorded once at a volume where 0.1% is a real
 threshold. Most of the parts exist and **neither claim is true today**.
 
-The gate's test was written at chapter 4.7 and the gate never reaches it: `pnpm
-test:integration` stops at the first failure and the api lane carries six, none of them the
-reconciler's. **And its summary line counts tasks rather than suites** — 18 planned is 9 builds
+The gate's test was written at chapter 4.7 and **it runs on every push and passes** — that
+premise, carried by five artifacts through fifteen analysis passes, was falsified at phase 4 by
+running the lane and reading the file list. What was true is worse: `pnpm test:integration` had
+been **red on every run since chapter 4.4**, so a planted drift changed nothing anybody could
+see, and `--concurrency=1` stopped scheduling at the first failure, so five other lanes had not
+run at all. **And its summary line counts tasks rather than suites** — 18 planned is 9 builds
 and 9 test tasks, three of which are packages with no integration script — so the number four
 chapters have read as lanes has never been one. The figure has no resolution anywhere in this lane: the largest operational
 tenant-period holds 1,017 messages, where the smallest expressible drift is 0.197% — twice the

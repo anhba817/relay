@@ -36,14 +36,16 @@ are falsified there.** Seven phases, MVP at 4.
 planted drift every run, and the 0.1% figure recorded once at a volume where 0.1% is a real
 threshold.
 
-**THE GATE CANNOT FAIL FOR ITS OWN REASON.** `pnpm test:integration` plans 18 tasks —
-**9 builds and 9 test tasks, three of which are no-ops** (`@relay/config`, `@relay/protocol`
-and `@relay/service-kit` have no `test:integration` script) — and `--concurrency=1` stops
-scheduling at the first failure. The api lane carries six failures, **none of them the
-reconciler's**: five need an ingester `compose.yaml` does not ship (050-8, since 4.4) and one
-reads *"the lane must configure a platform credential: expected undefined to be truthy"*. Both
-shapes were run alone at phase 1 and fail identically, so neither is 4.8's gateway flake. The
-planted-drift test has existed since 4.7 and the gate has never reached it.
+**THE GATE CANNOT FAIL FOR ITS OWN REASON, AND THE REASON IS NOT THE ONE FIVE ARTIFACTS GAVE.**
+The planted-drift suite **runs on every `pnpm test:integration` and passes** — `reconcile.itest.ts`
+is one of the api lane's 33 files and vitest runs them all. What was true is worse: **the gate
+was already red**, on every run since chapter 4.4, so a planted drift changed nothing anybody
+could see. Six failures: five in `request-log.itest.ts`, which needs an ingester `compose.yaml`
+does not ship (050-8), and one in `limits.itest.ts` — *"the lane must configure a platform
+credential: expected undefined to be truthy"*. **The signal was not absent; it was
+indistinguishable.** And `--concurrency=1` stopped scheduling at the first failure, so the
+gateway's 12 suites, the e2e journey, the ingester, the dispatcher and the harness had not run
+since 4.4 either.
 
 **AND THE SUMMARY LINE FOUR CHAPTERS HAVE READ AS A LANE COUNT DOES NOT REPRODUCE.** `7
 successful, 11 total` here, `8 of 10` at 4.8, `7 of 9` at 4.7 — same tree, same command. Which

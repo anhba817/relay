@@ -78,6 +78,37 @@ mode and needs one. **That harness is a chapter-1 dependency, not a chapter-8 on
 demonstration needs it before the milestone does, and it must be introduced by the chapter
 that first uses it (045-73: a file created by chapterless work has nowhere to be introduced).
 
+**AMENDED 2026-09-17 (feature 054, the milestone chapter itself). Three of the four claims
+above were falsified by building the thing they describe.**
+
+**(1) The harness claim is stale in the direction nobody checks.** *"It has no analytical-volume
+mode and needs one"* was true when this was written and stopped being true at chapter 4.2:
+`corpus.mjs` and `load-analytics.mjs` build 1.6M messages in 92.4 s and load them into ClickHouse
+in 1.2 s. **What the harness lacked was the OPERATIONAL side** — `usage_periods` appeared in
+`corpus.mjs` exactly once, as a row count in its own closing report, and `usage_active_users` not
+at all. §2.3 could not have anticipated that, because chapter 4.7 had not yet found every tenant
+in the platform one-sided. The milestone's harness work was writing the counters, not the volume.
+
+**(2) "The lane, every run" was never true, and the reason is not the one five artifacts gave.**
+The planted-drift suite has run on every push since chapter 4.7 and passed. What had not been
+true since chapter 4.4 is the gate's **colour**: `pnpm test:integration` was red on every run for
+six failures that had nothing to do with metering, so a planted drift made a red run redder.
+**The signal was not absent; it was indistinguishable.** And `--concurrency=1` stopped scheduling
+at the first failure, so five other lanes had not run at all. Both are fixed at 4.9 (ADR-27), and
+the gate now reports **suites executed against suites present** — 54 of 54 — because turbo's own
+summary counts tasks and does not reproduce run to run.
+
+**(3) The table's left column substitutes a schedule and does not say so.** *"The lane, every
+run"* stands in the row whose claim is FR-ANL-06's *"daily job"*. A per-push check on a planted
+fixture runs **more often** than daily and **reads no real tenant** — a different claim rather
+than a stronger one. ADR-28 records that the daily job has no runner of any kind, and the
+milestone's sentence is scoped to what runs.
+
+**(4) What survived unchanged is the split itself**, and the argument for it turned out to be
+sharper than written: at the lane's largest tenant-period the smallest expressible drift is
+**0.197%, twice the bound**, so the recorded half had to happen at a built volume. It did, at
+121,057 messages in one tenant-period, in `docs/13-metering-measurement-2026-09-17.md`.
+
 ### 2.4 Chapter 1's premise was wrong, and the true one is structural
 
 `docs/07-tutorial-plan.md` specified chapter 4.1 as *"run the metering query against Postgres
@@ -206,7 +237,7 @@ is the stable address, as §2.1 intended.
 | 7 | IV | Metering you can bill on | Daily rollup materialised views (DR-10). **One has existed since chapter 4.2** — `analytics/0001_daily_usage.sql`, a `SummingMergeTree` over `message_events`. What this line did not say is that **nothing reads it and nothing writes its source**: the only file that ever asked FR-ANL-05's question of the analytical store is `analytics/query.mjs`, referenced by no script, service or config, and `message_events` occurs in zero files under `services/` while `api_requests` holds 11,683 rows and `connection_events` 154. So the chapter is not *"build the rollup"* — it is **"the rollup satisfies DR-10 over a table that receives no events, and FR-ANL-09's channel dimension costs the billing read 525x"**. Two rollups ship, not one. Closes SRS Appendix C question 4 and records constitution III's conflict with the shipped platform |
 | 8 | IV | The job that checks the meter | FR-ANL-06's reconciliation job, built to be callable in isolation (§2.3). **What this line did not say is that the job cannot pass, and that three of the four reasons are not the analytical path's fault.** Measured at chapter 4.7: `message_events` has no producer (100%); `uniq` is exact to **65,536** distinct and 0.5676% at 65,537; the raw-retention boundary makes the oldest day in any window disagree by **0% at midnight rising to 1.0989% just before it**; and the two OPERATIONAL counters of messages sent disagree with **each other** by 0.2630%. So the chapter is not *"build the comparison"* — it is **"the comparison has to say which operational table it read, one tenant at a time, and publish no percentage where the bound is unreachable"**. **And `not-comparable` and `no-data` are verdicts of their own**, because every tenant in the platform is one-sided: 4 rollup environment ids that exist in no Postgres row, against 1,313 with operational usage and no rollup rows. *"Callable in isolation"* split in two — the verdict runs with no store, no database and no broker, and the gathering reads both. Amends FR-ANL-06 (SRS 1.14), closes `gaps.md` 047-1 and 048-1, and names constitution III's conflict a second time after 051-2 |
 | 9 | IV | The log a customer can search | FR-ANL-07's query surface; FR-ANL-10's latency percentiles. **The brief pairs a clause that can be built with one that cannot, and the chapter does not build the second.** FR-ANL-10's column `message_events.delivery_latency_ms` has **0 rows and 0 producers** — carried as `gaps.md` 048-2 through six features — and the one thing that writes that table, `scripts/scale/load-analytics.mjs`, puts `CAST(NULL AS Nullable(UInt32))` into the column on purpose, twice. **What this line also did not say is that the quantity had never been defined.** "End-to-end delivery latency" has three readings and the platform's one existing latency measures a different one: `deliver.ts` times the `fetch` alone, which `analytics/0003_webhook_attempts.sql:20` already called *"the ENDPOINT … NOT `message_events.delivery_latency_ms`"*. So the chapter is not *"compute the percentiles"* — it is **"define the quantity, publish the error of the function everyone would have reached for, and build the surface that can be built"**. Measured: `quantile(0.99)` reads **4,961 where `quantileExact` reads 10,000** on the platform's one real latency sample, 50.39% low, and on a skewed sample the error **grows** with n. Amends FR-ANL-10, FR-DSH-03 and FR-ANL-08 (SRS 1.15), writes **ADR-26** — the first customer request served from the analytical store — and provisions the CI ClickHouse four chapters had needed |
-| 10 | IV | **★ Milestone: the meter agrees** | The planted drift is caught; the 0.1% figure is measured once and recorded (§2.3) |
+| 10 | IV | **★ Milestone: the meter agrees** | The planted drift is caught; the 0.1% figure is measured once and recorded (§2.3). **What this line did not say is that the drift was already being caught and nobody could tell.** The planted-drift suite has run on every push since chapter 4.7 and passed; what had not been true since chapter 4.4 is the gate's colour — `pnpm test:integration` was red on every run for six failures with nothing to do with metering, so a planted drift made a red run redder. **The signal was not absent, it was indistinguishable**, and `--concurrency=1` meant five other lanes had not run at all. So the chapter is not *"make the gate catch a drift"* — it is **"make a gate whose colour can change, and publish the figure at a volume where 0.1% is a threshold rather than a rounding of nothing"**. Measured: 54 of 54 suites now execute and the gate says so, because turbo's own summary counts tasks and does not reproduce run to run; **one unset environment variable** was failing `limits.itest.ts` loudly and making three isolation-gauntlet attacks return at their first line and report green; and a gateway test had **never delivered the presence frame it published** — a five-field payload against a three-field strict schema — passing instead on a frame the gateway sends at connect. The figure: **121,057 against 121,057, 0.0000%**, where the smallest expressible drift is 122 messages. Writes **ADR-27** and **ADR-28**, proposes the constitution III amendment three features have deferred, and publishes `docs/13-metering-measurement-2026-09-17.md` |
 | 11 | V | The upload that never reaches us | FR-MED-01/02: the slot, the presigned URL, the four distinct refusals, the storage quota |
 | 12 | V | The half of the union that was refused | FR-MED-06. Chapter 3.24 shipped `media_not_available` (422) to refuse `media_id` **by name**, as a discriminated union built for this arm to be filled. This chapter fills it |
 | 13 | V | A link that expires, and who may hold it | FR-MED-08: signed delivery, one hour, authorisation following channel membership rather than a parallel ACL |
