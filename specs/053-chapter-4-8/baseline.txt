@@ -156,3 +156,129 @@ T001a/T001b/T001c/T001d — CI, AND THE CORRECTION PASS 12 MADE TO PASS 9
   attempts 9, and prints `Tasks: 7 successful, 9 total`. One red suite still hides every lane
   ordered after it, in CI exactly as locally (`gaps.md` 051-3). Provisioning the store does not
   fix that and this line exists so nobody reads it as fixed.
+
+═══════════════════════════════════════════════════════════════════════════════
+PHASE 2 — THE QUERY CONTRACT, WITH NO STORE IN SIGHT (T013-T022).
+═══════════════════════════════════════════════════════════════════════════════
+
+T020 — THE HOSTILE WINDOW, RUN RED, AND THEN ASKED OF THE SERVER
+  The phase's own test was written first and run against a version that validates the
+  window as a string and interpolates it — which is what *"it is validated upstream"*
+  looks like when the validation is `z.string()`. **10 of 10 red**, every payload intact
+  in the statement:
+
+    SELECT ... WHERE ts >= '2026-09-16T00:00:00Z' OR 1=1 --' AND ts < '...'
+    SELECT ... WHERE ts >= '' UNION ALL SELECT * FROM system.users --' AND ts < '...'
+
+  **THEN THE STATEMENTS WERE PUT TO THE SERVER, BECAUSE "REACHES THE PARSER" IS A WEAKER
+  CLAIM THAN THE ONE AVAILABLE.** Against the lane's busiest tenant:
+
+    scoped, honest window (1 hour)                       0 rows
+    same statement, `from` carrying `' OR 1=1 --`   11,683 rows   ← the whole table
+    the whole table, for comparison                 11,683 rows
+    distinct environment_id under the payload          152        ← every tenant in the lane
+    the tenant's own honest day                         37 rows
+
+  **The injection does not merely widen the window — it defeats the `environment_id`
+  predicate**, because `OR` binds looser than the `AND` chain the scope is written in. That
+  is constitution I broken by a query parameter, and it is the figure the chapter carries.
+
+    ' UNION ALL SELECT name FROM system.users --  →  relay, then the request ids
+                                                     ^ the ClickHouse account name, read
+                                                       out through a customer's log page
+
+  **AND ONE PAYLOAD IS REFUSED BY SOMETHING ELSE, WHICH IS WORTH SAYING RATHER THAN
+  CLAIMING THE CREDIT.** The `; DROP TABLE …; --` half cannot execute over this transport:
+
+    Code: 62. DB::Exception: Syntax error (Multi-statements are not allowed)
+
+  That is chapter 4.2's finding doing work as a second wall. The read payloads are single
+  statements and it does not touch them, so a surface defended by it alone would be
+  defended against the loud half of the attack and not the quiet one.
+
+  **THE REMEDY IS A TYPE, NOT AN ESCAPE.** `z.iso.datetime({offset:true}).transform(v => new
+  Date(v))` means what leaves the schema is a `Date`; `clickHouseInstant(at: Date)` is the
+  only function that turns one into SQL. There is no path from a query string to a
+  statement, so there is nothing to escape and nothing to forget to escape.
+
+T014/T018 — WHAT THE SCHEMA REFUSES, AND THE ONE IT MIRRORS DOES NOT DO WHAT ITS CHAPTER SAYS
+  `historyQuerySchema`'s form and bounds copied: `z.strictObject`, 1..200 default 50,
+  `older`/`newer`. Measured against the real schema:
+
+    {}                OK   {direction:"older", limit:50}
+    {limit:"500"}     REFUSED  too_big
+    {limit:"0"}       REFUSED  too_small
+    {limt:"200"}      REFUSED  unrecognized_keys
+
+  **AND `limit=500` IS A 400, WHERE CHAPTER 2.4 PUBLISHES A CLAMP.** The lead-in says *"the
+  page cap clamps rather than rejects, so a client asking for 500 gets 200 and a cursor
+  instead of a lecture"*, and the code comment inside its `diff` fence says `limit` CLAMPS
+  in capitals. `.max(200)` on a zod number is a validation, not a transform. Nothing in the
+  tree asserts either behaviour — `grep limit` over the messages suites finds no test above
+  200 — so the refusal has been unpinned and undocumented since 2.4.
+
+  **THE COMMENT IS IN EIGHT FENCES ACROSS FOUR CHAPTERS IN EACH LOCALE.** 2.4 adds it;
+  3.11, 3.17 and 3.18 carry it as `diff` CONTEXT. Changing the tree's comment alone
+  unanchors six hunks. Scheduled as **T069a** in phase 7, where the chain is measured.
+  The words are what get fixed, not the code: the refusal is what clients have been written
+  against for two parts, and this chapter's own surface refuses `limit` for a stated reason.
+
+T015/T019 — WHY ONE FIELD IS CLAMPED AND THE OTHER REFUSED
+  `from` is clamped to `now - 30 days` and reported back; `limit` outside 1..200 is a 400.
+  The asymmetry is a decision: `limit`'s bound is published in the contract, so a caller
+  outside it can see their mistake, and the retention edge moves every second and is
+  published as a guarantee rather than as a bound. A caller cannot know it when they write
+  the request. **FR-ANL-08 says ninety days and FR-ANL-07 retains thirty**, so a caller
+  reading the requirements asks for a window the store cannot answer.
+
+  A window ENTIRELY older than the edge resolves to `empty` rather than to a refusal or a
+  bare zero — the caller reads `window` and `retention_edge` and learns the log is gone
+  rather than that nothing happened (R8). The reader skips the store for it.
+
+T016/T017 — THE CURSOR, AND ITS OWN REFUSAL BLOCK CAUGHT ITS FIRST BOUND
+  `rl:<epochMs>:<uuid>`, base64url, decode refusing anything it did not produce. The pair
+  is what T006's 42 tied `(environment_id, ts)` pairs need; a `ts`-only cursor skips or
+  repeats all 89 of those rows.
+
+  **`Number.isSafeInteger` IS NOT A BOUND ON AN INSTANT.** The first draft used it, and the
+  block of ten refusals written beside it went red on `rl:999999999999999:<uuid>` — fifteen
+  digits, a perfectly safe integer, **the year 33658**, headed for a `DateTime64(3)`
+  comparison the column cannot express. Both ends are the column's own facts now: the floor
+  is the DDL's `CHECK ts > toDateTime64('2020-01-01 …')` and the ceiling is `DateTime64`'s
+  representable maximum, 2299-12-31.
+
+  AND THE COMPARISON STAYS IN SQL. `request_id` is a `UUID` column and ClickHouse does not
+  order UUIDs by their canonical text, so the token carries the text and the store compares
+  it as a `UUID` — comparing them as strings in the statement would draw a page boundary
+  the table's own `ORDER BY` disagrees with.
+
+T021 — THE PINS, AND BOTH HALVES OF THE PROBE
+    services/api/src/request-log/cursor.ts              100 / 100 / 100 / 100, twice
+    services/api/src/request-log/request-log.schema.ts  100 / 100 / 100 / 100, twice
+
+  **PINNED AT 100 AFTER THE BRANCH REPORT FOUND TWO UNCOVERED LINES THAT WERE UNCOVERED FOR
+  OPPOSITE REASONS.** `cursor.ts` first read 89.47 / 83.33 naming lines 76 and 79. Line 76's
+  guard could never fire — `Number.isSafeInteger` behind a `\d{1,15}` pattern that cannot
+  produce an unsafe integer — and was deleted, which is chapter 4.6's finding one file over.
+  Line 79's could and never had been asked: the splitting pattern admits `[0-9a-fA-F-]{36}`,
+  so thirty-six dashes reach the UUID check, and only the second check knows where the
+  dashes go. One arm went each way, which is what makes the 100 worth having.
+
+  **THE PIN SWEEP: 55 literal pins, 0 unbindable**, with a positive control asserting the
+  sweep read the threshold block at all (049's rule — a control that proves the checker
+  works says nothing about whether it looked).
+
+  **BOTH HALVES OF THE THRESHOLD PROBE, RE-RUN (045's trap, third time):**
+
+    an impossible pin on a REAL file      ERROR: Coverage for lines (100%) does not meet
+                                          "src/request-log/cursor.ts" threshold (101%)
+    a pin on a path that does not exist   silent — no error, no warning, nothing
+
+T022 — THE GATES
+    pnpm lint        green   1 pre-existing warning (`session.perf.itest.ts:120`), 0 errors
+    pnpm typecheck   14 of 14
+    pnpm test        12 of 12 lanes; api 33 files / 350 tests (+2 files, +59 tests)
+
+  Nothing in this phase touches a store, a database or a broker. That is what it was
+  separated for, and it is why the two coverage numbers are the same under the unit lane and
+  under the workspace one.

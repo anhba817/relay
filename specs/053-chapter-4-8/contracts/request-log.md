@@ -10,10 +10,13 @@ nothing else reads, so every claim here is one a test can drive.
 **Guard**: `CredentialGuard`. The principal must carry an `environmentId`; a `platform`
 principal carries none by design and is refused rather than served an empty page (FR-011).
 
-**Accepts**: decided in phase 3 and stated here with its argument. A request log is closer to
-configuration than to content, which argues for `application` only — the same reasoning
-`WebhooksController` carries: an end-user token on this route would let any logged-in person in
-a customer's product read that customer's whole API history.
+**Accepts**: **`application` only.** A request log is closer to configuration than to content,
+which is the reasoning `WebhooksController` already carries: an end-user token on this route
+would let any logged-in person in a customer's product read that customer's whole API history —
+every endpoint they called, when, and what it answered. The tenant's software may read its own
+log; a person signed into the tenant's product may not.
+
+Decided in phase 2 rather than inherited, because there is no neutral option (below).
 
 **And there is no neutral option.** `CredentialGuard` falls back to `EITHER` — application and
 user both — when no `Accepts` decorator is present (`credential.guard.ts:92`). Leaving the
@@ -235,10 +238,24 @@ request"*, and including means a reader sees their own reads.
 
 ### What it does with `/internal/*`
 
-**Decided in phase 4 and stated here.** 1,656 of a tenant's 4,621 attributed rows are the
-platform calling itself on that tenant's behalf, with the end user's principal —
-`/internal/session` alone is 1,423. Whichever way the decision goes, it is asserted by a test,
-and this section carries the argument rather than the outcome alone.
+**They are returned.** 1,656 of a tenant's 4,621 attributed rows are the platform calling itself
+on that tenant's behalf, with the end user's principal — `/internal/session` alone is 1,423 —
+so a customer's own log opens on calls their software did not make.
+
+Three arguments, and the third is the one that decides it:
+
+1. **Hiding them makes the log incomplete** against FR-ANL-01's *"every request"*. The rows
+   carry the tenant's environment id because the work was done for that tenant; dropping them
+   is a claim that the work did not happen.
+2. **Hiding them needs a prefix rule**, which is a hand-maintained table that **fails open**: a
+   new internal prefix is returned by default, and this project deleted a nine-row port map
+   rather than correct one of those (feature 045).
+3. **The caller can already exclude them, and the platform cannot un-hide them.** The
+   `endpoint` filter exists on this surface, so a customer who wants only their own calls asks
+   for the endpoint they called. A platform that hides rows offers no way back.
+
+What this costs is real and is stated rather than glossed: **the busiest entry in a tenant's
+log is a route they have never heard of**, and the chapter says so.
 
 ---
 
