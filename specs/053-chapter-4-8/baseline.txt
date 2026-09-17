@@ -282,3 +282,140 @@ T022 — THE GATES
   Nothing in this phase touches a store, a database or a broker. That is what it was
   separated for, and it is why the two coverage numbers are the same under the unit lane and
   under the workspace one.
+
+═══════════════════════════════════════════════════════════════════════════════
+PHASE 3 — THE READER AND THE ROUTE (T023-T033).
+═══════════════════════════════════════════════════════════════════════════════
+
+T023a-e — THE DEADLINE, BOTH HALVES, MEASURED BEFORE BEING BUILT
+    SETTINGS max_execution_time = 1, long scan   HTTP 408 in 1.002 s
+                                                 Code: 159 … (TIMEOUT_EXCEEDED)
+    SELECT nope FROM api_requests                HTTP 404
+                                                 Code:  47 … (UNKNOWN_IDENTIFIER)
+
+  **The status already told the two cases apart and only the client was losing it.**
+  `createAnalyticalStore` kept `text.trim().split("\n")[0]` and threw the rest away, so a
+  caller needing to tell a timeout from a bad query had to string-match `Code: 159` — a
+  parse of a server error message to recover a fact the response carried. It throws
+  `AnalyticalStoreError` with `status` now; **status 0 means no answer at all** — an abort,
+  a refused connection — so a caller maps one value rather than three strings.
+
+  The client half is `AbortSignal.timeout(3000)`, opt-in on `createAnalyticalStore` so
+  chapter 4.7's reconciler keeps the behaviour it was measured with. The server half is
+  `max_execution_time = 2`, **shorter on purpose**, so the server's refusal wins the race
+  and the route receives a code it can map instead of an `AbortError` carrying nothing.
+
+  AND THE 503 MAPS ON WHOSE FAULT IT IS. 408 and 0 are the analytical pipeline being
+  unavailable while the api is up — constitution III's second clause exactly — and the
+  client should retry. **404 and 400 are our statement being wrong**, and telling a customer
+  to retry a query that will never work is worse than telling them nothing. Those stay
+  `internal_error`.
+
+T025 — TWO EXTRA COLUMNS SHIP AND ONE DOES NOT, AND THE ONE THAT DOES NOT IS THE INFERRED ONE
+  FR-ANL-07 names six fields; the table carries four more.
+
+    principal_kind      RETURNED — the only handle a customer has on the `/internal/*`
+                        rows this surface decided to show them
+    limited_operation   RETURNED — the answer to "why was I 429'd", and the limiter STAMPS
+                        it, so the value is observed
+    refused_at          NOT RETURNED — two of its four arms are INFERRED. Chapter 4.4
+                        measured that a guard refusal and a handler response are identical
+                        from the producer's vantage point, so `handler` is an inference
+                        from silence, and a customer acting on a plausibly-wrong value in a
+                        column nothing flags is worse off than one who never saw it
+    environment_id      NOT RETURNED — the caller is the tenant
+
+T026a/T026c — ABSENCE IS NOT A STRING, AND THE COMMON COLUMN IS THE ONE THAT WOULD HAVE HURT
+    endpoint            NULL on    31 real rows (23 rate-limited, 8 unmatched) + 1 fixture
+    limited_operation   NULL on 11,660 of 11,683 — 99.8% of the table
+
+  `SELECT endpoint, limited_operation … WHERE status = 429` answers `\N<TAB>rest`. A reader
+  taking the value column alone reports the string `"\N"`, which is truthy and
+  indistinguishable from a route name downstream. The statement selects `<column> IS NULL`
+  as a column of its own and the presence column decides — chapter 4.7's `count()` move
+  against the same class one table over.
+
+  **RUN RED (T026b), 3 of 10**, against a reader taking the value column alone:
+  `AssertionError: expected '\N' to be null`. And the suite carries the control for its own
+  claim: it asks the store directly and asserts it really does answer `\N`, so the tests
+  are about the reader rather than about a store that happens never to produce it.
+
+  THE 32 ENDPOINT-LESS ROWS, SPLIT, WHICH T004 COUNTED AND DID NOT CHARACTERISE:
+
+    429 · limited_operation set · refused_at middleware   23   (rest 14, send 7, signup 2)
+    404 · limited_operation NULL · refused_at unmatched    8
+    200 · refused_at handler · request_id 7777…7777        1   a planted fixture, not a row
+                                                               the producer made
+
+T028a-c — THE DERIVATION FOUND THE ROUTE BEFORE THE LIST DID, FOR THE SEVENTH TIME
+    before the entry   43 derived, 42 classified   unclassified: ["GET /v1/request-log"]
+    after the entry    9 of 9 green
+    second direction   an entry matching no target: stale: ["GET /v1/request-log-renamed"],
+                       and `CLASSIFICATIONS.length` 44 against 43
+
+  **AND THE SUITE ENFORCES A THIRD DIRECTION THE TASKS DID NOT NAME.** With the entry added
+  and no attack written, `gauntlet.itest.ts` failed with *"classified but never attacked:
+  GET /v1/request-log"*. Classifying a route is not covering it; the accounting test at the
+  foot of that file is what makes the difference a failure.
+
+  THE ATTACK PLANTS ITS OWN ROWS, WHICH NO OTHER ONE IN THAT FILE HAS TO. `compose.yaml`
+  runs no ingester (050-8), so both tenants' logs are empty on a fresh lane — and an empty
+  log passes a leak check for the same reason an empty page does. Without the plant the
+  test could not fail for its own reason. It plants three rows: the attacker's, the
+  victim's, and **one with a NULL `environment_id`**, so the attack shows two things rather
+  than one — no other tenant's row comes back, and no tenantless row does either.
+
+  57 of 57 green.
+
+T028c — A DERIVED LIST WAS THE WRONG FIX, AND THE EXISTING TEST SAID SO
+  `rowsOf` in `attack.ts` knew two body shapes — a bare array and `{ data }` — and this
+  chapter serves a third, `{ requests }`. The first repair replaced the lookup with *"the
+  first array-valued property"*, on this project's own reflex that a hand-maintained table
+  cannot be checked. **`rowsOf({ items: [1,2,3] })` must equal `[]` is an assertion that
+  file already carried**, and it went red.
+
+  The reflex has a precondition and this table meets it: the shape set is pinned by that
+  assertion AND by the `count > 0` control every `list` attack carries, so an unknown shape
+  fails loudly rather than passing. The derived version was worse in the direction that
+  matters — it would count ANY array in the body as rows, which is a false pass where an
+  unrecognised shape is a failure. `{ requests }` added by name; a new pin,
+  `rowsOf({ cursors: [1,2,3], data: [1] })` → length 1, records why.
+
+  **What the named set costs is the failure MESSAGE**: an unrecognised shape reads as *"the
+  attacker's own listing came back empty"*, which names a symptom. The pin test is what
+  turns that into a sentence about the recogniser.
+
+T029a — THE CODE, REGISTERED FIVE PHASES BEFORE THE GATE THAT WOULD HAVE CAUGHT IT
+  `analytics_unavailable` is the **first 503 in `ERROR_CODES`** and the first code that
+  names a subsystem rather than a mistake. `check:errors` after the edit:
+  **28 codes, 28 sections**, both directions. The throw names it, because
+  `ProtocolErrorFilter`'s ladder covers 400/401/403/404 only and a 503 falls past it into
+  `internal_error`.
+
+T030-T032 — THE SUITE, AND ITS OWN ASSERTION WAS SCOPED TOO WIDE
+  `query.itest.ts`, 10 tests, green. `beforeAll` asks `SELECT 1` before trusting anything
+  else the store says; every statement names this suite's own environment ids (FR-024); the
+  cleanup polls until `count() = 0` for each and throws if it does not reach it.
+
+  **A FILTER TEST FAILED FOR ANOTHER TEST'S REASON, EIGHT LINES UP.** It asserted the
+  endpoint filter returned exactly `["/healthz"]` and got `["/healthz", "/healthz"]` —
+  because the `FINAL` dedup test above it plants a second `/healthz` row and the two share
+  a tenant. What a filter promises is that nothing ELSE comes back; the count of what does
+  is the plant's business. Asserted as a set now.
+
+T033 — THE GATES
+    pnpm lint                 green, 0 errors
+    pnpm typecheck            14 of 14
+    pnpm build                exit 0
+    check:errors              28 codes, 28 sections
+    api integration lane      6 failed | 647 passed (653) — the six are T012's, by name,
+                              and the +11 are this phase's 10 plus the gauntlet's attack
+    check:fences              110 -> 112, delta +2
+
+  **THE +2 IS THE TWO CLEAN FENCED FILES THIS PHASE HAD TO EDIT**, predicted before the
+  edit and named by the checker after it: `services/api/src/isolation/attack.ts` at line 135
+  and `services/api/src/isolation/gauntlet.itest.ts` at line 10. Phase 1 found one such file
+  (`packages/outsider/src/integrate.itest.ts`); there are three. Every other file this phase
+  touched — `codes.ts` (12 fences/locale), `app.module.ts` (11), `targets.ts` (6),
+  `fixtures.ts` (3) — is ALREADY a HEAD problem, so those edits are invisible to the gate.
+  T072 collects them and T069/T070 owe two `diff` hunks.
