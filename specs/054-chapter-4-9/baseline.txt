@@ -1,0 +1,209 @@
+BASELINE — feature 054, chapter 4.9, "Milestone: the meter agrees"
+Lane: RELAY_POSTGRES_PORT=15432, ClickHouse 8123 relay/relay. Opened 2026-09-17.
+
+Every number here says which instrument produced it. Analysis passes 14 and 15 each published a
+figure from a command that had misread its corpus — a glob that missed the api's 33 suites, and
+an `awk -F/` field that made 30/30/14 read as 0/0/74 — and neither was caught by a control. Both
+were caught by a prior. **A measurement with no prior has no such tell** (R1d).
+
+═══════════════════════════════════════════════════════════════════════════════
+PHASE 1 — PREMISES AND OPENINGS (T001-T012).
+═══════════════════════════════════════════════════════════════════════════════
+
+T001 — THE QUICKSTART, AND IT RAN AS WRITTEN
+  Steps 1 through 3 executed with no divergence: `docker compose up -d --wait` came up healthy,
+  both positive controls answered `1`, `migrate.js` said `migrations: nothing to apply` and
+  `apply.mjs` said `applied nothing / skipped 16`. Chapter 4.8's step-2 finding — the store up
+  and not yet answering — did not recur, because `--wait` is in the command this time.
+
+T011a — BOTH CORPUS FLOORS, RUN RED RATHER THAN READ
+    CORPUS_DAYS=90         CORPUS_DAYS (90) must exceed the query window (90), or the date
+                           predicate excludes nothing and its cost is measured as zero
+    CORPUS_ENVIRONMENTS=1  CORPUS_ENVIRONMENTS (1) must be at least 2, or the tenant predicate
+                           excludes nothing and its cost is measured as zero
+
+  **AND THE REASONS ARE ABOUT A DIFFERENT MEASUREMENT THAN THIS ONE'S.** Both floors exist so
+  that chapter 4.1's *query-cost* predicates have something to exclude. This feature needs the
+  tenant floor for the same reason — a neighbour whose rows must not appear in the subject's
+  figure — and inherits the day floor without needing it, since nothing here measures a date
+  predicate's cost. Recorded so the constraint is not mistaken for a requirement of this work.
+
+T004 — THE GATE, AND THE SUMMARY LINE IS NOT EVEN REPRODUCIBLE
+    planned (--dry=json)   18 = 9 build + 9 test:integration
+    of the 9 test tasks    6 real, 3 no-ops — @relay/config, @relay/protocol, @relay/service-kit
+                           have no `test:integration` script and complete as successful
+    this run               Tasks: 7 successful, 11 total
+    chapter 4.8's run      Tasks: 8 successful, 10 total
+    chapter 4.7's run      Tasks: 7 successful,  9 total
+
+  **THREE RUNS, THREE DIFFERENT PAIRS**, and T004's own expectation — `8 successful, 10 total`,
+  taken from research — is a fourth. `--concurrency=1` stops scheduling at the first
+  failure, and which tasks were already in flight when it arrived decides the total. So the line
+  four chapters have read as a lane count is measuring tasks, includes nine builds and three
+  no-ops, and **does not reproduce run to run**. FR-001's suite count cannot come from it.
+
+T004a — THE SIX REDS ARE ENVIRONMENT, NOT FLAKES
+    limits.itest.ts        alone: 1 failed | 17 passed (18)
+    request-log.itest.ts   alone: 5 failed (5)
+
+  Both fail alone exactly as they fail in the lane, so neither is 4.8's gateway-flake shape.
+  `request-log.itest.ts` needs an ingester `compose.yaml` does not ship (050-8, since 4.4);
+  `limits.itest.ts` reads *"the lane must configure a platform credential: expected undefined to
+  be truthy"*.
+
+T005 — BOTH SIDES OF THE RECONCILER, AND NO TENANT HAS BOTH
+    daily_usage_billing        7 rows over      4 environment ids
+    usage_periods          2,440 rows over  2,330 environments · max 1,017 · mean 14
+    usage_active_users     3,516 rows over  1,481 environments
+    environments in BOTH       0
+
+  T005 expected `2,317 over 2,212`, written at plan time eleven days ago; the lane has run since
+  and both grew. Unchanged in kind from chapter 4.7 and larger by the lanes' own traffic.
+  **Every tenant in the platform is still one-sided**, which is what makes `pass` or `breach`
+  (SC-005) a thing nothing has ever produced.
+
+T006 — THE BOUND'S RESOLUTION, RE-DERIVED FROM `differencePct` RATHER THAN COPIED
+    volume      over  under    % (under)   % (over)
+         9         1      1      11.1111    10.0000
+       100         1      1       1.0000     0.9901
+     1,000         2      2       0.2000     0.1996
+    10,000        11     11       0.1100     0.1099
+   100,000       101    101       0.1010     0.1009
+     1,017         2      2       0.1967     0.1963   ← the lane's largest tenant-period
+
+  Computed by iterating `|a-o| / max(a,o) > 0.001` in both directions, not by quoting 4.7.
+  **The same integer breaches on both sides at every volume**, which is 4.7's *"101 in both
+  directions"* generalised. 0.1% first resolves at 10,000 and is comfortable at 100,000; at the
+  lane's own largest tenant-period the smallest expressible drift is **0.1967% — twice the
+  bound**.
+
+T007 — `message_events`, AND THE WINDOW THE LOAD MUST SIT INSIDE
+    rows 0 · TTL toDateTime(ts) + toIntervalDay(90)
+
+  Zero rows, sixth feature (`gaps.md` 048-2). The 90-day TTL removes rows **at INSERT** (4.2),
+  so the measurement's month must sit inside 90 days of the load.
+
+T002 — THE GATE LIST, DERIVED RATHER THAN COUNTED
+    integration lanes with at least one .itest.ts AND a test:integration script:
+      api 33 · gateway 12 · e2e 4 · ingester 2 · test-harness 2 · dispatcher 1 · outsider 1
+      = 7 packages, 55 suites; 6 inside `pnpm test:integration`, outsider via `pnpm test:outsider`
+    relay-platform commands   5   lint, typecheck, build, test, coverage
+    relay-tutorial commands   7   lint, build, check:docs, check:srs, check:figures,
+                                  check:fences, check:errors
+    TOTAL                    19
+
+  **Earlier drafts of this task said "five integration lanes" and "the four lanes".** Neither is
+  any of those numbers, and this is the list T064 runs *"every gate"* against — the shape
+  `gaps.md` 053 recorded as *"eleven gates, not eleven"*, reproduced in the task that cites it.
+  The list is derived by command now.
+
+T003 — THE FENCE-CHAIN OPENING, WITH THE THIRD BUCKET NAMED
+    110 problems — APPLY 74, HEAD 36
+    APPLY   en 30 · vi 30 · fences/post-series.md 14
+    HEAD    differs at line 25 · does not exist in relay-platform 11
+
+  **"14 elsewhere" is one file**, and it is the appendix this feature must edit. Four chapters
+  have reported that bucket without naming it.
+
+T003a — THE WORKFLOW IS RED ON EVERY PUSH
+    check-fence-chain.mjs:337   process.exit(1)
+    ci.yml:205                  `- run: pnpm check:fences`, the tutorial job's LAST step
+    standing count              110 problem(s) — APPLY 74, HEAD 36
+
+  No `continue-on-error`. Every chapter since 4.1 has closed at *"110 → 110, delta 0"*, so the
+  job has failed on every run since feature 045 established that baseline. **Nothing is stranded
+  behind it — it is last.** What is lost is the workflow's colour as a signal, which is this
+  milestone's own subject one level up.
+
+T003b/T003c — THE MILESTONE PRECEDENTS FAIL BOTH OF `docs/07` §2's FLOORS
+    chapter                              prose   figures
+    milestone-the-tuan-test              3,151         0     below the figure floor
+    milestone-the-isolation-gauntlet     1,873         1     below both
+    errors-that-resolve-and-an-outsider  1,683         2     below the word floor
+    the-log-a-customer-can-search        3,606         3     inside both — 4.8, ordinary
+
+  §2 states 2,000–4,000 words and 2–4 figures for every chapter. **The same two milestones fail
+  both**, which makes it one decision (T059a). And **nothing enforces the figure count**:
+  `check:figures` verifies the `code=` prop and the import bindings.
+
+T008/T008a — FENCE COSTS, COUNTED, AND THE TRANSLATION FRONTIER
+    file                                     en  vi  HEAD problem  appendix
+    scripts/scale/corpus.mjs                  0   0       no          no     free
+    scripts/reconcile-usage.mjs               1   0       no          no     chapter hunk
+    services/api/src/metering/reconcile.ts    1   0       no          no     chapter hunk
+    compose.yaml                              8   6       no          no     chapter hunk
+    services/api/src/limits/limits.itest.ts   1   1       no          no     chapter hunk
+    package.json                              4   4      YES         YES     APPENDIX ONLY
+    turbo.json                               10  10       no         YES     APPENDIX ONLY
+
+  **The Vietnamese Part 4 holds chapter-01 through chapter-03 and stops**, where English holds
+  eight. So "1 en, 0 vi" is the frontier rather than a shape needing handling, and it covers
+  `reconcile.ts` as well as `reconcile-usage.mjs`.
+
+T008b/T008c — THE APPENDIX, AND THE GATE'S DEFINITION LIVES IN IT
+    28 fence blocks over 18 distinct files — `vitest.coverage.config.mts` alone has 9
+    (analysis pass 5 said "eighteen titles"; 18 is the file count, 28 the fence count)
+
+  Its `package.json` hunk's `-`/`+` pair:
+
+    -    "test:integration": "turbo run test:integration --concurrency=1",
+    +    "test:integration": "turbo run test:integration --concurrency=1 --filter=!@relay/outsider",
+    +    "test:outsider": "turbo run test:integration --filter=@relay/outsider",
+    +    "coverage": "vitest run --config vitest.coverage.config.mts --coverage",
+
+  **All three commands this milestone touches are published there and nowhere else.** The
+  appendix applies after every chapter, so a chapter hunk for `package.json` would anchor on a
+  pre-appendix state and then be overwritten — silently, unlike 4.8's failure, which reported
+  because its edit and the appendix's did not overlap.
+
+T009 — THE TWO CLAUSES, SIDE BY SIDE, FROM THE FILES
+    constitution III, bullet 4 (`.specify/memory/constitution.md:90`)
+      "Metered totals MUST reconcile against operational counts to within 0.1%, verified by
+       a daily job that alerts on breach."
+    SRS FR-ANL-06, as amended at 1.14
+      "Metered totals shall agree with counts derived from operational data to within 0.1%…"
+      …and then four amendments saying the bound is unreachable for three of four quantities
+      and that "raises an alert" has no mechanism here.
+
+    verification letters   FR-ANL-06  P3 T        NFR-SCL-01  P1 A
+
+T010 — `docs/11`'s STRUCTURE, EVERY HEADING
+    **Method:** `A` — analysis, including load testing, which is the verification method
+                the clause itself specifies
+    **Harness:** relay-platform/scripts/scale/
+    Why this exists · What was measured · Results ·
+    What this says about consolidating the subject grammars ·
+    The finding nobody was looking for ·
+    What went wrong while measuring, and why the numbers still stand ·
+    Reproducing · What this left in the lane
+
+  **Eight sections; R8's first draft described four.** And the method line names the clause's own
+  letter — which for NFR-SCL-01 is `A`, so a published analysis IS the verification. FR-ANL-06's
+  is **`T`**, so the planted-drift suite discharges it and `docs/13` is evidence.
+
+T011 — WHAT `corpus.mjs` WRITES, BOTH HALVES
+    direct SQL     insert into messages (x2) · insert into message_edits · insert into
+                   environments · insert into applications · update messages (x2) ·
+                   update channels · delete from outbox
+    repository     createEnvironment · createApiKey · createChannel · createUser ·
+                   upsertUser · addMember
+    counted only   usage_periods  ← one occurrence, in its closing report
+    absent         usage_active_users — zero occurrences
+
+  The artifacts' list was the direct-SQL half. Both halves checked, and the claim that matters
+  holds either way: **neither counter table is written**.
+
+T011b — NOTHING RUNS THE RECONCILER
+    reconcile-usage in relay-platform/package.json     0
+                       relay-platform/turbo.json        0
+                       .github/workflows/ci.yml         0
+                       relay-tutorial/package.json      0
+                       any *.sh in either repository    0
+    ci.yml triggers    push, pull_request — no `schedule:`
+    recurring loops    RELAY_OUTBOX_RELAY · RELAY_DELIVERY_RELAY · RELAY_QUOTA_RELAY ·
+                       RELAY_NOTIFICATION_RELAY · RELAY_EVENT_CONSUMER
+
+  Five corpora searched and named, because a zero from a grep is a claim about the corpus only if
+  the corpus is named. **FR-ANL-06 asks for a daily job and there is no runner of any kind** —
+  while the platform has five background loops, so the pattern exists and the reconciler is the
+  one recurring job built as a hand-run script.

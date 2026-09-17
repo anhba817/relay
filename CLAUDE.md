@@ -28,6 +28,96 @@ history; the replaced history is preserved on the remote as the tag
 tags. **Anyone holding an older clone of `relay-platform` must reset rather than pull.**
 
 <!-- SPECKIT START -->
+**ACTIVE: 054 — CHAPTER 4.9, "Milestone: the meter agrees" (movement IV's close).** Plan:
+`specs/054-chapter-4-9/plan.md`; **`research.md` first — two of `docs/12` §2.3's four premises
+are falsified there.** Seven phases, MVP at 4.
+
+**THE MILESTONE MAKES TWO CLAIMS AND NEITHER IS TRUE TODAY.** §2.3: a CI gate that catches a
+planted drift every run, and the 0.1% figure recorded once at a volume where 0.1% is a real
+threshold.
+
+**THE GATE CANNOT FAIL FOR ITS OWN REASON.** `pnpm test:integration` plans 18 tasks —
+**9 builds and 9 test tasks, three of which are no-ops** (`@relay/config`, `@relay/protocol`
+and `@relay/service-kit` have no `test:integration` script) — and `--concurrency=1` stops
+scheduling at the first failure. The api lane carries six failures, **none of them the
+reconciler's**: five need an ingester `compose.yaml` does not ship (050-8, since 4.4) and one
+reads *"the lane must configure a platform credential: expected undefined to be truthy"*. Both
+shapes were run alone at phase 1 and fail identically, so neither is 4.8's gateway flake. The
+planted-drift test has existed since 4.7 and the gate has never reached it.
+
+**AND THE SUMMARY LINE FOUR CHAPTERS HAVE READ AS A LANE COUNT DOES NOT REPRODUCE.** `7
+successful, 11 total` here, `8 of 10` at 4.8, `7 of 9` at 4.7 — same tree, same command. Which
+tasks were already in flight when the first failure arrived decides the total, so the number is
+not a count of anything a requirement can be written against.
+
+**AND 0.1% HAS NO RESOLUTION ANYWHERE IN THIS LANE, ON EITHER SIDE.**
+
+    analytical   daily_usage_billing      7 rows over 4 environment ids
+                 of those 4, in Postgres:            0
+    operational  usage_periods        2,440 rows over 2,330 environments
+                 max messages_sent    1,017 · mean 14
+                 usage_active_users   3,516 rows over 1,481 environments
+
+    volume        9    100    1,000   10,000   100,000
+    smallest      1      1        2       11       101
+    as a %   11.111  1.000    0.200    0.110     0.101
+
+At 1,017 the smallest expressible drift is **0.197% — twice the bound**. No tenant has both
+sides. 0.1% first resolves at 10,000 and is only comfortable at 100,000.
+
+**THE HARNESS §2.3 ASKED FOR EXISTS FOR ONE SIDE ONLY.** *"`scripts/scale/` … has no
+analytical-volume mode and needs one"* is **stale** — 4.1 and 4.2 built it, and 1.6M messages
+build in 92.4 s and load in 1.2 s. What it lacks is the **operational counter**: `usage_periods`
+appears once in `corpus.mjs`, as a row count in its own report, and `usage_active_users` not at
+all. §2.3 could not have anticipated that, because 4.7 had not yet found every tenant one-sided.
+
+**AND BOTH SIDES FROM ONE SOURCE IS A TAUTOLOGY.** A harness that derives the counter from the
+same rows the analytical side is loaded from makes the two agree by construction. The figure is
+then about **the reconciler's arithmetic at volume and the bound's resolution**, not about the
+platform agreeing with itself — which a mechanism establishes instead (`sendMessage` writes both
+in one transaction; 4.7 found 0 of 1,385 disagreeing for a non-fixture reason). The chapter says
+what the figure does not prove.
+
+**CONSTITUTION III STILL SAYS 0.1% FLAT AND THE SRS NO LONGER DOES.** The bullet —
+*"Metered totals MUST reconcile against operational counts to within 0.1%, verified by a daily
+job that alerts on breach"* — was not amended when SRS 1.14 amended FR-ANL-06 to record that the
+bound is unreachable for three of four quantities and that *"raises an alert"* has no mechanism
+here. Governance: *"where it conflicts with the SRS or SAD, the conflict MUST be resolved
+explicitly by amendment rather than ignored."* **This is the third constitution III item this
+movement has produced and the first about the clause a chapter exists to verify** (051-2, 052-6
+carry the other two).
+
+**THE FENCE COSTS ARE COUNTED, AND THE GATE'S DEFINITION IS NOT IN A CHAPTER AT ALL.**
+`corpus.mjs` 0/0 — free. `reconcile-usage.mjs` and `reconcile.ts` **1 en and 0 vi**, which is
+the translation frontier rather than a shape needing handling: the Vietnamese Part 4 holds
+`chapter-01` through `chapter-03` and stops. `compose.yaml` 8/6, `limits.itest.ts` 1/1.
+**`package.json` and `turbo.json` are APPENDIX ONLY** — `fences/post-series.md` carries 28
+fence blocks over 18 files, and its `package.json` hunk's `-`/`+` pair **is the
+`test:integration` line**, published there and nowhere else. The appendix applies after every
+chapter, so a chapter hunk touching that line would anchor on a pre-appendix state and then be
+**overwritten silently** — unlike 4.8's failure, which reported only because its edit and the
+appendix's did not overlap.
+
+**AND FR-ANL-06's DAILY JOB HAS NO RUNNER OF ANY KIND.** Zero occurrences of `reconcile-usage`
+in `relay-platform/package.json`, `turbo.json`, `ci.yml`, the tutorial's `package.json` or any
+`*.sh`; `ci.yml` triggers on `push` and `pull_request` and carries no `schedule:`. The platform
+runs five background loops — `RELAY_OUTBOX_RELAY`, `RELAY_DELIVERY_RELAY`, `RELAY_QUOTA_RELAY`,
+`RELAY_NOTIFICATION_RELAY`, `RELAY_EVENT_CONSUMER` — so the pattern exists and the reconciler is
+the one recurring job built as a hand-run script. **FR-ANL-06 is three requirements in one
+sentence and the platform has one**: the comparison exists, the alert has no mechanism (SRS
+1.14), and the daily job has no runner.
+
+**AND THE WORKFLOW HAS BEEN RED ON EVERY PUSH SINCE 045.** `check-fence-chain.mjs:337` exits 1
+whenever the count is non-zero, `ci.yml:205` runs `pnpm check:fences` with no
+`continue-on-error`, and the standing count is **110**. Nothing is stranded behind it — it is
+the tutorial job's last step — but *"the build fails"* is not a signal a planted drift can
+change, which is this milestone's own subject one level up.
+
+**AND BOTH PUBLISHED MILESTONES FAIL `docs/07` §2's FLOORS, IN BOTH DIRECTIONS.** 3,151 words
+and **0 figures**; 1,873 and 1. §2 asks for 2,000–4,000 words and 2–4 figures, and
+**`check:figures` does not enforce the count** — it verifies the `code=` prop and the import
+bindings, so a chapter with no figures passes it.
+
 **053 IS CLOSED at 139 of 139 — CHAPTER 4.8, "the log a customer can search".** Its record is
 `specs/053-chapter-4-8/` — `baseline.txt` first, then `gaps.md` (**21 entries: 9 new, 12
 carried and re-measured, and 048-2's own wording corrected**), `traceability.md`, `tasks.md`.
