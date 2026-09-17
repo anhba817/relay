@@ -25,7 +25,18 @@ Usage: check-lane-scope.py [--all]     (--all lists every hit, not just the summ
 """
 import pathlib, re, sys
 
-WT = pathlib.Path("/home/dong/work/relay/tmp/part3-refactor")
+# THE TREE, DERIVED FROM THIS FILE'S OWN LOCATION, AND IT USED TO BE A WORKTREE THAT NO
+# LONGER EXISTS.
+#
+# This read `/home/dong/work/relay/tmp/part3-refactor` — the worktree feature 045 deleted
+# when it closed. The glob then matched nothing, the scan read nothing, and the script
+# exited 0 with all ten of its own controls firing. 049 measured the retarget (50 files, 0
+# unscoped reads) and never landed it, so chapter 4.8 found the same line still here.
+#
+# **A control that proves the checker WORKS says nothing about whether it LOOKED**, which
+# is this script's own rule turned on itself — and the repair is the one 045-81 wrote for
+# the fence checker: a run that inspects nothing REFUSES rather than reporting zero.
+WT = pathlib.Path(__file__).resolve().parents[2] / "relay-platform"
 
 # Tables every suite in a lane writes to. A read of one of these is a read of the lane.
 SHARED = [
@@ -145,7 +156,16 @@ def controls() -> None:
 
 def main(show_all: bool) -> int:
     controls()
+    if not WT.is_dir():
+        print(f"check-lane-scope: REFUSED — {WT} is not a directory. "
+              f"The zero that means 'clean' and the zero that means 'never looked' "
+              f"print the same line, so this one refuses instead.")
+        return 2
     files = sorted(WT.glob("services/*/src/**/*.itest.ts")) + sorted(WT.glob("packages/*/src/**/*.itest.ts"))
+    if not files:
+        print(f"check-lane-scope: REFUSED — 0 integration files under {WT}. "
+              f"A scan over an empty corpus reports 0 unscoped reads and means nothing.")
+        return 2
     total, byfile = 0, []
     for p in files:
         hits = scan(p.read_text(encoding="utf-8"))

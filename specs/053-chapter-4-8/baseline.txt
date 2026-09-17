@@ -419,3 +419,180 @@ T033 — THE GATES
   touched — `codes.ts` (12 fences/locale), `app.module.ts` (11), `targets.ts` (6),
   `fixtures.ts` (3) — is ALREADY a HEAD problem, so those edits are invisible to the gate.
   T072 collects them and T069/T070 owe two `diff` hunks.
+
+═══════════════════════════════════════════════════════════════════════════════
+PHASE 4 — WHAT THE LOG CAN AND CANNOT SHOW (T034-T045).  MVP.
+═══════════════════════════════════════════════════════════════════════════════
+
+T040b — HOW FAR BEHIND THE LOG ACTUALLY IS, WITH AN INGESTER RUNNING
+    sample 1  0.29 s      n=6/6
+    sample 2  1.61 s      min  0.29 s
+    sample 3  1.60 s      p50  1.60 s
+    sample 4  1.33 s      max  1.61 s
+    sample 5  1.61 s
+    sample 6  1.60 s      2.7% of FR-ANL-04's 60 seconds
+
+  Request made through the api, its `X-Request-Id` read off the response, then the surface
+  polled at 250 ms until that id came back. The clustering at 1.60 s is the ingester's
+  two-second batch window; sample 1 caught a flush that was already about to happen.
+
+  **AND IT IS UNDER FR-DSH-02's TWO SECONDS TODAY**, which is the clause T074a files
+  forward: the dashboard requirement says 2 s and FR-ANL-04 says 60, a 30x gap, and this
+  lane sits inside both. That makes the tension a question about production scale rather
+  than a contradiction anyone can see here — which is the honest form of the gap.
+
+  **WHAT STARTING AN INGESTER COST THE LANE, SAID RATHER THAN LEFT IMPLICIT.** It drained
+  `ANALYTICS` for everything: **188 rows over 15 batches**, and the first batch alone wrote
+  137 — a backlog that had been sitting on the stream. `api_requests` went 11,704 -> 11,892,
+  so **T004's opening figures have moved and T073a re-takes them at the close**. The
+  process was stopped when the measurement finished.
+
+T035c/d/e — THE SEALED SUITE, STOOD UP, AND IT HAD NEVER PASSED
+  CI's `outsider` job copied rather than paraphrased: stores up, migrate from `dist`,
+  `--profile services build`, `up -d --wait`, seed captured from stdout. The two new tests
+  passed on the first run. **A third test failed, and it was not this feature's:**
+
+    expected 'https://relay.example/docs/error-reference#not_found' to contain '/not_found'
+
+  `integrate.itest.ts` asserted a PATH per code under a comment ending *"Asserted as this
+  platform actually answers."* It was not. `docsUrl` returns `${base}#${code}`, and the
+  commit that made it an anchor (`0381d54f`) landed **before** the commit that wrote this
+  suite (`2c65bbeb`) — checked with `git merge-base --is-ancestor`, both on 2026-09-10.
+  **So the sealed suite has never passed since it was written**, and nothing said so
+  because it needs a running platform no lane starts.
+
+  The platform is right and the test was wrong: `docs/08-error-reference.md` is ONE page
+  with a section per code, so a path per code would 404 for every refusal this platform
+  sends. Corrected; **18 of 18 green**, the first time.
+
+  What the new tests assert: the documented envelope, both cursors declared rather than
+  absent, the 400 with `field: "limit"` — and **that the log is empty**, after this suite
+  has made a dozen calls with that credential. The platform ships no ingester, so the
+  records are published and wait. That is FR-028's gap where a customer meets it.
+
+T041/T036b — A PAGE READS THE WHOLE TABLE, AND R6's 8,194 IS SUPERSEDED
+    50-row page, 24h window, one tenant     read 11,695   returned 51
+    the same page without FINAL             read 11,695   returned 51
+    a 31-day window                         read 11,695   returned 51
+    filtered by endpoint                    read 11,695   returned 51
+    filtered by status                      read 11,695   returned 24
+    both filters                            read 11,695   returned 23
+
+  **Every query reads the entire table, whatever the window and whatever the filter.**
+  `EXPLAIN indexes=1` says `PrimaryKey … Granules: 1/1`: the condition is right, the key is
+  right, and there is exactly one granule to select.
+
+T041a — WHY, AND IT IS THE PART TYPE RATHER THAN THE GRANULARITY
+    SHOW CREATE              SETTINGS allow_nullable_key = 1, index_granularity = 8192
+    system.parts             part_type Compact · rows 11,695 · marks 2
+    mergeTreeIndex()         2 entries — one granule and the terminal mark
+
+  **8,192 IS DECLARED AND IS NOT IN FORCE.** Built by construction rather than argued: two
+  scratch tables, same 11,695 rows, same `index_granularity = 8192`, differing only in
+  `min_bytes_for_wide_part`:
+
+    granule_probe_compact   Compact   11,695 rows   marks 2   → 1 granule
+    granule_probe_wide      Wide      11,695 rows   marks 3   → 2 granules
+
+  So the part type decides, the table is Compact because it is under 10 MiB, and the
+  per-tenant filter skips nothing until the table crosses that line. **R6's 8,194 was a
+  measurement of a Wide part** — one granule of 8,192 — and reading it as "the engine's
+  floor" generalised a number that depends on how much data there is.
+
+  AND WHAT `FINAL` COSTS, AGAINST A TABLE WITH PARTS. `SYSTEM STOP MERGES`, six inserts of
+  200 rows for a probe environment, then three runs a side:
+
+    7 parts, 12,895 rows     FINAL 3 ms   plain 2 ms   read_rows identical, 12,895 both
+
+  Three runs each, identical every time. The analysis probe's 2.43 vs 2.02 was measured on
+  a single-part table — the best case, and it proves nothing about the shape. Merges
+  restarted and the probe rows deleted in the same command, verified at 0.
+
+T042 — FR-ANL-08's NINETY DAYS CANNOT BE REACHED IN THIS TABLE AT ANY VOLUME
+    two rows planted for one environment   at now-60d and now-1d
+    survivors straight after the INSERT     1
+    survivors after OPTIMIZE TABLE FINAL    1      the survivor is 1 day old
+
+  The 30-day TTL removes rows AT INSERT (4.2's finding, reproduced), so no fixture can put
+  a row older than 30 days in this table — the clause is unreachable by construction rather
+  than by the lane being small. Handed to FR-016 rather than dressed up with a p95 from the
+  208-row tenant.
+
+T043 — THE PINS, AND TWO OF THREE MOVEMENTS WERE REAL GAPS
+    request-log/cursor.ts               100 / 100   / 100 / 100     twice
+    request-log/request-log.schema.ts   100 / 100   / 100 / 100     twice
+    request-log/request-log.controller.ts 100 / 100 / 100 / 100     twice
+    request-log/reader.ts               100 /  86.79 / 100 / 100    twice
+
+  `reader.ts` read **79.24 → 83.01 → 86.79**, and only the last step was rounding:
+
+    79.24   `refuse()`'s re-throw arm and the malformed cursor — two decisions this
+            chapter argued for in a comment and never drove. `reader.test.ts` drives them.
+    83.01   **`direction: newer` had never run.** In the contract and the schema since
+            phase 2, and every test used the default. Two expressions flip with it — the
+            cursor comparison and the sort — and a page that got one and not the other
+            returns the right rows in the wrong order.
+    86.79   eleven `??` defaults `noUncheckedIndexedAccess` forces over a ten-column TSV.
+
+  AND THE CONTROLLER'S 403 IS AT 100 BECAUSE A UNIT TEST DRIVES IT, NOT BECAUSE THE ROUTE
+  CAN REACH IT. `@Accepts("application")` refuses every other class at the door and an
+  application credential always carries an environment, so FR-011's refusal is unreachable
+  over HTTP today. Kept rather than deleted — the difference from 4.6's dead branches is
+  that a requirement asks for this one.
+
+  **AND THE RATCHET CAUGHT A REGRESSION OF MINE.** `metering/clickhouse.ts` fell 94.73 ->
+  91.3 against a pin of 93: the new `catch` around `fetch` types `cause` as `unknown`, so
+  `cause instanceof Error ? … : …` has an else the runtime never takes. That is the second
+  arm of exactly the kind 4.7 already recorded at line 115. Lowered to 91 with both named,
+  because driving either means mocking `fetch` — a green number from testing a stub.
+
+T044/T044a — THE SWEEPS, AND ONE CHECKER HAD STILL NEVER LOOKED
+    pin sweep                   57 literal pins, 0 unbindable, positive control present
+    threshold probe, half A     ERROR: Coverage for lines … threshold (101%)
+    threshold probe, half B     silent — a pin on a path that does not exist says nothing
+
+  **`check-lane-scope.py` STILL POINTED AT A WORKTREE 045 DELETED.** Line 28 read
+  `/home/dong/work/relay/tmp/part3-refactor`, which does not exist, so the glob matched
+  nothing and the script exited 0 with all ten of its own controls firing:
+
+    before   controls: 10 of 10 fired · 0 integration files, 0 unscoped read(s)
+    after    controls: 10 of 10 fired · 55 integration files, 0 unscoped read(s)
+
+  **049 measured the retarget and never landed it** (049-3 records "50 files, 0 unscoped
+  reads"), so the same line was still here two features later. Retargeted off the file's
+  own location, and given the repair 045-81 wrote for the fence checker: a run that reads
+  no files now **REFUSES with exit 2** rather than reporting zero. Both halves checked —
+  exit 2 on a dead path, exit 0 on the real tree.
+
+T034-T040a — WHAT THE ASSERTIONS ADDED UP TO
+  `query.itest.ts` 19 tests, `route.itest.ts` 14, `reader.test.ts` 5,
+  `request-log.controller.test.ts` 4, plus phase 2's 39 — 78 in `request-log/` in total.
+
+  **THE DEDUP TEST RUN RED WITHOUT `FINAL`**: 1 of 19, `expected [ …, … ] to have a length
+  of 1 but got 2`. It stops merges, asserts the physical count is 2 before asserting the
+  surface returns 1, and its `finally` restores merges AND deletes its own probe rows —
+  049's whole shape rather than the half that names the hazard.
+
+  AND THE `/internal/*` DECISION IS ASSERTED AS BEHAVIOUR: the rows come back, and the
+  caller can filter them out. Same for the REST budget — two reads, `x-ratelimit-remaining`
+  down by one — which makes the loop the chapter's rather than an oversight.
+
+T045 — THE LANES
+    pnpm lint                  green, 0 errors
+    pnpm typecheck             14 of 14
+    pnpm test (unit)           12 of 12 lanes
+    api integration            6 failed | 670 passed (676) — T012's six, by name
+    gateway integration        1 failed | 224 passed (225) — `typing.itest.ts`, A FLAKE:
+                               run alone twice, green once and red once
+    dispatcher integration     16 of 16
+    ingester integration       19 of 19
+    test-harness integration   41 of 41
+    outsider (sealed)          18 of 18 — the first time
+    pnpm test:integration      Tasks: 8 successful, 10 total — it plans 18 and attempts 10,
+                               so 051-3 still holds and the number moved from 7 of 9
+    pnpm coverage              7 failed | 1684 passed (1691); 3 threshold errors, of which
+                               `shape.ts` 95.12 vs 100 is inherited (052-2) and
+                               `clickhouse.ts` was mine, now pinned at 91
+    check:fences               112 -> 113, delta +1 — `integrate.itest.ts` at line 654,
+                               the third and last of the clean fenced files this feature
+                               edits. Total from the 110 opening: +3, all three named.
