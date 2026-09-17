@@ -1,0 +1,141 @@
+# Quickstart — verifying the fence-chain repair
+
+Every command below was run while this plan was written, except the four marked **after the
+repair**, which are what the close is measured by. Chapter 4.2's quickstart carried a command
+`corpus.mjs` refuses through five analysis passes because nobody ran it; these were run.
+
+No store, no broker, no Docker. The whole feature is text.
+
+---
+
+## 1. The opening count, and its four classes
+
+```bash
+cd relay-tutorial
+pnpm check:fences                 # exits 1 today
+```
+
+Expected, 2026-09-17:
+
+```
+check-fence-chain: 110 problem(s) — APPLY 74, HEAD 36
+```
+
+Classify them — this is the number every phase is measured against:
+
+```bash
+pnpm check:fences 2>&1 | grep -A1 '^\[' | grep -c 'matched 0 times'                # 42
+pnpm check:fences 2>&1 | grep -A1 '^\[' | grep -c 'no earlier fence to amend'      # 32
+pnpm check:fences 2>&1 | grep -A1 '^\[' | grep -c 'differs at line'                # 25
+pnpm check:fences 2>&1 | grep -A1 '^\[' | grep -c 'does not exist in relay-platform' # 11
+```
+
+**Re-measure rather than trusting these** (FR-013). The chain moves whenever a chapter or the
+platform does, and two published figures for it already disagree (R6).
+
+## 2. Where they are
+
+```bash
+pnpm check:fences 2>&1 | grep -E '^\[(APPLY|HEAD)\]' \
+  | sed -E 's/^\[(APPLY|HEAD)\] ([^:]+):.*/\1 \2/' \
+  | awk '{print $1, ($2 ~ /\(en\)/ ? "en" : $2 ~ /\(vi\)/ ? "vi" : $2)}' \
+  | sort | uniq -c
+```
+
+Expected: `36 HEAD en · 30 APPLY en · 30 APPLY vi · 14 APPLY fences/post-series.md`. **All 110
+are in `relay-tutorial`**; `relay-platform` is the reference, never the subject.
+
+## 3. The replayed state — the thing hunks must be written against
+
+**After phase 1**, the checker takes a dump flag:
+
+```bash
+pnpm check:fences -- --dump /tmp/chainstate
+find /tmp/chainstate -type f | wc -l                    # 285
+diff /tmp/chainstate/vitest.coverage.config.mts ../relay-platform/vitest.coverage.config.mts | wc -l
+```
+
+The state is 318 lines where the tree holds 1,182, and **it contains no `env` block** — which is
+why nine appendix hunks anchored inside one cannot apply, and why a hunk generated with
+`git diff` against the tree will be rejected.
+
+Prove the dump is the same replay the check uses:
+
+```bash
+pnpm check:fences -- --dump /tmp/a && pnpm check:fences -- --dump /tmp/b && diff -r /tmp/a /tmp/b
+pnpm check:fences | tail -1                              # same count with the flag as without
+```
+
+## 4. Historical content for a missing introduction
+
+```bash
+cd ../relay-platform
+git show rework/part3-ch3:services/gateway/src/session.itest.ts | wc -l     # 287
+wc -l < services/gateway/src/session.itest.ts                                # 1626
+```
+
+**The first number is the one that goes in chapter 3.3.** The second is the file twenty chapters
+later, and publishing it there would show a reader future code and leave five later hunks
+anchored on the wrong bytes.
+
+## 5. The loop, run after every target
+
+```bash
+cd ../relay-tutorial
+pnpm check:fences | tail -1
+```
+
+A repair that lowers the count by fewer problems than the target holds means some were shadows of
+a different root. **A repair that raises it means something downstream was unanchored** — feature
+045 measured one regeneration taking the chain from 111 to 203 — and is reverted or finished
+inside that target, with both numbers recorded.
+
+## 6. **After the repair** — the four things the close is measured by
+
+```bash
+pnpm check:fences                                   # 0 problem(s), exit 0
+echo "exit=$?"
+```
+
+Plant a regression and confirm the gate still works — **run red rather than reasoned about**:
+
+```bash
+cd ../relay-platform
+sed -i '1s/^/\/\/ planted\n/' packages/protocol/src/codes.ts
+cd ../relay-tutorial && pnpm check:fences | tail -2      # non-zero, naming codes.ts
+cd ../relay-platform && git checkout -- packages/protocol/src/codes.ts
+```
+
+Confirm no platform file was edited by the feature itself:
+
+```bash
+cd relay-platform && git diff --stat part4-ch9            # empty
+```
+
+And confirm the unread population did not grow:
+
+```bash
+cd ../relay-tutorial
+grep -rhoE '^```[a-z]*( title="[^"]*")?' app/\(en\) app/\(vi\) fences/post-series.md \
+  | grep -cv 'title='                                     # untitled fences: 360 before
+grep -rhoE 'title="[^"]*"' app/\(en\) app/\(vi\) fences/post-series.md \
+  | grep -c '(excerpt)'                                   # declared not-files: 222 before, 233 after
+```
+
+Measured 2026-09-17, before any repair: **2,109 opening fences · 1,749 titled · 360 with a
+language and no title · 222 titles already carrying `(excerpt)`**. After the repair the untitled
+count is unchanged at 360 and the declared count is 233. **Nothing that names a real file becomes
+unverified**, which is the property SC-008 is about — and `gaps.md` 043-1's *"146 of 904"* is a
+2026-08 figure that this feature re-measures rather than repeats.
+
+## 7. The gates around it
+
+```bash
+cd relay-tutorial
+pnpm lint && pnpm build && pnpm check:docs && pnpm check:srs && pnpm check:figures && pnpm check:errors
+```
+
+`pnpm build` is in the list because a chapter edit can break the page it lives in, and the
+tutorial did not build for a whole chapter once without anybody noticing (050).
+
+**`check:errors` reads the built `dist`** — build `relay-platform` before believing it.

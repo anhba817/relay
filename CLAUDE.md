@@ -28,6 +28,63 @@ history; the replaced history is preserved on the remote as the tag
 tags. **Anyone holding an older clone of `relay-platform` must reset rather than pull.**
 
 <!-- SPECKIT START -->
+**ACTIVE: 055 — REPAIR THE FENCE CHAIN, 110 TO 0.** Plan:
+`specs/055-fence-chain-repair/plan.md`; **`research.md` first — it corrects two of the
+specification's own assumptions.** Six phases, the cheap and riskless class first.
+
+Chosen from feature 054's five options (ADR-27, `gaps.md` 054-1) after they were costed:
+**repair the chain rather than change what the checker accepts.** No baseline file, no
+`continue-on-error`, no exempted class.
+
+    110 problems  ·  47 targets  ·  36 platform files + 11 phrases that name none
+     42  hunk pre-image matched 0 times          12 files
+     32  diff with no earlier fence to amend      9 files
+     25  differs at line N                       2,381 differing lines
+     11  title does not exist in relay-platform  all `lang=text` command output
+
+**EVERY ONE IS IN `relay-tutorial`.** 36 HEAD + 30 APPLY in `app/(en)`, 30 APPLY in `app/(vi)`,
+14 APPLY in `fences/post-series.md`. `relay-platform` is the reference and never the subject —
+`docs/07` §6's *"the repo at tag N is the truth; prose describes it"*, stated as FR-009 and
+**measured** as SC-010 because the cheapest repair for 25 of them would be to edit the platform.
+
+**THE VIETNAMESE CHAIN HAS NO DEFECTS OF ITS OWN.** All 30 vi problems mirror an en problem
+exactly — same chapter, same line, same message — and **zero are vi-only**, because `MIRROR`
+already forces the fence bodies to be byte-identical copies. Diagnosis halves; edits double; **no
+translated prose is touched**, because fence bodies are not translated.
+
+**AND ONE FILE IS 16 OF THE 110, WITH ONE HUNK EXPLAINING NINE.**
+`vitest.coverage.config.mts`'s chain state is **318 lines against the tree's 1,182 and has no
+`env` block at all** — the appendix hunk that would create it fails, so the nine hunks anchored
+inside it have nothing to attach to. **The first failure per file is the only one to diagnose.**
+
+**TWO OF THE SPECIFICATION'S OWN ASSUMPTIONS ARE WRONG AND RESEARCH SAYS SO.** The appendix
+**cannot** host a missing introduction — it applies after every chapter, so it can never supply a
+predecessor state. And an introduction must show the file **as it stood at its own chapter**,
+from `rework/part3-chN`: `session.itest.ts` is **287 lines at chapter 3.3 and 1,626 today**, so
+the listing cost is 1,956 lines rather than 3,956.
+
+**THE CHECKER ALREADY KNOWS HOW TO SAY "NOT A FILE", AND THE SERIES SAYS IT 222 TIMES.**
+`NOT_A_FILE` at `check-fence-chain.mjs:42` skips any title containing `(excerpt)`, in both the
+chapter loop and the appendix loop. All 11 prose-titled fences are `lang=text` command output —
+compiler errors, checker output, a Postgres `42P01`. Declaring them is the first phase because it
+is free, and it is **the measurement loop's own positive control**: 110 → exactly 99, or the
+instrument is wrong before anything expensive is attempted.
+
+**AND 043-1's "146 of 904" IS STALE.** Measured: **2,109 opening fences · 1,749 titled · 360 with
+a language and no title · 222 already declared `(excerpt)`**. The ratio held at 17% while the
+absolute number more than doubled — which is what a carried number does when nobody re-measures.
+
+**THE ONE INSTRUMENT CHANGE, AND WHY IT IS NOT A LOOSENING.** `check:fences` gains `--dump <dir>`
+so ~50 hunks are generated from the same replay that checks them (rule 1a). It adds an output
+mode: no threshold, no exemption, no exit code changes. Feature 054 built this twice from a
+throwaway copy; fifty uses is `check-lane-scope.py`'s shape, which pointed at a deleted worktree
+and reported zero for a year.
+
+**AND 045 CLOSED AT 109 WHILE 046 OPENED AT 110.** `specs/045-part-3-rework/gaps.md:3327` reports
+**109 — APPLY 74, HEAD 35**; 046's T062 measured **110 — APPLY 74, HEAD 36** and called it *"a
+delta of 0"* against its own opening. Both true. **One HEAD problem appeared in between and the
+delta-of-0 convention is what kept it invisible** — every chapter since has compared to 110.
+
 **054 IS CLOSED at 114 of 114 — CHAPTER 4.9, "Milestone: the meter agrees".** Its record is
 `specs/054-chapter-4-9/` — `baseline.txt` first (it carries every phase's measurements), then
 `gaps.md` (**8 new, 14 carried and re-measured, 2 closed, 1 corrected twice**),
