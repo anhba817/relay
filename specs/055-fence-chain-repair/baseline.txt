@@ -372,3 +372,112 @@ T042a  SC-007 — AND NO CHAPTER HUNK GREW
 
       Five distinct chapters carry a regenerated hunk — 3.17, 3.22, 3.23, 3.24,
       3.25 — in both locales, ten chapter-locale pairs read.
+
+================================================================================
+PHASE 5 — THE NINE FILES THE CHAIN NEVER SEES WHOLE                 2026-09-18
+================================================================================
+
+T044  THE DESIGN, DECIDED BY A MEASUREMENT NEITHER OPTION HAD ASKED FOR
+
+      The task offered three designs. A fourth is better than all of them, and
+      one command settles it: **every one of the nine first `diff` fences applies
+      cleanly to its own `rework/part3-chM` tag** — the state BEFORE the chapter's
+      change, not after.
+
+      So the repair is neither "replace the diff with a body at N" (design A, which
+      throws away the chapter's teaching) nor "put a body in chapter M" (design B,
+      which drops a listing into a chapter that never mentions the file). It is:
+
+          a whole body at chapter N, from rework/part3-chM,
+          immediately BEFORE the existing diff, which is left alone
+
+      The reader meets the file as it stands, then sees what the chapter changes.
+      The listing sits in the chapter that discusses the file — design A's
+      placement — and costs design B's line count, because the body is the
+      PREDECESSOR state. Analysis pass 1 measured this for chapter 3.3 and called
+      it a trap; it is the design.
+
+      THE COST, AND THE RATIO THAT DECIDES THE LAST ONE
+
+        file                             body  problems  lines each  verdict
+        services/gateway/session.itest.ts  281      10        28     body
+        api/outbox/event.test.ts            93       4        23     body
+        test-harness/driver-exempt.test.ts  92       4        23     body
+        protocol/internal.test.ts           49       4        12     body
+        api/messages/history.itest.ts      102       2        51     body
+        api/messages/idempotency.itest.ts  136       2        68     body
+        test-harness/guard.itest.ts        333       2       167     body
+        dispatcher/vitest.integration…      14       2         7     body
+        api/fanout/fanout.itest.ts         558       2       279     FR-012
+
+      **Eight bodies, 1,100 lines** — against the 1,956 design A would have cost
+      and the 1,658 design B would have.
+
+      **`fanout.itest.ts` is the one exception and the ratio is why.** 558 lines of
+      listing to verify a THREE-LINE change is 279 lines per problem, 1.7x the next
+      worst and 40x the best. Its chapter already publishes two `(excerpt)` fences
+      of the same file, so the excerpt form is the chapter's existing practice
+      rather than a new concession. Recorded under FR-012 at T056 with its price:
+      the file stays unverified, which is what it is today.
+
+      AND THE RATIO HAD TO BE PER PROBLEM, NOT PER CHAPTER. Measured against the
+      first chapter's change alone, `session.itest.ts` reads 281 lines for an
+      8-line diff — 35x, worse than everything but fanout — and would have been
+      declared. It is amended by FIVE chapters (3.3, 3.5, 3.9, 3.17, 3.22), so one
+      body buys ten problems and the honest figure is 28 lines each, the third
+      best on the list. **A listing is worth what the whole chain it unblocks is
+      worth, not what the chapter it sits in changes.**
+
+T045-T053  EIGHT BODIES, 1,100 LINES, AND EVERY EXISTING DIFF STILL APPLIED
+
+        55 -> 37 on the eight introductions (APPLY 32 -> 8, HEAD 23 -> 29)
+
+      The six new HEAD problems are the point rather than a cost: a file whose
+      chain now COMPLETES can be compared against the tree for the first time.
+      They are phase 6's work.
+
+T054  AND THE INTRODUCTIONS UNBLOCKED FOUR AMENDMENTS THAT THEN FAILED
+
+      This task exists because an introduction can leave later hunks anchored on
+      bytes that do not exist, and it did — four fences, eight problems:
+
+        session.itest.ts at 3.17 and 3.22   ·   event.test.ts at 3.17
+        fanout.itest.ts at 3.17 (never anchored; T044's declared case)
+
+      Three of driver-exempt, internal, guard and the dispatcher config had later
+      amendments and all of them applied untouched.
+
+T056  FOUR FR-012 CONVERSIONS, AND THE PRICE IS WRITTEN DOWN
+
+      `session.itest.ts` at 3.17 carries hunks of **+13/-0, +138/-0 and +33/-2**
+      whose context is 9 of 14, 3 of 12 and **1 of 22** lines present in the chain.
+      The region those blocks join does not exist in the chain: 318 lines against
+      `rework/part3-ch16`'s **980**. Publishing that tag's body would jump the
+      reader from the 281 lines they were shown at 3.3 to 980 with nothing in
+      between — 699 lines of code no chapter discusses, which is exactly the damage
+      this phase is told to avoid.
+
+      So four fences are declared, eight problems: session.itest.ts at 3.17 and
+      3.22, event.test.ts at 3.17, fanout.itest.ts at 3.17.
+
+      WHAT IT COSTS, PLAINLY: those four chapter amendments are no longer verified
+      against the repository, and the files' end states are reconciled by the
+      appendix instead. `session.itest.ts` keeps its body at 3.3 and its 3.5 and
+      3.9 diffs, so the file is verified for six chapters and declared for two.
+      **Eight fence-pairs converted, so T090's population rises by 8 beyond
+      phase 3's 22.**
+
+T055  SC-007 — AND THE EIGHT LISTINGS ARRIVED WITH NO PROSE AT ALL
+
+      Five of the eight landed immediately after a closing fence with a blank line
+      between and nothing else; the other three sat under prose that introduces the
+      DIFF, not the body. A listing of 333 lines with no sentence in front of it is
+      the checker satisfied and the reader abandoned.
+
+      One sentence written for each, in English only: FR-011 forbids altering
+      translated prose, so the Vietnamese chapters carry the listing without an
+      introduction and that is the translator's to write. `MIRROR` is unaffected —
+      it compares fence bodies and the title list, not the prose around them.
+
+      Four distinct chapters gained a listing — 3.3, 3.11 (four of them), 3.20 and
+      3.23 (two) — in both locales, so eight chapter-locale pairs read.
