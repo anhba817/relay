@@ -90,8 +90,18 @@ Resolve or record the **109 → 110** discrepancy (R6, FR-014).
 
 ### Phase 2 — The eleven that name no file 🎯 first, because they are free
 
-Declare each of the 11 `text` fences with `(excerpt)`, in `app/(en)` and its `app/(vi)` twin.
-Expected: **110 → 99**, `MIRROR` still 0.
+Declare each of the 11 `text` fences with `(excerpt)`, in `app/(en)` and its `app/(vi)` twin —
+**22 fences**, which is also what the declared-`(excerpt)` population moves by. Expected:
+**110 → 99**, `MIRROR` still 0.
+
+**The control is sound and that was measured rather than assumed**: each of the eleven titles
+occurs exactly twice, once per locale, all `lang=text`, none repeated inside a chapter and none
+in the appendix — so no later fence loses a predecessor when one is declared.
+
+**And the pair has to land together.** `MIRROR` compares a joined title list per chapter and
+`continue`s on a mismatch, so a half-applied declaration reports **one** problem and leaves that
+chapter's fences uncompared — 40 of them in the largest of the six chapters involved. The total
+stays at 110 through it, because a HEAD problem leaves as the MIRROR one arrives.
 
 **This phase is the measurement loop's own positive control.** It is the only class with no
 cascade risk, so if the count does not move by exactly 11, the instrument is wrong before

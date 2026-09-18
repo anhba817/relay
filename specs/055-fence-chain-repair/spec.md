@@ -276,7 +276,10 @@ confirm the prose describes what the fence shows.
   reading, with the count of chapters read recorded.
 - **SC-008**: The number of fences that no gate reads — untitled, or titled with a prose phrase —
   is measured before and after, and does not increase. Measured 2026-09-17: **360 untitled of
-  2,109 opening fences**, with 222 titles already declared `(excerpt)`. `gaps.md` 043-1's *"146 of
+  2,109 opening fences** (1,071 `app/(en)`, 1,005 `app/(vi)`, 33 `fences/`), with 222 titles
+  already declared `(excerpt)` — **111 in each locale** — and one further `.naive.` pair the
+  checker also skips, for 224 in all. **Every figure here spans both locales**; counted on one
+  side each is roughly half. `gaps.md` 043-1's *"146 of
   904"* is a 2026-08 figure this feature re-measures rather than repeats.
 - **SC-009**: The repair is reproducible: the commands that regenerate each hunk are recorded and
   run as written.

@@ -183,6 +183,8 @@ anything expensive has been attempted.
 - Zero files under `relay-platform/` in the feature's diff, which is a `git diff --stat` and not
   an assurance.
 - The count of fences no gate reads, before and after. Measured 2026-09-17: **360 untitled of
-  2,109 opening fences**, with **222 titles already declared `(excerpt)`**. After: untitled
-  unchanged at 360, declared 233. `gaps.md` 043-1's *"146 of 904"* is a 2026-08 figure and is
+  2,109 opening fences**, with **222 titles already declared `(excerpt)`** — 111 in each locale,
+  plus one `.naive.` pair, so `NOT_A_FILE` skips **224**. After: untitled unchanged at 360,
+  declared **244**, because the eleven prose titles are **twenty-two fences** and phase 3
+  declares both sides of each. `gaps.md` 043-1's *"146 of 904"* is a 2026-08 figure and is
   superseded by this measurement rather than repeated.

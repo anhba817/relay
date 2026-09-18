@@ -160,12 +160,15 @@ cd ../relay-tutorial
 grep -rhoE '^```[a-z]*( title="[^"]*")?' app/\(en\) app/\(vi\) fences/post-series.md \
   | grep -cv 'title='                                     # untitled fences: 360 before
 grep -rhoE 'title="[^"]*"' app/\(en\) app/\(vi\) fences/post-series.md \
-  | grep -c '(excerpt)'                                   # declared not-files: 222 before, 233 after
+  | grep -c '(excerpt)'                                   # declared not-files: 222 before, 244 after
 ```
 
 Measured 2026-09-17, before any repair: **2,109 opening fences · 1,749 titled · 360 with a
 language and no title · 222 titles already carrying `(excerpt)`**. After the repair the untitled
-count is unchanged at 360 and the declared count is 233. **Nothing that names a real file becomes
+count is unchanged at 360 and the declared count is **244** — **+22, not +11**, because the
+eleven prose titles occur once in `app/(en)` and once in `app/(vi)` and phase 3 declares the
+pair. Every figure on this line spans both locales: 1,071 en · 1,005 vi · 33 appendix, and the
+222 is 111 and 111. **Nothing that names a real file becomes
 unverified**, which is the property SC-008 is about — and `gaps.md` 043-1's *"146 of 904"* is a
 2026-08 figure that this feature re-measures rather than repeats.
 

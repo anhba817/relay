@@ -63,7 +63,15 @@ matches fences by title and a renamed English title would leave its Vietnamese t
 `app/(vi)` and the appendix:
 
     2,109 opening fences · 1,749 titled · 360 with a language and no title
-    222 titles already carry `(excerpt)`
+    222 titles already carry `(excerpt)`   —  111 in app/(en), 111 in app/(vi)
+    1,071 en · 1,005 vi · 33 fences/       and `.naive.` adds a pair, so NOT_A_FILE skips 224
+
+**Every number here is a two-locale number, and the eleven are twenty-two fences.** Measured:
+each of the eleven prose titles occurs **exactly twice** — once per locale — all of them
+`lang=text`, none repeated inside a chapter and none in `fences/post-series.md`. So nothing
+amends a prose title, no later fence loses its predecessor when one is declared, and phase 3's
+expected **110 → 99** has no cascade behind it. The same measurement is why the declared
+population lands at **244** rather than 233.
 
 So declaring these eleven is not inventing a mechanism, it is applying one the series uses in 222
 places. **And `gaps.md` 043-1's figure is stale**: it recorded *"146 of 904 — 16%"* untitled; the

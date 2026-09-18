@@ -49,6 +49,12 @@ Every fence for one path, in chapter order, with `fences/post-series.md` applied
 | `HEAD` | the state after the last fence equals the file on disk | 36 |
 | `MIRROR` | each Vietnamese fence is byte-identical to its English twin, matched **by title** | 0 |
 
+**`MIRROR` is two checks and the first one gates the second.** The loop joins each chapter's
+`lang title` list and compares it; on a mismatch it records **one** problem and `continue`s,
+**so none of that chapter's bodies is compared** (`check-fence-chain.mjs:307-314`). At 0 the
+property means what it says. At any other value it counts **chapters skipped**, not fences wrong
+— and the 41 translated chapters hold up to 40 titled fences each.
+
 Two consequences the repair depends on:
 
 - **A chain must open with a whole body.** An amendment with no predecessor is
@@ -57,7 +63,8 @@ Two consequences the repair depends on:
   and never introduce one. The specification's FR-010 offers it as a fallback for missing
   introductions; that fallback does not exist.
 - **`MIRROR` matches by title**, so renaming an English title without renaming its Vietnamese
-  twin unpairs them.
+  twin unpairs them — and unpairing one fence stops the other fences in that chapter being
+  compared at all. Phase 3 renames titles in **6 chapters holding 128 titled fences**.
 
 ---
 
@@ -128,7 +135,13 @@ An English fence and its Vietnamese twin, matched by title within the same chapt
 
 Measured: **30 vi problems, all 30 mirroring an en problem exactly, zero vi-only.** The pair is
 the unit of edit and the English side is the unit of diagnosis. `MIRROR` must read 0 after every
-repair, which is the check that the copy actually happened.
+repair, which is the check that the copy actually happened — **and only at 0**, because a
+non-zero reading is a chapter whose bodies went uncompared rather than a fence that differs.
+
+**The pair is also the unit of every count.** The 2,109 opening fences are 1,071 English, 1,005
+Vietnamese and 33 in the appendix; the 222 `(excerpt)` titles are 111 and 111; the eleven
+prose-titled fences are twenty-two. A population counted on the English side is half of itself,
+which is what T090 asserted until it was measured.
 
 `gaps.md` 050-3 is why HEAD problems are `(en)` only: the Vietnamese chain is compared to its
 English twin and never to `relay-platform`.
