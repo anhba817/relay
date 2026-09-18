@@ -74,14 +74,24 @@ One table, one route. The row is scoped to the environment and to the user when 
 The route returns the `media_id` and the URL and stores nothing about the URL, because the URL is
 derived and the store enforces its own expiry.
 
-### Phase 2 — The three refusals
+### Phase 2 — The four refusals, and the ladder that makes them honest
 
-`media_type_not_allowed`, `media_too_large`, `media_storage_exhausted`, each with its section in
-`docs/08-error-reference.md` and each asserted **by code**, not by status. `webhooks.itest.ts`
-passed for four chapters while the body said `internal_error`; only the code could have caught it.
+`media_type_not_allowed`, `media_too_large`, `media_storage_exhausted` and
+**`media_storage_unavailable`** — the fourth is `docs/05-sad.md:1062`'s degradation row, which
+analysis found after the specification had called it unexplained. Each gets a section in
+`docs/08-error-reference.md` and each is asserted **by code**, not by status.
+`webhooks.itest.ts` passed for four chapters while the body said `internal_error`; only the code
+could have caught it.
 
-**Asserting three codes are distinct is not the same as asserting each is right.** The test names
+**Asserting four codes are distinct is not the same as asserting each is right.** The test names
 the condition and the code together.
+
+**AND THE STATUS LADDER GAINS FOUR ENTRIES.** `protocol-error.filter.ts` maps 400, 401, 403 and
+404 and falls everything else through to `internal_error`. All four of this chapter's statuses —
+415, 413, 402, 503 — are outside it, so they are right only while every thrower remembers to name
+its code. The filter's own comment calls that fallback *"a lie the client cannot act on"*, twice,
+about the two statuses earlier chapters fixed. Four more statuses is four more lies unless the
+ladder learns them.
 
 ### Phase 3 — The quota, and the clause it forces
 
@@ -116,7 +126,7 @@ as an absolute number, not a delta** (055's own close-out decided that).
 | decision | why it is not simpler | what it costs |
 |---|---|---|
 | **Signing with `node:crypto` rather than an S3 client** | A client is two packages and a transitive tree for a string this platform can produce in 28 lines, and chapter 4.2 set the precedent with `fetch` against ClickHouse. | The canonical request is ours to get right, and its failure mode is an unexplained 400. Paid with a test against the running store rather than against an expected string. |
-| **A new container in the local stack** | ADR-13 requires a store the client can reach directly; there is no in-process substitute that also proves the 403 on an unsigned read. | 241 MB and one more service in every `docker compose up`. |
+| **A new container in the local stack** | ADR-13 requires a store the client can reach directly; there is no in-process substitute that also proves the 403 on an unsigned read. | 241 MB and one more service in every `docker compose up`. **Zero packages** — the two counts are different and only the package one is what this project has been calling a dependency count. |
 | **Committed bytes as a query rather than a counter** | A counter on `environments` would be a second source of truth for something the media rows already say (constitution IV). | A sum per slot request. At this chapter's scale it is nothing; the plan says so rather than pretending it measured a million rows. |
 | **Amending FR-RTL-05 rather than bending storage into a monthly quota** | The bend is what the clause's words invite, and R3 measured why it breaks: subtraction and a reset on the 1st. | An SRS revision, and two other FR-MED clauses to re-read when it lands. |
 
@@ -139,9 +149,9 @@ as an absolute number, not a delta** (055's own close-out decided that).
 
 ## Open questions for `/speckit-analyze`
 
-1. **`docs/12` says "the four distinct refusals" and FR-MED-02 names three.** Nothing found so
-   far explains the fourth. It may be the SAD's degradation row — *"upload slots return a specific
-   error"* when the store is down — which is a real refusal and is not FR-MED-02's.
+1. **ANSWERED IN ANALYSIS PASS 1.** `docs/12`'s fourth refusal is `docs/05-sad.md:1062`'s
+   degradation row — *"Object storage lost … Upload slots return a specific error"*. It is
+   FR-017 now, with its own code, and it is the only transient refusal of the four.
 2. Whether the media table is `media_objects` or joins an existing one. Nothing in the schema is
    close, so it is a new table; the name is the plan's smallest open choice.
 3. Whether the object key includes the environment id. It makes cross-tenant reads structurally

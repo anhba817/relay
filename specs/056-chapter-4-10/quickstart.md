@@ -76,6 +76,21 @@ done
     media_too_large
     media_storage_exhausted        (with a storage cap set below the committed bytes)
 
+**And the fourth, which needs the store taken away rather than a stub:**
+
+```bash
+docker compose stop minio
+curl -s -X POST localhost:3000/v1/media -H "Authorization: Bearer $TOKEN" \
+  -H 'content-type: application/json' \
+  -d '{"filename":"a.jpg","mime_type":"image/jpeg","bytes":1024}' | jq -r '.code'
+docker compose start minio
+```
+
+    media_storage_unavailable
+
+**It is the only transient one of the four**, so it is the only one whose message may say retry.
+A test that stubs the failure asserts the stub.
+
 **Read the code, not the status.** `webhooks.itest.ts` passed for four chapters while the body
 said `internal_error`, and only the code could have caught it.
 
@@ -101,6 +116,16 @@ psql -c "update environments set quota_config = '{\"bandwidth\":{\"hard\":1}}'"
 
 Both halves, every time the schema is re-pinned. Feature 049 found a coverage pin that could not
 fail by running exactly this shape of probe in both directions.
+
+## 6a. The status ladder, probed with an unnamed throw
+
+`protocol-error.filter.ts` maps 400, 401, 403 and 404 and falls everything else through to
+`internal_error`. All four of this chapter's statuses — 415, 413, 402, 503 — are outside it, so
+they are right only while every thrower names its code.
+
+Throw unnamed at each and assert the code is **not** `internal_error`. The filter's own comment
+calls that fallback *"a lie the client cannot act on"*, once about the 400 chapter 2.2 fixed and
+once about the 403 the credentials chapter fixed.
 
 ## 7. The gates
 

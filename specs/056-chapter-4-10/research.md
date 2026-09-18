@@ -134,3 +134,32 @@ it** — the same shape as 4.7's daily job that has no runner.
 adds to them; without serialising, both are issued. The plan takes the cheap correct option — do
 both inside one transaction — and the chapter says what the alternative costs, because a reader
 who copies a read-then-write quota check will ship the race.
+
+---
+
+## R7 — The fourth refusal, found in analysis pass 1
+
+**Decision**: `media_storage_unavailable`, its own code, 503, and the only one of the four whose
+message may say retry.
+
+The specification built three refusals and called `docs/12`'s fourth unexplained. It is
+`docs/05-sad.md:1062`, the degradation table:
+
+> | Object storage lost | Media uploads/downloads fail; text messaging unaffected | **Upload slots
+> return a specific error**; attachments render as temporarily unavailable; no Relay-side state to
+> recover — storage provider's durability is the recovery |
+
+**The brief was right and the clause is short.** FR-MED-02 names three conditions and the SAD
+names a fourth, in a table nobody reads when they are reading requirements.
+
+**And it is the one that matters most to a client.** The other three are permanent — transcode,
+compress, free space — so retrying them is wasted. This one is transient, so retrying is the
+remedy. A client that cannot tell them apart gets it wrong in one direction or the other every
+time.
+
+**It also cannot fall into `internal_error`, and neither can the other three.**
+`protocol-error.filter.ts` maps 400, 401, 403 and 404 and falls everything else through, and this
+chapter's four statuses are 415, 413, 402 and 503. Named throws work; an unnamed one produces the
+fallback, which the filter's own comment calls *"a lie the client cannot act on"* — twice, about
+the two statuses earlier chapters had to fix for the same reason. The ladder gains four entries
+and a probe throws unnamed at each.

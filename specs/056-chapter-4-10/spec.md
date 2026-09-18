@@ -45,10 +45,15 @@ persons, and connection-minutes."* Three quantities, and storage is not one of t
 clauses cite a third that does not say what they need**, which this project's own rule — read the
 clauses, not the identifiers — is about.
 
-**THE REFUSAL COUNT DISAGREES WITH THE CLAUSE.** The brief says *"the four distinct refusals"*.
-FR-MED-02 names **three** conditions: MIME outside the allowed set, declared size over the
-per-kind cap, storage quota exceeded. The fourth is unexplained and this specification builds the
-three the clause states.
+**THE FOURTH REFUSAL IS REAL AND IT IS IN THE SAD.** The brief says *"the four distinct
+refusals"* and FR-MED-02 names three conditions — MIME outside the allowed set, declared size over
+the per-kind cap, storage quota exceeded. The fourth is `docs/05-sad.md:1062`, the degradation
+table: *"Object storage lost … **Upload slots return a specific error**"*.
+
+**And it is the one a client most needs to tell apart.** The other three are permanent: transcode,
+compress, or buy more storage. This one is transient, so it is the only refusal for which retrying
+is the right advice — and a client that cannot distinguish it either retries three refusals that
+will never succeed or gives up on one that would.
 
 **What did hold**: chapter 3.24 shipped the discriminated union this chapter fills.
 `attachmentSchema` carries a `{ type: "media" }` arm that refuses today with
@@ -127,8 +132,9 @@ cannot be reached, and a refusal that cannot be reached is a test that cannot fa
   the chapter states plainly that the quota arithmetic here is over *declarations*.
 - **Two slots race the same remaining quota.** Both may be issued against one remaining
   allowance unless the commit is serialised.
-- **The object store is down when a slot is requested.** The SAD's degradation table says upload
-  slots return a specific error; that is a fourth refusal shape and it is not FR-MED-02's.
+- **The object store is down when a slot is requested.** This is the fourth refusal (FR-017), and
+  it is the only transient one. A slot cannot be issued because the URL is signed against a store
+  that is not answering — and the failure must not read as a quota or a bad MIME type.
 - **A MIME type that is allowed but whose kind cannot be derived**, so no per-kind cap applies.
 - **An upload URL is shared with someone else.** For fifteen minutes it is a bearer credential.
 
@@ -152,7 +158,7 @@ cannot be reached, and a refusal that cannot be reached is a test that cannot fa
   image 10 MB, audio 25 MB, video 100 MB.
 - **FR-007**: A slot MUST be refused when issuing it would take the environment's committed
   storage past its configured cap.
-- **FR-008**: The three refusals MUST use three distinct error codes, each documented in the
+- **FR-008**: The four refusals MUST use four distinct error codes, each documented in the
   published error reference, and each MUST say which rule was broken.
 - **FR-009**: A refused request MUST create no media record and reserve no bytes.
 - **FR-010**: The quota configuration MUST accept a storage dimension, and MUST continue to
@@ -170,6 +176,14 @@ cannot be reached, and a refusal that cannot be reached is a test that cannot fa
   bytes it committed are ever released.
 - **FR-016**: The `{ type: "media" }` arm MUST continue to refuse with `media_not_available`.
   This chapter makes a `media_id` exist; FR-MED-06's chapter is what starts accepting one.
+- **FR-017**: A slot MUST be refused with its own code when the object store cannot be reached,
+  and that code MUST be distinguishable from the other three. It is the only transient refusal, so
+  it is the only one whose message may tell a client to retry (`docs/05-sad.md:1062`).
+- **FR-018**: Every status this chapter introduces MUST have a named code in the error filter's
+  ladder, not only in its throwers. The ladder maps 400, 401, 403 and 404 and falls everything
+  else through to `internal_error` — which is *"a lie the client cannot act on"* in the filter's
+  own words about the 400 chapter 2.2 fixed and the 403 the credentials chapter fixed. Three or
+  four new statuses without a ladder entry is three or four more of the same.
 
 ### Key Entities
 
@@ -187,12 +201,17 @@ cannot be reached, and a refusal that cannot be reached is a test that cannot fa
 
 - **SC-001**: A client can obtain a slot and upload a file to the object store without any byte
   of that file reaching the api — verified by the api's own request log showing the slot request
-  and nothing else.
+  and nothing else. **The suite spawns the ingester it needs**: the request log is written by
+  `services/ingester`, which has no Dockerfile and no compose service, so those rows do not exist
+  on a machine where nothing drains the stream. Chapter 4.9 closed `gaps.md` 050-8 by having the
+  suite start the process; this criterion is measured the same way or it is measured against an
+  empty table.
 - **SC-002**: An upload URL is accepted before 15 minutes and refused after, measured against the
   store rather than asserted from the issuing code.
-- **SC-003**: The three refusals return three distinct codes, and a test asserts the codes rather
+- **SC-003**: The four refusals return four distinct codes, and a test asserts the codes rather
   than the status — this platform has shipped a suite that passed while the body said
-  `internal_error`.
+  `internal_error`. Distinctness is one assertion and correctness is four; a test that checks only
+  distinctness passes when every code is wrong in the same way.
 - **SC-004**: Every new code appears in the published error reference, and `check:errors` agrees
   in both directions.
 - **SC-005**: A storage cap set on an environment changes whether a slot is issued, measured at
@@ -205,8 +224,10 @@ cannot be reached, and a refusal that cannot be reached is a test that cannot fa
 - **SC-008**: The chapter's prose is within `docs/07`'s word bound, and its argument's cost is
   stated as prose or artifacts when the estimate is written.
 - **SC-009**: The tutorial job in CI succeeds on the chapter's push.
-- **SC-010**: Object storage joins the local stack and `docs/12`'s dependency count moves by
-  exactly one, recorded.
+- **SC-010**: Object storage joins the local stack as **one container**, and the **package count
+  moves by zero** — measured across every `package.json` in `relay-platform`, which holds no S3
+  client of any kind today. `docs/12` carries no dependency count; the "5 → 6" in this project's
+  record is chapter 4.5's gateway package count, and a container is not a package.
 
 ## Assumptions
 
@@ -222,8 +243,8 @@ cannot be reached, and a refusal that cannot be reached is a test that cannot fa
   quotas"* and FR-MED-12 puts storage under it. **This one is worth doubting**: stored bytes are
   a level and messages sent are a flow, and a monthly cap on a level is a different arithmetic
   from a monthly cap on a flow. The plan settles it and the chapter says which it chose.
-- **The four-refusals figure in `docs/12` is an error** until something explains it. Three
-  conditions are specified; if a fourth is found, it is a finding and not a silent addition.
+- **The four-refusals figure in `docs/12` is right**, and analysis found the fourth: the SAD's
+  degradation row. It is specified as FR-017 rather than added silently.
 
 ## Out of scope
 

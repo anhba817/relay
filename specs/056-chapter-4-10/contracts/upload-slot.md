@@ -32,15 +32,28 @@ client can decide whether to reuse it — **the store is authoritative and the f
 
 **Refusals**, each with its own code and each writing no row:
 
-| status | code | condition |
-|---|---|---|
-| 415 | `media_type_not_allowed` | `mime_type` outside the ten allowed |
-| 413 | `media_too_large` | `bytes` over the kind's cap — image 10 MB, audio 25 MB, video 100 MB |
-| 402 | `media_storage_exhausted` | the environment's committed bytes plus `bytes` exceeds its cap |
+| status | code | condition | retry? |
+|---|---|---|---|
+| 415 | `media_type_not_allowed` | `mime_type` outside the ten allowed | no — transcode |
+| 413 | `media_too_large` | `bytes` over the kind's cap — image 10 MB, audio 25 MB, video 100 MB | no — compress |
+| 402 | `media_storage_exhausted` | the environment's committed bytes plus `bytes` exceeds its cap | no — free space or raise the cap |
+| 503 | `media_storage_unavailable` | the object store cannot be reached | **yes** |
+
+**The fourth is the only transient one**, which is why it needs its own code rather than folding
+into `internal_error`. `docs/05-sad.md:1062` specified it — *"Object storage lost … Upload slots
+return a specific error"* — and a client that cannot tell it from the other three either retries
+three refusals that will never succeed or abandons the one that would.
 
 **The statuses are proposals and the codes are the contract.** A client branches on the code;
 the status is what a proxy sees. Tests assert the code — `webhooks.itest.ts` passed for four
 chapters while the body said `internal_error`, and only the code could have caught it.
+
+**AND EACH STATUS NEEDS A LADDER ENTRY, NOT ONLY A NAMED THROW.**
+`protocol-error.filter.ts` maps 400, 401, 403 and 404 and falls everything else through to
+`internal_error`. All four statuses above are outside it, so they are correct only while every
+thrower remembers to name its code. The filter's own comment calls that fallback *"a lie the
+client cannot act on"* — twice, once for the 400 chapter 2.2 fixed and once for the 403 the
+credentials chapter fixed. Four new statuses without ladder entries is four more.
 
 ---
 
@@ -68,5 +81,7 @@ because a later chapter that discovers the bucket is world-readable discovers it
 - No `ready` state and no way to reach one. FR-MED-03 verifies and FR-MED-04 scans.
 - No download URL. FR-MED-08's signed delivery is a later chapter, and the probe above only
   establishes that the mechanism exists.
+- No retry of a failed store call inside the api. `media_storage_unavailable` is reported, not
+  worked around; the client holds the retry because the client holds the file.
 - No `media_id` accepted on a message. The `{ type: "media" }` arm keeps refusing with
   `media_not_available` until 4.11, which is what `codes.ts:204` already says will happen.

@@ -96,13 +96,19 @@ cap. Both halves are probed (049's rule about a pin that cannot fail).
 
 ## Error codes
 
-Three, and none of them is `quota_exceeded`.
+Four, and none of them is `quota_exceeded`.
 
-| code | condition |
-|---|---|
-| `media_type_not_allowed` | the declared MIME type is outside the ten FR-MED-02 permits |
-| `media_too_large` | the declared size exceeds the cap for its kind |
-| `media_storage_exhausted` | issuing the slot would take the environment past its storage cap |
+| code | condition | permanent? |
+|---|---|---|
+| `media_type_not_allowed` | the declared MIME type is outside the ten FR-MED-02 permits | yes |
+| `media_too_large` | the declared size exceeds the cap for its kind | yes |
+| `media_storage_exhausted` | issuing the slot would take the environment past its storage cap | yes |
+| `media_storage_unavailable` | the object store cannot be reached | **no** |
+
+The fourth is `docs/05-sad.md:1062`'s degradation row, which FR-MED-02 does not carry and
+`docs/12`'s brief counted. **It is the only transient one**, and that is the whole reason it
+cannot share a code with the others or fall into `internal_error`: retry is right for exactly one
+of the four.
 
 `codes.ts` already refuses the reuse twice. `channel_member_limit_exceeded` carries *"NOT
 `quota_exceeded`. That is a monthly, billable, resets-on-a-date refusal whose message promises a
