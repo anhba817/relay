@@ -676,3 +676,28 @@ T100  WHETHER ZERO SHOULD BE GUARDED — DECIDED: NO NEW MECHANISM
       number.** A chapter that says "0" is making a claim a reader can check. A
       chapter that says "delta 0" is making a claim about arithmetic it did not
       show. Nothing to build, and `gaps.md` 048-5 and 054-4 are adjacent to it.
+
+T101  PUSHED. `relay-tutorial` 6ba7e9e..f9dac03 and the parent 314ddfd..b78e2d3,
+      both fast-forward. `relay-platform` was not pushed because it has nothing
+      to push — 0 commits ahead, 0 files changed since `part4-ch9` (SC-010).
+
+T102  SC-002 — THE TUTORIAL JOB IS GREEN, FOR THE FIRST TIME SINCE FEATURE 045
+
+      Run 35323020333 on b78e2d3, job by job:
+
+        success   relay-tutorial — build, docs drift, fence chain
+        failure   relay-platform — the sealed integration
+        failure   relay-platform — gates, lanes, coverage
+
+      The previous run, 35247383972 on 314ddfd — feature 054's close, before any
+      of this — failed all three. **The tutorial job is the one that changed.**
+
+      THE TWO PLATFORM FAILURES ARE RECORDED, NOT REPAIRED, and they cannot be
+      this feature's: `relay-platform` is 0 commits ahead of its remote and
+      `git diff --stat part4-ch9` is empty, so not one byte of what those jobs
+      test was touched. They failed identically on the run before. The visible
+      error is `packages/outsider/src/integrate.itest.ts:674` — `expected 200,
+      got 500` — in the sealed suite chapter 4.9 repaired two other assertions in.
+
+      That is a standing red in a different repository, for a different reason,
+      and T102 says to record it rather than repair it here.
