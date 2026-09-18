@@ -204,3 +204,46 @@ T014  THE GATES
         edit too, measured against `git show HEAD:`. It is not a gate in
         ci.yml's tutorial job and reformatting a gated script is a large
         unrelated diff, so the file keeps its own style.
+
+================================================================================
+PHASE 3 — THE ELEVEN THAT NAME NO FILE                              2026-09-18
+================================================================================
+
+T026  READ FIRST, DECLARED SECOND. All eleven bodies were read before any title
+      was touched. Every one is command output, and the criterion is that the
+      block is not a file's contents:
+
+        the ladder against the registry          5 lines  check:errors output
+        who builds a docs_url                    3        three source locations
+        the typo, now                            2        tsc TS2345
+        the derivation, reporting itself         1        gauntlet target report
+        what the schema looks like from here     1        catalogue report
+        the structural check, on the first …     3        catalogue refusal
+        the same error, from inside one package  2        Postgres 23505, twice
+        the check, on the consumer's table       1        catalogue refusal
+        42P01                                    2        Postgres, failed query
+        run 11 of 20                             1        a vitest assertion
+        the build that added the module          6        gauntlet report, JSON
+
+      None is a file. Eleven of eleven, no twelfth candidate found.
+
+T015-T025  22 FENCES ACROSS 12 PAGES — the eleven titles occur exactly twice
+      each, once per locale, and each pair was rewritten in one pass. Bodies
+      untouched: only the title attribute changed.
+
+T027  THE POSITIVE CONTROL, AND IT IS EXACT ON EVERY AXIS
+
+        MIRROR                    0        read FIRST — a broken pair shows here
+        total                    99        expected exactly 99
+        APPLY                    74        unchanged, as it must be
+        HEAD                     25        36 - 11
+        paths in the dump       274        285 - 11, as T012 predicted
+        (excerpt) titles        244        222 + 22, the pass-5 arithmetic
+        untitled                360        unchanged
+
+      Eleven declarations have no cascade risk — measured in analysis pass 5,
+      each title occurs once per locale, none repeated in a chapter and none in
+      the appendix — so any number other than 99 would have been the instrument
+      and not the repair. The loop can be trusted with the expensive phases.
+
+T028  pnpm lint exit 0 · pnpm build exit 0

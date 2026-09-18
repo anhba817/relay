@@ -81,22 +81,22 @@ All eleven are ` ```text ` command output. The repair is `(excerpt)` in the titl
 this series already carry**. The English title and its Vietnamese twin change together or
 `MIRROR` unpairs them.
 
-- [ ] T015 [P] [US1] Declare `the ladder against the registry` in `app/(en)/part-3/chapter-03/errors-that-resolve/page.mdx` and its `app/(vi)/vi/` twin. Body unchanged.
-- [ ] T016 [P] [US1] Declare `who builds a docs_url` in `app/(en)/part-3/chapter-03/errors-that-resolve/page.mdx` and its vi twin.
-- [ ] T017 [P] [US1] Declare `the typo, now` in `app/(en)/part-3/chapter-03/errors-that-resolve/page.mdx` and its vi twin.
-- [ ] T018 [P] [US1] Declare `the derivation, reporting itself` in `app/(en)/part-3/chapter-04/the-isolation-harness/page.mdx` and its vi twin.
-- [ ] T019 [P] [US1] Declare `what the schema looks like from here` in `app/(en)/part-3/chapter-04/the-isolation-harness/page.mdx` and its vi twin.
-- [ ] T020 [P] [US1] Declare `the structural check, on the first table added after it` in `app/(en)/part-3/chapter-05/the-outbox/page.mdx` and its vi twin.
-- [ ] T021 [P] [US1] Declare `the same error, from inside one package` in `app/(en)/part-3/chapter-05/the-outbox/page.mdx` and its vi twin.
-- [ ] T022 [P] [US1] Declare `the check, on the consumer's table` in `app/(en)/part-3/chapter-06/jetstream-and-the-first-consumer/page.mdx` and its vi twin.
-- [ ] T023 [P] [US1] Declare `42P01` in `app/(en)/part-3/chapter-06/jetstream-and-the-first-consumer/page.mdx` and its vi twin.
-- [ ] T024 [P] [US1] Declare `run 11 of 20` in `app/(en)/part-3/chapter-07/commit-and-publish-are-two-instants/page.mdx` and its vi twin.
-- [ ] T025 [P] [US1] Declare `the build that added the module` in `app/(en)/part-3/chapter-08/the-endpoints-and-the-instruments/page.mdx` and its vi twin.
-- [ ] T026 [US1] **Read each of the eleven bodies before declaring it, and record that you did.** The criterion is that the block is not a file's contents — all eleven are command output today, and a twelfth that looked like a listing would not be this class. A declaration nobody checked is the exemption FR-002 forbids, wearing a different hat.
-- [ ] T027 [US1] Run `pnpm check:fences` and confirm **exactly 99 — APPLY 74, HEAD 25**, with `MIRROR` still 0. **This is the measurement loop's positive control**: eleven declarations have no cascade risk, so if the count moves by anything other than 11 the instrument is wrong before anything expensive has been attempted. Record both numbers in `baseline.txt`.
+- [X] T015 [P] [US1] **DONE.** Declare `the ladder against the registry` in `app/(en)/part-3/chapter-03/errors-that-resolve/page.mdx` and its `app/(vi)/vi/` twin. Body unchanged.
+- [X] T016 [P] [US1] **DONE.** Declare `who builds a docs_url` in `app/(en)/part-3/chapter-03/errors-that-resolve/page.mdx` and its vi twin.
+- [X] T017 [P] [US1] **DONE.** Declare `the typo, now` in `app/(en)/part-3/chapter-03/errors-that-resolve/page.mdx` and its vi twin.
+- [X] T018 [P] [US1] **DONE.** Declare `the derivation, reporting itself` in `app/(en)/part-3/chapter-04/the-isolation-harness/page.mdx` and its vi twin.
+- [X] T019 [P] [US1] **DONE.** Declare `what the schema looks like from here` in `app/(en)/part-3/chapter-04/the-isolation-harness/page.mdx` and its vi twin.
+- [X] T020 [P] [US1] **DONE.** Declare `the structural check, on the first table added after it` in `app/(en)/part-3/chapter-05/the-outbox/page.mdx` and its vi twin.
+- [X] T021 [P] [US1] **DONE.** Declare `the same error, from inside one package` in `app/(en)/part-3/chapter-05/the-outbox/page.mdx` and its vi twin.
+- [X] T022 [P] [US1] **DONE.** Declare `the check, on the consumer's table` in `app/(en)/part-3/chapter-06/jetstream-and-the-first-consumer/page.mdx` and its vi twin.
+- [X] T023 [P] [US1] **DONE.** Declare `42P01` in `app/(en)/part-3/chapter-06/jetstream-and-the-first-consumer/page.mdx` and its vi twin.
+- [X] T024 [P] [US1] **DONE.** Declare `run 11 of 20` in `app/(en)/part-3/chapter-07/commit-and-publish-are-two-instants/page.mdx` and its vi twin.
+- [X] T025 [P] [US1] **DONE.** Declare `the build that added the module` in `app/(en)/part-3/chapter-08/the-endpoints-and-the-instruments/page.mdx` and its vi twin.
+- [X] T026 [US1] **DONE — all eleven read before any title was touched, and all eleven are command output.** Two checker reports, a `tsc` TS2345, two Postgres errors (23505 twice, and a 42P01 with its failed query), two catalogue refusals, a vitest assertion, three source locations, and a JSON gauntlet report. Bodies from 1 to 6 lines. No twelfth candidate. Listed in `baseline.txt`. Original: **Read each of the eleven bodies before declaring it, and record that you did.** The criterion is that the block is not a file's contents — all eleven are command output today, and a twelfth that looked like a listing would not be this class. A declaration nobody checked is the exemption FR-002 forbids, wearing a different hat.
+- [X] T027 [US1] **DONE — 99, APPLY 74, HEAD 25, MIRROR 0, and exact on every axis.** `MIRROR` read first and is 0, so both locales landed together. The dump fell 285 → **274**, exactly the eleven paths leaving `en.state` as T012 predicted. `(excerpt)` went **222 → 244** (+22, the pass-5 arithmetic, not +11) and untitled is unchanged at 360. Any number other than 99 would have been the instrument rather than the repair. Original: Run `pnpm check:fences` and confirm **exactly 99 — APPLY 74, HEAD 25**, with `MIRROR` still 0. **This is the measurement loop's positive control**: eleven declarations have no cascade risk, so if the count moves by anything other than 11 the instrument is wrong before anything expensive has been attempted. Record both numbers in `baseline.txt`.
   **`MIRROR` IS THE PRIMARY SIGNAL HERE AND THE TOTAL IS NOT — MEASURED.** One fence declared in English only gives **`110 — APPLY 74, HEAD 35, MIRROR 1`**: HEAD falls by one and MIRROR rises by one, so **the total does not move at all.** Declared in both locales it gives `109 — APPLY 74, HEAD 35`. `MIRROR` compares the chapter's **joined title list first** and `continue`s on mismatch (`check-fence-chain.mjs:307`), so a chapter whose Vietnamese titles were not renamed produces **one** problem however many of its fences were declared — and chapter 3.3 holds three of the eleven, so **one missed chapter can hold three declarations back while the number looks untouched.**
   So read `MIRROR` first: it must be **0**. A total of 110 after this phase does not mean nothing happened; it means a locale pair was broken. **An earlier draft of this task predicted "100 rather than 99" and the probe says otherwise** — the total under-moves by one per affected chapter, not per fence.
-- [ ] T028 Run `pnpm build`; commit phase 3.
+- [X] T028 **DONE — `pnpm lint` exit 0, `pnpm build` exit 0.** Committed as `relay-tutorial` `ba23f7b`. Original: Run `pnpm build`; commit phase 3.
 
 **Checkpoint**: 99, by a repair that could not have cascaded — and the loop has been shown to work before it is trusted with the rest.
 
