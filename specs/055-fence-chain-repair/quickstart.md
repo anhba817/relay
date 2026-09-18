@@ -63,6 +63,21 @@ wc -l < /tmp/at322/turbo.json                           # 62
 wc -l < /tmp/chainstate/turbo.json                      # 74
 ```
 
+**And the Vietnamese chain, which is the same command with the locale in the page path:**
+
+```bash
+pnpm check:fences --dump /tmp/at322vi --at 'app/(vi)/vi/part-3/chapter-22/limits-you-can-see-coming/page.mdx'
+diff /tmp/at322/turbo.json /tmp/at322vi/turbo.json      # no output — 62 lines both sides at 3.22
+ls /tmp/at322vi/services/api/src/metering/reconcile.ts  # No such file — chained in en 4.9 only
+```
+
+**There is no `--locale` flag: the page path is the locale**, so the argument copied off a problem
+line names its own chain. **A bare `--dump` writes the English one**, because that is the only
+final state the checker builds — the appendix loop mutates `en.state` and `replay("vi", …)` runs
+after it. The two ends differ: **9 paths, and `turbo.json` at en 75 against vi 62.** At the
+chapters this feature repairs they agree, which is what makes FR-011's regenerate-in-en-copy-to-vi
+rule safe on evidence rather than on the inference from `MIRROR` being 0.
+
 **Twelve lines apart, and that is the whole reason the flag has two modes.** A hunk for a chapter
 must be generated against the first number; one for the appendix or for a HEAD divergence against
 the second. Measured chapter by chapter, `turbo.json` goes 28 → 59 → 62 → 74, and the tree holds

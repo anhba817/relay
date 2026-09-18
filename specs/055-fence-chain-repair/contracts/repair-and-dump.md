@@ -30,6 +30,36 @@ state a hunk is written against before blaming the hunk."*
 `<page>` is the chapter's path as the checker reports it — `app/(en)/part-3/chapter-22/limits-you-can-see-coming/page.mdx` — so the argument is copied from the problem line rather than
 constructed.
 
+**AND THE PAGE PATH IS ALSO THE LOCALE, WHICH IS WHY THERE IS NO `--locale` FLAG.** Every problem
+line begins with the locale's own directory — `app/(en)/…` or `app/(vi)/vi/…` — so `--at` reads
+the chain to replay off the argument it was already given, and a flag could only ever disagree
+with it. **The plain `--dump` mode has no such argument, and for it the chain is English by
+construction.** The class-by-locale matrix says why, measured today:
+
+    class                  en   vi  appendix   total   which mode serves it
+    hunk pre-image         14   14        14      42   --at for the 28 · --dump for the 14
+    no earlier fence       16   16         0      32   a tag, not a dump (R2)
+    differs at line        25    0         0      25   --dump
+    does not exist         11    0         0      11   a title edit, no dump
+    TOTAL                  66   30        14     110
+
+**All 39 consumers of the final-state mode are English** — the 25 divergences because the HEAD
+comparison iterates `en.state`, and the 14 appendix hunks because `fences/post-series.md` is one
+file for both locales. **All 30 Vietnamese problems are chapter problems**, so every one of them
+is served by `--at` with a `app/(vi)/vi/…` page, and **half of the 28 chapter hunks are
+Vietnamese**.
+
+A `--dump` with no `--at` therefore writes the English chain, and the contract says so rather
+than leaving "final" to be read as covering both. The two final states are different objects:
+
+    paths in the chain          en 285 · vi 276
+    turbo.json, final           en  75 · vi  62
+
+The mechanism is the ordering — `const en = replay("en", …)` at `:204`, the appendix loop
+mutating `en.state` only, and `const vi = replay("vi", …)` at `:300`, after both. **A "vi final
+state" is the vi chain's own end, which nothing in this feature repairs**, and phase 8 records it
+against `gaps.md` 050-3 rather than dumping it here.
+
 **And regenerating a chapter hunk pairs the two sources phase 5 already pairs.** The new hunk is
 `diff(state at that chapter from --at, the file at that chapter from rework/part3-chN)`: the
 pre-image comes from the chain and the post-image from the repository's own history. Neither

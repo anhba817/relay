@@ -36,13 +36,24 @@ something downstream** and is reverted or finished inside that target, with both
 
 **Goal**: hunks are generated from the same replay that checks them. **Blocks phases 4, 5 and 6.**
 
-- [ ] T010 Add a `--dump <dir> [--at <page>]` flag to `relay-tutorial/scripts/check-fence-chain.mjs`. Plain `--dump` writes each path's state after every chapter and the appendix; `--at <page>` writes the state **as that page is reached, before its own fences apply**. Both print how many paths they wrote. The bytes are what the checker compares, **trailing newline included**. It changes no threshold, exempts no class and alters no exit code — **an output mode, not a loosening** (FR-002), and the contract says so where a reviewer will read it.
+- [ ] T010 Add a `--dump <dir> [--at <page>]` flag to `relay-tutorial/scripts/check-fence-chain.mjs`. Plain `--dump` writes each path's state after every chapter and the appendix; `--at <page>` writes the state **as that page is reached, before its own fences apply**. Both print how many paths they wrote, **and which chain they wrote**. The bytes are what the checker compares, **trailing newline included**. It changes no threshold, exempts no class and alters no exit code — **an output mode, not a loosening** (FR-002), and the contract says so where a reviewer will read it.
   **BOTH MODES, BECAUSE ONE CANNOT SERVE THE CHAPTER HUNKS — MEASURED.** `turbo.json` replays to **62 lines at chapter 3.22** and **74 after the appendix**; a hunk generated against the final state carries twelve lines of context that do not exist at 3.22. A final-state dump serves the **14 appendix hunks** and the **25 divergences** and cannot serve the **28 chapter hunks**. An earlier draft of this task specified the final-state mode alone, which would have produced hunks that fail exactly like the ones they replace — chapter 4.8's *"check which state a hunk is written against before blaming the hunk"*, arriving inside the instrument written to prevent it.
+  **AND THERE IS NO `--locale` FLAG, BECAUSE THE PAGE PATH IS ALREADY THE LOCALE.** Every problem line begins with `app/(en)/…` or `app/(vi)/vi/…`, so `--at` derives the chain from the argument it was given and a flag could only disagree with it. **The plain `--dump` mode writes the English chain, and must say so in its own output.** Measured by class and locale:
+
+    class                  en   vi  appendix   total   served by
+    hunk pre-image         14   14        14      42   --at for 28 · --dump for 14
+    no earlier fence       16   16         0      32   a tag, not a dump (R2)
+    differs at line        25    0         0      25   --dump
+    does not exist         11    0         0      11   a title edit, no dump
+
+  **All 39 consumers of the final-state mode are English** — the HEAD comparison iterates `en.state`, and `fences/post-series.md` is one file for both locales — and **all 30 Vietnamese problems are chapter problems**, so every one is served by `--at` on an `app/(vi)/vi/…` page. Half of the 28 chapter hunks are Vietnamese, and an earlier draft of this task left the chain a bare `--dump` reads unnamed: **pass 1's throwaway dumper silently read `en.state`**, which is right for 39 of the 110 and wrong for 28 of them.
 - [ ] T011 Prove the dump is the same replay the check uses: dump twice and `diff -r` the trees; run `pnpm check:fences` with and without the flag and confirm the same count. **A generator that replays differently produces hunks the checker rejects for reasons neither of them explains.**
   **AND ADD THE POSITIVE CONTROL, BECAUSE DETERMINISM IS NOT CORRECTNESS.** Dumping twice proves the dump is stable; **a dump that is consistently wrong passes that check.** So: take a chapter hunk that **works today**, dump with `--at` at its chapter, and confirm the hunk applies against that state. It must. Then confirm the same hunk does **not** apply against the plain `--dump` state, which is what proves the two modes are different states rather than the same one twice.
+  **RUN THAT CONTROL ON A VIETNAMESE PAGE TOO**, because half the chapter hunks are vi and a dumper that reads `en.state` for every argument passes the English half of this check. The discriminator needs no arithmetic: `services/api/src/metering/reconcile.ts` is chained in en 4.9 and in **no vi chapter**, so `--at` on a vi page must not write it and `--at` on en 4.9 must. Ten paths are in that position, all in en 4.5 through 4.9.
   **And check the trailing newline**: dump a path with no HEAD divergence and diff it against the tree — zero output. Pass 3's own probe dropped the final newline and made `turbo.json` read one line short of the tree, which looked like a divergence that does not exist.
-- [ ] T012 Confirm the dump covers every chained path: `find <dir> -type f | wc -l` against the count `--dump` prints for itself. Expected **285 now** for the final-state mode. **`--at <page>` writes fewer** — only the paths the chain has seen by that page, which for an early chapter is a small fraction of 285 — so its count is recorded per chapter rather than compared against a fixed number.
+- [ ] T012 Confirm the dump covers every chained path: `find <dir> -type f | wc -l` against the count `--dump` prints for itself. Expected **285 now** for the English final-state mode; the vi chain holds **276**. **`--at <page>` writes fewer** — only the paths the chain has seen by that page, which for an early chapter is a small fraction of 285 — so its count is recorded per chapter rather than compared against a fixed number.
   **DO NOT COMPARE IT AGAINST THE CHECKER'S OWN `N fenced files replay onto relay-platform` LINE, WHICH DOES NOT EXIST YET.** That line is printed only on the success path, **after** the `process.exit(1)` the 110 problems take, so at any count above zero it never appears. The cross-check against it belongs in phase 7 (T086), where the line is available because the count is 0.
+  **And the 285/276 gap is 9 where the title count says 10** — ten paths are titled in en chapters and in no vi chapter (all in 4.5 through 4.9), so one of them never reaches the state. **Name it rather than averaging the two numbers**; a path that is titled and unchained is one of 043-1's population arriving inside this feature's own instrument check.
   **And 285 is a pre-phase-3 figure.** The eleven prose-titled fences are in `en.state` today — measured: one declaration moved HEAD from 36 to 35 — so declaring them removes eleven entries and the dump becomes **274**. A re-dump in phase 4 or later that reports 285 means phase 3 did not land.
 - [ ] T013 Dump the state for `vitest.coverage.config.mts` and record in `baseline.txt` that it is **318 lines against the tree's 1,182 and contains no `env` block**, together with the dump's own file count at this point (285, before phase 3 takes it to 274). This is the measurement that explains nine of that file's fifteen bad hunks, and it is the instrument's own positive control — if the dump does not show it, the dump is wrong.
 - [ ] T014 Run lint and `pnpm build` in `relay-tutorial`; commit phase 2.
@@ -81,7 +92,7 @@ this series already carry**. The English title and its Vietnamese twin change to
 
 ---
 
-## Phase 4: The twelve files whose hunks cannot anchor (US1)
+## Phase 4: The twelve files whose hunks cannot anchor (US1, US3)
 
 **Goal**: FR-006 — 42 problems, regenerated against the dumped chain state, first failure per file first. **Expected 99 → 57.**
 
@@ -113,9 +124,11 @@ copy.
 - [ ] T041 [P] [US1] `services/gateway/src/presence.itest.ts` — 1 bad hunk in the appendix.
 - [ ] T042 [US1] Re-measure and record after every file above, in `baseline.txt`: **the total, APPLY, HEAD and `MIRROR`**, with the file that preceded each number and **the command that regenerated its hunks** (FR-003, FR-011, SC-004, SC-009). A recorded command is what makes the repair reproducible; chapter 4.2 published one nobody ran through five analysis passes.
   **Expect movement in both directions**: repairing a hunk changes the state every later hunk for that file anchors on, and feature 045 measured one regeneration taking the chain from 111 to 203. **A file that raises the count is reverted or finished before the next file is started** (FR-004), with both numbers recorded — not carried forward as a deficit to fix later.
+- [ ] T042a [US3] **Read the prose beside every hunk this phase regenerated in a chapter** — the 28 of the 42 that are not in `fences/post-series.md` — and confirm it still describes what the fence now shows; record the count of chapters read (SC-007). **A regenerated hunk is not the hunk it replaced.** It is `diff(chain state at that chapter, the file at rework/part3-chN)`, so it absorbs whatever divergence the chain was carrying for that path — which means it can be **larger** than the hunk it replaces and can show the reader lines that chapter never discusses. Record every case where a regenerated hunk grew, with the line counts before and after: that is the phase's prose risk and it has a mechanism behind it rather than being a general caution.
+  **SC-007 had one task and three phases that edit chapters.** It lived in phase 5 only (T055) while this phase rewrites 28 listings a reader sees and phase 6 appends into however many chapters the appendix is not the honest home for. Analysis pass 1 recorded the gap as *"partial"* in a coverage table and never raised it as a numbered finding, so nothing fixed it — **a finding filed in a table rather than a line does not get repaired**, which is the same shape as the check that exists in one config and not its twin.
 - [ ] T043 Run `pnpm build`; commit phase 4.
 
-**Checkpoint**: no hunk in the series is written against a state that does not exist.
+**Checkpoint**: no hunk in the series is written against a state that does not exist, and the prose beside each regenerated one has been read.
 
 ---
 
@@ -159,7 +172,7 @@ twin, byte-identical, changed together.
 - [ ] T053 [P] [US1] `services/dispatcher/vitest.integration.config.mts` — amended in 3.23. 2 problems, and the cheapest file in the phase. **ch22 14 lines · ch23 49 · today 49.**
 - [ ] T054 [US1] After each introduction, confirm **every existing amendment for that path still applies** — by running the checker, not by reading. An introduction whose content is right for the reader and wrong by one line leaves the later hunks anchored on bytes that do not exist.
 - [ ] T054a [US1] Re-measure and record after **every file** in this phase, in `baseline.txt`: the total, APPLY, HEAD and `MIRROR`, with the file that preceded each number and the tag the body came from (FR-003, FR-011, SC-004, SC-009). **Phase 5 had no measurement task until analysis found it missing** — phases 4 and 6 had one and this one did not, which is the shape this feature is about: a check that exists in one place and not its twin. A file that raises the count is reverted or finished before the next is started (FR-004).
-- [ ] T055 [US3] **Read each repaired chapter's prose beside its new listing** and confirm the prose describes what the fence shows. Record the count of chapters read. Feature 045's sentence is the standard: *"putting those into the last chapter that happened to fence the file would make that chapter show a reader code it never discusses."*
+- [ ] T055 [US3] **Read each repaired chapter's prose beside its new listing** and confirm the prose describes what the fence shows. Record the count of chapters read. **One of SC-007's three read-throughs** — T042a covers the regenerated hunks and T084a the appended ones; this one covers the introductions, which are the largest listings the feature publishes and the only ones a chapter has never shown before. Feature 045's sentence is the standard: *"putting those into the last chapter that happened to fence the file would make that chapter show a reader code it never discusses."*
 - [ ] T056 [US3] Where no chapter honestly introduces a file, **record the exception under FR-012 with what it would cost** and turn that file's fences into excerpts instead. The count improving is not the test; whether a reader can still follow the chapter is. **Record how many fences this converts**, because T090 asserts the declared-`(excerpt)` population and would otherwise fail for this task's reason.
 - [ ] T057 Run `pnpm build`; commit phase 5.
 
@@ -167,7 +180,7 @@ twin, byte-identical, changed together.
 
 ---
 
-## Phase 6: The twenty-five divergences (US1)
+## Phase 6: The twenty-five divergences (US1, US3)
 
 **Goal**: FR-007 — the replayed end state equals the repository. **Expected 25 → 0.**
 
@@ -207,9 +220,10 @@ and T084 checks `MIRROR` after each.
 - [ ] T082 [P] [US1] `services/api/package.json` — 4 differing lines.
 - [ ] T083 [P] [US1] `.gitignore` — 2 differing lines, and the checker's message prints `<eof>` on **both** sides, so the difference is invisible in the report. **Diff the dumped state against the tree with `diff` and `cat -A` before writing anything**: if the difference is whitespace or a trailing newline, **a `@@` hunk may not be able to express it at all**, and the honest outcome is an FR-012 exception with the bytes shown, not a hunk that looks right and changes nothing. This is the one target in the phase whose repair might not exist.
 - [ ] T084 [US1] Re-measure after each file and record the total, APPLY, HEAD and `MIRROR` with the file that preceded each number, and the command that generated its hunk (FR-003, FR-011, SC-004, SC-009). A file that raises the count is reverted or finished before the next is started (FR-004).
+- [ ] T084a [US3] **Read the prose beside every hunk this phase appended in a chapter** and confirm it still describes the listing; record the count of chapters read (SC-007). Hunks that landed in `fences/post-series.md` are exempt by construction — the appendix exists so that a change no chapter teaches is not put in front of a reader, which is the checker's own header comment and the reason FR-007 prefers it. **So record the split: how many of the 25 went to the appendix and how many into a chapter**, because the second number is the only part of this phase a reader sees.
 - [ ] T085 Run `pnpm build`; commit phase 6.
 
-**Checkpoint**: every titled fence in the series replays onto the repository.
+**Checkpoint**: every titled fence in the series replays onto the repository, and every hunk that landed in a chapter rather than the appendix has been read beside its prose.
 
 ---
 
@@ -236,7 +250,7 @@ and T084 checks `MIRROR` after each.
 **Goal**: what was repaired, what was declared, what was recorded as unrepairable, and what zero does not claim.
 
 - [ ] T094 Write **ADR-29** in `docs/05-sad.md` and `docs/06-adr-deep-dives.md`: the `--dump` flag and the `(excerpt)` declarations as one decision about what a fence claims, with the rejected alternatives — teaching the checker that `lang=text` is never a file, retitling to the real path, removing the titles — and a reversal condition. Constitution VII, and the plan flagged it as owed.
-- [ ] T095 Write `specs/055-fence-chain-repair/gaps.md`. **Re-measure the carried items this feature touches** rather than copying them: 043-1 (untitled fences, re-measured at 360 of 2,109), 047-1 (`eslint.config.mjs` could not take a fence), 048-3 (`vitest.coverage.config.mts` diverged at line 29), 050-3 (the vi chain is never compared to the tree), 050-4 (the 11 prose titles), 054-1 (the red workflow, closed by this feature).
+- [ ] T095 Write `specs/055-fence-chain-repair/gaps.md`. **Re-measure the carried items this feature touches** rather than copying them: 043-1 (untitled fences, re-measured at 360 of 2,109), 047-1 (`eslint.config.mjs` could not take a fence), 048-3 (`vitest.coverage.config.mts` diverged at line 29), 050-3 (the vi chain is never compared to the tree — **carry the measurement, not the sentence**: the appendix loop mutates `en.state` only and `const vi = replay("vi", …)` runs at `check-fence-chain.mjs:300`, after both the appendix and the HEAD comparison, so the two chains' end states differ by **9 paths** and `turbo.json` ends at **en 75 · vi 62**. That is the mechanism the entry describes in prose, and this feature can state it in numbers because phase 2 built the instrument that reads it), 050-4 (the 11 prose titles), 054-1 (the red workflow, closed by this feature).
 - [ ] T096 In `gaps.md`, record **what zero does not mean**: not that the chapters are readable, not that the listings are pedagogically right, not that the 360 untitled fences mean anything. One property — every titled fence replays onto the repository.
 - [ ] T097 In `gaps.md`, record the cascade arithmetic (FR-015): how many of the 110 were single defects and how many were shadows of an earlier failure in the same file, so the next reader of a fence-chain number knows what it counts.
 - [ ] T098 Write `specs/055-fence-chain-repair/traceability.md` mapping every FR and SC to the tasks and artifacts that discharged it, and **record any discharged in a weaker form than their words suggest**.
@@ -258,6 +272,7 @@ and T084 checks `MIRROR` after each.
     Phase 5  ─────► Phase 6 (same reason)
     Phases 3-6 ───► Phase 7 (zero needs all four classes at zero)
     T044     ─────► T045-T053 (the design decides which tag the body comes from)
+    T042a, T055, T084a        each follows its own phase's repairs — SC-007's three read-throughs
     T101     ─────► T102      (SC-002 is only observable after a push)
 
 **US1 is delivered incrementally and US2 is not.** Each repaired target is a listing a reader can
@@ -265,9 +280,17 @@ trust, so phases 3 through 6 each deliver value on their own. The build's colour
 0 — at one problem the step is as red as at 110 — so US2 is a single step at the end rather than
 a slice.
 
-**US3 is a constraint on phase 5 rather than a phase.** It is where a repair can improve the
-checker's number and make a chapter worse, and T055 is the only task in the feature whose test is
-reading.
+**US3 IS A CONSTRAINT ON PHASES 4, 5 AND 6, AND THIS PARAGRAPH SAID PHASE 5 ALONE.** Every phase
+that edits a chapter can improve the checker's number and make the chapter worse: phase 4
+regenerates 42 listings, phase 5 publishes up to 1,956 lines of new ones, phase 6 appends into a
+chapter wherever the appendix is not the honest home. **Three tasks have reading as their test —
+T042a, T055 and T084a** — and the count of chapters read is recorded in each, because SC-007 says
+*every* repaired chapter and a criterion checked in one of three phases is checked nowhere the
+other two matter.
+
+**Phase 5 is still where the judgement is**, which is why T044 blocks nine tasks and the other two
+read-throughs block nothing: a regenerated or appended hunk can be shown to be wrong for the
+reader, while a missing introduction has to be *placed*, and no measurement settles where.
 
 ## Parallel opportunities
 

@@ -293,6 +293,38 @@ the **25 divergences**, and `--at` serves the **28 chapter hunks**. Regenerating
 pairs the two sources phase 4 already pairs — the pre-image from the chain, the post-image from
 `rework/part3-chN`.
 
+**AND NEITHER MODE NEEDS A LOCALE FLAG, FOR TWO DIFFERENT REASONS — ANALYSIS PASS 4.** The 110
+split by class and locale:
+
+    class                  en   vi  appendix   total
+    hunk pre-image         14   14        14      42
+    no earlier fence       16   16         0      32
+    differs at line        25    0         0      25
+    does not exist         11    0         0      11
+    TOTAL                  66   30        14     110
+
+`--at` takes a page path, and a page path begins with `app/(en)/` or `app/(vi)/vi/` — the locale
+is inside the argument copied off the problem line, so a flag could only ever disagree with it.
+The final-state mode has no such argument, and **all 39 of its consumers are English**: the HEAD
+comparison iterates `en.state`, and `fences/post-series.md` is one file for both locales. So a
+bare `--dump` writes the English chain — which it must print, because the two chains' ends are
+different objects:
+
+    paths in the chain          en 285 · vi 276
+    turbo.json, final           en  75 · vi  62
+    turbo.json, at 3.17 / 3.22 / 3.23 / 3.24     en 59 · 62 · 62 · 62, and vi the same at each
+
+The mechanism is ordering: `const en = replay("en", …)` at `check-fence-chain.mjs:204`, the
+appendix loop mutating `en.state` only, and `const vi = replay("vi", …)` at `:300`, after both the
+appendix and the HEAD comparison. **A "vi final state" is the vi chain's own end and nothing in
+this feature repairs it** — it is the measurable form of `gaps.md` 050-3.
+
+**And the second row is why FR-011 is safe.** All 30 Vietnamese problems are chapter problems, and
+at every chapter this feature touches the two chains hold identical state. Regenerating in English
+and copying to Vietnamese is therefore checked against the states it actually lands on, rather
+than inferred from `MIRROR` reading 0 — which would have been an argument that the two fence
+*bodies* match, not that the two *chains* do.
+
 **Alternatives considered.** *A separate script importing the checker's internals* — the checker
 is a top-level program with no exports, so this means refactoring it into a module: more change,
 same result. *Keep making throwaway copies* — 50 regenerations against a copy nobody reviews is

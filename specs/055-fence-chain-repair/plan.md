@@ -35,6 +35,11 @@ distinction is the whole feature.
 **62 lines at chapter 3.22** and **74 after the appendix**: a final-state dump serves the 14
 appendix hunks and the 25 divergences, and **cannot serve the 28 chapter hunks**, which are two
 thirds of phase 3's work here.
+**Neither mode takes a locale, and the reasons differ.** `--at` is given a page path that begins
+`app/(en)/` or `app/(vi)/vi/`, so the chain is inside the argument. The final-state mode has no
+argument and writes the **English** chain, because all 39 of its consumers are English — the HEAD
+comparison iterates `en.state` and `fences/post-series.md` is one file for both locales. It prints
+which chain it wrote, because the two ends are 9 paths and 13 lines of `turbo.json` apart.
 **Historical content**: the 27 `rework/part3-chN` tags in `relay-platform`, which resolve. The
 deleted `part3-chN` tags are not needed.
 **Scale**: 47 targets · **42 hunks regenerated and 25 appended** · **9 whole bodies, 1,658 or
@@ -102,6 +107,12 @@ hunk for that file anchors on, and feature 045 measured one regeneration taking 
 111 to 203. The per-file measurement is what makes that recoverable instead of a surprise at the
 end.
 
+**And this phase publishes prose risk, which the plan had assigned to phase 4 alone.** A
+regenerated hunk is `diff(chain state, repo at tag)` and absorbs whatever divergence the chain was
+carrying, so it can be larger than the hunk it replaces and show the reader lines the chapter
+never discusses. SC-007 is read in three phases, not one — here, in the introductions, and in
+whatever phase 5 appends inside a chapter rather than the appendix.
+
 ### Phase 4 — The nine files the chain never sees whole
 
 Per file, decide between research's two designs — replace the first `diff` with a whole body at
@@ -121,6 +132,11 @@ change. Never a regenerated early fence: `codes.ts` is fenced by 12 chapters, `a
 
 Two files are 59% of the differing lines and both are measured against a chain state that phase 3
 will have changed, so their real size is not yet known.
+
+**Appendix hunks carry no prose obligation and chapter hunks do**, so the split between the two
+homes is recorded: the appendix exists precisely so that a change no chapter teaches is not put in
+front of a reader, and the number that goes into a chapter is the only part of this phase SC-007
+has to read.
 
 ### Phase 6 — Zero, and the things zero does not mean
 
