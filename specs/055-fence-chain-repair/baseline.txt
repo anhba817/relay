@@ -649,3 +649,30 @@ T092  THE TUTORIAL JOB'S FIVE OTHER GATES, BY THEIR SUCCESS LINES
 
       One property: every titled fence in the series replays onto the repository,
       byte for byte.
+
+================================================================================
+PHASE 8 — THE RECORD                                                2026-09-18
+================================================================================
+
+T094  ADR-29 in `docs/05-sad.md` and `docs/06-adr-deep-dives.md`, then `pnpm
+      sync:docs` and the docs gates re-run AFTER the edit — which is the ordering
+      analysis pass 7 found missing. Both mirrors carry it; `check:docs` and
+      `check:srs` green.
+
+T100  WHETHER ZERO SHOULD BE GUARDED — DECIDED: NO NEW MECHANISM
+
+      The checker already exits non-zero above 0 and `ci.yml` runs it on every
+      push. That IS the guard, and it starts working the moment the count is 0:
+      **a gate that is always red guards nothing**, which is what the last nine
+      chapters demonstrated rather than a missing mechanism.
+
+      What actually failed was not the gate but the convention around it. 046's
+      T006 reported 110 against an inherited 109, attributed the change to the
+      wrong repository, and every chapter since compared a total to a total and
+      called the delta 0 — so a problem that appeared in between stayed invisible
+      for nine chapters and was 046's own.
+
+      **So the change is to the convention, not the tooling: report the absolute
+      number.** A chapter that says "0" is making a claim a reader can check. A
+      chapter that says "delta 0" is making a claim about arithmetic it did not
+      show. Nothing to build, and `gaps.md` 048-5 and 054-4 are adjacent to it.

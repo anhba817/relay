@@ -28,64 +28,88 @@ history; the replaced history is preserved on the remote as the tag
 tags. **Anyone holding an older clone of `relay-platform` must reset rather than pull.**
 
 <!-- SPECKIT START -->
-**ACTIVE: 055 — REPAIR THE FENCE CHAIN, 110 TO 0.** Plan:
-`specs/055-fence-chain-repair/plan.md`; **`research.md` first — it corrects two of the
-specification's own assumptions.** Seven phases in the plan and eight in `tasks.md` — the task
-list splits the inventory from the instrument, because they block different things. The cheap and
-riskless class goes first, and it is the measurement loop's own control.
+**055 IS CLOSED at 105 of 105 — THE FENCE CHAIN IS ZERO.** Its record is
+`specs/055-fence-chain-repair/` — `baseline.txt` first (it carries every phase's measurements and
+the method), then `gaps.md` (**12 entries: 7 new, 4 closed, 1 corrected**), `traceability.md`,
+`tasks.md`. **ADR-29**. No tag: the feature cuts no chapter.
 
-Chosen from feature 054's five options (ADR-27, `gaps.md` 054-1) after they were costed:
-**repair the chain rather than change what the checker accepts.** No baseline file, no
-`continue-on-error`, no exempted class.
+    check-fence-chain: 282 fenced files replay onto relay-platform across 52 chapters
+                       (46 translated, fences mirrored, 2 retired, plus post-series amendments)
+    110 -> 0 · EXIT 0 · the first green tutorial job since feature 045
+    42 hunks re-anchored · 8 files published whole · 29 appendix hunks · 30 fences declared
+    2,379 published diff lines became 1,882 — the series shows readers LESS, not more
 
-    110 problems  ·  47 targets  ·  36 platform files + 11 phrases that name none
-     42  hunk pre-image matched 0 times          12 files
-     32  diff with no earlier fence to amend      9 files
-     25  differs at line N                       2,356 differing lines · 1 append, 24 interior
-     11  title does not exist in relay-platform  all `lang=text` command output
+**A COUNT OF 110 WAS NEITHER 110 DEFECTS NOR AN UPPER BOUND ON THEM.** 42 bad hunks were cleared
+by **24** repair operations, so 18 were shadows — one appendix hunk cleared five at once. And ten
+files could not be compared to the repository at all, because **a checker reports the first
+failure per file** and a file with a broken hunk never reaches its HEAD comparison.
+`session.itest.ts` was **1,322 lines** behind; `turbo.json` and `packages/e2e/src/harness.ts` had
+been diverging invisibly. The 25 divergences became 29 and the 2,356 differing lines became 3,471.
+**The number counts files with at least one problem, not problems.**
 
-**EVERY ONE IS IN `relay-tutorial`.** 36 HEAD + 30 APPLY in `app/(en)`, 30 APPLY in `app/(vi)`,
-14 APPLY in `fences/post-series.md`. `relay-platform` is the reference and never the subject —
-`docs/07` §6's *"the repo at tag N is the truth; prose describes it"*, stated as FR-009 and
-**measured** as SC-010 because the cheapest repair for 25 of them would be to edit the platform.
+**AND THE LAST ONE WOULD NOT CLOSE, WHICH IS HOW THE REAL DEFECT SURFACED.**
+`node -e 'console.log("x".replace("x", "END $$;"))'` prints **`END $;`** — `String.prototype.replace`
+reads `$$`, `$&`, `` $` ``, `$'` and `$<name>` in a **string** replacement as substitution
+patterns, and `applyHunks` used the string form. `sentinel.sql` is `DO $$ … END $$;` twice, so the
+chain replayed `$`. **FR-016 filed that against the prose for two features**; the fence says
+`END $$;` and a reader copying it is fine. Fixed with a function replacement — and **two of the 42
+"bad hunks" were never bad.** The repair had been compounding it: three rounds against a corrupted
+state stacked three dollars, reaching `+DO $$$$` in the appendix. **A repair that keeps almost
+working is the shape of an instrument bug.**
 
-**THE VIETNAMESE CHAIN HAS NO DEFECTS OF ITS OWN.** All 30 vi problems mirror an en problem
-exactly — same chapter, same line, same message — and **zero are vi-only**, because `MIRROR`
-already forces the fence bodies to be byte-identical copies. Diagnosis halves; edits double; **no
-translated prose is touched**, because fence bodies are not translated.
+**THE METHOD IS NOT "REGENERATE AGAINST THE TAG".** `diff(chain state at 3.17, rework/part3-ch17)`
+for the coverage config is **206 lines in one hunk**, because the chain was already 148 lines
+behind ch16 before the chapter started — a hunk that shows the reader 146 lines the chapter never
+wrote. **Keep the chapter's change and trim the context the chain does not carry.** Three
+strategies: the published hunk; trimmed ends; and **the interior gap** — anchor on the longest
+leading and trailing runs that each occur once and replace everything between them, which is what
+a hunk deleting a long block needs when earlier chapters never added part of it.
 
-**AND ONE FILE IS 16 OF THE 110, WITH ONE HUNK EXPLAINING NINE.**
-`vitest.coverage.config.mts`'s chain state is **318 lines against the tree's 1,182 and has no
-`env` block at all** — the appendix hunk that would create it fails, so the nine hunks anchored
-inside it have nothing to attach to. **The first failure per file is the only one to diagnose.**
+**AND THE INTRODUCTIONS HAVE A FOURTH DESIGN THE PLAN DID NOT LIST.** Every one of the nine first
+`diff` fences **applies cleanly to its own `rework/part3-chM` tag** — the state BEFORE the
+chapter's change. So the body goes at chapter N, taken from chM, **immediately before the existing
+diff**, which is left alone: design A's placement at design B's cost, and the reader meets the file
+before the change. Eight bodies, **1,100 lines**, against design A's 1,956.
+**And the ratio has to be per PROBLEM, not per chapter** — `session.itest.ts` reads 281 lines for an
+8-line diff and would have been declared, but five chapters amend it, so one body buys ten problems
+at 28 lines each.
 
-**TWO OF THE SPECIFICATION'S OWN ASSUMPTIONS ARE WRONG AND RESEARCH SAYS SO.** The appendix
-**cannot** host a missing introduction — it applies after every chapter, so it can never supply a
-predecessor state. And an introduction must show the file **as it stood at its own chapter**,
-from `rework/part3-chN`: `session.itest.ts` is **287 lines at chapter 3.3 and 1,626 today**, so
-the listing cost is 1,956 lines rather than 3,956.
+**THE 110th PROBLEM HAS A NAME AND IT IS NOT PART 3's.** 046's T006 blamed a `relay-tutorial`
+commit for 109 → 110; all six tutorial commits in that window are Vietnamese translations, and **a
+vi commit cannot add a HEAD problem.** It was `relay-platform`'s `ea0cb513 chore(046): the seeder's
+volumes`, which added `corpus.json` to a `.gitignore` chapter 1.1 publishes whole at seven lines.
+**046 created it, 046's own opening measurement first reported it, and the delta-of-0 convention
+hid the attribution for nine chapters** — because it compares a total to a total and never asks
+which file. **Report the absolute number, not the delta.**
 
-**THE CHECKER ALREADY KNOWS HOW TO SAY "NOT A FILE", AND THE SERIES SAYS IT 222 TIMES.**
-`NOT_A_FILE` at `check-fence-chain.mjs:42` skips any title containing `(excerpt)`, in both the
-chapter loop and the appendix loop. All 11 prose-titled fences are `lang=text` command output —
-compiler errors, checker output, a Postgres `42P01`. Declaring them is the first phase because it
-is free, and it is **the measurement loop's own positive control**: 110 → exactly 99, or the
-instrument is wrong before anything expensive is attempted.
+**FIVE OF THE SEVEN GATE SCRIPTS EXIT 0 WHEN THEIR CORPUS IS ABSENT** — `check-docs-drift.sh:36`,
+`check-srs-ids.sh:41`, `check-revision-order.mjs:34`, `check-fence-chain.sh:11` and
+`check-fence-chain.mjs:200`. Every one prints a counted success line when it really looked, so
+**assert the line, not the exit code**. And **a copy of the checker at any other path replays
+nothing and exits 0**, because the platform is resolved from the script's own location — which is
+the copy fence-chain rule 1a tells you to make. `gaps.md` 055-4 and 055-5.
 
-**AND 043-1's "146 of 904" IS STALE.** Measured: **2,109 opening fences · 1,749 titled · 360 with
-a language and no title · 222 already declared `(excerpt)`**. The ratio held at 17% while the
-absolute number more than doubled — which is what a carried number does when nobody re-measures.
+**`check:errors` IS A SCRIPT NO WORKFLOW RUNS.** Five `check:*` scripts, four steps in `ci.yml`,
+zero jobs running that one (055-3). **The tutorial job's gates are `lint`, `build`, `check:docs`,
+`check:srs`, `check:figures`, `check:fences` — read them off `ci.yml:184-205`, not off memory.**
 
-**THE ONE INSTRUMENT CHANGE, AND WHY IT IS NOT A LOOSENING.** `check:fences` gains `--dump <dir>`
-so ~50 hunks are generated from the same replay that checks them (rule 1a). It adds an output
-mode: no threshold, no exemption, no exit code changes. Feature 054 built this twice from a
-throwaway copy; fifty uses is `check-lane-scope.py`'s shape, which pointed at a deleted worktree
-and reported zero for a year.
+**WHAT ZERO DOES NOT MEAN.** Not that the chapters are readable, not that the listings are
+pedagogically right, and not that **614 fences outside every gate** — 360 untitled and 254 skipped
+by name — mean anything; this feature moved 30 of them further out, deliberately, each recorded.
+Not that the Vietnamese chain is compared to the repository (050-3). And the success line's chapter
+count is **pages the walker found**: five of the 52 are `part-0` and carry no titled fence at all.
+One property — every titled fence replays onto `relay-platform`, byte for byte.
 
-**AND 045 CLOSED AT 109 WHILE 046 OPENED AT 110.** `specs/045-part-3-rework/gaps.md:3327` reports
-**109 — APPLY 74, HEAD 35**; 046's T062 measured **110 — APPLY 74, HEAD 36** and called it *"a
-delta of 0"* against its own opening. Both true. **One HEAD problem appeared in between and the
-delta-of-0 convention is what kept it invisible** — every chapter since has compared to 110.
+**`check:fences` GAINED `--dump <dir> [--at <page>]`** so hunks come from the same replay that
+checks them. An output mode: no threshold, no exemption, no exit-code change, and `--at` replays
+separately so the dump cannot touch what the check reports. **No `--locale` flag** — a page path
+begins `app/(en)/` or `app/(vi)/vi/`, so the chain is inside the argument; a bare `--dump` writes
+the English chain and says so. And **`MIRROR` is two checks**: it joins each chapter's title list
+and `continue`s on a mismatch, so a non-zero reading counts **chapters skipped**, not fences wrong.
+
+**AND THE LOOP COMMAND NEVER PRINTED THE COUNT.** `pnpm check:fences | tail -1` shows pnpm's own
+`ELIFECYCLE` line, because the problems and the summary go to **stderr** and pnpm appends its error
+last. Use `pnpm check:fences 2>&1 | grep 'problem(s)\|replay onto'`.
 
 **054 IS CLOSED at 114 of 114 — CHAPTER 4.9, "Milestone: the meter agrees".** Its record is
 `specs/054-chapter-4-9/` — `baseline.txt` first (it carries every phase's measurements), then
