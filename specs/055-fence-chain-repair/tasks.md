@@ -123,7 +123,7 @@ copy.
 - [ ] T030 [US1] `vitest.coverage.config.mts` — repair whatever of the fifteen survives T029, in chapter order, re-measuring after each. Record how many were shadows, because **that ratio is the feature's headline finding about what a count of 110 means**.
 - [ ] T031 [US1] `turbo.json` — 6 bad hunks across 3.22, 3.23, 3.24 (3 en + 3 vi). Fenced by 10 chapters plus 1 appendix hunk, so regenerate rather than republish.
 - [ ] T032 [US1] `services/api/src/app.module.ts` — 4 bad hunks across 3.22 and 3.23. Fenced by 11 chapters.
-- [ ] T033 [US1] `packages/protocol/src/codes.ts` — 4 bad hunks across 3.23 and 3.24. Fenced by 12 chapters, the most-chained file in the series.
+- [ ] T033 [US1] `packages/protocol/src/codes.ts` — 4 bad hunks across 3.23 and 3.24. Fenced by 12 chapters — **seventh-deepest in the series, not the deepest**: `services/api/src/db/repository.ts` is fenced by **24**, `session.ts` by 17, `schema.ts` by 15, `internal.ts` by 14, `session.test.ts` and `messages.service.ts` by 13. Twelve is deep enough for the argument — regenerating an early fence is the 111 → 203 trap — and the superlative was wrong, which matters because it taught a ceiling half the real one. No target in this feature touches `repository.ts`.
 - [ ] T034 [US1] `eslint.config.mjs` — 3 bad hunks in 3.25 and the appendix. `gaps.md` 047-1 recorded this file as unable to take a fence at all; that entry is re-measured here and closed or re-stated with today's numbers.
 - [ ] T035 [P] [US1] `services/api/src/webhooks/test-event.itest.ts` — 2 bad hunks in 3.22.
 - [ ] T036 [P] [US1] `packages/test-harness/src/sentinel.sql` — 2 bad hunks in 3.23.
@@ -197,7 +197,8 @@ twin, byte-identical, changed together.
 **Goal**: FR-007 — the replayed end state equals the repository. **Expected 25 → 0.**
 
 **Appended, never regenerated.** `codes.ts` is fenced by 12 chapters, `app.module.ts` by 11,
-`vitest.coverage.config.mts` by 11 plus 9 appendix hunks, and one early-fence regeneration took
+`vitest.coverage.config.mts` by 11 plus 9 appendix hunks — none of them the deepest chain in the
+series, which is `repository.ts` at 24 and is not a target here — and one early-fence regeneration took
 the chain from 111 problems to 203. The home for an appended hunk is `fences/post-series.md`
 unless a chapter genuinely discusses the change.
 

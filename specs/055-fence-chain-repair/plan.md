@@ -203,11 +203,20 @@ three later phases while the inventory blocks everything.
 ## Files this feature is expected to touch
 
     relay-tutorial/scripts/check-fence-chain.mjs         the --dump flag, and nothing else
-    relay-tutorial/app/(en)/part-3/**/page.mdx           11 titles · ~9 introductions · ~20 hunks
+    relay-tutorial/app/(en)/part-3/**/page.mdx           11 titles · 9 introductions · 14 hunks
     relay-tutorial/app/(vi)/vi/part-3/**/page.mdx        the same, as byte-identical copies
-    relay-tutorial/fences/post-series.md                 ~14 hunks repaired · ~25 appended
+    relay-tutorial/app/(en)/part-1/chapter-01/…          only if .gitignore's hunk goes in a chapter
+    relay-tutorial/app/(en)/part-4/chapter-09/…          only if typing.itest.ts's does
+    relay-tutorial/fences/post-series.md                 14 hunks repaired · up to 25 appended
     docs/05-sad.md, docs/06-adr-deep-dives.md            ADR-29
     specs/055-fence-chain-repair/                        baseline.txt, gaps.md, traceability.md
+
+**The en hunk figure is 14, not the ~20 an earlier draft estimated** — the 42 bad hunks are 14
+English chapter hunks, 14 Vietnamese, and 14 in the appendix. **And two of phase 6's targets are
+last fenced outside Part 3**: `.gitignore` at chapter 1.1 and `typing.itest.ts` at 4.9. Both take
+an appendix hunk unless a chapter genuinely discusses the change, which is why those rows are
+conditional rather than absent — a path missing from this table reads as scope creep to whoever
+diffs the final change against it.
 
 **No file under `relay-platform/` appears here, and that is a requirement rather than an
 observation** (FR-009, SC-010).
