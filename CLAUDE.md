@@ -30,7 +30,9 @@ tags. **Anyone holding an older clone of `relay-platform` must reset rather than
 <!-- SPECKIT START -->
 **ACTIVE: 055 — REPAIR THE FENCE CHAIN, 110 TO 0.** Plan:
 `specs/055-fence-chain-repair/plan.md`; **`research.md` first — it corrects two of the
-specification's own assumptions.** Six phases, the cheap and riskless class first.
+specification's own assumptions.** Seven phases in the plan and eight in `tasks.md` — the task
+list splits the inventory from the instrument, because they block different things. The cheap and
+riskless class goes first, and it is the measurement loop's own control.
 
 Chosen from feature 054's five options (ADR-27, `gaps.md` 054-1) after they were costed:
 **repair the chain rather than change what the checker accepts.** No baseline file, no

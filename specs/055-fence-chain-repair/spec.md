@@ -259,7 +259,10 @@ confirm the prose describes what the fence shows.
 
 ### Measurable Outcomes
 
-- **SC-001**: `pnpm check:fences` reports **0 problems** and exits 0, from 110.
+- **SC-001**: `pnpm check:fences` reports **0 problems**, from 110, **evidenced by its success line**
+  — `N fenced files replay onto relay-platform across M chapters` — and not by the exit code alone.
+  The wrapper exits 0 when `relay-platform` is absent, having replayed nothing, so an exit code
+  cannot tell a repaired chain from an unread one (045-81).
 - **SC-002**: The tutorial job in CI succeeds on a push that changes nothing, for the first time
   since feature 045.
 - **SC-003**: A deliberate regression — one line changed in a fenced platform file, with no

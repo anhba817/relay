@@ -50,10 +50,14 @@ are in `relay-tutorial`**; `relay-platform` is the reference, never the subject.
 **After phase 1**, the checker takes a dump flag:
 
 ```bash
-pnpm check:fences -- --dump /tmp/chainstate
-find /tmp/chainstate -type f | wc -l                    # 285
+pnpm check:fences --dump /tmp/chainstate
+find /tmp/chainstate -type f | wc -l                    # 285 before phase 3, 274 after
 diff /tmp/chainstate/vitest.coverage.config.mts ../relay-platform/vitest.coverage.config.mts | wc -l
 ```
+
+**No `--` before the flag.** Measured on this pnpm: `pnpm check:fences -- --dump X` forwards
+**`-- --dump X`**, so a stray `--` reaches the script; without it the arguments arrive clean. The
+flag parser tolerates both, and the published form is the one that sends what it means.
 
 The state is 318 lines where the tree holds 1,182, and **it contains no `env` block** — which is
 why nine appendix hunks anchored inside one cannot apply, and why a hunk generated with
@@ -62,7 +66,7 @@ why nine appendix hunks anchored inside one cannot apply, and why a hunk generat
 Prove the dump is the same replay the check uses:
 
 ```bash
-pnpm check:fences -- --dump /tmp/a && pnpm check:fences -- --dump /tmp/b && diff -r /tmp/a /tmp/b
+pnpm check:fences --dump /tmp/a && pnpm check:fences --dump /tmp/b && diff -r /tmp/a /tmp/b
 pnpm check:fences | tail -1                              # same count with the flag as without
 ```
 
@@ -93,11 +97,20 @@ inside that target, with both numbers recorded.
 ## 6. **After the repair** — the four things the close is measured by
 
 ```bash
-pnpm check:fences                                   # 0 problem(s), exit 0
-echo "exit=$?"
+pnpm check:fences | tail -1
+# check-fence-chain: 285 fenced files replay onto relay-platform across N chapters (…)
 ```
 
-Plant a regression and confirm the gate still works — **run red rather than reasoned about**:
+**Read the line, not the exit code.** `scripts/check-fence-chain.sh:10-13` prints
+`relay-platform not found — skipping` and **exits 0** when the platform repository is absent, so
+a standalone clone satisfies "exit 0" having replayed nothing. The success line above is printed
+only when the problem count is 0, which makes it the one output that tells a repaired chain from
+an unread one.
+
+Plant a regression and confirm the gate still works — **run red rather than reasoned about**.
+**The target must be a file whose chain is clean**, because the checker reports the first failure
+per file: `packages/protocol/src/codes.ts` is a HEAD problem until phase 6 repairs it, so this
+probe changes nothing if it is run before the repair. After the repair every file qualifies.
 
 ```bash
 cd ../relay-platform

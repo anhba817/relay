@@ -126,6 +126,25 @@ Record what was repaired, what was declared, and what was recorded as unrepairab
 listings are pedagogically right, or that the 360 untitled fences mean anything. It is one
 property: every titled fence replays onto the repository.
 
+**And zero is not the exit code.** `scripts/check-fence-chain.sh` exits 0 when `relay-platform`
+is absent, having replayed nothing, so the evidence is the success line — `N fenced files replay
+onto relay-platform across M chapters` — which the checker prints only when the count is 0.
+
+### Phase 7 — The record
+
+ADR-29 for the one decision this feature makes about what a fence claims: the `--dump` flag and
+the `(excerpt)` declarations, with the rejected alternatives and a reversal condition.
+Constitution VII requires it and the Constitution Check above already flags it as owed — **this
+phase exists because analysis found the obligation named in two places and planned in neither.**
+
+Then `gaps.md` with every carried item re-measured rather than copied, `traceability.md`, this
+repository's `CLAUDE.md` block, and the push. Plus the arithmetic that says which of the 110 were
+defects and which were shadows, so the next reader of a fence-chain number knows what it counts.
+
+**The phase count here is seven and the task list's is eight**, because `tasks.md` splits phase 1
+into the inventory and the instrument — they block different things, and the instrument blocks
+three later phases while the inventory blocks everything.
+
 ## Complexity tracking
 
 | decision | why it is not simpler | what it costs |

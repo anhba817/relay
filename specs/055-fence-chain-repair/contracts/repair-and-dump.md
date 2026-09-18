@@ -21,6 +21,8 @@ rule 1a), and this feature regenerates about fifty hunks against it.
 | it is the same replay | dumping twice gives byte-identical trees; dumping after a repair changes exactly the repaired path |
 | it changes no verdict | `pnpm check:fences` reports the same count with and without the flag |
 | it writes nothing when the chain is broken for a path | the state is whatever replayed — a failed hunk leaves the previous state, which is the state a new hunk must anchor on |
+| it tolerates a leading `--` in its own arguments | measured on this pnpm: `pnpm check:fences -- --dump X` forwards **`-- --dump X`**, so the parser must find the flag by position-independent lookup rather than by treating `argv[0]` as meaningful. `pnpm check:fences --dump X` forwards cleanly and is the form the quickstart publishes |
+| it prints its own file count | because the checker's `N fenced files replay onto relay-platform` line exists **only** when the count is 0, and the dump is needed at 110 |
 
 **Why a flag and not a copy.** Feature 054 built this twice from a truncated copy and deleted it
 each time, which is what rule 1a says to do for a single use. Fifty uses is a different shape:
@@ -107,7 +109,9 @@ anything expensive has been attempted.
 
 ## What the close must show
 
-- `pnpm check:fences` → **0 problems, exit 0**.
+- `pnpm check:fences` → **0 problems**, evidenced by the success line
+  `N fenced files replay onto relay-platform across M chapters`. **Not by exit 0**, which the
+  wrapper also returns when `relay-platform` is absent and nothing was replayed.
 - A planted regression — one line changed in a fenced platform file, no chapter hunk — → **exit
   non-zero, naming that file**. Run red, not reasoned about.
 - `MIRROR` 0 throughout, measured per locale repair.
