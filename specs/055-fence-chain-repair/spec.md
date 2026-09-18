@@ -182,7 +182,9 @@ confirm the prose describes what the fence shows.
   exit 0 without any change to what the checker accepts.
 - **FR-002**: The checker's pass/fail semantics MUST NOT be weakened to reach FR-001. No baseline
   file, no `continue-on-error`, no problem class newly exempted, no threshold. If a problem cannot
-  be repaired, it is recorded under FR-012 rather than tolerated by the instrument.
+  be repaired, it is **converted and recorded** under FR-012 rather than tolerated by the
+  instrument — and converted is the load-bearing half, because the instrument cannot tell a
+  recorded problem from any other kind.
 - **FR-003**: The count MUST be measured after each file's repair, not only at the end, and every
   measurement recorded with the file that preceded it.
 - **FR-004**: A repair that raises the count MUST be reverted or completed within the same file's
@@ -213,17 +215,24 @@ confirm the prose describes what the fence shows.
   after every chapter, so it can amend a path and can never introduce one — this requirement said
   the opposite until research measured the checker's ordering (R2). Where no chapter honestly
   introduces the file, the path leaves the chain as excerpts and the exception is recorded under
-  FR-012.
+  FR-012 — leaving the chain is the conversion FR-012 requires, and the record is the other half.
 - **FR-011**: Vietnamese repairs MUST change fence bodies only, copied byte-identically from their
   English twins, and MUST NOT alter translated prose. `MIRROR` MUST remain at 0 failures
   throughout.
 
 **What cannot be repaired**
 
-- **FR-012**: Any problem this feature cannot repair MUST be recorded with the reason, the
-  measurement that establishes it, and what it would cost — not left as a residual number. A
-  feature that reports "0 except for these" without the arithmetic has moved the baseline it
-  refused to write.
+- **FR-012**: Any problem this feature cannot repair MUST be **converted and recorded**, not
+  recorded alone. Converted: the fence is declared `(excerpt)` so it stops claiming a file the
+  chain cannot verify, which is the same mechanism as FR-008 and is what takes the problem out of
+  the count. Recorded: the reason, the measurement that establishes it, and what a real repair
+  would cost.
+  **Recording alone does not reach FR-001, because nothing reads `gaps.md`.** The checker counts a
+  documented problem exactly as it counts an undocumented one, so "record and leave it" ends at a
+  residual number — which is the baseline file this feature refused to write, reached by a
+  different door. A feature that reports "0 except for these" without the arithmetic has moved
+  that baseline; a feature that reports "0" and hides an exception inside an excerpt without the
+  arithmetic has done the same thing more quietly, which is why both halves are required.
 
 **The record**
 

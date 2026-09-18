@@ -90,6 +90,12 @@ each time, which is what rule 1a says to do for a single use. Fifty uses is a di
 `check-lane-scope.py` was a script nobody re-read, pointing at a worktree feature 045 had deleted,
 reporting zero for a year with all ten of its controls firing (049-3).
 
+**And a copy has a silent mode, which is the argument that does not depend on anybody's habits.**
+`PLATFORM` is resolved from `import.meta.url`, so the identical file run from another directory
+prints `check-fence-chain: relay-platform not found — skipping` and **exits 0** having replayed
+nothing. Measured. The copy rule 1a asks for is one `cp` away from being a no-op that looks like
+a clean run, and the only thing that distinguishes the two is a line on stderr nobody greps.
+
 **Why this is not a loosening.** The flag adds an output mode. It changes no threshold, exempts no
 class, and alters no exit code. FR-002 forbids weakening what the checker *accepts*; this changes
 what it can *print*. The distinction is stated here because "I changed the checker" is the
@@ -122,7 +128,8 @@ after    ```text title="the typo, now (excerpt)"
 - Every existing amendment for that path still applies afterwards, checked by running, not by
   reading.
 - If no chapter honestly introduces the file, the path leaves the chain as excerpts and the
-  exception is recorded with its cost (FR-012). **The count improving is not the test**; whether
+  exception is recorded with its cost (FR-012) — the excerpt is the half that moves the count and
+  the record is the half that keeps it honest. **The count improving is not the test**; whether
   a reader can still follow the chapter is.
 
 ### A hunk that cannot anchor

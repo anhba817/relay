@@ -95,7 +95,7 @@ Prove the dump is the same replay the check uses:
 
 ```bash
 pnpm check:fences --dump /tmp/a && pnpm check:fences --dump /tmp/b && diff -r /tmp/a /tmp/b
-pnpm check:fences | tail -1                              # same count with the flag as without
+pnpm check:fences 2>&1 | grep 'problem(s)'               # same count with the flag as without
 ```
 
 ## 4. Historical content for a missing introduction
@@ -114,8 +114,13 @@ anchored on the wrong bytes.
 
 ```bash
 cd ../relay-tutorial
-pnpm check:fences | tail -1
+pnpm check:fences 2>&1 | grep 'problem(s)\|replay onto'
 ```
+
+**Not `| tail -1`.** The problem lines and the summary are written to **stderr**, and above zero
+`pnpm` exits 1 and appends `ELIFECYCLE Command failed with exit code 1.` — so `| tail -1` shows
+that and `2>&1 | tail -1` shows it too. The `grep` matches the count line while there are
+problems and the success line once there are none, which is the whole range this loop runs over.
 
 A repair that lowers the count by fewer problems than the target holds means some were shadows of
 a different root. **A repair that raises it means something downstream was unanchored** — feature
@@ -125,13 +130,22 @@ inside that target, with both numbers recorded.
 ## 6. **After the repair** — the four things the close is measured by
 
 ```bash
-pnpm check:fences | tail -1
-# check-fence-chain: 285 fenced files replay onto relay-platform across N chapters (…)
+pnpm check:fences 2>&1 | grep 'replay onto'
+# check-fence-chain: 283 fenced files replay onto relay-platform across 52 chapters
+#                    (46 translated, fences mirrored, 2 retired, plus post-series amendments)
 ```
 
-**Read the line, not the exit code.** `scripts/check-fence-chain.sh:10-13` prints
-`relay-platform not found — skipping` and **exits 0** when the platform repository is absent, so
-a standalone clone satisfies "exit 0" having replayed nothing. The success line above is printed
+**283, and 52 is not 47.** `app/(en)` carries a **`part-0` of five chapters** with **zero titled
+fences** in either locale, so the chapter count is pages the walker found rather than pages
+verified. The number that means something is the 283: 285 today, minus 11 declared in phase 3,
+plus 9 introduced in phase 5.
+
+**Read the line, not the exit code**, and note the guard is in **two** places.
+`scripts/check-fence-chain.sh:10-13` prints `relay-platform not found — skipping fence check`;
+`scripts/check-fence-chain.mjs:198-201` prints `relay-platform not found — skipping`. Both
+**exit 0** when the platform repository is absent, so a standalone clone — or a copy of the
+checker run from anywhere else, since the path comes from the script's own location — satisfies
+"exit 0" having replayed nothing. The three-word difference is how you tell which one fired. The success line above is printed
 only when the problem count is 0, which makes it the one output that tells a repaired chain from
 an unread one.
 
@@ -143,7 +157,7 @@ probe changes nothing if it is run before the repair. After the repair every fil
 ```bash
 cd ../relay-platform
 sed -i '1s/^/\/\/ planted\n/' packages/protocol/src/codes.ts
-cd ../relay-tutorial && pnpm check:fences | tail -2      # non-zero, naming codes.ts
+cd ../relay-tutorial && pnpm check:fences 2>&1 | grep -A2 'codes.ts'   # non-zero, naming it
 cd ../relay-platform && git checkout -- packages/protocol/src/codes.ts
 ```
 

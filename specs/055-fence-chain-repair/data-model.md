@@ -89,6 +89,12 @@ One `[APPLY]`, `[HEAD]` or `[MIRROR]` line: a kind, a location in `relay-tutoria
 **The checker reports the first failure per file**, so a problem is not a defect — it is a file
 with at least one. 25 files `differs at line N` and those 25 files hold 2,381 differing lines.
 
+**And `differs at line 0` means the chain is a PREFIX of the tree.** The line number is
+`findIndex(...) + 1`, so a −1 — no index where the two disagree — prints as 0, and both sides
+then print `<eof>` because `final[-1]` and `disk[-1]` are both undefined. It is the signature of a
+pure append and the cheapest repair there is. **One of the 25 prints it** (`.gitignore`), and it
+was filed as the target whose repair might not exist.
+
 **Four classes, and what each needs:**
 
 | class | n | what a repair is |
@@ -117,10 +123,17 @@ The state machine each of the 110 moves through, and the only three terminal sta
 
     open ──────► repaired          the chain replays onto the repository for that target
          ├─────► declared          the fence names no file and now says so  (11 candidates)
-         └─────► recorded          cannot be repaired; the reason, the measurement and the
-                                   cost are written down (FR-012)
+         └─────► converted        cannot be repaired, so the fence stops claiming a file AND
+                                   the reason, the measurement and the cost are written
+                                   down (FR-012) — both halves, always
 
-**`recorded` is not a fourth kind of green.** A feature that reports "0 except for these" without
+**THE SECOND HALF ALONE IS NOT A TERMINAL STATE.** A problem that is written up and left in place
+is still a problem the checker counts, because nothing reads `gaps.md`. So `converted` ends at
+`(excerpt)` — the same mechanism the eleven prose titles use — and the record is what stops that
+being an exemption nobody looked at. An earlier draft of this document called the state
+`recorded`, which named the half that does not move the number.
+
+**`converted` is not a fourth kind of green.** A feature that reports "0 except for these" without
 the arithmetic has written the baseline it refused to write, which is the option this feature
 exists instead of. Every `recorded` item carries what it would take.
 

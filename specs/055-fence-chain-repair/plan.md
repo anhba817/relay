@@ -132,7 +132,10 @@ content from `rework/part3-chN`, not from the working tree.
 **This is the phase that can make a chapter worse.** 1,956 lines of listing land in published
 chapters, and a chapter that shows a reader a file it never discusses has been repaired in the
 checker's terms and damaged in the reader's. Where no honest home exists, the file's fences become
-excerpts and the exception is recorded with what it costs (FR-012).
+excerpts **and** the exception is recorded with what it costs (FR-012). Both halves: the
+excerpt is what removes the problem from the count, the record is what stops it being an
+exemption nobody looked at. Recording alone leaves FR-001 unreachable, because nothing reads
+`gaps.md`.
 
 ### Phase 5 — The twenty-five divergences
 
@@ -181,7 +184,7 @@ three later phases while the inventory blocks everything.
 
 | decision | why it is not simpler | what it costs |
 |---|---|---|
-| **A `--dump` flag on the checker** | Fifty hunks regenerated against a throwaway copy is `check-lane-scope.py`'s shape — an instrument nobody reviews, pointed at the wrong thing for a year (049-3). | An interface change to a shared gate, and an ADR, because "I changed the checker" is the sentence this feature exists to not say. |
+| **A `--dump` flag on the checker** | Fifty hunks regenerated against a throwaway copy is `check-lane-scope.py`'s shape — an instrument nobody reviews, pointed at the wrong thing for a year (049-3). **And measured: the same file run from another directory prints `relay-platform not found — skipping` and exits 0**, because the platform path comes from `import.meta.url`. A moved copy is silently a no-op, and rule 1a is the instruction to move one. | An interface change to a shared gate, and an ADR, because "I changed the checker" is the sentence this feature exists to not say. |
 | **Declaring 11 fences `(excerpt)` rather than teaching the checker about `text`** | The one-line predicate change exempts a class without anybody reading its members. | Eleven titles × two locales, and somebody looks at each. |
 | **Whole-body introductions from `rework/part3-chN`** | Today's content in a Part 3 chapter shows the reader future code and leaves later hunks anchored on the wrong bytes. | A dependency on tags that exist now and were deleted once before for a different namespace (046). |
 | **Repairing the Vietnamese chain at all** | 30 of the 110 are there, and the count is the count. | Edits in files under active translation — fence bodies only, which `MIRROR` already requires to be byte-identical copies, so no translated prose moves. |

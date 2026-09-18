@@ -333,11 +333,29 @@ and copying to Vietnamese is therefore checked against the states it actually la
 than inferred from `MIRROR` reading 0 — which would have been an argument that the two fence
 *bodies* match, not that the two *chains* do.
 
+**AND A COPY AT ANOTHER PATH REPLAYS NOTHING AND EXITS 0 — MEASURED, NOT ARGUED.** The checker
+resolves the platform from its **own file location**, not the working directory:
+`PLATFORM = join(dirname(dirname(fileURLToPath(import.meta.url))), "..", "relay-platform")`. Run
+the identical file from a temp directory and it prints
+
+    check-fence-chain: relay-platform not found — skipping
+
+and **exits 0**, having compared nothing. Fence-chain **rule 1a instructs you to make exactly that
+copy**, and feature 054 made it twice. So the throwaway is not merely unreviewed — **it has a
+silent mode that satisfies every check you would run on it**, which is `check-lane-scope.py`'s
+failure verbatim, sitting inside the rule this feature cites as its justification.
+
+**The guard is in two places and the artifacts cite one.** `check-fence-chain.sh:10-13` prints
+`…— skipping fence check`; `check-fence-chain.mjs:198-201` prints `…— skipping`. They differ by
+three words, so which one fired is recoverable from the output — worth knowing, because T086
+records the line verbatim and a dump copy hits the second.
+
 **Alternatives considered.** *A separate script importing the checker's internals* — the checker
 is a top-level program with no exports, so this means refactoring it into a module: more change,
 same result. *Keep making throwaway copies* — 50 regenerations against a copy nobody reviews is
 the shape feature 049 found in `check-lane-scope.py`, which pointed at a deleted worktree and
-reported zero for a year.
+reported zero for a year, **and the measurement above is the same failure one step closer: the
+copy does not even need to be stale, only moved.**
 
 ---
 
