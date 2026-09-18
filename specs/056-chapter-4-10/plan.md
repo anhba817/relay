@@ -53,8 +53,16 @@ Read the clauses, not the identifiers. Each row says what was opened.
 ### The clause this chapter is inside
 
 ADR-13's *"media bytes never transit Relay compute"* is what makes every other choice here
-follow. NFR-SCL-01's 160 MB budget is the measurable reason — `docs/11` measured 157 against it —
-and a 100 MB video through the api would end that in one request.
+follow, and the measurable reason is an RSS figure that has been taken twice: `docs/11:43-44`
+measured the gateway at **160 MB with 200 channels and 157 MB with 10,000**, recorded in SRS
+revision 1.9. A 100 MB video through the api would move a number somebody measured.
+
+**CITE `docs/11`, NOT THE CLAUSE, AND COMPARE AGAINST 157.** NFR-SCL-01 reads *"The system shall
+sustain 10,000 concurrent WebSocket connections per gateway instance"* and **carries no memory
+figure at all**; 160 is not a budget either, it is the larger of two observations. Chapter 4.5
+found and corrected this exact attribution — *"Cite the source that holds the number and compare
+against 157, not the rounded ceiling"* — and this plan reproduced it, which is what a carried
+number does when the carrying is done from memory.
 
 ## Phases
 
@@ -119,7 +127,9 @@ version ships the race.
 
 ### Phase 5 — The chapter, the chain and the close
 
-Prose, figures, the chapter registered in `lib/tutorial.ts` — `pnpm build` throws on an
+Prose within **2,000–4,000 words outside code fences** (`docs/07:67`), at least one **`TRAP`**
+box (`docs/07:70` makes it a counted class with a per-chapter minimum, and 4.7, 4.8 and 4.9 carry
+2, 3 and 2), figures, the chapter registered in `lib/tutorial.ts` — `pnpm build` throws on an
 unregistered id and that has cost two chapters. `compose.yaml`'s hunk in both locales, generated
 with `check:fences --dump`. The gates, read by their success lines. **The fence count is reported
 as an absolute number, not a delta** (055's own close-out decided that).

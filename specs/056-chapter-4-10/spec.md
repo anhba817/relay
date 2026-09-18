@@ -221,8 +221,12 @@ cannot be reached, and a refusal that cannot be reached is a test that cannot fa
   existing comment says a disagreement makes a cap silently become no cap.
 - **SC-007**: The fence chain reports **0** and the delta is stated as an absolute number rather
   than a delta of zero.
-- **SC-008**: The chapter's prose is within `docs/07`'s word bound, and its argument's cost is
-  stated as prose or artifacts when the estimate is written.
+- **SC-008**: The chapter's prose is **2,000–4,000 words outside code fences** (`docs/07:67`),
+  measured with `relay-tutorial/scripts/prose-words.mjs` — chapter 4.9 came in at 2,826 — and the
+  chapter carries **at least one `TRAP` box**, which `docs/07:70` makes a counted class with a
+  per-chapter minimum. Its argument's cost is stated as prose or artifacts when the estimate is
+  written. **The ten fence hunks do not count**: *"+ code is additive, not counted"*, which is
+  what keeps a chapter publishing 1,100 lines of listing inside a 4,000-word bound.
 - **SC-009**: The tutorial job in CI succeeds on the chapter's push.
 - **SC-010**: Object storage joins the local stack as **one container**, and the **package count
   moves by zero** — measured across every `package.json` in `relay-platform`, which holds no S3
