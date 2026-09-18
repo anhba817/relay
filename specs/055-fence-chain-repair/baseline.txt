@@ -120,3 +120,87 @@ T008 did not hold. It asked for the 109 -> 110 discrepancy to be "resolved or
 recorded"; both prior records attribute it to the tutorial and the cause is a
 relay-platform commit. It is named above.
 
+
+================================================================================
+PHASE 2 — THE INSTRUMENT                                            2026-09-18
+================================================================================
+
+`check-fence-chain.mjs` gains `--dump <dir> [--at <page>]`. An output mode: no
+threshold, no exemption, no exit-code change, and the check below it untouched.
+
+T011  IT CHANGES NO VERDICT, AND IT IS THE SAME REPLAY
+
+        without the flag          110 problem(s) — APPLY 74, HEAD 36
+        --dump X                  110 problem(s) — APPLY 74, HEAD 36
+        -- --dump X               110 problem(s) — APPLY 74, HEAD 36
+        two dumps, diff -r        byte-identical, including across the `--` form
+
+        `--at` runs a SEPARATE replay with its own throwaway problem list, so the
+        dump cannot add to, remove from or reorder what the check reports.
+
+T011  THE POSITIVE CONTROL, BECAUSE DETERMINISM IS NOT CORRECTNESS
+
+        A dump that is consistently wrong passes a dump-twice check. So: a hunk
+        that works TODAY, against both modes.
+
+        control   app/(en)/part-3/chapter-14/…/page.mdx:1252
+                  a `diff` for services/api/src/users/users.controller.ts
+                  first hunk pre-image, 21 lines
+
+            --at chapter 3.14      occurs 1 time    APPLIES
+            plain --dump           occurs 0 times   does not apply
+
+        The two modes are different states, and `--at` stops BEFORE the page's
+        own fences. Neither fact follows from determinism.
+
+T011  THE LOCALE COMES OFF THE PAGE PATH, CHECKED BOTH WAYS
+
+        --at app/(en)/part-4/chapter-09/…    286 paths   reconcile.ts present
+        --at app/(vi)/vi/part-3/chapter-22/… 232 paths   reconcile.ts ABSENT
+        --at app/(en)/part-3/chapter-22/…    232 paths
+
+        A dumper reading en.state for every argument passes the English half of
+        every other control and fails this one. `reconcile.ts` is chained in en
+        4.7 and 4.9 and in no vi chapter at all.
+
+        And the two chains AGREE where this feature repairs them — at 3.22 both
+        hold 232 paths and `turbo.json` at 62 lines, byte-identical. FR-011's
+        regenerate-in-en-copy-to-vi rule rests on that, measured rather than
+        inferred from MIRROR being 0.
+
+T012  THE COUNT
+
+        --dump prints              285 paths
+        find -type f | wc -l       285
+        --at 3.14                  179     — only what the chain has seen by then
+
+        Two paths with no HEAD divergence, dumped and diffed against the tree:
+        `repository.ts` and `internal.ts`, zero bytes of difference each. That is
+        the trailing newline, checked rather than asserted.
+
+        AND THE APPENDIX RETIRES A PATH, WHICH NO ARTIFACT SAID. The pre-4.9 state
+        holds 286 where the end holds 285, and the extra is
+        `services/api/drizzle.config.ts` — retired by `fences/post-series.md:2500`.
+        data-model.md said the appendix "can amend a path and never introduce
+        one", which is true and incomplete: it can also remove one.
+
+T013  THE FILE THAT IS 16 OF THE 110
+
+        vitest.coverage.config.mts   chain state   318 lines
+                                     the tree    1,182 lines
+                                     `env:` blocks   0 in the chain, 1 in the tree
+
+        The appendix hunk that would create it is `+    env: {` at
+        fences/post-series.md:1524, and it is one of the fourteen that no longer
+        apply — so the nine hunks anchored inside that block have nothing to
+        attach to. The first failure per file is the only one to diagnose.
+
+T014  THE GATES
+
+        pnpm lint     exit 0
+        pnpm build    exit 0, every page rendered
+
+        `npx prettier --check` warns on this file — and warned on it BEFORE this
+        edit too, measured against `git show HEAD:`. It is not a gate in
+        ci.yml's tutorial job and reformatting a gated script is a large
+        unrelated diff, so the file keeps its own style.

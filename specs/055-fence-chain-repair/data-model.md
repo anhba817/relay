@@ -62,6 +62,11 @@ Two consequences the repair depends on:
 - **The appendix cannot open a chain.** It applies after every chapter, so it can amend a path
   and never introduce one. The specification's FR-010 offers it as a fallback for missing
   introductions; that fallback does not exist.
+- **It can, however, RETIRE one.** `fences/post-series.md:2500` carries
+  `services/api/drizzle.config.ts (deleted)`, so the end state holds **285** paths where the
+  state just before chapter 4.9 holds **286**. A later `--at` dump can therefore be *larger* than
+  the final one, which is not what "the chain grows" would lead you to expect. Measured in
+  phase 2; no artifact had said it.
 - **`MIRROR` matches by title**, so renaming an English title without renaming its Vietnamese
   twin unpairs them — and unpairing one fence stops the other fences in that chapter being
   compared at all. Phase 3 renames titles in **6 chapters holding 128 titled fences**.
