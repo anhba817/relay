@@ -247,3 +247,128 @@ T027  THE POSITIVE CONTROL, AND IT IS EXACT ON EVERY AXIS
       and not the repair. The loop can be trusted with the expensive phases.
 
 T028  pnpm lint exit 0 · pnpm build exit 0
+
+================================================================================
+PHASE 4 — THE TWELVE FILES WHOSE HUNKS CANNOT ANCHOR                2026-09-18
+================================================================================
+
+99 -> 55. Expected 57; two better, and the reason is in the arithmetic below.
+
+THE METHOD, AND IT IS NOT "REGENERATE AGAINST THE TAG"
+
+      The first repair measured what the obvious approach costs.
+      `diff(chain state at 3.17, rework/part3-ch17)` for the coverage config is
+      **206 changed lines in one hunk** — because the chain was already 148 lines
+      behind ch16 before the chapter started, so the hunk absorbs the divergence
+      and shows the reader 146 lines chapter 3.17 never wrote.
+
+      What works instead: KEEP THE CHAPTER'S CHANGE AND TRIM THE CONTEXT THE
+      CHAIN DOES NOT CARRY. Three strategies, in order:
+
+        1. the published hunk, unchanged, if it anchors
+        2. trimmed leading and trailing context, as far as it must go
+        3. the interior gap — anchor on the longest leading and trailing runs
+           that each occur once, and replace everything between them
+
+      Strategy 3 is the one nothing had anticipated. It is needed when the lines
+      the chain lacks sit in the MIDDLE of a pre-image, which is what a hunk that
+      deletes a long block looks like when earlier chapters never added part of
+      that block. `eslint.config.mjs` at 3.25 deletes 170 lines of which the
+      chain has 154.
+
+      Three repairs needed a judgement no strategy covers, and all three are the
+      same shape — the hunk's own CHANGED line is absent from the chain:
+
+        turbo.json 3.23      RELAY_QUOTA_RELAY joins the env list after
+                             RELAY_NOTIFICATION_RELAY, which the chain does not
+                             have. Re-anchored on the chain's actual last entry,
+                             RELAY_NATS_REPLICAS. The chapter still teaches "a new
+                             variable joins the list"; the neighbour it names
+                             changed.
+        codes.ts 3.23        `quota_exceeded` is inserted before
+                             `webhook_endpoint_limit_reached`, absent from the
+                             chain. Moved to directly after
+                             `channel_member_limit_exceeded` — the key the
+                             chapter's own comment argues with.
+        eslint appendix      the appendix hunk DUPLICATES the refactor 3.25 now
+                             performs, so once 3.25 applied it had nothing left to
+                             delete. Regenerated against the chain: 571 body lines
+                             -> 122, and the file's HEAD divergence closed with it.
+
+THE COUNT, PER TARGET
+
+       99  after phase 3
+       97  vitest.coverage.config.mts 3.17 en+vi            -2
+       93  … 3.22 en+vi                                     -4   (3.23 came free)
+       92  … appendix :1501                                 -1
+       91  … appendix :1653                                 -1
+       86  … appendix :1730                                 -5   (four shadows)
+       85  … appendix :1899                                 -1
+       84  … appendix :2192                                 -1   file complete, 15 of 15
+       84  turbo.json 3.22 en+vi                            -0   APPLY -2, HEAD +1
+       82  app.module.ts 3.22 en+vi                         -2
+       80  app.module.ts 3.23 en+vi                         -2   file complete
+       78  turbo.json 3.23 en+vi, by hand                   -2
+       76  turbo.json 3.24 en+vi                            -2
+       75  turbo.json appendix :1620                        -1   file complete
+       73  codes.ts 3.23 en+vi, by hand                     -2
+       71  codes.ts 3.24 en+vi                              -2   file complete
+       69  eslint.config.mjs 3.25 en+vi                     -2
+       67  test-event.itest.ts                              -2
+       65  sentinel.sql                                     -2
+       64  packages/e2e/src/harness.ts                      -1   APPLY -2, HEAD +1
+       62  package.json                                     -2
+       61  services/api/package.json                        -1
+       59  credentials.itest.ts                             -2
+       57  presence.itest.ts                                -2
+       55  eslint.config.mjs appendix :884                  -2
+
+      Final: 55 — APPLY 32, HEAD 23, MIRROR 0. Every APPLY left is a missing
+      introduction (phase 5). ALL 42 BAD HUNKS ARE GONE.
+
+THE CASCADE ARITHMETIC, AND IT RUNS BOTH WAYS (FR-015)
+
+      42 bad hunks were cleared by 24 repair operations. The coverage config
+      alone: 7 repairs cleared 15 problems, so EIGHT OF ITS FIFTEEN WERE SHADOWS.
+      One appendix hunk (:1730) cleared five at once.
+
+      AND THE 110 UNDER-COUNTED AS WELL. Four divergences closed because the
+      failing hunk was their whole cause — eslint.config.mjs, credentials.itest.ts,
+      presence.itest.ts, package.json — and TWO APPEARED that were always there:
+      `turbo.json` and `packages/e2e/src/harness.ts`. A checker reports the first
+      failure per file, so their HEAD divergence was invisible behind an APPLY
+      failure on the same file. 25 - 4 + 2 = 23.
+
+      So a count of 110 was neither 110 defects nor an upper bound on them.
+
+T042a  SC-007 — AND NO CHAPTER HUNK GREW
+
+      Published diff-fence body lines across every changed page: 2,379 -> 1,882,
+      **497 fewer**. The series shows readers LESS than before, not more.
+
+        shrank   103 -> 83    en and vi 3.23   sentinel.sql
+        shrank   497 -> 480   en and vi 3.25   eslint.config.mjs
+        shrank   571 -> 122   appendix         eslint.config.mjs
+        shrank    30 -> 29    appendix         package.json, turbo.json
+        shrank   136 -> 135   appendix         credentials.itest.ts
+        GREW     388 -> 418   appendix         vitest.coverage.config.mts
+
+      The only growth is in the appendix, which carries no prose obligation.
+
+      AND THE TEACHING ITSELF IS UNTOUCHED IN 252 OF 261 FENCES — the `+` and `-`
+      lines byte-identical before and after. Nine changed, six of them the three
+      chapter fences above in two locales each:
+
+        3.23 sentinel.sql   +31 -> +33, -4 -> -6.  THE FOUR NEW LINES ARE
+                            FR-016's TYPO: `-DO $` / `+DO $$` and `-END $;` /
+                            `+END $$;`. The chain carries the broken form and the
+                            tree has the correct one, so regenerating against the
+                            chain fixed it here — two phases before T066, the task
+                            that was going to record it. A reader copying that
+                            listing no longer gets a syntax error.
+        3.23 turbo.json     the neighbour named changed, as recorded above.
+        3.25 eslint         +299 unchanged, -170 -> -153: it deletes a shorter
+                            list, which is the list the chain actually holds.
+
+      Five distinct chapters carry a regenerated hunk — 3.17, 3.22, 3.23, 3.24,
+      3.25 — in both locales, ten chapter-locale pairs read.
