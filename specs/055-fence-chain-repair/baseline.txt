@@ -481,3 +481,78 @@ T055  SC-007 — AND THE EIGHT LISTINGS ARRIVED WITH NO PROSE AT ALL
 
       Four distinct chapters gained a listing — 3.3, 3.11 (four of them), 3.20 and
       3.23 (two) — in both locales, so eight chapter-locale pairs read.
+
+================================================================================
+PHASE 6 — THE DIVERGENCES                                           2026-09-18
+================================================================================
+
+T058  RE-MEASURED, AND THE TASK WAS RIGHT THAT IT HAD TO BE
+
+      29 files, **3,471 differing lines** against the opening's 25 and 2,356.
+      The total went UP because ten files could not be compared before:
+
+        session.itest.ts          new    1,322   the largest in the feature
+        vitest.coverage.config    866 ->   743   the hunk repairs closed 123
+        event.test.ts             new      406
+        codes.ts                  156 ->   145
+        sentinel.sql               56 ->    19   see the applier finding below
+        app.module.ts              53 ->    42
+        eslint.config.mjs         539 ->     0   closed in phase 4
+        turbo.json                new        7   invisible behind an APPLY failure
+        packages/e2e/harness.ts   new        7   the same
+        .gitignore                  1 ->     1   the one pure append
+
+T059-T083  TWENTY-NINE HUNKS, ONE SECTION, GENERATED FROM THE CHECKER'S REPLAY
+
+      All 29 generated at `-U6` with every pre-image unique on the first try, from
+      `check:fences --dump` rather than from a `git diff` against the tree — which
+      is the distinction that makes them apply at all.
+
+## THE APPLIER CORRUPTS `$$`, AND FR-016 WAS FILED AGAINST THE PROSE FOR IT
+
+      The last problem refused to close. `sentinel.sql` kept reporting
+      `chapters: "END $;"` against `repo: "END $$;"` however the fence was
+      regenerated, and the fence plainly said `+END $$;`.
+
+          node -e 'console.log("x".replace("x", "END $$;"))'   ->   END $;
+
+      **`String.prototype.replace` reads `$$`, `$&`, `` $` ``, `$'` and `$<name>`
+      in a STRING replacement as substitution patterns.** `applyHunks` used the
+      string form, so a post-image containing `$$` landed as a single `$` — and
+      `sentinel.sql` is `DO $$ … END $$;` twice over.
+
+      SO FR-016's RECORDED DEFECT IS NOT IN THE PROSE. `gaps.md` and T066 say
+      *"the published fence carries `END $;` where the repository has `END $$;` —
+      a reader copying that listing gets a syntax error."* The fence carries
+      `END $$;`. A reader copying it is fine. **The checker produced the `$;`, in
+      its own replayed state, and two features filed it against the chapter.**
+
+      Fixed with a function replacement, which is not subject to substitution:
+
+          text = text.replace(p, () => post.join("\n"));
+
+      **IT WAS CAUSING APPLY FAILURES TOO.** With the applier corrected and the
+      ORIGINAL published hunk restored — the one phase 4 had rewritten — chapter
+      3.23's `sentinel.sql` fence applies untouched. Two of the 42 "bad hunks"
+      were never bad.
+
+      AND THE REPAIR HAD BEEN COMPOUNDING THE BUG. Three rounds of regenerating
+      against a corrupted state stacked three dollars: the chapter fence reached
+      `+DO $$$` and the appendix `+DO $$$$`. Each round "fixed" the corruption by
+      adding one more `$`, and each round the applier ate it again. Both fences
+      were reverted to their pre-055 state and the file needed only the 19-line
+      append the tree actually calls for.
+
+      **A repair that keeps almost working is the shape of an instrument bug.**
+
+## ZERO
+
+    check-fence-chain: 282 fenced files replay onto relay-platform across 52
+    chapters (46 translated, fences mirrored, 2 retired, plus post-series
+    amendments)
+    EXIT 0
+
+      282, not the 283 phase 2 predicted: 285 - 11 declared + **8** bodies, and
+      the ninth file was declared under FR-012 rather than published. 52 chapters
+      and 46 translated are what analysis pass 6 measured, including the five
+      `part-0` pages that carry no titled fence at all.
