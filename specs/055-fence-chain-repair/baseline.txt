@@ -556,3 +556,96 @@ T059-T083  TWENTY-NINE HUNKS, ONE SECTION, GENERATED FROM THE CHECKER'S REPLAY
       the ninth file was declared under FR-012 rather than published. 52 chapters
       and 46 translated are what analysis pass 6 measured, including the five
       `part-0` pages that carry no titled fence at all.
+
+================================================================================
+PHASE 7 — ZERO, AND WHAT ZERO DOES NOT MEAN                         2026-09-18
+================================================================================
+
+T086  THE SUCCESS LINE, VERBATIM, WHICH IS THE EVIDENCE AND NOT THE EXIT CODE
+
+    check-fence-chain: 282 fenced files replay onto relay-platform across 52
+    chapters (46 translated, fences mirrored, 2 retired, plus post-series
+    amendments)
+    EXIT 0
+
+      282 = 285 opening - 11 declared in phase 3 + 8 bodies published in phase 5.
+      Not 283: the ninth file was declared under FR-012 rather than published.
+
+T087  RUN RED, WITH THE FILE NAMED
+
+      One comment line planted in `services/api/src/db/catalogue.ts`, a fenced
+      platform file with no chapter hunk:
+
+        [HEAD] fences/post-series.md:7426
+                services/api/src/db/catalogue.ts differs at line 23
+                chapters: "export type TenantPath = \"direct\" | \"hop\" | \"spine\";"
+                repo:     "// PLANTED BY 055 T087"
+        check-fence-chain: 1 problem(s) — HEAD 1
+        EXIT 1
+
+      Restored; `git status --short` in `relay-platform` reports 0 files, and the
+      clean tree exits 0 again.
+
+T088  EVERY CLASS AT ZERO, REPORTED SEPARATELY
+
+        APPLY 0 · HEAD 0 · MIRROR 0 · SYNTAX 0
+        0  hunk pre-image matched 0 times
+        0  diff with no earlier fence to amend
+        0  differs at line N
+        0  title does not exist in relay-platform
+
+T089  SC-010 — NOT ONE PLATFORM FILE
+
+      `git diff --stat part4-ch9` in `relay-platform` is empty and `git status
+      --short` reports 0. The cheapest repair for 25 of the original 110 would
+      have been to edit that repository; none of it was.
+
+T090  THE UNREAD POPULATION, AND IT ROSE BY EXACTLY WHAT WAS DECLARED
+
+        untitled           360   opened at 360, unchanged
+        (excerpt)          252   opened at 222: +22 phase 3, +8 T056
+        .naive.              2
+        NOT_A_FILE skips   254
+
+      Checked from both sides. Per file: `fanout.itest.ts` 2 pre-existing + 1
+      declared, `session.itest.ts` 2 + 2, `event.test.ts` 0 + 1 — four English
+      fences and their four Vietnamese twins, which is the +8. Nothing that names
+      a real file became unverified without a recorded exception.
+
+T091  THE COUNT NEVER EXCEEDED 110, AND THERE WAS ONE EXCURSION
+
+      110 is the highest number in every per-target table. One upward move:
+      **phase 6's applier fix took the count from 1 to 4**, exposing three APPLY
+      problems that had been passing on a corrupted replacement. It was completed
+      inside `sentinel.sql`'s own work rather than carried forward (FR-004), and
+      the three were never defects in the prose — see the applier finding.
+
+T092  THE TUTORIAL JOB'S FIVE OTHER GATES, BY THEIR SUCCESS LINES
+
+        pnpm lint        exit 0
+        pnpm build       exit 0, every page rendered
+        check-docs-drift: all mirrored docs match their sources
+        check-revision-order: 17 revisions ascend, 1.0 to 1.16
+        check:srs: 245 clause rows, 245 unique identifiers, no duplicates
+        check-figures: 281 figures, every diagram passed as `code`; 283 imported
+                       bindings all resolve, 3 export(s) unused
+
+      The list is `ci.yml:184-205`'s, not a remembered one, and each gate is read
+      by its counted success line rather than its exit code — five of the seven
+      gate scripts exit 0 when their corpus is absent.
+
+      `check:figures` prints three notes about unused figure exports. All three
+      predate this feature: `figTwoCounters` is in that `figures.ts` at `ba23f7b`.
+
+## WHAT ZERO DOES NOT MEAN
+
+      Not that the chapters are readable. Not that the listings are
+      pedagogically right. Not that the 360 untitled fences mean anything, nor
+      the 254 the checker skips by name. Not that the Vietnamese chain is
+      compared to the repository — it is compared to its English twin and never
+      to `relay-platform` (050-3). And the chapter count in the success line is
+      **pages the walker found**, not pages verified: five of the 52 are `part-0`
+      and carry no titled fence at all.
+
+      One property: every titled fence in the series replays onto the repository,
+      byte for byte.
