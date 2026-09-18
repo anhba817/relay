@@ -1,0 +1,201 @@
+# Tasks: chapter 4.10 — the upload that never reaches us
+
+**Feature**: `specs/056-chapter-4-10` · **Plan**: [plan.md](./plan.md) ·
+**Research**: [research.md](./research.md) — read it first, it settles the specification's one
+flagged assumption against the assumption.
+
+**Read before executing any task**: every figure below was measured on 2026-09-18 against
+`quay.io/minio/minio` and the tree at `554dd6b`. A task that names a number is quoting that
+measurement rather than asserting it. **Check a task's premise before executing it** — feature
+055 found eight of nine held and the ninth was the whole of T008.
+
+**The gate loop, after anything that touches a fence**:
+
+    pnpm check:fences 2>&1 | grep 'problem(s)\|replay onto'
+
+**Not `| tail -1`**, which prints pnpm's `ELIFECYCLE` line and never the count. The chain is at
+**0**; report the absolute number, not a delta.
+
+---
+
+## Phase 1: Setup — the store, and a health check that can fail
+
+**Goal**: object storage exists in the local stack and something proves it is reachable for the
+reason this chapter cares about.
+
+- [ ] T001 Add a `minio` service to `relay-platform/compose.yaml` using **`quay.io/minio/minio`**, with `MINIO_ROOT_USER` and `MINIO_ROOT_PASSWORD` from the environment and a port mapping beside the four existing stores.
+  **THE REGISTRY IS PART OF THE NAME.** `docker run minio/minio` fails on this machine with `pull access denied for minio/minio, repository does not exist or may require 'docker login'`, and `docs/05-sad.md:1002` names MinIO without a registry. Four images were tried: `quay.io/minio/minio` (241 MB) and `chrislusf/seaweedfs` and `adobe/s3mock` pull; `bitnami/minio` does not.
+- [ ] T002 Give the service a health check, and **write down what its failure looks like from outside** rather than what the config says. `/minio/health/live` answers 200 from the host — measured — and that is the shape chapter 4.2 warns about: ClickHouse answered `/ping` with `Ok.` for sixteen chapters while every query from outside its container was refused. The liveness probe is the container's; T009's signed round trip is the chapter's.
+- [ ] T003 [P] Create the media bucket at startup, and decide where: an entrypoint, a migration-like script, or the api on boot. **Record which and why** — the analytics runner (`analytics/apply.mjs`) is the nearest precedent and it refuses a statement that does not name its database.
+- [ ] T004 [P] Add the store's address and credentials to the api's environment, and to `turbo.json`'s `globalEnv` if the lane needs them. **`globalEnv` is a fenced file** in ten chapters; adding a key is a chain edit.
+- [ ] T005 Confirm `docker compose up -d` brings the store up beside the four existing ones and that `pnpm test:integration` still reports every lane. Chapter 4.9 built `scripts/integration-gate.mjs` for exactly this: turbo's own summary counts tasks and does not reproduce run to run.
+- [ ] T006 Commit phase 1.
+
+**Checkpoint**: a store exists and something can reach it.
+
+---
+
+## Phase 2: Foundational — the signature, which everything rests on
+
+**Goal**: a presigned URL this platform produces is accepted by the store. **Blocks all three
+stories.**
+
+- [ ] T007 Write the SigV4 presigner in `relay-platform/services/api/src/media/presign.ts`, with **`node:crypto` and no dependency**. Five HMAC-SHA256 rounds over a canonical request; 28 lines in the probe. The workspace has no S3 client of any kind — zero matches for `@aws-sdk`, `minio` or `aws-sdk` across every `package.json` — and this chapter adds none.
+  **THE CANONICAL REQUEST IS UNFORGIVING AND ITS FAILURE MODE IS A BARE 400.** `UNSIGNED-PAYLOAD`, the exact signed-header list, the path encoded segment by segment. A unit test against an expected string tests the test; the acceptance is T009.
+- [ ] T008 [P] Unit-test the presigner's shape: six query parameters and no others — `X-Amz-Algorithm`, `X-Amz-Credential`, `X-Amz-Date`, `X-Amz-Expires`, `X-Amz-SignedHeaders`, `X-Amz-Signature` — and a stable signature for a pinned clock and pinned credentials.
+- [ ] T009 **The round trip against the running store, which is the real health check.** Five results, all measured before this plan was written:
+
+        PUT with the presigned URL, no client library, no auth header    200
+        the same object through a signed GET                            200, byte-exact
+        an UNSIGNED GET of that object                                  403
+        a URL whose X-Amz-Expires has passed       AccessDenied · "Request has expired"
+        one character of X-Amz-Signature changed                        400
+
+  **Four of those five are requirements of this chapter or the next.** The 403 is FR-MED-08's precondition holding by default rather than by configuration, and the expiry comes from the **store**, which is what FR-003 asks for. Assert all five.
+- [ ] T010 Run lint and the api's unit lane; commit phase 2.
+
+**Checkpoint**: the platform can issue a URL a client can use and nobody else can.
+
+---
+
+## Phase 3: The slot (US1) 🎯 MVP
+
+**Goal**: a caller declares an upload and receives a `media_id` and a URL. **Independently
+testable**: request a slot, upload to it directly, and confirm the api saw one request.
+
+- [ ] T011 [US1] Add the media table to `relay-platform/services/api/src/db/schema.ts` and a migration: `id`, `environment_id`, `user_id` **nullable**, `filename`, `mime_type`, `declared_bytes`, `state`, `object_key`, `created_at`. `user_id` is nullable because an API key has no user and FR-MED-06 later distinguishes the two.
+  **AND THE TABLE JOINS THE SENTINEL LIST.** `packages/test-harness/src/sentinel.sql` guards every table carrying `environment_id`; a new one that is not in the array is a table the guard cannot refuse a cross-environment delete on. It arrives **with** the table, plus its bait row and its case in `guard.itest.ts` — that is the array's own documented rule.
+- [ ] T012 [US1] Add the path to `services/api/src/db/catalogue.ts`'s tenancy map. `check-lane-scope` and the structural check both read it, and the catalogue refuses a table with no path to an environment by name.
+- [ ] T013 [US1] Write the allowed-MIME set and the per-kind caps **in one place** in `services/api/src/media/`, read by both the refusal and the cap lookup. A MIME list that disagrees with itself refuses the wrong things.
+- [ ] T014 [US1] Implement the slot route, `POST /v1/media`, per `contracts/upload-slot.md`. It accepts a user token or an API key, scopes the row to the authenticated environment, and returns `media_id`, `state: "pending"`, `upload_url` and `expires_at`.
+- [ ] T015 [US1] **Store nothing about the URL.** It is derived from the row and the store's credentials at request time. Storing its expiry would make two sources of truth for one fact, and T009 measured which is authoritative: the store answers `Request has expired` from its own clock.
+- [ ] T016 [US1] Integration test: a slot is issued, the client uploads to the URL, and **the api's own request log shows the slot request and nothing else**. Chapter 4.8's surface is the instrument — a byte through the api would appear there.
+- [ ] T017 [US1] Integration test: an API key gets a slot and the row carries **no** user; a user token gets a slot and the row carries the user.
+- [ ] T018 [US1] **Attack it.** The gauntlet derives routes from the running router, so `POST /v1/media` joins it the moment it registers and the suite goes red with `classified but never attacked` until the case exists. Chapter 4.8 hit exactly that. The attack plants a row for each of two tenants and asserts neither sees the other's.
+- [ ] T019 [US1] Pin the tenant-scoping branch at 100%. Constitution VI's 100%-branch clause **names tenant isolation**, and 049 was the first Part 4 chapter to meet it rather than pin around it.
+- [ ] T020 [US1] Re-measure and record: the route, the row, the request-log count, and what the gauntlet says. Commit phase 3.
+
+**Checkpoint**: a photo can be uploaded to Relay's storage without a byte reaching Relay.
+
+---
+
+## Phase 4: Three refusals a client can tell apart (US2)
+
+**Goal**: FR-MED-02's three conditions, three distinct codes. **Independently testable**: three
+requests, three different codes, no rows written.
+
+- [ ] T021 [US2] Add `media_type_not_allowed`, `media_too_large` and `media_storage_exhausted` to `packages/protocol/src/codes.ts`, each with the comment the registry's style requires and each **naming its near-neighbour**.
+  **AND NONE OF THEM IS `quota_exceeded`.** `codes.ts` already refuses that reuse twice: `channel_member_limit_exceeded` says *"NOT `quota_exceeded`. That is a monthly, billable, resets-on-a-date refusal whose message promises a resume date"*. **A storage cap does not reset on a date** (R3), so the same objection applies one dimension over.
+- [ ] T022 [US2] Refuse a MIME type outside the ten FR-MED-02 permits — `image/jpeg`, `image/png`, `image/gif`, `image/webp`; `audio/mpeg`, `audio/mp4`, `audio/ogg`, `audio/wav`; `video/mp4`, `video/webm`.
+- [ ] T023 [US2] Refuse a declared size over its kind's cap: image 10 MB, audio 25 MB, video 100 MB. The message names the size and the cap, because the remedy is to compress and a client cannot compress to an unknown target.
+- [ ] T024 [US2] Refuse when committed bytes plus the declared size exceeds the environment's cap. **Depends on phase 5's configuration**; until then the condition is unreachable and a test of it cannot fail.
+- [ ] T025 [US2] **A refusal writes no row and reserves no bytes** (FR-009). Asserted by counting rows before and after, scoped to this test's own environment — an unscoped whole-table count is somebody else's problem in a lane that runs two files at a time (045-74).
+- [ ] T026 [US2] Test each refusal **by code**, not by status. `webhooks.itest.ts` asserted status and message text and passed for four chapters while the body said `internal_error`; only the code could have caught it.
+- [ ] T027 [US2] Assert the three codes are **distinct**, and separately that each is **right**. Distinctness is one assertion and correctness is three; a test that only checks distinctness passes when all three are wrong in the same way.
+- [ ] T028 [P] [US2] Write a section for each code in `docs/08-error-reference.md` — cause and client action, the shape the file already uses.
+- [ ] T029 [US2] Run `pnpm check:errors` in both directions after building `relay-platform` — it reads the built `dist`. **It is a gate no CI job runs** (`gaps.md` 055-3), so running it here is deliberate rather than automatic.
+- [ ] T030 [US2] Commit phase 4.
+
+**Checkpoint**: a refused client knows which rule it broke.
+
+---
+
+## Phase 5: The storage cap, and the clause it forces (US3)
+
+**Goal**: David sets a storage limit the way he sets the other three, and the third refusal
+becomes reachable.
+
+- [ ] T031 [US3] Add `storage_bytes` to `quotaConfigSchema` in `relay-platform/services/api/src/quotas/config.ts` **and** to the migration's `CHECK`, in the same change. The existing comment says why: the constraint would otherwise accept a config the parser rejects, `capsFor` fails closed, and **the cap would silently become no cap**.
+- [ ] T032 [US3] **Probe both halves** (049's rule about a pin that cannot fail): the parser refuses an unimplemented dimension, and the `CHECK` refuses the same input written straight to the column. One half passing proves nothing about the other.
+- [ ] T033 [US3] An absent cap means **no cap and no alert**, resolved the way the three existing dimensions resolve an absent cap — `NO_CAPS` is `{ hard: null, soft: null }` and the absent state stays absent all the way to the reader rather than becoming `Infinity` or `-1`.
+- [ ] T034 [US3] Compute committed bytes as a **sum over the media rows**, not a counter on `environments`. A counter would be a second source of truth for something the rows already say (constitution IV). The cost is a sum per request; say that rather than claiming a measurement at a scale this chapter does not have.
+- [ ] T035 [US3] **Read and write in one transaction.** Unserialised, two slots race the same remaining allowance and both are issued. Publish the transaction and state what the alternative costs, because a reader who copies a read-then-write quota check ships the race.
+- [ ] T036 [US3] Test the race: two concurrent slot requests against a cap that admits one. Exactly one is issued.
+- [ ] T037 [US3] **Amend SRS FR-RTL-05** and add revision **1.17**. It reads *"configurable monthly quotas on messages sent, unique active persons, and connection-minutes"* — three quantities, none of them storage — while FR-MED-02 refuses on *"the environment's storage quota"* and FR-MED-12 says stored bytes are *"included in quota enforcement (FR-RTL-05)"*. **Two clauses cite a third for something it does not define.**
+  **AND THE AMENDMENT MUST SAY WHICH KIND OF QUANTITY IT IS.** Storage is a **level**, not a monthly flow: `usage_periods` is keyed on a calendar month and `creditFor`'s own comment says *"the one thing this function must never do is subtract from a bill"*. A monthly storage quota would have to subtract on delete and would reset on the 1st, so a tenant holding 100 GB would start every month at zero. **A clause amended without that sentence means the thing R3 ruled out.**
+- [ ] T038 [US3] Re-read FR-MED-12 against the amended FR-RTL-05 and record whether it still says what it means. Amending a clause two others cite is not finished when the first one reads right.
+- [ ] T039 [US3] Run `pnpm check:srs`, which counts clause rows and unique identifiers, and `pnpm check:docs`, which compares `docs/` against its mirror. **Run `pnpm sync:docs` first** — editing `docs/` does not update the mirror, and analysis found that ordering missing in feature 055.
+- [ ] T040 [US3] Commit phase 5.
+
+**Checkpoint**: the third refusal is reachable, and the clause it rests on says what it needs to.
+
+---
+
+## Phase 6: The boundary, and the two things this chapter cannot fix
+
+- [ ] T041 **Test the quota at its boundary**: one byte under the cap is issued, one byte over is refused. A test in the middle of a range proves the comparison exists, not that it is right — chapter 4.7 found both obvious ways to plant a 0.1% drift pass for exactly this reason.
+- [ ] T042 [P] Record, in the chapter and in `gaps.md`: **a slot nobody uploads to holds its declared bytes indefinitely.** No job here reclaims it, and FR-MED-10's is 24 hours and about *unreferenced* media rather than *unused slots*. This chapter records the leak rather than closing it — the same shape as 4.7's daily job with no runner, and saying so is the whole of what a chapter can do about it.
+- [ ] T043 [P] Record that **the quota arithmetic is over declarations, not over verified bytes.** FR-MED-03 is a later chapter, so a client that declares 1 KB and uploads 90 MB is inside the cap and over it. State what that permits until verification ships.
+- [ ] T044 Re-measure the committed-bytes sum against the boundary tests and record the numbers.
+
+---
+
+## Phase 7: The chapter
+
+- [ ] T045 Write `relay-tutorial/app/(en)/part-4/chapter-10/…/page.mdx`, within `docs/07`'s word bound. **Say which kind each argument is when the estimate is written** — an argument costs 545 words as prose and about 280 as artifacts.
+- [ ] T046 **Register the chapter in `relay-tutorial/lib/tutorial.ts`.** `<ChapterHeader id="4.10" />` throws on an unregistered id, so `pnpm build` exits 1 from the moment the page exists. That has cost two chapters, once for a whole chapter at 112 of 112 with eight gates green and none of them rendering a page.
+- [ ] T047 [P] Figures in `figures.ts`, each named by a `<Figure>`. `check:figures` reports an export nothing names as a note rather than a failure, so the note is the check.
+- [ ] T048 The `compose.yaml` hunk. It is fenced in five chapters — 1.2, 3.19, 3.21, 3.22, 3.24 — and the chain is clean in both locales. **Generate it with `pnpm check:fences --dump <dir>`**, never with `git diff` against the working tree (fence-chain rule 1a, and feature 055 built the flag for it).
+- [ ] T049 The Vietnamese twin: the same fence body, byte-identical, copied rather than regenerated. `--dump` writes the English chain; FR-011's rule from 055 is that vi takes a copy.
+- [ ] T050 **Check which state each new hunk is written against.** A chapter hunk for a file the appendix also edits is written against a state no reader sees (4.8's finding), and `compose.yaml` has no appendix hunk today — confirm that is still true rather than assuming it.
+- [ ] T051 Run `pnpm check:fences` and report the **absolute number**. It is 0 today. A delta of zero is what hid a problem for nine chapters, and feature 055 named the file it hid.
+
+---
+
+## Phase 8: The record
+
+- [ ] T052 Write **ADR-30** in `docs/05-sad.md` and `docs/06-adr-deep-dives.md`: **sign it ourselves rather than take a client.** ADR-13 already chose the pattern, so this is the narrower dependency decision, with the rejected alternatives — `@aws-sdk/client-s3` plus `@aws-sdk/s3-request-presigner`, and `minio` — and a reversal condition. Constitution VII requires it because it is a dependency decision, even though the dependency count moves by zero.
+- [ ] T053 Then `pnpm sync:docs`, `pnpm check:docs` and `pnpm check:srs` **again**, after the last `docs/` edit. The docs gates must run after the docs change; feature 055 found that ordering missing and fixed it there.
+- [ ] T054 Write `specs/056-chapter-4-10/baseline.txt` carrying every phase's measurements and the pinned environment, in the order they were taken.
+- [ ] T055 Write `gaps.md`. **Re-measure every carried item rather than copying it**: 055-3 (`check:errors` has no runner — T029 runs it by hand), 055-4 (five of seven gate scripts exit 0 on an absent corpus), 050-8 (the ingester nothing starts), and this chapter's own two recorded leaks from T042 and T043.
+- [ ] T056 In `gaps.md`, answer the **four-refusals discrepancy**: `docs/12` row 11 says four and FR-MED-02 names three. The best candidate is the SAD's degradation row — *"upload slots return a specific error"* when the store is down — which is a real refusal and is not FR-MED-02's. Record the finding either way rather than leaving the number to drift.
+- [ ] T057 Write `traceability.md`, and **name anything discharged in a weaker form than its words suggest.**
+- [ ] T058 Update `CLAUDE.md`'s `<!-- SPECKIT -->` block for the close, including every task premise this chapter falsified by running it.
+- [ ] T059 Run the tutorial job's five other gates, named from `ci.yml:184-205` rather than from memory — `lint`, `build`, `check:docs`, `check:srs`, `check:figures` — and **read each one's counted success line**, because five of the seven gate scripts exit 0 when their corpus is absent.
+- [ ] T060 Tag `part4-ch10` on `relay-platform`, commit, and push all three repositories.
+- [ ] T061 After the push, confirm the **tutorial job in CI succeeds**. It went green for the first time in nine chapters at feature 055's close; this is the first chapter that can break it again and know.
+
+**Checkpoint**: the slot ships, the clause it needed says what it needs, and what this chapter
+could not fix is written down.
+
+---
+
+## Dependencies
+
+    Phase 1  ──────────────────────────► everything (no store, no signature)
+    Phase 2  ──────────────────────────► US1, US2, US3
+    Phase 3 (US1) ─────────────────────► US2 (there is no route to refuse on)
+    Phase 5 (US3) ─────────────────────► T024 and T041 (the third refusal is unreachable without a cap)
+    T031     ─────► T032               (probe both halves of the pin)
+    T037     ─────► T038               (re-read the citing clause after the amendment)
+    T046     ─────► T051               (an unregistered chapter fails the build before the chain)
+    T060     ─────► T061               (CI is only observable after a push)
+
+**US1 is the MVP and it is independently shippable.** A slot that is always issued is a working
+upload path; the refusals make it safe and the quota makes the third refusal reachable. US2
+depends on US1 having a route, and US2's third case depends on US3.
+
+**US3 is where the clause work is**, not the code work. `storage_bytes` is one key in a schema;
+FR-RTL-05's amendment is the thing that needed a measurement to get right.
+
+## Parallel opportunities
+
+- **Phase 1**: T003 and T004 are different files.
+- **Phase 2**: T008 is a unit test beside T007's implementation.
+- **Phase 4**: T028 is documentation beside the code tasks.
+- **Phase 6**: T042 and T043 are two records in the same file and can be written together.
+- **Phase 7**: T047's figures are independent of the fence work.
+
+## Implementation strategy
+
+**The MVP is phase 3**, and phases 1 and 2 are what make it possible. If the signature does not
+round-trip against the store, nothing after it is worth writing — which is why T009 asserts five
+results rather than one.
+
+**Then the order the mechanics force**: the route before the refusals, the configuration before
+the third refusal, the boundary after the configuration, the chapter after the code, and the
+docs gates after the last `docs/` edit.
+
+**The riskiest task is T007.** The canonical request is unforgiving and its failure mode is a
+bare 400 with no indication of which field was wrong. The probe that produced this plan is the
+reference implementation; the acceptance is the store, not a string.
