@@ -1,0 +1,122 @@
+FEATURE 055 — REPAIR THE FENCE CHAIN, 110 TO 0
+baseline.txt — every measurement this feature takes, in the order it took them.
+
+Read this file first. Numbers in spec.md, plan.md and tasks.md were measured on
+2026-09-17 and quoted thereafter; the numbers HERE were taken during the work.
+
+
+================================================================================
+PHASE 1 — THE INVENTORY, RE-MEASURED                                2026-09-18
+================================================================================
+
+The environment, pinned, because a fence-chain number is a claim about three
+repositories at once:
+
+    relay             3984c44        specs/, docs/, CLAUDE.md
+    relay-platform    fbbb7943       clean, 0 dirty files
+    relay-tutorial    6ba7e9e        clean, 0 dirty files
+    node              v22            pnpm 12.3.4
+    command           pnpm check:fences  ->  bash scripts/check-fence-chain.sh
+
+    The loop this feature runs after every target:
+
+        pnpm check:fences 2>&1 | grep 'problem(s)\|replay onto'
+
+    NOT `| tail -1`. Problems and the summary go to stderr and pnpm appends its
+    own ELIFECYCLE line last, so `| tail -1` prints that and never the count.
+    Measured in analysis pass 6; the old form works only once the count is 0.
+
+T001  TOTAL 110 — APPLY 74, HEAD 36
+
+T002  the four classes
+          42  hunk pre-image matched 0 times
+          32  diff with no earlier fence to amend
+          25  differs at line N
+          11  does not exist in relay-platform
+         110  total
+
+T003  where each problem lives
+          66  app/(en)
+          30  app/(vi)
+          14  fences/post-series.md
+           0  relay-platform   <- must be 0 (FR-009)
+
+        by class and locale
+        class                                    en   vi  appx   tot
+        hunk pre-image matched 0 times           14   14    14    42
+        diff with no earlier fence to amend      16   16     0    32
+        differs at line N                        25    0     0    25
+        does not exist in relay-platform         11    0     0    11
+
+T004  targets
+        47 targets — 36 platform files, 11 phrases naming none
+        top eleven hold 64 of 110
+          16  vitest.coverage.config.mts
+          10  services/gateway/src/session.itest.ts
+           6  turbo.json
+           5  services/api/src/app.module.ts
+           5  packages/protocol/src/codes.ts
+           4  services/api/src/outbox/event.test.ts
+           4  packages/test-harness/src/driver-exempt.test.ts
+           4  packages/protocol/src/internal.test.ts
+           4  eslint.config.mjs
+           3  services/api/src/webhooks/test-event.itest.ts
+           3  packages/test-harness/src/sentinel.sql
+
+T005  the en/vi mirror
+        en 66 · vi 30 · vi with an exact en twin (chapter, line, message): 30
+        vi-only: 0   <- must be 0
+        en problems with no vi twin: 36  (all HEAD — the vi chain is never HEAD-compared, 050-3)
+
+T006  MIRROR 0
+
+T007  the unread-fence population (SC-008), by locale — every figure spans both
+        corpus                     open  titled  untitled  (excerpt)  .naive.
+        app/(en)                   1071     877       194        111        1
+        app/(vi)                   1005     844       161        111        1
+        fences/                      33      28         5          0        0
+        TOTAL                      2109    1749       360        222        2
+        expected 2,109 / 1,749 / 360 / 222 — NOT_A_FILE skips 224
+        phase 3 declares 22 fences (11 titles x 2 locales), so (excerpt) -> 244
+
+T008  the 109 -> 110 discrepancy (FR-014) — RESOLVED, AND THE FILE IS NAMED
+
+        045 closed reporting 109 (APPLY 74, HEAD 35) with the unpatched gate.
+        046's T006 opened at 110 (APPLY 74, HEAD 36) and blamed a relay-tutorial
+        commit: "the tutorial repository moved to 0f4d8d6 since; APPLY is unchanged."
+
+        That attribution is wrong. The six tutorial commits in that window are all
+        Vietnamese translations, and a vi commit cannot add a HEAD problem —
+        the HEAD loop iterates en.state only (050-3).
+
+        The cause is in relay-platform. In the window rework/part3-ch26..part4-ch1,
+        exactly two of the 25 divergence targets were touched, and one of them is
+        .gitignore:
+
+            ea0cb513  chore(046): the seeder's volumes, and the two bounds the
+                      prose never enforced
+                      + corpus.json          (and a trailing newline the file lacked)
+
+        Chapter 1.1 publishes .gitignore as a whole body of 7 lines. The tree became
+        8. HEAD 35 -> 36, total 109 -> 110.
+
+        So the 110th problem is NOT inherited from Part 3. It is feature 046's own,
+        created by the seeder work in the same feature whose T006 first reported the
+        new number — and 046 read the change as the tutorial moving, because the
+        delta-of-0 convention compares a total to a total and never asks which file.
+
+        Every chapter since has measured against 110 and called the delta 0.
+
+================================================================================
+WHAT PHASE 1 CONFIRMED, AND THE ONE THING IT DID NOT
+================================================================================
+
+Eight of the nine task premises held exactly: 110/74/36, the four classes at
+42/32/25/11, the locale split at 66/30/14, 47 targets, 30 vi problems all with an
+exact en twin and zero vi-only, MIRROR 0, and the unread population at
+2,109/1,749/360/222.
+
+T008 did not hold. It asked for the 109 -> 110 discrepancy to be "resolved or
+recorded"; both prior records attribute it to the tutorial and the cause is a
+relay-platform commit. It is named above.
+
