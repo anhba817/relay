@@ -201,35 +201,42 @@ twin, byte-identical, changed together.
 the chain from 111 problems to 203. The home for an appended hunk is `fences/post-series.md`
 unless a chapter genuinely discusses the change.
 
+**One of the 25 is a pure append and 24 are interior.** Measured: only `.gitignore`'s chain state
+is a strict prefix of its file. The rest change lines in the middle, so "appended" is about where
+the fence goes in the chain, not about where the lines go in the file — and each of the 24 needs a
+hunk whose pre-image occurs exactly once.
+
 **A hunk appended in the appendix has no Vietnamese twin** — `fences/post-series.md` is one file
 for both locales. A hunk appended **in a chapter** is a locale pair like every other (FR-011),
 and T084 checks `MIRROR` after each.
 
-- [ ] T058 [US1] Re-measure all 25 divergences **after phases 4 and 5**, because a divergence is whatever is left once every hunk has applied. The two largest — `vitest.coverage.config.mts` at 867 differing lines and `eslint.config.mjs` at 540 — were measured against a chain state those phases change, so **their real size is not yet known** and the plan says so rather than guessing.
+- [ ] T058 [US1] Re-measure all 25 divergences **after phases 4 and 5**, because a divergence is whatever is left once every hunk has applied. The two largest — `vitest.coverage.config.mts` at **866** differing lines and `eslint.config.mjs` at **539** — were measured against a chain state those phases change, so **their real size is not yet known** and the plan says so rather than guessing.
+  **AND EVERY ONE OF THE 25 WAS ONE TOO HIGH UNTIL ANALYSIS PASS 8 RE-TOOK THEM.** The original probe read the tree with a plain `split("\n")`, which keeps a final empty element the chain state does not have, so **every file gained exactly one** and the published total was **2,381** where the measurement is **2,356**. Pass 3 found that trailing newline and wrote it into the contract as a property the dump must satisfy; **the numbers already derived from the broken probe were never re-taken**, in six artifacts, across five later passes. `.gitignore` was the one correct figure, because pass 6 measured it by hand. **Re-measure from the dump, and state the counting convention beside the number** — `diff | grep -c '^[<>]'` gives 2,356 and unified `-U0` gives 2,357.
+  **AND ONLY ONE OF THE 25 IS A PURE APPEND.** Measured: `.gitignore` alone has a chain state that is a strict prefix of the tree; **the other 24 are interior changes**. *"Appended, never regenerated"* means a new fence at the end of the **chain**, not lines at the end of the **file** — so 24 of these need real hunks with unique context, which is where `-U6` stops being a default.
 - [ ] T059 [US1] `vitest.coverage.config.mts` — append in `fences/post-series.md`. Chapter 4.9 could not publish its own two-line edit to this file for exactly this reason and described it in prose instead; that prose is replaced by the hunk here.
-- [ ] T060 [US1] `eslint.config.mjs` — append in `fences/post-series.md`. 206 chain lines against 451.
-- [ ] T061 [P] [US1] `packages/protocol/src/codes.ts` — 157 differing lines.
-- [ ] T062 [P] [US1] `services/api/src/isolation/targets.ts` — 119 differing lines.
-- [ ] T063 [P] [US1] `services/api/src/auth/credential.guard.ts` — 102 differing lines.
-- [ ] T064 [P] [US1] `services/api/src/auth/credentials.itest.ts` — 86 differing lines.
-- [ ] T065 [P] [US1] `packages/protocol/src/codes.test.ts` — 79 differing lines.
-- [ ] T066 [P] [US1] `packages/test-harness/src/sentinel.sql` — 57 differing lines. **And record separately that the published fence carries `END $;` where the repository has `END $$;`** (FR-016): a reader copying that listing gets a syntax error, and the count never said so.
-- [ ] T067 [P] [US1] `services/api/src/app.module.ts` — 54 differing lines.
-- [ ] T068 [P] [US1] `packages/test-harness/src/bound-port.test.ts` — 53 differing lines.
-- [ ] T069 [P] [US1] `services/gateway/src/presence.itest.ts` — 49 differing lines.
-- [ ] T070 [P] [US1] `services/api/src/outbox/event.ts` — 38 differing lines.
-- [ ] T071 [P] [US1] `services/gateway/src/main.test.ts` — 36 differing lines.
-- [ ] T072 [P] [US1] `services/api/src/internal/dispatch.controller.ts` — 21 differing lines.
-- [ ] T073 [P] [US1] `services/api/src/internal/usage.controller.ts` — 20 differing lines.
-- [ ] T074 [P] [US1] `services/api/src/isolation/targets.itest.ts` — 18 differing lines.
-- [ ] T075 [P] [US1] `services/api/src/isolation/fixtures.ts` — 18 differing lines.
-- [ ] T076 [P] [US1] `packages/test-harness/src/sentinel.ts` — 18 differing lines.
-- [ ] T077 [P] [US1] `services/api/src/auth/authenticate.middleware.ts` — 16 differing lines.
-- [ ] T078 [P] [US1] `services/api/src/webhooks/test-event.itest.ts` — 8 differing lines.
-- [ ] T079 [P] [US1] `services/api/src/db/catalogue.ts` — 7 differing lines.
-- [ ] T080 [P] [US1] `package.json` — 7 differing lines, and it is `test:integration` at line 15, which chapter 4.9 pointed at `scripts/integration-gate.mjs`.
-- [ ] T081 [P] [US1] `services/gateway/src/typing.itest.ts` — 5 differing lines, from chapter 4.9's presence-payload repair.
-- [ ] T082 [P] [US1] `services/api/package.json` — 4 differing lines.
+- [ ] T060 [US1] `eslint.config.mjs` — append in `fences/post-series.md`. 206 chain lines against 451, **539 differing**.
+- [ ] T061 [P] [US1] `packages/protocol/src/codes.ts` — 156 differing lines.
+- [ ] T062 [P] [US1] `services/api/src/isolation/targets.ts` — 118 differing lines.
+- [ ] T063 [P] [US1] `services/api/src/auth/credential.guard.ts` — 101 differing lines.
+- [ ] T064 [P] [US1] `services/api/src/auth/credentials.itest.ts` — 85 differing lines.
+- [ ] T065 [P] [US1] `packages/protocol/src/codes.test.ts` — 78 differing lines.
+- [ ] T066 [P] [US1] `packages/test-harness/src/sentinel.sql` — 56 differing lines. **And record separately that the published fence carries `END $;` where the repository has `END $$;`** (FR-016): a reader copying that listing gets a syntax error, and the count never said so.
+- [ ] T067 [P] [US1] `services/api/src/app.module.ts` — 53 differing lines.
+- [ ] T068 [P] [US1] `packages/test-harness/src/bound-port.test.ts` — 52 differing lines.
+- [ ] T069 [P] [US1] `services/gateway/src/presence.itest.ts` — 48 differing lines.
+- [ ] T070 [P] [US1] `services/api/src/outbox/event.ts` — 37 differing lines.
+- [ ] T071 [P] [US1] `services/gateway/src/main.test.ts` — 35 differing lines.
+- [ ] T072 [P] [US1] `services/api/src/internal/dispatch.controller.ts` — 20 differing lines.
+- [ ] T073 [P] [US1] `services/api/src/internal/usage.controller.ts` — 19 differing lines.
+- [ ] T074 [P] [US1] `services/api/src/isolation/targets.itest.ts` — 17 differing lines.
+- [ ] T075 [P] [US1] `services/api/src/isolation/fixtures.ts` — 17 differing lines.
+- [ ] T076 [P] [US1] `packages/test-harness/src/sentinel.ts` — 17 differing lines.
+- [ ] T077 [P] [US1] `services/api/src/auth/authenticate.middleware.ts` — 15 differing lines.
+- [ ] T078 [P] [US1] `services/api/src/webhooks/test-event.itest.ts` — 7 differing lines.
+- [ ] T079 [P] [US1] `services/api/src/db/catalogue.ts` — 6 differing lines.
+- [ ] T080 [P] [US1] `package.json` — 6 differing lines, and it is `test:integration` at line 15, which chapter 4.9 pointed at `scripts/integration-gate.mjs`.
+- [ ] T081 [P] [US1] `services/gateway/src/typing.itest.ts` — 4 differing lines, from chapter 4.9's presence-payload repair.
+- [ ] T082 [P] [US1] `services/api/package.json` — 3 differing lines.
 - [ ] T083 [P] [US1] `.gitignore` — **one differing line, and it is a pure append: the cheapest target in the phase.** Measured: the chain state is **7 lines**, the tree holds **8**, the state is a **strict prefix**, and the line the tree has is `corpus.json` — a file the corpus scripts write and no chapter teaches, so `fences/post-series.md` is its home for the reason the appendix exists. Still diff the dumped state against the tree with `diff` and `cat -A` before writing, because whitespace is the one difference a `@@` hunk cannot always express.
   **AND THE TASK HAD THIS EXACTLY BACKWARDS UNTIL ANALYSIS PASS 6 RAN IT.** It read *"2 differing lines … the one target in the phase whose repair might not exist"*, because `differs at line 0` with `<eof>` on both sides reads like no difference at all. It is `findIndex` returning −1 — **the signature of a chain state that is a prefix of the tree** — and it is the only one of the 25 that prints it. **A message that reads like "nothing to see" cost this target its diagnosis**, which is 047's *"a check that cannot fail for the reason you care about"* in the reporting rather than the checking.
 - [ ] T084 [US1] Re-measure after each file and record the total, APPLY, HEAD and `MIRROR` with the file that preceded each number, and the command that generated its hunk (FR-003, FR-011, SC-004, SC-009). A file that raises the count is reverted or finished before the next is started (FR-004).
@@ -284,7 +291,7 @@ and T084 checks `MIRROR` after each.
   **And that the success line's chapter count is pages on disk, not pages checked.** It reads 52 where `part-0`'s five carry no titled fence at all, so "across 52 chapters" is a claim about what the walker found, not about what was verified. The number that means something is the 283.
 - [ ] T097 In `gaps.md`, record the cascade arithmetic (FR-015): how many of the 110 were single defects and how many were shadows of an earlier failure in the same file, so the next reader of a fence-chain number knows what it counts.
 - [ ] T098 Write `specs/055-fence-chain-repair/traceability.md` mapping every FR and SC to the tasks and artifacts that discharged it, and **record any discharged in a weaker form than their words suggest**.
-- [ ] T099 Update `CLAUDE.md`'s `<!-- SPECKIT -->` block for the close, including every task premise this feature falsified by running it.
+- [ ] T099 Update `CLAUDE.md`'s `<!-- SPECKIT -->` block for the close, including every task premise this feature falsified by running it. **Its inventory table already carries one correction from analysis pass 8** — `2,381 differing lines` was one too high per file and now reads **2,356, 1 append and 24 interior** — so check the rest of that table against the close-out measurement rather than editing around it.
 - [ ] T100 Consider whether zero should be **guarded** rather than merely reached — the checker already exits non-zero above 0, so the open question is what holds the number between chapters. Adjacent to `gaps.md` 048-5 and 054-4; record the decision either way rather than leaving the next chapter to discover it.
 - [ ] T101 Commit phase 8 and push all three repositories.
 - [ ] T102 [US2] Discharge **SC-002**: after the push, confirm the **tutorial job in CI succeeds** — the first push in nine chapters whose result reflects that push. **This is the only success criterion that cannot be verified locally**, and it had no task until analysis found it: T092 runs the same gates on this machine, which is not the same claim. If the job fails for a reason this feature did not cause, record it rather than repairing it here.

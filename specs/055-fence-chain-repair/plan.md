@@ -43,7 +43,7 @@ which chain it wrote, because the two ends are 9 paths and 13 lines of `turbo.js
 **Historical content**: the 27 `rework/part3-chN` tags in `relay-platform`, which resolve. The
 deleted `part3-chN` tags are not needed.
 **Scale**: 47 targets · **42 hunks regenerated and 25 appended** · **9 whole bodies, 1,658 or
-1,956 lines depending on which tag each takes** · 2,381 differing lines · edits in `app/(en)`,
+1,956 lines depending on which tag each takes** · **2,356** differing lines · edits in `app/(en)`,
 `app/(vi)` and `fences/post-series.md`.
 **What is NOT in scope**: the 360 untitled fences (043-1, re-measured), the checker's exit semantics, any
 platform file, and chapter renumbering.
@@ -143,8 +143,10 @@ An appended hunk per file, in `fences/post-series.md` unless a chapter genuinely
 change. Never a regenerated early fence: `codes.ts` is fenced by 12 chapters, `app.module.ts` by
 11, `vitest.coverage.config.mts` by 11 plus 9 appendix hunks.
 
-Two files are 59% of the differing lines and both are measured against a chain state that phase 3
-will have changed, so their real size is not yet known.
+Two files are 60% of the differing lines and both are measured against a chain state that phase 3
+will have changed, so their real size is not yet known. **Only one of the 25 is a pure append**
+(`.gitignore`, one line); the other 24 change lines in the middle and need a hunk with unique
+context.
 
 **Appendix hunks carry no prose obligation and chapter hunks do**, so the split between the two
 homes is recorded: the appendix exists precisely so that a change no chapter teaches is not put in
@@ -218,8 +220,8 @@ observation** (FR-009, SC-010).
 2. Whether `--dump` belongs on the checker or in a second script that imports it. The checker is
    a top-level program with no exports, so the second option means refactoring it — more change
    for the same result, and the plan takes the flag.
-3. Whether the two large divergences (`vitest.coverage.config.mts` 867 lines,
-   `eslint.config.mjs` 540) are still large after phase 3 repairs their hunks. Both are measured
+3. Whether the two large divergences (`vitest.coverage.config.mts` 866 lines,
+   `eslint.config.mjs` 539) are still large after phase 3 repairs their hunks. Both are measured
    against a chain state that is missing what those hunks would have added.
 4. Whether reaching 0 should be followed by making 0 enforceable — the checker already exits
    non-zero above 0, so this is a question about whether anything guards the number between

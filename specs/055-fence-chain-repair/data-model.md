@@ -87,7 +87,11 @@ checker rather than a `git diff`.
 One `[APPLY]`, `[HEAD]` or `[MIRROR]` line: a kind, a location in `relay-tutorial`, and a detail.
 
 **The checker reports the first failure per file**, so a problem is not a defect — it is a file
-with at least one. 25 files `differs at line N` and those 25 files hold 2,381 differing lines.
+with at least one. 25 files `differs at line N` and those 25 files hold **2,356** differing lines
+— counted as `diff | grep -c '^[<>]'` against a dump written the checker's own way. **The figure
+was 2,381 in six artifacts until analysis pass 8**, one too high per file, from a probe that read
+the tree with a plain `split("\n")` and kept a trailing empty line the chain state does not have.
+**One of the 25 is a pure append; 24 change lines in the middle.**
 
 **And `differs at line 0` means the chain is a PREFIX of the tree.** The line number is
 `findIndex(...) + 1`, so a −1 — no index where the two disagree — prints as 0, and both sides

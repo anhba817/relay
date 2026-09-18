@@ -41,7 +41,7 @@ Chosen from feature 054's five options (ADR-27, `gaps.md` 054-1) after they were
     110 problems  ·  47 targets  ·  36 platform files + 11 phrases that name none
      42  hunk pre-image matched 0 times          12 files
      32  diff with no earlier fence to amend      9 files
-     25  differs at line N                       2,381 differing lines
+     25  differs at line N                       2,356 differing lines · 1 append, 24 interior
      11  title does not exist in relay-platform  all `lang=text` command output
 
 **EVERY ONE IS IN `relay-tutorial`.** 36 HEAD + 30 APPLY in `app/(en)`, 30 APPLY in `app/(vi)`,

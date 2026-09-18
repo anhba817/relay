@@ -174,21 +174,35 @@ instrument this feature runs on.
 
 ---
 
-## R4 — The 25 divergences are 2,381 lines, and 59% of them are two files
+## R4 — The 25 divergences are 2,356 lines, and 60% of them are two files
 
 **Decision**: divergences are repaired by appending a hunk, never by regenerating an early fence.
 
     file                                        chain   tree   differing lines
-    vitest.coverage.config.mts                    318   1182       867
-    eslint.config.mjs                             206    451       540
-    packages/protocol/src/codes.ts                279    429       157
-    services/api/src/isolation/targets.ts         390    508       119
-    services/api/src/auth/credential.guard.ts     104    179       102
+    vitest.coverage.config.mts                    318   1182       866
+    eslint.config.mjs                             206    451       539
+    packages/protocol/src/codes.ts                279    429       156
+    services/api/src/isolation/targets.ts         390    508       118
+    services/api/src/auth/credential.guard.ts     104    179       101
     … 20 more, of which 11 differ by 20 lines or fewer …
-                                                            total 2,381
+                                                            total 2,356
+
+**EVERY FIGURE IN THIS TABLE WAS ONE TOO HIGH UNTIL ANALYSIS PASS 8.** The first probe read the
+tree with a plain `split("\n")`, which keeps a final empty element that the chain state does not
+carry, so each file gained exactly one line and the total gained 25 — **2,381 where the
+measurement is 2,356**. Pass 3 found that same trailing newline on the other side of the
+comparison and turned it into a property the dump must satisfy; **nobody re-took the numbers the
+broken probe had already produced.** They are re-taken here from a dump written the checker's own
+way, `lines.join("\n") + "\n"`, which is what `fileLines()` reads back. Convention matters at
+this resolution: `diff | grep -c '^[<>]'` gives **2,356** and unified `-U0` gives 2,357.
+
+**AND ONLY ONE OF THE 25 IS A PURE APPEND.** `.gitignore`'s chain state is a strict prefix of its
+file — one missing line, `corpus.json`. **The other 24 change lines in the middle**, so
+"appending a hunk" is a statement about where the fence sits in the chain, not about where the
+lines sit in the file.
 
 `eslint.config.mjs` at 206 against 451 is `gaps.md` 047-1, which recorded *"a 243-line divergence
-predating this chapter"* — measured here as 540 changed lines, because the divergence has grown.
+predating this chapter"* — measured here as 539 changed lines, because the divergence has grown.
 
 **Appending is safe and regenerating is not.** Feature 045 measured a single foundation fence
 regenerated to match the tree taking the chain from **111 problems to 203**, by unanchoring
@@ -207,7 +221,7 @@ no chapter acquires a listing it never discusses.
 
 **Ordering follows from this**: a file's APPLY failures must be repaired before its HEAD
 divergence can be, because the divergence is whatever is left after every hunk has applied. Fix
-`vitest.coverage.config.mts`'s 15 hunks and its 867-line divergence may be a different number.
+`vitest.coverage.config.mts`'s 15 hunks and its 866-line divergence may be a different number.
 
 ---
 
@@ -381,7 +395,7 @@ Recorded now so the phases do not discover it as a surprise:
 
 - **Whether each of the nine files has a chapter that would honestly introduce it.** That is nine
   judgements about published prose, and the answer decides between R2's two designs per file.
-- **What the 867-line and 540-line divergences become after their hunks are repaired.** Both
+- **What the 866-line and 539-line divergences become after their hunks are repaired.** Both
   numbers are measured against a chain state that is missing content those hunks would have
   added.
 - **Whether repairing a hunk unanchors a later one.** The 111→203 measurement says it can. Only
