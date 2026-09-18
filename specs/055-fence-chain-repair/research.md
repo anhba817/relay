@@ -277,6 +277,22 @@ is one replay implementation and no copy to drift. That is a change to the check
 and not to what it accepts, which FR-002 permits — but the plan states it explicitly so it is not
 mistaken for a loosening.
 
+**AND ONE MODE IS NOT ENOUGH, WHICH THIS SECTION SAID UNTIL ANALYSIS PASS 3 WALKED A FILE.**
+`turbo.json`'s replayed length, chapter by chapter:
+
+    chapter 1.1 … 1.3   28 lines
+    mid-Part 3          59
+    chapter 3.22        62      ← the state its three failing hunks anchor on
+    after the appendix  74      ← what a final-state dump writes
+    the tree            75
+
+A hunk generated against the final state carries twelve lines of context that do not exist at
+chapter 3.22. So the flag takes `--at <page>` as well, writing the state **as that page is
+reached, before its own fences apply**: the final-state mode serves the **14 appendix hunks** and
+the **25 divergences**, and `--at` serves the **28 chapter hunks**. Regenerating a chapter hunk
+pairs the two sources phase 4 already pairs — the pre-image from the chain, the post-image from
+`rework/part3-chN`.
+
 **Alternatives considered.** *A separate script importing the checker's internals* — the checker
 is a top-level program with no exports, so this means refactoring it into a module: more change,
 same result. *Keep making throwaway copies* — 50 regenerations against a copy nobody reviews is

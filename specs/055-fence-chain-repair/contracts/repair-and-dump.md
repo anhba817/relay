@@ -5,10 +5,39 @@ nothing else reads, so every claim here is one a command can drive.
 
 ---
 
-## `check-fence-chain.mjs --dump <dir>`
+## `check-fence-chain.mjs --dump <dir> [--at <page>]`
 
-**What it does**: replays the chain exactly as the check does, then writes each path's final
-replayed state to `<dir>/<path>`, creating directories as needed. Prints how many it wrote.
+**TWO MODES, BECAUSE THE FAILURE CLASSES NEED DIFFERENT STATES — AND ONE MODE WAS SPECIFIED
+UNTIL ANALYSIS MEASURED IT.** `turbo.json`'s replayed length, walked chapter by chapter:
+
+    chapter 1.1 … 1.3        28 lines
+    mid-Part 3               59
+    chapter 3.22 … 3.26      62      ← the state its three failing hunks anchor on
+    after the appendix       74      ← what a final-state dump writes
+    the tree                 75
+
+So a hunk generated against the final state carries twelve lines of context that **do not exist**
+at chapter 3.22 and cannot apply there. **A final-state dump serves the 14 appendix hunks and the
+25 HEAD divergences and cannot serve the 28 chapter hunks** — two thirds of phase 4. This is
+chapter 4.8's recorded lesson arriving inside the instrument written to prevent it: *"check which
+state a hunk is written against before blaming the hunk."*
+
+| mode | what it writes | which class it serves |
+|---|---|---|
+| `--dump <dir>` | each path's state after every chapter **and** the appendix | the 14 appendix hunks · the 25 HEAD divergences |
+| `--dump <dir> --at <page>` | each path's state **as that page is reached, before its own fences apply** | the 28 chapter hunks, one chapter at a time |
+
+`<page>` is the chapter's path as the checker reports it — `app/(en)/part-3/chapter-22/limits-you-can-see-coming/page.mdx` — so the argument is copied from the problem line rather than
+constructed.
+
+**And regenerating a chapter hunk pairs the two sources phase 5 already pairs.** The new hunk is
+`diff(state at that chapter from --at, the file at that chapter from rework/part3-chN)`: the
+pre-image comes from the chain and the post-image from the repository's own history. Neither
+alone is enough, which is why both appear in every regeneration task.
+
+**What it does**: replays the chain exactly as the check does, then writes the requested state to
+`<dir>/<path>`, creating directories as needed. Prints how many paths it wrote and, with `--at`,
+which page it stopped before.
 
 **What it must not do**: anything different from the check. Same parser, same hunk applier, same
 chapter ordering, same appendix-applies-last. **A generator that replays differently from the
@@ -21,6 +50,8 @@ rule 1a), and this feature regenerates about fifty hunks against it.
 | it is the same replay | dumping twice gives byte-identical trees; dumping after a repair changes exactly the repaired path |
 | it changes no verdict | `pnpm check:fences` reports the same count with and without the flag |
 | it writes nothing when the chain is broken for a path | the state is whatever replayed — a failed hunk leaves the previous state, which is the state a new hunk must anchor on |
+| the bytes are what the checker compares | **including the trailing newline.** Analysis pass 3's own probe joined the state with `\n` and no final newline, which made `turbo.json` read 74 lines against the tree's 75 and look like a HEAD divergence that does not exist — that path is not among the 25. Verified by dumping a path with no divergence and diffing it against the tree: zero output |
+| `--at` stops before the named page's fences | checked against a hunk that **works today**: dump at its chapter, apply that hunk, confirm it applies. A dump that is consistently wrong passes a determinism check |
 | it tolerates a leading `--` in its own arguments | measured on this pnpm: `pnpm check:fences -- --dump X` forwards **`-- --dump X`**, so the parser must find the flag by position-independent lookup rather than by treating `argv[0]` as meaningful. `pnpm check:fences --dump X` forwards cleanly and is the form the quickstart publishes |
 | it prints its own file count | because the checker's `N fenced files replay onto relay-platform` line exists **only** when the count is 0, and the dump is needed at 110 |
 
@@ -66,7 +97,11 @@ after    ```text title="the typo, now (excerpt)"
 
 ### A hunk that cannot anchor
 
-- Regenerated against `--dump`'s state for that path, at that point in the chain.
+- Regenerated against the state for that path **at that point in the chain**: `--at <page>` for a
+  chapter hunk, plain `--dump` for an appendix one. **Using the wrong mode produces a hunk that
+  fails exactly like the one it replaces**, which is the failure this whole contract exists to
+  make impossible.
+- Its post-image is the file at that chapter from `rework/part3-chN`, not the working tree.
 - `@@` hunks only — no `--- a/` or `+++ b/` headers.
 - Each hunk's pre-image appears exactly once. Widen the context when it appears twice, and
   **verify before pasting**: `-U8` can be worse than `-U10`, because widening merges adjacent

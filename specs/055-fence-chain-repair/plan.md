@@ -28,9 +28,13 @@ analysis measured rather than predicted.
 
 **Language / runtime**: none new. The repair edits MDX chapters and one Node script.
 **The instrument**: `relay-tutorial/scripts/check-fence-chain.mjs`, unchanged in what it accepts.
-It gains a `--dump <dir>` flag so hunks are generated from the same replay that checks them
-(R8) — an interface addition, not a loosening, and the plan says so out loud because the
+It gains `--dump <dir> [--at <page>]` so hunks are generated from the same replay that checks
+them (R8) — an interface addition, not a loosening, and the plan says so out loud because the
 distinction is the whole feature.
+**And it needs both modes, which analysis measured rather than assumed.** `turbo.json` replays to
+**62 lines at chapter 3.22** and **74 after the appendix**: a final-state dump serves the 14
+appendix hunks and the 25 divergences, and **cannot serve the 28 chapter hunks**, which are two
+thirds of phase 3's work here.
 **Historical content**: the 27 `rework/part3-chN` tags in `relay-platform`, which resolve. The
 deleted `part3-chN` tags are not needed.
 **Scale**: 47 targets · **42 hunks regenerated and 25 appended** · **9 whole bodies, 1,658 or
@@ -70,9 +74,11 @@ targets, the en/vi mirror, the per-file concentration. Record the divergence bet
 measured and what this specification says, because the chain moves whenever a chapter or the
 platform does.
 
-Build the `--dump` flag into the checker and prove it agrees with the checker's own replay —
-dump, re-apply, compare. **An instrument that replays differently from the checker produces hunks
-the checker rejects for reasons neither of them explains**, and this feature runs it about fifty
+Build both dump modes into the checker and prove they agree with the checker's own replay —
+dump, re-apply, compare, **and apply a hunk that works today against the state `--at` reports for
+its own chapter.** Determinism is not correctness: a dump that is consistently wrong passes a
+dump-twice check. **An instrument that replays differently from the checker produces hunks the
+checker rejects for reasons neither of them explains**, and this feature runs it about fifty
 times.
 
 Resolve or record the **109 → 110** discrepancy (R6, FR-014).

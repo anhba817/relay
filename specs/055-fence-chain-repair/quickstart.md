@@ -55,6 +55,19 @@ find /tmp/chainstate -type f | wc -l                    # 285 before phase 3, 27
 diff /tmp/chainstate/vitest.coverage.config.mts ../relay-platform/vitest.coverage.config.mts | wc -l
 ```
 
+**And the state at a chapter, which is a different state:**
+
+```bash
+pnpm check:fences --dump /tmp/at322 --at 'app/(en)/part-3/chapter-22/limits-you-can-see-coming/page.mdx'
+wc -l < /tmp/at322/turbo.json                           # 62
+wc -l < /tmp/chainstate/turbo.json                      # 74
+```
+
+**Twelve lines apart, and that is the whole reason the flag has two modes.** A hunk for a chapter
+must be generated against the first number; one for the appendix or for a HEAD divergence against
+the second. Measured chapter by chapter, `turbo.json` goes 28 → 59 → 62 → 74, and the tree holds
+75. **Using the wrong mode produces a hunk that fails exactly like the one it replaces.**
+
 **No `--` before the flag.** Measured on this pnpm: `pnpm check:fences -- --dump X` forwards
 **`-- --dump X`**, so a stray `--` reaches the script; without it the arguments arrive clean. The
 flag parser tolerates both, and the published form is the one that sends what it means.
