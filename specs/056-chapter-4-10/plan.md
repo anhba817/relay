@@ -47,7 +47,7 @@ Read the clauses, not the identifiers. Each row says what was opened.
 | **III — two data paths** | **NOT ENGAGED, AND THAT IS A DECISION** | FR-MED-12 would put stored bytes in the analytical store. This chapter needs the cap, not the meter, and the cap is an operational read. No analytical query. |
 | **IV — single writer** | **PASS** | The media row is written by the api through the repository layer, like every other row. The object is written by the client to a store that holds no Relay state. |
 | **V — API-first** | **PASS** | The slot is a REST route on the tenant surface, documented before it is built (`contracts/`). |
-| **VI — requirement-driven, test-verified** | **PASS, WITH ONE CLAUSE THE CHAPTER OWES** | Every FR maps to a test. The 100%-branch clause applies to the tenant-scoping branch. And the quickstart MUST run unmodified — feature 055 made that verifiable again, and this chapter is the first to be held to it with a green gate behind it. |
+| **VI — requirement-driven, test-verified** | **PASS, WITH ONE CLAUSE THE CHAPTER OWES** | Every FR maps to a test. The 100%-branch clause applies to the tenant-scoping branch. **And every new file gets a per-file pin**: the config carries 63 of them against a 70% global floor, and an unpinned file sits on the floor alone. Each key is probed both ways — 049 found 1 unbindable pin in 45, and 052 found a glob that misses every file directly in a `src/`. And the quickstart MUST run unmodified — feature 055 made that verifiable again, and this chapter is the first to be held to it with a green gate behind it. |
 | **VII — boring by design** | **PASS, WITH ONE ADR OWED** | No new package. One new container, and **ADR-13 already chose the pattern** — so the ADR this chapter owes is not "use object storage" but the narrower decision R1 makes: **sign it ourselves rather than take a client.** That is a dependency decision and VII requires the record. |
 
 ### The clause this chapter is inside
@@ -65,6 +65,12 @@ against 157, not the rounded ceiling"* — and this plan reproduced it, which is
 number does when the carrying is done from memory.
 
 ## Phases
+
+**AND THE LANE READS ITS ENVIRONMENT FROM TWO PLACES.** `services/api/vitest.integration.config.mts`
+and `vitest.coverage.config.mts` both run `.itest.ts` and each carries its own `env` block — 4
+keys and 7 today, already divergent. Chapter 4.9 put a credential in one and left `pnpm coverage`
+red for eight minutes of a run before anything said so. Both, and the phase ends by running
+`pnpm coverage`.
 
 ### Phase 0 — The store, and the signature 🎯 first, because everything rests on it
 
@@ -146,7 +152,9 @@ as an absolute number, not a delta** (055's own close-out decided that).
 ## Files this chapter is expected to touch
 
     relay-platform/services/api/src/media/              the signer, the slot route, the refusals
-    relay-platform/services/api/migrations/             the table, and the quota CHECK re-added whole
+    relay-platform/services/api/migrations/0015,0016    the table, then the quota CHECK re-added whole
+    relay-platform/services/api/vitest.integration…     the store's address, for the lane
+    relay-platform/vitest.coverage.config.mts           THE TWIN — and the new files' pins
     docs/04-srs.md                                      FR-RTL-05 amended, revision 1.17
     docs/08-error-reference.md                          four sections
     docs/05-sad.md, docs/06-adr-deep-dives.md           ADR-30
