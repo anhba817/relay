@@ -64,15 +64,20 @@ stories.**
 testable**: request a slot, upload to it directly, and confirm the api saw one request.
 
 - [ ] T011 [US1] Add the media table to `relay-platform/services/api/src/db/schema.ts` and a migration: `id`, `environment_id`, `user_id` **nullable**, `filename`, `mime_type`, `declared_bytes`, `state`, `object_key`, `created_at`. `user_id` is nullable because an API key has no user and FR-MED-06 later distinguishes the two.
-  **AND THE TABLE JOINS THE SENTINEL LIST.** `packages/test-harness/src/sentinel.sql` guards every table carrying `environment_id`; a new one that is not in the array is a table the guard cannot refuse a cross-environment delete on. It arrives **with** the table, plus its bait row and its case in `guard.itest.ts` — that is the array's own documented rule.
-- [ ] T012 [US1] Add the path to `services/api/src/db/catalogue.ts`'s tenancy map. `check-lane-scope` and the structural check both read it, and the catalogue refuses a table with no path to an environment by name.
+  **AND THE TABLE JOINS THE SENTINEL LIST**, with its bait row and its case in `guard.itest.ts` — the array's own documented rule is that a table joins *in the chapter that creates it*.
+  **THAT RULE IS NOT WHAT THE TREE DOES, AND THE NUMBER IS WORTH KNOWING BEFORE QUOTING IT.** The comment says *"every table that carries `environment_id`"*; measured, **7 of 12 do**. `api_keys`, `webhook_endpoints`, `webhook_deliveries`, `webhook_dead_letters` and `webhook_disable_notifications` carry the column and are not guarded. The instruction stands — join it — but file the five rather than repeating a rule the repository has broken five times.
+- [ ] T012 [US1] Add the path to `services/api/src/db/catalogue.ts`'s tenancy map — `direct`, since the row carries `environment_id`. **The refusal is in `services/api/src/isolation/tenant-scope.itest.ts:42`, not in the catalogue**: `these tables have no path to an environment: …`. The catalogue is the data; the test is what fails. A task that names the wrong file sends somebody to the wrong file.
 - [ ] T013 [US1] Write the allowed-MIME set and the per-kind caps **in one place** in `services/api/src/media/`, read by both the refusal and the cap lookup. A MIME list that disagrees with itself refuses the wrong things.
 - [ ] T014 [US1] Implement the slot route, `POST /v1/media`, per `contracts/upload-slot.md`. It accepts a user token or an API key, scopes the row to the authenticated environment, and returns `media_id`, `state: "pending"`, `upload_url` and `expires_at`.
+- [ ] T014a [US1] **Register the module in `services/api/src/app.module.ts`'s `imports` array**, beside the other fifteen. Without it the route does not exist and T016, T018 and all four refusal tests get a 404 — which reads as a routing bug rather than a missing line. **Chapter 4.6 shipped this exact omission in a different file**: `pnpm build` said `Error: Unknown chapter id: 4.6` because a registration edit was refused and nothing caught it, and its record says *"registering the chapter is a task no requirement had named."*
+  **AND IT IS A CHAIN EDIT TOO.** `app.module.ts` is fenced in **11 chapters plus one appendix hunk**, so the registration needs a hunk in this chapter and a byte-identical Vietnamese twin. See T048.
 - [ ] T015 [US1] **Store nothing about the URL.** It is derived from the row and the store's credentials at request time. Storing its expiry would make two sources of truth for one fact, and T009 measured which is authoritative: the store answers `Request has expired` from its own clock.
 - [ ] T016 [US1] Integration test: a slot is issued, the client uploads to the URL, and **the api's own request log shows the slot request and nothing else**. Chapter 4.8's surface is the instrument — a byte through the api would appear there.
   **AND THE SUITE SPAWNS THE INGESTER, BECAUSE NOTHING ELSE DOES.** The request log is written by `services/ingester`, which has **no Dockerfile and no compose service**, so those rows do not exist on a machine where nothing drains the stream — `request-log.itest.ts:29` records those tests as *"red on any machine with no ingester since chapter 4.4"*. Chapter 4.9 closed `gaps.md` 050-8 by starting the process in `beforeAll` and killing it in `afterAll`, and reporting what it drained. **Copy that shape, not the sentence**: a probe copied from 049 once kept the hazard and dropped the guards. Without it this test asserts an empty table and passes.
 - [ ] T017 [US1] Integration test: an API key gets a slot and the row carries **no** user; a user token gets a slot and the row carries the user.
-- [ ] T018 [US1] **Attack it.** The gauntlet derives routes from the running router, so `POST /v1/media` joins it the moment it registers and the suite goes red with `classified but never attacked` until the case exists. Chapter 4.8 hit exactly that. The attack plants a row for each of two tenants and asserts neither sees the other's.
+- [ ] T018 [US1] **Classify it first.** The gauntlet derives routes from the running router, and `targets.ts` is a **hand-maintained list** of `{ method, path, accepts, shape }` entries. `targets.itest.ts:66` asserts *"classifies every derived target exactly once"*, so the moment the module registers, that suite fails with `POST /v1/media` **derived but unclassified**. Add the entry; `accepts` and `shape` are the two decisions.
+- [ ] T018a [US1] **Then attack it.** With the entry present, `targets.itest.ts` goes green and the gauntlet goes red the other way: **classified but never attacked**. The attack plants a row for each of two tenants and asserts neither sees the other's.
+  **TWO DIRECTIONS, IN TWO SUITES, AND THEY FAIL IN ORDER.** Chapter 4.8 walked this sequence — `43 derived, 42 classified, unclassified: ["GET /v1/request-log"]`, then adding the entry turned that green and the gauntlet red — and its record says the plan *"named two of"* three directions. Naming a route is not covering it.
 - [ ] T019 [US1] Pin the tenant-scoping branch at 100%. Constitution VI's 100%-branch clause **names tenant isolation**, and 049 was the first Part 4 chapter to meet it rather than pin around it.
 - [ ] T020 [US1] Re-measure and record: the route, the row, the request-log count, and what the gauntlet says. Commit phase 3.
 
@@ -112,7 +117,8 @@ requests, three different codes, no rows written.
 **Goal**: David sets a storage limit the way he sets the other three, and the third refusal
 becomes reachable.
 
-- [ ] T031 [US3] Add `storage_bytes` to `quotaConfigSchema` in `relay-platform/services/api/src/quotas/config.ts` **and** to the migration's `CHECK`, in the same change. The existing comment says why: the constraint would otherwise accept a config the parser rejects, `capsFor` fails closed, and **the cap would silently become no cap**.
+- [ ] T031 [US3] Add `storage_bytes` to `quotaConfigSchema` in `relay-platform/services/api/src/quotas/config.ts` **and** to the migration's `CHECK`, in the same change.
+  **THE `CHECK` IS DROPPED AND RE-ADDED WHOLE, NOT APPENDED TO.** `0014_connection_minutes.sql:40-46` does `DROP CONSTRAINT environments_quota_config_shape` and then `ADD CONSTRAINT` restating every dimension. A new migration does the same with four, and **a restatement that omits one silently stops constraining it** — the same silent loss the config comment warns about from the parser's side. The existing comment says why: the constraint would otherwise accept a config the parser rejects, `capsFor` fails closed, and **the cap would silently become no cap**.
 - [ ] T032 [US3] **Probe both halves** (049's rule about a pin that cannot fail): the parser refuses an unimplemented dimension, and the `CHECK` refuses the same input written straight to the column. One half passing proves nothing about the other.
 - [ ] T033 [US3] An absent cap means **no cap and no alert**, resolved the way the three existing dimensions resolve an absent cap — `NO_CAPS` is `{ hard: null, soft: null }` and the absent state stays absent all the way to the reader rather than becoming `Infinity` or `-1`.
 - [ ] T034 [US3] Compute committed bytes as a **sum over the media rows**, not a counter on `environments`. A counter would be a second source of truth for something the rows already say (constitution IV). The cost is a sum per request; say that rather than claiming a measurement at a scale this chapter does not have.
@@ -142,9 +148,25 @@ becomes reachable.
 - [ ] T045 Write `relay-tutorial/app/(en)/part-4/chapter-10/…/page.mdx`, within `docs/07`'s word bound. **Say which kind each argument is when the estimate is written** — an argument costs 545 words as prose and about 280 as artifacts.
 - [ ] T046 **Register the chapter in `relay-tutorial/lib/tutorial.ts`.** `<ChapterHeader id="4.10" />` throws on an unregistered id, so `pnpm build` exits 1 from the moment the page exists. That has cost two chapters, once for a whole chapter at 112 of 112 with eight gates green and none of them rendering a page.
 - [ ] T047 [P] Figures in `figures.ts`, each named by a `<Figure>`. `check:figures` reports an export nothing names as a note rather than a failure, so the note is the check.
-- [ ] T048 The `compose.yaml` hunk. It is fenced in five chapters — 1.2, 3.19, 3.21, 3.22, 3.24 — and the chain is clean in both locales. **Generate it with `pnpm check:fences --dump <dir>`**, never with `git diff` against the working tree (fence-chain rule 1a, and feature 055 built the flag for it).
-- [ ] T049 The Vietnamese twin: the same fence body, byte-identical, copied rather than regenerated. `--dump` writes the English chain; FR-011's rule from 055 is that vi takes a copy.
-- [ ] T050 **Check which state each new hunk is written against.** A chapter hunk for a file the appendix also edits is written against a state no reader sees (4.8's finding), and `compose.yaml` has no appendix hunk today — confirm that is still true rather than assuming it.
+- [ ] T048 **A hunk per fenced file this chapter edits — TEN of them, counted rather than remembered.** Generate each with `pnpm check:fences --dump <dir>`, never with `git diff` against the working tree (fence-chain rule 1a, and feature 055 built the flag for it).
+
+        file                                    en chapters   appendix hunks
+        services/api/src/db/schema.ts                15            2
+        packages/protocol/src/codes.ts               12            1
+        services/api/src/app.module.ts               11            1
+        turbo.json                                   10            2
+        compose.yaml                                  8            0
+        services/api/src/isolation/targets.ts         6            1
+        services/api/src/protocol-error.filter.ts     6            0
+        services/api/src/db/catalogue.ts              4            1
+        packages/test-harness/src/sentinel.sql        3            1
+        services/api/src/quotas/config.ts             2            0
+                                                     77            9
+
+  **AND `compose.yaml` IS EIGHT, NOT FIVE.** Research R5 listed 1.2, 3.19, 3.21, 3.22 and 3.24; Part 4 added **4.2, 4.5 and 4.7** after that list was written. This task said five until analysis pass 2 counted.
+  **THIS IS 050's LESSON, WORD FOR WORD**: *"The fenced-file list was remembered, not counted — eight files, not five. A list of fenced files goes stale every time a chapter moves code between files."* `schema.ts` at 15 chapters and `codes.ts` at 12 are the deepest chains this chapter touches, and feature 055 measured what regenerating an early fence costs.
+- [ ] T049 The Vietnamese twin **for each of the ten**: the same fence body, byte-identical, copied rather than regenerated. `--dump` writes the English chain; FR-011's rule from 055 is that vi takes a copy.
+- [ ] T050 **Check which state each new hunk is written against.** A chapter hunk for a file the appendix also edits is written against a state no reader sees (4.8's finding) — and **seven of the ten have an appendix hunk**, nine hunks in total. Only `compose.yaml`, `protocol-error.filter.ts` and `quotas/config.ts` do not. Use `--at <page>` for a chapter hunk and plain `--dump` for the end state; using the wrong mode produces a hunk that fails exactly like the one it replaces.
 - [ ] T051 Run `pnpm check:fences` and report the **absolute number**. It is 0 today. A delta of zero is what hid a problem for nine chapters, and feature 055 named the file it hid.
 
 ---

@@ -110,11 +110,30 @@ near-neighbours distinguished in a comment rather than left to a reader.
 
 ---
 
-## R5 — What the chain costs, and it is not nothing
+## R5 — What the chain costs, and it is ten files rather than one
 
-`compose.yaml` is fenced in five chapters — 1.2, 3.19, 3.21, 3.22, 3.24 — and the chain is clean
-in both locales, so a new service is a `diff` hunk in this chapter and a byte-identical twin in
-the Vietnamese one. `check:fences` is at **0** and the close-out reports an absolute number.
+**Counted in analysis pass 2, because this section had remembered it.** The chapter edits **ten
+fenced files**, with **77 English chapters and 9 appendix hunks** of chain behind them:
+
+    services/api/src/db/schema.ts                15 chapters   2 appendix hunks
+    packages/protocol/src/codes.ts               12            1
+    services/api/src/app.module.ts               11            1
+    turbo.json                                   10            2
+    compose.yaml                                  8            0
+    services/api/src/isolation/targets.ts         6            1
+    services/api/src/protocol-error.filter.ts     6            0
+    services/api/src/db/catalogue.ts              4            1
+    packages/test-harness/src/sentinel.sql        3            1
+    services/api/src/quotas/config.ts             2            0
+
+**And `compose.yaml` is eight, not the five this section first said** — 1.2, 3.19, 3.21, 3.22,
+3.24, and then **4.2, 4.5 and 4.7**, which Part 4 added after the list was written. Feature 050
+recorded the identical error: *"The fenced-file list was remembered, not counted — eight files,
+not five. A list of fenced files goes stale every time a chapter moves code between files."*
+
+The chain is clean in both locales, so each file takes a `diff` hunk in this chapter and a
+byte-identical Vietnamese twin. `check:fences` is at **0** and the close-out reports an absolute
+number.
 
 Feature 055's instrument applies: hunks are generated with `pnpm check:fences --dump <dir>`,
 never with `git diff` against the working tree. And `--dump` writes the English chain, so the

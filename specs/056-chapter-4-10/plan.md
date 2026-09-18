@@ -70,7 +70,10 @@ Then the signer, with its test against the running store. R1's five results are 
 
 ### Phase 1 — The media row and the slot
 
-One table, one route. The row is scoped to the environment and to the user when there is one.
+One table, one route, **and the module registered in `app.module.ts`** — without that line the
+route does not exist and every test in the chapter gets a 404. Chapter 4.6 shipped the same
+omission in a different file and `pnpm build` said `Error: Unknown chapter id: 4.6`; its record
+says *"registering the chapter is a task no requirement had named."* The row is scoped to the environment and to the user when there is one.
 The route returns the `media_id` and the URL and stores nothing about the URL, because the URL is
 derived and the store enforces its own expiry.
 
@@ -132,20 +135,22 @@ as an absolute number, not a delta** (055's own close-out decided that).
 
 ## Files this chapter is expected to touch
 
-    relay-platform/compose.yaml                         one service, one health check
     relay-platform/services/api/src/media/              the signer, the slot route, the refusals
-    relay-platform/services/api/src/db/schema.ts        one table
-    relay-platform/services/api/src/db/migrations/      the table, and the quota CHECK
-    relay-platform/services/api/src/quotas/config.ts    one key in a .strict() schema
-    relay-platform/packages/protocol/src/codes.ts       three codes
+    relay-platform/services/api/migrations/             the table, and the quota CHECK re-added whole
     docs/04-srs.md                                      FR-RTL-05 amended, revision 1.17
-    docs/08-error-reference.md                          three sections
+    docs/08-error-reference.md                          four sections
     docs/05-sad.md, docs/06-adr-deep-dives.md           ADR-30
     relay-tutorial/app/(en)/part-4/chapter-10/…         the chapter
-    relay-tutorial/app/(vi)/vi/part-4/…                 the compose hunk, byte-identical
+    relay-tutorial/app/(vi)/vi/part-4/…                 ten hunks, byte-identical
+
+    and TEN FENCED FILES — 77 en chapters, 9 appendix hunks — counted in pass 2:
+    schema.ts 15 · codes.ts 12 · app.module.ts 11 · turbo.json 10 · compose.yaml 8
+    targets.ts 6 · protocol-error.filter.ts 6 · catalogue.ts 4 · sentinel.sql 3 · config.ts 2
 
 **The estimate is low and this project knows by how much.** 043 planned 17 files and changed 58;
-045 said three and found eight. Every unplanned one came from running something.
+045 said three and found eight. Every unplanned one came from running something — and this table
+was already wrong before the work started: it named one fenced file where there are ten, which
+analysis pass 2 found by counting rather than by running.
 
 ## Open questions for `/speckit-analyze`
 
