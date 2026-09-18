@@ -28,6 +28,27 @@ history; the replaced history is preserved on the remote as the tag
 tags. **Anyone holding an older clone of `relay-platform` must reset rather than pull.**
 
 <!-- SPECKIT START -->
+**ACTIVE: 056 — CHAPTER 4.10, "the upload that never reaches us".** Movement V opens. Plan:
+`specs/056-chapter-4-10/plan.md`; **`research.md` first — it settles the specification's one
+flagged assumption against the assumption.** FR-MED-01/02: the slot, the presigned URL, the
+refusals, the storage quota. **Name it by its movement and title**: `docs/12` §3 keeps
+pre-contraction ordinals, so its "row 11" is this chapter and its "row 10" is the milestone that
+shipped as 4.9.
+
+**FOUR PREMISES RUN, THREE AGAINST THE BRIEF.** (1) **A presigned URL needs no dependency** — 28
+lines of `node:crypto`, proven against a running store: signed PUT 200, signed GET 200, **unsigned
+GET 403**, expired refused by the store, tampered 400. Dependency count moves by **zero**.
+(2) **`minio/minio` is `pull access denied`** on this machine and `docs/05-sad.md:1002` names it;
+the service is `quay.io/minio/minio`, 241 MB. (3) **Storage is a LEVEL and `usage_periods` holds
+FLOWS** — `creditFor` refuses to subtract and the figure resets on the 1st, so a tenant holding
+100 GB would start every month at zero. The cap joins `quotaConfig`; the accounting does not join
+the monthly rows, and **FR-RTL-05 is amended** because FR-MED-02 and FR-MED-12 both cite it for a
+quantity it does not define. (4) What held: 3.24 built the `{ type: "media" }` arm for 4.11 to
+fill, and `codes.ts:204` says so.
+
+**AND `docs/12` SAYS FOUR REFUSALS WHERE FR-MED-02 NAMES THREE.** MIME, per-kind size cap, storage
+quota. The fourth is unexplained; the spec builds three and records the discrepancy.
+
 **055 IS CLOSED at 105 of 105 — THE FENCE CHAIN IS ZERO.** Its record is
 `specs/055-fence-chain-repair/` — `baseline.txt` first (it carries every phase's measurements and
 the method), then `gaps.md` (**12 entries: 7 new, 4 closed, 1 corrected**), `traceability.md`,
