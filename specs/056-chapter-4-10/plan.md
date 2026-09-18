@@ -161,9 +161,11 @@ as an absolute number, not a delta** (055's own close-out decided that).
     relay-tutorial/app/(en)/part-4/chapter-10/…         the chapter
     relay-tutorial/app/(vi)/vi/part-4/…                 ten hunks, byte-identical
 
-    and TEN FENCED FILES — 77 en chapters, 9 appendix hunks — counted in pass 2:
-    schema.ts 15 · codes.ts 12 · app.module.ts 11 · turbo.json 10 · compose.yaml 8
-    targets.ts 6 · protocol-error.filter.ts 6 · catalogue.ts 4 · sentinel.sql 3 · config.ts 2
+    and TWELVE FENCED FILES — 94 en chapters, 19 appendix hunks — counted in pass 2
+    and counted again in pass 5, when pass 4's own remediation had added two:
+    schema.ts 15 · codes.ts 12 · app.module.ts 11 · vitest.coverage.config.mts 11+10
+    turbo.json 10 · compose.yaml 8 · targets.ts 6 · protocol-error.filter.ts 6
+    vitest.integration.config.mts 6 · catalogue.ts 4 · sentinel.sql 3 · config.ts 2
 
 **The estimate is low and this project knows by how much.** 043 planned 17 files and changed 58;
 045 said three and found eight. Every unplanned one came from running something — and this table

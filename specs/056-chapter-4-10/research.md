@@ -112,16 +112,19 @@ near-neighbours distinguished in a comment rather than left to a reader.
 
 ## R5 — What the chain costs, and it is ten files rather than one
 
-**Counted in analysis pass 2, because this section had remembered it.** The chapter edits **ten
-fenced files**, with **77 English chapters and 9 appendix hunks** of chain behind them:
+**Counted in analysis pass 2, because this section had remembered it — and counted AGAIN in pass
+5, because pass 4's remediation had added two more.** The chapter edits **twelve fenced files**,
+with **94 English chapters and 19 appendix hunks** of chain behind them:
 
     services/api/src/db/schema.ts                15 chapters   2 appendix hunks
     packages/protocol/src/codes.ts               12            1
     services/api/src/app.module.ts               11            1
+    vitest.coverage.config.mts                   11           10
     turbo.json                                   10            2
     compose.yaml                                  8            0
     services/api/src/isolation/targets.ts         6            1
     services/api/src/protocol-error.filter.ts     6            0
+    services/api/vitest.integration.config.mts    6            0
     services/api/src/db/catalogue.ts              4            1
     packages/test-harness/src/sentinel.sql        3            1
     services/api/src/quotas/config.ts             2            0
@@ -130,6 +133,12 @@ fenced files**, with **77 English chapters and 9 appendix hunks** of chain behin
 3.24, and then **4.2, 4.5 and 4.7**, which Part 4 added after the list was written. Feature 050
 recorded the identical error: *"The fenced-file list was remembered, not counted — eight files,
 not five. A list of fenced files goes stale every time a chapter moves code between files."*
+
+**And `vitest.coverage.config.mts` is the most expensive of the twelve.** Feature 055 spent most
+of a phase on it — 15 bad hunks, 743 differing lines, a chain state with **no `env` block at
+all** — which is the block this chapter adds a key to. Its `env` change and its per-file pins are
+**one hunk**, because no page in the series holds two chained fences for one path and `--at
+<page>` granularity assumes it.
 
 The chain is clean in both locales, so each file takes a `diff` hunk in this chapter and a
 byte-identical Vietnamese twin. `check:fences` is at **0** and the close-out reports an absolute

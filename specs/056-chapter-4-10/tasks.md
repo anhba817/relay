@@ -110,7 +110,9 @@ requests, three different codes, no rows written.
 - [ ] T027 [US2] Assert the four codes are **distinct**, and separately that each is **right**. Distinctness is one assertion and correctness is four; a test that only checks distinctness passes when every code is wrong in the same way.
 - [ ] T027a [US2] **Add 415, 413, 402 and 503 to the status ladder in `services/api/src/protocol-error.filter.ts`** (FR-018). It maps 400, 401, 403 and 404 and falls everything else through to `internal_error`, so this chapter's four statuses are correct only while every thrower remembers to name its code. The filter's own comment calls that fallback **"a lie the client cannot act on"** — once about the 400 chapter 2.2 fixed and once about the 403 the credentials chapter fixed. Four new statuses without ladder entries is four more of the same.
 - [ ] T027b [US2] Test the ladder by throwing **unnamed** at each of the four statuses and asserting the code is not `internal_error`. That is the probe that would have caught the two the filter already documents.
-- [ ] T028 [P] [US2] Write a section for each code in `docs/08-error-reference.md` — cause and client action, the shape the file already uses.
+- [ ] T028 [P] [US2] Write a section for each code in `docs/08-error-reference.md`. **The shape is exact and `check-error-codes.mjs` enforces four things**: the heading is `## <bare code>` — level two, the code itself, not `### \`code\`` (`:47`); the section contains **`**Retryable:**`** (`:75`); it contains **`**What to do:**`** (`:79`); and the body is **at least 200 characters** after whitespace collapse, a floor whose own comment says *"a restatement cannot clear"* it (`:85`).
+  **`**Retryable:**` IS THIS CHAPTER'S CENTRAL DISTINCTION, AND THE GATE ALREADY DEMANDS IT.** Three of the four refusals are permanent and `media_storage_unavailable` is not, so the field the checker requires of every section is the one FR-017 exists to make.
+  **AND THE CHECKER FAILS IN BOTH DIRECTIONS** — a code with no section, and a section naming no code — so T021's codes and these four sections must both be complete before T029 runs it. Either alone is red.
 - [ ] T028a [P] [US2] **Assert the `{ type: "media" }` arm still refuses with `media_not_available`** (FR-016). This chapter creates the very thing that arm refuses, so making it accept looks like finishing the job — and it would ship 4.11's surface with none of 4.11's checks: same environment, uploader identity, `pending` or `ready`. `codes.ts:204` already says *"§4.14 replaces the arm rather than this code"*, and the replacement is the next chapter's. FR-016 was the only requirement with no task until analysis pass 1.
 - [ ] T029 [US2] Run `pnpm check:errors` in both directions after building `relay-platform` — it reads the built `dist`. **It is a gate no CI job runs** (`gaps.md` 055-3), so running it here is deliberate rather than automatic.
 - [ ] T030 [US2] Commit phase 4.
@@ -165,19 +167,24 @@ becomes reachable.
         services/api/src/db/schema.ts                15            2
         packages/protocol/src/codes.ts               12            1
         services/api/src/app.module.ts               11            1
+        vitest.coverage.config.mts                   11           10
         turbo.json                                   10            2
         compose.yaml                                  8            0
         services/api/src/isolation/targets.ts         6            1
         services/api/src/protocol-error.filter.ts     6            0
+        services/api/vitest.integration.config.mts    6            0
         services/api/src/db/catalogue.ts              4            1
         packages/test-harness/src/sentinel.sql        3            1
         services/api/src/quotas/config.ts             2            0
-                                                     77            9
+                                                     94           19
 
+  **AND THE TABLE WAS TEN UNTIL ANALYSIS PASS 5 COUNTED IT AGAIN.** Pass 4's own remediation added the two vitest configs to this chapter — T004a puts the store's address in both and T018b puts the new files' pins in one — and neither reached this table. **The remediation of a finding about counting created another instance of it**, which is this project's *"a pass's own fix was the next pass's defect"* one pass later.
+  **`vitest.coverage.config.mts` IS THE MOST EXPENSIVE FENCE EDIT IN THIS REPOSITORY.** Feature 055 spent most of a phase on it: 15 bad hunks, 743 differing lines, and a chain state carrying **no `env` block at all** — which is the block T004a adds a key to.
+  **AND T004a AND T018b ARE ONE HUNK, NOT TWO.** They edit the same file in the same chapter, and feature 055 measured that no page in the series holds two chained fences for one path; `--at <page>` granularity assumes it. Combine the `env` key and the pins into a single `diff` fence.
   **AND `compose.yaml` IS EIGHT, NOT FIVE.** Research R5 listed 1.2, 3.19, 3.21, 3.22 and 3.24; Part 4 added **4.2, 4.5 and 4.7** after that list was written. This task said five until analysis pass 2 counted.
   **THIS IS 050's LESSON, WORD FOR WORD**: *"The fenced-file list was remembered, not counted — eight files, not five. A list of fenced files goes stale every time a chapter moves code between files."* `schema.ts` at 15 chapters and `codes.ts` at 12 are the deepest chains this chapter touches, and feature 055 measured what regenerating an early fence costs.
 - [ ] T049 The Vietnamese twin **for each of the ten**: the same fence body, byte-identical, copied rather than regenerated. `--dump` writes the English chain; FR-011's rule from 055 is that vi takes a copy.
-- [ ] T050 **Check which state each new hunk is written against.** A chapter hunk for a file the appendix also edits is written against a state no reader sees (4.8's finding) — and **seven of the ten have an appendix hunk**, nine hunks in total. Only `compose.yaml`, `protocol-error.filter.ts` and `quotas/config.ts` do not. Use `--at <page>` for a chapter hunk and plain `--dump` for the end state; using the wrong mode produces a hunk that fails exactly like the one it replaces.
+- [ ] T050 **Check which state each new hunk is written against.** A chapter hunk for a file the appendix also edits is written against a state no reader sees (4.8's finding) — and **eight of the twelve have an appendix hunk**, nineteen in total, ten of them on `vitest.coverage.config.mts` alone. Only `compose.yaml`, `protocol-error.filter.ts` and `quotas/config.ts` do not. Use `--at <page>` for a chapter hunk and plain `--dump` for the end state; using the wrong mode produces a hunk that fails exactly like the one it replaces.
 - [ ] T051 Run `pnpm check:fences` and report the **absolute number**. It is 0 today. A delta of zero is what hid a problem for nine chapters, and feature 055 named the file it hid.
 
 ---
