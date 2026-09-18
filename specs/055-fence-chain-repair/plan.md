@@ -154,7 +154,11 @@ has to read.
 ### Phase 6 — Zero, and the things zero does not mean
 
 Confirm 0 and exit 0. Plant a regression — one line in a fenced platform file, no chapter hunk —
-and confirm the run goes red and names the file (SC-003). Run the tutorial job's other gates.
+and confirm the run goes red and names the file (SC-003). Run the tutorial job's other **five**
+gates, read off `ci.yml` — `lint`, `build`, `check:docs`, `check:srs`, `check:figures` — and
+assert each one's success line rather than its exit code, because **five of the seven gate
+scripts exit 0 when their corpus is absent** and SC-001 names one of them. `check:errors` is not
+among them: it is a script no job runs, which this feature records rather than adopts.
 Record what was repaired, what was declared, and what was recorded as unrepairable with its cost.
 
 **And record what zero is not.** It is not a claim that the chapters are readable, that the
@@ -171,6 +175,10 @@ ADR-29 for the one decision this feature makes about what a fence claims: the `-
 the `(excerpt)` declarations, with the rejected alternatives and a reversal condition.
 Constitution VII requires it and the Constitution Check above already flags it as owed — **this
 phase exists because analysis found the obligation named in two places and planned in neither.**
+
+ADR-29 edits two documents `check-docs-drift.sh` mirrors, so this phase ends with `pnpm
+sync:docs` and a second run of `check:docs` and `check:srs` — **the docs gates have to run after
+the last `docs/` edit**, and phase 6's run is a phase too early.
 
 Then `gaps.md` with every carried item re-measured rather than copied, `traceability.md`, this
 repository's `CLAUDE.md` block, and the push. Plus the arithmetic that says which of the 110 were

@@ -190,10 +190,28 @@ unverified**, which is the property SC-008 is about — and `gaps.md` 043-1's *"
 
 ```bash
 cd relay-tutorial
-pnpm lint && pnpm build && pnpm check:docs && pnpm check:srs && pnpm check:figures && pnpm check:errors
+pnpm lint && pnpm build && pnpm check:docs && pnpm check:srs && pnpm check:figures
 ```
+
+**That is the tutorial job's list, taken from `ci.yml:184-205` rather than from memory.** The
+sixth step is `check:fences`. **`check:errors` is not in it** — it is a script in
+`package.json` and a step in no job at all, which is why it was dropped from here and filed as a
+gap instead; run it separately if you want it, after building `relay-platform`, because it reads
+the built `dist`.
 
 `pnpm build` is in the list because a chapter edit can break the page it lives in, and the
 tutorial did not build for a whole chapter once without anybody noticing (050).
 
-**`check:errors` reads the built `dist`** — build `relay-platform` before believing it.
+**Read each one's success line, not its exit code.** Five of the seven gate scripts print a skip
+and return 0 when their corpus is absent — `check-docs-drift.sh:36`, `check-srs-ids.sh:41`,
+`check-revision-order.mjs:34`, `check-fence-chain.sh:11`, `check-fence-chain.mjs:200`. Each one
+prints a count when it really looked:
+
+    check-docs-drift: all mirrored docs match their sources
+    check-revision-order: 17 revisions ascend, 1.0 to 1.16
+    check:srs: 245 clause rows, 245 unique identifiers, no duplicates
+    check-figures: 281 figures, every diagram passed as `code`; 283 imported bindings all resolve
+
+**And after any edit to `docs/`, run `pnpm sync:docs` before `check:docs`.** The mirror in
+`content/docs/` is not updated by editing the source, and `05-sad.md` and `06-adr-deep-dives.md`
+are both on the checked list — which is ADR-29's whole surface.
