@@ -502,3 +502,123 @@ AND TWO ASSERTIONS EXIST ONLY BECAUSE THEIR ABSENCE WOULD BE INVISIBLE
       AND THE CAPS ARE PER KIND, WHICH TAKES TWO REQUESTS TO SHOW. 25 MB of audio is
       accepted and 25 MB of image is refused, same suite, same size. One size test
       passes against a single global cap, which is a different design.
+
+════════════════════════════════════════════════════════════════════════════════
+PHASE 5 (T031-T040) — THE CAP, THE RACE, AND A TEST THAT BROKE ANOTHER FILE
+════════════════════════════════════════════════════════════════════════════════
+
+      storage-quota.itest.ts   6 of 6   the cap, the boundary, the race both ways
+      config.itest.ts         14 of 14  0016's rebuild, both gates probed
+      store.test.ts            6 of 6   the arms a running store cannot be asked for
+      media + quotas + isolation + messages   256 of 256, three consecutive runs
+      check:srs  245 clause rows, 245 unique identifiers · EXIT 0
+      check:docs all mirrored docs match · 18 revisions ascend, 1.0 to 1.17 · EXIT 0
+      media coverage   five files, four at 100/100/100/100
+
+T035/T036  THE RACE IS REAL, AND MEASURED BY HAND BECAUSE TEN CONCURRENT REQUESTS
+           COULD NOT PRODUCE IT.
+
+      The first version of the race test fired ten slot requests with `Promise.all` and
+      asserted one was issued. **It passed with the lock and without it**, every run:
+      each transaction is a sum and an insert a millisecond apart, and the windows never
+      happened to overlap. A race test that cannot lose the race is an assertion that
+      cannot fail — it would have gone green over the unserialised version this chapter
+      exists to warn about.
+
+      Interleaved by hand on two connections, both reading before either writes:
+
+          plain        B blocked: no   · B saw sum=0   · B inserted · committed 1,200
+          FOR UPDATE   B blocked: yes  · B saw sum=600 · B refused  · committed   600
+                                                                      against a cap of 1,000
+
+      A TRANSACTION IS NOT A LOCK. Postgres defaults to READ COMMITTED, so wrapping a
+      read and a write in BEGIN/COMMIT makes them atomic and not serialised.
+
+T036a THE OBVIOUS PROBE FOR "DOES THE METHOD TAKE THE LOCK" MEASURED THE WRONG LOCK.
+
+      Hold the environment row with `FOR UPDATE`, call `reserveMediaSlot`, watch it wait
+      — it waits, **and it waits with the explicit lock deleted**.
+      `media_objects.environment_id` is a foreign key, so the INSERT takes `FOR KEY
+      SHARE` on the parent row by itself, and `FOR KEY SHARE` conflicts with
+      `FOR UPDATE`. The probe was measuring the foreign key.
+
+      `FOR NO KEY UPDATE` IS THE DISCRIMINATOR. Postgres's row-lock conflict table puts
+      `FOR UPDATE` in conflict with it and `FOR KEY SHARE` not in conflict with it, so a
+      holder in that mode blocks exactly the lock the method asks for and nothing the
+      foreign key does. Red without the explicit lock, green with it — which the first
+      version could not manage in either direction.
+
+T032  BOTH GATES, ASKED SEPARATELY. The CHECK enumerates four dimensions and says
+      nothing about a fifth, so `{"disk_inodes":{"hard":10}}` is **accepted by the
+      column** and refused by `.strict()`. That is the division of labour the quota
+      chapter described — *"the constraint cannot express 'and nothing else', while a
+      parser can"* — and it is why a new dimension has to land in both files in one
+      change: the constraint would accept a config the parser rejects, `capsFor` fails
+      closed, and **the cap silently becomes no cap**.
+
+      0016 restates TWELVE clauses where 0014 restated nine, and every earlier dimension
+      is re-checked. The risk in a rebuild is the clause it drops, and a dropped clause
+      is invisible from TypeScript.
+
+T033  ABSENT, ZERO AND NULL ARE THREE STATES. An environment with no `storage_bytes`
+      key uploads 18 MB across two requests; a cap of `0` refuses one byte. A parser
+      that collapsed zero into absent would turn the strictest configuration into the
+      loosest, silently.
+
+T037/T038  SRS 1.17. FR-RTL-05 said *"configurable monthly quotas on messages sent,
+           unique active persons, and connection-minutes"* while FR-MED-02 and FR-MED-12
+           both cited it for storage. **The missing word is `monthly`**, and it is the
+           part that would have been implemented wrong: put stored bytes in
+           `usage_periods` and a delete needs a subtraction `creditFor` forbids, and a
+           tenant holding 100 GB starts every month at zero. Both clauses now say which
+           kind of quantity each quota is, and that a storage refusal must not promise a
+           resume date.
+
+────────────────────────────────────────────────────────────────────────────────
+AND A TEST TOOK A SHARED SERVICE AWAY FROM ITS NEIGHBOURS
+────────────────────────────────────────────────────────────────────────────────
+
+      `docker compose stop minio` is the truest way to test FR-017 and it cannot live in
+      this lane. The lane runs two files at a time, so while the media suite had the
+      store stopped, **`src/isolation/gauntlet.itest.ts` asked for a slot and got 503**:
+
+          expected 503 to be 201        two of three runs, in a file that never
+                                        mentions media storage
+
+      045 found eight ASSERTIONS scoped wider than their own subject. This is an ACTION
+      scoped wider than its own test, and the lane cannot tell the difference — it goes
+      red somewhere else. **A test may not take a shared service away from its
+      neighbours.**
+
+      SO THE ENDPOINT MOVES INSTEAD OF THE STORE. `RELAY_MINIO_ENDPOINT` points at port
+      1 — privileged, unbindable, refused by the kernel — for the duration of one
+      request, restored in a `finally`. Same `ECONNREFUSED`, same `fetch`, same branch,
+      and this lane's pool is `forks`, one process per worker and one file at a time, so
+      the variable is this file's alone. 256 of 256 three times after the change.
+
+      AND THE SECOND-APPLICATION VERSION OF THAT DID NOT WORK, which is worth recording
+      because it looks like it should. A second Nest app was compiled while the variable
+      was moved and then answered 201: `MediaService` depends on a REQUEST-scoped
+      `Repository`, so Nest makes it request-scoped too, and `storeConfig()` runs on
+      every request rather than at boot. **The variable has to be wrong at the moment of
+      the request, not at the moment of the wiring.**
+
+      The container-stop measurement is kept and is phase 4's: refusal in 312 ms, a
+      refused connection rather than the 2-second timeout, and no row written.
+
+────────────────────────────────────────────────────────────────────────────────
+AND THE COVERAGE ARMS A RUNNING STORE CANNOT BE ASKED FOR NEEDED A SERVER
+────────────────────────────────────────────────────────────────────────────────
+
+      store.ts    77.77 / 53.84 / 100 / 85.71   ->   100 / 100 / 100 / 100
+
+      `ensureBucket`'s throw needs a store that answers something other than 200 or 409,
+      and MinIO cannot be asked for that on demand. `store.test.ts` stands up an HTTP
+      server that answers to order: a 403, a 500, and **a 409 that is not
+      `BucketAlreadyOwnedByYou`** — another tenant of the same store owning the bucket,
+      which a status-only check reads as success.
+
+      media.service.ts 83.33/66.66/100/83.33 -> 100 / **92.85** / 100 / 100. The
+      fourteenth branch is attributed to line 32, which is `@Injectable()`. Every branch
+      the file writes has both arms driven over HTTP. Pinned at 92 and named rather than
+      left as a mystery.
