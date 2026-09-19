@@ -54,3 +54,30 @@ oracle. The wording is deliberate.
 **Two inherited gaps bound what this chapter can claim** and are named in Dependencies rather
 than left to be rediscovered: a slot nobody uploaded to is indistinguishable from one that was
 (`gaps.md` 056-1), and the storage quota counts declarations rather than bytes (056-2).
+
+---
+
+## Analysis pass 1 (2026-09-19)
+
+Twelve findings, no CRITICAL, all twelve applied. Three came from running something rather than
+reading it, and those three changed the design:
+
+- **422 is not in the error filter's ladder.** Measured at `protocol-error.filter.ts:67-81` —
+  eight rungs and 422 is not one, so FR-009's *"a status the ladder maps"* was unsatisfiable as
+  written. The chapter adds the rung (FR-009a) rather than softening the clause. Nothing throws an
+  unnamed 422 today, which is the argument for the rung and not against it.
+- **Nothing said how the repository learns the credential class**, which the predicate's second
+  clause needs. `senderMustBeBot` exists and reusing it overloads a flag named for the sender;
+  T020a decides it in writing.
+- **The plan's fenced-file list was six and the tasks named nine.** Counted:
+  `messages.service.ts` 26 titled fences, `codes.test.ts` 17, `vitest.coverage.config.mts` 33 —
+  the last two being among the most expensive files in the chain. Wrong before a line was written,
+  which is the direction 050 and 056 both recorded.
+
+And three requirements had no task: FR-013 (delivery carries nothing new), FR-012's route-level
+half, and the `docs/12` row-12 amendment that four consecutive chapters wrote. The UUID tightening
+was the reverse — two tasks implementing something no requirement stated, now FR-008a.
+
+**Requirement count moved 26 → 30** (FR-008a, FR-009a, FR-017 added; SC-002, SC-010 and FR-013
+sharpened) and **task count 76 → 83**. New tasks carry suffixed ids so numbering a reader has
+already seen does not move.

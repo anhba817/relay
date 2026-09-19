@@ -50,7 +50,7 @@ refusing.
 | **II · No acknowledged message is lost** | Untouched. The check runs before the insert, inside the same transaction; a refusal writes no message and no outbox row. |
 | **III · Two data paths** | Untouched. Nothing analytical is read or written. The send's existing request-log record is unchanged. |
 | **IV · Single writer** | The message records the id, not a copy of the object's state — one source of truth for what an attachment is, which is what lets FR-MED-07 report a change later without the message having lied. |
-| **V · API-first** | The arm's shape does not change; its behaviour does. `media_id` tightens to a UUID, which narrows a shape nothing was accepting (research R3), so CON-05's URL-versioning rule is not engaged. The removed code and the added one both land in `docs/08-error-reference.md`. |
+| **V · API-first** | The arm's shape does not change; its behaviour does. `media_id` tightens to a UUID, which narrows a shape nothing was accepting (research R3), so CON-05's URL-versioning rule is not engaged. The removed code and the added one both land in `docs/08-error-reference.md`. **And 422 joins the error filter's ladder** — measured at analysis pass 1: the rungs are 400, 401, 402, 403, 404, 413, 415 and 503, so an unnamed 422 still answers `internal_error`, which is the filter's own *"lie the client cannot act on"*. Chapter 4.10 closed four and left this one. |
 | **VI · Requirement-driven, test-verified** | FR-MED-06 is a `T` clause. **One of its arms cannot be tested** and the chapter says so with the database's own refusal rather than a skipped test (research R2). |
 | **VII · Boring by design** | No dependency, no table, no route. One code deleted on its own instruction, one added. |
 
@@ -102,22 +102,32 @@ relay-tutorial/
 
 ### Fenced files this chapter is likely to touch
 
-**Counted, not remembered** — 050's lesson, which 056 paid again at twelve-said-seventeen. The
-list below is a starting point for a task that counts it against the checker, not a substitute for
-counting:
+**Counted, not remembered** — 050's lesson, which 056 paid again at twelve-said-seventeen. This
+list was six until analysis pass 1 counted the files the tasks themselves name, and it is still a
+starting point rather than a substitute for `--dump`:
 
-    packages/protocol/src/attachments.ts
-    packages/protocol/src/codes.ts
-    services/api/src/messages/messages.itest.ts
-    services/api/src/messages/zod-validation.pipe.ts
-    services/api/src/db/repository.ts
-    services/api/src/isolation/gauntlet.itest.ts
+    file                                          titled fences (en + vi)
+    services/api/src/db/repository.ts                    48
+    vitest.coverage.config.mts                           33
+    packages/protocol/src/codes.ts                       26
+    services/api/src/messages/messages.service.ts        26
+    packages/protocol/src/codes.test.ts                  17
+    services/api/src/messages/messages.itest.ts          17
+    services/api/src/isolation/gauntlet.itest.ts         14
+    services/api/src/messages/zod-validation.pipe.ts      6
+    packages/protocol/src/attachments.ts                  2
+    packages/protocol/src/attachments.test.ts             0   — the only unfenced one
 
-`codes.ts` is a 12-chapter chain and `repository.ts` is the largest file in the platform. Feature
-056 measured what that costs: nine of seventeen hunks could not anchor at a chapter, and two more
-anchored and broke the appendix's own older hunks. **Generate every hunk from `check:fences
---dump`, and test anchoring with an exact-match count rather than `patch --dry-run`** — 056-7
-records that `patch` applies with fuzz and said yes to seven hunks the checker refused.
+**The three that pass 1 added are the three the tasks name and the plan had not**:
+`codes.test.ts` (T009), `messages.service.ts` (T022) and `vitest.coverage.config.mts` (T048). The
+list was wrong before any code was written, which is the direction 050 and 056 both recorded — and
+it was wrong about the two most expensive files in the chain.
+
+Feature 056 measured what that costs: nine of seventeen hunks could not anchor at a chapter, and
+two more anchored and broke the appendix's own older hunks. **Generate every hunk from
+`check:fences --dump`, and test anchoring with an exact-match count rather than `patch
+--dry-run`** — 056-7 records that `patch` applies with fuzz and said yes to seven hunks the
+checker refused.
 
 ## Phase 0 — research
 
@@ -156,6 +166,22 @@ weakens without noticing. SC-002 is byte-identical bodies, not three 422s.
 running. The derivation will report nothing. The accounting direction that still applies is the
 gauntlet's second — a route that is attacked and not for this identifier — and it has to be asked
 deliberately because nothing will ask it automatically.
+
+## What analysis pass 1 changed
+
+**422 was not in the ladder, and FR-009 required that it be.** Measured rather than read:
+`protocol-error.filter.ts:67-81` maps eight statuses and 422 is not one of them. Every 422 in the
+platform names its own code — `channel_member_limit_exceeded` twice, and `media_not_available`
+until this chapter — which is why nothing has noticed. The chapter adds the rung rather than
+softening the clause, because the alternative reading makes FR-009 mean "the thrower must
+remember", and remembering is what the ladder exists to survive.
+
+**Rejected: map 422 to this chapter's own code.** A channel-member-limit refusal that forgot its
+code would then tell a caller their media is not attachable.
+
+**FR-013 had no task and now has one**, and FR-008a states a requirement two tasks were already
+implementing. Three more coverage gaps closed the same way; `tasks.md` carries them as suffixed
+ids so the numbering a reader has already seen does not move.
 
 ## Open questions for `/speckit-analyze`
 

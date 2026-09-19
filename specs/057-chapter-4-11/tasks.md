@@ -41,6 +41,10 @@ cannot be tested before the arm accepts.
 - [ ] T009 Remove the three `media_not_available` assertions from `packages/protocol/src/codes.test.ts:244-246` and write the equivalents for the new code.
 - [ ] T010 Remove `media_not_available`'s section from `docs/08-error-reference.md` and write the new code's, with the four things `check-error-codes.mjs` enforces: a level-two heading that is the bare code, `**Retryable:**`, `**What to do:**`, and at least 200 characters after whitespace collapse.
 - [ ] T011 **`**Retryable:** no`, and the section must say what to do instead of retrying.** All three conditions are permanent for the id that caused them; the remedy is a different id or an upload of one's own.
+- [ ] T011a **Add a 422 rung to `services/api/src/protocol-error.filter.ts`, and a generic code for it** (FR-009a). Analysis pass 1 measured the ladder: 400, 401, 402, 403, 404, 413, 415, 503 — **422 is not there**, so an unnamed one answers `internal_error`, which is the filter's own *"lie the client cannot act on"*. Chapter 4.10 closed four statuses and left this one.
+  **NOTHING THROWS AN UNNAMED 422 TODAY**, and that is the argument for the rung rather than against it: `channel_member_limit_exceeded` names itself twice and `media_not_available` named itself until this chapter. The rung is for the next thrower that forgets, which is what `service_unavailable` was added for at 4.10 with nothing throwing it either.
+  **Rejected: map 422 to this chapter's own code.** A channel-member-limit refusal that forgot its code would then tell a caller their media is not attachable.
+- [ ] T011b Extend `services/api/src/protocol-error.filter.test.ts`'s rung table with 422, asserted **twice** the way the other eight are: the code it gives, and separately that it is not `internal_error`. Run it red by deleting the rung.
 - [ ] T012 Make `media_id` a UUID in the arm in `packages/protocol/src/attachments.ts`. **Research R3 measured what the looser shape costs**: `z.string().min(1)` sends `not-a-uuid` to the driver, Postgres answers `invalid input syntax for type uuid`, and the filter turns that into a **500** the caller triggered.
 - [ ] T013 Remove the arm's unconditional `.refine(() => false, …)` and its `protocolCode` params, leaving `strictObject` on both arms — an unknown key stays a refusal rather than a silent drop.
 - [ ] T014 Update `services/api/src/messages/zod-validation.pipe.ts:13`'s comment, which cites a code that will not exist. **Name what the mechanism is for, not who used it** — `gaps.md` 056-10's convention, and the mechanism now has no user at all (research R5).
@@ -61,6 +65,7 @@ the message reads back with its attachment.
 - [ ] T018 [US1] Write the predicate in `services/api/src/db/repository.ts`, inside `sendMessage`'s existing transaction. **The query engine lives in the repository because a lint rule says so in constitution I's words** — 4.7 found that wall and 4.10 hit it again.
 - [ ] T019 [US1] The predicate is the three clauses `data-model.md` §2 states, in the clause's order: environment, then uploader, then state.
 - [ ] T020 [US1] **A NULL `user_id` passes for a user token** (research R1). It means the tenant uploaded it, and chapter 4.10's controller says *"a photo sent by a person and an attachment uploaded by a customer's backend are the same operation."* The specification assumed the opposite; research settled it against the specification.
+- [ ] T020a [US1] **Decide in writing how the repository learns which credential class is asking**, and record the alternative. `sendMessage` already takes `senderMustBeBot`, set by the controller when the caller is an application credential — reusing it means a flag named for the SENDER answering a question about the CALLER, and adding a second parameter means two booleans that are always equal. Neither the plan nor the tasks said which until analysis pass 1 asked.
 - [ ] T021 [US1] Decide one query or N, and record the reason. **Plan open question 1**: one `IN` lookup makes "which one failed" a set difference, and the refusal's `field` path needs the attachment's index — so the difference has to preserve position.
 - [ ] T022 [US1] Map the repository's refusal to a `protocolError` in `services/api/src/messages/messages.service.ts`, beside the ban and quota mappings that are already there.
 - [ ] T023 [US1] Return the attachment array as sent, in order, with no de-duplication. Chapter 3.24's rule, unchanged: the same id twice is two attachments.
@@ -68,9 +73,12 @@ the message reads back with its attachment.
 - [ ] T025 [US1] Integration test: an API key's slot attached by that API key.
 - [ ] T026 [US1] Integration test: **an API-key slot attached by a user token of the same tenant is accepted** — R1's case, and the one the specification would have refused.
 - [ ] T027 [US1] Integration test: a message carrying one media attachment and one URL attachment stores both, in order.
+- [ ] T027a [US1] Integration test: **eleven attachments are refused whichever arms they are** (FR-012). The cap is `z.array(attachmentSchema).max(10)` over the union, so it counts both by construction — and "by construction" is what T016's unit test asserts. This one asserts it on the route, because the route is where a caller meets it.
 - [ ] T028 [US1] Integration test: a message with a media attachment and no text is accepted. Chapter 3.24's rule for the URL arm, asserted here because this chapter is the first thing that could have broken it.
+- [ ] T028a [US1] Integration test: **a message read back carries the attachment array exactly as sent — no state, no filename, nothing resolved** (FR-013). Read it through history and through the internal seam, because those are two paths and only one of them is obvious.
+  **"WE DID NOT ADD IT" IS NOT A PROPERTY ANYTHING CHECKS.** Chapter 4.10 gave FR-016 a test for the same reason and that test is what caught the arm still refusing a real id. FR-MED-07 is movement VI; the guard is that this chapter does not ship its surface early.
 - [ ] T029 [US1] Convert `services/api/src/messages/messages.itest.ts`'s two `media_not_available` tests into what they become. The one that mints a real id and expects 422 is now the accept test; the one that sends `"m_1"` is now a 400 at the schema.
-- [ ] T030 [US1] **Check `docs_url` resolves.** `codes.test.ts` owns the URL rule and a route test restating it is how the two drift — but the removed code's link must stop being generated and the new one's must start.
+- [ ] T030 [US1] Assert the refusal's envelope names **this** code, and let `codes.test.ts` keep owning the URL's shape. A route test restating that shape is how the two drift; what this one is about is that a 422 whose `docs_url` points at `invalid_request` is the failure. **The both-directions check that the removed code's link stops resolving and the new one's starts is T074's**, which is the gate that compares the registry against the reference.
 - [ ] T031 [US1] Re-measure and record: the send's latency with and without a media attachment, sampled rather than asserted. **State what it is a measurement of** — one read on a lane whose largest table is small, which is not a claim about production.
 - [ ] T032 [US1] Commit phase 3.
 
@@ -146,8 +154,11 @@ the message reads back with its attachment.
 ## Phase 8: The record
 
 - [ ] T068 Write `baseline.txt` carrying every phase's measurements in the order they were taken, and the pinned lane environment.
+- [ ] T068a **Re-measure the dependency count and compare it to T003's opening figure** (SC-010). T003 records 29 at `part4-ch10`; a criterion measured once is asserted rather than compared, which is the thing T003's own wording says it exists to prevent.
 - [ ] T069 Write `gaps.md`. **Re-measure every carried item rather than copying it**: 056-1 and 056-2 (this chapter inherits both), 056-9 and 056-10 (closed in the 056 follow-up — confirm they stayed closed), and 055-3 (`check:errors` still has no CI job, and this chapter both removes a code and adds one).
 - [ ] T070 Decide whether the SRS needs a revision, and record the decision either way. **Plan open question 3**: R1 and R2 are readings rather than contradictions, so the default is no revision — but check that against FR-MED-06's exact words before defaulting.
+- [ ] T070a **Amend `docs/12` row 12 with what the line did not say** (FR-017). The row reads *"this chapter fills it"*, which is true and silent about all three findings: the clause names a state the schema cannot reach, the arm ships a caller-triggered 500 the moment it accepts, and a tenant-uploaded object is attachable by a user of that tenant — the opposite of what the specification assumed, and what 4.10 made the column nullable for.
+  **CHAPTERS 4.7, 4.8, 4.9 AND 4.10 EACH AMENDED THEIR OWN ROW** and this task existed in none of the three artifacts until analysis pass 1. 056 caught the same omission at pass 3, having cited `docs/12` three times without opening it.
 - [ ] T071 Write `traceability.md`, and **name anything discharged in a weaker form than its words suggest.** FR-010 is the first candidate: the predicate is built and half of it cannot run.
 - [ ] T072 Update `CLAUDE.md`'s `<!-- SPECKIT -->` block for the close, including every task premise this chapter falsified by running it.
 - [ ] T073 Run the tutorial job's six gates, named from `ci.yml` rather than memory, and **read each one's counted success line**. `lint` is the one with no counted line at all — eslint prints nothing on success.
@@ -170,7 +181,10 @@ Phase 2 (registry + arm) ────► US1, US2, US3   — the arm cannot acce
 Phase 3 (US1) ───────────────► US2             — there is no accept path to refuse against
 Phase 5 (US3) ───────────────► independent of US2
 T012 ────► T042                                 the 500 test needs the tightened schema
+T011a ────► T011b                               the rung before the probe that reads it
 T007 + T008 + T010 ────► T074                   check:errors fails until all three land
+T020a ────► T018                                the predicate needs to know which credential asked
+T003 ────► T068a                                SC-010 is a comparison, not an assertion
 T060 ────► T067                                 an unregistered chapter fails the build first
 T005 ────► T062                                 a hunk list counted, not remembered
 T075 ────► T076                                 CI is only observable after a push
@@ -186,7 +200,7 @@ because it is a test and a comment about a state nothing reaches.
 ### Parallel Opportunities
 
 - **Phase 1**: T003 and T004 read different things.
-- **Phase 2**: T009, T010 and T016 are three files; T010 is documentation beside two code changes.
+- **Phase 2**: T009, T010 and T016 are three files; T010 is documentation beside two code changes. T011a and T011b are the filter and its test, and the test comes second.
 - **Phase 4**: T033, T034 and T035 are one predicate with three fixtures, so the tests parallelise and the implementation does not.
 - **Phase 6**: T055 and T056 are two records in one file.
 - **Phase 7**: T061's figures are independent of the fence work.
@@ -205,3 +219,11 @@ compare bodies.
 **The task most likely to be skipped is T051.** Eight chapters running have been told something by
 the derivation, and this one will not be. A green check that was never going to be red is worth a
 sentence, because the alternative is reading it as coverage.
+
+**And seven of these tasks exist because analysis pass 1 ran something rather than read it.**
+T011a and T011b come from measuring the error filter's ladder and finding 422 absent, which made
+FR-009 unsatisfiable as written. T020a comes from asking how the repository would learn the
+credential class and finding that nothing had said. T028a and T027a close requirements that had no
+task at all. T070a is the `docs/12` amendment four consecutive chapters wrote and this one had
+forgotten. **Nine of the pass's twelve findings came from reading the artifacts against each
+other; three came from running them, and those three are the ones that changed the design.**

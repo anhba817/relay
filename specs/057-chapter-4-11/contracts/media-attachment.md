@@ -34,9 +34,17 @@ One code for all three conditions (research R4). Status **422**: the body is wel
 understood, and what cannot be done is the thing it asks for — chapter 3.24's own argument for the
 422 this code replaces.
 
+**And 422 joins the error filter's ladder in this chapter.** Analysis pass 1 measured that it is
+not there: the rungs are 400, 401, 402, 403, 404, 413, 415 and 503, so an unnamed 422 answers
+`internal_error`. Nothing is broken today because every 422 in the platform names its own code —
+which is exactly the condition the ladder exists for the day it stops being true.
+
+The code is named by **T006** and is not spelled here, so that one task owns the decision rather
+than three documents carrying a guess. What the contract fixes is everything else about the body.
+
 ```jsonc
 {
-  "code": "<the chapter's new code>",
+  "code": "media_not_attachable",          // the name T006 decides; the shape does not depend on it
   "message": "<one sentence, the same for all three>",
   "docs_url": "…",
   "request_id": "…",

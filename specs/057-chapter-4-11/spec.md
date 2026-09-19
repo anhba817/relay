@@ -148,21 +148,39 @@ a green number, and chapter 4.8 defined FR-ANL-10's quantity and computed nothin
 - **FR-008**: `media_not_available` MUST be removed from the error registry and from the published
   error reference, because the state it describes no longer exists. The registry's own note
   requires deletion rather than repurposing.
+- **FR-008a**: `media_id` MUST be validated as a UUID before any lookup. A malformed id MUST be
+  refused at the schema with `invalid_request` and the field named. Measured (research R3): the
+  arm's current `z.string().min(1)` sends a non-UUID to the driver, which answers
+  `invalid input syntax for type uuid`, and the error filter turns that into a **500 the caller
+  triggered**.
 - **FR-009**: The refusal FR-005 names MUST be a code of its own, documented in the error
   reference, with a status the error filter's ladder maps.
+- **FR-009a**: **422 MUST join that ladder.** It is the last status the platform uses that the
+  filter falls through to `internal_error` for — chapter 4.10 added rungs for 402, 413, 415 and
+  503 and left this one. Every 422 in the platform names its own code today, so the rung has no
+  live user; it exists for the same reason `service_unavailable` does, which is that the next
+  thrower to forget is the one it is for.
 - **FR-010**: The state predicate MUST admit `pending` and `ready` and refuse anything else, and
   the chapter MUST record which of those arms no fixture can reach and why.
 - **FR-011**: The check MUST read the media object inside the transaction that writes the message.
 - **FR-012**: A media attachment MUST count toward FR-MSG-11's ten-attachment cap alongside URL
   attachments.
-- **FR-013**: Delivery MUST NOT carry attachment state. FR-MED-07's `media.updated` and the state
-  field are a later chapter, and adding either here would ship its surface without its checks.
+- **FR-013**: Delivery MUST NOT carry attachment state, and that MUST be asserted rather than left
+  to hold by default. FR-MED-07's `media.updated` and the state field are a later chapter, and
+  adding either here would ship its surface without its checks. A message read back MUST carry the
+  attachment array exactly as sent — the same shape chapter 4.10 gave FR-016, which needed a test
+  precisely because "we did not add it" is not a property anything checks.
 - **FR-014**: The cross-tenant suite MUST attack the new path, and the attack MUST plant a media
   object for each of two tenants so that an empty table cannot pass it.
 - **FR-015**: The chapter MUST record what a second message referencing one media object means for
   FR-MED-10's unlink-and-sweep, which no chapter has built.
 - **FR-016**: The fence chain MUST report **0** after the chapter, and the number MUST be stated
   absolutely rather than as a delta.
+- **FR-017**: `docs/12` row 12 MUST be amended with what the line did not say. Chapters 4.7, 4.8,
+  4.9 and 4.10 each amended their own row, and this chapter has three findings of that shape: the
+  clause names a state the schema cannot reach, the arm ships a caller-triggered 500 the moment it
+  accepts, and the assumption about a tenant-uploaded object is the opposite of what the row's
+  own predecessor wrote the nullable column for.
 
 ### Key Entities
 
@@ -182,7 +200,10 @@ a green number, and chapter 4.8 defined FR-ANL-10's quantity and computed nothin
 - **SC-001**: A user can request a slot, upload a file, and send a message carrying its `media_id`
   in one sequence, with no step refused.
 - **SC-002**: Three refusals — another tenant's id, another user's id, and an id nobody owns —
-  return byte-identical bodies apart from the request id.
+  return byte-identical bodies apart from the request id, **for the same attachment position**.
+  The qualifier is load-bearing: the refusal's `field` carries the attachment's index, so two
+  refusals at different positions differ for a reason that has nothing to do with the property
+  this criterion is about.
 - **SC-003**: A refused send leaves the channel's message count and sequence unchanged, measured
   before and after and scoped to the test's own channel.
 - **SC-004**: `pnpm check:errors` passes in both directions after `media_not_available` is removed
@@ -195,7 +216,9 @@ a green number, and chapter 4.8 defined FR-ANL-10's quantity and computed nothin
 - **SC-008**: The chapter's prose is 2,000–4,000 words outside code fences, measured with
   `relay-tutorial/scripts/prose-words.mjs`, and carries at least one `TRAP` box.
 - **SC-009**: The tutorial job in CI succeeds on the chapter's push.
-- **SC-010**: The dependency count across every `package.json` in `relay-platform` is unchanged.
+- **SC-010**: The dependency count across every `package.json` in `relay-platform` is unchanged,
+  **measured at the opening and again at the close** rather than asserted once. It is 29 at
+  `part4-ch10`.
 
 ## Assumptions
 

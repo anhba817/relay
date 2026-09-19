@@ -30,16 +30,24 @@ its name — takes part in the decision, because nothing has verified any of it.
 
 ## 2. The predicate, in the order the clause states it
 
-For each media attachment in the message, with `sender` being the environment and, for a user
-token, the user the send already resolved:
+For each media attachment in the message. **`caller` and `sender` are two things and this is the
+one line where they differ**: the caller is the credential — an application key or a user token —
+and the sender is the user the send resolved, which for an API key is a bot of that tenant. The
+clause's *"(for user tokens)"* is about the caller.
 
 ```text
-environment_id = sender.environmentId          — FR-002
-AND (sender is an API key
+environment_id = caller.environmentId          — FR-002
+AND (caller presents an application credential
      OR user_id IS NULL                        — the tenant uploaded it (research R1)
-     OR user_id = sender.userId)                — FR-003
+     OR user_id = sender.userId)               — FR-003
 AND state IN ('pending', 'ready')              — FR-010
 ```
+
+**How the repository learns which credential class is asking is a decision, not a given.**
+`sendMessage` already takes `senderMustBeBot`, set by the controller when the caller is an
+application credential, and it is the only signal of the kind that crosses that boundary today.
+Reusing it means a flag named for the sender answering a question about the caller; adding a second
+parameter means two booleans that are always equal. T020a decides it in writing.
 
 **A row that does not match and a row that does not exist are the same outcome** (FR-005). The
 query returns the ids that pass; anything asked for and not returned is refused, with no way for
