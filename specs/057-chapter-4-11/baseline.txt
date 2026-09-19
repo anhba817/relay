@@ -648,3 +648,93 @@ THE GATES, AND ONE CAUGHT WHAT THE BUILD COULD NOT
   `docs/08-error-reference.md`, and the tutorial serves its own mirrored copy.
   `pnpm sync:docs` is the answer, and the gate exists because the two drifting is
   invisible from either side.
+
+================================================================================
+PHASE 8 — THE RECORD                                                 2026-09-19
+================================================================================
+
+T068a · SC-010, measured twice rather than asserted once
+------------------------------------------------------------------------------
+    29 runtime dependencies at T003 · 29 at T068a · 11 package.json
+
+T070 · SRS 1.18 — two clauses, and one of them was silent rather than strict
+------------------------------------------------------------------------------
+  FR-MED-06 gains the case it left undefined. The uploader clause read *"(for
+  user tokens) was uploaded by the sending user"*; an object whose uploader is
+  unrecorded was taken by an application credential acting for the environment,
+  and **the first sentence withheld permission for it while the second mandated
+  refusal for neither case.** The clause was silent on the commonest shape a
+  customer's backend produces, and 4.10 made that column nullable expressly so
+  this chapter could ask. It now states three cases and requires the three
+  refusals to be indistinguishable.
+
+  FR-MED-07 is recorded UNMET BY DECISION. It cost nothing while no attachment
+  had a state; this chapter delivers the first that do and asserts the state is
+  absent. **Vacuous and unmet are different facts** and nothing said which.
+
+T070a/T070b · Both copies of the Part 4 table, for the first time
+------------------------------------------------------------------------------
+  `docs/12` row 12 amended, as 4.7 through 4.10 each amended their own row.
+
+  AND `docs/07`'s COPY, WHICH HAD RECEIVED NONE OF THOSE FOUR. Four corrections,
+  three of them inherited: row 12, row 11's *"four distinct refusals"* (056
+  amended `docs/12` alone), the count stated as **23** when the second contraction
+  took it to 22 on 2026-09-13, and *"milestones at 10, 18 and 23"* — original
+  ordinals presented as current, which is how this project put hosted media at 4.5
+  and 4.6 for eight analysis passes. The pre-contraction note `docs/12` carries is
+  now in both.
+
+T073b · THE QUICKSTART WAS RUN, AND IT WAS WRONG FIVE TIMES
+------------------------------------------------------------------------------
+  NFR-USE-03 makes *"the quickstart shall run without modification"* a `T` clause
+  at 100% pass, and `ci.yml` contains the word `quickstart` zero times. This run
+  is the whole of its verification, and it earned the sentence 4.10's opens with.
+
+    1  nothing started the api          `profiles: ["services"]`; the prerequisite
+                                        block starts stores and no list is the same
+                                        as a list of store names
+    2  `$USER_TOKEN` had no source      `ci.yml:305`: *"There is no public way to
+                                        obtain one"*
+    3  IT IS NOT A USER TOKEN           the seeder yields an APPLICATION credential,
+                                        every send omitted `user`, and the platform
+                                        answered **400** — *"name the sender in
+                                        `user`"*. An application credential may send
+                                        only as a bot, so §0 now creates one.
+    4  re-running the seeder gives      it REUSES the existing demo environment:
+       you your own tenant              two credential strings, one environment_id.
+                                        The "foreign" object was mine and the send
+                                        answered **201** — a reader watching for a
+                                        refusal would conclude the platform leaks.
+    5  `uuidgen` is not installed       three `command not found`, so the loop ran
+                                        with EMPTY ids and refused them for the
+                                        wrong reason. And `psql -tAc` leaves a
+                                        newline `tr -d ' '` does not strip, which
+                                        put a control character in the JSON body:
+                                        *"Bad control character … position 107"*.
+
+  **FOUR OF THE FIVE PRODUCED A RED THAT LOOKED LIKE A PLATFORM DEFECT.** Two of
+  them — the 201 on a "foreign" id, and three refusals for empty strings — would
+  have been read as this chapter's predicate failing. Running it is the only thing
+  that could have told them apart, and `environments` has no `name` column either,
+  which `information_schema` said and memory did not.
+
+  After the corrections, every section:
+
+    §1  slot pending · PUT 200 · send 201
+    §2  three identical 422 `media_not_attachable` bodies
+    §3  400 `invalid_request`, field `attachments.0.media_id`
+    §4  violates check constraint "media_objects_state_check"
+    §5  2|2 before a refusal and 2|2 after
+
+CLOSING GATES
+------------------------------------------------------------------------------
+    pnpm lint              0 errors
+    pnpm typecheck         14 of 14
+    pnpm test              12 of 12
+    pnpm test:integration  12 of 12      composed services stopped (057-5)
+    pnpm test:outsider     19 of 19      against the composed platform
+    pnpm check:errors      34 codes, 34 sections, both directions
+    pnpm check:docs        all mirrored docs match · 19 revisions, 1.0 to 1.18
+    pnpm check:figures     287 figures, every diagram passed as `code`
+    pnpm check:fences      290 files, 54 chapters, **0 problems**, EXIT 0
+    pnpm build             125 pages

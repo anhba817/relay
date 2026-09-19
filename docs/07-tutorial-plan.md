@@ -551,14 +551,18 @@ by asking what that costs. Compliance erasure deletes messages, memberships, pro
 objects **and** analytical rows: the one chapter that must know every path the data took, and
 the chapter the part is named for. A split at the media boundary would have orphaned it.
 
-*The count.* **It is 23, and it reached that by CONTRACTING — the first estimate in this
+*The count.* **It is 22, and it reached that by CONTRACTING TWICE — the first estimate in this
 document ever to be too high.** Movement I was specified as two chapters and chapter 4.1
 shipped with both halves at 2,132 prose words, inside the bound. Eight was an estimate made
 before Part 3 was written. Part 3 was planned as seven
 chapters and shipped 26, every extra one arriving the same way — a chapter that reached its
 word ceiling and split rather than compress. 24 is the movement structure costed at that rate,
 and **it will not be 24 either**: it was 23 for a day, until working through chapter 1's premise
-made movement I two chapters. The commitment is the movements; the count is an estimate, and
+made movement I two chapters. **And then it was not 23 either.** Chapter 4.2 built all four items
+of the ledger chapter's brief — the runner, the filename-and-checksum ledger, reporting
+idempotence and a checksum refusal tested red — so movement II had one subject left and every
+ordinal after 3 moved down again. 23 to 22, amended 2026-09-13. **Both corrections ran downward,
+which no other count in this document has done.** The commitment is the movements; the count is an estimate, and
 every chapter-count estimate in this document has been low in the same direction.
 
 *The phase.* SRS §7.3 puts FR-ANL, FR-MOD, FR-DSH, FR-EMJ-03→10 and FR-MED-01→12 in Phase 3.
@@ -585,8 +589,8 @@ SaaS analytics" is underserved territory — and it is now movements I–IV rath
 | 8 | IV | The job that checks the meter | FR-ANL-06's reconciliation job, built callable in isolation so a drift can be planted |
 | 9 | IV | The log a customer can search | FR-ANL-07's query surface; FR-ANL-10's latency percentiles |
 | 10 | IV | **Milestone: the meter agrees** | Two claims, not one: CI catches a *planted* drift, and the 0.1% figure is measured once at volume and recorded — the lane's five-channel corpus cannot carry it |
-| 11 | V | The upload that never reaches us | FR-MED-01/02: the slot, the presigned URL (ADR-13), four distinct refusals, the storage quota |
-| 12 | V | The half of the union that was refused | FR-MED-06. Chapter 3.24 shipped `media_not_available` to refuse `media_id` **by name**, as a union built for this arm to be filled |
+| 11 | V | The upload that never reaches us | FR-MED-01/02: the slot, the presigned URL (ADR-13), four distinct refusals, the storage quota. **The count is right and only three of the four are FR-MED-02's** — MIME type, per-kind size cap and storage quota; the fourth is `docs/05-sad.md:1062`'s degradation row and the only transient one. Stored bytes are a LEVEL where FR-RTL-05's other quotas are monthly flows (SRS 1.17), and the presigned URL needs no contact with the store, which is what made the outage refusal expensive rather than free. Writes **ADR-30** |
+| 12 | V | The half of the union that was refused | FR-MED-06. Chapter 3.24 shipped `media_not_available` to refuse `media_id` **by name**, as a union built for this arm to be filled. This chapter fills it: one predicate inside the send's transaction, three conditions answering identically so the route is not an existence oracle, and **five forwarding readers that had to accept the new arm before the producer shipped** — one of them drops a committed message with nothing but a log line. Writes **SRS 1.18**, deletes one error code and adds two |
 | 13 | V | A link that expires, and who may hold it | FR-MED-08: signed delivery, one hour, authorisation following channel membership rather than a parallel ACL |
 | 14 | VI | The only service that reads the bytes | The media worker (ADR-14). FR-MED-03/04: verify against declaration, ClamAV, probe |
 | 15 | VI | Pending, ready, rejected | The state machine and `media.updated` (FR-MED-07) — gating bytes, never messages. A placeholder becomes real without polling |
@@ -599,7 +603,12 @@ SaaS analytics" is underserved territory — and it is now movements I–IV rath
 | 22 | VII | Erasure, and every path it must find | FR-MOD-04 and FR-MED-10 — messages, memberships, profile, media objects, analytical rows |
 | 23 | VII | **Milestone: the Priya test** | Journey 3 scripted: locate → reconstruct (edit history proves the case; a rejected upload renders as rejected, not broken) → act → audit |
 
-**Three milestones inside one part, at 10, 18 and 23.** Rule 4 permits it — each appears after
+**Three milestones inside one part, at 9, 17 and 22** — and the table above keeps the ORIGINAL
+ordinals in its first column, as `docs/12` §3 does and for the same reason: an older reference
+resolves. **The movement column is the stable address.** Reading the first column as current is
+how this project put hosted media at 4.5 and 4.6 for eight analysis passes.
+
+**Three milestones inside one part.** Rule 4 permits it — each appears after
 the work it verifies — and Part 3's two both sat at the end, after a 25-chapter run with none.
 
 ### Part 5 — Developer experience (6 chapters)

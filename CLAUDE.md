@@ -28,34 +28,90 @@ history; the replaced history is preserved on the remote as the tag
 tags. **Anyone holding an older clone of `relay-platform` must reset rather than pull.**
 
 <!-- SPECKIT START -->
-**ACTIVE: 057 — CHAPTER 4.11, "the half of the union that was refused".** Movement V continues.
-Plan: `specs/057-chapter-4-11/plan.md`; **`research.md` first — it settles the specification's
-one flagged assumption AGAINST the specification, for the second feature running.** FR-MED-06:
-the `{ type: "media" }` arm starts accepting, `media_not_available` is deleted on its own
-registry entry's instruction, and three refusals get one answer because three would be an
-existence oracle. **Name it by its movement and title**: `docs/12` §3 row 12.
+**057 IS CLOSED at 108 of 108 — CHAPTER 4.11, "the half of the union that was refused".**
+Its record is `specs/057-chapter-4-11/` — `baseline.txt` first (every phase's measurements in
+the order they were taken), then `gaps.md` (**11 entries: 6 new, 5 carried and re-measured**),
+`traceability.md`, `tasks.md`. **SRS 1.18**, and **both** copies of the Part 4 table amended.
+Tagged **`part4-ch11`**.
 
-**THREE PREMISES RUN, THREE THAT CHANGED THE PLAN.** (1) **A NULL `user_id` means the TENANT
-uploaded it**, not "nobody", so a user token of that tenant may attach it — chapter 4.10's
-controller says *"a photo sent by a person and an attachment uploaded by a customer's backend
-are the same operation"*, and the strict reading makes them unequal. (2) **`ready` is
-unreachable and the database says so by name** — `violates check constraint
-"media_objects_state_check"`, which 4.10 wrote deliberately because verification is movement VI.
-So FR-MED-06 names two states and one can be tested. (3) **A non-UUID `media_id` is a 500 the
-moment the arm accepts** — `invalid input syntax for type uuid` reaches the driver through
-`z.string().min(1)` and the filter answers `internal_error`. The schema tightens to a UUID, which
-narrows a shape nothing was accepting. (4) What held: the ten-attachment cap already counts both
-arms, and `sendMessage` already runs in a transaction.
+    check:fences 22 -> 0 · EXIT 0 · 290 files across 54 chapters
+    1,576 diff lines over 22 files — 8 in the chapter, 14 in the appendix
+    2,396 prose words · 3 figures · 34 error codes, 34 sections
+    12 of 12 lanes · 19 of 19 sealed · 126 files, 1,814 tests under coverage
+    29 dependencies at the open and 29 at the close
 
-**AND `protocolCode` HAS EXACTLY ONE USER, WHICH THIS CHAPTER REMOVES.** `ZodValidationPipe`'s
-mechanism for a schema refinement to name a code other than `invalid_request` was built by 3.24
-for `media_not_available` alone. It stays with no user and says so — 4.10's `service_unavailable`
-precedent — rather than being deleted to save nine lines of something a chapter teaches.
+**THE PREDICATE IS FOUR LINES OF SQL AND EVERYTHING ELSE WAS THE CHAPTER.** One `IN` inside
+`sendMessage`'s transaction. Three conditions give **one** answer — another tenant's object,
+another user's, and an id nobody has return byte-identical bodies apart from `request_id` —
+because a refusal naming the cause reports whether somebody else's object exists.
 
-**AND THIS CHAPTER ADDS NO ROUTE**, so the derivation that has caught eight chapters running will
-report nothing. `POST /v1/channels/:channelId/messages` is already a target and is the
-derivation's own `CANARY_TARGET`. The direction that still applies is the second — attacked, and
-not for this identifier — and nothing will ask it automatically.
+**FIVE READERS HAD TO LEARN THE ARM BEFORE THE PRODUCER SHIPPED, AND THE TABLE BUILT TO FIND
+THEM SAID ONE WAS INERT.** One union, **ten** validators: seven naming `attachmentSchema` and
+three reaching it through `messageSchema`, which `data-model.md` §4b recorded as *"parsed by
+nothing at runtime"* — because nothing parses it under that name. **The question that finds
+them is one level up: what is this schema embedded in?** Five of the ten forward the value
+without reading it, and the worst refusal is the quietest: `fanout.ts:109` drops a delivered
+frame with a log line **after the sender holds its 201**. Every one has a red-first probe.
+
+**AND THE TASKS' OWN PROBE PREMISE HAD MOVED UNDER THEM.** T017b/e/g each said to test with a
+media arm and run it red "against the arm as it stands today" — right while the arm refused,
+worthless once it accepts, because a media attachment then parses under the strict union too.
+**Those tests would have asserted nothing.** They send an arm from a newer writer instead, and
+the probe reverts the READER.
+
+**CONSTITUTION VI's BRANCH CLAUSE, ANSWERED BY DELETING EACH ARM.** `repository.ts` holds
+hundreds of branches at a pin of 92 and measures 92.91, so an uncovered arm in the predicate
+clears it with room to spare — **the pin is not the instrument**. Three SQL clauses carry no
+JavaScript branch (048's shape). Forcing the credential arm turned **exactly one** test red,
+and that test did not exist until the probe asked what the arm was for: an API key's own slot
+records `user_id IS NULL`, which the user predicate admits, so the suite would have passed with
+the arm deleted. And deleting the early return left **17 of 17 passing** — it is an optimisation
+wearing a branch's clothes. **A coverage number would have called all four covered.**
+
+**SRS 1.18: THE CLAUSE WAS SILENT, NOT STRICT.** FR-MED-06's *"(for user tokens) was uploaded
+by the sending user"* withheld permission for an unrecorded uploader and mandated refusal for
+neither case — undefined on the commonest server-side shape, and 4.10 made the column nullable
+expressly so this chapter could ask. FR-MED-07 is recorded **unmet by decision**: vacuous until
+the first attachment that has a state, which is this one.
+
+**AND THE COMPOSED API HAD ANSWERED 503 TO EVERY SLOT REQUEST SINCE 4.10.** `compose.yaml`
+names every store by service name and named MinIO nowhere while `depends_on` waited on it, so
+`store.ts` fell back to `localhost:9100` — inside that container, that container. Measured with
+its control: `localhost:9100 ECONNREFUSED` from inside, `minio:9000` 200, the same store
+answering 200 to the host. **The host is inside the SigV4 signature**, so the client's address
+and the api's cannot be one field; `RELAY_MINIO_INTERNAL_ENDPOINT` defaults to the public one,
+which leaves every host-process lane unchanged.
+
+**THREE KINDS OF STALE BUILD, AT THREE LAYERS.** `pnpm build` fixes the `dist` the gateway suite
+spawns. It does nothing for the composed api's **container image**, which answered the sealed
+suite `expected 422 to be 201` — `docker compose --profile services build` is a third thing that
+can be stale, and the only suite that talks to a container is the one that found it.
+
+**AND THE QUICKSTART WAS RUN, WHICH IS NFR-USE-03's WHOLE VERIFICATION** — a `T` clause at 100%
+with **zero occurrences of `quickstart` in `ci.yml`**. It was wrong five times and **four of the
+five produced a red that looked like a platform defect**: nothing started the api; the credential
+had no published source; **it is an application credential, not a user token**, so every send
+answered 400 for naming no sender; **re-running the seeder reuses the existing tenant**, so the
+"foreign" object was mine and answered 201 — a reader would have concluded the platform leaks;
+and `uuidgen` is not installed while `psql -tAc` leaves a newline `tr -d ' '` does not strip,
+which put a control character in the body. `environments` has no `name` column either.
+
+**A GOOD HUNK FAILED FOR 4.8's REASON.** `codes.ts` was generated against the dump's END state
+and `fences/post-series.md` already amends that file twice — the appendix applies after every
+chapter, so a file it touches has one shape at chapter N and another at the end. Moved to the
+appendix, placed after the hunks that broke it. **Check which state a hunk is written against.**
+
+**AND `check:figures` CAUGHT THREE DEAD DIAGRAMS `pnpm build` DID NOT.** Passed as `chart={…}`
+where `<Figure>` reads `code`: all three would have rendered nothing on a page that compiled and
+served 125 pages green.
+
+**TEN ANALYSIS PASSES: 12 findings, 7, 3, 3, 3, 1, 3, 4, 2, 1** — severity 0 CRITICAL, 0, 1, 1
+HIGH, 1 HIGH, 1 CRIT, 1 CRIT, 1 CRIT, 0, 0. **The count measures the question, not the
+artifacts.** Passes 6 and 7 both found a CRITICAL *in an artifact written to prevent its own
+class* — §4b's validator table and the plan's constitution check — each filled once, early, and
+read past five times. Pass 10 ran the mechanical coverage map for the first time and found
+**14 of 51 requirements uncited in `tasks.md`, all 14 covered in substance**: fourteen alarms,
+fourteen false, which is why `traceability.md` is built by reading and not by grep.
 
 **056 IS CLOSED at 75 of 75 — CHAPTER 4.10, "the upload that never reaches us".** Movement V
 opens. Its record is `specs/056-chapter-4-10/` — `baseline.txt` first (every phase's

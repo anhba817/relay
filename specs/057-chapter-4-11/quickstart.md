@@ -3,10 +3,9 @@
 Prove the chapter end to end against a running stack: a slot, an upload, a message that attaches
 it, and the three refusals that look alike.
 
-**Not yet run.** 4.10's quickstart opens *"Every command here was run before it was written"* and
-this one may not say that until T073b does it. Two defects are known before the first attempt and
-are fixed below rather than left for the reader: **the api is not a store**, and **the credential
-has no public source**.
+**Every command here was run before it was written**, which this file could not say until it was.
+Running it found three things the reading had not: the api is not started by the prerequisite
+block, the credential has no public source, and **the credential is not a user token** — see §0.
 
 ## Prerequisites
 
@@ -46,9 +45,22 @@ signs with is T001b's decision, and the host is inside the signature.
 ## 0 · The credential, which has no public source
 
 ```bash
-export USER_TOKEN=$(RELAY_POSTGRES_PORT=15432 node scripts/seed-demo-tenant.mjs)
-export CHANNEL=…          # a channel of that tenant
+export CREDENTIAL=$(RELAY_POSTGRES_PORT=15432 node scripts/seed-demo-tenant.mjs)
+export CHANNEL=$(curl -s -X POST localhost:4000/v1/channels \
+  -H "authorization: Bearer $CREDENTIAL" -H 'content-type: application/json' \
+  -d '{"external_id":"quickstart-411","type":"public"}' | jq -r .id)
+curl -s -o /dev/null -X POST localhost:4000/v1/users \
+  -H "authorization: Bearer $CREDENTIAL" -H 'content-type: application/json' \
+  -d '{"users":[{"external_id":"qs-bot","kind":"bot","description":"sends the quickstart messages"}]}'
 ```
+
+**IT IS AN APPLICATION CREDENTIAL AND NOT A USER TOKEN, WHICH THE FIRST DRAFT OF THIS FILE
+GOT WRONG.** The variable was called `USER_TOKEN` and every send below omitted `user`; run as
+written it answered **400** — *"name the sender in `user` — an application credential has no
+user of its own"*. An application credential may send only as a bot (FR-007), which is why
+there is a third command here. A user token is a different route (`POST /auth/dev-token`) and
+a different half of FR-MED-06; §2 uses the credential's own objects, so the distinction does
+not change what those refusals prove.
 
 `ci.yml:305` says why this is a script and not a sign-up: *"There is no public way to obtain one —
 sign-up ends at an OAuth consent screen and key management is the dashboard's chapter."* The
@@ -60,13 +72,13 @@ six times and never said where it comes from.**
 ```bash
 # FIRST, what it answers today — T001a's measurement, not a step to skip
 curl -s -o /dev/null -w '%{http_code}\n' -X POST localhost:4000/v1/media \
-  -H "authorization: Bearer $USER_TOKEN" -H 'content-type: application/json' \
+  -H "authorization: Bearer $CREDENTIAL" -H 'content-type: application/json' \
   -d '{"filename":"holiday.jpg","mime_type":"image/jpeg","bytes":2097152}'
 # → 503 media_storage_unavailable, until the store's address is set (T001b)
 
 # a slot, then the upload, then the message — every variable set from the step above it
 SLOT=$(curl -s -X POST localhost:4000/v1/media \
-  -H "authorization: Bearer $USER_TOKEN" -H 'content-type: application/json' \
+  -H "authorization: Bearer $CREDENTIAL" -H 'content-type: application/json' \
   -d '{"filename":"holiday.jpg","mime_type":"image/jpeg","bytes":2097152}')
 # → 201 { "media_id": "…", "state": "pending", "upload_url": "…", "expires_at": "…" }
 MEDIA_ID=$(jq -r .media_id <<<"$SLOT")
@@ -77,8 +89,8 @@ curl -s -X PUT "$UPLOAD_URL" --data-binary @holiday.jpg -o /dev/null -w '%{http_
 # → 200, and no byte of it reached the api
 
 curl -s -X POST "localhost:4000/v1/channels/$CHANNEL/messages" \
-  -H "authorization: Bearer $USER_TOKEN" -H 'content-type: application/json' \
-  -d "{\"text\":\"look\",\"attachments\":[{\"type\":\"media\",\"media_id\":\"$MEDIA_ID\"}]}"
+  -H "authorization: Bearer $CREDENTIAL" -H 'content-type: application/json' \
+  -d "{\"text\":\"look\",\"user\":\"qs-bot\",\"attachments\":[{\"type\":\"media\",\"media_id\":\"$MEDIA_ID\"}]}"
 # → 201
 ```
 
@@ -91,26 +103,66 @@ is still `pending` — nothing has verified it, and nothing will until movement 
 
 ## 2 · The three refusals look the same
 
-Run all three and diff the bodies with `request_id` stripped. They must be identical.
+**RE-RUNNING THE SEEDER DOES NOT GIVE YOU A SECOND TENANT, and taking it at its word costs you
+the whole section.** `seed-demo-tenant.mjs` reuses an existing demo environment and mints a new
+credential in it — two different credential strings, one `environment_id`. An object obtained
+that way is **yours**, the send answers **201**, and a reader watching for a refusal concludes
+the platform leaks across tenants. Measured, on the run that wrote this paragraph.
+
+A genuinely foreign object needs a second environment, which no published route creates:
 
 ```bash
-for ID in "$OTHER_TENANTS_MEDIA" "$OTHER_USERS_MEDIA" "$(uuidgen)"; do
+FOREIGN=$(psql "postgres://relay:relay@localhost:15432/relay" -tAc "
+  WITH e AS (
+    INSERT INTO environments (id, application_id, kind, signing_secret)
+    SELECT gen_random_uuid(), application_id, 'production', signing_secret
+      FROM environments WHERE kind = 'development' LIMIT 1
+    ON CONFLICT DO NOTHING RETURNING id)
+  INSERT INTO media_objects
+    (id, environment_id, filename, mime_type, declared_bytes, object_key, state)
+  SELECT gen_random_uuid(), e.id, 'f.png', 'image/png', 1, 'f/k', 'pending' FROM e
+  RETURNING id" | tr -d '[:space:]')
+```
+
+Then all three, with the bodies compared after `request_id` is stripped:
+
+```bash
+NOBODYS=$(cat /proc/sys/kernel/random/uuid)
+for ID in "$FOREIGN" "$NOBODYS" "$(cat /proc/sys/kernel/random/uuid)"; do
   curl -s -X POST "localhost:4000/v1/channels/$CHANNEL/messages" \
-    -H "authorization: Bearer $USER_TOKEN" -H 'content-type: application/json' \
-    -d "{\"text\":\"x\",\"attachments\":[{\"type\":\"media\",\"media_id\":\"$ID\"}]}" \
+    -H "authorization: Bearer $CREDENTIAL" -H 'content-type: application/json' \
+    -d "{\"text\":\"x\",\"user\":\"qs-bot\",\"attachments\":[{\"type\":\"media\",\"media_id\":\"$ID\"}]}" \
   | jq 'del(.request_id)'
 done
 ```
 
+**AND `environments` HAS NO `name` COLUMN**, which the first version of that statement assumed:
+`id, application_id, kind, signing_secret, retention_days, quota_config` and three rate limits.
+Asked of `information_schema` rather than remembered — the third time in this feature that a
+fixture was wrong about a schema and only the database could say. An application holds one
+environment per `kind` (FR-TEN-04, `unique (application_id, kind)`), so the second one is the
+`production` half of the same application.
+
+**`uuidgen` IS NOT ON EVERY MACHINE AND IS NOT ON THIS ONE.** The first draft used it and the
+shell answered `command not found` three times — so the loop ran with EMPTY ids and every refusal
+came back for the wrong reason. `/proc/sys/kernel/random/uuid` needs nothing installed.
+
+**AND `psql -tAc` LEAVES A NEWLINE**, which `tr -d ' '` does not strip. The id then travelled into
+the JSON body with a control character in it and the api answered *"Bad control character in
+string literal in JSON at position 107"* — a fourth wrong refusal, and the fourth time in this
+section that a shell detail produced a red that looked like a platform one. `tr -d '[:space:]'`.
+
 **Expected**: three identical 422 bodies. Anything that distinguishes them is an existence oracle
-(SC-002).
+(SC-002). The third arm of FR-MED-06 — another USER's object in your own tenant — needs a user
+token and is exercised in `attach.itest.ts` rather than here; this section proves the property
+that matters on the wire, which is that the three answers cannot be told apart.
 
 ## 3 · A malformed id is a different failure
 
 ```bash
 curl -s -X POST "localhost:4000/v1/channels/$CHANNEL/messages" \
-  -H "authorization: Bearer $USER_TOKEN" -H 'content-type: application/json' \
-  -d '{"text":"x","attachments":[{"type":"media","media_id":"not-a-uuid"}]}' | jq .code
+  -H "authorization: Bearer $CREDENTIAL" -H 'content-type: application/json' \
+  -d '{"text":"x","user":"qs-bot","attachments":[{"type":"media","media_id":"not-a-uuid"}]}' | jq .code
 ```
 
 **Expected**: `invalid_request`, 400, `field: "attachments.0.media_id"`. **Not** a 500 — research
