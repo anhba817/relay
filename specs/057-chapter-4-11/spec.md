@@ -1,0 +1,232 @@
+# Feature Specification: Chapter 4.11 — the half of the union that was refused
+
+**Feature Branch**: `057-chapter-4-11`
+
+**Created**: 2026-09-19
+
+**Status**: Draft
+
+**Input**: User description: "next chapter"
+
+## The brief, and the two things it does not say
+
+`docs/12` §3 row 12, movement V: *"FR-MED-06. Chapter 3.24 shipped `media_not_available` (422)
+to refuse `media_id` **by name**, as a discriminated union built for this arm to be filled. This
+chapter fills it."*
+
+Both halves are true. What the line does not say:
+
+**FR-MED-06 NAMES TWO STATES AND THE SCHEMA PERMITS ONE.** The clause is *"a message may attach a
+`media_id` in state `pending` or `ready`"*, and chapter 4.10's migration carries
+`CONSTRAINT media_objects_state_check CHECK (state = 'pending')` with a comment saying why:
+*"`ready` and `rejected` arrive [with the worker]… a schema claiming states nothing in the
+platform can reach."* Verification is FR-MED-03, movement VI. So the clause's `ready` is
+unreachable, its implied `rejected` refusal has nothing to refuse, and **a test of either cannot
+fail** — the class this project names *"a test whose condition cannot occur is a test that cannot
+fail."* This chapter builds the check the clause asks for and says which of its arms no fixture
+can reach.
+
+**AND THE CODE THIS CHAPTER RETIRES LEAVES A GAP IT MUST FILL.** `packages/protocol/src/codes.ts`
+says of `media_not_available`: *"§4.14 REPLACES THE ARM RATHER THAN THIS CODE. When hosted media
+ships, the `{ type: "media" }` arm starts accepting and this entry describes a state the platform
+no longer has — at which point it is deleted, not repurposed."* Deleting it is right and it is not
+the whole change: a `media_id` that does not exist, one belonging to another tenant, and one
+belonging to another user all need an answer, and none of them is *"hosted media is not available
+yet"*.
+
+## User Scenarios & Testing *(mandatory)*
+
+### User Story 1 - A photo sends the moment its upload finishes (Priority: P1)
+
+A customer's user takes the slot chapter 4.10 issues, uploads the file straight to object storage,
+and sends a message carrying `{ "type": "media", "media_id": "…" }`. The message is accepted and
+delivered. The object is still `pending` — nothing has verified the bytes — and that is the
+design: FR-MED-06's own note says *"the scan is a delivery gate for bytes, never for the
+message."*
+
+**Why this priority**: It is the half of FR-MSG-11 the platform has published and refused since
+chapter 3.24, and every later media chapter needs a message that can carry a `media_id` to have
+anything to act on.
+
+**Independent Test**: Request a slot, upload to the signed URL, send a message naming the returned
+`media_id`, and read the message back. Delivers the clause's whole accept path with nothing else
+built.
+
+**Acceptance Scenarios**:
+
+1. **Given** a slot issued to a user token and an object uploaded to it, **When** that user sends a
+   message attaching the `media_id`, **Then** the message is created and the attachment is stored
+   in the order sent.
+2. **Given** a slot issued to an API key, **When** that key sends a message attaching the
+   `media_id`, **Then** the message is created.
+3. **Given** a message carrying one media attachment and one URL attachment, **When** it is sent,
+   **Then** both are stored, in order, and the ten-attachment cap counts them together.
+4. **Given** a message carrying a media attachment and no text, **When** it is sent, **Then** it is
+   accepted — chapter 3.24's rule for the URL arm, unchanged.
+
+---
+
+### User Story 2 - Somebody else's media cannot be attached (Priority: P2)
+
+A caller attaches a `media_id` that belongs to another tenant, to another user, or to nobody at
+all. Each is refused, and the three refusals are indistinguishable from each other.
+
+**Why this priority**: FR-MED-06's second sentence is *"Attaching another tenant's or user's media
+shall fail"*, and constitution I is what makes the indistinguishability part of the requirement
+rather than a nicety: a refusal that tells a caller "that id exists but is not yours" is a
+cross-tenant existence oracle.
+
+**Independent Test**: Two tenants, two users, and one invented UUID. Four sends, one accepted,
+three refused with the same code and the same message.
+
+**Acceptance Scenarios**:
+
+1. **Given** a `media_id` belonging to another environment, **When** a caller attaches it, **Then**
+   the send is refused and no message row is created.
+2. **Given** a `media_id` belonging to another user of the same environment, **When** a user token
+   attaches it, **Then** the send is refused.
+3. **Given** a `media_id` that no media object has, **When** a caller attaches it, **Then** the
+   send is refused with the same code and message as the two above.
+4. **Given** a message whose tenth attachment is a foreign `media_id`, **When** it is sent, **Then**
+   the whole message is refused and none of the other nine is stored.
+
+---
+
+### User Story 3 - The clause's unreachable half is recorded, not faked (Priority: P3)
+
+FR-MED-06 permits `pending` or `ready` and forbids everything else. Only `pending` exists. The
+chapter builds the check and publishes which arms no fixture can reach and why.
+
+**Why this priority**: It is what keeps the chapter honest, and it is this project's established
+answer to a clause it cannot fully satisfy — chapter 4.7 amended FR-ANL-06 rather than publishing
+a green number, and chapter 4.8 defined FR-ANL-10's quantity and computed nothing.
+
+**Independent Test**: The state predicate is exercised against `pending`; an attempt to plant a
+`ready` or `rejected` row is refused by the database, and the refusal is the evidence.
+
+**Acceptance Scenarios**:
+
+1. **Given** the shipped schema, **When** a fixture attempts to store a media object in state
+   `ready`, **Then** the database refuses it by name.
+2. **Given** that refusal, **When** the chapter publishes its state check, **Then** the unreachable
+   arms are named in the code and in the record rather than covered by a test that cannot fail.
+
+### Edge Cases
+
+- **The same `media_id` twice in one message.** Chapter 3.24 settled the URL case — *"the same URL
+  twice is two attachments, because the platform does not compare them."* The same rule applies
+  here unless a reason to differ is found.
+- **A media object attached to two different messages.** Nothing forbids it and nothing tracks it.
+  FR-MED-10's unlink-and-sweep is a later chapter, so this chapter records what a second reference
+  means for that sweep rather than building for it.
+- **A `media_id` that is not a UUID.** The current arm accepts `z.string().min(1)`. A malformed id
+  is a different failure from a well-formed id nobody owns, and the two must not be conflated —
+  one is `invalid_request` at the schema, the other is this chapter's refusal.
+- **An API key sends on behalf of a bot user.** The send path resolves a bot user from the body.
+  Whether that bot counts as "the sending user" for a `user_id`-bearing object is the assumption
+  flagged below.
+- **A slot issued and never uploaded to.** `state` is `pending` either way — the platform cannot
+  tell. `gaps.md` 056-1 records that a slot nobody uploads to holds its bytes forever; attaching
+  one is the same blind spot from the other side.
+
+## Requirements *(mandatory)*
+
+### Functional Requirements
+
+- **FR-001**: The `{ type: "media" }` attachment arm MUST accept a `media_id` that names a media
+  object in the sending environment, instead of refusing unconditionally.
+- **FR-002**: A send MUST be refused when the named media object belongs to another environment.
+- **FR-003**: A send MUST be refused when the caller is a user token and the named media object
+  was uploaded by a different user.
+- **FR-004**: A send MUST be refused when no media object has the named id.
+- **FR-005**: FR-002, FR-003 and FR-004 MUST return the same code and the same message. A caller
+  MUST NOT be able to tell an id that exists elsewhere from one that exists nowhere.
+- **FR-006**: A refused send MUST create no message row and no outbox row, and MUST NOT advance
+  the channel's sequence.
+- **FR-007**: The check MUST be applied to every attachment in the message, and one failure MUST
+  refuse the whole message.
+- **FR-008**: `media_not_available` MUST be removed from the error registry and from the published
+  error reference, because the state it describes no longer exists. The registry's own note
+  requires deletion rather than repurposing.
+- **FR-009**: The refusal FR-005 names MUST be a code of its own, documented in the error
+  reference, with a status the error filter's ladder maps.
+- **FR-010**: The state predicate MUST admit `pending` and `ready` and refuse anything else, and
+  the chapter MUST record which of those arms no fixture can reach and why.
+- **FR-011**: The check MUST read the media object inside the transaction that writes the message.
+- **FR-012**: A media attachment MUST count toward FR-MSG-11's ten-attachment cap alongside URL
+  attachments.
+- **FR-013**: Delivery MUST NOT carry attachment state. FR-MED-07's `media.updated` and the state
+  field are a later chapter, and adding either here would ship its surface without its checks.
+- **FR-014**: The cross-tenant suite MUST attack the new path, and the attack MUST plant a media
+  object for each of two tenants so that an empty table cannot pass it.
+- **FR-015**: The chapter MUST record what a second message referencing one media object means for
+  FR-MED-10's unlink-and-sweep, which no chapter has built.
+- **FR-016**: The fence chain MUST report **0** after the chapter, and the number MUST be stated
+  absolutely rather than as a delta.
+
+### Key Entities
+
+- **Media object**: what chapter 4.10 creates — an id, the environment that owns it, the user who
+  uploaded it or nothing when an API key did, a declared filename, MIME type and size, a state,
+  and the key it occupies in the store. This chapter reads it and changes nothing about it.
+- **Attachment**: one element of a message's array. Two arms today, discriminated on `type`. The
+  URL arm carries a kind and a URL; the media arm carries an id and, after this chapter, means
+  something.
+- **Message**: the row the send writes. It stores the attachment array as sent, in order, with no
+  de-duplication.
+
+## Success Criteria *(mandatory)*
+
+### Measurable Outcomes
+
+- **SC-001**: A user can request a slot, upload a file, and send a message carrying its `media_id`
+  in one sequence, with no step refused.
+- **SC-002**: Three refusals — another tenant's id, another user's id, and an id nobody owns —
+  return byte-identical bodies apart from the request id.
+- **SC-003**: A refused send leaves the channel's message count and sequence unchanged, measured
+  before and after and scoped to the test's own channel.
+- **SC-004**: `pnpm check:errors` passes in both directions after `media_not_available` is removed
+  and the new code is added, and the counted success line is read rather than the exit code.
+- **SC-005**: The cross-tenant suite reports every derived route classified and every classified
+  route attacked, and the new attack fails when the environment predicate is removed.
+- **SC-006**: An attempt to store a media object in state `ready` is refused by the database, and
+  the refusal is quoted in the record.
+- **SC-007**: `check:fences` reports **0**, stated as an absolute number.
+- **SC-008**: The chapter's prose is 2,000–4,000 words outside code fences, measured with
+  `relay-tutorial/scripts/prose-words.mjs`, and carries at least one `TRAP` box.
+- **SC-009**: The tutorial job in CI succeeds on the chapter's push.
+- **SC-010**: The dependency count across every `package.json` in `relay-platform` is unchanged.
+
+## Assumptions
+
+- **THE ONE FLAGGED ASSUMPTION, FOR `research.md` TO SETTLE AGAINST ITSELF.** FR-MED-06 says a user
+  token may attach media *"uploaded by the sending user"*, and chapter 4.10 stores `user_id` as
+  NULL when an API key took the slot. A NULL is not *"another user's media"* — it is the tenant's.
+  The strict reading refuses a user token attaching a tenant-uploaded object; the permissive
+  reading allows it, on the grounds that the tenant's own backend uploading on a user's behalf is
+  the normal shape of a server-side integration. This specification assumes the **strict** reading,
+  because the clause's sentence is about who uploaded it and NULL is not the sending user — and it
+  is flagged because the permissive reading is what a customer would probably expect, and the two
+  differ in what the platform permits rather than in how it is built.
+- **One code for all three refusals**, following the send path's own precedent: `messages.service.ts`
+  already records that a ban's refusal *"is the same for a channel that exists, one that belongs to
+  another tenant, and one that was invented."* Distinguishing them would leak existence across the
+  tenant boundary.
+- **`media_not_available` is deleted rather than re-pointed at "no such object"**, because the
+  registry's note forbids repurposing and because the two sentences are not the same claim: one is
+  about the platform's capability and the other about one caller's id.
+- **The state check is built as the clause reads**, with its unreachable arms named in the code —
+  chapter 4.10's precedent, where `RESUMES` carries an entry no caller reaches and says so.
+- **Nothing is added to delivery.** FR-MED-07 is row 15, movement VI.
+- **No new dependency.** The check is a read the repository already has a client for.
+- **The chapter is prose plus one tag on `relay-platform`**, the shape every Part 4 chapter has
+  taken: `part4-ch11`.
+
+## Dependencies
+
+- Chapter 4.10's `media_objects` table, slot route and storage quota — shipped, tagged
+  `part4-ch10`.
+- Chapter 3.24's discriminated union and `ZodValidationPipe`'s `protocolCode` mechanism — shipped.
+- `gaps.md` 056-1 and 056-2 are open and this chapter inherits both: a slot nobody uploads to is
+  indistinguishable from one that was uploaded, and the quota counts declarations rather than
+  bytes. Neither blocks this chapter; both bound what its acceptance can claim.

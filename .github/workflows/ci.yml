@@ -279,6 +279,18 @@ jobs:
       - run: RELAY_POSTGRES_PORT=15432 docker compose up -d --wait
         working-directory: relay-platform
       - run: DATABASE_URL=postgres://relay:relay@localhost:15432/relay node services/api/dist/db/migrate.js
+
+      # THE ANALYTICAL SCHEMA, WHICH THIS JOB WAS MISSING AND ITS SIBLING HAS.
+      #
+      # `migrate.js` builds Postgres and nothing builds ClickHouse: `CLICKHOUSE_DB` makes
+      # the database and not its tables, and `analytics/apply.mjs` is the only thing that
+      # creates them (chapter 4.2). Without it `GET /v1/request-log` answers **500** —
+      # measured, as `expected 500 to be 200` in the sealed suite's request-log test — for
+      # a route that is working perfectly against a schema that is not there.
+      #
+      # The `lanes` job has run this since chapter 4.8. This one never did, and nothing
+      # noticed because the sealed suite's request-log test was the first to ask.
+      - run: RELAY_CLICKHOUSE_HOST=localhost node analytics/apply.mjs
         working-directory: relay-platform
 
       # `--build` is not optional either, and this is measured rather than
