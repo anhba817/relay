@@ -812,3 +812,37 @@ AND THE CARRIED LEDGER MOVED, WHICH IS WHY IT IS RE-MEASURED RATHER THAN COPIED
       steps in the tutorial job, and `check:errors` is the one with no job — behind which
       this chapter added five codes and five reference sections. Run by hand in both
       directions; that is the only reason the discrepancy would have been caught.
+
+────────────────────────────────────────────────────────────────────────────────
+T004b — `pnpm coverage` FOUND A RED THIS CHAPTER CAUSED, AND NOTHING ELSE HAD
+────────────────────────────────────────────────────────────────────────────────
+
+      125 files, 1,778 tests, 664 s, EXIT 1 · 3 files failed, 6 tests
+
+**`packages/config/src/infra.test.ts` WAS RED BECAUSE THIS CHAPTER ADDED A CONTAINER AND
+DID NOT REGISTER IT.**
+
+    expected [ 'clickhouse', 'mailpit', …(4) ] to deeply equal [ 'clickhouse', 'mailpit', …(3) ]
+
+`@relay/config`'s `INFRA_SERVICES` is the list of infrastructure services and
+`infra.test.ts` asserts it **in both directions** — every registered service appears in
+`compose.yaml`, and every compose service is registered. **The second direction was
+written by the chapter that added the fifth container**, and its comment says why: *"a
+container added to compose and never registered here was invisible."* It caught the sixth.
+
+Neither `pnpm test:integration` nor any suite this feature ran touches `packages/config`,
+so the only instrument that could see it is the one that runs everything. **A green lane
+is a claim about what was re-run** — 050's sentence, and this is the second time a
+coverage run has been the thing that said so. `minio` joins `INFRA_SERVICES` and
+`minio-data` joins `DURABLE_VOLUMES`; 7 of 7, and one more fence in the chapter, which
+stays at **290 files and 0 problems**.
+
+THE OTHER FIVE FAILURES ARE THE COVERAGE LANE'S OWN, AND WERE CHECKED RATHER THAN
+ASSUMED. `dispatcher.itest.ts` 4 timeouts at 60,000 ms and `typing.itest.ts` 1, inside an
+eleven-minute serial run with `NatsError: 503` in the api's log beside them. Run alone
+afterwards: **dispatcher 16 of 16, typing 23 of 23.** Nothing in this chapter touches the
+dispatcher, the gateway or NATS. 045's rule about a timeout being a measurement.
+
+AND `services/ingester/src/shape.ts` READS 95.12 AGAINST ITS 100 PIN, which is chapter
+4.7's finding unchanged — left at 100 there deliberately, because that chapter made it
+visible rather than measuring it down.

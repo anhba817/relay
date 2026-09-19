@@ -137,6 +137,23 @@ seventeen.
 **OPEN**: nothing in the repository does that count. It was written for this feature and lives in
 its scratch directory. The next chapter that edits a deep-chain file will write it again.
 
+### 056-8 · A container is two edits and only the full coverage lane says so
+
+`compose.yaml` gained a sixth service and `@relay/config`'s `INFRA_SERVICES` did not. The
+assertion that caught it was written by the chapter that added the fifth — *"a container added to
+compose and never registered here was invisible"* — and it caught the sixth exactly as intended.
+
+**What is open is the eleven minutes.** `packages/config` is a unit test in a package no
+integration suite imports, so nothing this feature ran could see it: `pnpm test:integration`
+plans the api, gateway, dispatcher, ingester, e2e and harness lanes and not that one, and the
+only command that reaches it is `pnpm coverage`, which takes 664 seconds. **A green lane is a
+claim about what was re-run**, and the cheapest instrument that would have caught this in a
+second is `pnpm --filter @relay/config test` — which nothing tells anybody to run after editing
+`compose.yaml`.
+
+**FIXED** for this chapter: `minio` in `INFRA_SERVICES`, `minio-data` in `DURABLE_VOLUMES`, 7 of
+7. The class is open.
+
 ---
 
 ## CARRIED, AND RE-MEASURED

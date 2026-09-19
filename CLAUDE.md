@@ -132,6 +132,16 @@ removed.
 - **AND v8's TEXT REPORTER OMITS A FILE AT 100/100/100/100.** Three of the five new files were
   absent from the coverage table and present in `coverage-summary.json`. **The table answers
   which files have a gap; the summary answers which files were seen.**
+- **A CONTAINER IS TWO EDITS AND ONLY `pnpm coverage` SAID SO.** `compose.yaml` gained a sixth
+  service and `@relay/config`'s `INFRA_SERVICES` did not — caught by the both-directions
+  assertion **the chapter that added the FIFTH container wrote**, whose comment reads *"a
+  container added to compose and never registered here was invisible"*. `packages/config` is a
+  unit test no integration lane imports, so the only command that reaches it is the 664-second
+  one (056-8). **A green lane is a claim about what was re-run**, and this is the second time a
+  coverage run has been the thing that said so.
+- **AND FIVE OTHER FAILURES IN THAT RUN WERE THE LANE'S OWN, CHECKED RATHER THAN ASSUMED** —
+  `dispatcher.itest.ts` 4 timeouts and `typing.itest.ts` 1, inside an eleven-minute serial run
+  with `NatsError: 503` beside them; 16 of 16 and 23 of 23 alone.
 
 ## THE FENCE CHAIN CHARGED FOR SEVENTEEN FILES AND NINE COULD NOT BE THE CHAPTER'S
 
