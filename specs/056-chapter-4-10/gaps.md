@@ -116,3 +116,76 @@ return a specific error"* — and it shipped as FR-017 and `media_storage_unavai
 fourth was unexplained. Analysis pass 1 found it in the SAD; the lesson is the one this
 project keeps paying for, which is that the answer was in a published document nobody had
 opened in that pass.
+
+### 056-7 · A list of fenced files goes stale, and the instrument that checks it is not `patch`
+
+The task table said twelve files and named `services/api/src/db/catalogue.ts`, which this chapter
+never touches. The checker says **seventeen**, and the six it missed all arrived from repairs made
+after the table was written: the lint rule that moved the query into the repository, the harness
+guard's three edits, the `Record<Dimension, string>` the compiler demanded, the gauntlet's attack,
+and FR-016's test against a real id.
+
+050's sentence, for the second time in five features. What is new is the second half.
+
+**`patch --dry-run` IS NOT THE CHECKER**, and it said yes to seven hunks the checker refused with
+`hunk pre-image matched 0 times`. `patch` applies with fuzz and offset; the checker needs exactly
+one exact match. Rule 1a says generate hunks from the checker's own replay, and the same is true
+of verifying them — the instrument that answers *"will this anchor"* has to count exact
+occurrences of the pre-image, which is nine lines of JavaScript and agrees with the checker on all
+seventeen.
+
+**OPEN**: nothing in the repository does that count. It was written for this feature and lives in
+its scratch directory. The next chapter that edits a deep-chain file will write it again.
+
+---
+
+## CARRIED, AND RE-MEASURED
+
+### 050-8 · The ingester is a process no gate starts — OPEN, and narrower than it was
+
+Re-measured. `services/ingester` still has no Dockerfile and no service in `compose.yaml`, and
+`ci.yml` starts nothing. What has changed is who copes: **two suites now spawn it themselves** —
+`request-log.itest.ts` since chapter 4.9, and `media.itest.ts` in this chapter, which needs it for
+SC-001's instrument.
+
+So the gap is no longer *"these suites are red on any machine with no ingester"*. It is the
+original sentence underneath that one: **on the stack this series ships, a customer reading their
+own request log finds it empty**, because records are published and nothing drains them. Two test
+files starting a process for their own duration is not a deployment.
+
+### 055-3 · `check:errors` is a script no workflow runs — OPEN, unchanged
+
+Re-counted: **five `check:*` scripts in `relay-tutorial/package.json`** — `check:docs`,
+`check:errors`, `check:fences`, `check:figures`, `check:srs` — and the tutorial job at
+`ci.yml:184-205` runs `lint`, `build`, `check:docs`, `check:srs`, `check:figures`, `check:fences`.
+`check:errors` is the one with no job, and this chapter added five error codes and five reference
+sections behind it. T029 ran it by hand, in both directions, which is the only reason the
+discrepancy would have been caught.
+
+### 055-4 · A gate that exits 0 having looked at nothing — OPEN, and `cwd` is not the condition
+
+Re-measured from an unrelated empty directory, all seven gate scripts printed their **counted
+success line with the repository's real figures**:
+
+    check-docs-drift      all mirrored docs match their sources
+    check-srs-ids         245 clause rows, 245 unique identifiers
+    check-revision-order  18 revisions ascend, 1.0 to 1.17
+    check-fence-chain.sh  290 fenced files replay onto relay-platform across 53 chapters
+    check-fence-chain.mjs the same line
+    check-error-codes     33 codes, 33 sections
+    check-figures         284 figures, 286 bindings resolve
+
+Every one resolves its corpus from the script's own location, so **running the real script from
+somewhere else is not how a corpus goes absent** — which is the complement of 055-5, where a
+*copy* at another path replays nothing and exits 0. The entry's line numbers still name real
+early-exit paths; what this re-measurement adds is that the obvious way to reproduce it does not,
+and that **the rule it produced is what told the two apart in one command**: assert the counted
+line, not the exit code.
+
+### 056-6 · answered — `docs/12` row 11 is amended rather than left to drift
+
+The row said four refusals where FR-MED-02 names three, and the row was right. The fourth is
+`docs/05-sad.md:1062`'s degradation row and it is FR-017 now. Row 11 carries what the line did not
+say, in the form the document already uses four times: no object storage existed at all, the
+storage quota is a level where the other three are flows, and the presigned URL's independence
+from the store is what made the fourth refusal cost a round trip.

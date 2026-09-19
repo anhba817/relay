@@ -28,26 +28,152 @@ history; the replaced history is preserved on the remote as the tag
 tags. **Anyone holding an older clone of `relay-platform` must reset rather than pull.**
 
 <!-- SPECKIT START -->
-**ACTIVE: 056 — CHAPTER 4.10, "the upload that never reaches us".** Movement V opens. Plan:
-`specs/056-chapter-4-10/plan.md`; **`research.md` first — it settles the specification's one
-flagged assumption against the assumption.** FR-MED-01/02: the slot, the presigned URL, the
-refusals, the storage quota. **Name it by its movement and title**: `docs/12` §3 keeps
-pre-contraction ordinals, so its "row 11" is this chapter and its "row 10" is the milestone that
-shipped as 4.9.
+**056 IS CLOSED at 75 of 75 — CHAPTER 4.10, "the upload that never reaches us".** Movement V
+opens. Its record is `specs/056-chapter-4-10/` — `baseline.txt` first (every phase's
+measurements in the order they were taken), then `gaps.md` (**11 entries: 7 new, 3 carried and
+re-measured, 1 answered**), `traceability.md`, `tasks.md`. **ADR-30**, **SRS 1.17**, and
+`docs/12` row 11 amended. Tagged **`part4-ch10`**.
 
-**FOUR PREMISES RUN, THREE AGAINST THE BRIEF.** (1) **A presigned URL needs no dependency** — 28
-lines of `node:crypto`, proven against a running store: signed PUT 200, signed GET 200, **unsigned
-GET 403**, expired refused by the store, tampered **403**. Dependency count moves by **zero**.
-(2) **`minio/minio` is `pull access denied`** on this machine and `docs/05-sad.md:1002` names it;
-the service is `quay.io/minio/minio`, 241 MB. (3) **Storage is a LEVEL and `usage_periods` holds
-FLOWS** — `creditFor` refuses to subtract and the figure resets on the 1st, so a tenant holding
-100 GB would start every month at zero. The cap joins `quotaConfig`; the accounting does not join
-the monthly rows, and **FR-RTL-05 is amended** because FR-MED-02 and FR-MED-12 both cite it for a
-quantity it does not define. (4) What held: 3.24 built the `{ type: "media" }` arm for 4.11 to
-fill, and `codes.ts:204` says so.
+    290 fenced files replay onto relay-platform across 53 chapters · EXIT 0 · from 282 and 52
+    29 runtime dependencies at part4-ch9 and 29 now, across all eight package.json
+    5 slot requests logged · 0 rows for the upload            SC-001, the api's own request log
+    the store probe costs +1.524 ms at p50, +24.1%            200 samples a side
+    3,992 prose words · 4 TRAP boxes · 6 tutorial gates green · 256 of 256 suites, three runs
 
-**AND `docs/12` SAYS FOUR REFUSALS WHERE FR-MED-02 NAMES THREE.** MIME, per-kind size cap, storage
-quota. The fourth is unexplained; the spec builds three and records the discrepancy.
+**A PRESIGNED URL NEEDS NO DEPENDENCY, AND THAT IS THE CHEAP HALF.** 28 lines of `node:crypto`,
+proven against a running store — signed PUT 200, signed GET 200, **unsigned GET 403**, expired
+refused from the store's own clock, tampered **403**. ADR-30 rejects the AWS SDK on the ratio
+(this platform signs a PUT and a HEAD) and `minio` on the direction (a vendor client at the
+moment the platform is choosing a replaceable store). **Every other part of the brief cost a
+clause.**
+
+**AND A PRESIGNED URL NEEDS NO CONTACT WITH THE STORE, WHICH IS WHY FR-017 WAS EXPENSIVE.**
+Signing is arithmetic; the api never opens a socket, so it never learns the store is down and a
+slot issued into an outage is byte-identical to a good one. `docs/05-sad.md:1062` asks for the
+opposite, so `storeReachable()` exists **only to produce a refusal**: p50 6.335 -> 7.859 ms,
+**+24.1%**, measured 200 samples a side with the same binary minutes apart. Placed after type and
+size and before the reservation — **the only position that satisfies FR-009 without a
+compensating delete.**
+
+**`docs/12` SAID FOUR REFUSALS WHERE FR-MED-02 NAMES THREE, AND THE ROW WAS RIGHT.** The fourth
+is the SAD's degradation row — *"Object storage lost … Upload slots return a specific error"* —
+now FR-017, and **the only transient one of the four**, which is the whole reason they are four
+codes. Three are permanent: transcode, compress, free space. Row 11 is amended with what the line
+did not say.
+
+**STORAGE IS A LEVEL AND THE MISSING WORD WAS `monthly`.** FR-RTL-05 named three quantities and
+FR-MED-02 and FR-MED-12 both cited it for a fourth. Put stored bytes in `usage_periods` and a
+delete needs a subtraction `creditFor` forbids, and a tenant holding 100 GB starts every month at
+zero. **SRS 1.17** says which kind each of the four is, and that a storage refusal must not
+promise a resume date — the other three do, in the sentence `QuotaExceededError` builds.
+
+## A TRANSACTION IS NOT A LOCK, AND THE PROBE FOR IT MEASURED THE FOREIGN KEY
+
+**TEN CONCURRENT SLOT REQUESTS COULD NOT LOSE THE RACE.** `Promise.all` over ten, asserting one
+is issued: green with the lock and green without it, every run, because each transaction is a sum
+and an insert a millisecond apart and the windows never overlapped. **A race test that cannot lose
+the race is an assertion that cannot fail.** Interleaved by hand on two connections, both reading
+before either writes:
+
+    plain SELECT        B blocked: no    B saw sum=0     B inserted   committed 1,200
+    SELECT FOR UPDATE   B blocked: yes   B saw sum=600   B refused    committed   600
+                                                                      against a cap of 1,000
+
+**AND `FOR UPDATE` FROM OUTSIDE PROVES NOTHING ABOUT THE METHOD.** Hold the environment row, call
+`reserveMediaSlot`, watch it wait — it waits **with the explicit lock deleted**, because
+`media_objects.environment_id` is a foreign key and the INSERT takes `FOR KEY SHARE`, which
+conflicts with `FOR UPDATE`. **`FOR NO KEY UPDATE` is the discriminator**: it conflicts with
+`FOR UPDATE` and not with `FOR KEY SHARE`, so the test goes red the moment `.for("update")` is
+removed.
+
+## WHAT RUNNING IT COST, AND EVERY ONE WAS AN INSTRUMENT
+
+- **TWO COMPOSE SERVICES CLAIMED HOST PORT 9000.** ClickHouse since chapter 1.2,
+  MinIO from phase 1. `Bind for 127.0.0.1:9000 failed: port is already allocated`, exit 1 — and
+  **the stack had run without the analytical store for thirty-two hours** behind green health
+  checks, because nothing in phases 1 and 2 touches it. Eleven ports in that file are
+  hand-allocated and nothing checks they are distinct (045's rule, third time). MinIO moved to
+  **9100** on the host and kept 9000 in the container.
+- **AND A RESTARTED CONTAINER CAME BACK HEALTHY PUBLISHING NOTHING** — `NetworkSettings.Ports`
+  `{}`, not even the port that was free, while `docker compose up -d` printed `Started` and
+  exited 0. The health check runs `clickhouse-client` INSIDE the container. `--force-recreate`
+  is the fix. 4.2's `/ping` finding one layer out.
+- **`echo "exit=$?"` AFTER A PIPELINE READS `tail`'s STATUS.** The failed compose start measured
+  as 0 and was 1. Fourth time in this project.
+- **A TAMPER PROBE THAT WAS A NO-OP 6.23% OF RUNS.** It replaced the signature's first character
+  with `f`. Over 4,096 signings: 16 distinct first characters, **`f` on 255**. On those runs it
+  sent a VALID url and the store's honest 200 read as *the store accepted a tampered signature*.
+  Three consecutive greens before it failed. **A probe that may not have altered anything has to
+  assert that it did.**
+- **`kindOf("constructor")` RETURNED A FUNCTION.** An object literal inherits from
+  `Object.prototype`, so the truthy return defeated the type refusal — and `KIND_CAPS[thatFn]`
+  is `undefined`, `bytes > undefined` is false, so it defeated the size refusal too. **One
+  declared MIME type, at any size, walked past both.** `Object.hasOwn`.
+- **A 20-SECOND DEADLINE INSIDE A 5-SECOND TEST, SINCE 4.4.** `vitest.integration.config.mts`
+  sets no `testTimeout`; the twin `vitest.coverage.config.mts:102` sets 60,000. The poll's
+  `return null` was unreachable and its assertion could not fail (056-4).
+- **A TEST TOOK A SHARED SERVICE AWAY FROM ITS NEIGHBOURS.** `docker compose stop minio` is the
+  truest FR-017 test and the lane runs two files at a time, so `isolation/gauntlet.itest.ts`
+  answered 503 where it expected 201 — **two of three runs, in a file that never mentions media
+  storage.** 045 found eight ASSERTIONS scoped too wide; this is an **ACTION** scoped too wide
+  and `check-lane-scope.py` cannot see it, because `execFileSync("docker", …)` is not SQL. The
+  endpoint moves now, to a port the kernel refuses.
+- **AND THE SECOND-APPLICATION VERSION OF THAT DID NOT WORK.** A second Nest app compiled while
+  the variable was moved answered 201: `MediaService` depends on a REQUEST-scoped `Repository`,
+  so `storeConfig()` runs per request. **The variable has to be wrong at the moment of the
+  request, not the moment of the wiring.**
+- **`MediaModule` DECLARED A SERVICE IT DID NOT PROVIDE.** Compiled, typechecked, linted —
+  `Nest can't resolve dependencies of the MediaService (?)` on the first request. **Only a
+  running app asks that question.**
+- **A LINT RULE IS A CONSTITUTION CLAUSE, TWICE.** The drizzle query moved to the repository
+  (4.7's finding, one chapter on), and a raw `pg` import in a test was refused — `pool.connect()`
+  is the sanctioned way to a dedicated connection, and the type is written out structurally
+  because the rule reaches type positions too.
+- **AND v8's TEXT REPORTER OMITS A FILE AT 100/100/100/100.** Three of the five new files were
+  absent from the coverage table and present in `coverage-summary.json`. **The table answers
+  which files have a gap; the summary answers which files were seen.**
+
+## THE FENCE CHAIN CHARGED FOR SEVENTEEN FILES AND NINE COULD NOT BE THE CHAPTER'S
+
+**THE TASK TABLE SAID TWELVE AND NAMED ONE THIS CHAPTER NEVER TOUCHES.** The six it missed all
+arrived from repairs made after it was written. 050's sentence, second time in five features.
+
+**AND `patch --dry-run` IS NOT THE CHECKER.** It said yes to seven hunks the checker refused with
+`hunk pre-image matched 0 times`, because `patch` applies with fuzz and offset where the checker
+needs exactly one exact match. Rule 1a is about generating hunks; it is equally true of verifying
+them (056-7).
+
+    anchors at -U6                          8   chapter fences
+    anchors only at -U2 / -U3               2   chapter fences, context trimmed
+    anchors at no width                     7   appendix
+    anchors, and unanchors the appendix     2   appendix, placed last
+
+**Seven have no context a chapter can match at any width**, because the lines their change sits
+*between* are the appendix's own — `codes.ts` reaches 4.10 at 324 lines where the appendix leaves
+429. **Two more anchor here perfectly well and break the appendix's own older hunks by doing so**,
+and go last in that file instead: 14 -> 4 -> 0. **A hunk that works and unanchors somebody else's
+is still a broken chain.**
+
+**AND THERE IS NO VIETNAMESE TWIN TO WRITE.** `app/(vi)/vi/part-4/` holds chapters 1-3; the
+translation lags by seven, so MIRROR has nothing to compare and a byte-identical copy would be an
+untranslated English page in the vi tree. **The task described a corpus rather than checking one**
+— 050's finding again.
+
+## THE CARRIED LEDGER MOVED, WHICH IS WHY IT IS RE-MEASURED
+
+**055-4 DID NOT REPRODUCE THE OBVIOUS WAY.** Run from an unrelated empty directory, **all seven**
+gate scripts printed their counted line with the repository's real figures. Every one resolves its
+corpus from the script's own location, so a wrong `cwd` is not how a corpus goes absent — which is
+the complement of 055-5, where a *copy* elsewhere replays nothing. **The rule the entry produced
+is what told them apart in one command: assert the counted line, not the exit code.**
+
+**050-8 IS NARROWER AND NOT CLOSED.** Two suites now spawn the ingester for their own duration.
+Nothing else does. **Two test files starting a process is not a deployment.**
+
+**AND `check:errors` STILL HAS NO JOB** (055-3), behind which this chapter added five codes and
+five reference sections. Run by hand in both directions; that is the only reason a discrepancy
+would have been caught. **`lint` is the one tutorial gate with no counted line at all** — eslint
+prints nothing on success, so its exit code is all there is.
 
 **055 IS CLOSED at 105 of 105 — THE FENCE CHAIN IS ZERO.** Its record is
 `specs/055-fence-chain-repair/` — `baseline.txt` first (it carries every phase's measurements and

@@ -747,3 +747,68 @@ T051  THE ABSOLUTE NUMBER IS ZERO. `check-fence-chain: 290 fenced files replay o
       relay-platform across 53 chapters`, EXIT 0 — 282 and 52 before this chapter. The
       eight new files are the chapter's own whole bodies: the signer, the MIME table, the
       store client, the service, the controller, the module and both migrations.
+
+════════════════════════════════════════════════════════════════════════════════
+PHASE 8 (T052-T061) — THE RECORD
+════════════════════════════════════════════════════════════════════════════════
+
+      ADR-30 in both documents · docs/12 row 11 amended · SRS 1.17
+      gaps.md 11 entries — 7 new, 3 carried and re-measured, 1 answered
+      check:docs, check:srs, check:errors, check:figures, lint, build — all EXIT 0
+      dependency count 29 at part4-ch9 and 29 now, across all eight package.json
+
+T052  ADR-30 — SIGN IT OURSELVES, AND THE DEPENDENCY COUNT IS NOT THE WHOLE ARGUMENT.
+
+      Three options. `@aws-sdk/client-s3` + `@aws-sdk/s3-request-presigner` is the default
+      answer and the right one for a codebase that lists, copies, tags and
+      multipart-uploads; this platform signs a PUT and a HEAD. `minio` is one package
+      rather than two and binds the signature to one vendor's client at the moment the
+      platform is choosing a store it can replace. `node:crypto` is twenty-eight lines.
+
+      **Measured: 29 runtime dependencies at `part4-ch9` and 29 now**, across all eight
+      `package.json` files, and no S3 client of any kind in any of them.
+
+      The reversal condition is the ratio, not the count: a chapter that needs listing,
+      lifecycle rules or multipart uploads should re-take the decision whole rather than
+      extend it one hand-written signer at a time.
+
+T056a `docs/12` ROW 11 WAS RIGHT ABOUT THE NUMBER AND SILENT ABOUT EVERY COST.
+
+      *"the slot, the presigned URL, the four distinct refusals, the storage quota"* —
+      four is correct, and the fourth is not FR-MED-02's. Amended with what the line did
+      not say, in the form the document already uses four times: there was no object
+      storage at all; the fourth refusal is the SAD's degradation row; the storage quota
+      is a LEVEL where FR-RTL-05's other three are monthly flows; and the presigned URL's
+      independence from the store is what made that fourth refusal cost +24.1%.
+
+      This feature's tasks cited `docs/12` three times and amended nothing until analysis
+      pass 3 said so.
+
+────────────────────────────────────────────────────────────────────────────────
+AND THE CARRIED LEDGER MOVED, WHICH IS WHY IT IS RE-MEASURED RATHER THAN COPIED
+────────────────────────────────────────────────────────────────────────────────
+
+055-4 DID NOT REPRODUCE THE OBVIOUS WAY, AND THE RULE IT PRODUCED IS WHAT SAID SO.
+
+      Run from an unrelated empty directory, **all seven** gate scripts printed their
+      counted success line with the repository's real figures — 245 clause rows, 290
+      fenced files, 33 codes, 284 figures. Every one resolves its corpus from the
+      script's own location, so a wrong `cwd` is not how a corpus goes absent.
+
+      That is the complement of 055-5, where a *copy* of the checker at another path
+      replays nothing and exits 0: the platform is resolved from the SCRIPT's location,
+      which makes the real script portable and a copy of it inert. The entry's line
+      numbers still name real early-exit paths. **What told the two apart was one
+      command, because the rule is to assert the counted line rather than the exit code.**
+
+050-8 IS NARROWER THAN IT WAS AND NOT CLOSED. Two suites now spawn the ingester for
+      their own duration — `request-log.itest.ts` since 4.9 and `media.itest.ts` here.
+      Nothing else does: no Dockerfile, no compose service, no CI step. **Two test files
+      starting a process is not a deployment**, and the original sentence underneath is
+      untouched: on the stack this series ships, a customer reading their own request log
+      finds it empty.
+
+055-3 IS UNCHANGED AND THIS CHAPTER IS WHY IT MATTERED. Five `check:*` scripts, six
+      steps in the tutorial job, and `check:errors` is the one with no job — behind which
+      this chapter added five codes and five reference sections. Run by hand in both
+      directions; that is the only reason the discrepancy would have been caught.
