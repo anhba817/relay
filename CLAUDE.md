@@ -105,6 +105,19 @@ appendix, placed after the hunks that broke it. **Check which state a hunk is wr
 where `<Figure>` reads `code`: all three would have rendered nothing on a page that compiled and
 served 125 pages green.
 
+**AND THE SEALED SUITE HAS NEVER RUN IN CI, WHICH THE PER-ERROR COMPARISON FOUND.** Its job's
+migrate step carried no `working-directory` where every other step in that job does — two of the
+three jobs set it once under `defaults` and this one repeats it per step — so it died on
+`Cannot find module …/relay/relay/services/api/dist/db/migrate.js`, every run, before reaching
+the suite it is named for. **Three chapters running have now found a gate whose colour was true
+and whose meaning was not** (4.9's already-red integration gate, 4.10's nine features of skipped
+`test:integration`, this). Fixed in one line; `gaps.md` 057-7.
+
+**THE CI ERROR SET IS IDENTICAL TO THE PRE-CHAPTER BASELINE** — 4 distinct lines each side, and
+the one raw difference is a Postgres planner **cost estimate** inside a query-plan assertion.
+Normalised: **empty diff both ways, 3 distinct, all inherited.** The workflow was red before and
+after, so **a colour could not have said this** — and the tutorial job SUCCEEDED, which is SC-009.
+
 **TEN ANALYSIS PASSES: 12 findings, 7, 3, 3, 3, 1, 3, 4, 2, 1** — severity 0 CRITICAL, 0, 1, 1
 HIGH, 1 HIGH, 1 CRIT, 1 CRIT, 1 CRIT, 0, 0. **The count measures the question, not the
 artifacts.** Passes 6 and 7 both found a CRITICAL *in an artifact written to prevent its own

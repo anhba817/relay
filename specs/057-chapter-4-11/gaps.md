@@ -90,6 +90,28 @@ The class is 4.2's — *"a check that cannot fail for the reason you care about 
 check"* — one level out, and it is filed rather than built because the guard would have to
 know what a store is, which is the thing ADR-30 spent a chapter avoiding.
 
+### 057-7 · The sealed suite has never run in CI — FOUND AND FIXED HERE
+
+`ci.yml`'s outsider job died at its migrate step on **every run**:
+
+    Error: Cannot find module
+      '/home/runner/work/relay/relay/services/api/dist/db/migrate.js'
+
+The path is missing `relay-platform/`. Two of the three jobs in that workflow set the
+directory once under `defaults`; this one repeats it per step, and **the repetition is what
+made it possible to miss one.** So the job exists, it is red, and it has never reached the
+suite it is named for.
+
+**This chapter is what made it matter.** FR-021 adds a media test to that suite and T073a's
+premise was *"CI gives it a job of its own"* — true, and the job had never got there. 4.9 found
+the same shape in the integration gate (*"the gate was already red, so a planted drift deepened
+a red rather than turning one"*) and 4.10 found `pnpm test:integration` skipped for nine
+features. **A job's colour says nothing about which step produced it.**
+
+Fixed — one line — and the first green run of that job will be the first time the sealed suite
+has ever executed in CI. What it then reports is nine features of accumulated drift that is
+none of this chapter's, and all of it newly visible.
+
 ---
 
 ## Carried, and re-measured

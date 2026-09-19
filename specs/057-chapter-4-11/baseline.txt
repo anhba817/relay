@@ -738,3 +738,52 @@ CLOSING GATES
     pnpm check:figures     287 figures, every diagram passed as `code`
     pnpm check:fences      290 files, 54 chapters, **0 problems**, EXIT 0
     pnpm build             125 pages
+
+T076 · CI, COMPARED PER ERROR — AND THE COMPARISON FOUND A JOB THAT NEVER RAN
+------------------------------------------------------------------------------
+    relay-tutorial — build, docs drift, fence chain      SUCCESS   (SC-009 met)
+    relay-platform — the Docker-free gate                SUCCESS
+    relay-platform — the sealed integration              failure, and it was
+                                                         failing at the baseline too
+    relay-platform — integration lanes and coverage      in progress at the time
+                                                         of writing
+
+  **THE TUTORIAL JOB SUCCEEDED ON THIS CHAPTER'S PUSH**, which is SC-009 and the thing
+  the fence work was for.
+
+  THE SEALED JOB WAS RED BEFORE AND AFTER, AND COMPARING THE COLOUR WOULD HAVE
+  ENDED THERE. Its error, at the baseline and unchanged:
+
+    Error: Cannot find module
+      '/home/runner/work/relay/relay/services/api/dist/db/migrate.js'
+
+  The path is missing `relay-platform/`. `ci.yml:281`'s migrate step carries no
+  `working-directory` where **every other step in that job does** — two of the
+  three jobs set it once under `defaults` and this one repeats it per step, which
+  is what made one easy to miss. **The sealed suite has therefore never run in CI**:
+  the job exists, it is red, and it has never reached the thing it is named for.
+
+  This chapter is what made it matter — FR-021 puts a media test in that suite, and
+  T073a's premise was that CI runs it. Fixed in one line and pushed. `gaps.md` 057-7.
+
+  4.9 found the same shape (*"the gate was already red, so a planted drift deepened
+  a red rather than turning one"*) and 4.10 found `pnpm test:integration` skipped
+  for nine features. **Three chapters running have found a gate whose colour was
+  true and whose meaning was not.**
+
+  THE PER-ERROR COMPARISON, WHICH IS THE ONLY THING THAT COULD SAY THIS
+------------------------------------------------------------------------------
+    baseline (e8b5c3c)    4 distinct ##[error] lines
+    this chapter (e539403) 4 distinct
+
+  Raw, one difference: `cost=0.15..12…` against `cost=0.15..11…` — a Postgres
+  planner ESTIMATE inside a query-plan assertion, moving because the lane's
+  tables hold different row counts. Normalising the estimate:
+
+    diff baseline chapter   EMPTY, both directions   3 distinct errors
+
+  **THE ERROR SET IS IDENTICAL TO THE PRE-CHAPTER BASELINE.** All three are
+  inherited: `session.perf.itest.ts`'s query-plan assertion, which holds only at
+  volume, and the two lines its failure produces. The chapter introduced no new
+  CI failure, and **a colour could not have said that** — the workflow was red
+  before and is red after.

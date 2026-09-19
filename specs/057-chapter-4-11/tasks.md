@@ -239,8 +239,8 @@ the message reads back with its attachment.
 - [X] T073a **Run `pnpm test:outsider`, which is not in `pnpm test:integration` and not in any artifact's gate list** (FR-021, SC-002d). `integration-gate.mjs:101` excludes `@relay/outsider` by name; CI runs it as a job of its own at `ci.yml:244`. Its preconditions are that job's, in order: `compose --profile services build`, `up -d --wait`, `node services/api/dist/db/migrate.js`, `analytics/apply.mjs`, then `RELAY_DEMO_CREDENTIAL=$(node scripts/seed-demo-tenant.mjs)`. **Four CI jobs and five `check:*` scripts, and this is the second lane a chapter can run and not know to** — 055-3's shape, one directory over.
 - [X] T073b **Run the quickstart, unmodified, and say so in the chapter** (FR-027). 4.10's opens *"Every command here was run before it was written"* and this one may not claim that until it is true. **The known defects before the run**: nothing starts the api, and `$USER_TOKEN` has no published source — `ci.yml:305` says so in as many words. NFR-USE-03 is a `T` clause at 100% with **no CI job running any quickstart**, so this is the whole of its verification.
 - [X] T074 Run `pnpm check:errors` by hand, in **both directions**. It is a script no CI job runs (055-3), and this chapter is the first to both delete a code and add one.
-- [ ] T075 Tag `part4-ch11` on `relay-platform`, commit, and push all three repositories.
-- [ ] T076 After the push, confirm CI. **Compare per error, not per colour** — the `lanes` job's error set is the baseline, and 056 pushed two failures into a red job that its colour could not report.
+- [X] T075 Tag `part4-ch11` on `relay-platform`, commit, and push all three repositories.
+- [X] T076 After the push, confirm CI. **Compare per error, not per colour** — the `lanes` job's error set is the baseline, and 056 pushed two failures into a red job that its colour could not report.
 
 **Checkpoint**: the published union has both arms, and what the chapter could not verify is written
 down.
