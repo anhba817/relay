@@ -169,6 +169,32 @@ translation lags by seven, so MIRROR has nothing to compare and a byte-identical
 untranslated English page in the vi tree. **The task described a corpus rather than checking one**
 — 050's finding again.
 
+## AND THE PUSH FOUND TWO FAILURES A RED JOB COULD NOT REPORT
+
+**THE TUTORIAL JOB SUCCEEDED (SC-009)** — the job `check:fences` ends, on this chapter's push.
+The two `relay-platform` jobs failed at the same steps as the run before, **and that is not the
+same as failing for the same reasons.** Diffing this run's `##[error]` lines against the previous
+run's, uuids normalised, gave **exactly two new ones and nothing removed**:
+`expected 503 to be 201`, twice, because **`ci.yml` had no object store**. The plan's open
+question 4 asked whether this chapter should provision it in CI and nothing answered it — 4.8's
+shape, caught in one run instead of four, **and only because the comparison was per error rather
+than per colour.** 4.9's own finding aimed at this chapter: the signal was not absent, it was
+indistinguishable.
+
+**AND THE PLATFORM JOB RUNS FIVE STEPS OF ELEVEN WHEN ONE UNIT TEST FAILS** (056-9): `install`,
+`lint`, `typecheck`, `test`, `coverage`. There is no `continue-on-error` and only `pnpm coverage`
+carries `if: always()`, so `pnpm build`, the migration, `analytics/apply.mjs`, the error-registry
+gate and `pnpm test:integration` **never ran** — which is why the same run also reports
+`UNKNOWN_TABLE`, a missing `ingester/dist` and `expected 0 to be greater than 0`. **All of it is
+downstream of `main.test.ts > logs exactly one structured line per request`**, which gets two in
+CI and one locally, and has since before this chapter.
+
+That is where the MinIO step had to go — **before `pnpm test`, not beside the other provisioning**
+— because a provisioning step after the first failure is skipped on exactly the runs where the
+lane it provisions for still executes. It is `docker compose up -d --wait minio` rather than a
+service container, because `quay.io/minio/minio` needs a command argument that a service container
+has no field for, and the images that need none are a different image from the one compose runs.
+
 ## THE CARRIED LEDGER MOVED, WHICH IS WHY IT IS RE-MEASURED
 
 **055-4 DID NOT REPRODUCE THE OBVIOUS WAY.** Run from an unrelated empty directory, **all seven**

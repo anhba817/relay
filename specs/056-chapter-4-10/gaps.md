@@ -206,3 +206,37 @@ The row said four refusals where FR-MED-02 names three, and the row was right. T
 say, in the form the document already uses four times: no object storage existed at all, the
 storage quota is a level where the other three are flows, and the presigned URL's independence
 from the store is what made the fourth refusal cost a round trip.
+
+### 056-9 · One failing unit test skips six steps, and every other error in that job is downstream of it
+
+The platform CI job ran, in order: `install`, `lint`, `typecheck`, `test`, **`coverage`**. Nothing
+else. There is no `continue-on-error`, so the failure of `pnpm test` skipped `pnpm build`, the
+migration, `analytics/apply.mjs`, the error-registry gate and `pnpm test:integration` — and
+`pnpm coverage` ran anyway, because it carries `if: always()` for the reason chapter 4.8 gave.
+
+So the job's other errors are not separate problems:
+
+    Table relay_analytics.api_requests does not exist       analytics/apply.mjs never ran
+    ingester/dist/main.js does not exist                    pnpm build never ran
+    expected 0 to be greater than 0                         the same, one layer on
+
+**The one real failure is `main.test.ts > logs exactly one structured line per request`**, which
+gets two. It has failed in CI and passed locally since before this chapter, and the second line is
+almost certainly `request_log.publish_failed`: the unit lane is Docker-free by design, `nats` is a
+service container so the connection succeeds, and nothing creates the `ANALYTICS` stream in that
+job — so the producer chapter 4.4 added logs an error beside the request line. Locally the stream
+exists from compose and the test sees one line.
+
+**AND THIS IS THE CHAPTER'S OWN SUBJECT POINTED AT THE CHAPTER.** Chapter 4.9's finding is that a
+gate which is always red carries no information about what a change did to it. This feature pushed
+two new failures into that job — `expected 503 to be 201`, twice, because `ci.yml` had no MinIO —
+and **the run's colour did not change**. What found them was diffing this run's `##[error]` lines
+against the previous run's, which produced exactly two new ones and nothing else.
+
+**FIXED for this chapter's half**: MinIO is provisioned in the platform job from `compose.yaml`'s
+own definition, placed **before** `pnpm test` rather than beside the other provisioning steps,
+because a step after the first failure never runs while the lane it provisions for still does.
+
+**OPEN**: the unit-lane log line, and the shape of the job. A `continue-on-error` on the early
+gates, or an `if: always()` on the provisioning, would make a single unit failure stop hiding five
+other results. That is a CI decision rather than a chapter's, and 054-1 is the neighbouring item.

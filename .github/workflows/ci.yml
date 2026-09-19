@@ -121,6 +121,36 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      # THE OBJECT STORE, ADDED AT CHAPTER 4.10 — AND IT IS A COMPOSE CALL RATHER THAN
+      # A SERVICE CONTAINER, WHICH IS THE ONLY WAY TO KEEP IT HONEST.
+      #
+      # Every other store above is a GitHub service container, and MinIO cannot be one:
+      # `quay.io/minio/minio` needs the `server /data` argument, a service container has
+      # no field that supplies a command, and the images that start a server with no
+      # arguments are a different image from the one `compose.yaml` runs. The comment on
+      # the ClickHouse service says why that matters — *"the image and credentials match
+      # `compose.yaml` so a lane that passes locally passes here"*.
+      #
+      # So this brings up compose's own definition of that one service. Nothing is
+      # restated: the image, the credentials, the volume, the health check and the host
+      # port all come from the file the developer runs, and `--wait` is the health check
+      # compose already declares. No `RELAY_MINIO_*` variables are needed either, because
+      # the code's defaults and compose's published port are the same 9100.
+      #
+      # AND THE PORT IS 9100 BECAUSE 9000 WAS TAKEN. ClickHouse's native port has
+      # published 9000 since chapter 1.2, so the two cannot both bind it — measured as
+      # `Bind for 127.0.0.1:9000 failed: port is already allocated`, exit 1.
+      #
+      # AND IT RUNS BEFORE `pnpm test`, NOT BESIDE THE OTHER PROVISIONING STEPS, because
+      # this job has no `continue-on-error` and every step after the first failure is
+      # skipped. `pnpm coverage` carries `if: always()` and therefore runs anyway — so a
+      # provisioning step placed after `pnpm build` is skipped on exactly the runs where
+      # the lane it provisions for is still going to execute. Measured: the platform job
+      # ran install, lint, typecheck, test and coverage, and **six steps in between never
+      # happened**, which is why the same run also reports `UNKNOWN_TABLE` and a missing
+      # `ingester/dist`.
+      - run: docker compose up -d --wait minio
+
       # The Docker-free gate, exactly as chapter 1.1 defined it.
       - run: pnpm lint
       - run: pnpm typecheck

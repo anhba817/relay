@@ -846,3 +846,44 @@ dispatcher, the gateway or NATS. 045's rule about a timeout being a measurement.
 AND `services/ingester/src/shape.ts` READS 95.12 AGAINST ITS 100 PIN, which is chapter
 4.7's finding unchanged — left at 100 there deliberately, because that chapter made it
 visible rather than measuring it down.
+
+────────────────────────────────────────────────────────────────────────────────
+T061 — THE TUTORIAL JOB IS GREEN, AND THE PUSH FOUND TWO FAILURES OF ITS OWN
+────────────────────────────────────────────────────────────────────────────────
+
+      relay-tutorial — build, docs drift, fence chain      SUCCESS
+      relay-platform — gates, lanes, coverage              failure   (as before)
+      relay-platform — the sealed integration              failure   (as before)
+
+SC-009 IS MET. The tutorial job succeeded on this chapter's push, which is the job
+`check:fences` ends, and it is the first chapter since 055 closed that could have broken
+it and would have known.
+
+**AND THE TWO PLATFORM JOBS FAILED AT THE SAME STEPS AS THE RUN BEFORE**, which is not
+the same as failing for the same reasons. Diffing this run's `##[error]` lines against
+the previous run's, with uuids normalised, produced **exactly two new ones and nothing
+removed**:
+
+    AssertionError: expected 503 to be 201
+    AssertionError: the slot route did not issue an id to test with: expected 503 to be 201
+
+Both mine, both one cause: **`ci.yml` had no object store.** The plan's open question 4
+asked whether this chapter should provision it in CI as well as locally and nothing
+answered it. Chapter 4.8 provisioned ClickHouse four chapters after it was needed; this
+is the same shape, caught in one run instead of four, and only because the comparison was
+made per error rather than per colour.
+
+**THE JOB'S COLOUR COULD NOT HAVE TOLD ME.** It was already red and it stayed red. That is
+chapter 4.9's own finding aimed at this chapter — *the signal was not absent, it was
+indistinguishable* — and the instrument that worked was a diff of the error lines.
+
+AND TRACING THAT TURNED UP THE JOB'S REAL SHAPE (056-9). The platform job ran five steps:
+`install`, `lint`, `typecheck`, `test`, `coverage`. **Six steps in between never ran**,
+because there is no `continue-on-error` and `pnpm coverage` alone carries `if: always()`.
+So `UNKNOWN_TABLE`, the missing `ingester/dist` and `expected 0 to be greater than 0` are
+all downstream of one unit test — `main.test.ts > logs exactly one structured line per
+request`, which gets two in CI and one locally.
+
+That is where the MinIO step had to go: **before `pnpm test`, not beside the other
+provisioning**, because a provisioning step after the first failure is skipped on exactly
+the runs where the lane it provisions for still executes.
