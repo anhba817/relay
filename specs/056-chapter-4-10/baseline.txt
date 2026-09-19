@@ -622,3 +622,43 @@ AND THE COVERAGE ARMS A RUNNING STORE CANNOT BE ASKED FOR NEEDED A SERVER
       fourteenth branch is attributed to line 32, which is `@Injectable()`. Every branch
       the file writes has both arms driven over HTTP. Pinned at 92 and named rather than
       left as a mystery.
+
+════════════════════════════════════════════════════════════════════════════════
+PHASE 6 (T041-T044) — THE BOUNDARY, AND THE TWO THINGS THIS CHAPTER CANNOT FIX
+════════════════════════════════════════════════════════════════════════════════
+
+T041  THREE REQUESTS ON THE THREE SIDES OF THE BOUND, against a cap of 1,000:
+
+          999   issued    committed   999
+        1,000   issued    committed 1,000     the request that exactly fills it
+        1,001   refused   committed     0     one byte over an EMPTY cap
+           +1   refused   committed 1,000     one byte over a FULL cap
+
+      A request for half the cap proves the comparison exists; only the one that lands
+      exactly on it says whether `>` or `>=` was written. Falsified by flipping the
+      operator: **`expected 402 to be 201`**, one test of six.
+
+T043a `check-lane-scope.py` — **59 integration files, 0 unscoped reads, 10 of 10 controls
+      firing, exit 0.** Was 55 at 053's close.
+
+      FOUR NEW SUITES, WHERE THE TASK PREDICTED EIGHT: `presign.itest.ts`,
+      `media.itest.ts`, `refusals.itest.ts`, `storage-quota.itest.ts`. The estimate was
+      high in the direction this project's estimates are usually low, which is worth one
+      line rather than an argument.
+
+      Every whole-table read in the four is scoped to its own environment, which is what
+      the zero means — and the count is the evidence the instrument looked, because a run
+      that reads nothing exits 2 since 053.
+
+T042/T043  TWO THINGS THIS CHAPTER RECORDS AND DOES NOT CLOSE (`gaps.md` 056-1, 056-2).
+
+      A SLOT NOBODY UPLOADS TO HOLDS ITS BYTES FOREVER. Measured rather than reasoned
+      about: the tenant capped at 1,000 that was issued 600 and then refused still
+      reports 600 committed, and always will. FR-MED-10's twenty-four hours is about
+      *unreferenced* media — objects that were uploaded and then orphaned — and a slot
+      nobody used was never referenced. Reading the two as one clause is the mistake.
+
+      AND THE ARITHMETIC IS OVER DECLARATIONS. `declared_bytes` is what the client said,
+      and FR-MED-03's verification is a later chapter, so a client declaring 1 KB and
+      uploading 90 MB is inside its cap and over it at once. The size cap's own message
+      says "declared" for that reason: it refuses a declaration, not a file.
