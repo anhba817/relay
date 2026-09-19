@@ -1002,3 +1002,44 @@ surface of **13 lines in 10 files** and would have caught this one; the naive ve
 every export whose only callers are test files — reports **37**, nearly all legitimate, and
 needs a hand-maintained allow-list. One instance is not a class, and the convention costs
 nothing while the checker costs that argument.
+
+────────────────────────────────────────────────────────────────────────────────
+AND THE SPLIT'S FIRST RUN SAID WHAT NINE FEATURES OF CI HAD NOT
+────────────────────────────────────────────────────────────────────────────────
+
+      relay-platform — the Docker-free gate            SUCCESS   64s
+      relay-tutorial — build, docs drift, fence chain  SUCCESS  155s
+      relay-platform — integration lanes and coverage  failure  674s
+      relay-platform — the sealed integration          failure  107s
+
+**A JOB THAT HAS NEVER EXISTED PASSED IN 64 SECONDS WITH NO SERVICE CONTAINERS.** That is
+chapter 1.1's Docker-free claim tested rather than labelled, and it is the half of the
+split worth keeping even if nothing else came of it.
+
+**AND `pnpm test:integration` RAN FOR THE FIRST TIME SINCE 2026-09-13.** Measured across
+the run history rather than assumed:
+
+    2026-09-13  047   pnpm test PASSED · test:integration RAN and failed
+    2026-09-14  048   pnpm test FAILS  · test:integration skipped   `bound-port.test.ts`
+    ... eight published chapters ...
+    2026-09-19  056   the split — test:integration RUNS, and fails on its own merits
+
+**THE CAUSE HANDED OFF BEFORE ANYBODY MEASURED IT.** 048 broke `pnpm test` on
+`bound-port.test.ts` — the ingester arrived and its `BINDS_NOTHING` entry did not, which
+chapter 4.5 already records as a red turbo's cache hid for two chapters. 050 fixed it. By
+then 049's request-log producer was keeping `main.test.ts` red in CI, so the gate never
+recovered: **one cause replaced another, and nine features ran their integration lane
+locally believing CI ran it too.**
+
+What `lanes` now reports is that accumulated drift — query plans that differ on a small
+dataset, a 500, a missing ack, request-log rows that do not arrive. **None of it is this
+work's to close and all of it is newly visible**, which is the whole of what the split was
+for.
+
+**AND THE FIX REPRODUCED THE DEFECT IT WAS CLOSING, ONE CONFIG OVER.**
+`RELAY_REQUEST_LOG=off` went into `vitest.config.mts`, and the split's first run still
+showed `expected [ …(2) ] to have a length of 1 but got 2` — from `pnpm coverage`, because
+`vitest.coverage.config.mts` runs the same `*.test.ts` files and must NOT set that flag:
+the integration suites in the same run assert on the producer's rows. Chapter 4.9's
+twin-config finding, in the commit that closed 056-9. `main.test.ts` states its own
+precondition now: 3 of 3 under both configs with the broker pointed at a closed port.

@@ -181,12 +181,29 @@ that list is one per relay and exists for a quiet database; this is a per-reques
 mutates nothing.
 
 **AND THE PLATFORM JOB IS TWO JOBS.** `gates` runs lint, typecheck and test with **no service
-containers at all**, which is what turns "Docker-free" from a label into a tested claim; `lanes`
-keeps the five stores and everything downstream of the build. **Two jobs cannot hide each other.**
-The cost is one `pnpm install`, **3 s**, against 34 s of gates that ran in series ahead of a 242 s
-coverage run — and they now run in parallel. **`continue-on-error` was refused, not overlooked**:
-it marks a failure as ignored and the job goes green, which is the CI-bypass shape this
-environment's guard refused at 054.
+containers at all** — a job that has never existed, **green in 64 s**, which turns chapter 1.1's
+Docker-free claim into a tested one. `lanes` keeps the five stores and everything downstream of
+the build. **Two jobs cannot hide each other.** The cost is one `pnpm install`, **3 s**, against
+34 s of gates that ran in series ahead of a 242 s coverage run. **`continue-on-error` was
+refused, not overlooked**: it marks a failure as ignored and the job goes green, which is the
+CI-bypass shape this environment's guard refused at 054.
+
+**AND `pnpm test:integration` HAD NOT RUN IN CI SINCE 2026-09-13 — NINE FEATURES.** Measured
+across the run history, not assumed: 047 ran it and it failed; 048 broke `pnpm test` on
+`bound-port.test.ts` and everything after the first failure has been **skipped on every run
+since**, through eight published chapters. **The cause handed off before anybody measured it** —
+050 fixed `bound-port.test.ts`, by which time 049's request-log producer was keeping
+`main.test.ts` red, so the gate never recovered. Every chapter since has run the lane locally and
+believed CI ran it too. The split's first run executes it again and reports nine features of
+accumulated drift; **none of that is this work's to close and all of it is newly visible**, which
+is what the split was for.
+
+**AND THE FIX REPRODUCED THE DEFECT IT WAS CLOSING, ONE CONFIG OVER.** `RELAY_REQUEST_LOG=off`
+went into `vitest.config.mts` and the split's first run still showed the two-line failure — from
+`pnpm coverage`, because `vitest.coverage.config.mts` runs the same `*.test.ts` files and must
+NOT set that flag, since the integration suites in the same run assert on the producer's rows.
+**4.9's twin-config finding, in the commit that closed 056-9.** `main.test.ts` states its own
+precondition now and passes under both with the broker at a closed port.
 
 **THE BUCKET HAS A GUARD THAT TOUCHES NOTHING SHARED.** A slot against `probe-<uuid>`: 404 before,
 201 issued, 200 after, bucket deleted. A deleted volume was the obvious probe and it is an action

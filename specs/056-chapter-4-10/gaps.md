@@ -258,6 +258,24 @@ against the previous run's, which produced exactly two new ones and nothing else
 own definition, placed **before** `pnpm test` rather than beside the other provisioning steps,
 because a step after the first failure never runs while the lane it provisions for still does.
 
+**AND THE COST WAS NINE FEATURES OF CI, WHICH THE FOLLOW-UP MEASURED RATHER THAN GUESSED.**
+`pnpm test:integration` has been **skipped on every run since 2026-09-13** — every run for
+features 048 through 056, eight published chapters — because `pnpm test` fails ahead of it and
+nothing after the first failure executes:
+
+    2026-09-13  047   pnpm test PASSED · test:integration RAN and failed
+    2026-09-14  048   pnpm test FAILS  · test:integration skipped        `bound-port.test.ts`
+    ...
+    2026-09-19  056   pnpm test FAILS  · test:integration skipped
+    2026-09-19  056   the split — test:integration RUNS, and fails on its own merits
+
+**AND THE CAUSE HANDED OFF.** 048 broke it on `bound-port.test.ts` — the ingester arrived and
+its `BINDS_NOTHING` entry did not, which chapter 4.5's record already names as *"a
+two-chapter-old red turbo's cache hid"*. Feature 050 fixed that. By then 049 had added the
+request-log producer, whose second log line keeps `main.test.ts` red in CI, so **the gate never
+recovered: one cause replaced another before anyone measured which**. Every chapter since has
+run the integration lane locally and believed CI ran it too.
+
 **CLOSED, BOTH HALVES, IN THE FOLLOW-UP.**
 
 **The log line — the unit lane was not Docker-free and now is.** `ci.yml` calls `pnpm test`
@@ -279,6 +297,23 @@ integration lane and coverage. Two jobs cannot hide each other. The cost is one 
 a 242-second coverage run — and the two now run in parallel. `continue-on-error` was rejected:
 it marks the step's failure as ignored and the **job goes green**, which is the CI-bypass shape
 this environment's guard refused at feature 054.
+
+**THE SPLIT'S FIRST RUN IS THE PROOF AND IT IS NOT A GREEN ONE.** `relay-platform — the
+Docker-free gate` **succeeded in 64 s** — a job that has never existed, passing with no service
+containers at all, which is what turns chapter 1.1's label into a tested claim. `lanes` failed,
+and it failed at `pnpm test:integration` **having actually run it**, with `pnpm build`, the
+migration, the analytical schema and the error-registry gate all executing first instead of
+being skipped. What it reports is nine features of accumulated drift between the local lane and
+CI's, visible for the first time. That backlog is not this entry's to close; **making it
+visible was.**
+
+**AND THE FIX REPRODUCED THE DEFECT IT WAS CLOSING, ONE CONFIG OVER.** `RELAY_REQUEST_LOG=off`
+went into `vitest.config.mts` and the first split run still showed
+`expected [ …(2) ] to have a length of 1 but got 2` — from `pnpm coverage`, because
+`vitest.coverage.config.mts` runs the same `*.test.ts` files and must not set that flag: the
+integration suites in the same run assert on the producer's rows. Chapter 4.9's twin-config
+finding, in the commit that closed this entry. `main.test.ts` states its own precondition now
+and passes under both configs with no broker.
 
 ### 056-10 · `ensureBucket` said "on boot, every boot" and nothing called it on boot
 
