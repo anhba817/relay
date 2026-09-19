@@ -79,8 +79,11 @@ care about**. Chapter 4.2 is the warning: ClickHouse's `/ping` answered `Ok.` fo
 while every query from outside the container was refused. MinIO's `/minio/health/live` has the
 same shape, so the check that counts is a signed round trip, not a liveness probe.
 
-Then the signer, with its test against the running store. R1's five results are the acceptance:
-200, 200, 403, expired, 400.
+Then the signer, with its test against the running store. **R1's nine results are the
+acceptance** — five about objects and four about the bucket, which the first probe skipped by
+creating it with `mkdir`. The bucket create is the first signed call this platform makes, it has
+a different canonical URI, and `BucketAlreadyOwnedByYou` is what makes running it on every boot
+safe.
 
 ### Phase 1 — The media row and the slot
 

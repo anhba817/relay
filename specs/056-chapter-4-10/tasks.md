@@ -28,7 +28,8 @@ reason this chapter cares about.
 - [ ] T001a Add the store to the **api's `depends_on` with `condition: service_healthy`**, beside `postgres`, `nats` and `redis`. Not beside `clickhouse`, which is absent from that list because the api never touches it at boot — this store the api reaches **on every slot request**.
   **WITHOUT IT THE FIRST SLOT REQUEST CAN FAIL FOR A STARTUP REASON**, and FR-017 makes that failure `media_storage_unavailable` — correct, and indistinguishable from a real outage. A refusal that is right for the wrong reason makes the quickstart read as flaky, which is worse than a crash.
 - [ ] T002 Give the service a health check, and **write down what its failure looks like from outside** rather than what the config says. **T001a's `service_healthy` waits on this check**, which is a second reason it has to be the signed round trip and not the liveness probe. `/minio/health/live` answers 200 from the host — measured — and that is the shape chapter 4.2 warns about: ClickHouse answered `/ping` with `Ok.` for sixteen chapters while every query from outside its container was refused. The liveness probe is the container's; T009's signed round trip is the chapter's.
-- [ ] T003 [P] Create the media bucket at startup, and decide where: an entrypoint, a migration-like script, or the api on boot. **Record which and why** — the analytics runner (`analytics/apply.mjs`) is the nearest precedent and it refuses a statement that does not name its database.
+- [ ] T003 [P] **Create the media bucket from the api on boot, with the signer this chapter already writes.** Not an entrypoint, not a migration-like script: measured in analysis pass 6, `PUT /{bucket}` signed the same way answers **200**, `HEAD /{bucket}` answers 200, and a second create answers **`BucketAlreadyOwnedByYou`** — a named error to branch on, which is what makes running it on every boot safe. No `mc` invocation, no entrypoint wrapper, no fourth moving part.
+  **THE ANALYTICS RUNNER IS THE PRECEDENT THAT LOOKS RIGHT AND IS HEAVIER.** `analytics/apply.mjs` is a separate script with a ledger because ClickHouse DDL is versioned and forward-only; a bucket is one idempotent call. An open decision in a task invites whoever reaches it to pick the precedent, so this one is decided here.
 - [ ] T004 [P] Add the store's address and credentials to the api's environment, and to `turbo.json`'s `globalEnv`. **`globalEnv` is a fenced file** in ten chapters plus two appendix hunks; adding a key is a chain edit.
 - [ ] T004a **AND TO BOTH VITEST CONFIGS, WHICH IS WHERE THE LANE ACTUALLY GETS THEM.** Two configs run `.itest.ts` files: `services/api/vitest.integration.config.mts` (4 env keys today) and `vitest.coverage.config.mts` (7). They are **already divergent**, which is exactly what makes the second easy to miss.
   **THIS IS CHAPTER 4.9's DEFECT, VERBATIM.** Its record: *"THE FIX WAS RIGHT IN ONE CONFIG AND MISSING FROM ITS TWIN … `pnpm coverage` stayed red and kept the gauntlet skipped in the run that measures constitution VI's own coverage bar, until eight minutes of a coverage run said so."* An earlier draft of T004 named the api's environment and `turbo.json`, which is neither config.
@@ -48,7 +49,15 @@ stories.**
 - [ ] T007 Write the SigV4 presigner in `relay-platform/services/api/src/media/presign.ts`, with **`node:crypto` and no dependency**. Five HMAC-SHA256 rounds over a canonical request; 28 lines in the probe. The workspace has no S3 client of any kind — zero matches for `@aws-sdk`, `minio` or `aws-sdk` across every `package.json` — and this chapter adds none.
   **THE CANONICAL REQUEST IS UNFORGIVING AND ITS FAILURE MODE IS A BARE 400.** `UNSIGNED-PAYLOAD`, the exact signed-header list, the path encoded segment by segment. A unit test against an expected string tests the test; the acceptance is T009.
 - [ ] T008 [P] Unit-test the presigner's shape: six query parameters and no others — `X-Amz-Algorithm`, `X-Amz-Credential`, `X-Amz-Date`, `X-Amz-Expires`, `X-Amz-SignedHeaders`, `X-Amz-Signature` — and a stable signature for a pinned clock and pinned credentials.
-- [ ] T009 **The round trip against the running store, which is the real health check.** Five results, all measured before this plan was written:
+- [ ] T009 **The round trip against the running store, which is the real health check.** Nine results, all measured before this plan was written — the first five in the probe that produced it, the last four in analysis pass 6, which found the first five were **all about objects** while the probe had created the bucket with `mkdir`:
+
+        PUT  /relay-media                 200   the bucket, signed — a DIFFERENT canonical URI,
+                                                `/{bucket}`, no key segment, no trailing slash
+        HEAD /relay-media                 200
+        PUT  /relay-media again           BucketAlreadyOwnedByYou
+        unsigned LIST of the bucket       403
+
+  and then the five about objects:
 
         PUT with the presigned URL, no client library, no auth header    200
         the same object through a signed GET                            200, byte-exact

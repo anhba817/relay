@@ -21,8 +21,24 @@ Node 22 has `crypto`. Written in **28 lines** and run against a real store:
     a URL whose X-Amz-Expires has passed                             AccessDenied, "Request has expired"
     a URL with one character of the signature changed                HTTP 400
 
-**Four of those five are requirements of this chapter and the next two**, and none of them needed
-a package. The 403 on an unsigned read is FR-MED-08's precondition holding by default rather than
+**AND THE BUCKET, WHICH THE FIRST PROBE SKIPPED.** Those five results are all about *objects*,
+and the probe that produced them created the bucket with `docker exec … mkdir` — bypassing the S3
+API for the one operation that has to happen before any of the other five. A bucket operation has
+a **different canonical URI**: `/{bucket}`, no key segment, no trailing slash. Measured in
+analysis pass 6:
+
+    PUT  /relay-media          200      the bucket, no mkdir and no mc
+    HEAD /relay-media          200      an existence check
+    PUT  /relay-media/a/b.txt  200      an object into a bucket made the right way
+    PUT  /relay-media again    BucketAlreadyOwnedByYou
+    unsigned GET  of the object   403   private by default, no policy step
+    unsigned LIST of the bucket   403
+
+**Nine results now, and the first five claimed a coverage they did not have.** The bucket create
+is the first signed call this platform will ever make and it was the one nobody signed.
+
+**Four of the first five are requirements of this chapter and the next two**, and none of them
+needed a package. The 403 on an unsigned read is FR-MED-08's precondition holding by default rather than
 by configuration, and the expiry message comes **from the store**, which is what FR-003 asks for.
 
 **Alternatives considered.** `@aws-sdk/client-s3` plus `@aws-sdk/s3-request-presigner` — two

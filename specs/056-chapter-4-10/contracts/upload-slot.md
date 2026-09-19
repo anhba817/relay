@@ -72,6 +72,13 @@ Measured against `quay.io/minio/minio` before any of this was planned:
 
 **The last two are FR-MED-08's preconditions**, checked here because they are free here and
 because a later chapter that discovers the bucket is world-readable discovers it after publishing.
+They hold for a bucket created **through the API** as well as for one made by hand — measured
+separately, because the first probe made its bucket with `mkdir` and proved nothing about the
+path the platform will actually take.
+
+**And the bucket itself is signed the same way**, with a different canonical URI — `/{bucket}`,
+no key segment. `PUT` 200, `HEAD` 200, and a second `PUT` answers `BucketAlreadyOwnedByYou`,
+which is what lets the api create it on every boot rather than guarding with a flag.
 
 ---
 
