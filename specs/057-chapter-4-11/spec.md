@@ -287,6 +287,29 @@ a green number, and chapter 4.8 defined FR-ANL-10's quantity and computed nothin
   second contraction took it to 22 on 2026-09-13, and *"milestones at 10, 18 and 23"* — original
   ordinals presented as current, where `docs/12:225-227` says in as many words that its first
   column keeps them and that the movement column is the stable address.
+  **AND THE SRS IS THE THIRD GOVERNING DOCUMENT, WHICH THIS REQUIREMENT NOW COVERS.** Two clauses,
+  both read verbatim from `docs/04-srs.md` rather than quoted from an artifact:
+  - **FR-MED-06 leaves the NULL uploader undefined.** *"…provided the media object belongs to the
+    same environment and (for user tokens) was uploaded by the sending user. Attaching another
+    tenant's or user's media shall fail."* A NULL fails the first sentence's proviso and is named
+    by neither case in the second — **the first withholds permission and the second does not
+    mandate refusal.** R1's reading is available because the clause is silent, which is what an
+    amendment is for. It gains R1's three cases: sending user permitted, another user refused,
+    NULL permitted as the tenant's, with 4.10's controller comment as the reason the column is
+    nullable.
+  - **FR-MED-07 goes from vacuous to unmet** (P3, `T`). *"Real-time and history delivery shall
+    include each attachment's state."* No attachment has ever had a state, so the clause has cost
+    nothing; this chapter delivers the first ones that do and FR-013 asserts the state is absent,
+    by decision. **"Unmet from this chapter forward" is a different fact from "not yet reached"**,
+    and the revision records which, with the row that will meet it named.
+  **NO NEW REQUIREMENT ID IS MINTED FOR THIS, AND THAT IS A MEASUREMENT RATHER THAN A STYLE
+  CHOICE.** Every candidate was checked against the platform's own comments: `FR-022`
+  (`frames.ts:45`), `FR-025` (`protocol-error.filter.ts:42`), and `FR-028`, `FR-029`, `FR-030` and
+  `FR-031` — **all four of which appear in `services/api/src/db/repository.ts`**, this chapter's
+  most-edited file. `SC-0xx` is no better: 120 references in platform source, 11 for the next two
+  free numbers. **The bare feature-local id namespace is saturated in the files this chapter
+  touches**, so the work attaches to a requirement that already means *amend what the line did not
+  say*.
 
 ### Key Entities
 

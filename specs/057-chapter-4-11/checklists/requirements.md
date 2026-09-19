@@ -322,3 +322,46 @@ defect in the platform rather than in an artifact.** It also lands on pass 5's o
 which is the third time in this project that a pass's fix became the next pass's defect. The
 passes that found artifacts wrong were reading; the one that found the platform wrong asked what
 `docker compose up` actually starts.
+
+## Analysis pass 9 (2026-09-19)
+
+Two findings, both HIGH, no CRITICAL — and the remediation changed shape halfway through, which is
+the part worth recording. The pass took mechanism 2, *read the clauses not the identifiers*, and
+opened `docs/04-srs.md` at the FR-MED block, which no pass had done verbatim.
+
+- **FR-MED-06 leaves the NULL uploader undefined and T070 defaulted to no revision.** The clause is
+  *"…provided the media object belongs to the same environment and (for user tokens) was uploaded
+  by the sending user. Attaching another tenant's or user's media shall fail."* **A NULL fails the
+  first sentence's proviso and is named by neither case in the second** — the first withholds
+  permission, the second does not mandate refusal. R1's reading is available *because the clause
+  is silent*, and silence in a P3 `T` clause on the case the chapter's tenancy story turns on is
+  what an amendment is for. Revisions 1.13–1.17 are five consecutive chapters each amending; the
+  default would have been the first break, and it was written before anyone opened the table.
+- **FR-MED-07 goes from vacuous to unmet.** *"Real-time and history delivery shall include each
+  attachment's state"*, P3 `T`. It has cost nothing because no attachment has ever had a state.
+  This chapter delivers the first that do and FR-013 asserts the absence on purpose. Deferring is
+  a fine decision; **"unmet from this chapter forward" is a different fact from "not yet reached"**
+  and nothing said which. **The falsified clause is the next row down from the implemented one** —
+  4.6's shape, where two features quoted DR-10 while writing that no clause said what DR-09, the
+  adjacent row, says.
+
+**And the fix was going to mint `FR-028` until the id was checked.** `FR-028`, `FR-029`, `FR-030`
+and `FR-031` all appear in `services/api/src/db/repository.ts`, this chapter's most-edited file;
+`SC-0xx` has 120 references in platform source. **There is no free bare id**, so the work attached
+to `FR-017`, which already means *amend what the line did not say*. Pass 8 measured the collision
+rate at two in four and noted it; pass 9 is the first time it changed what the remediation did.
+
+**Clean premises, three checked and three held.** `FR-MED-13` and `FR-MED-14` exist at
+`docs/04-srs.md:647-648` — the hypothesis that `:841`'s `FR-MED-01/07/14` cites a missing clause was
+044's shape and came back wrong. The read path is recorded: `research.md:193` and
+`contracts/media-attachment.md:114` both say a `media_id` is not yet fetchable and name FR-MED-08 as
+row 13. And FR-MED-02's verbatim text carries exactly the three refusals 056 corrected `docs/12` to.
+
+**Requirement count 51 → 51** and **task count 108 → 108.** The first pass to add neither, because
+the remediation was a scope change to an existing requirement and a rewritten task.
+
+**On nine passes.** 12 findings, 7, 3, 3, 3, 1, 3, 4, 2 — severity 0 CRITICAL, 0, 1, 1 HIGH,
+1 HIGH, 1 CRITICAL, 1 CRITICAL, 1 CRITICAL, 0. The run of three CRITICALs ends. Both of this pass's
+findings are in one document and come from one habit: the chapter quotes FR-MED-06 accurately in
+five artifacts and **nobody had read it beside its neighbours.** A quotation is not a reading of
+the table it came from.
