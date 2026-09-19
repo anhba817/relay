@@ -229,6 +229,24 @@ a green number, and chapter 4.8 defined FR-ANL-10's quantity and computed nothin
   unchanged, asserted rather than assumed. `repository.ts:4604` states the property — *"an edit
   does not change attachments (FR-016)"* — and this chapter creates the first media attachment
   there is to preserve.
+- **FR-026**: The composed api MUST be able to issue a usable upload slot. `compose.yaml`'s `api`
+  service names `postgres:5432`, `nats:4222`, `redis:6379` and `clickhouse` in its environment and
+  **names MinIO nowhere**, while `depends_on` waits on it — so `store.ts:18` falls back to
+  `http://localhost:9100`, which inside that container is that container. `storeReady()`'s signed
+  HEAD is refused, and FR-017 answers **503 `media_storage_unavailable` to every slot request**:
+  4.10's outage refusal, permanent, for a reason that is not an outage.
+  **AND THE ADDRESS IS A DECISION, NOT A MISSING LINE.** `storeConfig` has one `endpoint` and two
+  consumers that want different ones: the probe needs an address the api can reach
+  (`http://minio:9000`), the presigned URL needs one the **client** can reach
+  (`http://localhost:9100`), and the host is inside the signature, so a URL signed for one is
+  refused from the other. They coincide only because every lane runs the api as a host process.
+  The chapter states which it splits and records the alternative.
+- **FR-027**: The quickstart MUST run as written, and the chapter MUST say that it was run. Its
+  prerequisite block starts stores and the api carries `profiles: ["services"]`, so nothing answers
+  `localhost:4000`; and `$USER_TOKEN` has no published source — `ci.yml:305` says *"There is no
+  public way to obtain one"* and uses `scripts/seed-demo-tenant.mjs`. NFR-USE-03 makes this a `T`
+  clause at 100% and **no CI job runs any quickstart**, so the only verification available is
+  running it.
 - **FR-023**: The chapter MUST state which form constitution VI's *"tenant isolation MUST have
   100% branch coverage (NFR-MNT-02)"* takes over this chapter's predicate, and record the
   measurement either way. The predicate is a SQL `WHERE` and carries no JavaScript branches — 048
@@ -301,6 +319,9 @@ a green number, and chapter 4.8 defined FR-ANL-10's quantity and computed nothin
 - **SC-002c**: An api send response carrying a media attachment parses under the gateway's
   schema, and the test fails against the arm as it stands today — the same red-first requirement
   SC-002b places on the durable reader.
+- **SC-012**: A slot requested from the **composed** api — `docker compose --profile services up`,
+  not a host-spawned process — answers 201, and the URL it returns accepts a PUT from outside the
+  compose network. Measured, with the 503 it answers today recorded beside it.
 - **SC-011**: The predicate's coverage is recorded as a figure with the form named: how many of its
   clauses are SQL and carry no branch, how many JavaScript arms it adds, and what each of those
   arms measured. A statement that the clause is *met rather than pinned* counts only with the

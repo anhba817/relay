@@ -277,3 +277,48 @@ constitution what it requires. **The plan's constitution table has now been wron
 II at pass 3, principle VI at pass 7** — and both times the row was filled when the plan was
 written and never re-read against what the chapter turned out to build. A constitution check is a
 measurement, and a measurement taken before the thing exists is a prediction.
+
+## Analysis pass 8 (2026-09-19)
+
+Four findings — one CRITICAL, one HIGH, two MEDIUM — all four applied. The pass ran the
+quickstart's premises instead of reading them, which is mechanism 3: *run the command a task tells
+someone to run.*
+
+- **The composed api cannot issue an upload slot, and this chapter is the first thing that would
+  ask it to.** `compose.yaml`'s `api` names `postgres:5432`, `nats:4222`, `redis:6379` and
+  `clickhouse` in its environment and **names MinIO nowhere**, while `depends_on` waits on it —
+  4.10 wired the dependency and not the address. `store.ts:18` falls back to
+  `http://localhost:9100`, the api container itself, so `storeReady()` is refused and **FR-017
+  answers 503 to every slot request**: an outage refusal, permanent, for no outage. Invisible until
+  now because every media suite runs the api as a host process where that default is correct, and
+  the composed api is exercised only by `ci.yml:244`, whose suite has never asked for a slot.
+  FR-026, SC-012, T001a, T001b.
+- **And the address is a decision.** `storeConfig` has one `endpoint` and two consumers that want
+  different ones — the probe needs `http://minio:9000`, the presigned URL needs
+  `http://localhost:9100`, and the host is inside the SigV4 signature. They have coincided only
+  because the api has always run on the host.
+- **The quickstart could not run.** Its prerequisite block started stores and the api carries
+  `profiles: ["services"]`; `$USER_TOKEN` had no published source, which `ci.yml:305` states
+  outright — *"There is no public way to obtain one."* Six variables were used and never set.
+  Rewritten from the recipe that works, `ci.yml:294-311`, and it does **not** claim 4.10's *"every
+  command here was run before it was written"* until T073b makes that true. FR-027, T073b.
+- **`pnpm test:outsider` appeared in no artifact.** T032e adds a test to that lane.
+  `integration-gate.mjs:101` excludes `@relay/outsider` from `test:integration` deliberately and
+  says why. **Correcting the first reading of this pass**: the suite is not unrun — CI gives it a
+  job of its own — the gap was the local command. T073a, and the quickstart's gate block.
+- **NFR-USE-03 has no runner** — a `T` clause at 100% pass, zero `quickstart` occurrences in
+  `ci.yml`, and no `gaps.md` in any feature records it. Filed under T069 rather than built.
+
+**Requirement count 48 → 51** and **task count 104 → 108.**
+
+**Two of the four next free ids were already taken.** `FR-022` is `frames.ts:45`'s and `FR-025` is
+`protocol-error.filter.ts:42`'s — both files this chapter edits — so this pass numbered around
+them and used FR-026 and FR-027. The `FR-003a` class with a rate attached: two in four, in files
+one chapter touches.
+
+**On eight passes.** 12 findings, 7, 3, 3, 3, 1, 3, 4 — severity 0 CRITICAL, 0, 1, 1 HIGH, 1 HIGH,
+1 CRITICAL, 1 CRITICAL, 1 CRITICAL. **Three CRITICALs running, and the third is the first that is a
+defect in the platform rather than in an artifact.** It also lands on pass 5's own remediation,
+which is the third time in this project that a pass's fix became the next pass's defect. The
+passes that found artifacts wrong were reading; the one that found the platform wrong asked what
+`docker compose up` actually starts.
