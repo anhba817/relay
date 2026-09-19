@@ -39,17 +39,20 @@ cannot be tested before the arm accepts.
 - [ ] T007 Add the new code to `relay-platform/packages/protocol/src/codes.ts` with the comment the registry's style requires, **naming its near-neighbour**: it is not `not_found` (that is a route), not `forbidden` (that is a permission), and not `invalid_request` (the id is well-formed).
 - [ ] T008 Delete `media_not_available` from `codes.ts`, on its own entry's instruction — *"§4.14 replaces the arm rather than this code … at which point it is deleted, not repurposed."*
 - [ ] T009 Remove the three `media_not_available` assertions from `packages/protocol/src/codes.test.ts:244-246` and write the equivalents for the new code.
-- [ ] T010 Remove `media_not_available`'s section from `docs/08-error-reference.md` and write the new code's, with the four things `check-error-codes.mjs` enforces: a level-two heading that is the bare code, `**Retryable:**`, `**What to do:**`, and at least 200 characters after whitespace collapse.
+- [ ] T010 Remove `media_not_available`'s section from `docs/08-error-reference.md` and write a section for **each** code this chapter adds — the media refusal and T011a's 422 rung (FR-009b). Four things `check-error-codes.mjs` enforces per section: a level-two heading that is the bare code, `**Retryable:**`, `**What to do:**`, and at least 200 characters after whitespace collapse.
+  **TWO SECTIONS, NOT ONE, AND ANALYSIS PASS 1 GOT THIS WRONG.** It added the rung and wrote "the new code's" singular; the checker fails in both directions, so T074 would have gone red on a code the previous pass introduced. **The fix is where the next defect is.**
 - [ ] T011 **`**Retryable:** no`, and the section must say what to do instead of retrying.** All three conditions are permanent for the id that caused them; the remedy is a different id or an upload of one's own.
-- [ ] T011a **Add a 422 rung to `services/api/src/protocol-error.filter.ts`, and a generic code for it** (FR-009a). Analysis pass 1 measured the ladder: 400, 401, 402, 403, 404, 413, 415, 503 — **422 is not there**, so an unnamed one answers `internal_error`, which is the filter's own *"lie the client cannot act on"*. Chapter 4.10 closed four statuses and left this one.
+- [ ] T011a0 **Name the 422 rung's code and say what a client does about it** (FR-009b), beside T006. It is a fallback with no thrower — the shape `service_unavailable` took at 4.10 — so its sentence has to carry the only two facts the status supports: the request was understood, and what it asked for cannot be done. A code nobody throws still needs a reference section a reader can act on.
+- [ ] T011a **Add a 422 rung to `services/api/src/protocol-error.filter.ts`, using T011a0's code** (FR-009a). Analysis pass 1 measured the ladder: 400, 401, 402, 403, 404, 413, 415, 503 — **422 is not there**, so an unnamed one answers `internal_error`, which is the filter's own *"lie the client cannot act on"*. Chapter 4.10 closed four statuses and left this one.
   **NOTHING THROWS AN UNNAMED 422 TODAY**, and that is the argument for the rung rather than against it: `channel_member_limit_exceeded` names itself twice and `media_not_available` named itself until this chapter. The rung is for the next thrower that forgets, which is what `service_unavailable` was added for at 4.10 with nothing throwing it either.
   **Rejected: map 422 to this chapter's own code.** A channel-member-limit refusal that forgot its code would then tell a caller their media is not attachable.
 - [ ] T011b Extend `services/api/src/protocol-error.filter.test.ts`'s rung table with 422, asserted **twice** the way the other eight are: the code it gives, and separately that it is not `internal_error`. Run it red by deleting the rung.
+- [ ] T012a **Record why the tightening is safe, because it is safe by ordering rather than by design** (research R10). No durable row carries a media attachment — the arm has refused since 3.24 — and the read paths cast rather than parse. *"A reader of anything durable cannot require a field its writer did not have"* is the rule that would otherwise apply, and it is the one `outboxEventSchema` broke. The next tightening will not have the first reason.
 - [ ] T012 Make `media_id` a UUID in the arm in `packages/protocol/src/attachments.ts`. **Research R3 measured what the looser shape costs**: `z.string().min(1)` sends `not-a-uuid` to the driver, Postgres answers `invalid input syntax for type uuid`, and the filter turns that into a **500** the caller triggered.
 - [ ] T013 Remove the arm's unconditional `.refine(() => false, …)` and its `protocolCode` params, leaving `strictObject` on both arms — an unknown key stays a refusal rather than a silent drop.
 - [ ] T014 Update `services/api/src/messages/zod-validation.pipe.ts:13`'s comment, which cites a code that will not exist. **Name what the mechanism is for, not who used it** — `gaps.md` 056-10's convention, and the mechanism now has no user at all (research R5).
 - [ ] T015 Keep `protocolCode` in the pipe and say in the comment that nothing uses it. Chapter 4.10's `service_unavailable` precedent: a general extension point with a stated role outlives its last caller. **Rejected alternative recorded rather than implied**: deleting it to save nine lines unteaches a chapter.
-- [ ] T016 Extend `packages/protocol/src/attachments.test.ts` for the arm's new shape — a UUID accepted, a non-UUID refused at the schema, the discriminator still selecting the media arm, and `MAX_ATTACHMENTS` still 10 over the union.
+- [ ] T016 **Replace** `packages/protocol/src/attachments.test.ts`'s `describe("the media arm refuses and SAYS SO (FR-003, FR-003a)")` block — it is a rewrite, not an extension, and a rewrite budgeted as an extension is how a task gets half done. What replaces it: a UUID accepted, a non-UUID refused at the schema, the discriminator still selecting the media arm, and `MAX_ATTACHMENTS` still 10 over the union.
 - [ ] T017 Build `@relay/protocol` before anything reads `ErrorCode` from it. The api reads the built `dist`, and 056 lost a compile cycle to that.
 
 **Checkpoint**: the arm parses a media attachment and nothing refuses it yet — which is a platform
@@ -75,11 +78,15 @@ the message reads back with its attachment.
 - [ ] T027 [US1] Integration test: a message carrying one media attachment and one URL attachment stores both, in order.
 - [ ] T027a [US1] Integration test: **eleven attachments are refused whichever arms they are** (FR-012). The cap is `z.array(attachmentSchema).max(10)` over the union, so it counts both by construction — and "by construction" is what T016's unit test asserts. This one asserts it on the route, because the route is where a caller meets it.
 - [ ] T028 [US1] Integration test: a message with a media attachment and no text is accepted. Chapter 3.24's rule for the URL arm, asserted here because this chapter is the first thing that could have broken it.
-- [ ] T028a [US1] Integration test: **a message read back carries the attachment array exactly as sent — no state, no filename, nothing resolved** (FR-013). Read it through history and through the internal seam, because those are two paths and only one of them is obvious.
+- [ ] T028a [US1] Integration test: **a message read back carries the attachment array exactly as sent — no state, no filename, nothing resolved** (FR-013). **Three doors, not one**: history, the live socket frame, and the backfill a resuming client reads — `backfill.controller.ts:123` passes `row.attachments` straight through, which is why a replay is not a lesser message and why it is also a place this chapter could have leaked state.
   **"WE DID NOT ADD IT" IS NOT A PROPERTY ANYTHING CHECKS.** Chapter 4.10 gave FR-016 a test for the same reason and that test is what caught the arm still refusing a real id. FR-MED-07 is movement VI; the guard is that this chapter does not ship its surface early.
 - [ ] T029 [US1] Convert `services/api/src/messages/messages.itest.ts`'s two `media_not_available` tests into what they become. The one that mints a real id and expects 422 is now the accept test; the one that sends `"m_1"` is now a 400 at the schema.
 - [ ] T030 [US1] Assert the refusal's envelope names **this** code, and let `codes.test.ts` keep owning the URL's shape. A route test restating that shape is how the two drift; what this one is about is that a 422 whose `docs_url` points at `invalid_request` is the failure. **The both-directions check that the removed code's link stops resolving and the new one's starts is T074's**, which is the gate that compares the registry against the reference.
 - [ ] T031 [US1] Re-measure and record: the send's latency with and without a media attachment, sampled rather than asserted. **State what it is a measurement of** — one read on a lane whose largest table is small, which is not a claim about production.
+- [ ] T032a [US1] **Convert `services/gateway/src/session.itest.ts:415`** — *"refuses a media_id and SAYS hosted media is unavailable"* — rather than deleting it (FR-001b). It goes red on the first phase that lands, and its comment says what it is for: *"the only thing that can tell the two-arm schema from a one-arm one on this door."* The two-arm schema still needs telling apart, now by the arm accepting.
+- [ ] T032b [US1] Integration test on the socket: a `message.send` frame carrying the sender's own `media_id` **commits** (FR-001a, SC-002a). The union is one definition and three doors — `messageSendSchema` embeds it and `packages/protocol/src/internal.ts` imports it — so the REST route passing says nothing about this one.
+- [ ] T032c [US1] Integration test on the socket: a frame carrying a **foreign** `media_id` receives the api's own code, not `invalid_frame`. The gateway's send catch forwards any 4xx whose `code` passes `isErrorCode`, so this works by inheritance — and `sendError` fixes the code for the gateway's OWN refusals, which is why a malformed id still answers `invalid_frame` and why that distinction has to be asserted rather than assumed.
+- [ ] T032d [US1] **Budget `session.itest.ts` in the fence work.** It carries **9 titled whole-body fences and 8 excerpts** across the two locales and appears in no artifact before analysis pass 2, because no artifact mentioned the socket.
 - [ ] T032 [US1] Commit phase 3.
 
 **Checkpoint**: a client can send a message carrying a `media_id` it uploaded.
@@ -128,6 +135,7 @@ the message reads back with its attachment.
 
 - [ ] T051 **Run the derivation first and record that it finds nothing.** This chapter adds no route, so `targets.itest.ts` will be green — which breaks a streak of eight chapters where it found the new route before the classification did. Say so rather than letting a green check read as coverage.
 - [ ] T052 Extend the existing `POST /v1/channels/:channelId/messages` attack in `services/api/src/isolation/gauntlet.itest.ts` with a forged **`media_id`**. The existing attack forges a channel id; this is a second identifier on the same route, and `attacked.add` already covers the route name.
+  **TWO OF THE THREE CONDITIONS, AND THE HELPER DECIDES WHICH.** `writeAttack(baseUrl, credential, foreignReq, absentReq, readVictimState)` compares exactly two requests and asserts their answers are identical — so the victim's id against a random UUID is the pair it is built for, and `differences` being empty **is** SC-002 for those two. The third condition, another user of the same tenant, is not a cross-tenant case at all and belongs in the media suite (T034).
 - [ ] T053 **The attack plants a media object for each tenant.** Both tenants' tables are otherwise empty, and *"an empty log passes a leak check for the same reason an empty page does"* (chapter 4.8).
 - [ ] T054 Run the attack red by removing the environment predicate, and confirm it fails for the tenancy reason rather than a shared refusal — the trap the existing attack's own comment records.
 - [ ] T055 [P] Record in `gaps.md`: **nothing counts references to a media object.** This chapter creates the first ones; FR-MED-10's sweep deletes *unreferenced* objects and the only way to answer "unreferenced" against this shape is a scan of `messages.attachments`.
@@ -181,7 +189,8 @@ Phase 2 (registry + arm) ────► US1, US2, US3   — the arm cannot acce
 Phase 3 (US1) ───────────────► US2             — there is no accept path to refuse against
 Phase 5 (US3) ───────────────► independent of US2
 T012 ────► T042                                 the 500 test needs the tightened schema
-T011a ────► T011b                               the rung before the probe that reads it
+T011a0 ────► T011a ────► T011b                   name it, add the rung, then probe it
+T010 ────► T074                                 TWO sections now, and the gate reads both
 T007 + T008 + T010 ────► T074                   check:errors fails until all three land
 T020a ────► T018                                the predicate needs to know which credential asked
 T003 ────► T068a                                SC-010 is a comparison, not an assertion
@@ -203,6 +212,7 @@ because it is a test and a comment about a state nothing reaches.
 - **Phase 2**: T009, T010 and T016 are three files; T010 is documentation beside two code changes. T011a and T011b are the filter and its test, and the test comes second.
 - **Phase 4**: T033, T034 and T035 are one predicate with three fixtures, so the tests parallelise and the implementation does not.
 - **Phase 6**: T055 and T056 are two records in one file.
+- **Phase 3**: T032b and T032c are two socket tests against one fixture and can be written together; T032a is a conversion of an existing test and comes first.
 - **Phase 7**: T061's figures are independent of the fence work.
 
 ## Implementation Strategy
@@ -227,3 +237,10 @@ credential class and finding that nothing had said. T028a and T027a close requir
 task at all. T070a is the `docs/12` amendment four consecutive chapters wrote and this one had
 forgotten. **Nine of the pass's twelve findings came from reading the artifacts against each
 other; three came from running them, and those three are the ones that changed the design.**
+
+**PASS 2 FOUND SEVEN, ALL BY RUNNING, AND THE FIRST IS BIGGER THAN ANYTHING PASS 1 FOUND.** Zero
+mentions of `gateway`, `socket` or `frame` across all six artifacts — and the union has three
+doors, with a live gateway test asserting the refusal this chapter removes. T032a-T032d are that.
+Pass 2 also found that **pass 1's own remediation left a gate red**: T011a added a code and T010
+wrote one section. The yield fell from twelve to seven and the second pass found the larger thing,
+which is why falling yield is not a reason to stop.

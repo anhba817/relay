@@ -134,7 +134,18 @@ a green number, and chapter 4.8 defined FR-ANL-10's quantity and computed nothin
 ### Functional Requirements
 
 - **FR-001**: The `{ type: "media" }` attachment arm MUST accept a `media_id` that names a media
-  object in the sending environment, instead of refusing unconditionally.
+  object in the sending environment, instead of refusing unconditionally. **This is two doors, not
+  one.** `messageSendSchema` embeds the same union, so a socket client's `message.send` frame
+  carries attachments to the api through the internal seam — the arm accepting changes the REST
+  route and the WebSocket path together.
+- **FR-001a**: A socket client MUST be able to attach a `media_id` and MUST receive the same
+  decision as the REST route: the message commits, or it is refused with the api's own code. The
+  gateway already forwards a 4xx whose code is in the registry; what MUST NOT happen is a socket
+  client getting `invalid_frame` for a well-formed id, which is what the arm's schema refusal
+  produces today.
+- **FR-001b**: The socket test that asserts today's refusal MUST be converted rather than deleted.
+  Its comment states what it is for — *"the only thing that can tell the two-arm schema from a
+  one-arm one on this door"* — and that property still needs an assertion once the arm accepts.
 - **FR-002**: A send MUST be refused when the named media object belongs to another environment.
 - **FR-003**: A send MUST be refused when the caller is a user token and the named media object
   was uploaded by a different user.
@@ -155,6 +166,10 @@ a green number, and chapter 4.8 defined FR-ANL-10's quantity and computed nothin
   triggered**.
 - **FR-009**: The refusal FR-005 names MUST be a code of its own, documented in the error
   reference, with a status the error filter's ladder maps.
+- **FR-009b**: The 422 rung's code MUST be named and documented like any other, with a sentence
+  saying what a client does about it. It is a fallback with no thrower, which is what
+  `service_unavailable` is, and the reference section is what stops it being a string in a
+  registry nobody can act on.
 - **FR-009a**: **422 MUST join that ladder.** It is the last status the platform uses that the
   filter falls through to `internal_error` for — chapter 4.10 added rungs for 402, 413, 415 and
   503 and left this one. Every 422 in the platform names its own code today, so the rung has no
@@ -169,7 +184,9 @@ a green number, and chapter 4.8 defined FR-ANL-10's quantity and computed nothin
   to hold by default. FR-MED-07's `media.updated` and the state field are a later chapter, and
   adding either here would ship its surface without its checks. A message read back MUST carry the
   attachment array exactly as sent — the same shape chapter 4.10 gave FR-016, which needed a test
-  precisely because "we did not add it" is not a property anything checks.
+  precisely because "we did not add it" is not a property anything checks. **There are three doors
+  to check, not one**: history, the live socket frame, and the backfill a resuming client reads,
+  which passes `row.attachments` straight through.
 - **FR-014**: The cross-tenant suite MUST attack the new path, and the attack MUST plant a media
   object for each of two tenants so that an empty table cannot pass it.
 - **FR-015**: The chapter MUST record what a second message referencing one media object means for
@@ -204,6 +221,9 @@ a green number, and chapter 4.8 defined FR-ANL-10's quantity and computed nothin
   The qualifier is load-bearing: the refusal's `field` carries the attachment's index, so two
   refusals at different positions differ for a reason that has nothing to do with the property
   this criterion is about.
+- **SC-002a**: A socket client attaching a valid `media_id` commits, and one attaching a foreign
+  id receives the api's own code rather than `invalid_frame`. Measured on the socket, not inferred
+  from the REST route passing.
 - **SC-003**: A refused send leaves the channel's message count and sequence unchanged, measured
   before and after and scoped to the test's own channel.
 - **SC-004**: `pnpm check:errors` passes in both directions after `media_not_available` is removed

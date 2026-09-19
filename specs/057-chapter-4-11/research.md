@@ -192,3 +192,65 @@ passes a leak check for the same reason an empty page does."*
   `gaps.md` 056-1 already records that an unused slot is indistinguishable from an uploaded one.
 - **Signed delivery.** FR-MED-08 is row 13. A `media_id` in a message is not yet a URL anybody can
   fetch.
+
+---
+
+## R9 · The union has three doors and the artifacts described one
+
+**Run**: `grep -c gateway|socket|frame` across all six artifacts of this feature — **zero, in every
+one of them.** Then `grep attachment` across `services/gateway/src`:
+
+```text
+session.ts:1589  "`messageSendSchema` puts `attachments` on the wire; without naming it here
+                  nothing carries it further, the message commits without attachments"
+internal.ts:34   attachments: z.array(attachmentSchema).max(MAX_ATTACHMENTS).optional()
+```
+
+**One definition, three doors.** `packages/protocol/src/internal.ts` imports the same
+`attachmentSchema`, so the REST route, the socket's `message.send` frame and the internal seam the
+gateway calls all validate against the arm this chapter changes. There is no second copy to keep
+in step — which is the good half — and no artifact had noticed the other two doors exist.
+
+**AND A LIVE TEST ASSERTS THE BEHAVIOUR THIS CHAPTER REMOVES.**
+`services/gateway/src/session.itest.ts:415`:
+
+```text
+it("refuses a media_id and SAYS hosted media is unavailable (FR-003a)")
+  expect(refusal.payload.code).toBe("invalid_frame");
+  expect(refusal.payload.message).toMatch(/hosted media is not available/i);
+```
+
+It goes red on the first phase that lands, and its own comment says what it is for — *"the only
+thing that can tell the two-arm schema from a one-arm one on this door"*. That property still needs
+an assertion, so the test is converted rather than deleted (FR-001b).
+
+**The mechanism is already right, which is why this is a test problem and not a design one.** The
+gateway's send catch forwards any api error with `status >= 400 && status < 500` whose `code`
+passes `isErrorCode`, so the new 422 reaches a socket client with its own code. What the gateway
+cannot do is emit a code for its OWN schema refusal: `sendError` fixes the code at the call site,
+which is why a malformed frame is always `invalid_frame` and why today's answer on this door is
+`invalid_frame` carrying the api's sentence.
+
+**Cost**: `session.itest.ts` carries **9 titled whole-body fences and 8 excerpts** across the two
+locales. It is the eleventh fenced file and the plan's list said ten.
+
+---
+
+## R10 · The UUID tightening is safe by ordering, not by design
+
+*"A reader of anything durable cannot require a field its writer did not have"* is this project's
+most-repeated rule, and tightening `media_id` to a UUID is exactly the move that has broken it
+before — `outboxEventSchema` answered every in-flight `message.created` written by the previous
+binary with `message.term()`.
+
+It is safe here for two reasons, and both are worth writing down because neither is a property of
+the change:
+
+1. **No durable row carries a media attachment.** The arm has refused unconditionally since
+   chapter 3.24, so there is nothing stored to re-validate.
+2. **The read paths cast rather than parse.** `messages.attachments` is a bare `jsonb()` with no
+   `.$type<>()`, and `backfill.controller.ts` passes `row.attachments` straight through.
+
+**The next schema tightening will not have the first one.** Stated here so the question gets asked
+rather than rediscovered.
+

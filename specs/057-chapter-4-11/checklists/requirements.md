@@ -81,3 +81,30 @@ was the reverse — two tasks implementing something no requirement stated, now 
 **Requirement count moved 26 → 30** (FR-008a, FR-009a, FR-017 added; SC-002, SC-010 and FR-013
 sharpened) and **task count 76 → 83**. New tasks carry suffixed ids so numbering a reader has
 already seen does not move.
+
+## Analysis pass 2 (2026-09-19)
+
+Seven findings, no CRITICAL, all seven applied. **All seven came from running something**, and the
+first is larger than anything pass 1 found.
+
+- **The union has three doors and the artifacts described one.** Zero mentions of `gateway`,
+  `socket` or `frame` across all six — while `messageSendSchema` embeds `attachmentSchema` and
+  `packages/protocol/src/internal.ts` imports it. A socket client can attach a `media_id` the
+  moment the arm accepts, and **`session.itest.ts:415` asserts the refusal this chapter removes**,
+  so it goes red on the first phase that lands. FR-001a, FR-001b, SC-002a, T032a-T032d.
+- **Pass 1's own remediation left a gate red.** T011a added a generic 422 code; T010 wrote a
+  section for *"the new code's"*, singular. `check-error-codes.mjs` fails in both directions.
+  FR-009b, T011a0, and T010 extended.
+- **The fenced-file list is eleven.** Six at pass 0, ten at pass 1, eleven now —
+  `session.itest.ts` carries 9 titled whole-body fences and appeared in no artifact, because no
+  artifact mentioned the socket. Wrong at every pass, in the same direction.
+- **The UUID tightening is safe by ordering, not by design** (R10): no durable row carries a media
+  attachment and the read paths cast rather than parse. Both are facts about timing.
+
+**Requirement count 29 → 33** and **task count 83 → 89.**
+
+**On yield.** Pass 1 found twelve and three came from running. Pass 2 found seven and all seven
+did. The count fell and the value did not, which is what `CLAUDE.md` means by *"do not stop on
+falling yield"* — and the unasked question of the same shape is what a **third** consumer would
+do with a stored media attachment, which today is nobody, because none has ever been stored.
+

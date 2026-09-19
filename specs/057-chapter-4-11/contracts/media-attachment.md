@@ -73,13 +73,43 @@ registry's own entry instructs the deletion rather than a repurposing.
 
 ---
 
+## The other door
+
+**`messageSendSchema` embeds the same union**, so the socket's `message.send` frame carries
+attachments through the internal seam to the api. One definition, three doors — the REST route,
+the frame, and `packages/protocol/src/internal.ts`, which imports `attachmentSchema` directly.
+
+```jsonc
+// over the socket
+{ "type": "message.send",
+  "payload": { "channel": "…", "text": "look", "idem_key": "…",
+               "attachments": [{ "type": "media", "media_id": "<uuid>" }] } }
+```
+
+| what the client sends | what it gets back |
+|---|---|
+| its own media id | the message commits, acked as any send is |
+| a foreign or unknown id | **the api's own code**, forwarded — the gateway's send catch passes any 4xx whose `code` is in the registry |
+| a malformed id | `invalid_frame`, with the path `payload.attachments.0.media_id` |
+
+**The third row is the gateway's limit, not a choice.** `sendError` fixes its code at the call
+site, so a refusal the gateway raises itself can only ever be `invalid_frame` — which is why the
+socket's answer to a media attachment today is `invalid_frame` carrying the api's sentence, and
+why `session.itest.ts` asserts the *message* rather than the code.
+
+**That test goes red on the first phase that lands**, and it is converted rather than deleted: its
+comment says it is *"the only thing that can tell the two-arm schema from a one-arm one on this
+door"*, and the two-arm schema still needs telling apart.
+
 ## What is unchanged, and is worth stating because a reader will look for it
 
 - **The ten-attachment cap** counts media and URL attachments together. It always has: the cap is
   `z.array(attachmentSchema).max(10)` over the union.
 - **A message may carry no text** when it carries an attachment. Chapter 3.24's rule.
 - **The same id twice is two attachments.** Nothing compares them.
-- **Delivery carries no attachment state.** FR-MED-07 is movement VI. A subscriber receives the
-  attachment array as sent and learns nothing about whether the bytes have been checked.
+- **Delivery carries no attachment state**, through all three doors: history, the live frame, and
+  the backfill a resuming client reads, which passes `row.attachments` straight through. FR-MED-07
+  is movement VI. A subscriber receives the attachment array as sent and learns nothing about
+  whether the bytes have been checked.
 - **A `media_id` is not yet fetchable.** FR-MED-08's signed delivery is row 13; this chapter makes
   a message able to name an object, not a recipient able to read one.

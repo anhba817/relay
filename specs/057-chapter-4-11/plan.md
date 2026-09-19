@@ -50,7 +50,7 @@ refusing.
 | **II · No acknowledged message is lost** | Untouched. The check runs before the insert, inside the same transaction; a refusal writes no message and no outbox row. |
 | **III · Two data paths** | Untouched. Nothing analytical is read or written. The send's existing request-log record is unchanged. |
 | **IV · Single writer** | The message records the id, not a copy of the object's state — one source of truth for what an attachment is, which is what lets FR-MED-07 report a change later without the message having lied. |
-| **V · API-first** | The arm's shape does not change; its behaviour does. `media_id` tightens to a UUID, which narrows a shape nothing was accepting (research R3), so CON-05's URL-versioning rule is not engaged. The removed code and the added one both land in `docs/08-error-reference.md`. **And 422 joins the error filter's ladder** — measured at analysis pass 1: the rungs are 400, 401, 402, 403, 404, 413, 415 and 503, so an unnamed 422 still answers `internal_error`, which is the filter's own *"lie the client cannot act on"*. Chapter 4.10 closed four and left this one. |
+| **V · API-first** | **There are two APIs and the artifacts described one until pass 2.** `messageSendSchema` embeds the same union, so the arm accepting changes the REST route and the socket's `message.send` frame together, and a live gateway test asserts the refusal this chapter removes (research R9). The arm's shape does not change; its behaviour does. `media_id` tightens to a UUID, which narrows a shape nothing was accepting (research R3), so CON-05's URL-versioning rule is not engaged. The removed code and the added one both land in `docs/08-error-reference.md`. **And 422 joins the error filter's ladder** — measured at analysis pass 1: the rungs are 400, 401, 402, 403, 404, 413, 415 and 503, so an unnamed 422 still answers `internal_error`, which is the filter's own *"lie the client cannot act on"*. Chapter 4.10 closed four and left this one. |
 | **VI · Requirement-driven, test-verified** | FR-MED-06 is a `T` clause. **One of its arms cannot be tested** and the chapter says so with the database's own refusal rather than a skipped test (research R2). |
 | **VII · Boring by design** | No dependency, no table, no route. One code deleted on its own instruction, one added. |
 
@@ -84,6 +84,8 @@ packages/protocol/src/
 ├── attachments.test.ts            # the arm's unit tests
 ├── codes.ts                       # media_not_available deleted, one code added
 └── codes.test.ts                  # three assertions about the departing code
+services/gateway/src/
+└── session.itest.ts               # the socket door: one test converted, two added
 services/api/src/
 ├── messages/
 │   ├── messages.schema.ts         # unchanged — the cap already counts both arms
@@ -116,12 +118,17 @@ starting point rather than a substitute for `--dump`:
     services/api/src/isolation/gauntlet.itest.ts         14
     services/api/src/messages/zod-validation.pipe.ts      6
     packages/protocol/src/attachments.ts                  2
+    services/gateway/src/session.itest.ts                 9   + 8 excerpts
     packages/protocol/src/attachments.test.ts             0   — the only unfenced one
 
-**The three that pass 1 added are the three the tasks name and the plan had not**:
-`codes.test.ts` (T009), `messages.service.ts` (T022) and `vitest.coverage.config.mts` (T048). The
-list was wrong before any code was written, which is the direction 050 and 056 both recorded — and
-it was wrong about the two most expensive files in the chain.
+**Six at pass 0, ten at pass 1, eleven at pass 2**, and each correction came from counting rather
+than remembering. Pass 1 added the three the tasks already named — `codes.test.ts` (T009),
+`messages.service.ts` (T022) and `vitest.coverage.config.mts` (T048), two of them among the most
+expensive files in the chain. Pass 2 added `session.itest.ts`, which no artifact had mentioned at
+all because no artifact had mentioned the socket (research R9).
+
+**The list has been wrong at every pass and in the same direction**, which is what 050 and 056
+both recorded. It is a starting point for `--dump`, not a substitute.
 
 Feature 056 measured what that costs: nine of seventeen hunks could not anchor at a chapter, and
 two more anchored and broke the appendix's own older hunks. **Generate every hunk from
@@ -167,6 +174,12 @@ running. The derivation will report nothing. The accounting direction that still
 gauntlet's second — a route that is attacked and not for this identifier — and it has to be asked
 deliberately because nothing will ask it automatically.
 
+**AND THE UUID TIGHTENING IS SAFE BY ORDERING RATHER THAN BY DESIGN** (research R10). No durable
+row carries a media attachment, because the arm has refused since 3.24, and the read paths cast
+rather than parse. Both are facts about the timing of this change and neither is a property of it
+— *"a reader of anything durable cannot require a field its writer did not have"* is the rule that
+would otherwise apply, and it is the one `outboxEventSchema` broke.
+
 ## What analysis pass 1 changed
 
 **422 was not in the ladder, and FR-009 required that it be.** Measured rather than read:
@@ -182,6 +195,18 @@ code would then tell a caller their media is not attachable.
 **FR-013 had no task and now has one**, and FR-008a states a requirement two tasks were already
 implementing. Three more coverage gaps closed the same way; `tasks.md` carries them as suffixed
 ids so the numbering a reader has already seen does not move.
+
+## What analysis pass 2 changed
+
+**The socket door.** Zero mentions of `gateway`, `socket` or `frame` across all six artifacts, and
+the union has three doors: the REST route, the socket frame, and the internal seam the gateway
+calls — one `attachmentSchema`, imported by all three. FR-001a, FR-001b and SC-002a are the
+result, along with three tasks and a fenced file nobody had counted.
+
+**And pass 1's own remediation left a gate red.** T011a added a generic 422 code and T010 wrote a
+section for *"the new code's"*, singular — `check-error-codes.mjs` fails in both directions, so
+T074 would have gone red on a code pass 1 introduced. FR-009b and an extended T010 close it. **The
+fix is where the next defect is**, three features running.
 
 ## Open questions for `/speckit-analyze`
 
