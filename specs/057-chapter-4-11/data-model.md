@@ -104,6 +104,26 @@ nothing downstream of the parse reads them either.
 counts exactly as an external URL does. Nothing breaks; the column's meaning widens, and this
 chapter is where that is written down (R12).
 
+## 4b. Every validator of an attachment array, and which ones cross a boundary
+
+One union, **seven validators**. Three analysis passes found them one door at a time, which is the
+argument for the table rather than for the diligence of any pass.
+
+| site | parsed by | boundary | crosses a deploy skew? |
+|---|---|---|---|
+| `messages/messages.schema.ts:40` | api | client → api, REST body | no — one process |
+| `packages/protocol/src/frames.ts:93` | gateway | client → gateway, `message.send` | no |
+| `packages/protocol/src/internal.ts:34` | api | gateway → api, send request | **yes**, and benign: an old api refuses a media arm with a 422 rather than losing anything |
+| `packages/protocol/src/internal.ts:70` | **gateway**, `api-client.ts:247` | api → gateway, send response | **yes, and it closes the socket 1011** |
+| `services/api/src/outbox/event.ts:373` | api consumer | durable, `message.created` | **yes, and it terminates the message** |
+| `services/api/src/outbox/event.ts:412` | api consumer | durable, `message.updated` | **yes**, same |
+| `packages/protocol/src/frames.ts:45` | nothing at runtime | server → client, delivery frame | no — a TypeScript type, and `z.uuid()` still infers `string` |
+
+**Four cross a boundary between processes that deploy separately, and three of those four matter.**
+The rule is the same at each: a reader that forwards a value it never interprets must not refuse a
+shape its writer may produce. The api's own request schemas stay strict, because refusing a bad
+arm at the door is the point of them.
+
 ## 5. State transitions
 
 None. This chapter reads `state` and never writes it. The transitions FR-MED-07 names —

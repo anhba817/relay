@@ -198,6 +198,20 @@ a green number, and chapter 4.8 defined FR-ANL-10's quantity and computed nothin
   with the consumer switched off and cannot find this class on its own. `outbox/event.ts`'s own
   header records the previous instance: *"the api suite stayed green through 505 tests with the
   defect in place."*
+- **FR-018b**: **The synchronous reader has the same obligation as the durable one.**
+  `internalSendResponseSchema` is a `strictObject` carrying a required
+  `attachments: z.array(attachmentSchema)`, and `services/gateway/src/api-client.ts:247` parses
+  the api's send response with it. An old gateway reading a new api's response refuses the payload
+  and the socket closes **1011** — the file's own words, from the chapter that added the field.
+  The message is committed, so the client loses its acknowledgement and its connection, and an
+  idempotent retry fails identically.
+- **FR-018c**: The chapter MUST enumerate every place an attachment array is validated, and say
+  which of them cross a process boundary. There are seven and they were found one per analysis
+  pass; the next change to this union should read a list rather than rediscover it.
+- **FR-020**: Editing a message that carries a media attachment MUST leave the attachment
+  unchanged, asserted rather than assumed. `repository.ts:4604` states the property — *"an edit
+  does not change attachments (FR-016)"* — and this chapter creates the first media attachment
+  there is to preserve.
 - **FR-019**: The chapter MUST record that `attachment_count` in the analytical store changes
   meaning. `load-analytics.mjs` computes `JSONLength(m.attachments)`, which has counted external
   URLs for every row ever written and starts counting hosted media alongside them with nothing
@@ -242,6 +256,9 @@ a green number, and chapter 4.8 defined FR-ANL-10's quantity and computed nothin
 - **SC-002b**: An outbox envelope carrying a media attachment parses under the consumer's schema,
   and the test that proves it **fails against the arm as it stands today**. A durable-reader test
   that cannot go red is the class this chapter is trying not to join.
+- **SC-002c**: An api send response carrying a media attachment parses under the gateway's
+  schema, and the test fails against the arm as it stands today — the same red-first requirement
+  SC-002b places on the durable reader.
 - **SC-003**: A refused send leaves the channel's message count and sequence unchanged, measured
   before and after and scoped to the test's own channel.
 - **SC-004**: `pnpm check:errors` passes in both directions after `media_not_available` is removed

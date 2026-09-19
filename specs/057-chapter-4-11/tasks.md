@@ -25,6 +25,7 @@ Paths below are relative to the repository that owns them.
 - [ ] T002 Record the opening `check:fences` figure as an **absolute number**, not a delta. It is 0 today. A delta of zero is what hid a problem for nine chapters.
 - [ ] T003 [P] Record the opening dependency count across every `package.json` in `relay-platform` — 29 at `part4-ch10` — so SC-010 is a comparison rather than an assertion.
 - [ ] T004 [P] Record the opening state of the three lanes: `pnpm test` (Docker-free since the 056 follow-up), `pnpm test:integration` (12 of 12 tasks), and `pnpm check:errors` (33 codes, 33 sections). **Read each one's counted line, not its exit code** (`gaps.md` 055-4).
+- [ ] T004a [P] **Enumerate every validator of an attachment array and say which cross a process boundary** (FR-018c). There are seven; `data-model.md` §4b has the table. Four cross a deploy skew and three of those four matter. Three analysis passes found them one door at a time, which is why the table exists rather than the diligence.
 - [ ] T005 **Count the fenced files this chapter will touch, against the checker.** The plan lists six as a starting point and says so; 056's table said twelve and the checker said seventeen. `pnpm check:fences --dump` after the first source edit is what answers it.
 
 ---
@@ -61,6 +62,9 @@ cannot be tested before the arm accepts.
   **Rejected: rely on deploy order.** Reader-first would work and nothing enforces it; an invariant that depends on the order two processes restart in is not an invariant.
 - [ ] T017b **Test it against the arm as it stands today** (FR-018a, SC-002b), in `services/api/src/consumer/consumer.itest.ts`: an envelope carrying `{ "type": "media", "media_id": "<uuid>" }` parses and is acked rather than terminated. **Run it red against the current `attachmentSchema`** — a durable-reader test that cannot go red is the class this chapter is trying not to join.
   **THE LANE CANNOT FIND THIS ON ITS OWN.** `RELAY_EVENT_CONSUMER=off`, for chapter 3.5's reason, and `outbox/event.ts`'s own header records what that cost last time: *"the api suite stayed green through 505 tests with the defect in place."*
+- [ ] T017d **Make the internal send RESPONSE's attachment elements permissive** (FR-018b), in `packages/protocol/src/internal.ts:70`. `internalSendResponseSchema` is a `strictObject` and `services/gateway/src/api-client.ts:247` parses the api's response with it, so an old gateway reading a new api refuses the payload — and the schema's own comment says what follows: *"every socket send would close 1011."* The message is committed, so the client loses its acknowledgement and its connection, and an idempotent retry fails identically.
+  **THE REQUEST SCHEMA AT `:34` STAYS STRICT.** An old api refusing a new gateway's media arm answers 422 and loses nothing, and refusing a bad arm at the door is what a request schema is for. The asymmetry is the point: strict where the value is judged, permissive where it is forwarded.
+- [ ] T017e **Test it red against today's arm** (SC-002c): a response payload carrying `{ "type": "media", "media_id": "<uuid>" }` parses under the gateway's schema. Same red-first requirement T017b places on the durable reader, for the same reason.
 - [ ] T017c **Budget `outbox/event.ts` (11 titled fences) and `consumer.itest.ts` (9) in the fence work.** Neither appears in any artifact before analysis pass 3, because none mentioned the consumer.
 
 **Checkpoint**: the arm parses a media attachment and nothing refuses it yet — which is a platform
@@ -88,6 +92,7 @@ the message reads back with its attachment.
 - [ ] T028 [US1] Integration test: a message with a media attachment and no text is accepted. Chapter 3.24's rule for the URL arm, asserted here because this chapter is the first thing that could have broken it.
 - [ ] T028a [US1] Integration test: **a message read back carries the attachment array exactly as sent — no state, no filename, nothing resolved** (FR-013). **Three doors, not one**: history, the live socket frame, and the backfill a resuming client reads — `backfill.controller.ts:123` passes `row.attachments` straight through, which is why a replay is not a lesser message and why it is also a place this chapter could have leaked state.
   **"WE DID NOT ADD IT" IS NOT A PROPERTY ANYTHING CHECKS.** Chapter 4.10 gave FR-016 a test for the same reason and that test is what caught the arm still refusing a real id. FR-MED-07 is movement VI; the guard is that this chapter does not ship its surface early.
+- [ ] T028b [US1] Integration test: **editing a message that carries a media attachment leaves the attachment unchanged** (FR-020). `repository.ts:4604` states the property — *"an edit does not change attachments (FR-016) … neither can invent them"* — and this chapter creates the first media attachment there is to preserve. The edit also emits `message.updated`, which is the second outbox arm T017a widened.
 - [ ] T029 [US1] Convert `services/api/src/messages/messages.itest.ts`'s two `media_not_available` tests into what they become. The one that mints a real id and expects 422 is now the accept test; the one that sends `"m_1"` is now a 400 at the schema.
 - [ ] T030 [US1] Assert the refusal's envelope names **this** code, and let `codes.test.ts` keep owning the URL's shape. A route test restating that shape is how the two drift; what this one is about is that a 422 whose `docs_url` points at `invalid_request` is the failure. **The both-directions check that the removed code's link stops resolving and the new one's starts is T074's**, which is the gate that compares the registry against the reference.
 - [ ] T031 [US1] Re-measure and record: the send's latency with and without a media attachment, sampled rather than asserted. **State what it is a measurement of** — one read on a lane whose largest table is small, which is not a claim about production.
@@ -202,6 +207,8 @@ T011a0 ────► T011a ────► T011b                   name it, ad
 T010 ────► T074                                 TWO sections now, and the gate reads both
 T007 + T008 + T010 ────► T074                   check:errors fails until all three land
 T017a ────► T017b                               the permissive reader before the test that proves it
+T017d ────► T017e                               the same, on the synchronous door
+T017a + T017d ────► T018                        BOTH readers before the producer, not one
 T017a ────► T018                                DO NOT SHIP A PRODUCER AHEAD OF ITS DURABLE READER
 T020a ────► T018                                the predicate needs to know which credential asked
 T003 ────► T068a                                SC-010 is a comparison, not an assertion
@@ -232,10 +239,11 @@ because it is a test and a comment about a state nothing reaches.
 predicate cannot be tested before the arm accepts, and an accept path without the predicate is a
 cross-tenant hole. Committing between them is fine; shipping between them is not.
 
-**AND T017a IS THE ONE ORDERING THAT IS NOT NEGOTIABLE.** The durable reader has to accept a media
-attachment before anything can write one. Ship the producer first and a rolling deploy destroys
-acknowledged messages — constitution II, permanently, silently, and on exactly the messages this
-chapter exists to make possible.
+**AND T017a AND T017d ARE THE ORDERING THAT IS NOT NEGOTIABLE.** Both readers have to accept a
+media attachment before anything can write one. Ship the producer first and a rolling deploy
+destroys acknowledged messages through the durable door — constitution II, permanently and
+silently — and closes sockets with 1011 through the synchronous one. They are the same defect on
+two doors and they were found two passes apart, because nothing listed the doors.
 
 **The riskiest task is T037**, and not because it is hard. Byte-identical refusals are easy to
 write and easy to lose: the next person to add a helpful detail to one of the three messages
@@ -253,6 +261,12 @@ credential class and finding that nothing had said. T028a and T027a close requir
 task at all. T070a is the `docs/12` amendment four consecutive chapters wrote and this one had
 forgotten. **Nine of the pass's twelve findings came from reading the artifacts against each
 other; three came from running them, and those three are the ones that changed the design.**
+
+**PASS 4 FOUND THE SAME DEFECT ON A DOOR PASS 3 DID NOT OPEN.** `internalSendResponseSchema` is
+strict and the gateway parses the api's response with it; the schema's own comment already said
+*"every socket send would close 1011"*. **One union has seven validators, four across a deploy
+boundary, and no artifact listed them** — which is why it took four passes to find three of the
+four. T004a and `data-model.md` §4b are that list.
 
 **PASS 3 FOUND THREE AND ONE WAS A CONSTITUTION VIOLATION.** The outbox envelope reads
 `attachments` with the same union and the consumer terminates a failed parse. `consumer` appeared

@@ -135,3 +135,28 @@ pass 1 asked the api, pass 2 asked which services import the union, pass 3 asked
 durable storage. **The count fell every time and the worst finding came last**, which is what
 `CLAUDE.md` means by not stopping on falling yield.
 
+## Analysis pass 4 (2026-09-19)
+
+Three findings, no CRITICAL, one HIGH, all three applied and all three from running.
+
+- **The synchronous reader has pass 3's defect.** `internalSendResponseSchema` is a `strictObject`
+  with a required `attachments: z.array(attachmentSchema)`, and `api-client.ts:247` parses the
+  api's send response with it. Old gateway, new api: the payload is refused and the socket closes
+  **1011** — the schema's own comment, written by the chapter that added the field. The message is
+  committed, so the client loses its acknowledgement rather than its data, and an idempotent retry
+  fails identically. FR-018b, SC-002c, T017d, T017e.
+- **One union has seven validators and no artifact listed them.** Four cross a deploy boundary.
+  They were found one per pass — REST at pass 0, the socket frame at pass 2, the outbox at pass 3,
+  the response now. FR-018c, T004a, and the table at `data-model.md` §4b.
+- **An edit carries attachments forward** and nothing asserted it survives with a media arm.
+  FR-020, T028b.
+
+**Requirement count 37 → 41** and **task count 93 → 97.**
+
+**On four passes.** 12 findings, 7, 3, 3 — severity 0 CRITICAL, 0, 1, then 1 HIGH. The count
+stopped being informative after the first pass. What kept working was asking a different question
+of the tree each time: the api, then which services import the union, then what reads it off
+durable storage, then *enumerate every validator*. **Three of the four boundary readers were found
+one pass apart, and the enumeration that would have found all of them in one command took until
+pass 4 to run.** That is the finding about the method, and it is why FR-018c exists.
+

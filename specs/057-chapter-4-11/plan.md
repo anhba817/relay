@@ -50,7 +50,7 @@ refusing.
 | **II · No acknowledged message is lost** | **The one principle this chapter can break, and the plan did until analysis pass 3.** `outboxEventSchema` validates `attachments` with the same union at two arms and `consumer/runtime.ts` answers a failed parse with `message.term()` — so a message a new instance commits and an old one reads during a rolling deploy is destroyed, after the ack. The consumer never reads the field (zero occurrences) and neither does anything downstream, so the strictness costs the message and buys nothing (research R11). The envelope stays strict about its own fields; the attachment elements become permissive. The refusal half is unchanged and was always fine: the check runs before the insert, inside the same transaction. |
 | **III · Two data paths** | Untouched. Nothing analytical is read or written. The send's existing request-log record is unchanged. |
 | **IV · Single writer** | The message records the id, not a copy of the object's state — one source of truth for what an attachment is, which is what lets FR-MED-07 report a change later without the message having lied. |
-| **V · API-first** | **There are two APIs and the artifacts described one until pass 2.** `messageSendSchema` embeds the same union, so the arm accepting changes the REST route and the socket's `message.send` frame together, and a live gateway test asserts the refusal this chapter removes (research R9). The arm's shape does not change; its behaviour does. `media_id` tightens to a UUID, which narrows a shape nothing was accepting (research R3), so CON-05's URL-versioning rule is not engaged. The removed code and the added one both land in `docs/08-error-reference.md`. **And 422 joins the error filter's ladder** — measured at analysis pass 1: the rungs are 400, 401, 402, 403, 404, 413, 415 and 503, so an unnamed 422 still answers `internal_error`, which is the filter's own *"lie the client cannot act on"*. Chapter 4.10 closed four and left this one. |
+| **V · API-first** | **There are two APIs and the artifacts described one until pass 2**, and the api→gateway response is a third door found at pass 4: `internalSendResponseSchema` is strict and `api-client.ts:247` parses it, so an old gateway reading a new api closes the socket **1011** — the schema's own comment, from the chapter that added the field (research R13). `messageSendSchema` embeds the same union, so the arm accepting changes the REST route and the socket's `message.send` frame together, and a live gateway test asserts the refusal this chapter removes (research R9). The arm's shape does not change; its behaviour does. `media_id` tightens to a UUID, which narrows a shape nothing was accepting (research R3), so CON-05's URL-versioning rule is not engaged. The removed code and the added one both land in `docs/08-error-reference.md`. **And 422 joins the error filter's ladder** — measured at analysis pass 1: the rungs are 400, 401, 402, 403, 404, 413, 415 and 503, so an unnamed 422 still answers `internal_error`, which is the filter's own *"lie the client cannot act on"*. Chapter 4.10 closed four and left this one. |
 | **VI · Requirement-driven, test-verified** | FR-MED-06 is a `T` clause. **One of its arms cannot be tested** and the chapter says so with the database's own refusal rather than a skipped test (research R2). |
 | **VII · Boring by design** | No dependency, no table, no route. One code deleted on its own instruction, one added. |
 
@@ -121,6 +121,7 @@ starting point rather than a substitute for `--dump`:
     services/api/src/messages/zod-validation.pipe.ts      6
     packages/protocol/src/attachments.ts                  2
     services/api/src/outbox/event.ts                     11
+    packages/protocol/src/internal.ts                     ?   — count at T005
     services/gateway/src/session.itest.ts                 9   + 8 excerpts
     services/api/src/consumer/consumer.itest.ts           9
     packages/protocol/src/attachments.test.ts             0   — the only unfenced one
@@ -201,6 +202,22 @@ code would then tell a caller their media is not attachable.
 **FR-013 had no task and now has one**, and FR-008a states a requirement two tasks were already
 implementing. Three more coverage gaps closed the same way; `tasks.md` carries them as suffixed
 ids so the numbering a reader has already seen does not move.
+
+## What analysis pass 4 changed
+
+**The same defect as pass 3, on a door pass 3 did not open.** The union has **seven validators**
+and four cross a boundary between processes that deploy separately; pass 3 fixed the two durable
+ones and `internalSendResponseSchema` is the third. FR-018b, FR-018c, FR-020, SC-002c and four
+tasks.
+
+**And the reason it took four passes is that nothing listed the doors.** `data-model.md` §4b is
+the table now: where each validator is, who parses it, and whether it crosses a skew. The
+asymmetry it records is the whole rule — **strict where a value is judged, permissive where it is
+forwarded.** The api's request schemas stay strict; the readers that hand the value onward do not.
+
+**The edit path also carries attachments forward** (R14, FR-020): `repository.ts:4601` selects
+them for `message.updated` and the 200 response, and this chapter creates the first media
+attachment there is to preserve.
 
 ## What analysis pass 3 changed
 

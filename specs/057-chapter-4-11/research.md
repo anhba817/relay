@@ -323,3 +323,54 @@ is known.
 meters stored bytes and counts uploads by kind; adding a narrower count here would be that
 chapter's surface without its clause.
 
+---
+
+## R13 · The synchronous reader has the same defect, on a door pass 3 did not open
+
+**Run**: `grep -rn 'z.array(attachmentSchema)' packages services` — **seven** sites, four of them
+across a process boundary. Pass 3 fixed the two durable ones. The third is
+`packages/protocol/src/internal.ts:70`:
+
+```text
+export const internalSendResponseSchema = z.strictObject({
+  …
+  attachments: z.array(attachmentSchema),      // required
+});
+```
+
+and `services/gateway/src/api-client.ts:247` is `return parse(res, internalSendResponseSchema,
+"send")`.
+
+**Old gateway, new api.** A socket client attaches media, the api commits the message and returns
+the attachment, and the gateway's copy of the arm refuses the payload. The chapter that added this
+field wrote down what happens, in the schema's own comment:
+
+> *"THIS SCHEMA IS A `strictObject` AND `services/gateway/src/api-client.ts:248` PARSES THE API'S
+> RESPONSE WITH IT … the moment `sendMessage` returns an attachments key the old schema would have
+> refused the payload and **every socket send would close 1011**."*
+
+The message is committed, so this is not constitution II — it is worse for the client than for the
+data. The send succeeded, the acknowledgement never arrives, the connection closes with an
+internal-error code, and an idempotent retry returns `duplicate: true` and fails the same way. A
+close-retry loop for as long as the skew lasts.
+
+**Decision**: the response's attachment elements become permissive, for H1's reason exactly — the
+gateway forwards them to the client and never interprets them. **The request schema at `:34` stays
+strict**: an old api refusing a new gateway's media arm answers 422 and loses nothing, and
+refusing a bad arm at the door is what a request schema is for.
+
+**And the reason it took four passes is that nothing listed the doors.** `data-model.md` §4b is
+the list now.
+
+---
+
+## R14 · An edit carries the attachments forward, and this chapter creates the first ones
+
+`repository.ts:4601-4605` selects `messages.attachments` inside the edit's transaction, for the
+`message.updated` event and the 200 response, with the comment *"an edit does not change
+attachments (FR-016) … neither can invent them."*
+
+That property has never been exercised with a media attachment, because none could exist. Pass 3's
+fix covers the envelope at both arms, so the durable half is safe; what is not asserted is that an
+edit of a message carrying a `media_id` still carries it afterwards. One test, in phase 3.
+
