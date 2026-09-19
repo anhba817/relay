@@ -10,7 +10,7 @@ Hub is `pull access denied` on this machine, and `docs/05-sad.md:1002` predates 
 ```bash
 cd relay-platform
 RELAY_POSTGRES_PORT=15432 docker compose up -d minio
-curl -s -o /dev/null -w 'health: HTTP %{http_code}\n' http://localhost:9000/minio/health/live
+curl -s -o /dev/null -w 'health: HTTP %{http_code}\n' http://localhost:9100/minio/health/live
 ```
 
 **A 200 here proves almost nothing**, which is the point of saying so. Chapter 4.2's ClickHouse
@@ -22,7 +22,7 @@ refused. The check that counts is the round trip in §3.
 ```bash
 node -e '
 const { presignPut } = await import("./services/api/dist/media/presign.js");
-console.log(presignPut({ endpoint: "http://localhost:9000", bucket: "relay-media",
+console.log(presignPut({ endpoint: "http://localhost:9100", bucket: "relay-media",
   key: "probe/hello.txt", accessKey: "relay", secretKey: "relay-secret" }));'
 ```
 
@@ -36,7 +36,7 @@ signs it, and the workspace has no S3 client of any kind.
 URL=$(node -e '…presignPut(…)')                       # as above
 echo hello > /tmp/f.txt
 curl -s -o /dev/null -w 'PUT      -> %{http_code}\n' -X PUT --upload-file /tmp/f.txt "$URL"
-curl -s -o /dev/null -w 'unsigned -> %{http_code}\n' http://localhost:9000/relay-media/probe/hello.txt
+curl -s -o /dev/null -w 'unsigned -> %{http_code}\n' http://localhost:9100/relay-media/probe/hello.txt
 ```
 
 Measured against `quay.io/minio/minio`:

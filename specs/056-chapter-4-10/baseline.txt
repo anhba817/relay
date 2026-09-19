@@ -140,3 +140,267 @@ T009  NINE RESULTS AGAINST THE RUNNING STORE — 9 of 9, three runs
       right**, and this one had reached the project's own instruction file.
 
 T010  lint exit 0 · typecheck exit 0
+
+================================================================================
+PHASE 3 — THE SLOT (US1)                                            2026-09-19
+================================================================================
+
+T011  THE TABLE, AND THE THREE THINGS THAT GO TOGETHER
+
+      `media_objects` in `schema.ts` and `migrations/0015_media_objects.sql`:
+      `environment_id` NOT NULL, `user_id` NULLABLE because an API key has no user,
+      `declared_bytes` with a `> 0` CHECK, and `state` CHECKed to `'pending'` alone —
+      a CHECK that accepted `ready` would be a schema claiming a state nothing can
+      reach.
+
+      **AND THE MIGRATION FIRST TRIED TO INSERT INTO A TABLE I INVENTED.**
+      `__sentinel_rows` does not exist. The guard's array is a literal inside a
+      `DO $$` block in `packages/test-harness/src/sentinel.sql`, and joining it is
+      three edits in that package rather than one statement in a migration: the NAME
+      in the array, the BAIT in `plant()`, and the CASE in `guard.itest.ts`. The
+      array's own comment says so — *"a name added here without bait planted in
+      `sentinel.ts` installs a trigger that can never match, and it reads exactly
+      like protection"* — and the migration now says where the guard lives instead of
+      pretending to set it up.
+
+        guard.itest.ts   38 tests before · 43 after
+
+      Five new cases, generated from the array by the suite's own parser, which is
+      why adding the name is what adds the tests.
+
+T012  THE CATALOGUE NEEDED NOTHING, AND THE TASK SAID IT WOULD
+
+      `classifyTables` DERIVES `direct` from the schema — a table carrying
+      `environment_id` is classified without being listed. Only `SPINE` is a manual
+      list. `tenant-scope.itest.ts` passed **6 of 6** with the table present, and its
+      failure message is *"these tables have no path to an environment"*, so a
+      missing classification would have been loud.
+
+      The task also named the wrong file for the refusal: it is in
+      `isolation/tenant-scope.itest.ts:42`, not in `catalogue.ts`. Analysis pass 2
+      caught that half; the "add the path" half was wrong too.
+
+## T013 — ONE PROTOTYPE KEY DEFEATED BOTH OF FR-MED-02's FIRST TWO REFUSALS
+
+      `ALLOWED_TYPES` is an object literal and the first `kindOf` was
+      `ALLOWED_TYPES[mimeType] ?? null`. An object literal inherits from
+      `Object.prototype`:
+
+        kindOf("constructor")            -> function Object() { … }   TRUTHY
+        so the TYPE refusal                                            never fires
+        KIND_CAPS[thatFunction]          -> undefined
+        bytes > undefined                -> false
+        so the SIZE refusal                                            never fires
+
+      **A declared MIME type of `constructor`, at any size, passed both.** TypeScript
+      types the map `Record<string, MediaKind>` and says the return is a `MediaKind`;
+      the runtime disagreed, which is why no type error appeared anywhere.
+
+      Fixed with `Object.hasOwn`. The test that found it was written to check exactly
+      this and went red on its first run — 5 of 5 after.
+
+      **And the two facts live in one file for the reason this bug shows**: a type
+      allowed with no cap is measured against `undefined`, and `>` against `undefined`
+      is `false` rather than an error.
+
+## T014 — THE LINT RULE REFUSED THE SERVICE, WHICH IS 4.7's FINDING ONE CHAPTER ON
+
+      The first `media.service.ts` held the quota query and imported `drizzle-orm`:
+
+        error  'drizzle-orm' import is restricted from being used. The query engine
+               lives inside the repository layer only (constitution I, ADR-16)
+
+      Chapter 4.7's record says why a plan walks into this: *"The plan put the job in
+      the api BECAUSE the api owns the repository and never noticed the wall between
+      them."* This chapter's plan did the same. The query is
+      `Repository.reserveMediaSlot` now — one transaction, because the cap is a sum
+      over `media_objects` and the insert adds to it — and it **returns facts rather
+      than a refusal**, so the protocol decision stays in the service.
+
+## AND THE TYPE SYSTEM SAID THE PHASE ORDER WAS WRONG
+
+      With the route written, `tsc` refused four things, and each refusal is a guard
+      this project built on purpose:
+
+        media_type_not_allowed …    not assignable to `ErrorCode`   (three codes)
+        "storage_bytes"             not assignable to `Dimension`
+        NOUN: Record<Dimension,…>   missing `storage_bytes`
+        RESUMES: Record<…>          missing `storage_bytes`
+
+      **US1's route cannot compile before US2's codes and US3's dimension**, and the
+      task list has it first. `protocolError` is typed `ErrorCode` precisely so an
+      unregistered code stops compiling (FR-025), and `Record<Dimension, string>` is
+      there because *"the compiler catches nothing"* about a missing dimension unless
+      somebody makes it.
+
+      So T021's four codes and T031's parser half were pulled forward, recorded here
+      rather than reordered silently. **The dependency was real and no analysis pass
+      found it; the compiler did, in one run.**
+
+      AND THE FOURTH DIMENSION HAS NOTHING TRUE TO SAY IN ONE OF THOSE MAPS.
+      `RESUMES` builds a sentence promising a date, and stored bytes resume on
+      nothing — the figure falls when media is deleted and the 1st changes nothing.
+      `media_storage_exhausted` exists for that reason and never reaches `QuotaError`,
+      so the entry is there because the type demands one. Written down in the file.
+
+T014a THE MODULE IS REGISTERED IN `app.module.ts`
+
+      One line, and the whole of whether the route exists. Without it every test in
+      the chapter gets a 404 that reads as a routing bug.
+
+      Lint and typecheck both exit 0 across `media/`, `app.module.ts` and `quotas/`.
+
+════════════════════════════════════════════════════════════════════════════════
+PHASE 3 (T015-T020) — THE SLOT, END TO END, AND FOUR INSTRUMENTS THAT WERE WRONG
+════════════════════════════════════════════════════════════════════════════════
+
+      media.itest.ts        5 of 5   the slot, the two credential classes, SC-001
+      presign.itest.ts      9 of 9   twenty consecutive runs, 0 red
+      targets.itest.ts      9 of 9   after the classification
+      gauntlet.itest.ts    58 of 58  after the attack, and run red once on purpose
+      request-log.itest.ts  5 of 5   unchanged, with a budget it can now use
+      check:fences          0 -> 15  fifteen files, where the plan named twelve
+
+T015  THE ROW HOLDS NINE COLUMNS AND NONE OF THEM IS THE URL.
+
+      Asserted two ways rather than as a design note, because "derived, never stored"
+      is a claim about a schema and a schema changes. The value half stringifies the
+      row and refuses to find the signature, the `X-Amz-` prefix or the endpoint; the
+      structural half pins the nine column names. **Either alone passes on an empty
+      row or on a column called `notes`.**
+
+T016/T017  FOUR SLOT REQUESTS LOGGED, AND THE 44-BYTE UPLOAD LOGGED NOTHING.
+
+          `media.itest: the ingester drained 1 batches, 5 records` — five slot
+          requests, five rows, and the PUT to the store produced none. That is SC-001
+          measured rather than argued: the api's own request log is the instrument,
+          and a byte through the api would be a sixth row.
+
+          AND THE FIRST VERSION OF THAT ASSERTION WAS A BEFORE/AFTER COUNT, WHICH IS
+          A NEIGHBOUR'S PROBLEM ONE FILE DOWN. The three slot requests above it are
+          still in flight when the last test starts, so a delta counts them and the
+          test fails for somebody else's reason. Scoped by `ts` instead — the column
+          is stamped when the request is SERVED, not when it is ingested, so
+          `ts > slotTs` excludes the earlier three whatever order the ingester writes
+          them in. The slot's own row is polled for first, which is the non-zero floor:
+          without it "nothing after this instant" is satisfied by a table the ingester
+          never reached.
+
+T018  `unclassified: ["POST /v1/media"]` — THE EIGHTH TIME, AND THE LIST HAS NEVER
+      ONCE BEEN AHEAD OF THE DERIVATION.
+
+          before the entry   44 derived, 37 attacked, 6 exempt, 1 unclassified
+          after the entry    targets 9 of 9 green
+          then the gauntlet  classified but never attacked: POST /v1/media
+          after the attack   58 of 58
+
+      `credential` AND NOT `write`, which is the one decision here that could have gone
+      either way. It writes a row, so `write` is the tempting shape — but a `write`
+      attack forges a tenant-owned identifier from another environment and this body is
+      `{ filename, mime_type, bytes }`. There is nothing in it to forge. That is
+      `POST /auth/dev-token`'s sentence and the shape's own definition.
+
+      What the attack shows instead is the OBJECT KEY: `${environment}/${id}`, built
+      from the principal the guard resolved rather than from anything the caller sent.
+      Two tenants asking the identical question get keys under different prefixes.
+      `accepts: "either"`, because the controller declares both classes and attacking
+      with one would cover half the door.
+
+T018a THE ATTACK WAS RUN RED BEFORE IT WAS BELIEVED. One line of `media.service.ts`
+      changed to `shared/${id}`:
+
+          expected '/relay-media/shared/b4fda393-...' to contain '/dbafd039-.../'
+
+      and 58 of 58 again on the revert.
+
+T018b THREE OF THE FIVE NEW FILES DO NOT APPEAR IN THE COVERAGE TABLE AT ALL.
+
+          text reporter          media.service.ts, store.ts
+          coverage-summary.json  those two AND presign.ts, kinds.ts, media.controller.ts
+
+      v8's text reporter omits a file at 100/100/100/100. A sweep of the table for
+      "which new files is this showing" finds two of five and concludes the other three
+      were never measured — which is 052's unbindable-glob finding wearing a different
+      coat. **The table answers which files have a gap; the json summary answers which
+      files were seen, and those are different questions.**
+
+          presign.ts            100 / 100    / 100 / 100
+          kinds.ts              100 / 100    / 100 / 100
+          media.controller.ts   100 / 100    / 100 / 100
+          media.service.ts    83.33 / 66.66  / 100 / 83.33   three throws, phase 4
+          store.ts            77.77 / 53.84  / 100 / 85.71   ensureBucket's throw
+
+      Five pins, and BOTH HALVES of the probe were run: each key demanded 101% and each
+      fired; the measured pins pass and the run exits 0.
+
+T019  CONSTITUTION VI'S 100%-BRANCH CLAUSE IS MET RATHER THAN PINNED AROUND, for the
+      second time in Part 4. The tenancy branch is `media.controller.ts`'s
+      `principal.kind === "user"`, and both arms are driven over HTTP — an API key's
+      slot carries no user and a user token's does, asserted as a PAIR so that neither
+      passes against a column that is always the same.
+
+────────────────────────────────────────────────────────────────────────────────
+AND FOUR INSTRUMENTS WERE WRONG, EVERY ONE FOUND BY RUNNING SOMETHING
+────────────────────────────────────────────────────────────────────────────────
+
+(1)   TWO COMPOSE SERVICES CLAIMED HOST PORT 9000 AND THE STACK HAD BEEN RUNNING
+      WITHOUT CLICKHOUSE FOR THIRTY-TWO HOURS.
+
+      ClickHouse has published `${RELAY_CLICKHOUSE_NATIVE_PORT:-9000}:9000` since
+      chapter 1.2; phase 1 of this feature added MinIO on `${RELAY_MINIO_PORT:-9000}`.
+      They cannot both start:
+
+          Bind for 127.0.0.1:9000 failed: port is already allocated   exit 1
+
+      Phase 1's health check probed both ways and passed, and phase 2's five signed
+      results were all real, because nothing in either phase touches ClickHouse. The
+      collision only surfaced when a suite needed the analytical store — one command,
+      `ECONNREFUSED 127.0.0.1:8123`.
+
+      045's rule, third time: **a hand-maintained table cannot be checked.** Eleven
+      published ports across `compose.yaml`, allocated by hand, and exactly one
+      duplicate. MinIO moves to 9100 on the host and keeps 9000 in the container,
+      because the host side is the hand-maintained table and chapter 1.2's claim was
+      there first.
+
+      AND A STOPPED CONTAINER CAN BE RESTARTED INTO A STATE WITH NO PUBLISHED PORTS AT
+      ALL. `docker compose up -d clickhouse` printed `Started`, exited 0, reported
+      `(healthy)`, and `NetworkSettings.Ports` was `{}` — not even 8123, which was free.
+      The health check runs `clickhouse-client` INSIDE the container, so it cannot see
+      this. `--force-recreate` fixed it. **A green health check is a claim about the
+      inside of the container.**
+
+(2)   `echo "exit=$?"` AFTER A PIPELINE READS `tail`'S STATUS. The failed compose start
+      was measured as `exit=0` and was 1. 043 reproduced this three times, once in a
+      task whose own text warns about it; this is the fourth.
+
+(3)   THE TAMPERED-SIGNATURE PROBE WAS A NO-OP ONE RUN IN SIXTEEN.
+
+      It replaced the signature's first character with `f`, which changes nothing when
+      that character already IS `f`. Measured over 4,096 signings: **16 distinct first
+      characters, `f` on 255 of them — 6.23%.** On those runs the probe sent a VALID
+      url and the store's honest 200 read as *"the store accepted a tampered
+      signature"*. It had passed three consecutive runs before it failed.
+
+      Fixed by mapping the character to a different one and asserting the tampered url
+      differs from the signed one — **a probe that may not have altered anything has to
+      say so.** 20 of 20 green after.
+
+(4)   A 20-SECOND DEADLINE INSIDE A 5-SECOND TEST, SINCE CHAPTER 4.4.
+
+      `vitest.integration.config.mts` sets no `testTimeout`, so this lane's budget is
+      vitest's default 5,000 ms. `request-log.itest.ts` polls to 20,000. The poll's
+      `return null` branch was unreachable and `expect(...).not.toBeNull()` was an
+      assertion that could never fail — it either got a row or the test was killed
+      four times before its own deadline.
+
+      AND THE TWIN CONFIG HAD IT RIGHT: `vitest.coverage.config.mts:102` sets
+      `testTimeout: 60_000`. Two configs run `.itest.ts` files and they disagree, which
+      is 4.9's finding on a different field. Both suites carry `}, 60_000` now (056-4).
+
+(5)   `MediaModule` DECLARED A SERVICE THAT INJECTS `Repository` AND DID NOT PROVIDE
+      IT. It compiled, typechecked and linted; the first request said
+      `Nest can't resolve dependencies of the MediaService (?)`. `users`, `channels`
+      and `webhooks` each carry the same two providers — a default-scoped `DB` and a
+      REQUEST-scoped `Repository` built from `req.principal.environmentId`. Only a
+      running app asks the question.
