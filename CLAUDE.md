@@ -28,6 +28,35 @@ history; the replaced history is preserved on the remote as the tag
 tags. **Anyone holding an older clone of `relay-platform` must reset rather than pull.**
 
 <!-- SPECKIT START -->
+**ACTIVE: 057 — CHAPTER 4.11, "the half of the union that was refused".** Movement V continues.
+Plan: `specs/057-chapter-4-11/plan.md`; **`research.md` first — it settles the specification's
+one flagged assumption AGAINST the specification, for the second feature running.** FR-MED-06:
+the `{ type: "media" }` arm starts accepting, `media_not_available` is deleted on its own
+registry entry's instruction, and three refusals get one answer because three would be an
+existence oracle. **Name it by its movement and title**: `docs/12` §3 row 12.
+
+**THREE PREMISES RUN, THREE THAT CHANGED THE PLAN.** (1) **A NULL `user_id` means the TENANT
+uploaded it**, not "nobody", so a user token of that tenant may attach it — chapter 4.10's
+controller says *"a photo sent by a person and an attachment uploaded by a customer's backend
+are the same operation"*, and the strict reading makes them unequal. (2) **`ready` is
+unreachable and the database says so by name** — `violates check constraint
+"media_objects_state_check"`, which 4.10 wrote deliberately because verification is movement VI.
+So FR-MED-06 names two states and one can be tested. (3) **A non-UUID `media_id` is a 500 the
+moment the arm accepts** — `invalid input syntax for type uuid` reaches the driver through
+`z.string().min(1)` and the filter answers `internal_error`. The schema tightens to a UUID, which
+narrows a shape nothing was accepting. (4) What held: the ten-attachment cap already counts both
+arms, and `sendMessage` already runs in a transaction.
+
+**AND `protocolCode` HAS EXACTLY ONE USER, WHICH THIS CHAPTER REMOVES.** `ZodValidationPipe`'s
+mechanism for a schema refinement to name a code other than `invalid_request` was built by 3.24
+for `media_not_available` alone. It stays with no user and says so — 4.10's `service_unavailable`
+precedent — rather than being deleted to save nine lines of something a chapter teaches.
+
+**AND THIS CHAPTER ADDS NO ROUTE**, so the derivation that has caught eight chapters running will
+report nothing. `POST /v1/channels/:channelId/messages` is already a target and is the
+derivation's own `CANARY_TARGET`. The direction that still applies is the second — attacked, and
+not for this identifier — and nothing will ask it automatically.
+
 **056 IS CLOSED at 75 of 75 — CHAPTER 4.10, "the upload that never reaches us".** Movement V
 opens. Its record is `specs/056-chapter-4-10/` — `baseline.txt` first (every phase's
 measurements in the order they were taken), then `gaps.md` (**11 entries: 7 new, 3 carried and
