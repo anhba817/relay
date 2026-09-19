@@ -278,7 +278,22 @@ jobs:
       # publishes a database the migration a line later cannot reach.
       - run: RELAY_POSTGRES_PORT=15432 docker compose up -d --wait
         working-directory: relay-platform
+      # `working-directory`, WHICH THIS STEP DID NOT HAVE AND EVERY OTHER STEP IN THIS JOB
+      # DOES. Two of the three jobs in this workflow set it once under `defaults`; this one
+      # repeats it per step, and the repetition is what made it possible to miss — so the
+      # job died here, every run, on:
+      #
+      #     Error: Cannot find module
+      #       '/home/runner/work/relay/relay/services/api/dist/db/migrate.js'
+      #
+      # The path is missing `relay-platform/`. **THE SEALED SUITE HAS THEREFORE NEVER RUN IN
+      # CI**: the job exists, it is red, and it has never reached the thing it is named for.
+      # Chapter 4.9 found the same shape in the integration gate — *"the gate was already
+      # red, so a planted drift deepened a red rather than turning one"* — and 4.10 found
+      # `pnpm test:integration` skipped for nine features. A job's colour says nothing about
+      # which step produced it.
       - run: DATABASE_URL=postgres://relay:relay@localhost:15432/relay node services/api/dist/db/migrate.js
+        working-directory: relay-platform
 
       # THE ANALYTICAL SCHEMA, WHICH THIS JOB WAS MISSING AND ITS SIBLING HAS.
       #
