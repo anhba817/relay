@@ -404,3 +404,101 @@ AND FOUR INSTRUMENTS WERE WRONG, EVERY ONE FOUND BY RUNNING SOMETHING
       and `webhooks` each carry the same two providers — a default-scoped `DB` and a
       REQUEST-scoped `Repository` built from `req.principal.environmentId`. Only a
       running app asks the question.
+
+════════════════════════════════════════════════════════════════════════════════
+PHASE 4 (T021-T030) — FOUR REFUSALS, AND ONE OF THEM COSTS 24% OF THE HAPPY PATH
+════════════════════════════════════════════════════════════════════════════════
+
+      refusals.itest.ts      7 of 7   including the store stopped and restarted
+      protocol-error.filter  19 of 19 the ladder, probed with unnamed throws
+      messages.itest.ts     68 of 68  FR-016, now against a real media_id
+      media + isolation     94 of 94  · api unit 32 of 32 · protocol 144 of 144
+      check:errors  33 codes, 33 sections · EXIT 0 · both directions fire
+      check:fences  15 -> 17
+
+T024a A PRESIGNED URL NEEDS NO CONTACT WITH THE STORE, WHICH IS WHY FR-017 NEEDED A
+      ROUND TRIP BUILT FOR IT.
+
+      Signing is five HMAC rounds over strings. The api never opens a socket, so it
+      never learns the store is down, and a slot issued into an outage is
+      byte-indistinguishable from a good one — the client finds out at upload time,
+      holding a URL nobody can use. `docs/05-sad.md:1062` asks for the opposite, so
+      `storeReachable()` exists **only to produce a refusal**.
+
+      MEASURED BOTH WAYS, 200 SAMPLES A SIDE, THE SAME BINARY MINUTES APART:
+
+          slot request, probe on    min 6.266  p50 7.859  p95 9.007  max 10.135 ms
+          slot request, probe off   min 4.849  p50 6.335  p95 7.260  max 10.350 ms
+          the probe alone, n=200    min 0.944  p50 1.062  p95 1.194  max  1.958 ms
+
+      **+1.524 ms at p50, +24.1%.** The probe's own 1.062 ms is two thirds of that; the
+      rest is the second signing. That is the price of FR-017 on the happy path and it
+      is published rather than described.
+
+      AND THE POSITION IS THE ONLY ONE THAT SATISFIES FR-009 WITHOUT A COMPENSATING
+      DELETE. After type and size, before the reservation: a probe after the write would
+      have to un-reserve bytes it just committed, and a probe first would spend a round
+      trip on `application/x-evil`. The consequence worth naming is that a tenant over
+      quota with a down store is told the store is down — retrying then produces
+      `media_storage_exhausted`, so the client learns both facts in two requests. The
+      opposite order tells a client to delete media when nothing could have been stored
+      anyway, which is permanent advice about a transient state.
+
+T024b THE STORE WAS TAKEN AWAY, NOT STUBBED. `docker compose stop minio`, ask, assert,
+      `start`, and poll `/minio/health/live` to a deadline rather than sleeping. The
+      refusal arrived in 312 ms — a refused connection, not the 2-second timeout — and
+      the row count did not move.
+
+T027a THE LADDER GAINED FOUR RUNGS AND ONE OF THEM NEEDED A NEW CODE.
+
+          402 -> quota_exceeded          the platform's only meaning for 402
+          413 -> media_too_large         and for 413
+          415 -> media_type_not_allowed  and for 415
+          503 -> service_unavailable     NEW
+
+      503 is the one that does not generalise. Both of the platform's 503 throwers name
+      a specific store — `analytics_unavailable` and `media_storage_unavailable` — and
+      mapping the ladder to either would tell a client that store is down when it may be
+      fine. `service_unavailable` carries only what the status supports. **It is the one
+      code in the registry nothing throws**, which is what a ladder fallback is.
+
+T027b THE PROBE IS UNNAMED THROWS, AND THAT IS THE ONLY VERSION THAT TESTS THIS.
+
+      A thrower that names its code never reaches the ternary, so a test through
+      `protocolError` proves the path that was never broken. Eight rungs, each asserted
+      twice — the code it gives, and separately that it is not `internal_error`, because
+      "every rung answers something" is satisfied by a ladder that answers
+      `internal_error` everywhere. Run red by deleting the 415 rung: 3 failures.
+
+      **This is the probe that would have caught the two the filter already documents**,
+      the 400 chapter 2.2 fixed and the 403 the credentials chapter fixed.
+
+T028a FR-016 IS NOW TESTED AGAINST AN ID THIS PLATFORM REALLY MINTED. The old test uses
+      `"m_1"`, which a refusal could pass by rejecting anything unparseable. The new one
+      asks `POST /v1/media` for a slot and attaches THAT id: still 422, still
+      `media_not_available`. And the message does not echo the id — "that one is wrong,
+      try another" is the opposite of what the arm means.
+
+T029  BOTH DIRECTIONS FIRE. A code with no section: exit 1, naming
+      `media_storage_unavailable`. A section naming no code: exit 1, naming the bogus
+      heading. Control: exit 0, `33 codes, 33 sections`. **The counted success line is
+      what was asserted, not the exit code** (055-4).
+
+────────────────────────────────────────────────────────────────────────────────
+AND TWO ASSERTIONS EXIST ONLY BECAUSE THEIR ABSENCE WOULD BE INVISIBLE
+────────────────────────────────────────────────────────────────────────────────
+
+      A TYPE-REFUSAL TEST IS SATISFIED BY A ROUTE THAT REFUSES EVERYTHING. All ten
+      accepted types are asked for and all ten answer 201, in the same file as the
+      refusal. Without it the suite is green against a route that has never issued a
+      slot.
+
+      AND "A REFUSAL WRITES NO ROW" IS SATISFIED BY A ROUTE THAT NEVER WRITES. The
+      count is taken before, after two refusals, and again after an accepted request —
+      `before`, `before`, `before + 1`. Scoped to this suite's own environment, because
+      a whole-table count in a lane that runs two files at a time is a neighbour's
+      problem (045-74).
+
+      AND THE CAPS ARE PER KIND, WHICH TAKES TWO REQUESTS TO SHOW. 25 MB of audio is
+      accepted and 25 MB of image is refused, same suite, same size. One size test
+      passes against a single global cap, which is a different design.
