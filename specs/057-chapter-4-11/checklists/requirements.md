@@ -365,3 +365,33 @@ the remediation was a scope change to an existing requirement and a rewritten ta
 findings are in one document and come from one habit: the chapter quotes FR-MED-06 accurately in
 five artifacts and **nobody had read it beside its neighbours.** A quotation is not a reading of
 the table it came from.
+
+## Analysis pass 10 (2026-09-19)
+
+One finding, MEDIUM. The pass ran the check the skill asks for and the previous nine skipped: the
+requirement-to-task map, both directions, mechanically.
+
+- **The mapping exists only in narrative.** 14 of 51 requirements carry no literal id anywhere in
+  `tasks.md`, and **69 of 108 tasks cite no requirement** — 64%. Every one of the 14 is covered in
+  substance. T071 writes `traceability.md` at the close from that same narrative, and **19 of the
+  51 requirements were minted after `tasks.md` was written**, by passes 4 through 9: a task written
+  to a finding cites the finding, not the id it later became. T071 now carries the list and the
+  method.
+
+**And this pass's own first finding was wrong.** SC-003 — *"a refused send leaves the channel's
+message count and sequence unchanged"* — was filed as uncovered; **T038 covers it verbatim in
+different words**: *"writes no message row and no outbox row and does not advance the channel's
+sequence."* The grep was for the criterion's phrasing and the task used the behaviour's. So the
+literal sweep produced **fourteen alarms and all fourteen were false**, which is the strongest
+argument for what the finding says: the traceability table cannot be produced by grep, and it
+cannot be produced from memory either.
+
+**Coverage by substance: 51 of 51.** Coverage by citation: 37 of 51.
+
+**On ten passes.** 12 findings, 7, 3, 3, 3, 1, 3, 4, 2, 1 — severity 0 CRITICAL, 0, 1, 1 HIGH,
+1 HIGH, 1 CRITICAL, 1 CRITICAL, 1 CRITICAL, 0, 0. **The thinnest pass of the ten, and its result is
+worth more than its count**: after nine passes of chasing threads, the systematic check finds zero
+uncovered requirements. That is a fact about the artifacts rather than about the pass, and it is
+the first evidence any pass has produced that the narrative method was not leaving holes. It says
+nothing about whether these are the right 51 requirements, which is what passes 1 through 9 were
+for.

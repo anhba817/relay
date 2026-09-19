@@ -216,6 +216,24 @@ the message reads back with its attachment.
   **THIS IS THE CLASS THIS PROJECT HAS NAMED TWICE AND NOT CLOSED**: *"an ADR lives in two documents — the SAD's summary and `docs/06`'s argument"* (4.5, ten passes amended one), and the memory rule *"fix the file that describes the thing AND the one that instructs it."* Three of the four corrections are inherited debt rather than this chapter's, and they land here because **this is the pass that found them** and *"a measurement is not a repair"* (049 measured `check-lane-scope.py`'s retarget and never landed it).
   **AND NOTHING CHECKS THE TWO TABLES AGAINST EACH OTHER.** No gate reads prose; `check-docs-drift.sh` does not compare these rows. Record in `gaps.md` that the Part 4 brief lives in two documents with no instrument holding them together, and that the count of chapters amending only one stands at **five**.
 - [ ] T071 Write `traceability.md`, and **name anything discharged in a weaker form than its words suggest.** FR-010 is the first candidate: the predicate is built and half of it cannot run.
+  **ENUMERATE, DO NOT RECALL — AND DO NOT GREP EITHER.** 056's table has the right shape (`id | discharged by | evidence`); what it needs here is a complete left column. **14 of the 51 requirements carry no id anywhere in `tasks.md`, and 69 of the 108 tasks cite no requirement** — 64%. All 14 are covered in substance, which is the point: a literal sweep produced fourteen alarms and **all fourteen were false**, so a zero is a question to answer in writing and never a row to leave out. The 14, with what discharges each:
+
+        FR-001   T018-T032, phase 3   the headline; the phase goal names FR-MED-06 instead
+        FR-008   T008, T010           deleted from codes.ts, section removed
+        FR-008a  T012, T042           the UUID tightening and its 400
+        FR-011   T018                 "inside sendMessage's existing transaction"
+        FR-014   T052, T053           the gauntlet attack and its plant
+        FR-015   T055                 the reference-counting gap
+        SC-001   T024                 slot -> upload -> send
+        SC-003   T038                 no message row, no outbox row, sequence unmoved
+        SC-004   T074                 check:errors, both directions
+        SC-005   T051, T052, T054     derivation, attack, red-first
+        SC-006   T046                 the CHECK constraint quoted
+        SC-007   T002, T067           absolute, opening and closing
+        SC-008   T058, T059           word count and the TRAP box
+        SC-009   T076                 CI after the push
+
+  **WHY THIS CHAPTER AND NOT THE LAST ONE.** **19 of the 51 requirements were minted after `tasks.md` was written**, by analysis passes 4 through 9, and a task written to a finding cites the finding rather than the id it later became. That is the mechanism, and it will produce the same gap in the next chapter that runs ten passes.
 - [ ] T072 Update `CLAUDE.md`'s `<!-- SPECKIT -->` block for the close, including every task premise this chapter falsified by running it.
 - [ ] T073 Run the tutorial job's six gates, named from `ci.yml` rather than memory, and **read each one's counted success line**. `lint` is the one with no counted line at all — eslint prints nothing on success.
 - [ ] T073a **Run `pnpm test:outsider`, which is not in `pnpm test:integration` and not in any artifact's gate list** (FR-021, SC-002d). `integration-gate.mjs:101` excludes `@relay/outsider` by name; CI runs it as a job of its own at `ci.yml:244`. Its preconditions are that job's, in order: `compose --profile services build`, `up -d --wait`, `node services/api/dist/db/migrate.js`, `analytics/apply.mjs`, then `RELAY_DEMO_CREDENTIAL=$(node scripts/seed-demo-tenant.mjs)`. **Four CI jobs and five `check:*` scripts, and this is the second lane a chapter can run and not know to** — 055-3's shape, one directory over.
