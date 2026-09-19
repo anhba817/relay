@@ -180,6 +180,10 @@ a green number, and chapter 4.8 defined FR-ANL-10's quantity and computed nothin
 - **FR-011**: The check MUST read the media object inside the transaction that writes the message.
 - **FR-012**: A media attachment MUST count toward FR-MSG-11's ten-attachment cap alongside URL
   attachments.
+  *A bare `FR-012` means something else 400 lines from where this chapter works:
+  `repository.ts:4877`'s tombstone comment uses it for "deleting a message unlinks its
+  attachments". Both are feature-local ids from different features and the SRS has neither — the
+  `FR-003a` class. Cite this one by the cap, not by the number, anywhere a reader meets both.*
 - **FR-013**: Delivery MUST NOT carry attachment state, and that MUST be asserted rather than left
   to hold by default. FR-MED-07's `media.updated` and the state field are a later chapter, and
   adding either here would ship its surface without its checks. A message read back MUST carry the
@@ -225,6 +229,20 @@ a green number, and chapter 4.8 defined FR-ANL-10's quantity and computed nothin
   unchanged, asserted rather than assumed. `repository.ts:4604` states the property — *"an edit
   does not change attachments (FR-016)"* — and this chapter creates the first media attachment
   there is to preserve.
+- **FR-023**: The chapter MUST state which form constitution VI's *"tenant isolation MUST have
+  100% branch coverage (NFR-MNT-02)"* takes over this chapter's predicate, and record the
+  measurement either way. The predicate is a SQL `WHERE` and carries no JavaScript branches — 048
+  recorded the same clause as unmeasurable for the same reason, that a schema has none. The
+  JavaScript around it does: the caller-kind signal, the position-preserving set difference, and
+  the refusal's `field` index. Those land in `repository.ts`, pinned at **branches 92** against a
+  measured 92.66, so **an uncovered isolation arm passes the ratchet** with room to spare. Silence
+  is what the plan's principle VI row currently offers, and it is the third Part 4 chapter to meet
+  this clause in a form the number cannot show.
+- **FR-024**: Deleting a message that carries a media attachment MUST be asserted: the tombstone's
+  list is `[]`, the column is null, and the media row survives with its bytes and its quota. The
+  code is arm-agnostic, which is the argument R6 rejected for the cap — and the reason is stronger
+  here, because for the URL arm an unlink costs nothing and for this arm it is the first time
+  unlinking strands bytes the platform stores and the quota counts.
 - **FR-021**: The sealed outsider suite MUST carry the media arm. `integrate.itest.ts` is the one
   place the platform is exercised from outside with nothing but a published credential, and its
   attachment test annotates the frames it reads as `{ url?: string }[]` — the old assumption
@@ -283,6 +301,10 @@ a green number, and chapter 4.8 defined FR-ANL-10's quantity and computed nothin
 - **SC-002c**: An api send response carrying a media attachment parses under the gateway's
   schema, and the test fails against the arm as it stands today — the same red-first requirement
   SC-002b places on the durable reader.
+- **SC-011**: The predicate's coverage is recorded as a figure with the form named: how many of its
+  clauses are SQL and carry no branch, how many JavaScript arms it adds, and what each of those
+  arms measured. A statement that the clause is *met rather than pinned* counts only with the
+  per-arm evidence beside it.
 - **SC-002e**: Three tests, each red against the arm as it stands today: a fanned-out
   `message.created` carrying a media attachment is **delivered** rather than dropped, a revision
   carrying one is delivered, and a backfill response carrying one parses rather than degrading the

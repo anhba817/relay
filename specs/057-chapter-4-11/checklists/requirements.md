@@ -237,3 +237,43 @@ artifacts.** Five passes asked which processes read the union; the sixth asked w
 *inside of*. And nothing in these three repositories runs an old protocol build against a new one —
 not a lane, not a gate, not the sealed suite — so red-first tests against today's build are the only
 instrument this class has.
+
+## Analysis pass 7 (2026-09-19)
+
+Three findings — one CRITICAL, one MEDIUM, one LOW — all three applied. The pass asked the
+governing document what it requires of the thing being built, rather than asking the tree who
+reads it.
+
+- **Constitution VI's 100%-branch clause for tenant isolation was unaddressed, and the ratchet
+  could not have reported it.** VI reads *"Message ordering, idempotency, and tenant isolation
+  MUST have 100% branch coverage (NFR-MNT-02)"*, and this chapter's central artifact is a
+  three-clause tenant-isolation predicate. The plan's principle VI row discussed only whether
+  FR-MED-06's two states can be tested. Two halves, both true: the predicate is a SQL `WHERE` and
+  carries **no JavaScript branches** — 048 recorded the same clause as unmeasurable because a
+  sorting key has none — while the JS around it does, and those arms land in `repository.ts` at
+  **branches 92** against a measured 92.66. **0.66 points of headroom means an uncovered isolation
+  arm passes.** FR-023, SC-011, T050a, and the plan's row rewritten.
+- **The delete path has no media test and it is where FR-MED-10's window opens.** The chapter
+  tests edit and not delete. `repository.ts` nulls the column and returns `attachments: []` on all
+  three tombstone sites, arm-agnostically — the argument R6 rejected for the cap. For the URL arm
+  an unlink costs nothing; for this arm it is the first time unlinking strands bytes the platform
+  stores and the quota counts, and it is the only orphan a customer can produce at will. FR-024,
+  T028c.
+- **A bare `FR-012` means two things 400 lines apart** — this feature's ten-attachment cap and
+  `repository.ts:4877`'s *"deleting a message unlinks its attachments"*. Neither is in the SRS.
+  The `FR-003a` class, noted where a reader of this chapter meets both, and **FR-022 was skipped
+  when numbering this pass's requirements** because `frames.ts:45`'s comment already uses it.
+
+**Clean premises.** Nothing drops attachments on a read path — ten production construction sites
+pass the row through and the three that hardcode a value are all the deletion path and all say why.
+The tombstone → sweep relationship was already written at `data-model.md:78`; what was missing was
+the assertion, not the idea.
+
+**Requirement count 45 → 48** and **task count 102 → 104.**
+
+**On seven passes.** 12 findings, 7, 3, 3, 3, 1, 3 — severity 0 CRITICAL, 0, 1, 1 HIGH, 1 HIGH,
+1 CRITICAL, 1 CRITICAL. Six passes asked the tree what reads the union; this one asked the
+constitution what it requires. **The plan's constitution table has now been wrong twice — principle
+II at pass 3, principle VI at pass 7** — and both times the row was filled when the plan was
+written and never re-read against what the chapter turned out to build. A constitution check is a
+measurement, and a measurement taken before the thing exists is a prediction.
