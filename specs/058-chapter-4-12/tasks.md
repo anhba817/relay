@@ -42,6 +42,9 @@ is the chapter's central measurement.
 - [ ] T010 Add the reference lookup to `services/api/src/db/repository.ts`, beside `channelVisibleTo`. **The query engine lives in the repository because a lint rule says so in constitution I's words** — 4.7 found that wall and 4.10 and 4.11 both hit it.
 - [ ] T011 **Return every referencing channel, not the first** (`data-model.md` §4). Authorisation is a disjunction over them: a query that stopped at one row would refuse a caller whose channel happened to be second, which is a correctness bug that presents as flakiness.
 - [ ] T012 **Reuse `channelVisibleTo` rather than writing a membership check** (research R2). `repository.ts:5517` already handles the three cases this clause needs, including *"userId absent means the tenant is reading"* — which is FR-MED-08's own *"or API key"* arm. Say in a comment that it was reused and why: the SRS note's *"rather than inventing a parallel ACL system"* is satisfied by construction only if nothing new is written.
+- [ ] T012a **RESOLVE THE EXTERNAL ID TO THE INTERNAL ONE FIRST, AND THE MEDIA CONTROLLER'S OWN PATTERN IS THE TRAP.** `media.controller.ts:12` computes `req.principal.userExternalId` and hands it to the service; `channelVisibleTo(channelId, userId)` takes the **internal UUID**, because `isMember` compares against `members.user_id`, a `uuid` column. External ids on this platform are `tuan`, `linh`, `delivery-bot` — **plain strings**.
+  **HANDING ONE STRAIGHT THROUGH IS T016a's 500 AGAIN**, from inside the authorisation check rather than from the path. Two places already do it right and either is the shape to copy: `media.service.ts:89` (`getUserByExternalId`) and `messages.controller.ts:526-530`, which resolves and answers **400 `unknown user`** when the id names nobody.
+  **AND THE SILENT VERSION IS THE ONE THAT SHIPS.** Where a tenant's external ids happen to be UUID-shaped, no parse fails — `isMember` simply returns false, and **every private channel refuses every member** while every public channel still works. On this lane that is a 500; on a customer's it is a quiet refusal.
 - [ ] T013 **Measure the lookup again with the index in place**, same two queries against `messages`, same shape: time **and buffers**. Milliseconds alone let a warm cache report a win a cold one does not.
 - [ ] T014 Commit phase 2.
 
@@ -53,7 +56,17 @@ is the chapter's central measurement.
 the bytes come back.
 
 - [ ] T015 [US1] Add `GET /v1/media/:mediaId` to `services/api/src/media/media.controller.ts`, beside the existing `@Post()`. The class already carries `@Accepts("application", "user")`.
-- [ ] T016 [US1] Validate the path parameter as a UUID, refusing a malformed one with **400 `invalid_request`** naming `mediaId`. 4.11 measured what the loose shape costs: a non-UUID reaching the driver is `invalid input syntax for type uuid`, which the filter turns into a caller-triggered **500**.
+- [ ] T016 [US1] Validate the path parameter as a UUID, refusing a malformed one with **400 `invalid_request`** naming `mediaId`. **There is no precedent for this anywhere in the api** — no route validates a path param today — so this route is the first, and T016a is why that is not merely tidy.
+- [ ] T016a **MEASURE THE CLASS THIS ROUTE IS THE FIRST TO ESCAPE, AND PUBLISH IT.** Against the composed api, before writing anything:
+
+        GET /v1/channels/not-a-uuid/messages  ->  500
+        {"code":"internal_error","message":"unexpected internal error"}
+
+  **A caller-triggered 500 on a shipped route, reachable by anyone with a credential.** It is 4.11's research R3 exactly — a value of the wrong type reaching the driver, `invalid input syntax for type uuid`, which the filter has no rung for. That chapter found it in a request BODY, measured it, and fixed it with `z.uuid()`; **nobody looked at the path.** 13 routes take `@Param("channelId")` and 3 take `@Param("messageId")`.
+- [ ] T016b **Decide in writing whether this chapter fixes the sixteen, and record the cost either way** (`contracts/media-delivery.md`). The fence bill is the input: `messages.controller.ts` **18** titled fences, `channels.controller.ts` **8**, `users.controller.ts` **4** — thirty fences across three published files for a change that is one pipe per parameter.
+  **THE ARGUMENT FOR FIXING IT HERE**: it is one line per route, this chapter found it, and *"a measurement is not a repair"* is what 049 wrote about `check-lane-scope.py` after measuring a retarget and not landing it.
+  **THE ARGUMENT AGAINST**: a chapter about signed delivery that rewrites three controllers is teaching two things badly. 4.11 filed 057-1 rather than building a reference count for the same reason, and its one-line CI fix was one line.
+  **Whichever is chosen, `gaps.md` carries the measurement**, so the next chapter to touch a controller inherits a number rather than a suspicion.
 - [ ] T017 [US1] Sign a **GET** with `expiresIn: 3600` in `services/api/src/media/media.service.ts`. `presign.ts` has taken `"GET"` since 4.10 and needs no change — assert that it needs none rather than editing it to be sure.
 - [ ] T018 [US1] **Sign with `endpoint`, not `internalEndpoint`** (4.11's FR-026). This URL is handed to a client outside the network; the probe's address is the api's own. The host is inside the SigV4 signature, so signing with the wrong one produces a URL that is refused rather than one that is slow.
 - [ ] T019 [US1] Return `{ url, expires_at }` and nothing else. `expires_at` exists so a client need not parse `X-Amz-Date` and add `X-Amz-Expires`, which is the same courtesy the upload slot gives.
@@ -61,6 +74,7 @@ the bytes come back.
 - [ ] T021 [US1] **The store enforces the expiry, and the test proves it from the store's clock** (SC-003). Sign with `expiresIn: 1` and `now` ten seconds in the past; the store answers **403** with `Request has expired`. Asserting that our own arithmetic produced an earlier timestamp proves nothing about the store.
 - [ ] T022 [US1] Integration test: a tampered signature is refused. **Map the changed character to a different one and assert the URL actually changed** — 4.10's tamper probe replaced the first character with `f` and was a no-op on 255 of 4,096 runs, reporting the store's honest 200 as an acceptance.
 - [ ] T023 [US1] Integration test in `services/api/src/media/delivery.itest.ts`: an **application credential** gets a URL for any object of its environment, whatever the memberships are (FR-006).
+- [ ] T023a [US1] Integration test in `services/api/src/media/delivery.itest.ts`: a **member of a PRIVATE channel** gets a URL. **This is the only test that reaches `isMember` at all**, and without it the whole membership path can be broken while every other test passes: T024's public channel returns true before `isMember` is consulted, and T028's private non-member expects a refusal, which a broken predicate also produces. **The grant exercises membership; the refusal does not.**
 - [ ] T024 [US1] Integration test in `services/api/src/media/delivery.itest.ts`: a **public** channel's referencing message authorises a user token **without membership** (research R2). This is the case a literal reading of *"channel membership"* would have refused, and the lane holds 11,289 public channels against 995 private — so it is the common case, not the edge.
 - [ ] T025 [US1] Re-measure and record the route's latency, sampled rather than asserted. **Pause BEFORE each pair and alternate the order within it** — 4.11's first measurement reported the media send 35.4% *faster* because the pause sat after the pair and only one side ever followed a quiet gap. And **the tenant's own limiter bounds the sample**: 600 requests answered `429 … retry after 34 seconds`.
 - [ ] T026 [US1] Commit phase 3.
@@ -137,7 +151,7 @@ the bytes come back.
 
 - [ ] T067 Write `baseline.txt` carrying every phase's measurements in the order they were taken, and the pinned lane environment.
 - [ ] T068 **Re-measure the dependency count across every `package.json` and compare it to T003's opening figure** (SC-009).
-- [ ] T069 Write `gaps.md`. **Re-measure every carried item rather than copying it**: 057-1 (T050), 057-2, 057-4, 057-5, 056-1, 056-2, 055-3.
+- [ ] T069 Write `gaps.md`. **Re-measure every carried item rather than copying it**: 057-1 (T050), 057-2, 057-4, 057-5, 056-1, 056-2, 055-3. **And record T016a's class with its measurement** — a malformed UUID path parameter is a caller-triggered 500 on 16 shipped routes, found by this chapter and fixed on one of them at most.
 - [ ] T070 **Decide whether the SRS needs a revision, and write it if it does.** The candidate is research R2: FR-MED-08's *"(channel membership or API key)"* is a gloss on *"authorised to read the referencing message"*, and this platform's answer to that question is `channelVisibleTo` — membership for private channels only. **A literal reading is stricter than the message it guards**, which is a clause falsified by the platform's behaviour rather than by a measurement. Five of the last six chapters amended; 4.11's default of "no revision" was flipped by reading the clause verbatim.
 - [ ] T071 **Amend BOTH copies of the Part 4 table** — `docs/12` §3 row 13 **and** `docs/07-tutorial-plan.md`'s copy. Chapters 4.7 through 4.10 each amended one of the two and 4.11 was the first to find the other had received none of them.
 - [ ] T072 Write `traceability.md`. **Enumerate the ids and read each row** — a literal grep produced fourteen alarms at 4.11 and all fourteen were false, so the sweep cannot build the table and neither can memory.
@@ -203,12 +217,16 @@ underneath them.
 
 **What this chapter could get wrong, ranked by how quietly it would happen:**
 
-1. **Implementing the clause's words instead of the platform's rule.** A membership check passes
+1. **Handing an external id to a predicate that wants a UUID.** Silent where a tenant's ids are
+   UUID-shaped — every private channel refuses every member while every public one works — and a
+   500 where they are not. **T023a is the only test that would notice**, because it is the only
+   one that asks for a grant through `isMember`. T012a, T023a.
+2. **Implementing the clause's words instead of the platform's rule.** A membership check passes
    every test somebody would think to write and refuses the photo in a message the caller can
    read. T024 is the test that catches it and it is in US1 rather than US2 on purpose.
-2. **Stopping the lookup at the first reference.** Correct for one reference, wrong for two, and
+3. **Stopping the lookup at the first reference.** Correct for one reference, wrong for two, and
    it presents as flakiness rather than as a refusal. T037.
-3. **Measuring only the hit.** The refusal is the expensive path and the cheap request to make.
+4. **Measuring only the hit.** The refusal is the expensive path and the cheap request to make.
    T005 and T013 both say *a hit and a miss*.
-4. **Believing a green run against a stale build.** Three kinds, and 4.11 lost time to two of
+5. **Believing a green run against a stale build.** Three kinds, and 4.11 lost time to two of
    them in one phase. T076.

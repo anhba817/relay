@@ -163,6 +163,16 @@ edge case, it is the ordinary consequence of forwarding a photo.
   indistinguishable from FR-004's and from a `media_id` no object has. Three conditions, one
   answer, for the reason 4.11 built: a refusal that named the cause reports whether somebody
   else's object exists.
+  **AND A MALFORMED ID IS A DIFFERENT ANSWER, WHICH THE PLATFORM DOES NOT GIVE TODAY.** A
+  `media_id` that is not a UUID MUST be refused with **400** naming the parameter, not 404 and
+  not 500. Measured on the composed api before this was written: `GET
+  /v1/channels/not-a-uuid/messages` answers **500 `internal_error`** — a caller-triggered server
+  error on a shipped route, on 16 routes taking a UUID path parameter, and **no route in the api
+  validates one**. It is 4.11's research R3 one layer out: that chapter found the same type
+  mismatch in a request body and fixed it there, and nobody looked at the path. The chapter MUST
+  publish the measurement and MUST decide in writing whether it repairs the other fifteen — the
+  fence bill for doing so is thirty titled fences across three controllers, which is the input to
+  that decision rather than an argument against it.
 - **FR-006**: An application credential of the environment MUST be issued a URL for any object
   of that environment, matching the clause's *"channel membership **or** API key"* and 4.11's
   reading of the same distinction for attaching.
@@ -194,8 +204,12 @@ edge case, it is the ordinary consequence of forwarding a photo.
 
 ### Measurable Outcomes
 
-- **SC-001**: A member of a referencing channel obtains a URL and fetches the bytes, and the
-  bytes are byte-identical to what was uploaded.
+- **SC-001**: A caller who may read a referencing message obtains a URL and fetches the bytes,
+  and the bytes are byte-identical to what was uploaded. **Both arms of the predicate are
+  exercised as GRANTS, not only as refusals**: a member of a **private** channel, and a
+  non-member of a **public** one. The private grant is the only test that reaches the membership
+  lookup at all — a public channel is visible before membership is consulted, and a refusal test
+  passes whether the predicate is right or broken.
 - **SC-002**: Three refusals — another tenant's object, an object referenced only where the
   caller is not a member, and an id no object has — return byte-identical bodies apart from the
   request id.

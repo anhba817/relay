@@ -80,3 +80,32 @@ channels only. A literal implementation would be stricter than the message it gu
 **Two spec requirements are now known to be cheaper than they read**: FR-009 (say the storage
 half was already built) is a citation, and FR-008's index was measured before the spec existed.
 Neither is padding — they are the two places a chapter most easily claims work it did not do.
+
+---
+
+## Analysis pass 1 (2026-09-19)
+
+Three findings — one CRITICAL, two HIGH — all three applied, and **all three are one defect seen
+from three sides**: a value of the wrong type reaching the driver.
+
+- **A malformed UUID path parameter is a caller-triggered 500 on shipped routes.** Measured
+  against the composed api rather than reasoned about: `GET /v1/channels/not-a-uuid/messages`
+  answers **500 `internal_error`**. 13 routes take `@Param("channelId")` and 3 take
+  `@Param("messageId")`; **none validates**. This is 4.11's research R3, which that chapter found
+  in a request BODY, measured, and fixed — while nobody looked at the path. FR-005 widened;
+  T016a measures it and T016b decides in writing whether this chapter repairs the class, with the
+  fence bill (thirty fences across three controllers) as the input.
+- **The media controller's own pattern hands an external id where a UUID is wanted.**
+  `channelVisibleTo` → `isMember` compares against a `uuid` column and external ids here are
+  `tuan`, `linh`. **The silent version is the one that ships**: where a tenant's ids happen to be
+  UUID-shaped no parse fails, `isMember` returns false, and every private channel refuses every
+  member while every public one works. T012a, citing the two places that already do it right.
+- **The private-channel member GRANT had no task.** T024 covers public-without-membership and
+  T028 covers private-non-member; the only arm that reaches `isMember` was untested, and a
+  refusal test passes whether the predicate is right or broken. T023a, in US1.
+
+**No new requirement id was minted, and that is a measurement.** `FR-013` appears **58** times in
+platform source, `FR-014` 39, `FR-015` 48, `SC-011` 3, `SC-012` 4. 4.11's pass 9 found the bare
+feature-local namespace saturated; it still is, so FR-005 and SC-001 were widened instead.
+
+**Task count 81 → 85.** Requirement count unchanged at 22.
