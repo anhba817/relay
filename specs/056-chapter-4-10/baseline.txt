@@ -1,0 +1,84 @@
+FEATURE 056 — CHAPTER 4.10, "the upload that never reaches us"
+baseline.txt — every measurement this chapter takes, in the order it took them.
+
+Read this first. Numbers in spec.md, plan.md and tasks.md were measured during
+planning and analysis; the numbers HERE were taken during the work.
+
+
+================================================================================
+PHASE 1 — THE STORE                                                 2026-09-19
+================================================================================
+
+The environment, pinned:
+
+    relay             a2c9c26        specs/, docs/, CLAUDE.md
+    relay-platform    fbbb7943       clean at the start
+    relay-tutorial    f9dac03        clean at the start
+    node              v22.23.2       pnpm 12.3.4 · docker compose
+    the stack         RELAY_POSTGRES_PORT=15432, this machine's own holds 5432
+
+T001  ONE SERVICE, AND THE REGISTRY IS PART OF THE NAME
+
+      `quay.io/minio/minio:latest`, 241 MB, `command: server /data`, a named
+      volume, and the port behind `RELAY_MINIO_PORT`. `minio/minio` on Docker Hub
+      is `pull access denied … repository does not exist or may require 'docker
+      login'`, and `docs/05-sad.md:1002` has named MinIO without a registry since
+      the first draft.
+
+T001a THE API DEPENDS ON IT, WITH `condition: service_healthy`
+
+      Beside postgres, nats and redis. NOT beside clickhouse, which is absent from
+      that list because the api never touches it at boot; this store the api
+      reaches on every slot request. Without the condition the first slot request
+      can be refused with `media_storage_unavailable` for a startup reason —
+      correct, and indistinguishable from a real outage.
+
+T002  THE HEALTH CHECK AUTHENTICATES, AND IT WAS PROBED IN BOTH DIRECTIONS
+
+      ClickHouse's check in the same file is the precedent: it runs a real query
+      because `/ping` was green from chapter 1.2 to 4.2 while every query from
+      outside the container was refused.
+
+        the check as configured (mc alias set + mc ls)      exit 0
+        the same with a WRONG password                      exit 1
+            mc: <ERROR> Unable to initialize new alias from the provided
+            credentials. The request signature we calculated does not match
+            the signature you provided.
+        /minio/health/live, unauthenticated, from the host  HTTP 200
+
+      **The liveness endpoint answers 200 to a caller with no credentials at all**,
+      which is the ClickHouse shape exactly. `mc` is in the image; `wget` and `nc`
+      are not, so this is the available way to ask a question only a working store
+      can answer.
+
+      Container reached `healthy` and stayed there, failing streak 0.
+
+T004  turbo.json HAS NO `globalEnv`, WHICH THIS TASK ASSUMED
+
+      The file has `$schema` and `tasks` and nothing else; environment is declared
+      per task, and `test:integration` carried **25 keys**. Four added, 29 now:
+      `RELAY_MINIO_ENDPOINT`, `_ACCESS_KEY`, `_SECRET_KEY`, `_BUCKET`.
+
+T004a BOTH VITEST CONFIGS, WHICH IS WHERE THE LANE ACTUALLY READS THEM
+
+      `services/api/vitest.integration.config.mts` and `vitest.coverage.config.mts`,
+      four keys each. Chapter 4.9 put a credential in one of the two and `pnpm
+      coverage` stayed red for eight minutes of a run before anything said so.
+
+T005  THE PACKAGE COUNT MOVED BY ZERO, WHICH IS SC-010's REAL CLAIM
+
+        packages across every package.json    before 60 · after 60 · delta 0
+        S3 clients anywhere in the workspace  0
+
+      One container is not one dependency. `docs/12` carries no dependency count;
+      the "5 -> 6" in this project's record is chapter 4.5's gateway package count.
+
+      `docker compose up -d` brings the store up beside the four stores; `minio`
+      reports `healthy` and the others start as before.
+
+AND ONE TASK IS IN THE WRONG PHASE
+
+      T003 creates the bucket from the api on boot **with the signer T007 writes**,
+      and it sits in phase 1 marked `[P]`. It cannot precede the thing it uses. It
+      is done in phase 2 beside the signer, and this line is the record rather than
+      a silent reordering.
