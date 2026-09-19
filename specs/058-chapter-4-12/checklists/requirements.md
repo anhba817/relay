@@ -57,3 +57,26 @@ something to attack; a clarification marker gives it something to wait for.
 it cannot say whether ten validators is still ten now that a read path joins them — 4.11's
 `data-model.md` §4b was complete when it was written and wrong two passes later. Both are
 `/speckit-plan`'s and `research.md`'s to answer.
+
+
+---
+
+## Post-plan (2026-09-19)
+
+**Research settled the flagged assumption against the specification, and the spec's Assumptions
+section is now wrong on purpose.** It assumed the permissive reading — an unreferenced object
+readable by its uploader — and `research.md` R1 refuses it: the permissive reading is the
+parallel ACL FR-MED-08's own note forbids, and FR-MED-10 hard-deletes unreferenced objects after
+24 hours, so it would be a read path to a thing already scheduled for destruction. **The spec is
+left as written rather than edited back**, because the flag exists to record what was believed
+before the work, and a specification retro-fitted to its own research is a document that has
+never been wrong. Third feature running.
+
+**And research found a second thing the spec did not flag**: FR-MED-08's *"channel membership"*
+is not what this platform means by *authorised to read*. History checks membership for `private`
+channels only. A literal implementation would be stricter than the message it guards. That is in
+`plan.md`'s Complexity Tracking as the chapter's one deviation, and it may cost an SRS sentence.
+
+**Two spec requirements are now known to be cheaper than they read**: FR-009 (say the storage
+half was already built) is a citation, and FR-008's index was measured before the spec existed.
+Neither is padding — they are the two places a chapter most easily claims work it did not do.

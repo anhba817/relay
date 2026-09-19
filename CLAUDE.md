@@ -28,6 +28,41 @@ history; the replaced history is preserved on the remote as the tag
 tags. **Anyone holding an older clone of `relay-platform` must reset rather than pull.**
 
 <!-- SPECKIT START -->
+**ACTIVE: 058 — CHAPTER 4.12, "a link that expires, and who may hold it".** Movement V
+continues. Plan: `specs/058-chapter-4-12/plan.md`; **`research.md` first — it settles the
+specification's one flagged assumption AGAINST the specification, for the third feature running.**
+FR-MED-08: signed delivery, one hour, authorisation following the message. **Name it by its
+movement and title**: `docs/12` §3 row 13.
+
+**HALF THE CLAUSE WAS BUILT TWO CHAPTERS AGO AND THE OTHER HALF NEEDS A LOOKUP NOTHING HAD.**
+*"Object storage shall not be publicly readable"* is `presign.itest.ts:53`, a test whose own title
+reads *"FR-MED-08's precondition"* — signed GET 200, unsigned 403, tampered 403, measured from
+outside the container. What is left is *"issued only to callers authorised to read the referencing
+message"*, which needs the reference lookup 4.11 filed as having no mechanism (`gaps.md` 057-1).
+
+**THREE RESEARCH FINDINGS, TWO AGAINST THE BRIEF.** (1) **The flagged assumption is wrong**: an
+object with no referencing message is readable by **nobody**, including its uploader, because the
+permissive reading is the parallel ACL the clause's own note forbids — and FR-MED-10 hard-deletes
+unreferenced objects after 24 hours, so it is a read path to a thing already scheduled for
+destruction. (2) **"Channel membership" is not what this platform means by authorised to read.**
+History checks membership for `private` channels **only** — 11,289 public against 995 private on
+the lane — so a literal implementation would refuse a user the photo in a message whose text they
+can read. The predicate already exists: **`channelVisibleTo`**, with the *"or API key"* arm built
+in. (3) What held: `presign` has signed GET since 4.10 and **no dependency moves**.
+
+**AND THE INDEX IS THE OPPOSITE ANSWER TO 4.1's.** The lookup is a sequential scan — **2.886 ms
+and 1,016 buffers on the REFUSAL path**, which is the expensive case because an id nobody
+references is searched for through the whole table. GIN `jsonb_path_ops`: **0.018 ms and 5
+buffers, at 136 kB against 8,128 kB — 1.7%.** 4.1 concluded *"you cannot index your way out of an
+analytical question when the cost is the aggregation"*; here the cost is a lookup. **Both are
+right and the transferable lesson is which kind of cost you are looking at.**
+
+**AND THE CHAPTER ADDS NO ERROR CODE.** Three conditions answer **404 `not_found`**, on
+`channelVisibleTo`'s own precedent — the leak it was written to close was a private channel
+answering `200, empty page` where an absent one answered 404. `check:errors` reading **34/34
+unchanged** is asserted rather than assumed, because a chapter that adds a route usually adds
+vocabulary.
+
 **057 IS CLOSED at 108 of 108 — CHAPTER 4.11, "the half of the union that was refused".**
 Its record is `specs/057-chapter-4-11/` — `baseline.txt` first (every phase's measurements in
 the order they were taken), then `gaps.md` (**11 entries: 6 new, 5 carried and re-measured**),
