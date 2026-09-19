@@ -128,18 +128,18 @@ the message reads back with its attachment.
 **Goal**: FR-MED-06's second sentence, with one answer for three conditions.
 **Independently testable**: four sends, one accepted and three refused identically.
 
-- [ ] T033 [US2] Refuse a `media_id` in another environment (FR-002).
-- [ ] T034 [US2] Refuse a `media_id` belonging to another user of the same environment, for a user token (FR-003).
-- [ ] T035 [US2] Refuse a `media_id` no media object has (FR-004).
-- [ ] T036 [US2] **One code and one message for all three** (FR-005). The send path already argues it: `messages.service.ts` records that the ban refusal *"is the same for a channel that exists, one that belongs to another tenant, and one that was invented."*
-- [ ] T037 [US2] Integration test: the three refusals return **byte-identical bodies apart from `request_id`** (SC-002). Not three 422s — three identical bodies, compared as bodies.
+- [X] T033 [US2] Refuse a `media_id` in another environment (FR-002).
+- [X] T034 [US2] Refuse a `media_id` belonging to another user of the same environment, for a user token (FR-003).
+- [X] T035 [US2] Refuse a `media_id` no media object has (FR-004).
+- [X] T036 [US2] **One code and one message for all three** (FR-005). The send path already argues it: `messages.service.ts` records that the ban refusal *"is the same for a channel that exists, one that belongs to another tenant, and one that was invented."*
+- [X] T037 [US2] Integration test: the three refusals return **byte-identical bodies apart from `request_id`** (SC-002). Not three 422s — three identical bodies, compared as bodies.
   **THIS IS THE ASSERTION A LATER EDIT WEAKENS.** "All three return 422" satisfies the letter and loses the property, and the property is that a caller cannot use the refusal as an existence oracle for a guessable UUID.
-- [ ] T038 [US2] Integration test: a refused send writes **no message row and no outbox row** and does not advance the channel's sequence (FR-006). Scoped to the test's own channel — a whole-table count is a neighbour's problem in a lane that runs two files at a time (045-74).
-- [ ] T039 [US2] Integration test: a message whose tenth attachment is foreign refuses the whole message and stores none of the other nine (FR-007).
-- [ ] T040 [US2] Integration test: the refusal's `field` names the attachment's index, so a caller with ten attachments is told which one.
-- [ ] T041 [US2] **Run the refusal red by deleting the environment predicate**, and confirm the cross-tenant test fails rather than the shape test. A refusal that can only fail for somebody else's reason is 043's recorded class.
-- [ ] T042 [US2] Integration test: a non-UUID `media_id` is a **400 `invalid_request`** naming `attachments.<n>.media_id`, and not a 500. R3's measurement is the reason this test exists; without T012 it is the driver's error wearing `internal_error`.
-- [ ] T043 [US2] Commit phase 4.
+- [X] T038 [US2] Integration test: a refused send writes **no message row and no outbox row** and does not advance the channel's sequence (FR-006). Scoped to the test's own channel — a whole-table count is a neighbour's problem in a lane that runs two files at a time (045-74).
+- [X] T039 [US2] Integration test: a message whose tenth attachment is foreign refuses the whole message and stores none of the other nine (FR-007).
+- [X] T040 [US2] Integration test: the refusal's `field` names the attachment's index, so a caller with ten attachments is told which one.
+- [X] T041 [US2] **Run the refusal red by deleting the environment predicate**, and confirm the cross-tenant test fails rather than the shape test. A refusal that can only fail for somebody else's reason is 043's recorded class.
+- [X] T042 [US2] Integration test: a non-UUID `media_id` is a **400 `invalid_request`** naming `attachments.<n>.media_id`, and not a 500. R3's measurement is the reason this test exists; without T012 it is the driver's error wearing `internal_error`.
+- [X] T043 [US2] Commit phase 4.
 
 **Checkpoint**: a refused client learns that the id is not theirs to use, and nothing else.
 
@@ -149,17 +149,17 @@ the message reads back with its attachment.
 
 **Goal**: build the state predicate as FR-MED-06 reads and publish which arm no fixture can reach.
 
-- [ ] T044 [US3] The state predicate admits `pending` and `ready` and refuses anything else (FR-010).
-- [ ] T045 [US3] **Name the unreachable arms in the code.** `ready` cannot occur and `rejected` cannot occur, because `CHECK (state = 'pending')`. Chapter 4.10's precedent is `RESUMES`' fourth entry, which no caller reaches and whose comment says so.
-- [ ] T046 [US3] Integration test: an attempt to store a media object in state `ready` is refused by the database, **and the refusal's text is the assertion** — `violates check constraint "media_objects_state_check"`. That test is the chapter's evidence, and it passes for the reason the chapter is about.
-- [ ] T047 [US3] Do **not** widen the CHECK so a fixture can plant `ready`. It would be a schema claiming a state nothing produces, which is what 4.10 refused, and it would buy a green assertion about a transition no code performs.
-- [ ] T048 [US3] Pin the new files and the changed ones in `vitest.coverage.config.mts`, and **probe both halves**: demand an impossible figure of each new key and confirm it fires, then confirm the measured pins pass. A pin whose key matches no file is silent.
-- [ ] T049 [US3] **Read `coverage-summary.json`, not the text table**, to find which files were measured. v8's text reporter omits a file at 100/100/100/100 — 056 lost three of five new files to that.
-- [ ] T050a [US3] **Answer constitution VI's 100%-branch clause for the predicate, in writing, with the figure** (FR-023, SC-011). The clause names tenant isolation and this chapter's mechanism is a tenant-isolation predicate; the plan's principle VI row said nothing about it until analysis pass 7. Two routes, and the task is to pick one and show the number:
+- [X] T044 [US3] The state predicate admits `pending` and `ready` and refuses anything else (FR-010).
+- [X] T045 [US3] **Name the unreachable arms in the code.** `ready` cannot occur and `rejected` cannot occur, because `CHECK (state = 'pending')`. Chapter 4.10's precedent is `RESUMES`' fourth entry, which no caller reaches and whose comment says so.
+- [X] T046 [US3] Integration test: an attempt to store a media object in state `ready` is refused by the database, **and the refusal's text is the assertion** — `violates check constraint "media_objects_state_check"`. That test is the chapter's evidence, and it passes for the reason the chapter is about.
+- [X] T047 [US3] Do **not** widen the CHECK so a fixture can plant `ready`. It would be a schema claiming a state nothing produces, which is what 4.10 refused, and it would buy a green assertion about a transition no code performs.
+- [X] T048 [US3] Pin the new files and the changed ones in `vitest.coverage.config.mts`, and **probe both halves**: demand an impossible figure of each new key and confirm it fires, then confirm the measured pins pass. A pin whose key matches no file is silent.
+- [X] T049 [US3] **Read `coverage-summary.json`, not the text table**, to find which files were measured. v8's text reporter omits a file at 100/100/100/100 — 056 lost three of five new files to that.
+- [X] T050a [US3] **Answer constitution VI's 100%-branch clause for the predicate, in writing, with the figure** (FR-023, SC-011). The clause names tenant isolation and this chapter's mechanism is a tenant-isolation predicate; the plan's principle VI row said nothing about it until analysis pass 7. Two routes, and the task is to pick one and show the number:
   - **Met rather than pinned.** 049's precedent, which is how this clause was discharged for `event.ts`'s tenancy branch — the first time in Part 4. Requires per-arm evidence: which of §2's three clauses are SQL and therefore carry no branch at all (048's finding, arriving from a different direction), which JavaScript arms the chapter adds — the caller-kind signal from T020a, T021's position-preserving set difference, the refusal's `field` index — and what each of those measured.
   - **Extract the decision and pin it at 100/100/100/100.** Given the rows the query returned and the credential asking, which indices are refused. The **query** stays in `repository.ts` where constitution I's lint rule requires it; the **decision** is a pure function and can be pinned. 4.9 built the reconciler callable in isolation for this reason, and 4.7 found the wall between the api and its repository by walking into it.
   **AND THE RATCHET CANNOT REPORT THIS EITHER WAY.** `repository.ts` is pinned at **branches 92** against a measured 92.66 — 0.66 points of headroom on a file with hundreds of branches — so a partly-uncovered isolation arm passes. The pin is not the instrument here, which is the thing to say out loud rather than to let a green `pnpm coverage` imply.
-- [ ] T050 [US3] Commit phase 5.
+- [X] T050 [US3] Commit phase 5.
 
 **Checkpoint**: the clause's testable half is tested and its untestable half is named.
 
@@ -167,30 +167,30 @@ the message reads back with its attachment.
 
 ## Phase 6: The gauntlet, and what this chapter cannot fix
 
-- [ ] T051 **Run the derivation first and record that it finds nothing.** This chapter adds no route, so `targets.itest.ts` will be green — which breaks a streak of eight chapters where it found the new route before the classification did. Say so rather than letting a green check read as coverage.
-- [ ] T052 Extend the existing `POST /v1/channels/:channelId/messages` attack in `services/api/src/isolation/gauntlet.itest.ts` with a forged **`media_id`**. The existing attack forges a channel id; this is a second identifier on the same route, and `attacked.add` already covers the route name.
+- [X] T051 **Run the derivation first and record that it finds nothing.** This chapter adds no route, so `targets.itest.ts` will be green — which breaks a streak of eight chapters where it found the new route before the classification did. Say so rather than letting a green check read as coverage.
+- [X] T052 Extend the existing `POST /v1/channels/:channelId/messages` attack in `services/api/src/isolation/gauntlet.itest.ts` with a forged **`media_id`**. The existing attack forges a channel id; this is a second identifier on the same route, and `attacked.add` already covers the route name.
   **TWO OF THE THREE CONDITIONS, AND THE HELPER DECIDES WHICH.** `writeAttack(baseUrl, credential, foreignReq, absentReq, readVictimState)` compares exactly two requests and asserts their answers are identical — so the victim's id against a random UUID is the pair it is built for, and `differences` being empty **is** SC-002 for those two. The third condition, another user of the same tenant, is not a cross-tenant case at all and belongs in the media suite (T034).
-- [ ] T053 **The attack plants a media object for each tenant.** Both tenants' tables are otherwise empty, and *"an empty log passes a leak check for the same reason an empty page does"* (chapter 4.8).
-- [ ] T054 Run the attack red by removing the environment predicate, and confirm it fails for the tenancy reason rather than a shared refusal — the trap the existing attack's own comment records.
-- [ ] T055 [P] Record in `gaps.md`: **nothing counts references to a media object.** This chapter creates the first ones; FR-MED-10's sweep deletes *unreferenced* objects and the only way to answer "unreferenced" against this shape is a scan of `messages.attachments`.
-- [ ] T055a [P] Record in `gaps.md` and in the chapter: **`attachment_count` changes meaning** (FR-019). `load-analytics.mjs:178,187,200` compute `JSONLength(m.attachments)`, which has counted external URLs for every row ever written and starts counting hosted media alongside them with nothing able to tell them apart. **Recorded, not split** — a second column is FR-MED-12's chapter, and adding a narrower count here would be that chapter's surface without its clause.
-- [ ] T056 [P] Record in `gaps.md`: **a message can attach an object nobody uploaded to.** `state` is `pending` whether the client uploaded or not (`gaps.md` 056-1), so a message may name a slot that holds no bytes, and no client can tell.
-- [ ] T057 Run `check-lane-scope.py` and record the file count. It read 59 files at 056's close; this chapter adds integration tests and the number must rise. A run that reads nothing exits 2.
+- [X] T053 **The attack plants a media object for each tenant.** Both tenants' tables are otherwise empty, and *"an empty log passes a leak check for the same reason an empty page does"* (chapter 4.8).
+- [X] T054 Run the attack red by removing the environment predicate, and confirm it fails for the tenancy reason rather than a shared refusal — the trap the existing attack's own comment records.
+- [X] T055 [P] Record in `gaps.md`: **nothing counts references to a media object.** This chapter creates the first ones; FR-MED-10's sweep deletes *unreferenced* objects and the only way to answer "unreferenced" against this shape is a scan of `messages.attachments`.
+- [X] T055a [P] Record in `gaps.md` and in the chapter: **`attachment_count` changes meaning** (FR-019). `load-analytics.mjs:178,187,200` compute `JSONLength(m.attachments)`, which has counted external URLs for every row ever written and starts counting hosted media alongside them with nothing able to tell them apart. **Recorded, not split** — a second column is FR-MED-12's chapter, and adding a narrower count here would be that chapter's surface without its clause.
+- [X] T056 [P] Record in `gaps.md`: **a message can attach an object nobody uploaded to.** `state` is `pending` whether the client uploaded or not (`gaps.md` 056-1), so a message may name a slot that holds no bytes, and no client can tell.
+- [X] T057 Run `check-lane-scope.py` and record the file count. It read 59 files at 056's close; this chapter adds integration tests and the number must rise. A run that reads nothing exits 2.
 
 ---
 
 ## Phase 7: The chapter
 
-- [ ] T058 Write `relay-tutorial/app/(en)/part-4/chapter-11/…/page.mdx`, **2,000–4,000 words outside code fences**, measured with `node relay-tutorial/scripts/prose-words.mjs <page>`. 4.10 came in at 3,998 after four rounds of trimming; leave margin.
-- [ ] T059 **At least one `TRAP` box.** The candidates are measured rather than invented: the 500 a looser schema ships (R3), the specification's own assumption settled against it (R1), and the three-refusals-one-answer argument, which reads like over-caution until the existence oracle is spelled out.
-- [ ] T060 Register the chapter in `relay-tutorial/lib/tutorial.ts`. `<ChapterHeader id="4.11" />` throws on an unregistered id, so `pnpm build` exits 1 from the moment the page exists — a cost two chapters have already paid.
-- [ ] T061 [P] Figures in `figures.ts`, each named by a `<Figure>`. `check:figures` reports an unused export as a note rather than a failure, so the note is the check.
-- [ ] T062 A hunk per fenced file this chapter edits, **counted at T005 rather than remembered**. Generate each with `pnpm check:fences --dump <dir>`, never with `git diff` against the working tree.
-- [ ] T063 **Test each hunk's anchoring with an exact-match count, not `patch --dry-run`** (`gaps.md` 056-7). `patch` applies with fuzz and offset and said yes to seven hunks the checker refused.
-- [ ] T064 For each file, use the widest context that anchors — and where `-U6` reaches an appendix-added line, trim rather than widen. Keep the chapter's change and trim the context the chain does not carry.
-- [ ] T065 A hunk that cannot anchor at any width goes in `fences/post-series.md`, and one that anchors **and unanchors an existing appendix hunk** goes there too, placed after the hunks it would otherwise have invalidated.
-- [ ] T066 **There is no Vietnamese twin to write.** `app/(vi)/vi/part-4/` holds chapters 1-3; the translation lags by eight. Check it rather than assume it — 050 and 056 both recorded a task that described a corpus instead of checking one.
-- [ ] T067 Run `pnpm check:fences` and report the **absolute number**.
+- [X] T058 Write `relay-tutorial/app/(en)/part-4/chapter-11/…/page.mdx`, **2,000–4,000 words outside code fences**, measured with `node relay-tutorial/scripts/prose-words.mjs <page>`. 4.10 came in at 3,998 after four rounds of trimming; leave margin.
+- [X] T059 **At least one `TRAP` box.** The candidates are measured rather than invented: the 500 a looser schema ships (R3), the specification's own assumption settled against it (R1), and the three-refusals-one-answer argument, which reads like over-caution until the existence oracle is spelled out.
+- [X] T060 Register the chapter in `relay-tutorial/lib/tutorial.ts`. `<ChapterHeader id="4.11" />` throws on an unregistered id, so `pnpm build` exits 1 from the moment the page exists — a cost two chapters have already paid.
+- [X] T061 [P] Figures in `figures.ts`, each named by a `<Figure>`. `check:figures` reports an unused export as a note rather than a failure, so the note is the check.
+- [X] T062 A hunk per fenced file this chapter edits, **counted at T005 rather than remembered**. Generate each with `pnpm check:fences --dump <dir>`, never with `git diff` against the working tree.
+- [X] T063 **Test each hunk's anchoring with an exact-match count, not `patch --dry-run`** (`gaps.md` 056-7). `patch` applies with fuzz and offset and said yes to seven hunks the checker refused.
+- [X] T064 For each file, use the widest context that anchors — and where `-U6` reaches an appendix-added line, trim rather than widen. Keep the chapter's change and trim the context the chain does not carry.
+- [X] T065 A hunk that cannot anchor at any width goes in `fences/post-series.md`, and one that anchors **and unanchors an existing appendix hunk** goes there too, placed after the hunks it would otherwise have invalidated.
+- [X] T066 **There is no Vietnamese twin to write.** `app/(vi)/vi/part-4/` holds chapters 1-3; the translation lags by eight. Check it rather than assume it — 050 and 056 both recorded a task that described a corpus instead of checking one.
+- [X] T067 Run `pnpm check:fences` and report the **absolute number**.
 
 ---
 

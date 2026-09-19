@@ -393,3 +393,258 @@ GATES AT THE CLOSE OF PHASE 3
     pnpm typecheck       14 of 14
     pnpm test:integration 12 of 12
     pnpm test:outsider   19 of 19        against the composed platform
+
+================================================================================
+PHASE 4 — SOMEBODY ELSE'S MEDIA CANNOT BE ATTACHED (US2)             2026-09-19
+================================================================================
+
+  Most of this phase's surface landed with the accept path, because a refusal
+  test and an accept test share a fixture and splitting them across two phases
+  would have meant building the tenant twice. Two additions were real:
+
+T038 · A REFUSED SEND LEAVES THREE FIGURES UNCHANGED, NOT TWO
+------------------------------------------------------------------------------
+  The first version counted rows and the sequence. The third is the OUTBOX, and
+  each can move without the others: a platform that inserted and rolled back
+  while `channels.last_sequence` kept its increment leaves a gap a resume cursor
+  reads as a lost message, and an outbox row for a message that does not exist is
+  worse than either — the consumer publishes it, a subscriber renders it, and
+  nothing in the database agrees.
+
+T039 · NINE GOOD ATTACHMENTS AND ONE FOREIGN STORES NOTHING
+------------------------------------------------------------------------------
+    field   attachments.9.media_id
+    rows    0 with that text
+
+  The nine are the assertion. A platform validating each attachment as it wrote
+  would leave a message carrying nine — one the sender never wrote, delivered to
+  every member, with no error anybody saw.
+
+T041 · THE RED PROBE, RE-RUN AGAINST THE FULLER SUITE
+------------------------------------------------------------------------------
+    environment clause deleted   1 failed | 13 passed
+
+  It fails for the TENANCY reason and nothing else does. A probe that turned the
+  whole file red would have proved only that the predicate is load-bearing, not
+  that this test is about tenancy.
+
+T042 · THE NON-UUID IS A 400 AND NOT A 500
+------------------------------------------------------------------------------
+  Green in `messages.itest.ts`, the test converted in phase 2. R3 measured what
+  the alternative costs: `z.string().min(1)` sends `m_1` to the driver, Postgres
+  answers `invalid input syntax for type uuid`, and the filter calls it
+  `internal_error` — a 500 any caller can produce with one request.
+
+    attach.itest.ts   14 of 14
+
+================================================================================
+PHASE 5 — THE CLAUSE'S UNREACHABLE HALF (US3)                        2026-09-19
+================================================================================
+
+T046 · The database's own refusal, quoted rather than described
+------------------------------------------------------------------------------
+    INSERT … state = 'ready'      violates check constraint
+                                  "media_objects_state_check"
+    INSERT … state = 'rejected'   the same
+
+  THE TEXT IS THE ASSERTION AND NOT THE THROW. "The insert failed" would pass
+  against a typo in the column list, a missing environment or a closed pool —
+  three things that are not this chapter's evidence. Both transitions FR-MED-07
+  names are asserted, which is what makes the first a fact about the CHECK rather
+  than a fact about the string `ready`.
+
+  T047 HELD: the CHECK is not widened so a fixture can plant `ready`. It would buy
+  a green assertion about a transition no code performs.
+
+T048/T049 · The pins, read out of `coverage-summary.json`
+------------------------------------------------------------------------------
+    126 files · 1,814 tests · all passing
+
+    attachments.ts             100 / 100 / 100 / 100     pin holds
+    frames.ts                  100 / 100 / 100 / 100     forwardedMessageSchema
+    revision.ts                100 / 100 / 100 / 100
+    media/store.ts             100 / 100 / 100 / 100     the endpoint split
+    media/presign.ts           100 / 100 / 100 / 100
+    outbox/event.ts            100 / 100 / 100 / 100
+    db/repository.ts          97.73 / 92.91 / 100 / 99.27   pin 92, headroom 0.91
+    zod-validation.pipe.ts       90 / 52.17 / 100 / 90      NO PIN
+
+  `zod-validation.pipe.ts` AT 52.17% BRANCHES IS T015'S COST, MEASURED. Keeping
+  `protocolCode` with no producer leaves its arm uncovered and the file carries no
+  pin, so nothing reports it. That was stated as the price when the decision was
+  made; this is the number.
+
+  NO PIN IS RAISED. `repository.ts` measures 92.91 against 92 and the config's own
+  comment warns against moving a ratchet on one chapter's evidence. The one
+  threshold failure in the run is `services/ingester/src/shape.ts` at **95.12%**
+  against a 100 pin — the identical figure 4.7 recorded and deliberately left.
+
+T050a · CONSTITUTION VI'S BRANCH CLAUSE, ANSWERED PER ARM
+------------------------------------------------------------------------------
+  *"Message ordering, idempotency, and tenant isolation MUST have 100% branch
+  coverage (NFR-MNT-02)."* The clause is MET rather than pinned, and the evidence
+  is four deletions rather than a percentage — because `repository.ts` holds
+  hundreds of branches and an uncovered arm here clears the pin with room to spare.
+
+    the three SQL clauses      no JavaScript branch at all (048's shape)
+    senderMustBeBot ? …        forced -> exactly ONE test red
+    refused !== undefined      never fires -> five red
+    wanted.length === 0        deleted -> **17 of 17 still pass**
+
+  TWO OF THE FOUR PROBES TOLD US SOMETHING A NUMBER COULD NOT.
+
+  The credential arm turned out to discriminate almost nothing: an API key's own
+  slot records `user_id IS NULL` and the USER predicate admits NULL, so forcing the
+  user predicate on an application credential changes nothing for its own objects.
+  **The suite as written would have passed with that arm deleted.** The one case
+  that moves is an API key attaching a USER's object, which FR-MED-06 permits
+  because it qualifies the uploader clause with *"(for user tokens)"*. That test
+  did not exist until this probe asked what the arm was for; it does now, and it is
+  the only thing the probe turns red.
+
+  And the early return has **no behavioural consequence**: with no media the `IN`
+  is empty, nothing comes back, nothing is refused. It is kept because most sends
+  carry no media and none of them should pay a round trip. **A coverage number
+  would have called all four arms covered and told nobody that one does nothing
+  observable.**
+
+================================================================================
+PHASE 6 — THE GAUNTLET, AND WHAT THIS CHAPTER CANNOT FIX             2026-09-19
+================================================================================
+
+T051 · The derivation found nothing, and that was predicted
+------------------------------------------------------------------------------
+    targets.itest.ts   9 of 9 green
+
+  Eight chapters running, the derivation named the new route before the
+  classification did. This chapter adds NO route — the send path is already a
+  target and is the derivation's own `CANARY_TARGET` — so a green run here is the
+  expected answer rather than a clean bill. **The direction that still applied is
+  the second one**: a route that is classified and attacked can still be attacked
+  for only one of its boundaries, and nothing asks that automatically.
+
+T052/T053 · A second boundary on one path
+------------------------------------------------------------------------------
+    gauntlet.itest.ts   59 of 59
+
+  The existing attack forges a CHANNEL id; this one forges a MEDIA id and leaves
+  the channel honest. Different walls, different queries, different code —
+  `channels.environment_id` and `media_objects.environment_id` — and a platform
+  could hold one and not the other. **Naming a route is not covering it, and
+  attacking it once is not either.**
+
+  THE ATTACK PLANTS A ROW FOR EACH TENANT, which no other attack in that file has
+  to: both tables are otherwise empty and an empty table passes a leak check for
+  the same reason an empty page does (4.8). And it runs a CONTROL first — the
+  attacker attaching its OWN object must answer 201, or the refusal below says the
+  feature is broken rather than that the boundary holds.
+
+T054 · Run red, and the leak is the whole finding
+------------------------------------------------------------------------------
+    predicate removed:  status 201 (foreign) vs 422 (absent)
+
+    {"id":"281d3ece-…","seq":3,"text":"from the attacker",
+     "attachments":[{"type":"media","media_id":"094efd45-…"}]}
+
+  **The attacker committed a message carrying the victim's object.** One test red
+  and fifty-eight green, so it fails for the tenancy reason and not for a shared
+  refusal — the trap the existing attack's own comment records.
+
+T057 · check-lane-scope
+------------------------------------------------------------------------------
+    60 integration files · 0 unscoped reads · controls 10 of 10 fired
+
+  59 at 056's close. The number had to rise: a run that reads nothing exits 2, and
+  a control that fires proves the checker works rather than that it looked.
+
+T055 / T055a / T056 · Written into `gaps.md` as 057-1, 057-3 and 057-2
+------------------------------------------------------------------------------
+  Nothing counts references to a media object (grep: zero hits, verified). A
+  message can attach an object nobody uploaded to — made reachable by this chapter
+  rather than caused by it. And `attachment_count` changes meaning under
+  `load-analytics.mjs:178,187,200` with no clause naming the distinction.
+
+================================================================================
+PHASE 7 — THE CHAPTER                                                2026-09-19
+================================================================================
+
+T058/T059 · The prose
+------------------------------------------------------------------------------
+    2,396 words outside code fences        bound 2,000-4,000
+    1 TRAP box · 3 figures · 1 Why · 1 ForwardRef · 1 Checkpoint
+
+  The TRAP is the loose validator: `z.string().min(1)` was correct for two
+  chapters and became a caller-triggered 500 the moment the arm accepted. **The
+  cost of a loose schema is paid by whoever makes it reachable**, which is not
+  the chapter that wrote it.
+
+T062/T063 · Twenty-two files, forty-four hunks, every one anchored at -U6
+------------------------------------------------------------------------------
+  Generated from `--dump`, which is the checker's own replay (rule 1a), and
+  verified by EXACT OCCURRENCE COUNT rather than `patch --dry-run` — `patch`
+  applies with fuzz and said yes to seven hunks the checker refused at 056 (056-7).
+  The generator walked -U6, 8, 10, 4, 3, 2 and stopped at the first width where
+  every pre-image occurred exactly once. All twenty-two settled at 6.
+
+    1,576 diff lines in total — the largest fence bill of any chapter so far
+
+T064/T065 · Eight in the chapter, fourteen in the appendix
+------------------------------------------------------------------------------
+  The chapter publishes what carries the argument: the predicate, the arm, the
+  forwarding reader, the registry excerpt, the filter rung, the service mapping,
+  and the store's two addresses. **A chapter that printed all twenty-two would
+  have shown a reader 1,576 diff lines to make one point about a predicate.**
+
+  Seven of the fourteen are test files, whose assertions the chapter quotes in
+  prose — the form a reader can follow — with the hunks in the appendix because
+  the chain still replays them. Three more are relays the COMPILER named rather
+  than the author: `session.ts`, `resume.ts` and `zod-validation.pipe.ts` changed
+  because a forwarded value met a strict type.
+
+AND ONE GOOD HUNK FAILED, FOR 053'S REASON EXACTLY
+------------------------------------------------------------------------------
+    hunk pre-image matched 0 times — starts "  // ONLY THE AUTHOR EVER SEES IT."
+
+  `codes.ts` was generated against the dump's END state, and `fences/post-series.md`
+  **already amends that file twice**. The appendix applies after every chapter, so
+  a file it touches has one shape a reader sees at chapter N and another the chain
+  reaches at the end — and the hunk was right about the wrong one.
+
+  Moved to the appendix, placed after the two hunks that made it fail, and the
+  chapter shows an untitled excerpt instead with the reason written down. 4.8 paid
+  for this sentence first: **check which state a hunk is written against before
+  blaming the hunk.**
+
+T066 · The Vietnamese twin, CHECKED rather than described
+------------------------------------------------------------------------------
+    app/(vi)/vi/part-4/   chapter-01 chapter-02 chapter-03
+    app/(en)/part-4/      chapter-01 … chapter-10
+
+  A lag of SEVEN before this chapter and eight after. The task said eight and the
+  tree said seven; 050 and 056 both recorded a task that described a corpus instead
+  of checking one, so the figure here is the `ls`.
+
+T067 · The chain
+------------------------------------------------------------------------------
+    22 -> 0 · EXIT 0
+    290 fenced files replay onto relay-platform across 54 chapters (was 53)
+
+THE GATES, AND ONE CAUGHT WHAT THE BUILD COULD NOT
+------------------------------------------------------------------------------
+    lint            exit 0     (no counted line — eslint prints nothing on success)
+    build           exit 0     125 pages
+    check:docs      exit 1 -> 0  after `pnpm sync:docs`
+    check:srs       exit 0
+    check:figures   exit 1 -> 0
+    check:fences    exit 0     290 files, 54 chapters
+
+  **`check:figures` FOUND THREE DEAD DIAGRAMS AND `pnpm build` DID NOT.** The
+  figures were passed as `chart={…}` where `<Figure>` reads `code` — so all three
+  would have rendered nothing, on a page that compiled, generated and served. The
+  gate's whole sentence is *"every diagram passed as `code`"*, and it is the only
+  thing in the repository that asks.
+
+  And `check:docs` was red for a reason this chapter caused honestly: it edits
+  `docs/08-error-reference.md`, and the tutorial serves its own mirrored copy.
+  `pnpm sync:docs` is the answer, and the gate exists because the two drifting is
+  invisible from either side.
