@@ -19,7 +19,7 @@ Node 22 has `crypto`. Written in **28 lines** and run against a real store:
     the same object fetched back through a signed GET                HTTP 200, 45 bytes, exact
     an UNSIGNED GET of the same object                               HTTP 403
     a URL whose X-Amz-Expires has passed                             AccessDenied, "Request has expired"
-    a URL with one character of the signature changed                HTTP 400
+    a URL with one character of the signature changed                HTTP 403
 
 **AND THE BUCKET, WHICH THE FIRST PROBE SKIPPED.** Those five results are all about *objects*,
 and the probe that produced them created the bucket with `docker exec … mkdir` — bypassing the S3
@@ -33,6 +33,13 @@ analysis pass 6:
     PUT  /relay-media again    BucketAlreadyOwnedByYou
     unsigned GET  of the object   403   private by default, no policy step
     unsigned LIST of the bucket   403
+
+**AND ONE OF THE ORIGINAL FIVE WAS WRONG, FOR THE PROBE'S OWN REASON.** A tampered signature
+was published as **400** and the store answers **403 `SignatureDoesNotMatch`**. The 400 came from
+the shell that produced it: `${URL%?*}?…` splits on the LAST `?`, so what went to the store was
+malformed rather than merely mis-signed. Asked through the code that ships, the store is
+consistent — a bad signature is a refusal, not a parse error. Found when the integration test
+asserted the published figure and went red.
 
 **Nine results now, and the first five claimed a coverage they did not have.** The bucket create
 is the first signed call this platform will ever make and it was the one nobody signed.

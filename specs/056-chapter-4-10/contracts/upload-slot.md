@@ -66,7 +66,7 @@ Measured against `quay.io/minio/minio` before any of this was planned:
 | a client can upload with it and no credentials | `curl -X PUT --upload-file f "$URL"` → **200**, with no auth header |
 | no byte reaches the api | the api's own request log shows the slot request and nothing else |
 | it expires | a URL whose `X-Amz-Expires` has passed → `AccessDenied · Request has expired`, **from the store** |
-| it cannot be altered | one character changed in `X-Amz-Signature` → **400** |
+| it cannot be altered | one character changed in `X-Amz-Signature` → **403 `SignatureDoesNotMatch`** |
 | the bucket is not public | an unsigned GET of a stored object → **403** |
 | the same signer reads | a signed GET returns the exact bytes — 45 of them, in the probe |
 

@@ -45,7 +45,7 @@ Measured against `quay.io/minio/minio`:
     unsigned -> 403      the bucket is not publicly readable, by default
     signed GET -> 200    45 bytes, byte-exact
     expired    -> AccessDenied · Request has expired      from the STORE
-    tampered   -> 400    one character of the signature changed
+    tampered   -> 403    SignatureDoesNotMatch
 
 **Four of those five are requirements of this chapter or the next**, and none needed a package.
 

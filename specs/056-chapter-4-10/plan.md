@@ -14,7 +14,7 @@ Four premises were run rather than read, and three moved the plan:
 
 - **A presigned URL needs no dependency.** 28 lines of `node:crypto`, proven against a running
   store: signed PUT 200, signed GET 200, unsigned GET **403**, expired refused by the store,
-  tampered 400. **Dependency count moves by zero.**
+  tampered **403**. **Dependency count moves by zero.**
 - **The SAD's image cannot be pulled.** `minio/minio` is `pull access denied`; the service names
   `quay.io/minio/minio`.
 - **Storage is a level and `usage_periods` holds flows.** The cap joins `quotaConfig`; the

@@ -37,7 +37,7 @@ shipped as 4.9.
 
 **FOUR PREMISES RUN, THREE AGAINST THE BRIEF.** (1) **A presigned URL needs no dependency** — 28
 lines of `node:crypto`, proven against a running store: signed PUT 200, signed GET 200, **unsigned
-GET 403**, expired refused by the store, tampered 400. Dependency count moves by **zero**.
+GET 403**, expired refused by the store, tampered **403**. Dependency count moves by **zero**.
 (2) **`minio/minio` is `pull access denied`** on this machine and `docs/05-sad.md:1002` names it;
 the service is `quay.io/minio/minio`, 241 MB. (3) **Storage is a LEVEL and `usage_periods` holds
 FLOWS** — `creditFor` refuses to subtract and the figure resets on the 1st, so a tenant holding

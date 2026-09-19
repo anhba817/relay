@@ -82,3 +82,61 @@ AND ONE TASK IS IN THE WRONG PHASE
       and it sits in phase 1 marked `[P]`. It cannot precede the thing it uses. It
       is done in phase 2 beside the signer, and this line is the record rather than
       a silent reordering.
+
+================================================================================
+PHASE 2 — THE SIGNER                                                2026-09-19
+================================================================================
+
+T007  SigV4 IN `node:crypto`, AND THE DEPENDENCY COUNT STILL MOVES BY ZERO
+
+      `services/api/src/media/presign.ts`, 104 lines including the argument for why
+      it is not `@aws-sdk/client-s3` plus `@aws-sdk/s3-request-presigner`. Typecheck
+      clean, lint clean.
+
+T008  EIGHT SHAPE ASSERTIONS, 8 of 8
+
+      Six signed parameters and no others · stable for a pinned clock · different
+      one second later · a BUCKET operation at `/{bucket}` with no key segment · a
+      key encoded segment by segment, separators kept · 900 seconds by default ·
+      the method signed, so a GET URL is not a PUT URL · the credential scoped to
+      the date and region.
+
+      **None of this can tell you the store accepts the URL.** A consistently wrong
+      signature passes every one of them.
+
+T003  THE BUCKET, FROM THE API ON BOOT, WITH THE SAME SIGNER
+
+      `ensureBucket` returns `created` or `exists` and throws otherwise. What makes
+      running it on every boot safe is that the store NAMES the second attempt —
+      `BucketAlreadyOwnedByYou` — so "already there" and "went wrong" are
+      distinguishable without a flag.
+
+T009  NINE RESULTS AGAINST THE RUNNING STORE — 9 of 9, three runs
+
+        ensureBucket twice                          created, then `exists`
+        signed HEAD on the bucket                   200
+        unsigned LIST of the bucket                 403
+        signed PUT of an object, no credentials     200
+        signed GET reads the same bytes             200, byte-exact
+        unsigned GET of that object                 403     FR-MED-08's precondition
+        a URL past its expiry                       403 · "Request has expired"
+        one character of the signature changed      403 · SignatureDoesNotMatch
+        a URL signed with the wrong secret          403
+
+## AND ONE OF THE NINE WAS PUBLISHED WRONG, FOR THE PROBE'S OWN REASON
+
+      Planning published the tampered-signature result as **400** and the store
+      answers **403 `SignatureDoesNotMatch`**. The 400 was the shell's: the probe
+      rebuilt the URL as `${URL%?*}?…`, which splits on the LAST `?` rather than the
+      first, so what reached the store was malformed rather than mis-signed.
+
+      **The integration test found it by asserting the published figure and going
+      red.** Confirmed two ways afterwards — a clean `curl` and a signature replaced
+      with `deadbeef` both answer 403 — so the store is consistent and the outlier
+      was the instrument.
+
+      Corrected in six places: `plan.md`, `research.md`, `contracts/`, `tasks.md`,
+      `quickstart.md` and `CLAUDE.md`. **Every measurement was wrong before it was
+      right**, and this one had reached the project's own instruction file.
+
+T010  lint exit 0 · typecheck exit 0
