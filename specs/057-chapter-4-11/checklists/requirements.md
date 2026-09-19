@@ -160,3 +160,41 @@ durable storage, then *enumerate every validator*. **Three of the four boundary 
 one pass apart, and the enumeration that would have found all of them in one command took until
 pass 4 to run.** That is the finding about the method, and it is why FR-018c exists.
 
+
+## Analysis pass 5 (2026-09-19)
+
+Three findings — one HIGH, one MEDIUM, one LOW — all three applied, and **three premises that came
+back clean and are recorded as evidence rather than dropped.**
+
+- **The Part 4 chapter table lives in two documents and only one is ever amended.**
+  `docs/07-tutorial-plan.md` carries the same table as `docs/12` §3 and has received none of the
+  four own-row amendments chapters 4.7 through 4.10 wrote. The divergence is live, not
+  hypothetical: row 11 still reads *"four distinct refusals"* where 056 established three plus
+  FR-017; the section states *"The count. **It is 23**"*, a contraction behind; and *"milestones
+  at 10, 18 and 23"* presents original ordinals as current, which is exactly how `CLAUDE.md` put
+  hosted media at 4.5 and 4.6 until 056's eighth pass. FR-017 widened, T070b.
+- **The sealed suite proves the platform from outside and this chapter was invisible to it.**
+  `integrate.itest.ts:321` delivers two attachments to a socket in order — FR-001 and FR-006's
+  claim exactly — and annotates the frames `attachments?: { url?: string }[]`. No 057 artifact
+  contained the word *outsider*. FR-021, SC-002d, T032e, and the fenced-file table thirteen → 14.
+- **`protocolCode`'s branch loses its only caller and one of two precedents was cited.** T015
+  keeps it on 4.10's `service_unavailable` precedent; 4.6 reached 100/100/100/100 **by deleting**
+  two unreachable arms. Both are named now, with the discriminator that decides it — this arm is
+  one `params:` key from reachable and those were unreachable by construction. T015.
+
+**Clean premises, run and recorded.** No production code branches on the attachment discriminator
+— three sites, all tests, all ternaries — so the arm becoming reachable creates no exhaustive-switch
+hazard. Chapter 3.18's `<ForwardRef>` makes two commitments and T008 and T010 honour both; **no gate
+reads a forward reference.** And the full six-file sweep for `media_not_available` lands entirely
+inside existing tasks.
+
+**Requirement count 41 → 43** and **task count 97 → 99.**
+
+**On five passes.** 12 findings, 7, 3, 3, 3 — severity 0 CRITICAL, 0, 1, 1 HIGH, 1 HIGH. **The
+count has been flat for three passes while the findings stayed real**, which settles what passes 3
+and 4 suspected: the number is not the signal, the question is. Each pass asked a new one of the
+tree — the api, which services import the union, what reads it off durable storage, enumerate every
+validator, and now *where does the text this chapter amends actually live*. **The first four asked
+about code and found doors; the fifth asked about a document and found that four chapters had been
+amending one of two copies.** That class is named twice in `CLAUDE.md` and had never been checked
+here.

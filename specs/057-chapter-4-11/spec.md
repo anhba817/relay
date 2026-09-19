@@ -212,6 +212,11 @@ a green number, and chapter 4.8 defined FR-ANL-10's quantity and computed nothin
   unchanged, asserted rather than assumed. `repository.ts:4604` states the property — *"an edit
   does not change attachments (FR-016)"* — and this chapter creates the first media attachment
   there is to preserve.
+- **FR-021**: The sealed outsider suite MUST carry the media arm. `integrate.itest.ts` is the one
+  place the platform is exercised from outside with nothing but a published credential, and its
+  attachment test annotates the frames it reads as `{ url?: string }[]` — the old assumption
+  written into a type. A chapter whose claim is that a second arm now works end to end and that
+  leaves this suite url-only has proven the claim everywhere except where it is worth proving.
 - **FR-019**: The chapter MUST record that `attachment_count` in the analytical store changes
   meaning. `load-analytics.mjs` computes `JSONLength(m.attachments)`, which has counted external
   URLs for every row ever written and starts counting hosted media alongside them with nothing
@@ -222,11 +227,17 @@ a green number, and chapter 4.8 defined FR-ANL-10's quantity and computed nothin
   FR-MED-10's unlink-and-sweep, which no chapter has built.
 - **FR-016**: The fence chain MUST report **0** after the chapter, and the number MUST be stated
   absolutely rather than as a delta.
-- **FR-017**: `docs/12` row 12 MUST be amended with what the line did not say. Chapters 4.7, 4.8,
-  4.9 and 4.10 each amended their own row, and this chapter has three findings of that shape: the
+- **FR-017**: **Both copies of the Part 4 chapter table** MUST be amended with what row 12 did not
+  say — `docs/12` §3 and `docs/07-tutorial-plan.md`'s Part 4 section, which carries the same table
+  and has never been amended by any chapter. This chapter has three findings of that shape: the
   clause names a state the schema cannot reach, the arm ships a caller-triggered 500 the moment it
   accepts, and the assumption about a tenant-uploaded object is the opposite of what the row's
   own predecessor wrote the nullable column for.
+  The second copy additionally carries three corrections it never received: row 11's *"four
+  distinct refusals"* (056 amended `docs/12` alone), a chapter count stated as **23** when the
+  second contraction took it to 22 on 2026-09-13, and *"milestones at 10, 18 and 23"* — original
+  ordinals presented as current, where `docs/12:225-227` says in as many words that its first
+  column keeps them and that the movement column is the stable address.
 
 ### Key Entities
 
@@ -259,6 +270,9 @@ a green number, and chapter 4.8 defined FR-ANL-10's quantity and computed nothin
 - **SC-002c**: An api send response carrying a media attachment parses under the gateway's
   schema, and the test fails against the arm as it stands today — the same red-first requirement
   SC-002b places on the durable reader.
+- **SC-002d**: The sealed suite delivers **one url attachment and one media attachment** to a
+  socket, in order, using nothing but a published credential — a slot, an upload, a send, and the
+  frame. Measured from outside the platform, which is the only place this claim is worth making.
 - **SC-003**: A refused send leaves the channel's message count and sequence unchanged, measured
   before and after and scoped to the test's own channel.
 - **SC-004**: `pnpm check:errors` passes in both directions after `media_not_available` is removed

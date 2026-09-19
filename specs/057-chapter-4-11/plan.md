@@ -124,15 +124,20 @@ starting point rather than a substitute for `--dump`:
     packages/protocol/src/internal.ts                     ?   — count at T005
     services/gateway/src/session.itest.ts                 9   + 8 excerpts
     services/api/src/consumer/consumer.itest.ts           9
+    packages/outsider/src/integrate.itest.ts              4   — whole body at 3.26, diffs at 4.8 and 4.9
     packages/protocol/src/attachments.test.ts             0   — the only unfenced one
 
-**Six at pass 0, ten at pass 1, eleven at pass 2, thirteen at pass 3**, and each correction came
+**Six at pass 0, ten at pass 1, eleven at pass 2, thirteen at pass 3, fourteen at pass 5**, and each
+correction came
 from counting rather than remembering. Pass 1 added the three the tasks already named — `codes.test.ts` (T009),
 `messages.service.ts` (T022) and `vitest.coverage.config.mts` (T048), two of them among the most
 expensive files in the chain. Pass 2 added `session.itest.ts`, which no artifact had mentioned at
 all because no artifact had mentioned the socket (research R9). Pass 3 added `outbox/event.ts` and
 `consumer.itest.ts`, which no artifact had mentioned because none had mentioned the consumer
-(R11).
+(R11). Pass 5 added `integrate.itest.ts`, which no artifact had mentioned because none had
+mentioned the sealed suite — **and every one of the five additions was a door, not a file.**
+The chain cost is one `diff` hunk against the state 4.9's diff leaves; the vi whole body at 3.26 is
+never compared to the repository (050-3) and a hunk for it would be an untranslated English page.
 
 **The list has been wrong at every pass and in the same direction**, which is what 050 and 056
 both recorded. It is a starting point for `--dump`, not a substitute.
