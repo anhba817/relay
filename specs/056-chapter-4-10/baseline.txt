@@ -662,3 +662,88 @@ T042/T043  TWO THINGS THIS CHAPTER RECORDS AND DOES NOT CLOSE (`gaps.md` 056-1, 
       and FR-MED-03's verification is a later chapter, so a client declaring 1 KB and
       uploading 90 MB is inside its cap and over it at once. The size cap's own message
       says "declared" for that reason: it refuses a declaration, not a file.
+
+════════════════════════════════════════════════════════════════════════════════
+PHASE 7 (T045-T051) — THE CHAPTER, AND NINE HUNKS NO CHAPTER CAN ANCHOR
+════════════════════════════════════════════════════════════════════════════════
+
+      check:fences  0 problems · EXIT 0 · 290 fenced files, 53 chapters
+      prose words   3,992 of a 2,000-4,000 bound
+      fences        8 diff hunks + 8 whole bodies in the chapter, 9 in the appendix
+      4 TRAP boxes · 3 figures · 2 WHY boxes
+      pnpm build EXIT 0 · check:figures 284 figures, 286 bindings resolve
+      check:docs, check:srs, check:errors all EXIT 0 with their counted lines
+
+T048  THE TABLE SAID TWELVE FILES AND THE CHECKER SAYS SEVENTEEN.
+
+      The task's table was counted at analysis pass 5 and was wrong in both directions
+      by the time the code existed: `services/api/src/db/catalogue.ts` is on it and this
+      chapter never touches it, and six files are not —
+
+          packages/test-harness/src/guard.itest.ts
+          packages/test-harness/src/sentinel.ts
+          services/api/src/db/repository.ts
+          services/api/src/isolation/gauntlet.itest.ts
+          services/api/src/messages/messages.itest.ts
+          services/api/src/quotas/quota.error.ts
+
+      Every one of the six arrived from a repair made *after* the table was written: the
+      lint rule that moved the query into the repository, the guard's three edits, the
+      `Record<Dimension, string>` the compiler demanded, the gauntlet's attack, and
+      FR-016's test against a real id. **050's sentence, for the second time in five
+      features**: a list of fenced files goes stale every time a chapter moves code
+      between files.
+
+T048a `patch --dry-run` IS NOT THE CHECKER, AND IT SAID YES TO SEVEN HUNKS THE CHECKER
+      REFUSED.
+
+      The first pass generated `diff(end-state, tree)` per file and tested each against
+      the chain's state at this chapter with `patch --dry-run`. Seven came back clean and
+      the checker then reported `hunk pre-image matched 0 times` for all seven, because
+      **`patch` applies with fuzz and offset and the checker requires exactly one exact
+      match.** Rule 1a says the same thing about generating hunks; it is equally true of
+      verifying them.
+
+      Rewritten as the checker asks it — count exact occurrences of each hunk's pre-image
+      in the target — the instrument agrees with the checker on all seventeen, and it is
+      what produced the table below.
+
+          anchors at -U6                        8 files
+          anchors only at -U2 / -U3             2 files   (guard.itest.ts, gauntlet.itest.ts)
+          anchors at no width                   7 files
+          anchors, but unanchors the appendix   2 files   (the same two)
+
+T048b NINE OF SEVENTEEN GO IN THE APPENDIX, AND TWO OF THE NINE FOR THE OPPOSITE REASON
+      FROM THE OTHER SEVEN.
+
+      Seven have no context a chapter can match at any width, because the lines their
+      change sits *between* are the appendix's own: `codes.ts` reaches this chapter at
+      324 lines where the appendix leaves 429, `vitest.coverage.config.mts` at 567 where
+      it leaves 1,182, `turbo.json` at 67 where it leaves 75.
+
+      The other two — `gauntlet.itest.ts` and `guard.itest.ts` — anchor here **perfectly
+      well at -U3 and -U2**, and placing them here broke the appendix's own older hunks
+      for the same two paths, which were written against a state that stops existing once
+      this chapter's change lands first. `check:fences` went 14 -> 4 -> 0 as those two
+      moved last in the appendix, after the hunks they would otherwise have invalidated.
+      **A hunk that works and unanchors somebody else's is still a broken chain.**
+
+      AND TWO OF THE EIGHT THAT STAYED NEEDED A NARROWER WINDOW, which is the same
+      problem one degree milder — `-U6` reaches an appendix line and `-U2` does not. 055's
+      method, applied in the small: keep the chapter's change and trim the context the
+      chain does not carry.
+
+T049  THERE IS NO VIETNAMESE TWIN TO WRITE, AND THE TASK ASSUMED THERE WAS.
+
+      `app/(vi)/vi/part-4/` holds `chapter-01`, `chapter-02` and `chapter-03`. The
+      translation lags the English series by seven chapters, so chapter 4.10 has no vi
+      page, MIRROR has nothing to compare, and a byte-identical copy would be an
+      untranslated English page in the vi tree.
+
+      Same shape as 050's *"the vi path that was checked has never existed"*: **the task
+      described a corpus rather than checking one.** Recorded rather than invented.
+
+T051  THE ABSOLUTE NUMBER IS ZERO. `check-fence-chain: 290 fenced files replay onto
+      relay-platform across 53 chapters`, EXIT 0 — 282 and 52 before this chapter. The
+      eight new files are the chapter's own whole bodies: the signer, the MIME table, the
+      store client, the service, the controller, the module and both migrations.
