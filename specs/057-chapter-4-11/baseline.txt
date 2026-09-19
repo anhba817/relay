@@ -142,3 +142,129 @@ T005 · What the chain charges so far
   0 -> 2 from phase 1's edits alone. Repaired in phase 7 with `diff` hunks, not
   now: the chain is a per-chapter artifact and a hunk written against a moving
   tree is written against the wrong state.
+
+================================================================================
+PHASE 2 — THE REGISTRY AND THE ARM                                   2026-09-19
+================================================================================
+
+The registry: one code deleted, two added
+------------------------------------------------------------------------------
+    media_not_available     DELETED, on its own entry's instruction
+    media_not_attachable    the operation, not the cause — three conditions,
+                            one answer, because naming the cause is an
+                            existence oracle (FR-005)
+    unprocessable_request   the 422 rung's fallback, with no thrower
+
+    check-error-codes: 33 codes, 33 sections  ->  34 codes, 34 sections
+                       both directions, run by hand (no CI job — 055-3)
+
+  `codes.test.ts` asserts the DELETION as well as the additions. "We removed it"
+  is not a property anything checks: `check:errors` compares the registry to the
+  reference in both directions and would catch a leftover SECTION, and nothing
+  but that test catches a leftover ENTRY no section documents.
+
+T011b · The 422 rung, run red by deleting it
+------------------------------------------------------------------------------
+    green                        21 of 21
+    rung deleted                 2 failed
+
+      × answers 422 with unprocessable_request, from a throw that names nothing
+        AssertionError: expected 'internal_error' to be 'unprocessable_request'
+      × does not fall 422 through to internal_error
+        AssertionError: expected 'internal_error' not to be 'internal_error'
+
+  The second failure is the defect in one line. A ladder that answers
+  `internal_error` everywhere satisfies "every rung answers something", which is
+  why the negative half is asserted separately.
+
+THE ARM, AND WHAT THE COMPILER ASKED FOR
+------------------------------------------------------------------------------
+  `.refine(() => false)` and its `protocolCode` params are gone; `media_id` is
+  `z.uuid()` where it was `z.string().min(1)`.
+
+  ONE PERMISSIVE ELEMENT, NOT FOUR COPIES. `forwardedAttachmentSchema` is
+  exported once and used by all five forwarding readers. The strict union is
+  unchanged and still refuses an arm it does not know, which is what a request
+  schema is for.
+
+  AND THE COMPILER NAMED SEVEN SITES, WHICH IS THE `attachments: required`
+  COMMENT EARNING ITS KEEP. Making the schemas permissive left hand-written
+  types narrow, and `tsc` listed every place a forwarded value met a strict one:
+
+    consumer/runtime.ts:166      OutboxEvent's attachments was Attachment[]
+    session.ts:399, 1377         send(frame: Frame) — the outbound relay
+    session.ts:1365              highWaterMarks(… messages: Message[])
+    session.ts:1628              fanout.publish(message: Message)
+
+  EACH ONE WAS FIXED BY WIDENING THE TYPE, NOT BY CASTING. A consumer really can
+  be handed an arm its binary does not know — that is what the schema now says —
+  and a type that denied it would move the lie one layer in. Two of them got
+  something better than a wider type:
+
+    highWaterMarks   typed by what it READS: `{ messages: { seq: number }[] }`.
+                     It touches one field and never an attachment.
+    send             takes `RelayedFrame`, a new type: the published `Frame`
+                     contract is unchanged, because what is happening is not
+                     "this platform intends to send unknown arms" but "two
+                     versions of the server briefly disagree", and the honest
+                     place to say that is the type of the process between them.
+
+FIVE READERS, FIVE RED-FIRST PROBES, ALL FIRED
+------------------------------------------------------------------------------
+    outbox consumer      strict -> expected [] to include '<event id>'
+                         (the message was TERMINATED and never came back)
+    send response        strict -> "send returned a payload the contract does
+                         not allow"
+    backfill page        strict -> same
+    fanout delivery      strict -> deadline; the frame was dropped
+    fanout revision      strict -> deadline; the edit was dropped
+
+**AND THE TASKS' OWN PREMISE HAD MOVED UNDER THEM.** T017b, T017e and T017g each
+said to test with `{ "type": "media", "media_id": "<uuid>" }` and to run it red
+"against the arm as it stands today". That was the right probe when the media arm
+REFUSED. This chapter makes it accept — so a media attachment now parses under the
+strict union too, and every one of those tests would have passed with or without
+the permissive reader. **They would have asserted nothing.** What discriminates
+the two is an arm from a writer NEWER than this binary, so each test sends
+`{ type: "audio_clip", clip_id, duration_ms }` beside the media arm, and the red
+probe reverts the READER rather than the arm.
+
+  A fourth premise held: the negative control still passes. A payload that is not
+  a message (`seq: -1`) is still dropped. Permissive about the ARM is not
+  permissive about being an attachment — `forwardedAttachmentSchema` still
+  refuses a value with no `type`, and the pair of tests is what says so.
+
+AND ONE TEST FIXTURE WAS WRONG IN A WAY THE DESIGN CAUGHT
+------------------------------------------------------------------------------
+  The send-response test first used the WIRE frame's spelling — `channel` — where
+  the internal contract takes `channel_id`. The strict object refused it: *"send
+  returned a payload the contract does not allow."* That is the half of this
+  design that is supposed to stay loud, so the fixture was wrong and the schema
+  was right. Two shapes for one message, and a test that conflates them is how
+  the permissive half would have been blamed for the strict half's work.
+
+T029 PULLED FORWARD FROM PHASE 3, BY THE COMPILER
+------------------------------------------------------------------------------
+  `messages.itest.ts` cited `media_not_available` in a `docsUrl()` call, so the
+  api stopped typechecking the moment the code was deleted. Both tests are
+  CONVERTED rather than deleted, each keeping its subject:
+
+    "refuses a media_id that really exists"  ->  "accepts …", 422 -> 201
+    "answers a media_id with its own code"   ->  a 400 naming
+                                                 attachments.0.media_id
+
+  The second is the test that would have been a 500 (R3): with the old
+  `z.string().min(1)` and an accepting arm, `m_1` reaches the driver and the
+  filter calls it `internal_error`.
+
+GATES AT THE CLOSE OF PHASE 2
+------------------------------------------------------------------------------
+    pnpm lint            0 errors   (1 pre-existing warning, session.perf.itest.ts)
+    pnpm typecheck       14 of 14
+    pnpm test            12 of 12
+    pnpm check:errors    34 codes, 34 sections, both directions
+    pnpm check:fences    2 -> 17 problems, absolute
+
+  Seventeen is the running cost of thirteen edited fenced files and is repaired
+  in phase 7 with `diff` hunks (T062-T065), not now: a hunk written against a
+  tree that is still moving is written against the wrong state.
