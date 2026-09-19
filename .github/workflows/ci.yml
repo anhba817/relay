@@ -71,53 +71,6 @@ jobs:
     name: relay-platform — integration lanes and coverage
     runs-on: ubuntu-latest
 
-    # The integration lane and the coverage run both need real stores. Same
-    # images as compose.yaml, so a lane that passes here passes there.
-    services:
-      postgres:
-        image: postgres:18-alpine
-        env:
-          POSTGRES_USER: relay
-          POSTGRES_PASSWORD: relay
-          POSTGRES_DB: relay
-        ports: ["5432:5432"]
-        options: >-
-          --health-cmd "pg_isready -U relay -d relay"
-          --health-interval 5s --health-timeout 3s --health-retries 10
-      redis:
-        image: redis:8-alpine
-        ports: ["6379:6379"]
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 5s --health-timeout 3s --health-retries 10
-      nats:
-        image: nats:2.12-alpine
-        ports: ["4222:4222", "8222:8222"]
-        options: >-
-          --health-cmd "wget -q -O - http://localhost:8222/healthz"
-          --health-interval 5s --health-timeout 3s --health-retries 10
-      # THE ANALYTICAL STORE, ADDED AT CHAPTER 4.8 — AND FOUR CHAPTERS OF WORK HAD
-      # NEVER RUN HERE. `ingest.itest.ts` (4.3), `request-log.itest.ts` (4.4),
-      # `metering.itest.ts` (4.6) and `reconcile.itest.ts` (4.7) all read
-      # `relay_analytics`, and this job provided postgres, redis and nats. The word
-      # `clickhouse` appeared nowhere in this file.
-      #
-      # THE IMAGE AND CREDENTIALS MATCH `compose.yaml` so a lane that passes locally
-      # passes here — the same argument the three above are chosen on. `CLICKHOUSE_DB`
-      # creates the database and does NOT make it the session default (chapter 4.2), so
-      # every statement names `relay_analytics` and `analytics/apply.mjs` below is what
-      # actually builds the schema.
-      clickhouse:
-        image: clickhouse/clickhouse-server:25.3
-        env:
-          CLICKHOUSE_USER: relay
-          CLICKHOUSE_PASSWORD: relay
-          CLICKHOUSE_DB: relay_analytics
-        ports: ["8123:8123"]
-        options: >-
-          --health-cmd "wget -q -O - 'http://relay:relay@localhost:8123/?query=SELECT%201'"
-          --health-interval 5s --health-timeout 3s --health-retries 20
-
     env:
       DATABASE_URL: postgres://relay:relay@localhost:5432/relay
       RELAY_REDIS_URL: redis://localhost:6379
@@ -179,35 +132,35 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      # THE OBJECT STORE, ADDED AT CHAPTER 4.10 — AND IT IS A COMPOSE CALL RATHER THAN
-      # A SERVICE CONTAINER, WHICH IS THE ONLY WAY TO KEEP IT HONEST.
+      # THE STORES COME FROM `compose.yaml`, NOT FROM SERVICE CONTAINERS.
       #
-      # Every other store above is a GitHub service container, and MinIO cannot be one:
-      # `quay.io/minio/minio` needs the `server /data` argument, a service container has
-      # no field that supplies a command, and the images that start a server with no
-      # arguments are a different image from the one `compose.yaml` runs. The comment on
-      # the ClickHouse service says why that matters — *"the image and credentials match
-      # `compose.yaml` so a lane that passes locally passes here"*.
+      # This job used four GitHub service containers — postgres, redis, nats and
+      # clickhouse — restating images, credentials, ports and health checks that
+      # `compose.yaml` already declares. Restating them is how they drift, and they had:
       #
-      # So this brings up compose's own definition of that one service. Nothing is
-      # restated: the image, the credentials, the volume, the health check and the host
-      # port all come from the file the developer runs, and `--wait` is the health check
-      # compose already declares. No `RELAY_MINIO_*` variables are needed either, because
-      # the code's defaults and compose's published port are the same 9100.
+      #   nats     compose runs `-js -sd /data -m 8222`; the service container had NO
+      #            command, because a service container has no field that supplies one.
+      #            **JetStream was off.** Every durable-stream suite in the repository
+      #            answers `NatsError: 503` against it — 1,805 occurrences in one run —
+      #            and `/healthz` says nothing about JetStream, so the check was green
+      #            throughout. Reproduced against a bare `nats:2.12-alpine`:
+      #            `jetstreamManager(): NatsError: 503`, `publish: NatsError: 503`.
+      #   mailpit  absent entirely. Three suites assert on what an operator receives —
+      #            `notifications`, `quotas`, `connections` — roughly eighteen tests.
+      #   minio    the same command problem, found at chapter 4.10 and worked around
+      #            with a one-service compose call. This generalises that fix.
       #
-      # AND THE PORT IS 9100 BECAUSE 9000 WAS TAKEN. ClickHouse's native port has
-      # published 9000 since chapter 1.2, so the two cannot both bind it — measured as
-      # `Bind for 127.0.0.1:9000 failed: port is already allocated`, exit 1.
+      # SO CI RUNS THE FILE A DEVELOPER RUNS. Image, credentials, command, volume,
+      # health check and published port all come from one place, `--wait` is the health
+      # check compose already declares, and the `env:` block below still addresses
+      # `localhost` on the same ports because those are compose's own defaults. The
+      # services behind `--profile services` are Relay's own and stay down: this job
+      # tests the code in the repository, not an image of it.
       #
-      # AND IT RUNS BEFORE `pnpm test`, NOT BESIDE THE OTHER PROVISIONING STEPS, because
-      # this job has no `continue-on-error` and every step after the first failure is
-      # skipped. `pnpm coverage` carries `if: always()` and therefore runs anyway — so a
-      # provisioning step placed after `pnpm build` is skipped on exactly the runs where
-      # the lane it provisions for is still going to execute. Measured: the platform job
-      # ran install, lint, typecheck, test and coverage, and **six steps in between never
-      # happened**, which is why the same run also reports `UNKNOWN_TABLE` and a missing
-      # `ingester/dist`.
-      - run: docker compose up -d --wait minio
+      # AND THE `docs/07` §6 CLAIM BECOMES TRUE HERE TOO — *"runs both lanes against
+      # real stores"* — for the same reason chapter 4.8 had to provision ClickHouse:
+      # a lane that passes locally passes here only if "here" is the same stack.
+      - run: docker compose up -d --wait postgres redis nats clickhouse minio mailpit
 
       # Migrations before the integration lane: the suites expect the schema the
       # migration runner produces, not the one drizzle-kit imagines.
