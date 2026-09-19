@@ -787,3 +787,27 @@ T076 · CI, COMPARED PER ERROR — AND THE COMPARISON FOUND A JOB THAT NEVER RAN
   volume, and the two lines its failure produces. The chapter introduced no new
   CI failure, and **a colour could not have said that** — the workflow was red
   before and is red after.
+
+  AND TWO MORE RUNS CHANGED WHAT THE COMPARISON MEANS
+------------------------------------------------------------------------------
+    e8b5c3c  baseline        3 distinct
+    e539403  the chapter     3 · empty diff both ways
+    8bc0a8f  the CI fix      6 · three extra, absent before AND after
+    81761a0  the record      3 · empty diff both ways
+
+  The middle run's extras — a `reset-lane` whole-table assertion and a second
+  query-plan one — appear in neither neighbour. **That is a flake, and one
+  comparison cannot tell a flake from a regression.** 056 compared a single run
+  and called the error set identical; so did this chapter's first reading. The
+  claim one comparison supports is *"this run introduced nothing new"*. `gaps.md`
+  057-8.
+
+  AND THE SEALED SUITE RAN: **19 of 19, on both runs after the one-line fix** —
+  the first time it has ever executed in this repository's CI, with this chapter's
+  media test among them.
+
+  **THE PREDICTION IN `gaps.md` 057-7 WAS WRONG.** It said the first green run
+  would report nine features of accumulated drift. It reported none. The drift a
+  dead gate hides is a reasonable fear and it was not what was there — which is
+  the more useful half, because that fear is what makes a dead gate tolerable to
+  leave.

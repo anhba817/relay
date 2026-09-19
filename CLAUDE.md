@@ -105,18 +105,33 @@ appendix, placed after the hunks that broke it. **Check which state a hunk is wr
 where `<Figure>` reads `code`: all three would have rendered nothing on a page that compiled and
 served 125 pages green.
 
-**AND THE SEALED SUITE HAS NEVER RUN IN CI, WHICH THE PER-ERROR COMPARISON FOUND.** Its job's
+**AND THE SEALED SUITE HAD NEVER RUN IN CI, WHICH THE PER-ERROR COMPARISON FOUND.** Its job's
 migrate step carried no `working-directory` where every other step in that job does — two of the
 three jobs set it once under `defaults` and this one repeats it per step — so it died on
 `Cannot find module …/relay/relay/services/api/dist/db/migrate.js`, every run, before reaching
 the suite it is named for. **Three chapters running have now found a gate whose colour was true
 and whose meaning was not** (4.9's already-red integration gate, 4.10's nine features of skipped
-`test:integration`, this). Fixed in one line; `gaps.md` 057-7.
+`test:integration`, this). Fixed in one line, and **it ran green on both runs after: 19 of 19,
+the first execution of that suite in this repository's CI.** `gaps.md` 057-7.
 
-**THE CI ERROR SET IS IDENTICAL TO THE PRE-CHAPTER BASELINE** — 4 distinct lines each side, and
-the one raw difference is a Postgres planner **cost estimate** inside a query-plan assertion.
-Normalised: **empty diff both ways, 3 distinct, all inherited.** The workflow was red before and
-after, so **a colour could not have said this** — and the tutorial job SUCCEEDED, which is SC-009.
+**AND THE PREDICTION ABOUT IT WAS WRONG.** `gaps.md` 057-7 said the first green run would report
+*"nine features of accumulated drift"*. It reported nothing of the kind — the suite passes. The
+drift a dead gate hides is a reasonable fear and it was not what was there.
+
+**THE CI ERROR SET IS IDENTICAL TO THE BASELINE ON TWO RUNS OF THREE, AND ONE COMPARISON WOULD
+HAVE MISSED THAT.** Normalising Postgres planner cost estimates:
+
+    e8b5c3c  baseline        3 distinct
+    e539403  the chapter     3 · empty diff both ways
+    8bc0a8f  the CI fix      6 · three extra, absent before AND after
+    81761a0  the record      3 · empty diff both ways
+
+The middle run's extras are a `reset-lane` whole-table assertion and a second query-plan one —
+present in neither neighbour, which is the definition of a flake rather than a regression.
+**056 compared ONE run and called the set identical; three runs show it moving.** The claim a
+single comparison supports is *"this run introduced nothing new"*, not *"the set is stable"* —
+and the lanes job is red either way, so **a colour could not have said either.** The tutorial job
+SUCCEEDED, which is SC-009. `gaps.md` 057-8.
 
 **TEN ANALYSIS PASSES: 12 findings, 7, 3, 3, 3, 1, 3, 4, 2, 1** — severity 0 CRITICAL, 0, 1, 1
 HIGH, 1 HIGH, 1 CRIT, 1 CRIT, 1 CRIT, 0, 0. **The count measures the question, not the

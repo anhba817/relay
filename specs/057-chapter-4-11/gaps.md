@@ -108,9 +108,36 @@ the same shape in the integration gate (*"the gate was already red, so a planted
 a red rather than turning one"*) and 4.10 found `pnpm test:integration` skipped for nine
 features. **A job's colour says nothing about which step produced it.**
 
-Fixed — one line — and the first green run of that job will be the first time the sealed suite
-has ever executed in CI. What it then reports is nine features of accumulated drift that is
-none of this chapter's, and all of it newly visible.
+Fixed — one line. **CLOSED, and the prediction in this entry was wrong.** It said the first green
+run would report *"nine features of accumulated drift"*; the suite ran **19 of 19 on both runs
+after the fix**, including this chapter's media test. The drift a dead gate hides is a reasonable
+fear and it was not what was there — which is worth more than the fix, because the same fear is
+what makes a dead gate tolerable to leave.
+
+### 057-8 · The lanes job's error set is not stable run to run
+
+T076 compares CI **per error rather than per colour**, which is 4.10's method and the only way
+to read a workflow that is red either side of a chapter. Across three runs, planner cost
+estimates normalised:
+
+    e8b5c3c  baseline        3 distinct
+    e539403  the chapter     3 · empty diff both ways
+    8bc0a8f  the CI fix      6 · three extra
+    81761a0  the record      3 · empty diff both ways
+
+The three extras are absent from the run before **and** the run after: a `reset-lane` whole-table
+assertion (*"the reset removed an organisation: expected 1 to be 3"*), a second query-plan
+assertion, and the harness package failure they produce.
+
+**056 COMPARED ONE RUN AND CALLED THE SET IDENTICAL.** So did this chapter, until a second and
+third run existed to compare. The claim one comparison supports is *"this run introduced nothing
+new"*; *"the set is stable"* needs more than one, and here it would have been false. The method is
+still right and its resolution is now known: **a single per-error comparison can report a flake as
+a regression, or miss one.**
+
+Nothing is fixed. The two flaky assertions are shared-state ones of a class 043 and 045 both
+recorded — `reset-lane` counts rows a neighbour can move — and finding them properly means
+running the lanes job several times against one tree, which no chapter has budgeted.
 
 ---
 
