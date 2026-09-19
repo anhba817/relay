@@ -258,9 +258,27 @@ against the previous run's, which produced exactly two new ones and nothing else
 own definition, placed **before** `pnpm test` rather than beside the other provisioning steps,
 because a step after the first failure never runs while the lane it provisions for still does.
 
-**OPEN**: the unit-lane log line, and the shape of the job. A `continue-on-error` on the early
-gates, or an `if: always()` on the provisioning, would make a single unit failure stop hiding five
-other results. That is a CI decision rather than a chapter's, and 054-1 is the neighbouring item.
+**CLOSED, BOTH HALVES, IN THE FOLLOW-UP.**
+
+**The log line — the unit lane was not Docker-free and now is.** `ci.yml` calls `pnpm test`
+*"the Docker-free gate, exactly as chapter 1.1 defined it"* and it had needed a broker since 4.4.
+`RELAY_REQUEST_LOG=off` takes the producer **out of the middleware chain** rather than
+short-circuiting inside it — a design in which the case cannot arise beats a branch that handles
+it — and `vitest.config.mts` sets it, so the property belongs to the lane rather than to one
+runner. Measured: **408 of 408 with `DATABASE_URL`, `RELAY_REDIS_URL`, `RELAY_NATS_URL` and the
+ClickHouse port all pointed at a closed port**, and the whole workspace unit lane 12 of 12 tasks.
+Not added to the harness's `RELAY_FLAGS`, which is *"one per relay that exists"* and exists for a
+quiet database: this is a per-request publish that mutates nothing, and listing it there would
+force every non-exempt integration suite to switch off the thing three of them assert on.
+
+**The job — split in two.** `gates` runs lint, typecheck and test with **no service containers at
+all**, which is what makes "Docker-free" a tested claim rather than a label; `lanes` keeps the
+five stores, the build, the migration, the analytical schema, the error-registry gate, the
+integration lane and coverage. Two jobs cannot hide each other. The cost is one extra
+`pnpm install` at **3 seconds**, against 34 seconds of gates that used to run in series ahead of
+a 242-second coverage run — and the two now run in parallel. `continue-on-error` was rejected:
+it marks the step's failure as ignored and the **job goes green**, which is the CI-bypass shape
+this environment's guard refused at feature 054.
 
 ### 056-10 · `ensureBucket` said "on boot, every boot" and nothing called it on boot
 
@@ -292,7 +310,25 @@ The 404 arm costs one extra round trip exactly once per store and nothing therea
 happy path is still the single HEAD the +24.1% figure was measured on — asserted, because a second
 call there would make the published number describe different code.
 
-**OPEN**: the class. A comment that describes behaviour no code performs is the defect this
-chapter found in `docs/07` §6, in `docs/12` row 11 and in `request-log.itest.ts`'s deadline, and
-then shipped in its own file. Nothing checks a comment against a call graph, and the only
-instrument that caught this one was an empty volume.
+**AND IT HAS A REGRESSION GUARD NOW.** `media.itest.ts` asks for a slot against a bucket name
+that has never existed — `probe-<uuid>` — asserts the store answers 404 for it beforehand, that
+the slot is issued, that the bucket exists afterwards, and deletes it. **A fresh name rather than
+a deleted volume**, because removing the shared bucket is an action scoped wider than its own
+test, which is this chapter's own 056-5. Run against the code as it shipped this morning it goes
+red with the real body: `{"code":"media_storage_unavailable", …}: expected 503 to be 201`.
+
+**THE CONVENTION IS WRITTEN DOWN AND APPLIED**: a comment claiming *when* a symbol runs names the
+thing that runs it. `ON BOOT, EVERY BOOT` is unverifiable and was false; `Called by storeReady on
+a 404` is one `grep` and goes visibly stale when the symbol moves. Applied to the four places that
+were already wrong — `store.ts`, `store.test.ts` twice, and `auth-limiter.ts`, which now names
+`AuthenticateMiddleware` and the `{*path}` that applies it. **Two of those four were written by
+the fix for the first one, three hours earlier.**
+
+**OPEN: the checker.** The surface is **13 lines in 10 files** — `on boot|at boot|every boot|on
+startup|at startup|runs on every|called on every|once per process` across `services/*/src` and
+`packages/*/src` — and most are counterfactuals that are correct. A checker over that grep,
+requiring the enclosing exported symbol to have a non-test caller, would have caught this with
+almost no noise. The naive version — flag every export whose only callers are test files —
+reports **37**, nearly all legitimate helpers, and would need a hand-maintained allow-list, which
+is the thing this project refuses. Not built: one instance is not yet a class, and the convention
+costs nothing while a checker costs an allow-list argument.

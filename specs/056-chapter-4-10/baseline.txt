@@ -954,3 +954,51 @@ placement was chosen rather than guessed:
 
 The provisioning step ran because it sits before the first fallible one. Everything
 between `pnpm test` and `pnpm coverage` did not.
+
+════════════════════════════════════════════════════════════════════════════════
+THE FOLLOW-UP — 056-9 AND 056-10 CLOSED, AND ONE PIECE LEFT OPEN ON PURPOSE
+════════════════════════════════════════════════════════════════════════════════
+
+      pnpm test, every store at a closed port     408 of 408 · 12 of 12 tasks
+      api integration lane                        711 of 711 across 37 files
+      check:fences                                290 files, 53 chapters · EXIT 0
+      lint · typecheck · build · check:docs · check:srs · check:figures · check:errors
+                                                  all EXIT 0
+
+THE UNIT LANE WAS NOT DOCKER-FREE AND NOW IS. `pnpm test` has needed a running broker
+with the `ANALYTICS` stream since chapter 4.4, behind a label that says the opposite.
+`RELAY_REQUEST_LOG=off` takes the producer out of the middleware chain rather than
+branching inside it, and `vitest.config.mts` sets it so the property belongs to the lane.
+**Not in the harness's `RELAY_FLAGS`**: that list is one per relay and exists for a quiet
+database, and this is a per-request publish that mutates nothing.
+
+THE PLATFORM JOB IS TWO JOBS. `gates` — lint, typecheck, test — with **no service
+containers at all**, which is what turns "Docker-free" from a label into a tested claim.
+`lanes` keeps the five stores and everything downstream of the build. **Two jobs cannot
+hide each other**, which was the whole of 056-9: one failing unit test had been skipping
+five steps and leaving `pnpm coverage` to report `UNKNOWN_TABLE` for a schema that was
+never applied.
+
+    the cost      one extra `pnpm install`, 3 s
+    against       34 s of gates that ran in series ahead of a 242 s coverage run
+    and now       the two run in parallel
+
+`continue-on-error` was rejected rather than overlooked: it marks a step's failure as
+ignored and **the job goes green**, which is the CI-bypass shape this environment's guard
+refused at feature 054.
+
+THE BUCKET HAS A REGRESSION GUARD, AND IT DOES NOT TOUCH THE SHARED ONE. A slot against
+`probe-<uuid>`: 404 before, 201 issued, 200 after, and the bucket deleted. A deleted volume
+would have been the obvious probe and it is an action scoped wider than its own test —
+this chapter's own 056-5. Run against this morning's code it goes red with the real body.
+
+AND THE CONVENTION IS APPLIED WHERE IT WAS ALREADY WRONG. A comment claiming when a symbol
+runs names the thing that runs it. Four places: `store.ts`, `store.test.ts` twice, and
+`auth-limiter.ts`. **Two of the four were written by the fix for the first one, three hours
+earlier.**
+
+WHAT IS LEFT OPEN, DELIBERATELY. The checker for that class. The targeted version has a
+surface of **13 lines in 10 files** and would have caught this one; the naive version —
+every export whose only callers are test files — reports **37**, nearly all legitimate, and
+needs a hand-maintained allow-list. One instance is not a class, and the convention costs
+nothing while the checker costs that argument.

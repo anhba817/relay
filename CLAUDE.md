@@ -170,6 +170,34 @@ translation lags by seven, so MIRROR has nothing to compare and a byte-identical
 untranslated English page in the vi tree. **The task described a corpus rather than checking one**
 — 050's finding again.
 
+## AND 056-9 AND 056-10 ARE CLOSED, WHICH TOOK FOUR CHANGES AND ONE REFUSAL
+
+**THE UNIT LANE WAS NOT DOCKER-FREE AND NOW IS.** `pnpm test` has needed a running broker with
+the `ANALYTICS` stream since 4.4, behind a label in `ci.yml` saying the opposite.
+`RELAY_REQUEST_LOG=off` takes the producer **out of the middleware chain** rather than branching
+inside it, set in `vitest.config.mts` so the property belongs to the lane and not to one runner:
+**408 of 408 with every store pointed at a closed port.** Not in the harness's `RELAY_FLAGS` —
+that list is one per relay and exists for a quiet database; this is a per-request publish that
+mutates nothing.
+
+**AND THE PLATFORM JOB IS TWO JOBS.** `gates` runs lint, typecheck and test with **no service
+containers at all**, which is what turns "Docker-free" from a label into a tested claim; `lanes`
+keeps the five stores and everything downstream of the build. **Two jobs cannot hide each other.**
+The cost is one `pnpm install`, **3 s**, against 34 s of gates that ran in series ahead of a 242 s
+coverage run — and they now run in parallel. **`continue-on-error` was refused, not overlooked**:
+it marks a failure as ignored and the job goes green, which is the CI-bypass shape this
+environment's guard refused at 054.
+
+**THE BUCKET HAS A GUARD THAT TOUCHES NOTHING SHARED.** A slot against `probe-<uuid>`: 404 before,
+201 issued, 200 after, bucket deleted. A deleted volume was the obvious probe and it is an action
+scoped wider than its own test — 056-5, this chapter's own finding, applied to the fix for
+056-10.
+
+**AND THE CHECKER IS LEFT UNBUILT ON PURPOSE.** The targeted version's surface is 13 lines in 10
+files; the naive one reports **37** exports whose only callers are tests, nearly all legitimate,
+and needs a hand-maintained allow-list. One instance is not a class, and the convention costs
+nothing while the checker costs that argument.
+
 ## AND THE PUSH FOUND TWO FAILURES A RED JOB COULD NOT REPORT
 
 **THE TUTORIAL JOB SUCCEEDED (SC-009)** — the job `check:fences` ends, on this chapter's push.
@@ -1683,6 +1711,32 @@ failure returned is what gave a probe to fix against.
 **AND A SWEEP BEATS A BATTERY FOR FINDING A CLASS.** Six instances of one fault were found one
 failure at a time across six runs; the last two came from one pass of an instrument that asked
 the tree directly. **When the count of a class keeps growing, stop counting failures.**
+
+## A COMMENT THAT SAYS *WHEN* SOMETHING RUNS MUST NAME ITS CALLER
+
+`store.ts` said *"ON BOOT, EVERY BOOT"* and every caller of `ensureBucket` was a test
+`beforeAll`. Nothing ran it at boot, so on a store that had never held a bucket every slot
+request answered 503 forever — and no local run could see it, because the volume persists.
+
+**The convention, and it costs nothing to follow.** A claim about the moment a symbol runs
+names the thing that runs it:
+
+    ON BOOT, EVERY BOOT                    -> unverifiable, and it was false
+    Called by `storeReady` on a 404        -> one grep, and the symbol vanishes when it rots
+
+Applied where it was already wrong: `store.ts`, `store.test.ts` (twice — the same sentence
+copied into a test) and `auth-limiter.ts`, which now names `AuthenticateMiddleware` and the
+`{*path}` that applies it. **Two of the four stale claims were written by the fix for the
+first one, three hours earlier.**
+
+**AND THE SURFACE IS THIRTEEN LINES IN TEN FILES**, measured — `on boot|at boot|every
+boot|on startup|at startup|runs on every|called on every|once per process` across
+`services/*/src` and `packages/*/src`. Most are counterfactuals (*"a default-scoped
+repository would be built once, at boot"*) and correct. A checker over that grep, requiring
+the enclosing exported symbol to have a non-test caller, would have caught this one with
+almost no noise; the naive version — flag every export whose only callers are tests — reports
+**37** and nearly all are legitimate helpers, which is a hand-maintained allow-list and the
+thing this project refuses. `gaps.md` 056-10.
 
 ## A CHECKER'S BLIND SPOT IS WORSE THAN ITS ABSENCE
 

@@ -15,8 +15,60 @@ on:
   pull_request:
 
 jobs:
-  platform:
-    name: relay-platform — gates, lanes, coverage
+  gates:
+    name: relay-platform — the Docker-free gate
+    runs-on: ubuntu-latest
+
+    # NO SERVICE CONTAINERS, AND THAT IS THE WHOLE POINT OF THE SPLIT.
+    #
+    # `pnpm lint`, `pnpm typecheck` and `pnpm test` are chapter 1.1's Docker-free gate, and
+    # for nine chapters they ran in a job that starts five stores — so "Docker-free" was a
+    # claim nothing tested. Here it is tested by the absence of anything to connect to:
+    # if a unit test needs a broker, this job is where it says so.
+    #
+    # AND THE SPLIT IS WHAT MAKES THE OTHER JOB LEGIBLE. In one job there is no
+    # `continue-on-error`, so a failing unit test skipped `pnpm build`, the migration, the
+    # analytical schema, the error-registry gate and the whole integration lane — five
+    # results hidden behind one, with `pnpm coverage` running anyway on its `if: always()`
+    # and reporting `UNKNOWN_TABLE` for a schema that was never applied. Measured on a real
+    # run before this change (`gaps.md` 056-9). Two jobs cannot hide each other.
+    #
+    # THE COST IS THREE SECONDS. `pnpm install` is 3s on a warm cache, and the two jobs run
+    # in parallel where the one job ran its 34 seconds of gates in series ahead of a
+    # 242-second coverage run.
+    defaults:
+      run:
+        working-directory: relay-platform
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: pnpm/action-setup@v4
+        # WHICH package.json. This repository has none at its root — it is the
+        # superproject, and `packageManager` lives in each submodule. Without this
+        # the action reads the root, finds nothing, and fails before any job runs.
+        # Pinning `version:` here instead would be a second place to change when
+        # the submodule's pnpm moves, and the two would drift in silence.
+        with:
+          package_json_file: relay-platform/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: relay-platform/pnpm-lock.yaml
+
+      - run: pnpm install --frozen-lockfile
+
+      # The Docker-free gate, exactly as chapter 1.1 defined it.
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+
+
+  lanes:
+    name: relay-platform — integration lanes and coverage
     runs-on: ubuntu-latest
 
     # The integration lane and the coverage run both need real stores. Same
@@ -95,6 +147,12 @@ jobs:
       # `pnpm build`, `pnpm test:integration`, `pnpm coverage` — so a new package
       # is covered the moment it exists. Adding a `dispatcher` job would have
       # been ceremony that runs the same commands twice.
+      #
+      # THE SPLIT ABOVE IS NOT THAT. `gates` and `lanes` run DIFFERENT commands and
+      # need different infrastructure: one is the Docker-free gate and starts no
+      # stores, the other needs five. The objection to a per-service job was that it
+      # would duplicate work; this divides it, and the duplication is one
+      # `pnpm install` at three seconds.
 
     defaults:
       run:
@@ -150,11 +208,6 @@ jobs:
       # happened**, which is why the same run also reports `UNKNOWN_TABLE` and a missing
       # `ingester/dist`.
       - run: docker compose up -d --wait minio
-
-      # The Docker-free gate, exactly as chapter 1.1 defined it.
-      - run: pnpm lint
-      - run: pnpm typecheck
-      - run: pnpm test
 
       # Migrations before the integration lane: the suites expect the schema the
       # migration runner produces, not the one drizzle-kit imagines.
