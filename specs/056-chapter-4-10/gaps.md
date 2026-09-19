@@ -240,3 +240,38 @@ because a step after the first failure never runs while the lane it provisions f
 **OPEN**: the unit-lane log line, and the shape of the job. A `continue-on-error` on the early
 gates, or an `if: always()` on the provisioning, would make a single unit failure stop hiding five
 other results. That is a CI decision rather than a chapter's, and 054-1 is the neighbouring item.
+
+### 056-10 · `ensureBucket` said "on boot, every boot" and nothing called it on boot
+
+`store.ts`'s own comment read *"ON BOOT, EVERY BOOT, WITH THE SIGNER THIS MODULE ALREADY HAS."*
+Every caller of that function was a test `beforeAll` hook. **The running application never created
+the bucket**, so on a store that has never held one, every slot request answers 503
+`media_storage_unavailable` — forever.
+
+**NO LOCAL RUN COULD SEE IT.** `presign.itest.ts` creates the bucket in its own `beforeAll`, and
+the volume is persistent, so from that moment every suite on this machine found it there.
+**CI's empty volume is what said so**, and it said so through two suites that never touch the
+media module: `gauntlet.itest.ts` and `messages.itest.ts` each ask for a slot, and each got 503.
+
+Reproduced locally by deleting the volume — `docker volume rm relay_minio-data`, `up --wait`,
+`gauntlet.itest.ts`: **`expected 503 to be 201`**, one test of 58. Green with the repair, 126 of
+126 across both suites.
+
+**FIXED, AND NOT WITH A BOOT HOOK.** `storeReady` treats a **404** as the first request rather
+than as a refusal: a reachable store with no bucket is what a fresh volume looks like, so that
+arm creates it. The three alternatives and why not:
+
+- **A boot hook that throws** stops the api starting during a store outage, which is the opposite
+  of what `docs/05-sad.md:1062` asks for — the api serves and refuses the slot.
+- **A boot hook that logs** leaves a store that was down at boot permanently bucketless.
+- **Creating on every request** needs `CreateBucket` on a credential that production may grant
+  only `PutObject`.
+
+The 404 arm costs one extra round trip exactly once per store and nothing thereafter, and the
+happy path is still the single HEAD the +24.1% figure was measured on — asserted, because a second
+call there would make the published number describe different code.
+
+**OPEN**: the class. A comment that describes behaviour no code performs is the defect this
+chapter found in `docs/07` §6, in `docs/12` row 11 and in `request-log.itest.ts`'s deadline, and
+then shipped in its own file. Nothing checks a comment against a call graph, and the only
+instrument that caught this one was an empty volume.

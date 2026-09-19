@@ -195,6 +195,20 @@ lane it provisions for still executes. It is `docker compose up -d --wait minio`
 service container, because `quay.io/minio/minio` needs a command argument that a service container
 has no field for, and the images that need none are a different image from the one compose runs.
 
+**AND THE SECOND VERIFICATION RUN FOUND THE REAL DEFECT, WHICH WAS MINE AND NOT CI'S.**
+Provisioning MinIO changed nothing: the same two errors, exactly. `store.ts` said *"ON BOOT,
+EVERY BOOT"* and **every caller of `ensureBucket` was a test `beforeAll`** — the running
+application never created the bucket, so on a store that has never held one every slot request
+answers 503 forever. No local run could see it, because `presign.itest.ts` creates it and the
+volume persists; **CI's empty volume said so through two suites that never touch the media
+module.** Reproduced by `docker volume rm relay_minio-data`: `expected 503 to be 201`, one test
+of 58, green after. `storeReady` treats a **404 as the first request rather than a refusal** —
+a boot hook that throws stops the api starting during an outage, one that logs leaves a
+recovered store bucketless, and creating on every request needs `CreateBucket` on a credential
+production may grant only `PutObject` (056-10). **A comment that describes behaviour no code
+performs** is what this chapter found in `docs/07` §6, in `docs/12` row 11 and in a test's
+deadline — and then shipped in its own file.
+
 ## THE CARRIED LEDGER MOVED, WHICH IS WHY IT IS RE-MEASURED
 
 **055-4 DID NOT REPRODUCE THE OBVIOUS WAY.** Run from an unrelated empty directory, **all seven**

@@ -887,3 +887,36 @@ request`, which gets two in CI and one locally.
 That is where the MinIO step had to go: **before `pnpm test`, not beside the other
 provisioning**, because a provisioning step after the first failure is skipped on exactly
 the runs where the lane it provisions for still executes.
+
+────────────────────────────────────────────────────────────────────────────────
+AND THE VERIFICATION RUN FOUND THE REAL DEFECT, WHICH WAS NOT CI'S
+────────────────────────────────────────────────────────────────────────────────
+
+Provisioning MinIO in `ci.yml` changed **nothing**: the container came up healthy at
+03:24:25 and the diff against the previous run was empty in both directions — the same
+two `expected 503 to be 201`, no more and no fewer.
+
+**`ensureBucket` SAID "ON BOOT, EVERY BOOT" AND EVERY CALLER WAS A TEST `beforeAll`.**
+The running application never created the bucket. On a store that has never held one,
+every slot request answers 503 `media_storage_unavailable`, permanently.
+
+No local run could see it: `presign.itest.ts` creates the bucket in its own `beforeAll`
+and the volume persists, so from the first run of this feature onward every suite on this
+machine found it there. **The two suites that failed in CI are the two that ask for a slot
+and never touch the media module** — `gauntlet.itest.ts` and `messages.itest.ts`.
+
+Reproduced locally, which is the step that turned a guess into a diagnosis:
+
+    docker volume rm relay_minio-data && docker compose up -d --wait minio
+    gauntlet.itest.ts    1 failed | 57 passed    expected 503 to be 201
+    with the 404 arm     58 passed · and 126 of 126 with messages.itest.ts beside it
+
+FIXED AS `storeReady`, AND THE THREE ALTERNATIVES ARE IN THE FILE. A 404 is a reachable
+store with no bucket, so that arm creates it. A boot hook that throws stops the api
+starting during an outage — the opposite of the degradation row. A boot hook that logs
+leaves a store that was down at boot permanently bucketless. Creating on every request
+needs `CreateBucket` on a credential production may grant only `PutObject`.
+
+**AND THE HAPPY PATH IS STILL ONE ROUND TRIP, ASSERTED.** `store.test.ts` counts the
+requests, because a second call there would make the published +24.1% describe different
+code. `store.ts` 100/100/100/100, unchanged.
