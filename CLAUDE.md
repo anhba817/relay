@@ -35,6 +35,7 @@ re-measured, 1 answered**), `traceability.md`, `tasks.md`. **ADR-30**, **SRS 1.1
 `docs/12` row 11 amended. Tagged **`part4-ch10`**.
 
     290 fenced files replay onto relay-platform across 53 chapters · EXIT 0 · from 282 and 52
+    the CI error set is IDENTICAL to the pre-chapter baseline — 15 distinct, empty diff both ways
     29 runtime dependencies at part4-ch9 and 29 now, across all eight package.json
     5 slot requests logged · 0 rows for the upload            SC-001, the api's own request log
     the store probe costs +1.524 ms at p50, +24.1%            200 samples a side
@@ -175,7 +176,11 @@ untranslated English page in the vi tree. **The task described a corpus rather t
 The two `relay-platform` jobs failed at the same steps as the run before, **and that is not the
 same as failing for the same reasons.** Diffing this run's `##[error]` lines against the previous
 run's, uuids normalised, gave **exactly two new ones and nothing removed**:
-`expected 503 to be 201`, twice, because **`ci.yml` had no object store**. The plan's open
+`expected 503 to be 201`, twice. **It took three pushes and two repairs**: `ci.yml` had no
+object store, and then — with the container healthy and the diff unchanged — the bucket nothing
+created. The third run's error set is **identical to the pre-chapter baseline, empty in both
+directions**, which is the strongest thing this instrument can say and is unavailable from a
+colour that was red all three times. The plan's open
 question 4 asked whether this chapter should provision it in CI and nothing answered it — 4.8's
 shape, caught in one run instead of four, **and only because the comparison was per error rather
 than per colour.** 4.9's own finding aimed at this chapter: the signal was not absent, it was

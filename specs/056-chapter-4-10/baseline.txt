@@ -920,3 +920,37 @@ needs `CreateBucket` on a credential production may grant only `PutObject`.
 **AND THE HAPPY PATH IS STILL ONE ROUND TRIP, ASSERTED.** `store.test.ts` counts the
 requests, because a second call there would make the published +24.1% describe different
 code. `store.ts` 100/100/100/100, unchanged.
+
+════════════════════════════════════════════════════════════════════════════════
+THE CLOSE — MEASURED PER ERROR, NOT PER COLOUR
+════════════════════════════════════════════════════════════════════════════════
+
+      relay-tutorial — build, docs drift, fence chain      SUCCESS
+      relay-platform — gates, lanes, coverage              failure, as before
+      relay-platform — the sealed integration              failure, as before
+
+**THE ERROR SET IS NOW IDENTICAL TO THE PRE-CHAPTER BASELINE.** Diffing the third run's
+`##[error]` lines against 055's close, uuids normalised: **empty in both directions.**
+15 distinct errors before this chapter and 15 after, the same 15. Nothing added, nothing
+removed, and both platform jobs fail exactly where they failed before movement V opened.
+
+That is the strongest statement this instrument can make, and it took three runs to get:
+
+    push 1   two new errors, hidden inside a job that was already red
+    push 2   ci.yml provisions MinIO — the container is healthy and NOTHING CHANGES
+    push 3   storeReady's 404 arm — the diff goes empty
+
+**AND BOTH REPAIRS WERE NECESSARY.** Push 2 proved the store was not the whole story;
+push 3's fix needs the store to exist at all. A colour could not have told them apart —
+red, red, red — and the per-error diff distinguished them in one command each time.
+
+**THE SIX SKIPPED STEPS ARE VISIBLE IN THE STEP LIST NOW** (056-9), which is how the
+placement was chosen rather than guessed:
+
+    success  pnpm install · docker compose up -d --wait minio · lint · typecheck
+    failure  pnpm test
+    skipped  pnpm build · migrate · analytics/apply.mjs · check-error-codes · test:integration
+    failure  pnpm coverage        (if: always())
+
+The provisioning step ran because it sits before the first fallible one. Everything
+between `pnpm test` and `pnpm coverage` did not.
