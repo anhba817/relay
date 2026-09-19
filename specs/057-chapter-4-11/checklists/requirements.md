@@ -198,3 +198,42 @@ validator, and now *where does the text this chapter amends actually live*. **Th
 about code and found doors; the fifth asked about a document and found that four chapters had been
 amending one of two copies.** That class is named twice in `CLAUDE.md` and had never been checked
 here.
+
+## Analysis pass 6 (2026-09-19)
+
+One finding, **CRITICAL**, applied.
+
+- **Three runtime readers of the union were absent from every artifact, and the table built to
+  prevent exactly that said the schema they share is parsed by nothing.** §4b's row 7 read
+  *"`packages/protocol/src/frames.ts:45` | nothing at runtime | a TypeScript type"*. That line is
+  `messageSchema.attachments`, and `messageSchema` is embedded in three schemas the **gateway**
+  `safeParse`s against payloads the **api** produced: `messageCreatedSchema.payload` at
+  `fanout.ts:109`, `revisionFabricSchema` at `fanout.ts:98`, and `internalBackfillResponseSchema`
+  at `api-client.ts:218`. Zero hits for `fanout` across all six artifacts. FR-018c corrected,
+  FR-018d, SC-002e, T017f, T017g, T017h.
+
+**What a refusal costs, per door.** The backfill one degrades the resume and loses no data. The
+other two are worse than anything the previous five passes found: `logger.log("error",
+"fanout.invalid_payload"); return` — **the frame is dropped after the send was acknowledged with a
+201**, so a message is committed, the sender is told it worked, and no socket on that instance
+receives it. Pass 4's defect cost the sender its acknowledgement while the message survived; this
+one delivers nothing and says 201.
+
+**The method finding, which is the reason this pass exists.** §4b was written at pass 4 so that
+pass 5 would not have to rediscover the list, and it was built by enumerating the seven sites that
+name `attachmentSchema` and asking of each *"who parses this?"* Nothing parses `messageSchema` under
+that name, so row 7 came back inert. **The question that finds the other three is one level up:
+what is this schema embedded in, and who parses that?** A list is worth what its question was worth,
+and a wrong row in a list is worse than no list, because five passes then read past it.
+
+**Requirement count 43 → 45** and **task count 99 → 102.** The fenced-file table went **14 → 18**,
+the largest jump of any pass — `frames.ts` 10, `fanout.itest.ts` 10, `fanout.ts` 6, `revision.ts` 2
+— and `internal.ts`'s `?` resolved to **26** by counting rather than scheduling the count.
+
+**On six passes.** 12 findings, 7, 3, 3, 3, 1 — severity 0 CRITICAL, 0, 1, 1 HIGH, 1 HIGH,
+**1 CRITICAL**. The count fell to one and the severity went up, which is the clearest version of
+what the previous three passes suspected: **the number of findings measures the question, not the
+artifacts.** Five passes asked which processes read the union; the sixth asked what the union is
+*inside of*. And nothing in these three repositories runs an old protocol build against a new one —
+not a lane, not a gate, not the sealed suite — so red-first tests against today's build are the only
+instrument this class has.

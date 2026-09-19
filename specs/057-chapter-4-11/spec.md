@@ -206,8 +206,21 @@ a green number, and chapter 4.8 defined FR-ANL-10's quantity and computed nothin
   The message is committed, so the client loses its acknowledgement and its connection, and an
   idempotent retry fails identically.
 - **FR-018c**: The chapter MUST enumerate every place an attachment array is validated, and say
-  which of them cross a process boundary. There are seven and they were found one per analysis
-  pass; the next change to this union should read a list rather than rediscover it.
+  which of them cross a process boundary. There are **ten**: seven that name `attachmentSchema`
+  directly, and three that reach it by embedding `messageSchema`. They were found one per analysis
+  pass; the next change to this union should read a list rather than rediscover it. **The
+  enumeration MUST be by what is parsed, not by what is named** — the first version of this list
+  asked "who parses this schema?" of each direct site, answered *"nothing at runtime"* for
+  `messageSchema`, and missed the three hottest readers in the platform.
+- **FR-018d**: The three readers that reach the union through `messageSchema` MUST accept an
+  unrecognised attachment shape: the gateway's fanout consumer for `message.created`, the same
+  consumer for a revision, and the gateway's backfill response reader. Each parses a payload the
+  **api** produced, across a boundary the two services deploy independently. Today all three reject
+  a media arm, and the live-delivery one drops the frame with a log line after the send has been
+  acknowledged with a 201 — a committed message that reaches no socket.
+  **`messageSchema` itself stays strict.** It is what the api BUILDS, and `Message` is inferred
+  from it; widening it would weaken every construction site, which is the defect FR-022's own
+  comment was written to prevent. The reader sites take a variant.
 - **FR-020**: Editing a message that carries a media attachment MUST leave the attachment
   unchanged, asserted rather than assumed. `repository.ts:4604` states the property — *"an edit
   does not change attachments (FR-016)"* — and this chapter creates the first media attachment
@@ -270,6 +283,11 @@ a green number, and chapter 4.8 defined FR-ANL-10's quantity and computed nothin
 - **SC-002c**: An api send response carrying a media attachment parses under the gateway's
   schema, and the test fails against the arm as it stands today — the same red-first requirement
   SC-002b places on the durable reader.
+- **SC-002e**: Three tests, each red against the arm as it stands today: a fanned-out
+  `message.created` carrying a media attachment is **delivered** rather than dropped, a revision
+  carrying one is delivered, and a backfill response carrying one parses rather than degrading the
+  resume. Red-first, for the reason SC-002b gives — a reader test that cannot go red is the class
+  this chapter is trying not to join.
 - **SC-002d**: The sealed suite delivers **one url attachment and one media attachment** to a
   socket, in order, using nothing but a published credential — a slot, an upload, a send, and the
   frame. Measured from outside the platform, which is the only place this claim is worth making.

@@ -106,8 +106,11 @@ chapter is where that is written down (R12).
 
 ## 4b. Every validator of an attachment array, and which ones cross a boundary
 
-One union, **seven validators**. Three analysis passes found them one door at a time, which is the
+One union, **ten validators** — seven that name `attachmentSchema` and three that reach it by
+embedding `messageSchema`. Four analysis passes found them one door at a time, which is the
 argument for the table rather than for the diligence of any pass.
+
+**Seven direct:**
 
 | site | parsed by | boundary | crosses a deploy skew? |
 |---|---|---|---|
@@ -117,12 +120,28 @@ argument for the table rather than for the diligence of any pass.
 | `packages/protocol/src/internal.ts:70` | **gateway**, `api-client.ts:247` | api → gateway, send response | **yes, and it closes the socket 1011** |
 | `services/api/src/outbox/event.ts:373` | api consumer | durable, `message.created` | **yes, and it terminates the message** |
 | `services/api/src/outbox/event.ts:412` | api consumer | durable, `message.updated` | **yes**, same |
-| `packages/protocol/src/frames.ts:45` | nothing at runtime | server → client, delivery frame | no — a TypeScript type, and `z.uuid()` still infers `string` |
+| `packages/protocol/src/frames.ts:45` | see below — this row said *"nothing at runtime"* and was wrong | inside `messageSchema` | **yes, three times over** |
 
-**Four cross a boundary between processes that deploy separately, and three of those four matter.**
-The rule is the same at each: a reader that forwards a value it never interprets must not refuse a
-shape its writer may produce. The api's own request schemas stay strict, because refusing a bad
-arm at the door is the point of them.
+**Three through `messageSchema`,** which embeds `frames.ts:45` and is itself parsed:
+
+| site | parsed by | boundary | what a refusal costs |
+|---|---|---|---|
+| `packages/protocol/src/frames.ts:122` (`messageCreatedSchema.payload`) | **gateway**, `fanout.ts:109` | api → Redis → gateway, live delivery | **the frame is dropped** — `logger.log("error", "fanout.invalid_payload")` and `return`. The message is committed and the sender already has its 201 |
+| `packages/protocol/src/revision.ts:62` (`revisionFabricSchema`) | **gateway**, `fanout.ts:98` | api → Redis → gateway, an edit | same drop, same log — the edit never reaches a client |
+| `packages/protocol/src/internal.ts:115` (`internalBackfillResponseSchema`) | **gateway**, `api-client.ts:218` | api → gateway, resume | `parse` throws → `session.ts:1361` answers `degrade("backfill_failed")`; the resume is lost and the client re-pages history over REST |
+
+**Seven of the ten cross a boundary between processes that deploy separately, and six of those
+seven matter.** The rule is the same at each: a reader that forwards a value it never interprets
+must not refuse a shape its writer may produce. The api's own request schemas stay strict, because
+refusing a bad arm at the door is the point of them — and `messageSchema` stays strict for the
+opposite reason, that it is what the api BUILDS.
+
+**HOW THE FIRST VERSION OF THIS TABLE GOT ROW 7 EXACTLY BACKWARDS.** It enumerated the seven sites
+that name `attachmentSchema`, then asked of each *"who parses this?"* — and nothing parses
+`messageSchema` under that name, so the answer came back *"nothing at runtime, a TypeScript type."*
+The question that finds the other three is one level up: **what is this schema embedded in, and who
+parses that?** A table built to stop the next change rediscovering the list is worth only as much
+as the question it was built from.
 
 ## 5. State transitions
 
