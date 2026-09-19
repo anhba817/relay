@@ -221,11 +221,32 @@ So the job's other errors are not separate problems:
     expected 0 to be greater than 0                         the same, one layer on
 
 **The one real failure is `main.test.ts > logs exactly one structured line per request`**, which
-gets two. It has failed in CI and passed locally since before this chapter, and the second line is
-almost certainly `request_log.publish_failed`: the unit lane is Docker-free by design, `nats` is a
-service container so the connection succeeds, and nothing creates the `ANALYTICS` stream in that
-job — so the producer chapter 4.4 added logs an error beside the request line. Locally the stream
-exists from compose and the test sees one line.
+gets two. It has failed in CI and passed locally since before this chapter.
+
+**THE SECOND LINE IS MEASURED, NOT INFERRED.** Reproduced locally by pointing the api at a broker
+that is not there — `RELAY_NATS_URL=nats://127.0.0.1:1 npx vitest run src/main.test.ts` — which
+turns the test red with the identical message, and printed by a throwaway probe that dumps the
+array instead of counting it:
+
+    {"level":"info","service":"api","msg":"request","request_id":"1b87…","path":"/healthz","status":200}
+    {"level":"error","service":"api","msg":"request_log.publish_failed","request_id":"1b87…",
+     "error":"NatsError: CONNECTION_REFUSED"}
+
+The producer chapter 4.4 added logs its own failure, on the same request, through the same logger.
+`main.test.ts` swaps the LOGGER provider for an array, so **every line the api emits during that
+request lands in the array** — the assertion is about the api's whole output and not about the
+access log.
+
+**AND IN CI THE BROKER IS REACHABLE AND THE STREAM IS NOT.** `nats` is a service container, so the
+error is `NatsError: 503` rather than `CONNECTION_REFUSED` — **870 occurrences in the coverage
+step of one run.** `AppModule` wires `ensureAnalyticsStream` into the publisher as an `ensure`
+hook and the connection is lazy, so the first publish of a freshly booted app races the stream's
+creation; locally the stream already exists from compose and the race cannot be lost.
+
+**AND THE LINE IS INVISIBLE IN THE CI LOG.** Zero occurrences of `NatsError` in the whole
+`pnpm test` step, because the test captured it. The only evidence the failure leaves is
+`expected [ …(2) ] to have a length of 1 but got 2` — a length, with the thing it counted
+swallowed by the fixture that counted it.
 
 **AND THIS IS THE CHAPTER'S OWN SUBJECT POINTED AT THE CHAPTER.** Chapter 4.9's finding is that a
 gate which is always red carries no information about what a change did to it. This feature pushed
