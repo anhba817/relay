@@ -1,0 +1,144 @@
+BASELINE — feature 057, chapter 4.11, "the half of the union that was refused"
+
+Every phase's measurements, in the order they were taken. Where a figure appears it is what
+came back, including the ones that came back from a broken instrument.
+
+================================================================================
+PHASE 1 — SETUP                                                      2026-09-19
+================================================================================
+
+T001 · The stores, on this machine's documented ports
+------------------------------------------------------------------------------
+  RELAY_POSTGRES_PORT=15432 docker compose up -d --wait \
+    postgres redis nats clickhouse minio mailpit          EXIT 0, six healthy
+
+  Published ports, read back rather than assumed (056-3: a restarted container
+  can come back healthy publishing nothing):
+
+    clickhouse   8123->8123, 9000->9000
+    minio        9100->9000          <- 9100 on the host, 9000 in the container
+    nats         4222->4222, 8222->8222
+    postgres     15432->5432
+    redis        6379->6379
+    mailpit      1025->1025, 8025->8025
+
+    minio  /minio/health/live   200      from the host
+    clickhouse /ping            200      from the host
+
+T002 · The fence chain, absolute
+------------------------------------------------------------------------------
+    check-fence-chain: 290 fenced files replay onto relay-platform
+                       across 53 chapters                    EXIT 0
+
+  ZERO PROBLEMS, and the problem line is ABSENT rather than reading zero. The
+  counted success line is the one to read (055-4); an exit code would have said
+  the same thing for a checker that never looked.
+
+T003 · Runtime dependencies — and the first instrument was broken
+------------------------------------------------------------------------------
+  THE FIRST ATTEMPT READ 0 AND 0 WAS NOT A MEASUREMENT. A shell one-liner with
+  nested quotes produced `SyntaxError: missing ) after argument list` eleven
+  times and summed the eleven failures to `TOTAL runtime dependencies: 0`. The
+  errors were on stderr, the total was on stdout, and a reader skimming for the
+  total would have recorded a dependency count of zero for a platform with 29.
+  Rewritten as a file rather than a one-liner:
+
+      0  ./package.json                    14  ./services/api/package.json
+      0  ./packages/config                  3  ./services/dispatcher
+      1  ./packages/e2e                     6  ./services/gateway
+      0  ./packages/outsider                3  ./services/ingester
+      1  ./packages/protocol
+      0  ./packages/service-kit
+      1  ./packages/test-harness
+
+    TOTAL 29 across 11 package.json       matches part4-ch10 exactly (SC-010)
+
+T004 · The three lanes at the opening
+------------------------------------------------------------------------------
+    pnpm test              12 of 12 tasks, 71 files            EXIT 0
+    pnpm test:integration  12 of 12 tasks, 58 files            EXIT 0
+    pnpm check:errors      33 codes, 33 sections, 6 close codes EXIT 0
+
+  Each read off its counted line. `pnpm build` ran first, because `check:errors`
+  reads the built `dist`.
+
+T001a · THE COMPOSED API COULD NOT ISSUE A SLOT, AND IT WAS MEASURED NOT INFERRED
+------------------------------------------------------------------------------
+  Analysis pass 8 predicted this from `compose.yaml` and never ran it. Run:
+
+    docker compose --profile services build                   EXIT 0
+    node services/api/dist/db/migrate.js                      nothing to apply
+    docker compose --profile services up -d --wait            api HEALTHY
+
+    POST localhost:4000/v1/media  ->  HTTP 503
+      {"code":"media_storage_unavailable",
+       "message":"the object store is not reachable; this is temporary and the
+                  request can be retried"}
+
+  A HEALTHY CONTAINER ANSWERING 503 TO EVERY SLOT REQUEST. The message says
+  "temporary" and nothing was temporary about it.
+
+  THE CONTROL, which is what makes it the address and not the store:
+
+    from inside the api container   localhost:9100 -> ECONNREFUSED
+                                    minio:9000     -> 200
+    from the host                   localhost:9100 -> 200
+
+  `compose.yaml`'s api names postgres:5432, nats:4222, redis:6379 and clickhouse
+  and names MinIO nowhere, while `depends_on` waits on it. The block directly
+  above the omission says *"Container names, not localhost"* — the file
+  documents the class and then omits one service.
+
+T001b · Two consumers, two addresses, because the host is in the signature
+------------------------------------------------------------------------------
+  `presign.ts` signs `X-Amz-SignedHeaders: host` with `host:${host}` in the
+  canonical request, so a URL signed for one origin is refused at another. One
+  `endpoint` field cannot serve both consumers once they disagree, and they have
+  agreed until now only because every lane runs the api as a host process.
+
+    StoreConfig.endpoint          where the CLIENT reaches the store — signed
+                                  into the upload URL
+    StoreConfig.internalEndpoint  where THIS SERVICE reaches it — the probe and
+                                  ensureBucket. Defaults to `endpoint`.
+
+  The default is what keeps every existing lane unchanged: unset, the two are
+  the same string and nothing has to know the field exists.
+
+  compose.yaml now sets both:
+    RELAY_MINIO_ENDPOINT          http://localhost:9100
+    RELAY_MINIO_INTERNAL_ENDPOINT http://minio:9000
+
+  AFTER, the same request against a rebuilt and force-recreated api:
+
+    POST localhost:4000/v1/media  ->  201
+      media_id  9940ad63-…
+      state     pending
+      upload_url signed for http://localhost:9100
+
+    PUT that URL from the host    ->  200        2,097,152 bytes
+
+  SC-012 discharged: a slot from the COMPOSED api, and a URL usable from outside
+  the compose network. tsc --noEmit EXIT 0; 39 unit files, 409 tests, green.
+
+  store.test.ts needed two edits and both are the finding in miniature: the
+  suite redirects the store to a fake server and overrode `endpoint` alone,
+  which after the split would have pointed the fake at the client's address and
+  left the probe talking to the real store.
+
+T004a · The ten validators, re-verified against the tree rather than the table
+------------------------------------------------------------------------------
+  Seven name `attachmentSchema` — internal.ts:34, internal.ts:70, frames.ts:45,
+  frames.ts:93, event.ts:373, event.ts:412, messages.schema.ts:40. Three reach
+  it through `messageSchema` — revision.ts:62, internal.ts:115, frames.ts:122.
+  All ten present as `data-model.md` §4b records them.
+
+T005 · What the chain charges so far
+------------------------------------------------------------------------------
+    check-fence-chain: 2 problem(s) — HEAD 2
+      compose.yaml                     differs at line 202   (15 titled fences)
+      services/api/src/media/store.ts  differs at line 10    (1)
+      services/api/src/media/store.test.ts                    (0, free)
+
+  0 -> 2 from phase 1's edits alone. Repaired in phase 7 with `diff` hunks, not
+  now: the chain is a per-chapter artifact and a hunk written against a moving
+  tree is written against the wrong state.
