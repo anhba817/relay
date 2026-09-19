@@ -268,3 +268,128 @@ GATES AT THE CLOSE OF PHASE 2
   Seventeen is the running cost of thirteen edited fenced files and is repaired
   in phase 7 with `diff` hunks (T062-T065), not now: a hunk written against a
   tree that is still moving is written against the wrong state.
+
+================================================================================
+PHASE 3 — THE PREDICATE AND THE ACCEPT PATH (US1)                    2026-09-19
+================================================================================
+
+The predicate: one query, the difference taken in order
+------------------------------------------------------------------------------
+  `assertAttachableMedia`, inside `sendMessage`'s transaction, after the ban,
+  the channel and the quota and before the insert. Three clauses in the clause's
+  own order: environment, uploader, state.
+
+  ONE `IN` AND NOT N. Up to ten round trips inside a write transaction for a
+  question one query answers. What it costs is that "which one failed" becomes a
+  set difference — and the difference preserves POSITION, because the refusal's
+  field is `attachments.<n>.media_id`.
+
+  T020a · `senderMustBeBot` IS REUSED AND THE ALTERNATIVE IS THE VIOLATION. The
+  predicate needs one fact — whether the caller is an application credential —
+  and `sendMessage` already carries it under a name about the sender. A second
+  boolean called `callerIsApplication` would read better here and is exactly what
+  research R5 forbids: *"the repository must not learn what a credential is."*
+
+  `state IN ('pending','ready')` IS WRITTEN IN FULL AND ONE ARM CANNOT OCCUR.
+  The CHECK constraint is `state = 'pending'`. The clause names both, so the
+  predicate names both, and whoever builds the scanner does not have to find it.
+
+TESTS · a new file, 13 of 13
+------------------------------------------------------------------------------
+  `services/api/src/media/attach.itest.ts`. Its own file because FR-MED-06 needs
+  BOTH credential classes and two users in one tenant, which neither existing
+  suite has — and **a new file costs the fence chain nothing**, which is the
+  cheap direction 051 recorded.
+
+    accept  own slot · API key's own slot · a TENANT slot attached by a user
+            (R1's case, the one the specification would have refused)
+            one media + one url in order · no text · the ten cap over the union
+    read    the send response AND history, both `toEqual` on the whole array
+    edit    the attachment survives (FR-020)
+    delete  the column is nulled and the media row stands (FR-024)
+    refuse  three conditions, byte-identical bodies · `attachments.2.media_id`
+            · this code in the envelope · no row and no sequence movement
+
+  THE RED PROBE FIRED FOR ITS OWN REASON. Deleting the environment clause:
+  `expected 201 to be 422` on the foreign tenant's id, with the other nine green —
+  so the test fails for the tenancy reason and not for a shared refusal.
+
+AND THE FIXTURE WAS WRONG THREE TIMES, EACH TIME ONLY THE DATABASE COULD SAY
+------------------------------------------------------------------------------
+    createChannel({name,type})   -> 23502, `external_id` null; it takes positionals
+    addMember(channel, "a")      -> 22P02 string_to_uuid; it takes the row's UUID
+    a bot with no description    -> 23514 users_bot_description_check
+
+  **Reading cannot find what the schema refuses** — 046's rule, three times in
+  one `beforeAll`. None of the three is about this chapter and all three would
+  have read as the predicate failing.
+
+THE SOCKET DOOR, AND A STALE BUILD ONE LAYER OUT
+------------------------------------------------------------------------------
+  `session.itest.ts:415` is CONVERTED, not deleted: it asserted *"refuses a
+  media_id and SAYS hosted media is unavailable"* and now asserts that `m_1` is
+  refused for being a non-UUID and that the message is **not** the old sentence —
+  the assertion that catches a gateway still carrying 3.24's schema.
+
+  Two new socket tests: a frame carrying the sender's own `media_id` COMMITS, and
+  a frame carrying a foreign one gets `media_not_attachable` rather than
+  `invalid_frame`.
+
+  T032c FAILED FIRST WITH `no error within 5s`, AND IT WAS THE STALE `dist`.
+  The gateway suite spawns `services/api/dist`, which predated the predicate.
+  `pnpm build` and all three pass. Third recorded instance of that trap.
+
+THE SEALED SUITE, 19 OF 19 — AND A THIRD KIND OF STALE BUILD
+------------------------------------------------------------------------------
+  `integrate.itest.ts` now uploads a file and attaches it from outside: slot,
+  PUT to the presigned URL, send, and both arms delivered to a socket in order,
+  with nothing but a published credential.
+
+  IT FAILED FIRST WITH `expected 422 to be 201`, AND THE HOST BUILD WAS ALREADY
+  FRESH. The composed api runs its own IMAGE, built at T001b before the arm
+  accepted — so `pnpm build` fixes the spawned-dist trap and does nothing for
+  this one. `docker compose --profile services build` is a third thing that can
+  be stale, and the suite that found it is the only one that talks to a container.
+
+T031 · The send's latency, and the first measurement was the pacing
+------------------------------------------------------------------------------
+    no attachment          p50  7.452   p95  9.490   mean 7.528
+    one media attachment   p50  7.908   p95 10.872   mean 8.196
+    delta at p50          +0.456 ms  (+6.1%)          n = 30 a side, interleaved
+
+  WHAT IT IS A MEASUREMENT OF: one indexed lookup inside a transaction, against a
+  lane whose `media_objects` holds a few hundred rows. It is not a production
+  figure and the shape of the query — `IN` over a primary key — is what makes the
+  small table uninformative rather than reassuring.
+
+  THE FIRST RUN REPORTED THE MEDIA SEND **35.4% FASTER**, which is impossible and
+  was the instrument. The pause sat AFTER each pair, so the plain send always
+  followed a quiet gap and the media send always followed a warm one. Fixed by
+  putting the pause first and alternating the order within the pair. 4.1's
+  quiet-then-busy confound, reproduced exactly.
+
+  AND THE PLATFORM'S OWN LIMITER BOUNDS THE METHOD. 200 samples a side is 600
+  requests and the tenant's budget answered `429 … retry after 34 seconds`. The
+  sample is 30 a side for that reason, said rather than quietly chosen — 4.8
+  found the same wall from the other direction, where reading the request log
+  spends the budget the reader is investigating.
+
+AND ONE RED IN THE FULL LANE WAS MINE
+------------------------------------------------------------------------------
+    pnpm test:integration   11 of 12 — outbox invariant 8 red
+    the same test alone     1 of 1 green
+    with `--profile services` stopped, the whole lane   12 of 12
+
+  *"Two concurrent relays publish every row exactly once"* — and I had left the
+  composed api, gateway and dispatcher running, which is a SECOND set of relays
+  polling the same outbox. 056 recorded a test taking a shared service away from
+  its neighbours; this is the same class from the other side, a neighbour taking a
+  shared table into contention with the lane. **The composed stack and the
+  integration lane cannot both run.**
+
+GATES AT THE CLOSE OF PHASE 3
+------------------------------------------------------------------------------
+    pnpm lint            0 errors
+    pnpm typecheck       14 of 14
+    pnpm test:integration 12 of 12
+    pnpm test:outsider   19 of 19        against the composed platform
