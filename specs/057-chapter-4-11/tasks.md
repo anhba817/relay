@@ -55,6 +55,14 @@ cannot be tested before the arm accepts.
 - [ ] T016 **Replace** `packages/protocol/src/attachments.test.ts`'s `describe("the media arm refuses and SAYS SO (FR-003, FR-003a)")` block — it is a rewrite, not an extension, and a rewrite budgeted as an extension is how a task gets half done. What replaces it: a UUID accepted, a non-UUID refused at the schema, the discriminator still selecting the media arm, and `MAX_ATTACHMENTS` still 10 over the union.
 - [ ] T017 Build `@relay/protocol` before anything reads `ErrorCode` from it. The api reads the built `dist`, and 056 lost a compile cycle to that.
 
+- [ ] T017a **Make the outbox envelope's attachment elements permissive** (FR-018), in `services/api/src/outbox/event.ts` at both arms — `:373` and `:412`. The envelope stays `strictObject` about its OWN fields, because that is the contract between two versions of one service and a new key should be loud. The attachment ELEMENTS are payload the consumer forwards, not data it interprets.
+  **THIS IS A CONSTITUTION II DEFECT AND IT WAS IN THE PLAN, NOT THE CODE.** `consumer/runtime.ts:163` parses with `safeParse` and `:204` answers a failure with `message.term()`, which stops redelivery for good. A message a new instance commits and an old one reads during a rolling deploy is destroyed **after the send was acknowledged**.
+  **AND THE CONSUMER NEVER READS THE FIELD** — `grep -c attachments services/api/src/consumer/` is 0, and nothing downstream of the parse reads them either. The validation that destroys the message is validation of a field the validator ignores.
+  **Rejected: rely on deploy order.** Reader-first would work and nothing enforces it; an invariant that depends on the order two processes restart in is not an invariant.
+- [ ] T017b **Test it against the arm as it stands today** (FR-018a, SC-002b), in `services/api/src/consumer/consumer.itest.ts`: an envelope carrying `{ "type": "media", "media_id": "<uuid>" }` parses and is acked rather than terminated. **Run it red against the current `attachmentSchema`** — a durable-reader test that cannot go red is the class this chapter is trying not to join.
+  **THE LANE CANNOT FIND THIS ON ITS OWN.** `RELAY_EVENT_CONSUMER=off`, for chapter 3.5's reason, and `outbox/event.ts`'s own header records what that cost last time: *"the api suite stayed green through 505 tests with the defect in place."*
+- [ ] T017c **Budget `outbox/event.ts` (11 titled fences) and `consumer.itest.ts` (9) in the fence work.** Neither appears in any artifact before analysis pass 3, because none mentioned the consumer.
+
 **Checkpoint**: the arm parses a media attachment and nothing refuses it yet — which is a platform
 that accepts any id, and is why phase 3 is one change with phase 2 rather than a shippable state.
 
@@ -139,6 +147,7 @@ the message reads back with its attachment.
 - [ ] T053 **The attack plants a media object for each tenant.** Both tenants' tables are otherwise empty, and *"an empty log passes a leak check for the same reason an empty page does"* (chapter 4.8).
 - [ ] T054 Run the attack red by removing the environment predicate, and confirm it fails for the tenancy reason rather than a shared refusal — the trap the existing attack's own comment records.
 - [ ] T055 [P] Record in `gaps.md`: **nothing counts references to a media object.** This chapter creates the first ones; FR-MED-10's sweep deletes *unreferenced* objects and the only way to answer "unreferenced" against this shape is a scan of `messages.attachments`.
+- [ ] T055a [P] Record in `gaps.md` and in the chapter: **`attachment_count` changes meaning** (FR-019). `load-analytics.mjs:178,187,200` compute `JSONLength(m.attachments)`, which has counted external URLs for every row ever written and starts counting hosted media alongside them with nothing able to tell them apart. **Recorded, not split** — a second column is FR-MED-12's chapter, and adding a narrower count here would be that chapter's surface without its clause.
 - [ ] T056 [P] Record in `gaps.md`: **a message can attach an object nobody uploaded to.** `state` is `pending` whether the client uploaded or not (`gaps.md` 056-1), so a message may name a slot that holds no bytes, and no client can tell.
 - [ ] T057 Run `check-lane-scope.py` and record the file count. It read 59 files at 056's close; this chapter adds integration tests and the number must rise. A run that reads nothing exits 2.
 
@@ -192,6 +201,8 @@ T012 ────► T042                                 the 500 test needs the
 T011a0 ────► T011a ────► T011b                   name it, add the rung, then probe it
 T010 ────► T074                                 TWO sections now, and the gate reads both
 T007 + T008 + T010 ────► T074                   check:errors fails until all three land
+T017a ────► T017b                               the permissive reader before the test that proves it
+T017a ────► T018                                DO NOT SHIP A PRODUCER AHEAD OF ITS DURABLE READER
 T020a ────► T018                                the predicate needs to know which credential asked
 T003 ────► T068a                                SC-010 is a comparison, not an assertion
 T060 ────► T067                                 an unregistered chapter fails the build first
@@ -221,6 +232,11 @@ because it is a test and a comment about a state nothing reaches.
 predicate cannot be tested before the arm accepts, and an accept path without the predicate is a
 cross-tenant hole. Committing between them is fine; shipping between them is not.
 
+**AND T017a IS THE ONE ORDERING THAT IS NOT NEGOTIABLE.** The durable reader has to accept a media
+attachment before anything can write one. Ship the producer first and a rolling deploy destroys
+acknowledged messages — constitution II, permanently, silently, and on exactly the messages this
+chapter exists to make possible.
+
 **The riskiest task is T037**, and not because it is hard. Byte-identical refusals are easy to
 write and easy to lose: the next person to add a helpful detail to one of the three messages
 removes the property without failing a test that only checks the status. The assertion has to
@@ -237,6 +253,13 @@ credential class and finding that nothing had said. T028a and T027a close requir
 task at all. T070a is the `docs/12` amendment four consecutive chapters wrote and this one had
 forgotten. **Nine of the pass's twelve findings came from reading the artifacts against each
 other; three came from running them, and those three are the ones that changed the design.**
+
+**PASS 3 FOUND THREE AND ONE WAS A CONSTITUTION VIOLATION.** The outbox envelope reads
+`attachments` with the same union and the consumer terminates a failed parse. `consumer` appeared
+zero times in all six artifacts and `outbox` five times, every one meaning *"a refusal writes no
+outbox row"* — the sense that was already safe. **12 findings, then 7, then 3, and the severity
+went the other way**: each pass asked a new question of the tree rather than re-reading, and the
+count was the misleading number every time.
 
 **PASS 2 FOUND SEVEN, ALL BY RUNNING, AND THE FIRST IS BIGGER THAN ANYTHING PASS 1 FOUND.** Zero
 mentions of `gateway`, `socket` or `frame` across all six artifacts — and the union has three

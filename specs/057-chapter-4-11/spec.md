@@ -187,6 +187,21 @@ a green number, and chapter 4.8 defined FR-ANL-10's quantity and computed nothin
   precisely because "we did not add it" is not a property anything checks. **There are three doors
   to check, not one**: history, the live socket frame, and the backfill a resuming client reads,
   which passes `row.attachments` straight through.
+- **FR-018**: **The durable reader MUST NOT refuse a shape its writer may produce.**
+  `outboxEventSchema` validates `attachments` with the same union, twice, and
+  `consumer/runtime.ts` answers a failed parse with `message.term()` — so a message committed by
+  a new instance and read by an old one during a rolling deploy is **destroyed permanently**, with
+  the send already acknowledged. Constitution II. The consumer never reads `attachments` (zero
+  occurrences) and nothing downstream of the parse does either, so the strictness buys nothing and
+  costs the message.
+- **FR-018a**: The fix MUST be tested against the arm as it stands today, because the lane runs
+  with the consumer switched off and cannot find this class on its own. `outbox/event.ts`'s own
+  header records the previous instance: *"the api suite stayed green through 505 tests with the
+  defect in place."*
+- **FR-019**: The chapter MUST record that `attachment_count` in the analytical store changes
+  meaning. `load-analytics.mjs` computes `JSONLength(m.attachments)`, which has counted external
+  URLs for every row ever written and starts counting hosted media alongside them with nothing
+  able to tell the two apart.
 - **FR-014**: The cross-tenant suite MUST attack the new path, and the attack MUST plant a media
   object for each of two tenants so that an empty table cannot pass it.
 - **FR-015**: The chapter MUST record what a second message referencing one media object means for
@@ -224,6 +239,9 @@ a green number, and chapter 4.8 defined FR-ANL-10's quantity and computed nothin
 - **SC-002a**: A socket client attaching a valid `media_id` commits, and one attaching a foreign
   id receives the api's own code rather than `invalid_frame`. Measured on the socket, not inferred
   from the REST route passing.
+- **SC-002b**: An outbox envelope carrying a media attachment parses under the consumer's schema,
+  and the test that proves it **fails against the arm as it stands today**. A durable-reader test
+  that cannot go red is the class this chapter is trying not to join.
 - **SC-003**: A refused send leaves the channel's message count and sequence unchanged, measured
   before and after and scoped to the test's own channel.
 - **SC-004**: `pnpm check:errors` passes in both directions after `media_not_available` is removed

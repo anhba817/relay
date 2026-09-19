@@ -87,6 +87,23 @@ learn when that changes until FR-MED-07 ships.
 
 ---
 
+## 4a. And the attachment array travels further than this chapter's doors
+
+The array written to `messages.attachments` is also copied into the **outbox envelope**, which is
+durable and is read by a consumer that may be a different version of the api. That reader
+validates the array with the same union and terminates a message it cannot parse, so widening what
+the writer produces without widening what the reader accepts destroys acknowledged messages
+(research R11).
+
+The envelope's own fields stay strict; the attachment elements do not. The line is what the reader
+uses: the consumer reads the envelope and never reads `attachments` — zero occurrences — and
+nothing downstream of the parse reads them either.
+
+**And one reader counts them without looking inside.** `load-analytics.mjs` computes
+`JSONLength(m.attachments)` into `message_events.attachment_count`, so a hosted-media attachment
+counts exactly as an external URL does. Nothing breaks; the column's meaning widens, and this
+chapter is where that is written down (R12).
+
 ## 5. State transitions
 
 None. This chapter reads `state` and never writes it. The transitions FR-MED-07 names —

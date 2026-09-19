@@ -254,3 +254,72 @@ the change:
 **The next schema tightening will not have the first one.** Stated here so the question gets asked
 rather than rediscovered.
 
+---
+
+## R11 · The durable reader refuses what this chapter makes the writer produce
+
+**Run**: `grep -n 'attachments: z.array(attachmentSchema)' services/api/src/outbox/event.ts`
+
+```text
+373:      attachments: z.array(attachmentSchema).default([]),
+412:      attachments: z.array(attachmentSchema).default([]),
+```
+
+Both arms of the outbox envelope validate attachments with **the same union this chapter
+changes**, and `consumer/runtime.ts:163` parses with `safeParse` and `:204` answers a failure with
+`message.term()`, which stops redelivery for good.
+
+**So a rolling deploy destroys messages.** A new api commits one carrying
+`{ "type": "media", "media_id": "…" }` and writes its outbox row; an old consumer instance parses
+that row with the previous binary's arm, which is `.refine(() => false)`; the event is terminated.
+The row is in Postgres, the send was acknowledged, and no subscriber, webhook or fan-out ever
+hears about it. **Constitution II.**
+
+**AND THE CONSUMER NEVER READS THE FIELD.** `grep -c attachments services/api/src/consumer/` is
+**0**, and nothing downstream of the parse reads them either — the fan-out frame does not carry
+them. The validation that destroys the message is validation of a field the validator ignores.
+
+**Decision**: the envelope stays `strictObject` about **its own fields**, because that is the
+contract between two versions of one service and a new key should be loud. The **attachment
+elements** become permissive, because they are payload the consumer forwards rather than data it
+interprets. That is the line the rule draws: *a reader of anything durable cannot refuse a shape
+its writer may produce.*
+
+**Rejected: rely on deploy order.** Reader-first would work and nothing enforces it; a monorepo
+deployed as one unit still has a window, and an invariant that depends on the order two processes
+restart in is not an invariant.
+
+**Rejected: leave it and note the window.** The loss is silent, permanent, and lands on exactly
+the messages this chapter exists to make possible.
+
+**AND THE FILE ALREADY RECORDS THE PREVIOUS INSTANCE**, in its own header:
+
+> *"The comment above argues NOT OPTIONAL from `message.term()`, and that argument is correct
+> about the producer and inverts about the reader… FOUND BY THE CLOSE-OUT COVERAGE LANE, six red
+> tests in `consumer.itest.ts`, after eleven analysis passes and eleven phases."*
+
+> *"The lane could not have found this. It runs `RELAY_EVENT_CONSUMER=off`, so nothing exercises
+> the consumer; the api suite stayed green through 505 tests with the defect in place."*
+
+Three artifacts and two analysis passes went past it. The word `consumer` appears zero times in
+all six documents of this feature, and `outbox` appears five times, every one of them meaning
+*"a refusal writes no outbox row"*.
+
+---
+
+## R12 · `attachment_count` changes meaning and nothing says so
+
+`scripts/scale/load-analytics.mjs:178,187,200` compute `JSONLength(m.attachments)` into
+`message_events.attachment_count`. The function counts array elements and does not look inside
+them, so a hosted-media attachment counts exactly as an external URL does.
+
+Nothing breaks. What changes is what the column means: it has counted external URLs for every row
+ever written, and after this chapter it counts both kinds with no way to separate them. Chapter
+4.2 spent a feature on columns whose contents had stopped matching their names —
+`attachment_count` uniformly NULL, `event` written as a literal — so the cost of not saying this
+is known.
+
+**Decision**: record it, do not split the column. A second column is FR-MED-12's chapter, which
+meters stored bytes and counts uploads by kind; adding a narrower count here would be that
+chapter's surface without its clause.
+

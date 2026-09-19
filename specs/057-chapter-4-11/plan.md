@@ -47,7 +47,7 @@ refusing.
 | principle | reading |
 |---|---|
 | **I · Tenant isolation** | The whole of the chapter. The environment predicate is the check; the **indistinguishable refusal** is the second half, and it is the half a design review would drop. `POST /v1/channels/:channelId/messages` is already a gauntlet target — and is its `CANARY_TARGET` — so the accounting direction that applies is "attacked but not for this identifier" (research R7). |
-| **II · No acknowledged message is lost** | Untouched. The check runs before the insert, inside the same transaction; a refusal writes no message and no outbox row. |
+| **II · No acknowledged message is lost** | **The one principle this chapter can break, and the plan did until analysis pass 3.** `outboxEventSchema` validates `attachments` with the same union at two arms and `consumer/runtime.ts` answers a failed parse with `message.term()` — so a message a new instance commits and an old one reads during a rolling deploy is destroyed, after the ack. The consumer never reads the field (zero occurrences) and neither does anything downstream, so the strictness costs the message and buys nothing (research R11). The envelope stays strict about its own fields; the attachment elements become permissive. The refusal half is unchanged and was always fine: the check runs before the insert, inside the same transaction. |
 | **III · Two data paths** | Untouched. Nothing analytical is read or written. The send's existing request-log record is unchanged. |
 | **IV · Single writer** | The message records the id, not a copy of the object's state — one source of truth for what an attachment is, which is what lets FR-MED-07 report a change later without the message having lied. |
 | **V · API-first** | **There are two APIs and the artifacts described one until pass 2.** `messageSendSchema` embeds the same union, so the arm accepting changes the REST route and the socket's `message.send` frame together, and a live gateway test asserts the refusal this chapter removes (research R9). The arm's shape does not change; its behaviour does. `media_id` tightens to a UUID, which narrows a shape nothing was accepting (research R3), so CON-05's URL-versioning rule is not engaged. The removed code and the added one both land in `docs/08-error-reference.md`. **And 422 joins the error filter's ladder** — measured at analysis pass 1: the rungs are 400, 401, 402, 403, 404, 413, 415 and 503, so an unnamed 422 still answers `internal_error`, which is the filter's own *"lie the client cannot act on"*. Chapter 4.10 closed four and left this one. |
@@ -87,6 +87,8 @@ packages/protocol/src/
 services/gateway/src/
 └── session.itest.ts               # the socket door: one test converted, two added
 services/api/src/
+├── outbox/event.ts                # the durable reader: attachment elements become permissive
+├── consumer/consumer.itest.ts     # a media envelope parses, red against today's arm
 ├── messages/
 │   ├── messages.schema.ts         # unchanged — the cap already counts both arms
 │   ├── messages.service.ts        # maps the repository's refusal to a protocolError
@@ -118,14 +120,18 @@ starting point rather than a substitute for `--dump`:
     services/api/src/isolation/gauntlet.itest.ts         14
     services/api/src/messages/zod-validation.pipe.ts      6
     packages/protocol/src/attachments.ts                  2
+    services/api/src/outbox/event.ts                     11
     services/gateway/src/session.itest.ts                 9   + 8 excerpts
+    services/api/src/consumer/consumer.itest.ts           9
     packages/protocol/src/attachments.test.ts             0   — the only unfenced one
 
-**Six at pass 0, ten at pass 1, eleven at pass 2**, and each correction came from counting rather
-than remembering. Pass 1 added the three the tasks already named — `codes.test.ts` (T009),
+**Six at pass 0, ten at pass 1, eleven at pass 2, thirteen at pass 3**, and each correction came
+from counting rather than remembering. Pass 1 added the three the tasks already named — `codes.test.ts` (T009),
 `messages.service.ts` (T022) and `vitest.coverage.config.mts` (T048), two of them among the most
 expensive files in the chain. Pass 2 added `session.itest.ts`, which no artifact had mentioned at
-all because no artifact had mentioned the socket (research R9).
+all because no artifact had mentioned the socket (research R9). Pass 3 added `outbox/event.ts` and
+`consumer.itest.ts`, which no artifact had mentioned because none had mentioned the consumer
+(R11).
 
 **The list has been wrong at every pass and in the same direction**, which is what 050 and 056
 both recorded. It is a starting point for `--dump`, not a substitute.
@@ -195,6 +201,23 @@ code would then tell a caller their media is not attachable.
 **FR-013 had no task and now has one**, and FR-008a states a requirement two tasks were already
 implementing. Three more coverage gaps closed the same way; `tasks.md` carries them as suffixed
 ids so the numbering a reader has already seen does not move.
+
+## What analysis pass 3 changed
+
+**A constitution II violation, and it was in the plan rather than in the code.** The durable reader
+refuses the shape this chapter makes the writer produce, and `message.term()` makes that
+permanent. FR-018, FR-018a, SC-002b and two tasks. **The word `consumer` appeared zero times in
+all six artifacts** and `outbox` five times, every one of them meaning *"a refusal writes no
+outbox row"* — the sense that was already safe.
+
+**And the lane cannot find it.** `RELAY_EVENT_CONSUMER=off` is set for the reason chapter 3.5
+gave, and `outbox/event.ts`'s header records what that cost the last time: *"the api suite stayed
+green through 505 tests with the defect in place."* SC-002b requires the test to fail against
+today's arm, because a durable-reader test that cannot go red is the class this chapter is trying
+not to join.
+
+**`attachment_count` also changes meaning** (R12, FR-019). Recorded rather than fixed: a second
+column is FR-MED-12's chapter.
 
 ## What analysis pass 2 changed
 

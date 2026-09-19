@@ -108,3 +108,30 @@ did. The count fell and the value did not, which is what `CLAUDE.md` means by *"
 falling yield"* — and the unasked question of the same shape is what a **third** consumer would
 do with a stored media attachment, which today is nobody, because none has ever been stored.
 
+## Analysis pass 3 (2026-09-19)
+
+Three findings, **one CRITICAL**, all three applied and all three from running something.
+
+- **The durable reader refuses what this chapter makes the writer produce.**
+  `outbox/event.ts:373,412` validate `attachments` with the same union and
+  `consumer/runtime.ts:204` answers a failed parse with `message.term()`. A message a new instance
+  commits and an old one reads during a rolling deploy is destroyed **after the ack** —
+  constitution II. The consumer never reads the field and neither does anything downstream, so the
+  strictness costs the message and buys nothing. FR-018, FR-018a, SC-002b, T017a-T017c.
+  **`consumer` appeared zero times in all six artifacts**; `outbox` appeared five, every one
+  meaning *"a refusal writes no outbox row"* — the sense that was already safe.
+- **The lane cannot find that class**, by configuration: `RELAY_EVENT_CONSUMER=off`, and
+  `outbox/event.ts`'s header records the last time — *"the api suite stayed green through 505
+  tests with the defect in place."* SC-002b requires the test to fail against today's arm.
+- **`attachment_count` changes meaning** (R12, FR-019, T055a). Recorded, not split: a second
+  column is FR-MED-12's chapter.
+
+**Requirement count 33 → 37** and **task count 89 → 93.** The fenced-file list is **thirteen**:
+six at pass 0, ten at pass 1, eleven at pass 2, thirteen now.
+
+**On the three passes.** Twelve findings, then seven, then three — and zero CRITICAL, then zero,
+then one. Each pass asked a different question of the tree rather than re-reading the artifacts:
+pass 1 asked the api, pass 2 asked which services import the union, pass 3 asked what reads it off
+durable storage. **The count fell every time and the worst finding came last**, which is what
+`CLAUDE.md` means by not stopping on falling yield.
+
