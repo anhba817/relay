@@ -168,3 +168,55 @@ not have to join.
 
 **Task count 92 → 99.** Requirements unchanged at 26. The probe container was removed before
 anything else was counted.
+
+## Analysis pass 2 (2026-09-20)
+
+Five findings — three HIGH, two MEDIUM, no CRITICAL — all five applied. **Two of them falsify a
+sentence written in the platform's own source and copied into three of this feature's
+artifacts**, which is the *artifacts agree with each other and not with the tree* shape one level
+further out than usual: here they agreed with a comment.
+
+- **`@Accepts("platform")` does not compile, and `contracts/` §1 opened with it.**
+  `credential.guard.ts:36` types `AcceptSpec` so a platform route must name its callers —
+  *"an authorization that can be omitted is one that will be, and the omission is invisible"*.
+  The form is `@Accepts({ platform: ["media-worker"] })`, and `"media-worker"` is unwriteable
+  until `PLATFORM_SERVICES` holds the row. **That is what makes pass 1's T012a mandatory**, for a
+  reason no artifact had given. T012b.
+- **AND THE REASON THEY DID GIVE IS FALSE.** Three artifacts repeated the middleware's own
+  comment: *"adding a third internal service widens this union on its own and every route that
+  must now decide about it stops compiling."* Measured — third entry added, `tsc --noEmit` on the
+  api, **exit 0**. `PlatformService` occurs in three positions and every one is
+  `readonly PlatformService[]`, where a new member is purely additive. The protection the comment
+  describes is real and lives one file over. T055a files the comment itself.
+- **T049's premise was backwards.** It said this chapter adds internal routes *"so the derivation
+  may report nothing — and if it comes back green, that is the finding"*. `targets.ts` already
+  classifies **nine `/internal` routes**, four of them `accepts: "platform"`. The derivation will
+  name both new ones, and a green run would mean it missed them: a defect pre-labelled as an
+  expected outcome.
+- **The sweep's batch query is a sort, and `data-model.md` §5 reasoned about the predicate.**
+  `ORDER BY created_at LIMIT 50` over 3,028 rows is a `Seq Scan` plus a top-N heapsort —
+  **90 buffers, 2.370 ms** — against **4 buffers and 0.029 ms** with a partial index on
+  `(created_at) WHERE state = 'pending'`, at 88 kB. Chapter 4.1's *"the sort is 656 of a 698 ms
+  plan"* at small scale. **And the ratio runs the opposite way from 4.12's GIN**: 11.96% today
+  because every row is `pending`, shrinking to the size of the backlog as objects resolve, where
+  a whole-column index stays the size of its table. The two published together say what a partial
+  predicate buys. T020a, and plan open question 2 closes.
+- **Type verification had no per-format enumeration for the six audio and video types**, where
+  T024 has one for the four image types — zero occurrences of `audio/mpeg`, `audio/ogg`,
+  `audio/wav` or `video/webm` across the tasks, the contract and the data model, while FR-MED-03
+  covers all ten. T023a. **And `audio/mp4` and `video/mp4` are the same container**: both declare
+  `ftyp` and the authoritative discriminator is inside `moov`, so T023b decides in writing what
+  the bytes can tell apart before a test asserts a distinction they cannot make.
+
+**One premise held and is recorded**: `serviceMains()` reads `services/*/src/main.ts` straight
+off the filesystem, with no `package.json` and no build, which confirms pass 1's T018a — the unit
+lane goes red the moment the worker's `main.ts` exists.
+
+**Task count 99 → 104.** Requirements unchanged at 26. Plan open questions 5, one closed. The
+probe index was dropped and the third `PLATFORM_SERVICES` entry reverted before anything else was
+counted; `probe_%` indexes remaining, **0**.
+
+**On two passes.** 6 findings then 5; severity 1 CRITICAL then 0. Pass 1 asked what the platform
+*does* — the store's headers, ClamAV's signature, the sealed suite's fixture. Pass 2 asked what
+the platform *claims about itself*, and two of five claims were wrong. The count has barely moved
+and the kind of question has.

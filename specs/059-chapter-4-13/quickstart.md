@@ -34,7 +34,7 @@ the composed stack is a second set of relays on the same `outbox` and turns inva
 (`gaps.md` 057-5).
 
 **And the scanner is a store now.** Whether `clamav` joins the default profile or the services
-one is plan open question 3; whichever it is, `packages/config/src/infra.ts` must agree with
+one is plan open question 4; whichever it is, `packages/config/src/infra.ts` must agree with
 `compose.yaml` **in both directions** — the assertion chapter 4.10 tripped over when it added
 the sixth container and not the registry entry.
 
@@ -215,7 +215,7 @@ pnpm check:fences 2>&1 | grep 'problem(s)\|replay onto'
 
 **And the sealed suite now needs a running worker.** Its media test fetches the bytes of an
 object it uploaded itself, which the gate refuses until something moves it to `ready` — so this
-command's preconditions include the worker being in the composed profile (plan open question 3).
+command's preconditions include the worker being in the composed profile (plan open question 4).
 Chapter 4.12's version of this suite ran against a `pending` object and passed.
 
 **`check:errors` is expected not to move.** This chapter changes what a route refuses and adds

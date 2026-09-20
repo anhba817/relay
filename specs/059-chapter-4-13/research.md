@@ -142,7 +142,7 @@ assertions as SC-010. Under the gate that call answers 404 and the sealed suite 
 figure above includes it.
 
 **And whether it can pass afterwards depends on a question the plan left open.** Only a worker
-running inside the composed profile moves that object to `ready`, so if plan open question 3
+running inside the composed profile moves that object to `ready`, so if plan open question 4
 lands on the ingester's unpackaged shape, the sealed suite has no worker and the assertion
 cannot be made at all. If it lands on a container, the assertion becomes a **poll** rather than a
 read. **Two open questions are coupled and nothing said so**: the packaging decision decides
@@ -325,12 +325,54 @@ service widens this union on its own and every route that must now decide about 
 compiling"*, which is the compiler asking a question that reusing the variable avoids.
 
 **Decision: a third entry, `RELAY_INTERNAL_CREDENTIAL_WORKER`.** The cost is one variable in
-`compose.yaml` and in CI, and whatever the widened union stops compiling — which is the
-mechanism working rather than a cost. The alternative is a platform whose audit trail attributes
-the only component that reads customer bytes to a service that never touched them.
+`compose.yaml` and in CI. The alternative is a platform whose audit trail attributes the only
+component that reads customer bytes to a service that never touched them.
+
+**AND THE FORCING FUNCTION IS NOT THE ONE THAT COMMENT NAMES.** This row said the widened union
+would stop routes compiling *"which is the mechanism working rather than a cost"*, copying the
+middleware's own sentence. **Measured at analysis pass 2: it does not.** A third entry added,
+`tsc --noEmit` on the api, **exit 0**. `PlatformService` occurs in three positions and all three
+are `readonly PlatformService[]`; adding a member to a union in array-element position is
+additive, and an existing route goes on admitting exactly what it admitted.
+
+**What does force the entry is the guard's type.** `credential.guard.ts:36` makes
+`@Accepts("platform")` a compile error — a platform route must name its callers — so
+`@Accepts({ platform: ["media-worker"] })` cannot be written until `PLATFORM_SERVICES` holds the
+row. That is a hard dependency, and it is a different mechanism from the one three artifacts
+cited. **The source comment is wrong as written** and is worth a `gaps.md` entry: a claim about
+compiler behaviour that nobody had run.
 
 **The variable this reuses the LESSON of** is `RELAY_INTERNAL_CREDENTIAL` itself, whose absence
 4.9 found was silently skipping three isolation attacks at 0 ms apiece.
+
+---
+
+## R7a · The sweep's batch query is a SORT, and §5 reasoned about the predicate
+
+`data-model.md` §5 said no index was needed: *"the predicate is `state = 'pending'` and today
+every row matches, so an index on it would select the whole table."* True about the predicate,
+and the query also carries `ORDER BY created_at LIMIT 50`. Measured at analysis pass 2, on the
+lane's 3,028 rows:
+
+    shape                                          plan                        buffers    time
+
+    no index                        Seq Scan 3,028 rows + top-N heapsort            90   2.370 ms
+    partial (created_at) WHERE      Index Scan, stopping at 50                       4   0.029 ms
+      state = 'pending'
+
+    index size 88 kB against a 736 kB table — 11.96%
+
+**22× fewer buffers for a 50-row batch**, and the table is the smallest in this movement.
+
+**AND THE STORAGE RATIO RUNS THE OPPOSITE WAY FROM 4.12's.** That chapter's GIN was 1.62% and
+stays 1.62% — it indexes every message. This one is **11.96% today because every row is
+`pending`**, and it shrinks as objects resolve: a partial index over the unresolved set is
+exactly as large as the backlog. The two published side by side say what a partial predicate
+buys, which neither says alone.
+
+**Chapter 4.1's sentence is the one that applies**: *the join is 140 ms of a 698 ms plan and the
+sort is 656.* The cost here is the ordering, not the filter — and 4.12's complement holds too,
+because the index only helps once the query is written so the planner can walk it in order.
 
 ---
 

@@ -133,12 +133,21 @@ verified the client's claim twice and called the second one a verification.
 200 rows — 34 with bytes and 166 without. The lane's whole 3,005-row backlog is **4.2 seconds**
 serial. That figure is what settled `research.md` R1 against the specification's assumption.
 
-**No index is needed and that is checked rather than assumed.** The predicate is
-`state = 'pending'` and today every row matches, so an index on it would select the whole table
-— the classic case where the planner reads the heap anyway. It becomes worth measuring when
-`ready` dominates, which is a later chapter's problem and should be measured then rather than
-guessed now. Chapter 4.12 published the general form of this: *the query has to be written so
-the planner can use the index before any storage ratio means anything.*
+**AN INDEX IS NEEDED, AND THE FIRST VERSION OF THIS PARAGRAPH REASONED ABOUT THE WRONG HALF.**
+It said no index was needed because *"the predicate is `state = 'pending'` and today every row
+matches"* — true about the predicate, and the query also carries `ORDER BY created_at LIMIT 50`.
+Measured at analysis pass 2:
+
+    no index                        Seq Scan 3,028 rows + top-N heapsort   90 buffers   2.370 ms
+    partial (created_at)            Index Scan, stopping at 50              4 buffers   0.029 ms
+      WHERE state = 'pending'
+
+    88 kB against a 736 kB table — 11.96%
+
+**Chapter 4.1's sentence, at small scale**: *the join is 140 ms of a 698 ms plan and the sort is
+656.* The cost is the ordering. And the ratio runs the opposite way from 4.12's GIN — 11.96%
+today because every row is `pending`, shrinking to the size of the backlog as objects resolve,
+where a whole-column index stays the size of the table.
 
 **`ORDER BY created_at` rather than newest-first**, so an object that keeps failing does not
 starve the queue behind it — and so the 24-hour reap boundary (FR-MED-10) is approached from the
@@ -156,9 +165,14 @@ seam.
 and `Principal.service` is what every structured log line and every request-log row reports. A
 worker on the dispatcher's variable is a fifth service that logs as the fourth — in the audit
 trail of the only component that reads customer bytes. `RELAY_INTERNAL_CREDENTIAL_WORKER` is a
-third entry in `PLATFORM_SERVICES`, which widens `PlatformService` and **stops every route that
-must now decide about it from compiling**. That is the mechanism working: the type was built for
-exactly this moment, and its own comment says so.
+third entry in `PLATFORM_SERVICES`.
+
+**AND WHAT MAKES THAT ENTRY MANDATORY IS THE GUARD, NOT THE UNION.** This paragraph first said
+the widening *"stops every route that must now decide about it from compiling"*, copying the
+middleware's own comment. Measured at analysis pass 2: a third entry, `tsc --noEmit`, **exit 0**.
+Nothing breaks, because `PlatformService` only ever appears as `readonly PlatformService[]`. What
+is mandatory is `@Accepts({ platform: ["media-worker"] })` — `credential.guard.ts:36` refuses the
+bare `@Accepts("platform")`, and `"media-worker"` is unwriteable until the list holds it.
 
 `RELAY_INTERNAL_CREDENTIAL` is still worth naming here for a different reason — chapter 4.9
 found its absence silently skipping three isolation attacks at 0 ms apiece.
@@ -172,7 +186,7 @@ writes `ready` and `rejected`.
 `pending`, and nothing but the worker leaves it. The api never re-writes a state it did not
 create, and the worker never creates a row.
 
-**What that does not cover is two workers**, which is plan open question 4. One worker is the
+**What that does not cover is two workers**, which is plan open question 5. One worker is the
 current reality; the design that survives a second one is a claim this chapter should either
 make and test or decline and record. Declining it is legitimate — *a design in which a case
 cannot arise beats a branch that handles it* — but only if something makes the case not arise,

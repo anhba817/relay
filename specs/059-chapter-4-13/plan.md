@@ -71,10 +71,14 @@ The worker's memory bound has to be measured here, not quoted.
    FR-MED-04 names both. Shipping dimensions alone means the clause is partly met and the
    chapter says so; shipping both means a second binary in the image and a longer §7.3
    argument. **Decide in `contracts/`, with the cost of each written down.**
-2. **Where does the probe's output live?** A column pair that is null for two of three kinds, a
+2. **CLOSED at analysis pass 2 — the sweep needs an index after all.** `data-model.md` §5 said
+   it did not, reasoning about the predicate and missing the `ORDER BY`. Measured: 90 buffers
+   and 2.370 ms against 4 and 0.029 for a 50-row batch, at 88 kB. T020a ships it with the
+   migration.
+3. **Where does the probe's output live?** A column pair that is null for two of three kinds, a
    `jsonb` blob, or nothing stored at all until FR-MED-05 needs it. `data-model.md` takes a
    position; the tasks phase confirms it against what row 15 and row 16 will need.
-3. **Is the worker a compose service, or the ingester's shape?** `services/ingester` has no
+4. **Is the worker a compose service, or the ingester's shape?** `services/ingester` has no
    Dockerfile and nothing starts it but a test suite (`gaps.md` 050-8, open since 4.5). A fifth
    service packaged the same way is a fifth thing nobody runs — and a container costs
    `compose.yaml` plus `INFRA_SERVICES` plus a health check, which is the both-directions
@@ -85,7 +89,7 @@ The worker's memory bound has to be measured here, not quoted.
    unsatisfiable; the container makes it a poll. **Three registries, not two** — `compose.yaml`,
    `INFRA_SERVICES` and `bound-port.test.ts`'s `BINDS_NOTHING`, whose omission cost 050 two
    chapters when the ingester arrived without it.
-4. **How does the sweep avoid two workers doing the same object?** One worker is the current
+5. **How does the sweep avoid two workers doing the same object?** One worker is the current
    reality and `FOR UPDATE SKIP LOCKED` is the obvious answer, but the read is through the api
    (ADR-04), not through a transaction the worker holds. The seam decides it.
 
@@ -98,7 +102,7 @@ The worker's memory bound has to be measured here, not quoted.
 | **I · Tenant isolation** | The worker acts on objects one at a time, keyed by id, and writes through the api's internal seam which already resolves the environment from the row. **Nothing here takes a tenant as an input**, which is the property to state rather than a scope to add — a worker that accepted an environment id would be a route to forge. The gauntlet gains no new public route unless open question 1 adds one. |
 | **II · No acknowledged message is lost** | Not engaged for messages. Engaged for *objects*: an object whose verification crashed halfway must come back, which is FR-009 and the reason a transient failure may not produce a terminal state. |
 | **III · Two data paths** | Not engaged. No analytical read, no cross-store query. The worker touches Postgres only through the api. |
-| **IV · Single writer** | **Engaged, and it is the reason for open question 4.** `media_objects.state` gains a second writer: the api writes `pending` at slot time and the worker writes the terminal states. They are different transitions on disjoint states, which is the argument — and it has to be written down rather than assumed, because two writers on one column is exactly what this principle names. |
+| **IV · Single writer** | **Engaged, and it is the reason for open question 5.** `media_objects.state` gains a second writer: the api writes `pending` at slot time and the worker writes the terminal states. They are different transitions on disjoint states, which is the argument — and it has to be written down rather than assumed, because two writers on one column is exactly what this principle names. |
 | **V · API-first** | The transition is an internal route on an existing seam (`research.md` R8), not a new mechanism. Whether any *public* surface changes depends on FR-012's answer: gating delivery changes what `GET /v1/media/:mediaId` returns for a `pending` object, which is a contract change a client can see. |
 | **VI · Requirement-driven, test-verified** | FR-MED-03 and FR-MED-04 are both `T`. The 100%-branch clause names tenant isolation; this chapter's isolation surface is thin, so the per-arm treatment goes on the **verdict** instead — four outcomes, two terminal, and a probe per arm as 4.11 and 4.12 both did. |
 | **VII · Boring by design** | **Engaged twice, and this is the chapter that answers both.** The one-language rule against a C scanner (`docs/12` §7.3, `research.md` R2) and the new-service rule against SAD §4.2's table (`research.md` R3, which no artifact had named). Both get an argument in the chapter and an ADR. |
@@ -185,7 +189,7 @@ surface of anything here. 4.9 found that file could not take a chapter hunk at a
 | **A second writer on `media_objects.state`** | The api writes `pending` and the worker writes the terminal states. Constitution IV names single-writer, so this is a deviation that gets an argument rather than a silence. | A single writer reached by making the api poll and scan, which is the merge above wearing different clothes. |
 | **A sweep rather than an event** | `research.md` R1: the event has no producer, the sweep costs 4.2 s for the whole backlog, and a client-driven notice makes FR-MED-04's *"every"* contingent on the client. | Bucket notifications, rejected on ADR-30's direction argument and recorded rather than dismissed. |
 
-| **A third internal credential** | `PLATFORM_SERVICES` maps `RELAY_INTERNAL_CREDENTIAL` to the literal `"dispatcher"`, and `Principal.service` is what every log line reports. Reusing it would make the only component that reads customer bytes log as a service that never touched them. | Reuse, which two artifacts had quietly assumed until analysis pass 1 read the middleware. |
+| **A third internal credential** | `PLATFORM_SERVICES` maps `RELAY_INTERNAL_CREDENTIAL` to the literal `"dispatcher"`, and `Principal.service` is what every log line reports. Reusing it would make the only component that reads customer bytes log as a service that never touched them. **And `@Accepts({ platform: ["media-worker"] })` is unwriteable without it** — `credential.guard.ts:36` refuses the bare `@Accepts("platform")`. | Reuse, which two artifacts had quietly assumed until analysis pass 1 read the middleware. **And the reason first given for the entry was wrong**: widening `PlatformService` stops nothing compiling, measured at pass 2 (`tsc --noEmit`, exit 0). |
 
 **What is NOT a deviation, said because it looks like one**: reading customer bytes. ADR-13 and
 ADR-14 both describe this service doing exactly that, and the SAD has called it *"the only Relay

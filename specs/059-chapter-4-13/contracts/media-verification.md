@@ -6,16 +6,33 @@
 POST /internal/media/:mediaId/verdict
 ```
 
-`@Accepts("platform")`, on the seam `research.md` R8 found already built six times over. ADR-04
-keeps the worker off Postgres, so this is how a verdict becomes a row.
+```ts
+@Accepts({ platform: ["media-worker"] })
+```
+
+On the seam `research.md` R8 found already built six times over. ADR-04 keeps the worker off
+Postgres, so this is how a verdict becomes a row.
+
+**`@Accepts("platform")` DOES NOT COMPILE, AND THE FIRST VERSION OF THIS LINE WROTE EXACTLY
+THAT.** `credential.guard.ts:36` types `AcceptSpec` as
+`"application" | "user" | { readonly platform: readonly PlatformService[] }`, and its comment
+says why in as many words: *"an authorization that can be omitted is one that will be, and the
+omission is invisible: the route works, the tests pass, and the blast radius is one leaked
+secret wide."* A platform route names **which** internal services may call it, because the
+gateway terminates connections from the public internet and the dispatcher does not.
 
 **WITH `RELAY_INTERNAL_CREDENTIAL_WORKER`, NOT THE DISPATCHER'S.** The first version of this
 line said the worker holds `RELAY_INTERNAL_CREDENTIAL` *"exactly as the dispatcher does"*, and
 so did `research.md` R8 — two artifacts agreeing with each other and neither asking what the
 credential **says**. `authenticate.middleware.ts:63` maps that variable to the literal
-`"dispatcher"`, and `Principal.service` is what every log line and request-log row reports. A
-third entry widens `PlatformService` and stops every route that must now decide about it from
-compiling, which is the compiler asking a question that reusing the variable avoids.
+`"dispatcher"`, and `Principal.service` is what every log line and request-log row reports.
+
+**AND THE DECORATOR IS WHAT FORCES THE THIRD ENTRY, NOT THE UNION.** `PlatformService` is derived
+from `PLATFORM_SERVICES`, so `["media-worker"]` is unwriteable until that list has the row —
+which is a hard requirement rather than an encouragement. What is **not** true is the thing three
+artifacts said next: widening the union does not stop anything compiling. Measured at analysis
+pass 2 — a third entry added, `tsc --noEmit` on the api, **exit 0**. The union appears in three
+positions and every one is `readonly PlatformService[]`, where a new member is purely additive.
 
 **Request — ready:**
 
@@ -116,7 +133,7 @@ from the delivery route's refusal; the route's job is to say nothing.
 **AND THE GATE BREAKS THE SEALED SUITE, WHICH R4's FIGURE DID NOT COUNT.**
 `packages/outsider/src/integrate.itest.ts:496` fetches the bytes of a **`pending`** object — the
 three assertions chapter 4.12 added as SC-010 — and that suite is a third lane the 10-of-76
-probe never reached. **Whether it can pass after this chapter depends on plan open question 3**:
+probe never reached. **Whether it can pass after this chapter depends on plan open question 4**:
 only a worker inside the composed profile moves the object to `ready`, and then the assertion
 becomes a poll rather than a read. The packaging decision decides whether SC-010 survives.
 
