@@ -127,8 +127,9 @@ happened survives.
 
 1. **Given** a slot declaring `image/png`, **When** the uploaded bytes are not a PNG, **Then**
    the object is `rejected` and the stored bytes are deleted.
-2. **Given** a slot declaring 1,024 bytes, **When** the uploaded object is materially larger,
-   **Then** the object is `rejected` and the stored bytes are deleted.
+2. **Given** a slot declaring 1,024 bytes, **When** the uploaded object is any other size,
+   **Then** the object is `rejected` and the stored bytes are deleted. **The comparison is exact**
+   — the quota sums declarations, so any tolerance is storage a client is not billed for.
 3. **Given** a rejected object, **When** the record is read afterwards, **Then** it says the
    object was rejected and why, and the quota no longer counts its bytes.
 

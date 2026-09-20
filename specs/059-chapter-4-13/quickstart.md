@@ -217,6 +217,13 @@ pnpm check:errors                           # expect 34 codes, 34 sections — U
 pnpm check:fences 2>&1 | grep 'problem(s)\|replay onto'
 ```
 
+**And the four gate commands need two opposite arrangements**, which the task list did not say
+until analysis pass 4: `pnpm test`, `pnpm test:integration` and `pnpm check:errors` want the
+composed services **stopped** (`gaps.md` 057-5), and `pnpm test:outsider` wants them **up** plus
+the three variables above. Run without them it answers
+`Missing: RELAY_API_URL, RELAY_WS_URL, RELAY_DEMO_CREDENTIAL` and **`Tests 19 skipped (19)`** —
+a counted line that is a number and means nothing ran.
+
 **And the sealed suite now needs a running worker.** Its media test fetches the bytes of an
 object it uploaded itself, which the gate refuses until something moves it to `ready` — so this
 command's preconditions include the worker being in the composed profile (plan open question 4).

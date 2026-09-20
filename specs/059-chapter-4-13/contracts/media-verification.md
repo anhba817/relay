@@ -188,6 +188,32 @@ whichever chapter decides ffmpeg is worth its image.
 non-TypeScript program, for the one job nobody would write themselves, rather than two because
 two were in the same sentence.
 
+## 5a. `media_events` is specified, and this chapter does not start it
+
+`docs/04-srs.md:827` declares an analytical table this chapter's data would fill:
+
+    media_events | Storage metering, scan-pipeline health (FR-MED-12)
+                 | environment_id, ts, event (uploaded/ready/rejected/deleted),
+                   kind, bytes, processing_ms
+
+**DR-17** builds on it: *"Stored-bytes-per-tenant shall be maintained as a daily rollup summing
+`media_events` deltas (uploaded/deleted), reconciled weekly against an object-storage inventory
+listing — the media analogue of FR-ANL-06."* The table has **no `.sql` file**, two live source
+files quote DR-17 about it, and no artifact in this feature mentioned it until analysis pass 4.
+
+**Decided: not here, and the reason is the column's own enum rather than scope.** This chapter
+produces `ready` and `rejected`. `uploaded` belongs to chapter 4.10's slot, which predates it,
+and `deleted` to FR-MED-10's sweep, which does not exist. So a producer built now would emit
+**exactly the two values DR-17's sum does not read**, and the first thing anybody did with the
+table would be to notice it holds nothing the clause asks for. Chapter 4.6 spent a chapter on
+that shape — *"the rollup satisfies DR-10 over a table that receives no events"* — and it is
+worth not rebuilding on purpose.
+
+**What is given up**: `processing_ms` is measured at SC-006 and published in `baseline.txt`
+rather than stored, so nobody can ask the analytical store how scan latency moved between
+chapters. That is the honest cost, and `gaps.md` carries it with the arithmetic so FR-MED-12's
+chapter starts from a decision rather than a discovery.
+
 ## 6. What the scanner does not promise
 
 A signature scanner detects known signatures. SAD R9 names *"scanner misses"* as a residual

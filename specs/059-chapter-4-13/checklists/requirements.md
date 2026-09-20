@@ -275,3 +275,56 @@ CRITICAL returns, which is 057's passes 6 and 7 again. What changed each time is
 what the platform *does*, what it *claims about itself*, and what it *has already written down
 about a chapter that does not exist yet*. Only the third required running this chapter's own
 migration, and it is the only one that found a shipped test going red.
+
+## Analysis pass 4 (2026-09-20)
+
+Four findings — three HIGH, one MEDIUM, no CRITICAL — all four applied. The pass asked two
+questions the first three had not: **does a task's own command work when run as worded**, and
+**what does the specification already say this chapter's data is for?**
+
+- **T004's `pnpm test:outsider` cannot run as worded, and its counted line is a number that means
+  nothing ran.** Executed literally: `Missing: RELAY_API_URL, RELAY_WS_URL, RELAY_DEMO_CREDENTIAL`
+  and **`Tests 19 skipped (19)`**. T004's own instruction is *"read each one's counted line, not
+  its exit code"*, so a reader records 19 as the opening state. **And the four commands need two
+  opposite arrangements** — three want the composed services stopped and this one wants them up
+  with a seeded credential. T086 named the preconditions; T004 did not. 043's rule earning its
+  place again: *run the command a task tells someone to run.*
+- **T020a edited a migration T009 has already applied, and the Postgres runner would have skipped
+  it in silence.** `schema_migrations` is `(version, applied_at)` — no checksum — where
+  `analytics/apply.mjs` keys `schema_applied` on `(filename, checksum)` and **refuses** a changed
+  file, which is the throw 4.2 built and 4.6 re-ran by hand. The index would never exist on the
+  lane where 0018 ran and would exist on a fresh CI database, with **no test able to tell**: the
+  sweep works either way, just slower. Now `0019_media_pending_age.sql`, and T055b files the
+  asymmetry — **two runners in one repository giving different guarantees about the same
+  mistake**, which nobody had written down. Found because analysis pass 2 added the task and pass
+  4 asked what the runner would do with it.
+- **The SRS already names an analytical table for this chapter's transitions, and no artifact
+  mentioned it.** `docs/04-srs.md:827`: `media_events` · *"Storage metering, scan-pipeline health
+  (FR-MED-12)"* · `event` in `uploaded/ready/rejected/deleted`, `kind`, `bytes`, **`processing_ms`**
+  — which is SC-006's measurement. **DR-17** sums it for stored-bytes-per-tenant, two live source
+  files quote DR-17, and the table has no `.sql` file. **Decided: not started here, and the reason
+  is the enum rather than scope.** This chapter owns `ready` and `rejected`; `uploaded` is 4.10's
+  and `deleted` is FR-MED-10's, so a producer now fills the table with **exactly the two values
+  DR-17's sum does not read** — 4.6's *"a rollup over a table that receives no events"*, rebuilt
+  deliberately. **And `data-model.md` §4 had argued against "a separate table" without knowing one
+  was specified**; it names it now, because declining a declared table is a different sentence
+  from not knowing it exists. T051a, T056a, plan open question 5 closes.
+- **"Materially larger" was unquantified and the quota made it a billing question.** FR-MED-03
+  says *"contradict their declaration"*; the acceptance scenario and T031 both hedged and nothing
+  gave a tolerance, while the quota sums `declared_bytes` (SRS 1.17) and no task changes that — so
+  any tolerance is storage a client is not billed for. **Exact, which makes the quota correct by
+  construction**: for every `ready` object, `verified_bytes = declared_bytes`. T031 now tests one
+  byte over and one byte under rather than a large mismatch.
+
+**Task count 109 → 112.** Requirements unchanged at 26. Plan open questions: six, two closed.
+
+**On four passes.** 6 findings, 5, 4, 4 — severity 1 CRITICAL, 0, 1, 0. The count has flattened
+and the yield has not, because each pass changed the question rather than re-reading the
+artifacts. Pass 4's two new ones were cheap: running a task's own command took minutes and found
+two, and reading the SRS's **schema** table rather than its clause table found the third — a
+place no requirements-to-tasks map can reach, because `media_events` appears in neither an FR nor
+an SC.
+
+**And three passes of remediation have now added work a fourth pass had to check.** T020a came
+from pass 2 and tripped pass 4's migration question; the fence table went stale at pass 3 for the
+same reason. The artifacts are not converging on a fixed point on their own.

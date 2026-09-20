@@ -79,6 +79,13 @@ and for one that was rejected before the probe ran. **The nullability is the rec
 questions were asked**, which is the same argument 4.10 made for `user_id` and the same one 4.11
 then depended on.
 
+**THE SIZE COMPARISON IS EXACT, AND THE QUOTA IS WHY.** FR-MED-03 says *"contradict their
+declaration"*; the spec's acceptance scenario said *"materially larger"* and gave no tolerance
+until analysis pass 4 asked what the number was. The quota sums `declared_bytes` (SRS 1.17), so
+under any tolerance a client that under-declares is billed for the declaration and stores the
+difference. **Exact makes the quota correct by construction**: for every `ready` object,
+`verified_bytes = declared_bytes`, and the column pair is a record rather than a discrepancy.
+
 **`verified_bytes` and `verified_type` are the facts beside `declared_bytes` and `mime_type`.**
 The declaration is what the caller said and 4.10 said so in a comment; this chapter produces the
 first thing in the platform that knows better. Keeping both is what makes FR-MED-03's refusal
@@ -126,6 +133,20 @@ record."* The row is the audit record — there is no separate table, and invent
 be a second place to look for the same fact. FR-MOD-03's audit log is movement VII's and it is a
 different thing: an immutable log of *moderator actions*, not of the platform's own verdicts.
 
+**AND THE TABLE BEING DECLINED HAS A NAME, WHICH THIS PARAGRAPH DID NOT KNOW.** `docs/04-srs.md`
+line 827 specifies `media_events` — *"Storage metering, scan-pipeline health (FR-MED-12)"* — with
+`event` in `uploaded/ready/rejected/deleted`, `kind`, `bytes` and `processing_ms`, and **DR-17**
+builds stored-bytes-per-tenant by *"summing `media_events` deltas (uploaded/deleted), reconciled
+weekly against an object-storage inventory"*. It has no `.sql` file and two live source files
+quote DR-17 about it.
+
+**Declined here, and the reason is arithmetic rather than scope.** This chapter owns `ready` and
+`rejected`; `uploaded` is 4.10's slot and `deleted` is FR-MED-10's sweep. A producer built now
+would fill the table with **exactly the two values DR-17's sum does not read** — a table holding
+only the rows its own clause ignores, which is chapter 4.6's finding rebuilt deliberately. The
+row above stays the audit record, `gaps.md` carries the arithmetic, and FR-MED-12's chapter
+inherits a measurement instead of a question.
+
 **AND THE QUOTA MOVES WHEN THE BYTES DO.** SRS 1.17 made committed bytes a **sum over the media
 rows** rather than a counter, precisely so a delete needs no subtraction. A rejected object's
 `declared_bytes` must stop counting — which means either the row is excluded from the sum by
@@ -166,6 +187,12 @@ Measured at analysis pass 2:
       WHERE state = 'pending'
 
     88 kB against a 736 kB table — 11.96%
+
+**IT IS `0019_media_pending_age.sql`, NOT AN EDIT TO 0018.** `schema_migrations` is
+`(version, applied_at)` with **no checksum**, so the Postgres runner skips an edited applied file
+in silence — where `analytics/apply.mjs` keys on `(filename, checksum)` and refuses one. The two
+runners in this platform give different guarantees about the same mistake, and the Postgres side
+is the one where a developer's lane and CI end up with different schemas.
 
 **Chapter 4.1's sentence, at small scale**: *the join is 140 ms of a 698 ms plan and the sort is
 656.* The cost is the ordering. And the ratio runs the opposite way from 4.12's GIN — 11.96%
@@ -234,7 +261,7 @@ writes `ready` and `rejected`.
 `pending`, and nothing but the worker leaves it. The api never re-writes a state it did not
 create, and the worker never creates a row.
 
-**What that does not cover is two workers**, which is plan open question 5. One worker is the
+**What that does not cover is two workers**, which is plan open question 6. One worker is the
 current reality; the design that survives a second one is a claim this chapter should either
 make and test or decline and record. Declining it is legitimate — *a design in which a case
 cannot arise beats a branch that handles it* — but only if something makes the case not arise,

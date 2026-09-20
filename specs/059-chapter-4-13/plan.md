@@ -89,7 +89,11 @@ The worker's memory bound has to be measured here, not quoted.
    unsatisfiable; the container makes it a poll. **Three registries, not two** — `compose.yaml`,
    `INFRA_SERVICES` and `bound-port.test.ts`'s `BINDS_NOTHING`, whose omission cost 050 two
    chapters when the ingester arrived without it.
-5. **How does the sweep avoid two workers doing the same object?** One worker is the current
+5. **CLOSED at analysis pass 4 — `media_events` is not started here.** `docs/04-srs.md:827`
+   specifies it and DR-17 sums it; this chapter owns `ready` and `rejected` while DR-17 reads
+   `uploaded` and `deleted`, so a producer now fills the table with the two values its own clause
+   ignores. `contracts/` §5a and `gaps.md` carry the arithmetic.
+6. **How does the sweep avoid two workers doing the same object?** One worker is the current
    reality and `FOR UPDATE SKIP LOCKED` is the obvious answer, but the read is through the api
    (ADR-04), not through a transaction the worker holds. The seam decides it.
 
@@ -102,7 +106,7 @@ The worker's memory bound has to be measured here, not quoted.
 | **I · Tenant isolation** | The worker acts on objects one at a time, keyed by id, and writes through the api's internal seam which already resolves the environment from the row. **Nothing here takes a tenant as an input**, which is the property to state rather than a scope to add — a worker that accepted an environment id would be a route to forge. The gauntlet gains no new public route unless open question 1 adds one. |
 | **II · No acknowledged message is lost** | Not engaged for messages. Engaged for *objects*: an object whose verification crashed halfway must come back, which is FR-009 and the reason a transient failure may not produce a terminal state. |
 | **III · Two data paths** | Not engaged. No analytical read, no cross-store query. The worker touches Postgres only through the api. |
-| **IV · Single writer** | **Engaged, and it is the reason for open question 5.** `media_objects.state` gains a second writer: the api writes `pending` at slot time and the worker writes the terminal states. They are different transitions on disjoint states, which is the argument — and it has to be written down rather than assumed, because two writers on one column is exactly what this principle names. |
+| **IV · Single writer** | **Engaged, and it is the reason for open question 6.** `media_objects.state` gains a second writer: the api writes `pending` at slot time and the worker writes the terminal states. They are different transitions on disjoint states, which is the argument — and it has to be written down rather than assumed, because two writers on one column is exactly what this principle names. |
 | **V · API-first** | The transition is an internal route on an existing seam (`research.md` R8), not a new mechanism. Whether any *public* surface changes depends on FR-012's answer: gating delivery changes what `GET /v1/media/:mediaId` returns for a `pending` object, which is a contract change a client can see. |
 | **VI · Requirement-driven, test-verified** | FR-MED-03 and FR-MED-04 are both `T`. The 100%-branch clause names tenant isolation; this chapter's isolation surface is thin, so the per-arm treatment goes on the **verdict** instead — four outcomes, two terminal, and a probe per arm as 4.11 and 4.12 both did. |
 | **VII · Boring by design** | **Engaged twice, and this is the chapter that answers both.** The one-language rule against a C scanner (`docs/12` §7.3, `research.md` R2) and the new-service rule against SAD §4.2's table (`research.md` R3, which no artifact had named). Both get an argument in the chapter and an ADR. |
@@ -141,6 +145,7 @@ relay-platform/
 ├── services/
 │   ├── api/
 │   │   ├── migrations/0018_media_states.sql      new — widen the CHECK
+│   │   ├── migrations/0019_media_pending_age.sql new — the sweep's partial index
 │   │   └── src/
 │   │       ├── db/schema.ts                      the CHECK's twin
 │   │       ├── db/repository.ts                  the transition, and FR-012's gate
