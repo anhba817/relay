@@ -185,6 +185,27 @@ SELECT id, object_key, mime_type, declared_bytes
 
 then one signed `HEAD` per row against the store.
 
+**AND A 404 DOES NOT MEAN WHAT THE SWEEP READS IT AS.** The loop treats a 404 as *"not uploaded
+yet"*, and a missing **bucket** answers the same thing. Measured at analysis pass 6:
+
+    HEAD  real bucket, absent object    404
+    HEAD  ABSENT bucket, any object     404          ← indistinguishable
+    GET   real bucket, absent object    404 · NoSuchKey
+    GET   ABSENT bucket, any object     404 · NoSuchBucket
+
+A `HEAD` has no body, so the element that tells them apart is not there — and the sweep does not
+issue a `GET` for an object it believes has no bytes. **On a store whose bucket is missing, the
+worker sweeps every `pending` object every interval, reads every 404 as "not yet", and reports
+nothing wrong forever.** Nothing goes red; objects simply never become `ready`, which is also
+what a legitimately un-uploaded object looks like.
+
+**That is chapter 4.10's own finding arriving in the component best placed to notice it.** 056-10
+was a store that had never held a bucket answering every slot request 503 forever, invisible
+locally because the volume persists and found only when CI's empty volume said so. **The bucket
+is asked about once per sweep, not once per object**, through the `storeReady` 4.10 already built
+— measured there at +24.1% on the slot path and written as existing *"only to produce a refusal"*.
+One call an interval turns a silent no-op into a log line.
+
 **AND THE `HEAD` IS ALSO WHERE SC-006's CLOCK STARTS, WHICH NOTHING NAMED.** *"Time from upload
 to `ready`"* has a start instant the platform never observes: under the sweep, nobody tells it
 when the PUT finished. The store does, on this same round trip — measured at analysis pass 5:

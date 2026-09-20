@@ -33,6 +33,12 @@ client sending it. A client that uploads and stays quiet leaves bytes in the sto
 and billed, until FR-MED-10 reaps them 24 hours later. SAD R9's named risk is *"scanner
 misses"*; an object that was never scanned does not even reach it.
 
+**AND THE SWEEP'S OWN SIGNAL IS AMBIGUOUS, FOUND AT PASS 6.** It reads a 404 as *"not uploaded
+yet"*, and a missing **bucket** answers the same thing — `HEAD` has no body, so `NoSuchKey` and
+`NoSuchBucket` are indistinguishable and only a `GET` tells them apart. So the mechanism below
+needs a bucket probe once per sweep or it goes silently inert on the condition 056-10 already hit
+in CI. One `storeReady` call an interval, which 4.10 built and measured.
+
 **Decision: the sweep is the mechanism and the notice is an optimisation.** The worker finds
 work by asking the database for `pending` rows and the store whether each has bytes. A client
 notice may be added on top as a fast path, and if it is, it must be **unable to change the

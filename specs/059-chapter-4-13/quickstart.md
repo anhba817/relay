@@ -200,6 +200,11 @@ psql "postgres://relay:relay@localhost:15432/relay" -tAc \
   "select state, count(*) from media_objects group by 1"
 ```
 
+**And if nothing ever reaches `ready`, check the bucket before the worker.** A missing bucket
+answers every object's `HEAD` with 404, which the sweep reads as *"not uploaded yet"* — measured
+at analysis pass 6, and 056-10's condition, which a persisting local volume hides. The worker
+probes the bucket once per sweep for that reason and says so in its log.
+
 **And the sweep's `HEAD` is where SC-006's clock starts**: `last-modified` is the only record of
 when the upload finished, at one-second resolution. The platform does not observe the PUT.
 

@@ -97,6 +97,10 @@ objects would be a route worth forging.
 
 ## 3. What the worker does with the bytes, and it reads them twice for a reason
 
+    HEAD  (signed, the BUCKET)   is the store holding        once per SWEEP, not per object.
+                     anything at all?                        A missing bucket answers every
+                                                             object's HEAD with 404, which the
+                                                             sweep reads as "not yet"
     HEAD  (signed)   does it have bytes, how many, and       1.412 ms measured
                      since when?                             content-length is the store's
                      — the SIZE half of FR-MED-03 is          own count; last-modified is
@@ -105,6 +109,13 @@ objects would be a route worth forging.
                      FIRST, and unconditionally
     GET   (signed, Range: bytes=0-65535)   the type and       206 · `bytes 0-7/12` measured;
                      the dimensions                           a PNG's are in its first 24 bytes
+
+**A 404 IS AMBIGUOUS AND THE SWEEP CANNOT SEE IT.** Measured at analysis pass 6: `HEAD` on the
+real bucket for an absent key and `HEAD` on an absent bucket both answer **404**, because a HEAD
+carries no body. The `GET` forms differ — `NoSuchKey` against **`NoSuchBucket`** — and the sweep
+issues no GET for an object it believes is empty. So a bucketless store makes the worker inert
+and silent, which is 056-10's condition one chapter on. The bucket probe above is the cheap
+answer, and `storeReady` is the function that already does it.
 
 **THE ORDER IS SCAN, SIZE, TYPE, AND STATING IT TOOK FIVE PASSES.** Each earlier fix was
 pairwise — the size comparison moved onto the `HEAD`, and the scan moved ahead of the *type*

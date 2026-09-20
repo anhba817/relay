@@ -107,14 +107,21 @@ The worker's memory bound has to be measured here, not quoted.
 | **II · No acknowledged message is lost** | Not engaged for messages. Engaged for *objects*: an object whose verification crashed halfway must come back, which is FR-009 and the reason a transient failure may not produce a terminal state. |
 | **III · Two data paths** | Not engaged. No analytical read, no cross-store query. The worker touches Postgres only through the api. |
 | **IV · Single writer** | **Engaged, and it is the reason for open question 6.** `media_objects.state` gains a second writer: the api writes `pending` at slot time and the worker writes the terminal states. They are different transitions on disjoint states, which is the argument — and it has to be written down rather than assumed, because two writers on one column is exactly what this principle names. |
-| **V · API-first** | The transition is an internal route on an existing seam (`research.md` R8), not a new mechanism. Whether any *public* surface changes depends on FR-012's answer: gating delivery changes what `GET /v1/media/:mediaId` returns for a `pending` object, which is a contract change a client can see. |
-| **VI · Requirement-driven, test-verified** | FR-MED-03 and FR-MED-04 are both `T`. The 100%-branch clause names tenant isolation; this chapter's isolation surface is thin, so the per-arm treatment goes on the **verdict** instead — four outcomes, two terminal, and a probe per arm as 4.11 and 4.12 both did. |
+| **V · API-first** | The transition is an internal route on an existing seam (`research.md` R8), not a new mechanism. **AND A PUBLIC CONTRACT CHANGE IS SHIPPING — this row said "whether … depends on FR-012's answer" until analysis pass 6, and FR-012 was answered two passes earlier.** T046 gates `GET /v1/media/:mediaId` on `ready`; `contracts/` §4 documents five conditions answering one 404; pass 3 measured the cost at 10 of 76 tests. A client that could fetch the bytes of a `pending` object yesterday cannot today, which is exactly the kind of change this row exists to flag. |
+| **VI · Requirement-driven, test-verified** | FR-MED-03 and FR-MED-04 are both `T`. The 100%-branch clause names tenant isolation, and the obligation lands in **two** places, where this row named one until analysis pass 6. **The verdict** — four outcomes, two terminal — gets the per-arm treatment 4.11 and 4.12 both used (T083). **And `assertAttachableMedia` is the tenant-isolation code 4.11 met the clause on**, whose second arm this chapter makes reachable for the first time: T015a asserts it, T015b corrects the comment that calls it unreachable, and **T015c re-runs 4.11's per-arm probe, whose recorded result was measured when only one arm could occur.** A row that named only the verdict would have left the clause's own file to somebody else. |
 | **VII · Boring by design** | **Engaged twice, and this is the chapter that answers both.** The one-language rule against a C scanner (`docs/12` §7.3, `research.md` R2) and the new-service rule against SAD §4.2's table (`research.md` R3, which no artifact had named). Both get an argument in the chapter and an ADR. |
 
 **AND PRINCIPLE IV's ROW IS THE ONE WRITTEN AFTER READING THE CLAUSE.** 4.10's plan was wrong at
 principle II and 4.11's at principle VI — both tables filled early and read past five times.
 The row above says *engaged* because a second writer on `media_objects.state` is what this
 chapter introduces, and the table's job is to catch exactly that.
+
+**AND ROWS V AND VI WERE STALE ANYWAY, WHICH MAKES THIS THE THIRD FEATURE RUNNING.** They were
+right when the table was filled and stopped being right two passes later — V because FR-012 got
+an answer, VI because pass 3 found work in the file the clause is about. **A table filled once at
+plan time is read past by every pass that changes the design**, and knowing that about 4.10 and
+4.11 was not enough to stop it happening here. What would have caught it earlier is re-reading
+the table at the end of each remediation rather than at the end of the feature.
 
 ## Project Structure
 

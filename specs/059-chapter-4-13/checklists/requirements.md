@@ -384,3 +384,58 @@ visible by reading any single artifact, and neither is a defect in any single fi
 and true again here (T022 and T039a came from pass 1). More passes of this shape would probably
 keep yielding at about this rate, which is an argument for implementing rather than for
 analysing: the findings left are cheaper to fix during the work than before it.
+
+## Analysis pass 6 (2026-09-20)
+
+Three findings — two HIGH, one MEDIUM, no CRITICAL — all three applied. The pass took this
+project's own hint: 057's passes 6 and 7 each found a CRITICAL **in an artifact written to
+prevent its own class**. One of the three is in exactly that artifact.
+
+- **A MISSING BUCKET AND A MISSING OBJECT ANSWER THE SAME 404, AND THE SWEEP CANNOT TELL THEM
+  APART.** Measured: `HEAD` on the real bucket for an absent key → 404; `HEAD` on an absent
+  bucket → 404. A HEAD has no body, so the element that distinguishes them is unavailable — on a
+  `GET` it is there (`NoSuchKey` against **`NoSuchBucket`**), and the sweep issues no GET for an
+  object it believes is empty. **On a bucketless store the worker sweeps everything every
+  interval, reads every 404 as "not yet", and reports nothing wrong forever.** Nothing goes red;
+  objects simply never become `ready`, which is what an un-uploaded object looks like too.
+  **056-10's condition arriving in the component best placed to notice it** — that one was a
+  store which had never held a bucket answering every slot request 503 forever, invisible locally
+  because the volume persists, found only when CI's empty volume said so. The fix is one
+  `storeReady` call per sweep rather than per object, using the function 4.10 built and measured
+  at +24.1%. **It goes to #1 on the failure ranking, above everything predicted before it.**
+  T021a, T021b.
+- **The Constitution Check was filled at plan time and read past by five passes.** Row **V** still
+  said *"whether any public surface changes depends on FR-012's answer"* — FR-012 was answered two
+  passes earlier, T046 gates the delivery route, and a client that could fetch a `pending`
+  object's bytes yesterday cannot today. Row **VI** put the 100%-branch obligation on *"the
+  verdict"* alone because *"this chapter's isolation surface is thin"*, while T015a/b/c put work
+  on `assertAttachableMedia` — **the tenant-isolation code 4.11 met that clause on**, whose second
+  arm this chapter makes reachable. The constitution check and the task list disagreed about
+  where the obligation lands. **Third feature running**: 4.10's plan was wrong at principle II,
+  4.11's at principle VI, and knowing both was not enough. What would have caught it is
+  re-reading the table at the end of each remediation rather than at the end of the feature.
+- **The sweep writes an analytics record on every poll, forever, and nobody costed it.** 4.4's
+  producer records internal-seam calls deliberately, so `GET /internal/media/pending` produces one
+  `api_requests` row per poll **whether or not there is work**. At five seconds: 17,280 rows a
+  day at 4.5's measured 403.5 B, about **0.2 rec/s against the 4.40 rec/s** that fills the
+  stream's seven-day retention — 4.5% of the budget on an idle platform. Small, **constant**, and
+  the interval is a number this chapter chooses. T055c.
+
+**One premise looked like a constraint and is not.** MinIO returns `x-ratelimit-limit: 4395` on
+every HEAD, which reads like a budget the sweep would spend — 3,005 objects an interval against
+4,395 is close enough to matter. Measured across 300 HEADs: `limit 4395 remaining 4395` before and
+after. It is concurrency-derived, not consumed. **A chapter citing it as a sweep constraint would
+have been wrong**, and only checking it makes that known.
+
+**Task count 114 → 117.** Requirements unchanged at 26.
+
+**On six passes.** 6 findings, 5, 4, 4, 4, 3 — severity 1 CRITICAL, 0, 1, 0, 0, 0. The count has
+come off its plateau and no CRITICAL has appeared in three passes.
+
+**And the kinds are repeating now.** Two of this pass's three are shapes already in the record —
+the plan's constitution table going stale for the third feature, and 056-10 in a new component.
+Only the bucket question needed the platform asked something new, and it was askable only because
+this chapter's own design made it a question. Pass 5 argued the remaining findings were getting
+cheaper to fix during the work than before it; **this pass supports that** — all three would have
+surfaced within minutes of running the worker against a fresh volume or reading the table at the
+close, and none would have been expensive to find then.
