@@ -28,6 +28,55 @@ history; the replaced history is preserved on the remote as the tag
 tags. **Anyone holding an older clone of `relay-platform` must reset rather than pull.**
 
 <!-- SPECKIT START -->
+**ACTIVE: 059 — CHAPTER 4.13, "the only service that reads the bytes".** **Movement VI opens.**
+Plan: `specs/059-chapter-4-13/plan.md`; **`research.md` first — it settles the specification's
+one flagged assumption AGAINST the specification, for the fourth feature running.**
+FR-MED-03/04: verify against declaration, scan, probe. **Name it by its movement and title**:
+`docs/12` §3 row 14, whose **§7.3 is this chapter's own open question**.
+
+**THE EVENT THE SAD SAYS THE WORKER CONSUMES HAS NO PRODUCER, AND ADR-13 IS WHY.** Zero
+occurrences of `media.uploaded` anywhere. The client PUTs straight to the store, so the only two
+parties that know the upload finished are the client and the store — 4.10's *"the api never
+opens a socket"* arriving as a hole rather than a cost.
+
+**AND THE SPEC'S ASSUMPTION — THE CLIENT TELLS US — IS PRICED WRONG.** It rejected a sweep on
+*"91.6% of the work spent on objects that hold nothing"*. Measured: one signed `HEAD` is
+**1.412 ms** (p50 1.094, p95 1.714, n=200) and the lane's whole **3,005-row backlog is 4.2 s
+serial**, 166 of 200 being 404s. **The waste is free.** So the sweep is the mechanism and a
+client notice is an optimisation that must not change any answer — because FR-MED-04's *"every
+uploaded object shall be virus-scanned"* cannot be contingent on a client choosing to send one.
+Bucket notifications are rejected on **ADR-30's direction argument one layer down** and recorded
+rather than dismissed.
+
+**AND ADR-14's DELIVERY GATE CANNOT SHIP ALONE — 10 OF 76 RED.** *"No signed URL until
+`ready`"*, against a route 4.12 shipped signing for `pending`. Adding `WHERE state = 'ready'`
+today turns every grant in `delivery.itest.ts` red **and the isolation gauntlet's own control**,
+because `media_objects_state_check` permits one value. The transition and the gate ship together
+or the gate ships broken.
+
+**THE PROBE SPLITS AND ONLY HALF NEEDS A SECOND PROGRAM.** PNG dimensions are **24 bytes of
+4,722** — 0.51% — and GIF, JPEG and WebP are fixed offsets or a short segment walk. Duration is
+four unrelated container parsers with MP3 VBR as a genuinely hard case. **The contract ships
+dimensions and records FR-MED-04 PARTLY MET**, on FR-MED-07's SRS 1.18 precedent, which makes
+§7.3's argument narrower: **one** non-TypeScript program, not two.
+
+**CONSTITUTION VII IS ENGAGED TWICE AND ONLY ONE WAS WRITTEN DOWN.** §7.3 asks about the
+scanner's language; VII's **other** clause — *"new services require justification against the
+'deliberately not a separate service' table"* — no artifact had named, and the worker fails all
+three of SAD §4.2's merge criteria (different datastore, no transactions, CPU-bound off the
+request path). The language line: **a program Relay addresses over a socket is not a program
+Relay is implemented in**, and the platform already speaks to five such programs in four
+languages. What VII would forbid is writing the worker in Go.
+
+**AND CONSTITUTION IV IS ENGAGED, WHICH THE PLAN'S TABLE CAUGHT.** `media_objects.state` gains a
+second writer — the api writes `pending`, the worker writes the terminal states. Disjoint
+transitions is the argument and it is written down rather than assumed.
+
+**AND NFR-SCL-01 WOULD HAVE BEEN CITED FOR A MEMORY BUDGET IT DOES NOT CARRY.** The obvious
+sentence is *"100 MB of video against NFR-SCL-01's 160 MB"*; that clause says 10,000 connections
+and nothing about memory, and the 160 MB is `docs/11`'s measurement of the GATEWAY's RSS. 050
+recorded this exact mistake. Checked before it was written.
+
 **058 IS CLOSED at 87 of 87 — CHAPTER 4.12, "a link that expires, and who may hold it".**
 Movement V continues. Its record is `specs/058-chapter-4-12/` — `baseline.txt` first (every
 phase's measurements in the order they were taken), then `gaps.md` (**15 entries: 8 new, 7

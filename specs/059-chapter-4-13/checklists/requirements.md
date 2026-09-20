@@ -74,3 +74,41 @@ verdict it cannot record is describing a state machine rather than building one.
 And it cannot say whether FR-012 is one chapter's work. Reconciling a shipped route with an
 accepted ADR may be a sentence or may be a gate on every delivery in the platform; the
 measurement that decides it — how many objects would stop being deliverable — has not been taken.
+
+---
+
+## Post-plan (2026-09-20)
+
+**Research settled the flagged assumption against the specification, and the spec's Assumptions
+section is now wrong on purpose.** It assumed the client tells the platform the upload finished,
+and rejected the sweep by pricing it at *"91.6% of the work spent on objects that hold
+nothing"*. `research.md` R1 measured that work: **1.412 ms per signed `HEAD`, 4.2 s for the
+lane's whole 3,005-row backlog**, 166 of 200 probes being 404s. The waste is free, and the
+notice costs FR-MED-04's *"every uploaded object"*. **The spec is left as written rather than
+edited back** — the flag exists to record what was believed before the work, and a specification
+retro-fitted to its own research is one that has never been wrong. Fourth feature running.
+
+**And two things the spec flagged came back sharper than it stated them.**
+
+FR-012 asked the chapter to reconcile ADR-14's *"no signed URL until `ready`"* with the route
+chapter 4.12 shipped. The spec left open whether that was a sentence or a gate on every
+delivery; `research.md` R4 measured it — **10 of 76 tests red**, including the isolation
+gauntlet's own control — which turns FR-012 from a reconciliation into a sequencing constraint:
+the transition and the gate ship together or the gate ships broken.
+
+FR-013 asked for the constitution VII argument that `docs/12` §7.3 names. Research found the
+argument is **narrower than §7.3 implies and there is a second one nobody had written down** —
+VII's new-service clause against SAD §4.2's table, which no artifact in this feature or in
+`docs/12` had mentioned. Both are in `plan.md`'s Constitution Check and its Complexity Tracking.
+
+**One requirement is now known to be partly met by decision.** `contracts/media-verification.md`
+§5 ships image dimensions and not audio/video duration, on FR-MED-07's SRS 1.18 precedent —
+*unmet by decision and not by oversight*. FR-006 in the spec asks for both; the chapter will
+record FR-MED-04 as PARTLY MET with the missing half named, and the gap belongs to whichever
+chapter decides ffmpeg is worth its image.
+
+**What the plan still cannot say**, carried as its four open questions: whether the worker is a
+compose service or the ingester's unpackaged shape (`gaps.md` 050-8 is the warning), where the
+probe's output lives, how a second worker avoids duplicating a first, and whether the three
+round trips per object collapse into one. Each has a measurement attached rather than an
+argument.
