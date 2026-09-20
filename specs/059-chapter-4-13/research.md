@@ -54,6 +54,12 @@ interval rather than by the upload, so a client that uploads a photo and watches
 placeholder to resolve waits for the next pass. The chapter publishes the interval and the
 measured p50 rather than claiming the design is instant.
 
+**AND IT GIVES UP AN EXACT START INSTANT, WHICH THIS ROW DID NOT RECORD UNTIL PASS 5.** The
+notice would have told the platform when the upload finished; the sweep does not, so SC-006's
+*"time from upload to `ready`"* has to come from the store. It does — `last-modified` on the
+`HEAD` the sweep already issues — **at one-second resolution**, because an HTTP date has no
+sub-second field. Measurable, and quantised, and the quantisation belongs to this decision.
+
 ---
 
 ## R2 · Constitution VII and the sidecar — `docs/12` §7.3, argued rather than assumed
@@ -176,8 +182,17 @@ status code shows.
 **The protocol is `INSTREAM` over a socket**, which takes the object in chunks. That matters
 against the size caps below: the worker never has to hold an object in memory to scan it.
 
-**Not measured yet and owned by the tasks phase**: scan latency against a real object, and
-whether the container's health check can distinguish *running* from *has definitions*.
+**AND THE READINESS QUESTION HAS AN ANSWER, ASKED AT PASS 5:**
+
+    zPING\0      ->  PONG
+    zVERSION\0   ->  ClamAV 1.5.4/28129/Sun Sep 20 06:26:26 2026
+
+`PING` proves the socket; **`VERSION` proves a signature database is loaded, which version, and
+how old.** A check that sends only the first cannot fail for the reason it exists — 4.2's
+`/ping`, 4.9's unset credential and 4.10's bucket, for the fourth time. And bounding the reported
+date is what lets the check be run red without manufacturing a definitionless scanner.
+
+**Not measured yet and owned by the tasks phase**: scan latency against a real object.
 
 ---
 

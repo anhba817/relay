@@ -200,6 +200,9 @@ psql "postgres://relay:relay@localhost:15432/relay" -tAc \
   "select state, count(*) from media_objects group by 1"
 ```
 
+**And the sweep's `HEAD` is where SC-006's clock starts**: `last-modified` is the only record of
+when the upload finished, at one-second resolution. The platform does not observe the PUT.
+
 **Measured before this chapter existed**: 3,005 rows, every one `pending`, 253 with bytes —
 8.4%. One signed `HEAD` is **1.412 ms** (p50 1.094, p95 1.714, n=200), so the whole backlog is
 **4.2 s serial**. Publish the figure again at the close, because the population moves: chapter

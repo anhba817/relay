@@ -328,3 +328,59 @@ an SC.
 **And three passes of remediation have now added work a fourth pass had to check.** T020a came
 from pass 2 and tripped pass 4's migration question; the fence table went stale at pass 3 for the
 same reason. The artifacts are not converging on a fixed point on their own.
+
+## Analysis pass 5 (2026-09-20)
+
+Four findings — three HIGH, one LOW, no CRITICAL — all four applied. The pass asked a fifth
+question: **do four rounds of remediation agree with each other, and can the criteria they left
+behind be measured?** Two findings are places where separately-correct fixes did not compose.
+
+- **THREE CHECKS, AND FIVE PASSES FIXED THEIR ORDER PAIRWISE WITHOUT EVER STATING IT.** Pass 1
+  moved the size comparison onto the sweep's own `HEAD`; pass 1's EICAR finding moved the scan
+  ahead of the *type* check. Composed, the size verdict is knowable **before** the scan, and
+  nothing said whether it short-circuits. **It does not**, and the argument is R5a's own applied
+  twice: *"the mis-declared ones are the ones worth scanning"* is at least as true of an object
+  declaring one byte while holding five megabytes. Reading *"every uploaded object"* to order the
+  type check and ignoring it for the size check would be reading it selectively. **The cost is
+  bounded by something that already exists** — streaming up to `KIND_CAPS`'s 100 MB for an object
+  that will be refused, where a caller who wants 100 MB streamed can upload a valid 100 MB video.
+  The order is **scan, size, type**. T039c.
+- **T038 asked the health check to distinguish *running* from *has definitions* and gave no
+  mechanism and no red run** — the class this project has found four times. Asked of a running
+  clamd: `zPING\0` answers `PONG` and `zVERSION\0` answers
+  `ClamAV 1.5.4/28129/Sun Sep 20 06:26:26 2026` — engine, signature database version, build date.
+  **And bounding the reported date is what makes the check runnable red without manufacturing a
+  definitionless scanner**, which is the part that turns T038 from an intention into a test.
+  T038a.
+- **SC-006 measures an interval whose start the platform does not observe.** *"Time from upload
+  to `ready`"* — and under the sweep nobody tells the platform when the PUT finished. The store
+  does, on the round trip already being made: `last-modified: Sun, 20 Sep 2026 17:02:53 GMT`,
+  **at one-second resolution**, because an HTTP date has no sub-second field. **No artifact named
+  that header**, and the quantisation is a cost of `research.md` R1's decision that R1 did not
+  record: the client notice the sweep replaced would have given an exact instant. T044.
+- **T058 named a script with no path, and that script's location has already been a defect.**
+  `check-lane-scope.py` lives in a closed feature's directory, and 049 found it pointing at a
+  worktree 045 deleted — reporting zero over an empty corpus with all ten controls firing. The
+  only one of 112 tasks naming a command without a path; run from the right place it answers
+  **61 integration files, 0 unscoped reads**.
+
+**Three setup commands run as worded and are recorded as checked**: `pnpm check:fences`
+(291 files, 55 chapters, 0 problems), the dependency counter (29 across 11 `package.json`), and
+`check-lane-scope.py`. Pass 4 found the fourth broken. **And the coverage globs came back clean**
+— `vitest.coverage.config.mts:122` includes `services/*/src/**/*.ts`, so the new package needs no
+registry edit, and the global thresholds are 70% against a tree measuring 92.39/86.50, so partial
+coverage mid-implementation cannot drag the run red. One list the fifth service does not join,
+after pass 1 found three that it does.
+
+**Task count 112 → 114.** Requirements unchanged at 26.
+
+**On five passes.** 6 findings, 5, 4, 4, 4 — severity 1 CRITICAL, 0, 1, 0, 0. Flat at four for
+three passes, with the question changing each time. **Pass 5's question was made necessary by the
+four before it**: two separately-correct fixes had composed into an order nobody had written
+down, and a criterion had survived a design change that removed the thing it measured. Neither is
+visible by reading any single artifact, and neither is a defect in any single fix.
+
+**The remediation is now itself a source of findings** — true at pass 4 (T020a came from pass 2)
+and true again here (T022 and T039a came from pass 1). More passes of this shape would probably
+keep yielding at about this rate, which is an argument for implementing rather than for
+analysing: the findings left are cheaper to fix during the work than before it.

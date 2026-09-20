@@ -97,15 +97,32 @@ objects would be a route worth forging.
 
 ## 3. What the worker does with the bytes, and it reads them twice for a reason
 
-    HEAD  (signed)   does it have bytes, and how many?       1.412 ms measured
-                     — and the SIZE half of FR-MED-03 is
-                       answered here, because content-length
-                       is the store's own count
+    HEAD  (signed)   does it have bytes, how many, and       1.412 ms measured
+                     since when?                             content-length is the store's
+                     — the SIZE half of FR-MED-03 is          own count; last-modified is
+                       ANSWERED here and ACTED ON later       SC-006's start instant
     GET   (signed, streamed)   the scan                       ClamAV INSTREAM, chunked.
-                     FIRST, because FR-MED-04 says EVERY
-                     uploaded object (`research.md` R5a)
+                     FIRST, and unconditionally
     GET   (signed, Range: bytes=0-65535)   the type and       206 · `bytes 0-7/12` measured;
                      the dimensions                           a PNG's are in its first 24 bytes
+
+**THE ORDER IS SCAN, SIZE, TYPE, AND STATING IT TOOK FIVE PASSES.** Each earlier fix was
+pairwise — the size comparison moved onto the `HEAD`, and the scan moved ahead of the *type*
+check so EICAR could reach it — which left the size verdict knowable before the scan and nothing
+saying whether it short-circuits. **It does not.** FR-MED-04's *"every uploaded object"* is what
+ordered the type check, and an object declaring one byte while holding five megabytes is at least
+as worth scanning as one whose type is wrong; reading the clause one way and not the other would
+be reading it selectively. The cost is streaming up to `KIND_CAPS`'s 100 MB for an object that
+will be refused — and a caller who wants 100 MB streamed can upload a valid 100 MB video, so the
+worst case is the cap either way.
+
+**AND `last-modified` IS WHERE SC-006's CLOCK STARTS.** *"Time from upload to `ready`"* has a
+start instant the platform never observes, because nothing tells it when the PUT finished. The
+store does, on the round trip the sweep already makes — `last-modified: Sun, 20 Sep 2026
+17:02:53 GMT`, measured at analysis pass 5 — **at one-second resolution**, because an HTTP date
+has no sub-second field. That quantisation is a cost of `research.md` R1's decision: the client
+notice the sweep replaced would have given an exact instant. Published beside the figure rather
+than rounded away.
 
 **THE STORE'S TWO HEADERS ARE NOT EQUALLY TRUSTWORTHY, AND THAT WAS MEASURED.** A presigned PUT
 of twelve MP4 bytes sent with `content-type: image/png` answers `HEAD` with **`content-type:
@@ -231,3 +248,17 @@ a coincidence worth stating rather than relying on.
 question from its reachability, and a health check that only proves the socket answers is the
 shape of every *"a check that cannot fail for the reason you care about"* finding this project
 has: chapter 4.2's `/ping`, chapter 4.9's unset credential, chapter 4.10's bucket.
+
+**THE TWO QUESTIONS HAVE TWO COMMANDS, ASKED OF A RUNNING CLAMD AT ANALYSIS PASS 5:**
+
+    zPING\0      ->  PONG
+    zVERSION\0   ->  ClamAV 1.5.4/28129/Sun Sep 20 06:26:26 2026
+
+`PING` proves the socket. **`VERSION` proves a signature database is loaded, which version, and
+how old** — the three fields are engine, database version and build date. A readiness check that
+sends only the first is the 4.2 shape; one that sends the second can refuse a scanner whose
+database is older than a stated bound.
+
+**And that is what makes the check runnable red without breaking the scanner.** Manufacturing a
+definitionless clamd is awkward; forcing the bound is one constant. The red run asserts the check
+refuses when the reported date is too old, which is a test of the check rather than of ClamAV.

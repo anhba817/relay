@@ -254,7 +254,9 @@ scanner is required to detect — and assert `rejected`, deleted bytes, and a su
   the scanner away and putting it back.
 - **SC-005**: The same object processed twice ends in one state and the bytes are read once.
 - **SC-006**: Time from upload to `ready` is measured and published for a representative object,
-  with the scan's share of it stated separately.
+  with the scan's share of it stated separately. **The start instant is the store's
+  `last-modified`, at one-second resolution** — the platform does not observe the upload, and the
+  quantisation is published beside the figure rather than rounded away.
 - **SC-007**: The chapter's prose is 2,000–4,000 words outside code fences and carries at least
   one `TRAP` box.
 - **SC-008**: `check:fences` reports 0, stated as an absolute number.

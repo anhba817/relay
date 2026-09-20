@@ -119,6 +119,25 @@ valid PNG either. Measured: EICAR plus two hundred trailing spaces is already `O
 declaration-first leaves some uploaded objects unscanned — the mis-declared ones, which are the
 ones worth scanning.
 
+**AND THE FULL ORDER IS SCAN, THEN SIZE, THEN TYPE — WHICH TOOK FIVE ANALYSIS PASSES TO STATE.**
+Each fix was pairwise: pass 1 moved the size comparison onto the sweep's own `HEAD`, and pass 1's
+EICAR finding put the scan ahead of the *type* check. Composed, they leave the size verdict
+**knowable before the scan runs**, and nothing said whether a size mismatch should skip it.
+
+**It should not, and the argument is R5a's own applied twice.** *"The mis-declared ones are the
+ones worth scanning"* is at least as true of an object declaring one byte and holding five
+megabytes as of one whose type is wrong. Using the clause's word to order the type check and
+ignoring it for the size check would be reading *"every"* selectively.
+
+**The cost is bounded and it is bounded by something that already exists.** Scanning an object
+that will be rejected on size means streaming up to `KIND_CAPS`'s 100 MB for nothing — and a
+caller who wants the platform to stream 100 MB can upload a valid 100 MB video, so the worst case
+is the cap either way. **Knowing the size early and refusing late are different things**: the
+`HEAD` still saves the round trip, it just does not short-circuit.
+
+**What is given up**: every object with bytes is streamed once, including the ones a cheaper
+order would have refused for free.
+
 **And `scan_failed` wins when both fail.** An object can now be both infected and a lie; the
 scan is the more serious fact about the caller and the one an operator reading `rejected_reason`
 needs.
@@ -165,6 +184,20 @@ SELECT id, object_key, mime_type, declared_bytes
 ```
 
 then one signed `HEAD` per row against the store.
+
+**AND THE `HEAD` IS ALSO WHERE SC-006's CLOCK STARTS, WHICH NOTHING NAMED.** *"Time from upload
+to `ready`"* has a start instant the platform never observes: under the sweep, nobody tells it
+when the PUT finished. The store does, on this same round trip — measured at analysis pass 5:
+
+    last-modified          Sun, 20 Sep 2026 17:02:53 GMT
+    content-length         1
+    etag                   "9dd4e461268c8034f5c8564e155c67a6"
+
+**At one-second resolution**, because an HTTP date has no sub-second field. **That is a cost of
+`research.md` R1's decision and it was not recorded as one**: the client notice the sweep replaced
+would have given the platform an exact instant. SC-006 is measurable, from a header no artifact
+named until pass 5, and its figure carries a ±1 s quantisation that has to be published beside it
+rather than rounded away.
 
 **AND THE `HEAD` ANSWERS HALF OF FR-MED-03 ON ITS OWN.** Measured at analysis pass 1: a presigned
 PUT of twelve MP4 bytes sent with `content-type: image/png` comes back from `HEAD` as
