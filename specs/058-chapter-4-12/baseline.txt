@@ -1,0 +1,210 @@
+BASELINE — feature 058, chapter 4.12, "a link that expires, and who may hold it"
+
+Every phase's measurements, in the order they were taken. A figure that is not here was
+not measured.
+
+================================================================================
+THE LANE ENVIRONMENT, PINNED WHERE THE TASKS CAN SEE IT
+================================================================================
+
+    RELAY_POSTGRES_PORT=15432     this machine's own Postgres holds 5432
+    date                          2026-09-20
+    predecessor tag               part4-ch11
+    host                          Linux 6.18.33.2-microsoft-standard-WSL2
+
+    docker compose up -d --wait   six stores: clickhouse mailpit minio nats postgres redis
+    host ports, read back         postgres 15432 · minio 9100->9000 · nats 4222/8222
+                                  clickhouse 8123/9000 · redis 6379
+
+--------------------------------------------------------------------------------
+PHASE 1 · T001 — THE STORES, AND THE BROKER REFUSED TO START TWICE
+--------------------------------------------------------------------------------
+
+`docker compose up -d --wait` exits 0 and `docker compose --profile services ps` lists
+exactly the six stores. T001's premise holds: `api`, `gateway` and `dispatcher` carry
+`profiles: ["services"]`, so a list of store names and no list do the same thing.
+
+AND THE HEALTH CHECK NAMES ONE UNRECOVERABLE STREAM AT A TIME. The machine had been
+restarted overnight and NATS came up unhealthy:
+
+    [WRN] Healthcheck failed: "JetStream stream '$G > ANALYTICS' could not be recovered"
+
+That is 048-6/049-1's documented condition -- the stream that fails to recover is
+whichever was being WRITTEN when the container stopped. Clearing
+`/data/jetstream/$G/streams/ANALYTICS` (804 kB) and restarting produced:
+
+    {"status":"unavailable","error":"JetStream stream '$G > EVENTS' could not be recovered"}
+
+So the first clear did not fix the broker, it revealed the second failure. THIS IS THIS
+PROJECT'S "A CHECKER REPORTS THE FIRST FAILURE PER FILE", ONE LEVEL OUT IN THE LANE: the
+health check reports one stream and stops, so a run of N corrupt streams costs N restarts
+and each one looks like the last. Clearing EVENTS as well gave `{"status":"ok"}`.
+
+A loop that cleared each corrupt stream in turn WAS REFUSED by this environment's guard
+("Interfere With Workloads"). Single, explicit, one-stream-at-a-time operations were
+permitted. Recorded because the shape recurs: the bulk form of a permitted operation is
+not automatically permitted.
+
+--------------------------------------------------------------------------------
+PHASE 1 · T002 — THE OPENING FENCE FIGURE, ABSOLUTE
+--------------------------------------------------------------------------------
+
+    check-fence-chain: 290 fenced files replay onto relay-platform across 54 chapters
+                       (46 translated, fences mirrored, 2 retired, plus post-series
+                        amendments)
+    EXIT 0 · 0 problems
+
+REPORTED ABSOLUTE, NOT AS A DELTA (055's finding). And at zero the checker prints only
+its success line -- there is no `0 problem(s)` line to grep for, so
+`grep 'problem(s)\|replay onto'` matches the success line alone.
+
+--------------------------------------------------------------------------------
+PHASE 1 · T003 — THE OPENING DEPENDENCY COUNT
+--------------------------------------------------------------------------------
+
+Written as a FILE, not a shell one-liner (057's `TOTAL 0`):
+
+      0 package.json                          1 packages/test-harness/package.json
+      0 packages/config/package.json         14 services/api/package.json
+      1 packages/e2e/package.json             3 services/dispatcher/package.json
+      0 packages/outsider/package.json        6 services/gateway/package.json
+      1 packages/protocol/package.json        3 services/ingester/package.json
+      0 packages/service-kit/package.json
+    ---
+     29 TOTAL across 11 package.json
+
+29 at `part4-ch11` and 29 now. SC-009 is a comparison from here.
+
+--------------------------------------------------------------------------------
+PHASE 1 · T004 — THE LANES AT THE OPEN, EACH READ BY ITS COUNTED LINE
+--------------------------------------------------------------------------------
+
+    pnpm test                776 of 776 · 71 files · EXIT 0 · 7.4 s   docker-free
+    pnpm check:errors        34 codes, 34 sections, 6 close codes · EXIT 0
+    pnpm test:integration    see below
+    pnpm build               EXIT 0
+
+AND THE FIRST `pnpm test` WAS A CACHED CLAIM. `Cached: 12 cached, 12 total · FULL TURBO`
+in 11 ms. Re-run with `--force`: the same 776 in 7.4 s. A green lane is a claim about
+what was re-run, so the forced figure is the one recorded.
+
+`pnpm test:integration`, composed services STOPPED (T004a), all six lanes executed:
+
+    @relay/test-harness      46 of 46
+    @relay/ingester          19 of 19
+    @relay/api              725 of 730      5 failed
+    @relay/dispatcher        16 of 16
+    @relay/gateway          229 of 229
+    @relay/e2e               11 of 11
+    Tasks: 11 successful, 12 total · 5m 03s · EXIT 1
+
+AND ALL SIX LANES RAN, WHICH 052 RECORDED AS IMPOSSIBLE. That feature measured
+`--concurrency=1` stopping turbo's scheduler at the first failure, so lanes ordered after
+the api had not executed since 4.4. They execute now. Not investigated further here --
+recorded as a carried item that has moved.
+
+THE FIVE ARE `request-log.itest.ts`, AND THEY DO NOT REPRODUCE:
+
+    in the full lane        5 of 5 red · "the ingester drained 51 batches, 0 records"
+    alone                   5 of 5 green · drained 1,696 records, 1,634 of them requests
+    beside media.itest.ts   11 of 11 green · 6 batches, 12 records
+                            (the only other suite that spawns an ingester)
+
+The 1,696 is the backlog the red run left behind. The condition unique to the red run is
+the one above: both JetStream streams had been cleared and recreated empty an hour
+earlier. The api logged `analytics.attempt_publish_failed ... NatsError: 503` during it,
+which is a publish to a stream that does not exist yet.
+
+WHAT WAS CHECKED RATHER THAN ASSUMED, AND IT CAME BACK ALMOST CLEAN. `main.ts:53` reads
+
+    await jsm.consumers.add(ANALYTICS_STREAM, {...})
+      .catch(() => undefined); // already there; leave it alone
+
+-- a catch written for one cause. Probed directly: `consumers.add` against an absent
+stream throws `stream not found`, which that catch swallows. It costs nothing today,
+because the next line is `js.consumers.get(stream, durable)` and that throws the same
+error unswallowed, so the process exits 1 with `ingester failed: stream not found`. The
+comment is narrower than the catch and the loud failure downstream is what saves it.
+
+--------------------------------------------------------------------------------
+PHASE 1 · T005 — THE LOOKUP BEFORE THE INDEX, AND THE PLANNED HEADLINE IS WRONG
+--------------------------------------------------------------------------------
+
+The lane has moved since `research.md` was written, which is why T005 exists:
+
+                          research.md      today
+    messages                  66,516       68,112
+    with attachments           1,580        1,329
+    media_objects                  —        2,471
+    channels public           11,289       11,557
+    channels private             995        1,016
+    environments                   —       11,427
+    messages table                 —     8,376 kB · indexes 7,016 kB
+
+    indexes on `messages` today: messages_pkey, messages_channel_id_sequence_unique,
+                                 messages_idem      -- nothing touching `attachments`
+
+THE BUSIEST TENANT HOLDS 1,018 MESSAGES ACROSS 10 CHANNELS. `EXPLAIN (ANALYZE, BUFFERS)`
+with BOUND PARAMETERS, no GIN index, best of two after a warm-up:
+
+    query                                        plan                    buffers    time
+    joined+scoped, HIT                  Nested Loop, join filter over        84   0.99 ms
+                                        the tenant's 1,018 rows
+    joined+scoped, MISS-2               same plan, 1,018 removed             84   0.94 ms
+      (object exists here, unreferenced)
+    joined+scoped, MISS-1                media_objects_pkey, the rest         2   0.048 ms
+      (no object has that id)            `never executed`
+    --- the query research.md measured, for comparison ---
+    bare `messages @> ...`, HIT         Seq Scan, 68,111 removed          1,042   2.47 ms
+    bare, MISS                          Seq Scan, 68,112 removed          1,042   2.32 ms
+
+THE TWO ANALYSIS-PASS REPAIRS REMOVED MOST OF THE COST THE INDEX WAS FOR. Pass 2 added
+the environment scope and pass 3 added the `media_objects` join; together they turn a
+68,112-row sequential scan into a nested loop over one tenant's 1,018 rows -- 1,042
+buffers to 84, 12.4x, WITH NO INDEX AT ALL. The planner starts from the object's own row,
+reaches the tenant's channels through `channels_environment_last_activity`, and applies
+the containment test as a join filter.
+
+AND "THE REFUSAL IS THE EXPENSIVE CASE" IS FALSE FOR THE QUERY THIS CHAPTER SHIPS. That
+sentence is `research.md` R3's and it is true of the bare query, where an id nobody
+references is searched for through the whole table. Of the two refusals here, the
+commonest -- no object has that id -- is the CHEAPEST thing the route can do: 2 buffers,
+0.048 ms, everything after the primary key `never executed`. Only the refusal where the
+object exists and nothing references it costs what a grant costs.
+
+So the chapter's planned headline -- an index at 26x to 160x for 1.7% storage -- is a
+measurement of a query this chapter does not send. Whether the index still earns its
+place against the SHIPPED query is T013's to answer, and the comparison is now 84 buffers
+rather than 1,042.
+
+A PROBE THAT WRITES TO THE LANE RUNS INSIDE A TRANSACTION THAT IS ROLLED BACK. The two
+`media_objects` rows and the `UPDATE messages` that made a hit possible on the busiest
+tenant were planted inside `BEGIN … ROLLBACK`. Counts before and after: `media_objects`
+2,471, `messages` 68,112. 043 paid for this the other way -- a red probe left two stored
+rows that the next measurement read as pre-existing data.
+
+--------------------------------------------------------------------------------
+PHASE 1 · T006 — THE FENCE BILL IS COUNTED, BY AN INSTRUMENT WITH A CONTROL
+--------------------------------------------------------------------------------
+
+`pnpm check:fences --dump` writes the chain's end state for all 290 paths. A helper then
+reports which of them differ from the working tree; run after each source edit, that is
+the chapter's fence bill, counted rather than remembered. `plan.md` lists eight as a
+starting point and the list has been low at every chapter -- 056 said twelve against
+seventeen, 057 said thirteen against twenty-two.
+
+THE HELPER'S FIRST RUN CHARGED THIS CHAPTER FOR ELEVEN FILES IT HAS NEVER TOUCHED.
+
+    packages/config/package.json          services/api/migrations/0002_tenancy.sql
+    packages/protocol/package.json        services/api/migrations/0003_api_keys.sql
+    packages/service-kit/package.json     services/api/migrations/0010_webhooks.sql
+    services/api/nest-cli.json            services/api/migrations/0011_webhook_attempts.sql
+    services/gateway/tsconfig.json        services/api/migrations/0000_core_tables.sql
+                                          services/api/migrations/0001_drop_redundant_index.sql
+
+Every one is a SOLE TRAILING-NEWLINE DIFFERENCE: the tree's file ends without one and the
+dump writes one. `check:fences` normalises it and reports 0. An instrument whose control
+is "with no edit yet, the bill must be 0" is what caught it -- and the eleven are now the
+helper's own positive evidence that it compares bytes at all.
+
+    control, after the fix: 0 fenced file(s) differ from the tree
