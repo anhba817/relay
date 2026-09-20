@@ -109,3 +109,40 @@ platform source, `FR-014` 39, `FR-015` 48, `SC-011` 3, `SC-012` 4. 4.11's pass 9
 feature-local namespace saturated; it still is, so FR-005 and SC-001 were widened instead.
 
 **Task count 81 → 85.** Requirement count unchanged at 22.
+
+## Analysis pass 2 (2026-09-20)
+
+One finding, HIGH, applied — and **three premises run that came back clean**, which is most of
+this pass's value. Pass 1 asked the running api; this pass asked whether the query the code will
+send is the query that was measured, and then what that query reads.
+
+- **The lookup would have been the only read in the repository that crosses tenants, and its
+  disjunction was unbounded.** `data-model.md` §3 described two steps with no environment
+  predicate — correct, because `channelVisibleTo` refuses another tenant's channel afterwards,
+  and **a query whose safety depends on a later call is a query somebody will reuse without the
+  later call.** `grep -c 'environmentId, this.environmentId'` in `repository.ts` is **44**; this
+  would have been the one exception. And *"every referencing channel"* without `DISTINCT` is one
+  `channelVisibleTo` per MESSAGE — a query each, two when the channel is private. Rewritten as
+  one joined, scoped, de-duplicated query: `Bitmap Index Scan`, **13 buffers**. T010a, T011.
+
+**The clean premises, recorded because a premise that holds is only evidence once checked:**
+
+- **A bound parameter uses the index.** Every figure in `research.md` came from a literal `@>`
+  and the driver sends a parameter. `PREPARE p(jsonb) … EXECUTE` gives the same `Bitmap Index
+  Scan` at 6 buffers. **This is the premise most likely to have silently invalidated the
+  chapter's headline comparison**, and it is now in R3 and in T005.
+- **Drizzle can declare the index.** 0.45.2 exposes `.using('gin', …)` and `column.op(opClass)`.
+  `grep -c 'using(' schema.ts` is **0** — every index in that file today is a btree or a unique
+  constraint, so this is the first and there is no local shape to copy. The exact expression is
+  in T009 rather than left to be discovered.
+- **The fan-out is 1 on this lane.** `max(references per media object)` is 1, so B1 costs nothing
+  measurable today. The lane has never forwarded a photo, which is the only thing that produces
+  a second reference — so the wrong shape would have shipped green.
+
+**Task count 85 → 86.** Requirements unchanged at 22. The probe index was dropped before anything
+else was counted.
+
+**On two passes.** 3 findings then 1; severity 1 CRITICAL then 0. Pass 1's three were one defect
+seen from three sides; pass 2's one is a posture rather than a defect — the answer was always
+going to be correct, and the query would have been the only one of forty-five written the other
+way round.

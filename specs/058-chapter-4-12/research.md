@@ -105,6 +105,18 @@ transferable lesson is **which kind of cost you are looking at** and not whether
 `attachments @> '[{"type":"media","media_id":"…"}]'`, containment only, which is the one operator
 class `jsonb_path_ops` supports and the reason it is smaller.
 
+**AND THE FIGURES SURVIVE A BOUND PARAMETER, WHICH IS WHAT THE DRIVER SENDS.** Everything above
+was measured with a literal, and a literal is not what the code will issue — the classic way a
+planning number stops describing the shipped query. Checked at analysis pass 2:
+
+    PREPARE p(jsonb) AS SELECT id FROM messages WHERE attachments @> $1 LIMIT 1;
+    EXECUTE p('[{"type":"media","media_id":"…"}]'::jsonb);
+
+    Bitmap Index Scan on the gin index · 6 buffers
+
+Identical to the literal. **This is the premise most likely to have quietly invalidated the
+chapter's headline comparison, and it held.**
+
 ---
 
 ## R4 · The chapter adds no error code, and 404 is the answer

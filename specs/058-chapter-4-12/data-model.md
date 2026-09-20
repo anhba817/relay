@@ -30,12 +30,33 @@ error. 1.7% is not worth that.
 
 ## 3. The predicate, and it is one that already exists
 
-For a `media_id` and a caller:
+For a `media_id` and a caller, **in one query**:
 
-```text
-find any message m where m.attachments @> [{ type: "media", media_id: <id> }]
-  and m.channel_id belongs to a channel that is channelVisibleTo(caller)
+```sql
+SELECT DISTINCT c.id, c.type
+  FROM messages m
+  JOIN channels c ON c.id = m.channel_id
+ WHERE m.attachments @> '[{"type":"media","media_id":<id>}]'::jsonb
+   AND c.environment_id = <this environment>
 ```
+
+then `channelVisibleTo` over the rows that come back.
+
+**THE TENANT PREDICATE IS NOT DECORATION, AND THE FIRST DRAFT OF THIS SECTION DID NOT HAVE
+IT.** It described two steps — find any message containing the id, then ask about its channel —
+which is correct, because `channelVisibleTo` is itself scoped and refuses another tenant's
+channel. It is also **the only read in this repository that would scan every tenant's rows**:
+`grep -c 'environmentId, this.environmentId'` in `repository.ts` returns **44**. A query whose
+safety depends on a later call is a query somebody will reuse without the later call.
+
+**`DISTINCT`, AND THE FAN-OUT IS WHY.** One object can be referenced by any number of messages —
+FR-MSG-11 has allowed the same id twice since 3.24, and forwarding a photo is how a second
+reference happens. Without `DISTINCT` the disjunction is one `channelVisibleTo` per *message*,
+each a query and sometimes two (`isMember`); with it, one per distinct *channel*. The lane's
+current maximum is **1 reference per object**, so this costs nothing measurable today and the
+shape is still wrong — the lane has never forwarded a photo.
+
+    the joined, scoped, de-duplicated query   Bitmap Index Scan · 13 buffers
 
 `channelVisibleTo(channelId, userId?)` is `repository.ts:5517` and has shipped since the channel
 chapter:
@@ -74,6 +95,12 @@ both; a caller in neither reads nothing.
 This is also why the lookup cannot stop at the first row it finds. A query returning one
 reference and testing it would refuse a caller whose channel happened to be second, which is a
 correctness bug that would look like flakiness.
+
+**AND "EVERY REFERENCE" IS NOT THE SAME AS "EVERY REFERENCING CHANNEL".** §3's `DISTINCT` is
+what keeps the disjunction bounded by channels rather than by messages: a photo forwarded into
+one channel a hundred times is one authorisation question, not a hundred. The unbounded version
+is correct and costs one `channelVisibleTo` per message, which is a query each and two when the
+channel is private.
 
 ## 5. What a refusal must not distinguish
 
