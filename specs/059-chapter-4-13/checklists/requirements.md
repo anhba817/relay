@@ -220,3 +220,58 @@ counted; `probe_%` indexes remaining, **0**.
 *does* — the store's headers, ClamAV's signature, the sealed suite's fixture. Pass 2 asked what
 the platform *claims about itself*, and two of five claims were wrong. The count has barely moved
 and the kind of question has.
+
+## Analysis pass 3 (2026-09-20)
+
+Five findings — one CRITICAL, three HIGH, one MEDIUM — all five applied. The pass asked a
+question the first two did not: **what does this chapter break in the chapters behind it?**
+
+- **THE WIDENED CHECK TURNS TWO SHIPPED TESTS RED, AND NOTHING PREDICTED IT.** T008's constraint
+  was applied to the live database and chapter 4.11's suite run: **2 failed, 15 passed.**
+  `attach.itest.ts:288` is titled *"cannot be given a `ready` object to attach, because the
+  database refuses one (SC-006)"* and asserts the constraint's own name in the refusal text; its
+  sibling at :307 uses `'rejected'` as its example of *"a state that is neither"*. Both inserts
+  now succeed and both get `''`. **Nothing in this feature named that file** — its only two
+  `SC-006` mentions are this chapter's own criterion, a different one with the same number. And
+  `research.md` R4's *"10 of 76"* missed them for a **second** reason: pass 1 found it had
+  skipped the sealed suite in another lane; this is a third file in the lane it did run. T008a
+  repairs both — the first becomes *a `ready` object is attachable*, the second keeps its title
+  and changes its example to **`'scanning'`**, the value T011 refuses to make a state.
+- **AND 0018 IS ONE-WAY ONCE A TERMINAL ROW EXISTS**, found by trying: restoring the narrow
+  constraint answers `is violated by some row` until the `ready` and `rejected` rows are deleted.
+  ADR-16 makes migrations forward-only so it is a property, not a fault — and it is the first
+  thing a local rollback meets. T008b.
+- **T014's 409 would have answered `internal_error`.** The status ladder has nine rungs and 409
+  is not one. **The precedent is three files away and was paid for**: `usage.controller.ts:90`
+  throws a `ConflictException`, and `connection_environment_conflict` exists at 409 in the
+  registry with `expected 'internal_error' to be 'connection_environment_conflict'` in its
+  comment. Decided as **422 `unprocessable_request`** — 4.11's own code, the same caller action,
+  and `check:errors` stays at 34/34. The rejected alternative is recorded: a new code at 409 puts
+  vocabulary for a route no customer can call into the document customers read.
+- **Chapter 4.11 left a note addressed to this chapter and no task answered it.**
+  `repository.ts:5119`: *"`'ready'` is unreachable today and the predicate says it anyway … a
+  predicate that named one would have to be found and widened by **whoever builds the
+  scanner**."* Three consequences, none covered: the second arm becomes reachable and nothing
+  asserted it (T015a), the comment goes stale — the class this movement keeps finding in its own
+  files (T015b) — and **4.11's recorded per-arm probe result was measured when only one arm could
+  occur** (T015c).
+- **The plan's fence table was stale by three files, and the analysis phase is what staled it.**
+  Passes 1–3 added tasks touching `authenticate.middleware.ts` (8 fences, 1 appendix hunk),
+  `bound-port.test.ts` (2, 1) and `attach.itest.ts` (no titled fence, so free). The standing note
+  is that such a list goes stale when a chapter moves code between files; **this is a new
+  variant, where it went stale because analysis found more work.** The floor is fourteen files.
+
+**The lane was left as it was found**, which took a deliberate cleanup: the constraint probe
+inserted a `ready` and a `rejected` row, and **the narrow constraint could not be restored until
+they were deleted** — 043's *"a red probe writes to the lane"* in a form where the probe blocks
+its own revert. Constraint back to `CHECK ((state = 'pending'::text))`, 3,053 rows all `pending`,
+`attach.itest.ts` 17 of 17. The row count is up from 3,005 at the open because intervening suite
+runs added rows, which is what T005 exists to re-measure.
+
+**Task count 104 → 109.** Requirements unchanged at 26.
+
+**On three passes.** 6 findings, 5, 4 — severity 1 CRITICAL, 0, 1. The count falls and the
+CRITICAL returns, which is 057's passes 6 and 7 again. What changed each time is the question:
+what the platform *does*, what it *claims about itself*, and what it *has already written down
+about a chapter that does not exist yet*. Only the third required running this chapter's own
+migration, and it is the only one that found a shipped test going red.

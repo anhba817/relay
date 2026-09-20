@@ -21,6 +21,29 @@ that accepted them now would be a schema claiming a state nothing can reach"* �
 constraint's job is unchanged. What changes is the set, and a fourth value is still a write that
 fails.
 
+**AND THIS WIDENING TURNS TWO SHIPPED TESTS RED, MEASURED AT ANALYSIS PASS 3.** The constraint
+was applied to the live database exactly as above and chapter 4.11's suite was run:
+**2 failed, 15 passed.** `attach.itest.ts:288` is titled *"cannot be given a `ready` object to
+attach, because the database refuses one (SC-006)"* and asserts the constraint's own name in the
+refusal text; its sibling at :307 uses `'rejected'` as its example of *"a state that is neither"*.
+Both now insert successfully and both get `''`.
+
+**Neither is a defect.** They were 4.11's published evidence that the second arm of
+`state IN ('pending','ready')` could not occur, and this chapter is what makes it occur. The
+first becomes an assertion that a `ready` object **is** attachable; the second keeps its title
+and changes its example to a value genuinely outside the set — **`'scanning'`**, which §2 below
+refuses to make a state, so the two decisions hold each other up.
+
+**AND 0018 CANNOT BE ROLLED BACK ONCE A TERMINAL ROW EXISTS.** Found by trying: restoring the
+narrow constraint answers
+
+    ERROR:  check constraint "media_objects_state_check" of relation "media_objects"
+            is violated by some row
+
+and the `ready` and `rejected` rows have to be deleted first. ADR-16 makes migrations
+forward-only, so this is a property rather than a fault — and it is one a developer testing
+locally meets within minutes, which is why it is written here rather than discovered there.
+
 **`scanning` is not a state**, and the temptation is real: a worker that has picked up an object
 would like to say so. Two reasons it stays out. It is not in the clause — FR-MED-04 names
 `pending → ready` and `pending → rejected`, and FR-MED-07 tells clients about *three* states, so
@@ -152,6 +175,31 @@ where a whole-column index stays the size of the table.
 **`ORDER BY created_at` rather than newest-first**, so an object that keeps failing does not
 starve the queue behind it — and so the 24-hour reap boundary (FR-MED-10) is approached from the
 right end.
+
+## 5a. The arm chapter 4.11 left for this one
+
+`assertAttachableMedia` admits `state IN ('pending', 'ready')`, and `repository.ts:5119` says why
+in a note addressed to this chapter by name:
+
+> *"`'ready'` is unreachable today and the predicate says it anyway: the clause names both, and a
+> predicate that named one would have to be found and widened by whoever builds the scanner."*
+
+**Nothing needs widening — 4.11 wrote both arms — and three things follow anyway.**
+
+**The second arm becomes reachable for the first time**, so the behaviour it produces is now
+observable and has to be asserted: a `ready` object is still attachable, and a `rejected` one is
+not. That second half is FR-MED-06's refusal arriving for free, because `rejected` is outside the
+predicate's set.
+
+**The comment goes stale the moment 0018 applies.** *"Unreachable today"* stops being true, and a
+comment describing behaviour no code performs is the class this movement has found in `store.ts`,
+in `docs/07` §6, in `docs/12` row 11 and in a test's deadline. Correcting it costs a fence hunk
+in a file carrying fifty of them.
+
+**And 4.11's per-arm probe result changes.** That comment records deleting each arm and re-running
+— *"the three SQL clauses: no JavaScript branch at all"* — measured when only one arm could
+occur. With `ready` reachable, deleting it can turn a test red that previously could not, so the
+probe is re-run here rather than inherited.
 
 ## 6. What the worker never touches
 

@@ -25,6 +25,10 @@ RELAY_POSTGRES_PORT=15432 docker compose up -d --wait
 pnpm build
 DATABASE_URL=postgres://relay:relay@localhost:15432/relay node services/api/dist/db/migrate.js
 RELAY_POSTGRES_PORT=15432 docker compose --profile services build
+# and 0018 is one-way once anything reaches a terminal state: restoring the narrow
+# CHECK answers `is violated by some row` until the ready and rejected rows are gone.
+# ADR-16 makes migrations forward-only, so this is a property — but it is the first
+# thing a local rollback meets.
 RELAY_POSTGRES_PORT=15432 docker compose --profile services up -d --wait
 ```
 

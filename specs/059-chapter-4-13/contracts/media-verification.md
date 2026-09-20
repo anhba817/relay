@@ -62,9 +62,27 @@ stays `pending` and the next sweep finds it, which is FR-009 expressed as an abs
 as a value.
 
 **Idempotent by state, not by key.** A second `ready` for an object already `ready` answers 200
-and changes nothing. A `ready` for an object already `rejected` answers **409** — the bytes are
-gone, so the verdict is about an object that no longer exists, and answering 200 would let a
-stale worker resurrect a rejected row's state while its bytes stay deleted.
+and changes nothing. A `ready` for an object already `rejected` is refused — the bytes are gone,
+so the verdict is about an object that no longer exists, and answering 200 would let a stale
+worker resurrect a rejected row's state while its bytes stay deleted.
+
+**THE REFUSAL IS 422 `unprocessable_request`, NOT A 409, AND THE FIRST VERSION OF THIS LINE SAID
+409.** `ProtocolErrorFilter`'s ladder has nine rungs — 400, 401, 402, 403, 404, 413, 415, 422,
+503 — and **409 is not one of them**, so a `ConflictException` that names no code answers
+`internal_error`. That is not a hypothetical: `connection_environment_conflict` exists in the
+registry at 409 precisely because somebody measured it, and its comment carries the failure —
+`expected 'internal_error' to be 'connection_environment_conflict'`.
+
+**So the choice was a tenth rung plus a new code, or a code that already fits.** 422 is 4.11's
+own addition and its meaning is exactly this one: a well-formed request the platform understood
+and cannot carry out. The caller's action is identical either way — a stale worker stops and does
+not retry — so the distinction would have bought a word and cost a registry entry.
+`check:errors` stays at **34 codes, 34 sections**.
+
+**The rejected alternative, named**: `media_verdict_conflict` at 409, with a tenth rung and a
+section in `docs/08-error-reference.md`. It is the more precise answer and it puts vocabulary for
+a route no customer can call into the document customers read. `connection_environment_conflict`
+is the precedent for doing that, and it is one entry rather than a habit.
 
 ## 2. What the worker reads
 

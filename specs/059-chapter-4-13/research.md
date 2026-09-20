@@ -141,6 +141,13 @@ a third lane and it fetches the bytes of a `pending` object** — `integrate.ite
 assertions as SC-010. Under the gate that call answers 404 and the sealed suite goes red, and no
 figure above includes it.
 
+**AND THAT IS THE SECOND REASON THE FIGURE UNDERCOUNTS.** The probe also skipped a suite in the
+lane it did run: `attach.itest.ts` is the api's, and chapter 4.11's two SC-006 tests assert the
+`state` CHECK by name. Measured at analysis pass 3 by applying 0018's widened constraint to the
+live database: **2 failed, 15 passed.** So *"10 of 76"* is the cost of the gate in two suites,
+and the chapter's true bill is that plus the sealed suite plus 4.11's two — none of which a
+single probe over two files could see.
+
 **And whether it can pass afterwards depends on a question the plan left open.** Only a worker
 running inside the composed profile moves that object to `ready`, so if plan open question 4
 lands on the ingester's unpackaged shape, the sealed suite has no worker and the assertion

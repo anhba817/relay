@@ -163,6 +163,9 @@ every time.
     file                                            titled fences   appendix hunks
     services/api/src/db/repository.ts                    50               0
     services/api/src/db/schema.ts                        32               2
+    services/api/src/media/attach.itest.ts               —   4.11's, repaired by T008a
+    services/api/src/auth/authenticate.middleware.ts      8               1
+    packages/test-harness/src/bound-port.test.ts          2               1
     packages/protocol/src/codes.ts                       24               3
     vitest.coverage.config.mts                           22              12
     turbo.json                                           20               3
@@ -175,6 +178,14 @@ every time.
     services/api/src/media/media.service.ts               2               0
     services/media-worker/**                              0   — new, and free
     services/api/src/media/delivery.itest.ts              0   — new at 4.12, unfenced
+
+**AND THE LAST THREE ROWS WERE ADDED BY THE ANALYSIS PHASE, NOT BY THE WORK.** This table said
+twelve and said the count was a floor; passes 1 to 3 added tasks touching
+`authenticate.middleware.ts` (T012a), `bound-port.test.ts` (T018a) and `attach.itest.ts`
+(T008a), and none of the three was here. **This project's standing note is that a fenced-file
+list goes stale when a chapter moves code between files — this is a new variant, where it went
+stale because analysis found more work.** `attach.itest.ts` carries no titled fence, so its
+repair is free; the other two are ten fences and two appendix hunks. The floor is fourteen files.
 
 **`vitest.coverage.config.mts` carries twelve appendix hunks**, which is the largest appendix
 surface of anything here. 4.9 found that file could not take a chapter hunk at all at one point;
