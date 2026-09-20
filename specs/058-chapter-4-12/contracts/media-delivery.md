@@ -119,3 +119,34 @@ rather than a suspicion.
 What decides it the other way is that the class is not this route's: the 500 predates the chapter
 by sixteen routes and eleven chapters, and one chapter fixing sixteen routes in three controllers
 it otherwise never opens is how a fence chain gets 1,576 diff lines to make one point.
+
+## The two open questions, decided in writing
+
+### 1 · One id per request (plan open question 1)
+
+**Decided: one.** A batch would spend one `rest` operation where fifty singles spend fifty, and
+that is a real cost R8 measured rather than guessed. It loses on the refusal.
+
+**A batch refusal has to name which ids failed.** `{"delivered": {…}, "refused": ["a","b"]}` is
+an existence oracle by construction: the caller learns which of fifty ids the platform recognises
+and cannot read, which is precisely the distinction this chapter spent phase 4 collapsing into
+one 404. A batch that refuses the WHOLE request when any id fails avoids the oracle and is worse
+than fifty singles, because one unreadable photo in a gallery of fifty returns no URLs at all.
+
+**The rejected alternative, named**: a batch endpoint that answers `{ id: url | null }` with no
+distinction between "not yours", "not readable" and "no such thing". That is oracle-free and it
+is the shape to build if the budget ever bites — it was not built here because nothing has
+measured a client hitting the limit, and 4.8's rule about hand-maintained exemption tables
+applies to speculative endpoints too.
+
+### 2 · No `state` in the response (plan open question 2)
+
+**Decided: two fields, `url` and `expires_at`.** Asserted in `delivery.itest.ts` as
+`Object.keys(body).sort()`, so a third field is a test failure rather than a review comment.
+
+4.11's FR-013 made the same call about the message payload and the reasoning carries one route
+over: every object is `pending` until movement VI, so a `state` here would be a constant wearing
+a field's name — and a client that branched on it would break on the day the verification chapter
+makes it mean something. What the platform knows about the bytes is *nothing*: `presign` never
+contacts the store, so a URL for an object whose upload never happened is well-formed and fetches
+a 404 from the store. Telling the caller `"state": "pending"` would suggest Relay had checked.

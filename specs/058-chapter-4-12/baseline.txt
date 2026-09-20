@@ -317,3 +317,206 @@ being unknown. Counted:
 T016b decides it in `contracts/media-delivery.md`: recorded, not repaired. Thirty hunks
 across three published controllers for a change that teaches nothing this chapter is
 about.
+
+================================================================================
+PHASES 3-5 · THE ROUTE, ITS REFUSALS, AND THE DISJUNCTION
+================================================================================
+
+--------------------------------------------------------------------------------
+`delivery.itest.ts` — 15 TESTS, AND THE FIXTURE WAS WRONG ONCE
+--------------------------------------------------------------------------------
+
+    15 of 15 · a new file, so the fence chain is charged nothing for it
+
+AND EIGHT OF THE FIRST RUN'S FIFTEEN FAILED IN THE FIXTURE. `expected 400 to be 201` on
+every send made with the API key: an application credential has to NAME its sender and a
+user token may not. That is 4.11's quickstart defect arriving in a test -- where a reader
+following the quickstart would have concluded the platform was broken, a reader of this
+suite would have concluded the delivery predicate was.
+
+--------------------------------------------------------------------------------
+T033, T037 — BOTH PROBES RUN RED, AND EACH TURNED A DIFFERENT TEST
+--------------------------------------------------------------------------------
+
+    the change                                    red                        of 15
+
+    delete the `channelVisibleTo` call            3: the private-channel      12 green
+    (T033)                                           refusal, the whole-body
+                                                     comparison, and the
+                                                     disjunction's negative half
+
+    return one referencing channel, not all       1: the disjunction, with    14 green
+    (T037)                                           `expected 404 to be 200`
+
+AND THE TENANCY TEST SURVIVED T033, WHICH IS WHAT T027 ASKED FOR. "Refuses an object of
+another environment" stayed green with the authorisation check deleted, because
+`channelsReferencingMedia` carries its own environment predicate. Two scopes, independent
+— and the task said to assert that rather than assume the one covered the other.
+
+--------------------------------------------------------------------------------
+T025 — THE REFUSAL IS 23% FASTER THAN THE GRANT, END TO END
+--------------------------------------------------------------------------------
+
+120 pairs, pause BEFORE each pair, order alternated within it (4.11's finding: a pause
+after the pair reported the media send 35.4% faster because only one side ever followed a
+quiet gap). Three runs:
+
+    run   grant p50   grant p95   refusal p50   refusal p95   refusal against grant
+      1     5.512       6.963        4.253         5.263            -22.8%
+      2     5.558       6.772        4.255         4.923            -23.4%
+      3     5.517       6.652        4.234         5.540            -23.3%
+
+This is T013's buffer measurement arriving as wall-clock. An id no object has dies at the
+primary key and the reference lookup never runs, so the commonest refusal is the cheapest
+thing the route does -- the OPPOSITE of `research.md` R3's *"the refusal is the expensive
+case"*, which was true of the query the chapter planned to send.
+
+    check:errors after the route exists   34 codes, 34 sections   unchanged (T032)
+
+================================================================================
+PHASE 6 · THE GAUNTLET, AND THREE SCOPES NO INSTRUMENT CAN SEE
+================================================================================
+
+--------------------------------------------------------------------------------
+T043, T044, T045, T046 — DERIVE, CLASSIFY, ATTACK, IN THAT ORDER
+--------------------------------------------------------------------------------
+
+    before the classification entry   45 derived, 38 attacked, 6 exempt
+                                      unclassified: ["GET /v1/media/:mediaId"]
+    after it, before the attack       "classified but never attacked:
+                                       GET /v1/media/:mediaId"
+    after the attack                  45 derived, 39 attacked, 6 exempt
+                                      (read 6, write 26, credential 4, list 3,
+                                       exempt 6) · 75 of 75
+
+THE DERIVATION FOUND THE ROUTE FIRST FOR THE NINTH TIME. 4.11 added no route and so
+broke no streak; this one resumes it. And the third accounting direction fired on cue:
+naming a route is not covering it.
+
+`read` AND NOT `credential`, WHICH IS THE OPPOSITE CALL FROM ITS SIBLING. `POST /v1/media`
+is `credential` because its body carries no identifier to forge. This route's whole input
+IS an identifier.
+
+AND THE ATTACK PLANTS A REFERENCED OBJECT, WHICH IS TWO STEPS RATHER THAN ONE. 4.11's
+write attack plants a bare `media_objects` row; that is not enough here, because an object
+with no referencing message is refused to EVERYBODY — a bare plant would fail the
+attacker's own control for this chapter's reason rather than for tenancy. Each tenant's
+object is uploaded and attached through its own routes.
+
+--------------------------------------------------------------------------------
+T041, T047 — THREE TENANCY PREDICATES, AND NO SINGLE-MUTATION PROBE SEES ANY
+--------------------------------------------------------------------------------
+
+Constitution VI's 100%-branch clause names tenant isolation, so each arm was deleted and
+the suites re-run. `repository.ts` is pinned at 92 branches against hundreds, so the pin
+is not the instrument -- and neither, it turns out, is anything else.
+
+    mutation                                   delivery.itest.ts   gauntlet.itest.ts
+
+    delete the object-exists guard              3 of 16 red         --
+    return one referencing channel, not all     1 of 16 red         --
+    delete the `channelVisibleTo` CALL          3 of 16 red         --
+
+    remove the scope from the REFERENCE LOOKUP  16 of 16 GREEN      60 of 60 GREEN
+    remove the scope from the OBJECT READ       16 of 16 GREEN      60 of 60 GREEN
+    remove the scope from `channelVisibleTo`    16 of 16 GREEN      5 red, and NONE of
+                                                                    them the media attack
+    remove ALL THREE                             2 of 16 red         --
+
+THREE INDEPENDENT SCOPES GUARD THIS ROUTE AND EACH ONE IS INVISIBLE ALONE. Only deleting
+all three turns anything red in this chapter's suite, and the gauntlet -- the suite
+constitution VI names as gating releases -- reports nothing at all when either of this
+chapter's two is removed. Removing `channelVisibleTo`'s turns five OTHER tests red and
+leaves the media read attack green, because this chapter's two catch it.
+
+THE READING IS NOT "DELETE TWO OF THEM", AND THE PRECEDENT THAT SAYS OTHERWISE IS ABOUT A
+DIFFERENT THING. 4.6 reached 100/100/100/100 by deleting unreachable arms and 4.11 deleted
+an early return that was "an optimisation wearing a branch's clothes" -- both were arms
+whose removal changed nothing. These are arms whose removal changes nothing TODAY BECAUSE
+OF EACH OTHER, and `channelsReferencingMedia` is one refactor away from being called by
+something that does not ask `channelVisibleTo` afterwards. `grep -c 'environmentId,
+this.environmentId'` in `repository.ts` returns 44: scoping every read is the convention,
+and an exception is what somebody copies.
+
+WHAT THE PROBE MEASURED IS THE DEFENCE, NOT THE ARM. A single-mutation test reports a
+redundant safety predicate exactly as it reports dead code, and the difference is not in
+the number.
+
+--------------------------------------------------------------------------------
+T053 — check-lane-scope.py
+--------------------------------------------------------------------------------
+
+    61 integration files, 0 unscoped read(s) of a shared table in 0 file(s)
+    controls: 10 of 10 fired
+
+60 at 057's close and 61 now: the chapter added a file and the instrument saw it. A run
+that reads nothing exits 2.
+
+================================================================================
+PHASE 7 · THE CHAPTER
+================================================================================
+
+    prose words outside code fences        2,944     bound 2,000-4,000
+    figures                                    3     all passed as `code`, not `chart`
+    TRAP boxes                                 3
+    pages the tutorial builds                126     from 125
+    check:figures    290 figures, 292 imported bindings resolve, 3 unused
+    check:srs        245 clause rows, 245 unique identifiers
+    check:docs       all mirrored docs match · 20 revisions ascend, 1.0 to 1.19
+    lint             no output, which is all there is (055-3's note)
+    build            EXIT 0
+
+--------------------------------------------------------------------------------
+T006 / T061 — THE FENCE BILL, AND THIS TIME THE PLAN WAS HIGH
+--------------------------------------------------------------------------------
+
+The checker's own dump, diffed against the tree after every source edit:
+
+    services/api/src/db/repository.ts               49 titled fences
+    services/api/src/db/schema.ts                   31
+    services/api/src/media/media.controller.ts       1
+    services/api/src/media/media.service.ts          1
+    services/api/src/isolation/targets.ts           12
+    services/api/src/isolation/gauntlet.itest.ts    12
+                                                    --
+                                                     6 files
+
+`plan.md` named six fenced files too — and **the sets differ in both directions.** It
+listed `packages/outsider/src/integrate.itest.ts`, which T075 will edit and which the
+checker therefore has not seen yet, and it missed `services/api/src/isolation/targets.ts`
+entirely. 056 said twelve against seventeen and 057 said thirteen against twenty-two; this
+is the first chapter whose count was right and whose LIST was not.
+
+AND THE INSTRUMENT'S OWN FIRST RUN CHARGED THIS CHAPTER FOR ELEVEN FILES IT NEVER TOUCHED
+— every one a sole trailing-newline difference, which `check:fences` normalises. The
+control ("with no edit yet, the bill must be 0") is what caught it, and the eleven are now
+the helper's evidence that it compares bytes at all.
+
+--------------------------------------------------------------------------------
+T063 — WHICH STATE EACH HUNK IS WRITTEN AGAINST, AND ONE OF SIX FAILED THE TEST
+--------------------------------------------------------------------------------
+
+`--dump --at <this chapter's page>` gives the chain BEFORE the appendix, which is the state
+a chapter hunk must anchor on. Diffed against the tree, per file:
+
+    file                       hunks in the diff   this chapter's   published
+    repository.ts                      1                 1          chapter
+    schema.ts                          3                 1          chapter
+    media.controller.ts                2                 2          chapter
+    media.service.ts                   3                 3          chapter
+    targets.ts                         4                 1          APPENDIX
+
+THE `targets.ts` ENTRY HAS NO ANCHOR AT THIS CHAPTER. It follows `POST /v1/media`'s own
+row, and `grep -c 'path: "/v1/media"'` against the chain at 4.12 returns **0**: that row is
+added by `fences/post-series.md`, which applies after every chapter. So the amendment
+extends the appendix's existing hunk instead — one pre-image rather than two. 4.8 found the
+shape, 4.11 paid it on `codes.ts`, and this is the third time.
+
+AND THE GAUNTLET'S ATTACK GOES LAST, anchored on the state the appendix itself produces:
+`gauntlet.itest.ts` is 1,415 lines in the chain's end state against 1,486 in the tree, and
+a hunk written against the tree would have matched nothing.
+
+VERIFIED BY OCCURRENCE COUNT, NOT BY `patch --dry-run` (056-7). Every published hunk's
+pre-image occurs exactly once in the state it is written against.
+
+    check:fences after the chapter   1 problem, and it is the deliberate coverage pin probe
