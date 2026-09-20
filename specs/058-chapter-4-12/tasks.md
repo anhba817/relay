@@ -164,8 +164,8 @@ the bytes come back.
 - [X] T076 **Rebuild in all three senses before believing a run.** `pnpm build` for the spawned `dist`, `docker compose --profile services build` for the container image, and the protocol package before anything reads a type from it. 4.11 lost a confusing failure to each of the first two.
 - [X] T077 Run the quickstart **unmodified**, and only then let it say every command was run before it was written. NFR-USE-03 is a `T` clause at 100% and `ci.yml` contains the word `quickstart` zero times, so this run is its whole verification. 4.11's was wrong five times and **four produced a red that looked like a platform defect**.
 - [X] T078 Run `pnpm check:errors` by hand, in both directions, and assert **34/34 unchanged**. It is a script no CI job runs (055-3).
-- [ ] T079 Tag `part4-ch12` on `relay-platform`, commit, and push all three repositories.
-- [ ] T080 After the push, confirm CI. **Compare per error, not per colour** — and **over more than one run**. 4.11 compared a single run and called the error set identical; three runs read 3, 6, 3, where the middle one's extras were absent from both neighbours. One comparison supports *"this run introduced nothing new"*, not *"the set is stable"* (`gaps.md` 057-8).
+- [X] T079 Tag `part4-ch12` on `relay-platform`, commit, and push all three repositories.
+- [X] T080 After the push, confirm CI. **Compare per error, not per colour** — and **over more than one run**. 4.11 compared a single run and called the error set identical; three runs read 3, 6, 3, where the middle one's extras were absent from both neighbours. One comparison supports *"this run introduced nothing new"*, not *"the set is stable"* (`gaps.md` 057-8).
 
 **Checkpoint**: a `media_id` is a URL, and the record says what the URL cannot promise.
 

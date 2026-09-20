@@ -635,3 +635,36 @@ The last two arrived from repairs made after the list was counted -- the coverag
 sealed suite -- which is 050's sentence for the third feature running: **a list of fenced
 files goes stale every time a chapter moves code between files, and the error is in one
 direction.**
+
+--------------------------------------------------------------------------------
+T079, T080 — THE PUSH, AND THE ERROR SET COMPARED OVER THREE RUNS
+--------------------------------------------------------------------------------
+
+Tagged `part4-ch12`; all three repositories pushed fast-forward, nothing forced.
+
+    relay-platform  19411a42..7eb07cf9  + the part4-ch12 tag
+    relay-tutorial  59fc293..4a191b1
+    relay           09ff2a5..71720ff
+
+    THE TUTORIAL JOB SUCCEEDED (SC-008)              the job check:fences ends
+    THE SEALED INTEGRATION JOB SUCCEEDED             its second green run ever
+    THE DOCKER-FREE GATE SUCCEEDED
+    the lanes job failed
+
+COMPARED PER ERROR, NOT PER COLOUR, AND OVER THREE RUNS — because 057 compared one and
+called the set identical where three showed it moving:
+
+    81761a0   057's record run     3 distinct
+    09ff2a5   057's last run       4 distinct       the baseline for this chapter
+    71720ff   THIS chapter         4 distinct       empty diff both ways against 09ff2a5
+
+    the one that moves:
+      AssertionError: expected 'Nested Loop Left Join …' to match
+                      /Index (Only )?Scan|Index Cond/
+    absent at 81761a0, present at 09ff2a5 and here.
+
+**THIS CHAPTER INTRODUCED NOTHING AND REMOVED NOTHING**, which is the strongest claim a
+single comparison supports and is what the baseline diff says in both directions. The third
+run is what keeps it from being read as *"the set is stable"*: one query-plan assertion
+comes and goes between runs of the same unchanged file, which is 057-8's flake rather than
+a regression. **The colour was red all three times and could not have said either.**

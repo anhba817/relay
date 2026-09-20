@@ -35,6 +35,8 @@ carried and re-measured**), `traceability.md`, `tasks.md`. **SRS 1.19**, and **b
 the Part 4 table amended. Tagged **`part4-ch12`**.
 
     check:fences 0 · EXIT 0 · 291 files across 55 chapters      from 290 and 54
+    the CI error set is IDENTICAL to the pre-chapter baseline — 4 distinct, empty both ways
+    the tutorial job SUCCEEDED (SC-008) · the sealed job SUCCEEDED · gates SUCCEEDED
     2,944 prose words · 3 figures · 3 TRAP boxes · 126 pages    from 125
     34 error codes, 34 sections — UNCHANGED, asserted twice
     api lane 747 of 747 · outsider 19 of 19 · unit 776 of 776
