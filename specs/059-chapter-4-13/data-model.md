@@ -70,11 +70,28 @@ closed set lives in the protocol package where the reader can see it.
 
     from       event                                  to          bytes        row
 
-    pending    verified, scanned, probed              ready       kept         probe columns set
+    pending    scanned, verified, probed              ready       kept         probe columns set
+    pending    scanner reports a signature            rejected    DELETED      rejected_reason
+                                                                               = scan_failed
     pending    size or type contradicts declaration   rejected    DELETED      verified_* set,
                                                                                rejected_reason
-    pending    scanner reports a signature            rejected    DELETED      rejected_reason
+                                                                               = declaration_mismatch
     pending    store or scanner unreachable           pending     kept         nothing
+
+**THE SCAN IS FIRST, AND A TEST THAT COULD NOT BE WRITTEN IS WHY** (`research.md` R5a). The first
+version of this table checked the declaration first, which is the cheaper refusal and the
+obvious order. It makes SC-003 impossible: EICAR is a 68-byte text file, `ALLOWED_TYPES` has no
+text type, so the object is refused as `declaration_mismatch` before the scanner is asked — and
+ClamAV's signature matches the FILE rather than a substring, so it cannot be smuggled inside a
+valid PNG either. Measured: EICAR plus two hundred trailing spaces is already `OK`.
+
+**FR-MED-04's own word settles it.** *"Every uploaded object shall be virus-scanned"*, and
+declaration-first leaves some uploaded objects unscanned — the mis-declared ones, which are the
+ones worth scanning.
+
+**And `scan_failed` wins when both fail.** An object can now be both infected and a lie; the
+scan is the more serious fact about the caller and the one an operator reading `rejected_reason`
+needs.
 
 **The fourth is the one that needs saying.** FR-009 forbids a transient failure from producing
 either terminal state, so *nothing happens* is a legitimate outcome and the object comes back on
@@ -105,6 +122,13 @@ SELECT id, object_key, mime_type, declared_bytes
 
 then one signed `HEAD` per row against the store.
 
+**AND THE `HEAD` ANSWERS HALF OF FR-MED-03 ON ITS OWN.** Measured at analysis pass 1: a presigned
+PUT of twelve MP4 bytes sent with `content-type: image/png` comes back from `HEAD` as
+`content-type: image/png` — **the client's claim, echoed** — and `content-length: 12`, which is
+**the store's own count**. So the size comparison needs no bytes at all, and only the type
+comparison needs the object. A worker that read `Content-Type` off the response would have
+verified the client's claim twice and called the second one a verification.
+
 **Measured before this document was written**: 1.412 ms per `HEAD`, p50 1.094, p95 1.714, over
 200 rows — 34 with bytes and 166 without. The lane's whole 3,005-row backlog is **4.2 seconds**
 serial. That figure is what settled `research.md` R1 against the specification's assumption.
@@ -125,8 +149,19 @@ right end.
 Postgres. ADR-04, and `research.md` R8 found the seam already built six times: the api serves
 six `internal/` controllers and `services/dispatcher/src/api-client.ts:67` is the one client
 that reaches them. The worker reads its batch and writes its verdict through a route on that
-seam, with `RELAY_INTERNAL_CREDENTIAL` — the variable whose absence chapter 4.9 found was
-silently skipping three isolation attacks, which is the reason to name it here.
+seam.
+
+**WITH ITS OWN CREDENTIAL, AND THE FIRST DRAFT OF THIS SECTION SAID OTHERWISE.**
+`authenticate.middleware.ts:63` maps `RELAY_INTERNAL_CREDENTIAL` to the literal `"dispatcher"`,
+and `Principal.service` is what every structured log line and every request-log row reports. A
+worker on the dispatcher's variable is a fifth service that logs as the fourth — in the audit
+trail of the only component that reads customer bytes. `RELAY_INTERNAL_CREDENTIAL_WORKER` is a
+third entry in `PLATFORM_SERVICES`, which widens `PlatformService` and **stops every route that
+must now decide about it from compiling**. That is the mechanism working: the type was built for
+exactly this moment, and its own comment says so.
+
+`RELAY_INTERNAL_CREDENTIAL` is still worth naming here for a different reason — chapter 4.9
+found its absence silently skipping three isolation attacks at 0 ms apiece.
 
 ## 7. The second writer, named because constitution IV names it
 

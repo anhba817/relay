@@ -24,6 +24,11 @@ what the slot declared, scans them, probes them, and moves each one to `ready` o
    **24 bytes** of a PNG and fixed offsets in three other formats; audio and video duration is
    four unrelated container parsers with a known hard case. That split is what makes `docs/12`
    §7.3's constitutional question concrete rather than abstract.
+4. **The scan has to run BEFORE the declaration check, and an impossible test is what proved
+   it** (added at analysis pass 1, `research.md` R5a). ClamAV's EICAR signature matches the
+   **file** rather than a substring — EICAR plus two hundred trailing spaces is already `OK` —
+   and `ALLOWED_TYPES` has no text type, so **no object can both satisfy FR-MED-03 and trip the
+   scanner**. FR-MED-04's own *"every uploaded object"* had required this order all along.
 
 ## Technical Context
 
@@ -74,6 +79,12 @@ The worker's memory bound has to be measured here, not quoted.
    service packaged the same way is a fifth thing nobody runs — and a container costs
    `compose.yaml` plus `INFRA_SERVICES` plus a health check, which is the both-directions
    assertion 4.10 tripped over. **Whichever is chosen, the chapter names which shape it is.**
+   **AND IT DECIDES WHETHER SC-010 CAN EXIST** (analysis pass 1): the sealed suite fetches the
+   bytes of an object it uploaded, T046's gate refuses that until something moves it to `ready`,
+   and only a worker inside the composed profile does. The unpackaged shape means SC-010 is
+   unsatisfiable; the container makes it a poll. **Three registries, not two** — `compose.yaml`,
+   `INFRA_SERVICES` and `bound-port.test.ts`'s `BINDS_NOTHING`, whose omission cost 050 two
+   chapters when the ingester arrived without it.
 4. **How does the sweep avoid two workers doing the same object?** One worker is the current
    reality and `FOR UPDATE SKIP LOCKED` is the obvious answer, but the read is through the api
    (ADR-04), not through a transaction the worker holds. The seam decides it.
@@ -173,6 +184,8 @@ surface of anything here. 4.9 found that file could not take a chapter hunk at a
 | **The platform's fifth service** | Different datastore, no transactions, CPU-bound off the request path: it fails all three of SAD §4.2's merge criteria (`research.md` R3). | Merging the worker into the api, which would put a 2–10 s CPU-bound pipeline in the same process as the send path — the coupling ADR-14 exists to forbid. |
 | **A second writer on `media_objects.state`** | The api writes `pending` and the worker writes the terminal states. Constitution IV names single-writer, so this is a deviation that gets an argument rather than a silence. | A single writer reached by making the api poll and scan, which is the merge above wearing different clothes. |
 | **A sweep rather than an event** | `research.md` R1: the event has no producer, the sweep costs 4.2 s for the whole backlog, and a client-driven notice makes FR-MED-04's *"every"* contingent on the client. | Bucket notifications, rejected on ADR-30's direction argument and recorded rather than dismissed. |
+
+| **A third internal credential** | `PLATFORM_SERVICES` maps `RELAY_INTERNAL_CREDENTIAL` to the literal `"dispatcher"`, and `Principal.service` is what every log line reports. Reusing it would make the only component that reads customer bytes log as a service that never touched them. | Reuse, which two artifacts had quietly assumed until analysis pass 1 read the middleware. |
 
 **What is NOT a deviation, said because it looks like one**: reading customer bytes. ADR-13 and
 ADR-14 both describe this service doing exactly that, and the SAD has called it *"the only Relay

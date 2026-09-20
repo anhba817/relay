@@ -123,23 +123,49 @@ curl -s -o /dev/null -w 'the bytes -> %{http_code}\n' \
 ```
 
 **Expected**: `rejected · declaration_mismatch · 1024 · 40000`, and the store answers **404** to
-a signed HEAD of the key. **Both halves**, because a state change that leaves the bytes in the
+a signed HEAD of the key. **The size half of that verdict came from the sweep's own `HEAD`** —
+`content-length` is the store's count — so this object was refused without its bytes ever being
+fetched for comparison. Only the scan read them, and only because T039a puts the scan first. **Both halves**, because a state change that leaves the bytes in the
 store is the failure FR-MED-03 exists to prevent — and the tenant's committed bytes must fall
 with them (SRS 1.17's sum over the media rows).
 
 ## 4 · EICAR is rejected by a scanner that is running
 
 ```bash
-printf 'X5O!P%%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*' > eicar.png
+printf 'X5O!P%%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*' > eicar.bin
+wc -c eicar.bin      # 68 — exactly, with no trailing newline
+EICAR=$(curl -s -X POST localhost:4000/v1/media \
+  -H "authorization: Bearer $CREDENTIAL" -H 'content-type: application/json' \
+  -d '{"filename":"eicar.png","mime_type":"image/png","bytes":68}')
+curl -s -X PUT "$(jq -r .upload_url <<<"$EICAR")" --data-binary @eicar.bin -o /dev/null
+sleep 5
+psql "postgres://relay:relay@localhost:15432/relay" -c \
+  "select state, rejected_reason from media_objects
+     where id='$(jq -r .media_id <<<"$EICAR")'"
 ```
 
-Take a slot for it, PUT it, wait, and read the row.
+**Expected**: `rejected · scan_failed`.
 
-**Expected**: `rejected · scan_failed`, and the bytes gone.
+**NOT `declaration_mismatch`, AND THAT IS THE WHOLE POINT OF THE ORDER.** Those 68 bytes are not
+a PNG, so under a declaration-first worker this object is refused before the scanner is asked,
+and the step above would read `declaration_mismatch`. Analysis pass 1 tried to dodge that by
+embedding the signature in a valid PNG and asked ClamAV through `INSTREAM`:
 
-**EICAR is the standard harmless string every scanner is required to detect.** A test that
-mocks the scanner asserts that the mock was called; this one asserts that ClamAV was running and
-had definitions — which is the distinction `research.md` R5 flags, because **a scanner with no
+    EICAR alone                        68 B   Eicar-Test-Signature FOUND
+    EICAR + a newline                  69 B   Eicar-Signature FOUND
+    EICAR + 200 spaces                268 B   OK
+    EICAR prepended to a valid PNG    422 B   OK
+    EICAR appended to a valid PNG     422 B   OK
+
+**The signature matches the file, not a substring in it.** So no object can both satisfy
+FR-MED-03 and trip the scanner, and FR-MED-04's *"every uploaded object shall be
+virus-scanned"* is what decides the order (`research.md` R5a). **Write the 68 bytes with no
+trailing newline**: `printf` does not add one and `echo` does, and the padded file above is the
+measurement showing why that matters.
+
+**EICAR is the standard harmless string every scanner is required to detect.** A test that mocks
+the scanner asserts that the mock was called; this one asserts that ClamAV was running and had
+definitions — which is the distinction `research.md` R5 flags, because **a scanner with no
 definitions reports clean on everything**.
 
 ## 5 · A scanner that is down leaves the object alone
@@ -181,11 +207,16 @@ psql "postgres://relay:relay@localhost:15432/relay" -tAc \
 cd relay-platform && pnpm lint && pnpm typecheck && pnpm test
 pnpm test:integration                       # composed services STOPPED
 RELAY_DEMO_CREDENTIAL=$CREDENTIAL RELAY_API_URL=http://localhost:4000 \
-  RELAY_WS_URL=ws://localhost:4001 pnpm test:outsider
+  RELAY_WS_URL=ws://localhost:4001 pnpm test:outsider   # needs a worker in the profile
 cd ../relay-tutorial
 pnpm check:errors                           # expect 34 codes, 34 sections — UNCHANGED
 pnpm check:fences 2>&1 | grep 'problem(s)\|replay onto'
 ```
+
+**And the sealed suite now needs a running worker.** Its media test fetches the bytes of an
+object it uploaded itself, which the gate refuses until something moves it to `ready` — so this
+command's preconditions include the worker being in the composed profile (plan open question 3).
+Chapter 4.12's version of this suite ran against a `pending` object and passed.
 
 **`check:errors` is expected not to move.** This chapter changes what a route refuses and adds
 no vocabulary, so 34/34 is an assertion rather than a formality — and it is a script no CI job

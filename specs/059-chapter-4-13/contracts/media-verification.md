@@ -6,9 +6,16 @@
 POST /internal/media/:mediaId/verdict
 ```
 
-`@Accepts("platform")`, on the seam `research.md` R8 found already built six times over. The
-worker holds `RELAY_INTERNAL_CREDENTIAL` exactly as the dispatcher does; ADR-04 keeps it off
-Postgres, so this is how a verdict becomes a row.
+`@Accepts("platform")`, on the seam `research.md` R8 found already built six times over. ADR-04
+keeps the worker off Postgres, so this is how a verdict becomes a row.
+
+**WITH `RELAY_INTERNAL_CREDENTIAL_WORKER`, NOT THE DISPATCHER'S.** The first version of this
+line said the worker holds `RELAY_INTERNAL_CREDENTIAL` *"exactly as the dispatcher does"*, and
+so did `research.md` R8 — two artifacts agreeing with each other and neither asking what the
+credential **says**. `authenticate.middleware.ts:63` maps that variable to the literal
+`"dispatcher"`, and `Principal.service` is what every log line and request-log row reports. A
+third entry widens `PlatformService` and stops every route that must now decide about it from
+compiling, which is the compiler asking a question that reusing the variable avoids.
 
 **Request — ready:**
 
@@ -55,10 +62,21 @@ objects would be a route worth forging.
 
 ## 3. What the worker does with the bytes, and it reads them twice for a reason
 
-    HEAD  (signed)   does this object have bytes at all?     1.412 ms measured, 3 KB of headers
-    GET   (signed, Range: bytes=0-65535)   the probe          dimensions live in the first 24
-                                                              bytes of a PNG
-    GET   (signed, streamed)   the scan                       ClamAV INSTREAM, chunked
+    HEAD  (signed)   does it have bytes, and how many?       1.412 ms measured
+                     — and the SIZE half of FR-MED-03 is
+                       answered here, because content-length
+                       is the store's own count
+    GET   (signed, streamed)   the scan                       ClamAV INSTREAM, chunked.
+                     FIRST, because FR-MED-04 says EVERY
+                     uploaded object (`research.md` R5a)
+    GET   (signed, Range: bytes=0-65535)   the type and       206 · `bytes 0-7/12` measured;
+                     the dimensions                           a PNG's are in its first 24 bytes
+
+**THE STORE'S TWO HEADERS ARE NOT EQUALLY TRUSTWORTHY, AND THAT WAS MEASURED.** A presigned PUT
+of twelve MP4 bytes sent with `content-type: image/png` answers `HEAD` with **`content-type:
+image/png`** — the client's own claim, echoed — and **`content-length: 12`**, which is the
+store's count. So the size comparison needs no bytes and the type comparison cannot use the
+header. Reading `Content-Type` off the response is verifying the client's claim twice.
 
 **Three round trips where one would do, and the chapter has to justify it or collapse it.**
 4.10 measured a single extra round trip on the slot path at **+24.1%** and published it, so the
@@ -94,6 +112,13 @@ five conditions:
 discipline 4.11 and 4.12 both built — and it is also why FR-MED-09's rejection marker is a
 *later* chapter. A client learns that an attachment was rejected from the message payload, not
 from the delivery route's refusal; the route's job is to say nothing.
+
+**AND THE GATE BREAKS THE SEALED SUITE, WHICH R4's FIGURE DID NOT COUNT.**
+`packages/outsider/src/integrate.itest.ts:496` fetches the bytes of a **`pending`** object — the
+three assertions chapter 4.12 added as SC-010 — and that suite is a third lane the 10-of-76
+probe never reached. **Whether it can pass after this chapter depends on plan open question 3**:
+only a worker inside the composed profile moves the object to `ready`, and then the assertion
+becomes a poll rather than a read. The packaging decision decides whether SC-010 survives.
 
 **No new error code.** `check:errors` should read **34 codes, 34 sections** at the close,
 unchanged from 4.12 — asserted rather than assumed, because a chapter that changes what a route
@@ -134,6 +159,12 @@ A signature scanner detects known signatures. SAD R9 names *"scanner misses"* as
 risk, and the chapter must say so — FR-014. A reader who finishes this chapter believing scanned
 means safe has learned something false, and the clause that would correct them is a risk row
 nobody reads.
+
+**And the EICAR test can only exist because the scan runs first** (`research.md` R5a). ClamAV's
+signature matches the file rather than a substring — EICAR plus two hundred trailing spaces is
+already `OK` — so no object can both satisfy FR-MED-03's declaration check and trip it. The
+order the clause required for its own reason is the order that makes the test possible, which is
+a coincidence worth stating rather than relying on.
 
 **And a scanner with no definitions reports clean on everything.** Its readiness is a different
 question from its reachability, and a health check that only proves the socket answers is the

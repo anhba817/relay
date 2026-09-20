@@ -184,11 +184,17 @@ scanner is required to detect — and assert `rejected`, deleted bytes, and a su
   survive the worker being down. The chapter MUST publish which mechanism was chosen, what the
   rejected alternatives cost, and what the chosen one cannot do.
 - **FR-002**: The worker MUST verify the object's actual size and content type against the
-  declaration recorded when the slot was issued (FR-MED-03).
+  declaration recorded when the slot was issued (FR-MED-03). **The size comes from the store's
+  own count and the type comes from the bytes** — measured at analysis pass 1, the store echoes
+  back whatever `Content-Type` the client uploaded with, so reading it verifies the declaration
+  against itself.
 - **FR-003**: An object contradicting its declaration MUST become `rejected`, and its bytes MUST
   be deleted from the store.
 - **FR-004**: Every object MUST be virus-scanned before it can become `ready` (FR-MED-04). An
-  object that fails the scan MUST become `rejected` and its bytes MUST be deleted.
+  object that fails the scan MUST become `rejected` and its bytes MUST be deleted. **The scan
+  MUST run before the declaration check**, because *"every uploaded object"* excludes nothing
+  and a declaration-first worker never scans the objects that lie — which are the ones worth
+  scanning. Where both fail, `scan_failed` is the recorded reason.
 - **FR-005**: A rejection MUST retain a record of what happened, and that record MUST
   distinguish a declaration mismatch from a scan failure.
 - **FR-006**: Images MUST have dimensions recorded and audio/video MUST have a duration recorded
@@ -196,7 +202,9 @@ scanner is required to detect — and assert `rejected`, deleted bytes, and a su
 - **FR-007**: The object MUST reach `ready` only after verification, scan and probe have all
   succeeded. No partial success may produce `ready`.
 - **FR-008**: Processing MUST be idempotent. An object processed twice MUST end in the same
-  state, and the second pass MUST NOT re-read the bytes.
+  state, and the second pass MUST NOT re-read the bytes — **both halves tested**, because the
+  second was the one requirement of twenty-six that a mechanical coverage sweep correctly
+  flagged as having no task.
 - **FR-009**: A transient failure — the store unreachable, the scanner unreachable — MUST leave
   the object `pending` and retryable, and MUST NOT produce either terminal state.
 - **FR-010**: The schema MUST accept `pending`, `ready` and `rejected`, and MUST NOT accept a

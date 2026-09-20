@@ -134,6 +134,20 @@ produce `ready`, and nothing can: `media_objects_state_check` permits one value.
 sequencing is fixed rather than chosen — **the transition and the gate ship together, in this
 chapter, or the gate ships broken.**
 
+**AND 10 OF 76 IS AN UNDERCOUNT, BECAUSE THE PROBE RAN IN ONE LANE.** It measured
+`delivery.itest.ts` and `gauntlet.itest.ts`, which are the api's. **The sealed outsider suite is
+a third lane and it fetches the bytes of a `pending` object** — `integrate.itest.ts:496` asks
+`GET /v1/media/:mediaId` for the object it uploaded itself, and chapter 4.12 added those three
+assertions as SC-010. Under the gate that call answers 404 and the sealed suite goes red, and no
+figure above includes it.
+
+**And whether it can pass afterwards depends on a question the plan left open.** Only a worker
+running inside the composed profile moves that object to `ready`, so if plan open question 3
+lands on the ingester's unpackaged shape, the sealed suite has no worker and the assertion
+cannot be made at all. If it lands on a container, the assertion becomes a **poll** rather than a
+read. **Two open questions are coupled and nothing said so**: the packaging decision decides
+whether SC-010 survives this chapter.
+
 **And the gauntlet's control is the interesting failure.** That test asserts the attacker can
 read its own object, so that the refusal beside it means tenancy rather than a broken feature.
 Gating without a state machine makes the control fail, which is the exact shape 4.12 recorded
@@ -157,6 +171,50 @@ against the size caps below: the worker never has to hold an object in memory to
 
 **Not measured yet and owned by the tasks phase**: scan latency against a real object, and
 whether the container's health check can distinguish *running* from *has definitions*.
+
+---
+
+## R5a · THE EICAR TEST AND FR-MED-03 ARE MUTUALLY EXCLUSIVE, AND THE CLAUSE DECIDES THE ORDER
+
+**Found at analysis pass 1, by running ClamAV rather than reasoning about it.** The chapter's
+scan test is SC-003: *"the EICAR signature is rejected by a scanner that is actually running."*
+EICAR is a 68-byte text file. `ALLOWED_TYPES` holds ten image, audio and video types and no text
+type, so **whatever a slot is taken for, EICAR's bytes contradict the declaration** — and with
+verification before the scan, the object is refused as `declaration_mismatch` and the scanner is
+never asked. The test would assert `scan_failed` and get the other one.
+
+**The obvious fix does not work, and that is the measurement worth keeping.** Embed the signature
+in a file that IS the declared type. Asked of ClamAV through `INSTREAM`, which is the protocol
+the worker will use:
+
+    file                             bytes   verdict
+
+    EICAR alone                         68   Eicar-Test-Signature FOUND
+    EICAR + a newline                   69   Eicar-Signature FOUND
+    EICAR + 200 spaces                 268   OK
+    EICAR + newline + 1 KB of 'A'    1,093   OK
+    EICAR prepended to a valid PNG     422   OK
+    EICAR appended to a valid PNG      422   OK
+
+**The signature matches the FILE, not a substring inside it.** Two hundred trailing spaces
+defeat it, and there are two signature names for the two lengths that match at all. So there is
+no object that both passes FR-MED-03's declaration check and trips the scanner — not by
+embedding, not by padding, not in either order.
+
+**Decision: THE SCAN RUNS BEFORE THE DECLARATION CHECK, and FR-MED-04's own word decides it.**
+*"Every uploaded object shall be virus-scanned."* Refusing on the declaration first means some
+uploaded objects are never scanned — and the object that lies about its type is exactly the one
+worth scanning. The clause had already made this choice; what surfaced it was a test that could
+not be written.
+
+**What it costs, stated rather than hidden**: a mis-declared object pays a full scan before it
+is refused, where the old order refused it from the sweep's own `HEAD`. Against that, the old
+order left a hole in the word *"every"*, and the platform's own risk row (SAD R9) is about what
+it fails to catch rather than what it spends.
+
+**And the rejection precedence has to be written down**, because an object can now fail both.
+`scan_failed` wins: it is the more serious fact about the caller, and it is the one an operator
+reading `rejected_reason` needs. `data-model.md` §4's table carries the order.
 
 ---
 
@@ -190,11 +248,31 @@ reason FR-MED-04's parenthesis names both quantities rather than one.
 image dimensions with no non-TypeScript program at all, and cannot ship duration that way.
 Whether it ships both is a scope decision the plan takes below.
 
+**AND THE STORE'S TWO HEADERS ARE NOT EQUALLY TRUSTWORTHY, WHICH WAS MEASURED.** A presigned
+PUT of twelve MP4 bytes sent with `content-type: image/png`:
+
+    PUT                      200
+    HEAD content-type        image/png      ← the CLIENT's claim, echoed back
+    HEAD content-length      12             ← the STORE's own count, correct
+
+**So FR-MED-03 splits.** The size half is answered by the `HEAD` the sweep already issues and
+needs no bytes at all; the type half needs the first bytes and nothing the store says. A worker
+that reads `Content-Type` off the response has verified the client's claim twice and called the
+second one a verification — the plan's top-ranked failure mode, now a measurement rather than a
+worry.
+
+**And it removes a round trip from the commonest rejection.** An over-size object is refused
+from the sweep's own `HEAD`, before any GET.
+
 **AND THE TWO READS HAVE OPPOSITE SHAPES.** The probe wants the first few kilobytes; the scan
 wants every byte. A worker that fetches the object once and uses it twice is one design; a
 worker that issues a `Range` request for the header and a streamed full GET for the scan is
 another. 4.10's measurement of a single extra round trip — `storeReachable` at **+24.1%** —
 is what makes that worth deciding rather than defaulting.
+
+**And the `Range` half is buildable, checked rather than assumed**: a presigned GET carrying
+`Range: bytes=0-7` answers **206 · 8 bytes · `bytes 0-7/12`**. SigV4 signs `host` and not
+`Range`, so the header rides on an unmodified signature.
 
 ---
 
@@ -226,8 +304,33 @@ reaches them through one client:
       fetch(`${baseUrl}/internal/dispatch/${path}`, …)
 
 So the worker's transition surface is a new route on an existing seam rather than a new
-mechanism, and the credential is the one `RELAY_INTERNAL_CREDENTIAL` already carries — the
-variable whose absence 4.9 found was silently skipping three isolation attacks.
+mechanism.
+
+**THE CREDENTIAL IS NOT A FREE REUSE, AND THIS PARAGRAPH SAID IT WAS.** The obvious sentence —
+*the worker holds `RELAY_INTERNAL_CREDENTIAL`, as the dispatcher does* — is what the first
+version of this row and `contracts/` §1 both wrote, and neither asked what the credential
+**says**. `authenticate.middleware.ts:63` maps that variable to the literal `"dispatcher"`:
+
+```ts
+const PLATFORM_SERVICES = [
+  [PLATFORM_CREDENTIAL_ENV, "dispatcher"],
+  [GATEWAY_CREDENTIAL_ENV, "gateway"],
+] as const satisfies ReadonlyArray<readonly [string, string]>;
+```
+
+`Principal.service` is what every structured log line and every request-log row then reports, so
+a worker on the dispatcher's variable is **a fifth service that logs as the fourth**. And the
+type was built to force exactly this decision — its own comment reads *"adding a third internal
+service widens this union on its own and every route that must now decide about it stops
+compiling"*, which is the compiler asking a question that reusing the variable avoids.
+
+**Decision: a third entry, `RELAY_INTERNAL_CREDENTIAL_WORKER`.** The cost is one variable in
+`compose.yaml` and in CI, and whatever the widened union stops compiling — which is the
+mechanism working rather than a cost. The alternative is a platform whose audit trail attributes
+the only component that reads customer bytes to a service that never touched them.
+
+**The variable this reuses the LESSON of** is `RELAY_INTERNAL_CREDENTIAL` itself, whose absence
+4.9 found was silently skipping three isolation attacks at 0 ms apiece.
 
 ---
 

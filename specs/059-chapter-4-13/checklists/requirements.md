@@ -112,3 +112,59 @@ compose service or the ingester's unpackaged shape (`gaps.md` 050-8 is the warni
 probe's output lives, how a second worker avoids duplicating a first, and whether the three
 round trips per object collapse into one. Each has a measurement attached rather than an
 argument.
+
+---
+
+## Analysis pass 1 (2026-09-20)
+
+Six findings — one CRITICAL, three HIGH, two MEDIUM — all six applied. **Four came from running
+a premise rather than from reading the artifacts against each other**, and the CRITICAL one
+inverted a design decision three documents had agreed on.
+
+- **THE EICAR TEST AND FR-MED-03 ARE MUTUALLY EXCLUSIVE, AND THE CLAUSE HAD ALREADY DECIDED THE
+  ORDER.** SC-003 needs the scanner to refuse a file; EICAR is 68 bytes of text and
+  `ALLOWED_TYPES` holds no text type, so a declaration-first worker refuses it as
+  `declaration_mismatch` and never asks. The obvious dodge — embed the signature in a valid PNG
+  — was measured against a running ClamAV through `INSTREAM` and **does not work**: EICAR alone
+  is `FOUND`, EICAR plus a newline is `FOUND`, and **EICAR plus two hundred spaces, EICAR at
+  either end of a valid PNG, and EICAR followed by a kilobyte are all `OK`**. The signature
+  matches the file, not a substring. So the scan runs first — which is what FR-MED-04's *"every
+  uploaded object"* required all along, since declaration-first leaves the mis-declared objects
+  unscanned and those are the ones worth scanning. `research.md` R5a, `data-model.md` §4,
+  T039a/T039b/T040/T040a.
+- **`research.md` R4's "10 of 76" was an undercount, because the probe ran in one lane.** The
+  sealed outsider suite fetches the bytes of a **`pending`** object — the three assertions 4.12
+  added as SC-010 — and T046's gate turns that 404. **And it couples two open questions**: only
+  a worker inside the composed profile moves the object to `ready`, so plan open question 3
+  decides whether SC-010 can be satisfied at all or merely becomes a poll. T086 is a repair now
+  rather than a check.
+- **A fifth service joins a third registry and no task named it.** `bound-port.test.ts:49`
+  derives `serviceMains()` from the tree and asserts each reads back a bound port unless
+  declared in `BINDS_NOTHING`, in both directions — so `services/media-worker/src/main.ts` turns
+  the unit lane red the moment it exists. **050 paid two chapters for this exact omission**, and
+  turbo's cache hid it. T018a.
+- **The worker would have authenticated as the dispatcher.** `contracts/` §1 and `research.md`
+  R8 both said it holds `RELAY_INTERNAL_CREDENTIAL`; `authenticate.middleware.ts:63` maps that
+  variable to the literal `"dispatcher"`, and `Principal.service` is what every log line and
+  request-log row reports. **Two artifacts agreed with each other and neither asked what the
+  credential says** — the shape this project names. T012a adds a third entry, and the widened
+  `PlatformService` union stopping routes from compiling is that type's stated purpose.
+- **The store's two headers are not equally trustworthy, measured.** A presigned PUT of twelve
+  MP4 bytes sent with `content-type: image/png` answers `HEAD` with `image/png` — the client's
+  claim, echoed — and `content-length: 12`, the store's own count. **So FR-MED-03 splits**: the
+  size is answered by the `HEAD` the sweep already issues and the type needs the bytes. T022,
+  T022a.
+- **One coverage gap of nineteen alarms.** The mechanical sweep flagged 19 of 26 requirement ids
+  as uncited; reading each, **18 are false** — the tasks cite SRS clause ids where the spec cites
+  local ones — and one is real: FR-008 and SC-005's *"the bytes are read once"* had no task.
+  T026a. This is chapter 4.11's pass-10 result reproduced, and the reason `traceability.md` gets
+  built by reading.
+
+**Two premises came back clean and are recorded because a premise that holds is only evidence
+once checked.** A presigned GET honours `Range` — **206 · `bytes 0-7/12`** — so the contract's
+three-read design is buildable; SigV4 signs `host` and not `Range`. And `pnpm-workspace.yaml`
+globs `services/*`, so the new package needs no workspace edit — one list the fifth service does
+not have to join.
+
+**Task count 92 → 99.** Requirements unchanged at 26. The probe container was removed before
+anything else was counted.
