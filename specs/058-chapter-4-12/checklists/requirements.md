@@ -146,3 +146,35 @@ else was counted.
 seen from three sides; pass 2's one is a posture rather than a defect — the answer was always
 going to be correct, and the query would have been the only one of forty-five written the other
 way round.
+
+## Analysis pass 3 (2026-09-20)
+
+One finding, MEDIUM, applied — plus three clean premises. The pass asked what the route needs
+that no artifact mentions.
+
+- **Nothing can be signed without `object_key`, and no artifact said where it comes from.**
+  Occurrences across the feature: spec 0, plan 0, tasks 0, research 0, contract 0; one in
+  `data-model.md` §1 saying nothing changes. `presign` takes a bucket and a key, and the key is
+  the column `media.service.ts:92` writes at slot time. **The two implementations differ in
+  whose invariant they stand on**: reading the row makes the object's `environment_id` an
+  explicit check, and reconstructing `${caller_env}/${media_id}` never touches `media_objects`,
+  leaving tenancy to 4.11's send-time predicate — another route, another chapter, another
+  moment. The query joins the row. Measured at **16 buffers, `Index Scan using
+  media_objects_pkey`, no sequential scan**, so the whole question — does the object exist here,
+  what is its key, which visible channels reference it — is still one query. T010b.
+
+**Clean premises.** T043's prediction is sound: targets derive from the running router, so a new
+`@Get` appears as unclassified, and `targets.ts:414` records the eight-chapter streak it
+continues. The shape vocabulary already covers this route — `read` exists with five uses and
+`readAttack` compares a foreign request against an absent one, which is SC-002's property
+exactly; **4.8 paid for the opposite case**, where a chapter served a body shape the helper did
+not know. And no stored attachment predates 4.11, which is what makes C1 a naming problem rather
+than a defect.
+
+**Task count 86 → 87.** Requirements unchanged at 22. The probe index was dropped before anything
+else was counted.
+
+**On three passes.** 3 findings, 1, 1 — severity 1 CRITICAL, 0, 0. The count has flattened and
+the severity has fallen, which on this project's evidence is not a reason to stop: the last
+feature's passes 6 and 7 both found a CRITICAL after a flat run. What has changed is the kind of
+question left — the api, the query and the route's inputs have each been asked once.

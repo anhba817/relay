@@ -42,6 +42,34 @@ SELECT DISTINCT c.id, c.type
 
 then `channelVisibleTo` over the rows that come back.
 
+**AND IT JOINS `media_objects`, BECAUSE THE ROUTE CANNOT SIGN WITHOUT `object_key`** — a need
+no artifact named until analysis pass 3. `presign` takes a bucket and a key; the key is
+`media_objects.object_key`, which `media.service.ts:92` computes as `` `${environment}/${id}` ``
+when the slot is issued. So the full query is:
+
+```sql
+SELECT DISTINCT o.object_key, c.id, c.type
+  FROM media_objects o
+  JOIN messages m
+    ON m.attachments @> jsonb_build_array(
+         jsonb_build_object('type', 'media', 'media_id', o.id::text))
+  JOIN channels c ON c.id = m.channel_id
+ WHERE o.id = <media_id>
+   AND o.environment_id = <this environment>
+   AND c.environment_id = <this environment>
+```
+
+    Index Scan using media_objects_pkey · 16 buffers · no sequential scan
+
+**READ THE ROW RATHER THAN RECONSTRUCT THE KEY, AND THE DIFFERENCE IS WHOSE INVARIANT YOU ARE
+STANDING ON.** The key is deterministic, so `` `${caller_env}/${media_id}` `` would sign
+correctly without touching `media_objects` at all — one fewer join. It would also mean the
+object's own `environment_id` is **never checked by this chapter**: the tenancy would rest
+entirely on 4.11's send-time predicate refusing to store a foreign `media_id` in the first
+place. That predicate holds, and no stored attachment predates it, so reconstruction is safe
+today. It is safe because of a rule enforced in a different route, in a different chapter, at a
+different moment — and the join costs one primary-key lookup to stop depending on it.
+
 **THE TENANT PREDICATE IS NOT DECORATION, AND THE FIRST DRAFT OF THIS SECTION DID NOT HAVE
 IT.** It described two steps — find any message containing the id, then ask about its channel —
 which is correct, because `channelVisibleTo` is itself scoped and refuses another tenant's
