@@ -176,6 +176,21 @@ discipline 4.11 and 4.12 both built — and it is also why FR-MED-09's rejection
 *later* chapter. A client learns that an attachment was rejected from the message payload, not
 from the delivery route's refusal; the route's job is to say nothing.
 
+**AND THE EXISTING FIXTURES ARE THE SHAPE THIS ROUTE REFUSES, WHICH IS A SECOND THING THE GATE
+MEASUREMENT DID NOT COUNT.** `delivery.itest.ts:56` declares `{ mime_type: "image/png",
+bytes: 1024 }` and uploads `` `bytes ${randomUUID()}` `` — **42 bytes of ASCII** — so every object
+4.12's suite creates fails the size check and the type check both. The sealed suite declares 11
+and uploads 11, which is the right size, and those bytes are the PNG signature plus three zeros
+with **no `IHDR`**, so it fails on type alone. `attach.itest.ts` declares 1024 and **never
+uploads**, which is why it is unaffected: the store answers 404, the sweep reads *"not yet"*, and
+its objects stay `pending`.
+
+**The fixtures did not rot — the platform grew a check.** Chapter 4.10's slot route accepts a
+declaration nothing can verify, and says so: *"what the caller said, not what arrived."* Until
+this chapter, `bytes: 1024` against 42 bytes was true of the platform. That is the clearest
+statement of what FR-MED-03 is for, and the chapter should make it rather than quietly repairing
+three files.
+
 **AND THE GATE BREAKS THE SEALED SUITE, WHICH R4's FIGURE DID NOT COUNT.**
 `packages/outsider/src/integrate.itest.ts:496` fetches the bytes of a **`pending`** object — the
 three assertions chapter 4.12 added as SC-010 — and that suite is a third lane the 10-of-76

@@ -89,6 +89,12 @@ The worker's memory bound has to be measured here, not quoted.
    unsatisfiable; the container makes it a poll. **Three registries, not two** — `compose.yaml`,
    `INFRA_SERVICES` and `bound-port.test.ts`'s `BINDS_NOTHING`, whose omission cost 050 two
    chapters when the ingester arrived without it.
+   **AND THE PROFILE IS THE OPPOSITE ANSWER FROM THE SCANNER'S** (analysis pass 7). Six services
+   start on a bare `up -d --wait` and three are profiled; T004a stops the profiled ones. The
+   worker **writes** — an unprofiled one sweeps every `pending` object in the lane during every
+   suite, rewriting fixtures other tests planted, which is 056-5 at maximum scale. The scanner
+   **writes nothing** and must be up when the worker's own suites spawn it as a child. So the
+   worker is profiled and ClamAV is not.
 5. **CLOSED at analysis pass 4 — `media_events` is not started here.** `docs/04-srs.md:827`
    specifies it and DR-17 sums it; this chapter owns `ready` and `rejected` while DR-17 reads
    `uploaded` and `deleted`, so a producer now fills the table with the two values its own clause

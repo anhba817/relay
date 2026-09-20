@@ -14,8 +14,8 @@
 ## Requirement Completeness
 
 - [X] No [NEEDS CLARIFICATION] markers remain
-- [X] Requirements are testable and unambiguous
-- [X] Success criteria are measurable
+- [X] Requirements are testable and unambiguous — **re-ticked at analysis pass 7**
+- [X] Success criteria are measurable — **re-ticked at analysis pass 7**
 - [X] Success criteria are technology-agnostic (no implementation details)
 - [X] All acceptance scenarios are defined
 - [X] Edge cases are identified
@@ -439,3 +439,53 @@ this chapter's own design made it a question. Pass 5 argued the remaining findin
 cheaper to fix during the work than before it; **this pass supports that** — all three would have
 surfaced within minutes of running the worker against a fresh volume or reading the table at the
 close, and none would have been expensive to find then.
+
+## Analysis pass 7 (2026-09-20)
+
+Three findings — one CRITICAL, one HIGH, one MEDIUM — all three applied. The CRITICAL came from
+asking what this chapter's own rules say about fixtures the chapters behind it already shipped.
+
+- **TWO SHIPPED SUITES CREATE OBJECTS OF EXACTLY THE SHAPE THIS CHAPTER REFUSES.**
+  `delivery.itest.ts:56` declares `{ mime_type: "image/png", bytes: 1024 }` and PUTs
+  `` `bytes ${randomUUID()}` `` — **42 bytes of ASCII** — so every object 4.12's suite creates
+  fails T022's exact size check and T022a's type check both, and with T046's gate every grant
+  test in it answers 404. The sealed suite declares 11 and uploads 11 — size right — and those
+  bytes are the PNG signature plus three zeros with **no `IHDR`**, so it fails on type alone.
+  **`attach.itest.ts` is unaffected because it never uploads**: the store answers 404, the sweep
+  reads *"not yet"*, and its objects stay `pending`. **Pass 3's repair addressed the wrong half**
+  — T048 asks whether the suite should depend on the worker, which is sequencing, where this is
+  the fixture's data. T048a–T048d.
+- **AND THE FIXTURES DID NOT ROT; THE PLATFORM GREW A CHECK.** Chapter 4.10's slot route accepts
+  a declaration nothing can verify and says so — *"what the caller said, not what arrived"* — so
+  `bytes: 1024` against 42 bytes was true of the platform until this chapter. T048d puts that in
+  the prose, because it is the clearest available statement of what FR-MED-03 is for.
+- **The worker mutates shared lane state and its profile was undecided.** Six services start on a
+  bare `docker compose up -d --wait`, three are profiled, and T004a stops the profiled three. An
+  unprofiled worker sweeps every `pending` object in the lane during every suite, rewriting
+  fixtures other tests planted — 056-5's *action scoped wider than its own test* at maximum
+  scale, where 4.10's version stopped one container and made `gauntlet.itest.ts` answer 503 in a
+  file that never mentions media. **The scanner's answer is the opposite**: it writes nothing and
+  the worker's own suites spawn the worker as a child, so ClamAV belongs in the default set while
+  the worker is profiled. Neither T018 nor T037 named a profile. T004a now stops four.
+- **This checklist was 16 of 16 with two ticks falsified.** *"Requirements are testable and
+  unambiguous"* — pass 4 found *"materially larger"* unquantified in an acceptance scenario.
+  *"Success criteria are measurable"* — pass 5 found SC-006's start instant unobservable. Both
+  were repaired in `spec.md` and **neither tick was revisited**: the file had grown six per-pass
+  sections while its checkboxes recorded a verdict older than the spec they validate. Re-ticked
+  above, against the current text — the size comparison is exact and SC-006 names `last-modified`
+  at one-second resolution. **The structural fix is pass 6's**: re-read the validating artifact at
+  the end of each remediation rather than at the end of the feature.
+
+**Task count 117 → 121.** Requirements unchanged at 26.
+
+**On seven passes.** 6 findings, 5, 4, 4, 4, 3, 3 — severity 1 CRITICAL, 0, 1, 0, 0, 0, 1. **A
+CRITICAL returned after four passes without one**, which is 057's pattern: its passes 6 and 7
+each produced one, both in artifacts written to prevent their own class. This pass has both
+shapes — the checklist literally, and pass 3's repair task, which was written to catch this
+chapter's damage to 4.12 and covered the sequencing while the data went past it.
+
+**And all three fail loudly rather than quietly.** G1 goes red the first time the worker meets
+4.12's suite, G2 the first time a lane runs with a worker in it, and G3 costs nothing until
+somebody trusts the checklist. That is the third pass running where nothing found would have hidden
+— which is a different argument from *there is nothing left to find*, and it is the one that
+should decide whether an eighth pass happens.
