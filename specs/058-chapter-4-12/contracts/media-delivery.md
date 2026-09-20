@@ -79,3 +79,43 @@ One `rest` operation per request. `operationsFor` returns `["rest"]` for every `
 client rendering fifty images spends fifty of the tenant's budget. **Left counted** — 4.8 made
 the same call for the request log and published the loop rather than routing around it, because
 an exemption list is a hand-maintained table.
+
+## The sixteen routes this chapter does not fix (T016b)
+
+**A malformed uuid in a path parameter is a caller-triggered 500 on every shipped route that
+takes one.** Measured against the composed api, with a control:
+
+    GET /v1/channels/not-a-uuid/messages      500 internal_error
+    GET /v1/channels/not-a-uuid               500 internal_error
+    GET /v1/channels/<a random uuid>/messages 404 not_found        ← the control
+
+The value reaches the driver, Postgres answers `invalid input syntax for type uuid`, and
+`ProtocolErrorFilter` has no rung for it. The control is what makes this a claim about the
+*shape* of the id rather than about the id being unknown.
+
+    @Param("channelId")   13 routes
+    @Param("messageId")    3
+    @Param("mediaId")      1   ← this chapter's, validated
+                          --
+                          16 unvalidated before this chapter, 16 after
+
+**Decision: they are recorded, not repaired.** The fix is one `z.uuid()` per parameter and the
+bill is not the fix:
+
+    services/api/src/messages/messages.controller.ts   18 titled fences   8 of the 16
+    services/api/src/channels/channels.controller.ts    8                 7
+    services/api/src/users/users.controller.ts          4                 1
+                                                       --
+                                                       30 fences across three published files
+
+Thirty fences is thirty hunks, each of which has to anchor against the chain's state at its own
+chapter, for a change that teaches nothing this chapter is about. 4.11 made the same call on
+reference counting and filed 057-1; what stops that being an excuse is that the measurement goes
+into `gaps.md` with the route counts, so the next chapter to touch a controller inherits a number
+rather than a suspicion.
+
+**The argument that nearly won.** *"A measurement is not a repair"* is what 049 wrote about
+`check-lane-scope.py` after measuring a retarget and not landing it, and this is the same shape.
+What decides it the other way is that the class is not this route's: the 500 predates the chapter
+by sixteen routes and eleven chapters, and one chapter fixing sixteen routes in three controllers
+it otherwise never opens is how a fence chain gets 1,576 diff lines to make one point.

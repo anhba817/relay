@@ -19,8 +19,22 @@ CREATE INDEX messages_attachments_gin
 
 **`jsonb_path_ops` and not the default `jsonb_ops`.** The only operator this chapter uses is
 containment — `attachments @> '[{"type":"media","media_id":"…"}]'` — which is the one class
-`jsonb_path_ops` supports and the reason it is smaller. Measured at **136 kB against an 8,128 kB
-table, 1.7%**, on 66,516 rows of which 1,580 carry attachments.
+`jsonb_path_ops` supports and the reason it is smaller. Built and measured at T007: **136 kB
+against an 8,376 kB table, 1.62%**, on 68,112 rows of which 1,329 carry attachments.
+
+**`CREATE INDEX` and not `CONCURRENTLY`, and the choice is not open.** `migrate.ts:46` issues
+`BEGIN` around every file in the directory. Asked of the server rather than quoted:
+
+    BEGIN;
+    CREATE INDEX CONCURRENTLY … ;
+    ERROR:  CREATE INDEX CONCURRENTLY cannot run inside a transaction block
+
+The cost is a lock. Asked of `pg_locks` from inside the building transaction: **`ShareLock` on
+`messages`** — reads continue, writes wait. **23.301 ms** on 68,112 rows; a deploy-shaped number
+on a table this platform expects to be large. The first version of that probe reported
+`ShareLock` *and* `AccessExclusiveLock`, which was the probe measuring its own `DROP INDEX`
+teardown — the migration contains no `DROP`, and asking again with a `CREATE` alone gave the
+`ShareLock` by itself.
 
 **It is on the whole column, not a partial index on the media arm.** A partial index
 (`WHERE attachments @> '[{"type":"media"}]'`) would be smaller still and would make the planner's
@@ -28,54 +42,58 @@ choice depend on the predicate matching the index's own — which is the kind of
 works until somebody writes the query slightly differently and gets a sequential scan with no
 error. 1.7% is not worth that.
 
-## 3. The predicate, and it is one that already exists
+## 3. The predicate, and it is TWO queries — the third design, decided by measuring
 
-For a `media_id` and a caller, **in one query**:
+**This section has been wrong twice and the second version was the expensive one.** The first
+draft described two steps with no tenant predicate; analysis pass 2 scoped it and collapsed it
+into one joined query; pass 3 added a join to `media_objects` for `object_key`. Running it at
+T013 showed that the collapse is what makes the new index dead.
+
+**What ships:**
 
 ```sql
-SELECT DISTINCT c.id, c.type
+-- 1. the object, by primary key, scoped. `object_key` is what presign signs, and reading
+--    the row is what makes the object's own environment_id a check this route performs.
+SELECT object_key
+  FROM media_objects
+ WHERE id = $1 AND environment_id = $2;
+
+-- 2. which of this environment's channels reference it. The containment operand is a
+--    BOUND VALUE, which is the only form the GIN index can serve.
+SELECT DISTINCT c.id
   FROM messages m
   JOIN channels c ON c.id = m.channel_id
- WHERE m.attachments @> '[{"type":"media","media_id":<id>}]'::jsonb
-   AND c.environment_id = <this environment>
+ WHERE m.attachments @> $3::jsonb
+   AND c.environment_id = $2;
 ```
 
-then `channelVisibleTo` over the rows that come back.
+then `channelVisibleTo` over the channels that come back.
 
-**AND IT JOINS `media_objects`, BECAUSE THE ROUTE CANNOT SIGN WITHOUT `object_key`** — a need
-no artifact named until analysis pass 3. `presign` takes a bucket and a key; the key is
-`media_objects.object_key`, which `media.service.ts:92` computes as `` `${environment}/${id}` ``
-when the slot is issued. So the full query is:
+**WHY NOT THE ONE JOINED QUERY, MEASURED RATHER THAN ARGUED.** On the lane's busiest tenant —
+1,018 messages across 10 channels — with the GIN index in place:
 
-```sql
-SELECT DISTINCT o.object_key, c.id, c.type
-  FROM media_objects o
-  JOIN messages m
-    ON m.attachments @> jsonb_build_array(
-         jsonb_build_object('type', 'media', 'media_id', o.id::text))
-  JOIN channels c ON c.id = m.channel_id
- WHERE o.id = <media_id>
-   AND o.environment_id = <this environment>
-   AND c.environment_id = <this environment>
-```
+    one joined query, a hit    Nested Loop · Rows Removed by Join Filter: 1017 ·  86 buffers · 1.109 ms
+    two queries, a hit         Index Scan + Bitmap Index Scan on the gin index ·  20 buffers · 0.111 ms
 
-    Index Scan using media_objects_pkey · 16 buffers · no sequential scan
+The one-query form builds its containment operand from `o.id`, a column on the other side of the
+join. A GIN index cannot be looked up with a value the planner does not have yet, so it narrows
+to the tenant's channels and filters every message they hold. **The index is present and idle.**
 
-**READ THE ROW RATHER THAN RECONSTRUCT THE KEY, AND THE DIFFERENCE IS WHOSE INVARIANT YOU ARE
-STANDING ON.** The key is deterministic, so `` `${caller_env}/${media_id}` `` would sign
-correctly without touching `media_objects` at all — one fewer join. It would also mean the
-object's own `environment_id` is **never checked by this chapter**: the tenancy would rest
-entirely on 4.11's send-time predicate refusing to store a foreign `media_id` in the first
-place. That predicate holds, and no stored attachment predates it, so reconstruction is safe
-today. It is safe because of a rule enforced in a different route, in a different chapter, at a
-different moment — and the join costs one primary-key lookup to stop depending on it.
+**AND THE LANE'S TENANTS ARE TOO SMALL TO SHOW IT.** 68,112 messages across 11,427 environments
+is six each. Pass 2 measured 13 buffers and pass 3 measured 16, both on a nine-message
+environment; the one-query cost is the tenant's message count and the two-query cost is not. A
+shape that does not scale is one the lane cannot fail.
 
-**THE TENANT PREDICATE IS NOT DECORATION, AND THE FIRST DRAFT OF THIS SECTION DID NOT HAVE
-IT.** It described two steps — find any message containing the id, then ask about its channel —
-which is correct, because `channelVisibleTo` is itself scoped and refuses another tenant's
-channel. It is also **the only read in this repository that would scan every tenant's rows**:
-`grep -c 'environmentId, this.environmentId'` in `repository.ts` returns **44**. A query whose
-safety depends on a later call is a query somebody will reuse without the later call.
+**WHAT THE SPLIT DOES NOT GIVE UP.** Both repairs survive it. The scope is on step 2, so this is
+still not the one read in `repository.ts` that crosses tenants — `grep -c 'environmentId,
+this.environmentId'` returns **44** and this is not the exception. And step 1 still reads
+`media_objects`, so the object's `environment_id` is checked here rather than inherited from
+4.11's send-time predicate — a rule enforced in another route, in another chapter, at another
+moment.
+
+**AND STEP 1 FIRST IS WHAT MAKES THE COMMON REFUSAL CHEAP.** An id no object has dies at the
+primary key in 3 buffers; step 2 never runs. `research.md` R3's *"the refusal is the expensive
+case"* was true of the bare query and is false of this one.
 
 **`DISTINCT`, AND THE FAN-OUT IS WHY.** One object can be referenced by any number of messages —
 FR-MSG-11 has allowed the same id twice since 3.24, and forwarding a photo is how a second
@@ -83,8 +101,6 @@ reference happens. Without `DISTINCT` the disjunction is one `channelVisibleTo` 
 each a query and sometimes two (`isMember`); with it, one per distinct *channel*. The lane's
 current maximum is **1 reference per object**, so this costs nothing measurable today and the
 shape is still wrong — the lane has never forwarded a photo.
-
-    the joined, scoped, de-duplicated query   Bitmap Index Scan · 13 buffers
 
 `channelVisibleTo(channelId, userId?)` is `repository.ts:5517` and has shipped since the channel
 chapter:
@@ -106,8 +122,8 @@ return this.isMember(channelId, userId);
 | anyone | another environment's | not visible — the helper is scoped to `this.environmentId` |
 
 **THE OBVIOUS IMPLEMENTATION WOULD HAVE BEEN WRONG.** FR-MED-08 says *"channel membership"*, and
-a membership check would refuse a user the photo in a message whose text they can read — 11,289
-public channels on the lane against 995 private, so the common case is a channel where
+a membership check would refuse a user the photo in a message whose text they can read — 11,557
+public channels on the lane against 1,016 private, so the common case is a channel where
 membership is not the rule. See `research.md` R2.
 
 ## 4. Any referencing message, not the referencing message

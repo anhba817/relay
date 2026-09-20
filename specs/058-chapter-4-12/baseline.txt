@@ -208,3 +208,112 @@ is "with no edit yet, the bill must be 0" is what caught it -- and the eleven ar
 helper's own positive evidence that it compares bytes at all.
 
     control, after the fix: 0 fenced file(s) differ from the tree
+
+================================================================================
+PHASE 2 · THE LOOKUP AND ITS INDEX
+================================================================================
+
+--------------------------------------------------------------------------------
+T007, T008 — THE MIGRATION, AND THE SERVER DECIDED THE OPEN QUESTION
+--------------------------------------------------------------------------------
+
+Tail checked rather than remembered: `0016_storage_quota.sql`, so `0017`.
+
+    BEGIN; CREATE INDEX CONCURRENTLY … ;
+    ERROR:  CREATE INDEX CONCURRENTLY cannot run inside a transaction block
+
+`migrate.ts:46` wraps every file in `BEGIN`, so plan open question 3 is not open. Asked
+of the server rather than quoted from the manual.
+
+    build on 68,112 rows (1,329 with attachments)          23.301 ms
+    lock held, from pg_locks inside the transaction        ShareLock on `messages`
+    index size · table size · ratio                        136 kB · 8,376 kB · 1.62%
+
+AND THE FIRST LOCK PROBE MEASURED ITS OWN TEARDOWN. It reported `ShareLock` AND
+`AccessExclusiveLock`; the second came from the `DROP INDEX` the probe needed in order to
+rebuild, and the migration contains no DROP. Asked again with a `CREATE` alone: ShareLock
+by itself. Reads continue, writes wait.
+
+--------------------------------------------------------------------------------
+T013 — THE MEASUREMENT THAT CHANGED THE DESIGN
+--------------------------------------------------------------------------------
+
+Busiest tenant, 1,018 messages across 10 channels, `EXPLAIN (ANALYZE, BUFFERS)`, bound
+parameters, probe rows planted inside a transaction that is rolled back.
+
+    shape                                   plan                            buffers    time
+
+    --- before the index (T005) ---
+    bare `messages @> …`, hit               Seq Scan, 68,111 removed          1,042   2.47 ms
+    bare, miss                              Seq Scan, 68,112 removed          1,042   2.32 ms
+    one joined+scoped query, hit            Nested Loop, join filter over        84   0.99 ms
+                                            the tenant's 1,018 rows
+    one joined+scoped query, miss-2         same plan, 1,018 removed             84   0.94 ms
+    one joined+scoped query, miss-1          media_objects_pkey, rest             2   0.048 ms
+      (no object has that id)                `never executed`
+
+    --- after the index (T013) ---
+    bare, hit                               Bitmap Index Scan                     6   0.028 ms
+    bare, miss                              Bitmap Index Scan                     6   0.023 ms
+    one joined+scoped query, hit            UNCHANGED, index unused              86   1.109 ms
+    two queries: the object row             Index Scan on media_objects           3   0.034 ms
+                 the reference lookup       Bitmap Index Scan on the gin index   17   0.077 ms
+                 the lookup, miss           Bitmap Index Scan, channels            6   0.046 ms
+                                            `never executed`
+
+THREE THINGS, AND THE PLAN WAS WRONG ABOUT ALL THREE.
+
+1. THE SCOPE ALONE IS 12.4x AND NEEDS NO INDEX. `c.environment_id = $env` turns a
+   68,112-row sequential scan into a nested loop over one tenant's rows: 1,042 buffers to
+   84, with nothing built.
+
+2. THE ONE-QUERY SHAPE MAKES THE INDEX UNUSABLE. Its containment operand is built from
+   `o.id`, a column on the other side of the join, and a GIN index cannot be looked up
+   with a value the planner does not have yet. `Rows Removed by Join Filter: 1017`, with
+   the index present and idle. Two queries make the operand a bound value, which is the
+   only form the index can serve: 20 buffers against 86, 0.111 ms against 1.109.
+
+   THE ANALYSIS PASSES' OWN REPAIR IS WHAT KILLED IT. Pass 2 collapsed two steps into one
+   joined query and pass 3 added the `media_objects` join; each was right about what it
+   was looking at and neither asked what the planner would do with the result.
+
+3. AND THE LANE CANNOT FAIL THE SHAPE THAT DOES NOT SCALE. 68,112 messages across 11,427
+   environments is six each. Pass 2 measured 13 buffers and pass 3 measured 16, both on a
+   nine-message environment. The one-query cost is the TENANT's message count; the
+   two-query cost is not.
+
+AND "THE REFUSAL IS THE EXPENSIVE CASE" IS FALSE FOR THE SHIPPED QUERY. `research.md` R3
+says it and it is true of the bare query, where an id nobody references is searched for
+through the whole table. Of the two refusals this route gives, the commoner -- no object
+has that id -- is the CHEAPEST thing it does: 3 buffers, everything after the primary key
+`never executed`. Only the refusal where the object exists and nothing references it costs
+what a grant costs.
+
+WHAT SURVIVES OF THE COMPARISON WITH 4.1. Still the opposite answer, for R3's reason. The
+multiplier is 4.3x rather than 26-160x, at 1.62% rather than 4.1's +49% -- and the
+transferable half is now larger than the number: the query has to be written so the
+planner CAN use the index before any of it is true.
+
+--------------------------------------------------------------------------------
+T016a — A MALFORMED PATH PARAMETER IS A 500, MEASURED WITH ITS CONTROL
+--------------------------------------------------------------------------------
+
+Against the composed api:
+
+    GET /v1/channels/not-a-uuid/messages       500 internal_error
+    GET /v1/channels/not-a-uuid                500 internal_error
+    GET /v1/channels/<a random uuid>/messages  404 not_found          <- the control
+
+The control is what makes this a claim about the SHAPE of the id rather than about the id
+being unknown. Counted:
+
+    @Param("channelId")  13 routes      messages.controller.ts  8 of the 16, 18 fences
+    @Param("messageId")   3             channels.controller.ts  7 of the 16,  8 fences
+    @Param("mediaId")     1  (this      users.controller.ts     1 of the 16,  4 fences
+                             chapter's)
+                         --                                                  --
+                         16 unvalidated before and after                     30 fences
+
+T016b decides it in `contracts/media-delivery.md`: recorded, not repaired. Thirty hunks
+across three published controllers for a change that teaches nothing this chapter is
+about.

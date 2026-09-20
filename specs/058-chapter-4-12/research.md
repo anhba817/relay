@@ -114,8 +114,63 @@ planning number stops describing the shipped query. Checked at analysis pass 2:
 
     Bitmap Index Scan on the gin index · 6 buffers
 
-Identical to the literal. **This is the premise most likely to have quietly invalidated the
-chapter's headline comparison, and it held.**
+Identical to the literal.
+
+---
+
+### R3a · AND THE HEADLINE WAS STILL A MEASUREMENT OF A QUERY THIS CHAPTER DOES NOT SEND
+
+**Amended at T005/T013, by running it.** Everything above is the BARE query —
+`SELECT id FROM messages WHERE attachments @> …` — and by the time the analysis passes had
+finished with it, the route's query was not that. Pass 2 added an environment scope; pass 3
+added a join to `media_objects` for `object_key`. Re-measured on the lane's **busiest tenant**,
+1,018 messages across 10 channels, `EXPLAIN (ANALYZE, BUFFERS)` with bound parameters:
+
+    shape                                    plan                              buffers    time
+
+    --- no index at all ---
+    bare `messages @> …`, a hit              Seq Scan, 68,111 removed            1,042   2.47 ms
+    bare, a miss                             Seq Scan, 68,112 removed            1,042   2.32 ms
+    one joined+scoped query, a hit           Nested Loop, join filter over          84   0.99 ms
+                                             the tenant's 1,018 rows
+    one joined+scoped query, a miss          same plan, 1,018 removed               84   0.94 ms
+
+    --- with the GIN index ---
+    bare, a hit                              Bitmap Index Scan                       6   0.028 ms
+    bare, a miss                             Bitmap Index Scan                       6   0.023 ms
+    one joined+scoped query, a hit           UNCHANGED — the index is not used      86   1.109 ms
+    two queries: the object row              Index Scan on media_objects             3   0.034 ms
+                 the reference lookup        Bitmap Index Scan on the gin index     17   0.077 ms
+                 the reference lookup, miss  Bitmap Index Scan, channels             6   0.046 ms
+                                             `never executed`
+
+**THE SCOPE ALONE IS 12.4× AND NEEDS NO INDEX.** Adding `c.environment_id = $env` turns a
+68,112-row sequential scan into a nested loop over one tenant's rows: 1,042 buffers to 84.
+
+**AND THE ONE-QUERY SHAPE MAKES THE INDEX UNUSABLE.** The containment operand is built from
+`o.id`, a value from the other side of the join, so the planner cannot look it up — it narrows
+to the tenant's channels and applies containment as a join filter over every message they hold.
+`Rows Removed by Join Filter: 1017`, with the index present and idle. Splitting the question in
+two makes the operand a bound value, which is the only form a GIN index can serve: **20 buffers
+against 86, 0.111 ms against 1.109.**
+
+**THE SMALL TENANT HID IT, AND THAT IS WHY BOTH ANALYSIS PASSES READ CLEAN.** Pass 2 measured
+13 buffers and pass 3 measured 16, both on a nine-message environment. The one-query plan's cost
+is the TENANT's message count; the two-query plan's is not. The lane holds 68,112 messages across
+11,427 environments — six messages each — so the shape that does not scale is the shape the lane
+cannot fail.
+
+**AND "THE REFUSAL IS THE EXPENSIVE CASE" IS FALSE FOR THE SHIPPED QUERY.** That sentence is true
+of the bare query, where an id nobody references is searched for through the whole table. Of the
+two refusals the route can give, the commoner — no object has that id — is the **cheapest thing
+it does**: 3 buffers, everything after the primary key `never executed`. Only the refusal where
+the object exists and nothing references it costs what a grant costs.
+
+**What survives of the comparison with 4.1.** That chapter's index bought *"a gap inside the
+run-to-run spread for +49% storage"*; this one buys 4.3× fewer buffers for **1.62%** — 136 kB
+against 8,376 kB. Still the opposite answer, still for the reason R3 gave. What changed is that
+the multiplier is 4.3× rather than 26–160×, and that **the query has to be written so the planner
+can use the index** before any of it is true.
 
 ---
 
