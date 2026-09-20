@@ -28,40 +28,115 @@ history; the replaced history is preserved on the remote as the tag
 tags. **Anyone holding an older clone of `relay-platform` must reset rather than pull.**
 
 <!-- SPECKIT START -->
-**ACTIVE: 058 — CHAPTER 4.12, "a link that expires, and who may hold it".** Movement V
-continues. Plan: `specs/058-chapter-4-12/plan.md`; **`research.md` first — it settles the
-specification's one flagged assumption AGAINST the specification, for the third feature running.**
-FR-MED-08: signed delivery, one hour, authorisation following the message. **Name it by its
-movement and title**: `docs/12` §3 row 13.
+**058 IS CLOSED at 87 of 87 — CHAPTER 4.12, "a link that expires, and who may hold it".**
+Movement V continues. Its record is `specs/058-chapter-4-12/` — `baseline.txt` first (every
+phase's measurements in the order they were taken), then `gaps.md` (**15 entries: 8 new, 7
+carried and re-measured**), `traceability.md`, `tasks.md`. **SRS 1.19**, and **both** copies of
+the Part 4 table amended. Tagged **`part4-ch12`**.
 
-**HALF THE CLAUSE WAS BUILT TWO CHAPTERS AGO AND THE OTHER HALF NEEDS A LOOKUP NOTHING HAD.**
-*"Object storage shall not be publicly readable"* is `presign.itest.ts:53`, a test whose own title
-reads *"FR-MED-08's precondition"* — signed GET 200, unsigned 403, tampered 403, measured from
-outside the container. What is left is *"issued only to callers authorised to read the referencing
-message"*, which needs the reference lookup 4.11 filed as having no mechanism (`gaps.md` 057-1).
+    check:fences 0 · EXIT 0 · 291 files across 55 chapters      from 290 and 54
+    2,944 prose words · 3 figures · 3 TRAP boxes · 126 pages    from 125
+    34 error codes, 34 sections — UNCHANGED, asserted twice
+    api lane 747 of 747 · outsider 19 of 19 · unit 776 of 776
+    127 files, 1,833 tests under coverage · 29 dependencies at the open and 29 at the close
 
-**THREE RESEARCH FINDINGS, TWO AGAINST THE BRIEF.** (1) **The flagged assumption is wrong**: an
-object with no referencing message is readable by **nobody**, including its uploader, because the
-permissive reading is the parallel ACL the clause's own note forbids — and FR-MED-10 hard-deletes
-unreferenced objects after 24 hours, so it is a read path to a thing already scheduled for
-destruction. (2) **"Channel membership" is not what this platform means by authorised to read.**
-History checks membership for `private` channels **only** — 11,289 public against 995 private on
-the lane — so a literal implementation would refuse a user the photo in a message whose text they
-can read. The predicate already exists: **`channelVisibleTo`**, with the *"or API key"* arm built
-in. (3) What held: `presign` has signed GET since 4.10 and **no dependency moves**.
+**THE INDEX'S HEADLINE WAS A MEASUREMENT OF A QUERY THIS CHAPTER DOES NOT SEND.** `research.md`
+published 26× to 160× for 1.7%, measured on the bare `messages.attachments @> …` scan. By the
+time three analysis passes had finished with it the route's query was scoped by environment and
+joined to `media_objects` — and on the lane's busiest tenant that alone is **1,042 buffers to 84,
+12.4×, with no index at all.**
 
-**AND THE INDEX IS THE OPPOSITE ANSWER TO 4.1's.** The lookup is a sequential scan — **2.886 ms
-and 1,016 buffers on the REFUSAL path**, which is the expensive case because an id nobody
-references is searched for through the whole table. GIN `jsonb_path_ops`: **0.018 ms and 5
-buffers, at 136 kB against 8,128 kB — 1.7%.** 4.1 concluded *"you cannot index your way out of an
-analytical question when the cost is the aggregation"*; here the cost is a lookup. **Both are
-right and the transferable lesson is which kind of cost you are looking at.**
+**AND THE PASSES' OWN REPAIR MADE THE INDEX DEAD.** The one joined query builds its containment
+operand from `o.id`, a column on the other side of the join, and a GIN index cannot be looked up
+with a value the planner does not have yet: `Rows Removed by Join Filter: 1017`, index present
+and idle, **86 buffers**. Two queries make the operand a bound value — **20 buffers, 0.111 ms
+against 1.109.** Both repairs survive the split, and **the lane could not have failed the shape
+that does not scale**: 68,112 messages across 11,427 environments is six each, and passes 2 and
+3 measured 13 and 16 buffers on a nine-message tenant. **The transferable half is that the query
+has to be written so the planner CAN use the index before any storage ratio means anything.**
 
-**AND THE CHAPTER ADDS NO ERROR CODE.** Three conditions answer **404 `not_found`**, on
-`channelVisibleTo`'s own precedent — the leak it was written to close was a private channel
-answering `200, empty page` where an absent one answered 404. `check:errors` reading **34/34
-unchanged** is asserted rather than assumed, because a chapter that adds a route usually adds
-vocabulary.
+**AND "THE REFUSAL IS THE EXPENSIVE CASE" INVERTED WITH IT.** True of the bare query, false of
+the shipped one: an id no object has dies at the primary key in 3 buffers with the rest
+`never executed`. Sampled 120 alternating pairs, three runs: the refusal is **22.8%, 23.4%,
+23.3% FASTER** than the grant at p50. `research.md` R3's sentence was not careless — it was
+written about a real measurement, and it stopped being true when the query changed.
+
+**4.1's CONCLUSION STILL HOLDS AND SO DOES THIS ONE.** *"You cannot index your way out of an
+analytical question when the cost is the aggregation"* — 656 ms of a 698 ms plan was a sort.
+Here the cost is a lookup by value: 4.3× for **1.62%**, 136 kB against 8,376 kB. Both published
+side by side, because **which kind of cost you are looking at** is the lesson and either half
+alone teaches the wrong rule.
+
+**THREE TENANCY PREDICATES, AND NO SINGLE-MUTATION PROBE SEES ANY.** Constitution VI's
+100%-branch clause names tenant isolation, so each arm was deleted and both suites re-run:
+
+    remove the scope from the REFERENCE LOOKUP   delivery 16/16 GREEN · gauntlet 60/60 GREEN
+    remove the scope from the OBJECT READ        delivery 16/16 GREEN · gauntlet 60/60 GREEN
+    remove the scope from `channelVisibleTo`     delivery 16/16 GREEN · gauntlet 5 red, and
+                                                 NONE of them the media read attack
+    remove ALL THREE                             delivery 2 of 16 RED
+
+**The gauntlet is the suite constitution VI names as gating releases** and it reports nothing
+when either of this chapter's two is deleted. **The reading is not "delete two of them"**: 4.6
+and 4.11 deleted arms whose removal changed nothing, and these are arms whose removal changes
+nothing *because of each other* — `channelsReferencingMedia` is one refactor from a caller that
+does not ask `channelVisibleTo` afterwards, and 44 reads in that file carry the environment
+predicate. **A single-mutation probe measures the DEFENCE, not the arm**, and a coverage number
+reports less than that, because an SQL clause carries no JavaScript branch at all.
+
+**SRS 1.19: THE CLAUSE'S OWN WORDS WERE STRICTER THAN THE MESSAGE THEY GUARD.** FR-MED-08 said
+*"(channel membership or API key)"*, and this platform checks membership for `private` channels
+**only** — 11,557 public against 1,016 private on the lane — so a literal implementation refuses
+a user the photo in a message whose text they can read. The predicate already existed:
+**`channelVisibleTo`**, with the *"or API key"* arm built in as `userId === undefined`. The
+singular was wrong too (FR-MSG-11 has allowed the same id twice since 3.24, so authorisation is
+a disjunction over every referencing channel), and the object with **no** referencing message is
+readable by nobody including its uploader — the permissive reading is the parallel ACL the
+clause's own note forbids, and FR-MED-10 destroys such objects after 24 hours.
+
+**A MALFORMED PATH PARAMETER IS A CALLER-TRIGGERED 500 ON SIXTEEN SHIPPED ROUTES.** Measured
+against the composed api **with a control**: `not-a-uuid` answers 500 `internal_error`, a random
+uuid answers 404 `not_found`. 13 routes take `@Param("channelId")`, 3 take `@Param("messageId")`,
+none validates. **It is 4.11's research R3 at a different address** — that chapter found it in a
+request BODY, measured it, fixed it with `z.uuid()`, and nobody looked at the path. Recorded with
+its bill rather than repaired: 30 titled fences across three controllers for a one-line change
+per route. `gaps.md` 058-3.
+
+**AND THE SEALED SUITE ASSERTED A FACT THE PLATFORM PUBLISHES AS FALSE.** `typeof
+row["endpoint"] === "string"`, where 4.8 measured NULL on 31 real rows — 23 rate-limited and 8
+unmatched — and built the reader to answer `null`. It survived two chapters because the seal's
+own rows all match a route. **What exposed it was this chapter's 500 probe**, which asked for an
+unmatched route against the demo tenant and put a row with no endpoint in the log the seal reads.
+
+**AND THE QUICKSTART WAS WRONG THREE TIMES, THE FIRST OF THEM THIS CHAPTER'S OWN SUBJECT.** §2's
+foreign object came back as the string `INSERT00` — a `RETURNING` inside `ON CONFLICT DO NOTHING`
+yields nothing on a second run, and `psql` printed its command tag instead. **It answered 400
+because of this chapter and would have answered 500 the day before.** Then: `psql -tAc` with
+`RETURNING` prints the value AND the tag, so `tr` glues them (`head -1`), and §3 used
+`$OBJECT_KEY` with nothing setting it. 4.11's `tr -d ' '` finding, one turn of the screw further.
+
+**A HUNK'S ANCHOR CAN BE THE APPENDIX'S OWN LINE, FOR THE THIRD TIME.** The `targets.ts` entry
+follows `POST /v1/media`'s row, and `grep -c 'path: "/v1/media"'` against the chain at 4.12
+returns **0** — that row is added by `fences/post-series.md`, which applies after every chapter.
+The amendment extends the appendix's existing hunk instead: one pre-image rather than two. 4.8
+found the shape and 4.11 paid it on `codes.ts`. **The fence bill was eight where the plan said
+six**, and the last two arrived from repairs made after the list was counted.
+
+**AND THE FENCE-BILL INSTRUMENT CHARGED THIS CHAPTER FOR ELEVEN FILES IT NEVER TOUCHED** — every
+one a sole trailing-newline difference the checker normalises. Its control ("with no edit yet,
+the bill must be 0") is what caught it.
+
+**THE BROKER'S HEALTH CHECK NAMES ONE UNRECOVERABLE STREAM AT A TIME.** `ANALYTICS could not be
+recovered`; cleared it, restarted, and got `EVENTS could not be recovered`. That is *a checker
+reports the first failure per file* one level out in the lane — N corrupt streams cost N restarts
+and each looks like the last. **And the bulk form of a permitted operation is not automatically
+permitted**: a loop clearing each in turn was refused by this environment's guard where the same
+clear issued one at a time was allowed.
+
+**THREE ANALYSIS PASSES: 3 findings, 1, 1** — severity 1 CRITICAL, 0, 0. **And the two that
+mattered most were found by RUNNING, not by reading**: the index measurement (pass 2 and pass 3
+each checked their own repair and neither asked what the planner would do with the result) and
+the three invisible scopes. Pass 1's three were one defect seen from three sides.
 
 **057 IS CLOSED at 108 of 108 — CHAPTER 4.11, "the half of the union that was refused".**
 Its record is `specs/057-chapter-4-11/` — `baseline.txt` first (every phase's measurements in

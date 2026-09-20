@@ -520,3 +520,118 @@ VERIFIED BY OCCURRENCE COUNT, NOT BY `patch --dry-run` (056-7). Every published 
 pre-image occurs exactly once in the state it is written against.
 
     check:fences after the chapter   1 problem, and it is the deliberate coverage pin probe
+
+================================================================================
+PHASE 8 · THE RECORD
+================================================================================
+
+--------------------------------------------------------------------------------
+T039, T040 — THE COVERAGE RUN, AND BOTH HALVES OF THE PIN PROBE
+--------------------------------------------------------------------------------
+
+    127 files, 1,833 tests, all passing · EXIT 1
+
+EXIT 1 FOR A FAILURE THIS CHAPTER DID NOT CAUSE. `services/ingester/src/shape.ts` is pinned
+at 100 and measures **95.12**, identical on both runs. The pin has been 100 since 048 and
+052 measured the 95.12 when it turned `coverage.reportOnFailure` on; `git show
+part4-ch11:vitest.coverage.config.mts` still says 100. Not lowered here -- it is a carried
+red with a known number, and lowering somebody else's pin from a chapter that did not touch
+the file is how a ratchet stops meaning anything.
+
+READ FROM `coverage-summary.json`, NOT THE TEXT TABLE (056's finding: v8's text reporter
+omits a file at 100/100/100/100):
+
+    file                                          stmts  branch  funcs  lines
+    services/api/src/media/media.controller.ts      100     100    100    100
+    services/api/src/media/media.service.ts         100      95    100    100   was 92.85
+    services/api/src/db/repository.ts             97.77   92.97    100  99.28
+    services/api/src/isolation/targets.ts           100     100    100    100
+
+AND THE PIN WAS PROBED IN BOTH DIRECTIONS. Demanding an impossible 101 of
+`media.service.ts` produced
+
+    ERROR: Coverage for branches (95%) does not meet
+           "services/api/src/media/media.service.ts" threshold (101%)
+
+which is how a config says the key binds to a file. A pin whose key matches nothing is
+silent, and 049 found one by sweeping for it. Raised to **94** against the measured 95,
+not to 95: `session.ts` measured 87.80 and 85.36 on identical code twenty minutes apart,
+and a ratchet pinned at the observation is a ratchet that teaches people to lower ratchets.
+
+--------------------------------------------------------------------------------
+T075, T077 — THE SEALED SUITE AND THE QUICKSTART, AND EACH FOUND ONE THING
+--------------------------------------------------------------------------------
+
+`pnpm test:outsider` against the composed stack: **19 of 19**, after one repair.
+
+THE SEAL ASSERTED A FACT THE PLATFORM PUBLISHES AS FALSE. `typeof row["endpoint"]` must be
+`"string"`, where 4.8 measured NULL on 31 real rows -- 23 rate-limited and 8 unmatched --
+and built the reader to answer `null` rather than the `\N` ClickHouse writes. The seal
+survived two chapters because its own rows all match a route. **What exposed it was this
+chapter's T016a probe**, which asked the composed api for `GET /v1/channels/not-a-uuid/members`
+-- an unmatched route -- against the demo tenant, putting a row with no endpoint into the log
+the seal reads.
+
+THE QUICKSTART WAS WRONG THREE TIMES and every one is recorded in the file itself:
+
+  1. §2's foreign object came back as the literal string `INSERT00`. The
+     `WITH … ON CONFLICT DO NOTHING RETURNING id` CTE returns no rows on a stack that
+     already has a `production` environment, so the outer INSERT inserted nothing and psql
+     printed its command tag. **It answered 400 rather than 404 -- and on the platform as
+     it stood this morning it would have answered 500**, which is the class §5 measures.
+  2. `psql -tAc` with `RETURNING` prints the value AND the command tag, so `tr` alone glues
+     them: `661e39fd-…-224d381ba807INSERT01`. `head -1` is the fix. 4.11 paid the smaller
+     version of this -- a newline `tr -d ' '` does not strip.
+  3. §3 used `$OBJECT_KEY` and nothing set it.
+
+AND `pnpm test:outsider` NEEDS THREE VARIABLES THE STEP DID NOT NAME -- `RELAY_DEMO_CREDENTIAL`,
+`RELAY_API_URL`, `RELAY_WS_URL`. The suite refuses rather than skipping, which is the right
+error and is why this cost one run rather than a wrong conclusion.
+
+What ran green first time: §1 end to end (`PUT -> 200`, `send -> 201`, `hello world` back),
+§3's expired URL (403, `Request has expired`, from the store's own clock), §4's index plan.
+
+--------------------------------------------------------------------------------
+THE CLOSING LANES
+--------------------------------------------------------------------------------
+
+    pnpm lint          EXIT 0   after one fix: an unused `_ignored` destructure
+    pnpm typecheck     EXIT 0
+    pnpm test          776 of 776, forced
+    pnpm test:integration   services stopped, 4m 19s, EXIT 1
+
+        test-harness   46 of 46          api        747 of 747   (was 725 of 730)
+        ingester       19 of 19          gateway    226 of 229
+        dispatcher     16 of 16          e2e         11 of 11
+
+    THE API LANE IS GREEN AND WAS NOT AT THE OPEN. The five `request-log.itest.ts` failures
+    did not recur once the ANALYTICS stream had a backlog and a working consumer; 731 of the
+    747 were there at the open and 16 are this chapter's.
+
+    THE GATEWAY'S THREE ARE `typing.itest.ts` AND THEY ARE NOT THIS CHAPTER'S. Four runs of
+    that file alone gave 22/23, 22/23, 22/23, 23/23 -- a different test in the first than in
+    the second and third, every failure a deadline expiring. `git diff --stat
+    part4-ch11..HEAD -- services/gateway packages/protocol` is empty. `gaps.md` 058-8.
+
+    pnpm test:outsider 19 of 19, composed services UP
+    pnpm check:errors  34 codes, 34 sections            UNCHANGED, asserted (T032, T078)
+    pnpm check:fences  291 fenced files across 55 chapters · 0 problems · EXIT 0
+    pnpm check:docs    all mirrored docs match · 20 revisions ascend, 1.0 to 1.19
+    pnpm check:srs     245 clause rows, 245 unique identifiers
+    pnpm check:figures 290 figures, every diagram passed as `code`
+    pnpm build         126 pages                        from 125
+    dependencies       29 across 11 package.json        29 at the open (SC-009)
+
+--------------------------------------------------------------------------------
+THE FENCE BILL, FINAL — EIGHT FILES, AND THE PLAN SAID SIX
+--------------------------------------------------------------------------------
+
+    published in the chapter        repository.ts · schema.ts · media.controller.ts
+                                    media.service.ts · 0017_media_reference_index.sql (whole)
+    published in the appendix       targets.ts · gauntlet.itest.ts
+                                    vitest.coverage.config.mts · integrate.itest.ts
+
+The last two arrived from repairs made after the list was counted -- the coverage pin and the
+sealed suite -- which is 050's sentence for the third feature running: **a list of fenced
+files goes stale every time a chapter moves code between files, and the error is in one
+direction.**

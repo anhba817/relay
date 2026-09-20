@@ -154,6 +154,25 @@ one and sees the broker still unhealthy reads it as the clear having failed.
 each corrupt stream in turn was refused by this environment's guard ("Interfere With
 Workloads"), where the same clear issued one stream at a time was allowed.
 
+### 058-8 · `typing.itest.ts` is flaky again, a different test each time
+
+Four runs of the file alone, nothing else on the machine:
+
+    run 1   22 of 23   × sends nothing to the signaller's OTHER connection   4,033 ms
+    run 2   22 of 23   × refuses a signal whose environment does not match   5,009 ms
+    run 3   22 of 23   × refuses a signal whose environment does not match   5,007 ms
+    run 4   23 of 23
+
+Every failure is a deadline expiring, and it is not always the same test. **Chapter 4.9 repaired
+this file** — a presence payload the gateway's `z.strictObject` refused, so nothing reached the
+socket — and recorded *"23 of 23 three times"*. It is red again.
+
+**Not this chapter's.** `git diff --stat part4-ch11..HEAD -- services/gateway packages/protocol`
+is empty: 058 changed ten files and none of them is in the gateway or the protocol package.
+
+**And three green runs would not have closed it**, which 045 wrote after offering exactly that as
+evidence and being falsified by the fourth. One green run here is the fourth.
+
 ---
 
 ## Carried, and re-measured

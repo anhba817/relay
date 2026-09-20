@@ -80,7 +80,7 @@ the bytes come back.
 - [X] T023a [US1] Integration test in `services/api/src/media/delivery.itest.ts`: a **member of a PRIVATE channel** gets a URL. **This is the only test that reaches `isMember` at all**, and without it the whole membership path can be broken while every other test passes: T024's public channel returns true before `isMember` is consulted, and T028's private non-member expects a refusal, which a broken predicate also produces. **The grant exercises membership; the refusal does not.**
 - [X] T024 [US1] Integration test in `services/api/src/media/delivery.itest.ts`: a **public** channel's referencing message authorises a user token **without membership** (research R2). This is the case a literal reading of *"channel membership"* would have refused, and the lane holds 11,289 public channels against 995 private — so it is the common case, not the edge.
 - [X] T025 [US1] Re-measure and record the route's latency, sampled rather than asserted. **Pause BEFORE each pair and alternate the order within it** — 4.11's first measurement reported the media send 35.4% *faster* because the pause sat after the pair and only one side ever followed a quiet gap. And **the tenant's own limiter bounds the sample**: 600 requests answered `429 … retry after 34 seconds`.
-- [ ] T026 [US1] Commit phase 3.
+- [X] T026 [US1] Commit phase 3.
 
 **Checkpoint**: a client that can read the message can fetch the photo.
 
@@ -98,7 +98,7 @@ the bytes come back.
 - [X] T032 [US2] **No new error code, and assert that.** `pnpm check:errors` must read **34 codes, 34 sections** at the close, unchanged from 4.11. A chapter that adds a route usually adds vocabulary; this one reuses `not_found` on `channelVisibleTo`'s own precedent, and the unchanged number is the evidence.
 - [X] T033 [US2] **Run the refusal red by removing the `channelVisibleTo` call**, and confirm the private-channel test fails rather than the shape test. A refusal that can only fail for somebody else's reason is the class 043 named and 4.11 re-ran at every phase.
 - [X] T034 [US2] Integration test in `services/api/src/media/delivery.itest.ts`: a **deleted** message's attachment stops being readable (research R9). 4.11's FR-024 nulls the column on delete, so the reference disappears and this route refuses — **asserted rather than assumed**, because nothing else in the platform connects those two facts.
-- [ ] T035 [US2] Commit phase 4.
+- [X] T035 [US2] Commit phase 4.
 
 ---
 
@@ -108,62 +108,62 @@ the bytes come back.
 
 - [X] T036 [US3] Integration test in `services/api/src/media/delivery.itest.ts`: one object, two messages, two channels. A member of either gets a URL; a member of neither is refused.
 - [X] T037 [US3] **Run it red by making `repository.ts`'s lookup return one reference** (T011's inverse). The test must fail for the caller whose channel is second, which is what proves the disjunction is real rather than incidental.
-- [ ] T038 [US3] Record in `page.mdx` that FR-MSG-11 has allowed the same id twice since 3.24 — *"the same id twice is two attachments"* — so two references is the ordinary consequence of forwarding a photo, not an edge case.
-- [ ] T039 [US3] Pin the new and changed files in `vitest.coverage.config.mts`, and **probe both halves**: demand an impossible figure of each new key and confirm it fires, then confirm the measured pins pass. A pin whose key matches no file is silent.
-- [ ] T040 [US3] **Read `coverage-summary.json`, not the text table.** v8's text reporter omits a file at 100/100/100/100, which cost 056 three of five new files.
-- [ ] T041 [US3] **Answer constitution VI's 100%-branch clause for the authorisation path, per arm** (SC-004's sibling). The clause names tenant isolation and this is tenant-isolation code. `repository.ts` is pinned at 92 branches against hundreds, so **the pin is not the instrument** — delete each arm and re-run, as 4.11 did. Two of its four probes said something a number could not.
-- [ ] T042 [US3] Commit phase 5.
+- [X] T038 [US3] Record in `page.mdx` that FR-MSG-11 has allowed the same id twice since 3.24 — *"the same id twice is two attachments"* — so two references is the ordinary consequence of forwarding a photo, not an edge case.
+- [X] T039 [US3] Pin the new and changed files in `vitest.coverage.config.mts`, and **probe both halves**: demand an impossible figure of each new key and confirm it fires, then confirm the measured pins pass. A pin whose key matches no file is silent.
+- [X] T040 [US3] **Read `coverage-summary.json`, not the text table.** v8's text reporter omits a file at 100/100/100/100, which cost 056 three of five new files.
+- [X] T041 [US3] **Answer constitution VI's 100%-branch clause for the authorisation path, per arm** (SC-004's sibling). The clause names tenant isolation and this is tenant-isolation code. `repository.ts` is pinned at 92 branches against hundreds, so **the pin is not the instrument** — delete each arm and re-run, as 4.11 did. Two of its four probes said something a number could not.
+- [X] T042 [US3] Commit phase 5.
 
 ---
 
 ## Phase 6: The gauntlet, the budget, and what this chapter cannot fix
 
-- [ ] T043 **Run the derivation first and record what it says.** This chapter **adds a route**, so `targets.itest.ts` should name `GET /v1/media/:mediaId` as unclassified — breaking 4.11's streak of one chapter that added none. If it comes back green, the derivation did not see the route and that is the finding.
-- [ ] T044 Add the route to the classification in `services/api/src/isolation/targets.ts`, then expect the gauntlet to go red with **"classified but never attacked"** — the third accounting direction 4.8 found after the plan named two.
-- [ ] T045 Extend `services/api/src/isolation/gauntlet.itest.ts` with a **forged `media_id` READ** attack. 4.11 added a forged-`media_id` write on the send route; this is the same id against a different verb, and a platform could hold one and not the other.
-- [ ] T046 **The attack in `services/api/src/isolation/gauntlet.itest.ts` plants a media object for each tenant and runs a control first.** Both tables are otherwise empty and an empty table passes a leak check for the same reason an empty page does. The control — the attacker reading its **own** object — must answer 200, or the refusal below means the feature is broken rather than that the boundary holds.
-- [ ] T047 Run the attack red by removing the environment scope from `services/api/src/db/repository.ts`, and confirm it fails for the tenancy reason rather than a shared refusal.
-- [ ] T048 [P] Record in `gaps.md`: **a signed URL outlives the authorisation that produced it** (FR-010, research R7). A caller removed from the channel at minute 1 holds a working link until minute 60. Nothing here can fix it — the store checks a signature and has never heard of a channel — and shortening the hour trades one exposure for a broken image. Name the window.
-- [ ] T049 [P] Record in `gaps.md` and the chapter: **every delivery spends one `rest` operation** (FR-011, research R8). A gallery of fifty images spends fifty of the tenant's budget. Left counted, for 4.8's reason — an exemption list is a hand-maintained table.
-- [ ] T050 [P] **Re-measure `gaps.md` 057-1 and close or narrow it in writing** (FR-012). It was filed as *"nothing counts references to a media object"*; this chapter is its first consumer. It is narrower now — there is a query and an index — and it is not closed, because FR-MED-10's sweep needs the opposite question (*which objects have NO reference*) and an index that answers containment does not answer absence.
-- [ ] T051 **Decide plan open question 1 in writing, in `contracts/media-delivery.md`**: one id per request, or several. The budget argues for a batch; the existence oracle argues against, because a batch refusal has to say which ids failed without saying why. Record the decision and the rejected alternative either way.
-- [ ] T052 **Decide plan open question 2 in writing**: whether the response carries the object's `state`. 4.11's FR-013 asserted delivery carries no state and that was about the message; this is the same smell one route over.
-- [ ] T053 Run `check-lane-scope.py` and record the file count. It read **60** at 057's close; this chapter adds integration tests and the number must rise. A run that reads nothing exits 2.
-- [ ] T054 Commit phase 6.
+- [X] T043 **Run the derivation first and record what it says.** This chapter **adds a route**, so `targets.itest.ts` should name `GET /v1/media/:mediaId` as unclassified — breaking 4.11's streak of one chapter that added none. If it comes back green, the derivation did not see the route and that is the finding.
+- [X] T044 Add the route to the classification in `services/api/src/isolation/targets.ts`, then expect the gauntlet to go red with **"classified but never attacked"** — the third accounting direction 4.8 found after the plan named two.
+- [X] T045 Extend `services/api/src/isolation/gauntlet.itest.ts` with a **forged `media_id` READ** attack. 4.11 added a forged-`media_id` write on the send route; this is the same id against a different verb, and a platform could hold one and not the other.
+- [X] T046 **The attack in `services/api/src/isolation/gauntlet.itest.ts` plants a media object for each tenant and runs a control first.** Both tables are otherwise empty and an empty table passes a leak check for the same reason an empty page does. The control — the attacker reading its **own** object — must answer 200, or the refusal below means the feature is broken rather than that the boundary holds.
+- [X] T047 Run the attack red by removing the environment scope from `services/api/src/db/repository.ts`, and confirm it fails for the tenancy reason rather than a shared refusal.
+- [X] T048 [P] Record in `gaps.md`: **a signed URL outlives the authorisation that produced it** (FR-010, research R7). A caller removed from the channel at minute 1 holds a working link until minute 60. Nothing here can fix it — the store checks a signature and has never heard of a channel — and shortening the hour trades one exposure for a broken image. Name the window.
+- [X] T049 [P] Record in `gaps.md` and the chapter: **every delivery spends one `rest` operation** (FR-011, research R8). A gallery of fifty images spends fifty of the tenant's budget. Left counted, for 4.8's reason — an exemption list is a hand-maintained table.
+- [X] T050 [P] **Re-measure `gaps.md` 057-1 and close or narrow it in writing** (FR-012). It was filed as *"nothing counts references to a media object"*; this chapter is its first consumer. It is narrower now — there is a query and an index — and it is not closed, because FR-MED-10's sweep needs the opposite question (*which objects have NO reference*) and an index that answers containment does not answer absence.
+- [X] T051 **Decide plan open question 1 in writing, in `contracts/media-delivery.md`**: one id per request, or several. The budget argues for a batch; the existence oracle argues against, because a batch refusal has to say which ids failed without saying why. Record the decision and the rejected alternative either way.
+- [X] T052 **Decide plan open question 2 in writing**: whether the response carries the object's `state`. 4.11's FR-013 asserted delivery carries no state and that was about the message; this is the same smell one route over.
+- [X] T053 Run `check-lane-scope.py` and record the file count. It read **60** at 057's close; this chapter adds integration tests and the number must rise. A run that reads nothing exits 2.
+- [X] T054 Commit phase 6.
 
 ---
 
 ## Phase 7: The chapter
 
-- [ ] T055 Write `relay-tutorial/app/(en)/part-4/chapter-12/…/page.mdx`, **2,000–4,000 words outside code fences**, measured with `node relay-tutorial/scripts/prose-words.mjs <page>`.
-- [ ] T056 **At least one `TRAP` box.** The candidates are measured rather than invented: the index that cannot be built `CONCURRENTLY` because the runner opens a transaction (T008), the refusal being the expensive lookup, and *"channel membership"* read literally being stricter than the message it guards.
-- [ ] T057 **Publish the index measurement in `page.mdx` beside 4.1's opposite conclusion.** That chapter found an index buying *"a gap inside the run-to-run spread for +49% storage"*; this one buys 26× to 160× for 1.7%. **Both are right** — the transferable lesson is which kind of cost you are looking at, and a chapter that published only its own half would teach the wrong rule.
-- [ ] T058 **Say which half of FR-MED-08 this chapter did not build** (FR-009). *"Object storage shall not be publicly readable"* is `presign.itest.ts:53`, whose title already names this clause. Re-proving it would claim work 4.10 did.
-- [ ] T059 Register the chapter in `relay-tutorial/lib/tutorial.ts`. `<ChapterHeader id="4.12" />` throws on an unregistered id, so `pnpm build` exits 1 from the moment the page exists.
-- [ ] T060 [P] Figures in `figures.ts`, each named by a `<Figure>`. **Pass each diagram as `code`, not `chart`** — 4.11 used `chart` and all three rendered nothing on a page that built and served 125 pages green. `check:figures` is the only thing that asks.
-- [ ] T061 A hunk per fenced file this chapter edits, **counted at T006 rather than remembered**. Generate each with `pnpm check:fences --dump`, never with `git diff` against the working tree.
-- [ ] T062 **Verify each hunk by exact occurrence count, not `patch --dry-run`** (`gaps.md` 056-7). `patch` applies with fuzz and offset and said yes to seven hunks the checker refused.
-- [ ] T063 **Check which state each hunk is written against** before blaming it. `fences/post-series.md` applies after every chapter, so a hunk for a file the appendix also amends is written against a state no reader sees — 4.8 found it, 4.11 paid it on `codes.ts` and moved the hunk to the appendix.
-- [ ] T064 **Decide the chapter/appendix split before the prose is written.** `repository.ts` carries 49 fences and 4.11 published a 201-line hunk for it; deciding afterwards is how a chapter ends up showing a reader 1,576 diff lines to make one point.
-- [ ] T065 **There is no Vietnamese twin to write** — check it rather than assume it. `app/(vi)/vi/part-4/` held chapters 1-3 at 4.11's close against en's 11, a lag of eight. 050 and 056 both recorded a task that described a corpus instead of checking one, and 4.11's own task said eight when the tree said seven.
-- [ ] T066 Run `pnpm check:fences` and report the **absolute number**.
+- [X] T055 Write `relay-tutorial/app/(en)/part-4/chapter-12/…/page.mdx`, **2,000–4,000 words outside code fences**, measured with `node relay-tutorial/scripts/prose-words.mjs <page>`.
+- [X] T056 **At least one `TRAP` box.** The candidates are measured rather than invented: the index that cannot be built `CONCURRENTLY` because the runner opens a transaction (T008), the refusal being the expensive lookup, and *"channel membership"* read literally being stricter than the message it guards.
+- [X] T057 **Publish the index measurement in `page.mdx` beside 4.1's opposite conclusion.** That chapter found an index buying *"a gap inside the run-to-run spread for +49% storage"*; this one buys 26× to 160× for 1.7%. **Both are right** — the transferable lesson is which kind of cost you are looking at, and a chapter that published only its own half would teach the wrong rule.
+- [X] T058 **Say which half of FR-MED-08 this chapter did not build** (FR-009). *"Object storage shall not be publicly readable"* is `presign.itest.ts:53`, whose title already names this clause. Re-proving it would claim work 4.10 did.
+- [X] T059 Register the chapter in `relay-tutorial/lib/tutorial.ts`. `<ChapterHeader id="4.12" />` throws on an unregistered id, so `pnpm build` exits 1 from the moment the page exists.
+- [X] T060 [P] Figures in `figures.ts`, each named by a `<Figure>`. **Pass each diagram as `code`, not `chart`** — 4.11 used `chart` and all three rendered nothing on a page that built and served 125 pages green. `check:figures` is the only thing that asks.
+- [X] T061 A hunk per fenced file this chapter edits, **counted at T006 rather than remembered**. Generate each with `pnpm check:fences --dump`, never with `git diff` against the working tree.
+- [X] T062 **Verify each hunk by exact occurrence count, not `patch --dry-run`** (`gaps.md` 056-7). `patch` applies with fuzz and offset and said yes to seven hunks the checker refused.
+- [X] T063 **Check which state each hunk is written against** before blaming it. `fences/post-series.md` applies after every chapter, so a hunk for a file the appendix also amends is written against a state no reader sees — 4.8 found it, 4.11 paid it on `codes.ts` and moved the hunk to the appendix.
+- [X] T064 **Decide the chapter/appendix split before the prose is written.** `repository.ts` carries 49 fences and 4.11 published a 201-line hunk for it; deciding afterwards is how a chapter ends up showing a reader 1,576 diff lines to make one point.
+- [X] T065 **There is no Vietnamese twin to write** — check it rather than assume it. `app/(vi)/vi/part-4/` held chapters 1-3 at 4.11's close against en's 11, a lag of eight. 050 and 056 both recorded a task that described a corpus instead of checking one, and 4.11's own task said eight when the tree said seven.
+- [X] T066 Run `pnpm check:fences` and report the **absolute number**.
 
 ---
 
 ## Phase 8: The record
 
-- [ ] T067 Write `baseline.txt` carrying every phase's measurements in the order they were taken, and the pinned lane environment.
-- [ ] T068 **Re-measure the dependency count across every `package.json` and compare it to T003's opening figure** (SC-009).
-- [ ] T069 Write `gaps.md`. **Re-measure every carried item rather than copying it**: 057-1 (T050), 057-2, 057-4, 057-5, 056-1, 056-2, 055-3. **And record T016a's class with its measurement** — a malformed UUID path parameter is a caller-triggered 500 on 16 shipped routes, found by this chapter and fixed on one of them at most.
-- [ ] T070 **Decide whether the SRS needs a revision, and write it if it does.** The candidate is research R2: FR-MED-08's *"(channel membership or API key)"* is a gloss on *"authorised to read the referencing message"*, and this platform's answer to that question is `channelVisibleTo` — membership for private channels only. **A literal reading is stricter than the message it guards**, which is a clause falsified by the platform's behaviour rather than by a measurement. Five of the last six chapters amended; 4.11's default of "no revision" was flipped by reading the clause verbatim.
-- [ ] T071 **Amend BOTH copies of the Part 4 table** — `docs/12` §3 row 13 **and** `docs/07-tutorial-plan.md`'s copy. Chapters 4.7 through 4.10 each amended one of the two and 4.11 was the first to find the other had received none of them.
-- [ ] T072 Write `traceability.md`. **Enumerate the ids and read each row** — a literal grep produced fourteen alarms at 4.11 and all fourteen were false, so the sweep cannot build the table and neither can memory.
-- [ ] T073 Update `CLAUDE.md`'s `<!-- SPECKIT -->` block for the close, including every task premise this chapter falsified by running it.
-- [ ] T074 Run the tutorial job's six gates, named from `ci.yml` rather than memory, and **read each one's counted success line**. `lint` is the one with no counted line at all.
-- [ ] T075 Run `pnpm test:outsider` with the outsider job's own preconditions, and extend the sealed suite to fetch a media object's bytes from outside (SC-010). **That suite ran in CI for the first time at 4.11**, after a one-line fix to a migrate step that had no `working-directory`.
-- [ ] T076 **Rebuild in all three senses before believing a run.** `pnpm build` for the spawned `dist`, `docker compose --profile services build` for the container image, and the protocol package before anything reads a type from it. 4.11 lost a confusing failure to each of the first two.
-- [ ] T077 Run the quickstart **unmodified**, and only then let it say every command was run before it was written. NFR-USE-03 is a `T` clause at 100% and `ci.yml` contains the word `quickstart` zero times, so this run is its whole verification. 4.11's was wrong five times and **four produced a red that looked like a platform defect**.
-- [ ] T078 Run `pnpm check:errors` by hand, in both directions, and assert **34/34 unchanged**. It is a script no CI job runs (055-3).
+- [X] T067 Write `baseline.txt` carrying every phase's measurements in the order they were taken, and the pinned lane environment.
+- [X] T068 **Re-measure the dependency count across every `package.json` and compare it to T003's opening figure** (SC-009).
+- [X] T069 Write `gaps.md`. **Re-measure every carried item rather than copying it**: 057-1 (T050), 057-2, 057-4, 057-5, 056-1, 056-2, 055-3. **And record T016a's class with its measurement** — a malformed UUID path parameter is a caller-triggered 500 on 16 shipped routes, found by this chapter and fixed on one of them at most.
+- [X] T070 **Decide whether the SRS needs a revision, and write it if it does.** The candidate is research R2: FR-MED-08's *"(channel membership or API key)"* is a gloss on *"authorised to read the referencing message"*, and this platform's answer to that question is `channelVisibleTo` — membership for private channels only. **A literal reading is stricter than the message it guards**, which is a clause falsified by the platform's behaviour rather than by a measurement. Five of the last six chapters amended; 4.11's default of "no revision" was flipped by reading the clause verbatim.
+- [X] T071 **Amend BOTH copies of the Part 4 table** — `docs/12` §3 row 13 **and** `docs/07-tutorial-plan.md`'s copy. Chapters 4.7 through 4.10 each amended one of the two and 4.11 was the first to find the other had received none of them.
+- [X] T072 Write `traceability.md`. **Enumerate the ids and read each row** — a literal grep produced fourteen alarms at 4.11 and all fourteen were false, so the sweep cannot build the table and neither can memory.
+- [X] T073 Update `CLAUDE.md`'s `<!-- SPECKIT -->` block for the close, including every task premise this chapter falsified by running it.
+- [X] T074 Run the tutorial job's six gates, named from `ci.yml` rather than memory, and **read each one's counted success line**. `lint` is the one with no counted line at all.
+- [X] T075 Run `pnpm test:outsider` with the outsider job's own preconditions, and extend the sealed suite to fetch a media object's bytes from outside (SC-010). **That suite ran in CI for the first time at 4.11**, after a one-line fix to a migrate step that had no `working-directory`.
+- [X] T076 **Rebuild in all three senses before believing a run.** `pnpm build` for the spawned `dist`, `docker compose --profile services build` for the container image, and the protocol package before anything reads a type from it. 4.11 lost a confusing failure to each of the first two.
+- [X] T077 Run the quickstart **unmodified**, and only then let it say every command was run before it was written. NFR-USE-03 is a `T` clause at 100% and `ci.yml` contains the word `quickstart` zero times, so this run is its whole verification. 4.11's was wrong five times and **four produced a red that looked like a platform defect**.
+- [X] T078 Run `pnpm check:errors` by hand, in both directions, and assert **34/34 unchanged**. It is a script no CI job runs (055-3).
 - [ ] T079 Tag `part4-ch12` on `relay-platform`, commit, and push all three repositories.
 - [ ] T080 After the push, confirm CI. **Compare per error, not per colour** — and **over more than one run**. 4.11 compared a single run and called the error set identical; three runs read 3, 6, 3, where the middle one's extras were absent from both neighbours. One comparison supports *"this run introduced nothing new"*, not *"the set is stable"* (`gaps.md` 057-8).
 

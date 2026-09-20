@@ -3,10 +3,21 @@
 Prove the chapter against a running stack: a URL that fetches the bytes, three refusals that
 look alike, and an expiry the store enforces from its own clock.
 
-**Not yet run.** 4.10's quickstart opens *"Every command here was run before it was written"* and
-this file may not say that until its own task does. 4.11's was wrong five times when it was
-finally executed — **four of the five produced a red that looked like a platform defect** — so
-the corrections it earned are already applied below rather than rediscovered.
+**Every command below was run, against the composed stack, on 2026-09-20.** It was wrong three
+times and every correction is recorded where it happened rather than quietly applied:
+
+  1. §2's foreign object came back as the string `INSERT00` on a stack where a `production`
+     environment already existed. The `WITH … ON CONFLICT DO NOTHING RETURNING id` CTE returns
+     no rows on a second run, so the outer INSERT inserted nothing and `psql` printed its
+     command tag, which `tr -d '[:space:]'` turned into an identifier. **It answered 400 rather
+     than the 404 the step claims — and before this chapter it would have answered 500**, which
+     is the very class §5 measures.
+  2. `psql -tAc` with `RETURNING` prints the value **and** the command tag, so `tr` alone glues
+     them: `661e39fd-…-224d381ba807INSERT01`. `head -1` is the fix. 4.11 paid the smaller
+     version of this — a newline `tr -d ' '` does not strip.
+  3. §3 used `$OBJECT_KEY` and nothing set it.
+
+And `pnpm test:outsider` takes three variables the step did not name.
 
 ## Prerequisites
 
@@ -70,16 +81,18 @@ application holds one environment per `kind` (`unique (application_id, kind)`), 
 the `production` half of the same application:
 
 ```bash
+psql "postgres://relay:relay@localhost:15432/relay" -tAc "
+  INSERT INTO environments (id, application_id, kind, signing_secret)
+  SELECT gen_random_uuid(), application_id, 'production', signing_secret
+    FROM environments WHERE kind = 'development' LIMIT 1
+  ON CONFLICT DO NOTHING" > /dev/null
+
 FOREIGN=$(psql "postgres://relay:relay@localhost:15432/relay" -tAc "
-  WITH e AS (
-    INSERT INTO environments (id, application_id, kind, signing_secret)
-    SELECT gen_random_uuid(), application_id, 'production', signing_secret
-      FROM environments WHERE kind = 'development' LIMIT 1
-    ON CONFLICT DO NOTHING RETURNING id)
   INSERT INTO media_objects
     (id, environment_id, filename, mime_type, declared_bytes, object_key, state)
-  SELECT gen_random_uuid(), e.id, 'f.png', 'image/png', 1, 'f/k', 'pending' FROM e
-  RETURNING id" | tr -d '[:space:]')
+  SELECT gen_random_uuid(), id, 'f.png', 'image/png', 1, 'f/k', 'pending'
+    FROM environments WHERE kind = 'production' LIMIT 1
+  RETURNING id" | head -1 | tr -d '[:space:]')
 
 UNREFERENCED=$(jq -r .media_id <<<"$(curl -s -X POST localhost:4000/v1/media \
   -H "authorization: Bearer $CREDENTIAL" -H 'content-type: application/json' \
@@ -96,13 +109,23 @@ and which no message references. `research.md` R1 settles it: authorisation foll
 there is no message, and granting the uploader access would be the parallel ACL the clause's own
 note forbids.
 
+**Two statements, not one CTE, and `head -1` after the `RETURNING`.** Creating the environment
+separately is what makes the step idempotent: a `RETURNING` inside `ON CONFLICT DO NOTHING`
+yields nothing on a second run, and the outer INSERT then inserts nothing. And `psql -tAc` prints
+the command tag underneath the value, so `tr` alone produces
+`661e39fd-…-224d381ba807INSERT01` — a malformed id, which this route answers **400
+`invalid_request`** and every other route in the api answers **500**.
+
 `uuidgen` is not on every machine and is not on this one; `/proc/sys/kernel/random/uuid` needs
-nothing installed. And `psql -tAc` leaves a newline that `tr -d ' '` does not strip — it travels
-into a URL and produces a refusal for the wrong reason.
+nothing installed.
 
 ## 3 · The expiry is the store's, not ours
 
 ```bash
+MEDIA_ID=${MEDIA_ID:?run §1 first}
+OBJECT_KEY=$(psql "postgres://relay:relay@localhost:15432/relay" -tAc \
+  "select object_key from media_objects where id='$MEDIA_ID'" | head -1 | tr -d '[:space:]')
+
 node -e '
 const { presign } = await import("./services/api/dist/media/presign.js");
 console.log(presign({ method: "GET", endpoint: "http://localhost:9100", bucket: "relay-media",
@@ -123,19 +146,24 @@ psql "postgres://relay:relay@localhost:15432/relay" -c "
    WHERE m.attachments @> '[{\"type\":\"media\",\"media_id\":\"$(cat /proc/sys/kernel/random/uuid)\"}]'::jsonb"
 ```
 
-**Expected**, once `0017` has run: a `Bitmap Index Scan on messages_attachments_gin`, single-digit
-buffers, and no `Rows Removed by Filter` line. Before it: a `Seq Scan`, **66,516 rows removed and
-1,016 buffers** for the id that matches nothing.
+**Measured**, once `0017` has run: `Bitmap Index Scan on messages_attachments_gin`, **18
+buffers**, no `Rows Removed by Filter`. Before it: `Seq Scan`, **68,112 rows removed and 1,042
+buffers** for an id that matches nothing.
 
-**Run it against an id that matches NOTHING.** The refusal is the expensive case — a hit can stop
-early and a miss cannot — so measuring only the happy path reports the smaller number.
+**AND THIS IS NOT THE QUERY THE ROUTE SENDS.** It is the bare containment scan, which is where the
+index earns its keep and where the sentence *"the refusal is the expensive case"* is true — a hit
+can stop early and a miss cannot. The route's own lookup is scoped to one tenant and is a
+different measurement entirely: 86 buffers as a single joined query with this index idle, 20 as
+the two the route actually issues. `baseline.txt` T005 and T013 carry the table, and the chapter
+publishes it beside chapter 4.1's opposite conclusion.
 
 ## The gates
 
 ```bash
 cd relay-platform && pnpm lint && pnpm typecheck && pnpm test
 pnpm test:integration                      # composed services STOPPED
-pnpm test:outsider                          # the sealed suite, after §0's seeder
+RELAY_DEMO_CREDENTIAL=$CREDENTIAL RELAY_API_URL=http://localhost:4000 \
+  RELAY_WS_URL=ws://localhost:4001 pnpm test:outsider    # the sealed suite
 cd ../relay-tutorial
 pnpm check:errors                           # expect 34 codes, 34 sections — UNCHANGED
 pnpm check:fences 2>&1 | grep 'problem(s)\|replay onto'
