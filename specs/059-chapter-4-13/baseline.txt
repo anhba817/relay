@@ -278,3 +278,124 @@ until the chapter publishes them — *a titled fence is a whole-body claim*, and
 published whole costs one fence rather than a hunk against a state no reader sees.
 `media-verdict.itest.ts` is the same: a new file, and 4.11's note about why that is the
 cheap direction applies unchanged.
+
+================================================================================
+PHASE 3 · THE PROBE, AND WHAT IT COSTS
+================================================================================
+
+    unit lane                       839 of 839              from 802
+    @relay/media-worker             63 of 63 — sniff 19, dimensions 10, verify 13,
+                                    sweep 8, store 13
+    verify.itest.ts                 9 of 9
+    lint                            0 errors · build EXIT 0 · check:fences 9, the bill 9
+
+--------------------------------------------------------------------------------
+T020a — THE PARTIAL INDEX, AGAINST THE REAL LANE
+--------------------------------------------------------------------------------
+
+    before   Limit → Sort (top-N heapsort) → Seq Scan     93 buffers · 2.370 ms
+    after    Limit → Index Scan using media_objects_pending_age
+                                                            5 buffers · 0.063 ms
+
+    table 720 kB · index 88 kB · 12.22%     3,314 rows, 3,292 of them pending
+
+**PUBLISHED BESIDE 4.12's GIN, WHICH IS THE POINT OF MEASURING BOTH.** That one is 1.62%
+of its table and stays there. This one is 12.22% **today** and shrinks as objects
+resolve, because the index holds only `pending` rows — the partial predicate is not a
+storage trick, it is the reason the ratio is temporary. And the cost being removed is a
+SORT, which is chapter 4.1's *"656 ms of a 698 ms plan"* at a scale where the whole query
+is 2.4 ms.
+
+--------------------------------------------------------------------------------
+T027 — THREE ROUND TRIPS, AND WHETHER THEY COLLAPSE. THEY DO NOT, AND THE
+       BREAK-EVEN IS 39%
+--------------------------------------------------------------------------------
+
+Against MinIO, 100 samples a side, one 10 MB object:
+
+    HEAD                            p50 1.215   p95 2.049
+    GET Range: bytes=0-65535        p50 2.627   p95 3.008    206 · bytes 0-65535/10485760
+    GET whole (10 MB)               p50 8.853   p95 17.687
+    HEAD, absent key                p50 1.167   p95 1.763
+    GET Range, absent key           p50 1.943   p95 2.150
+
+**A RANGED GET CARRIES EVERYTHING THE HEAD DOES.** Measured on the 206:
+`content-range: bytes 0-65535/1048576` gives the total size, `last-modified` gives
+SC-006's start instant, `content-type` gives the client's echoed claim. So the two
+requests **can** be one, and the question is whether they should be.
+
+    two trips   0.916 × 1.167  +  0.084 × 3.842  =  1.392 ms an object
+    one trip    0.916 × 1.943  +  0.084 × 2.627  =  2.001 ms an object
+
+**The two-trip design is 30% cheaper at this lane's mix and the ranged GET wins above
+39% present.** The whole argument is that 91.6% of `pending` rows hold nothing, and for
+those a `HEAD` is 40% cheaper than a ranged `GET` that has to build and discard an error
+body. Above 39% the arithmetic inverts and one trip is right. **Neither is the better
+design; the fraction decides, and nothing in this platform had ever measured it.**
+
+--------------------------------------------------------------------------------
+T028 — PEAK RSS, AND THE FIRST MEASUREMENT WAS CONFOUNDED BY ITS OWN FIXTURE
+--------------------------------------------------------------------------------
+
+    20 probes of a 100 MB object    baseline 46.2 MB   peak  80.7 MB   delta  34.5 MB
+    buffering the same object       baseline 46.1 MB   peak 188.8 MB   delta 142.7 MB
+
+**1.4× THE OBJECT TO BUFFER IT**, because `arrayBuffer()` copies. That is the figure
+phase 5's scan has to beat: `INSTREAM` must be chunked, not `await res.arrayBuffer()`.
+
+**AND THE FIRST RUN READ 0.0 MB FOR BOTH.** It uploaded the fixture in the same process,
+so the 100 MB `Buffer.alloc` had already grown RSS and buffering 100 MB more reused the
+freed pages without moving the number. *A delta between two totals is not a measurement
+of the thing that changed unless nothing else changed* — 4.1's rule, in the shape where
+the fixture is the other thing. Split into an upload process and a measurement process,
+both numbers moved.
+
+**AND NFR-SCL-01 IS NOT CITED FOR ANY OF THIS.** That clause names 10,000 connections and
+carries no memory figure; the 160 MB everybody reaches for is `docs/11`'s measurement of
+the **gateway's** RSS. Worth saying because the buffering figure of 188.8 MB would have
+read as *"over NFR-SCL-01's budget"* — a sentence that is wrong twice: wrong clause, and
+a budget belonging to a different process. 050 recorded this exact mis-citation and 059's
+`research.md` R9 checked it before it was written.
+
+--------------------------------------------------------------------------------
+T023b — THE MP4 PAIR, DECIDED AGAINST ITSELF
+--------------------------------------------------------------------------------
+
+`audio/mp4` and `video/mp4` are one container. The brand at offset 8 is conclusive for
+`M4A ` and `M4B ` and is used for both in `mp42`, `isom`, `avc1` and `iso5`; the
+authoritative discriminator is an `hdlr` inside `moov`, which most encoders put at the
+END of the file — past any prefix. **So the pair is treated as interchangeable and the
+chapter says it cannot tell them apart**, rather than shipping a test that asserts a
+distinction the bytes cannot make.
+
+**AND THE CAPS STILL HOLD, WHICH IS WHY THE AMBIGUITY IS AFFORDABLE.** Declaring
+`audio/mp4` and uploading a video buys the STRICTER cap — 25 MB rather than 100 — so the
+pair cannot smuggle a large file past `KIND_CAPS`. What it permits is a video filed as
+audio: a wrong label and no extra bytes.
+
+--------------------------------------------------------------------------------
+T024 AND T023a — RED PER FORMAT, NOT ONCE
+--------------------------------------------------------------------------------
+
+Each reader arm deleted in turn and the suite re-run:
+
+    dimensions   png   1 red     sniff   PNG   1 red      OggS       1 red
+                 gif   2 red             JPEG  1 red      ID3        2 red
+                 webp  1 red             GIF   1 red      frame sync 2 red
+                 jpeg  2 red             WEBP  2 red      ftyp       3 red
+                                         WAVE  2 red      declared===detected  1 red
+
+**Every arm is separately covered, and two pairs alias.** `RIFF` opens both a WebP and a
+WAV, so deleting either turns the other's discrimination test red as well — which is the
+evidence that the byte-8 check is load-bearing rather than decoration. MP3 has two legal
+starts and a reader knowing only `ID3` answers `null` for every stripped file; **`null` is
+not a rejection**, so that failure would have been silent: the type check would simply
+never have run.
+
+**AND THE FIXTURES' CIRCULARITY IS NAMED.** A test that writes 640×400 into a header and
+asserts the reader answers 640×400 has proved two pieces of code agree about an offset.
+PNG gets a second, independent derivation — its IDAT inflates to exactly `height` rows of
+`1 + width` bytes, so counting them recovers both numbers from bytes the header does not
+contain. GIF's LZW, JPEG's entropy-coded scan and WebP's VP8L bitstream each need a
+decoder to do the same, and the limit is written in the test file rather than papered
+over.
