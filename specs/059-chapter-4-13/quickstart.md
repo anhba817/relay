@@ -37,6 +37,12 @@ and `dispatcher` carry `profiles: ["services"]`. **Stop them again before `pnpm 
 the composed stack is a second set of relays on the same `outbox` and turns invariant 8 red
 (`gaps.md` 057-5).
 
+**And `--wait` does not mean the scanner is current.** A freshly started ClamAV answers `PONG`
+for about twenty seconds while holding the database baked into the image — thirteen days old on
+the run that measured it — before freshclam downloads the daily update. A liveness-shaped health
+check passes in that window. If an object comes back `ready` suspiciously early after a cold
+start, ask the scanner `zVERSION\0` and read the third field.
+
 **And the scanner is a store now.** Whether `clamav` joins the default profile or the services
 one is plan open question 4; whichever it is, `packages/config/src/infra.ts` must agree with
 `compose.yaml` **in both directions** — the assertion chapter 4.10 tripped over when it added

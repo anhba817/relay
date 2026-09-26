@@ -489,3 +489,57 @@ chapter's damage to 4.12 and covered the sequencing while the data went past it.
 somebody trusts the checklist. That is the third pass running where nothing found would have hidden
 — which is a different argument from *there is nothing left to find*, and it is the one that
 should decide whether an eighth pass happens.
+
+## Analysis pass 8 (2026-09-26)
+
+Two findings — one HIGH, one MEDIUM, no CRITICAL — both applied. **Six days had passed since
+pass 7**, which made a question available that no earlier pass could ask: are these artifacts'
+measurements still true? Both findings came from re-running a measurement; neither came from
+reading anything.
+
+- **THE SCANNER ANSWERS WHILE HOLDING A THIRTEEN-DAY-OLD DATABASE, AND `--wait` WOULD RETURN
+  INSIDE THE WINDOW.** A container started today from the image pulled on 2026-09-20 reported,
+  ten seconds in, `ClamAV 1.5.4/28122/Sun Sep 13 06:26:25 2026` — the baked copy — and read
+  `28135/Sat Sep 26` by twenty seconds. Its own log: `daily database available for update (local
+  version: 28122, remote version: 28135)` then `daily.cld updated (sigs: 355678)`. **Every health
+  check in `compose.yaml` is a liveness probe** — `pg_isready`, `redis-cli ping`,
+  `wget /healthz` — and one of that shape passes at ten seconds, so compose reports ready and the
+  worker starts scanning against stale definitions. Twenty seconds here, and a 355,678-signature
+  download is bandwidth-bound and unbounded on a slow link. **Fourth instance of 4.2's `/ping`
+  class, and the first with a measured window.** T038, T038a.
+- **AND SC-003 IS STRUCTURALLY UNABLE TO CATCH IT.** EICAR's signature is in `main.cvd`,
+  version **63**, reported *"up-to-date"* and identical across both measurements, while
+  everything that moved was `daily.cld`. **The test that proves the scanner runs passes the same
+  against a thirteen-day-old database as a current one** — which is the sharpest available
+  argument for why the date check is a separate obligation rather than a detail of T040. T038b.
+- **Every lane figure in these artifacts is six days old, and one moved 27.8%.** `media_objects`
+  3,005 → **3,078**, `messages` 68,112 → **73,218**, **`with attachments` 1,329 → 1,698**,
+  `environments` 11,427 → **12,275**, channels 11,557/1,016 → **12,415/1,129**. T005 re-measures
+  the sweep's cost and nothing re-checked the **composition** the arguments rest on. T004b now
+  does. **And `docs/04-srs.md` revision 1.19 publishes the channel pair as a fact about this
+  lane**, which is wrong in both numerals though its ratio argument holds — recorded in `gaps.md`
+  rather than edited in place, because revisions are appended in that document and 1.14 corrected
+  an earlier one in new prose. T055d.
+
+**And the premise the chapter rests on held, which is the pass's most useful result.**
+`research.md` R1's sweep, re-measured against a 2.4% larger population:
+
+    per-object HEAD   1.412 → 1.421 ms  ·  p50 1.094 → 1.111  ·  p95 1.714 → 1.854
+    200s/404s 34/166 → 33/167           ·  whole backlog 4.2 → 4.4 s
+
+That decision was taken on a single day's reading. It now has two, six days apart. **And T001
+cost 6 seconds on a cold start with all six stores healthy and no unrecoverable stream** — pass
+1's JetStream failure was a condition, not a certainty, and T001 now says so.
+
+**Task count 121 → 124.** Requirements unchanged at 26.
+
+**On eight passes.** 6 findings, 5, 4, 4, 4, 3, 3, 2 — severity 1 CRITICAL, 0, 1, 0, 0, 0, 1, 0.
+The lowest count yet, and the pass was only possible because time passed.
+
+**The eight questions, in order**: what the platform does · what it says about itself · what it
+wrote about this chapter · whether a task's own command works · whether the remediations compose
+· what the validating artifacts still claim · what this chapter breaks behind it · what has moved
+underneath. **Each needed a new question, and they have moved steadily away from the artifacts
+and towards the running system.** Three passes running have produced nothing that would fail
+silently. A ninth would have to ask something about the implementation, which is an argument for
+building it.

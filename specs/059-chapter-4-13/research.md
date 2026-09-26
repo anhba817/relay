@@ -22,6 +22,17 @@ signed and asked serially:
     other                                  0
     the whole 3,005-row backlog          4.2 s, serial, one connection
 
+**AND THE SAME MEASUREMENT SIX DAYS LATER, AGAINST A 2.4% LARGER POPULATION:**
+
+                      R1 (2026-09-20)   re-measured (2026-09-26)
+    per-object HEAD       1.412 ms            1.421 ms
+    p50 / p95          1.094 / 1.714       1.111 / 1.854
+    200s / 404s            34 / 166            33 / 167
+    whole backlog          4.2 s               4.4 s
+
+This decision was taken on one day's reading, and this project's rule is that two measurements
+are comparable once you measure rather than assume either way. It now has two.
+
 **Four seconds for every unresolved object in the platform.** The 91.6% is real and it is
 free: a 404 is the same round trip as a 200, and the wasted work is measured in milliseconds
 rather than in anything a sweep interval would notice.
@@ -197,6 +208,29 @@ against the size caps below: the worker never has to hold an object in memory to
 how old.** A check that sends only the first cannot fail for the reason it exists — 4.2's
 `/ping`, 4.9's unset credential and 4.10's bucket, for the fourth time. And bounding the reported
 date is what lets the check be run red without manufacturing a definitionless scanner.
+
+**AND AT PASS 8 THE WINDOW WAS MEASURED, SIX DAYS LATER, FROM THE SAME CACHED IMAGE:**
+
+    ~10 s after start   ClamAV 1.5.4/28122/Sun Sep 13 06:26:25 2026   the baked copy, 13 days old
+    ~20 s after start   ClamAV 1.5.4/28135/Sat Sep 26 06:24:13 2026   freshclam has caught up
+
+    the container's own log:
+      daily database available for update (local version: 28122, remote version: 28135)
+      daily.cld updated (version: 28135, sigs: 355678)
+
+**So the scanner is up, answering, and stale for a window.** Twenty seconds here, and it is a
+355,678-signature download — bandwidth-bound, and unbounded on a slow link.
+
+**AND `docker compose up -d --wait` WOULD RETURN INSIDE IT.** Every health check in
+`compose.yaml` is a liveness probe: `pg_isready`, `redis-cli ping`, `wget /healthz`. One of that
+shape passes at ten seconds, compose reports ready, and the worker starts scanning against
+definitions thirteen days old.
+
+**AND SC-003 IS STRUCTURALLY UNABLE TO CATCH IT.** EICAR's signature is in `main.cvd` — version
+**63**, reported *"up-to-date"* and identical across both measurements — while everything that
+moved was `daily.cld`. The test that proves the scanner runs passes the same against a stale
+database as a current one, which is why the date check is a separate obligation rather than a
+detail of the EICAR test.
 
 **Not measured yet and owned by the tasks phase**: scan latency against a real object.
 

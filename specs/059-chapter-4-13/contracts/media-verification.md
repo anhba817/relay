@@ -285,6 +285,14 @@ how old** — the three fields are engine, database version and build date. A re
 sends only the first is the 4.2 shape; one that sends the second can refuse a scanner whose
 database is older than a stated bound.
 
+**AND THE STALE STATE IS NOT HYPOTHETICAL — IT IS THE FIRST TWENTY SECONDS.** A container
+started from a cached image answers `PONG` and reports `28122/Sun Sep 13` — the image's baked
+database, thirteen days old — until freshclam downloads 355,678 signatures and it reads
+`28135/Sat Sep 26`. **A liveness-shaped health check passes inside that window and
+`docker compose up -d --wait` returns**, which is every other health check's shape in this
+repository. And the EICAR test cannot see it: that signature lives in `main.cvd` version 63,
+unchanged, while the staleness is entirely in `daily.cld`.
+
 **And that is what makes the check runnable red without breaking the scanner.** Manufacturing a
 definitionless clamd is awkward; forcing the bound is one constant. The red run asserts the check
 refuses when the reported date is too old, which is a test of the check rather than of ClamAV.
