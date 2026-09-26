@@ -453,3 +453,156 @@ T033 — THE QUOTA MOVES, READ THROUGH THE SLOT ROUTE'S OWN SUM
 
 The bytes stop counting because the ROW left the sum, not because the column was
 zeroed. Zeroing would destroy the fact FR-MED-03 is about.
+
+================================================================================
+PHASE 5 · THE SCANNER, AND THE DEFECT ONLY A RUNNING SWEEP COULD FIND
+================================================================================
+
+    unit lane                       855 of 855              from 839
+    @relay/media-worker             79 of 79                from 63
+    worker integration lane         22 of 22 — verify 14, scan 8
+    compose services                10, INFRA_SERVICES 7     clamav in the DEFAULT profile
+
+--------------------------------------------------------------------------------
+THE VERDICT ROUTE ANSWERED 400 AND THE WORKER RETRIED IT FOREVER
+--------------------------------------------------------------------------------
+
+Eight objects of 256 KiB of random bytes behind a PNG signature, through the real
+worker process against the real api:
+
+    W  "the api refused a verdict"  status 400   × 8, every sweep, for 30 seconds
+    states  8 of 8 timeout
+
+**THREE DEFECTS, AND THE FIRST IS ARITHMETIC.** `u32be` was
+`(b[at] << 24) | …`, and JavaScript's `<<` is a **signed** 32-bit operation: bytes
+`ff 00 00 0a` read **-16,777,206** rather than 4,278,190,090. The verdict schema says
+`z.number().int().positive()`, so the api refused the body — **and the defect surfaced
+as an api 400 three layers away from the arithmetic that caused it.** `>>> 0`.
+
+**THE SECOND IS THAT A HEADER THE READER CANNOT CHECK IS NOT A FACT.** This reader sees
+64 KiB, so a PNG claiming four billion pixels of width is a claim it has no way to
+verify. `MAX_DIMENSION` is 1,000,000 and the answer above it is `null` — *the bytes do
+not say* — **refused rather than clamped**, because recording a million for an image
+claiming four billion would be a number this platform invented.
+
+**THE THIRD IS THE ONE THAT COST THE MEASUREMENT.** A 400 is the worker's own bug and is
+not transient, and the sweep retried it on every interval: eight objects re-streamed
+through ClamAV every second, with the log saying exactly what was wrong and nothing
+acting on it. A 4xx that is not 404 or 422 now puts the id in a process-local set and
+the object is skipped for this worker's lifetime. It stays `pending` — the safe state,
+and a fixed worker resolves it — and a deploy clears the set for free.
+
+**NO UNIT TEST WOULD HAVE PRODUCED THE INPUT.** Every fixture in `dimensions.test.ts`
+is a header this repository wrote, with dimensions somebody chose. The bytes that broke
+it came from `randomFillSync`, in a measurement script written to time something else.
+
+--------------------------------------------------------------------------------
+T038 / T038a — THE HEALTH CHECK READS THE DATE, AND THE WINDOW IS MEASURED
+--------------------------------------------------------------------------------
+
+`clamav/clamav:latest`, a fresh container, the shipped check run every four seconds:
+
+    t≈ 8s   exit 8   clamd not answering yet
+    t≈12s   exit 1   ClamAV 1.5.4/28122/Sun Sep 13 06:26:25 2026   age 13d
+    t≈16s   exit 1   28122 · 13d
+    t≈20s   exit 1   28122 · 13d
+    t≈25s   exit 1   28122 · 13d
+    t≈30s   exit 0   ClamAV 1.5.4/28135/Sat Sep 26 06:24:13 2026   age  0d
+
+**A LIVENESS PROBE PASSES AT TWELVE SECONDS.** `zPING` answers `PONG` throughout, so
+`docker compose up -d --wait` would report ready and the worker would start scanning
+against definitions from a fortnight ago. That is 4.2's `/ping`, 4.9's unset credential
+and 4.10's bucket for the fourth time — **with a measured window instead of a
+hypothesis**.
+
+    forced bound of -1 days    exit 1      the arm run red on the SHIPPED command
+    shipped bound of 7 days    exit 0
+
+**AND THE IMAGE TAG CHANGES WHETHER THE WINDOW IS CATCHABLE.** `clamav/clamav:1.5` bakes
+`28129` where `:latest` bakes `28122` — six days against thirteen — so the same check
+against the pinned tag passes on its first reading and against `:latest` does not. The
+window is a property of how stale the image is, not of the check.
+
+--------------------------------------------------------------------------------
+T038b — SC-003 CANNOT CATCH STALENESS, MEASURED RATHER THAN ARGUED
+--------------------------------------------------------------------------------
+
+    t≈12s   28122/Sun Sep 13   stream: Eicar-Test-Signature FOUND
+    t≈16s   28122/Sun Sep 13   stream: Eicar-Test-Signature FOUND
+    t≈20s   28122/Sun Sep 13   stream: Eicar-Test-Signature FOUND
+    t≈26s   28135/Sat Sep 26   stream: Eicar-Test-Signature FOUND
+
+EICAR lives in `main.cvd` — version **63**, reported *"up-to-date"* in both readings —
+while the staleness is entirely in `daily.cld` (28122 → 28135, 355,678 signatures).
+**The test that proves the scanner runs is structurally unable to prove it is current**,
+which is the sharpest available statement of why T038 is a separate check.
+
+--------------------------------------------------------------------------------
+T039a — WHAT THE SIGNATURE MATCHES, THROUGH `INSTREAM`
+--------------------------------------------------------------------------------
+
+    EICAR alone (68 bytes)        68   Eicar-Test-Signature FOUND
+    EICAR + newline               69   Eicar-Signature FOUND          a DIFFERENT entry
+    EICAR + 200 spaces           268   OK
+    EICAR + 1 KiB of zeros      1092   OK
+    EICAR after a PNG header      84   OK
+    EICAR before a PNG header     84   OK
+
+**The signature matches the FILE, not a substring.** `ALLOWED_TYPES` carries no text
+type, so **no object can both satisfy FR-MED-03 and trip the scanner** — which is the
+test that could not be written, and is why the scan must run before the declaration
+check rather than after it. A reader that matched on the signature NAME rather than on
+`FOUND` would have called the 69-byte case clean.
+
+--------------------------------------------------------------------------------
+T044 — THE SCAN'S SHARE, SEPARATED FROM THE FETCH AND THE PROBE
+--------------------------------------------------------------------------------
+
+Best of five, incompressible objects, against a real ClamAV:
+
+    object      HEAD      SCAN     PROBE     TOTAL    scan %
+    4 KiB       1.22      3.54      2.00      6.76     52.4
+    1 MiB       1.37      6.15      2.65     10.17     60.5
+    10 MiB      1.85     25.39      3.16     30.40     83.5
+    100 MiB     1.84    203.83      3.00    208.67     97.7
+
+**About 2 ms a megabyte, and everything else is constant.** The `HEAD` and the probe do
+not grow with the object — that is what a 64 KiB prefix buys — so at the largest allowed
+size the scan is the whole cost.
+
+**AND SC-006 IS DOMINATED BY THE SWEEP INTERVAL, NOT BY ANY OF THIS.** The real worker,
+against the real api and store, 8 objects of 256 KiB:
+
+    interval 1000 ms    min  244   p50 1073   max 1099    8 of 8 ready
+    interval 5000 ms    min 3163   p50 5080   max 5098    8 of 8 ready
+
+p50 lands **at** the interval rather than at half of it, because the measurement uploads
+each object immediately after the previous verdict and so arrives just behind a sweep
+that has already run. **The work is 7 ms of a 5,080 ms answer.** That is the cost of
+`research.md` R1's decision stated as a number: a client notice would have removed the
+whole of it, and it cannot, because FR-MED-04 may not be contingent on a client choosing
+to send one.
+
+**AND THE START INSTANT IS THE STORE'S, AT ONE-SECOND RESOLUTION.** Nothing tells this
+platform when a PUT finished — the client uploads directly (ADR-13) — so `last-modified`
+on the sweep's own `HEAD` is the only observation of it, and an HTTP date has no
+sub-second field. Published beside the figure rather than rounded away.
+
+--------------------------------------------------------------------------------
+THE WORKER'S INTEGRATION LANE RUNS SERIALLY, AND SIX RED TESTS SAID WHY
+--------------------------------------------------------------------------------
+
+`GET /internal/media/pending` is oldest-first over the whole platform and takes no
+tenant parameter — the isolation property the route is built around. It also means two
+suites sweeping at once sweep the same queue: both backdate their fixture to the head,
+the second wins, and the first suite's sweep verifies the second suite's object.
+Measured: **six tests red across two files, every one `expected 'pending' to be
+'ready'`, with nothing wrong in the worker.**
+
+**It is not an assertion that is too wide but the ACTION** — 056-5's shape — and
+`check-lane-scope.py` cannot see it either, because the scope that is missing is in a
+route's contract rather than in SQL. `fileParallelism: false`, with the reason written
+in the config.
+
+    the fence bill after phase 5    10        from 9 — `packages/config/src/infra.ts`
+                                              joins it, for ClamAV's INFRA_SERVICES row
