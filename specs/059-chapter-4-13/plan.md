@@ -78,7 +78,16 @@ The worker's memory bound has to be measured here, not quoted.
 3. **Where does the probe's output live?** A column pair that is null for two of three kinds, a
    `jsonb` blob, or nothing stored at all until FR-MED-05 needs it. `data-model.md` takes a
    position; the tasks phase confirms it against what row 15 and row 16 will need.
-4. **Is the worker a compose service, or the ingester's shape?** `services/ingester` has no
+4. **CLOSED at T018 — a compose service, profiled, with a Dockerfile.** The ingester's shape
+   loses SC-010 outright, and the fifth-thing-nobody-runs objection is answered by the profile
+   rather than by leaving it unpackaged: `--profile services` starts it and a bare `up -d
+   --wait` does not. **THE THIRD REGISTRY WAS NOT THE ONE THIS QUESTION NAMED.** `INFRA_SERVICES`
+   lists the *infrastructure* and excludes Relay's own containers by name; the list that had to
+   grow is `infra.test.ts`'s `ours` set, which the both-directions assertion caught in one run.
+   So: `compose.yaml`, `packages/config/src/infra.test.ts`, and `bound-port.test.ts`'s
+   `BINDS_NOTHING` — three registries, and one of the three was misidentified by every artifact
+   that named it. The original question follows.
+   **Is the worker a compose service, or the ingester's shape?** `services/ingester` has no
    Dockerfile and nothing starts it but a test suite (`gaps.md` 050-8, open since 4.5). A fifth
    service packaged the same way is a fifth thing nobody runs — and a container costs
    `compose.yaml` plus `INFRA_SERVICES` plus a health check, which is the both-directions
@@ -99,7 +108,12 @@ The worker's memory bound has to be measured here, not quoted.
    specifies it and DR-17 sums it; this chapter owns `ready` and `rejected` while DR-17 reads
    `uploaded` and `deleted`, so a producer now fills the table with the two values its own clause
    ignores. `contracts/` §5a and `gaps.md` carry the arithmetic.
-6. **How does the sweep avoid two workers doing the same object?** One worker is the current
+6. **CLOSED at T019 — it does not avoid it, and nothing was added.** `UPDATE … WHERE state =
+   'pending'` is a compare-and-set: the second worker updates no rows and is told `applied:
+   false` with the state that won. A lease would buy efficiency rather than safety, at the cost
+   of a column, a clock, a reaper and a new way for an object to become permanently
+   unverifiable. `data-model.md` §7a carries it. The original question follows.
+   **How does the sweep avoid two workers doing the same object?** One worker is the current
    reality and `FOR UPDATE SKIP LOCKED` is the obvious answer, but the read is through the api
    (ADR-04), not through a transaction the worker holds. The seam decides it.
 

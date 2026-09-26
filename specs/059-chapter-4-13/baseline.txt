@@ -171,3 +171,110 @@ hid the red.
 
 **AND THE INGESTER IS THE PRECEDENT FOR NOT SHIPPING A CONTAINER AT ALL**: no Dockerfile,
 nothing starts it but a test suite spawning a child (`gaps.md` 050-8, open since 4.5).
+
+================================================================================
+PHASE 2 · THE SEAM, THE SECOND WRITER, AND THE SERVICE
+================================================================================
+
+    api typecheck                   EXIT 0
+    unit lane                       802 of 802, 13 tasks   from 776 and 11
+    @relay/media-worker             26 of 26 — sweep 13, store 13
+    media-verdict.itest.ts          18 of 18
+    attach.itest.ts                 18 of 18               from 17 at 4.12
+    lint                            0 errors, 1 pre-existing warning
+    build                           8 packages, EXIT 0     @relay/media-worker is the 8th
+    docker compose config           VALID
+
+--------------------------------------------------------------------------------
+T015c — 4.11's PER-ARM PROBE, RE-RUN RATHER THAN INHERITED
+--------------------------------------------------------------------------------
+
+`repository.ts`'s `assertAttachableMedia` records its per-arm result in a comment 4.11
+wrote. That run was made when `media_objects_state_check` permitted one value, so
+deleting the state clause could not change any answer and the recorded line — *"the
+three SQL clauses: no JavaScript branch at all"* — was true of a platform that has
+stopped existing. Re-run against migration 0018:
+
+    delete the whole `state IN (…)` clause      1 red · "refuses a `rejected` object"
+    narrow it to `state IN ('pending')`         1 red · "attaches a `ready` object"
+    unchanged                                   18 of 18
+
+**Both arms are now separately covered, and at 4.11 neither could be.** The comment is
+corrected in place rather than left standing (T015b) — *"`'ready'` is unreachable today"*
+is the class of claim this movement has now found in `store.ts`, in `docs/07` §6, in
+`docs/12` row 11 and in a test's deadline.
+
+--------------------------------------------------------------------------------
+THE LANE'S PENDING BACKLOG IS LONGER THAN ANY BATCH, AND THE FIRST TESTS DID NOT KNOW
+--------------------------------------------------------------------------------
+
+    media_objects where state = 'pending'   3,292
+    oldest                                  2026-09-19 01:41:58+00     seven days
+    the route's cap                         200 rows
+
+`GET /internal/media/pending` is oldest-first, which is FR-009's anti-starvation property
+and is the right order. It also means **an object created a millisecond ago is row 3,293
+of a 200-row page**, so the first version of two tests asserted `toContain` against a list
+that could never hold their fixtures — a test failing for the lane's reason rather than
+the route's. The fixture backdates its own rows' `created_at` and `afterAll` deletes every
+row its two environments own, scoped, so the next run's head is not this run's leftovers.
+
+**The operational half is worth more than the test fix**: on a store with a real backlog a
+fresh upload waits behind it, and the sweep has no notion of priority. Filed for the
+record rather than solved here — a cursor or a claim is what a worker pool would need
+(`data-model.md` §7a).
+
+--------------------------------------------------------------------------------
+T018 — THE THIRD REGISTRY WAS NOT THE ONE FOUR ARTIFACTS NAMED
+--------------------------------------------------------------------------------
+
+The plan's open question 4, T018 and `baseline.txt`'s own phase-1 table all said a new
+container costs `compose.yaml` plus `INFRA_SERVICES`. It does not. `INFRA_SERVICES` lists
+the *infrastructure*, and `infra.test.ts` excludes Relay's own containers **by name**:
+
+    const ours = new Set(["api", "gateway", "dispatcher"]);
+
+So `media-worker` goes in `ours`, not in `INFRA_SERVICES`, and the both-directions
+assertion 4.10 wrote said so on the first run. The three registries are `compose.yaml`,
+`infra.test.ts`'s `ours`, and `bound-port.test.ts`'s `BINDS_NOTHING` — and one of the
+three had been misidentified by every artifact that named it, including the measurement
+above, which counted the right list for the wrong purpose.
+
+--------------------------------------------------------------------------------
+T012a — THE COMMENT THAT SAID THE UNION WOULD STOP THE BUILD
+--------------------------------------------------------------------------------
+
+    PLATFORM_SERVICES gains "media-worker"      tsc --noEmit on the api: EXIT 0
+
+`authenticate.middleware.ts` claimed *"adding a third internal service widens this union
+on its own and every route that must now decide about it stops compiling"*. Measured:
+nothing stops compiling. `PlatformService` appears in three positions and all three are
+`readonly PlatformService[]`, where a new member is purely additive. **The forcing
+function is `credential.guard.ts`'s refusal to type a bare `@Accepts("platform")`** — a
+platform route must name its callers — so the third entry is mandatory because the
+DECORATOR needs it, not because the union breaks. The comment is corrected in place.
+
+--------------------------------------------------------------------------------
+PHASE 2 · THE FENCE BILL, COUNTED RATHER THAN REMEMBERED
+--------------------------------------------------------------------------------
+
+    check:fences                    9 problem(s) — HEAD 9      from 0 at the open
+    the bill, file by file          9
+
+    compose.yaml                             the worker's service + the api's third credential
+    packages/config/src/infra.test.ts        `ours` gains "media-worker"
+    packages/protocol/src/internal.ts        the seam's five schemas
+    packages/test-harness/src/bound-port.ts  BINDS_NOTHING gains the worker
+    services/api/src/auth/authenticate…      PLATFORM_SERVICES gains "media-worker"
+    services/api/src/db/repository.ts        two seam functions, the quota predicate, 4.11's
+                                             comment corrected
+    services/api/src/db/schema.ts            six columns, the widened CHECK, the partial index
+    services/api/src/internal/internal…      the controller registered
+    services/api/src/media/store.ts          `deleteObject`
+
+**AND THE TWO FILES THAT COST NOTHING ARE THE TWO NEW ONES.** `media.controller.ts` and
+every file under `services/media-worker/` carry no titled fence yet, so they are free
+until the chapter publishes them — *a titled fence is a whole-body claim*, and a new file
+published whole costs one fence rather than a hunk against a state no reader sees.
+`media-verdict.itest.ts` is the same: a new file, and 4.11's note about why that is the
+cheap direction applies unchanged.

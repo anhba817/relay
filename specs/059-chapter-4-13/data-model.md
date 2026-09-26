@@ -320,3 +320,41 @@ current reality; the design that survives a second one is a claim this chapter s
 make and test or decline and record. Declining it is legitimate — *a design in which a case
 cannot arise beats a branch that handles it* — but only if something makes the case not arise,
 and "we only run one" is a deployment fact rather than a design.
+
+### 7a. Decided: the transition IS the lock (T019)
+
+Two workers are safe, and nothing was added to make them safe.
+
+`recordMediaVerdict` is one statement:
+
+```
+UPDATE media_objects
+   SET state = $verdict, …
+ WHERE id = $id AND state = 'pending'
+RETURNING state, object_key
+```
+
+The `state = 'pending'` predicate is a compare-and-set. Two workers that both read the same
+object from `/internal/media/pending` and both finish their probes race on this statement; one
+updates a row and the other updates none, and the one that updated none is told so —
+`applied: false`, with the state that won. There is no lease, no heartbeat, no `locked_until`
+column and no lock table.
+
+**What a lease would have bought is not safety but efficiency**: it would stop the second
+worker spending a scan on bytes whose verdict is already decided. That is real and it is
+cheap to give up — a duplicated scan costs CPU on a machine that is already scanning, and the
+`skipped` count in the loser's log is the observable. A lease would cost a column, a clock
+comparison, a reaper for leases whose worker died, and a new way for an object to become
+permanently unverifiable. **The lease is the mechanism that needs the argument; the
+compare-and-set needs none, because it is the write itself.**
+
+**`FOR UPDATE SKIP LOCKED` IS NOT AVAILABLE AND ITS ABSENCE IS ADR-04's**, not an oversight.
+The worker reads through the api, so the row lock would be held by an HTTP request that ends
+before the worker has read a byte. Any lease here has to be application state with a clock,
+which is the more expensive thing the previous paragraph declines.
+
+**A second worker doubles the store reads and the scans.** Measured shape rather than measured
+number: each pass fetches the same oldest-first page, so two workers sweep the same 50 objects
+rather than 25 each. The `pending` list has no cursor and no claim, so this is by construction.
+A worker pool would need one, and that is what a later chapter would add if the backlog ever
+justified it — recorded here so that chapter finds the reason rather than the omission.
