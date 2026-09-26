@@ -399,3 +399,57 @@ PNG gets a second, independent derivation — its IDAT inflates to exactly `heig
 contain. GIF's LZW, JPEG's entropy-coded scan and WebP's VP8L bitstream each need a
 decoder to do the same, and the limit is written in the test file rather than papered
 over.
+
+================================================================================
+PHASE 4 · THE REFUSAL, AND THE TWO CONDITIONS ARE NOT ONE
+================================================================================
+
+    verify.itest.ts                 14 of 14               from 9
+    unit lane                       839 of 839             unchanged
+
+--------------------------------------------------------------------------------
+T034 — EACH CONDITION DELETED, AND NOTHING OVERLAPS
+--------------------------------------------------------------------------------
+
+    delete the TYPE check       unit  3 red     itest  4 red
+                                the GIF-as-PNG case, the MP4-pair case, the
+                                MP4-uploaded-as-png case, the quota case
+    delete the SIZE check       unit  1 red     itest  4 red
+                                one byte over, one byte under, five thousand over,
+                                and "for every ready object the two numbers are equal"
+
+**Two conditions that always agree are one condition with two names**, and these do not
+agree anywhere: the sets of failing tests are disjoint. The size check cannot see a GIF
+declared as a PNG at exactly the right byte count, and the type check cannot see a PNG
+that is one byte short of its declaration.
+
+**AND THE INVARIANT EARNED ITS PLACE.** *"For every `ready` object,
+`verified_bytes = declared_bytes`"* is a property of the tenant's whole set rather than
+of one row, and it goes red when the size check goes — which is what makes it an
+assertion rather than a restatement.
+
+--------------------------------------------------------------------------------
+T031 — "MATERIALLY LARGER" WAS UNQUANTIFIED, AND THE QUOTA SETTLED IT
+--------------------------------------------------------------------------------
+
+FR-MED-03 says *"contradict their declaration"*. The acceptance scenario and T031 both
+said *"materially"* and nothing gave a tolerance. `reserveMediaSlot` sums
+`declared_bytes` (SRS 1.17), so **under any tolerance a client that under-declares is
+billed for the declaration and stores the difference** — the tolerance would be a
+storage discount with no clause behind it.
+
+Exact comparison makes the quota correct by construction, and the test that says so is
+**one byte**, in both directions. A five-thousand-byte mismatch is rejected under a
+tolerance too, so a suite testing only the large case would be green against the design
+this one refuses.
+
+--------------------------------------------------------------------------------
+T033 — THE QUOTA MOVES, READ THROUGH THE SLOT ROUTE'S OWN SUM
+--------------------------------------------------------------------------------
+
+    a pending object      counts     committed = before + declared_bytes
+    the same object once rejected    committed = before
+    `declared_bytes`                 UNCHANGED — the row is the audit record
+
+The bytes stop counting because the ROW left the sum, not because the column was
+zeroed. Zeroing would destroy the fact FR-MED-03 is about.
