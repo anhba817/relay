@@ -321,3 +321,57 @@ for exactly that step and §1 never used them.
 **And §5's is the shape 4.11 named**: three of its five lines were comments describing work
 rather than doing it. **A step whose commands cannot run is indistinguishable from a step whose
 subject is broken.**
+
+### 059-15 · `quay.io/minio/minio` stopped being publicly pullable, and both platform CI jobs now die at step one
+
+**NOT THIS CHAPTER'S, AND FOUND BY IT.** `compose.yaml:106` has said
+`image: quay.io/minio/minio:latest` since chapter 4.10. It pulled on 2026-09-20 and on
+2026-09-26 it does not:
+
+    minio Error unauthorized: access to the requested resource is not authorized
+
+Reproduced off CI, three ways:
+
+    docker pull quay.io/minio/minio:latest                    401 Unauthorized
+    docker pull quay.io/minio/minio:RELEASE.2025-04-22T…      401 UNAUTHORIZED
+    docker pull minio/minio:latest                            pull access denied
+    docker manifest inspect chainguard/minio:latest           OK
+
+**IT BLOCKS EVERYTHING DOWNSTREAM OF IT IN BOTH JOBS.** `lanes` fails at
+`docker compose up -d --wait …` and skips `build`, `migrate`, `apply`, `check:errors` and
+`test:integration`; `sealed` fails at its own `up` before migrating. **Five of eleven steps
+and none of six.**
+
+**AND NO LOCAL RUN COULD SEE IT**, because the image is in this machine's cache and has been
+since 4.10 — which is 056-10's shape exactly (a persisting local volume hid a bucket nothing
+created) at the registry layer rather than the storage one. **The first machine without the
+cache is CI, and CI is where it appeared.**
+
+**NOT REPAIRED HERE, AND THAT IS A DECISION.** `chainguard/minio` is pullable and is a
+different image: different entrypoint, different credential variables, its own health check.
+Swapping it is a line of YAML and an afternoon of verification against the four media suites,
+the sealed suite and the presign probe — and doing that inside a closed feature would be a
+change nobody measured hiding behind a chapter about something else. **It needs its own
+measurement**, and ADR-30's reversal condition is the place to start: the argument for signing
+our own URLs was that the store is replaceable, and this is the first time that claim has been
+tested by anything other than an opinion.
+
+### 059-16 · A per-error comparison can only say what the run executed
+
+**THE SET IS ONE ERROR AGAINST THE BASELINE'S SIX, AND THAT IS NOT AN IMPROVEMENT.**
+
+    baseline (058's push)   6 distinct   two query-plan assertions, a typing frame,
+                                         two lane commands, one exit code
+    this push               1 distinct   `Process completed with exit code 1.`
+    new                     0
+    gone                    5
+
+**Five errors are gone because the tests that produced them never ran.** 059-15 killed both
+jobs at the image pull. *A zero from an instrument is a claim about the corpus only if the
+instrument can be shown to have read it* — and this instrument read nothing.
+
+**WHAT THE RUN DOES SAY**, and it is the half that is real: `relay-tutorial — build, docs
+drift, fence chain` **SUCCEEDED** (SC-009), and so did `relay-platform — the Docker-free gate`,
+which is the job 056 split out precisely so that a store outage could not hide the unit lane.
+**Two jobs cannot hide each other** is the sentence that made this run legible at all: without
+the split, one red would have covered both the real failure and the clean one.

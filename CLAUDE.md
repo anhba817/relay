@@ -162,6 +162,21 @@ deletion or the compare-and-set turns only seam tests red; deleting the scanner-
 or the infected arm turns only worker tests red. **Two conditions that always agree are one
 condition with two names**, and none of these six do.
 
+**AND THE PUSH FOUND SOMETHING THAT IS NOT THIS CHAPTER'S.** `quay.io/minio/minio:latest`
+stopped being publicly pullable between 2026-09-20 and 2026-09-26 — `unauthorized`, reproduced
+off CI three ways, with `chainguard/minio` the pullable alternative — so **both `relay-platform`
+jobs die at `docker compose up`**, five steps of eleven and none of six. **No local run could
+see it**: the image has been in this machine's cache since 4.10, which is 056-10's shape at the
+registry layer. The error set reads **1 distinct against the baseline's 6, zero new and five
+gone** — and *the five are gone because the tests that produced them never ran*. **Not repaired
+inside a closed feature**: swapping the image is a line of YAML and an afternoon against four
+media suites, the sealed suite and the presign probe, and ADR-30's reversal condition is where
+it starts. `gaps.md` 059-15 and 059-16.
+
+**THE TUTORIAL JOB SUCCEEDED (SC-009) AND SO DID THE DOCKER-FREE GATE.** 056 split that job out
+so a store outage could not hide the unit lane; **this is the first run where it mattered**, and
+without the split one red would have covered the real failure and the clean one alike.
+
 **EIGHT ANALYSIS PASSES: 6 findings, 5, 4, 4, 4, 3, 3, 2** — CRITICALs at 1, 3 and 7. Each pass
 asked a different question: what the platform does · what it says about itself · what it wrote
 about this chapter · whether a task's own command works · whether the remediations compose ·

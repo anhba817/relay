@@ -186,7 +186,7 @@ through the published slot route and watch it reach `ready` with the right dimen
 - [X] T077 **Amend BOTH copies of the Part 4 table** — `docs/12` §3 row 14 **and** `docs/07-tutorial-plan.md`'s copy. Chapters 4.7 through 4.10 each amended one of the two and 4.11 was the first to find the other had received none of them.
 - [X] T078 **Close `docs/12` §7.3 in the table AND in §7** (SC-011). §7.1 was closed by a chapter that did not own it and the entry stayed open for two features, which is the defect 4.5 fixed one entry down and which survived the chapter that found it.
 - [X] T079 Write `traceability.md`. **Enumerate the ids and read each row** — a literal grep produced fourteen alarms at 4.11 and all fourteen were false.
-- [ ] T080 Update `CLAUDE.md`'s `<!-- SPECKIT -->` block for the close, including every task premise this chapter falsified by running it.
+- [X] T080 Update `CLAUDE.md`'s `<!-- SPECKIT -->` block for the close, including every task premise this chapter falsified by running it.
 - [X] T081 Pin the new files in `vitest.coverage.config.mts`, and **probe both halves**: demand an impossible figure of each new key and confirm it fires, then confirm the measured pins pass. A pin whose key matches no file is silent, and 058's probe is the worked example.
 - [X] T082 **Read `coverage-summary.json`, not the text table.** v8's text reporter omits a file at 100/100/100/100, which cost 056 three of five new files.
 - [X] T083 **Answer constitution VI's 100%-branch clause per arm** in `services/media-worker/src/` — for the **verdict**, which has four outcomes and two terminal states. Delete each arm and re-run, as 4.11 and 4.12 did. 4.12's probe found three tenancy predicates no single mutation could see; the question here is whether the transient arm is reachable at all without the scanner being down.
@@ -196,8 +196,8 @@ through the published slot route and watch it reach `ready` with the right dimen
 - [X] T087 **Rebuild in all three senses before believing a run.** `pnpm build` for the spawned `dist`, `docker compose --profile services build` for the container image, and the protocol package before anything reads a type from it. 4.11 lost a confusing failure to each of the first two.
 - [X] T088 Run the quickstart **unmodified**, and only then let it say every command was run before it was written. NFR-USE-03 is a `T` clause at 100% and `ci.yml` contains the word `quickstart` zero times, so this run is its whole verification. 4.11's was wrong five times; 4.12's three, and the first of those was that chapter's own subject.
 - [X] T089 Run `pnpm check:errors` by hand, in both directions, and assert **34/34 unchanged**. It is a script no CI job runs (055-3).
-- [ ] T090 Tag `part4-ch13` on `relay-platform`, commit, and push all three repositories.
-- [ ] T091 After the push, confirm CI. **Compare per error, not per colour — and over more than one run.** 4.11 compared a single run and called the set identical; three runs read 3, 6, 3. 4.12's baseline was 4 distinct and its own run matched in both directions, with one query-plan assertion that comes and goes.
+- [X] T090 Tag `part4-ch13` on `relay-platform`, commit, and push all three repositories.
+- [X] T091 After the push, confirm CI. **Compare per error, not per colour — and over more than one run.** 4.11 compared a single run and called the set identical; three runs read 3, 6, 3. 4.12's baseline was 4 distinct and its own run matched in both directions, with one query-plan assertion that comes and goes.
 
 **Checkpoint**: an image uploaded by a customer is read once by one service, and only then can anybody else read it.
 

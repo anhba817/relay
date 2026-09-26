@@ -883,3 +883,23 @@ and a bot for exactly that step and §1 never used them.
 **AND THE PNG IS 4,722 BYTES, WHICH IS THE CHAPTER'S OWN FIGURE.** The prose says a PNG's
 dimensions are *"24 bytes of a 4,722-byte file"*; the quickstart builds that file, and the two
 numbers agreeing is the only reason either is checkable.
+
+--------------------------------------------------------------------------------
+T091 — CI, AND THE COMPARISON COULD ONLY SAY WHAT RAN
+--------------------------------------------------------------------------------
+
+    relay-tutorial — build, docs drift, fence chain      SUCCESS      SC-009 MET
+    relay-platform — the Docker-free gate                SUCCESS
+    relay-platform — integration lanes and coverage      FAILURE      at step 6 of 11
+    relay-platform — the sealed integration              FAILURE      at step 1
+
+    error set: baseline 6 distinct · this run 1 · NEW 0 · GONE 5
+
+**AND THE FIVE ARE GONE BECAUSE NOTHING RAN.** `quay.io/minio/minio:latest` stopped being
+publicly pullable between 2026-09-20 and 2026-09-26 — `unauthorized`, reproduced off CI three
+ways — so both platform jobs died at `docker compose up`. `gaps.md` 059-15 and 059-16.
+
+**THE TWO GREEN JOBS ARE THE REAL RESULT.** The tutorial job is `check:fences` ending, which is
+SC-009; the Docker-free gate is lint, typecheck and the unit lane with no containers at all.
+**056 split that job out so a store outage could not hide the unit lane, and this is the first
+run where it mattered.**
