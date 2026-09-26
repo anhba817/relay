@@ -606,3 +606,84 @@ in the config.
 
     the fence bill after phase 5    10        from 9 — `packages/config/src/infra.ts`
                                               joins it, for ClamAV's INFRA_SERVICES row
+
+================================================================================
+PHASE 6 · THE GATE, THE GAUNTLET, AND TWO CONSTITUTION ARGUMENTS
+================================================================================
+
+    api integration lane            768 of 768 · 40 files
+    isolation                       76 of 76                from 75
+    media suites                    62 of 62
+    unit lane                       855 of 855 · lint 0 errors · build EXIT 0
+    check-lane-scope                64 files, 0 unscoped, 10 of 10 controls fired
+                                                            from 61 at 058's close
+    the fence bill                  14                      from 10
+
+--------------------------------------------------------------------------------
+T046 — THE GATE TURNED TEN RED, WHICH IS THE NUMBER R4 PREDICTED
+--------------------------------------------------------------------------------
+
+`research.md` R4 measured `WHERE state = 'ready'` against 4.12's route **before the state
+machine existed** and got **10 of 76**. Applied here, with the transitions in place, it
+turned **ten** red again — and they are not the same ten:
+
+    delivery.itest.ts       9 red   every grant. The fixture's objects are `pending`,
+                                    because nothing in that lane produces `ready`.
+    media.itest.ts          1 red   the column-list assertion, which is migration 0018's
+                                    doing and not the gate's — and had been red since
+                                    phase 2 without anybody running that file.
+    gauntlet.itest.ts       1 red   the media attack's own CONTROL, exactly as R4 named
+
+**The prediction was right about the count and wrong about what it meant.** R4's ten were
+*"there is no such state"*; these are *"the fixtures do not produce it"* — a different
+defect with the same arithmetic, and the difference is the whole of what this chapter
+built.
+
+--------------------------------------------------------------------------------
+T048 / T048a / T048b — THE FIXTURES DID NOT ROT, THE PLATFORM GREW A CHECK
+--------------------------------------------------------------------------------
+
+    delivery.itest.ts       declared 1024, uploaded 42 bytes of ASCII
+    integrate.itest.ts      declared 11, uploaded 11 — the PNG signature plus three
+                            zeros, with NO `IHDR`. Size right, bytes not a PNG.
+    attach.itest.ts         declared 1024, uploads NOTHING — and is therefore safe
+
+**Every one was correct when it was written.** 4.10's slot route records *"what the caller
+said, not what arrived"*, so nothing could disagree with `bytes: 1024`. The third is the
+distinction worth keeping: **a fixture that lies about bytes it never sends is invisible to
+this chapter**, because the store answers 404, the sweep reads *"not yet"*, and the object
+stays `pending` — which `assertAttachableMedia` admits.
+
+**AND THE STATE IS WRITTEN DIRECTLY IN BOTH REPAIRED SUITES, WHICH IS A DECISION.** A
+delivery test or a tenancy attack that fails when the scanner is down is reporting somebody
+else's outage under a name about authorisation. The end-to-end path is covered where it
+belongs: `verify.itest.ts` against a real store and scanner, and the sealed suite against
+the composed stack.
+
+**AND THE SEALED SUITE'S SC-010 IS A POLL NOW**, which is the cost T018's packaging
+decision was taken with in front of it. The unpackaged shape would have made it
+unsatisfiable.
+
+**AND ONE ASSERTION QUIETLY STOPPED BEING ABOUT IDENTITY.** `expect(await
+fetched.text()).toBe(bytes)` on a real PNG decodes as UTF-8, so every byte above 0x7f
+becomes U+FFFD and two different images compare equal. `Buffer.from(await
+fetched.arrayBuffer())`.
+
+--------------------------------------------------------------------------------
+T049 — THE DERIVATION FOUND BOTH ROUTES FIRST, FOR THE ELEVENTH TIME
+--------------------------------------------------------------------------------
+
+    unclassified: ["GET /internal/media/pending", "POST /internal/media/:mediaId/verdict"]
+
+**The list has still never been ahead of the derivation.** This is the first time the task
+predicted it rather than hedging: earlier versions said the derivation *"may report
+nothing"* and called a green run the finding — which is backwards, since nine `/internal`
+routes were already classified and a green run would have meant the derivation could not
+see them.
+
+**Both are `exempt`, and for a stronger reason than `material`'s.** Those three take one
+opaque id and derive the tenant from the row; these take **no tenant-shaped input at all**.
+So `gauntlet.itest.ts` gains a test that is explicitly **not** an attack on the route: it
+shows the guard the exemption rests on — that no tenant credential reaches either route —
+and it does not call `attacked.add`, because an exempt route counted as attacked would
+break the accounting in the direction 4.8 found.
