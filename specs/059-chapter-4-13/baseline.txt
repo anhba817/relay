@@ -1,0 +1,173 @@
+BASELINE — feature 059, chapter 4.13, "the only service that reads the bytes"
+
+Every phase's measurements, in the order they were taken. A figure that is not here was
+not measured.
+
+================================================================================
+THE LANE ENVIRONMENT, PINNED WHERE THE TASKS CAN SEE IT
+================================================================================
+
+    RELAY_POSTGRES_PORT=15432     this machine's own Postgres holds 5432
+    date                          2026-09-26
+    predecessor tag               part4-ch12
+    host                          Linux 6.18.33.2-microsoft-standard-WSL2
+
+    docker compose up -d --wait   six stores: clickhouse mailpit minio nats postgres redis
+    composed services             api, gateway, dispatcher — profiles: ["services"]
+
+--------------------------------------------------------------------------------
+PHASE 1 · T001, T004a — THE STORES, AND WHAT A COLD START COST
+--------------------------------------------------------------------------------
+
+    docker compose up -d --wait   6.090 s · EXIT 0 · all six healthy
+
+AND NO STREAM FAILED TO RECOVER, WHICH THE ARTIFACTS SHOULD NOT PROMISE EITHER WAY.
+Analysis pass 1 met `JetStream stream '$G > ANALYTICS' could not be recovered` and then
+`EVENTS` behind it — 048-6/049-1's condition, where the stream that fails is whichever was
+being written when the container stopped. It did not recur on this start. **A condition,
+not a certainty**, and T001 now says so.
+
+T004a: `api`, `gateway` and `dispatcher` were stopped for the three lanes that need them
+stopped, started for the one that needs them up, and stopped again. Each figure below says
+which state it was taken in.
+
+--------------------------------------------------------------------------------
+PHASE 1 · T002, T003 — THE TWO OPENING NUMBERS
+--------------------------------------------------------------------------------
+
+    check-fence-chain: 291 fenced files replay onto relay-platform across 55 chapters
+                       (46 translated, fences mirrored, 2 retired, plus post-series
+                        amendments)
+    EXIT 0 · 0 problems
+
+REPORTED ABSOLUTE, NOT AS A DELTA (055's finding). At zero the checker prints only its
+success line — there is no `0 problem(s)` line to grep for.
+
+    dependencies, by a FILE rather than a shell one-liner (057's `TOTAL 0`):
+
+      0 package.json                          1 packages/test-harness/package.json
+      0 packages/config/package.json         14 services/api/package.json
+      1 packages/e2e/package.json             3 services/dispatcher/package.json
+      0 packages/outsider/package.json        6 services/gateway/package.json
+      1 packages/protocol/package.json        3 services/ingester/package.json
+      0 packages/service-kit/package.json
+    ---
+     29 TOTAL across 11 package.json
+
+29 at `part4-ch12` and 29 now. **SC-010 expects this to move** — a new package adds
+`package.json` entries even with no third-party dependency — so it is a figure to explain
+rather than to hold.
+
+--------------------------------------------------------------------------------
+PHASE 1 · T004 — THE LANES AT THE OPEN, AND TWO CARRIED REDS DID NOT RECUR
+--------------------------------------------------------------------------------
+
+    pnpm check:errors     34 codes, 34 sections, 6 close codes · EXIT 0
+    pnpm test --force     776 of 776 · 71 files · 7.4 s · EXIT 0      services stopped
+    pnpm test:integration 12 of 12 tasks · 4m 13s · EXIT 0            services stopped
+
+        test-harness   46 of 46          api        747 of 747
+        ingester       19 of 19          gateway    229 of 229
+        dispatcher     16 of 16          e2e         11 of 11
+                                                   ----------
+                                                   1,068 integration tests, all green
+
+    pnpm test:outsider    19 of 19 · EXIT 0        services UP, three variables set
+
+**BOTH CARRIED REDS ARE ABSENT, AND THE TASK EXPECTED THEM.** T004 warned about
+`services/ingester/src/shape.ts` pinned at 100 and measuring 95.12 since 048, and about
+`typing.itest.ts` flaking at a deadline (`gaps.md` 058-8, four runs: 22/23, 22/23, 22/23,
+23/23). The gateway lane is **229 of 229** and the integration run is **12 of 12 tasks**,
+where 058's open was 725 of 730 in the api lane with one turbo task failing. `shape.ts`'s
+pin is a coverage figure and is not exercised by `pnpm test:integration`; it is re-measured
+at T082.
+
+**AND `pnpm test:outsider` NEEDS AN ARRANGEMENT OPPOSITE TO THE OTHER THREE.** Analysis
+pass 4 ran it as T004 first worded it and got
+`Missing: RELAY_API_URL, RELAY_WS_URL, RELAY_DEMO_CREDENTIAL` with **`Tests 19 skipped
+(19)`** — a counted line that is a number and means nothing ran. Taken here with the
+services up and the seeder's credential exported.
+
+--------------------------------------------------------------------------------
+PHASE 1 · T004b — THE LANE'S COMPOSITION, WHICH MOVES WHILE YOU WATCH IT
+--------------------------------------------------------------------------------
+
+                        artifacts     re-measured      after the lanes
+                        2026-09-20    2026-09-26       2026-09-26
+    media_objects          3,005         3,078            3,158
+    messages              68,112        73,218           74,836
+    with attachments       1,329         1,698            1,747
+    environments          11,427        12,275           12,532
+    channels public       11,557        12,685 ────────────┘
+    channels private       1,016         1,153
+
+**THE ARTIFACTS' FIGURES WERE SIX DAYS OLD AND ONE HAD MOVED 27.8%** — `with attachments`,
+which is the population 4.12's GIN index serves. And the third column is the second column
+after one `pnpm test:integration` run: **80 media objects and 1,618 messages in four
+minutes**, which is the population moving inside this feature rather than between features.
+
+**AND `docs/04-srs.md` REVISION 1.19 PUBLISHES THE CHANNEL PAIR AS A FACT ABOUT THIS LANE**
+— *"11,557 public channels against 1,016 private"*. It is now 12,685 against 1,153. The
+ratio moved 11.4:1 to 11.0:1, so the argument holds and both numerals are stale. Recorded
+rather than edited: revisions are appended in that document (T055d).
+
+--------------------------------------------------------------------------------
+PHASE 1 · T005 — THE SWEEP, THIRD READING
+--------------------------------------------------------------------------------
+
+    reading              date         rows     per HEAD    p50      p95     backlog
+
+    research.md R1       2026-09-20   3,005    1.412 ms   1.094    1.714     4.2 s
+    analysis pass 8      2026-09-26   3,078    1.421 ms   1.111    1.854     4.4 s
+    T005, at the open    2026-09-26   3,158    1.278 ms   1.089    1.554     4.0 s
+
+    200s / 404s          34/166  ·  33/167  ·  32/168     newest-first, so biased high
+
+**THE DECISION THAT CHOSE THE SWEEP RESTS ON THREE READINGS NOW, NOT ONE.** `research.md`
+R1 settled the specification's flagged assumption against it on a single day's figure, and
+the per-object cost has held across six days and a 5% larger population. This project's
+rule is that two measurements are comparable once you measure rather than assume either
+way.
+
+**AND THE BATCH QUERY IS A SORT, WHICH IS WHAT 0019 EXISTS FOR.** Before the index:
+
+    Limit → Sort (top-N heapsort, Sort Key: created_at) → Seq Scan
+    Buffers: shared hit=93      for a 50-row batch over 3,158 rows
+
+93 where analysis pass 2 measured 90 at 3,028 rows.
+
+--------------------------------------------------------------------------------
+PHASE 1 · T006 — THE FENCE BILL IS AN INSTRUMENT WITH A CONTROL
+--------------------------------------------------------------------------------
+
+`pnpm check:fences --dump` wrote the chain's end state for all **291** paths. A helper then
+reports which of them differ from the working tree; run after each source edit, that is the
+chapter's fence bill, counted rather than remembered.
+
+    control, with no edit yet:  0 fenced file(s) differ from the tree
+
+**THE CONTROL IS THE POINT.** 058's first version of this helper charged that chapter for
+eleven files it never touched — every one a sole trailing-newline difference the checker
+normalises — and only the control said so.
+
+--------------------------------------------------------------------------------
+PHASE 1 · T007 — WHAT A CONTAINER COSTS, COUNTED BEFORE ADDING ONE
+--------------------------------------------------------------------------------
+
+    compose services (non-volume)   9   postgres redis nats clickhouse minio mailpit
+                                        api gateway dispatcher
+    profiled ["services"]           3   api gateway dispatcher
+    INFRA_SERVICES                  6   postgres redis nats clickhouse mailpit minio
+    BINDS_NOTHING                   2   services/dispatcher/src/main.ts
+                                        services/ingester/src/main.ts
+    services/ingester/Dockerfile    NO
+
+**THREE REGISTRIES, AND ONLY TWO ARE OBVIOUS.** `compose.yaml` and `INFRA_SERVICES` are
+checked against each other in both directions by a unit test no integration lane imports
+(056-8). `BINDS_NOTHING` is derived from the filesystem — `services/*/src/main.ts` — so a
+fifth service enters it the moment its `main.ts` exists, with no build and no
+`package.json`. **050 paid two chapters for that entry arriving late**, and turbo's cache
+hid the red.
+
+**AND THE INGESTER IS THE PRECEDENT FOR NOT SHIPPING A CONTAINER AT ALL**: no Dockerfile,
+nothing starts it but a test suite spawning a child (`gaps.md` 050-8, open since 4.5).
