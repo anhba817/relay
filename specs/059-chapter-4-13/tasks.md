@@ -62,7 +62,7 @@ documents. Paths below are relative to the repository that owns them.
   **AND THE DECISION IS COUPLED TO SC-010**, which nothing said until analysis pass 1: only a worker inside the composed profile moves an object to `ready`, and the sealed suite's media test fetches one. The unpackaged shape means SC-010 cannot be satisfied at all; the container means it becomes a poll. **Decide the packaging with that consequence in front of you**, not after T086 finds it.
 - [X] T018a **A FIFTH SERVICE JOINS A THIRD REGISTRY, AND NO TASK NAMED IT.** `packages/test-harness/src/bound-port.test.ts:49` derives `serviceMains()` from the tree and asserts every one of them reads back a bound port unless it is declared in `BINDS_NOTHING`, **in both directions** — so `services/media-worker/src/main.ts` turns the unit lane red the moment the file exists, with no listener to report. **050 paid two chapters for this exact omission**: the ingester arrived in 4.3, its entry did not, and turbo's cache hid the red until an unrelated `compose.yaml` edit busted the key. The entry ships in the same commit as `main.ts`, with a reason longer than twenty characters — the test asserts that too.
 - [X] T019 **Decide plan open question 6 in writing**, in `specs/059-chapter-4-13/data-model.md` §7: what stops two workers processing one object. One worker is the current reality and *"we only run one"* is a deployment fact rather than a design. `FOR UPDATE SKIP LOCKED` is not available to the worker — the read is through the api (ADR-04) — so the lease, if there is one, lives on the api's side of the seam.
-- [ ] T020 Commit phase 2.
+- [X] T020 Commit phase 2.
 
 ---
 
@@ -86,7 +86,7 @@ through the published slot route and watch it reach `ready` with the right dimen
 - [X] T026a [US1] **Process the same object twice and count the store's requests** (FR-008, SC-005). T014 covers the seam's half — a second `ready` changes nothing — and **the worker's half had no task until analysis pass 1**: *"the second pass MUST NOT re-read the bytes"* was the only one of nineteen mechanically-flagged requirement ids that turned out to be a real gap. Count the GETs, do not assert that a method was called.
 - [X] T027 [US1] **Measure the three round trips and decide whether they collapse** (`contracts/` §3, a question the plan never numbered). `HEAD`, a `Range` GET for the probe, a streamed GET for the scan. 4.10 measured one extra round trip on the slot path at **+24.1%**, so the cost is a known number rather than an intuition — and the largest allowed object is **100 MB**, which is what makes fetching everything to read 24 bytes worth avoiding.
 - [X] T028 [US1] **Measure the worker's peak RSS against the largest object it may see**, and do NOT cite NFR-SCL-01 for it (`research.md` R9). That clause names 10,000 connections and no memory figure; the 160 MB everyone reaches for is `docs/11`'s measurement of the **gateway's** RSS, and 050 recorded this exact mis-citation.
-- [ ] T029 [US1] Commit phase 3.
+- [X] T029 [US1] Commit phase 3.
 
 **Checkpoint**: a photo uploaded through the published route becomes `ready` on its own.
 
@@ -102,7 +102,7 @@ through the published slot route and watch it reach `ready` with the right dimen
 - [X] T033 [US2] **Assert the quota moved.** The tenant's committed bytes fall by the rejected object's declaration, read through the same sum `media.service.ts` uses — otherwise a rejected upload holds a tenant's storage forever.
 - [X] T034 [US2] **Run `services/media-worker/src/verify.ts` red by deleting the type check**, and confirm the size test still passes and the type test fails. Two conditions that always agree are one condition with two names.
 - [X] T035 [US2] **What `verified_type` is measured from, tested rather than assumed.** A test that PUTs an MP4 with `Content-Type: image/png` must still be rejected — if it passes, the platform is reading the client's claim twice and calling the second one a verification.
-- [ ] T036 [US2] Commit phase 4.
+- [X] T036 [US2] Commit phase 4.
 
 ---
 
@@ -124,9 +124,9 @@ through the published slot route and watch it reach `ready` with the right dimen
 - [X] T040a [US3] **Assert the scanner's own answer, not just the platform's.** The suite sends EICAR through `INSTREAM` directly once and asserts `Eicar-Test-Signature FOUND`, so a green `scan_failed` cannot come from a scanner that refused everything. The control 4.12's gauntlet needed, one layer down.
 - [X] T041 [US3] In `services/media-worker/src/scan.itest.ts`, **a scanner that is unreachable leaves the object `pending`** (FR-009), and the object reaches `ready` once it returns. Both halves, because only the second proves the first was a pause rather than a silent drop.
 - [X] T042 [US3] **The scanner-down test must NOT stop the container** (056-5). `docker compose stop` is an action scoped wider than its own test — the lane runs two files at a time and 4.10's version of this made `gauntlet.itest.ts` answer 503 in a file that never mentions media storage. Point the worker's scanner address at a port the kernel refuses, and make the variable wrong **at the moment of the request** rather than at the moment of the wiring (4.10's second finding, where a second Nest app answered 201 because the service was request-scoped).
-- [ ] T043 [US3] **Say what the scan does not promise** in `services/media-worker/src/scan.ts`'s header and in `page.mdx` (FR-014). A signature scanner detects known signatures; SAD R9 names *"scanner misses"* as residual. A reader who finishes this chapter believing *scanned* means *safe* has learned something false.
+- [X] T043 [US3] **Say what the scan does not promise** in `services/media-worker/src/scan.ts`'s header and in `page.mdx` (FR-014). A signature scanner detects known signatures; SAD R9 names *"scanner misses"* as residual. A reader who finishes this chapter believing *scanned* means *safe* has learned something false.
 - [X] T044 [US3] Measure the scan's share of time-to-`ready` and record it in `specs/059-chapter-4-13/baseline.txt` (SC-006), separated from the fetch and the probe. **THE START INSTANT IS `last-modified` ON THE SWEEP'S OWN `HEAD`, AND NO ARTIFACT NAMED IT UNTIL ANALYSIS PASS 5.** Under the sweep the platform never observes the upload — the store does, and reports `last-modified: Sun, 20 Sep 2026 17:02:53 GMT` on the round trip already being made. **At one-second resolution**, because an HTTP date has no sub-second field. Publish the quantisation beside the figure: it is a cost of `research.md` R1's decision, since the client notice the sweep replaced would have given an exact instant.
-- [ ] T045 [US3] Commit phase 5.
+- [X] T045 [US3] Commit phase 5.
 
 ---
 
@@ -155,24 +155,24 @@ through the published slot route and watch it reach `ready` with the right dimen
 - [X] T056a [P] Record in `gaps.md`: **`media_events` is specified, unbuilt, and this chapter declined to start it.** With the arithmetic from T051a, so the chapter that builds FR-MED-12 inherits a measurement rather than a question — and with 4.6's sentence attached, because *"the rollup satisfies DR-10 over a table that receives no events"* is what happens when a producer and a consumer are built in the wrong order.
 - [X] T057 [P] Record in `gaps.md`: **audio and video carry no duration** (FR-MED-04 partly met). On FR-MED-07's SRS 1.18 precedent — *unmet by decision and not by oversight*. Name what it costs a client: no scrubber length before playback.
 - [X] T058 Run `python3 specs/045-part-3-rework/check-lane-scope.py` from the repository root and record the file count. **The path is written out because that script's location has already been a defect**: 049 found it still pointing at a worktree 045 deleted, reporting zero over an empty corpus with all ten controls firing. It read **61** at 058's close; this chapter adds integration tests and the number must rise. A run that reads nothing exits 2.
-- [ ] T059 Commit phase 6.
+- [X] T059 Commit phase 6.
 
 ---
 
 ## Phase 7: The chapter
 
-- [ ] T060 Write `relay-tutorial/app/(en)/part-4/chapter-13/…/page.mdx`, **2,000–4,000 words outside code fences**, measured with `node relay-tutorial/scripts/prose-words.mjs <page>`.
-- [ ] T061 **At least one `TRAP` box** in `page.mdx`, and the candidates are measured rather than invented: the event with no producer, the sweep that costs 4.2 seconds where the spec priced it as waste, and the gate that turns 10 of 76 red if it ships alone.
-- [ ] T062 **Publish the sweep-against-notice comparison in `page.mdx` as the chapter's central argument.** The specification was wrong and the measurement is what corrected it; a chapter that presents the sweep as the obvious choice teaches nothing, because it was not obvious enough to survive the spec.
-- [ ] T063 **Say in `page.mdx` which half of FR-MED-04 shipped.** Dimensions, not duration, and the reason is four container parsers with MP3 VBR as the hard case — not that duration is unimportant.
-- [ ] T064 Register the chapter in `relay-tutorial/lib/tutorial.ts`. `<ChapterHeader id="4.13" />` throws on an unregistered id, so `pnpm build` exits 1 from the moment the page exists.
-- [ ] T065 [P] Figures in `figures.ts`, each named by a `<Figure>`. **Pass each diagram as `code`, not `chart`** — 4.11 used `chart` and all three rendered nothing on a page that built and served 125 pages green. `check:figures` is the only thing that asks.
-- [ ] T066 A hunk per fenced file this chapter edits, **counted at T006 rather than remembered**. Generate each with `pnpm check:fences --dump`, never with `git diff` against the working tree.
-- [ ] T067 **Verify each hunk by exact occurrence count, not `patch --dry-run`** (`gaps.md` 056-7). `patch` applies with fuzz and offset and said yes to seven hunks the checker refused.
-- [ ] T068 **Check which state each hunk is written against** before blaming it. `vitest.coverage.config.mts` carries **twelve** appendix hunks and `codes.ts` three; a hunk whose anchor line is one the appendix adds has nothing to match at this chapter, which 4.8, 4.11 and 4.12 each paid once.
-- [ ] T069 **Decide the chapter/appendix split before the prose is written.** `repository.ts` carries 50 fences and `schema.ts` 32; deciding afterwards is how a chapter ends up showing a reader 1,576 diff lines to make one point.
-- [ ] T070 **There is no Vietnamese twin to write** — check it rather than assume it. `app/(vi)/vi/part-4/` held 3 chapters against en's 12 at 4.12's close, a lag of nine. 050, 056 and 058 all recorded a task that described a corpus instead of checking one.
-- [ ] T071 Run `pnpm check:fences` and report the **absolute number**.
+- [X] T060 Write `relay-tutorial/app/(en)/part-4/chapter-13/…/page.mdx`, **2,000–4,000 words outside code fences**, measured with `node relay-tutorial/scripts/prose-words.mjs <page>`.
+- [X] T061 **At least one `TRAP` box** in `page.mdx`, and the candidates are measured rather than invented: the event with no producer, the sweep that costs 4.2 seconds where the spec priced it as waste, and the gate that turns 10 of 76 red if it ships alone.
+- [X] T062 **Publish the sweep-against-notice comparison in `page.mdx` as the chapter's central argument.** The specification was wrong and the measurement is what corrected it; a chapter that presents the sweep as the obvious choice teaches nothing, because it was not obvious enough to survive the spec.
+- [X] T063 **Say in `page.mdx` which half of FR-MED-04 shipped.** Dimensions, not duration, and the reason is four container parsers with MP3 VBR as the hard case — not that duration is unimportant.
+- [X] T064 Register the chapter in `relay-tutorial/lib/tutorial.ts`. `<ChapterHeader id="4.13" />` throws on an unregistered id, so `pnpm build` exits 1 from the moment the page exists.
+- [X] T065 [P] Figures in `figures.ts`, each named by a `<Figure>`. **Pass each diagram as `code`, not `chart`** — 4.11 used `chart` and all three rendered nothing on a page that built and served 125 pages green. `check:figures` is the only thing that asks.
+- [X] T066 A hunk per fenced file this chapter edits, **counted at T006 rather than remembered**. Generate each with `pnpm check:fences --dump`, never with `git diff` against the working tree.
+- [X] T067 **Verify each hunk by exact occurrence count, not `patch --dry-run`** (`gaps.md` 056-7). `patch` applies with fuzz and offset and said yes to seven hunks the checker refused.
+- [X] T068 **Check which state each hunk is written against** before blaming it. `vitest.coverage.config.mts` carries **twelve** appendix hunks and `codes.ts` three; a hunk whose anchor line is one the appendix adds has nothing to match at this chapter, which 4.8, 4.11 and 4.12 each paid once.
+- [X] T069 **Decide the chapter/appendix split before the prose is written.** `repository.ts` carries 50 fences and `schema.ts` 32; deciding afterwards is how a chapter ends up showing a reader 1,576 diff lines to make one point.
+- [X] T070 **There is no Vietnamese twin to write** — check it rather than assume it. `app/(vi)/vi/part-4/` held 3 chapters against en's 12 at 4.12's close, a lag of nine. 050, 056 and 058 all recorded a task that described a corpus instead of checking one.
+- [X] T071 Run `pnpm check:fences` and report the **absolute number**.
 
 ---
 

@@ -687,3 +687,86 @@ So `gauntlet.itest.ts` gains a test that is explicitly **not** an attack on the 
 shows the guard the exemption rests on — that no tenant credential reaches either route —
 and it does not call `attacked.add`, because an exempt route counted as attacked would
 break the accounting in the direction 4.8 found.
+
+================================================================================
+PHASE 7 · THE CHAPTER
+================================================================================
+
+    check:fences 14 -> 0 · EXIT 0 · 291 files across 56 chapters      from 55
+    3,337 prose words · 4 figures · 3 TRAP boxes · 127 pages          from 126
+    34 error codes, 34 sections — UNCHANGED, asserted in both directions
+    lint · build · check:docs · check:srs · check:figures · check:errors — all EXIT 0
+    294 figures, every diagram passed as `code`
+
+--------------------------------------------------------------------------------
+A PROSE TITLE IS A FENCE PROBLEM, AND TEN OF THEM ARRIVED IN ONE DRAFT
+--------------------------------------------------------------------------------
+
+The first draft used ```` title="measured: one signed HEAD against MinIO, n=200" ```` and
+nine more like it, because a title is how a code block gets a caption. The checker
+collects a fence **only** when it matches `title="…"`, and then looks for that title as a
+path:
+
+    check:fences 14 -> 24        every prose title is `<title> does not exist in
+                                 relay-platform`
+
+**That is 050-4's eleven inherited problems arriving as new ones.** Stripped to untitled
+fences — which are never compared to anything — the count went back to 14. **An untitled
+fence is outside every gate**, which is 043-1's open item and is the right answer here:
+these blocks are measurements, not files.
+
+**AND ONE OF THE TEN WAS A REAL EXCERPT.** A single line under
+`title="services/media-worker/src/verify.ts"` is a whole-body claim about a 120-line file
+(051-6, reproduced). It is a comment plus a line now, with no title.
+
+--------------------------------------------------------------------------------
+A CHAPTER THAT PUBLISHES WHAT THE APPENDIX WAS CARRYING MAKES ITS HUNK OBSOLETE
+--------------------------------------------------------------------------------
+
+**A NEW SHAPE, AND IT IS THE INVERSE OF THE ONE THIS MOVEMENT KEEPS FINDING.** 4.8, 4.11 and
+4.12 each paid *"check which state a hunk is written against"* — a chapter hunk failing
+because the appendix had already moved the file. This is the other direction:
+
+    the chapter's hunk applies at 4.13        old shape -> FR-044 + the worker's entry
+    the appendix's hunk applies after          old shape -> FR-044
+                                               `hunk pre-image matched 0 times`
+
+`fences/post-series.md` carried `authenticate.middleware.ts`'s FR-044 change because no
+chapter had published it. **4.13 publishes a superset of it, so the appendix's hunk is not
+broken — it is finished**, and the repair is to delete it rather than to re-anchor it.
+
+**AND THE HUNK HAD TO BE REGENERATED AGAINST `--at`, NOT AGAINST THE DUMP.** A bare
+`--dump` writes the chain's END state, which for this file is post-appendix. The first
+version verified as matching exactly once against that state and matched **zero** times
+where it actually applies. `--dump <dir> --at <page>` is the flag that answers the right
+question, and 055 built it for exactly this.
+
+--------------------------------------------------------------------------------
+AND TWO HUNKS UNANCHORED THE APPENDIX'S OWN OLDER ONES
+--------------------------------------------------------------------------------
+
+    gauntlet.itest.ts       placed in order    2 APPLY, 1 HEAD
+    integrate.itest.ts      placed in order    (the two later entries for the same files)
+    both, placed LAST                          0
+
+4.10's rule, reproduced exactly: **a hunk that works and unanchors somebody else's is still
+a broken chain.** They are generated against the end state, so the end of the document is
+where they belong, with a heading that says why.
+
+--------------------------------------------------------------------------------
+THE SPLIT, DECIDED BEFORE THE PROSE (T069)
+--------------------------------------------------------------------------------
+
+    the chapter      5 files, 563 diff lines   schema.ts, repository.ts, store.ts,
+                                               authenticate.middleware.ts, compose.yaml
+    the appendix     9 files, 430 diff lines   the protocol, the module, three registries,
+                                               and four suites repaired for the gate
+
+**The rule that produced it**: a file the prose argues about goes in the chapter, and a file
+that changed because a registry demanded it goes in the appendix. `repository.ts` carries 50
+titled fences and `schema.ts` 32, so deciding afterwards is how a chapter ends up showing a
+reader 1,576 lines to make one point.
+
+**AND THERE IS NO VIETNAMESE TWIN.** `app/(vi)/vi/part-4/` holds three chapters against the
+English thirteen — a lag of ten, checked rather than assumed, which is the task 050, 056 and
+058 each recorded as describing a corpus instead of reading one.
