@@ -770,3 +770,116 @@ reader 1,576 lines to make one point.
 **AND THERE IS NO VIETNAMESE TWIN.** `app/(vi)/vi/part-4/` holds three chapters against the
 English thirteen — a lag of ten, checked rather than assumed, which is the task 050, 056 and
 058 each recorded as describing a corpus instead of reading one.
+
+================================================================================
+PHASE 8 · THE CLOSE
+================================================================================
+
+    check:fences 0 · EXIT 0 · 291 files across 56 chapters      from 291 and 55
+    3,337 prose words · 4 figures · 3 TRAP boxes · 127 pages     from 126
+    34 error codes, 34 sections — UNCHANGED, asserted in both directions
+    api lane 768 of 768 · worker 22 of 22 · outsider 19 of 19 · unit 855 of 855
+    136 files, 1,959 tests under coverage
+    dependency ENTRIES 31 against 29 — and both new ones are workspace links
+    check-lane-scope 64 files, 0 unscoped, 10 of 10 controls fired      from 61
+
+--------------------------------------------------------------------------------
+SC-010 — A FIFTH SERVICE AND A SEVENTH CONTAINER, AND NO NEW THIRD-PARTY DEPENDENCY
+--------------------------------------------------------------------------------
+
+                             part4-ch12    now
+    package.json files              11      12
+    dependency entries              29      31
+      of them workspace links        9      11
+      of them third-party           20      20
+    DISTINCT third-party packages   13      13
+
+**The figure had to be read rather than compared**, which is what T073 predicted. A new package
+adds entries whether or not it adds a dependency, and both of this one's are `@relay/protocol`
+and `@relay/service-kit`. ClamAV is a container and `INSTREAM` is twenty-two lines; SigV4 is the
+signer 4.10 wrote, copied with its divergence stated.
+
+--------------------------------------------------------------------------------
+T081 / T082 — THE COVERAGE PINS, PROBED BOTH WAYS
+--------------------------------------------------------------------------------
+
+    an impossible pin on a key that matches NO file      SILENT — no error, no warning
+    an impossible pin on `.../sniff.ts`                  ERROR, named, exit 1
+
+045's finding reproduced unchanged, and the reason the second half is run every time.
+
+    services/media-worker/src/sniff.ts        100 / 100 / 100 / 100
+    services/media-worker/src/fixtures.ts     100 / 100 / 100 / 100
+    services/media-worker/src/sweep.ts      97.67 / 92.30 / 100 / 97.50
+    services/media-worker/src/verify.ts     96.15 / 87.50 / 100 / 100
+    services/media-worker/src/store.ts      91.11 / 87.50 / 100 / 100
+    services/media-worker/src/scan.ts       88.23 / 85.71 / 82.35 / 87.30
+    services/media-worker/src/dimensions.ts 85.71 / 88.52 / 100 / 84.78
+    services/media-worker/src/api-client.ts 78.94 / 50.00 / 100 / 100
+    services/api/src/internal/media.…ts     94.44 / 90.90 / 100 / 94.44
+
+**READ FROM `coverage-summary.json`, NOT FROM THE TABLE** — v8's text reporter omits a file at
+100/100/100/100, which cost 056 three of five new files, and two of the nine above are at 100.
+
+**AND THE RATCHET CAUGHT A REGRESSION OF MINE.** `services/api/src/media/store.ts` fell from its
+100 pin to 96/95.23 when `deleteObject` arrived with two arms no api test reached. Four unit
+tests rather than a lowered pin — *the pin working, not the pin in the way*.
+
+--------------------------------------------------------------------------------
+T083 — CONSTITUTION VI, ANSWERED PER ARM
+--------------------------------------------------------------------------------
+
+    delete the 404 arm                           seam  1 red   worker  0
+    delete the 422 refusal                       seam  1 red   worker  0
+    delete the byte deletion                     seam  1 red   worker  0
+    delete `WHERE state = 'pending'`             seam  2 red   worker  0
+    delete the scanner-unavailable arm (FR-009)  seam  0       worker  2 red
+    delete the infected arm                      seam  0       worker  2 red
+
+**Every arm separately covered, and the two halves do not overlap** — which is the evidence that
+the seam's refusals and the worker's decisions are different code rather than one condition
+under two names. The compare-and-set is the only one that turns two red, because idempotence
+and the 422 both stand on it.
+
+--------------------------------------------------------------------------------
+T086 / T087 — THE SEALED SUITE, AND THREE KINDS OF STALE BUILD
+--------------------------------------------------------------------------------
+
+    pnpm build                                  the spawned `dist`
+    docker compose --profile services build     the container images
+    pnpm --filter @relay/protocol build         before anything reads a type from it
+
+**19 of 19, the first run of that suite against a worker.** Its media test is now the only place
+in the repository where upload, sweep, scan, verdict and delivery run end to end from outside —
+which is the cost of the gate and was one of the things T018's packaging decision was taken
+with in front of it.
+
+**AND ONE FAILURE WAS THE ASSERTION'S OWN.** The byte-identity check compared against a second
+copy of the old eleven-byte fixture written out by hand; when the upload became a real PNG the
+assertion kept comparing against bytes that were no longer sent anywhere.
+
+**AND ONE WAS SOMEBODY ELSE'S.** `outbox.itest.ts` invariant 8 read `expected 18 to have length
+20` with the composed stack up — a second set of relays draining the same table. Green with the
+services stopped, which is 057-5 and is why the quickstart says so twice.
+
+--------------------------------------------------------------------------------
+T088 — THE QUICKSTART, RUN UNMODIFIED, WRONG THREE TIMES
+--------------------------------------------------------------------------------
+
+    §1   ready · image/png · 4722 · 640 · 480         as written
+    §2   ready -> 404                                 WRONG — no referencing message
+    §3   rejected · declaration_mismatch · 1024 · 40000, store 404     as written
+    §3   the signed HEAD                              WRONG — an ellipsis, not a command
+    §4   rejected · scan_failed, 68 bytes exactly     as written
+    §5   `$ID` unset, read twice                      WRONG — commands that cannot run
+    §5   pending at 14 s, ready 10 s after restart    after the repair
+
+**All three corrected in place with the failure recorded beside them**, and the first is the one
+worth keeping: FR-MED-08 authorises through a referencing message, so an object nobody has sent
+answers 404 whatever its state — **a reader would have concluded the gate was refusing a
+verified object**, which is this chapter's own subject appearing broken. §0 creates a channel
+and a bot for exactly that step and §1 never used them.
+
+**AND THE PNG IS 4,722 BYTES, WHICH IS THE CHAPTER'S OWN FIGURE.** The prose says a PNG's
+dimensions are *"24 bytes of a 4,722-byte file"*; the quickstart builds that file, and the two
+numbers agreeing is the only reason either is checkable.

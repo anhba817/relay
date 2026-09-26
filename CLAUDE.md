@@ -28,54 +28,147 @@ history; the replaced history is preserved on the remote as the tag
 tags. **Anyone holding an older clone of `relay-platform` must reset rather than pull.**
 
 <!-- SPECKIT START -->
-**ACTIVE: 059 — CHAPTER 4.13, "the only service that reads the bytes".** **Movement VI opens.**
-Plan: `specs/059-chapter-4-13/plan.md`; **`research.md` first — it settles the specification's
-one flagged assumption AGAINST the specification, for the fourth feature running.**
-FR-MED-03/04: verify against declaration, scan, probe. **Name it by its movement and title**:
-`docs/12` §3 row 14, whose **§7.3 is this chapter's own open question**.
+
+**059 IS CLOSED at 124 of 124 — CHAPTER 4.13, "the only service that reads the bytes".**
+**Movement VI opens.** Its record is `specs/059-chapter-4-13/` — `baseline.txt` first (every
+phase's measurements in the order they were taken), then `gaps.md` (**18 entries: 14 new, 4
+carried and re-measured, 057-2 closed**), `traceability.md`, `tasks.md`. **SRS 1.20**,
+**ADR-31**, **ADR-32**, `docs/12` §7.3 CLOSED, and **both** copies of the Part 4 table amended.
+Tagged **`part4-ch13`**.
+
+    check:fences 0 · EXIT 0 · 291 files across 56 chapters      from 291 and 55
+    3,337 prose words · 4 figures · 3 TRAP boxes · 127 pages     from 126
+    34 error codes, 34 sections — UNCHANGED, asserted in both directions
+    api 768 of 768 · worker 22 of 22 · outsider 19 of 19 · unit 855 of 855
+    136 files, 1,959 tests under coverage · check-lane-scope 64 files, 0 unscoped
+    31 dependency entries against 29 — and BOTH new ones are workspace links
+
+**A FIFTH SERVICE, A SEVENTH CONTAINER, AND NO NEW THIRD-PARTY DEPENDENCY.** Third-party
+entries 20 → 20, distinct packages 13 → 13. `INSTREAM` is twenty-two lines of `node:net`;
+SigV4 is 4.10's signer copied with the divergence stated and the three alternatives named.
 
 **THE EVENT THE SAD SAYS THE WORKER CONSUMES HAS NO PRODUCER, AND ADR-13 IS WHY.** Zero
-occurrences of `media.uploaded` anywhere. The client PUTs straight to the store, so the only two
-parties that know the upload finished are the client and the store — 4.10's *"the api never
-opens a socket"* arriving as a hole rather than a cost.
+occurrences of `media.uploaded`. The client PUTs straight to the store, so the only two parties
+that know the upload finished are the client and the store. **The specification priced the
+alternative wrong**: it rejected a sweep on *"91.6% of the work spent on objects that hold
+nothing"* and one signed `HEAD` is **1.412 ms**, the whole backlog **4.2 s serial**. The waste
+is free — **so the sweep is the mechanism and a notice is an optimisation that must not change
+any answer**, because FR-MED-04's *"every uploaded object"* cannot be contingent on a client
+choosing to send one.
 
-**AND THE SPEC'S ASSUMPTION — THE CLIENT TELLS US — IS PRICED WRONG.** It rejected a sweep on
-*"91.6% of the work spent on objects that hold nothing"*. Measured: one signed `HEAD` is
-**1.412 ms** (p50 1.094, p95 1.714, n=200) and the lane's whole **3,005-row backlog is 4.2 s
-serial**, 166 of 200 being 404s. **The waste is free.** So the sweep is the mechanism and a
-client notice is an optimisation that must not change any answer — because FR-MED-04's *"every
-uploaded object shall be virus-scanned"* cannot be contingent on a client choosing to send one.
-Bucket notifications are rejected on **ADR-30's direction argument one layer down** and recorded
-rather than dismissed.
+**AND THE SWEEP READ ONE PAGE, WHICH IS THE DEFECT THIS CHAPTER CAME CLOSEST TO SHIPPING.**
+The lane held **3,849 pending rows, 858 inside FR-MED-10's window**, and an object nobody
+uploaded to stays `pending` until a reap that is not built — so **the head never moves** and a
+fresh upload was row 858. The sealed suite timed out at thirty seconds with the worker running
+perfectly, the scanner current, and the log silent, because it logs only when something
+happened. **The published figure assumed the fix**: *"the whole backlog is 4.2 s"* is only true
+if a sweep is a whole pass. It pages now, keyset on `created_at`, bounded by `maxPages`, over a
+queue the batch query trims to the last 24 hours — because an object pending longer than that
+is the reap's. `gaps.md` 059-12.
 
-**AND ADR-14's DELIVERY GATE CANNOT SHIP ALONE — 10 OF 76 RED.** *"No signed URL until
-`ready`"*, against a route 4.12 shipped signing for `pending`. Adding `WHERE state = 'ready'`
-today turns every grant in `delivery.itest.ts` red **and the isolation gauntlet's own control**,
-because `media_objects_state_check` permits one value. The transition and the gate ship together
-or the gate ships broken.
+**JAVASCRIPT'S `<<` IS SIGNED, AND IT SURFACED AS AN API 400 THREE LAYERS AWAY.** `ff 00 00 0a`
+reads **-16,777,206** rather than 4,278,190,090; the verdict schema says `positive()`; the api
+answered 400; **and the worker retried it every second forever**, re-streaming eight objects
+through ClamAV with the log saying exactly what was wrong. Three fixes and only the first is the
+bug: `>>> 0`, a `MAX_DIMENSION` above which the answer is `null` **refused rather than clamped**,
+and a 4xx that stops the retry. **No unit test would have produced the input** — every fixture
+is a header this repository wrote; these bytes came from `randomFillSync` in a script written to
+time something else.
 
-**THE PROBE SPLITS AND ONLY HALF NEEDS A SECOND PROGRAM.** PNG dimensions are **24 bytes of
-4,722** — 0.51% — and GIF, JPEG and WebP are fixed offsets or a short segment walk. Duration is
-four unrelated container parsers with MP3 VBR as a genuinely hard case. **The contract ships
-dimensions and records FR-MED-04 PARTLY MET**, on FR-MED-07's SRS 1.18 precedent, which makes
-§7.3's argument narrower: **one** non-TypeScript program, not two.
+**A LIVENESS PROBE PASSES AGAINST A SIGNATURE DATABASE THIRTEEN DAYS OLD.** Measured every four
+seconds on a fresh container: `28122/Sun Sep 13` at 12 s, 16 s, 20 s and 25 s, `28135/Sat Sep 26`
+at 30 s, with `zPING` answering `PONG` throughout. So the health check reads the third field of
+`zVERSION` and refuses a database over seven days old — run red inside the window and on the
+shipped command with a forced bound. **AND SC-003 CANNOT CATCH IT**: EICAR lives in `main.cvd`
+v63, *"up-to-date"* in both readings, and is `FOUND` identically at every point in the window.
+**The test that proves the scanner runs is structurally unable to prove it is current.** Fourth
+time for this shape after 4.2's `/ping`, 4.9's unset credential and 4.10's bucket.
 
-**CONSTITUTION VII IS ENGAGED TWICE AND ONLY ONE WAS WRITTEN DOWN.** §7.3 asks about the
-scanner's language; VII's **other** clause — *"new services require justification against the
-'deliberately not a separate service' table"* — no artifact had named, and the worker fails all
-three of SAD §4.2's merge criteria (different datastore, no transactions, CPU-bound off the
-request path). The language line: **a program Relay addresses over a socket is not a program
-Relay is implemented in**, and the platform already speaks to five such programs in four
-languages. What VII would forbid is writing the worker in Go.
+**THE SIGNATURE MATCHES THE FILE, NOT A SUBSTRING**, which is why the scan runs first.
 
-**AND CONSTITUTION IV IS ENGAGED, WHICH THE PLAN'S TABLE CAUGHT.** `media_objects.state` gains a
-second writer — the api writes `pending`, the worker writes the terminal states. Disjoint
-transitions is the argument and it is written down rather than assumed.
+    EICAR alone (68 bytes)      Eicar-Test-Signature FOUND
+    EICAR + one newline         Eicar-Signature FOUND      a DIFFERENT entry
+    EICAR + 200 spaces          OK
+    EICAR inside a PNG          OK, either end
 
-**AND NFR-SCL-01 WOULD HAVE BEEN CITED FOR A MEMORY BUDGET IT DOES NOT CARRY.** The obvious
-sentence is *"100 MB of video against NFR-SCL-01's 160 MB"*; that clause says 10,000 connections
-and nothing about memory, and the 160 MB is `docs/11`'s measurement of the GATEWAY's RSS. 050
-recorded this exact mistake. Checked before it was written.
+`ALLOWED_TYPES` has no text type, so **no object can both satisfy FR-MED-03 and trip the
+scanner** — the test one would naturally write cannot be written, and that is the argument for
+the order rather than a gap in the suite. A reader matching on the signature's NAME rather than
+on `FOUND` would have called the 69-byte case clean.
+
+**AND THE STORE'S TWO HEADERS ARE NOT EQUALLY TRUSTWORTHY.** A presigned PUT of twelve MP4 bytes
+sent as `content-type: image/png` answers `HEAD` with **`image/png`** — the client's own claim,
+echoed. `content-length` is the store's count and is evidence; `content-type` is not. Ten types
+from their magic numbers, every arm run red on its own, and the two RIFF formats each turn the
+other's discrimination test red.
+
+**FR-MED-03's "CONTRADICT THEIR DECLARATION" IS EXACT, AND THE QUOTA IS WHAT SETTLED IT.** The
+spec and the tasks both read *"materially larger"* and neither gave a tolerance;
+`reserveMediaSlot` sums `declared_bytes`, so **any tolerance is a storage discount with no
+clause behind it**. Exact comparison makes the quota correct by construction — `verified_bytes =
+declared_bytes` for every `ready` object, asserted over the tenant's whole set. The tests are
+**one byte**, both directions.
+
+**ADR-14's GATE TURNED TEN RED, THE NUMBER R4 PREDICTED, AND NOT THE SAME TEN.** R4's were
+*"there is no such state"*; these are *"the fixtures do not produce it"*. **The fixtures did not
+rot; the platform grew a check** — `delivery.itest.ts` declared 1024 and uploaded 42 bytes of
+ASCII, the sealed suite declared 11 and uploaded a PNG signature with no `IHDR`, and both were
+true statements about a platform whose slot route records *"what the caller said, not what
+arrived"*. `attach.itest.ts` uploads NOTHING and is therefore invisible to this chapter, which
+is the distinction worth keeping.
+
+**CONSTITUTION VII WAS ENGAGED TWICE AND ONLY ONE HAD BEEN WRITTEN DOWN.** **ADR-32**: *a
+program Relay addresses over a socket is not a program Relay is implemented in* — five such
+programs in four languages already, and what VII forbids is writing the worker in Go.
+**ADR-31**: VII's other clause, *"new services require justification against the 'deliberately
+not a separate service' table"*, which **no artifact in this feature had named**. All three of
+SAD §4.2's merge criteria fail, and the table answers a candidate the other way for the first
+time.
+
+**AND CONSTITUTION IV's SECOND WRITER IS THE STATEMENT, NOT THE DISCIPLINE.** `UPDATE … WHERE
+state = 'pending'` is a compare-and-set: two workers racing one object resolve because the
+second updates no rows and is told so. **No lease, no heartbeat, no reaper for a worker that
+died holding one** — a lease buys efficiency rather than safety and costs a column, a clock and
+a new way for an object to become permanently unverifiable.
+
+**THE COMPOSED WORKER COULD NOT REACH THE SCANNER AND NOTHING FAILED.** 4.11's MinIO defect one
+chapter later, in the service whose subject is reading bytes: the default is `localhost:3310`,
+which inside the container is the container. Every object stayed `pending` — **FR-009 working
+exactly as designed** — and a correct refusal is indistinguishable from an object nobody
+uploaded to. **The boot line is the only thing that said so**, which is why it logs the
+scanner's version rather than a boolean.
+
+**AND THE QUICKSTART WAS WRONG THREE TIMES, THE FIRST OF THEM THIS CHAPTER'S OWN SUBJECT.** §2
+asked for a delivery URL for an object it never attached and read `ready -> 404` — FR-MED-08
+working, and a reader would have concluded the gate refuses verified objects. Then §3's signed
+`HEAD` was an ellipsis rather than a command, and §5 read `$ID`, which nothing assigned, twice.
+**A step whose commands cannot run is indistinguishable from a step whose subject is broken.**
+
+**A PROSE TITLE IS A FENCE PROBLEM, TEN AT A TIME.** The first draft captioned its measurement
+blocks with ```` title="measured: …" ````, and the checker collects a fence only when it matches
+`title=` and then looks for that title as a path: **14 → 24**. Untitled, 14 again. One of the ten
+was a real excerpt-as-whole-body claim (051-6).
+
+**AND A CHAPTER THAT PUBLISHES WHAT THE APPENDIX WAS CARRYING MAKES ITS HUNK OBSOLETE** — the
+inverse of the shape 4.8, 4.11 and 4.12 each paid. `post-series.md` carried
+`authenticate.middleware.ts`'s FR-044 change because no chapter had published it; 4.13 publishes
+a superset, so that hunk is **finished rather than broken** and the repair is to delete it.
+**And the hunk had to be generated with `--dump --at <page>`**, because a bare `--dump` writes
+the END state: the first version verified as matching exactly once against that and matched
+**zero** times where it applies.
+
+**T083's PER-ARM PROBE, AND THE TWO HALVES DO NOT OVERLAP.** Deleting the 404, the 422, the byte
+deletion or the compare-and-set turns only seam tests red; deleting the scanner-unavailable arm
+or the infected arm turns only worker tests red. **Two conditions that always agree are one
+condition with two names**, and none of these six do.
+
+**EIGHT ANALYSIS PASSES: 6 findings, 5, 4, 4, 4, 3, 3, 2** — CRITICALs at 1, 3 and 7. Each pass
+asked a different question: what the platform does · what it says about itself · what it wrote
+about this chapter · whether a task's own command works · whether the remediations compose ·
+what the validating artifacts still claim · what this chapter breaks behind it · what has moved
+underneath. **And the three that mattered most were found by RUNNING**: the signed-shift 400,
+the one-page sweep, and the composed worker's unreachable scanner — none of them visible to any
+number of passes over the text.
 
 **058 IS CLOSED at 87 of 87 — CHAPTER 4.12, "a link that expires, and who may hold it".**
 Movement V continues. Its record is `specs/058-chapter-4-12/` — `baseline.txt` first (every

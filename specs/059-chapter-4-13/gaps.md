@@ -198,6 +198,49 @@ the same shape, and the way to avoid it is to build the producer and the consume
 
 ## Carried and re-measured
 
+### 057-2 · CLOSED — *"a message can attach an object nobody uploaded to"*
+
+**The gate closes it and FR-MED-10 does not.** 4.11's predicate admits `pending`, so a message
+could carry an object whose bytes never arrived; ADR-14's delivery gate now refuses a signed URL
+until `ready`, and `ready` requires bytes that were fetched, scanned and measured. **The
+attachment still parses** — the send path is unchanged — and what the entry was about is that a
+client holding the id could get nothing. Now the platform says so with the same 404 it gives a
+foreign object.
+
+### 056-1 · NOT CLOSED, and narrowed — *"an unused slot holds its bytes forever"*
+
+**This chapter does not touch it and must not claim to.** An object that was never uploaded to
+holds no bytes at all; one that WAS uploaded to and never attached holds them until FR-MED-10's
+reap, which is a later chapter. What 4.13 adds is that such an object is now **countable**:
+`state = 'pending'` older than 24 hours is exactly the reap's population, and the sweep's own
+window predicate names it. The lane's figure at this chapter's close is **4,077 pending against
+291 ready and 88 rejected**.
+
+### 058-1 · RE-MEASURED — a signed URL outlives the authorisation that produced it
+
+**And the gate does not change it.** The hour is unchanged and the store still checks a
+signature and has never heard of a channel. What this chapter adds is one more thing the URL
+outlives: an object rejected a minute after a URL was issued keeps serving until the store
+deletes the bytes — which happens inside the same request as the verdict, so the window is the
+delete's own latency rather than the hour. Measured at 2 ms.
+
+### 058-3 · RE-MEASURED — a malformed path parameter is still a 500 on sixteen routes
+
+Unchanged, and this chapter's two new routes are not among them: `/internal/media/:mediaId/
+verdict` takes a `ParseUUIDPipe` and answers 400, asserted. **Seventeen routes now take a uuid
+path parameter and one validates it**, which is a worse ratio than the entry recorded and the
+same number of defects.
+
+### 058-4 · RE-MEASURED — three tenancy predicates no single-mutation probe sees
+
+**A fourth arrives with the gate.** `readableMediaObjectKey` now carries `state = 'ready'`
+alongside the environment scope, and deleting it turns two tests red — so unlike the three the
+entry names, this one IS visible to a single mutation. The difference is that it guards a
+STATE rather than a tenant, and the tenancy arms are still invisible for the reason 4.12 gave:
+they are redundant with each other.
+
+
+
 ### 055-3 · `check:errors` still has no job
 
 Re-measured at this chapter's close: five `check:*` scripts, and `ci.yml` runs four. This chapter
@@ -222,3 +265,59 @@ all legitimate, and needs a hand-maintained allow-list.
 `compose.yaml` service, which is the first thing in this movement to close the shape rather than
 restate it — the ingester still has neither. Two suites spawn the worker's *api*; the worker
 itself is a container behind `--profile services`.
+
+### 059-12 · A sweep that reads only the first page cannot reach a new object
+
+**MEASURED AGAINST A LANE WITH REAL HISTORY, and it is the defect this chapter came closest to
+shipping.** `GET /internal/media/pending` is oldest-first with a batch of fifty. The lane held
+**3,849 rows in `pending`, 858 of them inside FR-MED-10's 24-hour window** — and an object
+nobody uploaded to stays `pending` until the reap, so **the head of the queue never moves**. A
+fresh upload was row 858 and was never reached: the sealed suite timed out at thirty seconds
+with the worker running perfectly, the scanner current, and the log saying nothing, because it
+logs only when something happened.
+
+**AND THE CHAPTER'S OWN HEADLINE FIGURE ASSUMED THE FIX.** *"The whole backlog is 4.2 s serial"*
+is the argument for a sweep over a client notice; it is only true if a sweep is a whole pass. A
+fixed first page made the published arithmetic describe something the code did not do.
+
+Two changes, and both are in the chapter: the batch query excludes objects older than
+FR-MED-10's window, because an object pending for more than a day is the reap's; and the sweep
+**pages** with a keyset cursor on `created_at` until a page comes back short, bounded by
+`maxPages` so a queue growing faster than it drains cannot hang one pass.
+
+**WHAT IS NOT CLOSED** is that the cycle time is a function of the queue. 858 objects at fifty
+a page is eighteen pages a sweep — fine at 1.4 ms an object, and a number nobody has a bound
+for. A tenant that takes ten thousand slots an hour and uploads none makes every other tenant's
+upload wait, and the only thing that removes them is a reap that is not built.
+
+### 059-13 · The composed worker could not reach the scanner, and nothing failed
+
+**4.11's MinIO defect, one chapter later, in the service whose whole subject is reading bytes.**
+`scannerConfigFromEnv` defaults to `localhost:3310`, which inside the container is that
+container. The first composed run logged `scanner: "unreachable"` at boot and then behaved
+perfectly: every object stayed `pending`, which is **FR-009 working exactly as designed**, and
+the symptom of a correct refusal is indistinguishable from the symptom of an object nobody
+uploaded to.
+
+**The boot line is the only thing that said so**, which is why it prints the scanner's version
+string rather than a boolean. `RELAY_CLAMAV_HOST: clamav` in `compose.yaml`, with
+`depends_on: clamav: { condition: service_healthy }` — `service_started` would let the worker
+begin against a database a fortnight old.
+
+### 059-14 · The quickstart was wrong three times, and every one read as a platform defect
+
+**NFR-USE-03 is a `T` clause at 100% and `ci.yml` contains the word `quickstart` zero times**
+(055-3's neighbour), so running it is its whole verification.
+
+    §2   asked for a delivery URL for an object it never attached      ready -> 404
+    §3   the signed HEAD was an ellipsis, not a command                nothing to run
+    §5   read `$ID`, which nothing assigned, twice                     two empty results
+
+**The first is the instructive one.** FR-MED-08 authorises through a *referencing message*, so
+an object nobody has sent is 404 whatever its state — the run reads as ADR-14's gate refusing a
+verified object, which is this chapter's own subject failing. §0 creates a channel and a bot
+for exactly that step and §1 never used them.
+
+**And §5's is the shape 4.11 named**: three of its five lines were comments describing work
+rather than doing it. **A step whose commands cannot run is indistinguishable from a step whose
+subject is broken.**

@@ -160,7 +160,20 @@ jobs:
       # AND THE `docs/07` §6 CLAIM BECOMES TRUE HERE TOO — *"runs both lanes against
       # real stores"* — for the same reason chapter 4.8 had to provision ClickHouse:
       # a lane that passes locally passes here only if "here" is the same stack.
-      - run: docker compose up -d --wait postgres redis nats clickhouse minio mailpit
+      #
+      # AND `clamav` FROM CHAPTER 4.13, WHICH IS WHY THIS LIST IS EXPLICIT RATHER THAN A
+      # BARE `up`. The media worker's own suite streams EICAR through a real scanner —
+      # a mock would assert that the mock was called — and the worker itself stays down
+      # here, because it is behind `--profile services` and an unprofiled one would sweep
+      # every `pending` object the other lanes plant.
+      #
+      # IT IS THE LONGEST WAIT IN THE JOB AND IT IS FIRST. The container's health check
+      # refuses a signature database older than seven days, and `freshclam` downloads
+      # 355,678 signatures after `clamd` starts answering — measured at roughly 30
+      # seconds from a cached image. Every step after this one is cheaper, and a
+      # provisioning step placed after the first failure is skipped on exactly the runs
+      # where the lane it provisions for still executes (4.10).
+      - run: docker compose up -d --wait postgres redis nats clickhouse minio mailpit clamav
 
       # Migrations before the integration lane: the suites expect the schema the
       # migration runner produces, not the one drizzle-kit imagines.

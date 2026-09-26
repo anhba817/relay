@@ -4,8 +4,14 @@ Prove the chapter against a running stack: an image that becomes `ready`, a lie 
 `rejected`, a virus that becomes `rejected`, and a scanner that is down leaving the object
 alone.
 
-**Not yet run.** This file may not say *"every command here was run before it was written"*
-until its own task does. 4.11's quickstart was wrong five times and **four of the five produced
+**EVERY COMMAND HERE WAS RUN BEFORE THIS LINE WAS WRITTEN**, against the composed stack, in
+the order they appear — which is NFR-USE-03's whole verification, since `ci.yml` contains the
+word `quickstart` zero times. **It was wrong three times and every one produced a red that
+looked like a platform defect**: §2 asked for a delivery URL for an object it had never
+attached and read `ready -> 404`, which is FR-MED-08 working and reads as the gate refusing a
+verified object; §3's signed `HEAD` was an ellipsis rather than a command; and §5 read a
+variable nothing set, twice. All three are corrected in place below with the failure recorded
+beside them. 4.11's quickstart was wrong five times and **four of the five produced
 a red that looked like a platform defect**; 4.12's was wrong three times and the first of them
 was that chapter's own subject. The corrections both earned are already applied below rather
 than rediscovered:
@@ -99,7 +105,19 @@ uploaded object"* contingent on a client choosing to send one.
 
 ## 2 · Only a `ready` object is deliverable
 
+**ATTACH IT FIRST, AND THE FIRST VERSION OF THIS SECTION DID NOT.** FR-MED-08 authorises a
+delivery through a *referencing message*, so an object nobody has sent answers **404 whatever
+its state** — the run that found this read `ready -> 404` and would have been read as the gate
+refusing a verified object. §0 creates a channel and a bot for exactly this and §1 never used
+them.
+
 ```bash
+curl -s -o /dev/null -w 'send   -> %{http_code}\n' \
+  -X POST "localhost:4000/v1/channels/$CHANNEL/messages" \
+  -H "authorization: Bearer $CREDENTIAL" -H 'content-type: application/json' \
+  -d "{\"text\":\"the holiday photo\",\"user\":\"qs-bot\",
+       \"attachments\":[{\"type\":\"media\",\"media_id\":\"$MEDIA_ID\"}]}"
+
 curl -s -o /dev/null -w 'ready  -> %{http_code}\n' \
   "localhost:4000/v1/media/$MEDIA_ID" -H "authorization: Bearer $CREDENTIAL"
 
@@ -110,7 +128,10 @@ curl -s -o /dev/null -w 'pending -> %{http_code}\n' \
   "localhost:4000/v1/media/$PENDING" -H "authorization: Bearer $CREDENTIAL"
 ```
 
-**Expected**: `200` then `404`. This is ADR-14's *"no signed URL until `ready`"*, which chapter
+**Expected**: `201`, `200`, then `404`. **The `pending` object is refused for two reasons at
+once and that is worth knowing** — it has no referencing message either, so this step shows the
+gate only in contrast with the line above it, where the same object with the same message
+answers 200 once it is `ready`. This is ADR-14's *"no signed URL until `ready`"*, which chapter
 4.12 shipped the opposite of — and `research.md` R4 measured why it could not have shipped
 earlier: the gate alone turns **10 of 76 tests red**, because nothing could produce `ready`.
 
@@ -128,9 +149,23 @@ sleep 5
 psql "postgres://relay:relay@localhost:15432/relay" -c \
   "select state, rejected_reason, declared_bytes, verified_bytes
      from media_objects where id='$LIAR_ID'"
-curl -s -o /dev/null -w 'the bytes -> %{http_code}\n' \
-  "$(node -e '…signed HEAD for the object key…')"
+# and the bytes themselves, asked of the STORE rather than of the platform
+KEY=$(psql "postgres://relay:relay@localhost:15432/relay" -tAc \
+  "select object_key from media_objects where id='$LIAR_ID'" | head -1 | tr -d '[:space:]')
+node --input-type=module -e '
+const m = await import("./services/media-worker/dist/store.js");
+const s = m.storeConfigFromEnv({ RELAY_MINIO_ENDPOINT: "http://localhost:9100" });
+const r = await fetch(m.sign(s, { method: "HEAD", key: process.argv[1], expiresIn: 60 }),
+                      { method: "HEAD" });
+console.log("the bytes ->", r.status);
+' "$KEY"
 ```
+
+**THIS COMMAND WAS AN ELLIPSIS UNTIL IT WAS RUN.** The first version read
+`"$(node -e '…signed HEAD for the object key…')"` — a description of a command rather than one,
+which is the shape a reader cannot follow and a checker cannot catch, because no gate reads
+prose. It needs `services/media-worker/dist`, so `pnpm build` is a precondition of this step and
+not only of the api's.
 
 **Expected**: `rejected · declaration_mismatch · 1024 · 40000`, and the store answers **404** to
 a signed HEAD of the key. **The size half of that verdict came from the sweep's own `HEAD`** —
@@ -181,15 +216,32 @@ definitions reports clean on everything**.
 ## 5 · A scanner that is down leaves the object alone
 
 ```bash
-docker compose stop clamav
-# take a slot, upload a good image, wait past two sweep intervals
-psql "postgres://relay:relay@localhost:15432/relay" -tAc "select state from media_objects where id='$ID'"
-docker compose start clamav
-# wait one more interval
-psql "postgres://relay:relay@localhost:15432/relay" -tAc "select state from media_objects where id='$ID'"
+RELAY_POSTGRES_PORT=15432 docker compose stop clamav
+
+SLOT=$(curl -s -X POST localhost:4000/v1/media \
+  -H "authorization: Bearer $CREDENTIAL" -H 'content-type: application/json' \
+  -d '{"filename":"outage.png","mime_type":"image/png","bytes":4722}')
+export ID=$(jq -r .media_id <<<"$SLOT")
+curl -s -X PUT "$(jq -r .upload_url <<<"$SLOT")" --data-binary @holiday.png -o /dev/null
+
+sleep 14      # past two sweep intervals
+psql "postgres://relay:relay@localhost:15432/relay" -tAc \
+  "select state from media_objects where id='$ID'"
+
+RELAY_POSTGRES_PORT=15432 docker compose start clamav
+sleep 10
+psql "postgres://relay:relay@localhost:15432/relay" -tAc \
+  "select state from media_objects where id='$ID'"
 ```
 
-**Expected**: `pending`, then `ready`. FR-009: a transient failure produces neither terminal
+**Expected**: `pending`, then `ready` — measured at 5 s still pending and 10 s ready.
+
+**`$ID` WAS NEVER SET IN THE FIRST VERSION OF THIS STEP.** Three of its five lines were
+comments describing work rather than doing it, and the two `psql` calls read a variable nothing
+assigned — which under `set -u` is an error and without it is a query for the empty string,
+printing nothing twice and reading as *"the object has no state"*. **A step whose commands
+cannot run is indistinguishable from a step whose subject is broken**, which is the fourth kind
+of quickstart defect this movement has found. FR-009: a transient failure produces neither terminal
 state, because a worker that marked an object `rejected` because the scanner was down would be
 deleting a customer's photo to record an outage.
 

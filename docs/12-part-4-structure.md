@@ -241,7 +241,7 @@ is the stable address, as §2.1 intended.
 | 11 | V | The upload that never reaches us | FR-MED-01/02: the slot, the presigned URL, the four distinct refusals, the storage quota. **The count was right and the line was silent about every cost.** (1) **There was no object storage at all** — ADR-13 chose the pattern in the first draft and `docs/05-sad.md:1002` has named MinIO ever since, and nothing had ever provisioned a container; `minio/minio` is `pull access denied` and the image that exists is `quay.io/minio/minio`, 241 MB. (2) **The fourth refusal is not FR-MED-02's.** That clause names three — MIME type, per-kind size cap, storage quota — and the fourth is `docs/05-sad.md:1062`'s degradation row, *"Object storage lost … Upload slots return a specific error"*, now FR-017. It is the only transient one of the four, which is the whole reason they are four codes. (3) **The storage quota is a LEVEL where FR-RTL-05's other three are monthly flows** — `usage_periods` is keyed on a calendar month and `creditFor` never subtracts, so a tenant holding 100 GB would start every month at zero; the cap joins `quota_config` and the accounting is a sum over the media rows. **Two clauses cited FR-RTL-05 for a quantity it did not define** (SRS 1.17). (4) **And the presigned URL needs no contact with the store**, which is what made FR-017 expensive rather than free: the api never learns the store is down, so the refusal needed a round trip built for it — **+1.524 ms at p50, +24.1%**. So the chapter is not *"sign a URL"* — it is **"the cheap part costs no dependency and twenty-eight lines, and every other part of the brief cost a clause"**. Writes **ADR-30**, amends FR-RTL-05 and FR-MED-12, and adds four rungs to the error filter's status ladder |
 | 12 | V | The half of the union that was refused | FR-MED-06. Chapter 3.24 shipped `media_not_available` (422) to refuse `media_id` **by name**, as a discriminated union built for this arm to be filled. This chapter fills it — **and the line was silent about everything that cost anything.** (1) **The predicate is four lines of SQL and the chapter is the other twenty pages.** Three conditions must give ONE answer, because a refusal naming the cause reports whether another tenant's object exists; built and tested as one property, three bodies byte-identical apart from `request_id`. (2) **FIVE READERS HAD TO LEARN THE ARM BEFORE THE PRODUCER SHIPPED.** One union, ten validators — seven naming `attachmentSchema` and three reaching it through `messageSchema`, which a table written to prevent exactly this recorded as *"parsed by nothing at runtime"*. Five of the ten forward the value without reading it, and the worst refusal is the quietest: `fanout.ts:109` drops a delivered frame with a log line **after the sender holds its 201**. (3) **The clause was silent where the specification thought it was strict.** An object whose uploader is unrecorded was taken by the tenant's own backend; the clause withheld permission and mandated no refusal, so **SRS 1.18** gives it the three cases — the second feature running whose `research.md` settled the specification against itself. (4) **FR-MED-07 turns from vacuous to unmet here**, being the first chapter to deliver an attachment that has a state, and the schema still refuses to hold one but `pending` — published as the database's own `violates check constraint`. (5) And the composed api had answered **503 to every slot request since 4.10**, because `compose.yaml` named every store but MinIO while `depends_on` waited on it. Writes **SRS 1.18**, deletes one error code and adds two |
 | 13 | V | A link that expires, and who may hold it | FR-MED-08: signed delivery, one hour, authorisation following channel **visibility** rather than a parallel ACL — amended at SRS 1.19, because this platform checks membership for `private` channels only and the literal reading refuses a user the photo in a message whose text they can read |
-| 14 | VI | The only service that reads the bytes | The media worker. FR-MED-03/04: verify against declaration, ClamAV, probe. **Open — see §7.3** |
+| 14 | VI | The only service that reads the bytes | The media worker. FR-MED-03/04: verify against declaration, ClamAV, probe. **CLOSED — ADR-31 and ADR-32** (chapter 4.13, feature 059). §7.3 is answered and so is VII's other clause, which no artifact had named. |
 | 15 | VI | Pending, ready, rejected | The state machine and `media.updated` (FR-MED-07). A placeholder becomes real without polling. **Open — see §7.4** |
 | 16 | VI | What a thumbnail costs | FR-MED-05: derived objects sharing the parent's lifecycle |
 | 17 | VI | Storage on the bill | FR-MED-12: stored bytes metered per tenant per day, into the store movement IV built |
@@ -446,12 +446,29 @@ that is a chapter's worth of argument rather than a line of wiring.
 > both `docs/05-sad.md` and `docs/06-adr-deep-dives.md`, with the new-ADR alternative named
 > and declined — the decision has not changed, only a driver's price.
 
-**7.3 — Constitution VII and the media worker (ch 14).** ClamAV and ffprobe are not
-TypeScript. The SAD calls this *"the one service where ADR-01's worker-thread posture matters
-from day one"* and ADR-13/14 bless the design — but nothing blesses the packaging. VII's
-subject is the language services are *implemented in*; a sidecar the worker talks to is
-arguably not that. Argue it explicitly rather than by silence, the way the PL/pgSQL guard was
-argued.
+**7.3 — CLOSED at chapter 4.13 (feature 059), and VII was engaged twice rather than once.**
+
+> **ADR-32 answers the language half.** *A program Relay addresses over a socket is not a
+> program Relay is implemented in.* The platform already speaks to Postgres (C), Redis (C),
+> NATS (Go), MinIO (Go) and ClickHouse (C++) — five programs in four languages that are not
+> TypeScript, none of them a violation — and ClamAV's `INSTREAM` is the same relationship at
+> twenty-two lines with no client library. **What VII would forbid is writing the worker
+> itself in Go**, which is the case ADR-01 named in advance. The reversal condition is a
+> verification step that cannot be expressed as a conversation with a separate program;
+> `ffprobe`, if duration ever ships, is a sixth such program and not a sixth language.
+>
+> **AND VII's OTHER CLAUSE HAD NOT BEEN NAMED BY ANY ARTIFACT.** *"New services require
+> justification against the 'deliberately not a separate service' table."* **ADR-31** is that
+> argument, against SAD §4.2's own three columns: a different datastore (the object store,
+> which no other process opens), no shared transactions (ADR-04 keeps the worker off Postgres
+> entirely), and CPU-bound work off the request path — the scan is 52% of the work at 4 KiB
+> and 97.7% at 100 MB. All three merge criteria fail, and the table answers a candidate the
+> other way for the first time.
+>
+> The ffprobe half of this entry is moot: chapter 4.13 ships dimensions and records FR-MED-04
+> **partly met** (SRS revision 1.20), because duration is four container parsers with MP3
+> variable bitrate as a genuinely hard case. One non-TypeScript program, not two, which makes
+> the argument narrower than this entry assumed.
 
 **7.4 — Does `media.updated` take a sixth subject grammar (ch 15)?** Five exist, each argued
 individually, and the review asked for a consolidation threshold. **There is now a number to
