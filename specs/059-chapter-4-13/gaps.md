@@ -573,8 +573,40 @@ is a ratchet calibrated to a single machine.
 project has been building toward for six chapters: *assert the counted line, not the exit code*.
 Turbo reported total success while nothing executed, and only the summary said so.
 
-**NOT DIAGNOSED HERE AND NOT THIS WORK'S.** It is visible now because 059-15's image repair let
-the job reach that step at all — before it, the lane died at `docker compose up`. The coverage
-run in the same job executes all 136 files and passes, so **the suites are fine and the lane
-that runs them is not**. 050's sentence, unchanged: *a green lane is a claim about what was
-re-run.*
+**DIAGNOSED AND FIXED, AND THE CAUSE IS THE OUTPUT FORMAT.** `--log-order` defaults to `auto`,
+and on GitHub Actions turbo resolves it to **grouped**: it emits
+
+    ##[group]@relay/service-kit:build
+    cache hit, replaying logs a5527bb3c186412f
+
+— the package name in the FOLD HEADER, and every line inside it **unprefixed**. The gate keys
+on `^(\S+):test:integration:`, which matched **zero lines of the entire run**. Locally turbo
+uses `stream` and the same line reads
+`@relay/ingester:test:integration:  Test Files  2 passed (2)`.
+
+**THE SUITES WERE GREEN THE WHOLE TIME.** That run printed `2 passed (2)`, `2 passed (2)`,
+`40 passed (40)`, `2 passed (2)`, `1 passed (1)`, `12 passed (12)`, `4 passed (4)` —
+**63 collected, exactly the number the gate expects**, and it reported `0 ran`.
+
+**SO THE GATE HAS NEVER ONCE REPORTED A REAL NUMBER IN CI**, on any push since it was written.
+It failed the step every time with `no summary from` all seven lanes, which reads as *the lanes
+did not run* and meant *I could not read them*. **That is 045's shape inside the instrument
+built to prevent it** — a zero that means "never looked" printing the same line as a zero that
+means "clean" — in a script whose own header says *"it refuses rather than guessing"*. It did
+refuse, honestly, for a reason that had nothing to do with the tests.
+
+**The repair is `--log-order=stream` in the gate's own turbo arguments**, pinned rather than
+detected: `stream` is what a developer's terminal already gets, so CI now reads the way the
+machine the gate was written on does. Reproduced and verified under CI's own environment
+variables — `GITHUB_ACTIONS=true CI=true` locally gives the unprefixed line before the change
+and the prefixed one after:
+
+    before    63 suites ·  0 ran      no summary from all seven lanes
+    after     63 suites · 63 ran      every lane, 0 failed
+
+**And the refusal still works**, checked rather than assumed: filtered to one lane, the gate
+reports six lanes `did not run` and exits 1.
+
+**IT WAS ONLY VISIBLE BECAUSE OF 059-15.** Before the image repair the job died at
+`docker compose up`, five steps earlier — so the gate's own defect was hidden behind an outage
+in a registry.

@@ -247,11 +247,19 @@ green both sides, **84.61 on three consecutive CI runs** against a local 90.90. 
 observation — the exact mistake 045 wrote down. Re-pinned at 83 with both numbers in the
 config; eight sibling pins from the same day are stable, which localises it. `gaps.md` 059-20.
 
-**AND `pnpm test:integration` RAN 0 OF 63 SUITES WHILE TURBO REPORTED `14 successful, 14
-total`.** The integration gate's own summary is what failed the step — *assert the counted line,
-not the exit code*, six chapters in the making. The coverage run in the same job executes all
-136 files and passes, so **the suites are fine and the lane that runs them is not**. Visible
-only because the image repair let the job reach that step. `gaps.md` 059-21.
+**AND `pnpm test:integration` REPORTED 0 OF 63 SUITES WHILE EVERY ONE OF THEM PASSED.**
+`--log-order` defaults to `auto` and turbo resolves it to **grouped** on GitHub Actions: the
+package name goes in a `##[group]` fold header and every line inside is **unprefixed**. The
+gate keys on `^(\S+):test:integration:` and matched **zero lines of the whole run**. The same
+run printed `40 passed (40)`, `12 passed (12)` and five more — **63 collected, exactly what the
+gate expects** — and it read `0 ran`. **So the gate has never reported a real number in CI**,
+on any push since it was written, and it failed the step every time with `no summary from`.
+**045's shape inside the instrument built to prevent it**: a zero meaning "never looked"
+printing the line of a zero meaning "clean", in a script whose header says *"it refuses rather
+than guessing"*. Fixed with `--log-order=stream`, pinned rather than detected. Verified under
+`GITHUB_ACTIONS=true CI=true`: **0 ran before, 63 ran after, 0 failed**, and the refusal still
+fires when a lane is genuinely absent. **Hidden until now behind the registry outage**, which
+killed the job five steps earlier. `gaps.md` 059-21.
 
 **WHAT THE REWRITE COSTS, SAID RATHER THAN HIDDEN:** the comment in those four trees is dated
 after the commits carrying it, because the chain compares its END state to `HEAD` — so every
