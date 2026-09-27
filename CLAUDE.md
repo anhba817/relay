@@ -164,14 +164,38 @@ condition with two names**, and none of these six do.
 
 **AND THE PUSH FOUND SOMETHING THAT IS NOT THIS CHAPTER'S.** `quay.io/minio/minio:latest`
 stopped being publicly pullable between 2026-09-20 and 2026-09-26 — `unauthorized`, reproduced
-off CI three ways, with `chainguard/minio` the pullable alternative — so **both `relay-platform`
-jobs die at `docker compose up`**, five steps of eleven and none of six. **No local run could
-see it**: the image has been in this machine's cache since 4.10, which is 056-10's shape at the
-registry layer. The error set reads **1 distinct against the baseline's 6, zero new and five
-gone** — and *the five are gone because the tests that produced them never ran*. **Not repaired
-inside a closed feature**: swapping the image is a line of YAML and an afternoon against four
-media suites, the sealed suite and the presign probe, and ADR-30's reversal condition is where
-it starts. `gaps.md` 059-15 and 059-16.
+off CI three ways — so **both `relay-platform` jobs died at `docker compose up`**, five steps of
+eleven and none of six. **No local run could see it**: the image had been in this machine's cache
+since 4.10, which is 056-10's shape at the registry layer. The error set read **1 distinct
+against the baseline's 6, zero new and five gone** — and *the five were gone because the tests
+that produced them never ran*. `gaps.md` 059-15 and 059-16.
+
+**CLOSED 2026-09-27 BY REWORKING 4.10, AND ADR-30's REVERSAL CONDITION HELD.** The argument for
+signing our own URLs was that the store is replaceable; the store was replaced and **nothing
+outside `compose.yaml` changed** — 768 of 768 on the api lane, 22 of 22 on the worker's, 19 of
+19 sealed, `check:fences` 0. `chainguard/minio` is `RELEASE.2026-09-22`, the same binary: same
+entrypoint so `server /data` is unchanged, the same `MINIO_ROOT_*` variables, and `mc` in the
+image so the health check runs **verbatim**. **This entry's first draft guessed all three would
+differ.**
+
+**THE ONE COST IS A UID.** It runs as **65532** where the old image ran as root, so an existing
+volume stops it with `FATAL Unable to initialize backend: file access denied` — reproduced
+deliberately. One `chown -R 65532:65532` migrates it with every object intact; **CI and a fresh
+clone never meet it**, which is the same asymmetry that hid the registry break.
+
+**AND THE FIX WENT INTO HISTORY, NOT ON TOP OF IT.** `README.md:8` promises a chapter's tag
+checks out that chapter's platform, and a forward commit would have left **four tags pointing at
+trees whose stack cannot start** — 047's defect, which cost Part 3 twenty-one deleted tags. The
+image block is rewritten in all **25 commits** from the one that introduced the store;
+`part4-ch10` … `part4-ch13` are recreated on the rewritten commits, local and remote. The
+replaced history is **`backup/pre-minio-image-20260927`**, pushed first and naming the four old
+targets in its own message. **Anyone holding a clone from before 2026-09-27 must reset rather
+than pull.**
+
+**WHAT THE REWRITE COSTS, SAID RATHER THAN HIDDEN:** the comment in those four trees is dated
+after the commits carrying it, because the chain compares its END state to `HEAD` — so every
+commit after the last one to touch those lines must hold the same text. **One text everywhere is
+the only shape the chain permits.**
 
 **THE TUTORIAL JOB SUCCEEDED (SC-009) AND SO DID THE DOCKER-FREE GATE.** 056 split that job out
 so a store outage could not hide the unit lane; **this is the first run where it mattered**, and

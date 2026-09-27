@@ -367,3 +367,31 @@ almost no noise. The naive version — flag every export whose only callers are 
 reports **37**, nearly all legitimate helpers, and would need a hand-maintained allow-list, which
 is the thing this project refuses. Not built: one instance is not yet a class, and the convention
 costs nothing while a checker costs an allow-list argument.
+
+---
+
+## Amended 2026-09-27 — the image this chapter chose stopped existing
+
+**056-11 · `quay.io/minio/minio` went `401` eight days after this chapter shipped.**
+
+This chapter's compose comment recorded that `minio/minio` on Docker Hub answers `pull access
+denied` and that four images were tried, of which `quay.io/minio/minio` pulled. **On 2026-09-26
+that one answered `401 unauthorized` too**, and both `relay-platform` CI jobs died at
+`docker compose up` before reaching a single test. 4.13's push is where it surfaced;
+`specs/059-chapter-4-13/gaps.md` 059-15 and 059-16 carry the measurement.
+
+**The repair is in this chapter, not after it.** `chainguard/minio` is the same binary with the
+same entrypoint, the same credential variables and `mc` in the image, so `command`, the
+environment block and the health check are byte-identical; only the `image:` line and the
+paragraph justifying it changed. It was applied to **all twenty-five commits from the one that
+introduced the store**, so `part4-ch10` through `part4-ch13` each check out a stack that starts
+— `README.md:8`'s promise, which a forward-only commit would have broken for four tags.
+
+**The measurements in this record are not re-taken and are not wrong.** 241 MB, the port
+collision, the bucket nothing created, the +24.1% store probe: every one was measured against
+the image named here and none of them is a property of the registry. **What changed is a name.**
+
+**AND THE REASON IT WAS INVISIBLE IS THIS RECORD'S OWN SHAPE.** The image had been in every
+developer's cache since this chapter, so no local run could fail — the first machine without one
+was CI, eight days later. That is 056-10's persisting-volume finding at the registry layer, and
+this chapter wrote both halves without connecting them.

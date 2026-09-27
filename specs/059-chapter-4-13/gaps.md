@@ -347,14 +347,43 @@ since 4.10 — which is 056-10's shape exactly (a persisting local volume hid a 
 created) at the registry layer rather than the storage one. **The first machine without the
 cache is CI, and CI is where it appeared.**
 
-**NOT REPAIRED HERE, AND THAT IS A DECISION.** `chainguard/minio` is pullable and is a
-different image: different entrypoint, different credential variables, its own health check.
-Swapping it is a line of YAML and an afternoon of verification against the four media suites,
-the sealed suite and the presign probe — and doing that inside a closed feature would be a
-change nobody measured hiding behind a chapter about something else. **It needs its own
-measurement**, and ADR-30's reversal condition is the place to start: the argument for signing
-our own URLs was that the store is replaceable, and this is the first time that claim has been
-tested by anything other than an opinion.
+**CLOSED 2026-09-27 by reworking chapter 4.10, and the guesses in this entry's first draft
+were wrong in the useful direction.** It read *"a different image: different entrypoint,
+different credential variables, its own health check"*. Measured:
+
+    binary            RELEASE.2026-09-22T19-25-18Z — the same MinIO, repackaged
+    entrypoint        ["/usr/bin/minio"], so `command: server /data` is unchanged
+    credentials       MINIO_ROOT_USER / MINIO_ROOT_PASSWORD, unchanged
+    health check      `mc` is in the image; the compose check runs VERBATIM
+    what DID change   it runs as uid 65532 where the old image ran as root
+
+**ADR-30's REVERSAL CONDITION HELD, AND THAT IS THE RESULT WORTH KEEPING.** The argument for
+signing our own URLs was that the store is replaceable; the store was replaced, and the signer,
+the bucket layout, the presign probe and every media suite were untouched. **A claim that had
+only ever been an opinion is now a measurement** — 768 of 768 on the api lane, 22 of 22 on the
+worker's, 19 of 19 sealed, with no change outside `compose.yaml`.
+
+**THE ONE COST IS A UID, AND IT IS A `chown` RATHER THAN A WIPE.** An existing volume is
+root-owned at mode 755, so the new image dies with `FATAL Unable to initialize backend: file
+access denied` — reproduced deliberately against a root-owned volume before it was written down.
+`docker run --rm -v relay_minio-data:/d alpine chown -R 65532:65532 /d` migrates it with every
+object intact, verified. **CI and a fresh clone never meet it**, which is the direction that
+matters: the failure belongs to machines that already had the old image, and those are the
+machines that could not see the registry break either.
+
+**AND THE FIX WENT INTO HISTORY RATHER THAN ON TOP OF IT.** `README.md:8` promises a chapter's
+tag checks out that chapter's platform, and a forward-only commit would have left `part4-ch10`
+through `part4-ch13` pointing at four trees whose stack cannot start — which is the defect 047
+found for Part 3 and deleted twenty-one tags over. The image block is rewritten in all
+twenty-five commits from the one that introduced the store; the replaced history is
+`backup/pre-minio-image-20260927`, pushed first, and it names the four old tag targets in its
+own message.
+
+**WHAT THE REWRITE COSTS A READER**, said rather than hidden: the comment inside those four
+trees is dated after the commits that carry it. It records a registry failure measured on
+2026-09-26 and sits in commits from the 19th onward, because the fence chain compares its END
+state to `HEAD` — so whatever text those lines hold, every commit after the last one to touch
+them must hold it too. **One text everywhere is the only shape the chain permits.**
 
 ### 059-16 · A per-error comparison can only say what the run executed
 
