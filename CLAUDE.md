@@ -202,6 +202,19 @@ comment says *"up to twice the limit across a boundary"*; the test pins no insta
 sends straddling a boundary make the third the first of a new bucket. **043's wall-clock minute
 bucket, still open, in a file 043 did not sweep.** Filed, not repaired.
 
+**AND THE PIN IS IN, RUN RED WITH THE BOUNDARY FORCED.** `pinWindow` waits only when the window
+is nearly over and only for the sliver left, so the wait is bounded by the headroom (3 s against
+a longest measured test of 143 ms, firing on 5% of runs) rather than by the window — which is
+the difference between it and the fix that suite's own comment records as worse than the fault.
+**The suite had already solved the other half**: `windowsSince` made COUNTING boundary-proof and
+could never make the PLATFORM boundary-proof, because no sum recovers a 429 that never happened.
+
+**AND MEASURING ITS BLAST RADIUS WAS WRONG TWICE** (`gaps.md` 059-17). Three runs with no control
+read as *"pre-existing"*; then six control runs grouped before five change runs read as *"the
+change is implicated"* — and **three INTERLEAVED pairs inverted it**, A red 2 of 3 and B red 0 of
+3. The gateway lane fails one of 229 on about a third of runs and moves which test; the file
+actually changed was green every time. **A grouped A/B on a flaky lane measures the ordering.**
+
 **WHAT THE REWRITE COSTS, SAID RATHER THAN HIDDEN:** the comment in those four trees is dated
 after the commits carrying it, because the chain compares its END state to `HEAD` — so every
 commit after the last one to touch those lines must hold the same text. **One text everywhere is

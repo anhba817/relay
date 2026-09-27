@@ -413,8 +413,30 @@ against a `send` limit of 2 and expects a 429 — and **`limits/bucket.ts` is a 
 window** whose own comment states the cost: *"up to twice the limit across a boundary."* The test
 pins no window instant, so three requests straddling a minute boundary make the third the first
 of a new bucket and it answers 201. **That is 043's wall-clock minute bucket, still open, in a
-file 043 did not sweep.** Filed rather than repaired here: the repair is to pin one instant
-across the three sends, and it belongs to whoever owns that suite.
+file 043 did not sweep.**
+
+**PINNED 2026-09-27, AND THE SUITE HAD ALREADY SOLVED THE OTHER HALF.** `limits.itest.ts:239`
+carries `windowsSince`, which sums both keys so a straddling test still counts ten sends as ten
+— and its comment reads as complete. It made COUNTING boundary-proof and **cannot make the
+PLATFORM boundary-proof**: the limiter keys on the same minute, so the third request of a
+straddled burst is the first of a new window and is allowed. **No sum recovers a 429 that never
+happened.** Two of the five tests read a count and were already safe; the three that read the
+platform's own answer — a 429, and an `x-ratelimit-remaining` of exactly `14` — were not.
+
+`pinWindow` waits **only when the window is nearly over, and only for the sliver that is left**,
+so the wait is bounded by the headroom rather than by the window — which is what that same
+comment records as the difference between this and the fix whose failure mode was worse than the
+fault. 3 s against a longest measured test of **143 ms**; it fires on 5% of runs. It sits in
+`beforeEach` so a sixth test cannot bring the class back by being written without it.
+
+**RUN RED WITH THE BOUNDARY FORCED**, which is the only thing that proves a pin does anything:
+arriving 120 ms before a boundary with 200 ms inside the burst gives `expected 201 to be 429`
+with the pin off — the CI error reproduced on demand — and green with it on.
+
+**AND THE PROBE'S FIRST VERSION MADE THE MISTAKE THE FILE WARNS ABOUT.** It waited up to 60 s to
+reach a boundary inside a hook with a 10-second limit and died `Hook timed out in 10000ms`,
+so the pin was never reached and both arms read red. **A probe that cannot reach the thing it is
+testing reports on itself** — 045's shape, one level in.
 
 **B IS THE STRONGEST READING THIS INSTRUMENT CAN PRODUCE** — zero new against the pre-chapter
 baseline and three fewer — and **it was unavailable from a colour**, which was red for all three
@@ -425,3 +447,30 @@ drift, fence chain` **SUCCEEDED** (SC-009), and so did `relay-platform — the D
 which is the job 056 split out precisely so that a store outage could not hide the unit lane.
 **Two jobs cannot hide each other** is the sentence that made this run legible at all: without
 the split, one red would have covered both the real failure and the clean one.
+
+### 059-17 · A grouped A/B on a flaky lane said the opposite of an interleaved one
+
+**Measuring the pin's blast radius produced a wrong conclusion twice, and the second one is the
+instructive half.**
+
+    3 runs with the change, no control           1 failed | 228 passed, each time
+      → read as "pre-existing"                   WRONG: no control had been run
+    6 control runs, then 5 with the change       control 5 green / 1 red · change 0 green / 5 red
+      → read as "the change is implicated"       WRONG: every control ran before every change
+    3 INTERLEAVED pairs                          A 1 green / 2 red · B 3 green / 0 red
+
+**The gateway lane fails one test of 229 on roughly a third of runs on this machine, and which
+test it is moves** — `typing.itest.ts` twice, `membership.itest.ts` once, each passing 23 of 23
+and 229 of 229 when run alone. `limits.itest.ts`, the file actually changed, was green in every
+single run.
+
+**THE GROUPED COMPARISON IS THE TRAP.** Running all of A and then all of B confounds the change
+with everything that drifted between them — here the composed stack was stopped partway through,
+which is load this project's own rule says to hold still. **Interleave, or the ordering is the
+variable.** 045 measured twenty runs a side to compare two batteries and could say they were
+comparable; six runs split into two blocks cannot say anything, and read as if it could.
+
+**AND AN EXPERIMENT SEPARATED THE HALVES WHEN THE TALLY COULD NOT.** Keeping the structural
+change and setting the headroom to zero — so the hook is still async and still merged, and
+simply never waits — reproduced the reds. That ruled out *waiting* as the mechanism and should
+have been the signal that the tally was measuring something other than the change.
