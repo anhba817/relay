@@ -474,3 +474,63 @@ comparable; six runs split into two blocks cannot say anything, and read as if i
 change and setting the headroom to zero — so the hook is still async and still merged, and
 simply never waits — reproduced the reds. That ruled out *waiting* as the mechanism and should
 have been the signal that the tally was measuring something other than the change.
+
+### 059-18 · A query-plan assertion that required the planner to make a bad choice
+
+**`session.perf.itest.ts:102` was red on every CI run in this project's recorded history**, and
+both of its lines were the same mistake:
+
+```
+expect(plan).toMatch(/Index (Only )?Scan|Index Cond/);
+expect(plan).not.toMatch(/Seq Scan on (environments|usage_periods)/);
+```
+
+**It asked whether the planner CHOOSES an index, which is a property of the corpus.** Reproduced
+on a freshly migrated database — CI's condition, and any new contributor's first run:
+
+    Nested Loop Left Join  (cost=0.00..4.29 rows=1 width=40)
+      ->  Seq Scan on environments e    (cost=0.00..1.59 rows=1 width=48)
+      ->  Seq Scan on usage_periods u   (cost=0.00..2.69 rows=1 width=24)
+
+**Postgres is right.** Reading one page beats descending a B-tree, so the test demanded a bad
+plan and passed only on a developer lane with 31,215 environments behind it. **A test that
+passes because the machine is dirty is not passing.**
+
+**THE QUESTION IT MEANT TO ASK IS ABOUT THE QUERY**: can the planner look this up through an
+index at all — the defect 4.12 found, where a containment operand built from a joined column
+left the index *present and idle*. `SET LOCAL enable_seqscan = off` asks exactly that and is
+corpus-independent: green on a two-row database and on the lane's 31,215.
+
+**AND `Index Scan` IS THE WRONG THING TO MATCH, WHICH THE RED PROBE FOUND.** With sequential
+scans penalised the planner reaches for an index whether or not it can use one, and a predicate
+it cannot push down comes back as an index scan carrying a **`Filter:`**. Measured against a
+deliberately broken shape:
+
+    the shape that ships      Index Cond x2   Filter x0
+    WHERE e.id::text = $1     Index Cond x1   Filter x2
+
+**An `Index Scan` assertion passes on both** — it would have replaced one corpus-dependent
+assertion with one that cannot fail. `Index Cond` per table is the question: it says the
+predicate reached the index rather than the rows. Run red on both databases with the broken
+shape, green on both with the shape that ships.
+
+**`SET LOCAL` INSIDE A TRANSACTION THAT ROLLS BACK**, on a dedicated connection from the pool,
+so no other suite in the lane inherits a planner that refuses sequential scans — 056-5's *action
+scoped wider than its own test*, which a bare `SET` would have been.
+
+### 059-19 · Five suites failed on this session's own analytics backlog
+
+While verifying the repair the api lane reported five failures, all at **~20 seconds** — the
+ingester poll deadline (050-8). The cause was in the stream, not the code:
+
+    ANALYTICS   msgs=1034   consumers=0
+
+**059-6 predicted this and undercounted it.** That entry costed the media worker's own polling
+at 17,280 rows a day; what filled the stream here was hours of a composed stack running for the
+sealed-suite checks, and a suite that spawns an ingester has to drain the whole backlog before
+it reaches the row it is polling for. Draining it — 1,000 then 34 in two batches — returned the
+lane to **768 of 768**.
+
+**It reads exactly like a regression** and the five test names have nothing in common but a
+deadline. The tell is the duration: five tests failing at the same 20 s are waiting for one
+thing, and no code change makes five unrelated assertions time out identically.

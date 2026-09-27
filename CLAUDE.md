@@ -215,6 +215,29 @@ change is implicated"* — and **three INTERLEAVED pairs inverted it**, A red 2 
 3. The gateway lane fails one of 229 on about a third of runs and moves which test; the file
 actually changed was green every time. **A grouped A/B on a flaky lane measures the ordering.**
 
+**AND THE TWO QUERY-PLAN ASSERTIONS ARE FIXED — THEY REQUIRED THE PLANNER TO MAKE A BAD
+CHOICE.** `session.perf.itest.ts` asked whether Postgres CHOOSES an index, which is a property
+of the corpus: on a freshly migrated database it answers `Seq Scan on environments e
+(cost=0.00..1.59)` and **it is right**, because reading one page beats descending a B-tree. The
+test passed only on a lane with 31,215 environments behind it, and was red on every CI run this
+project has recorded. `SET LOCAL enable_seqscan = off` asks the question it meant to — *can the
+planner look this up through an index* — and is green on a two-row database and on the lane.
+
+**AND `Index Scan` IS THE WRONG THING TO MATCH.** With scans penalised the planner reaches for
+an index whether or not it can use one, and a predicate it cannot push down returns an index
+scan carrying a `Filter:` — 4.12's *index present and idle*. Measured: the shipped shape gives
+`Index Cond x2, Filter x0` and `WHERE e.id::text = $1` gives `Index Cond x1, Filter x2`, and an
+`Index Scan` assertion passes on **both**. **`Index Cond` per table is the question.** Run red
+on both corpus sizes. `SET LOCAL` in a transaction that rolls back, on its own pooled
+connection, so no neighbour inherits a planner that refuses scans (056-5).
+
+**AND FIVE SUITES FAILED ON THIS SESSION'S OWN DEBRIS, WHICH READS EXACTLY LIKE A REGRESSION.**
+All five at **~20 s** — the ingester poll deadline — with `ANALYTICS msgs=1034, consumers=0`.
+Hours of a composed stack filled the stream and a suite that spawns an ingester must drain it
+before reaching its own row. Drained, the lane is 768 of 768. **The tell is the duration: five
+unrelated assertions timing out identically are waiting for one thing**, and no code change does
+that.
+
 **WHAT THE REWRITE COSTS, SAID RATHER THAN HIDDEN:** the comment in those four trees is dated
 after the commits carrying it, because the chain compares its END state to `HEAD` — so every
 commit after the last one to touch those lines must hold the same text. **One text everywhere is
