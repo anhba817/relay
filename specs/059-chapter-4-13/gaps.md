@@ -399,6 +399,27 @@ them must hold it too. **One text everywhere is the only shape the chain permits
 jobs at the image pull. *A zero from an instrument is a claim about the corpus only if the
 instrument can be shown to have read it* — and this instrument read nothing.
 
+**AND TWO RUNS AFTER THE IMAGE REPAIR SAY WHAT ONE COULD NOT** (2026-09-27). With the pull
+fixed the lanes job reaches its tests for the first time in this chapter's history — nine steps
+of eleven where the broken run managed five:
+
+    058's push, the baseline          6 distinct
+    A · the image rework              5 · ONE new (`expected 201 to be 429`), two gone
+    B · a docs commit on A's code     3 · ZERO new, three gone
+
+**The new error in A is absent from B on identical platform code**, which is 057's definition of
+a flake rather than a regression. It is `limits.itest.ts:417`, which spends three requests
+against a `send` limit of 2 and expects a 429 — and **`limits/bucket.ts` is a FIXED 60-second
+window** whose own comment states the cost: *"up to twice the limit across a boundary."* The test
+pins no window instant, so three requests straddling a minute boundary make the third the first
+of a new bucket and it answers 201. **That is 043's wall-clock minute bucket, still open, in a
+file 043 did not sweep.** Filed rather than repaired here: the repair is to pin one instant
+across the three sends, and it belongs to whoever owns that suite.
+
+**B IS THE STRONGEST READING THIS INSTRUMENT CAN PRODUCE** — zero new against the pre-chapter
+baseline and three fewer — and **it was unavailable from a colour**, which was red for all three
+runs and for three different reasons.
+
 **WHAT THE RUN DOES SAY**, and it is the half that is real: `relay-tutorial — build, docs
 drift, fence chain` **SUCCEEDED** (SC-009), and so did `relay-platform — the Docker-free gate`,
 which is the job 056 split out precisely so that a store outage could not hide the unit lane.

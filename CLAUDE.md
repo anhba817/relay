@@ -192,6 +192,16 @@ replaced history is **`backup/pre-minio-image-20260927`**, pushed first and nami
 targets in its own message. **Anyone holding a clone from before 2026-09-27 must reset rather
 than pull.**
 
+**AND THE LANE REACHED ITS TESTS, WHICH IS WHAT THE REPAIR WAS FOR.** Nine steps of eleven
+against the broken run's five, and the sealed job green where it had died at the pull. Per
+error: **baseline 6 · run A 5, one new and two gone · run B, a docs commit on A's code, 3 with
+ZERO new and three gone.** A's extra is `expected 201 to be 429` and **B does not have it on
+identical code** — a flake by 057's definition. It is `limits.itest.ts:417`, three requests
+against a `send` limit of 2, and `limits/bucket.ts` is a **fixed 60-second window** whose own
+comment says *"up to twice the limit across a boundary"*; the test pins no instant, so three
+sends straddling a boundary make the third the first of a new bucket. **043's wall-clock minute
+bucket, still open, in a file 043 did not sweep.** Filed, not repaired.
+
 **WHAT THE REWRITE COSTS, SAID RATHER THAN HIDDEN:** the comment in those four trees is dated
 after the commits carrying it, because the chain compares its END state to `HEAD` — so every
 commit after the last one to touch those lines must hold the same text. **One text everywhere is
