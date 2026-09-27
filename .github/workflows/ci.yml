@@ -74,7 +74,23 @@ jobs:
     env:
       DATABASE_URL: postgres://relay:relay@localhost:5432/relay
       RELAY_REDIS_URL: redis://localhost:6379
-      RELAY_CLICKHOUSE_HOST: localhost
+      # `RELAY_CLICKHOUSE_HOST` IS DELIBERATELY ABSENT, AND ITS REMOVAL IS THE FIX FOR A
+      # COVERAGE PIN. It used to read `localhost` — the value **all five readers already
+      # default to**: `metering/clickhouse.ts:58`, `ingester/clickhouse.ts:50`,
+      # `analytics/apply.mjs`, `analytics/query.mjs` and `scripts/scale/load-analytics.mjs`
+      # are every one of them `?? "localhost"`. It changed no behaviour and cost one
+      # branch: with the variable set, the right-hand side of `process.env[…] ?? "localhost"`
+      # is never evaluated, so that arm was dead in CI and live on a developer's machine.
+      #
+      # MEASURED by setting it locally, which reproduced CI's row byte for byte:
+      #
+      #     unset    100 | 91.30 | 100 | 100    uncovered 108, 115
+      #     set      100 | 86.95 | 100 | 100    uncovered  58, 108, 115
+      #
+      # The pin is 91, from chapter 4.8, which named its two unreachable arms — 108 and
+      # 115 — and was right about both. **The third was this file's doing.** So the repair
+      # is to delete a line that does nothing rather than lower a ratchet to accommodate
+      # it.
       RELAY_NATS_URL: nats://localhost:4222
       # The outbox relay stays off in the test lane, for the reason chapter 3.3
       # found the hard way: a background daemon draining the table two suites

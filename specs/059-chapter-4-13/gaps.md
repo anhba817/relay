@@ -629,3 +629,54 @@ reports six lanes `did not run` and exits 1.
 **IT WAS ONLY VISIBLE BECAUSE OF 059-15.** Before the image repair the job died at
 `docker compose up`, five steps earlier — so the gate's own defect was hidden behind an outage
 in a registry.
+
+### 059-22 · A coverage pin that was right, and an environment variable that was wrong
+
+**`metering/clickhouse.ts` was pinned at 91 branches by chapter 4.8 and red on every CI run
+since.** The obvious reading — after 059-20 had just found two pins calibrated on one machine —
+is a third of the same. It is not.
+
+    RELAY_CLICKHOUSE_HOST unset    100 | 91.30 | 100 | 100    uncovered 108, 115
+    RELAY_CLICKHOUSE_HOST set      100 | 86.95 | 100 | 100    uncovered  58, 108, 115
+
+`ci.yml`'s lanes job set `RELAY_CLICKHOUSE_HOST: localhost`. Line 58 reads
+`host = process.env["RELAY_CLICKHOUSE_HOST"] ?? "localhost"`, so with the variable set the
+right-hand side is never evaluated and that arm is dead — **in CI only**. Reproduced locally by
+setting it, which returned CI's row byte for byte, uncovered lines included.
+
+**THE VARIABLE DID NOTHING ELSE.** All five readers default to the same string —
+`metering/clickhouse.ts:58`, `ingester/clickhouse.ts:50`, `analytics/apply.mjs`,
+`analytics/query.mjs`, `scripts/scale/load-analytics.mjs`. It set a value to the value it
+already had, and the only observable effect in the repository was one dead branch.
+
+**SO THE REPAIR IS A DELETION, NOT A LOWER PIN.** 4.8's comment named its two unreachable arms —
+108 and 115 — and was right about both; the third was the workflow's. Verified without the
+variable: `100 | 91.30 | 100 | 100`, **1,961 tests passing**, the pin green, and the ingester's
+own `clickhouse.ts` gaining four points of branches for free.
+
+**THE LESSON IS THE ORDER OF THE TWO QUESTIONS.** 059-20's pins were wrong and the code was
+right; this pin was right and the environment was wrong. **Both present as a red pin**, and
+reaching for the ratchet first would have lowered a threshold that was telling the truth. *Ask
+what the number is measuring before you move it.*
+
+### 059-23 · The fixture floor I wrote at 059-12 was a slow leak, and only a dirty machine sees it
+
+The backdate helper that made a fixture the oldest row in the sweep's window stepped by **one
+second** from a floor of `now() - 23h30m`. After about 1,800 fixtures every later one lands
+**on** the floor — same instant, no ordering — and a new fixture stops being first in a batch of
+one. Measured after a day of runs on this machine: **3,235 rows at the floor, 1,513 inside the
+window**, and twelve tests across two files failing in milliseconds with `expected 'pending' to
+be 'rejected'`.
+
+**CI NEVER SEES IT, WHICH IS THE WHOLE SHAPE OF IT.** A fresh database has no pile, so the
+fixture is always first there — the defect belongs to the machine that has run the suite most.
+That is 059-15's asymmetry pointing the other way: an image cached since the chapter that added
+it hid a failure from every developer and showed it to CI; this hides a failure from CI and
+shows it to the developer.
+
+**A millisecond step against 59 minutes of room** is three and a half million fixtures before
+the floor is reachable. 22 of 22 twice after, and 14 of 14 for the file alone.
+
+**AND IT WAS FOUND WHILE VERIFYING SOMETHING ELSE.** The twelve failures appeared in the
+coverage run measuring 059-22, and reading them as *"the variable broke the media tests"* was
+available and wrong. They fail in ~23 ms; the variable has nothing to do with media.

@@ -261,6 +261,25 @@ than guessing"*. Fixed with `--log-order=stream`, pinned rather than detected. V
 fires when a lane is genuinely absent. **Hidden until now behind the registry outage**, which
 killed the job five steps earlier. `gaps.md` 059-21.
 
+**AND THE LAST COVERAGE PIN WAS RIGHT WHILE ITS ENVIRONMENT WAS WRONG.** `metering/
+clickhouse.ts` sat at 91 and was red on every CI run since 4.8 wrote it — and after 059-20 had
+just found two pins calibrated on one machine, the obvious reading was a third. **It was the
+workflow.** `ci.yml` set `RELAY_CLICKHOUSE_HOST: localhost`, which is *the value line 58 already
+defaults to*, so `process.env[…] ?? "localhost"` never evaluated its right side and that arm was
+dead in CI alone: **86.95 with uncovered 58, 108, 115 against 91.30 with 108, 115**, reproduced
+locally by setting the variable. All five readers default to the same string, so the line did
+nothing else. **The repair is a deletion, not a lower pin** — 1,961 tests green, the pin green,
+and the ingester's own `clickhouse.ts` gaining four branch points for free. **Both cases present
+as a red pin; ask what the number is measuring before you move it.** `gaps.md` 059-22.
+
+**AND 059-12's OWN FIXTURE WAS A SLOW LEAK.** The backdate that makes a fixture the oldest row
+stepped by a SECOND from a floor of `now() - 23h30m`, so after ~1,800 fixtures they pile up ON
+the floor and a new one stops being first. **3,235 rows at the floor, 1,513 in the window, twelve
+tests red in milliseconds** — and **CI never sees it**, because a fresh database has no pile.
+That is 059-15's asymmetry reversed: the image cache hid a failure from developers and showed it
+to CI; this hides one from CI and shows it to the developer. A millisecond step buys three and a
+half million fixtures. `gaps.md` 059-23.
+
 **WHAT THE REWRITE COSTS, SAID RATHER THAN HIDDEN:** the comment in those four trees is dated
 after the commits carrying it, because the chain compares its END state to `HEAD` — so every
 commit after the last one to touch those lines must hold the same text. **One text everywhere is
