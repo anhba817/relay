@@ -280,6 +280,18 @@ That is 059-15's asymmetry reversed: the image cache hid a failure from develope
 to CI; this hides one from CI and shows it to the developer. A millisecond step buys three and a
 half million fixtures. `gaps.md` 059-23.
 
+**AND `shape.ts` IS AT 100, RAISED RATHER THAN LOWERED.** 4.7 found it at 95.12 and kept the pin
+at 100 *"because this chapter made it visible rather than measuring it down"*; it has failed every
+CI run since. Four dark arms, and **`shapeConnection` had no tests in this file at all** — every
+call it had ever received came through `ingest.itest.ts` carrying a record the gateway had just
+written, and **a valid record cannot exercise a refusal**. Its sibling has had `refuses a
+non-object` since 4.4. **And the type ternary's comment argues for a closed set — rejecting
+`e.type.split(".")[1]` as *"a shaper that cannot be wrong about a record it has never seen"* —
+with nothing checking the set was closed.** The `limited_operation` arm is 4.8's own measurement
+surfacing: NULL on 11,660 of 11,683 rows, so every fixture inherited the 99.8% case. Six tests,
+control first, **100/100/100/100** and **zero threshold errors in the whole run**. `gaps.md`
+059-24.
+
 **WHAT THE REWRITE COSTS, SAID RATHER THAN HIDDEN:** the comment in those four trees is dated
 after the commits carrying it, because the chain compares its END state to `HEAD` — so every
 commit after the last one to touch those lines must hold the same text. **One text everywhere is

@@ -680,3 +680,38 @@ the floor is reachable. 22 of 22 twice after, and 14 of 14 for the file alone.
 **AND IT WAS FOUND WHILE VERIFYING SOMETHING ELSE.** The twelve failures appeared in the
 coverage run measuring 059-22, and reading them as *"the variable broke the media tests"* was
 available and wrong. They fail in ~23 ms; the variable has nothing to do with media.
+
+### 059-24 · `shape.ts` reached 100 by testing three arms nothing had ever called
+
+Chapter 4.7 found this file at **95.12** and **left the pin at 100 rather than lowering it**,
+*"because this chapter made it visible rather than measuring it down"*. It has failed every CI
+run since. Raised rather than lowered, which is what that decision was holding the place for.
+
+**Four arms, and the interesting thing is why each was dark.**
+
+    161  `isString(e.limited_operation) ? … : null`   the TRUE arm, never taken
+    234  `if (typeof raw !== "object")  return null`   never called with a non-object
+    256  the `: null` of the type ternary              never called with an unknown type
+    257  `if (event === null) return null`             same cause
+
+**`shapeConnection` HAD NO TESTS IN THIS FILE AT ALL.** Every call it had ever received came
+through `ingest.itest.ts`, carrying a record the gateway had just written — and **a valid record
+cannot exercise a refusal**. Its sibling `shapeRequest` has had a `refuses a non-object` test
+since 4.4; the neighbour written beside it never got one.
+
+**AND ONE OF THE FOUR HAD AN ARGUMENT IN THE SOURCE AND NO TEST ANYWHERE.** The type ternary's
+comment rejects `e.type.split(".")[1]` because it *"would turn any `connection.*` record into a
+row with whatever word followed the dot — a shaper that cannot be wrong about a record it has
+never seen"*. **That is a claim about a closed set, and nothing checked the set was closed.** A
+third connection event added upstream would have been refused correctly and silently, with no
+test to say so. It now has five: `connection.resumed`, `connection.migrated`, `connection.`,
+`connection` and a bare `opened`.
+
+**The `limited_operation` arm is 4.8's measurement showing up as a gap.** That chapter measured
+the column NULL on **11,660 of 11,683 rows**, so every fixture inherited the 99.8% case and the
+arm that carries a value was never written. One ternary, two arms, and only the empty one was
+checked.
+
+**100 / 100 / 100 / 100, six new tests, and a control first** — the valid open and close are
+asserted before the refusals, because without them every assertion under that heading passes
+against a function that returns null for everything.
