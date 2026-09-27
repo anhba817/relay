@@ -550,10 +550,29 @@ and put both numbers in the config"*. Here the **denominator** changes, which is
 thing: the two runs are not two samples of one quantity, they are two quantities. No value
 pinned here means what the ratchet wants it to mean until that is understood.
 
-**IT IS ONE FILE OF NINE, WHICH IS WHAT MAKES IT A LEAD RATHER THAN A SHRUG.** The eight sibling
-pins this feature added on the same day hold in both environments. The odd one out is the only
-decorated NestJS class among them, reached through DI — a candidate, not a finding, and said as
-such.
+**IT IS TWO FILES OF NINE, AND MEASURING THE OTHER SEVEN IS WHAT MADE THAT SAYABLE.** Every pin
+this feature added came from ONE local coverage run; CI has now measured all nine:
+
+    file              local  s / b / f / l           CI  s / b / f / l          verdict
+    sniff.ts          100  / 100   / 100   / 100     100 / 100   / 100 / 100    identical
+    dimensions.ts     85.71/ 88.52 / 100   / 84.78   85.71/88.52 / 100 / 84.78  identical
+    sweep.ts          97.67/ 92.30 / 100   / 97.50   98.14/93.75 / 100 / 97.87  CI HIGHER
+    api-client.ts     78.94/ 50.00 / 100   / 100     81.81/60.00 / 100 / 100    CI HIGHER
+    scan.ts           88.23/ 85.71 / 82.35 / 87.30   86.76/80.95 / 82.35/ 85.71 CI LOWER
+    media.controller  —    / 90.90 / —     / —       —    /84.61 / —   / —      CI LOWER
+
+**`scan.ts` moves for a reason that can be named**: its uncovered arms are socket failures — a
+connection refused, a reply that never comes — and which of them a real ClamAV produces depends
+on timing. `functions` is **identical** in both, which is the tell that the file is fully
+reached and only its error arms vary. Re-pinned below the lower of the two.
+
+**`media.controller.ts` moves for a reason that cannot**, and that is the one worth keeping
+open: its denominator changes. It is the only decorated NestJS class among the nine, reached
+through DI — a candidate, not a finding, and said as such.
+
+**THE GENERAL MISTAKE IS THE SAME IN BOTH: NINE PINS FROM ONE MACHINE.** Two of nine needed
+moving, and the only way to know which was to read CI's own table rather than wait for it to go
+red one file at a time.
 
 **Pinned at 83 and the pin is honest again**: below the lower of two stable observations, still
 able to catch a real regression in the four arms that file has. **The mistake being corrected is
