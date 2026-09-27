@@ -238,6 +238,21 @@ before reaching its own row. Drained, the lane is 768 of 768. **The tell is the 
 unrelated assertions timing out identically are waiting for one thing**, and no code change does
 that.
 
+**AND CI NOW CARRIES ONE ERROR LINE, WHICH IS THE JOB'S OWN EXIT CODE.** The plan assertions are
+gone; what is left is coverage pins and a lane that runs nothing. **`media.controller.ts`
+measures 33 branch points locally and 13 in CI** — same commit, same Node 22.23.2, 136 files
+green both sides, **84.61 on three consecutive CI runs** against a local 90.90. That is not
+045's swing: the DENOMINATOR moves, so the two figures are not two samples of one quantity.
+**A per-file branch pin is a claim about the machine**, and the pin was mine, set from one
+observation — the exact mistake 045 wrote down. Re-pinned at 83 with both numbers in the
+config; eight sibling pins from the same day are stable, which localises it. `gaps.md` 059-20.
+
+**AND `pnpm test:integration` RAN 0 OF 63 SUITES WHILE TURBO REPORTED `14 successful, 14
+total`.** The integration gate's own summary is what failed the step — *assert the counted line,
+not the exit code*, six chapters in the making. The coverage run in the same job executes all
+136 files and passes, so **the suites are fine and the lane that runs them is not**. Visible
+only because the image repair let the job reach that step. `gaps.md` 059-21.
+
 **WHAT THE REWRITE COSTS, SAID RATHER THAN HIDDEN:** the comment in those four trees is dated
 after the commits carrying it, because the chain compares its END state to `HEAD` — so every
 commit after the last one to touch those lines must hold the same text. **One text everywhere is

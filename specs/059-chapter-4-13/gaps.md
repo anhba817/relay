@@ -534,3 +534,47 @@ lane to **768 of 768**.
 **It reads exactly like a regression** and the five test names have nothing in common but a
 deadline. The tell is the duration: five tests failing at the same 20 s are waiting for one
 thing, and no code change makes five unrelated assertions time out identically.
+
+### 059-20 · A per-file branch pin is a claim about the machine, because the denominator moves
+
+**`media.controller.ts` measures 33 branch points locally and 13 in CI** — same commit, same
+Node **22.23.2**, all **136** test files green on both sides:
+
+    local      30/33   90.90%
+    CI         11/13   84.61%   three consecutive runs, identical
+    the pin    89              set from ONE local observation
+
+**This is not coverage's known run-to-run swing.** 045 measured that at about one function of
+forty on identical code, and prescribed *"pin below the lower observation by the observed swing
+and put both numbers in the config"*. Here the **denominator** changes, which is a different
+thing: the two runs are not two samples of one quantity, they are two quantities. No value
+pinned here means what the ratchet wants it to mean until that is understood.
+
+**IT IS ONE FILE OF NINE, WHICH IS WHAT MAKES IT A LEAD RATHER THAN A SHRUG.** The eight sibling
+pins this feature added on the same day hold in both environments. The odd one out is the only
+decorated NestJS class among them, reached through DI — a candidate, not a finding, and said as
+such.
+
+**Pinned at 83 and the pin is honest again**: below the lower of two stable observations, still
+able to catch a real regression in the four arms that file has. **The mistake being corrected is
+mine and it is the one 045 wrote down** — I had one observation and pinned just under it, which
+is a ratchet calibrated to a single machine.
+
+### 059-21 · `pnpm test:integration` ran 0 of 63 suites in CI and turbo called it 14 successes
+
+    Tasks:    14 successful, 14 total
+    @relay/api           40 suites · did not run
+    @relay/gateway       12 suites · did not run
+                         63 suites · 0 ran
+    integration gate: no summary from @relay/api, @relay/dispatcher, @relay/e2e,
+      @relay/gateway, @relay/ingester, @relay/media-worker, @relay/test-harness
+
+**The gate caught it and the step is red for the right reason** — which is the shape this
+project has been building toward for six chapters: *assert the counted line, not the exit code*.
+Turbo reported total success while nothing executed, and only the summary said so.
+
+**NOT DIAGNOSED HERE AND NOT THIS WORK'S.** It is visible now because 059-15's image repair let
+the job reach that step at all — before it, the lane died at `docker compose up`. The coverage
+run in the same job executes all 136 files and passes, so **the suites are fine and the lane
+that runs them is not**. 050's sentence, unchanged: *a green lane is a claim about what was
+re-run.*
