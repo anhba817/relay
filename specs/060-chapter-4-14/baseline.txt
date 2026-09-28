@@ -734,7 +734,18 @@ T079 / T080 — THE THIRD PUSH, AND THE COMPARISON THE WHOLE INSTRUMENT IS FOR
         run 2    (74efae6 )   the two fixed; ONE NEW, caused by the fix
         run 3    (8780ecd )   **0 distinct**
 
+        run 4    (1e96501 )   **0 distinct** — a docs-only commit
+
         diff(baseline, run 3): **EMPTY IN BOTH DIRECTIONS**
+        diff(baseline, run 4): **EMPTY IN BOTH DIRECTIONS**
+
+      **THE FOURTH RUN IS THE ONE 057 SAID TO TAKE.** That chapter compared ONE
+      run, called the set identical, and three runs later found it moving — so
+      the claim a single comparison supports is *this run introduced nothing
+      new*, not *the set is stable*. Run 4 changed no code at all (only
+      `specs/` and `CLAUDE.md`) and is the control: **zero twice in a row on
+      two different commits**, which is the difference between an error set that
+      is empty and one that is quiet.
 
       **THIS IS THE STRONGEST THING THE INSTRUMENT CAN SAY**, and 056 is where
       the project learned to want it: a colour would have said "green" about run
