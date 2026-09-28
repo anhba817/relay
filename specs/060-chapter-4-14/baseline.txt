@@ -529,3 +529,44 @@ T075  THE TEST AUDIT
       assertions that this chapter falsified, plus a harness. Each was re-read
       after repair rather than just made green, which is 045's rule: the fixture
       is half the task.
+
+================================================================================
+PHASE 8 — THE RECORD, AND WHAT THE CLOSE FOUND (2026-09-28)
+================================================================================
+
+T040  THE END-TO-END IS THREE TESTS, AND THE MISSING ONE WAS THE WIRE
+      The task named one file. What exists instead, and it is better decomposed:
+        api `media-updated.itest.ts`   the producer publishes, 9 tests
+        gateway `session.test.ts`      a subscribed socket receives it — STUB fabric
+        gateway `fanout.itest.ts`      **two real clients over real Redis**
+        the quickstart                 the composed stack, end to end, by hand
+      The third was the gap and is now closed: only two real fabric clients can
+      show that the arm carrying NO `message` survives the wire, which is where
+      every site deriving a subject from `revision.message.channel` would have
+      published to `revision:undefined` — on a function whose contract is never
+      to reject.
+
+T077  A LINT RULE IS A CONSTITUTION CLAUSE, AND IT REFUSED THIS CHAPTER'S TEST
+      `media-updated.itest.ts` imports `ioredis` to subscribe; the rule says the
+      counter store lives in `limits/` only, because *"an unrestricted client is
+      a cross-tenant read"*. **Reason (4) in that file's own exemption list is
+      this exact case**: *"THE SUBJECT IS WHAT REACHES THE FABRIC, so the oracle
+      cannot be either service's own client. A spy on `createFanout` proves that
+      an object was asked to publish, not that a frame arrived."* Added with its
+      reason, beside the four suites already exempt for it.
+
+T061-T065  AND THE FENCE CHAIN TOOK FOUR ROUNDS, THE THIRD BEING MY OWN MISTAKE
+      18 → 15 (untitling my excerpts) → 0 → 5 (the close's own edits: the new
+      cross-instance test, the directions table, the fifth frame count, the
+      coverage pin, the lint exemption) → 2 → **0**.
+
+      **THE THIRD ROUND WAS A HUNK REGENERATED AGAINST A STATE THAT ALREADY
+      CONTAINED IT.** I replaced `fanout.itest.ts`'s 4.14 hunk with a diff taken
+      from a dump computed WITH that hunk applied, so the new hunk carried only
+      the newest change and silently dropped the guard repairs the old one held.
+      The checker caught it — `differs at line 263`, naming the exact assertion.
+      **Rule 1a says generate hunks from the checker's own replay; it does not
+      say the replay is still valid after you edit the thing being replayed.**
+      The fix is to re-dump and APPEND a corrective hunk rather than rewrite.
+
+      final: **291 fenced files replay across 57 chapters, EXIT 0.**
