@@ -570,3 +570,74 @@ T061-T065  AND THE FENCE CHAIN TOOK FOUR ROUNDS, THE THIRD BEING MY OWN MISTAKE
       The fix is to re-dump and APPEND a corrective hunk rather than rewrite.
 
       final: **291 fenced files replay across 57 chapters, EXIT 0.**
+
+================================================================================
+T007 / T079 — CI, RECOVERED (2026-09-28)
+================================================================================
+
+THE OPENING BASELINE WAS TAKEN AFTER ALL, AND 060-11's PREMISE WAS HALF WRONG.
+      The account was the problem, not the visibility. Once switched:
+      `gh run list` answers, and **CI does not live in `relay-platform` at all** —
+      there is no `.github/` there. `ci.yml` is the SUPERPROJECT's, and
+      `relay-platform` and `relay-tutorial` are **git submodules** checked out
+      with `submodules: recursive`.
+
+      That changes what "push" means and the order is forced: submodules first,
+      then the superproject, or CI checks out gitlinks pointing at commits no
+      remote has. Every prior close-out in CLAUDE.md says "pushed in all three
+      repositories" without saying why the order matters. It matters.
+
+      **BASELINE — run 36323172622, commit 56095ded, the session's starting
+      point:**
+
+        success   relay-platform — the sealed integration
+        success   relay-platform — integration lanes and coverage
+        success   relay-tutorial — build, docs drift, fence chain
+        success   relay-platform — the Docker-free gate
+        ##[error] lines, uuids normalised:  **0 distinct**
+
+      Four jobs green and an empty error set. 059 closed CI fully green and this
+      confirms it held. **A clean baseline is the hardest one to improve on and
+      the easiest to damage**, which is what makes the per-error diff worth
+      taking on a run whose colour will be obvious either way.
+
+T079  THE FIRST PUSH: THREE JOBS OF FOUR, AND CI FOUND WHAT NO LANE I RAN COULD
+
+      run 36404071162, commit d269846b
+
+        success   relay-tutorial — build, docs drift, fence chain
+        failure   relay-platform — the Docker-free gate     (pnpm typecheck)
+        failure   relay-platform — the sealed integration   (one assertion)
+        —         relay-platform — integration lanes and coverage
+
+      **BOTH FAILURES WERE REAL AND BOTH WERE INVISIBLE TO EVERY COMMAND I RAN.**
+
+      (1) `pnpm typecheck` FAILED ON TWO LINES IN `packages/protocol/src/revision.test.ts`
+      — `revision.message` on a union whose third arm has none, the same class
+      the compiler caught five times elsewhere. **It escaped because
+      `tsconfig.build.json` EXCLUDES TESTS**, so `pnpm build` typechecks the
+      shipped code and not its tests, and I had typechecked five services
+      individually and never the protocol package. `pnpm typecheck` is the only
+      command that reaches those files and I never ran it: **fifteen turbo tasks,
+      and my per-service `tsc` covered five.**
+
+      (2) THE SEALED SUITE HELD **A FIFTH** WHOLE-ARRAY ASSERTION.
+      `packages/outsider/src/integrate.itest.ts` — `toEqual([…, {type:"media",
+      media_id}])` on a socket frame. **It is the only one of the five that no
+      local lane reaches**: `pnpm test`, `pnpm test:integration` and
+      `pnpm coverage` all skip that suite, which needs a composed stack and three
+      environment variables. The other four were found by the api lane and the
+      coverage lane; this one was found by CI, which is what 057-7 predicted the
+      job would be for — *"the first execution of that suite in this repository's
+      CI"* — one chapter after it started running.
+
+      AND THE COMPOSED STACK WOULD NOT START THE GATEWAY: a stale docker network
+      id, `failed to set up container networking: network 7e5279ce… not found`.
+      `--force-recreate` on the three service containers fixed it. Until then the
+      sealed suite failed LOCALLY too, six tests at ~10 s each — **the shape of a
+      missing gateway, not of a wrong assertion**, and reading the durations is
+      what separated them (4.13's five-suites-at-20-seconds rule).
+
+      Fixed: narrow before reading a union arm in the two protocol tests; add
+      `state: "pending"` to the sealed assertion, with a note that it is stable
+      rather than racy because that suite runs no media worker.
