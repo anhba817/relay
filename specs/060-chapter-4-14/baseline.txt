@@ -314,3 +314,112 @@ T034-T039a  NINE OF NINE, AND FOUR FIXTURE FAULTS FIRST
 
       api integration lane after the producer: **42 files, 783 tests, all green.**
       The producer broke nothing — the nine new tests are the whole delta.
+
+================================================================================
+PHASE 5 — USER STORY 3, who is not told (2026-09-28)
+================================================================================
+
+T041-T044  THE DELIVERY SET IS SUBSCRIBERS, AND THE DIRECTION IS THE POINT
+      Two tests in `session.test.ts`: a media transition arrives as
+      `media.updated` and NOT as `message.deleted` — the falsifying half, and
+      the shape the two-way ternary would have produced — and a transition for a
+      channel this connection never joined reaches nobody, with a positive
+      control first so the silence is evidence.
+
+      **The under-delivery case is the same mechanism, recorded rather than
+      given its own test.** FR-MED-08 authorises by channel VISIBILITY;
+      a connection subscribes by MEMBERSHIP. Subscribers are therefore a SUBSET
+      of authorised readers: a non-member of a public channel is entitled to the
+      photo and does not get the frame. Narrower, never wider — FR-007 holds by
+      construction and history is the repair. Written into the test so nobody
+      later "fixes" it by broadcasting wider.
+      gateway unit suite: 38 of 38.
+
+T045  THE TASK'S PREMISE IS FALSE: THERE IS NO NEW ROUTE TO ATTACK
+      The task says to add a gauntlet attack for the new path. **This chapter
+      adds no HTTP route.** Its new surface is a fabric frame and a query
+      predicate, and the gauntlet attacks routes with foreign ids. Run to check
+      rather than assumed: the isolation suite is **76 of 76 across 3 files with
+      nothing unclassified**, because `targets.ts` already carries the verdict
+      route — 4.13 added it, after that chapter's own derivation found it
+      unclassified on the eleventh consecutive occasion.
+
+      The tenancy surface this chapter DOES add is
+      `channelsReferencingMediaIn`'s environment predicate, and T030b attacks it
+      directly: the right object under the wrong tenant returns nothing.
+
+================================================================================
+PHASE 6 — THE PROBES AND THE GATES (2026-09-28)
+================================================================================
+
+T046  THE PER-ARM PROBE. Five arms, deleted one at a time, suites re-run.
+
+      arm                              what turned red
+      ------------------------------   --------------------------------------
+      the `applied` gate               1 — "announces nothing on a duplicate
+                                           verdict". Exactly the test for it.
+      the environment predicate        1 — T030b only. **delivery.itest.ts and
+                                           gauntlet.itest.ts BOTH STAYED GREEN**
+      the per-channel loop (first      1 — the N = 2 test, and nothing else
+        channel only)
+      the `ready`/`rejected` guard     **NOTHING**
+      the buffering skip (gateway)     1 — the revision buffering test
+
+      **4.12's FINDING REPRODUCED EXACTLY.** Deleting the media tenancy scope
+      leaves the suite constitution VI names as gating releases green at 60, and
+      leaves the delivery gate green at 17. The only thing that catches it is the
+      test written to ask that precise question — which is why T030b exists and
+      why a coverage number would have reported all five arms covered.
+
+T047  THE ARM THAT TURNED NOTHING RED, AND WHICH KIND IT IS
+      The `ready`/`rejected` guard is **unreachable at runtime and load-bearing
+      at compile time**. `announce` runs only when the compare-and-set applied,
+      and one that applied set the state to the verdict — so the guard cannot
+      fire. It stays because `state` arrives typed `string | null` and this is
+      what narrows it; deleting it needs a cast, and a cast is a claim the
+      compiler stops checking.
+
+      4.11 found an early return that was an optimisation wearing a branch's
+      clothes. **This is the other kind — a type narrowing wearing a runtime
+      guard's clothes.** Said out loud in the file, so its coverage is not read
+      later as a gap.
+
+T048  AND `echo "EXIT=$?"` AFTER A PIPELINE READS `sed`'s STATUS. FIFTH TIME.
+      `pnpm coverage 2>&1 | sed … > file; echo "EXIT=$?"` printed **EXIT=0**
+      while the run had failed. Re-run without the pipe: **REAL EXIT=1**, on a
+      per-file threshold. CLAUDE.md records this as the fourth occurrence; this
+      is the fifth, in the same session that quotes the rule.
+
+      `media.controller.ts` statements **92.59% against a pin of 93**. The file
+      gained `announce`, and one of its statements is the `ready`/`rejected`
+      guard T046 proved unreachable — a statement that CANNOT be covered.
+      **Ask what the number is measuring before moving it** (059-22): this is
+      not a machine disagreement like the branch pin two lines above it in the
+      same config, it is a real statement that no test can reach.
+
+T046/T015  AND THE FRAME COUNT IS ASSERTED IN **FIVE** PLACES, NOT TWO
+      Every one fired on `media.updated`, and each is a different question:
+
+        packages/protocol/src/frames.test.ts   the union's own length
+        services/gateway/src/main.test.ts      what the gateway ADVERTISES
+        services/gateway/src/isolation.itest.ts   derived count from the union
+        services/gateway/src/isolation.itest.ts   classified exactly once
+        services/gateway/src/session.itest.ts  non-inbound types refused 4002
+
+      The last two are the ones that matter most and neither is a count for its
+      own sake: a server-to-client frame with no entry in the DIRECTIONS table is
+      one a client could FORGE, and the loop that proves it cannot needs a
+      well-formed sample or it asserts `invalid_frame` — the refusal a phase
+      before the one under test.
+
+      **AND THAT TRAP FIRED, EXACTLY AS THE FILE'S OWN COMMENT PREDICTED.**
+      `session.itest.ts` carries a second sample builder, deliberately not shared,
+      whose comment records the same bill being paid twice before: *"a field
+      added to a frame makes the forged sample malformed, and the loop then
+      asserts `invalid_frame`."* A new frame does it by having no case at all.
+      Third time for that file.
+
+      **The coverage lane is what found all four.** Every one of them passed
+      standalone in its own file and in the api's integration lane; three of the
+      five live in the gateway's, and `pnpm coverage` is the only command that
+      runs everything together.

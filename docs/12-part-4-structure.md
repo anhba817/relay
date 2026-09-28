@@ -242,7 +242,7 @@ is the stable address, as §2.1 intended.
 | 12 | V | The half of the union that was refused | FR-MED-06. Chapter 3.24 shipped `media_not_available` (422) to refuse `media_id` **by name**, as a discriminated union built for this arm to be filled. This chapter fills it — **and the line was silent about everything that cost anything.** (1) **The predicate is four lines of SQL and the chapter is the other twenty pages.** Three conditions must give ONE answer, because a refusal naming the cause reports whether another tenant's object exists; built and tested as one property, three bodies byte-identical apart from `request_id`. (2) **FIVE READERS HAD TO LEARN THE ARM BEFORE THE PRODUCER SHIPPED.** One union, ten validators — seven naming `attachmentSchema` and three reaching it through `messageSchema`, which a table written to prevent exactly this recorded as *"parsed by nothing at runtime"*. Five of the ten forward the value without reading it, and the worst refusal is the quietest: `fanout.ts:109` drops a delivered frame with a log line **after the sender holds its 201**. (3) **The clause was silent where the specification thought it was strict.** An object whose uploader is unrecorded was taken by the tenant's own backend; the clause withheld permission and mandated no refusal, so **SRS 1.18** gives it the three cases — the second feature running whose `research.md` settled the specification against itself. (4) **FR-MED-07 turns from vacuous to unmet here**, being the first chapter to deliver an attachment that has a state, and the schema still refuses to hold one but `pending` — published as the database's own `violates check constraint`. (5) And the composed api had answered **503 to every slot request since 4.10**, because `compose.yaml` named every store but MinIO while `depends_on` waited on it. Writes **SRS 1.18**, deletes one error code and adds two |
 | 13 | V | A link that expires, and who may hold it | FR-MED-08: signed delivery, one hour, authorisation following channel **visibility** rather than a parallel ACL — amended at SRS 1.19, because this platform checks membership for `private` channels only and the literal reading refuses a user the photo in a message whose text they can read |
 | 14 | VI | The only service that reads the bytes | The media worker. FR-MED-03/04: verify against declaration, ClamAV, probe. **CLOSED — ADR-31 and ADR-32** (chapter 4.13, feature 059). §7.3 is answered and so is VII's other clause, which no artifact had named. |
-| 15 | VI | Pending, ready, rejected | The state machine and `media.updated` (FR-MED-07). A placeholder becomes real without polling. **Open — see §7.4** |
+| 15 | VI | Pending, ready, rejected | The state machine and `media.updated` (FR-MED-07). A placeholder becomes real without polling. **CLOSED — ADR-33** (chapter 4.14, feature 060). §7.4 is answered: the third arm on `revision:{channel_id}`, not a sixth grammar, and the clause's FIRST sentence turned out to be unmet too. |
 | 16 | VI | What a thumbnail costs | FR-MED-05: derived objects sharing the parent's lifecycle |
 | 17 | VI | Storage on the bill | FR-MED-12: stored bytes metered per tenant per day, into the store movement IV built |
 | 18 | VI | **★ Milestone: an image, end to end** | Upload → scan → send → signed delivery. FR-MED-09's rejection marker renders as rejected, never as broken |
@@ -470,10 +470,16 @@ that is a chapter's worth of argument rather than a line of wiring.
 > variable bitrate as a genuinely hard case. One non-TypeScript program, not two, which makes
 > the argument narrower than this entry assumed.
 
-**7.4 — Does `media.updated` take a sixth subject grammar (ch 15)?** Five exist, each argued
-individually, and the review asked for a consolidation threshold. **There is now a number to
-argue against**: `docs/11` measured the subscription law as `redis subjects = 5 × channels +
-1 × connected users`, exact on six rows to 20,000 connections.
+**7.4 — Does `media.updated` take a sixth subject grammar (ch 15)? ANSWERED: no — ADR-33.**
+Five exist, each argued individually, and the review asked for a consolidation threshold.
+**ADR-25 had already written it**, which is what narrowed this question from a policy to an
+arithmetic: consolidate when per-channel SUBSCRIBEs *exceed* six, or a projected subject count
+exceeds 250,000 under `5 × channels + 1 × connected users`. A sixth grammar is therefore
+permitted and spends the last of the headroom; the third arm on `revision:{channel_id}` keeps
+the count at five, and `fanout.ts` already subscribes that subject with `chan:` under one
+reference count. The cheapest shape — re-delivering the message as `message.updated` — was
+refused because `messageSchema` has no `edited_at`, so a client could not tell an attachment
+resolving from an author editing.
 
 **7.5 — Check ch 20's premise before writing it.** FR-MOD-01/02 are **P2**, and chapter 3.23
 built edit history and tombstones. Some of this chapter may already exist. Run the premise;
