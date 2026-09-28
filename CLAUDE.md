@@ -38,264 +38,210 @@ tags. **Anyone holding an older clone of `relay-platform` must reset rather than
 
 <!-- SPECKIT START -->
 
-**060 IS IN FLIGHT — CHAPTER 4.14, "Pending, ready, rejected"** (FR-MED-07, `docs/12` §3 row 15).
-Plan: `specs/060-chapter-4-14/plan.md`; research is measured and `docs/12` §7.4 is answered
-**against the spec's own working answer** — a third arm on `revision:{channel_id}`, not a sixth
-subject grammar. Nothing is built yet. This line is replaced by the close-out record.
+**060 IS CLOSED — CHAPTER 4.14, "Pending, ready, rejected".** Movement VI continues. Its record
+is `specs/060-chapter-4-14/` — `baseline.txt` first (every phase's measurements in the order
+they were taken, including the ones that were wrong first), then `gaps.md` (**16 entries: 10
+new, 6 carried and re-measured**), `traceability.md`, `doors.txt`, `tasks.md`. **SRS 1.21**,
+**ADR-33**, `docs/12` §7.4 ANSWERED, and **both** copies of the Part 4 table amended.
+
+    check:fences 0 · 291 files across 57 chapters              from 56
+    2,254 prose words · 4 figures · 112 routes · 14 of 14 Part 4 chapters build
+    unit 888 of 888 · api integration 783 of 783 across 42 files
+    coverage REAL EXIT 0 · 138 files · 2,009 tests · zero threshold errors
+    34 error codes, 34 sections — UNCHANGED · 31 dependency entries, unchanged
+    check-lane-scope 66 files, 0 unscoped, 10 of 10 controls fired
+
+**FR-MED-07 IS TWO SENTENCES AND THE ONE NOBODY QUOTED WAS ALSO UNMET.** Three chapters cited
+this clause for its `media.updated` event and recorded the state machine as the gap. The
+sentence before it — *"real-time and history delivery shall include each attachment's state"* —
+had nowhere to put a state: the media arm was `{ type, media_id }` on every door.
+
+**AND ONE SCHEMA WAS SERVING TWO RULES THAT CANNOT BOTH HOLD.** `attachmentSchema` is embedded
+by three request doors **and by `messageSchema`, which is what the api BUILDS**. A sender must
+not declare a state; a delivered attachment must always carry one. A third shape,
+`deliveredAttachmentSchema` with `state` **required** — and required is what makes the compiler
+name every construction site, which is how the door set was derived after **a hand list of three
+and a second of six were both wrong**. One of the doors `tsc` cannot see at all: a handler whose
+return type is inferred rather than annotated.
+
+**THE TWO SENTENCES FAIL IN DIFFERENT CIRCUMSTANCES, WHICH IS THE CHAPTER.** FR-MED-06 permits
+attaching an object already `ready`, for which no transition remains to announce — **538 of the
+lane's 1,589 referenced objects**. So the state on the attachment is the mechanism and the frame
+is an optimisation over it, and a client that receives no frame at all must still be right.
+4.13's shape for the upload sweep, one clause over.
+
+**AND THE STATE IS READ WHEN THE MESSAGE IS SERVED, AT ONE EXTRA QUERY PER PAGE.** Storing it
+would make every verdict a write across every referencing message and give one fact two homes.
+The test asserts the column **byte-identical either side of a verdict** — asserting the new
+state twice would pass against a platform that rewrote every message.
+
+**§7.4 IS ANSWERED BY ARITHMETIC SOMEBODY HAD ALREADY WRITTEN DOWN (ADR-33).** ADR-25 set the
+threshold at per-channel SUBSCRIBEs *exceeding* six, so a sixth grammar is **permitted and
+spends the last of the headroom**. The third arm on `revision:{channel_id}` keeps it at five;
+`fanout.ts` already subscribes that subject with `chan:` under one reference count, *co-extensive
+by construction*. **And the cheapest option died on a field that does not exist**: re-delivering
+the message as `message.updated` needs nothing new, and `messageSchema` has no `edited_at`, so a
+client could not tell an attachment resolving from an author editing — ADR-24's own objection
+one level up.
+
+**REUSING A SUBJECT MEANS REUSING ITS PUBLISHER, WHICH THE RESEARCH PRICED AT ZERO.** Eight
+production sites in two services reached through `revision.message.channel` for the subject, the
+routing key or a log field; five more in tests, **one of them a HARNESS** that would have left
+every downstream test unable to exercise the media path while staying green. One grep found the
+class after five analysis passes found instances. They delegate to `channelOfRevision` in the
+module that owns the grammar, whose `switch` is exhaustive.
+
+**THE PRODUCER'S SEAM HAD FOUR THINGS MISSING AND NONE OF THEM WAS THE PRODUCER.** No tenant
+(`recordMediaVerdict` is module-level on a raw handle because its caller is a worker, and
+returned none), no publisher (`MessagesModule` declares the token and **deliberately does not
+export it**), a publisher assuming one arm shape, and no lifecycle for the second Redis client.
+**The second fails at runtime on the first request** with lint, typecheck and every unit test
+green — 4.10's finding, and the first test in the producer's suite exists only to make one
+request and check it is not a 500.
+
+**FIVE PLACES COUNT FRAMES AND ALL FIVE FIRED.** The union's own length, the gateway's advertised
+vocabulary, a derived count, a classified-exactly-once check, and a non-inbound refusal loop.
+**The last two are not counts for their own sake**: a server-to-client frame with no DIRECTIONS
+entry is one a client could forge, and the loop proving it cannot needs a well-formed sample or
+it asserts `invalid_frame` — the refusal a phase before the one under test. **That trap fired for
+the third time in the same file**, whose own comment records the first two. **Only `pnpm coverage`
+found them**: three live in the gateway's lane and it is the one command that runs everything.
+
+**AND THE PER-ARM PROBE REPRODUCED 4.12 EXACTLY.** Deleting the environment predicate leaves the
+suite constitution VI names as gating releases **green at 60** and the delivery gate green at 17;
+one test catches it, the one written to ask that question. **One arm turned nothing red** — the
+`ready`/`rejected` guard, which is unreachable at runtime and load-bearing at compile time.
+4.11 found *an optimisation wearing a branch's clothes*; **this is a type narrowing wearing a
+runtime guard's clothes**, and which kind it is now says so in the file.
+
+**FOUR TESTS ASSERTED THE ABSENCE THIS CHAPTER FILLS, UNDER A COMMENT PREDICTING IT.** *"The slot
+is `pending` and stays `pending` until movement VI, and a client cannot tell from this payload."*
+This is movement VI. **And the fourth was a directory away** — running the media suite alone
+found three and reported green.
+
+**THE FENCE BILL WAS 18 AND THREE WERE MINE.** My own chapter's excerpts carried
+`title="<a real path>"`, and **a titled fence is a whole-body claim** (051-6). Untitled, 15 — all
+real drift. **All 15 went to the appendix**, generated against the END state: seven already carry
+appendix hunks, and a chapter hunk for those is written against a state no reader sees (4.8).
+One rule for fifteen files beats two rules and a judgement per file. **854 diff lines**, and one
+hunk needed `-U10` because `-U6` matched twice.
+
+**AND `echo "EXIT=$?"` AFTER A PIPELINE READS `sed`'s STATUS. FIFTH TIME**, in the session that
+quotes the rule. `pnpm coverage | sed > f; echo EXIT=$?` printed **0** on a run that had failed a
+threshold; re-run without the pipe, **REAL EXIT=1**.
+
+**THE QUICKSTART WAS RUN AND WAS WRONG SIX TIMES.** Port 3000 for 4000; a channel body of
+`{name, visibility}` for `{external_id, type}`; a slot body whose wrong shape answers a
+**caller-triggered 500**; `idem_key` on a REST door that has no such field; a sender that is not
+a user of the demo tenant; and the worker credential, without which every verdict is a 401 and
+the producer under test is never reached — **4.9's finding, twice in one feature.**
+
+**AND CI COULD NOT BE READ FROM THIS MACHINE** (`gaps.md` 060-11). `gh run list` returns empty on
+every branch under a different account, so T007's opening error set was never taken and the
+per-error comparison has nothing to compare against. Recorded rather than worked around: an
+instrument that cannot see its corpus reports nothing, and reading that as "no errors" is 055-4
+and 049-3's mistake.
 
 **059 IS CLOSED at 124 of 124 — CHAPTER 4.13, "the only service that reads the bytes".**
-**Movement VI opens.** Its record is `specs/059-chapter-4-13/` — `baseline.txt` first (every
-phase's measurements in the order they were taken), then `gaps.md` (**18 entries: 14 new, 4
-carried and re-measured, 057-2 closed**), `traceability.md`, `tasks.md`. **SRS 1.20**,
-**ADR-31**, **ADR-32**, `docs/12` §7.3 CLOSED, and **both** copies of the Part 4 table amended.
-Tagged **`part4-ch13`**.
+**Movement VI opened here.** Its record is `specs/059-chapter-4-13/` — `baseline.txt` first,
+then `gaps.md` (**18 entries**), `traceability.md`, `tasks.md`. **SRS 1.20**, **ADR-31**,
+**ADR-32**, `docs/12` §7.3 CLOSED. Tagged **`part4-ch13`**.
 
-    check:fences 0 · EXIT 0 · 291 files across 56 chapters      from 291 and 55
-    3,337 prose words · 4 figures · 3 TRAP boxes · 127 pages     from 126
-    34 error codes, 34 sections — UNCHANGED, asserted in both directions
+    check:fences 0 · 291 files across 56 chapters · 127 pages · 3,337 prose words
     api 768 of 768 · worker 22 of 22 · outsider 19 of 19 · unit 855 of 855
-    136 files, 1,959 tests under coverage · check-lane-scope 64 files, 0 unscoped
-    31 dependency entries against 29 — and BOTH new ones are workspace links
+    31 dependency entries — a fifth service, a seventh container, NO new third-party
 
-**A FIFTH SERVICE, A SEVENTH CONTAINER, AND NO NEW THIRD-PARTY DEPENDENCY.** Third-party entries
-20 → 20. `INSTREAM` is twenty-two lines of `node:net`; SigV4 is 4.10's signer copied with the
-divergence stated and the three alternatives named.
-
-**THE EVENT THE SAD SAYS THE WORKER CONSUMES HAS NO PRODUCER, AND ADR-13 IS WHY.** Zero
-occurrences of `media.uploaded`: the client PUTs straight to the store, so the only two parties
-that know the upload finished are the client and the store. **The specification priced the
-alternative wrong** — it rejected a sweep on *"91.6% of the work spent on objects that hold
-nothing"*, and one signed `HEAD` is **1.412 ms**, the whole backlog **4.2 s serial**. The waste
-is free, **so the sweep is the mechanism and a notice is an optimisation that must not change
-any answer**: FR-MED-04's *"every uploaded object"* cannot be contingent on a client choosing to
-send one.
-
-**AND THE SWEEP READ ONE PAGE, WHICH IS THE DEFECT THIS CHAPTER CAME CLOSEST TO SHIPPING.** The
-lane held **3,849 pending rows, 858 inside FR-MED-10's window**, and an object nobody uploaded to
-stays `pending` until a reap that is not built — so **the head never moves** and a fresh upload
-was row 858. The sealed suite timed out at thirty seconds with the worker running perfectly and
-the log silent, because it logs only when something happened. **The published figure assumed the
-fix**: *"the whole backlog is 4.2 s"* is only true if a sweep is a whole pass. It pages now,
-keyset on `created_at`, bounded by `maxPages`. `gaps.md` 059-12.
+**THE EVENT THE SAD SAYS THE WORKER CONSUMES HAS NO PRODUCER, AND ADR-13 IS WHY.** The client
+PUTs straight to the store, so the only two parties that know the upload finished are the client
+and the store. **The specification priced the alternative wrong** — it rejected a sweep on
+*"91.6% of the work spent on objects that hold nothing"*, and one signed `HEAD` is 1.412 ms.
+**So the sweep is the mechanism and a notice is an optimisation that must not change any
+answer.** **And the sweep read one page**, which is the defect the chapter came closest to
+shipping: an object nobody uploaded to stays `pending` for ever, so the head never moves. It
+pages now, keyset on `created_at`. `gaps.md` 059-12.
 
 **JAVASCRIPT'S `<<` IS SIGNED, AND IT SURFACED AS AN API 400 THREE LAYERS AWAY.** `ff 00 00 0a`
-reads **-16,777,206** rather than 4,278,190,090; the verdict schema says `positive()`; the api
-answered 400; **and the worker retried it every second forever**, re-streaming eight objects
-through ClamAV with the log saying exactly what was wrong. Three fixes and only the first is the
-bug: `>>> 0`, a `MAX_DIMENSION` above which the answer is `null` **refused rather than clamped**,
-and a 4xx that stops the retry. **No unit test would have produced the input** — every fixture is
-a header this repository wrote; these bytes came from `randomFillSync` in a script written to
-time something else.
+reads **-16,777,206**; the schema says `positive()`; **the worker retried it every second for
+ever**. Three fixes and only the first is the bug: `>>> 0`, a `MAX_DIMENSION` above which the
+answer is `null` **refused rather than clamped**, and a 4xx that stops the retry. **No unit test
+would have produced the input** — every fixture is a header this repository wrote.
 
-**A LIVENESS PROBE PASSES AGAINST A SIGNATURE DATABASE THIRTEEN DAYS OLD.** Measured every four
-seconds on a fresh container: `28122/Sun Sep 13` at 12 s through 25 s, `28135/Sat Sep 26` at
-30 s, with `zPING` answering `PONG` throughout. The health check reads the third field of
-`zVERSION` and refuses a database over seven days old. **AND SC-003 CANNOT CATCH IT**: EICAR
-lives in `main.cvd` v63 and is `FOUND` identically at every point in the window. **The test that
-proves the scanner runs is structurally unable to prove it is current.** Fourth time for this
-shape after 4.2's `/ping`, 4.9's unset credential and 4.10's bucket.
+**A LIVENESS PROBE PASSES AGAINST A SIGNATURE DATABASE THIRTEEN DAYS OLD**, so the health check
+reads the third field of `zVERSION` and refuses one over seven days old. **AND SC-003 CANNOT
+CATCH IT**: EICAR is `FOUND` identically at every point in the window. **The test that proves
+the scanner runs is structurally unable to prove it is current.** Fourth time for this shape
+after 4.2's `/ping`, 4.9's unset credential and 4.10's bucket.
 
-**THE SIGNATURE MATCHES THE FILE, NOT A SUBSTRING**, which is why the scan runs first.
-
-    EICAR alone (68 bytes)      Eicar-Test-Signature FOUND
-    EICAR + one newline         Eicar-Signature FOUND      a DIFFERENT entry
-    EICAR + 200 spaces          OK
-    EICAR inside a PNG          OK, either end
-
-`ALLOWED_TYPES` has no text type, so **no object can both satisfy FR-MED-03 and trip the
-scanner** — the test one would naturally write cannot be written, and that is the argument for
-the order rather than a gap in the suite. A reader matching on the signature's NAME rather than
-on `FOUND` would have called the 69-byte case clean.
+**THE SIGNATURE MATCHES THE FILE, NOT A SUBSTRING**, which is why the scan runs first. EICAR
+alone is FOUND; EICAR plus one newline is a DIFFERENT entry; EICAR plus 200 spaces is OK; EICAR
+inside a PNG is OK. `ALLOWED_TYPES` has no text type, so **no object can both satisfy FR-MED-03
+and trip the scanner** — the test one would naturally write cannot be written.
 
 **AND THE STORE'S TWO HEADERS ARE NOT EQUALLY TRUSTWORTHY.** A presigned PUT of twelve MP4 bytes
 sent as `content-type: image/png` answers `HEAD` with **`image/png`** — the client's own claim,
-echoed. `content-length` is the store's count and is evidence; `content-type` is not. Ten types
-from their magic numbers, every arm run red on its own, and the two RIFF formats each turn the
-other's discrimination test red.
+echoed. `content-length` is the store's count and is evidence; `content-type` is not.
 
-**FR-MED-03's "CONTRADICT THEIR DECLARATION" IS EXACT, AND THE QUOTA IS WHAT SETTLED IT.** The
-spec and the tasks both read *"materially larger"* and gave no tolerance; `reserveMediaSlot` sums
-`declared_bytes`, so **any tolerance is a storage discount with no clause behind it**. Exact
-comparison makes the quota correct by construction — `verified_bytes = declared_bytes` for every
-`ready` object, asserted over the tenant's whole set. The tests are **one byte**, both directions.
+**FR-MED-03's "CONTRADICT THEIR DECLARATION" IS EXACT, AND THE QUOTA SETTLED IT.**
+`reserveMediaSlot` sums `declared_bytes`, so **any tolerance is a storage discount with no
+clause behind it**. The tests are one byte, both directions.
 
-**ADR-14's GATE TURNED TEN RED, THE NUMBER R4 PREDICTED, AND NOT THE SAME TEN.** R4's were
-*"there is no such state"*; these are *"the fixtures do not produce it"*. **The fixtures did not
-rot; the platform grew a check** — one suite declared 1024 and uploaded 42 bytes of ASCII,
-another declared 11 and uploaded a PNG signature with no `IHDR`, and both were true statements
-about a platform whose slot route records *"what the caller said, not what arrived"*.
-`attach.itest.ts` uploads NOTHING and is therefore invisible to this chapter.
+**CONSTITUTION VII WAS ENGAGED TWICE AND ONLY ONE HAD BEEN WRITTEN DOWN.** **ADR-32**: *a program
+Relay addresses over a socket is not a program Relay is implemented in.* **ADR-31**: VII's other
+clause, *"new services require justification against the 'deliberately not a separate service'
+table"*, which no artifact had named. **AND CONSTITUTION IV's SECOND WRITER IS THE STATEMENT**:
+`UPDATE … WHERE state = 'pending'` is a compare-and-set, so no lease, no heartbeat, no reaper.
 
-**CONSTITUTION VII WAS ENGAGED TWICE AND ONLY ONE HAD BEEN WRITTEN DOWN.** **ADR-32**: *a
-program Relay addresses over a socket is not a program Relay is implemented in* — five such
-programs in four languages already, and what VII forbids is writing the worker in Go. **ADR-31**:
-VII's other clause, *"new services require justification against the 'deliberately not a separate
-service' table"*, which **no artifact in this feature had named**. All three of SAD §4.2's merge
-criteria fail, and the table answers a candidate the other way for the first time.
-
-**AND CONSTITUTION IV's SECOND WRITER IS THE STATEMENT, NOT THE DISCIPLINE.** `UPDATE … WHERE
-state = 'pending'` is a compare-and-set: two workers racing one object resolve because the second
-updates no rows and is told so. **No lease, no heartbeat, no reaper** — a lease buys efficiency
-rather than safety and costs a column, a clock and a new way for an object to become permanently
-unverifiable.
-
-**THE COMPOSED WORKER COULD NOT REACH THE SCANNER AND NOTHING FAILED.** 4.11's MinIO defect one
-chapter later, in the service whose subject is reading bytes: the default is `localhost:3310`,
-which inside the container is the container. Every object stayed `pending` — **FR-009 working
-exactly as designed** — and a correct refusal is indistinguishable from an object nobody uploaded
-to. **The boot line is the only thing that said so**, which is why it logs the scanner's version
-rather than a boolean.
-
-**AND THE QUICKSTART WAS WRONG THREE TIMES, THE FIRST OF THEM THIS CHAPTER'S OWN SUBJECT.** §2
-asked for a delivery URL for an object it never attached and read `ready -> 404` — FR-MED-08
-working, and a reader would have concluded the gate refuses verified objects. Then §3's signed
-`HEAD` was an ellipsis rather than a command, and §5 read `$ID`, which nothing assigned. **A step
-whose commands cannot run is indistinguishable from a step whose subject is broken.**
-
-**A PROSE TITLE IS A FENCE PROBLEM, TEN AT A TIME.** The first draft captioned its measurement
-blocks with ```` title="measured: …" ````, and the checker collects a fence only when it matches
-`title=` and then looks for that title as a path: **14 → 24**. Untitled, 14 again. One of the ten
-was a real excerpt-as-whole-body claim (051-6).
+**THE COMPOSED WORKER COULD NOT REACH THE SCANNER AND NOTHING FAILED** — the default is
+`localhost:3310`, which inside the container is the container. Every object stayed `pending`,
+**FR-009 working exactly as designed**, and a correct refusal is indistinguishable from an object
+nobody uploaded to. **The boot line is the only thing that said so.**
 
 **AND A CHAPTER THAT PUBLISHES WHAT THE APPENDIX WAS CARRYING MAKES ITS HUNK OBSOLETE** — the
-inverse of the shape 4.8, 4.11 and 4.12 each paid. `post-series.md` carried
-`authenticate.middleware.ts`'s FR-044 change because no chapter had published it; 4.13 publishes
-a superset, so that hunk is **finished rather than broken** and the repair is to delete it. **And
-the hunk had to be generated with `--dump --at <page>`**, because a bare `--dump` writes the END
-state: the first version matched exactly once against that and **zero** times where it applies.
-
-**T083's PER-ARM PROBE, AND THE TWO HALVES DO NOT OVERLAP.** Deleting the 404, the 422, the byte
-deletion or the compare-and-set turns only seam tests red; deleting the scanner-unavailable arm
-or the infected arm turns only worker tests red. **Two conditions that always agree are one
-condition with two names**, and none of these six do.
+repair is to delete it. **And the hunk had to be generated with `--dump --at <page>`**, because
+a bare `--dump` writes the END state.
 
 **AND THE PUSH FOUND SOMETHING THAT IS NOT THIS CHAPTER'S.** `quay.io/minio/minio:latest` stopped
-being publicly pullable between 2026-09-20 and 2026-09-26 — `unauthorized`, reproduced off CI
-three ways — so **both `relay-platform` jobs died at `docker compose up`**, five steps of eleven
-and none of six. **No local run could see it**: the image had been in this machine's cache since
-4.10, which is 056-10's shape at the registry layer. The error set read **1 distinct against the
-baseline's 6, zero new and five gone** — and *the five were gone because the tests that produced
-them never ran*. 059-15 and 059-16.
+being publicly pullable, so both jobs died at `docker compose up`. **No local run could see it**:
+the image had been cached since 4.10. The error set read **1 distinct against a baseline of 6,
+zero new and five gone** — *and the five were gone because the tests that produced them never
+ran.* **CLOSED by reworking 4.10 and ADR-30's reversal condition held**: the store was replaced
+and **nothing outside `compose.yaml` changed**. `chainguard/minio` is the same binary; the one
+cost is a UID — it runs as **65532**, so an existing volume needs `chown -R 65532:65532`, and
+**CI and a fresh clone never meet it**. **The fix went into history, not on top of it**: the
+image block is rewritten in all 25 commits and `part4-ch10` … `part4-ch13` recreated, with
+`backup/pre-minio-image-20260927` pushed first.
 
-**CLOSED 2026-09-27 BY REWORKING 4.10, AND ADR-30's REVERSAL CONDITION HELD.** The argument for
-signing our own URLs was that the store is replaceable; the store was replaced and **nothing
-outside `compose.yaml` changed**. `chainguard/minio` is `RELEASE.2026-09-22`, the same binary:
-same entrypoint, the same `MINIO_ROOT_*` variables, and `mc` in the image so the health check
-runs **verbatim**. **This entry's first draft guessed all three would differ.** **The one cost is
-a UID** — it runs as **65532** where the old image ran as root, so an existing volume stops it
-with `FATAL Unable to initialize backend: file access denied`. One `chown -R 65532:65532`
-migrates it with every object intact; **CI and a fresh clone never meet it**, which is the same
-asymmetry that hid the registry break.
-
-**AND THE FIX WENT INTO HISTORY, NOT ON TOP OF IT.** `README.md:8` promises a chapter's tag
-checks out that chapter's platform, and a forward commit would have left **four tags pointing at
-trees whose stack cannot start** — 047's defect, which cost Part 3 twenty-one deleted tags. The
-image block is rewritten in all **25 commits** from the one that introduced the store;
-`part4-ch10` … `part4-ch13` are recreated on the rewritten commits, local and remote. The
-replaced history is **`backup/pre-minio-image-20260927`**, pushed first and naming the four old
-targets in its own message. **Anyone holding a clone from before 2026-09-27 must reset rather
-than pull.** **And what the rewrite costs is said rather than hidden**: the comment in those four
-trees is dated after the commits carrying it, because the chain compares its END state to `HEAD`
-— so every commit after the last one to touch those lines must hold the same text. **One text
-everywhere is the only shape the chain permits.**
-
-**AND THE LANE REACHED ITS TESTS, WHICH IS WHAT THE REPAIR WAS FOR.** Nine steps of eleven
-against the broken run's five. Per error: **baseline 6 · run A 5, one new and two gone · run B, a
-docs commit on A's code, 3 with ZERO new and three gone.** A's extra is `expected 201 to be 429`
-and **B does not have it on identical code** — a flake by 057's definition. `limits/bucket.ts` is
-a **fixed 60-second window** whose own comment says *"up to twice the limit across a boundary"*,
-and the test pinned no instant. **043's wall-clock minute bucket, still open, in a file 043 did
-not sweep.** **The pin is in, run red with the boundary forced**: `pinWindow` waits only when the
-window is nearly over and only for the sliver left, so the wait is bounded by the headroom (3 s
-against a longest measured test of 143 ms, firing on 5% of runs) rather than by the window —
-which is the difference between it and the fix that suite's own comment records as worse than the
-fault. **The suite had already solved the other half**: `windowsSince` made COUNTING
-boundary-proof and could never make the PLATFORM boundary-proof, because no sum recovers a 429
-that never happened.
-
-**AND MEASURING ITS BLAST RADIUS WAS WRONG TWICE** (059-17). Three runs with no control read as
-*"pre-existing"*; then six control runs grouped before five change runs read as *"the change is
-implicated"* — and **three INTERLEAVED pairs inverted it**, A red 2 of 3 and B red 0 of 3. The
-gateway lane fails one of 229 on about a third of runs and moves which test. **A grouped A/B on a
-flaky lane measures the ordering.**
-
-**AND THE TWO QUERY-PLAN ASSERTIONS ARE FIXED — THEY REQUIRED THE PLANNER TO MAKE A BAD CHOICE.**
-`session.perf.itest.ts` asked whether Postgres CHOOSES an index, which is a property of the
-corpus: on a freshly migrated database it answers `Seq Scan on environments e (cost=0.00..1.59)`
-and **it is right**, because reading one page beats descending a B-tree. The test passed only on
-a lane with 31,215 environments behind it, and was red on every CI run this project has recorded.
-`SET LOCAL enable_seqscan = off` asks the question it meant to. **And `Index Scan` is the wrong
-thing to match**: with scans penalised the planner reaches for an index whether or not it can use
-one, and a predicate it cannot push down returns an index scan carrying a `Filter:` — 4.12's
-*index present and idle*. The shipped shape gives `Index Cond x2, Filter x0` and `WHERE
-e.id::text = $1` gives `Index Cond x1, Filter x2`, and an `Index Scan` assertion passes on
-**both**. **`Index Cond` per table is the question.** `SET LOCAL` in a transaction that rolls
-back, on its own pooled connection, so no neighbour inherits a planner that refuses scans (056-5).
-
-**AND FIVE SUITES FAILED ON THIS SESSION'S OWN DEBRIS, WHICH READS EXACTLY LIKE A REGRESSION.**
-All five at **~20 s** — the ingester poll deadline — with `ANALYTICS msgs=1034, consumers=0`.
-Hours of a composed stack filled the stream and a suite that spawns an ingester must drain it
-before reaching its own row. **The tell is the duration: five unrelated assertions timing out
-identically are waiting for one thing**, and no code change does that.
+**THE TWO QUERY-PLAN ASSERTIONS REQUIRED THE PLANNER TO MAKE A BAD CHOICE.** They asked whether
+Postgres CHOOSES an index, which is a property of the corpus; on a freshly migrated database
+`Seq Scan` is **right**. `SET LOCAL enable_seqscan = off` asks the question they meant. **And
+`Index Scan` is the wrong thing to match** — a predicate the planner cannot push down returns an
+index scan carrying a `Filter:`. **`Index Cond` per table is the question.**
 
 **AND A PER-FILE BRANCH PIN IS A CLAIM ABOUT THE MACHINE.** `media.controller.ts` measures **33
-branch points locally and 13 in CI** — same commit, same Node 22.23.2, 136 files green both
-sides, **84.61 on three consecutive CI runs** against a local 90.90. That is not 045's swing: the
-DENOMINATOR moves, so the two figures are not two samples of one quantity. The pin was mine, set
-from one observation — the exact mistake 045 wrote down. Re-pinned at 83 with both numbers in the
-config; eight sibling pins from the same day are stable, which localises it. 059-20.
+branch points locally and 13 in CI**, same commit, same Node. **The DENOMINATOR moves**, so the
+two figures are not two samples of one quantity. 059-20.
 
-**AND `pnpm test:integration` REPORTED 0 OF 63 SUITES WHILE EVERY ONE OF THEM PASSED.**
-`--log-order` defaults to `auto` and turbo resolves it to **grouped** on GitHub Actions: the
-package name goes in a `##[group]` fold header and every line inside is **unprefixed**. The gate
-keys on `^(\S+):test:integration:` and matched **zero lines of the whole run**, while the same run
-printed `40 passed (40)`, `12 passed (12)` and five more — **63 collected, exactly what the gate
-expects** — and it read `0 ran`. **So the gate has never reported a real number in CI**, on any
-push since it was written, and it failed the step every time with `no summary from`. **045's
-shape inside the instrument built to prevent it**: a zero meaning "never looked" printing the line
-of a zero meaning "clean", in a script whose header says *"it refuses rather than guessing"*.
-Fixed with `--log-order=stream`, pinned rather than detected; verified under `GITHUB_ACTIONS=true
-CI=true`, **0 ran before, 63 ran after**, with the refusal still firing when a lane is genuinely
-absent. **Hidden until now behind the registry outage.** 059-21.
+**AND `pnpm test:integration` REPORTED 0 OF 63 SUITES WHILE EVERY ONE PASSED.** `--log-order`
+resolves to **grouped** on GitHub Actions, so every line inside the fold is **unprefixed** and
+the gate matched zero lines of the whole run. **It has never reported a real number in CI.**
+**045's shape inside the instrument built to prevent it.** Fixed with `--log-order=stream`.
+059-21.
 
-**AND THE LAST COVERAGE PIN WAS RIGHT WHILE ITS ENVIRONMENT WAS WRONG.** `metering/clickhouse.ts`
-sat at 91 and was red on every CI run since 4.8 wrote it — and after 059-20 had just found two
-pins calibrated on one machine, the obvious reading was a third. **It was the workflow.** `ci.yml`
-set `RELAY_CLICKHOUSE_HOST: localhost`, which is *the value the file already defaults to*, so
-`process.env[…] ?? "localhost"` never evaluated its right side and that arm was dead in CI alone:
-**86.95 with uncovered 58, 108, 115 against 91.30 with 108, 115.** **The repair is a deletion,
+**AND THE LAST COVERAGE PIN WAS RIGHT WHILE ITS ENVIRONMENT WAS WRONG.** `ci.yml` set
+`RELAY_CLICKHOUSE_HOST: localhost`, *the value the file already defaults to*, so `?? "localhost"`
+never evaluated its right side and that arm was dead in CI alone. **The repair is a deletion,
 not a lower pin. Both cases present as a red pin; ask what the number is measuring before you
 move it.** 059-22.
 
-**AND 059-12's OWN FIXTURE WAS A SLOW LEAK.** The backdate that makes a fixture the oldest row
-stepped by a SECOND from a floor of `now() - 23h30m`, so after ~1,800 fixtures they pile up ON
-the floor and a new one stops being first: **3,235 rows at the floor, twelve tests red in
-milliseconds** — and **CI never sees it**, because a fresh database has no pile. That is 059-15's
-asymmetry reversed: the image cache hid a failure from developers and showed it to CI; this hides
-one from CI and shows it to the developer. A millisecond step buys three and a half million
-fixtures. 059-23.
+**AND 059-12's OWN FIXTURE WAS A SLOW LEAK** — a backdate stepping by a SECOND piled 3,235 rows
+on one instant, twelve tests red in milliseconds, **and CI never sees it** because a fresh
+database has no pile. 059-15's asymmetry reversed. **And `shape.ts` is at 100, RAISED rather than
+lowered**: `shapeConnection` had no tests in that file at all, because **a valid record cannot
+exercise a refusal**. 059-23, 059-24.
 
-**AND `shape.ts` IS AT 100, RAISED RATHER THAN LOWERED.** 4.7 found it at 95.12 and kept the pin
-at 100 *"because this chapter made it visible rather than measuring it down"*; it has failed every
-CI run since. Four dark arms, and **`shapeConnection` had no tests in this file at all** — every
-call it had ever received came through `ingest.itest.ts` carrying a record the gateway had just
-written, and **a valid record cannot exercise a refusal**. **And the type ternary's comment argues
-for a closed set — rejecting `e.type.split(".")[1]` as *"a shaper that cannot be wrong about a
-record it has never seen"* — with nothing checking the set was closed.** The `limited_operation`
-arm is 4.8's own measurement surfacing: NULL on 11,660 of 11,683 rows, so every fixture inherited
-the 99.8% case. Six tests, control first, **100/100/100/100** and **zero threshold errors in the
-whole run**. 059-24.
-
-**THE TUTORIAL JOB SUCCEEDED (SC-009) AND SO DID THE DOCKER-FREE GATE.** 056 split that job out
-so a store outage could not hide the unit lane; **this is the first run where it mattered.**
-
-**EIGHT ANALYSIS PASSES: 6 findings, 5, 4, 4, 4, 3, 3, 2** — CRITICALs at 1, 3 and 7. Each pass
-asked a different question: what the platform does · what it says about itself · what it wrote
-about this chapter · whether a task's own command works · whether the remediations compose · what
-the validating artifacts still claim · what this chapter breaks behind it · what has moved
-underneath. **And the three that mattered most were found by RUNNING**: the signed-shift 400, the
-one-page sweep, and the composed worker's unreachable scanner — none of them visible to any
-number of passes over the text.
+**EIGHT ANALYSIS PASSES: 6 findings, 5, 4, 4, 4, 3, 3, 2** — CRITICALs at 1, 3 and 7. **The three
+that mattered most were found by RUNNING**: the signed-shift 400, the one-page sweep, and the
+composed worker's unreachable scanner.
 
 **058 IS CLOSED at 87 of 87 — CHAPTER 4.12, "a link that expires, and who may hold it".**
 Movement V continues. Its record is `specs/058-chapter-4-12/` — `baseline.txt` first, then

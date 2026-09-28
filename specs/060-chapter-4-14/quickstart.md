@@ -4,14 +4,29 @@ Prove the chapter against a running stack: a placeholder that resolves while a c
 the same object resolving on two channels at once, a verdict that announces nothing because
 nobody attached the object, and a client that never receives a frame and is still right.
 
-**WHAT HAS AND HAS NOT BEEN RUN.** §0's prerequisites were executed on 2026-09-28 against the
-composed stack and the figures in §5 are from that run. **Everything from §1 onward describes a
-feature that does not exist yet** and cannot have been run at plan time. The task that builds
-each step runs it and corrects this file in place — which is the only reason the last three
-chapters' quickstarts were wrong three, three and five times **and were fixed before
-publication** rather than shipped broken.
+**EVERY COMMAND HERE WAS RUN AGAINST THE COMPOSED STACK BEFORE THIS LINE WAS WRITTEN**, in the
+order they appear — which is NFR-USE-03's whole verification, since `ci.yml` contains the word
+`quickstart` zero times. **It was wrong six times**, and every one was a fixture fault that
+would have read as a platform defect:
 
-The corrections those three chapters earned are already applied below rather than rediscovered:
+1. **The api is on port 4000, not 3000.** Every step said 3000 and answered
+   `Failed to connect`. The plan-time draft inherited the number from nowhere.
+2. **A channel takes `{external_id, type}`**, not `{name, visibility}` —
+   `Invalid input: expected string, received undefined`, which names no field.
+3. **A slot takes `{filename, mime_type, bytes}`**, not `{kind, …}`. The wrong shape
+   answers **`internal_error`, a 500** — a caller-triggered one, which is `gaps.md`
+   058-3's class arriving on a route that does validate its path parameter.
+4. **`idem_key` is the socket frame's field, not the REST body's** —
+   `Unrecognized key: "idem_key"`.
+5. **The sender must exist in the demo tenant.** `demo-bot` does not;
+   `outside-bot` does. `the sender named in \`user\` is not a user of this
+   environment`.
+6. **The worker credential is `rk_svc_local_development_worker_000000`**, which
+   `compose.yaml` defaults it to. Without it every verdict is a 401 and the producer
+   under test is never reached — 4.9's finding, and the second time this feature met it.
+
+The corrections the last three chapters earned are already applied below rather than
+rediscovered:
 
 - the credential comes from the seeder and **it is an application credential**, so every send
   names a bot;
@@ -47,31 +62,34 @@ Take a slot, PUT the bytes, and attach the object while it is still `pending` �
 permits and which is the whole point of the chapter.
 
 ```bash
-export CHANNEL=$(curl -sX POST localhost:3000/v1/channels \
+export CHANNEL=$(curl -sX POST localhost:4000/v1/channels \
   -H "authorization: Bearer $CREDENTIAL" -H 'content-type: application/json' \
-  -d '{"name":"placeholders","visibility":"public"}' | python3 -c 'import sys,json;print(json.load(sys.stdin)["id"])')
+  -d '{"external_id":"placeholders-qs","type":"public","name":"placeholders"}' \
+  | python3 -c 'import sys,json;print(json.load(sys.stdin)["id"])')
 echo "channel=$CHANNEL"
 ```
 
 Then a slot, the PUT, and a send naming a bot (an application credential has no user):
 
 ```bash
-SLOT=$(curl -sX POST localhost:3000/v1/media \
+SLOT=$(curl -sX POST localhost:4000/v1/media \
   -H "authorization: Bearer $CREDENTIAL" -H 'content-type: application/json' \
-  -d '{"kind":"image","mime_type":"image/png","bytes":70}')
-export MEDIA=$(printf '%s' "$SLOT" | python3 -c 'import sys,json;print(json.load(sys.stdin)["id"])')
+  -d '{"filename":"p.png","mime_type":"image/png","bytes":70}')
+export MEDIA=$(printf '%s' "$SLOT" | python3 -c 'import sys,json;print(json.load(sys.stdin)["media_id"])')
 export PUT_URL=$(printf '%s' "$SLOT" | python3 -c 'import sys,json;print(json.load(sys.stdin)["upload_url"])')
 printf '\x89PNG\r\n\x1a\n' > /tmp/relay-4-14.png
 curl -sS -X PUT --data-binary @/tmp/relay-4-14.png "$PUT_URL" -o /dev/null -w '%{http_code}\n'
 
-curl -sX POST "localhost:3000/v1/channels/$CHANNEL/messages" \
+curl -sX POST "localhost:4000/v1/channels/$CHANNEL/messages" \
   -H "authorization: Bearer $CREDENTIAL" -H 'content-type: application/json' \
-  -d "{\"idem_key\":\"$(cat /proc/sys/kernel/random/uuid)\",\"sender\":{\"kind\":\"bot\",\"name\":\"quickstart\"},\"text\":\"a photo\",\"attachments\":[{\"type\":\"media\",\"media_id\":\"$MEDIA\"}]}"
+  -d "{\"user\":\"outside-bot\",\"text\":\"a photo\",\"attachments\":[{\"type\":\"media\",\"media_id\":\"$MEDIA\"}]}"
 ```
 
-**The field names above are the ones to check first when this step fails.** They are read from
-4.13's quickstart and the slot route's own schema; if the slot response spells them differently
-the fix is here, not in the platform.
+**Measured.** The send response and history both answer:
+
+```text
+[{"type": "media", "media_id": "bb3c9338-…", "state": "pending"}]
+```
 
 **Expected**: the send returns 201 and the message's attachment reads `"state": "pending"`.
 **A `state` that is absent is this chapter's first failure** and means the delivery schema was
@@ -81,8 +99,23 @@ changed and a door was not.
 
 Open a socket subscribed to `$CHANNEL` before the worker picks the object up.
 
-**Expected**: one `media.updated` frame carrying `$MEDIA` and `ready`, with **no request issued
-by the client between the send and the frame** — which is SC-001 and the chapter's title.
+```bash
+export WORKER=rk_svc_local_development_worker_000000
+docker compose exec -T redis redis-cli psubscribe 'revision:*' &
+curl -sS -X POST "localhost:4000/internal/media/$MEDIA/verdict" \
+  -H "authorization: Bearer $WORKER" -H 'content-type: application/json' \
+  -d '{"verdict":"ready","verified_bytes":8,"verified_type":"image/png"}'
+```
+
+**Measured.** The verdict answers `{"applied":true,"state":"ready"}` and the subscription sees:
+
+```text
+revision:0fd39943-…
+{"kind":"media","media_id":"bb3c9338-…","channel":"0fd39943-…","state":"ready"}
+```
+
+and history, read again, now answers `"state": "ready"` for the same message — **with no request
+issued by the client between the send and the frame**, which is SC-001 and the chapter's title.
 
 **If the frame never arrives**, ask in this order, because three of these look identical from
 the client: is the worker running; can it reach the scanner (`zVERSION`, third field); did the
@@ -101,7 +134,7 @@ channels** — and a fan-out written for N = 1 is correct on 97% of it.
 
 ```bash
 # (a) a slot taken and never attached, then verified
-SLOT_B=$(curl -sX POST localhost:3000/v1/media \
+SLOT_B=$(curl -sX POST localhost:4000/v1/media \
   -H "authorization: Bearer $CREDENTIAL" -H 'content-type: application/json' \
   -d '{"kind":"image","mime_type":"image/png","bytes":70}')
 export MEDIA_B=$(printf '%s' "$SLOT_B" | python3 -c 'import sys,json;print(json.load(sys.stdin)["id"])')
