@@ -81,3 +81,84 @@ T007  CI ERROR SET — NOT TAKEN, AND THE TASK'S PREMISE IS FALSE FROM HERE
       the same limitation. Recorded rather than worked around: an instrument
       that cannot see its corpus reports nothing, and calling that "no errors"
       is the mistake 055-4 and 049-3 both name.
+
+================================================================================
+PHASE 2 — FOUNDATIONAL (2026-09-28)
+================================================================================
+
+T008  WHAT EMBEDS WHICH ATTACHMENT SCHEMA — four strict, four forwarding
+      attachmentSchema (strict)
+        frames.ts:46          messageSchema            <- OUTBOUND, the one that changes
+        frames.ts:94          messageSendSchema        request
+        internal.ts:35        internal send request    request
+        messages.schema.ts:40 REST send body           request
+      forwardedAttachmentSchema (permissive)
+        frames.ts:145 · internal.ts:79 · outbox/event.ts:391 · outbox/event.ts:436
+
+T009a1  THE SET tsc NAMES, AND IT IS NOT THE SET PASS 2 PREDICTED
+      Pass 2 replaced a hand list of three doors with a hand list of six. The
+      compiler names TWO in the api and ZERO in the gateway:
+
+        services/api/src/internal/backfill.controller.ts:123   resume
+        services/api/src/messages/messages.controller.ts:255   the fanout publish
+
+      The other three pass 2 named do not error, and the reason is the finding:
+      :255 builds a `Message` for `fanout.publish`, so it is type-checked; :270
+      builds the HTTP RESPONSE BODY, whose type is the controller's own and is
+      inferred. **:270 is a door and the compiler is silent about it.**
+      And the gateway is clean at 0 errors — `session.ts:1628` forwards
+      `committed.attachments` rather than constructing a Message, so pass 2 was
+      wrong about that site too.
+
+      THE RULE THIS SETTLES: `tsc --noEmit` derives CONSTRUCTION SITES OF
+      `Message`, not doors. It is necessary and not sufficient for T019, and a
+      third hand list — this time mine, in pass 2 — was wrong in both directions
+      again. The derivation has to ask which handlers RETURN a message-shaped
+      body, whatever type annotates it.
+
+      Also found while reading: `publishContext(req)` at messages.controller.ts:67
+      already returns `{requestId, environmentId}` with the `?? "unknown"`
+      fallbacks F4 asked for. The verdict seam reuses the shape; its environment
+      comes from the row rather than the principal.
+
+T009/T012/T015  THE SHAPES, AND WHAT THE SUITES SAID
+      protocol suite  152 -> 171 tests, 9 files, all green
+        +9  attachments.test.ts   delivered/request/forwarding, all three roles
+        +6  revision.test.ts      the third arm and channelOfRevision
+        +4  frames.test.ts        media.updated, and what it refuses
+      api publisher   13 tests green, +2 for the media arm
+
+T009a2  THE PREDICTION WAS WRONG AND THE GATEWAY WAS ALREADY CLEAN
+      The task said to expect `tsc` to name `session.ts:1628` and not to read it as a
+      surprise. It names nothing there: the gateway typechecks at 0 errors against the
+      new `messageSchema`, because `session.ts:1628` forwards `committed.attachments`
+      rather than constructing a Message. Pass 2 put that site on a hand list of six;
+      the compiler disagrees, as it disagreed about three others.
+
+T012a  THE SWEEP, AND IT COLLAPSED INTO ONE FUNCTION
+      Eight production sites reached through `revision.message.*`. Rather than eight
+      per-arm switches, `channelOfRevision` and `logFieldsOfRevision` went into
+      `revision.ts` — the module that already exports `REVISION_SUBJECT_PREFIX` for the
+      stated reason that *a literal elsewhere would be a second place that knows this
+      grammar*. Eight call sites became eight one-line calls, and the `switch` inside is
+      exhaustive so a fourth arm is a type error in one place.
+
+      The five TEST sites the pass-5 sweep predicted were named by the compiler almost
+      exactly: `fanout.itest.ts` 263, 279 and **313** (not 241, which already carried a
+      `kind` guard) and `session.test.ts` 163-164.
+
+T015  AN EXISTING ACCOUNTING TEST FIRED, WHICH IS WHAT IT IS FOR
+      `frames.test.ts > the frame union's membership > has eleven members` went red at
+      `expected [...] to have a length of 11 but got 12` the moment `media.updated`
+      joined the union. Nobody wrote that test for this chapter; it exists so a frame
+      cannot be added without somebody announcing it. Updated to twelve, with the reason
+      in the test rather than in a commit message.
+
+T018  END OF PHASE 2 — GREEN EXCEPT THE TWO SITES US1 IS FOR
+      lint        pass
+      tsc         gateway 0 · dispatcher 0 · ingester 0 · media-worker 0 · **api 2**
+      pnpm build  FAILS, and the failure is the api's two errors
+      The two are `backfill.controller.ts:123` and `messages.controller.ts:255` — the
+      construction sites that cannot compile until the read path supplies a state.
+      **The api does not build at this commit**, which is what red-first costs when the
+      shape lands before the reader that fills it.
