@@ -1,0 +1,15 @@
+# Doors that serve a message with attachments — DERIVED, not listed (FR-003, SC-002).
+#
+# Method: every site that builds a message-shaped body, found by pointing
+# MessageRow.attachments at DeliveredAttachment[] and reading what `tsc --noEmit` named,
+# then adding the sites it is structurally blind to — a handler whose return type is
+# inferred rather than annotated `Message`.
+#
+# door                                            derived by        covered by
+messages.controller.ts:270  send response         inferred return   attachment-state.itest.ts "carries the state on the send response"
+messages.controller.ts:255  fanout publish        tsc               attach.itest.ts + session.itest.ts (socket frame)
+messages.controller.ts:381  edit response         inferred return   attach.itest.ts "leaves the attachment unchanged when the message is edited"
+messages.controller.ts:361  edit fanout publish   inferred return   attachment-state.itest.ts "carries the state on the edit response"
+history (listMessages)                            read path         attachment-state.itest.ts "serves pending" / attach.itest.ts HISTORY
+backfill.controller.ts:123  resume                tsc               attachment-state.itest.ts "through a resume"
+idempotency-conflict read   repeat send           read path         covered by the send-response test on retry

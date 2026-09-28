@@ -209,3 +209,60 @@ T015  AND A SECOND ACCOUNTING TEST FIRED, IN ANOTHER SERVICE
       lint pass · tsc 0 across every service · pnpm build pass
       unit lane 888 of 888, 13 of 13 tasks, cache forced off  (from 867)
         protocol 171 (+19) · api 417 (+2) · the rest unchanged
+
+T022  THE DOOR LIST IS `doors.txt`, AND IT HAS TWO PROVENANCES
+      Four doors were named by `tsc` after the type change; three more are
+      handlers whose return type is inferred, which the compiler cannot see.
+      Both kinds are in the file with which instrument found them.
+
+T023-T028  THE US1 SUITE, AND FOUR FIXTURE FAULTS BEFORE A REAL ONE
+      `attachment-state.itest.ts`, 6 of 6 green. Each failure on the way was the
+      fixture, not the platform, and each was a thing only the running system
+      would say:
+        1. `sender: {kind, name}` — the REST door has no such field. It takes
+           `user: "<external id>"`, and the schema answered
+           `Unrecognized key: "sender"` with a 400 the helper swallowed until it
+           was made to assert. **A helper that does not assert its own status
+           turns every later assertion into a mystery.**
+        2. `editMessage(messageId, {...})` — it takes `(channelId, messageId,
+           {...})`, and the arity error surfaced as
+           `Cannot destructure property 'text' of 'undefined'`.
+        3. `userId: "state-bot"` — the edit compares against `messages.user_id`,
+           a uuid. The external id answers `NotMessageAuthorError`. The fixture
+           reads the author back from the row now rather than guessing how the
+           platform resolved the name. `attach.itest.ts` hit the same class twice
+           in its own setup and wrote both down.
+
+T027a  AND THREE EXISTING TESTS WENT RED, WHICH THEIR OWN COMMENT PREDICTED
+      `attach.itest.ts` — the send response, history, and the edit response —
+      each asserting `toEqual([{ type: "media", media_id: id }])` on the whole
+      array. 4.11 wrote them under a comment reading: *"the slot is `pending` and
+      stays `pending` until movement VI, and a client cannot tell from this
+      payload."* **This is movement VI.** They were true statements about the
+      platform and the platform grew a field — ADR-14's gate one chapter earlier,
+      ten times, in the same shape.
+
+      The three are the send response, history and the edit response — the same
+      three doors the new suite covers from the other side, which is a better
+      cross-check of the door set than either file alone.
+
+      Repaired to `toEqual([{..., state: "pending" }])` rather than loosened to a
+      property check: FR-013's claim is about what is ABSENT, and `toEqual` on the
+      whole array is what makes "nothing else was added" assertable.
+
+      media integration suite: 7 files, 69 tests, green.
+
+      AND THERE WERE FOUR, NOT THREE. The full api integration lane found a
+      fourth whole-array assertion in `messages/messages.itest.ts:241`, carrying
+      the same comment — *"will stay `pending` until movement VI, and a client
+      cannot tell from this payload"*. **Running the media suite alone did not
+      find it, because it lives a directory away.** 4.11 wrote the sentence in
+      two files and this chapter's first sweep looked in one of them.
+
+      api integration lane: **41 files, 774 tests, all green.** One red before
+      the fourth repair, zero after.
+
+      US1 IS COMPLETE. Every door serves the attachment's current state, read
+      when the message is served, and a client that receives no frame at all
+      still reports the right one — which is the half of FR-MED-07 that does not
+      need a producer.
