@@ -162,3 +162,50 @@ T018  END OF PHASE 2 — GREEN EXCEPT THE TWO SITES US1 IS FOR
       construction sites that cannot compile until the read path supplies a state.
       **The api does not build at this commit**, which is what red-first costs when the
       shape lands before the reader that fills it.
+
+================================================================================
+PHASE 3 — USER STORY 1, the state at every door (2026-09-28)
+================================================================================
+
+T019  THE DERIVED SET, AND THE COMPILER DID MOST OF IT
+      The three read paths that cast the column:
+        repository.ts:4817 editMessage · 5610 idempotency conflict · 5918 listMessages
+      The two construction sites `tsc` named:
+        backfill.controller.ts:123 · messages.controller.ts:255
+      And the site it did NOT name, which is a door all the same:
+        messages.controller.ts:270 — the HTTP response body, typed by the
+        controller's own inferred return rather than by `Message`.
+
+T020/T021  ONE CHANGE MADE THE DOORS AGREE, AND IT WAS A TYPE
+      `MessageRow.attachments` became `DeliveredAttachment[]`. The two controller
+      errors vanished at once and three repository builders took their place —
+      `sendMessage`, `editMessage` and the idempotency-conflict read — which is
+      the compiler enumerating the write paths that now have to say a state.
+      **Every door inherited the field from one declaration**, including the one
+      `tsc` could not see, because they all read the same row.
+
+      `withMediaStates` is TWO QUERIES PER PAGE, not one per row. The obvious
+      shape is a correlated subquery over each row's jsonb; 4.12 measured that
+      cost at 1,042 buffers against 84 and the repair was a bound-value operand.
+      The page's distinct media ids are collected first and fetched with one
+      `= any(...)` on the primary key, scoped by environment.
+
+      Decoration happens AFTER each transaction commits. Reading the media state
+      on the transaction's own connection would tie one fact's freshness to
+      another's commit, and the state is nothing to do with the write.
+
+T015  AND A SECOND ACCOUNTING TEST FIRED, IN ANOTHER SERVICE
+      `gateway/src/main.test.ts > advertises exactly the vocabulary
+      @relay/protocol exports` — `expected [...] to have a length of 11 but got
+      12`. That is the SECOND hard-coded frame count; the first is in the
+      protocol package. Its own comment says it is *"the second of the two
+      hard-coded frame counts in the repository, and the only one no task owned
+      until analysis pass 17"*. Both fired on this chapter, and they are not
+      redundant: the protocol one asserts the union's length, this one asserts
+      what the gateway ADVERTISES over HTTP. A frame added to the union and not
+      served would pass the first and fail this one.
+
+      END OF THE US1 CORE
+      lint pass · tsc 0 across every service · pnpm build pass
+      unit lane 888 of 888, 13 of 13 tasks, cache forced off  (from 867)
+        protocol 171 (+19) · api 417 (+2) · the rest unchanged
