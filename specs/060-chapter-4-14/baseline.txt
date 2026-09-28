@@ -266,3 +266,51 @@ T027a  AND THREE EXISTING TESTS WENT RED, WHICH THEIR OWN COMMENT PREDICTED
       when the message is served, and a client that receives no frame at all
       still reports the right one — which is the half of FR-MED-07 that does not
       need a producer.
+
+================================================================================
+PHASE 4 — USER STORY 2, the producer (2026-09-28)
+================================================================================
+
+T030/T030a  THE TENANT TRAVELS OUT OF THE RETURNING LIST
+      `recordMediaVerdict` returns `environmentId` now. The fan-out's query body
+      moved to a module-level `channelsReferencingMediaIn(db, environmentId,
+      mediaId)`, and `Repository.channelsReferencingMedia` DELEGATES to it — one
+      body, one predicate, two callers. The delivery gate is green at 17 of 17
+      after the move, which is the check that matters: 4.12 built that query and
+      a second copy would have drifted from the one deciding who reads bytes.
+
+T030c  PASS 4's CRITICAL, AND IT WAS EXACTLY AS DESCRIBED
+      `InternalModule` now declares `MESSAGE_PUBLISHER` and
+      `InternalMessagePublisherLifecycle`. Without them the route answers
+      `Nest can't resolve dependencies` on the first request while lint,
+      typecheck and every unit test pass. T030e is the control and it is the
+      first test in the file.
+
+T031a  THE PUBLISH GOES AFTER `deleteObject`, DECIDED RATHER THAN DEFAULTED
+      For a rejection the bytes are destroyed first. Neither order is observable
+      to a client — FR-MED-08's gate reads the state, not the store — so the tie
+      breaks toward saying the true thing later. Cost: one store round trip on
+      the worker's request, rejection path only.
+
+T034-T039a  NINE OF NINE, AND FOUR FIXTURE FAULTS FIRST
+      Every failure was the fixture and every one was a thing only the running
+      system says:
+        1. 401 with the credential unset. **4.9's finding, reproduced**: the
+           route is refused and the producer under test is never reached.
+        2. 401 AGAIN with the credential set — because
+           `authenticate.middleware.ts` routes on the `rk_svc_` prefix before it
+           compares anything. **A credential without the prefix is refused with
+           the same 401 an unset one produces**, and the two are
+           indistinguishable from the caller.
+        3. 400 on four tests: the verdict schema wants `verified_bytes` AND
+           `verified_type`, and a body missing one is refused at the door — which
+           reads like the route refusing the VERDICT rather than the REQUEST.
+        4. The two tests that passed throughout were the two that never called
+           the route, which is what made the first three legible at all.
+
+      Silence is asserted with a POSITIVE CONTROL, never a flat sleep: the
+      no-reference and duplicate-verdict tests publish a second object that MUST
+      arrive on the same subscription, and then assert the frame count is one.
+
+      api integration lane after the producer: **42 files, 783 tests, all green.**
+      The producer broke nothing — the nine new tests are the whole delta.
