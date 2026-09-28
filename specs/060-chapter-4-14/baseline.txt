@@ -1,0 +1,83 @@
+BASELINE — feature 060, chapter 4.14 "Pending, ready, rejected"
+Every phase's measurements in the order they were taken, including the ones that were
+wrong first.
+
+================================================================================
+PHASE 1 — SETUP (2026-09-28)
+================================================================================
+
+T001  THE STACK
+      RELAY_POSTGRES_PORT=15432 docker compose up -d --wait
+      Seven containers healthy including clamav. No corrupt stream on this start,
+      so 058-7's one-unrecoverable-stream-at-a-time repair was not needed.
+      NOTE: the stores had been removed between the plan phase and here; only the
+      four service-profile containers remained, exited. `docker compose ps` with no
+      -a prints nothing in that state, which reads as "no stack" rather than
+      "stores gone, services exited". Use -a.
+
+T002  FENCE CHAIN — run in relay-tutorial, where the gates live
+      EXIT 0
+      check-fence-chain: 291 fenced files replay onto relay-platform across 56
+      chapters (46 translated, fences mirrored, 2 retired, plus post-series
+      amendments)
+
+      A CLEAN RUN PRINTS NO PROBLEM LINE AT ALL. The documented grep
+      'problem(s)\|replay onto' matches one alternative and never the other, so
+      there is no printed zero to record. Clean = EXIT 0 + the counted line.
+      This corrected the task's own expected output (analysis pass 6, H2).
+
+T003  DEPENDENCIES — 12 package.json files
+      31 entries · 20 third-party entries · 13 distinct third-party packages
+      Matches part4-ch13 exactly. This chapter must not move any of the three.
+
+T004  THE LANES
+      pnpm test (unit, composed services stopped)         867 of 867, EXIT 0
+        test-harness 24 · service-kit 3 · protocol 152 · config 7 · ingester 39
+        api 415 · dispatcher 8 · media-worker 81 · gateway 138
+
+      AND THE FIRST READING WAS 553, WHICH IS THE TRAP THIS PROJECT WROTE DOWN.
+      `pnpm test` reported green at "Tasks: 13 successful, 13 total" with
+      "Cached: 8 cached, 13 total" — eight tasks replayed with logs suppressed,
+      so only api and gateway printed a count and the sum read 553. Nothing was
+      red; the number was simply a claim about what re-ran. 045's sentence:
+      A GREEN LANE IS A CLAIM ABOUT WHAT WAS RE-RUN.
+      The honest command is `pnpm exec turbo run test --force`.
+      AND `pnpm test -- --force` IS NOT IT: the flag lands on vitest, which has
+      no such option, and the run answers "0 successful, 6 total" with EXIT 0.
+
+      867 against CLAUDE.md's 855 at part4-ch13 — the lane grew by 12 between
+      that close-out and this open.
+
+      check:errors (relay-tutorial)   34 codes, 34 sections, 6 close codes
+      AND THE TASK NAMED IT BESIDE THREE PLATFORM COMMANDS. Run in
+      relay-platform it answers ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL, "Command
+      check:errors not found" — loudly, not silently, which is worth recording
+      because the standing note says a wrong-repo pnpm reads as green.
+
+T005  THE LANE'S MEDIA COMPOSITION — re-measured rather than quoted
+      media_objects 5,403        pending 4,725 · ready 564 · rejected 114
+      referenced by >=1 message  1,589
+      channels per object        1 -> 1,545 objects · 2 -> 44 objects
+      tombstoned messages        2,867
+        of those WITH attachments      0   <- FR-MED-10's unlink, complete
+      Unchanged from the plan's figures, taken the same day.
+
+T006  PER-CHANNEL SUBSCRIBES — counted from source, not load-tested
+      fanout.ts      1 call, TWO subjects (chan + revision)   2
+      presence.ts    1 call                                    1
+      typing.ts      1 call                                    1
+      membership.ts  1 call                                    1
+                                                             ---
+                                                               5
+      Agrees with docs/11's measured law 5 x channels + 1 x connected users.
+      ADR-25's bound is "exceed six", so the third arm keeps this at 5 and a
+      sixth grammar would have sat exactly on the bound.
+
+T007  CI ERROR SET — NOT TAKEN, AND THE TASK'S PREMISE IS FALSE FROM HERE
+      gh run list -R anhba817/relay-platform  ->  empty, on every branch
+      gh is authenticated as dong_opd; the remote is anhba817/relay-platform.
+      No run history is visible from this machine, so there is no opening error
+      set to diff the close against. T079 and T080 depend on this and inherit
+      the same limitation. Recorded rather than worked around: an instrument
+      that cannot see its corpus reports nothing, and calling that "no errors"
+      is the mistake 055-4 and 049-3 both name.
