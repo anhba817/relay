@@ -641,3 +641,119 @@ T079  THE FIRST PUSH: THREE JOBS OF FOUR, AND CI FOUND WHAT NO LANE I RAN COULD
       Fixed: narrow before reading a union arm in the two protocol tests; add
       `state: "pending"` to the sealed assertion, with a note that it is stable
       rather than racy because that suite runs no media worker.
+
+      THE SECOND PUSH (run 36405684427, 74efae6) — TWO FIXED, ONE NEW, AND THE
+      NEW ONE WAS THE FIX'S OWN FAULT.
+
+        success   the Docker-free gate       (typecheck, repaired)
+        success   the sealed integration     (the fifth assertion, repaired)
+        success   integration lanes and coverage
+        FAILURE   relay-tutorial — build, docs drift, fence chain   ← NEW
+
+      **THE FENCE CHAIN IS A CLAIM ABOUT `relay-platform`'s HEAD, AND THE CI FIX
+      MOVED IT.** Repairing `revision.test.ts` and `integrate.itest.ts` changed
+      two files the appendix publishes, so their hunks went stale the moment the
+      fix landed. Nothing in `relay-tutorial` changed and its job still went red.
+
+      **This is the loop this project has paid for before, from the other side.**
+      A chapter's fences are checked against the platform's tip, so ANY platform
+      edit after the hunks are written invalidates them — including an edit made
+      to turn CI green. The order that avoids it is: fix the platform, re-dump,
+      re-hunk, then push both. I pushed the platform first and learned it from
+      the gate, which is the gate working.
+
+      Repaired with two more appendix hunks; **all seven tutorial gates green
+      locally before the third push.**
+
+================================================================================
+050-1 IS EXPLAINED AND CLOSED — OPEN SINCE CHAPTER 4.5, FIVE FEATURES
+================================================================================
+
+CLAUDE.md carries it as: *"Phase 4 measured `pnpm coverage` printing `No test
+files found, exiting with code 1` … One instrument here produced a false
+'nothing to see' and nobody can yet say why."*
+
+**IT REPRODUCED HERE, TWICE CONSECUTIVELY, MINUTES AFTER A RUN THAT FOUND 138
+FILES AND 2,009 TESTS** — same config, same machine, same command. Two runs in a
+row rules out a flake and says it is state.
+
+**THE CAUSE IS THE DATABASE, AND THE MESSAGE IS ABOUT TEST DISCOVERY.**
+`vitest run` prints `No test files found, exiting with code 1`. `vitest list`
+against the same config prints the truth:
+
+    Collect Error
+    Error: connect ECONNREFUSED 127.0.0.1:15432
+
+The coverage config's `globalSetup` opens Postgres. When it cannot, the failure
+is swallowed and reported as **a claim about the corpus** — *there are no tests*
+— rather than as a claim about the setup. With Postgres back, the same command
+lists **2,010 tests**.
+
+**THIS IS THIS PROJECT'S SIGNATURE FAILURE SHAPE, IN THE COVERAGE LANE.** A zero
+meaning *the setup died* printing the line of a zero meaning *there is nothing
+to run* — 045-81's checker, 049-3's `check-lane-scope`, 059-21's
+`integration-gate.mjs`, and now this. Each one was found by asking a different
+instrument the same question, and here the instrument is `vitest list`, which
+prints the collect error that `vitest run` replaces.
+
+**WHAT MADE IT LOOK INEXPLICABLE FOR FIVE FEATURES** is that the two states are
+indistinguishable from the command you would naturally run: 050's phase 4 tried
+it *"in a `part4-ch4` worktree"*, which is exactly where a stack is not up. The
+rule the entry should have produced: **when a lane reports an empty corpus, ask
+a lister rather than a runner.**
+
+MY OWN CAUSE: `docker compose --profile services stop` with no service list
+stops **everything**, stores included — not just the profile's containers. I
+used it to honour 057-5 and took the database down with it.
+
+AND WITH THE STORES BACK, coverage is **REAL EXIT 0 · 138 files · 2,010 tests
+· zero threshold errors** — one more than before, which is the cross-instance
+test this phase added.
+
+AND CLEARING NATS AFTERWARDS COST TWO RESTARTS, WHICH IS 058-7 EXACTLY:
+`ANALYTICS could not be recovered`, cleared, restart → `EVENTS could not be
+recovered`. **N corrupt streams cost N restarts and each one looks like the
+last.**
+
+================================================================================
+T079 / T080 — THE THIRD PUSH, AND THE COMPARISON THE WHOLE INSTRUMENT IS FOR
+================================================================================
+
+      run 36406272401, commit 8780ecd
+
+        success   relay-platform — the Docker-free gate
+        success   relay-tutorial — build, docs drift, fence chain
+        success   relay-platform — the sealed integration
+        success   relay-platform — integration lanes and coverage
+        conclusion: **success**
+
+      PER ERROR, uuids normalised:
+
+        baseline (56095ded)   0 distinct
+        run 1    (d269846b)   7 distinct — two real defects, both mine
+        run 2    (74efae6 )   the two fixed; ONE NEW, caused by the fix
+        run 3    (8780ecd )   **0 distinct**
+
+        diff(baseline, run 3): **EMPTY IN BOTH DIRECTIONS**
+
+      **THIS IS THE STRONGEST THING THE INSTRUMENT CAN SAY**, and 056 is where
+      the project learned to want it: a colour would have said "green" about run
+      3 and "red" about runs 1 and 2 without ever saying whether the set MOVED.
+      Here the set left zero, went to seven, and came back to zero — and every
+      one of the seven traces to two defects that no local command could see.
+
+T080  WAS ANY OF IT SOMEBODY ELSE'S? NO — ALL THREE FAILURES WERE THIS
+      CHAPTER'S, ESTABLISHED BEFORE ANY REPAIR:
+        the typecheck    two lines this chapter wrote in revision.test.ts
+        the sealed suite an assertion this chapter's field invalidated
+        the fence chain  hunks this chapter's own CI fix made stale
+      Nothing was inherited and nothing was a flake. The one thing that WAS
+      environmental — the stale docker network blocking the gateway — was local
+      and never reached CI.
+
+T078  AND THE TAG HAD TO MOVE, WHICH IS 047's DEFECT AVOIDED RATHER THAN PAID.
+      It was cut at `73c5db95`, **which fails `pnpm typecheck`**. `README.md:8`
+      promises a chapter's tag checks out that chapter's platform, and 047 is
+      what leaving it costs — twenty-one deleted Part 3 tags. Moved to
+      `8e35a349`, the commit CI verified green on all four jobs, with the reason
+      in the tag's own message.

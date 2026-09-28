@@ -195,8 +195,8 @@ frame arrives with no client request in between.
 - [X] T076 Update `CLAUDE.md` — replace the in-flight line inside the SPECKIT markers with the close-out record. **Compress 059's entry at the same time**, per the convention at the top of that file: the budget is 150,000 characters and it stood at 134,772 when this feature opened.
 - [X] T077 Commit each phase. `git checkout` on a file with uncommitted work has destroyed work twice. Messages under five lines, no `Co-Authored-By` trailer.
 - [X] T078 Tag **`part4-ch14`** on `relay-platform`, annotated. Verify the tag checks out a tree whose stack starts — `README.md:8` promises exactly that, and a forward-only fix is what cost Part 3 twenty-one deleted tags.
-- [ ] T079 Push, and **compare the CI error set per error against T007's opening**, uuids normalised. Three runs if the set moves: 057 found one comparison says *"this run introduced nothing new"* and three say whether the set is stable. A colour cannot say either.
-- [ ] T080 If CI is red, establish whether it is this chapter's before repairing anything. 4.13's registry outage read as **1 distinct against a baseline of 6, zero new and five gone** — and the five were gone because the tests that produced them never ran.
+- [X] T079 Push, and **compare the CI error set per error against T007's opening**, uuids normalised. Three runs if the set moves: 057 found one comparison says *"this run introduced nothing new"* and three say whether the set is stable. A colour cannot say either.
+- [X] T080 If CI is red, establish whether it is this chapter's before repairing anything. 4.13's registry outage read as **1 distinct against a baseline of 6, zero new and five gone** — and the five were gone because the tests that produced them never ran.
 
 ---
 

@@ -91,9 +91,23 @@ which can then build producer and consumer together — the lesson 4.6 paid for.
 
 **050-8 · Two test files spawning an ingester is not a deployment.** Unchanged.
 
-**060-11 · CI is not visible from this machine, so three tasks could not run.**
-`gh run list -R anhba817/relay-platform` returns empty on every branch; `gh` is authenticated as
-a different account. T007's opening error set was never taken, so T079's per-error comparison and
-T080's is-it-ours triage have nothing to compare against. **OPEN**, and recorded rather than
-worked around: an instrument that cannot see its corpus reports nothing, and reading that as "no
-errors" is the mistake 055-4 and 049-3 both name.
+**060-11 · CLOSED, and the premise was half wrong.** It read *"CI is not visible from this
+machine"*. The account was the problem, not the visibility — and **CI is not in
+`relay-platform` at all**: `ci.yml` is the superproject's and the other two are git submodules
+checked out `recursive`, so the push order is forced and no close-out had said so. Baseline
+taken (0 distinct, four jobs green), three pushes, **final error set 0 and identical to the
+baseline in both directions.**
+
+**060-12 · 050-1 IS EXPLAINED AND CLOSED, OPEN SINCE CHAPTER 4.5.** *"`pnpm coverage` printing
+`No test files found` … nobody can yet say why."* It reproduced twice consecutively here, and
+`vitest list` against the same config prints what `vitest run` replaces: **`Collect Error —
+connect ECONNREFUSED 127.0.0.1:15432`**. The config's `globalSetup` opens Postgres; when it
+cannot, the failure is reported as a claim about the CORPUS rather than about the setup. **A
+zero meaning "the setup died" printing the line of a zero meaning "there is nothing to run"** —
+045-81, 049-3 and 059-21's shape, in the coverage lane. The rule: **when a lane reports an empty
+corpus, ask a lister rather than a runner.**
+
+**060-13 · `docker compose --profile services stop` stops the stores too.** With no service
+list it stops everything, not just the profile's containers — which is how 060-12 was triggered
+while honouring 057-5. **OPEN** as a documentation gap: every close-out says "stop the composed
+services before a lane" and none says the naive command takes the database with them.

@@ -136,11 +136,42 @@ threshold; re-run without the pipe, **REAL EXIT=1**.
 a user of the demo tenant; and the worker credential, without which every verdict is a 401 and
 the producer under test is never reached — **4.9's finding, twice in one feature.**
 
-**AND CI COULD NOT BE READ FROM THIS MACHINE** (`gaps.md` 060-11). `gh run list` returns empty on
-every branch under a different account, so T007's opening error set was never taken and the
-per-error comparison has nothing to compare against. Recorded rather than worked around: an
-instrument that cannot see its corpus reports nothing, and reading that as "no errors" is 055-4
-and 049-3's mistake.
+**AND CI IS THE SUPERPROJECT'S, WHICH NO CLOSE-OUT HAD SAID.** There is no `.github/` in
+`relay-platform` at all: `ci.yml` lives in the outer repository and the other two are **git
+submodules** checked out with `submodules: recursive`. **So the push order is forced** —
+submodules first, then the superproject, or CI checks out gitlinks pointing at commits no remote
+has. Every prior record says "pushed in all three repositories" without saying why the order
+matters.
+
+**BASELINE 0 DISTINCT, FOUR JOBS GREEN** (run at `56095ded`, this session's starting commit).
+**AND THE FIRST PUSH FOUND TWO REAL DEFECTS, BOTH INVISIBLE TO EVERY COMMAND I HAD RUN.**
+`pnpm typecheck` failed on two lines in `packages/protocol/src/revision.test.ts` — the same
+union class the compiler caught five times elsewhere — **because `tsconfig.build.json` excludes
+tests**, so `pnpm build` typechecks the shipped code and not its tests, and I had typechecked
+five services individually and never the protocol package. **Fifteen turbo tasks; my per-service
+`tsc` covered five.** And the sealed suite held **a fifth** whole-array assertion, in the one
+suite no local lane reaches: `pnpm test`, `pnpm test:integration` and `pnpm coverage` all skip
+`packages/outsider`, which needs a composed stack and three variables. **CI found it, one
+chapter after 057 made that job run at all.**
+
+**AND THE FIX FOR CI BROKE THE FENCE CHAIN, WHICH IS THE LOOP WORTH NAMING.** Repairing those
+two platform files invalidated the appendix hunks that publish them, so `relay-tutorial`'s job
+went red on the second push having been green on the first — with nothing in that repository
+changed. **The fence chain is a claim about `relay-platform`'s HEAD**, so any platform edit after
+the hunks are written invalidates them, including one made to turn CI green. Order: fix the
+platform, re-dump, re-hunk, push both.
+
+**AND 050-1 IS EXPLAINED AND CLOSED, OPEN SINCE CHAPTER 4.5.** *"`pnpm coverage` printing `No
+test files found, exiting with code 1` … nobody can yet say why."* It reproduced twice
+consecutively, minutes after a run that found 138 files — and `vitest list` against the same
+config prints what `vitest run` replaces: **`Collect Error — connect ECONNREFUSED
+127.0.0.1:15432`**. The coverage config's `globalSetup` opens Postgres, and when it cannot the
+failure is reported as a claim about the CORPUS — *there are no tests* — rather than about the
+setup. **A zero meaning "the setup died" printing the line of a zero meaning "there is nothing to
+run"**, which is 045-81's checker, 049-3's lane-scope and 059-21's integration gate, now in the
+coverage lane. The rule: **when a lane reports an empty corpus, ask a lister rather than a
+runner.** My own cause was `docker compose --profile services stop` with no service list, which
+stops the stores too.
 
 **059 IS CLOSED at 124 of 124 — CHAPTER 4.13, "the only service that reads the bytes".**
 **Movement VI opened here.** Its record is `specs/059-chapter-4-13/` — `baseline.txt` first,
