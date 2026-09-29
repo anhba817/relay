@@ -97,3 +97,92 @@ T008  THE INGESTER IS NOT A COMPOSE SERVICE (4.9 — no Dockerfile), and
       `media.itest.ts:117` spawns it as a child. **Every analytical figure in this
       chapter depends on a process two test files start** (050-8, still open, and this
       chapter leans on it harder than any before).
+
+================================================================================
+PHASE 2 — the consumer learns the record before anything sends one   2026-09-29
+================================================================================
+
+T010  **THE TASK CONTRADICTED ITSELF AND EXECUTING IT IS WHAT SHOWED THAT.** It said to
+      assert the record comes back `unclaimed` AND to "run it red before T012". A test
+      asserting current behaviour passes now; it cannot be red. Split into the two things
+      it was conflating:
+
+        the DEMONSTRATION   route({type:"media.stored", …}) -> {"kind":"unclaimed"}
+                            ingest.ts:100 neither acks nor terminates it, so it is
+                            redelivered for the stream's seven days and the `unclaimed`
+                            counter is the only signal
+        the PERMANENT TEST  asserts the record IS claimed — red before T012, green after
+
+T011  THE RECORD SCHEMA, IN `internal.ts` BESIDE THE SUBJECT HELPERS — **not
+      `packages/protocol/src/analytics.ts`, which does not exist.** The tasks named a file
+      the package has never had, which is the same mistake 061's T013 made about
+      `media.ts`; the subject builders (`apiRequestSubject`, `webhookAttemptSubject`) all
+      live in `internal.ts` and the new one joins them.
+
+      **AND THE DISCRIMINATOR IS SHARED, WHICH THE THREE BEFORE IT ARE NOT.**
+      `"api.request"` is written as a literal in `request-log/event.ts` twice and again as
+      `API_REQUEST_TYPE` in `shape.ts` — three copies of one string across two services
+      that cannot import each other. Nothing has drifted; the only thing preventing it is
+      that nobody has retyped it. `MEDIA_STORED_TYPE` is exported from the protocol package
+      and imported by both. Not a refactor of the existing three — a choice not to add a
+      fourth copy.
+
+T012  THE FOURTH ARM in `route()`, with `shapeMediaStored` renaming `occurred_at` to `ts`
+      and refusing an `event` or `kind` outside its closed set.
+
+T012a **FIVE EDITS IN `ingest.ts` AND ONE IN THE STORE CLIENT, as the task enumerated**:
+      the accumulator, the branch, the insert, the `written` total, the per-type counter,
+      and `insertMediaEvents` beside three methods whose names are `insert`,
+      `insertRequests`, `insertConnections`.
+
+T012b **THE CATCH-ALL `else` WAS A REAL DEFECT AND THE COMPILER PROVED IT.** The moment
+      the fourth arm existed, `tsc` said:
+
+        ingest.ts(111,27): Argument of type 'ConnectionRow | MediaStoredRow' is not
+        assignable to parameter of type 'ConnectionRow'.
+
+      `else connections.push(routed.row)` was about to put media rows into
+      `connection_events`. **It caught this one because the row shapes differ** — two
+      record types that happened to be structurally compatible would have passed
+      silently. Replaced with an exhaustive `switch` and a `never`, which is what 4.14 did
+      to `session.ts` for the same reason.
+
+T013/T014/T015/T016  THREE MIGRATIONS APPLIED, REAL EXIT 0 — `applied 3, skipped 16`.
+      The applier keys on `(filename, checksum)` and refuses a changed file, unlike the
+      Postgres runner that skips one in silence; and it strips comments before splitting
+      on `;`, which is why three semicolons in prose are still one statement.
+
+T017  **THE DESIGN WORKS END TO END, AND THE ARITHMETIC IS THE PROOF.** Two separate
+      inserts of five events for one tenant-day, then `OPTIMIZE FINAL`:
+
+        rows for the tenant-day    1            two inserts merged
+        stored_bytes_delta         1,092,356    447,377 + 85,252 + 1,000,000
+                                                − 447,377 + 7,104
+        uploads_by_kind            {'image':2,'video':1}
+        stored_delta               0            the neighbouring column untouched
+
+      **FR-010 IS VISIBLE IN THOSE TWO LINES**: the rendition's 7,104 bytes are in the
+      level and the rendition is not in the count. A rejection's bytes come back out and
+      its upload is not un-counted, because it was counted as reserved and only `reserved`
+      counts.
+
+      The probe rows were removed with `ALTER TABLE … DELETE`, **polled to completion**
+      before asserting zero — a mutation returns before it acts (4.6).
+
+T018  THE LANES, AND THE SET COMPARISON EARNED ITS KEEP AGAIN
+
+        unit, forced   914, REAL EXIT 0        lint  REAL EXIT 0
+        integration    one NEW failure, mine; phase 1's three all absent
+
+      **THE NEW ONE WAS A WHOLE-OBJECT `toEqual` ON `IngestResult`** — and its own comment
+      says 4.5 hit it when adding the third counter: *"that is the check working: a result
+      this service reports is a contract, and a field appearing in it is a decision
+      somebody writes down rather than one a `toMatchObject` absorbs."* Twice now.
+
+      **AND THE SAME FILE HOLDS THE WEAKER STYLE.** The field-by-field block T012c
+      extended — every counter named, the rest asserted zero — did **not** fire, and never
+      would have. Two accounting styles in one file and only one notices a new field; the
+      comment now says so beside both.
+
+      After the fix: the set is **one carried baseline item**
+      (`media-updated.itest.ts > announces nothing on a duplicate verdict`) and nothing new.
