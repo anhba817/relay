@@ -128,3 +128,110 @@ PRE-PHASE MEASUREMENTS CARRIED FROM research.md (taken 2026-09-28, during planni
   JPEG + maximal APP1 72,215 B  dims UNKNOWN      at PROBE_BYTES = 65,536
   pnpm 10.33 + sharp            installs clean    no onlyBuiltDependencies needed
   lockfile platform variants    26, incl. musl    so --frozen-lockfile works in alpine
+
+================================================================================
+PHASE 2 — the shapes, before anything reads or writes them      2026-09-29
+================================================================================
+
+**FIRST, A CORRECTION TO T004c, AND IT IS THE KIND THIS PROJECT KEEPS PAYING FOR.**
+The baseline called two of the three failures DETERMINISTIC. Run 3 of the integration
+lane came back **14 of 14 tasks, REAL EXIT 0, empty failure set** — with nothing done
+to notifications or typing. So:
+
+  notifications.itest.ts   the 10 s drain hook passed. The pile drained itself: the
+                           baseline run claimed and delivered rows, so the second run
+                           met a shorter queue. Deterministic UNTIL the backlog clears,
+                           which is not what "deterministic" means.
+  typing.itest.ts          passes. I called it "deterministic in isolation" on the
+                           strength of ONE isolated run. It is a flake.
+  media-updated.itest.ts   passes. The neighbour-effect reading survives.
+
+**ONE ISOLATED RUN IS NOT EVIDENCE OF DETERMINISM**, and CLAUDE.md says so in as many
+words: *"A flake does not show up in the distribution — twenty runs is a sample of the
+lane's timing and a very thin sample of its failure modes; three green runs is weaker
+still."* I offered one. The three baseline failures are carried to gaps.md as
+**transient**, not as a standing red.
+
+**AND THE SET COMPARISON EARNED ITS KEEP ON THE FIRST TRY.** Run 2, after the schema
+change, had a set of two: one carried and **one new, which was mine**. A colour could
+not have said that — the lane was red before and red after.
+
+T010  MIGRATION 0020 WRITTEN, 95 lines, in 0019's commented style.
+T014  APPLIED — `migrations: applied 0020_media_renditions.sql`, REAL EXIT 0.
+      Before: `ERROR: column "parent_id" does not exist`, which is the probe's red.
+
+T012  EVERY CONSTRAINT FIRES BY NAME, probed against the live lane:
+
+        parent_id with no rendition   ERROR ... "media_objects_rendition_pairing_check"
+        a rendition that is not ready ERROR ... "media_objects_rendition_state_check"
+        a parent in another env       ERROR ... "media_objects_parent_fk"
+        a second thumbnail per parent ERROR ... "media_objects_parent_rendition_key"
+        A VALID RENDITION             INSERT 0 1        <- the positive control
+        the cascade, by direct DELETE  1 rendition -> 0
+
+      **The cross-environment refusal is the one that could only be checked by running
+      it.** Constitution I is enforced by the database now, not by a predicate somebody
+      maintains. And the positive control matters: a probe that only shows refusals
+      proves the constraints exist, not that the shape they permit is the one we need.
+
+T015  WHAT THE NEW CONSTRAINTS COST, AND ONE OF THEM WAS 21x TOO EXPENSIVE
+
+      First measurement, 6,646 rows, heap 1,540,096 B (1,504 kB):
+
+        media_objects_id_environment_key      352,256 B   344 kB   22.9% of heap
+        media_objects_parent_rendition_key    172,032 B   168 kB   11.2%
+        media_objects_parent_idx (partial)     16,384 B    16 kB    1.1%
+        ---------------------------------------------------------------
+        added                                 540,672 B            35.11% of heap
+
+      **`UNIQUE (parent_id, rendition)` as a table constraint cost 168 kB to police zero
+      rows.** A btree indexes NULLs, so it covered all 6,646 uploads to enforce
+      uniqueness among the rows with a parent, of which there were none. Rewritten as a
+      partial unique index over `parent_id IS NOT NULL`: **8,192 bytes**, a 21x
+      reduction, and re-run to check that making it partial had not made it decorative —
+      the duplicate is still refused by name. Added cost is now 376,832 B, 24.5%.
+
+      **344 kB of that is constitution I's price and is not reducible.** The unique on
+      `(id, environment_id)` adds no uniqueness the primary key lacks; it exists only
+      because Postgres requires the referenced columns of a composite foreign key to
+      carry a unique constraint. Every row can be a parent, so it cannot be partial.
+
+      **THE FILE WAS EDITED AFTER IT HAD BEEN APPLIED**, which is the hazard 0019's own
+      comment names: `schema_migrations` is `(version, applied_at)` with no checksum, so
+      the runner skips an edited applied file in silence. 0020 is unreleased — written
+      and applied minutes earlier in this session — so the lane was brought to match the
+      edited file by hand (`DROP CONSTRAINT` then `CREATE UNIQUE INDEX`). CI and a fresh
+      clone see only the edited file. Recorded because the next person to edit an applied
+      migration will not have that excuse.
+
+T011  SCHEMA.TS MIRRORED. `foreignKey` imported; three columns, two CHECKs, the unique,
+      the composite FK with `onDelete("cascade")`, the partial unique index and the
+      partial lookup index. `declared_bytes`'s comment amended: it said *"what the caller
+      said"* and now holds a number nobody said, for a rendition. `tsc --noEmit` EXIT 0.
+
+T013  CLOSED SETS — in `attachments.ts` beside `MEDIA_STATES`, NOT a new `media.ts`.
+      The pass-2 analysis found that file does not exist; `index.ts` carries
+      `export * from "./attachments.js"`, so putting them there needs no export edit and
+      a new file would have needed one. `RENDITIONS = ["thumbnail"]`, `RENDITION_FAILED`
+      with three members.
+
+T016  LANES AFTER THE SCHEMA CHANGE
+
+        build                  REAL EXIT 0
+        unit, forced           893 tests, 13 of 13, REAL EXIT 0   unchanged
+        integration, run 2     REAL EXIT 1, set of two            ONE NEW, AND MINE
+        integration, run 3     REAL EXIT 0, 14 of 14, empty set   after the fix
+
+      **THE NEW ONE WAS A WHOLE-COLUMN-LIST ASSERTION**, which is the sixth instance of
+      the class 4.14 found five of, in a new form — columns rather than attachments:
+
+        media.itest.ts > the upload slot > stores nothing about the URL it just handed out
+        AssertionError: expected [ 'created_at', ...(17) ] to deeply equal [ ...(14) ]
+
+      **And it is not a defect — it is a tripwire that fired.** Its own comment reads
+      *"This list going stale is the point of writing it out — migration 0018 turned it
+      red the moment it applied."* It has now fired for two consecutive migrations to
+      this table, which is the only evidence that it is a tripwire rather than a list
+      somebody once typed. Extended with the three columns, and the null-at-slot-time
+      loop extended with them too, because the structural half and the value half are
+      both the point.
