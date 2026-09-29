@@ -718,3 +718,37 @@ T082/T083  EVERY GATE GREEN, EACH REAL EXIT CAPTURED WITHOUT A PIPE.
         check:errors    0      34 codes, 34 sections, unchanged
         check:fences    0      **291 fenced files across 58 chapters**, from 57
         pnpm build      0      /part-4/chapter-15/what-a-thumbnail-costs generated
+
+================================================================================
+PHASE 9 — the record and the close                              2026-09-29
+================================================================================
+
+T088  **THE QUICKSTART RAN CORRECTLY THE FIRST TIME**, which is unusual here — 4.14's was
+      wrong six times, 4.11's five, 4.12's three — and it is not luck. Every correction
+      those chapters earned went into the document before it was run, and §1's fixture
+      was executed at planning time rather than guessed, which is where the one wrong
+      number was caught ("roughly 1.4 MB" for a file that is 447,377 bytes).
+
+        §1  wrote 447377 bytes, 800x600, decodable
+        §2  PUT 200 · send 201 · "state":"pending" with no thumbnail, correctly
+            after the sweep: "state":"ready" with
+            "thumbnail":{"media_id":"…","width":320,"height":240}
+        §3  200x150 at 85,252 B -> "ready", and Object.hasOwn(a,"thumbnail") FALSE
+        §4  the thumbnail 200 · the parent 200 · an id no object has 404
+        §5  before: 2 · DELETE 1 · after: 0, and **251 objects still in the bucket** —
+            the store has no cascade, which is the chapter's TRAP box, confirmed
+
+T089  THE FINAL LANES, composed services stopped first (057-5)
+
+        unit, forced      **914 tests** (893 at baseline, +21), 13 of 13, REAL EXIT 0
+        integration       13 of 14 tasks; the one failure is CARRIED baseline item #2,
+                          `notifications.itest.ts`'s 10 s drain hook
+        coverage          REAL EXIT 1, **zero threshold errors**, 2,062 tests / 142 files
+                          the one failure there was carried item #3, the typing flake
+        outsider          19 of 19
+        every tutorial gate 0, including check:fences at 291 files / 58 chapters
+
+T084/T085/T086/T087  THE RECORD. `baseline.txt` (this file, written phase by phase and
+      including the readings that were wrong first), `gaps.md` (**8 new, 6 carried and
+      re-measured**), `traceability.md` (built by reading — 4.11's mechanical map raised
+      fourteen false alarms), `doors.txt`, and the quickstart marked run with its output.

@@ -4,11 +4,25 @@ Prove the chapter against a running stack: an image that gains a thumbnail, an i
 small enough that it does not, a rendition that nobody can address directly, and a parent whose
 deletion takes its rendition with it.
 
-**NOT YET RUN. This is a plan-time draft.** Every quickstart in this series has been wrong at
-plan time — six times in 4.14, five in 4.11, three in 4.12 — and each was a fixture fault that
-read as a platform defect. Running it is a task in phase 8, and the corrections go here with
-what each wrong version looked like. Saying it is verified before it has been run is the one
-failure this document cannot recover from.
+**RUN AGAINST THE COMPOSED STACK ON 2026-09-29, IN THIS ORDER, AND IT WAS RIGHT THE FIRST
+TIME.** That is unusual here — 4.14's quickstart was wrong six times, 4.11's five, 4.12's three
+— and it is not luck. Every correction those chapters earned was applied to this document
+*before* it was run (the list below), and §1's fixture was executed at planning time rather
+than guessed, which is where the one wrong number was caught: the draft said "roughly 1.4 MB"
+from the raw pixel count and the file is **447,377 bytes**, because a smooth pattern deflates
+well.
+
+Measured, end to end:
+
+    §1  wrote 447377 bytes                       800x600, decodable
+    §2  PUT 200 · send 201 · state "pending"     no thumbnail yet, correctly
+        after the sweep:
+        {"type":"media","media_id":"…","state":"ready",
+         "thumbnail":{"media_id":"…","width":320,"height":240}}
+    §3  200x150, 85,252 bytes -> state "ready", and `Object.hasOwn(a,"thumbnail")` FALSE
+    §4  the thumbnail 200 · the parent 200 · an id no object has 404
+    §5  before: 2 · DELETE 1 · after: 0          the cascade
+        and 251 objects still in the bucket      the store has no cascade — the TRAP box
 
 The corrections earlier chapters already earned are applied below rather than rediscovered:
 
