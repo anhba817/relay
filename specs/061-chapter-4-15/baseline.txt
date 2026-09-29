@@ -235,3 +235,106 @@ T016  LANES AFTER THE SCHEMA CHANGE
       somebody once typed. Extended with the three columns, and the null-at-slot-time
       loop extended with them too, because the structural half and the value half are
       both the point.
+
+================================================================================
+PHASE 3 — US1, a rendition belongs to its parent                2026-09-29
+================================================================================
+
+T017  `unreferencedMediaIn(db, environmentId, olderThan, limit)` — FR-MED-10's predicate.
+
+      **A RENDITION IS NEVER RETURNED, AND THAT IS THE WHOLE OF FR-002.** The obvious
+      reading — "a rendition is unreferenced when its parent is" — would have the reaper
+      delete parent and rendition separately and depend on the order. It does not need
+      to: `media_objects_parent_fk` is ON DELETE CASCADE, so the predicate asks only
+      about uploads and the renditions follow. *"Its reachability is its parent's"* is
+      discharged by the foreign key rather than by a second arm somebody keeps in step.
+
+      **TWO QUERIES, NOT ONE, AND 4.12 MEASURED WHY.** The natural single statement puts
+      `NOT EXISTS (… attachments @> … m.id …)` against each candidate, which builds the
+      containment operand from a column on the other side of the join — a GIN index
+      cannot be looked up with a value the planner does not have yet (1,042 buffers
+      against 84). Candidates come back first; their ids go into the second query as
+      bound values. **The first draft was THREE queries** — the middle one returned
+      channels when what was needed was media ids — and was simplified before it ran.
+
+T018  Its comment names the chapter that will call it (`docs/12` row 22, erasure) rather
+      than claiming a caller it does not have. CLAUDE.md's convention, and the reason is
+      `ensureBucket`'s *"on boot, every boot"*, which was false for two chapters.
+
+T020  THE DELIVERY GATE RESOLVES THE PARENT — in `repository.ts`'s
+      `readableMediaObjectKey`, **not the controller**, which is where the plan's first
+      draft sent it. One substitution: `object.parentId ?? mediaId` feeds the existing
+      loop. FR-005 wants the same predicate, not a copy, and the controller is precisely
+      where the copy would have been written.
+
+T022  THE ATTACH PREDICATE REFUSES A RENDITION, AND IT WOULD HAVE PASSED WITHOUT IT.
+      A thumbnail is `ready` and of the environment, so every condition already there
+      admits it. `isNull(mediaObjects.parentId)` goes INSIDE the existing `and(...)`, so
+      the refusal is the arm the function already produces — a separate check with its
+      own code would report that somebody else's rendition exists.
+
+T023  THE DOOR DERIVATION FOUND WHAT THE ANALYSIS PREDICTED, AND ITS CONTROL FIRED.
+      Seven reads of `mediaObjects` in api source, all in `repository.ts`:
+
+        pendingMediaObjects      the sweep's batch      excludes renditions structurally
+        unreferencedMediaIn      new, this chapter
+        recordMediaVerdict       the verdict
+        reserveMediaSlot         the quota sum          INCLUDES them, as FR-012 requires
+        assertAttachableMedia    the attach predicate   now refuses them
+        readableMediaObjectKey   the delivery gate      now resolves the parent
+
+      **No door lists a tenant's uploads**, so nothing needed changing for FR-004 beyond
+      the attach predicate. The two reads named in advance as the control both came back,
+      which is what makes the zero mean something. `pendingMediaObjects` filters
+      `state = 'pending'` and a rendition is `ready` by CHECK, so it is excluded by the
+      schema rather than by a predicate anybody has to remember.
+
+T024  `deleteObjectWithRenditions` in `media/store.ts`, with T018's comment for T018's
+      reason — it has no production caller either, because **nothing deletes a row**.
+
+T019/T021/T025  `rendition.itest.ts`, **10 of 10**, and no decoder appears in the file.
+      Scenarios: the reaper leaves a referenced parent alone across the boundary;
+      collects an unreferenced parent and never its rendition; ignores a younger parent;
+      ignores another tenant's (the arm that proves the scope argument is used); the
+      cascade; the enumeration; the positive control; the indistinguishable refusal; an
+      unreferenced parent readable by nobody; and a rendition refused at attach.
+
+      One instant is pinned before each predicate call (043's `reset-lane`, 4.13's
+      `pinWindow`) rather than letting `now()` re-evaluate inside the assertion.
+
+      **THE ENUMERATION TEST NEEDED A POSITIVE CONTROL AND ALMOST SHIPPED WITHOUT ONE.**
+      Its assertion is `toHaveLength(0)` over a `grep` for row deletions, and a wrong
+      path, a renamed directory or an unparseable pattern all produce zero hits and a
+      green test. It now greps `from(mediaObjects)` first and requires that to be
+      non-zero. "An instrument that reports zero has to prove it looked."
+
+      FOUR THINGS THE FIRST DRAFT GOT WRONG, all mine and all found by running:
+        `import.meta` in a package that builds to CommonJS — TS1470
+        `db.execute()` returns `{ rows }`, not an array — 9 of 10 red, one TypeError
+        the delivery route answers **200 with a signed URL in the body**, not a 302
+        the refusal code is `media_not_attachable`; `media_not_available` was DELETED at
+          4.11, and the live code has exactly ONE throw site — which is what makes a
+          rendition, a foreign object and an absent id genuinely indistinguishable
+
+T026  check-lane-scope: **67 integration files, 0 unscoped reads, 10 of 10 controls
+      fired** — 66 at 060's close, so the new suite is counted. The counted line is the
+      assertion; the exit code would be 0 over an empty corpus (055-4).
+
+T027  THE LANES
+
+        unit, forced        893, 13 of 13, REAL EXIT 0      unchanged
+        integration         793 api tests (+10), one failure
+        that one failure    the CARRIED baseline item, `media-updated.itest.ts`,
+                            which passes alone 9 of 9 — the same neighbour effect
+        outsider            **19 of 19, REAL EXIT 0**
+
+      **THE OUTSIDER SUITE FAILED 7 OF 19 FIRST, AND EVERY ONE WAS MY FIXTURE.** I set
+      `RELAY_WS_URL=ws://localhost:4000`, the api's port; the gateway is on **4001** and
+      `ci.yml:359` says so. All seven failures were socket tests, and they would have
+      read as "phase 3 broke the gateway". The quickstart class, in a suite rather than a
+      document.
+
+      AND `docker compose --profile services stop` NAMES ITS SERVICES (060-13) — but
+      `ingester` is not one of them: it has no Dockerfile (4.9's finding), and naming it
+      made the whole command fail rather than partly apply, so nothing stopped. The four
+      that exist are api, gateway, dispatcher, media-worker.
