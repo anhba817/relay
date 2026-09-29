@@ -1,0 +1,130 @@
+BASELINE — feature 061, chapter 4.15 "What a thumbnail costs"
+Measurements in the order they were taken, including the ones that were wrong first.
+Machine: Linux WSL2, Node v22.23.2, pnpm 10.33.0. Stack on RELAY_POSTGRES_PORT=15432.
+
+================================================================================
+PHASE 1 — the numbers this chapter is compared against          2026-09-29
+================================================================================
+
+T001  STORES UP, SEVEN CONTAINERS HEALTHY, EXIT 0
+      postgres, redis, nats, minio, clickhouse, clamav, mailpit — all Healthy on the
+      first attempt. NATS did not need a stream cleared this time (058-7 did not fire).
+
+T002  FENCE CHAIN, ABSOLUTE AND NOT A DELTA
+      "291 fenced files replay onto relay-platform across 57 chapters
+       (46 translated, fences mirrored, 2 retired, plus post-series amendments)"
+      REAL EXIT 0, run without a pipe. A clean run prints no problem line at all, so
+      the counted line plus the exit code is what clean looks like.
+
+T003  DEPENDENCIES — 31 ENTRIES, 13 DISTINCT THIRD-PARTY
+        0 root · 0 config · 1 e2e · 0 outsider · 1 protocol · 0 service-kit
+        1 test-harness · 14 api · 3 dispatcher · 6 gateway · 3 ingester · 2 media-worker
+      third-party: @nestjs/common @nestjs/core @nestjs/platform-express drizzle-orm
+                   ioredis jose nats nodemailer pg reflect-metadata rxjs ws zod
+      This chapter adds ONE (sharp). It is the first time in Part 4 this number moves.
+
+T004a UNIT LANE — 893 TESTS, 77 FILES, 13 OF 13 TASKS, REAL EXIT 0
+      Run as `pnpm exec turbo run test --force`. The forced run is the honest one:
+      4.14 read 553 from a cached run whose real figure was 867.
+        test-harness 24 · config 7 · service-kit 3 · protocol 174 · ingester 39
+        api 417 · dispatcher 8 · media-worker 81 · gateway 140
+
+T004b BUILD — REAL EXIT 0, 7 of 7 cached (FULL TURBO)
+
+T004c INTEGRATION LANE — **RED AT BASELINE, THREE FAILURES, NONE OF THEM THIS CHAPTER'S**
+      REAL EXIT 1. Tasks: 12 successful, 14 total.
+        test-harness  46/46      ingester   19/19      dispatcher 16/16
+        media-worker  22/22      e2e        11/11
+        api          781/783     2 failed
+        gateway      230/231     1 failed
+
+      **THIS IS 4.9's FINDING AND IT IS LIVE AGAIN.** "The gate was already red, so a
+      planted drift deepened a red rather than turning one. The signal was not absent,
+      it was indistinguishable." For the rest of this feature the gate is a FAILURE SET
+      compared against this list, not a colour.
+
+      The three, characterised by re-running each in isolation — three failures, three
+      different causes:
+
+      1. api/media-updated.itest.ts
+         "publishes once when one channel holds two messages for the object"
+         PASSES ALONE. Fails only in the full lane. -> NEIGHBOUR EFFECT.
+         It is 4.14's own test, and the class is the one 045 found eight of: an
+         assertion scoped wider than the thing it tests.
+
+      2. api/notifications.itest.ts
+         "sends what the organisation needs, and Mailpit confirms the contents (FR-021)"
+         DETERMINISTIC, alone and in the lane. `Hook timed out in 10000ms` at the
+         `beforeEach` on line 215 — the drain, not the assertion.
+         Mailpit is healthy and answers /api/v1/messages 200, so it is not the catcher.
+         CAUSE: lane accumulation. webhook_disable_notifications holds **2,701** rows
+         and quota_notifications **6,053**; `drainDisableNotifications` delivers one
+         SMTP round trip per claimed row inside a 10 s hook.
+         -> 059-12's SHAPE. **CI never sees it, because a fresh database has no pile.**
+
+      3. gateway/typing.itest.ts
+         "sends nothing at all after the signal, until another signal is sent"
+         DETERMINISTIC IN ISOLATION — 22 of 23. Not a neighbour effect.
+         A quiet-window assertion, which is the shape CLAUDE.md names: keep a quiet
+         window only for what must NOT arrive, taken after the arrival wait.
+         4.9 left this file at 23 of 23 three times running, so it has regressed since.
+
+      None is fixed here — all three are out of this chapter's scope. All three are
+      carried into gaps.md so the set can be compared rather than the colour.
+
+T005  MEDIA COMPOSITION — 6,535 ROWS
+        pending 5,432 · ready 937 · rejected 166
+        by kind: image/pending 4,953 · image/ready 976 · audio/pending 390
+                 image/rejected 171 · video/pending 156
+      The two readings were taken twenty minutes apart and disagree (937 vs 976 ready)
+      **because running the integration lane created rows between them.** The lane is
+      not a still object; the second reading is the later one and neither is wrong.
+
+T006  HOW MANY OBJECTS WOULD GAIN A RENDITION — **FOUR**
+        images                                    5,996
+        images with width recorded                   54
+        images ABOVE the 320 px bound                 4
+        images within the bound (dims known)         50
+        ready images                                937
+      **THE LANE CANNOT EXERCISE THIS CHAPTER AT ANY SCALE.** 4 objects would produce a
+      thumbnail. 4.12's sentence applies unchanged — "the lane could not have failed the
+      shape that does not scale" — and it answers T058 before T058 runs: any bytes ratio
+      taken from this lane is a sample of four.
+      The 54-of-5,996 figure is its own fact: `width` is null for almost every image,
+      because the probe only ran for objects the worker actually verified.
+
+T007  CI ERROR SET — ZERO DISTINCT, LAST RUN ON main SUCCEEDED
+      run 36410173144, head e83d7e617af1e908a17188892c84fa506314b1b8, conclusion success
+      (060's fourth run, the control 057 asked for). Baseline for the per-error
+      comparison at T092 is therefore an empty set, in both directions.
+
+T007a FENCE EXPOSURE, COUNTED BEFORE ANY EDIT
+        services/api/src/db/repository.ts          52   28 en + 23 vi + 1 appendix
+                                                        50 diff hunks, 2 whole bodies
+        services/api/src/db/schema.ts              34
+        packages/protocol/src/attachments.ts        4
+        services/api/src/media/media.controller.ts  2
+        services/media-worker/* (all files)         0
+        pnpm-lock.yaml                              0
+      The plan's first guess named the three zero-exposure files and missed the two
+      most exposed. 4.5's finding again: a remembered list is wrong in both directions.
+      52 is not a repair bill — 23 are vi pages and 050-3 records that chain is never
+      compared to relay-platform.
+
+T008  WORKER IMAGE — relay-media-worker:latest 245MB (relay-api 304MB)
+      sharp adds a measured 30,380,799 B on musl (research.md R1), so expect ~275 MB.
+
+================================================================================
+PRE-PHASE MEASUREMENTS CARRIED FROM research.md (taken 2026-09-28, during planning)
+================================================================================
+
+  sharp musl install            30,380,799 B      libvips 8.18.7, runs in node:22-alpine
+  ImageMagick + jpeg + webp     28,936,284 B      35.8 ms p50 per subprocess
+  ffmpeg on top                113,994,336 B      the video half, 3.75x the image half
+  sharp 1920x1080 -> 320        15.2 ms p50       in-process
+  crossover at the bound        97.3% of parent   an image within the bound gains nothing
+  10 MB image ceiling           50.8 ms CPU       I/O and RSS still unmeasured (R9)
+  fixtures that decode          pngOf, gifOf      jpegOf and webpOf are headers only
+  JPEG + maximal APP1 72,215 B  dims UNKNOWN      at PROBE_BYTES = 65,536
+  pnpm 10.33 + sharp            installs clean    no onlyBuiltDependencies needed
+  lockfile platform variants    26, incl. musl    so --frozen-lockfile works in alpine
