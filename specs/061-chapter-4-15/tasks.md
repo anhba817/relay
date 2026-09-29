@@ -163,14 +163,14 @@ non-member, receive the parent's refusal.
 
 ## Phase 7: The documents
 
-- [ ] T064 Amend **FR-MED-05** in `docs/04-srs.md` — this task is FR-013 and SC-010, and nothing else discharges them: the image half met, the video half unmet by decision with R8's reason and reversal condition, on FR-MED-04's revision 1.20 precedent and FR-MED-07's 1.18. **Read the clause before editing it** — four documents once agreed on two clauses that do not exist, and what found it was opening the SRS to make the edit.
-- [ ] T065 Add the revision row 1.22 to `docs/04-srs.md`'s revision table.
-- [ ] T066 Write **ADR-34** in `docs/05-sad.md` (FR-014): the dependency, its drivers, the three rejected alternatives with their measured costs, and its reversal condition. **ADR-32's line does not carry** — it is about a program addressed over a socket, and a linked library is not that case, so ADR-34 makes its own argument (plan, Complexity Tracking).
-- [ ] T067 [P] Check whether ADR-34 has a deep dive in `docs/06`. An ADR lives in two documents — the SAD's summary and `docs/06`'s argument — and 4.5 found ten passes amending the summary with nobody opening the 98-line deep dive.
-- [ ] T068 [P] Amend **both** copies of the Part 4 table: `docs/12-part-4-structure.md` row 16 and `docs/07-tutorial-plan.md` row 16. Two copies, and a chapter that amends one of them is how they drift.
-- [ ] T069 [P] Record the storage-quota consequence FR-012 requires: derived bytes are summed by `reserveMediaSlot` the moment the row exists, so a rendition can carry a tenant past the quota **with no request to refuse**. Say what the platform does, and note that chapter 4.16 owns the meter.
-- [ ] T070 [P] Grep `docs/` for feature-local ids leaking into published documents (`FR-0\d\d`). **Nothing runs this check** (`gaps.md` 052-7) and a feature-local id reached two published documents three commits after reading a correction of the same defect.
-- [ ] T071 Run `check:srs`, `check:docs` and `check:refs`.
+- [X] T064 Amend **FR-MED-05** in `docs/04-srs.md` — this task is FR-013 and SC-010, and nothing else discharges them: the image half met, the video half unmet by decision with R8's reason and reversal condition, on FR-MED-04's revision 1.20 precedent and FR-MED-07's 1.18. **Read the clause before editing it** — four documents once agreed on two clauses that do not exist, and what found it was opening the SRS to make the edit.
+- [X] T065 Add the revision row 1.22 to `docs/04-srs.md`'s revision table.
+- [X] T066 Write **ADR-34** in `docs/05-sad.md` (FR-014): the dependency, its drivers, the three rejected alternatives with their measured costs, and its reversal condition. **ADR-32's line does not carry** — it is about a program addressed over a socket, and a linked library is not that case, so ADR-34 makes its own argument (plan, Complexity Tracking).
+- [X] T067 [P] Check whether ADR-34 has a deep dive in `docs/06`. An ADR lives in two documents — the SAD's summary and `docs/06`'s argument — and 4.5 found ten passes amending the summary with nobody opening the 98-line deep dive.
+- [X] T068 [P] Amend **both** copies of the Part 4 table: `docs/12-part-4-structure.md` row 16 and `docs/07-tutorial-plan.md` row 16. Two copies, and a chapter that amends one of them is how they drift.
+- [X] T069 [P] Record the storage-quota consequence FR-012 requires: derived bytes are summed by `reserveMediaSlot` the moment the row exists, so a rendition can carry a tenant past the quota **with no request to refuse**. Say what the platform does, and note that chapter 4.16 owns the meter.
+- [X] T070 [P] Grep `docs/` for feature-local ids leaking into published documents (`FR-0\d\d`). **Nothing runs this check** (`gaps.md` 052-7) and a feature-local id reached two published documents three commits after reading a correction of the same defect.
+- [X] T071 Run `check:srs`, `check:docs` and `check:refs`.
 
 ---
 

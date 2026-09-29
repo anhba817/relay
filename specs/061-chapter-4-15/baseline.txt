@@ -583,3 +583,75 @@ T062  TYPECHECK, EVERY TURBO TASK: **15 of 15, REAL EXIT 0.** This is the comman
 
 T063  OUTSIDER: **19 of 19, REAL EXIT 0**, against rebuilt api and gateway images. The
       wire changed this phase, and this is the suite no local lane reaches.
+
+================================================================================
+PHASE 7 — the documents                                         2026-09-29
+================================================================================
+
+T064/T065  **FR-MED-05 AMENDED, SRS REVISION 1.22.** The image half met; the video half
+      unmet **by decision** with the number attached — ffmpeg 113,994,336 B against the
+      image half's 30,380,799 B, 3.75x, for the harder half of a clause whose easier half
+      (FR-MED-04's duration) revision 1.20 already declined. Reversal condition named.
+      And the clause's last five words identified as the hard part, with what the
+      composite foreign key does about them.
+
+      **A FIGURE DISAGREED WITH ITSELF IN THE SAME DOCUMENT AND I CAUGHT IT BY READING.**
+      The revision row said `30,384,799 B` where the clause said `30,380,799`. One
+      transposed digit, in the number the whole video ruling rests on. Fixed; both now
+      read the measured value.
+
+T066  **ADR-34 — a native image library is a dependency, not a second language.**
+
+      **ADR-32's ARGUMENT DOES NOT REACH THIS AND THE ADR SAYS SO.** That one settled
+      ClamAV on a specific sentence: Relay addresses five programs it is not written in,
+      *"each reached over a socket with a documented protocol"*, and the clause governs
+      what Relay is implemented in and not what Relay talks to. **A linked library is a
+      different relationship and cannot borrow it.** ADR-34's own argument: the worker is
+      a TypeScript program, calling a native module from it is the same relationship as
+      calling Node's JSON parser, which is C, and what VII forbids is a second language
+      this team writes. No `.c` file enters the repository.
+
+      The options table is measured, and the ADR states that **the size did not decide
+      it**: 30.4 MB against ImageMagick's 28.9 is 5%, and what decided it is 15.2 ms
+      against 35.8 ms plus the shape — a subprocess pays spawn on every object, in a
+      service whose whole job is a sweep.
+
+T067  **NO DEEP DIVE, AND THE CONVENTION WAS CHECKED RATHER THAN ASSUMED.**
+      `docs/06-adr-deep-dives.md` carries ADR-01 through ADR-30 and stops. ADRs 31, 32
+      and 33 have none either, so ADR-34 matching them is the convention rather than an
+      omission. 4.5's finding was ten passes amending a summary with nobody opening the
+      98-line deep dive; this is the same question asked before writing.
+
+T068  BOTH COPIES OF THE PART 4 TABLE AMENDED — `docs/12` row 16 CLOSED with the seven
+      findings, `docs/07` row 16 SHIPPED. Two copies, and a chapter that amends one is
+      how they drift.
+
+T069  **FR-MED-12 RECORDS THE QUOTA CONSEQUENCE, WHICH 4.16 INHERITS.** Derived bytes are
+      summed from the moment the row exists — deliberately, since the alternative is a
+      storage discount with no clause behind it (revision 1.17's argument about
+      tolerance). Two consequences stated rather than discovered: a rendition can carry a
+      tenant past the quota **with no request to refuse**, bounded by its own single-digit
+      kilobytes; and the sum is approximate by one rendition, because `reserveMediaSlot`
+      locks the environment row and the verdict transaction does not. No second lock —
+      4.10 measured the existing one earning its place in the slot-versus-slot race,
+      which this does not change.
+
+T070  **ZERO FEATURE-LOCAL IDS IN MY ADDITIONS**, checked by diffing `docs/` rather than
+      by grepping the whole tree: `git diff HEAD -- docs/ | grep '^+' | grep -oE 'FR-0[0-9][0-9]'`
+      returns nothing. The one at `04-srs.md:833` is the inherited `FR-003a` that 052
+      already identified. **Nothing runs this check** (`gaps.md` 052-7), so it stays a
+      hand-run diff.
+
+T071  THE DOCUMENT GATES, AND THE TASK NAMED ONE THAT DOES NOT EXIST.
+
+        check:srs    EXIT 0
+        check:docs   EXIT 1 -> 0   drift in the tutorial's mirrored copies; `pnpm
+                                   sync:docs` is the repair, and the gate exists to
+                                   catch exactly this
+        check:refs   **NOT A SCRIPT.** `Command "check:refs" not found`. The five that
+                     exist are check:docs, check:errors, check:fences, check:figures,
+                     check:srs — read off `package.json`, which is what 055-3's entry
+                     says to do and what this task failed to do when it was written.
+
+      After the sync: *"all mirrored docs match their sources"* and *"23 revisions
+      ascend, 1.0 to 1.22"*.
