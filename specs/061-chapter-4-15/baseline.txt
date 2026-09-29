@@ -499,3 +499,87 @@ T052  **AN OPTIONAL FIELD BROKE ZERO WHOLE-ARRAY ASSERTIONS, WHERE 4.14's REQUIR
 T053/T054  THE FULL LANE: **13 of 14 tasks**, and the single failure is the CARRIED
       baseline item `media-updated.itest.ts`, which passes alone 9 of 9. The accounting
       tests and the isolation gauntlet are green.
+
+================================================================================
+PHASE 6 — the probes, the measurements and the gates            2026-09-29
+================================================================================
+
+T055/T056  **EVERY ARM PROBED BY DELETION (SC-004), AND AN ARM HERE IS AN SQL CLAUSE.**
+      Each removed individually, both suites re-run:
+
+        arm                                      rendition+delivery   gauntlet
+        delivery: the environment scope                   0 red         0 red
+        delivery: the ready gate                          0 red         0 red
+        delivery: the parent substitution (4.15)          1 red         0 red
+        attach: the rendition refusal (4.15)              1 red         0 red
+
+      **THIS CHAPTER'S TWO ARMS ARE BOTH TESTED.** Each one's removal turns exactly one
+      test red, and neither is reported by the gauntlet — which is the point of probing
+      rather than reading a coverage number, since an SQL clause carries no JavaScript
+      branch at all.
+
+      THE TWO THAT TURNED NOTHING RED ARE NOT THE SAME KIND OF NOTHING:
+
+        the environment scope   UNNECESSARY FOR CORRECTNESS, and the file says so:
+                                "the predicate below is redundant … a query whose safety
+                                depends on a later call is a query somebody will reuse
+                                without it." `channelVisibleTo` refuses another tenant's
+                                channel afterwards. This reproduces 4.12's finding
+                                exactly, on the same read, two chapters later.
+        the ready gate          **TESTED — BY A SUITE I HAD NOT PROBED WITH.** Removed
+                                again and run against `delivery.itest.ts`: **2 of 17
+                                red.** Reported as untested only because the probe's
+                                suite list was too short, which is worth recording: a
+                                per-arm probe measures the arm against the suites you
+                                chose, and choosing wrong looks exactly like an
+                                uncovered arm.
+
+T059/T060  **COVERAGE: REAL EXIT 1, ZERO THRESHOLD ERRORS, 2,062 tests across 142 files.**
+
+      The first run had **six** threshold errors across two `store.ts` files — I had
+      added `getObject`, `putObject` and `deleteObjectWithRenditions` and covered none of
+      them. **Fixed by writing the tests, not by lowering the pins** (4.13's precedent,
+      which raised `shape.ts` to 100 rather than measuring it down): 8 new unit tests in
+      the worker's `store.test.ts`, 3 in the api's. Second run: zero threshold errors.
+
+      **AND THE FIRST RUN FAILED A TEST OF MINE FOR THE RIGHT REASON.** The deletion-path
+      enumeration greps `src` relative to `process.cwd()` — which is `services/api` under
+      the integration config and the **repository root** under
+      `vitest.coverage.config.mts`. So it looked at two different places and found
+      nothing in one. **The positive control caught it**: "the sweep found no reads of
+      media_objects at all, so it did not look". Without that control the test would
+      have passed vacuously in the one lane that runs everything. The path is now found
+      by walking up to `pnpm-workspace.yaml`.
+
+      The single remaining failure is `gateway/typing.itest.ts`, the CARRIED baseline
+      flake — now seen failing in 2 of 7 runs and passing in 5, which settles what one
+      isolated run could not.
+
+T061  THE GATES
+
+        check:docs      EXIT 0
+        check:srs       EXIT 0
+        check:figures   EXIT 0   298 figures, every diagram passed as `code`
+        check:errors    EXIT 0   34 codes, 34 sections — unchanged
+        check:fences    EXIT 1   **5 problems in 5 files**, which is phase 8's bill
+
+      THE FENCE BILL, AND T007a's COUNTED TABLE PREDICTED IT:
+
+        packages/protocol/src/attachments.ts   differs at line 112
+        packages/protocol/src/internal.ts      differs at line 8
+        services/api/src/db/repository.ts      differs at line 548
+        services/api/src/db/schema.ts          differs at line 8
+        services/api/src/media/store.ts        differs at line 0
+
+      **No media-worker file appears**, which is what the phase-1 count said would happen
+      — its `package.json`, `Dockerfile` and sources are fenced in zero pages, so adding
+      `sharp` cost the chain nothing. Five problems against an exposure of 28 English
+      pages on `repository.ts` alone, because the checker reports the first failure per
+      file and the bill is per file, not per hunk.
+
+T062  TYPECHECK, EVERY TURBO TASK: **15 of 15, REAL EXIT 0.** This is the command 4.14
+      did not run — it typechecked five services individually and CI found two errors in
+      `packages/protocol`'s tests, which `tsconfig.build.json` excludes.
+
+T063  OUTSIDER: **19 of 19, REAL EXIT 0**, against rebuilt api and gateway images. The
+      wire changed this phase, and this is the suite no local lane reaches.
