@@ -752,3 +752,60 @@ T084/T085/T086/T087  THE RECORD. `baseline.txt` (this file, written phase by pha
       including the readings that were wrong first), `gaps.md` (**8 new, 6 carried and
       re-measured**), `traceability.md` (built by reading — 4.11's mechanical map raised
       fourteen false alarms), `doors.txt`, and the quickstart marked run with its output.
+
+T091/T092/T093/T094  THE PUSH, AND CI FOUND SOMETHING NO LOCAL COMMAND HAD
+
+      Pushed in the forced order — submodules, then the superproject, because `ci.yml`
+      lives in the outer repository and the other two are gitlinks.
+
+      **THE FIRST RUN FAILED ON `pnpm lint`, WHICH I HAD NEVER RUN.** Typecheck and the
+      five tutorial gates were in the task list; lint was not. Three errors, all mine:
+
+        two test files imported `sql` from `drizzle-orm` — **a lint rule enforcing a
+          constitution clause**: *"the query engine lives inside the repository layer
+          only (constitution I, ADR-16)"*. 4.7 recorded this exact shape. `db.execute()`
+          takes a plain string, which is what `media.itest.ts` already does, so the
+          import was removable rather than exemptible.
+        `otherKey` assigned and never used — **a second tenant set up and never asked
+          anything**, which is a fixture that looks like coverage. Fixed by asking it a
+          question: another tenant's credential gets the same refusal, which is a
+          stronger isolation test than the non-member one beside it.
+
+      **AND REMOVING THE IMPORT EXPOSED A WORSE DEFECT THAN THE LINT ERROR.** With `sql`
+      gone, every uuid interpolation sat unquoted in a plain string, and fixing that
+      surfaced the real problem: my `pending` fixtures join the queue
+      `GET /internal/media/pending` serves — **oldest-first over the whole platform, no
+      tenant parameter** — so the media worker's own suite swept MY objects. **8 of its
+      tests red, every one `expected 'pending' to be 'rejected'`, with nothing wrong in
+      the worker**, and 185 rows from this feature sitting in the window.
+
+      **056-5's class: an ACTION scoped wider than its own test**, which
+      `check-lane-scope.py` cannot see because the missing scope is in a route's contract
+      rather than in SQL. Repaired with the predicate the sweep already has — fixtures
+      are backdated 30 days, past FR-MED-10's window, so they are invisible to it and
+      still `pending` for the compare-and-set the tests drive directly.
+
+      **AND THE ENVIRONMENT'S OWN GUARD REFUSED MY CLEANUP**, which is the same lesson
+      one level out: a bulk `UPDATE` over the pending rows was refused —
+      *"global-operation guard: this statement modified sentinel row … which belongs to
+      no test"*. I was fixing an action scoped too wide with another one.
+
+      FOUR MORE SELF-INFLICTED, each found by the next command rather than by reading:
+        `sql.raw(...)` survived a regex that only matched `sql\``
+        `${opts.state ?? "ready"}` left unquoted -> `column "ready" does not exist`
+        a JS `//` comment written INSIDE a SQL template literal, where it is SQL text
+          and its backticks close the string
+        `exactOptionalPropertyTypes` on a test helper added during the coverage fix and
+          never re-typechecked
+
+      **THE SECOND RUN IS GREEN ON ALL FOUR JOBS.** Per-error comparison, uuids
+      normalised:
+
+        baseline   e83d7e61   0 distinct
+        first push c1f460b0   5 distinct      the lint failure
+        final      a0a5ed6    0 distinct      **empty in BOTH directions vs baseline**
+
+      Tagged **`part4-ch15`** on `b007adfb`, annotated, and the commit is the one CI
+      proved green — 047 found three Part 1 tags pointing at a superseded lineage that
+      no gate could have caught, and 4.14's had to be moved off a commit failing
+      typecheck.
