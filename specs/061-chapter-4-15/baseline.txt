@@ -338,3 +338,96 @@ T027  THE LANES
       `ingester` is not one of them: it has no Dockerfile (4.9's finding), and naming it
       made the whole command fail rather than partly apply, so nothing stopped. The four
       that exist are api, gateway, dispatcher, media-worker.
+
+================================================================================
+PHASE 4 — US2, an image gets a thumbnail                        2026-09-29
+================================================================================
+
+T028  `sharp` ADDED, AND BOTH INSTALL PREMISES HELD IN THE REAL WORKSPACE.
+      No build-script warning under pnpm 10.33.0, so no `onlyBuiltDependencies` entry is
+      needed; the lockfile records `sharp-linuxmusl-x64`, so `--frozen-lockfile` inside
+      alpine resolves the musl binary. Dependency entries **31 -> 32**, third-party
+      13 -> 14 — the first time in Part 4 that number has moved.
+
+T029  IT LOADS INSIDE THE IMAGE, WHICH IS THE ONLY VERSION OF THIS QUESTION THAT COUNTS.
+      `docker run --entrypoint node relay-media-worker` → `libvips 8.18.7`, and a resize
+      to 926 B. `pnpm --prod deploy --legacy` carried the platform package. The image is
+      **279 MB, from 245** — a 34 MB delta against the 30,380,799 B measured install,
+      the difference being layer overhead.
+
+T030/T032  `thumbnail.ts`. The bound is 320 px on the long edge, `fit: inside`, no
+      enlargement, WebP q80. **`within-bound` is an outcome, not a smaller output** —
+      R2 measured 97.3% of the parent and the same pixels below the bound.
+      The type set is `sharp.format` filtered to buffer-decodable, NOT a list: the api's
+      `ALLOWED_TYPES` is unreachable from this service and does not need to be, because
+      the slot route refuses everything outside it upstream.
+
+T031  `thumbnail.test.ts`, **10 of 10 first run**, Docker-free. PNG and GIF; `jpegOf` and
+      `webpOf` assert `decode_failed`, which is a behaviour rather than a skip.
+
+T032a/T033  `getObject` (the worker's FOURTH round trip) and `putObject` (its FIRST
+      write ever). Two things the compiler found:
+
+        `SignOptions.method` was typed `"GET" | "HEAD"` — the store client was
+          read-only AT THE TYPE LEVEL, not merely by omission. Widened deliberately.
+        `BodyInit` rejects `Uint8Array<ArrayBufferLike>` under TS 5.7, which separated it
+          from `ArrayBuffer`. Copied into a fresh buffer rather than cast: a thumbnail is
+          single-digit kilobytes and the cast would be wrong for a SharedArrayBuffer view.
+
+T032b  THE THREE-STATE GATE, in `rendition.ts`. Above the bound → fetch; within → no
+      fetch; **dimensions unknown → fetch and let the decoder answer.**
+
+T032c/T032d  **R9's TWO COSTS, MEASURED — AND BOTH WERE SMALLER THAN R9 FEARED.**
+      One 7,984,317 B JPEG at 4000x3000, p50 of 7:
+
+        HEAD                    2.793 ms
+        full GET                8.2 ms        <- the cost R2 left out entirely
+        resize                  52.0 ms       (R2 predicted 50.8)
+        total                   60.2 ms
+
+        RSS before              254.0 MB
+        RSS peak                254.4 MB      delta 0.4 MB
+        arithmetic bound for a 4000x3000 RGB bitmap      36.0 MB
+
+      **THE FETCH IS 14% OF THE COST, NOT THE DOMINANT TERM**, so R9's decision to pay a
+      round trip rather than tee the scan is vindicated cheaply rather than narrowly.
+      **AND LIBVIPS DOES PROCESS IN STRIPS**: the 36 MB was arithmetic and R9 refused to
+      publish it as a measurement; the measurement is 0.4 MB, about 90x smaller.
+      CAVEAT, RECORDED RATHER THAN SMOOTHED: the RSS delta was taken after seven prior
+      resizes in the same process, so the allocator was warm and this understates a cold
+      first call. It is enough to refuse the 36 MB figure and not enough to publish 0.4
+      as the number.
+
+T037/T037a  **THE TRANSACTION, AND THE RED PROBE PROVED IT WAS NEEDED.**
+      Reverted to the untransacted version and ran the atomicity test:
+
+        expected 'ready' to be 'pending'
+
+      Without a transaction the UPDATE lands, the INSERT fails, and the parent is `ready`
+      with no rendition and no reason — the absence FR-007 forbids. That is the analysis
+      pass's CRITICAL, demonstrated rather than argued. `RETURNING` also gained `user_id`
+      so a rendition inherits its parent's uploader, which is what lets FR-MED-10's
+      erasure find both on one predicate.
+
+T042  `thumbnail.itest.ts` — **10 of 10 against a real store**, all four allowed image
+      types with real bytes, the fetch-resize-write path read back OUT of the store, the
+      camera-JPEG third state, within-bound, decode failure, a rejected verdict writing
+      nothing, and audio producing no rendition and no reason.
+
+      TWO THINGS THE FIRST DRAFT GOT WRONG:
+        an `afterAll` that imported `deleteObject` from the API'S SOURCE — a service
+          boundary violation the compiler refused outright;
+        `storeConfigFromEnv(process.env)` with no address set, which reported **10
+          skipped** — a counted line that means nothing ran. **The guard I had written
+          into `afterAll` caught it**: "the suite wrote nothing, so it tested nothing".
+
+T043  NO NEW CONTAINER. `sharp` is a library, not a service, so `INFRA_SERVICES` and
+      `compose.yaml` still agree — the 056-8 both-directions check has nothing to do.
+
+T044  THE LANES
+
+        unit, forced          903 (from 893), 13 of 13, REAL EXIT 0
+        integration           **14 of 14, REAL EXIT 0, EMPTY FAILURE SET**
+        api integration       797 (from 783)
+        media-worker          32 (from 22)
+        worker image          279 MB (from 245)
