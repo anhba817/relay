@@ -1,0 +1,99 @@
+BASELINE — feature 062, chapter 4.16 "Storage on the bill"
+Measurements in the order they were taken, including the ones that were wrong first.
+Machine: Linux WSL2, Node v22.23.2, pnpm 10.33.0, ClickHouse 25.3.14.14.
+Starting commit: adcb853a (061's close-out).
+
+================================================================================
+PHASE 1 — the numbers this chapter is compared against          2026-09-29
+================================================================================
+
+T001  STORES UP, SEVEN CONTAINERS, EXIT 0. No stream needed clearing (058-7 did not fire).
+
+T002  FENCE CHAIN — `291 fenced files replay onto relay-platform across 58 chapters`,
+      REAL EXIT 0, run in `relay-tutorial` without a pipe.
+
+T003  DEPENDENCIES — **32 entries, 14 third-party.** This chapter adds none, and SC-009
+      expects the number not to move: 4.15 was the first Part 4 chapter to change it.
+
+T004  THE LOCAL LANES
+
+        unit, forced        **914 tests**, 13 of 13, REAL EXIT 0
+        lint                REAL EXIT 0
+        typecheck           **15 of 15**, REAL EXIT 0
+        integration         **REAL EXIT 1 — three failures, none this chapter's**
+
+      **THE LANE IS RED BEFORE ANYTHING IS BUILT, WHICH IS 4.9's SITUATION AGAIN.** For
+      this whole feature the gate is a FAILURE SET compared against this list, never a
+      colour. The set:
+
+        [api]     media-updated.itest.ts > announces nothing on a duplicate verdict
+        [gateway] typing.itest.ts > refuses a signal whose environment does not match
+                  the connection, and logs it
+        [gateway] typing.itest.ts > sends nothing at all after the signal, until another
+                  signal is sent
+
+      061 also began with three, and all three of ITS three turned out transient. Two of
+      these are the same files — `media-updated.itest.ts` (a different test in it) and
+      `typing.itest.ts` (the same test, plus a second). **`typing.itest.ts` now has two
+      failing tests where 061 recorded one.**
+
+T005  THE ANALYTICAL BASELINE
+
+        media_events          DOES NOT EXIST
+        message_events        **0**       the precedent's source, still unproduced (4.6)
+        daily_usage_v2        39          backfills and tests
+        daily_usage_billing   44          backfills and tests
+        api_requests          118,238     the one analytical table with live traffic
+
+T006  THE OPERATIONAL BASELINE — and the spread is R5's argument
+
+        chargeable objects  8,120     total 4,255 MB     environments 1,576
+        mean 537 kB   ·   **p50 1,024 bytes**   ·   max 25 MB
+
+      The mean is 500x the median, so "one lost delta costs 537 kB" is true of no object
+      in particular. R5 publishes the distribution for that reason.
+
+T007  **THE CI BASELINE IS RED, AND THE FAILING COMMIT IS 061's OWN CLOSE-OUT.**
+      run 36553980739 at `adcb853a` — **failure**, one job: *integration lanes and
+      coverage*, at `pnpm test:integration`.
+
+      **THAT COMMIT CHANGED TWO SPEC DOCUMENTS AND NO PLATFORM CODE**
+      (`specs/061-chapter-4-15/{baseline.txt,tasks.md}`), and the run before it —
+      `a0a5ed6`, the one 061 verified — was green on all four jobs. **So this is a flake
+      rather than a regression**, by 4.11's definition: the same tree passed and failed
+      with nothing executable changed between.
+
+      The two failures, both in the gateway lane and both arrival-deadline waits:
+
+        typing.itest.ts     > sends nothing at all after the signal          4,021 ms
+        membership.itest.ts > converges a pair that arrived in the wrong order  5,350 ms
+                              "no the backstop restoring what the database says within 5000ms"
+
+      **AND THIS CORRECTS 061's RECORD.** That chapter characterised the `typing` failure
+      as lane-local, seen 2 of 7 times on this machine. It reaches CI. What 061 could not
+      see, the commit after its close-out showed.
+
+T007a FENCE EXPOSURE, COUNTED BEFORE ANY EDIT
+
+        services/api/src/db/repository.ts          52   (29 en + appendix)
+        packages/protocol/src/internal.ts          27   (15 en + appendix)
+        services/api/src/media/store.ts             4
+        services/ingester/src/shape.ts              4   (3 en + appendix)
+        services/api/src/metering/reconcile.ts      2
+        services/api/src/media/media.service.ts     2
+        services/api/src/media/presign.ts           1
+        services/ingester/src/metering.ts           1
+        services/api/src/internal/media.controller.ts   **0**
+        services/ingester/src/ingest.ts                 **0**
+        services/api/src/metering/clickhouse.ts         **0**
+        files fencing analytics/*.sql                    6
+
+      Two conveniences worth noticing early: **`ingest.ts` is fenced nowhere**, and T012a
+      touches it in five places; **`internal/media.controller.ts` is fenced nowhere**
+      despite 4.14 and 4.15 both editing it. The two expensive files — `repository.ts`
+      and `protocol/internal.ts` — are both ones this chapter edits.
+
+T008  THE INGESTER IS NOT A COMPOSE SERVICE (4.9 — no Dockerfile), and
+      `media.itest.ts:117` spawns it as a child. **Every analytical figure in this
+      chapter depends on a process two test files start** (050-8, still open, and this
+      chapter leans on it harder than any before).
