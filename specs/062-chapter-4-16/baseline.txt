@@ -186,3 +186,67 @@ T018  THE LANES, AND THE SET COMPARISON EARNED ITS KEEP AGAIN
 
       After the fix: the set is **one carried baseline item**
       (`media-updated.itest.ts > announces nothing on a duplicate verdict`) and nothing new.
+
+================================================================================
+PHASE 3 — US1, a tenant's stored bytes have a daily history      2026-09-29
+================================================================================
+
+T019/T020/T023  `publishStorageDelta` in `services/api/src/metering/storage-event.ts`.
+      One function, four causes, three callers — `deleted` has none, and the comment says
+      so and names the chapter that will supply one, because *"called on deletion"* would
+      be false today. The `Nats-Msg-Id` is `${mediaId}:${cause}`: the media id alone would
+      collide, since a rejection follows a reservation for the same object.
+
+T021/T021a  **THE PUBLISH IS AFTER THE COMMIT, OUTSIDE THE TRANSACTION, AND NOT AWAITED.**
+      `void publishStorageDelta(...)` in `media.service.ts` after `reserveMediaSlot`
+      returns — `request-log.middleware.ts:118`'s shape, not the dispatcher's awaited one.
+      `webhooks/analytics.ts:14-32` is the decision record it follows.
+
+      **AND `MediaModule` NEEDED ITS OWN PROVIDER, WHICH IS 4.10's TRAP IN ITS OWN FILE.**
+      That module's header already says a service declared without its providers
+      *"compiles, typechecks and lints, and fails at the first request with `Nest can't
+      resolve dependencies`"*. `internal.module.ts` states the rule: **a provider is
+      visible to the module that declares it and to nothing it imports**, and
+      `InternalModule` has no `exports:`. So `ANALYTICS_PUBLISHER` is provided a THIRD
+      time, following `AppModule`'s precedent and paying its stated cost — another lazy
+      NATS connection.
+
+      **Verified against a running app, not the compiler**: `media.itest.ts` 6 of 6.
+
+T022  THE `RETURNING` LIST WAS SHORT FOR THE THIRD CHAPTER RUNNING. The verdict seam
+      needed `declared_bytes` to negate and `mime_type` for the kind, and had neither —
+      while carrying a field called `kind` that is the RENDITION's (`"thumbnail"`), which
+      is the near-miss a reader would use by accident. 4.14 added `environmentId` to this
+      list, 4.15 added `userId`, and the repair is the same each time.
+
+T022a Both causes emitted from the verdict handler **after** `recordMediaVerdict` returns,
+      beside `announce`, hanging off `applied`. Verified against a running app:
+      `media-verdict.itest.ts` 18 of 18.
+
+T024  `storedBytes` beside `storedMessages`, copying its two details — no empty-result
+      guard, `flat()[0]` — **and carrying the retention horizon in a comment at the
+      query**, because this sums from the beginning of time over a table with a 25-month
+      TTL. `storedMessages` shares that defect and has never shown it.
+
+T025-T029  `storage-metering.itest.ts`, **5 of 5, end to end**: api → NATS → ingester →
+      ClickHouse. A slot moves the delta by exactly the declared bytes; two tenants stay
+      separate; a quiet tenant reads **0 rather than nothing**; the kind is recorded; and
+      a rejection takes the bytes back leaving `reserved +9000, rejected -9000`.
+
+      **THE DUPLICATE TEST WAS WRONG ABOUT THE PLATFORM AND THE PLATFORM WAS RIGHT.** It
+      expected `applied: false` and got `expected undefined to be false`: **a second
+      verdict on a REJECTED object is a 422**, not a 200 — *"because its bytes are gone"*,
+      which `media-verdict.itest.ts` tests by name. The `applied: false` path is the
+      `ready` object's. Either way no second delta is emitted, which is what the
+      assertion after it proves, with a quiet window taken AFTER an arrival wait.
+
+T030  check-lane-scope: **70 integration files, 0 unscoped reads, 10 of 10 controls
+      fired** — 67 at 061's close.
+
+T031  **THE LANE IS GREEN: REAL EXIT 0, EMPTY FAILURE SET** — including the carried
+      baseline item, which has now been transient in every feature that recorded it.
+
+      **AND LINT CAUGHT ONE THING THE LANE DID NOT**: `no-useless-assignment` on a `let
+      seen = 0` whose value is never read before reassignment. Caught locally this time,
+      because 061's CI failed on a lint no task had named and T004 now runs it at the
+      baseline.
