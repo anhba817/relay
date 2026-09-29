@@ -38,140 +38,159 @@ tags. **Anyone holding an older clone of `relay-platform` must reset rather than
 
 <!-- SPECKIT START -->
 
-**060 IS CLOSED — CHAPTER 4.14, "Pending, ready, rejected".** Movement VI continues. Its record
-is `specs/060-chapter-4-14/` — `baseline.txt` first (every phase's measurements in the order
-they were taken, including the ones that were wrong first), then `gaps.md` (**16 entries: 10
-new, 6 carried and re-measured**), `traceability.md`, `doors.txt`, `tasks.md`. **SRS 1.21**,
-**ADR-33**, `docs/12` §7.4 ANSWERED, and **both** copies of the Part 4 table amended.
+**061 IS CLOSED at 103 of 103 — CHAPTER 4.15, "What a thumbnail costs".** Movement VI
+continues. Its record is `specs/061-chapter-4-15/` — `baseline.txt` first (every phase's
+measurements in the order they were taken, including the ones that were wrong first), then
+`gaps.md` (**8 new, 6 carried and re-measured**), `traceability.md`, `doors.txt`, `quickstart.md`
+(run, and right the first time), `tasks.md`. **SRS 1.22**, **ADR-34**, `docs/12` row 16 CLOSED,
+and **both** copies of the Part 4 table amended. Tagged **`part4-ch15`**.
 
-    check:fences 0 · 291 files across 57 chapters              from 56
-    2,254 prose words · 4 figures · 112 routes · 14 of 14 Part 4 chapters build
-    unit 888 of 888 · api integration 783 of 783 across 42 files
-    coverage REAL EXIT 0 · 138 files · 2,009 tests · zero threshold errors
-    34 error codes, 34 sections — UNCHANGED · 31 dependency entries, unchanged
-    check-lane-scope 66 files, 0 unscoped, 10 of 10 controls fired
+    check:fences 0 · 291 files across 58 chapters              from 57
+    2,385 prose words · 4 figures · 2 TRAP boxes · 0 titled fences in the chapter
+    unit 914 of 914 · api integration 797 · media-worker 32 · outsider 19 of 19
+    coverage zero threshold errors · 2,062 tests across 142 files
+    31 dependency entries -> 32, third-party 13 -> 14      the first move in Part 4
+    worker image 245 MB -> 279 MB · 19 appendix hunks across 5 files
 
-**FR-MED-07 IS TWO SENTENCES AND THE ONE NOBODY QUOTED WAS ALSO UNMET.** Three chapters cited
-this clause for its `media.updated` event and recorded the state machine as the gap. The
-sentence before it — *"real-time and history delivery shall include each attachment's state"* —
-had nowhere to put a state: the media arm was `{ type, media_id }` on every door.
+**THE COST IS NOT A RATIO, AND THAT IS THE CHAPTER.** Across six real images the
+thumbnail-to-parent ratio spans **775×** (0.08% to 61.99%) while the thumbnail's own size spans
+**4×** — every one lands between 2,558 and 10,258 bytes, because the output is a fact about the
+320 px bound and the ratio is a fact about somebody else's file. **A thumbnail costs about 7 kB
+and 15.2 ms.** Publishing the ratio publishes the wrong variable.
 
-**AND ONE SCHEMA WAS SERVING TWO RULES THAT CANNOT BOTH HOLD.** `attachmentSchema` is embedded
-by three request doors **and by `messageSchema`, which is what the api BUILDS**. A sender must
-not declare a state; a delivered attachment must always carry one. A third shape,
-`deliveredAttachmentSchema` with `state` **required** — and required is what makes the compiler
-name every construction site, which is how the door set was derived after **a hand list of three
-and a second of six were both wrong**. One of the doors `tsc` cannot see at all: a handler whose
-return type is inferred rather than annotated.
+**AND THE BOUND DECIDES A BEHAVIOUR, NOT A FIGURE.** At or below 320 px the output is **97.3% of
+the parent and the same pixels**, so an image already inside the bound gets **no rendition at
+all**. The rule came out of the table.
 
-**THE TWO SENTENCES FAIL IN DIFFERENT CIRCUMSTANCES, WHICH IS THE CHAPTER.** FR-MED-06 permits
-attaching an object already `ready`, for which no transition remains to announce — **538 of the
-lane's 1,589 referenced objects**. So the state on the attachment is the mechanism and the frame
-is an optimisation over it, and a client that receives no frame at all must still be right.
-4.13's shape for the upload sweep, one clause over.
+**THE CLAUSE'S LAST FIVE WORDS WERE THE HARD PART.** *"Stored as derived objects sharing the
+parent's lifecycle"* reads like a storage note. A rendition is named by no message, so
+**FR-MED-08 refuses to serve it** — its own rule for an unreferenced object — and **FR-MED-10
+would reap it after 24 hours**. Both correct. `0020` answers with a composite foreign key
+`(parent_id, environment_id)` and `ON DELETE CASCADE`, so **constitution I is enforced by the
+database** and *"its reachability is its parent's"* is a key rather than a second predicate arm
+somebody keeps in step. The redundant unique that the composite key needs costs **344 kB on a
+1,504 kB heap** and buys no uniqueness the primary key lacks — that is the price of the clause.
 
-**AND THE STATE IS READ WHEN THE MESSAGE IS SERVED, AT ONE EXTRA QUERY PER PAGE.** Storing it
-would make every verdict a write across every referencing message and give one fact two homes.
-The test asserts the column **byte-identical either side of a verdict** — asserting the new
-state twice would pass against a platform that rewrote every message.
+**AND `UNIQUE (parent_id, rendition)` AS A TABLE CONSTRAINT WAS 21× TOO BIG.** A btree indexes
+NULLs, so it covered all 6,646 rows at 168 kB to police the zero that had a parent. Partial over
+`parent_id IS NOT NULL`: **8,192 bytes**, same refusals, re-run to check that partial had not
+made it decorative. **Measure an index you add.**
 
-**§7.4 IS ANSWERED BY ARITHMETIC SOMEBODY HAD ALREADY WRITTEN DOWN (ADR-33).** ADR-25 set the
-threshold at per-channel SUBSCRIBEs *exceeding* six, so a sixth grammar is **permitted and
-spends the last of the headroom**. The third arm on `revision:{channel_id}` keeps it at five;
-`fanout.ts` already subscribes that subject with `chan:` under one reference count, *co-extensive
-by construction*. **And the cheapest option died on a field that does not exist**: re-delivering
-the message as `message.updated` needs nothing new, and `messageSchema` has no `edited_at`, so a
-client could not tell an attachment resolving from an author editing — ADR-24's own objection
-one level up.
+**A FOURTH ROUND TRIP, AND R2 HAD PRICED ONLY THE CPU.** The worker holds no object —
+`headObject` takes metadata, `streamObject` is consumed once by ClamAV at 64 KiB a chunk,
+`getRange` takes a prefix — so a rendition needs a whole-object GET nothing had ever made.
+Measured: **8.2 ms fetch against a 52.0 ms resize**, 14% and not the dominant term; **peak RSS
+moved 0.4 MB where the arithmetic for the bitmap said 36**, because libvips works in strips.
+**The 36 MB was written down as an upper bound and deliberately not published as a measurement**
+until something measured it.
 
-**REUSING A SUBJECT MEANS REUSING ITS PUBLISHER, WHICH THE RESEARCH PRICED AT ZERO.** Eight
-production sites in two services reached through `revision.message.channel` for the subject, the
-routing key or a log field; five more in tests, **one of them a HARNESS** that would have left
-every downstream test unable to exercise the media path while staying green. One grep found the
-class after five analysis passes found instances. They delegate to `channelOfRevision` in the
-module that owns the grammar, whose `switch` is exhaustive.
+**`recordMediaVerdict` HAD NO TRANSACTION AND FOUR ARTIFACTS SAID IT DID.** Found by an analysis
+pass opening the function rather than reading the plan. The red probe reports `expected 'ready'
+to be 'pending'` — a parent committed with no rendition and no reason, which is the absence
+FR-007 forbids. **Revert the mechanism and run the test before believing it.**
 
-**THE PRODUCER'S SEAM HAD FOUR THINGS MISSING AND NONE OF THEM WAS THE PRODUCER.** No tenant
-(`recordMediaVerdict` is module-level on a raw handle because its caller is a worker, and
-returned none), no publisher (`MessagesModule` declares the token and **deliberately does not
-export it**), a publisher assuming one arm shape, and no lifecycle for the second Redis client.
-**The second fails at runtime on the first request** with lint, typecheck and every unit test
-green — 4.10's finding, and the first test in the producer's suite exists only to make one
-request and check it is not a 500.
+**AND THE WORKER'S SIGNER WAS TYPED `"GET" | "HEAD"`** — read-only at the type level, not by
+omission, and an accurate statement about a service that produced nothing. The compiler refused
+`putObject` before a reviewer could.
 
-**FIVE PLACES COUNT FRAMES AND ALL FIVE FIRED.** The union's own length, the gateway's advertised
+**A JPEG WITH ORDINARY EXIF DEFEATS THE 64 KiB PROBE.** One maximal `APP1` is 65,535 bytes and
+`PROBE_BYTES` is 65,536, so a 72,215-byte camera file reports **no dimensions** while its bytes
+decode as 1200×900. The fetch gate has **three** states, not two; a two-state gate would have
+denied renditions to exactly the files most likely to want one. It also explains why `width` is
+null for 5,942 of 5,996 lane images.
+
+**ADR-34 COULD NOT BORROW ADR-32's ARGUMENT.** That one is specific — five programs *"each
+reached over a socket with a documented protocol"* — and a linked library is a different
+relationship. ADR-34's own ground: the worker is a TypeScript program, calling a native module is
+the same relationship as calling Node's JSON parser, and **no `.c` file enters the repository**.
+**And the size did not decide it**: `sharp` 30,380,799 B against ImageMagick's 28,936,284 B is
+5%; what decided it is 15.2 ms against 35.8 and a subprocess paying spawn on every object.
+**The video half is priced rather than deferred** — ffmpeg is 113,994,336 B, 3.75× the image
+half, for the harder half of a clause whose easier half 4.13 declined.
+
+**THE GATE WAS A FAILURE SET, NEVER A COLOUR, AND IT EARNED THAT ON THE FIRST COMPARISON.** Three
+integration suites were red at the baseline and **none was this chapter's**. Phase 2's run had a
+set of two — one carried, one new and mine, a whole-column-list tripwire whose own comment says
+*"this list going stale is the point of writing it out"*. A colour could not have said that; the
+lane was red before and red after. **And all three baseline failures turned out to be transient**
+after four runs: I called two of them deterministic on ONE isolated run each, which is the
+reading `CLAUDE.md` warns about in as many words.
+
+**THREE INSTRUMENTS LIED WHILE MEASURING ONE TABLE.** `apk add imagemagick` installs a build that
+answers `no decode delegate` for a JPEG — **a dependency's install size is not its usable install
+size**. The repair, four delegate packages in one `apk add`, returned **0 B** because two do not
+exist and apk is all-or-nothing, so a failed transaction presented as *no change needed*. And
+`magick -list format | grep '^ *(JPEG|PNG…)'` printed nothing because the list writes `JPEG*`;
+with a positive control the answer is `GIF* JPEG* JPG* PNG* WEBP*`.
+
+**AND `echo "EXIT=$?"` AFTER A PIPELINE READ `tail`'s STATUS. SIXTH TIME**, and the first by me:
+`tsc --noEmit | tail -6; echo EXIT=$?` printed **0** on a run that failed with TS1470.
+
+**THE FENCE BILL IS PER FILE, NOT PER HUNK, AND COUNTING IT BEFORE THE WORK IS THE POINT.**
+`repository.ts` is titled in 52 files (28 en, 23 vi, 1 appendix) and cost **9 hunks**; the whole
+bill was **19 hunks in 5 files**, all to the appendix because it already amends four of them
+(4.8's rule, and one rule for five files beats a judgement per file). **No media-worker file
+appeared** — the phase-1 count said its exposure was zero, so a new dependency, a new module and
+a rewritten Dockerfile layer cost the chain nothing. **Move the count to phase 1**, where it can
+still change how the work is sequenced.
+
+**AND AN OPTIONAL FIELD IS INVISIBLE IN BOTH DIRECTIONS.** It broke **zero** of the twelve
+whole-array assertions 4.14's required field would have broken, and the compiler named none of
+its construction sites — so the door set came from `withMediaStates`' four callers instead, and
+`doors.txt` records that as weaker rather than equivalent. Convenient, and it means neither
+instrument gives warning.
+
+**THE LANE CANNOT EXERCISE THIS CHAPTER AT SCALE, AND THE CHAPTER SAYS SO IN ITS BODY.** **4 of
+5,996 images are above the bound**; 54 renditions among 6,646 rows, where forcing the partial
+index costs **127 buffers against a sequential scan's 57** — the planner is right, and *whether
+Postgres chooses an index is a property of the corpus* (4.13). Every published ratio came from
+six images of convenience or synthetic noise, and says which.
+
+**AND THE PER-ARM PROBE FOUND THAT CHOOSING THE WRONG SUITES LOOKS EXACTLY LIKE AN UNCOVERED
+ARM.** Four arms deleted individually: this chapter's two each turned exactly one test red; the
+delivery read's environment scope turned nothing red **anywhere** (4.12's finding reproduced —
+`channelVisibleTo` refuses afterwards, and the file says so); and the `state = 'ready'` gate
+turned nothing red **in the suites I had chosen** and **2 of 17 red** in the one written for it.
+
+**060 IS CLOSED — CHAPTER 4.14, "Pending, ready, rejected".** Its record is
+`specs/060-chapter-4-14/` — `baseline.txt` first, then `gaps.md` (**16 entries**),
+`traceability.md`, `doors.txt`, `tasks.md`. **SRS 1.21**, **ADR-33**, `docs/12` §7.4 ANSWERED.
+
+    check:fences 0 · 291 files across 57 chapters · 2,254 prose words · 4 figures
+    unit 888 · api integration 783 across 42 files · coverage REAL EXIT 0, 138 files, 2,009
+    34 error codes, 34 sections · 31 dependency entries
+
+**ONE SCHEMA WAS SERVING TWO RULES THAT CANNOT BOTH HOLD.** `attachmentSchema` was embedded by
+three request doors **and by `messageSchema`, which is what the api BUILDS**. A sender must not
+declare a state; a delivered attachment must always carry one. A third shape with `state`
+**required** — and **required is what makes the compiler name every construction site**, which
+is how the door set was derived after a hand list of three and a second of six were both wrong.
+**4.15 paid the other side of this**: an OPTIONAL field names no site and breaks no existing
+assertion, so neither instrument warns.
+
+**FIVE PLACES COUNT FRAMES AND ALL FIVE FIRED** — the union's length, the gateway's advertised
 vocabulary, a derived count, a classified-exactly-once check, and a non-inbound refusal loop.
-**The last two are not counts for their own sake**: a server-to-client frame with no DIRECTIONS
-entry is one a client could forge, and the loop proving it cannot needs a well-formed sample or
-it asserts `invalid_frame` — the refusal a phase before the one under test. **That trap fired for
-the third time in the same file**, whose own comment records the first two. **Only `pnpm coverage`
-found them**: three live in the gateway's lane and it is the one command that runs everything.
+**Only `pnpm coverage` found them**, because three live in the gateway's lane.
 
-**AND THE PER-ARM PROBE REPRODUCED 4.12 EXACTLY.** Deleting the environment predicate leaves the
-suite constitution VI names as gating releases **green at 60** and the delivery gate green at 17;
-one test catches it, the one written to ask that question. **One arm turned nothing red** — the
-`ready`/`rejected` guard, which is unreachable at runtime and load-bearing at compile time.
-4.11 found *an optimisation wearing a branch's clothes*; **this is a type narrowing wearing a
-runtime guard's clothes**, and which kind it is now says so in the file.
+**AND CI IS THE SUPERPROJECT'S.** There is no `.github/` in `relay-platform`: `ci.yml` lives in
+the outer repository and the other two are **git submodules** checked out `submodules:
+recursive`. **So the push order is forced** — submodules first, then the superproject, or CI
+checks out gitlinks pointing at commits no remote has.
 
-**FOUR TESTS ASSERTED THE ABSENCE THIS CHAPTER FILLS, UNDER A COMMENT PREDICTING IT.** *"The slot
-is `pending` and stays `pending` until movement VI, and a client cannot tell from this payload."*
-This is movement VI. **And the fourth was a directory away** — running the media suite alone
-found three and reported green.
+**AND `tsconfig.build.json` EXCLUDES TESTS**, so `pnpm build` typechecks the shipped code and
+not its tests. CI found two errors in `packages/protocol/src/revision.test.ts` after five
+services had been typechecked individually. **`pnpm exec turbo run typecheck` is the command**
+— fifteen tasks, not five. And the sealed suite `packages/outsider` is reached by no local lane.
 
-**THE FENCE BILL WAS 18 AND THREE WERE MINE.** My own chapter's excerpts carried
-`title="<a real path>"`, and **a titled fence is a whole-body claim** (051-6). Untitled, 15 — all
-real drift. **All 15 went to the appendix**, generated against the END state: seven already carry
-appendix hunks, and a chapter hunk for those is written against a state no reader sees (4.8).
-One rule for fifteen files beats two rules and a judgement per file. **854 diff lines**, and one
-hunk needed `-U10` because `-U6` matched twice.
+**AND THE FIX FOR CI BROKE THE FENCE CHAIN.** Repairing two platform files invalidated the
+appendix hunks that publish them, so `relay-tutorial`'s job went red on the second push with
+nothing in that repository changed. **The fence chain is a claim about `relay-platform`'s
+HEAD.** Order: fix the platform, re-dump, re-hunk, push both.
 
-**AND `echo "EXIT=$?"` AFTER A PIPELINE READS `sed`'s STATUS. FIFTH TIME**, in the session that
-quotes the rule. `pnpm coverage | sed > f; echo EXIT=$?` printed **0** on a run that had failed a
-threshold; re-run without the pipe, **REAL EXIT=1**.
-
-**THE QUICKSTART WAS RUN AND WAS WRONG SIX TIMES.** Port 3000 for 4000; a channel body of
-`{name, visibility}` for `{external_id, type}`; a slot body whose wrong shape answers a
-**caller-triggered 500**; `idem_key` on a REST door that has no such field; a sender that is not
-a user of the demo tenant; and the worker credential, without which every verdict is a 401 and
-the producer under test is never reached — **4.9's finding, twice in one feature.**
-
-**AND CI IS THE SUPERPROJECT'S, WHICH NO CLOSE-OUT HAD SAID.** There is no `.github/` in
-`relay-platform` at all: `ci.yml` lives in the outer repository and the other two are **git
-submodules** checked out with `submodules: recursive`. **So the push order is forced** —
-submodules first, then the superproject, or CI checks out gitlinks pointing at commits no remote
-has. Every prior record says "pushed in all three repositories" without saying why the order
-matters.
-
-**BASELINE 0 DISTINCT, FOUR JOBS GREEN** (run at `56095ded`, this session's starting commit).
-**AND THE FIRST PUSH FOUND TWO REAL DEFECTS, BOTH INVISIBLE TO EVERY COMMAND I HAD RUN.**
-`pnpm typecheck` failed on two lines in `packages/protocol/src/revision.test.ts` — the same
-union class the compiler caught five times elsewhere — **because `tsconfig.build.json` excludes
-tests**, so `pnpm build` typechecks the shipped code and not its tests, and I had typechecked
-five services individually and never the protocol package. **Fifteen turbo tasks; my per-service
-`tsc` covered five.** And the sealed suite held **a fifth** whole-array assertion, in the one
-suite no local lane reaches: `pnpm test`, `pnpm test:integration` and `pnpm coverage` all skip
-`packages/outsider`, which needs a composed stack and three variables. **CI found it, one
-chapter after 057 made that job run at all.**
-
-**AND THE FIX FOR CI BROKE THE FENCE CHAIN, WHICH IS THE LOOP WORTH NAMING.** Repairing those
-two platform files invalidated the appendix hunks that publish them, so `relay-tutorial`'s job
-went red on the second push having been green on the first — with nothing in that repository
-changed. **The fence chain is a claim about `relay-platform`'s HEAD**, so any platform edit after
-the hunks are written invalidates them, including one made to turn CI green. Order: fix the
-platform, re-dump, re-hunk, push both.
-
-**AND 050-1 IS EXPLAINED AND CLOSED, OPEN SINCE CHAPTER 4.5.** *"`pnpm coverage` printing `No
-test files found, exiting with code 1` … nobody can yet say why."* It reproduced twice
-consecutively, minutes after a run that found 138 files — and `vitest list` against the same
-config prints what `vitest run` replaces: **`Collect Error — connect ECONNREFUSED
-127.0.0.1:15432`**. The coverage config's `globalSetup` opens Postgres, and when it cannot the
-failure is reported as a claim about the CORPUS — *there are no tests* — rather than about the
-setup. **A zero meaning "the setup died" printing the line of a zero meaning "there is nothing to
-run"**, which is 045-81's checker, 049-3's lane-scope and 059-21's integration gate, now in the
-coverage lane. The rule: **when a lane reports an empty corpus, ask a lister rather than a
-runner.** My own cause was `docker compose --profile services stop` with no service list, which
-stops the stores too.
+**AND 050-1 IS EXPLAINED AND CLOSED.** `pnpm coverage` printing `No test files found, exiting
+with code 1` is a swallowed `globalSetup` Postgres failure: `vitest list` prints `Collect Error
+— connect ECONNREFUSED 127.0.0.1:15432`. **When a lane reports an empty corpus, ask a lister
+rather than a runner.**
 
 **059 IS CLOSED at 124 of 124 — CHAPTER 4.13, "the only service that reads the bytes".**
 **Movement VI opened here.** Its record is `specs/059-chapter-4-13/` — `baseline.txt` first,

@@ -204,7 +204,7 @@ non-member, receive the parent's refusal.
 - [ ] T092 Compare the CI error set **per error** against T007's baseline, in both directions. One comparison supports *"this run introduced nothing new"*, not *"the set is stable"* — 4.11 ran three and found the middle one's extras present in neither neighbour, which is a flake rather than a regression.
 - [ ] T093 If CI is red, fix the platform, **re-dump, re-hunk, and push both** — repairing a platform file invalidates the appendix hunks that publish it, which took `relay-tutorial`'s job red on 4.14's second push with nothing in that repository changed.
 - [ ] T094 Tag `part4-ch15` on a commit that **checks out a working chapter**. 4.14's tag had to be moved off a commit that fails `pnpm typecheck`, because `README.md:8` promises a chapter's tag checks out that chapter's platform — and 047 found three Part 1 tags pointing at a superseded lineage that no gate could have caught.
-- [ ] T095 Compress the previous feature's `CLAUDE.md` entry to its headline, measurement block and the findings still cited elsewhere, and add this one. **The file has a 150,000-character budget and the harness refuses it over that.**
+- [X] T095 Compress the previous feature's `CLAUDE.md` entry to its headline, measurement block and the findings still cited elsewhere, and add this one. **The file has a 150,000-character budget and the harness refuses it over that.**
 
 ---
 
