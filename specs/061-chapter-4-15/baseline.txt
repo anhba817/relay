@@ -431,3 +431,71 @@ T044  THE LANES
         api integration       797 (from 783)
         media-worker          32 (from 22)
         worker image          279 MB (from 245)
+
+================================================================================
+PHASE 5 — US3, a client can show the small one                  2026-09-29
+================================================================================
+
+T045  `thumbnail` ON THE DELIVERED ARM, OPTIONAL AND `strictObject`.
+      Absent, never null: three cases produce no rendition and only one is a failure, so
+      a `null` plus a reason would put the platform's diagnostics in every message.
+
+T046  THE DOOR DERIVATION, AND IT IS WEAKER THAN 4.14's — `doors.txt` says so first.
+      That chapter made `state` REQUIRED so `tsc` named every construction site. An
+      optional property is silently correct everywhere, so the compiler says nothing.
+      What makes it tractable: both fields are written at the SAME point, so the door set
+      is a question about `withMediaStates`' callers, which the compiler CAN answer.
+
+        repository.ts:4521  sendMessage                -> send response + fanout
+        repository.ts:5021  editMessage                -> edit response + edit fanout
+        repository.ts:5868  getMessageByIdempotencyKey -> the repeat-send read
+        repository.ts:6351  listMessages               -> history, and resume
+
+      Four callers, seven doors — the same seven 4.14 enumerated.
+
+T047  THE DECORATOR CARRIES IT — a THIRD query per page, not a join and not one per row.
+      A left join would return one row per (object, rendition) pair and turn the states
+      map into a group-by in Node. The tenant predicate is repeated on the new query even
+      though `media_objects_parent_fk` already constrains `parent_id` to the environment:
+      4.12 found three tenancy scopes whose individual removal turned nothing red, which
+      is exactly what a clause that cannot change a result looks like from a suite.
+
+T048  WHAT THE THIRD QUERY COSTS, AND THE PLANNER IS RIGHT TO IGNORE THE INDEX
+
+        the state lookup (50 ids, primary key)          3 shared buffers
+        the rendition lookup, as planned               57 shared buffers   Seq Scan
+        the same, with enable_seqscan = off           127 shared buffers   Index Cond
+
+      **FORCING THE INDEX MAKES IT WORSE.** 54 renditions among 6,646 rows, so a
+      sequential scan beats an index scan and Postgres chooses correctly. This is 4.13's
+      rule applied before writing an assertion — *"they asked whether Postgres CHOOSES an
+      index, which is a property of the corpus"* — and the honest statement is that
+      `media_objects_parent_idx` is the right shape for a population this lane does not
+      have. T006 already said so from the other end: **4 of 5,996 images are above the
+      bound**, so the lane cannot exercise this chapter at scale, and neither figure
+      should be published as a claim about a real deployment.
+
+T049/T050/T051  `rendition-delivery.itest.ts`, **7 of 7**. Every door, plus: the key is
+      OMITTED rather than sent as null (asked with `Object.hasOwn`, because
+      `toBeUndefined` also passes on `null`); a `pending` attachment offers nothing; and
+      `mediaUpdatedSchema` REFUSES a thumbnail, because ADR-33's frame is a notification
+      and not a payload — FR-MED-07's amendment makes the event an optimisation over the
+      floor, and a thumbnail arriving only in the frame would make the frame load-bearing.
+
+      TWO THINGS THE FIRST DRAFT GOT WRONG, both mine:
+        history answers `{ messages: [...] }`, not `{ data: [...] }` — guessed, and the
+          test died on `Cannot read properties of undefined (reading 'flatMap')`;
+        the PATCH route is `@Accepts("user")`, so an application credential gets **403**
+          — I used the api key for every door and read the refusal as a missing
+          thumbnail, which is 4.11's *"a red that looks like a platform defect"*.
+
+T052  **AN OPTIONAL FIELD BROKE ZERO WHOLE-ARRAY ASSERTIONS, WHERE 4.14's REQUIRED FIELD
+      BROKE FIVE.** The sweep found twelve `attachments … toEqual([...])` sites and every
+      one still passes, because the attachments they assert on have no renditions and the
+      key is therefore absent. That is the same design property as T046's, seen from the
+      other side: what the compiler cannot name, an existing assertion cannot trip over.
+      Recorded rather than celebrated — it means the suite gives no warning either.
+
+T053/T054  THE FULL LANE: **13 of 14 tasks**, and the single failure is the CARRIED
+      baseline item `media-updated.itest.ts`, which passes alone 9 of 9. The accounting
+      tests and the isolation gauntlet are green.

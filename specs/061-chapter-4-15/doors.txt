@@ -1,0 +1,44 @@
+# Doors that serve an attachment's THUMBNAIL — derived, not read off 4.14's list (T046).
+#
+# WHY THIS DERIVATION IS WEAKER THAN 4.14's, SAID FIRST.
+#
+# That chapter made `state` REQUIRED on the delivered arm, so `tsc --noEmit` named every
+# construction site and the door set fell out of a build error — after a hand list of
+# three and a second of six had both been wrong. **This chapter's field is OPTIONAL**,
+# because three cases legitimately produce no rendition and only one of them is a
+# failure. An optional property is silently correct everywhere, so the compiler says
+# nothing and the derivation is a runtime assertion per door instead. Recorded as weaker
+# rather than presented as equivalent.
+#
+# WHAT MAKES IT TRACTABLE ANYWAY: both fields are written at the SAME point. Every door
+# that carries `state` carries `thumbnail`, because both are added by
+# `Repository.withMediaStates` / `withMediaState` and by nothing else. So the derivation
+# is a question about that function's callers, which the compiler CAN answer.
+#
+# grep 'withMediaStates(|withMediaState(' services/api/src/db/repository.ts   → 5 sites
+#
+#   repository.ts:4521  in sendMessage                 -> the send response + fanout publish
+#   repository.ts:5021  in editMessage                 -> the edit response + edit fanout
+#   repository.ts:5868  in getMessageByIdempotencyKey  -> the repeat-send read
+#   repository.ts:6199  in withMediaState (the one-row wrapper, not a door)
+#   repository.ts:6351  in listMessages                -> history, and resume reads it
+#
+# Four callers, seven doors — the same seven 4.14 enumerated, because a door is a place a
+# message reaches a client and several of them share one repository call.
+
+# door                                          reaches it via        asserted by
+messages.controller.ts  send response           sendMessage           rendition-delivery.itest.ts "the send response"
+messages.controller.ts  fanout publish          sendMessage           rendition-delivery.itest.ts "the socket frame"
+messages.controller.ts  edit response           editMessage           rendition-delivery.itest.ts "the edit response"
+messages.controller.ts  edit fanout publish     editMessage           rendition-delivery.itest.ts "the socket frame"
+history (listMessages)                          listMessages          rendition-delivery.itest.ts "history"
+backfill.controller.ts  resume                  listMessages          rendition-delivery.itest.ts "resume"
+idempotency-conflict    repeat send             getMessageByIdemKey   rendition-delivery.itest.ts "a repeated send"
+
+# AND ONE DOOR THAT DELIBERATELY DOES NOT CARRY IT:
+#
+#   the `media.updated` frame (4.14, ADR-33). A verdict announces that a client should
+#   look again; it does not carry the payload. FR-MED-07 was amended to make the event an
+#   OPTIMISATION over the floor — "a client that never receives a frame must still report
+#   the right state" — and putting the thumbnail in the frame would make the frame the
+#   only way to learn it. Asserted unchanged rather than left alone.
