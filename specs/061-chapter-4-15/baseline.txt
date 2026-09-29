@@ -655,3 +655,66 @@ T071  THE DOCUMENT GATES, AND THE TASK NAMED ONE THAT DOES NOT EXIST.
 
       After the sync: *"all mirrored docs match their sources"* and *"23 revisions
       ascend, 1.0 to 1.22"*.
+
+================================================================================
+PHASE 8 — the chapter                                           2026-09-29
+================================================================================
+
+T072  REGISTERED with all seven fields. `path` is checked by no gate, and an
+      unregistered id throws at build — 4.4's `pnpm build` was red for eight chapters
+      with eight other gates green.
+
+T073/T074/T075/T076/T077  THE CHAPTER.
+
+        2,385 prose words          bound 2,000-4,000, counted outside fences AND tables
+        2 TRAP boxes               bound is >= 1
+        4 figures, all `code`      `chart` renders nothing on a page that builds green
+        0 titled fences            an excerpt is untitled; a titled fence is a whole-body
+                                   claim (051-6), and 4.14 paid three fences for that
+
+      It publishes both halves of R2 — the real corpus showing the ratio is unstable and
+      the synthetic series showing where the crossover is — because either alone teaches
+      the wrong rule. It publishes R1's option table with the sentence that the size did
+      not decide it. And it publishes the three instruments that lied while measuring the
+      table, plus the pipeline exit-code trap, which happened again while writing it.
+
+      **AND IT SAYS WHAT THE LANE CANNOT TELL YOU, IN THE BODY.** Four of 5,996 images
+      are above the bound; the six real images are icons, diagrams and GIFs and not one
+      is a photograph. That paragraph is in the chapter rather than in this file, because
+      a reader deciding whether to trust a figure needs it where the figure is.
+
+T078/T079/T080/T081  THE FENCE BILL WAS FIVE FILES AND PHASE 1 PREDICTED IT.
+
+        packages/protocol/src/attachments.ts    2 hunks
+        packages/protocol/src/internal.ts       3 hunks
+        services/api/src/db/repository.ts       9 hunks     (12 at -U3, merged at -U6)
+        services/api/src/db/schema.ts           4 hunks
+        services/api/src/media/store.ts         1 hunk
+                                               19 hunks in 5 files
+
+      **ALL FIVE WENT TO THE APPENDIX**, generated against the dump's END state, because
+      the appendix already amends four of them — and a chapter hunk for a file the
+      appendix also edits is written against a state no reader sees (4.8). One rule for
+      five files beats two rules and a judgement per file, which is 4.14's conclusion
+      after it paid for the alternative.
+
+      **NO MEDIA-WORKER FILE APPEARS.** T007a counted its exposure at zero before any
+      edit, and adding `sharp` — a new dependency, a new module, a new test, a rewritten
+      Dockerfile layer — cost the chain nothing. The prediction and the bill agree.
+
+      GENERATED FROM THE CHECKER'S OWN REPLAY (`--dump`), not from `git diff`, and every
+      pre-image verified to match the dumped state **exactly once** before being written.
+      `-U6` sufficed for all five; the generator was prepared to widen to 8, 10 and 12
+      and did not need to. `repository.ts` went 12 hunks -> 9 because widening merges
+      adjacent ones, which is the effect 045 recorded as making `-U8` worse than `-U10`.
+      The `--- a/` and `+++ b/` headers are stripped: a `diff` fence carries the `@@`
+      hunks only (052's finding, 112 problems).
+
+T082/T083  EVERY GATE GREEN, EACH REAL EXIT CAPTURED WITHOUT A PIPE.
+
+        check:docs      0      after `sync:docs` — the mirrored SRS and SAD copies
+        check:srs       0
+        check:figures   0
+        check:errors    0      34 codes, 34 sections, unchanged
+        check:fences    0      **291 fenced files across 58 chapters**, from 57
+        pnpm build      0      /part-4/chapter-15/what-a-thumbnail-costs generated
