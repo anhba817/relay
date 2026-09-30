@@ -139,18 +139,18 @@ direction, and how many tenants it examined.
 
 ## Phase 8: The chapter
 
-- [ ] T064 Register 4.16 in `relay-tutorial/lib/tutorial.ts` with **all seven fields**. `path` is checked by no gate, and an unregistered id throws at build.
-- [ ] T065 Write the chapter at `relay-tutorial/app/(en)/part-4/chapter-16/<slug>/page.mdx`, 2,000–4,000 prose words counted **outside fences and tables**, English only.
-- [ ] T066 [P] Write the `TRAP` box. The candidate is the one the premise check found: **`stored_delta` is not stored bytes**, and a planner reading the column list would have concluded this chapter was half built.
-- [ ] T067 [P] Write the figures in `figures.ts`, passed as `code` and not `chart` — `check:figures` caught three dead diagrams `pnpm build` did not.
-- [ ] T068 Publish R5's distribution, and publish it as a distribution: **p50 1 kB, mean 537 kB, max 25 MB**. The mean alone would say a lost event costs half a megabyte, which is true of no object in particular.
-- [ ] T069 Publish the delta-versus-sample trade (FR-012) and why DR-17 already made it: a materialised view fires on insert and a sampler needs a scheduler this platform does not have (ADR-28).
-- [ ] T070 Publish what the inventory measurement found — that the listing already worked, that pagination did not, and that the keys carry the tenant because 4.15 kept the platform's layout.
-- [ ] T071 Write the chapter's fences. **A titled fence is a whole-body claim** (051-6) — an excerpt must be untitled, and 4.14 paid three fences for forgetting it.
-- [ ] T072 Generate hunks from the checker's own replay: `pnpm check:fences --dump <dir>`. A bare `--dump` writes the END state, which is what an appendix hunk wants. **Verify every pre-image matches the dumped state exactly once** before pasting, widening past `-U6` only when it does not.
-- [ ] T073 Put hunks in the appendix for any file the appendix already amends (4.8), and read T007a's counted table to work the bill biggest-first.
-- [ ] T074 Run `check:fences` to 0 and `pnpm build` green (SC-010, SC-011). **Run `check:fences` after any source edit** — the chain is a claim about `relay-platform`'s HEAD, so a platform edit made to turn CI green invalidates the hunks that publish it (4.14).
-- [ ] T075 [P] Count the prose words and confirm the bound.
+- [X] T064 Register 4.16 in `relay-tutorial/lib/tutorial.ts` with **all seven fields**. `path` is checked by no gate, and an unregistered id throws at build.
+- [X] T065 Write the chapter at `relay-tutorial/app/(en)/part-4/chapter-16/<slug>/page.mdx`, 2,000–4,000 prose words counted **outside fences and tables**, English only.
+- [X] T066 [P] Write the `TRAP` box. The candidate is the one the premise check found: **`stored_delta` is not stored bytes**, and a planner reading the column list would have concluded this chapter was half built.
+- [X] T067 [P] Write the figures in `figures.ts`, passed as `code` and not `chart` — `check:figures` caught three dead diagrams `pnpm build` did not.
+- [X] T068 Publish R5's distribution, and publish it as a distribution: **p50 1 kB, mean 537 kB, max 25 MB**. The mean alone would say a lost event costs half a megabyte, which is true of no object in particular.
+- [X] T069 Publish the delta-versus-sample trade (FR-012) and why DR-17 already made it: a materialised view fires on insert and a sampler needs a scheduler this platform does not have (ADR-28).
+- [X] T070 Publish what the inventory measurement found — that the listing already worked, that pagination did not, and that the keys carry the tenant because 4.15 kept the platform's layout.
+- [X] T071 Write the chapter's fences. **A titled fence is a whole-body claim** (051-6) — an excerpt must be untitled, and 4.14 paid three fences for forgetting it.
+- [X] T072 Generate hunks from the checker's own replay: `pnpm check:fences --dump <dir>`. A bare `--dump` writes the END state, which is what an appendix hunk wants. **Verify every pre-image matches the dumped state exactly once** before pasting, widening past `-U6` only when it does not.
+- [X] T073 Put hunks in the appendix for any file the appendix already amends (4.8), and read T007a's counted table to work the bill biggest-first.
+- [X] T074 Run `check:fences` to 0 and `pnpm build` green (SC-010, SC-011). **Run `check:fences` after any source edit** — the chain is a claim about `relay-platform`'s HEAD, so a platform edit made to turn CI green invalidates the hunks that publish it (4.14).
+- [X] T075 [P] Count the prose words and confirm the bound.
 
 ---
 

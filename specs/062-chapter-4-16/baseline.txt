@@ -692,3 +692,70 @@ T062  **THE DIFF CHECK CAUGHT ONE, IN THE REVISION ROW ANNOUNCING A CLAUSE CORRE
 
 T063  `pnpm sync:docs` synced four mirrored files; `check:docs` REAL EXIT 0 —
       *all mirrored docs match their sources* · *24 revisions ascend, 1.0 to 1.23*.
+
+================================================================================
+PHASE 8 — the chapter                                                2026-09-30
+================================================================================
+
+T064  Registered with all seven fields; `pnpm build` REAL EXIT 0 and the page renders.
+      **59 chapters** in the chain now, from 58.
+
+T065/T075  **2,795 prose words**, counted outside fences and tables, inside the
+      2,000–4,000 bound. **10 fences, 0 of them titled** — every one an excerpt, which is
+      051-6's rule followed rather than paid for: a titled fence is a whole-body claim and
+      three quoted lines would make the chain's state for that file three lines.
+
+T066  TWO `TRAP` BOXES. The first is the one the premise check found — **`stored_delta` is
+      not stored bytes**, on the same table, counting messages, and it nearly made this
+      chapter conclude its own work was half done. The second is the coverage finding: **a
+      coverage number is a claim about what ran in THIS process**, and a service exercised
+      only through a spawned subprocess measures as dead code however hard it is working.
+
+T067  FOUR FIGURES, all passed as `code`. `check:figures` reports **306 figures** (from
+      302) and **308 imported bindings all resolve**.
+
+T068  R5's distribution published AS a distribution — p50 1,024 B, mean 521,671 B, max
+      26,214,400 B, with the 509× stated. The mean alone says a lost record costs half a
+      megabyte, which is true of no object on this lane.
+
+T069/T070  The delta-versus-sample trade is published with the reason the clause had no
+      choice (a view fires on insert; a sampler needs a scheduler ADR-28 records as
+      absent), and the listing's story with it: **the listing already worked and the
+      pagination did not**, the keys carry the tenant because 4.15 kept the layout, and
+      the signer needed extra parameters because appending one answers
+      `SignatureDoesNotMatch`.
+
+T071-T074  **THE FENCE CHAIN IS ZERO.** `check:fences` REAL EXIT 0 — *291 fenced files
+      replay onto relay-platform across 59 chapters*.
+
+        10 files · 22 hunks · 765 diff lines · all at -U6
+        every pre-image verified to match the dumped chain state EXACTLY ONCE
+        before pasting, at seven candidate widths — none needed more than 6
+
+      **ALL TEN WENT TO THE APPENDIX**, which is 4.15's rule applied to a different
+      ratio: three of the ten are files `fences/post-series.md` already amends and their
+      hunks go after the existing ones, and the other seven follow because **one rule for
+      ten files beats a judgement per file** — and a 2,795-word chapter cannot carry 765
+      diff lines.
+
+        packages/protocol/src/internal.ts          1 hunk    appendix already amends it
+        services/api/src/db/repository.ts          3         appendix already amends it
+        services/api/src/media/store.ts            1         appendix already amends it
+        services/ingester/src/shape.ts             4
+        services/ingester/src/clickhouse.ts        3
+        services/ingester/src/main.ts              2
+        services/ingester/src/metering.ts          1
+        services/api/src/media/presign.ts          2
+        services/api/src/media/media.service.ts    3
+        services/api/src/media/media.module.ts     2
+
+      **THE BILL GREW FROM 8 PREDICTED TO 10 ACTUAL, AND ALL THREE ERRORS WERE IN THE SAME
+      DIRECTION.** T007a predicted eight and charged for `metering/reconcile.ts`, which
+      this chapter never touched. The three it missed — `services/ingester/src/clickhouse.ts`,
+      `services/api/src/media/media.module.ts` and `services/ingester/src/main.ts` — each
+      arrived from work done after the list was written: an insert method, a third
+      provider, and a one-line repair to a log line that T050 found by watching an outage.
+      **Fourth feature running that every unplanned file came from RUNNING something.**
+
+T074-2  ALL FIVE GATES REAL EXIT 0 — `check:docs`, `check:errors`, `check:fences`,
+      `check:figures`, `check:srs` — and `pnpm build` REAL EXIT 0.
