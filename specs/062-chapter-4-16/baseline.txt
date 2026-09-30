@@ -377,3 +377,82 @@ T042-pre  THE FENCE BILL AT THE CLOSE OF PHASE 4: **9 files, all HEAD, 0 APPLY.*
       Four of the nine go to `fences/post-series.md`'s existing hunks (4.8's rule) and the
       fifth — `media.module.ts` — anchors in chapter 4.10, which is where 4.15 also found its
       cheapest anchors. T072/T073 pay it.
+
+================================================================================
+PHASE 5 — uploads are counted by kind (US3)                          2026-09-30
+================================================================================
+
+T042/T043  ALREADY STRUCTURALLY IN PLACE from phases 2 and 3 — `kind` is required on
+      `mediaStoredRecordSchema` so every cause carries it including `deleted`, and `0018`
+      populates `uploads_by_kind`. **Both were verified by running rather than by reading,
+      and the running is what found T043 was wrong.**
+
+T044  THE END-TO-END COUNT, THROUGH THE WHOLE PATH: three slots on one day, two images and
+      one audio, give `{'audio':1,'image':2}` summing to 3 with a level of 7,000 bytes.
+      The type was measured in phase 2 against a DIRECT INSERT; **a type that merges on
+      insert and not through a view would be half a fix**, and this is the half an insert
+      cannot check.
+
+T044-2  **THE VIEW'S EXPRESSION WAS WRONG AND A TEST IS WHAT SAID SO.**
+      `sumMap(map(kind, toUInt64(if(event = 'reserved', 1, 0))))` gives EVERY event's kind
+      a key and non-uploads a value of zero. Measured on a day holding one image
+      reservation, one audio REJECTION and one image rendition:
+
+        the first version    {'audio':0,'image':1}
+        `sumMapIf`           {'image':1}
+        no matching row      {}
+
+      An `audio` key in a column called `uploads_by_kind`, on a day nobody uploaded any
+      audio. The damage is to the KEY SET, not the values: it stops meaning *"the kinds
+      this tenant uploaded"* and starts meaning *"the kinds that had any media event"*,
+      and a caller iterating the map reports a kind belonging to a different question.
+      `dailyUsage`'s own rule one level down — *"a day with no activity is a missing row,
+      never a row of zeros."*
+
+      **AND THE ZEROS WERE STABLE, WHICH IS THE KIND THAT SURVIVES.** `SummingMergeTree`
+      drops a row whose summed columns are all zero and does **not** drop a zero-valued
+      key inside a map: `{'audio':0,'image':1,'video':0}` before `OPTIMIZE … FINAL` and
+      the same after. So this was not a 4.9-style moment-versus-state artefact that a
+      merge would have cleaned up.
+
+      `0018` IS AMENDED IN PLACE RATHER THAN FIXED BY AN `0019`. The migration is this
+      chapter's own and has shipped nowhere; a `0019` that repairs `0018` publishes a
+      mistake as history, which is the argument 4.13 made when it rewrote the MinIO image
+      in all 25 commits. **A lane that already applied the old file must drop the view and
+      delete its ledger row** — the checksum refusal is doing its job, and the two
+      commands are in `quickstart.md`. A fresh apply is unaffected.
+
+T045  FR-010 ANSWERED ONCE AND ASSERTED AT EVERY READER. A rendition is **not** an upload
+      and its bytes **are** in the level:
+
+        end to end (api → ingester → view)   50,000 reserved then a 7,000 rendition:
+                                             level 57,000, count {'image':1}
+        the ingester's two reads             level 5,500 as of the 23rd, count {'image':1}
+        the raw events                       reserved image 50000 / rendition image 7000
+
+      **AND THE POLL WAS WATCHING THE WRONG COLUMN.** The first version of the FR-010 test
+      polled `uploads_by_kind` — the one column that by design does NOT move for a
+      rendition — so it returned on the first read, before the delta had crossed the
+      broker, and reported `expected 50000 to be 57000`: a red that reads exactly like the
+      feature being broken. *Arrival is a condition* (045), and the condition has to be
+      the thing the test is about. It waits on both columns now.
+
+T045-2  **`uploads_by_kind` HAD NO READER AND `storedBytes` HAD NO TEST**, which is 4.6's
+      *"the rollup nobody read"* one movement later and in a column three commits old.
+      `grep` over the whole repository for either name gave the migration that writes it,
+      the migration that declares it, and nothing else. FR-009 says the platform MUST
+      count uploads by kind; a column holding the count does not discharge that.
+
+      `uploadsByKind()` joins `storedBytes` and `storedMessages` in
+      `services/ingester/src/metering.ts`, and both now have tests. **A flow, not a
+      stock** — closed at both ends where the level has no lower bound, which is the
+      distinction `0018` puts in one `SELECT` and FR-010 exists to keep apart.
+
+      AND ITS FIRST DRAFT ASKED FOR `FORMAT JSONCompact`, whose body is a multi-line
+      envelope with double-quoted keys that this client's tab-splitter would shred. The
+      parser matches single-quoted keys, so it would have returned **`{}`** for a tenant
+      with uploads — a silently empty answer. The wire format was then asked of the
+      server: `{'audio':14,'image':155,'video':2}`, one line, `FORMAT TSV`.
+
+T042-T045  ingester metering 11 -> **14 of 14** · storage-metering 5 -> **7 of 7** ·
+      storage-reconcile **8 of 8** · unit 929 · lint 0 · typecheck 0 · fence bill still 9.

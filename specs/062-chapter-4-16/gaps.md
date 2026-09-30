@@ -69,3 +69,45 @@ outstanding can only be answered by the inventory. Three sides, because the ques
 The constitution III amendment written in full at 054 and not applied
 (`specs/054-chapter-4-9/constitution-amendment.md`) now has a **fourth** item standing against
 it.
+
+---
+
+## 062-5 — a column with one writer and no reader, three commits after it was added
+
+**New, and it is 4.6's finding one movement later.** That chapter is called *"the rollup
+nobody read"*: it found a rollup that had existed for two chapters, satisfied DR-10, and was
+read by nothing — `grep` gave a comment and a file referenced by no script, service or config.
+
+`uploads_by_kind` was in exactly that state at the start of phase 5. `grep` over all three
+repositories gave `0017`, which declares it, and `0018`, which writes it. Nothing read it.
+`storedBytes` was one step better — a reader with no test and no caller.
+
+**CLOSED IN THIS FEATURE RATHER THAN RECORDED.** `uploadsByKind()` joins `storedBytes` and
+`storedMessages` in `services/ingester/src/metering.ts`, and both have tests. The entry stays
+because the *interval* is the finding: a clause that says the platform MUST count something
+is not discharged by a column that holds the count, and three commits is how long it took
+anyone to ask.
+
+---
+
+## 062-6 — the amended migration needs a manual step on any lane that applied the old one
+
+**New, operational.** `0018_mv_billing_storage.sql` was amended in place after it had been
+applied — `sumMap(map(kind, if(…)))` to `sumMapIf(…)` — because the migration is this
+chapter's own and has shipped nowhere, and an `0019` that repairs `0018` publishes a mistake
+as history (4.13's argument when it rewrote the MinIO image in all 25 commits).
+
+`analytics/apply.mjs` keys its ledger on filename AND checksum and refuses a file that changed
+after it was applied, which is the gate working. A developer holding such a lane needs two
+commands before `node analytics/apply.mjs` will run:
+
+    DROP TABLE IF EXISTS relay_analytics.mv_billing_storage
+    ALTER TABLE relay_analytics.schema_applied DELETE WHERE filename = '0018_mv_billing_storage.sql'
+
+**CI AND A FRESH CLONE NEVER MEET IT**, which is the same asymmetry 4.10's MinIO UID had and
+the reason it is written down rather than assumed harmless. `quickstart.md` carries it.
+
+**AND THE OLD VIEW'S ROWS ARE STILL IN THE ROLLUP** on any such lane, carrying zero-valued
+keys a merge will never remove. Harmless to the level and to every count that reads a value;
+misleading only to a reader that treats the key set as the list of kinds uploaded — which is
+the defect the amendment was for.

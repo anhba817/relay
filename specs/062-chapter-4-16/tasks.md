@@ -101,10 +101,10 @@ direction, and how many tenants it examined.
 
 ## Phase 5: User Story 3 — uploads are counted by kind (P3)
 
-- [ ] T042 [US3] Carry `kind` on every record including `deleted`, so the same view that builds the counts can reverse them.
-- [ ] T043 [P] [US3] Extend the materialised view to populate `uploads_by_kind` (FR-009).
-- [ ] T044 [P] [US3] Write the test: uploads of two kinds on one day give separate counts that sum to the day's total (SC-007).
-- [ ] T045 [US3] **Answer FR-010 once and assert the answer at every reader**: a rendition is **not** an upload for the count — nobody uploaded it — and its bytes **are** in the level. Two answers about one object is how a count and a sum drift apart, which is why this is a requirement rather than a note.
+- [X] T042 [US3] Carry `kind` on every record including `deleted`, so the same view that builds the counts can reverse them.
+- [X] T043 [P] [US3] Extend the materialised view to populate `uploads_by_kind` (FR-009).
+- [X] T044 [P] [US3] Write the test: uploads of two kinds on one day give separate counts that sum to the day's total (SC-007).
+- [X] T045 [US3] **Answer FR-010 once and assert the answer at every reader**: a rendition is **not** an upload for the count — nobody uploaded it — and its bytes **are** in the level. Two answers about one object is how a count and a sum drift apart, which is why this is a requirement rather than a note.
 
 ---
 

@@ -41,6 +41,20 @@ RELAY_POSTGRES_PORT=15432 docker compose --profile services up -d --wait
 export CREDENTIAL=$(RELAY_POSTGRES_PORT=15432 node scripts/seed-demo-tenant.mjs)
 ```
 
+**IF `apply.mjs` REFUSES `0018_mv_billing_storage.sql` AS CHANGED**, this lane applied the
+first version of that view, which counted a zero for every kind that had a non-upload event.
+The migration was amended in place because it has shipped nowhere (`gaps.md` 062-6), and the
+ledger refusing it is the gate working. Two commands, then re-run the apply:
+
+```bash
+cq() { curl -s -u relay:relay "http://localhost:8123/" --data-binary "$1"; }
+cq "DROP TABLE IF EXISTS relay_analytics.mv_billing_storage"
+cq "ALTER TABLE relay_analytics.schema_applied DELETE WHERE filename = '0018_mv_billing_storage.sql'"
+node analytics/apply.mjs
+```
+
+A fresh clone and CI never meet this.
+
 **This chapter needs the ingester running**, and it is not a compose service (4.9). A record on
 the stream with nothing draining it leaves every figure at zero — which is indistinguishable
 from a tenant that stored nothing, and is the reason §1 starts by reading the baseline.
