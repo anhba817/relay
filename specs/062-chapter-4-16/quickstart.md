@@ -4,9 +4,10 @@ Prove the chapter against a running stack: bytes appearing in a tenant's daily f
 are taken, a rejection taking them back out, the metered level agreeing with the object store,
 and a slot request that still succeeds with the analytical store stopped.
 
-**NOT YET RUN AS A WHOLE. This is a plan-time draft**, and saying otherwise before it has been
-run is the one failure this document cannot recover from. Running it is a phase-9 task and every
-correction goes here with what the wrong version looked like.
+**RUN END TO END ON 2026-09-30**, against the composed stack. It was wrong in three places and
+each one is corrected below with what the wrong version looked like. One further failure was
+mine rather than the document's: §2 returned no row because I had not started the ingester,
+which §0 says to do in bold — the warning working rather than a defect.
 
 **What HAS been verified, during planning:** the ClickHouse client invocation below answers
 (`message_events 0`, `api_requests 118238`); the bucket listing returns a `ListBucketResult`
@@ -76,9 +77,27 @@ chapter. **Record it** — every later step is a difference from this, not an ab
 
 ## 2 · Take a slot and watch the figure move
 
+**CORRECTION 1 — this step referred the reader to another document.** It read
+`node -e '/* 4.15's fixture … */' # see quickstart 4.15 §1`, which runs nothing and leaves
+`/tmp/relay-4-15.png` absent, so `stat` fails and `$BYTES` is empty. A quickstart that cannot be
+run from itself is a quickstart nobody runs. The generator is inlined:
+
 ```bash
-node -e '/* 4.15's fixture, 800x600, 447,377 bytes */' > /dev/null   # see quickstart 4.15 §1
-export BYTES=$(stat -c%s /tmp/relay-4-15.png)
+node -e '
+const z=require("node:zlib"), fs=require("node:fs");
+const W=800,H=600, raw=Buffer.alloc(H*(1+W*3));
+for(let y=0;y<H;y++){const o=y*(1+W*3); raw[o]=0;
+  for(let x=0;x<W;x++){const p=o+1+x*3; raw[p]=(x*7)&255; raw[p+1]=(y*5)&255; raw[p+2]=((x^y)*3)&255;}}
+const chunk=(t,d)=>{const l=Buffer.alloc(4);l.writeUInt32BE(d.length);
+  const b=Buffer.concat([Buffer.from(t),d]); const c=Buffer.alloc(4);
+  c.writeUInt32BE(z.crc32(b)); return Buffer.concat([l,b,c]);};
+const ihdr=Buffer.alloc(13); ihdr.writeUInt32BE(W,0); ihdr.writeUInt32BE(H,4);
+ihdr[8]=8; ihdr[9]=2;
+fs.writeFileSync("/tmp/relay-4-16.png", Buffer.concat([
+  Buffer.from([0x89,0x50,0x4e,0x47,0x0d,0x0a,0x1a,0x0a]),
+  chunk("IHDR",ihdr), chunk("IDAT",z.deflateSync(raw)), chunk("IEND",Buffer.alloc(0))]));
+console.log("wrote", fs.statSync("/tmp/relay-4-16.png").size, "bytes");'
+export BYTES=$(stat -c%s /tmp/relay-4-16.png)   # measured: wrote 447377 bytes
 SLOT=$(curl -sX POST localhost:4000/v1/media \
   -H "authorization: Bearer $CREDENTIAL" -H 'content-type: application/json' \
   -d "{\"filename\":\"bill.png\",\"mime_type\":\"image/png\",\"bytes\":$BYTES}")
@@ -88,8 +107,8 @@ cq "SELECT event, kind, bytes_delta FROM relay_analytics.media_events
     WHERE media_id = toUUID('$MEDIA')"
 ```
 
-**Expected**: one row, `reserved image <BYTES>`. **A slot that has not been uploaded to is
-already charged** — the quota counts `pending`, and FR-002 makes the meter agree.
+**Expected**: one row, `reserved image 447377` — measured. **A slot that has not been uploaded
+to is already charged** — the quota counts `pending`, and FR-002 makes the meter agree.
 
 **If the row is absent**, ask in this order, because three of these look identical from here:
 is the ingester running; did the record reach the stream
@@ -106,16 +125,30 @@ curl -sS -X POST "localhost:4000/internal/media/$MEDIA/verdict" \
   -d '{"verdict":"rejected","reason":"declaration_mismatch","verified_bytes":10}'
 
 cq "SELECT event, bytes_delta FROM relay_analytics.media_events
-    WHERE media_id = toUUID('$MEDIA') ORDER BY occurred_at"
+    WHERE media_id = toUUID('$MEDIA') ORDER BY ts"
 cq "SELECT sum(bytes_delta) FROM relay_analytics.media_events WHERE media_id = toUUID('$MEDIA')"
 ```
 
-**Expected**: two rows — `reserved +N` then `rejected −N` — and a sum of **0**. The object is
-charged while it is `pending` and not once it is refused, which is exactly what the quota's
-`state <> 'rejected'` does.
+**CORRECTION 2 — this query said `ORDER BY occurred_at` and the column is `ts`.** Measured:
+`Code: 47. DB::Exception: Unknown expression identifier 'occurred_at'`. `occurred_at` is the
+PRODUCER's field name; `shapeMediaStored` renames it on the way in, which is the rename
+`shape.ts`'s own header warns fails silently if it ever stops happening — and this document
+tripped over the other side of it.
 
-**Then deliver the same verdict again** and re-read: still two rows. The second verdict updates
-no rows (4.14's compare-and-set), so it emits nothing.
+**Expected**: two rows — `reserved +447377` then `rejected −447377` — and a sum of **0**,
+measured. The object is charged while it is `pending` and not once it is refused, which is
+exactly what the quota's `state <> 'rejected'` does.
+
+**Then deliver the same verdict again** and re-read: still two rows, sum still 0.
+
+**CORRECTION 3 — the sentence explaining that was wrong, and it is this feature's own finding
+written down twice.** The draft read *"the second verdict updates no rows (4.14's
+compare-and-set), so it emits nothing."* Measured: **HTTP 422**,
+`this object was rejected and its bytes are gone; a verdict cannot change that`. The
+`applied: false` path belongs to a `ready` object; a rejected one is refused by name. Phase 3's
+integration suite found exactly this and got `expected undefined to be false`, and the
+correction did not reach this document. **The assertion held and the explanation did not**,
+which is the harder half to notice.
 
 ## 4 · The reconciliation against the store's own inventory
 
@@ -141,8 +174,11 @@ curl -s -o /dev/null -w 'slot with ClickHouse down -> %{http_code}\n' \
 RELAY_POSTGRES_PORT=15432 docker compose start clickhouse
 ```
 
-**Expected**: **201**. The operational path publishes to a stream and never reads the analytical
-store, so an outage costs history and not availability.
+**Expected**: **201**, measured. The operational path publishes to a stream and never reads the
+analytical store, so an outage costs history and not availability. **And the record survived**:
+`ANALYTICS` held 1,177 messages during the outage and the row was queryable **4 seconds** after
+the restart, carrying its own `occurred_at` as `ts` — so the outage does not move the day the
+bytes were charged.
 
 **And the record should survive**: the ANALYTICS stream's `max_age` is 7 days
 (`jetstream.publisher.ts:51`), so a few minutes of ClickHouse being down is well inside it.

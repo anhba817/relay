@@ -759,3 +759,88 @@ T071-T074  **THE FENCE CHAIN IS ZERO.** `check:fences` REAL EXIT 0 — *291 fenc
 
 T074-2  ALL FIVE GATES REAL EXIT 0 — `check:docs`, `check:errors`, `check:fences`,
       `check:figures`, `check:srs` — and `pnpm build` REAL EXIT 0.
+
+================================================================================
+PHASE 9 — the record and the close                                   2026-09-30
+================================================================================
+
+T076-T078  `baseline.txt` written phase by phase in the order the measurements were
+      taken, including the ones that were wrong first. `gaps.md` **14 entries**, with the
+      carried ledger re-measured rather than copied (062-13). `traceability.md` built by
+      READING — 4.11's mechanical map raised fourteen false alarms out of fourteen, and
+      this one names, per requirement, the test that would go red.
+
+T077a  **THE RATCHET WAS HOLDING NONE OF THIS CHAPTER'S THREE FILES.**
+      `storage-reconcile.ts`, `storage-reads.ts` and `storage-event.ts` were unpinned, and
+      `storage-event.ts` measured **66.66% statements** with nothing to notice — the
+      missing third being the `catch`, which is not a defensive branch but the whole of
+      what *"a lost record is the accepted cost"* means in code. A test drives it now and
+      the pin is **100**, which is what the file achieves rather than what it achieved.
+      74 per-file pins, from 71. The class is open: **68 of 139 files are unpinned and the
+      lowest is at 20.00%** (`gaps.md` 062-12).
+
+T077b  **THE HOST SUSPENDED MID-FEATURE AND TOOK TWO STREAMS WITH IT.** Every container
+      exited; NATS came back answering `JetStream stream '$G > ANALYTICS' could not be
+      recovered`, and clearing that one produced `EVENTS` — 058's *"one unrecoverable
+      stream at a time"*, exactly. `jsm.streams.delete` answers `stream not found`,
+      because the server cannot see what it failed to recover. **And then starting the
+      composed api fixed it**: `{"status":"ok"}`, ANALYTICS 333 / EVENTS 816 /
+      DELIVERIES 17. The repair is to start the thing that owns the stream. The
+      intermediate state is convincing and wrong, which is why `gaps.md` 062-14 keeps it.
+
+      **AND `echo "REAL EXIT=$?"` AFTER A PIPELINE READ `tail`'s STATUS AGAIN — SEVENTH
+      TIME**, and the second by me. It printed `REAL EXIT=0` for a `docker compose up
+      --wait` that had just said `container relay-nats-1 is unhealthy`.
+
+T079  **THE QUICKSTART WAS RUN END TO END AND WAS WRONG THREE TIMES.**
+
+        1  §2 referred the reader to ANOTHER DOCUMENT for the fixture — `# see quickstart
+           4.15 §1` — so `/tmp/relay-4-15.png` is absent, `stat` fails and `$BYTES` is
+           empty. A quickstart that cannot be run from itself is one nobody runs. The
+           generator is inlined; measured, `wrote 447377 bytes`, matching 4.15 exactly.
+        2  §3 said `ORDER BY occurred_at` and the column is **`ts`**:
+           `Code: 47. Unknown expression identifier 'occurred_at'`. That is the PRODUCER's
+           field name — `shapeMediaStored` renames it — and this document tripped over the
+           other side of the rename `shape.ts`'s header warns about.
+        3  §3's duplicate verdict said *"updates no rows, so it emits nothing"*. Measured:
+           **HTTP 422**, *"this object was rejected and its bytes are gone"*. **The
+           assertion held and the explanation did not**, which is the harder half to
+           notice — and phase 3's suite had already found it and the correction never
+           reached this document.
+
+      **AND A FOURTH FAILURE WAS MINE RATHER THAN THE DOCUMENT'S**: §2 returned no row
+      because I had not started the ingester, which §0 says to do in bold. The warning
+      working rather than a defect.
+
+      What it measured, all of it first time once corrected:
+
+        §1  baseline for the demo tenant                123456
+        §2  reserved image 447377                       and `media: 1` in the batch line
+        §3  reserved +447377 / rejected -447377         sum 0, and 2 rows after the 422
+        §4  reconcile-storage --environment             1 row, meter-low, REAL EXIT 1
+        §5  slot with ClickHouse stopped                **201**
+            the record on the stream during the outage  ANALYTICS 1,177 messages
+            queryable after the restart                 **4 s**, ts unmoved
+
+T080  THE COMPOSED SERVICES STOPPED **BY NAME** — `api gateway dispatcher media-worker`,
+      REAL EXIT 0. Naming `ingester` makes the whole command fail; it has no Dockerfile.
+
+      THE FULL LANE SET, ALL READ WITHOUT A PIPE:
+
+        pnpm lint                        REAL EXIT 0
+        turbo run typecheck --force      REAL EXIT 0      15 tasks
+        pnpm build                       REAL EXIT 0
+        turbo run test --force           REAL EXIT 0      **945 unit tests**
+        pnpm test:integration            REAL EXIT 0      **70 of 70 suites**
+        pnpm coverage                    REAL EXIT 0      146 files, **2,116 tests**,
+                                                          zero threshold errors
+        global 93.62 st · 89.22 br · 93.16 fn · 94.77 ln
+        pnpm test:outsider               REAL EXIT 0      19 of 19
+        the five tutorial gates          all REAL EXIT 0  check:fences 291 files, 59 chapters
+
+      **AND ONE SUITE FLAKED, IN A DIRECTORY THIS CHAPTER DOES NOT TOUCH.**
+      `services/gateway/src/typing.itest.ts` failed twice in the first coverage run after
+      the host came back. Four samples: green, 1 red, 1 red, green — and **three DISTINCT
+      tests among the reds**, which is the definition of a flake rather than a regression.
+      `git diff` says this feature changed **0 gateway files**. 4.15's warning followed
+      rather than repeated: it called two failures deterministic on one isolated run each.

@@ -156,12 +156,12 @@ direction, and how many tenants it examined.
 
 ## Phase 9: The record and the close
 
-- [ ] T076 Write `specs/062-chapter-4-16/baseline.txt` phase by phase, **in the order the measurements were taken, including the ones that were wrong first**.
-- [ ] T077 [P] Write `gaps.md`, numbered, with the carried ledger **re-measured** rather than copied. Known carries: 050-8 (the ingester is not a deployment — this chapter depends on it more than any before), 055-3 and 061-4 (`check:errors` has no CI job; `check:refs` does not exist), 059-20, 043.
-- [ ] T078 [P] Write `traceability.md` by **reading**. 4.11's mechanical map raised fourteen false alarms out of fourteen.
-- [ ] T079 Run the quickstart end to end and correct it in place, recording each wrong version. **061's was right first time** because the corrections were applied before it ran; that is the bar, not luck.
-- [ ] T080 Stop the composed services **by name** — `api gateway dispatcher media-worker`, and **not `ingester`**, which has no Dockerfile and makes the whole command fail. Then run the full lane set once more.
-- [ ] T081 Commit each phase. Under five lines, no trailer.
+- [X] T076 Write `specs/062-chapter-4-16/baseline.txt` phase by phase, **in the order the measurements were taken, including the ones that were wrong first**.
+- [X] T077 [P] Write `gaps.md`, numbered, with the carried ledger **re-measured** rather than copied. Known carries: 050-8 (the ingester is not a deployment — this chapter depends on it more than any before), 055-3 and 061-4 (`check:errors` has no CI job; `check:refs` does not exist), 059-20, 043.
+- [X] T078 [P] Write `traceability.md` by **reading**. 4.11's mechanical map raised fourteen false alarms out of fourteen.
+- [X] T079 Run the quickstart end to end and correct it in place, recording each wrong version. **061's was right first time** because the corrections were applied before it ran; that is the bar, not luck.
+- [X] T080 Stop the composed services **by name** — `api gateway dispatcher media-worker`, and **not `ingester`**, which has no Dockerfile and makes the whole command fail. Then run the full lane set once more.
+- [X] T081 Commit each phase. Under five lines, no trailer.
 - [ ] T082 **Push submodules first, then the superproject.** `ci.yml` is the outer repository's and the other two are gitlinks, so the reverse order checks out commits no remote has.
 - [ ] T083 Compare the CI error set **per error** (SC-010) against T007's baseline, in both directions. One comparison supports *"this run introduced nothing new"*, not *"the set is stable"*.
 - [ ] T084 If CI is red, fix the platform, **re-dump, re-hunk, and push both** — repairing a platform file invalidates the appendix hunks that publish it.

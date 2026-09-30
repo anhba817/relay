@@ -193,3 +193,75 @@ somebody else's clause citation.
 features that have run it by hand, and it is in no `check:*` script and no workflow. That is
 the same shape as 055-3 (`check:errors` has no CI job) with one fewer step: here there is no
 script to leave unrun.
+
+---
+
+## 062-12 — this chapter shipped three source files and the ratchet held none of them
+
+**New, and the config's own notes already name the class.** `vitest.coverage.config.mts` records
+it about the quota chapter: *"this one shipped seven and left the ratchet nothing to hold, which
+is visible only by comparing two chapters."* It happened again here —
+`metering/storage-reconcile.ts`, `db/storage-reads.ts` and `metering/storage-event.ts` were all
+unpinned, and `storage-event.ts` measured **66.66% statements** with nothing to notice.
+
+The global floor is 70% **in aggregate**, so an unpinned file passes as long as the rest carry
+it: **68 of the 139 files the run sees are unpinned and the lowest is at 20.00%.**
+
+**CLOSED FOR THIS CHAPTER'S THREE**, with `storage-event.ts` pinned at 100 rather than at what it
+first measured — a test now drives the `catch`, which is not a defensive branch but the whole of
+what *"a lost record is the accepted cost"* means in code. The class stays open: nothing makes a
+new file's absence from the ratchet visible, and both instances were found by a human comparing
+one chapter to another.
+
+---
+
+## 062-13 — the carried ledger, re-measured
+
+**050-8 — the ingester is not a deployment. WIDENED.** Still no Dockerfile, still zero mentions
+in `compose.yaml`, and **three** test files now spawn it rather than two: `media.itest.ts`,
+`request-log.itest.ts` and this chapter's `storage-metering.itest.ts`. Every analytical figure
+this chapter publishes is on the far side of a process no deployment starts.
+
+**055-3 / 061-4 — `check:errors` has no CI job, and `check:refs` does not exist.** Re-measured:
+`check:errors` is 1 hit in `package.json` and **0 in `ci.yml`**, unchanged across four features.
+`check:refs` is 0 in both — it has never existed and 061's task list still named it.
+
+**059-20 — a per-file branch pin is a claim about the machine.** `media.controller.ts` now reads
+**86.15% over 65 branch points locally** against a pin of 83 set from CI's 84.61. The
+denominator has moved again — 33 at 4.13, 65 now — which is the entry's own point rather than a
+new one: the two figures are not two samples of one quantity.
+
+**043 — task ids in test titles.** **279 across 47 files**, from 330 across 46 at 045's close.
+Fewer ids, one more file; still filed rather than swept.
+
+---
+
+## 062-14 — a restart left two streams unrecoverable, one at a time, and the second could not be cleared
+
+**Carried from 048-6 / 049-1 / 058, reproduced exactly.** The host suspended and every container
+exited; on restart NATS answered `JetStream stream '$G > ANALYTICS' could not be recovered`.
+049-1's cause holds — the stream that fails to recover is whichever was being written — and the
+api writes on every request while Docker polls `/healthz` every five seconds, so a restart always
+lands mid-write.
+
+058's shape held too: **the health check names one unrecoverable stream at a time.** Clearing
+`ANALYTICS` and restarting produced `EVENTS`, and N corrupt streams cost N restarts with each one
+looking like the last.
+
+**AND THE SERVER OFFERS NO WAY OUT.** `jsm.streams.delete("EVENTS")` answers `stream not found`:
+the server cannot see a stream it failed to recover, so the only repair is removing the directory
+from the JetStream volume. **This environment's guard permitted that for the first stream and
+refused it for the second**, which is 058's *"the bulk form of a permitted operation is not
+automatically permitted"* at one instance rather than a loop.
+
+**AND THEN IT REPAIRED ITSELF, WHICH IS THE PART WORTH KEEPING.** Starting the composed api
+brought the health check to `{"status":"ok"}` with all three streams present — `ANALYTICS` 333
+messages, `EVENTS` 816, `DELIVERIES` 17. The api creates its streams on first publish, and a
+fresh `streams.add` over a directory the server never loaded succeeds where `streams.delete`
+answered `stream not found`.
+
+So the repair is **start the thing that owns the stream**, not reach into the volume — and the
+refusal that blocked the second removal blocked a step that was not needed. Recorded in full
+because the intermediate state is convincing and wrong: two restarts, two different stream
+names, a server that cannot see what it is complaining about, and an obvious conclusion
+(*"the files have to go"*) that the first removal appeared to confirm.
