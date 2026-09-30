@@ -110,16 +110,16 @@ direction, and how many tenants it examined.
 
 ## Phase 6: The measurements and the probes
 
-- [ ] T046 Probe every scope arm **by deletion** (SC-003): remove each individually, re-run the storage suites and the isolation gauntlet, and record each as **tested** or **unnecessary** by name. **An arm here is an SQL or predicate clause, not a JavaScript branch**, so a coverage number reports nothing about it (048's shape, 4.12's confirmation). 061 found that choosing too few suites looks exactly like an uncovered arm — name the suites in the record.
-- [ ] T047 [P] Measure SC-002: the rollup read against accumulating the same answer from raw `media_events`. **This is the comparison DR-10 asks for**, and `research.md` R8 records that the 252-buffer operational sum is not it.
-- [ ] T048 [P] Measure SC-009: the drift from one lost delta, as the distribution rather than a number — p50, mean and max over the chargeable objects — and state that it never self-corrects.
-- [ ] T049 [P] Measure the inventory's cost at the lane's size: pages, bytes, wall clock, against heading every object.
-- [ ] T050 SC-005: stop ClickHouse, issue a slot request, assert **201**, restart, and then **say which of the two happened** — the record survived or it was lost. The criterion requires the chapter to state it, not to prefer one.
-- [ ] T051 Run `pnpm coverage` and read the **real** exit code, without a pipe. `pnpm coverage | sed > f; echo EXIT=$?` reads `sed`'s status — **six occurrences in this project**, the last one mine.
-- [ ] T052 [P] Check the per-file coverage pins this chapter's files fall under, and run **both halves** of the unbindable-key probe (049). If a pin has to move, ask what the number is measuring first: 059 found a denominator that differs between machines and a pin that was right while its environment was wrong. **061 fixed six threshold errors with tests rather than lower pins.**
-- [ ] T053 Run `pnpm lint` and `pnpm exec turbo run typecheck --force`. **Both, by name, because 061's CI failed on the first and had 15 turbo tasks where per-service checks covered 5.**
-- [ ] T054 [P] Run the five gates that exist — `check:docs`, `check:errors`, `check:fences`, `check:figures`, `check:srs` — read off `package.json`. **There is no `check:refs`**; 061's task list named it and got `Command not found`.
-- [ ] T055 Run `pnpm test:outsider` with the composed services up and the three variables set. No local lane reaches it.
+- [X] T046 Probe every scope arm **by deletion** (SC-003): remove each individually, re-run the storage suites and the isolation gauntlet, and record each as **tested** or **unnecessary** by name. **An arm here is an SQL or predicate clause, not a JavaScript branch**, so a coverage number reports nothing about it (048's shape, 4.12's confirmation). 061 found that choosing too few suites looks exactly like an uncovered arm — name the suites in the record.
+- [X] T047 [P] Measure SC-002: the rollup read against accumulating the same answer from raw `media_events`. **This is the comparison DR-10 asks for**, and `research.md` R8 records that the 252-buffer operational sum is not it.
+- [X] T048 [P] Measure SC-009: the drift from one lost delta, as the distribution rather than a number — p50, mean and max over the chargeable objects — and state that it never self-corrects.
+- [X] T049 [P] Measure the inventory's cost at the lane's size: pages, bytes, wall clock, against heading every object.
+- [X] T050 SC-005: stop ClickHouse, issue a slot request, assert **201**, restart, and then **say which of the two happened** — the record survived or it was lost. The criterion requires the chapter to state it, not to prefer one.
+- [X] T051 Run `pnpm coverage` and read the **real** exit code, without a pipe. `pnpm coverage | sed > f; echo EXIT=$?` reads `sed`'s status — **six occurrences in this project**, the last one mine.
+- [X] T052 [P] Check the per-file coverage pins this chapter's files fall under, and run **both halves** of the unbindable-key probe (049). If a pin has to move, ask what the number is measuring first: 059 found a denominator that differs between machines and a pin that was right while its environment was wrong. **061 fixed six threshold errors with tests rather than lower pins.**
+- [X] T053 Run `pnpm lint` and `pnpm exec turbo run typecheck --force`. **Both, by name, because 061's CI failed on the first and had 15 turbo tasks where per-service checks covered 5.**
+- [X] T054 [P] Run the five gates that exist — `check:docs`, `check:errors`, `check:fences`, `check:figures`, `check:srs` — read off `package.json`. **There is no `check:refs`**; 061's task list named it and got `Command not found`.
+- [X] T055 Run `pnpm test:outsider` with the composed services up and the three variables set. No local lane reaches it.
 
 ---
 

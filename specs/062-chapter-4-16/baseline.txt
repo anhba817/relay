@@ -456,3 +456,176 @@ T045-2  **`uploads_by_kind` HAD NO READER AND `storedBytes` HAD NO TEST**, which
 
 T042-T045  ingester metering 11 -> **14 of 14** · storage-metering 5 -> **7 of 7** ·
       storage-reconcile **8 of 8** · unit 929 · lint 0 · typecheck 0 · fence bill still 9.
+
+================================================================================
+PHASE 6 — the measurements and the probes                            2026-09-30
+================================================================================
+
+T046  ELEVEN ARMS, DELETED ONE AT A TIME, AGAINST FIVE SUITES. `U` is
+      `storage-reconcile.test`, `R` `storage-reconcile.itest`, `S`
+      `storage-metering.itest`, `M` the ingester's `metering.itest`, `G`
+      `isolation/gauntlet`. Every mutation asserted that its pattern matched AND that
+      the file differed from a saved copy before any suite ran.
+
+        A1  partitionByTenant: the uuid prefix test        U 1 · R 1        TESTED
+        A2  partitionByTenant: the key's prefix segment    U 2 · R 6        TESTED
+        A3  reconcileStorage: the per-tenant lookup        R 5              TESTED
+        A4  reconcileStorage: the rollup's GROUP BY        R 4              TESTED
+        A5  outstandingReservations: the grouping          U 2 · R 1        TESTED
+        A6  outstandingReservations: the in-store skip     U 3 · R 1        TESTED
+        A7  storedBytes: the environment predicate         M 2              TESTED
+        A8  uploadsByKind: the environment predicate       M 1              TESTED
+        A9  uploadsByKind: the day window                  M 2              TESTED
+        A10 meterStorage: the absent-tenant guard          nothing red      UNNECESSARY
+        A11 pendingMediaObjects: the state predicate       nothing red      UNTESTED
+        CONTROL unmutated                                  15 · 8 · 7 · 14 · 61
+
+      **THE GAUNTLET REPORTED NOTHING FOR ANY OF THE ELEVEN**, 61 of 61 on every run.
+      That is 4.12's finding reproduced a third time: the suite constitution VI names as
+      gating releases does not reach a reconciliation, which is read-only, runs in no
+      request, and is reachable from no route.
+
+      **AND THE TWO SILENT ARMS NEEDED OPPOSITE REPAIRS, WHICH IS THE WHOLE VALUE OF
+      ASKING WHICH.** A10 is **unreachable**: its only caller is three lines up and reads
+      `if (result.applied && result.environmentId !== null)` before calling. Deleted, and
+      the parameter narrowed from `string | null` to `string` — 051's *"100/100/100/100
+      by deleting branches"*, and stronger than a test because the compiler now refuses a
+      caller that has not checked. A11 is **reachable and was untested**: every media row
+      the other tests plant is pending, so a read returning all of them gave the same
+      answer. That is 061's *"choosing the wrong suites looks exactly like an uncovered
+      arm"* one level down, where it is the wrong FIXTURE. A test plants a `ready` object
+      through `recordMediaVerdict` and asserts only the waiting slot is outstanding;
+      re-probed with the mutation, the arm is **1 red**.
+
+T047  SC-002, OVER A PLANTED CORPUS OF 240,000 EVENTS ACROSS 90 DAYS FOR ONE TENANT
+      (the lane holds 175 real ones; at that size the question has no answer). The view
+      fires on the insert, so both sides were built by the same statement, and they agree
+      exactly: **17,423,832,000 bytes on each side, 240,000 raw rows against 90 rollup
+      rows.**
+
+        all time      rollup      305 rows       5,600 B     min 2 ms
+                      raw     240,000 rows   5,760,000 B     min 3 ms
+        30 days       rollup      276 rows       5,456 B     min 2 ms · p50 2
+                      raw      89,823 rows   2,874,336 B     min 3 ms · p50 4
+                                    325x            527x            2x at p50
+
+      **DR-10's ARGUMENT IS ABOUT BYTES AND THE WALL CLOCK BARELY SHOWS IT.** 527× the
+      bytes for 2× the time, because 2.8 MB is nothing to this engine — 4.1's shape
+      exactly (*"the index buys a gap inside the run-to-run spread"*), and publishing the
+      ratio without the duration beside it would overclaim by two orders of magnitude.
+
+T048  SC-009, THE DRIFT ONE LOST DELTA LEAVES, AS A DISTRIBUTION. Over 8,941 chargeable
+      objects:
+
+        min 1 B · p50 1,024 B · mean 521,671 B · p99 and max 26,214,400 B
+
+      **THE MEAN IS 509× THE MEDIAN**, so a single number for *"what one lost record
+      costs"* is a choice of which story to tell. As a share of the tenant's own level,
+      over the 925 tenants holding more than one object: the median tenant's median
+      object is **14.89%** of its level, its worst object **50.00%**, and the worst case
+      across all tenants **99.96%** — one object that is essentially the whole level.
+
+      The percentages are a fact about a lane where the median tenant holds a handful of
+      objects; the absolute figures are facts about the size distribution and the caps.
+      **And it never self-corrects**: the level is a sum of deltas with nothing that
+      re-samples it, so the error is permanent and the only thing that can restate it is
+      DR-17's inventory.
+
+T049  THE INVENTORY'S COST, warm, best of three after a warm-up:
+
+        LIST  1,775 objects · 2 pages · 30,756,595 B · 27 ms
+        HEAD  1,775 objects, serial          1,972 ms   1.111 ms each   73.2x
+        HEAD  1,775 objects, 8 at a time       650 ms   0.366 ms each   24.1x
+
+      **R2's "430 ms against 11.5 s" NAMED NO CONCURRENCY**, and the ratio depends on it
+      entirely: 73× serial, 24× at eight. **And the first call in a process is 869 ms** —
+      32× the warm figure — so which of the two a chapter publishes is a choice that has
+      to be stated. Phase 4 recorded 68 ms for the same listing under different
+      conditions; the spread across all three is the measurement.
+
+T050  SC-005, AGAINST THE REAL STACK. ClickHouse stopped, a slot request issued, the
+      store restarted:
+
+        slot with the analytical store down       HTTP 201
+        ingester, during the outage               ingester.batch_failed x2, "fetch failed"
+        the record, after the restart             queryable 27 s later
+        its `ts`                                  14:20:09.667 — when it became true
+
+      **THE RECORD SURVIVED, AND THE ANSWER IS THE MECHANISM RATHER THAN LUCK**:
+      `ingestOnce` acknowledges only after every insert returns, so a refused batch is
+      acknowledged not at all and the stream redelivers it. **And the outage does not move
+      the day the bytes were charged**, because the record carries its own `occurred_at`
+      — a delta-summed level is immune to ingestion lag in a way a sampled one would not
+      be.
+
+      **AND WATCHING THAT LOG FOUND THAT IT NAMES FOUR RECORD TYPES AND THERE ARE FIVE.**
+      `IngestResult` has carried `writtenMediaEvents` since phase 2 and `main.ts` never
+      printed it, so a media delta moved `written` and no field said which arm moved it —
+      in the one situation where an operator has nothing else to read (4.13: *"the boot
+      line is the only thing that said so"*). One line.
+
+      **AND THE IN-PROCESS FORM OF THE SAME CLAIM WAS WRONG THE FIRST TIME.** A second
+      drain asserting the record lands measured **0**: this consumer's `ack_wait` is sixty
+      seconds and the message is still outstanding to the fetch that failed. That is a
+      claim about `ack_wait`, not about durability — the mirror of the trap the connection
+      suite records, where a window LONGER than `ack_wait` made a batch redeliver into
+      itself. The suite asks the consumer directly now: one message outstanding, none
+      acknowledged.
+
+T051  **`pnpm coverage` REAL EXIT 0** — read without a pipe. 145 files, **2,113 tests**
+      (2,062 at 061's close), **zero threshold errors.**
+
+      **IT OPENED AT THIRTEEN ERRORS ACROSS SIX FILES, AND EVERY ONE WAS CLOSED WITH A
+      TEST OR A DELETED BRANCH. NO PIN WAS LOWERED.**
+
+        services/ingester/src/shape.ts        78.57/81.37/85.71/80.43  against 100
+        services/ingester/src/clickhouse.ts   83.78/85.18/73.33/83.87  against 84/88/75
+        services/ingester/src/metering.ts             branches 50      against 100
+        services/api/src/internal/media.controller.ts  st 91.89        against 92
+        services/api/src/media/presign.ts             branches 81.81   against 100
+        services/api/src/media/store.ts       95.65/96.66/—/97.56      against 100
+
+      **AND THE BIGGEST GAP WAS AN ARTEFACT OF WHICH PROCESS THE CODE RAN IN.**
+      `shapeMediaStored`, `route()`'s fourth arm and `insertMediaEvents` are exercised on
+      every run of `storage-metering.itest.ts` — **in a child process**, because that
+      suite spawns the ingester (4.9: it is not a compose service). None of it is
+      instrumented. *A green lane is a claim about what was re-run* (050); **a coverage
+      number is a claim about what ran in this process.** The repair is a suite that
+      drains the same records in process against the same real store: eight publishes,
+      two that shape and six refusals, then the non-acknowledgement probe.
+
+      The rest: `presign`'s sort comparator driven in both directions and on an equal pair
+      a caller can actually produce; `listObjects`' marker, page cap, empty-truncated-page
+      guard and 403, against a stubbed `fetch` because **a real store will not truncate at
+      page one on demand**; `parseKindMap`'s `?? ""` DELETED as unreachable (a bare
+      aggregate always returns one row); and `meterStorage`'s `kind === null` arm, which
+      the first version recorded as unreachable and is not — **`ALLOWED_TYPES` changing is
+      a deploy**, and a row written under the old vocabulary outlives it. Planted through
+      `reserveMediaSlot`, which does not validate the type because the SERVICE does.
+
+T052  BOTH HALVES OF 049's UNBINDABLE-KEY PROBE.
+
+        71 per-file pins · 0 naming a path that is not a file
+        a pin demanding 101% of `this-file-does-not-exist.ts`:  REAL EXIT 0, no output
+
+      The ratchet binds today, and **the silence is unchanged since 049** — an unbindable
+      pin still produces no error, no warning and no line. Run both ways, config restored
+      and diffed.
+
+T053  lint REAL EXIT 0 · `turbo run typecheck --force` REAL EXIT 0, 15 tasks.
+
+T054  THE FIVE GATES, each run outside a pipe with its counted line read:
+
+        check:docs     0   all mirrored docs match · 23 revisions ascend, 1.0 to 1.22
+        check:errors   0   34 codes, 34 sections · 6 close codes
+        check:fences   1   10 problem(s) — HEAD 10        the chapter's own bill, phase 8
+        check:figures  0   302 figures, 304 bindings resolve, 3 exports unused
+        check:srs      0   classes checked: ASM CON DR EIR FR NFR
+
+T055  **`pnpm test:outsider` REAL EXIT 0 — 19 of 19**, against the composed services
+      (`--profile services build` then `up -d --wait`, both from CI's own step order).
+
+T042-pre-2  THE FENCE BILL IS **10**, not 9: `services/ingester/src/main.ts` is titled in
+      four fences and T050's one-line repair to the batch summary put it in the chain.
+      **Third file T007a's count missed**, and the third to arrive from work done after
+      the list was written.

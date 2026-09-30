@@ -111,3 +111,49 @@ the reason it is written down rather than assumed harmless. `quickstart.md` carr
 keys a merge will never remove. Harmless to the level and to every count that reads a value;
 misleading only to a reader that treats the key set as the list of kinds uploaded — which is
 the defect the amendment was for.
+
+---
+
+## 062-7 — coverage cannot see a service its own suite runs in a child process
+
+**New, and it is the sharpest instrument finding of the feature.** `shapeMediaStored`,
+`route()`'s fourth arm and `insertMediaEvents` are executed on **every** run of
+`services/api/src/media/storage-metering.itest.ts`, which drives the whole path end to end.
+`pnpm coverage` reported them at 78.57%, 81.37% and 83.78% against pins of 100 and 84.
+
+Both readings are true. That suite **spawns the ingester as a child process**, because the
+ingester is not a compose service (4.9 — it has no Dockerfile), so none of the code under
+test is instrumented. *A green lane is a claim about what was re-run* (050); **a coverage
+number is a claim about what ran in this process.**
+
+**CLOSED BY A SUITE, NOT BY A PIN.** `ingest.itest.ts` now drains `media.stored` records in
+process against the same real broker and store. The entry stays because the class is open:
+**050-8 is the same shape** (*"two test files starting a process is not a deployment"*), and
+any future code whose only exercise is through that child process will measure as dead.
+
+---
+
+## 062-8 — the gauntlet reports nothing about a reconciliation, and cannot
+
+**Carried from 4.12, third occurrence, and this time it is structural rather than a defect.**
+Eleven scope arms deleted one at a time; `isolation/gauntlet.itest.ts` answered **61 of 61
+green for every one of them.**
+
+Constitution VI names that suite as gating releases, and it is an attack surface over HTTP
+routes. A reconciliation is read-only, runs in no request and is reachable from no route, so
+there is nothing for the gauntlet to attack. **The tenancy of a batch job is outside the
+instrument the constitution points at** — recorded rather than repaired, because adding a
+route to make it attackable would be inventing product to satisfy a checker.
+
+What does hold the arms is `storage-reconcile.itest.ts`: nine of the eleven turn it red.
+
+---
+
+## 062-9 — a pin whose key names no file is still silent, four features on
+
+**Carried from 049, re-measured, unchanged.** 71 per-file coverage pins, **0 unbindable**;
+and a pin demanding **101% of `this-file-does-not-exist.ts`** produces no error, no warning
+and no line, exiting 0.
+
+Both halves run, the config restored and diffed afterwards. The ratchet binds today; the
+blind spot that would let it stop binding is exactly as open as 049 found it.
