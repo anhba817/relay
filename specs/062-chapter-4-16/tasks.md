@@ -125,15 +125,15 @@ direction, and how many tenants it examined.
 
 ## Phase 7: The documents
 
-- [ ] T056 Amend **FR-MED-12** in `docs/04-srs.md`: the daily figure and the per-kind counts met; *"visible in the dashboard"* unmet because there is no dashboard and FR-DSH-04/05 are unbuilt. **Read the clause before editing it** — four documents once agreed on two clauses that do not exist, and what found it was opening the SRS to make the edit.
-- [ ] T057 Amend **DR-17**: the rollup met, the **weekly cadence** unmet by decision (ADR-28), and the reconciliation's blind spot recorded — it cannot fail in the direction it exists to catch until something deletes.
-- [ ] T057a **Bound FR-MED-12's daily figure at the rollup's retention horizon** (FR-003, FR-003a) and say what re-bases it. 25 months, measured; a level accumulated from deltas is understated by everything the TTL removed, and **DR-17's inventory is the re-base** — the store holds the level directly. 4.7's precedent: when measurement shows a clause's bound is unreachable, amend the clause rather than let the number stand.
-- [ ] T058 Add revision row 1.23.
-- [ ] T059 [P] **Count the clauses** and put the counts in the chapter (SC-008): how many met, how many unmet by decision, how many unreachable. A chapter that says "mostly met" is one nobody can check.
-- [ ] T060 [P] Amend **both** copies of the Part 4 table — `docs/12` row 17 CLOSED, `docs/07` row 17 SHIPPED. Two copies, and amending one is how they drift.
-- [ ] T061 [P] Record in `docs/05-sad.md` §6 or the data-model section that `stored_delta` and `stored_bytes_delta` are different quantities, since the next reader will meet them side by side.
-- [ ] T062 [P] Grep `docs/` for feature-local ids leaking in, by **diffing** rather than grepping the tree: `git diff HEAD -- docs/ | grep '^+' | grep -oE 'FR-0[0-9][0-9]'`. Nothing runs this check (052-7).
-- [ ] T063 Run `pnpm sync:docs` then `check:docs` — the tutorial keeps mirrored copies, and 061's first run of that gate was red for exactly this.
+- [X] T056 Amend **FR-MED-12** in `docs/04-srs.md`: the daily figure and the per-kind counts met; *"visible in the dashboard"* unmet because there is no dashboard and FR-DSH-04/05 are unbuilt. **Read the clause before editing it** — four documents once agreed on two clauses that do not exist, and what found it was opening the SRS to make the edit.
+- [X] T057 Amend **DR-17**: the rollup met, the **weekly cadence** unmet by decision (ADR-28), and the reconciliation's blind spot recorded — it cannot fail in the direction it exists to catch until something deletes.
+- [X] T057a **Bound FR-MED-12's daily figure at the rollup's retention horizon** (FR-003, FR-003a) and say what re-bases it. 25 months, measured; a level accumulated from deltas is understated by everything the TTL removed, and **DR-17's inventory is the re-base** — the store holds the level directly. 4.7's precedent: when measurement shows a clause's bound is unreachable, amend the clause rather than let the number stand.
+- [X] T058 Add revision row 1.23.
+- [X] T059 [P] **Count the clauses** and put the counts in the chapter (SC-008): how many met, how many unmet by decision, how many unreachable. A chapter that says "mostly met" is one nobody can check.
+- [X] T060 [P] Amend **both** copies of the Part 4 table — `docs/12` row 17 CLOSED, `docs/07` row 17 SHIPPED. Two copies, and amending one is how they drift.
+- [X] T061 [P] Record in `docs/05-sad.md` §6 or the data-model section that `stored_delta` and `stored_bytes_delta` are different quantities, since the next reader will meet them side by side.
+- [X] T062 [P] Grep `docs/` for feature-local ids leaking in, by **diffing** rather than grepping the tree: `git diff HEAD -- docs/ | grep '^+' | grep -oE 'FR-0[0-9][0-9]'`. Nothing runs this check (052-7).
+- [X] T063 Run `pnpm sync:docs` then `check:docs` — the tutorial keeps mirrored copies, and 061's first run of that gate was red for exactly this.
 
 ---
 

@@ -629,3 +629,66 @@ T042-pre-2  THE FENCE BILL IS **10**, not 9: `services/ingester/src/main.ts` is 
       four fences and T050's one-line repair to the batch summary put it in the chain.
       **Third file T007a's count missed**, and the third to arrive from work done after
       the list was written.
+
+================================================================================
+PHASE 7 — the documents                                              2026-09-30
+================================================================================
+
+T056  **FR-MED-12 IS THREE ANSWERS, NOT ONE.** The daily figure and the per-kind counts
+      are met; *"visible in the dashboard alongside other usage (FR-DSH-04/05)"* is
+      **unreachable from this chapter** — there is no dashboard in this platform and both
+      cited clauses are verified by demonstration and unbuilt. Reading the clause before
+      editing it is what separated the three; a chapter that reported "FR-MED-12 met"
+      would have claimed a screen nobody has written.
+
+T057  **DR-17's PARENTHETICAL NAMED TWO EVENTS THIS PLATFORM DOES NOT EMIT.** The clause
+      said *"summing `media_events` deltas (uploaded/deleted)"* and the four causes are
+      `reserved`, `rejected`, `rendition`, `deleted`. **The correction is not
+      vocabulary**: the meter charges at RESERVATION, because FR-MED-01 reserves the slot
+      against the quota the moment it is issued and `reserveMediaSlot` has summed
+      `declared_bytes` since 4.10 — so a clause that metered uploads would disagree with
+      the quota it exists to explain, by 4,436 MB on this lane.
+
+T057-2  **AND THE SRS's OWN DATA DICTIONARY DESCRIBED A DIFFERENT TABLE.** The
+      `media_events` row named `event (uploaded/ready/rejected/deleted)`, `bytes`,
+      `processing_ms` and no `media_id` — four columns' worth of divergence from the table
+      `0016` creates, in the document the table is supposed to implement. Found by opening
+      the DR section to edit DR-17 two rows below it. **Read the clauses, and read what is
+      beside them.**
+
+T057a  **FR-MED-12's DAILY FIGURE IS BOUNDED AT 25 MONTHS AND NO CLAUSE HAD SAID SO.**
+      `daily_usage_billing` carries `TTL toDateTime(day) + toIntervalMonth(25)` (DR-09,
+      applied at 4.6). A level accumulated from deltas is understated by exactly what the
+      TTL removed — permanently, with nothing able to notice — so the figure means *the
+      bytes stored, as recorded in the last 25 months*. **DR-17's inventory is named as
+      what re-bases it**: the object store holds the level directly rather than as a sum,
+      so a reconciliation can restate a truncated figure where no amount of re-reading the
+      rollup can. 4.7's precedent applied: amend the clause rather than let the number
+      stand.
+
+T058  **SRS 1.23.** 24 revisions ascend, 1.0 to 1.23 · 245 clause rows, 245 unique ids.
+
+T059  **15 CLAUSE-PARTS DECIDED BY NAME** (`clauses.md`): 8 met here, 3 met in earlier
+      chapters and cited, 1 partly, **1 unmet by decision** (DR-17's *"weekly"*, ADR-28),
+      **1 unreachable** (the dashboard), 1 engaged (constitution III). A chapter that says
+      "mostly met" is one nobody can check.
+
+T060  **BOTH** copies of the Part 4 table amended — `docs/12` row 17 CLOSED, `docs/07`
+      row 17 SHIPPED.
+
+T061  `docs/05-sad.md` §6 gains two paragraphs: the `stored_delta` / `stored_bytes_delta`
+      pair, which read as one quantity measured two ways and are stored MESSAGES against
+      stored BYTES; and DR-17's reconciler as the **second** reader that crosses the
+      fence, and the first that crosses it twice — three stores in one function, all three
+      load-bearing.
+
+T062  **THE DIFF CHECK CAUGHT ONE, IN THE REVISION ROW ANNOUNCING A CLAUSE CORRECTION.**
+      `git diff HEAD -- docs/ | grep '^+' | grep -oE 'FR-0[0-9][0-9]'` returned
+      **`FR-010`** — a feature-local id from this feature's own `spec.md`, written into the
+      SRS as though it were a clause. That is 052-7's defect exactly, committed while
+      writing the sentence that corrects somebody else's. Replaced with the substance;
+      re-run, **none**. **And nothing runs this check** — it is four tasks old and still
+      has no gate.
+
+T063  `pnpm sync:docs` synced four mirrored files; `check:docs` REAL EXIT 0 —
+      *all mirrored docs match their sources* · *24 revisions ascend, 1.0 to 1.23*.

@@ -157,3 +157,39 @@ and no line, exiting 0.
 
 Both halves run, the config restored and diffed afterwards. The ratchet binds today; the
 blind spot that would let it stop binding is exactly as open as 049 found it.
+
+---
+
+## 062-10 — the SRS's data dictionary described a `media_events` table nobody built
+
+**New.** The DR section's table row read:
+
+    | `media_events` | Storage metering, scan-pipeline health (FR-MED-12)
+    | `environment_id`, `ts`, `event` (uploaded/ready/rejected/deleted), `kind`, `bytes`, `processing_ms` |
+
+Against what `0016` creates: the events are `reserved`/`rejected`/`rendition`/`deleted`, the
+column is `bytes_delta`, there is a `media_id`, and there is no `processing_ms` at all —
+`scan-pipeline health` was a second purpose the table never took on. **Four columns' worth of
+divergence, in the document the table implements.**
+
+Found by opening the DR section to edit DR-17, two rows below it. `check:srs` cannot see this:
+it checks that identifiers are unique and ordered, and **no checker in these repositories
+reads a clause against the schema it describes**. Corrected in revision 1.23.
+
+---
+
+## 062-11 — a feature-local id reached the SRS again, in the row announcing a clause fix
+
+**Carried from 052-7, re-offended.** `git diff HEAD -- docs/ | grep '^+' | grep -oE 'FR-0[0-9][0-9]'`
+returned **`FR-010`** — this feature's own spec-local id, written into revision 1.23 as though
+it were a clause of the SRS.
+
+052-7 recorded the mechanism as *copying the task line*, and that is what happened again: the
+task for this work is phrased with the feature-local id and the id came along. **The
+self-referential part is the finding** — it was committed inside the sentence correcting
+somebody else's clause citation.
+
+**AND NOTHING RUNS THIS CHECK.** It is one line, it has caught something in two of the four
+features that have run it by hand, and it is in no `check:*` script and no workflow. That is
+the same shape as 055-3 (`check:errors` has no CI job) with one fewer step: here there is no
+script to leave unrun.
