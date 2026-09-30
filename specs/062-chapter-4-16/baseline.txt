@@ -250,3 +250,130 @@ T031  **THE LANE IS GREEN: REAL EXIT 0, EMPTY FAILURE SET** — including the ca
       seen = 0` whose value is never read before reassignment. Caught locally this time,
       because 061's CI failed on a lint no task had named and T004 now runs it at the
       baseline.
+
+T036a THE COMPOSED HALF READS **THREE** STORES, AND THE THIRD IS NOT A CONVENIENCE.
+      `reconcile.ts` reads Postgres and ClickHouse; `reconcileStorage` reads Postgres,
+      ClickHouse and the bucket. The analytical side records a `reserved` event and **no
+      `uploaded` event**, so nothing in it can tell an outstanding slot from a delivered
+      object — the explanatory term has to come from Postgres, and which reservations are
+      still outstanding can only be answered by the inventory. `gaps.md` 062-4.
+
+      **AND THE OBVIOUS READ IS WRONG BY A MEASURABLE AMOUNT.**
+      `sum(declared_bytes) where state = 'pending'`, grouped by tenant, double-counts:
+
+        pending   6,580 rows   4,651,141,511 declared   of which the bucket HOLDS the key:
+                                                          267 rows,  6,533,174 bytes
+        ready     2,082 rows       3,753,936 declared    1,008 rows,    165,583 bytes
+        rejected    237 rows         238,884 declared       53 rows,      3,763 bytes
+
+      21% of everything in the bucket is a pending row's object. 4.13's sweep is why that
+      is ordinary — an object is uploaded and stays `pending` until the sweep HEADs it —
+      and subtracting those as outstanding removes bytes present on BOTH sides and invents
+      a `meter-low`. `outstandingReservations` takes the key set for that reason.
+
+      **AND 447 OF THE 1,775 INVENTORY KEYS NAME NO `media_objects` ROW AT ALL** —
+      24,285,259 bytes, **79% of the bucket**. Only 83 of the 447 carry a non-tenant
+      prefix, so the unattributable report catches under a fifth of it; the other 364 look
+      exactly like legitimate tenant keys and read, correctly, as `meter-low`.
+
+T036a-2  A FOURTH SIDE, ADDED AFTER THE FIRST RUN, AND IT CLOSED A BLIND SPOT.
+      The population was the union of the rollup, the bucket and the outstanding
+      reservations. A tenant whose objects are all `ready`, whose keys the bucket does not
+      hold and which the rollup has never heard of appears on **none of those three** —
+      and that is precisely the drift DR-17 exists to find. The lane holds **1,074 ready
+      rows naming a key the bucket does not have.** Adding `environmentsWithMedia` as a
+      fourth side moved the population 1,855 -> 1,868: **13 tenants nobody was looking at.**
+
+      **AND THE COVERAGE LINE MADE A CLAIM THAT DOES NOT DIVIDE.** It printed
+      `tenants examined: 1855 of 1678 holding media` — a containment claim that is false,
+      because the union takes tenants the operational side has never heard of. The sides
+      are printed beside the union now.
+
+T036a-3  THE RUN, AGAINST THE LANE (`scripts/reconcile-storage.mjs`, EXIT 1):
+
+        inventory: 1,775 objects, 30,756,595 bytes, 2 pages, not truncated
+        tenants examined: 1,868 — rollup 84, bucket 297, reservations 1,657,
+                                  holding media in Postgres 1,678
+        keys belonging to no tenant: 83, 10,341,075 bytes
+        verdicts: agree 47 · meter-high 10 · meter-low 1 ·
+                  not-comparable 1,784 · reservations-only 26
+
+      **95.5% OF TENANTS PRODUCE NO VERDICT**, because the rollup knows 84 environments
+      and Postgres knows 1,678 with media rows. 4.6's *"a rollup created late is
+      permanently short"* at its widest: the producer ships in THIS chapter, so the
+      meter's history begins here and the bucket's does not. 4.7 refused to collapse that
+      into "missing data" and it is refused again — `not-comparable` is counted, and it is
+      by far the commonest answer this job gives.
+
+      The one `meter-low` is real: metered 0, bucket 6,852,575, reserved 16,266. Bytes the
+      meter has never charged for, in the direction nothing can explain away.
+
+T036b  15 of 15 unit (12 -> 15). The three new ones drive `outstandingReservations`,
+      including the one that shows the same tenant reading `meter-high` without the term
+      and `reservations-only` with it.
+
+T036c/T037  The exit code is `exitCodeFor`, unchanged from the pure half, and **the whole
+      report feeds it, never the `--environment` view** — an exit code that depended on
+      which tenant was asked about would be a flag that turns a failure green. FR-007's
+      coverage line goes FIRST, above any verdict.
+
+      **AND A TRUNCATED LISTING EXITS 2 RATHER THAN REPORTING VERDICTS.** Every verdict
+      under a partial listing is about a bucket the job did not finish reading, which is
+      4.13's one-page sweep inside the instrument written to catch it.
+
+T038  `storage-reconcile.itest.ts`, **8 of 8**, against all three stores: an agreeing
+      tenant, a planted disagreement in each direction, a one-sided tenant, the
+      reservation term measured **both ways round** (outstanding, then satisfied by an
+      upload while the row stays `pending`), the coverage report, and the unattributable
+      keys. Every assertion names its own tenant — not a convention here but the only way
+      it can pass, since the report covers all 1,868 environments the lane has ever had.
+
+T039  THE SCOPE PROBE, THREE ARMS, EACH RUN AGAINST BOTH SUITES:
+
+        ARM 1  the uuid test in `partitionByTenant`        unit 1 red · itest 1 red
+        ARM 2  the prefix split (group by the whole key)   unit 2 red · itest 6 red
+        ARM 3  the per-tenant lookup (bucket per tenant)   unit 0 red · itest 5 red
+        CONTROL unmutated                                  15 of 15 · 8 of 8
+
+      **ARM 3 IS INVISIBLE TO THE UNIT LANE**, and it is the arm that lets one tenant read
+      another's bytes. 4.12's finding again: the scope that matters most carries no branch
+      a unit test can see, because it is a map lookup rather than a predicate.
+
+      **AND ARM 1 REPORTED GREEN THE FIRST TIME BECAUSE IT CHANGED NOTHING.** `prettier`
+      had wrapped that `if` across five lines, so the single-line pattern the probe
+      replaced matched nothing and the script wrote the file back unmodified: 15 of 15 and
+      8 of 8, one keystroke from being recorded as *"this arm is uncovered."* 4.10's
+      tamper probe at a different address. Re-run with `assert old in s` and a `diff`
+      against the saved original, the arm is red in both lanes. `gaps.md` 062-3.
+
+T040/T041  Both recorded in `storage-reconcile.ts` and in `gaps.md` (062-1, 062-2) rather
+      than only in the chapter. `deleted` has no producer, so **the metered level never
+      falls for a deletion** and the lost-`deleted` failure a delta-summed level is most
+      exposed to cannot arise — a green verdict is evidence about three causes, not four.
+      DR-17's *"weekly"* has no runner, the same absence 4.9 recorded for FR-ANL-06's
+      *"daily"*, with the same evidence and ADR-28's answer.
+
+T042-pre  THE FENCE BILL AT THE CLOSE OF PHASE 4: **9 files, all HEAD, 0 APPLY.**
+
+        fences/post-series.md          services/api/src/db/repository.ts        line 749
+        fences/post-series.md          packages/protocol/src/internal.ts        line 326
+        fences/post-series.md          services/api/src/media/store.ts          line 0
+        part-4/chapter-05             services/ingester/src/shape.ts            line 15
+        part-4/chapter-06             services/ingester/src/clickhouse.ts       line 3
+        part-4/chapter-06             services/ingester/src/metering.ts         line 0
+        part-4/chapter-10             services/api/src/media/presign.ts         line 44
+        part-4/chapter-10             services/api/src/media/media.module.ts    line 5
+        part-4/chapter-12             services/api/src/media/media.service.ts   line 3
+
+      **T007a's COUNT PREDICTED EIGHT AND NAMED ONE THIS CHAPTER NEVER TOUCHED.** It missed
+      `services/ingester/src/clickhouse.ts` (which gained `insertMediaEvents`) and
+      `services/api/src/media/media.module.ts` (the third `ANALYTICS_PUBLISHER` provider),
+      and it charged for `services/api/src/metering/reconcile.ts`, which this chapter left
+      alone. **Both misses arrived from work done after the list was written** — 050's
+      sentence, now in its third feature running. The count is still worth taking at phase 1:
+      it got the two expensive files right, and those are the ones that change how the work
+      is sequenced.
+
+      Four of the nine go to `fences/post-series.md`'s existing hunks (4.8's rule) and the
+      fifth — `media.module.ts` — anchors in chapter 4.10, which is where 4.15 also found its
+      cheapest anchors. T072/T073 pay it.
