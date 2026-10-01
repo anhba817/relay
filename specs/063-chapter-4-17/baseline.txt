@@ -1,0 +1,224 @@
+================================================================================
+CHAPTER 4.17 — ★ MILESTONE: AN IMAGE, END TO END          feature 063
+baseline.txt — every phase's measurements, in the order they were taken,
+including the ones that were wrong first.
+================================================================================
+
+PHASE 1 — the baseline, measured before anything is edited          2026-10-01
+================================================================================
+
+T001  THE STACK, AND THE BOOT LINE THAT IS THE ONLY THING THAT SAYS SO.
+
+        relay-postgres-1    healthy      relay-minio-1       healthy
+        relay-redis-1       healthy      relay-clamav-1      healthy
+        relay-nats-1        healthy      relay-mailpit-1     healthy
+        relay-clickhouse-1  healthy
+        relay-api-1         healthy      relay-gateway-1     up
+        relay-media-worker-1 up          relay-dispatcher-1  up
+
+        media worker started  interval_ms 5000
+        scanner "ClamAV 1.5.4/28139/Wed Sep 30 06:24:18 2026"
+
+      **THE SCANNER VERSION IS THE MEASUREMENT, NOT THE WORD `started`.** 4.13's defect
+      was a worker that booted clean and verified nothing, because the default
+      `localhost:3310` inside a container is that container — and a worker that produces
+      no verdict is FR-009 working as designed, so every object stays `pending` and
+      nothing fails. A boot line printing `unreachable` here would make every later
+      figure in this feature a measurement of an upload nobody checked.
+
+T002  THE FIVE LANES, EVERY EXIT CODE READ OUTSIDE A PIPE.
+
+        pnpm lint                        REAL EXIT 0
+        pnpm exec turbo run typecheck --force   REAL EXIT 0      15 tasks
+        pnpm build                       REAL EXIT 0
+        pnpm exec turbo run test --force REAL EXIT 0      **945 unit tests**
+        pnpm test:integration            REAL EXIT **1**   70 suites, 70 ran, 3 failed
+
+      **THE BASELINE IS RED, AND THE SET IS THE MEASUREMENT RATHER THAN THE COLOUR.**
+      Three api suites, named with their messages so a later red can be compared per test:
+
+        media/media-updated.itest.ts
+          "announces nothing for an object nobody attached, and the verdict still succeeds"
+          expected [ {…}, {…} ] to have a length of 1 but got 2
+        outbox/outbox.itest.ts
+          "invariant 8: two concurrent relays publish every row exactly once"
+          expected [ …(15) ] to have a length of 20 but got 15
+        webhooks/deliveries.itest.ts
+          "invariant 12: the SWEEP disables the quiet endpoint no outcome ever revisits"
+          expected 0 to be greater than or equal to 1
+
+      **ALL THREE PASS IN ISOLATION, AND THE SET MOVES.** The three suites run together:
+
+        full lane          3 red      media-updated · outbox · deliveries
+        the three alone    0 red      77 of 77
+        the three alone    1 red      outbox invariant 8 only
+
+      Three observations, three different sets. **That is lane interference rather than a
+      regression** — the shape 045 named: an assertion scoped wider than the thing it tests
+      fails for somebody else's reason, and a flake does not show up in the distribution.
+      4.15's warning is followed rather than repeated: it called two failures deterministic
+      on ONE isolated run each and all three turned out transient after four runs.
+
+T002a **AND SOME OF THIS IS MINE.** Five analysis passes ran probes against this lane and
+      cleaned up only some of them:
+
+        channels named by those probes (journey-*, us1-*, upd-*, reject-*)        7
+        media_objects created since 062's close                               1,354
+        media_objects total                                 10,304 (6,646 at 4.15)
+
+      `media-updated.itest.ts`'s failure — *"announces nothing for an object nobody
+      attached"* answering 2 — is the shape residue produces. **Not asserted either way**:
+      ids are uuids and a collision is implausible, so this is recorded as a question rather
+      than a cause. The rule it breaks is 043's, in as many words: **a red probe writes to
+      the lane, and the next measurement reads it as pre-existing data.**
+
+T005  THE FIVE TUTORIAL GATES, EACH RUN OUTSIDE A PIPE WITH ITS COUNTED LINE QUOTED —
+      because 055-4 found five of seven gate scripts exiting 0 over an absent corpus, and
+      the rule it produced is **assert the line, not the exit code**.
+
+        check:docs     0   check-revision-order: 24 revisions ascend, 1.0 to 1.23
+        check:errors   0   34 codes, 34 sections … 6 close codes documented
+        check:fences   0   291 fenced files replay onto relay-platform across 59 chapters
+        check:figures  0   306 figures, every diagram passed as `code`; 308 bindings resolve
+        check:srs      0   classes checked: ASM CON DR EIR FR NFR
+
+T006  THE CI BASELINE IS **GREEN**, which is the first time a Part 4 chapter has opened
+      against one. Run **36805363351** at `0b9e9f2`:
+
+        relay-platform — the Docker-free gate            SUCCESS
+        relay-platform — the sealed integration          SUCCESS
+        relay-platform — integration lanes and coverage  SUCCESS
+        relay-tutorial — build, docs drift, fence chain  SUCCESS
+
+        `##[error]` lines over the whole run:            **0**
+
+      **AN EMPTY BASELINE SET IS A HARDER COMPARISON TO PASS, NOT AN EASIER ONE.** 061
+      opened red and 4.16's first push could hide a new failure inside an existing one;
+      here any error at all in T069's comparison is new.
+
+      And it contradicts nothing about T002: the integration lane is red **locally** and
+      green in CI. Three suites that fail for a neighbour's reason on a machine holding
+      10,304 media objects pass on a fresh database — 059-12's asymmetry, which is why the
+      local set is recorded by name rather than by colour.
+
+T007  FENCE EXPOSURE, COUNTED BEFORE ANY EDIT.
+
+        packages/outsider/src/integrate.itest.ts        **5 files** — 6 `diff` + 2 whole bodies
+        packages/outsider/vitest.integration.config.mts    2 files — 2 whole bodies
+        lib/tutorial.ts                                    0
+        fences/post-series.md                              0   (it IS the appendix)
+
+      The one source file this feature edits carries the whole bill, and **two of the eight
+      fence blocks on it are whole bodies** — a titled fence is a whole-body claim (051-6),
+      so every edit is a claim five places publish. T007's first draft predicted *"near
+      zero"*; analysis pass 2 measured five and this run confirms it.
+
+      **AND THE CONFIG IS FENCED TWICE, WHICH THE TASK DID NOT NAME.** This feature does
+      not touch `vitest.integration.config.mts` — recorded so that if a timeout or an
+      include ever needs changing, the two whole bodies are known in advance rather than
+      found by the gate.
+
+T008  THE SEALED SUITE'S MEDIA ASSERTIONS, QUOTED BEFORE THEY CHANGE.
+
+        expect(delivered.payload.attachments).toEqual([
+          { type: "url", kind: "image", url: "https://example.test/outside-url.png" },
+          { type: "media", media_id: mediaId, state: "pending" },
+        ]);
+
+      And the sentence that explains it, which is the chapter's first finding:
+
+        // `pending` is right and is not a race. The object was uploaded but nothing has
+        // verified it — this suite runs no media worker, which is what makes the value
+        // stable rather than timing-dependent.
+
+      **CI's sealed job runs `docker compose --profile services up -d --wait` and the
+      worker is in that profile.** The assertion is right; the reason is false. T013
+      replaces it and T014 asserts the real one.
+
+      The fixture is quoted too, because T016 replaces it: *"A 1×1 greyscale PNG with a
+      stored (uncompressed) deflate block, 67 bytes"* — and at 1×1 `thumbnailOf` answers
+      `within-bound`, so **no rendition exists to fetch**.
+
+T003  `pnpm coverage` REAL EXIT **1** — 146 files, **2,116 tests**, 3 failed, and
+      **zero threshold errors**. Every per-file pin holds; the red is three tests.
+
+        services/gateway/src/typing.itest.ts   "sends nothing at all after the signal"
+        services/api/src/outbox/outbox.itest.ts        invariant 8
+        services/api/src/webhooks/deliveries.itest.ts  invariant 12
+
+      **TWO OF THE THREE ARE THE INTEGRATION LANE'S, AND THAT IS THE USEFUL PART.** Across
+      the two lanes the recurring pair is `outbox` invariant 8 and `deliveries` invariant
+      12; `media-updated` appeared once and `typing` is the flake 062 classified over four
+      samples. A failure that survives two different runners on one machine and passes in
+      CI is a lane property, not a defect in the code under test.
+
+      **AND `packages/outsider` IS OUTSIDE THIS LANE** — `vitest.coverage.config.mts:98`
+      excludes it by name. So the suite this chapter's whole claim rests on contributes
+      nothing to the number constitution VI's coverage clause is stated in. That is
+      correct, and it means this milestone's evidence is a green job rather than a
+      percentage. The chapter says so.
+
+T004  `pnpm test:outsider` REAL EXIT **0 — 19 of 19**, against the composed services with
+      `RELAY_DEMO_CREDENTIAL`, `RELAY_API_URL` and `RELAY_WS_URL` set.
+
+      The task's note that *"no local lane reaches it"* is about the default lanes:
+      `pnpm test:integration` is `--filter=!@relay/outsider`, and `pnpm test` has no script
+      here at all. A hand-run reaches it, which is what this is, and CI's sealed job is the
+      only automated thing that does.
+
+T009  THE VERDICT TIMING, RE-MEASURED WITH INDEPENDENT PHASE — never in a back-to-back
+      loop, because a loop that waits for the thing it is timing synchronises with it.
+
+        this run, 10 trials   min 1,861 · p50 3,993 · max 5,568 · mean 3,625 ms
+        analysis pass 5       min 1,197 · p50 2,953 · max 5,840 · mean 3,055 ms
+        the discarded loop    min 5,656 · p50 5,693 · max 6,123 ms
+
+      **THE TWO HONEST SAMPLES DIFFER BY ABOUT A SECOND AT THE MEDIAN AND ARE THE SAME
+      DISTRIBUTION.** A p50 taken from ten draws of a uniform [0, 5,000] has a standard
+      error near 500 ms, so 2,953 and 3,993 are one distribution seen twice. **The thing to
+      publish is the generator, not the percentile**: a 5,000 ms timer the upload lands in
+      at a random point, plus the work.
+
+      **AND THE RESIDUAL IS NOISIER THAN T035 ASSUMED.** "The minimum minus the smallest
+      possible wait" gives 1,197 on one sample and 1,861 on another — with ten draws the
+      expected smallest wait is about 455 ms, so the two mins differ by less than the
+      sampling noise. The ~700 ms figure is an order of magnitude, not a measurement, and
+      4.13's direct measurement of the scan is the better number for that quantity.
+
+================================================================================
+PHASE 2 — what the journey needs before it can be written            2026-10-01
+================================================================================
+
+T010  **IT IS FOUR COPIES OF `waitFor`, NOT THREE.** Analysis pass 2 grepped for one
+      formatting of the definition and found 280, 348 and 423; the file holds a fourth at
+      **772**, written across three lines with a wider predicate type.
+      `grep -c "const waitFor = async ("` answers **4**.
+
+        line 280   (predicate, what)                       untyped return
+        line 348   (predicate, what)                       untyped return — identical to 280
+        line 423   (predicate, what): Promise<{type, payload?:{attachments?}}>
+        line 772   (predicate: (f: {type, payload?: Record<string,unknown>}) => boolean, what)
+
+      Each closes over a **local** `frames` array, so a shared helper has to take it as a
+      parameter — a change at four call sites. `post` and `get` are defined once, at the
+      describe's top, and are the shape a shared helper would take.
+
+      **AND THE PASS-2 FIGURE BEING WRONG IS THE POINT RATHER THAN A FOOTNOTE**: a count
+      taken by grepping one spelling of a thing reports the spellings it knows. The number
+      went into three artifacts before anybody ran `grep -c`.
+
+T010a THE DECISION: **a local helper, and no consolidation.** Written down because the
+      instruction was to decide either way rather than note the duplication and step round
+      it.
+
+      Consolidating is the better code and this is the wrong chapter to pay for it.
+      `integrate.itest.ts` is titled in **five fences — two whole bodies and six diffs** —
+      across part-3/chapter-26 in both locales, part-4/chapter-08, part-4/chapter-09 and
+      the appendix. **A titled fence is a whole-body claim** (051-6), so editing four
+      regions of that file to lift a helper means regenerating two whole bodies and
+      re-anchoring six hunks, in a milestone whose own line says it adds nothing.
+
+      So: one more local helper, in the journey's own test, matching the file's existing
+      shape. **Recorded as a gap rather than done quietly** — the next chapter to edit this
+      file for its own reasons should lift all five at once, and `gaps.md` carries it with
+      the fence bill attached so the cost is known before somebody starts.
