@@ -222,3 +222,112 @@ T010a THE DECISION: **a local helper, and no consolidation.** Written down becau
       shape. **Recorded as a gap rather than done quietly** — the next chapter to edit this
       file for its own reasons should lift all five at once, and `gaps.md` carries it with
       the fence bill attached so the cost is known before somebody starts.
+
+T010b **THE SPEC'S PREMISE IS PARTLY WRONG, AND READING THE WHOLE TEST IS WHAT SHOWED
+      IT.** `spec.md`'s Context table says `integrate.itest.ts` *"asserts `state:
+      "pending"` — no verdict in the picture"*. It is in the picture. The same test, sixty
+      lines later:
+
+        const deadline = Date.now() + 30_000;
+        let link = await get(`/v1/media/${mediaId}`, credential);
+        while (link.status === 404 && Date.now() < deadline) { … }
+        expect(link.status, "the platform refused a delivery URL …").toBe(200);
+        const bytes = await fetch(link.body["url"] as string);
+        expect(new Uint8Array(await bytes.arrayBuffer())).toEqual(png);
+
+      **That loop exits only when the deployed worker makes the object `ready`**, and the
+      delivery gate reads `state = 'ready'`. So the sealed suite already carries a slot, a
+      PUT, a send, a wait on the real worker, a signed link and a byte-identical fetch.
+
+      **AND THE TEST CONTRADICTS ITSELF IN TWO COMMENTS.** The first says *"this suite
+      runs no media worker, which is what makes the value stable rather than
+      timing-dependent"*; the second, in the same `it(...)`, says *"THE DEADLINE IS THE
+      SWEEP INTERVAL PLUS THE WORK … a failure here means the worker is not running rather
+      than that it was slow"* — and quotes **p50 5,080 ms from upload to `ready`**, which
+      is a figure only a running worker can produce. One test, two comments, opposite
+      claims about the same process.
+
+      **SO THE JOURNEY'S GAP IS NARROWER THAN THE SPECIFICATION SAYS, AND THIS IS 4.2's
+      RISK ARRIVING.** `checklists/requirements.md` wrote it down in advance: *"If phase 1
+      finds that join already tested, the honest outcome is a smaller chapter, not an
+      invented one."* What is genuinely missing:
+
+        slot → PUT → send → worker → link → bytes          ALREADY TESTED
+        the state transition visible in HISTORY             not asserted
+        the thumbnail                                       not asserted, and UNREACHABLE
+                                                            with a 1×1 fixture
+        `media.updated` on either path                      not asserted — the file
+                                                            mentions the frame zero times
+        each assertion naming its chapter                   3 mentions across 19 tests
+
+      That is still a chapter — the state a *reader* sees, the rendition, and the frame are
+      three of the seven chapters' contributions and none is checked from outside. But the
+      claim *"no test lets a real scan decide what a recipient can fetch"* is false as
+      written, and the spec's Context table is corrected rather than left to make the
+      chapter look bigger than it is.
+
+T013/T014  THE COMMENT IS REPLACED BY THE MEASUREMENT, AND THE MEASUREMENT IS CHECKED
+-------------------------------------------------------------------------------------
+
+      The false sentence is gone from `packages/outsider/src/integrate.itest.ts`. What
+      replaces it is the phase-2 figure and the distinction the old sentence collapsed:
+
+        it is TIMING-DEPENDENT   the sweep is 5,000 ms and the read is milliseconds later
+        and it is STABLE         min 1,861 · p50 3,993 · max 5,568 ms to a verdict,
+                                 against a window of about four seconds
+
+      **Two claims, and the comment made the wrong one.** "No worker runs" was offered as
+      the reason the value is stable; the real reason is a margin. A race with a
+      four-second margin is the kind nothing ever catches, which is exactly why a sentence
+      explaining it away survived two chapters.
+
+      **AND THE CORRECTION IS ASSERTED, NOT WRITTEN.** This chapter's whole subject applied
+      to its own first repair: a comment is not a test. The `pending` expectation stays and
+      is followed by `waitForAttachmentState(...)`, which must answer `ready`. If the
+      reason is right — the read lands inside the window — then waiting past the window
+      must produce a verdict, and the two lines now say so together.
+
+      **RUN RED, AND THE PROBE CORRECTED THE CLAIM I WAS ABOUT TO MAKE FOR IT.** With
+      `docker compose stop media-worker` the suite is 18 of 19, the `pending` line still
+      passes, and the new line throws at 25,061 ms naming the worker and the command to
+      run. But the claim *"nothing caught a stopped worker before"* is **false**: line 618
+      polls `GET /v1/media/{id}` to a 30-second deadline and would have gone red too. What
+      it says when it does is
+
+        before   the platform refused a delivery URL for its own attachment
+        after    media <id> is still 'pending' after 25,061 ms. The sweep runs every
+                 5,000 ms, so this is not the timer — the media worker is not producing
+                 verdicts. … 'docker compose logs media-worker | tail -2'
+
+      — **the first names the delivery route, which is working perfectly.** That is R6 and
+      4.13's shape: *a stopped worker and an object that never existed are the same 404
+      from outside*, so the only thing that can tell a reader which is the message. The
+      gain here is diagnosis and placement, not detection, and recording it as detection
+      would have been this project's own favourite overclaim.
+
+      **AND IT COSTS THE SUITE NOTHING**, because it is the same wait moved earlier: once
+      the helper returns `ready` the existing poll answers 200 on its first read. The media
+      test is 5,003 ms of the file's 5,938.
+
+      **This is also where the helper gets its first caller.** `tsc` was clean from T011
+      and `eslint` was not: an unused export is a lint error, so T011 through T014 cannot
+      be four commits. They are one.
+
+      tsc --noEmit    EXIT 0
+      eslint          EXIT 0
+
+FENCE BILL, RUNNING — counted as it accrues, not at the end
+-------------------------------------------------------------------------------------
+
+      4.15's rule: *the bill is per FILE, not per hunk, and counting it before the work is
+      the point.* It is counted here from phase 2 and updated each phase, because the
+      files that arrive late are the ones a list written once always misses.
+
+        phase 2   packages/outsider/src/integrate.itest.ts        1 HEAD problem
+
+      Published as a titled whole or diff on **four pages** — 3.26 and its Vietnamese
+      twin, 4.8, and 4.9 — but the chain compares one END state per file against HEAD, so
+      one hunk in 4.17 settles all four. **No Vietnamese twin to write**: the translation
+      lags Part 4 entirely, so MIRROR has nothing to compare (056's finding).
+
+      check:fences after T013/T014    1 problem(s) — HEAD 1

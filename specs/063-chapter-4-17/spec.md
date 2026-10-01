@@ -27,11 +27,23 @@ A premise check before this spec was written, against the tree rather than again
 | suite | how far it walks | what it stops short of |
 |---|---|---|
 | `media-worker/src/verify.itest.ts` | slot → PUT → sweep → `ready` | the worker runs **in process**; no send, no delivery |
-| `outsider/src/integrate.itest.ts` | slot → PUT → send → signed GET | asserts `state: "pending"` — no verdict in the picture |
+| `outsider/src/integrate.itest.ts` | slot → PUT → send → **a real verdict** → signed GET → bytes compared | never re-reads the state; no thumbnail; no `media.updated` |
 | `api/src/media/attachment-state.itest.ts` | send → verdict → history | the verdict is called **by the test**, not by a worker |
 | `api/src/media/delivery.itest.ts` | the gate's six refusals | states are set by SQL |
 
-So **no test in this repository lets a real scan decide what a recipient can fetch.**
+**CORRECTED IN PHASE 2, AND THE CORRECTION IS THIS CHAPTER'S SUBJECT.** The row above
+first read *"asserts `state: "pending"` — no verdict in the picture"*, and the sentence
+under the table read *"no test in this repository lets a real scan decide what a recipient
+can fetch."* **Both were false, and reading the whole test rather than the assertion the
+premise check had quoted is what showed it**: sixty lines later the sealed suite polls
+`GET /v1/media/{id}` to a 30-second deadline, which cannot answer 200 until the deployed
+worker has marked the object `ready`, then fetches the signed URL and compares the bytes.
+**A real scan has been deciding what that test can fetch since 4.13.**
+
+What stays true is narrower and is still the chapter: **nothing asserts that the state a
+recipient sees ever changes** — the `pending` assertion is never followed by a second read
+— **nothing fetches a thumbnail**, and **no test anywhere watches a `media.updated` frame
+arrive**. The milestone is the join, not the verdict.
 
 Two further findings shaped this specification, both from reading the tree:
 
@@ -49,6 +61,13 @@ value stable rather than timing-dependent."* CI's sealed job runs
 interval is 5,000 ms. So the assertion is either a race that keeps winning or a true reading of
 a worker that is not working, and the comment explaining it is wrong either way. **Which of
 those it is must be measured before anything is built on top of it.**
+
+**MEASURED IN PHASE 2: it is a race that keeps winning, with about four seconds of margin.**
+Ten independent trials from PUT to verdict gave **min 1,861 · p50 3,993 · max 5,568 ms**
+against three steps between the PUT and the assertion that take milliseconds. So the value is
+stable and timing-dependent at the same time, which the comment treated as alternatives. The
+comment is replaced with the measurement, and — because a comment is not a test — the reason
+is now checked: the suite waits past the window and asserts the verdict it claimed was absent.
 
 This is a milestone chapter, so it follows `docs/12` §2.3's split: a falsifiable claim the lane
 checks on every run, and a measurement recorded once. It is not a chapter that adds product
