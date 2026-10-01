@@ -94,3 +94,38 @@ but a log that cannot say it is working.
 count and the backlog — costs almost nothing and makes liveness readable. Left unbuilt here
 for FR-012's reason; recorded so the next chapter that opens this file does not re-derive
 it. **And meanwhile: for liveness, read the log of whatever the process TALKS to.**
+
+## 063-4 — three feature-local ids mean two different things each inside `docs/`, and the check that would find it is diff-scoped
+
+**Measured tree-wide.** `docs/` holds 22 distinct `FR-0NN` ids. Most are correctly qualified
+(*"FR-013 of chapter 3.23"*, *"043's own FR-016"*) or are the SRS correcting an earlier leak.
+**Five were unqualified and are fixed in this chapter**, by feature number:
+
+    docs/04-srs.md:941                (FR-009)                feature 059's
+    docs/05-sad.md:1736               FR-013 requires …       feature 040's
+    docs/05-sad.md:2003               FR-017's refusal        feature 056's
+    docs/12-part-4-structure.md:241   now FR-017              feature 056's
+    docs/12-part-4-structure.md:407   FR-008 states the rule  045's
+
+**What is left open is the collision.** `FR-009`, `FR-013` and `FR-017` each name two unrelated
+things across these documents — a scanner that cannot answer and an idempotent delete; a
+connection-cap race and a deletion grant; a store outage and a tombstone read path. Qualifying
+each citation makes every individual sentence correct and does nothing about a reader who greps.
+
+**And the instrument cannot find any of it.** The check `gaps.md` 052-7 produced is
+`git diff HEAD -- docs/ | grep '^+' | grep -oE 'FR-0[0-9][0-9]'`. It is **diff-scoped**, so it
+catches a leak being made and never one already in the tree — this chapter's diff is clean while
+five leaks sat in the files it was editing. **Nothing runs either version**, five features on
+from 052-7.
+
+**How to apply it.** A tree-wide version is three lines and would have to allow the qualified
+spellings, which is a pattern rather than a list: an `FR-0NN` is acceptable when "feature", a
+four-digit feature number, or "chapter" appears within about forty characters of it. That is a
+checker somebody can write; what it must not become is a hand-maintained allow-list, which is
+the thing this project refuses (056-10).
+
+**AND THE QUALIFIER MUST BE A FEATURE NUMBER.** The connection-cap feature is
+`specs/040-chapter-3-22/` and its chapter is now **3.16, "the sixth connection"** — feature 045
+renumbered 21 of Part 3's 26 chapters. The existing *"of chapter 3.23"* spellings in
+`docs/05-sad.md` are therefore the next instance of this entry, pointing at chapters that have
+moved. **Name a chapter, never number it** applies to citations too.

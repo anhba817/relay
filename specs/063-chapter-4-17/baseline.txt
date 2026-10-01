@@ -753,3 +753,146 @@ T041  ASSERTIONS ADDED BY THIS FEATURE THAT NAME NO CHAPTER: 0 OF 40
       looked up. **A measurement whose instrument is rewritten between runs is two
       measurements**, which is the smaller version of 4.16's formatter finding: a file a
       formatter owns moves under anything that counts lines.
+
+PHASE 7 — THE DOCUMENTS (T042 … T049)
+=====================================================================================
+
+T043  THE CLAUSES BESIDE FR-MED-09, READ WHILE THE FILE WAS OPEN
+-------------------------------------------------------------------------------------
+
+      4.16 found a data-dictionary row describing a table nobody built, two rows from the
+      one it had opened the file to edit. So the neighbours were read here, and the answer
+      this time is **nothing to amend**, which is worth recording as a result rather than
+      as a silence.
+
+      **FR-MED-10's reaper does not exist, and that is correct.** No scheduled job deletes
+      unreferenced media objects; `media.controller.ts:88` says so in the future tense —
+      *"the 24-hour boundary FR-MED-10 will own"* — and `docs/12` row 22, movement VII,
+      *"Erasure, and every path it must find"*, owns the clause. An unbuilt clause with a
+      named owner is a plan, not a gap.
+
+      **AND THE TWO 24-HOUR WINDOWS ARE THE SAME NUMBER ON PURPOSE.** The sweep's pending
+      query is scoped `created_at > now() - interval '24 hours'` and FR-MED-10's reap is at
+      24 hours, so an object leaves the worker's attention exactly when the reaper takes
+      responsibility for it. Nothing had said the two were related except that controller
+      comment. **The cost of the reaper's absence is measurable here**: 7,429 pending rows
+      on this lane, 356 of them inside the window, each one HEADed on every pass —
+      4.16's `outstandingReservations` finding arriving as latency.
+
+T046b §7.6 OF `docs/12`, CHECKED AND NOT CLOSED, WITH THE REASON
+-------------------------------------------------------------------------------------
+
+      *"The SRS phase table disagrees with itself, and someone must amend it."* Still true,
+      still open, and **still not this part's**: its disagreement is about FR-DSH-01/02 at
+      P2 inside a Phase 3 annotated *(P3)*, FR-MED-05 at P4 in the same block, and
+      FR-EMJ-11's pack analytics. Part 4 covers FR-ANL, FR-MED and FR-MOD; FR-DSH and
+      FR-EMJ-03→10 are Phase 3 by the SRS and Part 5 by the tutorial plan.
+
+      **Recorded as checked rather than left looking unexamined**, because a milestone is
+      exactly where somebody goes looking for the open questions — and because §7.7, one
+      line below it, had been false for eight chapters with nobody reading it.
+
+T046a §7.7 WAS FALSE THE WEEK IT WAS WRITTEN, AND SURVIVED EIGHT CHAPTERS
+-------------------------------------------------------------------------------------
+
+      *"Nobody has decomposed the 109."* Feature 055 decomposed it and took the chain to
+      **0**; every chapter since has closed at 0, and `check:fences` today reports 291
+      files across 59 chapters with no problems. Closed, with 055's two transferable
+      findings kept in place of the count: **a count of 110 was neither 110 defects nor an
+      upper bound on them**, and **the delta-of-0 convention hid an attribution for nine
+      chapters** because it compares a total to a total and never asks which file.
+
+      **This is §7.1's own failure mode, named in this document and repeated in it** —
+      *"§3 was amended and §7 was not … it survived the chapter that found it."* Closed by
+      a chapter that had the file open for a different row, which is the only reason
+      anybody looked.
+
+T045  TWENTY CLAUSE-PARTS DECIDED, AND ELEVEN OF THEM ARE NEW
+-------------------------------------------------------------------------------------
+
+      `clauses.md` carries the table. The counts: **DEMONSTRATED 11 · MET 5 · UNREACHABLE
+      1 · UNBUILT and owned elsewhere 1 · HELD 1 · not exercised 1 = 20.**
+
+      **DEMONSTRATED is a stronger verdict than MET and the distinction is the chapter.**
+      It means the journey exercises the clause end to end against the deployed worker,
+      from outside the platform, and goes red if it stops being true. Before this chapter
+      that count was **zero** for every one of the eleven: each was verified by a suite
+      that stood in for at least one of the steps beside it.
+
+T047  THE SEALED SUITE IS THE ONLY CONSUMER OF THE DEPLOYED WORKER, AND THE SAD DID NOT
+      SAY SO
+-------------------------------------------------------------------------------------
+
+      Added to ADR-27's account in `docs/05-sad.md`, because that section is where the
+      document says which suites prove what and its own honesty rule — *"the lane list
+      comes from the tree"* — has a hole: `packages/outsider` is not in the tree it reads.
+
+        pnpm test                 does not reach it
+        pnpm test:integration     does not reach it
+        pnpm coverage             EXCLUDES it, `vitest.coverage.config.mts:98`
+        CI's sealed job           the only runner, and it builds two images first
+
+      **So the service that decides whether a customer's upload is readable has exactly
+      one automated consumer**, in a job most contributors never trigger locally, and it
+      contributes nothing to the coverage number. *A file at 100% in the coverage lane and
+      a file the deployed worker runs are two different claims about two different sets of
+      code.*
+
+T049/T047b AND TWO MORE STALE SENTENCES, BOTH ABOUT THE FENCE CHAIN
+-------------------------------------------------------------------------------------
+
+      ADR-27's text in `docs/05-sad.md` read *"`pnpm check:fences` … exits 1 at the
+      standing 110 problems on every push since feature 045."* **055 took the chain to 0
+      and it has stayed there**, so that sentence had been false for eight chapters — the
+      second instance found in one phase, after `docs/12` §7.7. Corrected rather than
+      deleted, because the decision it records still stands.
+
+      **TWO DOCUMENTS CARRYING THE SAME DEAD NUMBER IS NOT A COINCIDENCE**: both were
+      written in the window where 110 was true, and nothing re-reads a sentence whose
+      subject has a checker. *A gate's own number ages faster than the prose about it.*
+
+      `pnpm sync:docs` then `pnpm check:docs`: **all mirrored docs match their sources**,
+      25 revisions ascend 1.0 to 1.24. Three mirrors rewritten — `05-sad.md`,
+      `06-adr-deep-dives.md`, `08-error-reference.md`.
+
+T048  THE DIFF CHECK IS CLEAN AND THE TREE IS NOT — FIVE LEAKS, THREE IDS WITH TWO
+      MEANINGS EACH
+-------------------------------------------------------------------------------------
+
+      `git diff HEAD -- docs/ | grep '^+' | grep -oE 'FR-0[0-9][0-9]'` returned **nothing**
+      before this phase's repairs and **five afterwards** — `FR-008`, `FR-009`, `FR-013`
+      and `FR-017` twice — **every one of them the repair itself.** The check cannot tell
+      a leak from the sentence that fixes one, which is 4.16's finding with the polarity
+      reversed: that chapter leaked an id inside a sentence correcting somebody else's
+      citation, and here the same grep fires on five corrections. **A check whose output
+      must be read by hand has not replaced reading.**
+
+      And it is DIFF-SCOPED, which is the larger limit: it can only ever catch a leak
+      being made, never one already in the tree. Run tree-wide instead, `docs/` holds 22
+      distinct feature-local ids, of which **five citations were unqualified**:
+
+        docs/04-srs.md:941              (FR-009)                  feature 059's
+        docs/05-sad.md:1736             FR-013 requires …         feature 040's
+        docs/05-sad.md:2003             FR-017's refusal          feature 056's
+        docs/12-part-4-structure.md:241 now FR-017                feature 056's
+        docs/12-part-4-structure.md:407 FR-008 states the rule    045's
+
+      All five qualified by **feature number**, which is the stable address. Every other
+      occurrence is already qualified — *"FR-013 of chapter 3.23"*, *"043's own FR-016"* —
+      or is the SRS correcting an earlier leak.
+
+      **AND THREE OF THE IDS MEAN TWO DIFFERENT THINGS INSIDE `docs/`.** `FR-009` is a
+      scanner that cannot answer (059) at `04-srs.md:941` and an idempotent delete (3.23)
+      at `05-sad.md:440`. `FR-017` is a store outage (056) in two places and a tombstone
+      read path (3.23) at `05-sad.md:695`. `FR-013` is a connection-cap race (040) and a
+      deletion grant (3.23). **This is exactly `FR-003a`'s defect** — *"a feature-local id
+      used by four different features to mean four different things"* — and SRS 1.14
+      corrected it, 1.23 reproduced it, and it has been sitting in three documents
+      throughout. `gaps.md` 063-4.
+
+      **AND THE QUALIFICATION HAS TO BE A FEATURE NUMBER, NOT A CHAPTER NUMBER**, which
+      this phase nearly got wrong: the connection-cap feature is `specs/040-chapter-3-22/`
+      and the chapter is now **3.16, "the sixth connection"** — 045 renumbered 21 of
+      Part 3's 26. *Name a chapter, never number it* applies to a citation as much as to a
+      sentence, and the existing *"FR-013 of chapter 3.23"* spellings are the next
+      instance of it.
