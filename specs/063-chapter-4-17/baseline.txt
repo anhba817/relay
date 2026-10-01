@@ -896,3 +896,50 @@ T048  THE DIFF CHECK IS CLEAN AND THE TREE IS NOT — FIVE LEAKS, THREE IDS WITH
       Part 3's 26. *Name a chapter, never number it* applies to a citation as much as to a
       sentence, and the existing *"FR-013 of chapter 3.23"* spellings are the next
       instance of it.
+
+PHASE 8 — THE CHAPTER (T050 … T060)
+=====================================================================================
+
+      check:fences 0 · EXIT 0 · 291 files across 60 chapters          from 59
+      2,889 prose words · 4 figures · 2 TRAP boxes
+      0 titled fences in the chapter · 2 untitled excerpts
+      lint · build · check:docs · check:errors · check:figures · check:srs   all exit 0
+      310 figures across the series, every diagram passed as `code`
+
+T057/T058  THE BILL WAS 23 HUNKS BEFORE IT WAS 6, AND A FORMATTER IS WHY
+-------------------------------------------------------------------------------------
+
+      The first generated diff against the chain's own replay was **23 hunks over 1,249
+      lines** for a chapter that made six edits. Nineteen of them were `prettier`.
+
+      **`integrate.itest.ts` had never been Prettier-clean** — measured by checking out
+      the pre-feature version into the package and running `--check` against the repo's
+      own config, because a copy under `/tmp` resolves a different config and would have
+      answered the wrong question. Chapters 4.13, 4.14 and 4.16 all edited this file
+      without a format pass. Running `prettier --write` over the whole of it rewrote
+      **221 lines nobody had asked about**, and every one became a hunk this appendix
+      would have carried for ever.
+
+      The repair: re-derive the patch against the UNFORMATTED original and re-apply.
+
+        before -> prettified -> current        23 hunks, 1,249 diff lines
+        before -> current (edits only)          6 hunks,   782 diff lines
+        suite after the rebuild                 21 of 21, tsc 0, eslint 0
+
+      **A formatter is free on a file you own and is not free on a file the fence chain
+      publishes.** The cost is invisible at the moment you pay it — `--write` prints
+      nothing and the tests stay green — and it arrives as published diff a reader has to
+      scroll past. **The number that made it visible was the hunk count, not the review.**
+
+      **AND THE HUNKS WENT TO THE APPENDIX, WHICH ALREADY AMENDS THIS FILE FOUR TIMES.**
+      4.8's rule: a chapter hunk anchored between the appendix's own is written against a
+      state no reader of that chapter ever sees. The chapter publishes **two untitled
+      excerpts** instead — untitled because an excerpt must be (051-6), and because a
+      titled fence is a whole-body claim on a 1,677-line file.
+
+T050  AND THE REGISTRATION TITLE CARRIES NO STAR
+-------------------------------------------------------------------------------------
+
+      `"Milestone: an image, end to end"`, matching 4.9's `"Milestone: the meter agrees"`.
+      The `★` lives in `docs/12`'s table and nowhere else. The slug follows 4.9's
+      precedent — `milestone-an-image-end-to-end` — so nothing was waiting on a decision.
