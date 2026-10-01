@@ -89,8 +89,9 @@ chapters' contributions and a named assertion fails.
    and not `pending`.
 3. **Given** the recipient holds only the media id, **When** they ask for a link and follow it,
    **Then** the bytes they receive are byte-identical to the bytes uploaded.
-4. **Given** the same message, **When** the recipient asks for the thumbnail the platform
-   derived, **Then** they are served it or refused it, and the chapter states which and why.
+4. **Given** an image **above 320 px on its long edge**, **When** the reader asks for the
+   thumbnail the platform derived, **Then** they are served it, and the chapter states the
+   bound that made it exist.
 5. **Given** the worker is stopped, **When** the same sequence runs, **Then** a named assertion
    fails rather than the suite passing on a `pending` attachment.
 
@@ -183,8 +184,12 @@ figure is about a machine rather than about a defect.
   retroactively to its neighbours.
 - **FR-003**: The suite MUST fail when the media worker is not working, and MUST NOT pass by
   observing a state that an unworked object and a worked one share.
-- **FR-004**: A recipient MUST be able to obtain the bytes of a `ready` attachment, and the bytes
+- **FR-004**: A reader MUST be able to obtain the bytes of a `ready` attachment, and the bytes
   MUST equal the bytes uploaded.
+- **FR-004a**: The journey's image MUST exceed **320 px on its long edge**, because at or below
+  it `thumbnailOf` answers `within-bound` and the worker writes **no rendition at all** (4.15).
+  A journey that asserts a thumbnail under a smaller image asserts an id the payload never
+  carries.
 - **FR-005**: A rejected attachment MUST reach a recipient as an explicit state on a message that
   remains in history, distinguishable from a deleted message and from a message with no
   attachment.
@@ -227,8 +232,8 @@ figure is about a machine rather than about a defect.
 
 - **SC-001**: One image travels from slot to delivered bytes in a single automated run, with the
   worker deployed rather than called, and the delivered bytes equal the uploaded bytes.
-- **SC-002**: Stopping the media worker turns the suite red, and the failure names the worker
-  rather than reporting an attachment in a legitimate state.
+- **SC-002**: FR-003's measurement — stopping the deployed worker turns the suite red, and the
+  failure names the worker rather than reporting an attachment in a legitimate state.
 - **SC-003**: A rejected upload leaves a readable message whose attachment says `rejected`, and a
   link to it is refused identically to a link to an id no object has.
 - **SC-003a**: A subscriber that received the message while the attachment was `pending` receives
@@ -260,6 +265,15 @@ figure is about a machine rather than about a defect.
 - **"End to end" ends at the bytes, not at a screen.** This repository has no client and no
   renderer, and FR-MED-14's reference client is P4 and unbuilt. The furthest a test can follow an
   image is the response to a signed GET.
+- **The fixture is generated, not carried, and it needs `node:zlib`.** The sealed suite's
+  existing image is a **1×1 PNG written as a 67-byte literal**, which produces no rendition —
+  and the journey's 800×600 image deflates to 447,345 bytes, so a literal is not available. A
+  Node builtin is not a workspace path, which is the seal's actual rule; the file's header
+  sentence claiming it imports nothing beyond `vitest` is already false (line 1 is
+  `node:crypto`) and is corrected rather than worked around. The alternative considered was a
+  **321×1** strip, which deflates to 281 bytes and would fit a literal — rejected because every
+  figure this chapter publishes would then describe a one-pixel-tall image and could not be
+  compared with the measurements already taken at 447,377 bytes.
 - **The deployed worker means the composed container**, built from its own Dockerfile and started
   under the `services` profile — which is what CI's sealed job already starts and what no
   assertion currently depends on.

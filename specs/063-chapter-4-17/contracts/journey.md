@@ -50,8 +50,19 @@ correction, and the sealed suite already relies on it.
 - Call `POST /internal/media/{id}/verdict`. That is the worker's route and calling it is the
   thing this chapter exists to stop doing.
 - Mint a second credential, or change `scripts/seed-demo-tenant.mjs`. See above.
+- Import anything from `@relay/*` or any workspace path, which is the rule. **Node builtins are
+  not that** — `node:crypto` is already imported and `node:zlib` joins it.
 - Shorten the sweep interval. 5,000 ms is a deployment property; the journey waits on a
   condition with a deadline.
+
+## The fixture
+
+| property | value | why |
+|---|---|---|
+| dimensions | **800 × 600** | must exceed **320 px** on its long edge, or `thumbnailOf` answers `within-bound` and no rendition is written (4.15) |
+| bytes | **447,377** | measured; the same image every figure in `research.md` was taken with |
+| how | generated with `node:zlib` inside the suite | 447,345 bytes of deflate cannot be a literal, and the existing 1×1 literal produces no thumbnail |
+| imports it adds | `node:zlib` | a Node builtin is not a workspace path. The file's header sentence saying it imports nothing beyond `vitest` is already false and is corrected |
 
 ## Timing the journey must respect
 

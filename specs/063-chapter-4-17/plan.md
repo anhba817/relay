@@ -104,9 +104,15 @@ relay-tutorial/
 ```
 
 **Structure Decision**: the journey lives in `packages/outsider` because it is the only lane
-whose job starts the deployed worker (research R4). No file under `services/` changes except the
-sealed suite's own neighbours if a repair is needed, and `compose.yaml` is read rather than
-edited.
+whose job starts the deployed worker (research R4). No file under `services/` changes, and
+`compose.yaml` is read rather than edited.
+
+**AND THE SEALED SUITE IS THE EXPENSIVE FILE, NOT THE CHEAP ONE.** It is titled in **five
+fences** — part-3/chapter-26 in both locales, part-4/chapter-08, part-4/chapter-09 and
+`fences/post-series.md` — as **two whole bodies and six diffs**. A titled fence is a whole-body
+claim (051-6), so every edit to it is a claim about `relay-platform`'s HEAD that five places
+publish. The feature changes one platform file and that file carries the whole fence bill; phase
+8 is where it is paid, and T007 counts it before phase 2 edits anything.
 
 ## Phase plan
 
@@ -127,6 +133,12 @@ edited.
 **The milestone finds a defect in somebody else's chapter.** Phase 0 found none in the path, but
 it walked it once. If phase 2 finds one, it is recorded with its bill and scoped deliberately —
 a milestone that absorbs a repair stops being a measurement of what was already there.
+
+**The fixture has to be bigger than the bound, and the seal makes that awkward.** The existing
+image is a 1×1 literal and produces no rendition; the journey's 800×600 one deflates to 447,345
+bytes, so it is generated with `node:zlib` rather than carried. That is a second Node builtin in
+a file whose header claims it imports none, and the header is corrected rather than the rule
+bent — `node:zlib` is not a workspace path.
 
 **The journey becomes a second harness, and the file is already most of the way there.**
 `integrate.itest.ts` defines `waitFor` **three times** — once per test, at lines 280, 348 and
