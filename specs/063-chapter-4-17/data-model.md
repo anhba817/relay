@@ -57,6 +57,13 @@ platform signed.
 | bytes | the signed `GET` | the whole path: what comes back is what went in |
 | thumbnail | `GET /v1/media/{rendition_id}` | 4.15 — a rendition's reachability is its parent's |
 
+| the frame | `${ws}/v1/ws?token=` | 4.14 — a recipient holding a stale `pending` is told when it changes |
+
+**A SUBSCRIBER MUST BE A MEMBER OF THE CHANNEL, EVEN A PUBLIC ONE.** Measured: without the
+members call, the socket receives `connection.ack` and `presence.changed` and nothing else.
+`channelVisibleTo` governs who may READ an object (4.12); membership governs who is SENT a
+frame, and the two are different questions that the word "public" makes look like one.
+
 **There is no surface for "has the worker run yet".** The journey learns the verdict by reading
 the message again, which is exactly what a client would do and is the reason the wait is a poll
 with a deadline rather than a sleep.

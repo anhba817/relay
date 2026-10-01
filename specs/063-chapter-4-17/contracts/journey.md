@@ -18,10 +18,38 @@ Every entry was exercised by hand on 2026-10-01 (research R2).
 | `GET` | `/v1/channels/{id}/messages?limit=N` | — | `200 {messages:[…], next_cursor, prev_cursor}` |
 | `GET` | `/v1/media/{id}` | — | `200 {url, …}` when `ready` and referenced; a refusal otherwise |
 | `GET` | the signed URL | — | `200`, the bytes |
+| `POST` | `/auth/dev-token` | `{user, ttl_seconds}` | `200 {token, expires_at}` — the socket takes a user token, not the application credential |
+| `POST` | `/v1/channels/{id}/members` | `{user_ids: ["ana"]}` | `200 {members:[{external_id, status}]}` |
+| — | `${ws}/v1/ws?token={token}` | the WebSocket | frames arrive as JSON text: `connection.ack`, `message.created`, `presence.changed`, `media.updated` |
+
+**THE THREE ROWS ABOVE WERE MISSING FROM THIS FILE UNTIL THE THIRD ANALYSIS PASS**, while T030a
+needed all three — in a document whose rule is that an unlisted step is a step the platform does
+not expose. A contract that omits what its own feature needs gets reached past rather than
+amended.
+
+**AND A SUBSCRIBER MUST BE A MEMBER, EVEN OF A PUBLIC CHANNEL.** Measured: without the members
+call, a socket opened with a valid token received `connection.ack` and `presence.changed` and
+**no `message.created` and no `media.updated`**. That is what made pass 2's third probe attempt
+read like `media.updated` not existing — the subscriber was outside the channel and the absence
+of every frame looked like the absence of one. With the member added, all four arrive.
 
 **`messages`, not `data`.** The history response's array is keyed `messages`. Research R7
 records the cost of assuming otherwise: a defaulting accessor turned a wrong key into what
 looked like history dropping the attachment.
+
+## Where the journey goes in the file
+
+**The suite is nineteen sequentially-dependent tests over five `let`s declared at describe
+scope** — `api`, `ws`, `credential`, `channelId`, `token` — and they are populated by named
+earlier tests: the channel at the test on line 114, the token at 161, the bot at 168. The media
+sequence sits at 408, after all of them.
+
+- **The journey's tests go after the existing media sequence**, not above it. Inserted higher
+  they fail on `undefined`, and the failure names a variable rather than a step.
+- **The journey creates its own channel** rather than reusing `channelId`. The shared one
+  accumulates messages from every test before it, so a history read against it would have to
+  search rather than assert — and `items[0]` would be somebody else's message. Research's walk
+  made a fresh channel, which is why its history held exactly one.
 
 ## Credentials
 

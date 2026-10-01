@@ -96,7 +96,7 @@ relay-platform/
 └── docs/                         (superproject) 04-srs.md, 05-sad.md, 07, 12
 
 relay-tutorial/
-├── app/(en)/part-4/chapter-17/<slug>/
+├── app/(en)/part-4/chapter-17/milestone-an-image-end-to-end/
 │   ├── page.mdx
 │   └── figures.ts
 ├── lib/tutorial.ts               registration, seven fields
