@@ -104,8 +104,12 @@ done
 echo "state=$S after ~$((i/2)) s"
 ```
 
-**Expected**: `ready`, after **about 5.7 s** — measured 5,656 to 6,143 ms over five runs. **Five
-of those seconds are the sweep interval, not work.** Nothing in the platform is told the upload
+**Expected**: `ready`, after **anywhere from 1.2 to 5.8 seconds — p50 2,953 ms over ten
+trials**. If it comes back in a second, nothing is wrong: the sweep is a 5,000 ms timer and an
+upload lands at a random point in the cycle, so **the wait is uniform over the interval and
+only about 0.7 s of it is work.** An earlier draft of this line said *"about 5.7 s"* from five
+runs taken in a loop — each starting just after the sweep that finished the one before, which
+measured the worst case and called it typical. Nothing in the platform is told the upload
 finished (ADR-13: the client PUTs straight to the store), so the worker checks every 5,000 ms.
 
 `psql` is used here and nowhere else in this document, because **there is no published surface

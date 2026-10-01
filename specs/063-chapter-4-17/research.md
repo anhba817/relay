@@ -14,7 +14,9 @@ media-worker started  interval_ms 5000  scanner "ClamAV 1.5.4/28139/Wed Sep 30 0
 sweep  seen 616  ready 1  rejected 0  waiting 615
 ```
 
-Five runs, slot to verdict, against the deployed container:
+Five runs, slot to verdict, against the deployed container — **and this measurement was wrong,
+which analysis pass 5 found and which is written out in full below because the error is more
+useful than the number**:
 
 ```
          slot        PUT       PUT -> verdict
@@ -24,12 +26,35 @@ run 3    8.5 ms    5.2 ms      5,656 ms
 run 4    8.1 ms    4.9 ms      5,756 ms
 run 5   10.4 ms    6.3 ms      5,693 ms
 
-min 5,656 · p50 5,693 · max 6,123 ms, over a 5,000 ms sweep interval
+min 5,656 · p50 5,693 · max 6,123 ms        ← THE WORST CASE, REPORTED AS THE MEDIAN
 ```
 
-So an uploaded object is `ready` about 5.7 seconds later, of which **5.0 s is the timer and
-about 0.7 s is work**. The sealed suite PUTs, sends and reads within milliseconds, so its
-expectation of `pending` holds with roughly a five-second margin.
+**A LOOP THAT WAITS FOR THE THING IT IS TIMING SYNCHRONISES WITH IT.** Each trial ended the
+moment the sweep processed it, so the next trial's slot was taken a few milliseconds after a
+sweep and had to wait almost the whole 5,000 ms interval. Every sample is phase-locked to the
+timer it is measuring.
+
+**The tell was in the spread and I read past it**: 467 ms across five samples of a process
+gated by a 5,000 ms timer is impossible unless the samples are not independent.
+
+Ten trials, each preceded by a random sleep so the upload lands uniformly in the cycle:
+
+```
+1,197 · 1,340 · 1,390 · 1,570 · 2,950 · 3,240 · 3,440 · 4,240 · 5,340 · 5,840 ms
+
+min 1,197 · p50 2,953 · max 5,840 · mean 3,055        over a 5,000 ms sweep interval
+```
+
+So an uploaded object is `ready` **between about 1.2 and 5.8 seconds later, p50 2,953 ms** —
+the wait is uniform over the interval because nothing tells the platform the upload finished
+(ADR-13), plus roughly 0.7 s of work. **The sampled path is the refusal one** (2,048 bytes that
+are not a PNG), so it omits the thumbnail's ~15 ms and a store write; the wait dominates either
+way and the difference between the two paths is tens of milliseconds.
+
+The sealed suite PUTs, sends and reads within milliseconds of each other, so its expectation of
+`pending` holds — and on the corrected figures its margin is **at least 1.2 s** rather than
+about five, which is a smaller margin than the original measurement implied and still a wide
+one.
 
 **Decision**: the suite's assertion stays correct and its stated reason is replaced. The comment
 reads *"this suite runs no media worker, which is what makes the value stable rather than
@@ -52,7 +77,7 @@ deployment property rather than a test fixture.
 1  slot + PUT                    201, PUT 200
 2  channel                       201
 3  send BEFORE the verdict       201   attachment {"type":"media","media_id":…,"state":"pending"}
-4  the deployed worker            ready after 6,143 ms
+4  the deployed worker            ready after 6,143 ms   (one sample, high in the cycle)
 5  rendition                      created
 6  history                        200   state "ready", thumbnail {media_id, 320, 240}
 7  link for the parent            200   url issued
@@ -119,9 +144,12 @@ is recorded rather than repaired.
 ```
 slot                     8–34 ms      a signature, no contact with the store (4.10)
 PUT                       5–7 ms      447,377 bytes to MinIO on the loopback
-waiting for the sweep    ≤ 5,000 ms   the interval, not work
-scan + verify + thumbnail  ~700 ms    the remainder of 5,656–6,143
+waiting for the sweep    0–5,000 ms   the interval, not work — UNIFORM, not a constant
+scan + verify + thumbnail  ~700 ms    the floor of the ten independent trials, 1,197 ms,
+                                      minus the smallest possible wait
 history / link / GET      < 20 ms     each
+
+end to end               1,197–5,840 ms, p50 2,953 over 10 independent trials
 ```
 
 **Decision**: the chapter publishes the decomposition and names the timer as the dominant term.
@@ -129,7 +157,9 @@ Publishing *"5.7 seconds end to end"* without it would describe a platform that 
 scanning, when it is a platform that checks every five seconds.
 
 **The 700 ms is a residual, not a measurement**, and the plan says so: it is what is left after
-subtracting a bound from a total. A direct measurement of the scan belongs to 4.13, which took
+subtracting a bound from a total. The corrected version is a better residual — the minimum of
+ten independent trials is the sample that waited least, so what remains after the smallest
+possible wait is closer to the work than any figure taken off a phase-locked loop. A direct measurement of the scan belongs to 4.13, which took
 it; re-deriving it here by subtraction would publish a worse number for the same quantity.
 
 ---

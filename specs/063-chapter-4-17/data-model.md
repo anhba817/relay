@@ -59,6 +59,16 @@ platform signed.
 
 | the frame | `${ws}/v1/ws?token=` | 4.14 — a recipient holding a stale `pending` is told when it changes |
 
+**AND THE FRAME CARRIES THREE FIELDS, NOT THE ATTACHMENT.** Measured:
+
+```json
+{ "media_id": "9555d52b-…", "channel": "23ef218a-…", "state": "ready" }
+```
+
+No thumbnail, no bytes, no message id. A client learns **that** the state changed and re-reads
+history to learn what it changed to in full — which is why the journey asserts both the frame
+and the payload §1 shows, rather than treating one as evidence for the other.
+
 **A SUBSCRIBER MUST BE A MEMBER OF THE CHANNEL, EVEN A PUBLIC ONE.** Measured: without the
 members call, the socket receives `connection.ack` and `presence.changed` and nothing else.
 `channelVisibleTo` governs who may READ an object (4.12); membership governs who is SENT a

@@ -98,7 +98,12 @@ correction, and the sealed suite already relies on it.
 |---|---|---|
 | slot | 8–34 ms | the suite's default |
 | PUT | 5–7 ms | the suite's default |
-| PUT → `ready` | 5,656–6,143 ms, over a 5,000 ms interval | a poll to a deadline comfortably above one interval, failing with a message that names the worker |
+| PUT → `ready` | **1,197–5,840 ms, p50 2,953**, over a 5,000 ms interval, 10 independent trials | a poll to a deadline comfortably above one interval, failing with a message that names the worker |
+
+**THE WAIT IS UNIFORM OVER THE INTERVAL, NOT A CONSTANT.** An earlier figure of `p50 5,693 ms`
+came from five runs in a loop, each starting just after the sweep that ended the one before —
+**a loop that waits for the thing it is timing synchronises with it**. A journey that asserted
+an elapsed time rather than a condition would have been tuned against the worst case.
 | history, link, GET | < 20 ms each | the suite's default |
 
 **Arrival is a condition and absence is not.** The wait for the verdict polls; any assertion that

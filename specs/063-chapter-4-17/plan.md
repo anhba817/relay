@@ -8,7 +8,9 @@
 
 Seven chapters built upload → scan → send → signed delivery, and no test joins them. Phase 0
 walked the path by hand against the composed stack: every step works, an image is `ready`
-**5,693 ms** after the PUT, and a recipient can fetch both the bytes and the thumbnail. So this
+**between 1,197 and 5,840 ms after the PUT, p50 2,953** — a 5,000 ms sweep plus about 0.7 s of
+work, and the wait is uniform because nothing tells the platform the upload finished — and a
+**reader** can fetch both the bytes and the thumbnail. So this
 feature writes one journey suite in `packages/outsider` — the only lane that runs the deployed
 worker — plus the rejection path, a recorded measurement, and the documents.
 
@@ -123,7 +125,7 @@ publish. The feature changes one platform file and that file carries the whole f
 | **3** | US1 — the journey: slot → PUT → send → the deployed worker → history → link → bytes → thumbnail → the `media.updated` frame, each assertion naming its chapter | the suite is red with the worker stopped and green with it running, both demonstrated |
 | | **One reader, not two credentials.** The seal holds exactly one and the seeder mints one on purpose; the recipient is a socket subscriber or a second read | no change to `scripts/seed-demo-tenant.mjs` |
 | **4** | US2 — the rejection: bytes that contradict the declaration, the marker in history, the refusal on the link, the `media.updated` frame carrying `rejected` | the refusal is byte-identical to the one for an id nobody has |
-| **5** | US3 — the measurement: the decomposition, the sample size, the timer named separately | no figure published without its sample size |
+| **5** | US3 — the measurement: the decomposition, the sample size, the timer named separately, **and independent phase** | no figure published without its sample size, and no timing loop that waits for what it times |
 | **6** | The probes: stop the worker, break the scanner's address, and record what each looks like from outside | each produces a named red rather than a plausible green |
 | **7** | The documents: SRS FR-MED-09, the clause count, both Part 4 tables, `sync:docs` | `check:docs` and `check:srs` green |
 | **8** | The chapter: 2,000–4,000 prose words, figures, fences, the bill paid | `check:fences` 0 and `pnpm build` green |
@@ -155,6 +157,12 @@ is that decision and it is written down either way.
 **The suite runs nowhere but CI.** That is already true of the sealed nineteen, and it means a
 local green says nothing about this chapter's central claim. Phase 8's push is the first honest
 run, which is the same position 4.11 was in when the sealed job had never executed at all.
+
+**A timing loop measures its own structure if nobody watches it.** Phase 0's five-run loop
+reported `p50 5,693 ms` and the true p50 is **2,953** — each trial ended when the sweep
+processed it, so the next began immediately after a sweep and paid nearly a whole interval.
+Every figure this feature publishes about the path comes from trials with independent phase,
+and the artefact stays in `research.md` because it is the chapter's own subject.
 
 **And the chapter has no mechanism to describe.** Every chapter so far shipped something that did
 not exist. This one ships a test, which is a harder chapter to write and an easier one to pad.
