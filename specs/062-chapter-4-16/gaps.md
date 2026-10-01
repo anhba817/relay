@@ -222,9 +222,18 @@ in `compose.yaml`, and **three** test files now spawn it rather than two: `media
 `request-log.itest.ts` and this chapter's `storage-metering.itest.ts`. Every analytical figure
 this chapter publishes is on the far side of a process no deployment starts.
 
-**055-3 / 061-4 — `check:errors` has no CI job, and `check:refs` does not exist.** Re-measured:
-`check:errors` is 1 hit in `package.json` and **0 in `ci.yml`**, unchanged across four features.
-`check:refs` is 0 in both — it has never existed and 061's task list still named it.
+**055-3 — `check:errors` has no CI job. CORRECTED, AND THE RE-MEASUREMENT WAS HALF WRONG.**
+Grepping `ci.yml` for `check:errors` gives **0**, which is what four features have recorded —
+and `ci.yml:211` runs **`node ../relay-tutorial/scripts/check-error-codes.mjs`** directly, as a
+step of the lanes job. It was in the green run's step list. **The CHECK runs; the pnpm SCRIPT
+NAME has no job**, and 055-3's sentence conflated the two for four features because every
+re-measurement grepped for the name rather than for the thing the name invokes. The entry is
+closed as written and reopened as a smaller one: a script invoked by path in one repository's
+workflow and by name in another's `package.json` is a check with two spellings, and a sweep for
+either finds half the truth.
+
+**061-4 — `check:refs` does not exist.** Re-measured: **0 hits in `ci.yml` and 0 in
+`package.json`**. It has never existed; 061's task list named it and got `Command not found`.
 
 **059-20 — a per-file branch pin is a claim about the machine.** `media.controller.ts` now reads
 **86.15% over 65 branch points locally** against a pin of 83 set from CI's 84.61. The

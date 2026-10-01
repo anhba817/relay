@@ -781,8 +781,12 @@ success line when it really looked, so **assert the line, not the exit code**. A
 checker at any other path replays nothing and exits 0**, because the platform is resolved from the
 script's own location — which is the copy fence-chain rule 1a tells you to make. 055-4 and 055-5.
 
-**`check:errors` IS A SCRIPT NO WORKFLOW RUNS.** Five `check:*` scripts, four steps in `ci.yml`,
-zero jobs running that one (055-3). **The tutorial job's gates are `lint`, `build`, `check:docs`,
+**`check:errors` IS A SCRIPT NO WORKFLOW RUNS — AND THE CHECK ITSELF DOES RUN.** Four features
+re-measured this by grepping `ci.yml` for `check:errors`, which gives zero, while **`ci.yml:211`
+runs `node ../relay-tutorial/scripts/check-error-codes.mjs` by path** in the lanes job. The
+pnpm script name has no job; the check has one. **A script invoked by path in one repository's
+workflow and by name in another's `package.json` is a check with two spellings, and a sweep for
+either finds half the truth** (055-3, corrected at 062). **The tutorial job's gates are `lint`, `build`, `check:docs`,
 `check:srs`, `check:figures`, `check:fences` — read them off `ci.yml`, not off memory.**
 
 **WHAT ZERO DOES NOT MEAN.** Not that the chapters are readable, not that the listings are
