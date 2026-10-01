@@ -512,3 +512,141 @@ T031  WHAT FR-MED-09's "RENDERS AS AN EXPLICIT REJECTION MARKER" CANNOT DISCHARG
       half, by structure**, which is 4.11's treatment of FR-MED-07 — *unmet by decision,
       vacuous until there is something to satisfy it*. The alternative is a chapter that
       claims a rendering nobody can see, and the honest version costs one sentence.
+
+PHASE 5 — WHAT THE PATH COSTS (T032 … T036)
+=====================================================================================
+
+T032/T033  THREE BATTERIES, EVERY TRIAL WITH AN INDEPENDENT PHASE
+-------------------------------------------------------------------------------------
+
+      Each trial sleeps a uniform random 0–5,000 ms before it starts, so the upload
+      lands at a uniform point in the sweep's cycle. T009's finding is the reason: five
+      runs back to back gave `p50 5,693 ms` because **a loop that waits for the thing it
+      is timing synchronises with it.** Timed with `process.hrtime.bigint()`, never
+      `date +%s%3N` — research R7 measured that appending nine digits of nanoseconds on
+      this machine, which is how a harness once reported `slot 70934383ms`.
+
+      All figures in milliseconds. min · p50 · max · mean, with n stated.
+
+        n = 10          slot      9 ·   16 ·    20 ·   14
+                        PUT       6 ·    7 ·     8 ·    7
+                        verdict 1000 · 1994 ·  5756 · 2435
+                        history   4 ·    5 ·     6 ·    5
+                        link      4 ·    4 ·     7 ·    5
+                        GET       2 ·    3 ·     3 ·    3
+                        thumbnail 5 ·    7 ·     7 ·    6
+
+        n = 25          slot      8 ·   11 ·    20 ·   12
+                        PUT       6 ·    7 ·    10 ·    7
+                        verdict 1097 · 3398 · 36164 · 7211
+                        history   4 ·    5 ·     6 ·    5
+                        link      4 ·    5 ·    12 ·    6
+                        GET       2 ·    2 ·     4 ·    3
+                        thumbnail 5 ·    7 ·     9 ·    7
+
+        n = 12          verdict  433 · 3871 · 32247 · 5166
+                        (run with the api's access log captured beside it)
+
+      **EVERY STEP A CLIENT CONTROLS IS UNDER 20 ms AND THE ONE IT WAITS ON IS THREE
+      ORDERS OF MAGNITUDE LARGER.** Slot, PUT, history, link, GET and thumbnail together
+      are about 40 ms at p50 against a verdict wait of 3,398. **Publishing one total
+      would describe a slow platform**; what is actually there is a fast platform that
+      checks every five seconds.
+
+T034  THE INTERVAL, SEPARATED FROM THE WORK — AND MEASURED FROM A DIFFERENT INSTRUMENT
+-------------------------------------------------------------------------------------
+
+      The sweep's period is not the worker's own log. **It is the api's access log**, in
+      which every pass announces itself as nine `GET /internal/media/pending` requests:
+
+        twelve consecutive passes   5.37 · 5.39 · 5.40 · 5.40 · 5.40 · 5.41
+                                    5.36 · 5.37 · 5.37 · 5.36 · 5.37      seconds
+
+      **5,000 ms of interval and about 370 ms of work**, because the loop sleeps AFTER the
+      pass rather than on a fixed schedule. 441 objects in the 24-hour window, 440 of
+      which answer `HEAD` with a 404 — **the sweep's steady cost is a round trip per
+      reservation nobody uploaded to**, which is 4.16's `outstandingReservations` finding
+      arriving as latency instead of as a billing discrepancy.
+
+      So the wait a client sees is **uniform on [0, 5,000] plus the work**, and the right
+      thing to publish is that sentence with the interval beside it, not a single number.
+
+T035  THE WORK, AS A RESIDUAL AND NOT A MEASUREMENT
+-------------------------------------------------------------------------------------
+
+      The smallest possible wait is zero — an upload that lands just before a pass begins.
+      The smallest observed total is **433 ms** (n = 12). So
+
+        HEAD + GET 480,813 B + scan + sniff + dimensions + thumbnail
+          + rendition upload + verdict POST + the history read that sees it   ≤ 433 ms
+
+      **That is a total minus a bound, not a stopwatch on the work**, and it is published
+      as one. 4.13 measured a signed `HEAD` at 1.412 ms directly and ADR-31 has the scan
+      curve; re-deriving either by subtraction would publish a worse number for a
+      quantity that already has a good one.
+
+      **AND THE SCAN IS NOT WHERE THE TIME IS.** Twenty INSTREAM scans of this exact
+      fixture, straight to `clamd` on 3310: **min 2 · p50 2 · max 4 ms**, 20 of 20 `OK`.
+
+T032b THE TAIL IS REAL, IT IS NOT THE TIMER AND IT IS NOT THE SCANNER
+-------------------------------------------------------------------------------------
+
+      4 of 25 trials took 19,294 · 30,153 · 32,269 · 36,164 ms, and 1 of 12 took 32,247 —
+      five to six whole passes during which the object was pending, present in the
+      bucket, inside the window, and not decided. Three candidates eliminated by
+      measurement rather than by argument:
+
+        the sweep stopped        NO   twelve consecutive passes, 5.36–5.41 s, no gap
+        the scan was slow        NO   min 2 · p50 2 · max 4 ms over 20 scans
+        the worker had died      NO   the api served it nine pending pages every 5.4 s
+
+      **Left open and recorded as `gaps.md` 063-2** rather than diagnosed: this chapter
+      adds no mechanism (FR-012), and a worker's scheduling is 4.13's. What is published
+      is the distribution with its tail, because a p50 alone would say the path is
+      reliably under four seconds and one trial in six is not.
+
+      **AND THE TELL IS THE COLUMN BESIDE IT**: `link` reads 11–12 ms on exactly the
+      tail trials and 4–6 ms on every other one. Whatever slows the worker slows the api
+      at the same moment, which is the one real clue and points at something shared.
+
+T032c AND I READ A LOG'S SILENCE AS A STALLED WORKER, FOR TEN MINUTES
+-------------------------------------------------------------------------------------
+
+      `main.ts` logs a sweep **only when `ready > 0 || rejected > 0`** — deliberately, and
+      the comment says why: *"a sweep over an empty backlog every five seconds would
+      otherwise be the loudest thing in the log."* So an idle worker prints nothing.
+
+      Measured, after four minutes of reading `docker compose logs --tail 1` and seeing
+      the same line: 62 seconds of idle gave **0 sweep lines and 0 change in the ready
+      count**, while the api's access log showed nine pending pages every 5.4 s
+      throughout. **The worker was never stalled. Its log's gaps measure ARRIVALS, not
+      LIVENESS**, and the two are indistinguishable from outside.
+
+      This is 4.2's `/ping`, 4.9's unset credential, 4.10's bucket and 4.13's signature
+      age at a fifth address, with the polarity flipped: not a check that cannot fail,
+      but **a log that cannot say "I am alive and there was nothing to do."** Every
+      conclusion drawn from those gaps — a 27-second stall, a 91-second stall, a hung
+      process — was wrong, and the instrument that corrected all of them was **a
+      different process's log of the first one's requests.**
+
+T036  WHAT THIS LANE CANNOT SAY ABOUT THESE FIGURES
+-------------------------------------------------------------------------------------
+
+      One image, one tenant, one machine, loopback everywhere, and **one point on every
+      curve that matters**:
+
+        size        480,813 bytes. ADR-31 puts the scan at 52% of the work at 4 KiB and
+                    97.7% at 100 MB, so the work term is a function of size and this
+                    sample fixes it at one value.
+        backlog     441 pending objects in the window. The pass cost is linear in that
+                    number and CI's volume is EMPTY, so the same battery there would
+                    measure a cheaper sweep — 056's finding, from the other side.
+        contention  the worker, the api, Postgres, MinIO and ClamAV share one host with
+                    the harness. The tail's correlation with the api's own latency is
+                    exactly what that looks like.
+        concurrency one object at a time. Nothing here says what the sweep costs when
+                    fifty tenants upload in the same interval.
+
+      **The number that travels is the SHAPE**: a wait uniform on [0, interval] plus
+      work under half a second. The interval is a deployment property, and every figure
+      above is a measurement of this deployment.
