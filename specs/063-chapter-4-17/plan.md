@@ -144,7 +144,7 @@ it walked it once. If phase 2 finds one, it is recorded with its bill and scoped
 a milestone that absorbs a repair stops being a measurement of what was already there.
 
 **The fixture has to be bigger than the bound, and the seal makes that awkward.** The existing
-image is a 1×1 literal and produces no rendition; the journey's 800×600 one deflates to 447,345
+image is a 1×1 literal and produces no rendition; the journey's 800×600 one deflates to 480,756
 bytes, so it is generated with `node:zlib` rather than carried. That is a second Node builtin in
 a file whose header claims it imports none, and the header is corrected rather than the rule
 bent — `node:zlib` is not a workspace path.

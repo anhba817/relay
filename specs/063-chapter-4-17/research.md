@@ -81,8 +81,8 @@ deployment property rather than a test fixture.
 5  rendition                      created
 6  history                        200   state "ready", thumbnail {media_id, 320, 240}
 7  link for the parent            200   url issued
-8  the bytes                      447,377  IDENTICAL to what was uploaded
-9  link for the THUMBNAIL         200   url issued, 18,090 bytes
+8  the bytes                      480,813  IDENTICAL to what was uploaded
+9  link for the THUMBNAIL         200   url issued, 30,612 bytes
 ```
 
 **Decision**: the chapter builds one suite that is this walk, with assertions. It adds no
@@ -105,12 +105,25 @@ would really ask.
 ## R3 — Can a recipient fetch the thumbnail?
 
 **Yes, and it is authorised through the parent.** `GET /v1/media/{rendition_id}` answers **200**
-with a signed URL, and the bytes are 18,090 against the parent's 447,377. 4.15's
+with a signed URL, and the bytes are 30,612 against the parent's 480,813. 4.15's
 `readableMediaObjectKey` resolves `parentId ?? mediaId`, so the rendition — named by no message —
 inherits the parent's reachability rather than needing a rule of its own.
 
 **Decision**: the journey asserts both fetches. The thumbnail is the only part of this path that
 has never been asked for from outside the platform.
+
+**AND EVERY FIGURE IN R2 AND R3 WAS RE-MEASURED IN PHASE 3, BECAUSE THE RECIPE WAS NOT WRITTEN
+DOWN.** This walk was taken with an 800×600 PNG of **447,377 bytes** and nothing anywhere
+recorded how those bytes were produced — colour type, filter, entropy, seed. A number whose
+method is unrecorded cannot be reproduced, so the suite could not be built to hit it and the
+figure had to be taken again against the fixture that actually ships: **800×600 greyscale,
+xorshift32 noise, filter 0, `deflateSync` at default level — 480,813 bytes, deflating to
+480,756.** Its thumbnail is 320×240 and **30,612 bytes**.
+
+The walk is otherwise identical and the published numbers above are now this fixture's. **The
+transferable half is that a measurement is a method plus a number**, and a research pass that
+records only the number hands the implementation a target it cannot aim at — which is the same
+shape as 4.16's quickstart sending the reader to another document for its fixture.
 
 ---
 
@@ -143,7 +156,7 @@ is recorded rather than repaired.
 
 ```
 slot                     8–34 ms      a signature, no contact with the store (4.10)
-PUT                       5–7 ms      447,377 bytes to MinIO on the loopback
+PUT                       5–7 ms      480,813 bytes to MinIO on the loopback
 waiting for the sweep    0–5,000 ms   the interval, not work — UNIFORM, not a constant
 scan + verify + thumbnail  ~700 ms    the floor of the ten independent trials, 1,197 ms,
                                       minus the smallest possible wait

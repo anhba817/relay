@@ -156,7 +156,7 @@ python3 -c 'import json;print(json.load(open("/tmp/t.json"))["url"])' \
   | xargs curl -sS -o /tmp/thumb.webp -w '%{size_download} bytes\n'
 ```
 
-**Expected**: `200`, then **18,090 bytes** against the parent's 447,377. A rendition is named by
+**Expected**: `200`, then **30,612 bytes** against the parent's 480,813. A rendition is named by
 no message and is reachable anyway, because 4.15 made its reachability its parent's — the
 composite key, not a second predicate.
 

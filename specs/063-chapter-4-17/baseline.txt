@@ -221,7 +221,18 @@ T010a THE DECISION: **a local helper, and no consolidation.** Written down becau
       So: one more local helper, in the journey's own test, matching the file's existing
       shape. **Recorded as a gap rather than done quietly** — the next chapter to edit this
       file for its own reasons should lift all five at once, and `gaps.md` carries it with
-      the fence bill attached so the cost is known before somebody starts.
+      the fence bill attached so the cost is known before somebody starts. **Written as
+      `gaps.md` 063-1 the moment it was decided**, rather than at close-out, because an
+      entry deferred to phase 9 is an entry whose cost nobody re-derives.
+
+      **AND THE DECISION IS REFINED BY WHAT T011 ACTUALLY NEEDED, WHICH IS WORTH SAYING
+      RATHER THAN QUIETLY DOING.** The new helper sits at **describe scope**, beside `post`
+      and `get`, not local to one test. The reasoning above holds for the three frame
+      waiters — each has exactly one caller, so a local copy IS the local thing — and
+      inverts for this one: `waitForAttachmentState` has three callers in three `it(...)`
+      blocks (the existing media test, the journey, the rejection), so "local" would have
+      meant three copies of the new helper on top of the three old ones. **One caller is a
+      judgement; three is the answer.**
 
 T010b **THE SPEC'S PREMISE IS PARTLY WRONG, AND READING THE WHOLE TEST IS WHAT SHOWED
       IT.** `spec.md`'s Context table says `integrate.itest.ts` *"asserts `state:
@@ -324,6 +335,7 @@ FENCE BILL, RUNNING — counted as it accrues, not at the end
       files that arrive late are the ones a list written once always misses.
 
         phase 2   packages/outsider/src/integrate.itest.ts        1 HEAD problem
+        phase 3   the same file, four more regions                1 HEAD problem
 
       Published as a titled whole or diff on **four pages** — 3.26 and its Vietnamese
       twin, 4.8, and 4.9 — but the chain compares one END state per file against HEAD, so
@@ -331,3 +343,97 @@ FENCE BILL, RUNNING — counted as it accrues, not at the end
       lags Part 4 entirely, so MIRROR has nothing to compare (056's finding).
 
       check:fences after T013/T014    1 problem(s) — HEAD 1
+      check:fences after phase 3      1 problem(s) — HEAD 1
+
+      **The bill is flat because the chapter has only ever touched one file**, and the
+      chain compares one end state per file. Phase 3 edited four more regions of it — the
+      header sentence, the import, a module-scope fixture and a 170-line test — and the
+      count did not move. **A fence bill counts files, so it is insensitive to exactly the
+      thing a reader cares about**, which is why the hunk's size is budgeted separately at
+      T057.
+
+PHASE 3 — THE JOURNEY (T015 … T025)
+=====================================================================================
+
+T016  THE FIXTURE HAD TO BE RE-MEASURED, BECAUSE R2's RECIPE WAS NEVER WRITTEN DOWN
+-------------------------------------------------------------------------------------
+
+      `research.md` published **447,377 bytes** for the 800×600 image its whole walk was
+      taken with, and recorded nothing about how those bytes were made — colour type,
+      filter, entropy, seed. **A number without its method cannot be reproduced**, so the
+      suite could not be built to hit it and every figure derived from it had to be taken
+      again. Eleven figures across six artifacts moved.
+
+      What ships, measured:
+
+        800 × 600, colour type 0 (greyscale), filter 0, xorshift32 noise, seed 1
+        deflateSync at the default level        480,756 bytes of IDAT
+        the file                                480,813 bytes
+        its thumbnail                           320 × 240, 30,612 bytes
+
+      **AND THE FIRST GENERATOR WAS WRONG IN A WAY ONLY THE BYTE COUNT SHOWED.** The
+      obvious `seed = (seed * 1103515245 + 12345) >>> 0` deflated to **23,284 bytes** — a
+      62× ratio on data that was supposed to be incompressible. The product passes 2^53
+      and JavaScript's floating point drops the low bits, so the sequence degenerates.
+      Nothing about the image looks wrong; the only tell is the size, and it was only
+      visible because the size was being measured for its own sake. xorshift32 instead.
+
+      **GREYSCALE RATHER THAN RGB** is a third of the store, the quota and the PUT, and
+      the file's existing 1×1 literal is greyscale too. **NOISE RATHER THAN A PICTURE**
+      keeps the thumbnail comparison meaningful: a photograph of a white wall thumbnails
+      LARGER than its parent, and `expect(thumb.length).toBeLessThan(image.length)` would
+      then be a defect report about a correct platform.
+
+T016a THE HEADER SAID IT IMPORTS NOTHING BEYOND VITEST, AND LINE 1 IS `node:crypto`
+-------------------------------------------------------------------------------------
+
+      False when it was written, not falsified by this chapter — `node:zlib` only made it
+      falser, which is how it was noticed. The rule the three seals actually enforce is
+      **no workspace path**: `@relay/*`, a specifier climbing out of the package, and the
+      `".."` literal. None of them has anything to say about `node:`. Replaced with the
+      rule, because an overclaiming sentence invites the next reader to assume the seals
+      are decorative too.
+
+T023  GREEN, AND THE JOURNEY IS 20 OF 20
+-------------------------------------------------------------------------------------
+
+        Test Files  1 passed (1)        Tests  20 passed (20)      7,871 ms
+        carries one image from slot to delivered bytes …            6,130 ms
+        uploads a file and attaches it (the existing media test)      938 ms
+
+      **The two media tests' durations are not comparable to each other and both are
+      right.** Each waits for its own object's verdict, and the second starts wherever
+      the first left the sweep's phase — 938 ms is a test that arrived just before a
+      sweep, not a faster path.
+
+T024  RED, WITH THE WORKER STOPPED — AND IT TAKES TWO TESTS WITH IT
+-------------------------------------------------------------------------------------
+
+        docker compose --profile services stop media-worker
+        Tests  18 passed, 2 failed (20)
+
+        × carries one image from slot to delivered bytes …     25,372 ms
+        × uploads a file and attaches it …                     25,272 ms
+
+        Error: media 8bc9c8dc-… is still 'pending' after 25,201 ms. The sweep runs every
+        5,000 ms, so this is not the timer — the media worker is not producing verdicts.
+        Check that it is running and that its boot line names a reachable scanner:
+        'docker compose logs media-worker | tail -2'.
+
+      **Both failures name the worker, and that is the whole of T012's value.** Neither
+      says "the platform refused a delivery URL", which is what the same stoppage used to
+      report from sixty lines further down — a message pointing at the one part of the
+      path that is almost never the cause.
+
+      Run with nothing else against the stack (056: a test that stopped MinIO answered 503
+      to an isolation suite that never mentions media).
+
+T025  AND THE PROBE CLEANS UP AFTER ITSELF, WHICH WAS CHECKED RATHER THAN ASSUMED
+-------------------------------------------------------------------------------------
+
+      Restarted, waited one interval, re-ran: **20 of 20**. The two objects the red run
+      left `pending` were both `ready` when asked for by id — the sweep is a sweep, so it
+      finds them on its next pass with no help. `media_objects` at this point holds
+      pending 7,429 · ready 2,739 · rejected 308, and **the pending pile is 4.16's
+      finding rather than this probe's debris**: 062's DR-17 work measured 6,580 rows that
+      are slots reserved and never uploaded to.

@@ -291,13 +291,13 @@ figure is about a machine rather than about a defect.
   image is the response to a signed GET.
 - **The fixture is generated, not carried, and it needs `node:zlib`.** The sealed suite's
   existing image is a **1×1 PNG written as a 67-byte literal**, which produces no rendition —
-  and the journey's 800×600 image deflates to 447,345 bytes, so a literal is not available. A
+  and the journey's 800×600 image deflates to 480,756 bytes, so a literal is not available. A
   Node builtin is not a workspace path, which is the seal's actual rule; the file's header
   sentence claiming it imports nothing beyond `vitest` is already false (line 1 is
   `node:crypto`) and is corrected rather than worked around. The alternative considered was a
   **321×1** strip, which deflates to 281 bytes and would fit a literal — rejected because every
   figure this chapter publishes would then describe a one-pixel-tall image and could not be
-  compared with the measurements already taken at 447,377 bytes.
+  compared with the measurements already taken at 480,813 bytes.
 - **The deployed worker means the composed container**, built from its own Dockerfile and started
   under the `services` profile — which is what CI's sealed job already starts and what no
   assertion currently depends on.

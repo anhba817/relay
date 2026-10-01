@@ -88,8 +88,11 @@ correction, and the sealed suite already relies on it.
 | property | value | why |
 |---|---|---|
 | dimensions | **800 × 600** | must exceed **320 px** on its long edge, or `thumbnailOf` answers `within-bound` and no rendition is written (4.15) |
-| bytes | **447,377** | measured; the same image every figure in `research.md` was taken with |
-| how | generated with `node:zlib` inside the suite | 447,345 bytes of deflate cannot be a literal, and the existing 1×1 literal produces no thumbnail |
+| colour type | **0, greyscale, 8-bit** | the file's existing literal is greyscale too, and one byte a pixel is a third of the store, the quota and the PUT that RGB noise would cost |
+| content | **xorshift32 noise from a fixed seed** | deterministic, so the byte count is a constant; and incompressible, so the size is a property of the dimensions rather than of the picture |
+| bytes | **480,813** | measured, deflating to 480,756 — and re-measured in phase 3, because R2's 447,377 was taken with a recipe nobody wrote down |
+| thumbnail | 320 × 240, **30,612 bytes** | measured against this fixture |
+| how | generated with `node:zlib` inside the suite | half a megabyte of deflate cannot be a literal, and the existing 1×1 literal produces no thumbnail |
 | imports it adds | `node:zlib` | a Node builtin is not a workspace path. The file's header sentence saying it imports nothing beyond `vitest` is already false and is corrected |
 
 ## Timing the journey must respect
