@@ -15,9 +15,18 @@ implementation task here.
 
 ## Format: `[ID] [P?] [Story] Description`
 
-- **[P]**: can run in parallel (different files, no dependency on an incomplete task)
+- **[P]**: can run in parallel — **different files, no dependency on an incomplete task**.
+  `specs/063-chapter-4-17/baseline.txt` is the exception and it is deliberate: it is an
+  append-only record, and independent measurements append to it in any order. Everything else
+  follows the rule literally. **Eight markers were wrong until analysis pass 6 swept them** —
+  tasks marked parallel while editing a source file a sibling in the same phase also edits.
+  Pass 1 had fixed one instance and never looked for the class.
 - **[Story]**: US1, US2, US3 from `spec.md`
 - Every task names the file it touches
+- **Commit at the end of every phase**, to the repository the changes belong to —
+  `relay-platform`, `relay-tutorial`, or the superproject holding `specs/` and `docs/`. Under
+  five lines, no trailer. This governs all nine phases; `git checkout` on a file with
+  uncommitted work has destroyed it twice in this project.
 
 ## Path conventions
 
@@ -53,7 +62,7 @@ difference from these.
 - [ ] T011 Add the poll-to-deadline helper to `relay-platform/packages/outsider/src/integrate.itest.ts` **in the shape T010a chose** — one helper beside `post` and `get` if the copies were consolidated, a local one if they were not. It reads the attachment's state through `GET /v1/channels/{id}/messages` and returns when it leaves `pending`. **Published surface only** — there is no route that answers *"has the worker run yet"*, which is why the journey learns it the way a client would.
 - [ ] T012 Make that helper's failure in `relay-platform/packages/outsider/src/integrate.itest.ts` name the worker: on deadline, throw with the state it last saw, the elapsed time and the sweep interval. **A stopped worker and an object that never existed are the same 404 from outside** (research R6), so the message is the only thing that can tell a reader which.
 - [ ] T013 Correct the false comment at `relay-platform/packages/outsider/src/integrate.itest.ts` — *"this suite runs no media worker, which is what makes the value stable rather than timing-dependent"* — with the measured truth: CI's job starts the worker, the sweep is 5,000 ms, the read happens within milliseconds, and the margin is about five seconds. **It is timing-dependent and it is stable, which are two claims and the comment makes the wrong one.**
-- [ ] T014 [P] Assert the correction in `relay-platform/packages/outsider/src/integrate.itest.ts` rather than only writing it: keep the existing `state: "pending"` expectation and add the reason as a checked fact — the read happens inside one sweep interval. A comment is not a test, and this is the chapter's own subject applied to itself.
+- [ ] T014 Assert the correction in `relay-platform/packages/outsider/src/integrate.itest.ts` rather than only writing it: keep the existing `state: "pending"` expectation and add the reason as a checked fact — the read happens inside one sweep interval. A comment is not a test, and this is the chapter's own subject applied to itself.
 
 ---
 
@@ -73,7 +82,7 @@ named assertion fails.
 - [ ] T019 [US1] Assert the history payload's full shape in `relay-platform/packages/outsider/src/integrate.itest.ts`: `{type, media_id, state:"ready", thumbnail:{media_id, width, height}}`. Measured at 320×240. **Read the array under `messages`, not `data`** — research R7's wrong key rendered as a missing attachment.
 - [ ] T020 [US1] Ask for the link and fetch the bytes in `relay-platform/packages/outsider/src/integrate.itest.ts`, and assert they are **byte-identical** to what was uploaded — not the same length. A length check passes for a file the store truncated.
 - [ ] T021 [US1] Fetch the thumbnail by the id the history payload handed over, in `relay-platform/packages/outsider/src/integrate.itest.ts`, and assert 200 and a smaller body. **This depends on T016's image exceeding the bound** — measured at 18,090 bytes against the parent's 447,377. **It is the only media id the platform gives out that no message names**, and 4.15's composite key is what makes it reachable.
-- [ ] T022 [P] [US1] Assert the thumbnail's bytes are not the parent's, in `relay-platform/packages/outsider/src/integrate.itest.ts`. Two signed URLs that both answer 200 prove nothing if they serve the same object, and `readableMediaObjectKey` resolves `parentId ?? mediaId` — a reader will want to know which it returned.
+- [ ] T022 [US1] Assert the thumbnail's bytes are not the parent's, in `relay-platform/packages/outsider/src/integrate.itest.ts`. Two signed URLs that both answer 200 prove nothing if they serve the same object, and `readableMediaObjectKey` resolves `parentId ?? mediaId` — a reader will want to know which it returned.
 - [ ] T022a [US1] Hold a socket open from before the send, in `relay-platform/packages/outsider/src/integrate.itest.ts`, and assert a **`media.updated`** frame arrives carrying `ready` (FR-006a, SC-003a). **Measured payload: `{media_id, channel, state}` and nothing else** — no thumbnail, so a client learns the state from the frame and re-reads history for the rendition id. **`announce` returns early unless the state is `ready` or `rejected`**, so the platform treats the two alike — and the ready frame is the one a client waits on, because it is the placeholder becoming a picture. It needs the token from the test at line 161 and its own channel's member added with `{user_ids:[…]}`; `contracts/journey.md` carries both and the four ways that setup fails silently.
 - [ ] T023 [US1] Run the suite green against the composed stack and record the output in `specs/063-chapter-4-17/baseline.txt`, with the elapsed time of the verdict wait.
 - [ ] T024 [US1] **Run it red**: stop the deployed worker, run the suite, and record in `specs/063-chapter-4-17/baseline.txt` which assertion fails and what its message says. **Run it with nothing else against the stack** — 056 found a test that stopped MinIO and answered 503 to an isolation suite that never mentions media, and `check-lane-scope.py` cannot see an action scoped too wide because it reads SQL. SC-002. A suite that has never failed is a suite nobody has checked.
@@ -128,10 +137,12 @@ stories so the suite exists to be broken.
 ## Phase 7: The documents
 
 - [ ] T042 Amend **FR-MED-09** in `docs/04-srs.md`: the data half met — a rejected attachment reaches a recipient as an explicit state on a message that stays in history — and *"renders as"* recorded **unmet, with the reason**. 4.16's precedent with *"visible in the dashboard"*. **Read the clause before editing it**; four documents once agreed on two clauses that do not exist.
-- [ ] T043 [P] Read the clauses **beside** FR-MED-09 in `docs/04-srs.md` while the file is open. 4.16 found the SRS's `media_events` dictionary row describing a table nobody built, two rows from the one it went in to edit, and no checker reads a clause against the schema it describes.
+- [ ] T043 Read the clauses **beside** FR-MED-09 in `docs/04-srs.md` while the file is open. 4.16 found the SRS's `media_events` dictionary row describing a table nobody built, two rows from the one it went in to edit, and no checker reads a clause against the schema it describes.
 - [ ] T044 Add revision row **1.24** to `docs/04-srs.md`, stating what the milestone demonstrated and what it could not.
 - [ ] T045 [P] Count the clauses in `specs/063-chapter-4-17/clauses.md`: how many this chapter demonstrates, how many it records unmet, how many are unreachable. SC-006. A chapter that says "mostly met" is one nobody can check.
 - [ ] T046 [P] Amend **both** copies of the Part 4 table — `docs/12-part-4-structure.md` row 18 CLOSED and `docs/07-tutorial-plan.md` row 18 SHIPPED. Two copies, and amending one is how they drift.
+- [ ] T046a **Close `docs/12-part-4-structure.md` §7.7, whose premise is false.** It reads *"The fence chain opens at 110 … Nobody has decomposed the 109"* while `check:fences` reports **zero problems across 291 files and 59 chapters** — 055 decomposed it and 4.16 closed at 0. **§7.1 of the same document records this exact failure mode**: *"§3 was amended and §7 was not … it survived the chapter that found it."* T046 has the file open.
+- [ ] T046b While that file is open, **check §7.6 and record what was found** in `specs/063-chapter-4-17/baseline.txt`. Its disagreement is about FR-DSH-01/02 and FR-EMJ, which this part does not cover, so it is not this chapter's to close — recorded as checked rather than left looking unexamined, because a milestone is where somebody would go looking.
 - [ ] T047 [P] Record in `docs/05-sad.md` that the sealed suite is the only lane that exercises the deployed media worker, and that it is outside the coverage lane. The architecture document says which suites prove what; this is a gap in that account.
 - [ ] T048 [P] Grep `docs/` for feature-local ids leaking in, by **diffing** rather than grepping the tree: `git diff HEAD -- docs/ | grep '^+' | grep -oE 'FR-0[0-9][0-9]'`. It caught one in 4.16 — inside the sentence correcting somebody else's citation — and **nothing runs this check**.
 - [ ] T049 Run `pnpm sync:docs` then `pnpm check:docs` from `relay-tutorial`, which rewrites `relay-tutorial/content/docs/*`. The tutorial keeps mirrored copies and 061's first run of that gate was red for exactly this.
@@ -143,15 +154,15 @@ stories so the suite exists to be broken.
 - [ ] T050 Register 4.17 in `relay-tutorial/lib/tutorial.ts` with **all seven fields**, at `/part-4/chapter-17/milestone-an-image-end-to-end`, titled **`"Milestone: an image, end to end"` — without the star**, which is how 4.9 is registered (`"Milestone: the meter agrees"`); `★` lives in `docs/12`'s table and nowhere else. **The slug was a `<slug>` placeholder in nine places until the third analysis pass** — 4.9 is `milestone-the-meter-agrees`, so the shape was settled by precedent and nothing was waiting on a decision. `path` is checked by no gate, and an unregistered id throws at build.
 - [ ] T051 Write the chapter at `relay-tutorial/app/(en)/part-4/chapter-17/milestone-an-image-end-to-end/page.mdx`, 2,000–4,000 prose words counted **outside fences and tables**, English only.
 - [ ] T052 [P] Write the figures in `relay-tutorial/app/(en)/part-4/chapter-17/milestone-an-image-end-to-end/figures.ts`, passed as `code` and not `chart` — `check:figures` caught three dead diagrams `pnpm build` did not.
-- [ ] T053 [P] Write the `TRAP` box in `relay-tutorial/app/(en)/part-4/chapter-17/milestone-an-image-end-to-end/page.mdx`. The candidate is phase 2's: **a comment that explains why an assertion is stable, and is false in the job that runs it.** It survived because the assertion was right.
-- [ ] T054 [P] Publish the decomposition in `relay-tutorial/app/(en)/part-4/chapter-17/milestone-an-image-end-to-end/page.mdx` with the timer named as the dominant term, and the sample size beside it.
-- [ ] T054a [P] State the milestone's **two halves** in `relay-tutorial/app/(en)/part-4/chapter-17/milestone-an-image-end-to-end/page.mdx` (FR-008): which claim the lane checks on every run, and which figure is recorded once. `docs/12` §2.3 sets that split for every milestone in this part and 4.9 followed it — *"the CI half is falsifiable and fails for its own reason; the recorded half follows `docs/11`'s precedent"*. **Presenting the measurement as the gate is the failure the split exists to prevent.**
-- [ ] T055 [P] Publish what the milestone could not demonstrate, in `relay-tutorial/app/(en)/part-4/chapter-17/milestone-an-image-end-to-end/page.mdx`: no renderer, no metering in the path, one image. **A milestone that reports only the parts that worked is one nobody trusts.**
+- [ ] T053 Write the `TRAP` box in `relay-tutorial/app/(en)/part-4/chapter-17/milestone-an-image-end-to-end/page.mdx`. The candidate is phase 2's: **a comment that explains why an assertion is stable, and is false in the job that runs it.** It survived because the assertion was right.
+- [ ] T054 Publish the decomposition in `relay-tutorial/app/(en)/part-4/chapter-17/milestone-an-image-end-to-end/page.mdx` with the timer named as the dominant term, and the sample size beside it.
+- [ ] T054a State the milestone's **two halves** in `relay-tutorial/app/(en)/part-4/chapter-17/milestone-an-image-end-to-end/page.mdx` (FR-008): which claim the lane checks on every run, and which figure is recorded once. `docs/12` §2.3 sets that split for every milestone in this part and 4.9 followed it — *"the CI half is falsifiable and fails for its own reason; the recorded half follows `docs/11`'s precedent"*. **Presenting the measurement as the gate is the failure the split exists to prevent.**
+- [ ] T055 Publish what the milestone could not demonstrate, in `relay-tutorial/app/(en)/part-4/chapter-17/milestone-an-image-end-to-end/page.mdx`: no renderer, no metering in the path, one image. **A milestone that reports only the parts that worked is one nobody trusts.**
 - [ ] T056 Write the chapter's fences in `relay-tutorial/app/(en)/part-4/chapter-17/milestone-an-image-end-to-end/page.mdx`. **A titled fence is a whole-body claim** (051-6) — an excerpt must be untitled, and 4.14 paid three fences for forgetting it.
 - [ ] T057 Generate hunks from the checker's own replay: `pnpm check:fences --dump <dir>` in `relay-tutorial`, then diff against `relay-platform`. **Verify every pre-image matches the dumped state exactly once** before pasting, widening past `-U6` only when it does not.
 - [ ] T058 Put hunks in `relay-tutorial/fences/post-series.md` for any file the appendix already amends (4.8), and read T007's counted table to work the bill biggest-first.
 - [ ] T059 Run `check:fences` to 0 and `pnpm build` green from `relay-tutorial` (SC-009). **Run `check:fences` after ANY source edit** — 4.16's CI failure was a coverage pin added after the chain was taken to zero, and the edit that broke it was the ratchet being tightened.
-- [ ] T060 [P] Count the prose words in `relay-tutorial/app/(en)/part-4/chapter-17/milestone-an-image-end-to-end/page.mdx` and confirm the bound. SC-010.
+- [ ] T060 Count the prose words in `relay-tutorial/app/(en)/part-4/chapter-17/milestone-an-image-end-to-end/page.mdx` and confirm the bound. SC-010.
 
 ---
 
@@ -164,13 +175,13 @@ stories so the suite exists to be broken.
 - [ ] T065 Stop the composed services **by name**, from `relay-platform/compose.yaml`'s `services` profile — `api gateway dispatcher media-worker`, and **not `ingester`**, which has no Dockerfile and makes the whole command fail.
 - [ ] T066 Run the full lane set once more and record every REAL exit code in `specs/063-chapter-4-17/baseline.txt`: lint, typecheck, build, unit, `test:integration`, `coverage`, `test:outsider`, the five tutorial gates.
 - [ ] T066a **Check FR-012 rather than trusting it**: `git diff` the platform changes this feature made and confirm in `specs/063-chapter-4-17/baseline.txt` that every one is a test, a comment or a document. 4.2 built all four items of a later chapter's brief and that chapter ceased to exist; the way that happens is one useful addition at a time.
-- [ ] T067 Commit each phase to the repository it belongs to — `relay-platform`, `relay-tutorial`, or the superproject holding `specs/` and `docs/`. Under five lines, no trailer.
+- [ ] T067 Confirm every phase was committed as it closed, in `specs/063-chapter-4-17/baseline.txt` — the instruction lives in the Format section because it governs all nine phases, and a task at number 67 of 81 would have an executor committing once at the end.
 - [ ] T068 **Push submodules first, then the superproject.** `ci.yml` is the outer repository's and the other two are gitlinks, so the reverse order checks out commits no remote has.
 - [ ] T069 Compare the CI error set **per error** against T006's baseline, in both directions, and record it in `specs/063-chapter-4-17/baseline.txt` (SC-008). One comparison supports *"this run introduced nothing new"*, not *"the set is stable"*.
 - [ ] T070 **Watch the sealed job specifically** — `relay-platform — the sealed integration`, defined in `.github/workflows/ci.yml`. It is the only job that runs this chapter's suite, and it is the first honest execution of it — no local lane reaches it. If it is red, the journey is wrong about the stack rather than about the code.
 - [ ] T071 If CI is red, fix the platform, then **re-dump, re-hunk `relay-tutorial/fences/post-series.md`, and push both** — repairing a platform file invalidates the appendix hunks that publish it.
 - [ ] T072 Tag `part4-ch17` in `relay-platform`, annotated, on a commit CI has proved green. 4.14's tag had to be moved off one that fails `pnpm typecheck`.
-- [ ] T073 Compress 062's `CLAUDE.md` entry to its headline, measurement block and still-cited findings, and add this one. **The file has a 150,000-character budget**; it stood at 139,238 after 062's close and the active-plan line.
+- [ ] T073 Compress 062's `CLAUDE.md` entry to its headline, measurement block and still-cited findings, and add this one. **The file has a 150,000-character budget** — `wc -c CLAUDE.md` before and after, rather than a figure carried from a task written days earlier.
 - [ ] T074 Remove the active-plan line from between the `SPECKIT` markers in `CLAUDE.md` when the feature closes, so the next feature's line replaces a plan rather than joining a list.
 
 ---
