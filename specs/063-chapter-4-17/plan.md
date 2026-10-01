@@ -114,6 +114,7 @@ edited.
 |---|---|---|
 | **1** | Baseline: the five lanes, the CI error set, the fence exposure counted **before any edit**, and the sealed suite's current media assertions quoted | every number written down, including the ones that are red |
 | **2** | US1 — the journey: slot → PUT → send → the deployed worker → history → link → bytes → thumbnail, each assertion naming its chapter | the suite is red with the worker stopped and green with it running, both demonstrated |
+| | **One reader, not two credentials.** The seal holds exactly one and the seeder mints one on purpose; the recipient is a socket subscriber or a second read | no change to `scripts/seed-demo-tenant.mjs` |
 | **3** | US2 — the rejection: bytes that contradict the declaration, the marker in history, the refusal on the link | the refusal is byte-identical to the one for an id nobody has |
 | **4** | US3 — the measurement: the decomposition, the sample size, the timer named separately | no figure published without its sample size |
 | **5** | The probes: stop the worker, break the scanner's address, and record what each looks like from outside | each produces a named red rather than a plausible green |
@@ -127,9 +128,10 @@ edited.
 it walked it once. If phase 2 finds one, it is recorded with its bill and scoped deliberately —
 a milestone that absorbs a repair stops being a measurement of what was already there.
 
-**The journey becomes a second harness.** `integrate.itest.ts` already has a media sequence, a
-socket helper and a `waitFor`. Writing a parallel set is how two suites drift. The journey
-extends what is there.
+**The journey becomes a second harness, and the file is already most of the way there.**
+`integrate.itest.ts` defines `waitFor` **three times** — once per test, at lines 280, 348 and
+423 — so "extend what is there" means deciding about those three before adding a fourth. T010a
+is that decision and it is written down either way.
 
 **The suite runs nowhere but CI.** That is already true of the sealed nineteen, and it means a
 local green says nothing about this chapter's central claim. Phase 8's push is the first honest

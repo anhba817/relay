@@ -161,11 +161,24 @@ database here only so this section can be run on its own.)
 
 ## 7 · Break it: stop the worker
 
+**`$MEDIA2` WAS USED HERE TWICE AND SET NOWHERE** until the analysis pass caught it. That is
+4.12's defect word for word — *"§3 used `$OBJECT_KEY` with nothing setting it"* — in the
+quickstart of the chapter two after the one that recorded it, and it fails quietly: `psql`
+queries `id=''` and `curl` fetches `/v1/media/`. The slot is taken here instead of being
+referred to.
+
 ```bash
 RELAY_POSTGRES_PORT=15432 docker compose --profile services stop media-worker
-# repeat §1, then:
+
+SLOT2=$(curl -sX POST localhost:4000/v1/media -H "authorization: Bearer $CREDENTIAL" \
+  -H 'content-type: application/json' \
+  -d "{\"filename\":\"noworker.png\",\"mime_type\":\"image/png\",\"bytes\":$BYTES}")
+export MEDIA2=$(printf '%s' "$SLOT2" | python3 -c 'import sys,json;print(json.load(sys.stdin)["media_id"])')
+printf '%s' "$SLOT2" | python3 -c 'import sys,json;print(json.load(sys.stdin)["upload_url"])' \
+  | xargs -I{} curl -sS -X PUT --data-binary @/tmp/relay-4-17.png {} -o /dev/null -w 'PUT %{http_code}\n'
+
 sleep 20
-psql postgres://relay:relay@localhost:15432/relay -tAc "select state from media_objects where id='$MEDIA2'"
+echo "state: $(psql postgres://relay:relay@localhost:15432/relay -tAc "select state from media_objects where id='$MEDIA2'")"
 curl -s -o /dev/null -w 'link -> %{http_code}\n' "localhost:4000/v1/media/$MEDIA2" -H "authorization: Bearer $CREDENTIAL"
 RELAY_POSTGRES_PORT=15432 docker compose --profile services start media-worker
 ```

@@ -28,6 +28,13 @@ looked like history dropping the attachment.
 | name | what it is | where it comes from |
 |---|---|---|
 | `RELAY_DEMO_CREDENTIAL` | an **application** credential, so every send names a `user` | `node scripts/seed-demo-tenant.mjs`, last line |
+
+**There is exactly one, and that is deliberate.** The seeder's own comment records why a second
+would be worse than none: *"a second organisation called `demo` with a second key would leave two
+credentials where the printed one is whichever the"* run wrote last. So the journey's recipient
+is **a reader rather than a second party** — a socket subscriber on the same credential, or a
+second read through history. Minting another credential would be product-adjacent work this
+feature forbids itself.
 | `RELAY_API_URL` | `http://localhost:4000` | CI's sealed job sets it |
 | `RELAY_WS_URL` | `ws://localhost:4001` | CI's sealed job sets it |
 
@@ -42,6 +49,7 @@ correction, and the sealed suite already relies on it.
   not expose; say so.
 - Call `POST /internal/media/{id}/verdict`. That is the worker's route and calling it is the
   thing this chapter exists to stop doing.
+- Mint a second credential, or change `scripts/seed-demo-tenant.mjs`. See above.
 - Shorten the sweep interval. 5,000 ms is a deployment property; the journey waits on a
   condition with a deadline.
 

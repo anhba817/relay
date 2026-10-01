@@ -62,9 +62,16 @@ surface.
 
 A customer's backend takes an upload slot, PUTs an image, and sends a message naming it. The
 media worker — the one a deployment runs, not a function a test calls — scans the bytes,
-verifies the declaration, and records a verdict. A second client reads the channel, receives the
-message with the attachment marked `ready`, asks for a link, and fetches the bytes. They are the
-bytes that were uploaded.
+verifies the declaration, and records a verdict. A reader of that channel sees the message with
+the attachment marked `ready`, asks for a link, and fetches the bytes. They are the bytes that
+were uploaded.
+
+**A reader, not a second credential.** The sealed lane holds exactly one
+(`RELAY_DEMO_CREDENTIAL`), and the seeder mints one on purpose — its own comment records that a
+second key under the same demo organisation would leave two credentials where the printed one is
+whichever came last. Minting another is product-adjacent work this feature forbids itself
+(FR-012), and the claim does not need it: what the milestone asserts is that the state and the
+bytes reach a *reader*, which is a socket subscriber or a second read through history.
 
 **Why this priority**: it is the milestone's whole claim, and it is the only one that can fail
 for its own reason. Every other story in this feature is a statement about something that has
@@ -77,8 +84,9 @@ chapters' contributions and a named assertion fails.
 
 1. **Given** a slot issued for a real PNG, **When** the bytes are PUT and the deployed worker
    runs, **Then** the object reaches `ready` without any test calling the verdict route.
-2. **Given** that object attached to a message in a channel, **When** a second credential reads
-   the channel, **Then** the attachment carries `ready` and not `pending`.
+2. **Given** that object attached to a message in a channel, **When** the channel is read —
+   over a socket as a subscriber, or through history — **Then** the attachment carries `ready`
+   and not `pending`.
 3. **Given** the recipient holds only the media id, **When** they ask for a link and follow it,
    **Then** the bytes they receive are byte-identical to the bytes uploaded.
 4. **Given** the same message, **When** the recipient asks for the thumbnail the platform
@@ -111,7 +119,10 @@ refuse them, and read the channel as a recipient.
 3. **Given** a rejected attachment and a deleted message in the same channel, **When** a
    recipient reads history, **Then** the two are distinguishable without reading any field the
    platform does not publish.
-4. **Given** no renderer exists in this repository, **When** FR-MED-09's *"renders as"* half is
+4. **Given** a recipient already holds a frame saying `pending`, **When** the worker then
+   rejects the object, **Then** a `media.updated` frame reaches that recipient carrying the new
+   state.
+5. **Given** no renderer exists in this repository, **When** FR-MED-09's *"renders as"* half is
    assessed, **Then** it is recorded as unmet with the reason rather than reported as met.
 
 ---
@@ -152,7 +163,9 @@ figure is about a machine rather than about a defect.
   a legitimate steady state for up to one sweep interval, so an assertion that waits must wait
   for a condition rather than for a duration.
 - **What happens to a message whose attachment is rejected after the message was delivered?** The
-  recipient already holds a frame saying `pending`.
+  recipient already holds a frame saying `pending`, and 4.14 built `media.updated` for exactly
+  this. **The sealed suite mentions that frame zero times**, so the journey is the first place it
+  would be observed from outside — which makes it the only end-to-end evidence 4.14's work has.
 
 ---
 
@@ -161,9 +174,13 @@ figure is about a machine rather than about a defect.
 ### Functional Requirements
 
 - **FR-001**: One suite MUST carry a single image from upload slot to bytes a recipient fetches,
-  with the media worker running as a deployment runs it rather than as a function the test calls.
-- **FR-002**: Each assertion in that suite MUST name the chapter whose work it depends on, so
-  removing that work fails an assertion that says which.
+  with the deployed worker — the composed container — running it rather than a function the test calls.
+- **FR-002**: Each assertion this feature adds MUST name the chapter whose work it depends on,
+  so removing that work fails an assertion that says which. **The convention is borrowed and is
+  new to this file**: `packages/e2e/src/tuan.itest.ts` carries it (*"Read the right margin: each
+  step names the chapter that made it possible"*) and `integrate.itest.ts` has three chapter
+  mentions across nineteen tests. Adopting it here applies to what this feature writes, not
+  retroactively to its neighbours.
 - **FR-003**: The suite MUST fail when the media worker is not working, and MUST NOT pass by
   observing a state that an unworked object and a worked one share.
 - **FR-004**: A recipient MUST be able to obtain the bytes of a `ready` attachment, and the bytes
@@ -173,6 +190,8 @@ figure is about a machine rather than about a defect.
   attachment.
 - **FR-006**: A link to a rejected object MUST be refused, and the refusal MUST be
   indistinguishable from the refusal for an object that does not exist.
+- **FR-006a**: A recipient holding a frame that says `pending` MUST receive the state change when
+  the verdict lands, through the frame 4.14 built for it.
 - **FR-007**: Where a clause of FR-MED-09 cannot be discharged because no artifact in this
   repository can render anything, it MUST be recorded in the SRS as unmet with the reason.
 - **FR-008**: The chapter MUST state which half of the milestone runs in the lane and which half
@@ -185,14 +204,16 @@ figure is about a machine rather than about a defect.
   be corrected or the assertion changed — a green assertion with a wrong explanation is the
   defect this chapter exists to find.
 - **FR-012**: This feature MUST NOT add product surface. Where the milestone wants something the
-  platform does not expose, it is recorded rather than invented.
+  platform does not expose, it is recorded rather than invented. **Checked at the close rather
+  than promised**: every platform file this feature changes is a test, a comment or a document,
+  and the diff is read to confirm it.
 - **FR-013**: The chapter MUST state what the development lane cannot demonstrate about this path.
 
 ### Key Entities
 
 - **The journey**: one image and one message, carried by the published surface only — a slot, a
   PUT, a send, a read, a link, a GET.
-- **The deployed worker**: the composed `media-worker`, which no assertion currently depends on.
+- **The deployed worker**: the composed `media-worker` container, called that throughout. No assertion anywhere currently depends on it.
 - **The attachment state**: `pending`, `ready` or `rejected` as a recipient sees it, which is the
   only thing FR-MED-09 can be tested against in a repository with no client.
 - **The rendition**: the thumbnail 4.15 derives, which the recipient may or may not be able to
@@ -210,8 +231,12 @@ figure is about a machine rather than about a defect.
   rather than reporting an attachment in a legitimate state.
 - **SC-003**: A rejected upload leaves a readable message whose attachment says `rejected`, and a
   link to it is refused identically to a link to an id no object has.
-- **SC-004**: Every assertion in the journey suite names the chapter it depends on, and the count
-  of assertions with no such name is zero.
+- **SC-003a**: A subscriber that received the message while the attachment was `pending` receives
+  a `media.updated` frame carrying the verdict, observed from outside the platform for the first
+  time.
+- **SC-004**: Every assertion **this feature adds** names the chapter it depends on, and the
+  count of added assertions with no such name is zero. The nineteen tests already in that file
+  are not in scope — renaming them is another chapter's work.
 - **SC-005**: The end-to-end elapsed time is published with its decomposition, its sample size and
   the number of sweep intervals inside it.
 - **SC-006**: The number of clauses this chapter can and cannot discharge is published as a count,
