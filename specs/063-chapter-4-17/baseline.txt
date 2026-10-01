@@ -437,3 +437,78 @@ T025  AND THE PROBE CLEANS UP AFTER ITSELF, WHICH WAS CHECKED RATHER THAN ASSUME
       pending 7,429 · ready 2,739 · rejected 308, and **the pending pile is 4.16's
       finding rather than this probe's debris**: 062's DR-17 work measured 6,580 rows that
       are slots reserved and never uploaded to.
+
+PHASE 4 — THE REFUSAL (T026 … T031)
+=====================================================================================
+
+T030  PREMISE, CHECKED BEFORE IT WAS ASSERTED: HISTORY DOES NOT FILTER IT
+-------------------------------------------------------------------------------------
+
+      A message whose only attachment was refused **is still returned**, carrying
+      `{"type":"media","media_id":…,"state":"rejected"}`. Had it been filtered, US2 would
+      have been unbuildable and the chapter's job would have been to record that rather
+      than to work round it. Verdict reached in **1,907 ms**, inside one sweep.
+
+T030b `media.updated` REACHES A SUBSCRIBER ON THE REJECTION PATH TOO
+-------------------------------------------------------------------------------------
+
+        frames seen:  connection.ack, presence.changed, message.created, media.updated
+        payload:      {"media_id":…,"channel":…,"state":"rejected"}
+
+      **Never watched before.** 4.14's suite drives the frame by calling
+      `recordMediaVerdict` directly; through the deployed worker, from outside, on the
+      refusal arm, this is the first observation. `announce` returns early unless the
+      state is `ready` or `rejected`, so the two terminal states travel the same way —
+      now checked on both arms rather than inferred from one.
+
+T029  THE THREE CASES, AND THEY ARE TOLD APART BY TWO DIFFERENT FIELDS
+-------------------------------------------------------------------------------------
+
+        a refused upload      text: the sender's   attachments: [{… state:"rejected"}]
+        a message with none   text: the sender's   attachments: []
+        a deleted message     text: NULL           attachments: []
+
+      **A client reading only `attachments` cannot tell a deletion from a plain message,
+      and one reading only `text` cannot tell a refusal from a delivery.** FR-MED-09's
+      reason is a person telling three things apart, and the published surface supports
+      it — in two fields, not one, which is the part worth saying to a client author.
+
+T028  THE REFUSAL IS BYTE-IDENTICAL TO AN ID NOBODY HAS, APART FROM `request_id`
+-------------------------------------------------------------------------------------
+
+        rejected object   404 {"code":"not_found","message":"no such media object", …}
+        random uuid       404 {"code":"not_found","message":"no such media object", …}
+
+      4.12 built that indistinguishability deliberately — a refusal naming the cause
+      reports whether somebody else's object exists. **First check of it from outside
+      with a real refusal behind it**: every earlier one set the state with SQL, so both
+      sides of the comparison were fixtures.
+
+      **AND THE COMPARISON CARRIES A CONTROL**, because two empty objects are also equal:
+      the test asserts `code === "not_found"` and that the two `request_id`s differ. An
+      equality over two bodies is satisfied by two bodies that lost their contents.
+
+T026  AND THE SUITE IS 21 OF 21
+-------------------------------------------------------------------------------------
+
+        Test Files  1 passed (1)        Tests  21 passed (21)
+        carries one image from slot to delivered bytes …     6,123 ms
+        delivers a refused upload as a rejected marker …     4,718 ms
+
+      Two verdict waits in one file, each on its own object and each landing wherever the
+      sweep's phase puts it.
+
+T031  WHAT FR-MED-09's "RENDERS AS AN EXPLICIT REJECTION MARKER" CANNOT DISCHARGE
+-------------------------------------------------------------------------------------
+
+      **It cannot be discharged here at all, and the reason is structural rather than an
+      omission.** *"Renders"* is a claim about a client, and **there is no client in this
+      repository**: FR-MED-14's reference client is P4 and unbuilt. What this chapter can
+      and does discharge is everything the clause depends on — the state is published, it
+      survives in history, it is distinguishable from the two things a reader would
+      otherwise confuse it with, and it is announced on a socket.
+
+      So the clause is recorded as **met in its platform half and unmet in its client
+      half, by structure**, which is 4.11's treatment of FR-MED-07 — *unmet by decision,
+      vacuous until there is something to satisfy it*. The alternative is a chapter that
+      claims a rendering nobody can see, and the honest version costs one sentence.
