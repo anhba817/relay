@@ -118,15 +118,22 @@ publish. The feature changes one platform file and that file carries the whole f
 
 | phase | what | gate |
 |---|---|---|
-| **1** | Baseline: the five lanes, the CI error set, the fence exposure counted **before any edit**, and the sealed suite's current media assertions quoted | every number written down, including the ones that are red |
-| **2** | US1 — the journey: slot → PUT → send → the deployed worker → history → link → bytes → thumbnail, each assertion naming its chapter | the suite is red with the worker stopped and green with it running, both demonstrated |
+| **1** | Setup: the five lanes, the CI error set, the fence exposure counted **before any edit**, and the sealed suite's current media assertions quoted | every number written down, including the ones that are red |
+| **2** | Foundational: the poll-to-deadline helper, and the comment that is false in the job that runs it | the three existing `waitFor` copies are decided about, not stepped around |
+| **3** | US1 — the journey: slot → PUT → send → the deployed worker → history → link → bytes → thumbnail → the `media.updated` frame, each assertion naming its chapter | the suite is red with the worker stopped and green with it running, both demonstrated |
 | | **One reader, not two credentials.** The seal holds exactly one and the seeder mints one on purpose; the recipient is a socket subscriber or a second read | no change to `scripts/seed-demo-tenant.mjs` |
-| **3** | US2 — the rejection: bytes that contradict the declaration, the marker in history, the refusal on the link | the refusal is byte-identical to the one for an id nobody has |
-| **4** | US3 — the measurement: the decomposition, the sample size, the timer named separately | no figure published without its sample size |
-| **5** | The probes: stop the worker, break the scanner's address, and record what each looks like from outside | each produces a named red rather than a plausible green |
-| **6** | The documents: SRS FR-MED-09, the clause count, both Part 4 tables, `sync:docs` | `check:docs` and `check:srs` green |
-| **7** | The chapter: 2,000–4,000 prose words, figures, fences, the bill paid | `check:fences` 0 and `pnpm build` green |
-| **8** | The record and the close: `baseline.txt`, `gaps.md`, `traceability.md`, the quickstart run, push, the per-error CI comparison, the tag | all four CI jobs green before the tag |
+| **4** | US2 — the rejection: bytes that contradict the declaration, the marker in history, the refusal on the link, the `media.updated` frame carrying `rejected` | the refusal is byte-identical to the one for an id nobody has |
+| **5** | US3 — the measurement: the decomposition, the sample size, the timer named separately | no figure published without its sample size |
+| **6** | The probes: stop the worker, break the scanner's address, and record what each looks like from outside | each produces a named red rather than a plausible green |
+| **7** | The documents: SRS FR-MED-09, the clause count, both Part 4 tables, `sync:docs` | `check:docs` and `check:srs` green |
+| **8** | The chapter: 2,000–4,000 prose words, figures, fences, the bill paid | `check:fences` 0 and `pnpm build` green |
+| **9** | The record and the close: `baseline.txt`, `gaps.md`, `traceability.md`, the quickstart run, push, the per-error CI comparison, the tag | all four CI jobs green before the tag |
+
+**THE NUMBERS HERE ARE `tasks.md`'s.** The first draft of this table had eight phases and no
+Foundational, so everything from US1 on was off by one — and **this project commits one phase at
+a time**, with messages like `spec(062): phase 4 — US2 closed`. A log that disagrees with the
+plan about what phase 4 was is a disagreement nobody notices until somebody goes looking for a
+decision six features later.
 
 ## Risks
 

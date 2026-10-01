@@ -92,7 +92,10 @@ chapters' contributions and a named assertion fails.
 4. **Given** an image **above 320 px on its long edge**, **When** the reader asks for the
    thumbnail the platform derived, **Then** they are served it, and the chapter states the
    bound that made it exist.
-5. **Given** the worker is stopped, **When** the same sequence runs, **Then** a named assertion
+5. **Given** a subscriber that received the message while the attachment was `pending`, **When**
+   the verdict lands, **Then** a `media.updated` frame reaches them carrying `ready` — the
+   placeholder becoming a picture, which is the frame a client actually waits on.
+6. **Given** the worker is stopped, **When** the same sequence runs, **Then** a named assertion
    fails rather than the suite passing on a `pending` attachment.
 
 ---
@@ -196,7 +199,9 @@ figure is about a machine rather than about a defect.
 - **FR-006**: A link to a rejected object MUST be refused, and the refusal MUST be
   indistinguishable from the refusal for an object that does not exist.
 - **FR-006a**: A recipient holding a frame that says `pending` MUST receive the state change when
-  the verdict lands, through the frame 4.14 built for it.
+  the verdict lands, through the frame 4.14 built for it, **on both paths**. `announce` returns
+  early unless the state is `ready` or `rejected`, so the platform treats them alike and the
+  journey does too — the ready frame is the commoner case and the one a client waits on.
 - **FR-007**: Where a clause of FR-MED-09 cannot be discharged because no artifact in this
   repository can render anything, it MUST be recorded in the SRS as unmet with the reason.
 - **FR-008**: The chapter MUST state which half of the milestone runs in the lane and which half
@@ -237,8 +242,8 @@ figure is about a machine rather than about a defect.
 - **SC-003**: A rejected upload leaves a readable message whose attachment says `rejected`, and a
   link to it is refused identically to a link to an id no object has.
 - **SC-003a**: A subscriber that received the message while the attachment was `pending` receives
-  a `media.updated` frame carrying the verdict, observed from outside the platform for the first
-  time.
+  a `media.updated` frame carrying the verdict — **`ready` on one path and `rejected` on the
+  other, both asserted** — observed from outside the platform for the first time.
 - **SC-004**: Every assertion **this feature adds** names the chapter it depends on, and the
   count of added assertions with no such name is zero. The nineteen tests already in that file
   are not in scope — renaming them is another chapter's work.
