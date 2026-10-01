@@ -38,6 +38,12 @@ tags. **Anyone holding an older clone of `relay-platform` must reset rather than
 
 <!-- SPECKIT START -->
 
+**ACTIVE PLAN: `specs/063-chapter-4-17/plan.md`** — chapter 4.17, movement VI's milestone.
+Phase 0 walked the path by hand: every step works, an image is `ready` **5,693 ms** after the
+PUT of which 5,000 is the sweep timer, and a recipient can fetch both the bytes and the
+thumbnail. **No test joins them**, and nothing anywhere depends on the composed worker doing
+work. The journey goes in `packages/outsider` — the only lane whose job starts that container.
+
 **062 IS CLOSED — CHAPTER 4.16, "Storage on the bill".** Movement VI continues. Its record is
 `specs/062-chapter-4-16/` — `baseline.txt` first (every phase's measurements in the order they
 were taken, including the ones that were wrong first), then `gaps.md` (**14 entries**),
