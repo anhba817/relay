@@ -38,101 +38,159 @@ tags. **Anyone holding an older clone of `relay-platform` must reset rather than
 
 <!-- SPECKIT START -->
 
-**061 IS CLOSED at 103 of 103 — CHAPTER 4.15, "What a thumbnail costs".** Movement VI
-continues. Its record is `specs/061-chapter-4-15/` — `baseline.txt` first (every phase's
-measurements in the order they were taken, including the ones that were wrong first), then
-`gaps.md` (**8 new, 6 carried and re-measured**), `traceability.md`, `doors.txt`, `quickstart.md`
-(run, and right the first time), `tasks.md`. **SRS 1.22**, **ADR-34**, `docs/12` row 16 CLOSED,
-and **both** copies of the Part 4 table amended. Tagged **`part4-ch15`**.
+**062 IS CLOSED — CHAPTER 4.16, "Storage on the bill".** Movement VI continues. Its record is
+`specs/062-chapter-4-16/` — `baseline.txt` first (every phase's measurements in the order they
+were taken, including the ones that were wrong first), then `gaps.md` (**14 entries**),
+`traceability.md`, `clauses.md`, `quickstart.md` (run, and wrong three times), `tasks.md`.
+**SRS 1.23**, `docs/12` row 17 CLOSED, and **both** copies of the Part 4 table amended.
 
-    check:fences 0 · 291 files across 58 chapters              from 57
-    2,385 prose words · 4 figures · 2 TRAP boxes · 0 titled fences in the chapter
-    unit 914 of 914 · api integration 797 · media-worker 32 · outsider 19 of 19
-    coverage zero threshold errors · 2,062 tests across 142 files
+    check:fences 0 · 291 files across 59 chapters              from 58
+    2,795 prose words · 4 figures · 2 TRAP boxes · 0 titled fences in the chapter
+    unit 945 · test:integration 70 of 70 suites · outsider 19 of 19
+    coverage REAL EXIT 0 · 146 files, 2,116 tests · 74 per-file pins, from 71
+    the meter charges 4,436 MB · the bucket holds 30.7 MB · 1,868 tenants examined
+    22 appendix hunks across 10 files, and an eleventh CI found
+
+**THE TWO SIDES MEASURE DIFFERENT THINGS, AND NO READING OF THE CLAUSE WOULD HAVE SAID SO.**
+DR-17 asks whether the meter matches the store. Run against real data: **8,662 charged rows at
+~4,440 MB against a bucket holding 1,775 objects at 30.7 MB**, and **6,580 of those rows are
+slots reserved and never uploaded to**. Nothing is broken — the quota charges at reservation
+(FR-MED-01, 4.10) because the alternative is reserving without limit — so the comparison is a
+reservation against a delivery. **The verdict therefore has a third value**: `reservations-only`
+says the two differ and the difference is entirely accounted for, because `agree` over a 4.4 GB
+gap would be true and unbelievable and `meter-high` would be wrong.
+
+**AND THE TERM THAT EXPLAINS IT CANNOT BE COMPUTED FROM EITHER STORE ALONE.** The analytical
+side records `reserved` and has **no `uploaded` event** — the client PUTs straight to the store
+(ADR-13) — so it cannot tell an outstanding slot from a delivered object. Postgres can, and is
+wrong by a measurable amount: **267 of 6,580 pending rows name a key the bucket holds**, 21% of
+everything in it, because 4.13's sweep leaves an uploaded object `pending` until it HEADs it.
+Subtracting those removes bytes from both sides and invents a `meter-low`. So
+`reconcileStorage` reads **three stores**, and `gaps.md` 062-4 is the fourth item standing
+against the unapplied constitution III amendment.
+
+**AND THE POPULATION IS FOUR SIDES, WHICH THE FIRST DESIGN GOT WRONG.** Rollup ∪ bucket ∪
+reservations misses the tenant the clause most wants: one whose objects are all `ready`, whose
+keys the bucket lacks, and which the rollup never heard of. **1,074 ready rows name a key the
+bucket does not have.** Adding the operational tenant list moved the population 1,855 -> 1,868:
+**thirteen tenants nobody was looking at.** And the coverage line said `1855 of 1678 holding
+media` — a containment claim that does not divide, because the union takes tenants the
+operational side has never heard of.
+
+**95.5% OF TENANTS CANNOT BE COMPARED AT ALL** — 1,784 of 1,868 `not-comparable`, because the
+rollup knows 84 environments and Postgres knows 1,678 with media rows. 4.6's *"a rollup created
+late is permanently short"* at its widest: **the producer ships in this chapter**, so the
+meter's history begins now and the bucket's does not. 4.7 refused to collapse that into
+"missing data" and it is refused again.
+
+**THE VIEW WAS COUNTING ZEROS, AND A MERGE WOULD NOT HAVE CLEANED IT UP.**
+`sumMap(map(kind, if(event='reserved',1,0)))` gives every event's kind a key, so a day with one
+image reservation, one audio REJECTION and one image rendition answers `{'audio':0,'image':1}`.
+The values are right; **the key set stops meaning *the kinds this tenant uploaded*** and starts
+meaning *the kinds that had any media event*. `sumMapIf` emits no key for a non-match and `{}`
+for a group with none. And `SummingMergeTree` drops a row whose summed columns are all zero but
+**not a zero-valued key inside a map** — `{'audio':0,'image':1,'video':0}` before `OPTIMIZE
+FINAL` and identical after, so the wrong answer was stable. **`0018` was amended in place**
+rather than repaired by an `0019`, because it has shipped nowhere; the ledger's checksum refusal
+is the gate working and `quickstart.md` carries the two commands.
+
+**AND A COLUMN WITH ONE WRITER AND NO READER IS 4.6 ONE MOVEMENT LATER.** `uploads_by_kind` had
+`0017` declaring it, `0018` writing it, and nothing reading it — three commits after it was
+added. `storedBytes` was one step better: a reader with no test and no caller. A clause that
+says the platform MUST count something is not discharged by a column that holds the count.
+`uploadsByKind()` joins them in `ingester/metering.ts`, a FLOW where the level is a stock.
+
+**A COVERAGE NUMBER IS A CLAIM ABOUT WHAT RAN IN *THIS* PROCESS.** `shapeMediaStored`,
+`route()`'s fourth arm and `insertMediaEvents` run on every execution of the media suite and
+measured **78.57 / 81.37 / 83.78** against pins of 100 and 84 — because that suite **spawns the
+ingester as a child process** (4.9: it is not a compose service), so none of it is instrumented.
+*A green lane is a claim about what was re-run* (050); this is its twin. **Thirteen threshold
+errors across six files, all closed with tests or deleted unreachable branches, no pin
+lowered** — and the biggest repair was a suite that drains the same records in process.
+
+**AND THE RATCHET WAS HOLDING NONE OF THIS CHAPTER'S THREE FILES.** `storage-event.ts` measured
+**66.66%** with no pin to notice, the missing third being the `catch` — not a defensive branch
+but the whole of what *"a lost record is the accepted cost"* means in code. **68 of 139 files
+are unpinned and the lowest is at 20.00%**, under a global floor that is an aggregate. Both
+instances of this class were found by a human comparing one chapter to another (062-12).
+
+**ELEVEN ARMS DELETED ONE AT A TIME, AND THE TWO SILENT ONES NEEDED OPPOSITE REPAIRS.** Nine
+turned a suite red. **A10 was unreachable** — its only caller checks the same thing three lines
+up — so it was deleted and the parameter narrowed, which is stronger than a test because the
+compiler now refuses a caller that has not checked. **A11 was reachable and untested**: every
+media row the other fixtures plant is `pending`, so a read returning all of them gave the same
+answer. 061's *"choosing the wrong suites looks like an uncovered arm"* one level down, where it
+is the wrong FIXTURE. **And the gauntlet reported 61 of 61 for all eleven** — a reconciliation
+is read-only, in no request and on no route, so constitution VI's named suite has nothing to
+attack (062-8).
+
+**AND A PROBE THAT CHANGED NOTHING REPORTED GREEN.** The first run of arm A1 was 15 of 15 and 8
+of 8, one keystroke from being recorded as uncovered: `prettier` had wrapped that `if` across
+five lines, so the single-line pattern matched nothing and the script wrote the file back
+unmodified. 4.10's tamper probe at a different address, with a new half — **a file a formatter
+owns cannot be mutated by matching its text as you last wrote it**; diff against a saved copy.
+
+**ONE LOST RECORD IS A DISTRIBUTION, NOT A NUMBER.** Over 8,941 chargeable objects: **p50 1,024
+B, mean 521,671 B, max 26,214,400 B** — the mean is **509×** the median. Over the 925 tenants
+holding more than one object, the median tenant's worst object is **50.00%** of its level and
+the worst case anywhere is **99.96%**. It never self-corrects, and the clause had no choice: a
+sampled level needs a scheduler ADR-28 records as absent, and a materialised view fires on
+insert. **The level is also bounded at the rollup's 25-month TTL**, which no clause had said —
+SRS 1.23 says it and names DR-17's inventory as the re-base, because the store holds the level
+directly rather than as a sum.
+
+**DR-17's PARENTHETICAL NAMED TWO EVENTS THIS PLATFORM DOES NOT EMIT.** *"(uploaded/deleted)"*
+against `reserved`, `rejected`, `rendition`, `deleted` — and the correction is not vocabulary:
+**the meter charges at reservation because the quota does**, so a clause metering uploads would
+disagree with the quota it exists to explain. **And the SRS's data dictionary described a
+`media_events` table nobody built** — `bytes`, `processing_ms`, an `uploaded`/`ready` pair, no
+`media_id`. Found by opening the DR section to edit the row two below it. **No checker here
+reads a clause against the schema it describes.**
+
+**AND THE FEATURE-LOCAL ID LEAKED AGAIN, INSIDE THE SENTENCE CORRECTING SOMEBODY ELSE'S
+CITATION.** `git diff HEAD -- docs/ | grep '^+' | grep -oE 'FR-0[0-9][0-9]'` returned `FR-010`
+in revision 1.23. 052-7's defect by 052-7's own mechanism — copying the task line — and
+**nothing runs that check**, four features on.
+
+**THE QUICKSTART WAS RUN AND WAS WRONG THREE TIMES.** It referred the reader to ANOTHER
+DOCUMENT for its fixture; it said `ORDER BY occurred_at` where the column is `ts` (`Code: 47` —
+the producer's field name, renamed by the shaper, and this document tripped over the other side
+of the rename); and its duplicate-verdict paragraph said *"updates no rows, so it emits
+nothing"* where the answer is **422**. **The assertion held and the explanation did not**, which
+is the harder half to notice, and phase 3 had already found it.
+
+**AND CI FOUND TWO THINGS NO LOCAL RUN COULD.** `check:fences` went red on
+`vitest.coverage.config.mts` **at line 513, where this chapter's coverage pins went in** — the
+chain was taken to zero in phase 8 and the pins were added in phase 9, after it. *Run
+`check:fences` after ANY source edit*, and **the edit that broke it was the ratchet being
+tightened**, which is the version of this mistake that feels safest to make. Then the lanes job
+failed on **my own suite**: `expect(report.unattributable.keys).toBeGreaterThan(0)` passed here
+because this bucket holds 83 keys of old probe debris and **CI's volume is empty**. 056's
+finding from the other side — the test plants its own key now and asserts the delta.
+
+**AND THE SECOND RUN IS GREEN ON ALL FOUR JOBS WITH AN EMPTY ERROR SET** — `grep -c
+'##[error]'` over the whole run is **0**, and `test:integration` reports **70 suites, 70 ran,
+0 failed**. The comparison against 061's close-out is `2 distinct -> 0` with nothing carried:
+strictly better than the baseline rather than equal to it, and the first all-green run since
+`a0a5ed6`. Tagged **`part4-ch16`**.
+
+**061 IS CLOSED at 103 of 103 — CHAPTER 4.15, "What a thumbnail costs".** Its record is
+`specs/061-chapter-4-15/` — `baseline.txt` first, then `gaps.md` (**8 new, 6 carried**),
+`traceability.md`, `doors.txt`, `quickstart.md`, `tasks.md`. **SRS 1.22**, **ADR-34**,
+`docs/12` row 16 CLOSED. Tagged **`part4-ch15`**.
+
+    check:fences 0 · 291 files across 58 chapters · 2,385 prose words · 0 titled fences
+    unit 914 · api integration 797 · outsider 19 of 19 · coverage 2,062 tests, 142 files
     31 dependency entries -> 32, third-party 13 -> 14      the first move in Part 4
-    worker image 245 MB -> 279 MB · 19 appendix hunks across 5 files
+    19 appendix hunks across 5 files
 
-**THE COST IS NOT A RATIO, AND THAT IS THE CHAPTER.** Across six real images the
-thumbnail-to-parent ratio spans **775×** (0.08% to 61.99%) while the thumbnail's own size spans
-**4×** — every one lands between 2,558 and 10,258 bytes, because the output is a fact about the
-320 px bound and the ratio is a fact about somebody else's file. **A thumbnail costs about 7 kB
-and 15.2 ms.** Publishing the ratio publishes the wrong variable.
-
-**AND THE BOUND DECIDES A BEHAVIOUR, NOT A FIGURE.** At or below 320 px the output is **97.3% of
-the parent and the same pixels**, so an image already inside the bound gets **no rendition at
-all**. The rule came out of the table.
-
-**THE CLAUSE'S LAST FIVE WORDS WERE THE HARD PART.** *"Stored as derived objects sharing the
-parent's lifecycle"* reads like a storage note. A rendition is named by no message, so
-**FR-MED-08 refuses to serve it** — its own rule for an unreferenced object — and **FR-MED-10
-would reap it after 24 hours**. Both correct. `0020` answers with a composite foreign key
-`(parent_id, environment_id)` and `ON DELETE CASCADE`, so **constitution I is enforced by the
-database** and *"its reachability is its parent's"* is a key rather than a second predicate arm
-somebody keeps in step. The redundant unique that the composite key needs costs **344 kB on a
-1,504 kB heap** and buys no uniqueness the primary key lacks — that is the price of the clause.
-
-**AND `UNIQUE (parent_id, rendition)` AS A TABLE CONSTRAINT WAS 21× TOO BIG.** A btree indexes
-NULLs, so it covered all 6,646 rows at 168 kB to police the zero that had a parent. Partial over
-`parent_id IS NOT NULL`: **8,192 bytes**, same refusals, re-run to check that partial had not
-made it decorative. **Measure an index you add.**
-
-**A FOURTH ROUND TRIP, AND R2 HAD PRICED ONLY THE CPU.** The worker holds no object —
-`headObject` takes metadata, `streamObject` is consumed once by ClamAV at 64 KiB a chunk,
-`getRange` takes a prefix — so a rendition needs a whole-object GET nothing had ever made.
-Measured: **8.2 ms fetch against a 52.0 ms resize**, 14% and not the dominant term; **peak RSS
-moved 0.4 MB where the arithmetic for the bitmap said 36**, because libvips works in strips.
-**The 36 MB was written down as an upper bound and deliberately not published as a measurement**
-until something measured it.
-
-**`recordMediaVerdict` HAD NO TRANSACTION AND FOUR ARTIFACTS SAID IT DID.** Found by an analysis
-pass opening the function rather than reading the plan. The red probe reports `expected 'ready'
-to be 'pending'` — a parent committed with no rendition and no reason, which is the absence
-FR-007 forbids. **Revert the mechanism and run the test before believing it.**
-
-**AND THE WORKER'S SIGNER WAS TYPED `"GET" | "HEAD"`** — read-only at the type level, not by
-omission, and an accurate statement about a service that produced nothing. The compiler refused
-`putObject` before a reviewer could.
-
-**A JPEG WITH ORDINARY EXIF DEFEATS THE 64 KiB PROBE.** One maximal `APP1` is 65,535 bytes and
-`PROBE_BYTES` is 65,536, so a 72,215-byte camera file reports **no dimensions** while its bytes
-decode as 1200×900. The fetch gate has **three** states, not two; a two-state gate would have
-denied renditions to exactly the files most likely to want one. It also explains why `width` is
-null for 5,942 of 5,996 lane images.
-
-**ADR-34 COULD NOT BORROW ADR-32's ARGUMENT.** That one is specific — five programs *"each
-reached over a socket with a documented protocol"* — and a linked library is a different
-relationship. ADR-34's own ground: the worker is a TypeScript program, calling a native module is
-the same relationship as calling Node's JSON parser, and **no `.c` file enters the repository**.
-**And the size did not decide it**: `sharp` 30,380,799 B against ImageMagick's 28,936,284 B is
-5%; what decided it is 15.2 ms against 35.8 and a subprocess paying spawn on every object.
-**The video half is priced rather than deferred** — ffmpeg is 113,994,336 B, 3.75× the image
-half, for the harder half of a clause whose easier half 4.13 declined.
-
-**THE GATE WAS A FAILURE SET, NEVER A COLOUR, AND IT EARNED THAT ON THE FIRST COMPARISON.** Three
-integration suites were red at the baseline and **none was this chapter's**. Phase 2's run had a
-set of two — one carried, one new and mine, a whole-column-list tripwire whose own comment says
-*"this list going stale is the point of writing it out"*. A colour could not have said that; the
-lane was red before and red after. **And all three baseline failures turned out to be transient**
-after four runs: I called two of them deterministic on ONE isolated run each, which is the
-reading `CLAUDE.md` warns about in as many words.
-
-**THREE INSTRUMENTS LIED WHILE MEASURING ONE TABLE.** `apk add imagemagick` installs a build that
-answers `no decode delegate` for a JPEG — **a dependency's install size is not its usable install
-size**. The repair, four delegate packages in one `apk add`, returned **0 B** because two do not
-exist and apk is all-or-nothing, so a failed transaction presented as *no change needed*. And
-`magick -list format | grep '^ *(JPEG|PNG…)'` printed nothing because the list writes `JPEG*`;
-with a positive control the answer is `GIF* JPEG* JPG* PNG* WEBP*`.
-
-**AND `echo "EXIT=$?"` AFTER A PIPELINE READ `tail`'s STATUS. SIXTH TIME**, and the first by me:
-`tsc --noEmit | tail -6; echo EXIT=$?` printed **0** on a run that failed with TS1470.
-
-**THE FENCE BILL IS PER FILE, NOT PER HUNK, AND COUNTING IT BEFORE THE WORK IS THE POINT.**
-`repository.ts` is titled in 52 files (28 en, 23 vi, 1 appendix) and cost **9 hunks**; the whole
-bill was **19 hunks in 5 files**, all to the appendix because it already amends four of them
-(4.8's rule, and one rule for five files beats a judgement per file). **No media-worker file
-appeared** — the phase-1 count said its exposure was zero, so a new dependency, a new module and
-a rewritten Dockerfile layer cost the chain nothing. **Move the count to phase 1**, where it can
-still change how the work is sequenced.
+**THE COST IS NOT A RATIO, AND THAT IS THE CHAPTER.** Across six real images the ratio to the
+parent spans **775×** (0.08% to 61.99%) while the thumbnail's own size spans **4×** — every one
+lands between 2,558 and 10,258 bytes, because the output is a fact about the 320 px bound and
+the ratio is a fact about somebody else's file. **A thumbnail costs about 7 kB and 15.2 ms**,
+and at or below the bound the output is 97.3% of the parent and the same pixels, so an image
+already inside it gets **no rendition at all**. Publishing the ratio publishes the wrong
+variable.
 
 **AND AN OPTIONAL FIELD IS INVISIBLE IN BOTH DIRECTIONS.** It broke **zero** of the twelve
 whole-array assertions 4.14's required field would have broken, and the compiler named none of
@@ -140,17 +198,26 @@ its construction sites — so the door set came from `withMediaStates`' four cal
 `doors.txt` records that as weaker rather than equivalent. Convenient, and it means neither
 instrument gives warning.
 
-**THE LANE CANNOT EXERCISE THIS CHAPTER AT SCALE, AND THE CHAPTER SAYS SO IN ITS BODY.** **4 of
-5,996 images are above the bound**; 54 renditions among 6,646 rows, where forcing the partial
-index costs **127 buffers against a sequential scan's 57** — the planner is right, and *whether
-Postgres chooses an index is a property of the corpus* (4.13). Every published ratio came from
-six images of convenience or synthetic noise, and says which.
+**THE FENCE BILL IS PER FILE, NOT PER HUNK, AND COUNTING IT BEFORE THE WORK IS THE POINT.**
+`repository.ts` is titled in 52 files and cost **9 hunks**; the whole bill was **19 hunks in 5
+files**, all to the appendix because it already amends four of them (4.8's rule, and one rule
+for five files beats a judgement per file). **Move the count to phase 1**, where it can still
+change how the work is sequenced — and expect it to be short, because every file it misses
+arrives from a repair made after the list was written.
 
 **AND THE PER-ARM PROBE FOUND THAT CHOOSING THE WRONG SUITES LOOKS EXACTLY LIKE AN UNCOVERED
 ARM.** Four arms deleted individually: this chapter's two each turned exactly one test red; the
-delivery read's environment scope turned nothing red **anywhere** (4.12's finding reproduced —
-`channelVisibleTo` refuses afterwards, and the file says so); and the `state = 'ready'` gate
-turned nothing red **in the suites I had chosen** and **2 of 17 red** in the one written for it.
+delivery read's environment scope turned nothing red **anywhere** (4.12 reproduced); and the
+`state = 'ready'` gate turned nothing red **in the suites I had chosen** and **2 of 17 red** in
+the one written for it.
+
+**AND `echo "EXIT=$?"` AFTER A PIPELINE READ `tail`'s STATUS. SIXTH TIME**, and the first by me.
+
+**AND `recordMediaVerdict` HAD NO TRANSACTION AND FOUR ARTIFACTS SAID IT DID.** Found by an
+analysis pass opening the function rather than reading the plan. **Revert the mechanism and run
+the test before believing it.** **And measure an index you add**: `UNIQUE (parent_id,
+rendition)` as a table constraint was **21× too big**, because a btree indexes NULLs — partial
+over `parent_id IS NOT NULL` is 8,192 bytes and refuses the same duplicates.
 
 **060 IS CLOSED — CHAPTER 4.14, "Pending, ready, rejected".** Its record is
 `specs/060-chapter-4-14/` — `baseline.txt` first, then `gaps.md` (**16 entries**),

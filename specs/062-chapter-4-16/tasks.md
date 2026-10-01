@@ -162,11 +162,11 @@ direction, and how many tenants it examined.
 - [X] T079 Run the quickstart end to end and correct it in place, recording each wrong version. **061's was right first time** because the corrections were applied before it ran; that is the bar, not luck.
 - [X] T080 Stop the composed services **by name** — `api gateway dispatcher media-worker`, and **not `ingester`**, which has no Dockerfile and makes the whole command fail. Then run the full lane set once more.
 - [X] T081 Commit each phase. Under five lines, no trailer.
-- [ ] T082 **Push submodules first, then the superproject.** `ci.yml` is the outer repository's and the other two are gitlinks, so the reverse order checks out commits no remote has.
-- [ ] T083 Compare the CI error set **per error** (SC-010) against T007's baseline, in both directions. One comparison supports *"this run introduced nothing new"*, not *"the set is stable"*.
-- [ ] T084 If CI is red, fix the platform, **re-dump, re-hunk, and push both** — repairing a platform file invalidates the appendix hunks that publish it.
-- [ ] T085 Tag `part4-ch16` on a commit that **checks out a working chapter**, annotated. 4.14's tag had to be moved off one that fails `pnpm typecheck`.
-- [ ] T086 Compress 061's `CLAUDE.md` entry to its headline, measurement block and still-cited findings, and add this one. **The file has a 150,000-character budget**; it stood at 133,308 after 061.
+- [X] T082 **Push submodules first, then the superproject.** `ci.yml` is the outer repository's and the other two are gitlinks, so the reverse order checks out commits no remote has.
+- [X] T083 Compare the CI error set **per error** (SC-010) against T007's baseline, in both directions. One comparison supports *"this run introduced nothing new"*, not *"the set is stable"*.
+- [X] T084 If CI is red, fix the platform, **re-dump, re-hunk, and push both** — repairing a platform file invalidates the appendix hunks that publish it.
+- [X] T085 Tag `part4-ch16` on a commit that **checks out a working chapter**, annotated. 4.14's tag had to be moved off one that fails `pnpm typecheck`.
+- [X] T086 Compress 061's `CLAUDE.md` entry to its headline, measurement block and still-cited findings, and add this one. **The file has a 150,000-character budget**; it stood at 133,308 after 061.
 
 ---
 

@@ -844,3 +844,74 @@ T080  THE COMPOSED SERVICES STOPPED **BY NAME** — `api gateway dispatcher medi
       tests among the reds**, which is the definition of a flake rather than a regression.
       `git diff` says this feature changed **0 gateway files**. 4.15's warning followed
       rather than repeated: it called two failures deterministic on one isolated run each.
+
+T082  PUSHED, SUBMODULES FIRST. `relay-platform` b007adfb..6435998e, `relay-tutorial`
+      6ae0e93..5c1dbef, then the superproject adcb853..5d75cba. Run **36792925213**.
+
+T084  **AND CI FOUND AN ELEVENTH FENCE FILE, WHICH NO LOCAL RUN COULD HAVE.**
+
+        relay-platform — the Docker-free gate            SUCCESS
+        relay-platform — the sealed integration          SUCCESS
+        relay-tutorial — build, docs drift, fence chain  FAILURE at `pnpm check:fences`
+            vitest.coverage.config.mts differs at line 513
+            check-fence-chain: 1 problem(s) — HEAD 1
+
+      **LINE 513 IS WHERE THIS CHAPTER'S THREE COVERAGE PINS WENT IN.** `check:fences` was
+      taken to zero in phase 8; the pins were added in phase 9, **after it**, and the
+      chain was never re-run. `CLAUDE.md`'s rule is *"run `check:fences` after ANY source
+      edit"*, and 4.14 recorded the same sequence from the other side — a platform edit
+      made to turn CI green invalidates the hunks that publish it. **Here the edit was not
+      even a repair; it was the ratchet being tightened**, which is the version of this
+      mistake that feels safest to make.
+
+      The repair is one hunk, pre-image verified unique, appended to the appendix after
+      that file's existing ones: **291 files, 59 chapters, REAL EXIT 0**, and every
+      tutorial gate the CI job runs re-run by name afterwards — `lint`, `build`,
+      `check:docs`, `check:srs`, `check:figures`, `check:fences`, all REAL EXIT 0.
+
+      **AND THE OTHER THREE JOBS SAY THE FIRST PUSH WAS OTHERWISE SOUND**: both platform
+      jobs that had completed were green, including the sealed suite.
+
+T083  THE CI ERROR SET, PER ERROR, NORMALISED (uuids and numbers), IN BOTH DIRECTIONS.
+
+        adcb853a  the baseline (061's close-out)   2 distinct
+        5d75cba   the chapter, first push          2 distinct · 1 gone, 1 NEW
+        b798597   the two repairs                  see below
+
+      The diff names the thing exactly rather than counting it:
+
+        gone:  pnpm run test:integration exited, in services/GATEWAY
+        new:   pnpm run test:integration exited, in services/API
+
+      **THE ONE THAT WENT IS THE BASELINE'S FLAKE AND THE ONE THAT ARRIVED IS MINE.** The
+      baseline's two failures were `typing.itest.ts` and `membership.itest.ts`, both
+      gateway arrival waits; neither recurred. The new one is
+      `storage-reconcile.itest.ts > reports the keys that belong to no tenant`, which
+      asserted `unattributable.keys > 0` — true here because this bucket holds 83 keys of
+      old probe debris, and false on CI's empty volume. **056's finding from the other
+      side**: that chapter's persistent volume HID a defect CI's empty one named; here a
+      persistent volume MADE an assertion pass that had nothing to do with the platform.
+
+      **A COLOUR COULD NOT HAVE SAID ANY OF THIS.** Both runs are red and the sets are
+      disjoint in one member each; *"still red"* would have carried a flake out and a
+      regression in without a word.
+
+T083-2  **RUN 36794366989 AT `b798597` IS GREEN ON ALL FOUR JOBS, AND ITS ERROR SET IS
+      EMPTY.** `grep -c '##\[error\]'` over the whole run: **0**.
+
+        relay-platform — the Docker-free gate            SUCCESS
+        relay-platform — integration lanes and coverage  SUCCESS   70 suites · 70 ran
+        relay-platform — the sealed integration          SUCCESS
+        relay-tutorial — build, docs drift, fence chain  SUCCESS   291 files, 59 chapters
+
+        @relay/api 46 · gateway 12 · e2e 4 · media-worker 3 · ingester 2
+        test-harness 2 · dispatcher 1                    = 70, all ran, 0 failed
+
+      **STRICTLY BETTER THAN THE BASELINE RATHER THAN EQUAL TO IT.** 061's close-out was
+      red with two gateway failures; this is the first all-green run since `a0a5ed6`, and
+      the comparison is `2 distinct -> 0` with nothing carried.
+
+      **AND THE BASELINE'S FLAKE DID NOT RECUR IN CI EITHER.** `typing.itest.ts` failed
+      here twice during phase 9 — three distinct tests across four local samples — and
+      passed in both CI runs of this feature. A flake does not show up in the
+      distribution, and it does not show up in two runs of a different machine.
