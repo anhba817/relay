@@ -650,3 +650,106 @@ T036  WHAT THIS LANE CANNOT SAY ABOUT THESE FIGURES
       **The number that travels is the SHAPE**: a wait uniform on [0, interval] plus
       work under half a second. The interval is a deployment property, and every figure
       above is a measurement of this deployment.
+
+PHASE 6 — THE PROBES (T037 … T041)
+=====================================================================================
+
+T037  WITH THE WORKER STOPPED, THREE DIFFERENT SITUATIONS GIVE ONE ANSWER
+-------------------------------------------------------------------------------------
+
+      Run with nothing else against the stack. An uploaded object attached to a message,
+      an uploaded object nobody attached, and an id nobody has — twelve seconds later,
+      two sweep intervals that never came:
+
+        the send                           201
+        ATTACHED, in history               [{"type":"media", …, "state":"pending"}]
+        ATTACHED, GET /v1/media/{id}       404  not_found
+        UNATTACHED, GET /v1/media/{id}     404  not_found
+        CONTROL, an id nobody has          404  not_found
+
+      **Research R6 measured the unattached case; the attached one had not been measured
+      and it is the same 404.** So from the delivery route a stopped worker, an upload
+      nobody made, and a fabricated id are one answer — chapter 4.12 built that
+      indistinguishability on purpose, for a tenancy reason, and the cost lands here.
+
+      **THE ONLY SURFACE THAT TELLS THEM APART IS HISTORY**, where the attachment exists
+      and says `pending`. That is why the journey's wait reads the channel rather than
+      polling the media route: the media route cannot answer the question being asked.
+
+T038  A WORKER WHOSE SCANNER IS A CLOSED PORT: ONE LINE SAYS SO, AND NOTHING ELSE DOES
+-------------------------------------------------------------------------------------
+
+      A throwaway `docker compose run --rm --no-deps -e RELAY_CLAMAV_HOST=127.0.0.1
+      -e RELAY_CLAMAV_PORT=1 media-worker`, twenty seconds, against the real lane with
+      two objects uploaded and waiting:
+
+        {"msg":"media worker started","interval_ms":5000,"scanner":"unreachable"}
+        (no further output)
+        both planted objects: pending, pending
+
+      **4.13's defect reproduced deliberately.** `verify` returns null when the scanner
+      cannot answer — FR-009, correct, and silent — so the worker sweeps, decides
+      nothing, and says nothing. Stopped before the real worker was restarted so the two
+      never swept together; after the restart both objects were `ready` within one
+      interval, which is the control.
+
+      **AND 063-3 MAKES IT WORSE THAN 4.13 RECORDED.** The sweep's silence here is the
+      same silence as a sweep with nothing to do, so the boot line is not merely the best
+      signal — it is the only one. A deployment that restarted the worker before anybody
+      read the line has no evidence left.
+
+T039  THE JOURNEY DEPENDS ON NO OTHER SUITE'S ROWS
+-------------------------------------------------------------------------------------
+
+      Checked by reading every read the two tests make:
+
+        channel        created by the test, `journey-${Date.now()}` / `reject-${…}`
+        media objects  created by the test, and never counted in aggregate
+        history        read on its own channel and filtered by its own `text`
+        the bucket     never listed; only two signed URLs the platform just issued
+        `ana`, `outside-bot`, `token`   earlier tests IN THIS FILE, which is the file's
+                                        existing design and not another suite
+
+      **No aggregate assertion anywhere**, which is the specific thing 4.16 got wrong: its
+      debris check passed locally on 83 keys of old probe residue and failed on CI's empty
+      volume. Every number this journey asserts is one it created.
+
+T040  check-lane-scope: THE COUNTED LINE, NOT THE EXIT CODE
+-------------------------------------------------------------------------------------
+
+        check-lane-scope: 71 integration files, 0 unscoped read(s) of a shared table in
+                          0 file(s)
+        controls: 10 of 10 fired
+        check-lane-scope: SQL text only — a scope applied in JavaScript is invisible
+
+      **71 files, up from the 55 it reported at 055.** The count is the point: 049 found
+      this checker reading a worktree 045 had deleted, matching nothing and exiting 0 with
+      all ten controls firing, because **a control proves the checker WORKS and says
+      nothing about whether it LOOKED.**
+
+      **AND IT CANNOT SEE THIS CHAPTER'S SUITE.** `packages/outsider/src/integrate.itest.ts`
+      is inside its glob and contains **no SQL at all** — the seal forbids a database
+      client — so a zero here is a true statement about a file the instrument has nothing
+      to say about. Recorded as a limit rather than reported as a pass.
+
+      **AND THE PATH IN THE TASK WAS WRONG**: the script is at
+      `specs/045-part-3-rework/check-lane-scope.py`, not under `relay-tutorial/scripts/`.
+      `python3 … | tail -6; echo EXIT=$?` then printed **EXIT=0** for a file that does not
+      exist, because `$?` after a pipeline is `tail`'s. **Seventh occurrence in this
+      project** and the second by me.
+
+T041  ASSERTIONS ADDED BY THIS FEATURE THAT NAME NO CHAPTER: 0 OF 40
+-------------------------------------------------------------------------------------
+
+      SC-004 asks for a count. **40 assertions, 0 unnamed**, over fourteen chapters:
+      2.2, 3.4, 3.8, 3.17, 3.18, 3.26, 4.8, 4.10, 4.11, 4.12, 4.13, 4.14, 4.15, 4.17.
+
+      **THE RULE THE COUNT USES HAS TO BE STATED, BECAUSE THE NUMBER DEPENDS ON IT**: an
+      assertion is named if a chapter appears in the twenty lines above it or inside the
+      statement itself. The first run of the counter said **ten unnamed**; all ten were
+      repaired by naming them. Then `prettier` reflowed the file and the same counter said
+      **three** — two genuinely out of the window and **one a counter defect**, because a
+      multi-line `expect(` carries its message on the line BELOW and the window only
+      looked up. **A measurement whose instrument is rewritten between runs is two
+      measurements**, which is the smaller version of 4.16's formatter finding: a file a
+      formatter owns moves under anything that counts lines.
