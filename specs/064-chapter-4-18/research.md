@@ -292,6 +292,14 @@ inventing one at writing time.
 **The second one is the useful one** and it points at work outside this chapter: the stronger
 mechanism is unavailable because of a deployment choice, not a design one. `gaps.md` carries it.
 
+**AND IT IS ALSO NFR-SEC-10's SUBJECT**, which no artifact in this feature had named until the
+eleventh analysis pass: *"Administrative access to production data shall require multi-factor
+authentication and shall be logged to an immutable audit trail."* A second clause asking for an
+immutable trail, for the actor this chapter's trigger cannot refuse. **The two are not the same
+artifact** — FR-MOD-03's records a tenant acting through the API — and NFR-SEC-10 stays unmet.
+The non-superuser role is the one change that would move both, which is what makes it worth
+writing down rather than filing as somebody else's clause.
+
 ## R8 — What erasure does to an entry naming an erased user
 
 **Not decided here, and not this chapter's.**
