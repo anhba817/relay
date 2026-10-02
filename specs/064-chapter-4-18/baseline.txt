@@ -1366,3 +1366,144 @@ T073  THE CARRIED LEDGER, RE-MEASURED. Seven items carried; **063-4 is worse tha
       compared to anything**. The 49 appendix hunks carry the chapter's real claim about
       the repository; the page's fences are illustrations. That is the right trade and
       it is worth knowing which half is checked.
+
+T078  EVERY PHASE WAS COMMITTED AS IT CLOSED — AND ONE OF THEM TWICE, FOR TWO REASONS
+
+        relay-platform      5 commits   ae2d149 · 81d98e0 · a2f1f9a · 7f3992f · e1a46a7
+        relay-tutorial      1 commit    febda4b, the whole chapter and its hunks
+        superproject        9 commits   one per phase, plus two repairs below
+
+      **`git commit -F -` IN A BACKGROUNDED COMMAND COMMITS NOTHING.** Phase 8's commit
+      was issued inside a `run_in_background` compound command together with the
+      coverage run. A background command has no stdin, so `-F -` read an empty message
+      and git aborted — **and the background task reported only the coverage command's
+      exit code**, so the failure was silent in both directions. Found by running
+      `git log` for a different task. Use `-F <file>` for anything not in the
+      foreground.
+
+      **AND `git add -A` IN THE SUPERPROJECT STAGES A POINTER, NOT THE SUBMODULE.** The
+      re-issued commit then recorded a gitlink that had not moved, because
+      `relay-tutorial` still held the chapter, its figures, the 49 appendix hunks, the
+      synced docs and `lib/tutorial.ts` uncommitted. The superproject commit was green,
+      complete-looking, and carried none of the chapter.
+
+      Every earlier phase escaped this by accident: each one committed the platform
+      submodule explicitly before the superproject, which is the push order 060 already
+      wrote down — **submodules first, then the pointer**. The same order is a commit
+      rule and nothing had said so.
+
+T050  SEVEN PINS FOR EIGHT NEW FILES, AND THE CURSOR WAS RAISED RATHER THAN PINNED LOW
+-------------------------------------------------------------------------------------
+
+        pnpm coverage   REAL EXIT 0   **149 files, 2,156 tests, 0 failed**
+                                      ZERO threshold errors       from 146 and 2,116
+
+      The text reporter showed **two** of this chapter's eight new files;
+      `coverage-summary.json` showed all eight. *The table answers which files have a
+      gap, the JSON answers which were seen* (4.10), and six of the eight are at
+      100/100/100/100 and therefore omitted from the table entirely.
+
+        actor.ts · audit.port.ts · audit.reader.ts · audit.schema.ts
+        moderation-routes.ts · db/audit-reads.ts            100 across the board
+        cursor.ts            88.23 / 80.00 / 100 / 100      lines 70-72
+        audit.controller.ts  92.85 / 83.33 / 100 /  92.30   line 47
+
+      **`cursor.ts` WAS RAISED TO 100.** Its two uncovered lines are reachable refusals
+      nothing drove: a token whose instant is outside anything the column can hold, and
+      one whose id is 36 characters and not a uuid. `cursor.test.ts` drives both, plus
+      the request log's prefix presented to this decoder — two opaque cursors in one
+      platform, and a client holding the wrong one should get a refusal rather than
+      somebody else's page. 5 of 5, **in the Docker-free lane**, because a cursor is
+      arithmetic. 4.13's `shape.ts`, raised rather than lowered.
+
+      **`audit.controller.ts` IS PINNED BELOW WHAT IT MEASURES AND THE REASON IS NAMED.**
+      Line 47 is the 403 for a principal with no environment — **the branch T046 proved
+      cannot fire**. It stays, because it is the contract's and matches the request log's
+      route, and what actually keeps the route safe is the decorator, which
+      `route.itest.ts` tests and was run red. Pinned 90/80 against 92.85/83.33, below the
+      observation by about the swing `session.ts` showed across two identical runs, with
+      both numbers in the config.
+
+      **AND `audit.module.ts` IS DELIBERATELY NOT PINNED**, which is 4.4's finding in
+      this same file: `**/*.module.ts` is excluded, so a pin on it would match no file
+      and be silent.
+
+T051  BOTH HALVES OF THE PIN PROBE, RUN
+-------------------------------------------------------------------------------------
+
+        101% of `audit/this-file-does-not-exist.ts`   errors naming it: **0** — SILENT
+        101% of `audit/audit.module.ts` (real, excluded)  errors naming it: **0** — SILENT
+
+      Neither produces an error, a warning or a mention. The config was restored from a
+      saved copy and verified byte-identical by `diff` after each half.
+
+      *Run both halves every time the ratchet is re-pinned* — and the second half is the
+      one that matters here, because the file is real and the pin would read as a
+      decision somebody made.
+
+T074  THE QUICKSTART WAS RUN END TO END AND WAS WRONG TWICE
+-------------------------------------------------------------------------------------
+
+      Four of the last four chapters' quickstarts were wrong three, four, three and five
+      times at this point. This one twice — and **neither is a wrong expected value**.
+      Sections 3, 4, 5 and 7 were predictions and all four held:
+
+        §3  two entries, newest first, keyed `entries`, with `has_more: false`,
+            `next_cursor: null`, `prev_cursor: null`, a resolved `window`
+            **and no `retention_edge`** — exactly as the contract specifies
+        §5  two `ERROR: audit entries are append-only (FR-MOD-03)`, then `1`
+
+      **WRONG ONCE: §4 PREDICTED ITS OWN EMPTY RESULT AND LEFT IT THERE.** The composed
+      stack runs no ingester (050-8), so the join query returns nothing — and the
+      section said so, correctly, and stopped. A reader following the document would
+      have seen the join's ABSENCE explained rather than the join. Twenty seconds of
+      `node services/ingester/dist/main.js` drains it (`"written":69`, `65`, `58`) and
+      the same query then answers
+
+        /v1/users/:externalId/ban	DELETE	200
+
+      for the `request_id` the audit entry carries. **A section that correctly predicts
+      a failure is still not a section that demonstrates the thing it is for.**
+
+      **WRONG TWICE: THE CLEANUP DESTROYED THE ROW IT WAS RESTORING, AND IT IS THIS
+      CHAPTER'S OWN SUBJECT.** §6's restore captured the pre-image through `tr -d ' '` —
+      the idiom 4.11 added because `psql -tAc` leaves whitespace — and the `action`
+      column holds `METHOD /path`, **with a space**:
+
+        before the probe   DELETE /v1/users/:externalId/ban
+        after the restore  DELETE/v1/users/:externalId/ban
+
+      A value no router could produce, written by the cleanup step, into the one table
+      in this platform you cannot correct — and repairing it took
+      `session_replication_role = replica` a second time. **A correction carried forward
+      from another chapter is a correction about another chapter's column.**
+
+      §6 also gained the control it lacked: take the value before and compare it after,
+      rather than trusting `UPDATE 1`. §7 gained the fourth thing this cannot show — a
+      reason — which §6's own prose had and the list did not.
+
+T076  THE COMPOSED SERVICES STOPPED BY NAME — `api gateway dispatcher media-worker`, and
+      **not `ingester`**, which has no Dockerfile and would make the whole command fail.
+      Seven base containers left running.
+
+T077  THE FULL LANE SET AT THE CLOSE, COMPARED PER TEST AGAINST T002
+-------------------------------------------------------------------------------------
+
+                                at the open                 at the close
+        pnpm lint               REAL EXIT 0                 REAL EXIT 0
+        pnpm typecheck          REAL EXIT 0                 REAL EXIT 0   15 of 15 tasks
+        pnpm test               REAL EXIT 0   945 unit      REAL EXIT 0   13 of 13 tasks
+        pnpm coverage           REAL EXIT 1   146 files,    **REAL EXIT 0**  149 files,
+                                              2,116 tests,                  2,156 tests,
+                                              2 failed                      **0 failed**
+                                              ZERO threshold errors, both runs
+
+      **COVERAGE IS STRICTLY BETTER THAN THE BASELINE RATHER THAN EQUAL TO IT** — the two
+      tests that were red at the open are green, 40 tests and 3 files were added, and no
+      pin moved in either direction. That is the comparison the per-test rule exists for:
+      a colour would have said *red then green* and nothing about which tests.
+
+      **AND `pnpm test` IS 13 TASKS, NOT ONE NUMBER.** T002 recorded *945 unit tests*
+      from the same command; turbo reports tasks and the test counts are inside them.
+      Both readings are in the record because the first is what a later chapter will
+      compare against and the second is what the command actually prints.

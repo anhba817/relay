@@ -3,13 +3,15 @@
 Walk the log by hand: ban somebody, lift the ban, read the two entries back, then try to
 change one and fail.
 
-**NOT YET RUN — this document is written at plan time and the platform it describes does not
-exist yet.** Every expected value below is a prediction, and predictions in this position have
-been wrong in each of the last four chapters: 4.16's quickstart was wrong three times, 4.17's
-four. The phase-9 task is to run it as a document, start to finish, and correct it in place
-with each wrong version recorded. **The two sections marked MEASURED are the exceptions** —
-they were run against the current platform while this plan was written, and what they show is
-why the chapter exists.
+**RUN END TO END AT T074, AND WRONG TWICE.** Both corrections are recorded in place below,
+and neither is a wrong *value* — §4 predicted its own empty result correctly and did not tell
+the reader how to see the thing the section exists for, and §6's cleanup destroyed the row it
+was restoring. Four of the last four chapters' quickstarts were wrong three, four, three and
+five times at this point; this one twice, and the second is this chapter's own subject biting
+the document that describes it.
+
+Sections 1, 2 and 6 were measured against the platform while the plan was written; 3, 4, 5
+and 7 were predictions and all four held.
 
 The corrections earlier chapters earned are applied rather than rediscovered:
 
@@ -20,7 +22,12 @@ The corrections earlier chapters earned are applied rather than rediscovered:
   defaulting accessor over the wrong key reads as the platform dropping data;
 - `date +%s%3N` does **not** truncate on this machine;
 - `pnpm -s <script>` reports red for a green gate; drop the `-s`;
-- capture an exit code **outside** the pipeline, or `$?` is `tail`'s. Seven occurrences so far.
+- capture an exit code **outside** the pipeline, or `$?` is `tail`'s. Seven occurrences so far;
+- **and `tr -d ' '` destroys an `action`.** 4.11 added that idiom because `psql -tAc` leaves
+  whitespace a bare substitution does not strip. This chapter's `action` column holds
+  `METHOD /path` — *with a space* — so the correction carried forward from another chapter
+  silently rewrites the value it was cleaning. It did, at T074, to the row §6 had just
+  restored. Use `psql -tAc` with no filter and quote the result.
 
 ## 0 · Prerequisites
 
@@ -126,9 +133,25 @@ docker exec relay-clickhouse-1 clickhouse-client -q \
 audit entry does not carry, beside the actor and target, which the request log does not. The
 two logs answer different questions about one request and the id is the join.
 
-**If this returns nothing, read `gaps.md` 050-8 before concluding anything**: on the stack this
-series ships, nothing drains the analytical streams, so a customer reading their own request
-log finds it empty.
+**CORRECTED AT T074 — this returns nothing until something drains the stream**, and the first
+version of this section stopped at saying so. `gaps.md` 050-8 is real: the composed stack runs
+no ingester, so a customer reading their own request log finds it empty, and a reader following
+this document would have seen the join's *absence* explained rather than the join. Run one:
+
+```bash
+RELAY_CLICKHOUSE_HOST=localhost timeout 20 node services/ingester/dist/main.js
+```
+
+**Measured**: twenty seconds of draining, `"written":69` then `65` then `58`, and the same query
+then answers
+
+```text
+/v1/users/:externalId/ban	DELETE	200
+```
+
+for the `request_id` the audit entry carries. That is the join — the route and the status from
+one log, the actor and the target from the other, and neither document holds the other's
+fields.
 
 ## 5 · Try to change an entry
 
@@ -170,9 +193,27 @@ accident, and not to somebody holding the database password.** A separate, non-s
 for the application would make it much stronger, and that is a deployment change rather than a
 chapter — recorded in `gaps.md` with its cost.
 
-Restore the entry's value before anything else is counted, or leave the probe's row out of
-every later count. **A red probe writes to the lane** (043), and chapter 4.17 spent a battery
-discovering that its own quickstart traffic had broken two suites that read shared state.
+**Take the value before and compare it after**, rather than trusting `UPDATE 1`:
+
+```bash
+ID=$(psql postgres://relay:relay@localhost:15432/relay -tAc \
+  "select id from audit_log where target_id='quickstart-target' order by occurred_at desc limit 1")
+BEFORE=$(psql postgres://relay:relay@localhost:15432/relay -tAc "select action from audit_log where id='$ID'")
+```
+
+**Measured**: `before: DELETE /v1/users/:externalId/ban`, then `UPDATE 1`, then
+`after: something else`.
+
+Restore the entry's value before anything else is counted. **A red probe writes to the lane**
+(043), and chapter 4.17 spent a battery discovering that its own quickstart traffic had broken
+two suites reading shared state.
+
+**AND THE RESTORE IS WHERE THIS DOCUMENT WENT WRONG THE SECOND TIME.** The first run captured
+`$BEFORE` through `tr -d ' '` — the idiom 4.11 added for a different column — and wrote
+`DELETE/v1/users/:externalId/ban` back, with the space gone. The row was left holding a value
+no router could produce, by the cleanup step, in the chapter whose subject is a log you cannot
+correct. It took the bypass a second time to repair, which is the section's own point arriving
+from the wrong direction.
 
 ## 7 · What this cannot show
 
@@ -181,3 +222,7 @@ discovering that its own quickstart traffic had broken two suites that read shar
 - **A person.** The actor is a key id. Who held the key is not knowable from here.
 - **A history.** The log begins at the migration. No entry exists for any moderation action
   taken before it, and an empty window means *not recorded*, not *did not happen*.
+- **A reason.** FR-MOD-03 asks for five fields and none of them is why. The journey this
+  requirement comes from has Priya *"noting which messages were removed and why"*, and the why
+  is hers — she writes it in her own tool. It is the first question a reader of an entry asks,
+  so it is answered here rather than left to be discovered.

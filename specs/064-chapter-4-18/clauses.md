@@ -17,7 +17,9 @@ Four verdicts, and the difference between them matters more than the tally:
 > Every moderation action shall be recorded in an immutable audit log with actor, action,
 > target, timestamp, and request ID, retained for 1 year.
 
-**Eight obligations.** The clause reads as one sentence and is not one.
+**Ten obligations.** The clause reads as one sentence and is not one.
+
+(It said *eight* here until the table below was counted — written before the rows were, which is the error this document exists to prevent one level up.)
 
 | # | obligation | verdict | where |
 |---|---|---|---|
