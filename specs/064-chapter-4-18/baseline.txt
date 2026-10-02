@@ -1283,3 +1283,86 @@ T060  `traceability.md` written by reading. **Sixteen functional requirements, s
       discharged** — and FR-011 is met by a different mechanism than the one it names,
       which is recorded as a finding rather than quietly re-pointed. Eight of twelve
       success criteria pass now; four belong to phases 8 and 9.
+
+PHASE 8 — THE CHAPTER (T061 … T071)
+
+      4.18 registered at `/part-4/chapter-18/the-log-that-cannot-be-edited`.
+
+        prose words            2,937          bound 2,000–4,000
+        figures                4              all passed as `code`
+        TRAP boxes             2              WHY boxes 2
+        titled fences          **0**          every excerpt untitled, on 051-6's rule
+        static pages           132            from 131
+
+        the six tutorial gates, each with its counted line
+          lint           exit 0
+          build          exit 0   132/132 static pages
+          check:docs     exit 0   26 revisions ascend, 1.0 to 1.25
+          check:srs      exit 0   245 clause rows, 245 unique identifiers
+          check:figures  exit 0   314 figures, 316 bindings resolve
+          check:fences   exit 0   **291 files across 61 chapters**, from 290 and 60
+
+T068  THE BILL WAS 21 FILES AND 49 HUNKS, AND EVERY ONE APPLIED FIRST TIME
+T069  -------------------------------------------------------------------------------
+
+        repository.ts        12      repository.itest.ts   6      fixtures.ts     4
+        app.module.ts         2      dev-token.controller  2      gauntlet        2
+        the four other module factories   2 each            users.itest.ts  2
+        eleven files at 1 each
+                            ----
+                             49 hunks across 21 files, all to the appendix
+
+      **Bigger than any Part 4 chapter so far** — 4.15 paid 19 hunks in 5 files and 4.16
+      paid 22 in 10 — and the shape is the same one 4.15 named: the plan counted the
+      files it would edit, and six of these arrived from repairs made afterwards.
+      `attack.ts`, `attack.test.ts`, `gauntlet.itest.ts`, `fixtures.ts`,
+      `outbox.itest.ts` and `credentials.itest.ts` are all consequences rather than
+      intentions — four of them the compiler's demand for a new argument, one the
+      probe's, one `rowsOf` meeting a third envelope.
+
+      **All to `fences/post-series.md`**, because every one of the 21 is published by
+      pages this chapter does not own (4.8's rule, and one rule for 21 files beats a
+      judgement per file). **Generated with `--dump` from the checker's own replay and
+      diffed at `-U6`**, which is fence-chain rule 1a — and the result is that 49 hunks
+      applied on the first run with no re-anchoring at all. The width never had to move.
+
+T075  EVERY PLATFORM FILE THIS FEATURE TOUCHED, CLASSIFIED (SC-007a)
+-------------------------------------------------------------------------------------
+
+      36 files against `part4-ch17`. **Every non-test file is one this chapter is for**,
+      and two of them are shared instruments whose change is worth naming rather than
+      counting:
+
+        isolation/attack.ts            `rowsOf` gains `entries`, its third envelope. A
+                                       shared helper every `list` attack depends on —
+                                       changed by name, which is what 4.8 argued for when
+                                       it refused to derive the table
+        messages/request-with-tenant.ts  gains `requestId?`, which
+                                       `request-context.middleware.ts` has written onto
+                                       every request since chapter 1.3 and this interface
+                                       had never mentioned. A type that was incomplete
+                                       rather than wrong
+
+      And one deliberate change to an existing test, recorded with its bill at T014c:
+      `no-trigger-in-migrations.test.ts`, narrowed from every trigger to the sentinel
+      guard, with the narrowing asserted.
+
+      **Nothing here is a repair absorbed quietly.** The two instruments above are
+      changes this chapter needed; `gaps.md` 058-3 and 064-1 are defects this chapter
+      found and did not fix.
+
+PHASE 9 — THE RECORD AND THE CLOSE (T072 … T084)
+
+T073  THE CARRIED LEDGER, RE-MEASURED. Seven items carried; **063-4 is worse than it was
+      recorded as** — `FR-013a` means three unrelated things across `specs/041`,
+      `specs/031` and `specs/039`, confirmed by opening all three rather than by
+      quoting the entry. Four new entries: 064-1 (four ADRs with a summary and no
+      argument), 064-2 (the membership rule is a judgement nothing can check), 064-3
+      (nothing records administrative access and this log cannot), 064-4 (`pnpm lint`
+      green while a stricter invocation is not).
+
+      **And 043-1 is the one this chapter leans on.** Every code excerpt in 4.18 is
+      untitled, which is correct under fence-chain rule 5 and means **none of them is
+      compared to anything**. The 49 appendix hunks carry the chapter's real claim about
+      the repository; the page's fences are illustrations. That is the right trade and
+      it is worth knowing which half is checked.
