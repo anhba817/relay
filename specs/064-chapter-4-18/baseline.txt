@@ -1530,3 +1530,36 @@ T077  THE FULL LANE SET AT THE CLOSE, COMPARED PER TEST AGAINST T002
       flaky on its own — one of four runs passed 18 of 18. So the close is strictly
       better than the open on every lane, and the honest reading is *two flaky tests
       happened not to fire* rather than *this chapter fixed them*.
+
+T080  CI WENT RED ON `check:fences`, AND THE TASK THAT CAUSED IT HAD WARNED ABOUT IT
+T081  -------------------------------------------------------------------------------
+
+      Run **37072661053** at `481f87d`:
+
+        relay-platform — the Docker-free gate            SUCCESS
+        relay-platform — the sealed integration          SUCCESS
+        relay-platform — integration lanes and coverage  SUCCESS
+        relay-tutorial — build, docs drift, fence chain  **FAILURE**, at `check:fences`
+                                                         (lint, build, check:docs,
+                                                          check:srs, check:figures all
+                                                          green before it)
+
+      Reproduced locally in one command:
+
+        vitest.coverage.config.mts differs at line 1449
+        check-fence-chain: 1 problem(s) — HEAD 1
+
+      **T050's OWN TASK TEXT NAMED THIS FAILURE.** *"Add them after the fence chain is
+      taken to zero, not before — chapter 4.16's CI failure was a coverage pin added
+      after the chain was zeroed, and the edit that broke it was the ratchet being
+      tightened."* The pins went in after zeroing, which is what the task asked, and
+      **`check:fences` was not re-run afterwards** — which is rule 6, *run it after ANY
+      source edit*, and the only part of the warning that mattered.
+
+      **Reading a warning about a defect is not the same as running the check it names.**
+      Two chapters running, the same file, the same step, the same cause.
+
+      Repaired: `--dump` again, one hunk at `-U6`, appended to the appendix. 0, EXIT 0,
+      291 files across 61 chapters, and all five remaining tutorial gates re-run green
+      rather than assumed. Push order holds — the platform is already correct, so this
+      is `relay-tutorial` and then the pointer.
