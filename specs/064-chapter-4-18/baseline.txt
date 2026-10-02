@@ -1164,3 +1164,122 @@ T049  THE ENTRY COSTS 0.43 ms AND THE TRANSACTION COSTS ABOUT THE SAME
 T050  DEFERRED to after T070. Coverage pins go in **after** the fence chain is taken to
 T051  zero: chapter 4.16's CI failure was a pin added once the chain was already at 0,
       and the edit that broke it was the ratchet being tightened.
+
+PHASE 7 — THE DOCUMENTS (T052 … T060)
+
+T052  FR-MOD-03 AMENDED. Ten obligations named, the set's membership rule supplied, the
+      actor recorded as a credential and not a person, `immutable` scoped to what the
+      probe shows, and `retained for 1 year` marked unmet by decision on ADR-28's
+      precedent — the third clause in this document bounded by the absent scheduler
+      after FR-ANL-06 and DR-17. Revision 1.25 added; `check:srs` prints
+      **245 clause rows, 245 unique identifiers**.
+
+T053  READING THE NEIGHBOURS FOUND THE ENTITY WAS SPECIFIED ALL ALONG
+-------------------------------------------------------------------------------------
+
+      **§6.1's ER diagram carries `Environment ||--o{ AuditLogEntry : "1:N"`.** The SRS
+      has named this entity since before Part 4, and `docs/05-sad.md:430` says *"there
+      is no `audit_log` table, in §6.1 or anywhere in the schema"* — which was true of
+      the SCHEMA and not of the data model. **The specification was ahead of the
+      implementation and the architecture document recorded only the absence**, so a
+      reader checking whether the table was intended would have found the SAD's sentence
+      first and stopped. 4.16's shape inverted: that chapter found a dictionary row for
+      a table nobody built; this is a built table whose entity was already drawn.
+
+      **AND TWO MORE CLAUSES IN THIS TABLE DEPEND ON THE SCHEDULER NOBODY HAS.**
+      FR-MOD-06 — *"expired messages hard-deleted by a scheduled job"* — and FR-MOD-05's
+      *"generated asynchronously with a notification on completion"*. Neither is this
+      chapter's to amend and both are now on the same list as FR-MOD-03's retention,
+      FR-ANL-06's daily job and DR-17's weekly one. **Five clauses, one absence**, and
+      ADR-28 records it once.
+
+      FR-MOD-01 and FR-MOD-02 are unchanged and both are already met: reading is not an
+      action and no read is recorded, and FR-MOD-02's route is the one entry in the set
+      whose classification the credential decides.
+
+      Nothing else to amend, which is recorded because *nothing to amend* is an answer
+      and an unrecorded look is indistinguishable from no look.
+
+T054a ADR-35 WRITTEN IN BOTH DOCUMENTS, AND IT ANSWERS ADR-26's OPTION D
+T054b -------------------------------------------------------------------------------
+
+      Three decisions in one clause: the store, the mechanism, the precision. The shape is
+      ADR-28's — problem, drivers, decisions with their measurements, rejected
+      alternatives, consequences, reversal condition.
+
+      **ADR-26's REJECTED OPTION D IS THIS ADR's DECISION, FROM THE SAME DRIVER.** That
+      ADR weighed *"mirror the log into Postgres and serve it from there"* and refused it
+      for the request log, whose rows were already in ClickHouse. The audit log's rows
+      are written by the api in a transaction, so **serve the log from the store that
+      already holds it selects the other store**. Two ADRs reaching opposite conclusions
+      from one driver is a register working; reaching them without reference to each
+      other is how it stops being one — so ADR-35 names ADR-26 and ADR-26's option D by
+      letter.
+
+      **AND THE FOUR-ADR GAP IS REAL AND IS NOT THIS CHAPTER'S.**
+
+        docs/06-adr-deep-dives.md   ADR-01 … ADR-30, then ADR-35
+        docs/05-sad.md              … ADR-31, 32, 33, 34, 35
+
+      **31 through 34 have a summary and no argument** — the half carrying the rejected
+      alternatives and the reversal condition, which is what constitution VII actually
+      requires. 4.5 wrote the rule down and four ADRs have been written since without it.
+      `gaps.md` 064-1, with the note that a gate comparing the two lists is four lines.
+
+T055  THE SAD SAID THERE IS NO SUCH TABLE, AND THE SRS HAD DRAWN THE ENTITY ALL ALONG
+T056  -------------------------------------------------------------------------------
+T056a
+      `docs/05-sad.md:430` read *"There is no `audit_log` table, in §6.1 or anywhere in
+      the schema"*. True of the schema and **false of the data model**: the SRS's §6.1 ER
+      diagram carries `Environment ||--o{ AuditLogEntry : "1:N"`. The paragraph's
+      argument — why `metadata.deleted_by` is not FR-MOD-03's log — is kept and extended
+      with the fourth thing nobody had said: **that column is published on no read path**,
+      so the one fragment the platform recorded was invisible to the tenant whose log it
+      would be.
+
+      §6.1's SQL block gains the table, the index, the function and the trigger, with what
+      the trigger does NOT cover stated beside it rather than in a footnote.
+
+      **AND `docs/03-journey-map.md:402` LISTED FOUR OF FIVE FIELDS.** *"actor, action,
+      target, timestamp"* — the request id missing, and it is the field doing the most
+      work here, because it is the join to the request log. **That document's own summary
+      is the reason it matters**: *"If a proposed feature cut touches any of them, this is
+      the journey that gets re-read first."* Nineteen analysis passes went by without
+      opening it; what found it was a task that named the line.
+
+T057  BOTH COPIES OF THE PART 4 TABLE AMENDED — `docs/12` row 19 CLOSED (SRS 1.25) and
+      `docs/07` row 19 SHIPPED. Two copies, and amending one is how they drift.
+
+T058  THE TREE-WIDE SWEEP FOUND SEVEN, AND THE AMBIGUITY 063-4 NAMED IS REAL
+-------------------------------------------------------------------------------------
+
+      `grep -rnoE 'FR-0[0-9][0-9]' docs/` over the whole tree: **22 distinct ids**, led by
+      `FR-003` (8), `FR-016` (7), `FR-025` and `FR-013` (5 each). This chapter added
+      **seven** citations and four were unqualified — three `FR-005` and one `FR-006`, all
+      meaning feature 064's own clauses, in `docs/06` and the SAD.
+
+      **AND `FR-013a` MEANS THREE UNRELATED THINGS**, which is 063-4's finding confirmed
+      by looking rather than quoted:
+
+        specs/041-chapter-3-23   a tenant API key MUST NOT edit a message
+        specs/031-chapter-3-10   a soft threshold and a hard cap configured together
+        specs/039-chapter-3-21   no per-environment typing quota
+
+      The one this chapter means is 041's, and the citation says so now. **Every
+      `FR-0nn` this chapter added to `docs/` carries its feature or its chapter.**
+
+      **And the sweep's own pattern missed one of its hits**: `chapter 3.23's FR-013`
+      puts the qualifier BEFORE the id, so a check looking only to the right of the id
+      reports it unqualified. Read the hits; a position-sensitive pattern over prose is
+      not a classifier.
+
+T059  `pnpm sync:docs` then the gates, with their counted lines:
+
+        check-docs-drift     all mirrored docs match their sources
+        check-revision-order 26 revisions ascend, 1.0 to 1.25
+        check:srs            245 clause rows, 245 unique identifiers, no duplicates
+
+T060  `traceability.md` written by reading. **Sixteen functional requirements, sixteen
+      discharged** — and FR-011 is met by a different mechanism than the one it names,
+      which is recorded as a finding rather than quietly re-pointed. Eight of twelve
+      success criteria pass now; four belong to phases 8 and 9.
