@@ -71,12 +71,22 @@ the planner making the right choice.
 - **No `details` or `metadata` column.** FR-MOD-03 lists five fields and the chapter supplies
   five. A free-form blob is where a schema goes to stop being checkable, and chapter 4.16
   already paid for a column whose name read as its subject and held something else.
-- **No `result` or `status`.** FR-008 was decided at T014a's neighbour by reading all eight
-  write methods: **a refused action earns no entry** — a refusal is a request and the request
-  log already holds every one with its status — and **an action that changes no state earns no
-  entry**, which four of the eight already answer for themselves (`banUser` returns `[]`,
-  `deleteUser` `false`, `removeMembers` an outcome, `deleteMessage` branches). A column making
-  both answers expressible would have made neither one true.
+- **No `result` or `status`.** FR-008 was decided by reading all eight write methods:
+  **a refused action earns no entry** — a refusal is a request and the request log already
+  holds every one with its status — and **an action that changes no state earns no entry.**
+
+  **The test is mechanical: did the write statement affect a row.** Uniform across the eight,
+  and a choice at three of them, because `deleteUser`, `setMemberRole`, `archiveChannel` and
+  `unarchiveChannel` all return a boolean meaning *the row was FOUND*. Each says so in its own
+  comment, and phase 2's survey read `deleteUser`'s `false` as the no-op discriminator before
+  reading what it meant — a second deletion changes nothing and still answers `true`, because
+  `?? new Date()` keeps the original instant. The discriminator there is `alive.deletedAt`.
+  Archiving an archived channel and setting a role a member already holds do write entries:
+  the statement really did affect a row, and knowing whether the VALUE changed would need a
+  SELECT inside the write transaction, which is the query `deleteMessage` argues against
+  paying on every call.
+
+  A column making both answers expressible would have made neither one true.
 - **No soft delete, no `updated_at`, no version.** The trigger refuses both verbs; a column
   that only an `UPDATE` could fill would be a column nothing can fill.
 
@@ -186,9 +196,30 @@ key to a row that erasure may remove.
 > transaction is a query every deletion would pay to learn something the controller already
 > holds.
 
-`banUser` and `unbanUser` gain the same parameter. **Only the user case needs it** — a channel
-and a message are named by uuid on the routes that act on them, so for those the identifier the
-write site holds and the one a customer uses are the same string.
+**AND THE SURVEY WAS WRONG ABOUT THREE OF THE FIVE, WHICH T023a FOUND BY OPENING THEM.** This
+section said `banUser` and `unbanUser` would gain the parameter. Neither did:
+
+| method | the external id at the write site | so |
+|---|---|---|
+| `banUser` | `.returning({ externalId })`, read three lines above where the entry goes | no parameter |
+| `removeMembers` | a `(SELECT external_id FROM users …)` inside its `RETURNING` | no parameter |
+| `unbanUser` | none — and T026 gives it a `RETURNING` for FR-005 anyway | no parameter |
+| `setMemberRole` | `.returning({ userId })`, a uuid | **threaded** |
+| `deleteUser` | `.select({ id, deletedAt })` | **threaded** |
+
+**A method that already emits a customer-visible event already holds customer-visible
+identifiers**, and the two that needed threading are exactly the two that emit no event. A map
+written to carry row ids to external ids into `removeMembers` was reverted before it shipped.
+
+**Only the user and membership cases need it at all** — a channel and a message are named by
+uuid on the routes that act on them, so for those the identifier the write site holds and the
+one a customer uses are the same string.
+
+**AND A MEMBERSHIP IS A PAIR.** `target_kind: "membership"` names a person's standing in one
+channel, and the route carries both halves, so `target_id` is `<channel uuid>/<external id>`.
+Unambiguous whatever the external id holds — the schema is `z.string().min(1).max(255)` and
+permits a slash — because a uuid is 36 characters and cannot contain one, so the first slash is
+always the separator.
 
 **This is a signature change and not a behaviour change**, so FR-012's exception is not
 engaged: the action does the same thing with the same answer, and one more argument arrives

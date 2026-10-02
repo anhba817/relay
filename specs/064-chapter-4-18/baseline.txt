@@ -555,3 +555,232 @@ T018  THE SCHEMA DECLARATION, AND WHAT IT CANNOT SAY
       chapter's own bill, one file, repaired in phase 8 (T068/T069). Recorded now rather
       than at the end, because a number that moves during a phase and is only read at the
       close cannot be attributed to the edit that moved it.
+
+T022  THE OPTIONAL ARGUMENT, AND THE `as const` THAT KEEPS IT NARROW
+-------------------------------------------------------------------------------------
+
+      `ActorContext` and `RECORDS_NOTHING` live in `services/api/src/audit/actor.ts`, not
+      in `repository.ts` where the first draft put them: `actorFrom` has to read a
+      request, and a repository importing an HTTP type is the wrong direction.
+
+      **AND THE NAMED ABSENCE WAS `string` UNTIL IT WAS PROBED.**
+      `export const RECORDS_NOTHING = "records-nothing"` infers `string`, so
+      `ActorContext | typeof RECORDS_NOTHING` is `ActorContext | string` and **every
+      string satisfies it, `""` included** — which is precisely the `?? ""` failure the
+      constant's own comment says it exists to avoid. With `as const`:
+
+        const bad: typeof RECORDS_NOTHING = "anything-else";
+        error TS2322: Type '"anything-else"' is not assignable to type 'records-nothing'
+
+      The probe is three lines and the defect was invisible to `tsc` on the real tree,
+      because nothing yet passed a wrong string.
+
+      **AND `RequestWithTenant` DID NOT MENTION THE REQUEST ID.**
+      `request-context.middleware.ts` has written `req.requestId` on every request since
+      chapter 1.3; the interface five module factories read the request through has
+      carried `principal?` alone. The first draft reached it with
+      `(req as { requestId?: string })`, which is a cast past a type that was simply
+      incomplete. The field is declared now, optional, because the type describes what a
+      provider may read rather than what the platform guarantees.
+
+T022a THE CHECK CAUGHT TWO DEFECTS AND BOTH WERE ITS OWN
+-------------------------------------------------------------------------------------
+
+      Written before T023, run red as required:
+
+        finds the construction sites it claims to police      PASS   the probe looked
+        gives each one an actor or the named absence          FAIL   expected true, false
+
+      Then, repairing it:
+
+      **1. `/\bactor\b/` DOES NOT MATCH `actorFrom(req)`** — no word boundary after
+      `actor` — so all five correctly-updated modules failed, and only the first was
+      reported, because an `expect` inside a loop stops there. *A checker reports the
+      first failure per file*, one level in.
+
+      **2. AND THE WORD TEST WOULD HAVE BEEN SATISFIED BY A COMMENT.**
+      `isolation/fixtures.ts`'s annotation contains the word `actor`. So the assertion
+      now counts the call's top-level arguments with comments stripped, which is a
+      structural fact a comment cannot be, and carries a control saying so.
+
+      **3. AND THE SCAN FOUND A CALL INSIDE ITS OWN DOCUMENTATION.**
+      `audit/actor.ts` has a comment reading *"reads every production `new Repository(`
+      and requires one or the other"*, and the scan demanded three arguments of that
+      sentence. **An instrument that reads prose as code reports a defect in the
+      paragraph describing itself.** Comments are blanked — to spaces, not deleted, so a
+      reported offset is still the file's — with a both-directions control.
+
+      Four tests, 4 passed. **Two of the three repairs were to the instrument and the
+      third was to its own documentation being in range**, which is 051-6's shape at a
+      different address: the thing being measured included the measurement.
+
+T023  NINE SITES, NOT SIX, AND THE THREE EXTRA ARE THE INTERESTING ONES
+-------------------------------------------------------------------------------------
+
+      R4 counted six production construction sites. The source walk finds **nine**:
+
+        5  the request-scoped module factories        actorFrom(req)
+        1  auth/dev-token.controller.ts               RECORDS_NOTHING
+        3  isolation/fixtures.ts                      RECORDS_NOTHING
+
+      `fixtures.ts` is test support that lives in `src/` without a `.test.` in its name,
+      so the walk reads it as production — **correctly**. A check that trusted a filename
+      would be an exemption list with extra steps, and this project refuses those
+      (056-10). The three sites state the absence instead, which costs one comment and
+      leaves the assertion with no special cases at all.
+
+T023a TWO OF THE THREE THREADED IDENTIFIERS WERE ALREADY IN THE METHOD
+-------------------------------------------------------------------------------------
+
+      `data-model.md` §3a said `banUser` and `unbanUser` would each gain a
+      `userExternalId` parameter, because `setBanned` resolves the user and hands the
+      repository a uuid. It does — and neither method needed the parameter:
+
+        banUser         `.returning({ externalId })` since the ban chapter, read three
+                        lines above where the entry goes, for the membership events
+        removeMembers   a `(SELECT external_id FROM users …)` inside its `RETURNING`,
+                        since the membership chapter, for the removal events
+        unbanUser       nothing — and T026 gives it a `RETURNING` anyway, so the column
+                        arrives with the transaction it needed for FR-005
+        setMemberRole   `.returning({ userId })`, a uuid. **The one real case.**
+        deleteUser      `.select({ id, deletedAt })`, no external id. **The second.**
+
+      **A METHOD THAT ALREADY EMITS A CUSTOMER-VISIBLE EVENT ALREADY HOLDS
+      CUSTOMER-VISIBLE IDENTIFIERS**, and that is the question the survey should have
+      asked. `setMemberRole` and `deleteUser` are precisely the two that emit no event.
+      The `externalIdOf` map written for `removeMembers` was reverted before it shipped.
+
+      **AND THE COMPILER NAMED EVERY CALL SITE, WHICH IS THE PROPERTY 4.14 WANTED.** Two
+      required parameters produced **13 errors across 4 test files** — a bill small
+      enough to pay, where the same property at the CONSTRUCTOR is 110 sites across 32
+      files. The difference is not the mechanism, it is that every repository is
+      constructed and eight methods are called. **Where a required argument goes decides
+      whether its own best property is affordable.**
+
+T024  THE SKIP IS COSTED, NOT ASSUMED
+-------------------------------------------------------------------------------------
+
+      `recordAction(tx, {action, targetKind, targetId})` writes nothing when there is no
+      actor. The alternative — throw — was priced: **30 `new Repository(` sites across
+      the eight test files that call a recording method** would have to supply an actor
+      to go on testing something else, every one of them in a file the fence chain
+      publishes. That buys a second guard over the property `repository.itest.ts`
+      already guards. So the skip stands, and `audit.itest.ts` asserts it: a
+      `RECORDS_NOTHING` repository performs the ban and writes no entry.
+
+      `occurredAt: new Date()` and not `sql\`now()\``, which every other write in that
+      class uses. `now()` is the transaction's START instant, and the column is
+      millisecond-precision expressly so the read cursor can trust it.
+
+T025  THE EIGHT WRITES, AND THE NO-OP RULE IS MECHANICAL
+T026  -------------------------------------------------------------------------------
+T027
+T027a   banUser           after `if (banned.length === 0) return []`     existing tx
+        unbanUser         NEW transaction, NEW `isNotNull` guard, NEW `RETURNING`
+        deleteUser        gated on `alive.deletedAt === null`            existing tx
+        removeMembers     one per row the `RETURNING` gave back          existing tx
+        setMemberRole     NEW transaction                                threaded id
+        archiveChannel    NEW transaction
+        unarchiveChannel  NEW transaction
+        deleteMessage     only when `this.actorKind === "application"`   existing tx
+
+      **THE RULE IS: DID THE WRITE STATEMENT AFFECT A ROW.** Uniform across the eight,
+      and it is a choice at three of them. `deleteUser`, `setMemberRole`,
+      `archiveChannel` and `unarchiveChannel` all return a boolean meaning *the row was
+      FOUND*, not *something changed* — those files say so in their own comments — so
+      archiving an archived channel and setting a role a member already holds each write
+      an entry. Knowing whether the VALUE changed would need a SELECT inside the write
+      transaction, which is the query `deleteMessage` argues against paying on every
+      call.
+
+      **AND T014's SURVEY WAS WRONG ABOUT `deleteUser`.** Phase 2 recorded its `false`
+      as the no-op discriminator. It is not: `?? new Date()` keeps the original instant,
+      so a second deletion changes nothing and still answers `true`. The discriminator
+      is `alive.deletedAt`, and the method's own comment had said so — *"it reports which
+      happened, so the route can answer 200 twice"*. **Reading a return type is not
+      reading what it means.**
+
+      **FR-005a's EXCEPTION WAS TAKEN FOUR TIMES, AS T014b PREDICTED, AND ALL FOUR
+      ANSWERS ARE UNCHANGED.** `unbanUser` still returns `void`, `setMemberRole` still
+      `"set" | "not_a_member"`, both archives still a boolean. FR-012's live risk is
+      scope creep in the exception; the count is four and it is the four that were
+      measured.
+
+      **THE MEMBERSHIP TARGET IS A PAIR**, so `target_id` is `<channel uuid>/<external
+      id>`. Unambiguous whatever the external id holds — `z.string().min(1).max(255)`
+      permits a slash — because a uuid is 36 characters and cannot contain one, so the
+      FIRST slash is always the separator.
+
+      **AND `deleteMessage`'s CONDITION IS THE ACTOR'S KIND, NOT `userId === undefined`.**
+      The two agree today, and they are different claims: one is a calling convention,
+      the other is who authenticated the request, and only the second is what an audit
+      log is entitled to.
+
+T028  8 OF 8, AND THE REFUSAL TEST WAS ASSERTING ON DRIZZLE'S WRAPPER
+T029  -------------------------------------------------------------------------------
+T030
+T027b   a ban and its reversal: two entries, whole-row equality          PASS
+        a re-ban writes nothing                                          PASS
+        an unban that lifted nothing writes nothing                      PASS
+        the request id is the one the api assigned                       PASS
+        UPDATE and DELETE refused, and the row survives both             PASS
+        an application credential deleting another's message: 1 entry    PASS
+        a user deleting their own message: 0 entries                     PASS
+        a RECORDS_NOTHING repository: the ban happens, no entry          PASS
+
+      **`toThrow(/append-only/)` WENT RED AGAINST A TRIGGER THAT FIRED.** Drizzle wraps a
+      failed statement in an error whose own message is `Failed query: update
+      "audit_log" …`; the trigger's words are on `cause`. And the obvious repair is
+      worse than the fault: `toThrow()` with no pattern is green for **any** failure, a
+      syntax error included. The assertion reads the cause and names the clause.
+
+      **AND IT WAS RUN RED.** Trigger dropped, suite re-run: the refusal test reports
+      `'no refusal at all'` — the exact string the helper exists to produce — and the
+      other seven stay green. Trigger restored, 8 of 8. *A mechanism believed rather
+      than attempted* applies to the test as much as to the table.
+
+T031  179 OF 179 ACROSS THE FOUR SUITES THE SIGNATURE CHANGE TOUCHED
+-------------------------------------------------------------------------------------
+
+      `repository.itest.ts`, `users.itest.ts`, `outbox.itest.ts`,
+      `credentials.itest.ts`. **Every edit to those files was the compiler's demand for
+      a new argument, and not one expectation changed** — which is the distinction T031
+      asks for. A suite that needed an EXPECTATION edited would be a behaviour change;
+      a suite that needed a call site widened is a signature change, and the thirteen
+      sites are listed above.
+
+      **AND `pnpm lint` IS GREEN WHILE A STRICTER INVOCATION IS NOT.**
+      `eslint src --max-warnings 0` reports one pre-existing unused-disable warning in
+      a file this chapter never opened; the gate's own script carries no
+      `--max-warnings`, exits 0, and that is the number phase 1 recorded. **Run the
+      gate's invocation, not a stricter one** — an ad-hoc command reports a failure the
+      project does not have, which is the mirror of a checker that cannot fail.
+
+      **THE WHOLE LANE: 831 of 834, and the three reds are one file that is green on its
+      own one run in four.**
+
+        the lane, with the chapter      47 suites, 1 failed, 3 tests failed
+                                        outbox.itest.ts invariants 4, 7 and 8
+        outbox.itest.ts alone, run 1    17 of 18   invariant 8, "expected 20, got 16"
+                              run 2     16 of 18   invariant 8 AND "a failing publisher
+                                                   leaves the row pending"
+                              run 3     18 of 18   GREEN
+                              run 4     17 of 18   invariant 8
+
+      **RUN 3 IS THE EVIDENCE.** A file that passes 18 of 18 is not a file this chapter
+      broke, and no reading of the three lane failures could have settled that — all
+      three are rows that vanished (`expected 2, got 0`; `expected ≥1, got 0`;
+      `expected depth 0, got 1`), which is what a neighbour draining your outbox looks
+      like and also what a regression would look like. **The isolated green run is the
+      only observation that distinguishes them.**
+
+      And the coupling is absent anyway: this chapter writes to `audit_log` and these
+      assertions count `outbox`. Phase 1's baseline recorded this same file failing
+      invariant 8 in one lane and invariants 4 and 9 in another, minutes apart, **before
+      any source file had changed** — so the control was taken before the work, which is
+      the only time it is worth anything. Six observations now, six different sets.
+
+      **AND THE FIRST LANE RUN'S OUTPUT WAS DESTROYED BY ITS OWN PIPELINE.** It was run
+      as `vitest … | grep -v | tail -20`; the command moved to the background and the
+      saved file held **17 lines** — the summary and nothing else. The failing test names
+      were gone. *Redirect a long run to a file; do not pipe it through `tail`.*

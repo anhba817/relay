@@ -67,11 +67,23 @@ and gives no membership rule. The router serves **24** mutating routes a tenant 
 which **nine** are ones a reasonable reader might include: ban, unban, delete a user, delete
 another author's message, edit another author's message, remove a member, change a member's
 role, archive a channel, unarchive a channel. **The nine are the expected inclusions and the
-twenty-five are the population owed a decision**, which are different claims — and the gap
+24 are the population owed a decision**, which are different claims — and the gap
 between them is where a classification goes wrong. Deciding which are in, in writing, with the reason, is this
 chapter's main product. It is the same shape as FR-ANL-06's *"counts derived from operational
 data"* at chapter 4.7 and FR-MED-09's *"renders as"* at 4.17: the clause's own words are the
 work.
+
+**AND THE SET CAME OUT AT EIGHT, BECAUSE THE NINTH IS NOT A REACHABLE ACTION.** T012 classified
+all 24 and *edit another author's message* is not among them: `PATCH
+/v1/channels/:channelId/messages/:messageId` is `accepts: "user"`, so a tenant key cannot reach
+it at all. FR-MOD-02 grants a key deletion of any message and is silent on editing, and
+FR-013a reads that silence as absence of permission. This paragraph predicted that *the routes
+the rule classifies wrongly are the chapter's findings*; this one the rule classified right and
+the expectation was wrong, which is the same prediction arriving from the other side.
+
+**And the stale number in this paragraph was spelled as a word.** It read *"the twenty-five are
+the population"* after six documents had been swept for `25`. A sweep for a digit does not find
+a number written out, and nothing in this project checks prose.
 
 ---
 
@@ -186,6 +198,14 @@ hand-listed, and a route added without a decision about it makes a check fail.
   one behaviour on purpose, and the change is stated rather than discovered**: a moderation
   action whose entry cannot be written now fails, where before it would have succeeded. That
   is the guarantee rather than a side effect of it.
+
+  **AND THE GUARANTEE IS SCOPED BY A CHECK RATHER THAN BY A TYPE, WHICH IS WORTH SAYING OUT
+  LOUD.** The actor reaches the write through an OPTIONAL constructor argument (FR-005c), so a
+  repository built without one performs the action and records nothing — the state this clause
+  calls unreachable, reachable. What makes it unreachable in the platform is that every
+  production construction site supplies an actor or a named absence, asserted by reading the
+  source. A required argument would have made the compiler say it instead, at 110 call sites
+  across 32 test files; the check is what that bought.
 - **FR-005a**: Where an action is not already performed inside a transaction, the feature MAY
   add one, and MUST record which actions needed it. Measured at plan time: of seven candidate
   methods, `banUser`, `deleteUser` and `deleteMessage` already open transactions and
@@ -194,6 +214,13 @@ hand-listed, and a route added without a decision about it makes a check fail.
   it able to before FR-008's decision can be applied to it. `unbanUser` is the measured case: a
   bare `UPDATE` with no `isNull` guard and no `RETURNING`, so lifting a ban and unbanning
   somebody who was never banned are the same call with the same result.
+- **FR-005c**: The actor context MAY reach the write through an optional argument rather than a
+  required one, and where it does, **every production construction site MUST supply either an
+  actor or a named value meaning *this one records nothing*, asserted by reading the source in
+  both directions.** Measured: required, the compiler names every site, which is 110 of them
+  across 32 test files, 17 fenced across 131 pages. An omission MUST NOT be how a site says it
+  records nothing — *nothing may be exempt by omission* is the rule the derivation this feature
+  builds on already states.
 - **FR-006**: A tenant MUST be able to read its own entries, ordered, filtered by a time
   window, and MUST NOT be able to read any other tenant's.
 - **FR-007**: The actor MUST identify the credential or user that acted. Where the platform
