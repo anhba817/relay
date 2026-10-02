@@ -43,9 +43,18 @@ the attack.
 **Project Type**: a chapter of a tutorial series whose artifact is a commit on `relay-platform`
 plus prose in `relay-tutorial`.
 
-**Performance Goals**: none stated by the clause. One additional insert inside transactions
-that already exist; the plan measures the cost rather than predicting it, and publishes the
-number beside the action's own.
+**Performance Goals**: none stated by the clause, and the cost is **two quantities rather than
+one**. For `banUser`, `deleteUser` and `deleteMessage` it is one additional insert inside a
+transaction that already exists. For `unbanUser`, `setMemberRole`, `archiveChannel` and
+`unarchiveChannel` it is an insert **plus a transaction those methods did not have** (FR-005a).
+An earlier draft of this line said *"inside transactions that already exist"* and was written
+before the four were measured. The plan measures both rather than predicting either.
+
+**Storage precision**: `occurred_at` is declared `timestamptz(3)` where every other column in
+this schema is the default microsecond, because the cursor compares it against a value that
+came back over the wire at millisecond precision. See `data-model.md` §1 — it is the first
+keyset cursor over a timestamp column in Postgres here, and the only place the platform's
+deviation from the constitution's *"millisecond precision"* would cost a reader rows.
 
 **Constraints**: FR-012 — no behaviour change to any action recorded. The fence chain must
 return to zero (SC-009).
@@ -80,6 +89,8 @@ specs/064-chapter-4-18/
 ├── research.md          # Phase 0 — R1..R8, with the trigger probe and its two bypasses
 ├── data-model.md        # Phase 1 — the entry, the set, the actor
 ├── quickstart.md        # Phase 1 — walk it by hand, including the attack
+├── routes.md            # Phase 2 — every mutating route, classified, with a reason
+│                        #           each. The chapter's product.
 ├── contracts/
 │   └── audit-log.md     # Phase 1 — the read route and the entry's published shape
 ├── checklists/
