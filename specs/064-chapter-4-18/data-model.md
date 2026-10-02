@@ -66,6 +66,18 @@ chapter 4.13's applies to how it is verified: ask for `Index Cond` per table und
 `SET LOCAL enable_seqscan = off`, because on a freshly migrated database a sequential scan is
 the planner making the right choice.
 
+**Measured at T032a over 50,148 rows in 230 environments: 3,712 kB against a 7,808 kB heap,
+47.5%.** The planner picks it unaided — `Index Scan`, no sort, no filter, 54 buffers, 0.171 ms
+— where the same question without it is a `Seq Scan` and a top-N heapsort at 982 buffers and
+2.231 ms. And at the 148 rows the lane held before the corpus was planted the planner chose
+`Bitmap Index Scan` + `Sort` instead: the right `Index Cond`, the ordering not from the index,
+which is 4.13's point that whether Postgres chooses an index is a property of the corpus.
+
+**And the cursor had to be a SQL row value to reach that index cond at all.** The expanded
+`a < X OR (a = X AND b < Y)` lands in a `Filter:` and discards every row of every earlier
+page. `data-model.md` said the comparison is a row value; the first implementation wrote the
+expansion with a comment claiming they were equivalent, and the plan test is what settled it.
+
 ### What the table does not have
 
 - **No `details` or `metadata` column.** FR-MOD-03 lists five fields and the chapter supplies

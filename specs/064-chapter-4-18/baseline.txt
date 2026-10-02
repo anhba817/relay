@@ -784,3 +784,234 @@ T031  179 OF 179 ACROSS THE FOUR SUITES THE SIGNATURE CHANGE TOUCHED
       as `vitest … | grep -v | tail -20`; the command moved to the background and the
       saved file held **17 lines** — the summary and nothing else. The failing test names
       were gone. *Redirect a long run to a file; do not pipe it through `tail`.*
+
+PHASE 4 — USER STORY 2: THE READ (T032 … T040)
+
+T032  THE QUERY COULD NOT LIVE WHERE THE PLAN PUT IT
+-------------------------------------------------------------------------------------
+
+      `eslint.config.mjs` restricts `drizzle-orm` to `services/api/src/db/**` — *"the
+      query engine lives inside the repository layer only (constitution I, ADR-16)"* — so
+      `audit/audit.reader.ts` cannot hold a statement. **Chapter 4.7 paid this exact bill
+      and wrote it down**: *"the plan put the job in the api BECAUSE the api owns the
+      repository and never noticed the wall between them."* Three features on, the plan
+      named `audit.reader.ts` and said nothing about the wall.
+
+      The split is `storage-reads.ts`'s: `db/audit-reads.ts` holds the SQL,
+      `audit/audit.reader.ts` holds the cursor, the window and `has_more`. **Not a method
+      on `Repository`**, and not for size: that class is built per request with an actor
+      so its WRITES can be attributed, and a page of a tenant's history should not depend
+      on the object that records history. The tenancy predicate is a required parameter,
+      which is as strong as `this.environmentId` and visible at the call site.
+
+T032a THE MEASUREMENT FALSIFIED THE CODE'S OWN COMMENT, WHICH IS WHY IT WAS TAKEN
+-------------------------------------------------------------------------------------
+
+      Corpus: 50,148 rows across 230 environments, planted and removed.
+
+        heap 7,808 kB · audit_log_read_idx 3,712 kB · pkey        the index is 47.5% of
+                                                                  the heap it serves
+
+        the planner's own choice, nothing forced
+          Index Scan using audit_log_read_idx · no Sort · no Filter
+          54 buffers · 0.171 ms
+
+        the same question with the index dropped
+          Seq Scan + top-N heapsort · Rows Removed by Filter: 49,898
+          982 buffers · 2.231 ms              18.2x the buffers, 13x the time
+
+      **AND THE KEYSET PREDICATE WAS NOT REACHING THE INDEX.** The first version wrote it
+      as drizzle's `or(lt(...), and(eq(...), lt(...)))`, with a comment in this very file
+      claiming *"the expanded form is the same predicate and the planner treats it the
+      same way, which T032a measures rather than assumes."* It does not:
+
+        the OR form    Index Cond: (environment_id … AND occurred_at >= … AND < …)
+                       Filter:     ((occurred_at < …) OR (… AND id < …))
+                       Rows Removed by Filter:  51   on page 2
+                                               201   on page 5
+        the ROW form   Index Cond: (… AND ROW(occurred_at, id) < ROW(…, …))
+                       no Filter, nothing removed
+
+      **The OR form re-walks every row of every earlier page** — O(page depth × limit),
+      which is the exact cost keyset pagination exists to avoid — and it is invisible at
+      lane scale, where this tenant holds 250 rows and both forms cost 6 buffers. Chapter
+      4.13's rule said where to look: *a predicate the planner cannot push down returns an
+      index scan carrying a `Filter:`*, so **`Index Cond` is the question and `Index Scan`
+      is not.** Drizzle has no row-value constructor; the predicate is `sql` now.
+
+      **AND THE SMALL-TABLE PLAN IS A THIRD ANSWER AGAIN.** At 148 rows the planner chose
+      `Bitmap Index Scan` + `Sort` — correct `Index Cond`, ordering not from the index.
+      With `enable_bitmapscan` off as well it becomes the ordered `Index Scan` with no
+      sort, so **the index can serve the order and the planner declines to use it on a
+      table where neither costs anything**. 4.13's finding exactly: whether Postgres
+      CHOOSES an index is a property of the corpus.
+
+      **THE PLAN TEST EXPLAINS THE ROUTE'S OWN STATEMENT.** `auditPageQuery` is the
+      builder and `auditPage` awaits it, so the test calls `.toSQL()` on the object the
+      route sends rather than re-typing the query — a plan test built from a hand-written
+      copy is a second implementation agreeing with itself. **Run red against the OR
+      form**, with the `Filter:` printed in the failure, and green after restoring,
+      verified byte-identical by `diff`.
+
+T033  THE VOCABULARY IS TWO SETS AND THE SECOND COSTS A QUERY ONLY WHEN IT IS USED
+T034  -------------------------------------------------------------------------------
+T035
+      The classified set is computed once; the actions a tenant's rows actually hold are
+      a query, and the controller asks for them **only on a request that names an
+      `action`**. The request log's module considered deriving its vocabulary from the
+      data and declined because it *"costs a query per page"*; here the common path is
+      unchanged and the filter's own request pays for itself.
+
+      `AuditModule` registered in `app.module.ts`. **Only a running app asks whether a
+      module provides what it declares** — chapter 4.10 shipped a `MediaModule` that
+      compiled, typechecked and linted and answered `Nest can't resolve dependencies` on
+      the first request — and the gauntlet boots the whole `AppModule`, so 62 passing
+      tests is that question answered.
+
+T036  THE DERIVATION FOUND THE ROUTE FIRST, FOR THE EIGHTH TIME
+T037  -------------------------------------------------------------------------------
+
+        before the entry   47 derived, 39 attacked, 8 exempt
+        after              48 derived, 40 attacked, 8 exempt
+                           (read 6, write 26, credential 4, list 4, exempt 8)
+        gauntlet           62 of 62, from 61
+
+      **AND THE ATTACK PLANTS ITS ROWS THROUGH THE PRODUCT.** The request log's has to
+      `INSERT` because nothing in the composed stack writes that table; an audit entry has
+      a writer, so this one creates a throwaway user in each environment and bans it over
+      HTTP. The plant exercises credential to principal to actor to row, which is the path
+      the leak check is about. A throwaway user and not the fixture's own, because banning
+      `t.attacker.userExternalId` would leave a banned user for whatever attack runs next
+      — 045's action-scoped-too-wide, eight times over.
+
+      **AND `rowsOf` MET ITS THIRD ENVELOPE.** It knew `data` and `requests`; the audit
+      log serves `entries`, so `verdict.count` would have been 0 and the attack's own
+      control would have failed as *"the attacker's own audit log came back empty"*.
+      Chapter 4.8 had already refused to replace this table with *"the first array-valued
+      property"* and was right; adding a name is the whole cost of keeping it. **And the
+      `requests` arm had no test at all** — found while adding one for `entries`.
+
+      **AND THE BODY SHAPE WAS A GUESS THAT WAS WRONG.** `POST /v1/users` takes
+      `{ users: [...] }` and answers 200, not a single entry and 201. The attack failed
+      `expected 400 to be 200` on its first run, which is the cheap version of this
+      mistake: the assertion named the status so the failure named the cause.
+
+T038  THE SUITE IS 16 OF 16, AND ONE EXEMPTION BOUGHT TWO STATEMENTS
+T038a -------------------------------------------------------------------------------
+T039
+      `audit.itest.ts` is on `eslint.config.mjs`'s driver-exempt list, and it is that
+      list's honest case in its purest form: **FR-004 requires an `UPDATE` and a `DELETE`
+      to be attempted on `audit_log`, there is no repository method for either, and there
+      must never be one.** The suite's reads go through `db/audit-reads.ts` like the
+      route's, so the exemption buys exactly the two statements it exists for.
+      `driver-exempt.test.ts` 4 of 4; `pnpm lint` REAL EXIT 0.
+
+      The read-side additions: two environments doing the same thing and a read that
+      returns one tenant's (and the whole serialised body checked, not only the rows); the
+      filter's complement rather than its count; two pages with `has_more`, a
+      `next_cursor` that fetches the rest, no row in both pages and no row between them;
+      and the refusals by field — `limit` 0 and 201, an unknown action, a malformed
+      cursor, and a window whose end is not after its start.
+
+      **The unknown-action refusal is asserted in both directions**, because a vocabulary
+      that admitted everything would make the first half vacuous: a retired action the
+      column still holds is accepted, and a route nobody ever served is refused.
+
+T040  NO ERROR CODE IS OWED. Re-checked rather than trusted: `forbidden` and
+      `invalid_request` are both in `packages/protocol/src/codes.ts`, and the refusals
+      this chapter writes use those two and nothing else.
+
+PHASE 5 — USER STORY 3: THE SET, PUBLISHED AND CHECKED (T041 … T045)
+
+T041  24 entries, a reason on each, and the reason is the part worth reading in a year.
+T044b The procedure — classify, write, assert — is a header comment in the same file,
+      because the person adding the next entry is reading the entries and not the
+      chapter. `codes.ts` is the registry this one is modelled on and keeps its own
+      convention inline for the same reason.
+
+T042  FIVE CHECKS, AND TWO OF THEM ARE ABOUT THE WRITE SIDE
+-------------------------------------------------------------------------------------
+
+        derived something to compare against                   the instrument looked
+        every mutating tenant-reachable route is classified    direction 1
+        every entry names a route the application serves       direction 2
+        every ACTION the repository writes is in the set       the write side
+        every route owing an entry has a writer                the other write side
+
+      5 of 5. **Directions 3 and 4 are not in the plan and are the two that compare the
+      LIST against the CODE** rather than against the router. A name in `ACTION`
+      classified `not-moderation` would be the platform recording an action it decided is
+      not moderation; a `moderation` route with no `ACTION` name would be a route
+      classified as owing an entry that nothing writes — 4.6's rollup with a producer and
+      no reader, and 4.16's column with a writer and no reader, one movement on.
+
+T043  SC-004 RUN RED, AND THE SECOND HALF IS THE INTERESTING ONE
+-------------------------------------------------------------------------------------
+
+      A throwaway `POST /v1/channels/probe-unclassified` added to the controller:
+
+        moderation-routes.itest.ts   1 failed of 5
+          "these routes exist and nobody decided whether they are moderation:
+           POST /v1/channels/probe-unclassified"
+
+      **THEN THE PROBE WAS CLASSIFIED IN `targets.ts` ALONE**, which is T011's decision
+      put to a test rather than argued:
+
+        targets.itest.ts             9 of 9 GREEN      the SECURITY list is satisfied
+        moderation-routes.itest.ts   still red         the COMPLIANCE list is not
+
+      A route can be classified for attack and unclassified for audit, and only two lists
+      can say so. The field-on-`targets.ts` design would have made one decision stand for
+      both — which reads as economy and is a route being audited by accident or not at
+      all depending on which question somebody was answering that day.
+
+      Both files restored and verified: `git diff` empty on the controller, 0 occurrences
+      of `probe-unclassified` in either, 14 of 14 across both suites.
+
+T044  THE RULE'S MISCLASSIFICATIONS, WHICH THE SPEC PREDICTED
+-------------------------------------------------------------------------------------
+
+      The rule: *mutating, tenant-reachable, and acting on something other than the
+      caller — and where the caller decides, the credential decides.*
+
+      **ONE EXPECTED INCLUSION DOES NOT EXIST.** *Edit another author's message* was the
+      spec's ninth, and `PATCH /v1/channels/:channelId/messages/:messageId` is
+      `accepts: "user"` — a tenant key cannot reach it. The rule classified it right and
+      the expectation was wrong, which is the same prediction coming true from the other
+      side.
+
+      **AND THE RULE ADMITS TWO ROUTES THE SET EXCLUDES**, both on purpose:
+
+        POST /v1/channels/:channelId/members   adding a member IS acting on another, and
+                                               a tenant's onboarding does it all day
+        PATCH /v1/users/:externalId            editing a profile IS acting on another
+
+      Together they name the line the set actually draws, which the rule does not:
+      **standing, not data.** Ban, delete, role and removal change what a person may do;
+      a display name and a membership row do not. That sentence is the chapter's, and it
+      was not available until the rule had been applied to all 24 and seen to be wrong
+      twice in the same direction.
+
+T045  `clauses.md` WRITTEN: FR-MOD-03 IS TEN OBLIGATIONS, NINE MET OR DEMONSTRATED
+T044c -------------------------------------------------------------------------------
+
+      The tenth is **retained for 1 year**, unmet by decision: nothing prunes this table
+      and **ADR-28 records that this platform has no scheduler** — the same absence 4.9
+      found for FR-ANL-06's daily job. What was refused is publishing a `retention_edge`
+      the route does not enforce, which is how the request log's envelope would have been
+      copied without thinking.
+
+      **AND NFR-SEC-10 ASKS FOR THE SAME ARTIFACT AND IS NOT SATISFIED BY IT.**
+      *"Administrative access to production data shall … be logged to an immutable audit
+      trail."* Its actor is an operator with a database password, and that is **exactly
+      the actor this chapter's immutability cannot defend against**: a trigger a superuser
+      can drop is not an audit trail for a superuser. Three obligations, none met, one
+      unreachable as built. A reader who sees *"immutable audit log, FR-MOD-03, shipped"*
+      would reasonably assume NFR-SEC-10 came with it.
+
+      One change moves both and it is a deployment change rather than a chapter: a
+      separate non-superuser role for the application. It is ADR-35's reversal condition.
+
+      **T044a IS DEFERRED TO T062**, which is where the chapter page is created. The
+      procedure it publishes is already written and lives in `moderation-routes.ts`'s
+      header (T044b); the prose version has nowhere to go until phase 8.

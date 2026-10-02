@@ -139,6 +139,18 @@ MUST NOT affect … API availability"* is about a dependency this route does not
 paragraph is wrong and `statement_timeout` is the answer.** It is written here so the next
 reader knows the question was asked rather than skipped.
 
+**MEASURED, AND THE PARAGRAPH HOLDS — AFTER THE MEASUREMENT FIXED THE QUERY.** Over 50,148
+rows across 230 environments the planner chooses `Index Scan using audit_log_read_idx` on its
+own, with no sort and no filter: **54 buffers, 0.171 ms**, against **982 buffers and 2.231 ms**
+for the same question with the index dropped. The index costs 3,712 kB against a 7,808 kB heap.
+
+But the first version of the keyset predicate was **not** an index range. Written as
+`occurred_at < $1 OR (occurred_at = $1 AND id < $2)` it lands in a `Filter:` and the scan
+discards every row of every earlier page — `Rows Removed by Filter: 51` on page 2, `201` on
+page 5 — which is O(page depth) and the cost keyset pagination exists to avoid. A true row
+value, `(occurred_at, id) < ($1, $2)`, reaches the `Index Cond`. The route sends the row-value
+form and a test explains the route's own statement to say so.
+
 ## Refusals
 
 | condition | status | code |
