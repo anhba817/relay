@@ -1681,6 +1681,12 @@ T080  THE THIRD RUN IS GREEN ON ALL FOUR JOBS WITH AN EMPTY ERROR SET (SC-008)
         37072661053  481f87d  failure  the chapter                  2
         37073989205  5c38314  failure  the fence repair             1
         37076601118  0c7fc0e  **SUCCESS**  the pin repair           **0**
+        37078070095  33de3b6  **SUCCESS**  the record               **0**
+
+      **Two consecutive green runs with an empty error set**, which is more than the
+      baseline comparison needs and is what 057 asked for after measuring a set that
+      moved across three runs: one green run supports *this run introduced nothing new*,
+      and two support *the set is where it was*.
 
       **The close-out set is identical to the baseline, empty in both directions** —
       which 4.17 noted is the hardest baseline there is, because an empty set cannot be
