@@ -210,3 +210,39 @@ T010  THE POPULATION IS 24, AND SIX DOCUMENTS SAID 25
       `accepts` column is the derivation's own, and the four `either` routes are visible
       in it — `POST …/messages`, `DELETE …/messages/:messageId`, `POST /v1/media`,
       `PUT …/channels/:channelId/read` — which is where FR-002a's third value applies.
+
+T007  THE CHAPTER'S OPENING FACT, RE-VERIFIED
+-------------------------------------------------------------------------------------
+
+        create 200 · ban 200 · unban 200
+        banned_at: <NULL>
+
+      Two moderation actions, and the row is byte-identical to a user who was never
+      banned. `coalesce(banned_at::text,'<NULL>')` rather than the bare column, because
+      the point of the measurement is an absence and an empty trailing field is the
+      easiest thing in a terminal to read past.
+
+T008  FR-MOD-02 IS MET, RUN RATHER THAN READ — AND THE FRAGMENT IS UNPUBLISHED
+-------------------------------------------------------------------------------------
+
+      `docs/12` §7.5 says to check this before chapter 4.19, and this chapter needs the
+      answer because it decides whether the log has a writer on day one.
+
+        sent      author='outside-bot'
+        DELETE by the application credential, which is not the author:  **204**
+        history   text=None user='outside-bot'          the tombstone, as designed
+        metadata  null                                   on the response
+
+      **FR-MOD-02 is already met**, so the log has a writer the day it ships.
+
+      **AND THE NEAREST THING TO AN AUDIT RECORD TODAY CANNOT BE READ BY ANYBODY.** The
+      response says `metadata: null`; the database says
+
+        {"deleted_by": {"kind": "application"}}
+
+      So `messages.metadata.deleted_by` is written and **not published on any read
+      path**. The spec's Context already says it is a mutable column on the row it
+      describes, carries no request id and cannot be appended to. Add the fourth: it
+      holds the actor's KIND and not which credential, and **no customer can see it at
+      all.** The one fragment the platform records about a moderation action is
+      invisible to the tenant whose log it would be.
