@@ -309,8 +309,13 @@ Each of these was decided rather than asked, with the evidence that decided it.
 ## Out of Scope
 
 - **FR-MOD-01 and FR-MOD-02's chapter.** Row 20 owns them, and §7.5 of `docs/12` says to check
-  their premise first. This feature notes that FR-MOD-02 appears already met and leaves the
-  measurement to the chapter that owns it.
+  their premise first. **This feature MEASURES FR-MOD-02 and does not own it**, which are
+  different things: the Context section rests on that clause being already met — it is the
+  whole argument that this chapter is not building a store with no writer — so the measurement
+  is this feature's and T008 runs it. What stays row 20's is the chapter: the clause amendment,
+  the surface, the prose. **An earlier draft of this entry said the measurement was left to
+  that chapter too**, which would have had an executor skip the evidence for this one's central
+  claim by following the right document.
 - **The retention job.** Row 21, FR-MOD-06.
 - **Erasure.** Row 22, FR-MOD-04 — including the question of what erasure does to an audit
   entry naming the erased user. This feature records the tension; it does not resolve it.
