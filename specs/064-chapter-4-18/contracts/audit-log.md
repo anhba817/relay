@@ -31,13 +31,27 @@ does not ask for. A tenant's moderation history is the tenant's.
 | `to` | timestamp | — | exclusive upper bound |
 | `action` | enum | all | **validated against the set as the router serves it now**, not against a list frozen at import time |
 | `limit` | integer | 50 | bounded; the bound is published and a value outside it is a 400 naming the field |
-| `cursor` | opaque | — | keyset, as the request log's |
+| `cursor` | opaque | — | keyset on the **pair** `(occurred_at, id)`, compared as a row value — see below |
+
+**AND THE ENUM ADMITS WHAT THE COLUMN HOLDS, NOT ONLY WHAT THE SET CURRENTLY CLASSIFIES.** A
+route reclassified from `moderation` to `not-moderation` — which rows 20, 21 and 22 may do —
+leaves entries carrying an action the current set no longer names, and a filter built from the
+set alone would refuse a value that exists in the data. **So an action, once recorded, stays in
+the vocabulary.** Chapter 4.8 met the same shape from the other side: *"the repair that made it
+safe removed the most diagnostic question it could ask"*, and its answer was to keep
+`unmatched` as a member of the set rather than let the filter be narrower than the table.
 
 **THE `action` ENUM IS BUILT PER REQUEST FROM THE INJECTED SET.** Chapter 4.8 built its
 `endpoint` filter the same way and the reason transfers exactly: a filter whose vocabulary is
 frozen at import time drifts from the router that produces the values, and the drift is silent
 in the direction that matters — a real action becomes unfilterable. `buildRequestLogQuerySchema(this.endpoints.get())`
 is the shape to copy.
+
+**THE CURSOR IS A PAIR, AND THE PRECEDENT IS WHY.** `occurred_at` is not unique, and
+`request-log/reader.ts` carries the measurement that settles it — *"42 `(environment_id, ts)`
+pairs in this lane hold more than one row; a `ts`-only comparison skips or repeats all 89 of
+them."* The comparison is `(occurred_at, id) < (…, …)` as a row value and the index carries
+`id` as its third column so the planner can use it.
 
 **And a filter's promise is that nothing else comes back.** Chapter 4.8's finding, in as many
 words: *what a filter promises is that nothing ELSE comes back; the count of what does is the

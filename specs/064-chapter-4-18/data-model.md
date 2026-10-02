@@ -26,11 +26,26 @@ later than the action, and the answer is that it cannot. The name says which que
 answers. **If a later chapter ever writes an entry outside the action's transaction, this name
 is the thing that will have to change, and that is the right place for the friction.**
 
-**One index: `(environment_id, occurred_at DESC)`.** It is the read route's only access path
-(FR-006) and the tenancy predicate's. Chapter 4.15's rule applies at the point it is added —
-*measure an index you add* — and chapter 4.13's applies to how it is verified: ask for
-`Index Cond` per table under `SET LOCAL enable_seqscan = off`, because on a freshly migrated
-database a sequential scan is the planner making the right choice.
+**One index: `(environment_id, occurred_at DESC, id DESC)`.** It is the read route's only
+access path (FR-006) and the tenancy predicate's.
+
+**THE THIRD COLUMN IS THE CURSOR'S TIEBREAKER AND IT IS NOT OPTIONAL.** `occurred_at` is not
+unique — two moderation actions in one instant is what a bulk script does — and a keyset cursor
+on a non-unique column **skips or repeats rows at every page boundary**. The precedent this
+chapter copies had already measured it. `request-log/reader.ts:183` compares the pair and says
+why:
+
+> THE PAIR, COMPARED AS A TUPLE… 42 `(environment_id, ts)` pairs in this lane hold more than
+> one row; a `ts`-only comparison skips or repeats all 89 of them.
+
+So the cursor is `(occurred_at, id)` compared as a row value, and the index carries `id` so the
+planner can use it. **An earlier draft of this file specified the two-column index and the
+contract said "keyset, as the request log's" — citing a precedent is not reading it.**
+
+Chapter 4.15's rule applies at the point the index is added — *measure an index you add* — and
+chapter 4.13's applies to how it is verified: ask for `Index Cond` per table under
+`SET LOCAL enable_seqscan = off`, because on a freshly migrated database a sequential scan is
+the planner making the right choice.
 
 ### What the table does not have
 
