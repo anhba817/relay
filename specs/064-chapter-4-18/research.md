@@ -60,10 +60,39 @@ grant would be in the migration and the table would be mutable.
     delete from probe_immutable where id=1;        -->  ERROR: audit entries are append-only
                                                         rows after delete attempt: 1
 
-A trigger fires for a superuser and refuses both verbs. **This would be the first trigger in
-this schema** — `grep -rl "CREATE TRIGGER\|CREATE FUNCTION" services/api/migrations/` returns
-nothing across twenty migrations — so it is a new mechanism and constitution VII asks for a
-justification, which is R2 itself.
+A trigger fires for a superuser and refuses both verbs.
+
+**AND THE GREP THAT SAID THIS WOULD BE THE SCHEMA'S FIRST TRIGGER WAS MEASURING A RULE, NOT A
+VACUUM.** This note read: *"`grep -rl "CREATE TRIGGER|CREATE FUNCTION" services/api/migrations/`
+returns nothing across twenty migrations, so it is a new mechanism."* The zero is **enforced**.
+`packages/test-harness/src/no-trigger-in-migrations.test.ts` asserts it over every `.sql` in
+that directory and passes today — 3 of 3 — under the heading *"the guard is not a product
+migration"*:
+
+    expect(sql, `${file} creates a trigger`).not.toMatch(/CREATE\s+TRIGGER/i);
+    expect(sql, `${file} names the sentinel`).not.toMatch(/__sentinel/i);
+
+So T017 would turn a green unit test red at the second task of the MVP phase. **A zero from an
+instrument is a claim about the corpus only if you know what produced it** — this project's own
+rule, and the grep above is the case where the answer is *a test that exists to produce it*.
+
+**THE RULE IS WIDER THAN ITS REASON, AND THIS CHAPTER IS THE FIRST THING TO NEED THE
+DIFFERENCE.** The test's own comment scopes it: *"The guard must exist only in test databases
+(constitution IV)… the way that promise breaks is somebody moving the SQL into
+`services/api/migrations/` because that is where SQL lives — at which point the api ships a
+trigger whose only purpose is to reject its own legitimate sweeps, in production."* That is an
+argument about **the sentinel guard**, which the second assertion already catches by name. The
+first assertion catches every trigger, including one whose purpose is the opposite — to refuse
+writes the api must never make rather than writes it makes constantly.
+
+**The decision is T014c's and it is to narrow the first assertion to the guard**, keeping the
+`__sentinel` check unchanged, with the test's own comment extended to say what it now permits
+and why. Not the alternatives: a migration is the only thing that applies schema, so the
+trigger cannot live elsewhere, and `REVOKE` was measured inert four paragraphs up.
+
+Constitution VII still asks for a justification and this is still it — **a corrected one**: the
+mechanism is new to the product schema, the obvious alternative does nothing here, and the rule
+that made it look impossible was written about a different trigger.
 
 **AND THE TWO BYPASSES WERE MEASURED, BECAUSE A SECURITY CLAIM WITH NO ATTACK AGAINST IT IS A
 COMMENT.**

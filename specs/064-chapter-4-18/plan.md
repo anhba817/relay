@@ -74,7 +74,7 @@ classify. Entry volume is one row per moderation action, which on this lane is a
 | **IV. Single writer, single source of truth** | **MET by placement, and the two facts are named** | The entry is written by the same transaction that performs the action, in the repository layer, which is the only place a lint rule permits a query. No second writer. **And `users.banned_at` and an entry are not the same fact**: the column answers *is this user banned*, the log answers *what did somebody do and when*, and the column is authoritative for the first. A disagreement between them is not a reconciliation this chapter builds — DR-17 is what that question becomes when somebody asks it — and saying so is the difference between one fact with one home and two facts nobody distinguished. |
 | **V. API-first** | **MET** | The read route is a published route with a documented contract, not an operator's `psql`. |
 | **VI. Requirement-driven, test-verified** | **ENGAGED** | FR-004's refusal must be demonstrated by a probe that attempts the write, not asserted by a comment — chapter 4.17's *a comment is not a test*, applied to the mechanism this chapter exists to build. |
-| **VII. Boring by design** | **ENGAGED, with one justification owed** | No dependency, no service, no container. One new mechanism: a Postgres trigger, the schema's first. R2 is the justification and it is measured — the obvious alternative, `REVOKE`, does nothing on this deployment. |
+| **VII. Boring by design** | **ENGAGED, and the justification was rebuilt on a corrected premise** | No dependency, no service, no container. One new mechanism: a Postgres trigger. R2 called it *the schema's first* on a grep that returned zero — and **a test enforces that zero**: `no-trigger-in-migrations.test.ts` forbids `CREATE TRIGGER` in every migration and passes today. The rule is wider than its own stated reason, which is about the sentinel guard; T014c narrows it before phase 3 writes anything. The justification stands and is now *the mechanism is new to the product schema, the obvious alternative does nothing here, and the rule that made it look impossible was written about a different trigger.* |
 
 **No violation requires a Complexity Tracking entry, and VII asks for one thing this plan did
 not originally produce.** The trigger is new and is argued in R2 against an alternative measured
@@ -205,6 +205,13 @@ document, the lane set, push, the per-error CI comparison, tag.
 
 Nothing in the design moved a verdict. Two gained evidence and one gained a limit.
 
+**VII's justification survived being wrong about why it was needed.** The claim *"the schema's
+first trigger"* came from a grep whose zero is produced by a test, not by absence of thought —
+analysis pass 18, nine passes after the previous CRITICAL, from one row of `docs/12` §4.
+**A zero from an instrument is a claim about the corpus only if you know what produced it**, and
+this is the case where the answer was *a test written to produce it*. What the mechanism is
+justified against is unchanged and still measured.
+
 **VII gained its justification and it is measured, not argued.** The trigger is this schema's
 first, and the alternative a reviewer would reach for — `REVOKE UPDATE, DELETE` — was run and
 **does nothing**: the api connects as `relay`, `select usesuper` answers `t`, and the update
@@ -270,6 +277,13 @@ to see, which is the only job it has.
   does not exist. Measured: **257 Part 4 ordinals** across 16 chapters, and **27 Part 3 ones**
   back on a surface 045 took to zero by hand. T009a records the number; the standing rule keeps
   this chapter from adding to it; **repairing 257 is nobody's task yet.**
+- **This chapter enlarges row 22, and the part's name depends on row 22 landing.** `docs/12`
+  §2.2: *"The part is named* Everywhere the data went*… its meaning only completes at movement
+  VII. **The name is a promise the last movement has to keep. If erasure is deferred, the title
+  lies and must change with it.**"* Research R8 defers *what erasure does to an audit entry
+  naming an erased user* — correctly, FR-MOD-04 owns it — but **that obligation did not exist
+  when the part was named.** The tension is recorded in R8 and in Out of Scope; the fact that
+  this chapter added to the last movement's bill is recorded here.
 - **`docs/06-adr-deep-dives.md` is four ADRs behind the summary.** ADR-31 through 34 are in
   `docs/05-sad.md` and appear **zero** times in the deep dive. T054b writes ADR-35 into both,
   which keeps the gap from becoming five and does nothing about the four — chapter 4.5 recorded
