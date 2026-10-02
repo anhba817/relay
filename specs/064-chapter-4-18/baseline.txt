@@ -246,3 +246,196 @@ T008  FR-MOD-02 IS MET, RUN RATHER THAN READ — AND THE FRAGMENT IS UNPUBLISHED
       holds the actor's KIND and not which credential, and **no customer can see it at
       all.** The one fragment the platform records about a moderation action is
       invisible to the tenant whose log it would be.
+
+PHASE 2 — FOUNDATIONAL: THE DECISION (T010 … T015)
+
+T011  THE BILL DECIDED R3, AND THE ARGUMENT AGAINST THE SIBLING DISSOLVED WHEN IT WAS
+      CHECKED
+-------------------------------------------------------------------------------------
+
+      R3's question: the moderation flag as a field on `targets.ts`'s 47 entries, or a
+      sibling list with its own both-directions check.
+
+      The shape a field would have to take is not in dispute. It mirrors `exempt`'s
+      `because` exactly — `moderation` required on every entry because *nothing may be
+      exempt by omission* is the file's own first rule, and a reason required on the
+      eight that are in the set. Built that variant and measured the diff against the
+      591-line file:
+
+        -U6     16 hunks, 455 published lines
+        -U8      7 hunks, 490
+        -U10     4 hunks, 510
+        -U16     1 hunk,  541          the file is 591 lines
+
+      **A CHANGE THAT TOUCHES EVERY ENTRY OF A LIST HAS NO ECONOMICAL DIFF.** Widening
+      context to collapse the hunks publishes more of the file each time, and at the
+      width where it is one hunk the reader is being shown 92% of a file to see 55
+      changed lines. The three ways out are all bad: 16 hunks, or a whole body that
+      chapter 3.4 already publishes and that re-publishing is the 111 -> 203 trap, or
+      the field on the eight only — 3 hunks, 70 lines, and the omission rule given up
+      for exactly the saving that makes it tempting.
+
+      **AND THE HUNKS COULD NOT GO IN THE CHAPTER ANYWAY.** `fences/post-series.md`
+      carries six `targets.ts` hunks at `-U6`, anchored at lines 124, 191, 272, 287, 378
+      and 405. Insertions spread through the file land inside those windows, so a
+      chapter hunk would unanchor the appendix's own — 4.8's rule, which T069 already
+      applies to this file. The decision would cost 16 hunks placed in the appendix
+      where no reader of the chapter sees them.
+
+      **AND THE REASON THE SPEC GAVE FOR PREFERRING THE FIELD IS NOT TRUE.** The trade
+      was recorded as *one list against two lists that can fall out of step with the
+      router independently*. They cannot, if both check against the router: the
+      derivation is `app.getHttpAdapter().getInstance().router.stack`, and a sibling
+      pinned to it by the same both-directions pair drifts from the router no more than
+      `targets.ts` does. What the two lists can drift from is each other, and that costs
+      nothing, because neither is derived from the other.
+
+      **DECIDED: a sibling, `services/api/src/audit/moderation-routes.ts`, with its own
+      both-directions check against the same derived list** (T042). Zero hunks on
+      `targets.ts`, zero disturbance to its six appendix hunks and thirteen fence sites,
+      and the chapter publishes one new file whole — which is the form that shows a
+      reader a decision rather than a scattering of inserted lines.
+
+      The second reason, found while measuring the first: the gauntlet is the suite
+      constitution VI names as gating releases. A compliance classification living in
+      its list means a change to the moderation set turns the isolation gauntlet red.
+      Two unrelated reasons behind one red is what 4.12 measured the cost of.
+
+T012  THE RULE YIELDS EIGHT, THE SPEC EXPECTED NINE, AND THE NINTH ACTION DOES NOT EXIST
+-------------------------------------------------------------------------------------
+
+      `routes.md` carries all 24 rows with a reason each.
+
+        moderation                     7
+        moderation-when-application    1     DELETE …/messages/:messageId (FR-002a)
+        not-moderation                16
+                                      --
+                                      24
+
+      The spec's ninth expected inclusion was *edit another author's message*. It is not
+      in the set because **it is not a reachable action**: `PATCH
+      /v1/channels/:channelId/messages/:messageId` is `accepts: "user"`. FR-MOD-02 grants
+      a tenant key deletion of any message and is silent on editing, and FR-013a reads
+      silence as absence of permission — which `repository.ts` states in its own comment:
+      *"this route accepts both credential classes and the edit accepts one."*
+
+      The spec predicted *"the routes it classifies wrongly are the chapter's findings"*.
+      This one the rule classified right and the expectation was wrong, which is the same
+      prediction arriving from the other side.
+
+      The two calls that could have gone the other way are `POST …/members` and `PATCH
+      /v1/users/:externalId`, both excluded, and together they name the line the set
+      actually draws: **standing, not data.**
+
+T013  Recorded in `routes.md`. Nine `/internal/` routes, outside by construction.
+
+T014  FR-008 PER ACTION, AND THE EIGHT DO NOT HAVE ONE SHAPE
+-------------------------------------------------------------------------------------
+
+      Read all eight write methods rather than generalising from `banUser`:
+
+        method             transaction   reports a change        no-op guard
+        banUser                yes       `.returning()`          inside the tx
+        unbanUser              NO        **no — returns void**   none
+        deleteUser             yes       boolean                 inside the tx
+        removeMembers          yes       an outcome object       BEFORE the tx
+        setMemberRole          NO        `.returning()`          --
+        archiveChannel         NO        `.returning()`          --
+        unarchiveChannel       NO        `.returning()`          --
+        deleteMessage          yes       two-branch return       --
+
+      **A REFUSED ACTION EARNS NO ENTRY.** A refusal is a request, and the request log
+      (4.8) already holds every one with its status. An audit log that also holds
+      refusals is a second request log with a worse retention policy, and FR-MOD-03's
+      five fields — actor, action, target, timestamp, request id — describe something
+      that happened.
+
+      **AN ACTION THAT CHANGES NO STATE EARNS NO ENTRY**, and the four that can tell say
+      so themselves: `banUser` returns `[]`, `deleteUser` returns `false`,
+      `removeMembers` returns an outcome, `deleteMessage` branches. A re-ban writes
+      nothing and is recorded as nothing. The entry goes after the guard, inside the
+      transaction, where the method already knows the answer.
+
+      **AND `unbanUser` CANNOT ANSWER THE QUESTION AT ALL** — `Promise<void>`, no
+      `.returning()`, no transaction. It is half the chapter's opening demonstration and
+      it is the one method of the eight that does not know whether it did anything. That
+      is T014b's problem and T026's work.
+
+T014a THE DRAFT'S CONSEQUENCE IS THE OPPOSITE OF THE SCHEMA'S CONVENTION
+-------------------------------------------------------------------------------------
+
+      `data-model.md` §1 said *"a tenant's entries die with the tenant"*, as a consequence
+      of following the schema's usual foreign key. Checked:
+
+        `.references(() => environments.id)` with no `onDelete`      every tenant FK
+        `onDelete("cascade")` anywhere in `schema.ts`                1, and it is
+                                                                     media_objects' own
+                                                                     parent/child FK
+        any code that deletes an environment                         none in services/api
+
+      Postgres defaults to `NO ACTION`, so the convention **refuses** a delete that would
+      orphan rows. **DECIDED: follow the convention — no `onDelete`.** For an audit log
+      the default behaviour is the one you would choose on purpose: an environment with
+      moderation history cannot be dropped out from under it, and nothing in the platform
+      wants to drop one. §1 is amended, because it stated the consequence backwards.
+
+      Row 22's user case is untouched and stays row 22's (research R8).
+
+T014b FOUR ACTIONS TAKE FR-012's EXCEPTION, AND THREE OF THEM GAIN LESS THAN THE TASK
+      SAID
+-------------------------------------------------------------------------------------
+
+      FR-005 (the entry is written atomically with the action) and FR-012 (this chapter
+      adds no transaction) cannot both hold for `unbanUser`, `setMemberRole`,
+      `archiveChannel` and `unarchiveChannel`. FR-005a permits the exception; these four
+      take it.
+
+      What each gains is not the same, and the task's own list was wrong about three of
+      them. **`setMemberRole`, `archiveChannel` and `unarchiveChannel` already report
+      whether a row changed** — all three call `.returning()`. A transaction gives them
+      atomicity and a new way to fail, and nothing else.
+
+      **`unbanUser` gains all three**, because it has none: a transaction, a `.returning()`
+      that lets it answer T014's question, and a failure mode it did not have. It changes
+      signature from `Promise<void>`, which is a published contract — T026's bill.
+
+T014c NARROWING A TEST THAT PASSES, AND SAYING SO
+-------------------------------------------------------------------------------------
+
+      `packages/test-harness/src/no-trigger-in-migrations.test.ts` passes 3 of 3 today and
+      asserts `not.toMatch(/CREATE\s+TRIGGER/i)` over every `.sql` under
+      `services/api/migrations/`. T017 writes a migration with a trigger in it, so the
+      test goes red at the second task of the MVP phase.
+
+      **The rule is wider than its reason.** Its own comment scopes it to the sentinel
+      guard — a trigger *"whose only purpose is to reject its own legitimate sweeps, in
+      production"*. The audit trigger's purpose is the opposite: it refuses writes the api
+      must never make, in production, deliberately.
+
+      **DECIDED**, before any migration is written:
+
+        - the first assertion narrows to the guard — a trigger naming `__sentinel`
+        - the `__sentinel` assertion is left exactly as it is
+        - the comment gains what is now permitted and why, naming this chapter
+        - the third test keeps its positive control, and gains one: the narrowed
+          pattern must still match the guard's own SQL
+
+      Recorded as a deliberate change to an existing test. A defect found in earlier work
+      is recorded with its bill; this is not a defect, it is a rule meeting the case its
+      author did not have, and the distinction is worth the four lines it costs.
+
+T015  ONE NAME, AND IT IS THE ROUTE'S OWN
+-------------------------------------------------------------------------------------
+
+      The `action` column holds `METHOD /path`, the same string `targetKey` builds from
+      the derived router — `POST /v1/users/:externalId/ban`, `DELETE
+      /v1/channels/:channelId/archive`. Not a verb invented for the log.
+
+      One name used by three readers: the column, the `action` filter on `GET
+      /v1/audit-log`, and `moderation-routes.ts`'s both-directions check, which can then
+      be a set comparison rather than a mapping nobody maintains. A reader joins an entry
+      to a route by reading it.
+
+      Chapter 4.16 lost a day to `occurred_at` against `ts` — a field renamed between its
+      producer and its reader. The defence is not care, it is having one name that a
+      check compares in both directions. `data-model.md` §2 is amended to say so.

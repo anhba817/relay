@@ -149,11 +149,24 @@ pattern missed. Both numbers are estimates of a thing only the running router ca
 the plan treats them as such: phase 1 derives the list from a booted application and writes
 the real number down before any classification is made.
 
-**Open, and the plan's first real decision:** whether the moderation flag is a field on
-`targets.ts`'s existing entries or a sibling table with its own both-directions check. The
-first keeps one list and couples two concerns — a security classification and a compliance
-one — in a file 12 chapters publish. The second keeps them apart and gives the router two
-tables to fall out of step with. **Deciding it needs the fence bill, which is R6.**
+**RESOLVED AT T011 — a sibling, `services/api/src/audit/moderation-routes.ts`.** The question
+was whether the moderation flag is a field on `targets.ts`'s existing entries or a list of its
+own with its own both-directions check, and it was decided by building the field variant and
+measuring it: required on all 47 entries, because *nothing may be exempt by omission*, it is
+**16 hunks at `-U6`** and **510 published lines** at the `-U10` that collapses them to four,
+against a 591-line file. A change touching every entry of a list has no economical diff, and
+the hunks could not go in the chapter anyway — the appendix already carries six `targets.ts`
+hunks whose anchors the insertions fall inside (4.8's rule, which T069 applies to this file).
+
+**And the reason recorded here for preferring the field is not true.** *"Two tables to fall out
+of step with the router"* — they cannot, if both check against the router, which is the same
+derivation `targets.ts` uses. What two lists can drift from is each other, and neither is
+derived from the other, so that costs nothing. The sibling also keeps a compliance
+classification out of the gauntlet, which is the suite constitution VI names as gating
+releases: a change to the moderation set turning the isolation suite red is two unrelated
+reasons behind one colour.
+
+The bill R6 was needed for decided it, which is what counting a bill in phase 1 is for.
 
 ---
 

@@ -258,9 +258,11 @@ to see, which is the only job it has.
   deployment change, and NFR-SEC-10 — a second clause wanting an immutable trail, for exactly
   this actor — stays unmet. **Writing *"immutable"* without that sentence would be the
   chapter's own TRAP box.**
-- **R3's open question has a fence bill on both sides**, and the cheaper answer may be the
-  worse one. Deciding it in phase 2 with the bill in hand is the point of counting the bill in
-  phase 1.
+- **R3's open question had a fence bill on both sides, and the cheaper answer was also the
+  better one** — resolved at T011 in favour of a sibling list. The risk this entry named, that
+  the bill would argue against the right design, did not materialise; counting the bill in
+  phase 1 is what let the question be decided at all, because the field variant had to be
+  built and diffed before either side had a number.
 - **FR-005a's exception taken wider than it was measured for.** This risk read *"FR-012 is the
   one most likely to be violated quietly — adding an entry to a transaction changes what that
   transaction does"*, and that is now the **permitted** case: four methods were measured to act
