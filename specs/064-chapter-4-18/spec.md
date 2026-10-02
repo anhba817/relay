@@ -285,7 +285,13 @@ Each of these was decided rather than asked, with the evidence that decided it.
   reads, because FR-MOD-01 is a read and the request log already records that one was made; it
   excludes a user acting on their own message, which FR-013 of chapter 3.23 grants them.
   Expect the rule to survive contact with the router imperfectly — the routes it classifies
-  wrongly are the chapter's findings.
+  wrongly are the chapter's findings. **One already is, and the rule now has a third case.**
+  `DELETE /v1/channels/:channelId/messages/:messageId` is `accepts: "either"`: under an
+  application credential it is FR-MOD-02 and moderation, under a user token deleting their own
+  message it is FR-013 of chapter 3.23 and is not. So the rule reads *mutating, tenant-reachable,
+  and acting on something other than the caller — **and where the caller decides, the credential
+  decides**,* which FR-002a requires and `moderation-when-application` expresses. The prediction
+  was right; this is the point at which it stops being a prediction.
 - **Retention is stated and not enforced.** Nothing in the platform prunes an operational table;
   `schema.ts:867` already records pruning as named and deferred, and FR-MOD-06's retention job
   is row 21, three chapters away. The clause's year is recorded as an obligation with no
@@ -300,9 +306,17 @@ Each of these was decided rather than asked, with the evidence that decided it.
 - **The read path is this chapter's, not a later one's.** A store with no reader is chapter
   4.6's rollup and chapter 4.16's column, recorded twice as a defect. The milestone at row 23
   ends in an audit step, so the reader exists either here or as a gap that milestone inherits.
-- **No existing moderation action changes.** FR-012 is the same constraint chapter 4.17 held and
-  checked rather than trusted. Chapter 4.2 built four items of a later chapter's brief and that
-  chapter ceased to exist; the way that happens is one useful addition at a time.
+- **No existing moderation action gains a different answer, and four gain a transaction.** This
+  read *"No existing moderation action changes"* until FR-005a measured that `unbanUser`,
+  `setMemberRole`, `archiveChannel` and `unarchiveChannel` act outside a transaction, so
+  recording them atomically means adding one; `unbanUser` also gains a `RETURNING` it needs
+  before FR-008 can apply to it, and the ban pair gains the external id the entry stores.
+  **The assumption forbade what FR-012 was amended to permit**, which is what an assumption
+  does when a requirement moves and the paragraph explaining it does not. What none of them
+  gains is a different answer, a different status code or a different event. FR-012 is still
+  chapter 4.17's constraint, checked rather than trusted — T031 per action, T075 against the
+  diff. Chapter 4.2 built four items of a later chapter's brief and that chapter ceased to
+  exist; the way that happens is one useful addition at a time.
 
 ---
 
