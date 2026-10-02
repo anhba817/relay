@@ -53,6 +53,14 @@ Paths are from the repository root. `relay-platform/` and `relay-tutorial/` are 
   published hunks that way; the file had never been Prettier-clean and nothing requires it to be.
 - **Before regenerating a measurement, grep this directory for the number.** Chapter 4.17 spent
   a phase rebuilding a fixture whose recipe was in its own `quickstart.md`.
+- **And after CORRECTING a number, grep this directory for the OLD one.** The population of
+  mutating routes was corrected from nine to 25 in the spec at analysis pass 2, and the closed
+  premise was still live in the plan's risk register at pass 15 and the checklist's at pass 16.
+  **A fact corrected in one document stays live in every other that restated it, and nothing
+  sweeps for it.** Three passes running found the same class in a different artifact each time,
+  which is slower than one `grep` — **and read the hits, because a correction quotes the thing
+  it corrects**: the sweep that closed this class reported all four patterns still present, and
+  every hit was a sentence doing the fixing.
 
 ---
 
