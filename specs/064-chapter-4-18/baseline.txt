@@ -1015,3 +1015,152 @@ T044c --------------------------------------------------------------------------
       **T044a IS DEFERRED TO T062**, which is where the chapter page is created. The
       procedure it publishes is already written and lives in `moderation-routes.ts`'s
       header (T044b); the prose version has nowhere to go until phase 8.
+
+PHASE 6 — THE PROBES (T046 … T051)
+
+T046  THREE SCOPES, ONE VISIBLE, AND THE THIRD DEFENDS AGAINST THE WRONG THING
+-------------------------------------------------------------------------------------
+
+      Each arm deleted alone, both suites re-run:
+
+        the PAGE read's `eq(environmentId)`        audit 3 of 21 RED · gauntlet 1 RED
+        the VOCABULARY read's `eq(environmentId)`  audit 21 of 21 GREEN · gauntlet 62/62
+        the controller's 403 for no environment    audit 22 of 22 GREEN · gauntlet 62/62
+
+      **ARM 2 WAS INVISIBLE BECAUSE NO TEST HAD TWO TENANTS WITH DIFFERENT
+      VOCABULARIES.** `auditActionsHeld` is the filter's *what has this tenant actually
+      done* half, and unscoped it answers *what has anyone done* — a smaller leak than a
+      row and still a leak, because the set of action kinds a competitor's moderators
+      perform is information about how they run their product. 4.12 found three scopes
+      covering for each other; this is one scope with no neighbour at all.
+
+      Closed with a test that plants an archive in the OTHER environment and a ban in
+      this one: green with the scope, and red without it reading *"another tenant's
+      action appeared in this tenant's vocabulary"*.
+
+      **AND ARM 3 IS UNREACHABLE, WHICH IS NOT THE INTERESTING HALF.** The controller's
+      `environmentId === undefined -> 403` cannot fire: `@Accepts("application")` makes
+      `CredentialGuard` refuse a platform principal with `wrong_credential_type` at
+      line 143, before the handler runs, and an application principal always resolves to
+      an environment.
+
+      **THE BRANCH DEFENDS AGAINST A CASE THAT CANNOT ARISE AND NOT AGAINST THE ONE THAT
+      WOULD BE BAD.** Drop the decorator and the guard falls back to `EITHER`; a USER
+      principal **has** an `environmentId`, so that branch would not fire and every
+      person signed into a customer's product could read that customer's whole
+      moderation history. Measured, by deleting the decorator:
+
+        a user token on GET /v1/audit-log, decorator present   403 wrong_credential_type
+        the same request, decorator deleted                    **200, with the entries**
+
+      So the 403 stays — it is the contract and the request log's shape — and the
+      repair is the test that was missing. `services/api/src/audit/route.itest.ts`, 11
+      of 11, modelled on `request-log/route.itest.ts` and carrying its reason in as many
+      words: *the absence of this test is the absence of any evidence the decorator is
+      there at all, and the decorator is the whole of the decision.*
+
+      The new file also covers what only a route can show: the envelope's five fields by
+      name, **`retention_edge` asserted ABSENT**, the four `limit` bounds, an unknown
+      action, a malformed cursor, an unknown query parameter against `z.strictObject`,
+      and `actorFrom`'s three principal kinds.
+
+      **AND THE STACK WENT DOWN MID-PROBE.** Arm 2's first run printed no summary line
+      at all — `ECONNREFUSED 127.0.0.1:15432`, every container gone. The volumes
+      survived and `docker compose up -d` restored it with the 279 audit rows and the
+      trigger intact. **The instrument note is the grep**: filtering the run for
+      `Tests ` showed nothing, so the probe would have been recorded as *no output*
+      rather than *the database was absent* — 055-4's rule at a different address, and
+      the reason to read the tail of a failed run rather than a pattern from it.
+
+T047  THE GAUNTLET'S OWN COUNTED LINE, AND THE CREDENTIAL 4.9 FOUND UNSET IS SET
+-------------------------------------------------------------------------------------
+
+        gauntlet targets: 48 derived, 40 attacked, 8 exempt
+                          (read 6, write 26, credential 4, list 4, exempt 8)
+        isolation suites: 77 of 77 across 3 files
+
+      **AND THE GREEN IS NOT 4.9's HOLLOW ONE.** That chapter found three platform-route
+      attacks returning at their first line and reporting green because
+      `RELAY_INTERNAL_CREDENTIAL` was unset — *"0ms is what a skipped attack looks like
+      in a green suite"*. Checked by its own discriminator, under `--reporter=verbose`:
+
+        expand reaches only the endpoints of the environment it names        20ms
+        expand naming an environment that exists nowhere creates nothing      5ms
+        a connection billed to one environment cannot be re-billed            16ms
+
+      **And the variable is absent from this shell and present in the lane**, which is
+      the thing worth checking rather than assuming in either direction:
+      `services/api/vitest.integration.config.mts:71` sets both credentials, and
+      `vitest.coverage.config.mts:67` sets them too — the twin 4.9 had to repair. An
+      `echo $RELAY_INTERNAL_CREDENTIAL` says nothing about what vitest injects.
+
+T048  SC-006 — THE PIPELINE IS STOPPED AND THE ENTRY IS STILL THERE
+-------------------------------------------------------------------------------------
+
+        docker compose stop nats clickhouse        both base services, no profile flag
+        remaining: clamav mailpit minio postgres redis
+
+        --- UNBAN (pipeline stopped) ---
+        environment: 02caaefc-98c6-43b8-8fe0-5e16b2f7bff0
+        entries: 2
+           DELETE /v1/users/:externalId/ban -> sc006-subject  21:50:03.877Z
+           POST   /v1/users/:externalId/ban -> sc006-subject  21:50:03.873Z
+
+      Both actions committed, both left an entry, 4 ms apart and in the right order.
+      **Constitution III's independence from the side that usually gets tested**: the
+      audit log is operational, and the clause the platform has spent movement IV
+      proving in one direction holds in the other.
+
+      The subject is a user in no channel, so neither the ban nor the unban reaches
+      `membership.publish` — a ban of a user WITH channels commits and then throws at
+      the publish, which is a 500 for an action that succeeded and is a different
+      finding from this one. Pipeline restarted; nothing else ran against the stack.
+
+T049  THE ENTRY COSTS 0.43 ms AND THE TRANSACTION COSTS ABOUT THE SAME
+-------------------------------------------------------------------------------------
+
+      **Interleaved, not one block then the other** — a warm cache and a growing table
+      both drift during a run, and two blocks measured back to back attribute that drift
+      to the change (chapter 4.1's quiet-then-busy loop). 200 samples a side, each.
+
+      What the ENTRY costs, in a method that already had a transaction and in one that
+      did not:
+
+        banUser          with     min 1.930 · p50 2.417 · p95 2.965 · max 5.748
+                         without  min 1.571 · p50 1.978 · p95 2.386 · max 2.541
+                         p50 delta  0.439 ms   22.2%
+
+        archiveChannel   with     min 1.439 · p50 1.715 · p95 2.069 · max 2.481
+                         without  min 1.142 · p50 1.284 · p95 1.591 · max 2.095
+                         p50 delta  0.431 ms   33.6%
+
+      **THE ABSOLUTE COST IS THE SAME AND THE PERCENTAGE IS NOT**, 0.439 against 0.431
+      for 22.2% against 33.6% — the entry is one INSERT and costs what one INSERT costs,
+      and the ratio is a fact about whichever action is carrying it. Publishing the
+      percentage alone would have published the wrong variable, which is chapter 4.15's
+      thumbnail finding in a second place.
+
+      **AND THE SECOND QUANTITY IS THE ONE THE PLAN COULD NOT PREDICT.** The table above
+      holds the transaction constant, so it prices the entry and not FR-005a's
+      exception. Measured against the pre-chapter shape — a bare `UPDATE`, no
+      transaction, no entry — built as a twin method in one binary so both run under the
+      same cache:
+
+        archiveChannel, as it ships     min 1.552 · p50 1.857 · p95 2.305 · max 4.036
+        archiveChannel, pre-chapter     min 0.782 · p50 0.954 · p95 1.155 · max 5.320
+        p50 delta  0.903 ms   **94.6%**
+
+      **So the transaction costs about as much as the entry it exists to protect**:
+      0.903 total, 0.431 of it the INSERT, ~0.47 the transaction. The four methods that
+      took FR-005a's exception pay roughly double what the four that already had one
+      pay, and *nearly doubling the latency of an archive* is the sentence that belongs
+      in the chapter rather than *"adds an insert"*.
+
+      The twin was removed and `repository.ts` verified identical to HEAD before
+      anything else was counted. The probes left **979 audit rows across 83
+      environments**, each scoped to an environment the probe minted — `fixtures.ts`'s
+      standing convention, and this table cannot be tidied without the bypass anyway.
+
+T050  DEFERRED to after T070. Coverage pins go in **after** the fence chain is taken to
+T051  zero: chapter 4.16's CI failure was a pin added once the chain was already at 0,
+      and the edit that broke it was the ratchet being tightened.
