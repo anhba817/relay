@@ -76,8 +76,17 @@ classify. Entry volume is one row per moderation action, which on this lane is a
 | **VI. Requirement-driven, test-verified** | **ENGAGED** | FR-004's refusal must be demonstrated by a probe that attempts the write, not asserted by a comment — chapter 4.17's *a comment is not a test*, applied to the mechanism this chapter exists to build. |
 | **VII. Boring by design** | **ENGAGED, with one justification owed** | No dependency, no service, no container. One new mechanism: a Postgres trigger, the schema's first. R2 is the justification and it is measured — the obvious alternative, `REVOKE`, does nothing on this deployment. |
 
-**No violation requires a Complexity Tracking entry.** The trigger is new and is argued in R2
-against the alternative that was measured inert; that is the form constitution VII asks for.
+**No violation requires a Complexity Tracking entry, and VII asks for one thing this plan did
+not originally produce.** The trigger is new and is argued in R2 against an alternative measured
+inert — but VII's own words are *"Every architecture decision is recorded as an **ADR** stating
+its drivers, rejected alternatives, and reversal condition"*, and a research note is not one. It
+carries no reversal condition, and it is not where a later chapter looks.
+
+**ADR-35 is this feature's**, written at T054a into `docs/06-adr-deep-dives.md` and summarised
+at T054b into `docs/05-sad.md`: the store placement, the trigger, and `timestamptz(3)` as the
+read path's consequence. Its mirror already exists — ADR-26 is *"The api serves a customer
+request from the analytical store"*, the same decision pointing the other way. Research R7a
+carries the three reversal conditions, which is the field measuring does not produce.
 
 ## Project Structure
 
@@ -180,7 +189,9 @@ to itself.
 4.12 did; a coverage number will not find an SQL scope. Run the gauntlet. Perform the unban
 with `nats` and `clickhouse` stopped (SC-006). Pin the new files, and probe the pins both ways.
 
-**Phase 7 — the documents.** FR-MOD-03 amended for the retention it cannot enforce and the
+**Phase 7 — the documents.** **ADR-35 in both `docs/06-adr-deep-dives.md` and
+`docs/05-sad.md`**, because an ADR lives in two places and the deep dive is the one that gets
+forgotten; FR-MOD-03 amended for the retention it cannot enforce and the
 actor it cannot identify; **`docs/05-sad.md:430`'s *"There is no `audit_log` table"* corrected**,
 because this chapter makes it false; `docs/12` row 19 CLOSED; both copies of the Part 4 table;
 SRS revision 1.25; `clauses.md` as a count.

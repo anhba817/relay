@@ -275,6 +275,23 @@ FR-011 is that sentence as a requirement.
 
 ---
 
+## R7a — The reversal conditions, which a research note has no reason to carry and an ADR does
+
+Constitution VII: *"Every architecture decision is recorded as an ADR stating its drivers,
+rejected alternatives, and **reversal condition**."* R1 and R2 have the first two because
+measuring produces them. The third is the field that only exists because somebody asked what
+would make the decision wrong, and it is written here so **ADR-35** has it rather than
+inventing one at writing time.
+
+| decision | reversal condition |
+|---|---|
+| **The log is operational, not analytical** (R1) | FR-005 stops requiring the entry and the action to be written together. The moment a clause accepts that an action may succeed with no entry, the analytical path becomes available and brings a cheaper read with it. Nothing else reverses this — not volume, not query shape. |
+| **Immutability is a trigger** (R2) | **The api stops connecting as a superuser.** `REVOKE UPDATE, DELETE` was measured inert only because `relay` is one; against an ordinary role it is the stronger mechanism, because a grant cannot be switched off for a session the way `session_replication_role = replica` switches off every trigger. On that day the trigger is redundant and the revoke is the thing to keep. |
+| **`timestamptz(3)`** (N1) | The cursor stops comparing this column. It is declared at the wire's precision because a keyset page compares a stored value against one that came back over the wire; a reader that paged on an integer, as message history does, would not need it. |
+
+**The second one is the useful one** and it points at work outside this chapter: the stronger
+mechanism is unavailable because of a deployment choice, not a design one. `gaps.md` carries it.
+
 ## R8 — What erasure does to an entry naming an erased user
 
 **Not decided here, and not this chapter's.**
