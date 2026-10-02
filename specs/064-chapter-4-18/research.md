@@ -148,7 +148,30 @@ a method that writes an entry reads the context the way it already reads `this.e
 
 The alternative — threading `{actor, requestId}` through each method that records an action —
 touches `repository.ts`, which **51 chapters publish**, once per method plus once per caller.
-The constructor change touches it once.
+
+**AND THE CONSTRUCTOR CHANGE DOES NOT TOUCH IT ONCE, WHICH THIS NOTE CLAIMED UNTIL IT WAS
+MEASURED.** `grep -rn "new Repository(" --include=*.ts services/ packages/` finds **110 call
+sites across 32 test files** beside the six production ones, and **17 of those test files are
+fenced**, published across 131 pages:
+
+    repository.itest.ts 18 · messages.itest.ts 17 · auth/credentials.itest.ts 12
+    isolation/gauntlet.itest.ts 12 · tenancy/signup.itest.ts 10 · outbox.itest.ts 10
+    internal/backfill.itest.ts 10 · internal/internal.itest.ts 8 · channels.itest.ts 8
+    users.itest.ts 4 · webhooks/test-event.itest.ts 4 · webhooks/deliveries.itest.ts 4
+    webhooks/attempts.itest.ts 4 · db/history-drift.itest.ts 4
+    messages/history.itest.ts 2 · messages/idempotency.itest.ts 2 · limits.itest.ts 2
+
+**So the choice is not cheap-versus-expensive, it is two different expenses.** A **required**
+third argument is a 32-file edit and 17 fence hunks R6's table does not list. An **optional**
+one leaves all 110 compiling untouched — and then nothing forces the six production sites to
+pass it, which is the weaker shape and the one that fails silently: a repository built without
+an actor writes entries with no actor, and no compiler says so.
+
+**Decision: optional parameter, with the six production sites asserted rather than trusted.**
+A test asserts that every construction site outside `*.test.ts` and `*.itest.ts` supplies it —
+derived from the source, the same both-directions shape `targets.ts` uses — so the thing the
+compiler stopped checking is checked by something else. The alternative buys compiler
+enforcement for 32 files of churn in a chapter whose own line says it adds no product surface.
 
 **And the fields are already resolved.** `ApplicationPrincipal` carries `keyId`,
 `UserPrincipal` carries `userExternalId`, `RequestWithPrincipal` carries `requestId`. Nothing
@@ -205,6 +228,13 @@ too late to change how the work is sequenced.**
     services/api/src/users/users.service.ts          6
     services/api/src/users/users.module.ts           4
     services/api/src/channels/channels.module.ts     4
+
+**AND THIS TABLE WAS SHORT BY SEVENTEEN FILES UNTIL R4 WAS MEASURED.** Every test file that
+constructs a `Repository` is a file a required constructor argument would edit, and 17 of them
+are fenced across 131 pages — more published pages than everything above except
+`repository.ts` itself. R4's decision to make the parameter optional is what keeps them off
+this list, and **the bill is the reason for the decision rather than a consequence of it**,
+which is the whole point of counting it before the work.
 
 A titled fence is a whole-body claim (051-6), so every page above is a place the chain compares
 this file. The chain holds one end state per file, so the bill is **one hunk set per file, not

@@ -1,6 +1,6 @@
 # Data model — chapter 4.18
 
-## 1. The entry
+## 1. The entry — `audit_log`
 
 One row per moderation action. Written inside the transaction that performs the action
 (FR-005), and never written again.

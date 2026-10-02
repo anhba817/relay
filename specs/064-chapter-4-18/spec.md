@@ -63,10 +63,12 @@ clause is buildable because chapter 3.2's credential work resolved an actor and 
 request handling resolved an id; nothing in FR-MOD-03's field list needs inventing.
 
 **WHAT THE CLAUSE DOES NOT DEFINE IS THE SET.** *"Every moderation action"* names a population
-and gives no membership rule, and the platform has **nine** mutating routes a tenant can reach
-that a reasonable reader might include: ban, unban, delete a user, delete another author's
-message, edit another author's message, remove a member, change a member's role, archive a
-channel, unarchive a channel. Deciding which are in, in writing, with the reason, is this
+and gives no membership rule. The router serves **25** mutating routes a tenant can reach, of
+which **nine** are ones a reasonable reader might include: ban, unban, delete a user, delete
+another author's message, edit another author's message, remove a member, change a member's
+role, archive a channel, unarchive a channel. **The nine are the expected inclusions and the
+twenty-five are the population owed a decision**, which are different claims — and the gap
+between them is where a classification goes wrong. Deciding which are in, in writing, with the reason, is this
 chapter's main product. It is the same shape as FR-ANL-06's *"counts derived from operational
 data"* at chapter 4.7 and FR-MED-09's *"renders as"* at 4.17: the clause's own words are the
 work.
@@ -166,7 +168,18 @@ hand-listed, and a route added without a decision about it makes a check fail.
   and the refusal MUST be demonstrated rather than asserted — a probe that attempts the
   modification and is refused.
 - **FR-005**: An entry MUST be written as part of the action it records, so that an action
-  that succeeded with no entry, or an entry with no action, is not reachable.
+  that succeeded with no entry, or an entry with no action, is not reachable. **This changes
+  one behaviour on purpose, and the change is stated rather than discovered**: a moderation
+  action whose entry cannot be written now fails, where before it would have succeeded. That
+  is the guarantee rather than a side effect of it.
+- **FR-005a**: Where an action is not already performed inside a transaction, the feature MAY
+  add one, and MUST record which actions needed it. Measured at plan time: of seven candidate
+  methods, `banUser`, `deleteUser` and `deleteMessage` already open transactions and
+  **`unbanUser`, `setMemberRole`, `archiveChannel` and `unarchiveChannel` do not**.
+- **FR-005b**: Where an action cannot report whether it changed any row, the feature MUST make
+  it able to before FR-008's decision can be applied to it. `unbanUser` is the measured case: a
+  bare `UPDATE` with no `isNull` guard and no `RETURNING`, so lifting a ban and unbanning
+  somebody who was never banned are the same call with the same result.
 - **FR-006**: A tenant MUST be able to read its own entries, ordered, filtered by a time
   window, and MUST NOT be able to read any other tenant's.
 - **FR-007**: The actor MUST identify the credential or user that acted. Where the platform
@@ -182,9 +195,13 @@ hand-listed, and a route added without a decision about it makes a check fail.
 - **FR-011**: The chapter MUST state that the log begins now — entries do not exist for
   actions taken before it shipped — and MUST NOT present a reader with a view that implies
   otherwise.
-- **FR-012**: This feature MUST NOT change the behaviour of any moderation action it records.
-  Where recording an action would require changing it, the requirement is recorded with its
-  cost rather than satisfied.
+- **FR-012**: This feature MUST NOT change the behaviour of any moderation action it records,
+  **except as FR-005, FR-005a and FR-005b require**, and every exception MUST be named with
+  what it changes. Where recording an action would require any other change, the requirement is
+  recorded with its cost rather than satisfied. **The exception is not a loophole and it has a
+  shape**: an action gains a transaction, the ability to say whether it changed a row, and a
+  new way to fail. It does not gain a different answer, a different status code or a different
+  event.
 - **FR-013**: The chapter MUST publish what the development lane cannot demonstrate about the
   log, as a list rather than as a qualifier.
 

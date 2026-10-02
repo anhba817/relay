@@ -182,6 +182,16 @@ both found that an SQL scope carries no JavaScript branch, so a coverage number 
 the probe is to delete each predicate and re-run, and phase 6 does that rather than trusting a
 pin.
 
+**AND IV TAKES A SECOND READING NOW THAT FR-005a EXISTS.** Four of the seven candidate methods
+— `unbanUser`, `setMemberRole`, `archiveChannel` and `unarchiveChannel` — perform their action
+outside a transaction, so recording an entry atomically with them means **adding** one. That
+moves a write boundary, which is squarely IV's subject, and it is permitted rather than
+overlooked: FR-005a allows it and FR-012 names the exception. What each action gains is a
+transaction, the ability to say whether it changed a row, and **a new way to fail** — an action
+whose entry cannot be written no longer succeeds. What none of them gains is a different
+answer, a different status code or a different event, and T031 checks that per action by
+re-running each one's existing suite unedited.
+
 **And the design added one honest limit rather than hiding it.** Immutability holds against the
 application and against accident, and not against `SET session_replication_role = replica` —
 one line, measured, and available to the role the api already connects as. The chapter states
