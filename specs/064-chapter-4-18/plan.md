@@ -240,17 +240,37 @@ kind of comment chapter 4.17 spent its TRAP box on.
 
 ## Risks this plan is carrying
 
+**Re-read after fifteen analysis passes, and two of the four had gone stale the way the spec's
+Assumptions had** — one describing as a danger the thing the spec later decided to permit, one
+listing a resolved item as live. A register that carries closed items makes the open ones harder
+to see, which is the only job it has.
+
 - **The immutability claim is weaker than the word.** A superuser disables every trigger with
   one `SET`, and the api connects as one. The chapter states what the probe shows and records
-  the non-superuser role as a gap with its cost. **Writing *"immutable"* without that sentence
-  would be the chapter's own TRAP box.**
+  the non-superuser role as a gap with its cost. ADR-35's reversal condition is that same
+  deployment change, and NFR-SEC-10 — a second clause wanting an immutable trail, for exactly
+  this actor — stays unmet. **Writing *"immutable"* without that sentence would be the
+  chapter's own TRAP box.**
 - **R3's open question has a fence bill on both sides**, and the cheaper answer may be the
   worse one. Deciding it in phase 2 with the bill in hand is the point of counting the bill in
   phase 1.
-- **FR-012 is the one most likely to be violated quietly.** Adding an entry to a transaction
-  changes what that transaction does. Chapter 4.17's method — diff the platform changes and
-  check every one is a test, a comment or the thing the chapter is for — is SC-007a, and it
-  runs in phase 9 rather than being trusted.
-- **The population is 25 and the spec said nine.** The spec was counting what it expected to
-  include. Expect the classification to produce findings, and expect some of them to be routes
-  nobody would have listed.
+- **FR-005a's exception taken wider than it was measured for.** This risk read *"FR-012 is the
+  one most likely to be violated quietly — adding an entry to a transaction changes what that
+  transaction does"*, and that is now the **permitted** case: four methods were measured to act
+  outside a transaction and FR-012 names the exception. **The live risk is scope creep in the
+  exception** — a fifth method gaining one because the first four did. T031 checks it per
+  action by re-running each action's own suite unedited, and T075 checks it against the diff.
+- **The classification will produce findings, and some will be routes nobody would have
+  listed.** The premise this risk was written with is closed — the spec said nine where the
+  population is 25, and pass 2 corrected it to *"25, of which nine are expected inclusions"* —
+  but the prediction stands, and T044 records each misclassification with what the rule said
+  and what the right answer is.
+- **No gate refuses a chapter ordinal in platform source, and this chapter writes into it.**
+  `docs/12` §6 named that gate as a precondition for chapter one; seventeen chapters later it
+  does not exist. Measured: **257 Part 4 ordinals** across 16 chapters, and **27 Part 3 ones**
+  back on a surface 045 took to zero by hand. T009a records the number; the standing rule keeps
+  this chapter from adding to it; **repairing 257 is nobody's task yet.**
+- **`docs/06-adr-deep-dives.md` is four ADRs behind the summary.** ADR-31 through 34 are in
+  `docs/05-sad.md` and appear **zero** times in the deep dive. T054b writes ADR-35 into both,
+  which keeps the gap from becoming five and does nothing about the four — chapter 4.5 recorded
+  this failure mode and it has been live since.
