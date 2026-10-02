@@ -1,6 +1,6 @@
 # Gaps — feature 063, chapter 4.17
 
-Numbered as they are found, not as they are fixed. An entry here is something measured and
+Numbered as they are found, not as they are fixed. **Seven entries**, then the carried ledger. An entry here is something measured and
 left open on purpose, with the cost of closing it attached so nobody has to re-derive it.
 
 ## 063-1 — `integrate.itest.ts` has four poll-to-deadline helpers and should have one
@@ -129,3 +129,125 @@ the thing this project refuses (056-10).
 renumbered 21 of Part 3's 26 chapters. The existing *"of chapter 3.23"* spellings in
 `docs/05-sad.md` are therefore the next instance of this entry, pointing at chapters that have
 moved. **Name a chapter, never number it** applies to citations too.
+
+---
+
+## The carried ledger, re-measured
+
+**Re-measured, not copied.** 043 found four of twenty-three carried items wrong when they were
+measured again, and three had closed with nobody working on them.
+
+### 050-8 — the ingester has no deployment, and the count is **two**, not three
+
+    services/api/src/request-log/request-log.itest.ts   spawns services/ingester/dist/main.js
+    services/api/src/media/media.itest.ts               spawns the same
+
+    compose.yaml services named `ingester`              0
+    services/ingester/Dockerfile                        does not exist
+
+**Narrower than the entry said and still open.** Two test files starting a process is not a
+deployment. On the stack this series ships, nothing drains the analytical streams, so a customer
+reading their own request log finds it empty — and `gauntlet.itest.ts:1326` now has a comment
+relying on that, which is the shape of a defect becoming load-bearing.
+
+### 062-7 — a coverage number is a claim about what ran in *this* process, and 4.17 is the same thing one step out
+
+062 measured three symbols at 78.57 / 81.37 / 83.78 against pins of 100 and 84, because the
+suite exercising them **spawns the ingester as a child process**. This chapter's suite is that
+finding one level further out: `packages/outsider` talks to a composed stack over HTTP, so
+nothing it exercises is instrumented by anything — and the package is excluded from the coverage
+lane outright at `vitest.coverage.config.mts:98`.
+
+**What is new is the consequence, which is now written in `docs/05-sad.md`** (T047): the
+deployed media worker has exactly one automated consumer, it runs only in CI's sealed job, and
+it contributes nothing to the coverage number. Still open: nothing measures coverage of code
+executed in a container.
+
+### 062-12 — per-file pins: **75**, from 74
+
+One pin added since 062's close. The entry's point stands: the ratchet holds a minority of the
+files it could, so a file with no pin can fall to any number and nothing says so. Both instances
+of that class were found by a human comparing one chapter to another.
+
+### 055-3 — corrected at 062, and the correction holds
+
+`check:errors` has no job under that name, and the check runs: `ci.yml:211` is
+`node ../relay-tutorial/scripts/check-error-codes.mjs`, by path. **A check with two spellings,
+and a sweep for either finds half the truth.** Re-measured this chapter: unchanged.
+
+### 043-1 — untitled fences, and the class has grown by 2.6× since it was opened
+
+    043's measurement     146 of 904 fences untitled    16.2%
+    this chapter          387 of 2,158 untitled         17.9%
+
+An untitled fence is compared to nothing — `check-fence-chain.mjs:77` collects a fence only when
+it matches `title="…"`. **This chapter added two of them on purpose**, which is the right use:
+an excerpt must be untitled, because a titled fence is a whole-body claim on a 1,677-line file.
+The entry is about the ones nobody decided, and it is still nobody's.
+
+---
+
+## 063-5 — `echo "EXIT=$?"` after a pipeline, for the seventh time, and the second by me
+
+    python3 relay-tutorial/scripts/check-lane-scope.py 2>&1 | tail -6; echo "T040 EXIT=$?"
+
+printed **`T040 EXIT=0`** for a path that does not exist. `$?` after a pipeline is the LAST
+command's status, and `tail` succeeded at reading nothing. The script is at
+`specs/045-part-3-rework/check-lane-scope.py`.
+
+**Seventh occurrence in this project**, and the first six were other people's. The shape that
+keeps producing it is a gate run for its counted line — the pipe exists to trim the output, and
+the status check is bolted on after it. **Capture the exit code outside the pipeline, or write
+the output to a file and read it**, which is what the rest of this feature's runs did:
+
+    pnpm <gate> > out.log 2>&1; echo "EXIT=$?"; tail -3 out.log
+
+**And the control that caught it was 055-4's rule, not the exit code**: *assert the counted
+line, not the exit code.* The line said `can't open file`, which no status would have.
+
+## 063-6 — `check-lane-scope.py` reads this chapter's suite and has nothing to say about it
+
+    check-lane-scope: 71 integration files, 0 unscoped read(s) of a shared table in 0 file(s)
+    controls: 10 of 10 fired
+
+**71 files, up from 55 at feature 055**, and `packages/outsider/src/integrate.itest.ts` is one
+of them — its glob is `packages/*/src/**/*.itest.ts`. The file contains **no SQL at all**,
+because the seal forbids a database client, so the zero it contributes is a true statement about
+a file the instrument cannot examine.
+
+This is not the 049 failure (a checker reading a deleted worktree and exiting 0 over nothing):
+the corpus is real and the count proves it looked. It is the weaker thing the script's own last
+line admits — *"SQL text only — a scope applied in JavaScript is invisible to it"* — with a new
+case: **a suite whose scoping is entirely in HTTP paths and bearer tokens.** Recorded as a limit
+so a later chapter does not read `71 files, 0 unscoped` as covering the sealed suite.
+
+## 063-7 — `media-updated.itest.ts` subscribes to `revision:*` and counts, so it fails for somebody else's reason
+
+**Found by running the quickstart against the composed stack while `pnpm test:integration` was
+running** — which is a thing the tasks tell you not to do (T024, after 056), and doing it is what
+exposed this:
+
+    FAIL  src/media/media-updated.itest.ts > publishes once per referencing channel
+          when an object is in two
+    AssertionError: expected [ {…}, {…}, {…} ] to have a length of 2 but got 3
+
+The suite's `beforeAll` runs `sub.psubscribe("revision:*")` and pushes **every** frame on that
+pattern into one array. Three tests then clear the array, trigger a verdict, and assert the
+array's length. The pattern is not scoped to the test's environment, its channels or its object:
+**any `media.updated` published by anything else sharing that Redis lands in the count.**
+
+**This is 043's class — an assertion scoped wider than the thing it tests — and
+`check-lane-scope.py` cannot see it.** That instrument reads SQL text and reports *"71
+integration files, 0 unscoped reads"*; this scope is a **Redis pattern subscription**, which it
+has no opinion about. 063-6 records the limit abstractly and this is the instance.
+
+**The repair is small and is not this chapter's**: the frames are already tagged with a subject,
+so the three assertions can filter to the channels the test created. Recorded with its bill
+rather than applied, because a milestone that fixes things stops being a measurement of what was
+already there — and because it was my own interference that surfaced it, which makes "it is
+flaky" the wrong conclusion and "it is scoped to the whole instance" the right one.
+
+**AND THE SAME RUN TOOK DOWN `outbox.itest.ts`'s *"invariant 1: a committed message leaves
+exactly one outbox row"***, which is 043's original whole-table count at a different address.
+Both failures vanish when the lane runs alone — so the lane's green is conditional on nothing
+else touching the stack, and nothing anywhere says so.

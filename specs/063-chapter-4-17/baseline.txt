@@ -355,14 +355,25 @@ FENCE BILL, RUNNING — counted as it accrues, not at the end
 PHASE 3 — THE JOURNEY (T015 … T025)
 =====================================================================================
 
-T016  THE FIXTURE HAD TO BE RE-MEASURED, BECAUSE R2's RECIPE WAS NEVER WRITTEN DOWN
+T016  THE FIXTURE WAS RE-MEASURED, AND PHASE 9 FOUND THE RECIPE HAD BEEN RECORDED
 -------------------------------------------------------------------------------------
 
       `research.md` published **447,377 bytes** for the 800×600 image its whole walk was
       taken with, and recorded nothing about how those bytes were made — colour type,
-      filter, entropy, seed. **A number without its method cannot be reproduced**, so the
-      suite could not be built to hit it and every figure derived from it had to be taken
-      again. Eleven figures across six artifacts moved.
+      filter, entropy, seed. On that reading a number without its method cannot be
+      reproduced, so a fixture was built from scratch and every figure derived from the
+      old one re-taken. Seventeen figures across six artifacts moved.
+
+      **AND THE METHOD HAD BEEN WRITTEN DOWN, IN `quickstart.md` §1.** Running that
+      document in phase 9 printed `wrote 447377 bytes` from an RGB gradient — exact to the
+      byte, nine phases after the number was declared unreproducible. **The method and the
+      number lived in different artifacts and I looked in the one that holds numbers.**
+      `grep -rn 447377 specs/063-chapter-4-17/` would have cost five seconds.
+
+      The new fixture is kept and `quickstart.md` is changed to match it, so the feature
+      has one fixture rather than two. What moves is the lesson: not *record your method*,
+      but **before regenerating a measurement, grep the feature directory for the
+      number.**
 
       What ships, measured:
 
@@ -943,3 +954,142 @@ T050  AND THE REGISTRATION TITLE CARRIES NO STAR
       `"Milestone: an image, end to end"`, matching 4.9's `"Milestone: the meter agrees"`.
       The `★` lives in `docs/12`'s table and nowhere else. The slug follows 4.9's
       precedent — `milestone-an-image-end-to-end` — so nothing was waiting on a decision.
+
+PHASE 9 — THE RECORD AND THE CLOSE (T061 … T074)
+=====================================================================================
+
+T066a FR-012, CHECKED RATHER THAN TRUSTED: TWO FILES, BOTH TESTS
+-------------------------------------------------------------------------------------
+
+      `git diff --name-only 6435998e..HEAD` in `relay-platform`:
+
+        packages/outsider/src/integrate.itest.ts            +733
+        services/api/src/metering/storage-reconcile.itest.ts  +37 / -9
+
+      **Both are `.itest.ts`. No production file changed in this feature at all** — no
+      route, no service, no migration, no schema, no dependency. The second is phase 1's
+      repair of 4.16's debris assertion, which is a test too.
+
+      The check matters because of how the opposite happens: 4.2 built all four items of a
+      later chapter's brief and that chapter ceased to exist, **one useful addition at a
+      time**. Two open gaps in this feature (063-2's instrumentation, 063-7's scoping
+      repair) are exactly the additions that would have been useful and were refused.
+
+T067  EVERY PHASE COMMITTED AS IT CLOSED
+-------------------------------------------------------------------------------------
+
+      Eight `spec(063): phase N` commits in the superproject, one per phase, plus the
+      three that carried the analysis passes' repairs; five `test(outsider)` commits in
+      `relay-platform`; one `feat(4.17)` in `relay-tutorial`. **Nothing was committed once
+      at the end**, which is the failure a task at number 67 of 83 invites.
+
+      `git checkout` on a file with uncommitted work has destroyed work twice in this
+      project, which is why the instruction lives in the format section rather than in a
+      task.
+
+T066  THE LANE SET AT THE CLOSE, EVERY EXIT CODE READ OUTSIDE A PIPE
+-------------------------------------------------------------------------------------
+
+        pnpm lint                        REAL EXIT 0
+        pnpm typecheck                   REAL EXIT 0
+        pnpm build                       REAL EXIT 0
+        pnpm test                        REAL EXIT 0
+        pnpm test:integration            REAL EXIT 1      70 suites, 70 ran, 3 failed
+        pnpm test:outsider                                21 of 21, from 19
+        check:docs / errors / fences / figures / srs      all 0
+
+**THE INTEGRATION LANE IS RED AT THE CLOSE AND IT WAS RED AT THE OPEN, AND THE SET IS THE
+MEASUREMENT RATHER THAN THE COLOUR.** Compared per test against T002's baseline:
+
+    T002, phase 1          media-updated "announces nothing for an object nobody attached"
+                           outbox        "invariant 8: two concurrent relays …"
+                           deliveries    "invariant 12: the SWEEP disables the quiet endpoint"
+
+    this run               outbox        "invariant 8: two concurrent relays …"      CARRIED
+                           typing        "sends nothing at all after the signal"     NEW
+                           test-event    "answers honestly when nothing is there"    NEW
+                           media-updated                                             GONE
+                           deliveries                                                GONE
+
+      **Three red at the open, three red at the close, and only one is the same test.** Two
+      arrived and two left while nothing in those files changed — which is phase 1's
+      recorded conclusion reaching its own evidence: *three observations, three different
+      sets, so that is lane interference rather than a regression.*
+
+      **AND THE MACHINE WAS NOT IDLE, WHICH I FOUND BY LOOKING RATHER THAN BY ASSUMING.**
+      `pgrep -fa "vitest|turbo"` during the run showed a `turbo run dev --filter web` from
+      an unrelated repository — somebody else's dev server, on the host these timings are
+      taken on. The project's own rule is *nothing else runs on the machine during a
+      timing battery*, and this is the half of it nobody can enforce.
+
+      **AND I BROKE THAT RULE MYSELF FIRST.** The first attempt at this battery was run
+      while I walked the quickstart against the same stack, and it produced a different
+      pair of failures — `media-updated` counting three frames where it expected two, and
+      `outbox` invariant 1. Both are assertions scoped to shared infrastructure
+      (`psubscribe("revision:*")`, a whole-table count), so my traffic landed inside them.
+      **That run was discarded rather than reported**, and `gaps.md` 063-7 carries what it
+      found, because an instrument contaminated by the observer still measures something —
+      just not what it was pointed at.
+
+      **AND THE COVERAGE LANE'S FOUR REDS ARE THE SAME FAMILY, WITH NO PIN BREACHED.**
+
+        coverage   REAL EXIT 1   146 files, 2,116 tests, 4 failed in 3 files
+                   grep for a coverage threshold error over the whole run: **0**
+
+        consumer   "invariant 12: a consumer log line carries counts, never payloads"
+        outbox     "invariant 8" and "invariant 9: the broker can be absent"
+        typing     "refuses a signal whose environment does not match the connection"
+
+      **The exit code is tests, not the ratchet** — 062 closed at the identical 146 files
+      and 2,116 tests, and no per-file pin moved in this feature because no source file
+      changed. **A red lane and a breached pin are two different claims and only one of
+      them would be this chapter's.**
+
+T024b THE RED PROBE, RE-MEASURED AGAINST THE 21-TEST SUITE: **18 OF 21**
+-------------------------------------------------------------------------------------
+
+      T024 measured 18 of 20 before the rejection journey existed, and three artifacts
+      carried that number into the close. Re-run with `stop media-worker`:
+
+        Tests  3 failed | 18 passed (21)
+        media 0c445662-… is still 'pending' after 25,039 ms. The sweep runs every 5,000 …
+        media 4547b169-… is still 'pending' after 25,098 ms. …
+        media 5545cabe-… is still 'pending' after 25,084 ms. …
+
+      **All three name the worker and the command to run**, none says "the platform
+      refused a delivery URL". A number measured at the moment a suite had twenty tests
+      is a fact about that moment; the chapter, the traceability map and this file all
+      said 18 of 20 until it was taken again.
+
+T064  THE QUICKSTART WAS RUN END TO END AND WAS WRONG FOUR TIMES
+-------------------------------------------------------------------------------------
+
+      Every step in it had been run once during analysis; **the document as a document
+      had not**, which is the failure 4.16 met three times and 4.11 five.
+
+      1. **§1 GENERATED A DIFFERENT FIXTURE FROM THE SUITE'S.** An RGB gradient of
+         447,377 bytes against the journey's greyscale noise at 480,813 — two fixtures in
+         one feature, so a reader walking this document would get numbers the chapter
+         does not publish. **And running it is what proved the recipe had been recorded
+         all along**, nine phases after the figure was declared unreproducible.
+      2. **§1's expected output said `wrote 447377 bytes`** and
+      3. **§5's said `GET 200  447377 bytes`** — both missed by the phase-3 sweep, which
+         replaced `447,377` and never looked for the bare digits. **One mechanism, two
+         sites: a find-and-replace keyed on a formatted number cannot see the unformatted
+         one**, and the unformatted one is what a program prints.
+      4. **§3's deadline was 30 seconds against an observed maximum of 36.2.** `seq 1 60`
+         with a half-second sleep gives up before one upload in six has a verdict, and
+         what it prints then is `state=pending` — which sends a reader straight to §7's
+         conclusion that the worker is broken. **The document would have manufactured the
+         defect its own last section exists to demonstrate.** It is 120 now. And
+         `$((i/2))` is integer division, so it reported `0 s` for a verdict that took
+         most of a second; it reports elapsed wall-clock instead.
+
+      **§7 ran as written**: with the worker stopped, `state: pending` and the link
+      answers **404**, identical to an id nobody has.
+
+T065  THE COMPOSED SERVICES, STOPPED BY NAME
+-------------------------------------------------------------------------------------
+
+      `api gateway dispatcher media-worker` — and **not `ingester`**, which has no
+      Dockerfile and no compose service, so naming it makes the whole command fail.

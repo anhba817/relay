@@ -168,21 +168,21 @@ stories so the suite exists to be broken.
 
 ## Phase 9: The record and the close
 
-- [ ] T061 Write `specs/063-chapter-4-17/baseline.txt` phase by phase, **in the order the measurements were taken, including the ones that were wrong first**.
-- [ ] T062 [P] Write `specs/063-chapter-4-17/gaps.md`, numbered, with the carried ledger **re-measured** rather than copied. Known carries: 050-8 (three test files spawn the ingester and it is still not a deployment), 062-7 (coverage cannot see a service run in a child process — this chapter's suite is the same shape one step further out), 062-12 (68 of 139 files unpinned), 055-3 as corrected at 062, 043.
-- [ ] T063 [P] Write `specs/063-chapter-4-17/traceability.md` by **reading**. 4.11's mechanical map raised fourteen false alarms out of fourteen.
-- [ ] T064 Run `specs/063-chapter-4-17/quickstart.md` end to end and correct it in place, recording each wrong version. Every step in it has been run once; **the document as a document has not**, which is the failure 4.16 met three times.
-- [ ] T065 Stop the composed services **by name**, from `relay-platform/compose.yaml`'s `services` profile — `api gateway dispatcher media-worker`, and **not `ingester`**, which has no Dockerfile and makes the whole command fail.
-- [ ] T066 Run the full lane set once more and record every REAL exit code in `specs/063-chapter-4-17/baseline.txt`: lint, typecheck, build, unit, `test:integration`, `coverage`, `test:outsider`, the five tutorial gates.
-- [ ] T066a **Check FR-012 rather than trusting it**: `git diff` the platform changes this feature made and confirm in `specs/063-chapter-4-17/baseline.txt` that every one is a test, a comment or a document. 4.2 built all four items of a later chapter's brief and that chapter ceased to exist; the way that happens is one useful addition at a time.
-- [ ] T067 Confirm every phase was committed as it closed, in `specs/063-chapter-4-17/baseline.txt` — the instruction lives in the Format section because it governs all nine phases, and a task at number 67 of 81 would have an executor committing once at the end.
+- [X] T061 Write `specs/063-chapter-4-17/baseline.txt` phase by phase, **in the order the measurements were taken, including the ones that were wrong first**.
+- [X] T062 [P] Write `specs/063-chapter-4-17/gaps.md`, numbered, with the carried ledger **re-measured** rather than copied. Known carries: 050-8 (three test files spawn the ingester and it is still not a deployment), 062-7 (coverage cannot see a service run in a child process — this chapter's suite is the same shape one step further out), 062-12 (68 of 139 files unpinned), 055-3 as corrected at 062, 043.
+- [X] T063 [P] Write `specs/063-chapter-4-17/traceability.md` by **reading**. 4.11's mechanical map raised fourteen false alarms out of fourteen.
+- [X] T064 Run `specs/063-chapter-4-17/quickstart.md` end to end and correct it in place, recording each wrong version. Every step in it has been run once; **the document as a document has not**, which is the failure 4.16 met three times.
+- [X] T065 Stop the composed services **by name**, from `relay-platform/compose.yaml`'s `services` profile — `api gateway dispatcher media-worker`, and **not `ingester`**, which has no Dockerfile and makes the whole command fail.
+- [X] T066 Run the full lane set once more and record every REAL exit code in `specs/063-chapter-4-17/baseline.txt`: lint, typecheck, build, unit, `test:integration`, `coverage`, `test:outsider`, the five tutorial gates.
+- [X] T066a **Check FR-012 rather than trusting it**: `git diff` the platform changes this feature made and confirm in `specs/063-chapter-4-17/baseline.txt` that every one is a test, a comment or a document. 4.2 built all four items of a later chapter's brief and that chapter ceased to exist; the way that happens is one useful addition at a time.
+- [X] T067 Confirm every phase was committed as it closed, in `specs/063-chapter-4-17/baseline.txt` — the instruction lives in the Format section because it governs all nine phases, and a task at number 67 of 81 would have an executor committing once at the end.
 - [ ] T068 **Push submodules first, then the superproject.** `ci.yml` is the outer repository's and the other two are gitlinks, so the reverse order checks out commits no remote has.
 - [ ] T069 Compare the CI error set **per error** against T006's baseline, in both directions, and record it in `specs/063-chapter-4-17/baseline.txt` (SC-008). One comparison supports *"this run introduced nothing new"*, not *"the set is stable"*.
 - [ ] T070 **Watch the sealed job specifically** — `relay-platform — the sealed integration`, defined in `.github/workflows/ci.yml`. It is the only job that runs this chapter's suite, and it is the first honest execution of it — no local lane reaches it. If it is red, the journey is wrong about the stack rather than about the code.
 - [ ] T071 If CI is red, fix the platform, then **re-dump, re-hunk `relay-tutorial/fences/post-series.md`, and push both** — repairing a platform file invalidates the appendix hunks that publish it.
 - [ ] T072 Tag `part4-ch17` in `relay-platform`, annotated, on a commit CI has proved green. 4.14's tag had to be moved off one that fails `pnpm typecheck`.
-- [ ] T073 Compress 062's `CLAUDE.md` entry to its headline, measurement block and still-cited findings, and add this one. **The file has a 150,000-character budget** — `wc -c CLAUDE.md` before and after, rather than a figure carried from a task written days earlier.
-- [ ] T074 Remove the active-plan line from between the `SPECKIT` markers in `CLAUDE.md` when the feature closes, so the next feature's line replaces a plan rather than joining a list.
+- [X] T073 Compress 062's `CLAUDE.md` entry to its headline, measurement block and still-cited findings, and add this one. **The file has a 150,000-character budget** — `wc -c CLAUDE.md` before and after, rather than a figure carried from a task written days earlier.
+- [X] T074 Remove the active-plan line from between the `SPECKIT` markers in `CLAUDE.md` when the feature closes, so the next feature's line replaces a plan rather than joining a list.
 
 ---
 

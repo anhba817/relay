@@ -38,17 +38,148 @@ tags. **Anyone holding an older clone of `relay-platform` must reset rather than
 
 <!-- SPECKIT START -->
 
-**ACTIVE PLAN: `specs/063-chapter-4-17/plan.md`** — chapter 4.17, movement VI's milestone.
-Phase 0 walked the path by hand: every step works and a reader can fetch both the bytes and the
-thumbnail. **No test joins them**, and nothing anywhere depends on the composed worker doing
-work. The journey goes in `packages/outsider` — the only lane whose job starts that container.
-**And the first timing was the worst case wearing a median's name**: five runs in a loop gave
-`p50 5,693 ms`, ten with independent phase gave **min 1,197 · p50 2,953 · max 5,840** over a
-5,000 ms sweep — *a loop that waits for the thing it is timing synchronises with it.*
+**063 IS CLOSED — CHAPTER 4.17, "★ Milestone: an image, end to end".** Movement VI closes. Its
+record is `specs/063-chapter-4-17/` — `baseline.txt` first (every phase's measurements in the
+order they were taken, including the ones that were wrong first), then `gaps.md` (**7 entries
+plus the carried ledger**), `traceability.md`, `clauses.md`, `quickstart.md` (run, and wrong
+four times), `tasks.md`. **SRS 1.24**, `docs/12` row 18 CLOSED **and §7.7 closed**, and **both**
+copies of the Part 4 table amended.
 
-**062 IS CLOSED — CHAPTER 4.16, "Storage on the bill".** Movement VI continues. Its record is
-`specs/062-chapter-4-16/` — `baseline.txt` first (every phase's measurements in the order they
-were taken, including the ones that were wrong first), then `gaps.md` (**14 entries**),
+    check:fences 0 · 291 files across 60 chapters              from 59
+    2,889 prose words · 4 figures · 2 TRAP boxes · 0 titled fences · 2 untitled excerpts
+    unit 945 · test:integration 70 of 70 suites, 3 red — and 3 red at the open
+    outsider 21 of 21 (from 19) · worker stopped 18 of 21, all three naming it
+    coverage 146 files, 2,116 tests, 4 red · ZERO threshold errors, no pin moved
+    20 clause-parts decided, 11 of them DEMONSTRATED end to end — from 0
+    6 appendix hunks, which were 23 before a formatter was taken back out
+
+**SEVEN CHAPTERS BUILT THE PATH AND NO TEST JOINED THEM, BECAUSE EVERY SUITE STOOD IN FOR THE
+STEP BESIDE IT.** The worker's own suite runs the sweep **in process**; the state machine's
+posts the verdict **itself**; the delivery gate's sets states **with SQL**; the thumbnail's is a
+unit test over a buffer. Four green suites, each the right test for its own chapter, and the
+aggregate is a path nobody had walked. **Nothing in a codebase measures aggregates** — coverage
+says every line ran and a green lane says every suite passed, and neither can say that the thing
+calling the worker is always a test.
+
+**AND THE SPEC'S PREMISE WAS PARTLY WRONG, WHICH MADE THE CHAPTER SMALLER.** Its Context table
+said the sealed suite *"asserts `state: \"pending\"` — no verdict in the picture"*. Sixty lines
+below the quoted assertion that test polls `GET /v1/media/{id}` to a 30-second deadline, which
+cannot answer 200 until the deployed worker says `ready`, then compares the bytes. **A real scan
+has decided what it fetches since 4.13.** What was genuinely missing is three things: the state
+a RECIPIENT sees changing, the thumbnail, and a `media.updated` frame watched from outside.
+**Reading the whole test rather than the line that had been quoted is what showed it**, and the
+honest consequence of a premise check is sometimes a smaller chapter.
+
+**THE COMMENT EXPLAINING WHY AN ASSERTION WAS STABLE WAS FALSE IN THE JOB THAT RUNS IT.** *"This
+suite runs no media worker"* — and CI's sealed job runs `--profile services`, which starts one.
+The assertion is right for a different reason: the three HTTP calls between the upload and the
+read take milliseconds against a 5,000 ms sweep, so **min 1,861 · p50 3,993 · max 5,568 ms** of
+margin. It is timing-dependent AND stable, which the comment treated as alternatives. **A race
+with a four-second margin is the kind nothing ever catches**, and what protected it is that the
+assertion was right. The repair is two lines: the measurement replaces the sentence, and
+`waitForAttachmentState` then CHECKS the reason — if `pending` is right because the read is
+inside the window, waiting past the window must produce a verdict. **A comment is not a test.**
+
+**WHAT THE PATH COSTS, AND THE TIMER IS THE WHOLE OF IT.** Every step a client controls is under
+20 ms — slot 11, PUT 7, history 5, link 5, GET 2, thumbnail 7 — and the wait is **min 1,097 ·
+p50 3,398 · max 36,164 ms over 25 trials**, each preceded by a uniform random sleep. The sweep's
+period was measured from **a different process's log**: twelve consecutive passes at 5.36–5.41 s,
+counted as nine `GET /internal/media/pending` each in the api's access log. So the shape is *a
+wait uniform on [0, interval] plus work*, and the work is **a residual ≤ 433 ms**, published as
+one rather than re-derived by subtraction.
+
+**AND THE TAIL IS PUBLISHED RATHER THAN SMOOTHED.** One upload in six waits five or six whole
+passes, and three explanations were eliminated by measurement: the sweep did not stop (twelve
+passes, no gap), the scan was not slow (**min 2 · p50 2 · max 4 ms** over 20 INSTREAM scans of
+the same fixture), the worker had not died. Left open as `gaps.md` 063-2, because FR-012 says
+this chapter adds no mechanism — and a p50 of 3,398 alone would claim the path is reliably under
+four seconds.
+
+**A LOG THAT CANNOT SAY "ALIVE, NOTHING TO DO", AND I READ ITS SILENCE AS A STALL FOR TEN
+MINUTES.** `main.ts` logs a sweep only when `ready > 0 || rejected > 0`, deliberately and with
+the reason in the comment. So an idle worker is byte-identical, in its own log, to a stopped
+one: four minutes of `--tail 1` returning the same line produced a confident wrong diagnosis,
+and 62 seconds of deliberate idle then gave **0 sweep lines and 0 change in the ready count**
+while the api served it nine pages every 5.4 s throughout. Fifth time this series has met a
+check that cannot report the thing it is read for, **with the polarity reversed — not a check
+that cannot fail, but a log that cannot say it is working. For liveness, read the log of
+whatever the process TALKS to.** `gaps.md` 063-3.
+
+**AND WITH THE WORKER STOPPED, THREE DIFFERENT SITUATIONS GIVE ONE ANSWER.** An uploaded object
+attached to a message, an uploaded object nobody attached, and an id nobody has: **404
+`not_found`, all three.** 4.12 built that indistinguishability on purpose and the cost lands
+here. **Only history tells them apart**, which is why the journey's wait reads the channel
+rather than polling the media route — the media route cannot answer the question being asked.
+
+**A FORMATTER TURNED SIX EDITS INTO 23 PUBLISHED HUNKS.** `integrate.itest.ts` had never been
+Prettier-clean — 4.13, 4.14 and 4.16 all edited it without a format pass — and
+`prettier --write` rewrote **221 lines nobody had asked about**, each one a hunk the appendix
+would carry for ever. Re-deriving the patch against the unformatted original gave **6 hunks**
+with the same 21 of 21. **A formatter is free on a file you own and is not free on a file the
+fence chain publishes**, and the cost is invisible when you pay it: `--write` prints nothing and
+the tests stay green. **The hunk count is what made it visible.** (And the hunks went to the
+appendix, which already amends this file four times — 4.8's rule.)
+
+**THE MEASUREMENT'S METHOD WAS RECORDED IN THE ARTIFACT NOBODY RE-READS.** `research.md`
+published 447,377 bytes for the fixture its whole walk used and said nothing about how they were
+made, so phase 3 built a new fixture and moved seventeen figures across six artifacts to match
+it. **Phase 9 ran `quickstart.md` and it printed `wrote 447377 bytes`** — the generator was in
+§1 all along. The new fixture is kept and the quickstart changed to match, so the feature has
+one; what moves is the rule. **Before regenerating a measurement, grep the feature directory for
+the number.**
+
+**AND THE FEATURE-LOCAL ID CHECK IS DIFF-SCOPED, SO IT FIRES ON ITS OWN REPAIRS AND MISSES
+EVERY LEAK ALREADY IN THE TREE.** `git diff HEAD -- docs/ | grep '^+' | grep -oE 'FR-0[0-9][0-9]'`
+returned nothing before this phase and **five afterwards, every one a correction.** Run
+tree-wide, `docs/` holds 22 distinct ids of which **five citations were unqualified**, and
+**`FR-009`, `FR-013` and `FR-017` each mean two unrelated things** across these documents. All
+five now carry a FEATURE number, which is the stable address — **the connection-cap feature is
+`040-chapter-3-22` and its chapter is now 3.16**, so *name a chapter, never number it* applies
+to a citation too. `gaps.md` 063-4; nothing runs either version of the check, five features on
+from 052-7.
+
+**AND TWO DOCUMENTS CARRIED THE SAME DEAD NUMBER FOR EIGHT CHAPTERS.** `docs/12` §7.7 said
+*"Nobody has decomposed the 109"* and `docs/05-sad.md` said `check:fences` *"exits 1 at the
+standing 110 on every push"* — **055 took the chain to 0 and it has stayed there.** Both closed
+here, by a chapter that had each file open for a different row. **§7.1 of `docs/12` names this
+exact failure mode in that document**, which is how long a sentence survives when its subject
+has a checker and the prose about it does not.
+
+**AND THE SEALED SUITE IS THE ONLY CONSUMER OF THE DEPLOYED WORKER** — reached by no local lane,
+excluded from `pnpm coverage` at `vitest.coverage.config.mts:98`, run only by CI's separate
+sealed job. So the service deciding whether a customer's upload is readable has **one**
+automated consumer and contributes **nothing** to the coverage number. *A file at 100% in the
+coverage lane and a file the deployed worker runs are two different claims about two different
+sets of code.* Now written into ADR-27's account in `docs/05-sad.md`.
+
+**AND RUNNING THE QUICKSTART BESIDE THE LANE BROKE TWO SUITES FOR SOMEBODY ELSE'S REASON.**
+`media-updated.itest.ts` does `psubscribe("revision:*")` and asserts the array's LENGTH, so any
+frame from anything else sharing that Redis counts; `outbox.itest.ts`'s invariant 1 is 043's
+whole-table count at a different address. **`check-lane-scope.py` can see neither** — it reads
+SQL text, reports *"71 integration files, 0 unscoped reads"*, and has no opinion about a Redis
+pattern subscription. The lane's green is conditional on nothing else touching the stack and
+nothing says so. `gaps.md` 063-7.
+
+**AND THE QUICKSTART WAS RUN AND WAS WRONG FOUR TIMES.** Two of them are one mechanism: the
+phase-3 figure sweep replaced `447,377` and **never looked for the bare digits**, which is the
+form a program prints, so both `**Expected**` lines kept a dead number. **A find-and-replace
+keyed on a formatted number cannot see the unformatted one.** And **§3's deadline was 30 seconds
+against an observed maximum of 36.2** — `seq 1 60` at half-second steps gives up before one
+upload in six has a verdict and prints `state=pending`, so **the document would have
+manufactured the defect its own last section exists to demonstrate.**
+
+**AND A NUMBER MEASURED AT ONE MOMENT IS A FACT ABOUT THAT MOMENT.** `stop media-worker` gave
+**18 of 20** when the suite had twenty tests, and three artifacts carried that into the close
+while the suite grew to twenty-one. Re-measured: **18 of 21**, all three failures naming the
+worker. The same shape as the fence bill counted before the work and the lane set compared per
+test — **re-measure anything a later phase could have moved.**
+
+**AND `echo "EXIT=$?"` AFTER A PIPELINE READ `tail`'s STATUS. SEVENTH TIME**, and the second by
+me — it printed `EXIT=0` for a script at a path that does not exist. **What caught it was the
+counted line, not the status** (055-4): the line said `can't open file`.
+
+**062 IS CLOSED — CHAPTER 4.16, "Storage on the bill".** Its record is
+`specs/062-chapter-4-16/` — `baseline.txt` first, then `gaps.md` (**14 entries**),
 `traceability.md`, `clauses.md`, `quickstart.md` (run, and wrong three times), `tasks.md`.
 **SRS 1.23**, `docs/12` row 17 CLOSED, and **both** copies of the Part 4 table amended.
 
@@ -60,128 +191,36 @@ were taken, including the ones that were wrong first), then `gaps.md` (**14 entr
     22 appendix hunks across 10 files, and an eleventh CI found
 
 **THE TWO SIDES MEASURE DIFFERENT THINGS, AND NO READING OF THE CLAUSE WOULD HAVE SAID SO.**
-DR-17 asks whether the meter matches the store. Run against real data: **8,662 charged rows at
-~4,440 MB against a bucket holding 1,775 objects at 30.7 MB**, and **6,580 of those rows are
-slots reserved and never uploaded to**. Nothing is broken — the quota charges at reservation
-(FR-MED-01, 4.10) because the alternative is reserving without limit — so the comparison is a
-reservation against a delivery. **The verdict therefore has a third value**: `reservations-only`
-says the two differ and the difference is entirely accounted for, because `agree` over a 4.4 GB
-gap would be true and unbelievable and `meter-high` would be wrong.
+**8,662 charged rows at ~4,440 MB against a bucket holding 1,775 objects at 30.7 MB**, and
+**6,580 of those rows are slots reserved and never uploaded to** — the quota charges at
+reservation (FR-MED-01), so the comparison is a reservation against a delivery and the verdict
+needs a third value, `reservations-only`. **The term that explains it cannot be computed from
+either store alone**, so `reconcileStorage` reads three; and the population is four sides, which
+the first design got wrong. **95.5% of tenants cannot be compared at all** — the rollup knows 84
+environments and Postgres 1,678 — which is 4.6's *"a rollup created late is permanently short"*
+at its widest.
 
-**AND THE TERM THAT EXPLAINS IT CANNOT BE COMPUTED FROM EITHER STORE ALONE.** The analytical
-side records `reserved` and has **no `uploaded` event** — the client PUTs straight to the store
-(ADR-13) — so it cannot tell an outstanding slot from a delivered object. Postgres can, and is
-wrong by a measurable amount: **267 of 6,580 pending rows name a key the bucket holds**, 21% of
-everything in it, because 4.13's sweep leaves an uploaded object `pending` until it HEADs it.
-Subtracting those removes bytes from both sides and invents a `meter-low`. So
-`reconcileStorage` reads **three stores**, and `gaps.md` 062-4 is the fourth item standing
-against the unapplied constitution III amendment.
+**A COVERAGE NUMBER IS A CLAIM ABOUT WHAT RAN IN *THIS* PROCESS.** Three symbols measured
+**78.57 / 81.37 / 83.78** against pins of 100 and 84 while running on every execution of their
+suite — because that suite **spawns the ingester as a child process**, so none of it is
+instrumented. *A green lane is a claim about what was re-run* (050); this is its twin.
+**And the ratchet was holding none of that chapter's three files** — one measured 66.66% with no
+pin to notice, and **68 of 139 files are unpinned with the lowest at 20.00%** under a global
+floor that is an aggregate. Both instances were found by a human comparing one chapter to
+another (062-12).
 
-**AND THE POPULATION IS FOUR SIDES, WHICH THE FIRST DESIGN GOT WRONG.** Rollup ∪ bucket ∪
-reservations misses the tenant the clause most wants: one whose objects are all `ready`, whose
-keys the bucket lacks, and which the rollup never heard of. **1,074 ready rows name a key the
-bucket does not have.** Adding the operational tenant list moved the population 1,855 -> 1,868:
-**thirteen tenants nobody was looking at.** And the coverage line said `1855 of 1678 holding
-media` — a containment claim that does not divide, because the union takes tenants the
-operational side has never heard of.
+**AND A PROBE THAT CHANGED NOTHING REPORTED GREEN.** A mutation probe's first run was 15 of 15,
+one keystroke from being recorded as uncovered: `prettier` had wrapped that `if` across five
+lines, so the single-line pattern matched nothing and the script wrote the file back unmodified.
+**A file a formatter owns cannot be mutated by matching its text as you last wrote it** — diff
+against a saved copy. (4.17 paid the other half: `prettier --write` on a file that had never
+been clean turned six edits into 23 published hunks.)
 
-**95.5% OF TENANTS CANNOT BE COMPARED AT ALL** — 1,784 of 1,868 `not-comparable`, because the
-rollup knows 84 environments and Postgres knows 1,678 with media rows. 4.6's *"a rollup created
-late is permanently short"* at its widest: **the producer ships in this chapter**, so the
-meter's history begins now and the bucket's does not. 4.7 refused to collapse that into
-"missing data" and it is refused again.
-
-**THE VIEW WAS COUNTING ZEROS, AND A MERGE WOULD NOT HAVE CLEANED IT UP.**
-`sumMap(map(kind, if(event='reserved',1,0)))` gives every event's kind a key, so a day with one
-image reservation, one audio REJECTION and one image rendition answers `{'audio':0,'image':1}`.
-The values are right; **the key set stops meaning *the kinds this tenant uploaded*** and starts
-meaning *the kinds that had any media event*. `sumMapIf` emits no key for a non-match and `{}`
-for a group with none. And `SummingMergeTree` drops a row whose summed columns are all zero but
-**not a zero-valued key inside a map** — `{'audio':0,'image':1,'video':0}` before `OPTIMIZE
-FINAL` and identical after, so the wrong answer was stable. **`0018` was amended in place**
-rather than repaired by an `0019`, because it has shipped nowhere; the ledger's checksum refusal
-is the gate working and `quickstart.md` carries the two commands.
-
-**AND A COLUMN WITH ONE WRITER AND NO READER IS 4.6 ONE MOVEMENT LATER.** `uploads_by_kind` had
-`0017` declaring it, `0018` writing it, and nothing reading it — three commits after it was
-added. `storedBytes` was one step better: a reader with no test and no caller. A clause that
-says the platform MUST count something is not discharged by a column that holds the count.
-`uploadsByKind()` joins them in `ingester/metering.ts`, a FLOW where the level is a stock.
-
-**A COVERAGE NUMBER IS A CLAIM ABOUT WHAT RAN IN *THIS* PROCESS.** `shapeMediaStored`,
-`route()`'s fourth arm and `insertMediaEvents` run on every execution of the media suite and
-measured **78.57 / 81.37 / 83.78** against pins of 100 and 84 — because that suite **spawns the
-ingester as a child process** (4.9: it is not a compose service), so none of it is instrumented.
-*A green lane is a claim about what was re-run* (050); this is its twin. **Thirteen threshold
-errors across six files, all closed with tests or deleted unreachable branches, no pin
-lowered** — and the biggest repair was a suite that drains the same records in process.
-
-**AND THE RATCHET WAS HOLDING NONE OF THIS CHAPTER'S THREE FILES.** `storage-event.ts` measured
-**66.66%** with no pin to notice, the missing third being the `catch` — not a defensive branch
-but the whole of what *"a lost record is the accepted cost"* means in code. **68 of 139 files
-are unpinned and the lowest is at 20.00%**, under a global floor that is an aggregate. Both
-instances of this class were found by a human comparing one chapter to another (062-12).
-
-**ELEVEN ARMS DELETED ONE AT A TIME, AND THE TWO SILENT ONES NEEDED OPPOSITE REPAIRS.** Nine
-turned a suite red. **A10 was unreachable** — its only caller checks the same thing three lines
-up — so it was deleted and the parameter narrowed, which is stronger than a test because the
-compiler now refuses a caller that has not checked. **A11 was reachable and untested**: every
-media row the other fixtures plant is `pending`, so a read returning all of them gave the same
-answer. 061's *"choosing the wrong suites looks like an uncovered arm"* one level down, where it
-is the wrong FIXTURE. **And the gauntlet reported 61 of 61 for all eleven** — a reconciliation
-is read-only, in no request and on no route, so constitution VI's named suite has nothing to
-attack (062-8).
-
-**AND A PROBE THAT CHANGED NOTHING REPORTED GREEN.** The first run of arm A1 was 15 of 15 and 8
-of 8, one keystroke from being recorded as uncovered: `prettier` had wrapped that `if` across
-five lines, so the single-line pattern matched nothing and the script wrote the file back
-unmodified. 4.10's tamper probe at a different address, with a new half — **a file a formatter
-owns cannot be mutated by matching its text as you last wrote it**; diff against a saved copy.
-
-**ONE LOST RECORD IS A DISTRIBUTION, NOT A NUMBER.** Over 8,941 chargeable objects: **p50 1,024
-B, mean 521,671 B, max 26,214,400 B** — the mean is **509×** the median. Over the 925 tenants
-holding more than one object, the median tenant's worst object is **50.00%** of its level and
-the worst case anywhere is **99.96%**. It never self-corrects, and the clause had no choice: a
-sampled level needs a scheduler ADR-28 records as absent, and a materialised view fires on
-insert. **The level is also bounded at the rollup's 25-month TTL**, which no clause had said —
-SRS 1.23 says it and names DR-17's inventory as the re-base, because the store holds the level
-directly rather than as a sum.
-
-**DR-17's PARENTHETICAL NAMED TWO EVENTS THIS PLATFORM DOES NOT EMIT.** *"(uploaded/deleted)"*
-against `reserved`, `rejected`, `rendition`, `deleted` — and the correction is not vocabulary:
-**the meter charges at reservation because the quota does**, so a clause metering uploads would
-disagree with the quota it exists to explain. **And the SRS's data dictionary described a
-`media_events` table nobody built** — `bytes`, `processing_ms`, an `uploaded`/`ready` pair, no
-`media_id`. Found by opening the DR section to edit the row two below it. **No checker here
-reads a clause against the schema it describes.**
-
-**AND THE FEATURE-LOCAL ID LEAKED AGAIN, INSIDE THE SENTENCE CORRECTING SOMEBODY ELSE'S
-CITATION.** `git diff HEAD -- docs/ | grep '^+' | grep -oE 'FR-0[0-9][0-9]'` returned `FR-010`
-in revision 1.23. 052-7's defect by 052-7's own mechanism — copying the task line — and
-**nothing runs that check**, four features on.
-
-**THE QUICKSTART WAS RUN AND WAS WRONG THREE TIMES.** It referred the reader to ANOTHER
-DOCUMENT for its fixture; it said `ORDER BY occurred_at` where the column is `ts` (`Code: 47` —
-the producer's field name, renamed by the shaper, and this document tripped over the other side
-of the rename); and its duplicate-verdict paragraph said *"updates no rows, so it emits
-nothing"* where the answer is **422**. **The assertion held and the explanation did not**, which
-is the harder half to notice, and phase 3 had already found it.
-
-**AND CI FOUND TWO THINGS NO LOCAL RUN COULD.** `check:fences` went red on
-`vitest.coverage.config.mts` **at line 513, where this chapter's coverage pins went in** — the
-chain was taken to zero in phase 8 and the pins were added in phase 9, after it. *Run
-`check:fences` after ANY source edit*, and **the edit that broke it was the ratchet being
-tightened**, which is the version of this mistake that feels safest to make. Then the lanes job
-failed on **my own suite**: `expect(report.unattributable.keys).toBeGreaterThan(0)` passed here
-because this bucket holds 83 keys of old probe debris and **CI's volume is empty**. 056's
-finding from the other side — the test plants its own key now and asserts the delta.
-
-**AND THE SECOND RUN IS GREEN ON ALL FOUR JOBS WITH AN EMPTY ERROR SET** — `grep -c
-'##[error]'` over the whole run is **0**, and `test:integration` reports **70 suites, 70 ran,
-0 failed**. The comparison against 061's close-out is `2 distinct -> 0` with nothing carried:
-strictly better than the baseline rather than equal to it, and the first all-green run since
-`a0a5ed6`. Tagged **`part4-ch16`**.
-
+**AND THE VIEW WAS COUNTING ZEROS.** `sumMap(map(kind, if(event='reserved',1,0)))` gives every
+event's kind a key, so the key set stops meaning *the kinds this tenant uploaded*. `sumMapIf`
+emits no key for a non-match — and **`SummingMergeTree` drops a row whose summed columns are all
+zero but not a zero-valued key inside a map**, identical before and after `OPTIMIZE FINAL`, so
+the wrong answer was stable.
 **061 IS CLOSED at 103 of 103 — CHAPTER 4.15, "What a thumbnail costs".** Its record is
 `specs/061-chapter-4-15/` — `baseline.txt` first, then `gaps.md` (**8 new, 6 carried**),
 `traceability.md`, `doors.txt`, `quickstart.md`, `tasks.md`. **SRS 1.22**, **ADR-34**,

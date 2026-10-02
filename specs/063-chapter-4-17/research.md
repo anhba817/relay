@@ -112,18 +112,30 @@ inherits the parent's reachability rather than needing a rule of its own.
 **Decision**: the journey asserts both fetches. The thumbnail is the only part of this path that
 has never been asked for from outside the platform.
 
-**AND EVERY FIGURE IN R2 AND R3 WAS RE-MEASURED IN PHASE 3, BECAUSE THE RECIPE WAS NOT WRITTEN
-DOWN.** This walk was taken with an 800×600 PNG of **447,377 bytes** and nothing anywhere
-recorded how those bytes were produced — colour type, filter, entropy, seed. A number whose
-method is unrecorded cannot be reproduced, so the suite could not be built to hit it and the
-figure had to be taken again against the fixture that actually ships: **800×600 greyscale,
-xorshift32 noise, filter 0, `deflateSync` at default level — 480,813 bytes, deflating to
-480,756.** Its thumbnail is 320×240 and **30,612 bytes**.
+**EVERY FIGURE IN R2 AND R3 WAS RE-MEASURED IN PHASE 3, AND THE REASON I GAVE FOR DOING IT WAS
+WRONG.** This section records both, because the correction is the more useful half.
 
-The walk is otherwise identical and the published numbers above are now this fixture's. **The
-transferable half is that a measurement is a method plus a number**, and a research pass that
-records only the number hands the implementation a target it cannot aim at — which is the same
-shape as 4.16's quickstart sending the reader to another document for its fixture.
+This walk was taken with an 800×600 PNG of **447,377 bytes**, and *this file* says nothing about
+how those bytes were produced — colour type, filter, entropy. So phase 3 built a fixture from
+scratch, measured it, and amended seventeen figures across six artifacts to match: **800×600
+greyscale, xorshift32 noise, filter 0, `deflateSync` at default level — 480,813 bytes, deflating
+to 480,756**, with a 320×240 thumbnail of **30,612 bytes**.
+
+**THE RECIPE WAS WRITTEN DOWN. IT WAS IN `quickstart.md` §1, AND RUNNING THAT DOCUMENT IN PHASE
+9 IS WHAT PRINTED `wrote 447377 bytes`** — an RGB gradient, `(x*7, y*5, (x^y)*3)`, exact to the
+byte. The method was recorded in the one artifact whose job is to be executed, and the
+implementation regenerated it from scratch because it looked in the research note instead.
+
+The new fixture is kept, because its properties are better and it has shipped: noise is
+incompressible, so its size is a fact about the dimensions rather than about the picture, which
+is what keeps `thumbnail < parent` meaningful. **`quickstart.md` was changed to match it**, so
+the feature has one fixture rather than two.
+
+**So the transferable half is not "record your method".** It is that a measurement's method and
+its number can live in different artifacts, and the one that holds the method may be the one
+nobody re-reads while building. **Before regenerating a measurement, grep the feature directory
+for the number** — `grep -rn 447377 specs/063-chapter-4-17/` would have cost five seconds and
+returned the generator.
 
 ---
 

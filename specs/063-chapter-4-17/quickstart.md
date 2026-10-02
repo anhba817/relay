@@ -48,17 +48,26 @@ fail**.
 
 ## 1 · A slot and an upload
 
+**THIS GENERATOR IS THE SUITE'S FIXTURE, AND IT USED TO BE A DIFFERENT ONE.** It produced an
+RGB gradient of **447,377 bytes** — the image every figure in `research.md` was measured with —
+and the journey suite ships greyscale noise at 480,813. Two fixtures in one feature means a
+reader walking this document gets numbers the chapter does not publish, so there is one now.
+The suite's reasons for the change are in its own comment: noise is incompressible, so the size
+is a fact about the dimensions rather than about the picture, and greyscale is a third of the
+store, the quota and the PUT.
+
 ```bash
 node -e '
 const z=require("node:zlib"), fs=require("node:fs");
-const W=800,H=600, raw=Buffer.alloc(H*(1+W*3));
-for(let y=0;y<H;y++){const o=y*(1+W*3); raw[o]=0;
-  for(let x=0;x<W;x++){const p=o+1+x*3; raw[p]=(x*7)&255; raw[p+1]=(y*5)&255; raw[p+2]=((x^y)*3)&255;}}
+const W=800,H=600, raw=Buffer.alloc(H*(1+W));
+let s=1;
+for(let y=0;y<H;y++){const o=y*(1+W); raw[o]=0;
+  for(let x=0;x<W;x++){s^=s<<13;s>>>=0;s^=s>>>17;s^=s<<5;s>>>=0; raw[o+1+x]=s&255;}}
 const chunk=(t,d)=>{const l=Buffer.alloc(4);l.writeUInt32BE(d.length);
   const b=Buffer.concat([Buffer.from(t),d]); const c=Buffer.alloc(4);
   c.writeUInt32BE(z.crc32(b)); return Buffer.concat([l,b,c]);};
 const ihdr=Buffer.alloc(13); ihdr.writeUInt32BE(W,0); ihdr.writeUInt32BE(H,4);
-ihdr[8]=8; ihdr[9]=2;
+ihdr[8]=8; ihdr[9]=0;
 fs.writeFileSync("/tmp/relay-4-17.png", Buffer.concat([
   Buffer.from([0x89,0x50,0x4e,0x47,0x0d,0x0a,0x1a,0x0a]),
   chunk("IHDR",ihdr), chunk("IDAT",z.deflateSync(raw)), chunk("IEND",Buffer.alloc(0))]));
@@ -73,7 +82,7 @@ export PUT_URL=$(printf '%s' "$SLOT" | python3 -c 'import sys,json;print(json.lo
 curl -sS -X PUT --data-binary @/tmp/relay-4-17.png "$PUT_URL" -o /dev/null -w 'PUT %{http_code}\n'
 ```
 
-**Expected**: `wrote 447377 bytes`, then `PUT 200`. The slot costs 8–34 ms and never touches the
+**Expected**: `wrote 480813 bytes`, then `PUT 200`. The slot costs 8–34 ms and never touches the
 store — it is a signature (4.10).
 
 ## 2 · A channel, and a message that names the object before it is verified
@@ -95,22 +104,35 @@ sent the moment the upload completes.
 
 ## 3 · The deployed worker
 
+**THE DEADLINE WAS 30 SECONDS AND THE OBSERVED MAXIMUM IS 36.2.** `seq 1 60` with a half-second
+sleep gives up before one upload in six has a verdict — and what it prints then is
+`state=pending`, which sends a reader straight to §7's conclusion that the worker is broken. It
+is 120 now, and it reports the elapsed time rather than inferring it from the loop counter,
+which was wrong anyway: `$((i/2))` is integer division and printed `0 s` for a verdict that took
+most of a second.
+
 ```bash
-for i in $(seq 1 60); do
+START=$(date +%s)
+for i in $(seq 1 120); do
   S=$(psql postgres://relay:relay@localhost:15432/relay -tAc "select state from media_objects where id='$MEDIA'" | tr -d ' ')
   [ "$S" != "pending" ] && break
   sleep 0.5
 done
-echo "state=$S after ~$((i/2)) s"
+echo "state=$S after $(( $(date +%s) - START )) s"
 ```
 
-**Expected**: `ready`, after **anywhere from 1.2 to 5.8 seconds — p50 2,953 ms over ten
-trials**. If it comes back in a second, nothing is wrong: the sweep is a 5,000 ms timer and an
-upload lands at a random point in the cycle, so **the wait is uniform over the interval and
-only about 0.7 s of it is work.** An earlier draft of this line said *"about 5.7 s"* from five
-runs taken in a loop — each starting just after the sweep that finished the one before, which
-measured the worst case and called it typical. Nothing in the platform is told the upload
-finished (ADR-13: the client PUTs straight to the store), so the worker checks every 5,000 ms.
+**Expected**: `ready`, and the wait is a distribution rather than a number — **min 1,097 ·
+p50 3,398 · max 36,164 ms over 25 trials**, each preceded by a random sleep so the upload lands
+at a uniform point in the cycle. If it comes back in a second, nothing is wrong: the sweep is a
+5,000 ms timer and only about 0.4 s of the wait is work. An earlier draft of this line said
+*"about 5.7 s"* from five runs taken in a loop — each starting just after the sweep that
+finished the one before, which measured the worst case and called it typical. Nothing in the
+platform is told the upload finished (ADR-13: the client PUTs straight to the store), so the
+worker checks every 5,000 ms.
+
+**And one upload in six waits five or six whole passes** — 19 to 36 seconds — for a reason that
+is neither the timer nor the scanner. That is `gaps.md` 063-2 and it is why the deadline here is
+generous.
 
 `psql` is used here and nowhere else in this document, because **there is no published surface
 that answers "has the worker run yet"** — a client learns it by reading the message again, which
@@ -143,7 +165,7 @@ printf '%s' "$LINK" | python3 -c 'import sys,json;print(json.load(sys.stdin)["ur
 cmp /tmp/relay-4-17.png /tmp/got-4-17.png && echo "IDENTICAL to what was uploaded"
 ```
 
-**Expected**: `GET 200  447377 bytes`, then `IDENTICAL`.
+**Expected**: `GET 200  480813 bytes`, then `IDENTICAL`.
 
 ## 6 · The thumbnail, which no message names
 

@@ -90,7 +90,7 @@ correction, and the sealed suite already relies on it.
 | dimensions | **800 × 600** | must exceed **320 px** on its long edge, or `thumbnailOf` answers `within-bound` and no rendition is written (4.15) |
 | colour type | **0, greyscale, 8-bit** | the file's existing literal is greyscale too, and one byte a pixel is a third of the store, the quota and the PUT that RGB noise would cost |
 | content | **xorshift32 noise from a fixed seed** | deterministic, so the byte count is a constant; and incompressible, so the size is a property of the dimensions rather than of the picture |
-| bytes | **480,813** | measured, deflating to 480,756 — and re-measured in phase 3, because R2's 447,377 was taken with a recipe nobody wrote down |
+| bytes | **480,813** | measured, deflating to 480,756. R2's walk used a different image — an RGB gradient of 447,377 bytes — and phase 3 replaced it because `research.md` did not record the recipe. **It was recorded, in `quickstart.md` §1**, which phase 9 found by running that document; the new fixture is kept and the quickstart changed to match, so there is one |
 | thumbnail | 320 × 240, **30,612 bytes** | measured against this fixture |
 | how | generated with `node:zlib` inside the suite | half a megabyte of deflate cannot be a literal, and the existing 1×1 literal produces no thumbnail |
 | imports it adds | `node:zlib` | a Node builtin is not a workspace path. The file's header sentence saying it imports nothing beyond `vitest` is already false and is corrected |
@@ -101,7 +101,7 @@ correction, and the sealed suite already relies on it.
 |---|---|---|
 | slot | 8–34 ms | the suite's default |
 | PUT | 5–7 ms | the suite's default |
-| PUT → `ready` | **1,197–5,840 ms, p50 2,953**, over a 5,000 ms interval, 10 independent trials | a poll to a deadline comfortably above one interval, failing with a message that names the worker |
+| PUT → `ready` | **min 1,097 · p50 3,398 · max 36,164 ms** over a 5,000 ms interval, **25** independent trials (an earlier n=10 run gave 1,197–5,840, p50 2,953, and did not reach the tail) | a poll to a deadline **above the observed maximum**, not above one interval, failing with a message that names the worker |
 
 **THE WAIT IS UNIFORM OVER THE INTERVAL, NOT A CONSTANT.** An earlier figure of `p50 5,693 ms`
 came from five runs in a loop, each starting just after the sweep that ended the one before —
