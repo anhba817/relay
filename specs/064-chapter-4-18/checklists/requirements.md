@@ -119,7 +119,7 @@ a third time**, and it is why `traceability.md` is built by reading.
 ## Risks this spec is carrying on purpose
 
 - **The moderation set is a rule, not a list, and the rule will misclassify.** The router
-  serves **25** mutating tenant-reachable routes, of which nine are the expected inclusions —
+  serves **24** mutating tenant-reachable routes, of which nine are the expected inclusions —
   *"mutating, tenant-reachable, acting on something other than the caller, **and where the
   caller decides, the credential decides**"*. The ones it gets wrong are the chapter's findings,
   and the spec says so rather than predicting the answer. **This entry said "admits nine routes

@@ -63,7 +63,7 @@ clause is buildable because chapter 3.2's credential work resolved an actor and 
 request handling resolved an id; nothing in FR-MOD-03's field list needs inventing.
 
 **WHAT THE CLAUSE DOES NOT DEFINE IS THE SET.** *"Every moderation action"* names a population
-and gives no membership rule. The router serves **25** mutating routes a tenant can reach, of
+and gives no membership rule. The router serves **24** mutating routes a tenant can reach, of
 which **nine** are ones a reasonable reader might include: ban, unban, delete a user, delete
 another author's message, edit another author's message, remove a member, change a member's
 role, archive a channel, unarchive a channel. **The nine are the expected inclusions and the

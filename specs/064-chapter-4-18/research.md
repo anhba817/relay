@@ -139,7 +139,7 @@ derivation would be a second thing to keep in step with the router.
 
 **THE POPULATION IS 25, NOT NINE.** The spec's Context said *nine mutating routes a tenant can
 reach* from a hand count. Parsing the table gives **33 mutating entries, 8 of them `/internal/`
-— so 25 tenant-reachable routes to decide about.** The spec was counting the ones it expected
+— so 25 tenant-reachable routes to decide about.** **T005's derivation later made it 24**: this parse missed a ninth `/internal/` route, and only the booted router settled it. The spec was counting the ones it expected
 to include; the number that matters is the one the derivation will hand the checker, and a
 decision is owed for every one of them.
 

@@ -114,7 +114,7 @@ no lookup, and it is the same fact the authorship check already reads three line
 this classification rides on it rather than beside it. A route added later with no decision
 fails the suite (SC-004).
 
-**The population is 25 tenant-reachable mutating routes**, derived: the table parses to 33
+**The population is 24 tenant-reachable mutating routes**, derived: the table parses to 33
 mutating entries of which 8 are `/internal/`. That parse is an estimate — a regex over the
 source found 47 entries where the file's own `method:` count is 51 — and **phase 1 replaces it
 with the number a booted application prints.** The derivation is the source; a count taken from

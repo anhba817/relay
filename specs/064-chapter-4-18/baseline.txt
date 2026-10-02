@@ -1,0 +1,212 @@
+BASELINE — feature 064, chapter 4.18, "The log that cannot be edited"
+=====================================================================================
+Every measurement in the order it was taken, including the ones that were wrong first.
+Nineteen analysis passes preceded this file; four CRITICALs and fifteen HIGHs were
+fixed before any code was written, and the passes are tabulated in
+checklists/requirements.md.
+
+PHASE 1 — SETUP (T001 … T009a)
+
+T001  THE BRIEF STILL DESCRIBES THE PLATFORM, AND §7.5's PREMISE IS THIS CHAPTER'S
+-------------------------------------------------------------------------------------
+
+      `docs/12` row 19: *"FR-MOD-03's audit log. **First in its movement, not last** —
+      everything after it writes to it. Registry-shaped, the same shape as Errors that
+      resolve, which 045 moved to the front of Part 3 for this reason."*
+
+      Checked against the tree rather than against the plan:
+
+        an `audit_log` table            does not exist — `docs/05-sad.md:430` says so
+        messages.metadata.deleted_by    the actor's KIND, one mutable column, no request id
+        the request log (4.8)           3 of FR-MOD-03's 5 fields · ReplacingMergeTree ·
+                                        TTL 30 days, against "immutable" and "1 year"
+
+      **The brief holds.** The chapter is first in its movement, the registry shape is
+      `docs/12` §5 rule 5 — *"A registry appears before the first chapter that adds to
+      it"* — and T044a/T044b carry the obligation that rule implies, which is to publish
+      how an action is ADDED to the set and not only what is in it.
+
+      **AND §7.5 IS THIS CHAPTER'S PREMISE, NOT ONLY ROW 20's.** *"Check ch 20's premise
+      before writing it. FR-MOD-01/02 are P2, and chapter 3.23 built edit history and
+      tombstones. Some of this chapter may already exist."* FR-MOD-02 being already met
+      is the whole argument that this chapter is not building a store with no writer, so
+      T008 runs it — the spec's Out of Scope was corrected at analysis pass 13 to say
+      that measuring a clause and owning it are different things.
+
+T001a THE STACK, BROUGHT UP BEFORE ANYTHING MEASURES IT
+-------------------------------------------------------------------------------------
+
+      Added at analysis pass 13: 101 tasks stopped the services by name at T076 and
+      started nothing, and four tasks need them running.
+
+        docker compose up -d --wait        8 containers healthy
+        pnpm build                         EXIT 0
+        migrate.js                         migrations: nothing to apply
+        analytics/apply.mjs                skipped 19 — the schema is current
+
+T006  THE FENCE BILL, COUNTED IN PHASE 1 WHERE IT CAN STILL CHANGE THE SEQUENCING
+-------------------------------------------------------------------------------------
+
+      4.15's rule. Pages publishing each file this chapter touches:
+
+        services/api/src/db/repository.ts                  51
+        services/api/src/db/schema.ts                      33
+        packages/protocol/src/codes.ts                     24   T040: no code is owed
+        services/api/src/db/repository.itest.ts            18   T022a writes here
+        services/api/src/isolation/targets.ts              12
+        services/api/src/auth/dev-token.controller.ts       8
+        services/api/src/messages/messages.module.ts        8
+        services/api/src/users/users.service.ts             6
+        services/api/src/users/users.module.ts              4
+        services/api/src/channels/channels.module.ts        4
+        services/api/src/webhooks/webhooks.module.ts        2
+        services/api/src/media/media.module.ts              1
+        packages/test-harness/src/no-trigger-in-migrations.test.ts   0
+
+      **TWO NUMBERS THE PLAN'S TABLE DID NOT HAVE, AND THEY POINT OPPOSITE WAYS.**
+      `repository.itest.ts` is published by **18 pages** and T022a writes the
+      construction-site assertion into it — research R4 counted that file among the 17
+      fenced test files a REQUIRED constructor parameter would have edited, and then the
+      optional-parameter decision kept all 17 off the bill except this one, which T022a
+      opens anyway. It is the single most-published file this chapter edits after
+      `repository.ts` and `schema.ts`.
+
+      And **`no-trigger-in-migrations.test.ts` is published by nothing**, so T014c's
+      amendment — the fix for analysis pass 18's CRITICAL — costs the chain zero.
+
+T009  ONE REAL COLUMN IN THE WHOLE DATABASE, AND A CONTROL THAT FIRED
+-------------------------------------------------------------------------------------
+
+        select table_name||'.'||column_name from information_schema.columns
+        where column_name ~ 'ban|moderat|actor|audit'
+
+        pg_stat_database.sessions_abandoned     a statistics catalogue, substring `ban`
+        users.banned_at                         the only real one
+
+      **Two hits, one meaning.** The second is the control working: a pattern returning
+      only `users.banned_at` would have looked identical and proved less, which is why
+      this project classifies every hit rather than reporting a count.
+
+T009a THE ORDINAL LEAK, AND BOTH GATES §6 REQUIRED ARE STILL ABSENT
+-------------------------------------------------------------------------------------
+
+        Part 4 ordinals in services/ and packages/      257
+        Part 3 ordinals, on a surface 045 took to 0      27
+        check:redirects in package.json / ci.yml        0 / 0
+
+      `docs/12` §6 is titled *"Two gates that must exist before chapter one"* and neither
+      exists eighteen chapters in. G2 predicted this in writing: *"Part 4 will write new
+      ordinals, and the only thing that stopped them leaking last time was a person."*
+      **Recorded, not repaired** — the standing rule keeps this chapter from adding to it.
+
+T003  THE FIVE TUTORIAL GATES, EACH OUTSIDE A PIPE WITH ITS COUNTED LINE
+-------------------------------------------------------------------------------------
+
+        check:docs     0   check-revision-order: 25 revisions ascend, 1.0 to 1.24
+        check:errors   0   34 codes, 34 sections, each with a cause and a client action
+        check:fences   0   291 fenced files replay onto relay-platform across 60 chapters
+        check:figures  0   310 figures, every diagram passed as `code`; 312 bindings resolve
+        check:srs      0   245 clause rows, 245 unique identifiers, no duplicates
+
+      055-4's rule: five of seven gate scripts exit 0 over an absent corpus, so the line
+      is the measurement and the exit code is not.
+
+T004  THE CI BASELINE IS GREEN WITH AN EMPTY ERROR SET
+-------------------------------------------------------------------------------------
+
+      Run **36948190833** at `6716daa` — 063's close-out, which is the last pushed state;
+      064's 23 superproject commits are local.
+
+        relay-platform — the Docker-free gate            SUCCESS
+        relay-platform — integration lanes and coverage  SUCCESS
+        relay-platform — the sealed integration          SUCCESS
+        relay-tutorial — build, docs drift, fence chain  SUCCESS
+
+        `##[error]` lines over the whole run:            **0**
+
+      **AN EMPTY BASELINE IS THE HARDEST COMPARISON TO PASS, NOT THE EASIEST.** T080's
+      per-error diff can only equal zero by introducing nothing — there is no removal to
+      offset an addition. Chapter 4.17 opened and closed on the same baseline.
+
+T002  THE LANE SET, EVERY EXIT CODE OUTSIDE A PIPE
+-------------------------------------------------------------------------------------
+
+        pnpm lint                   REAL EXIT 0
+        pnpm typecheck              REAL EXIT 0
+        pnpm build                  REAL EXIT 0
+        pnpm test                   REAL EXIT 0      945 unit tests
+        pnpm test:integration       REAL EXIT 1      70 suites, 70 ran, 2 failed
+        pnpm coverage               REAL EXIT 1      146 files, 2,116 tests, 2 failed
+                                                     ZERO coverage thresholds breached
+
+      **THE BASELINE IS RED AND THE SET IS THE MEASUREMENT RATHER THAN THE COLOUR.**
+      Named with their messages so a later red can be compared per test:
+
+        test:integration   outbox.itest.ts      "invariant 8: two concurrent relays
+                                                 publish every row exactly once"
+                           deliveries.itest.ts  "invariant 12: the SWEEP disables the
+                                                 quiet endpoint no outcome ever revisits"
+
+        coverage           outbox.itest.ts      "invariant 4: both doors produce one
+                                                 event each, identical in shape"
+                           outbox.itest.ts      "invariant 9: the broker can be absent"
+
+      **FOUR FAILURES ACROSS TWO RUNS OF THE SAME TREE, AND ONLY ONE FILE IS IN BOTH.**
+      `outbox.itest.ts` fails invariant 8 in one lane and invariants 4 and 9 in the
+      other, minutes apart, with nothing changed between them. Chapter 4.17 measured the
+      same file across three observations and got three different sets; its conclusion
+      holds here — **lane interference, not a regression.**
+
+      **AND THE COVERAGE EXIT CODE IS TESTS, NOT THE RATCHET.** `grep -icE "ERROR.*coverage
+      .*threshold|does not meet"` over the whole run is **0**. No pin moved, and no pin
+      can have moved, because no source file has changed yet.
+
+T005  THE ROUTER SAYS 47, AND THE PARSE WAS RIGHT WHERE THE GREP WAS WRONG
+-------------------------------------------------------------------------------------
+
+      `targets.itest.ts`, 9 of 9, under `--reporter=verbose`:
+
+        gauntlet targets: 47 derived, 39 attacked, 8 exempt
+                          (read 6, write 26, credential 4, list 3, exempt 8)
+
+      **Research R3 published two estimates and said only the router could settle it.**
+      A regex over `targets.ts` found **47**; `grep -c "method:"` found **51**, and R3
+      recorded the disagreement rather than picking. The router says 47 — so the parse
+      was right and the grep was counting the string `method:` four times more often
+      than there are entries. *A count taken from the text is a guess about the
+      derivation*, and this is the case where one guess was exact and the other was not.
+
+      **AND THE BOTH-DIRECTIONS ASSERTION IS WHAT LICENSES T010 TO USE THE FILE.** The
+      suite passes only when every derived target matches an entry and every entry
+      matches a derived target, so `targets.ts`'s list and the router's are the same
+      list — proven this run, not assumed. T010 builds `routes.md` from the file with
+      that warrant rather than from a fresh parse.
+
+T010  THE POPULATION IS 24, AND SIX DOCUMENTS SAID 25
+-------------------------------------------------------------------------------------
+
+      `routes.md` holds the table. Derived from the booted application:
+
+        47 routes derived
+        33 mutating (POST · PATCH · PUT · DELETE)
+         9 of those /internal/
+        24 tenant-reachable mutating   ← the population owed a decision
+
+      **THE 25 WAS WRONG FROM THE MOMENT IT WAS WRITTEN AND IT REACHED SIX DOCUMENTS.**
+      Analysis pass 2 corrected the spec from *nine* to *25* and the 25 came from a
+      strict regex that **missed a ninth `/internal/` route**; it then spread to the
+      spec, the plan, the data model, the tasks, the checklist and the research note.
+      Swept to 24 in all six.
+
+      **AND THAT IS THE FOURTH BRITTLE REGEX OVER THIS ONE FILE.** Across the analysis
+      passes and this phase: a parse that found 47 of 47 (right), `grep -c "method:"`
+      that found 51 (wrong, counting a string), a field-order-sensitive parse that found
+      23 of 47 (wrong), and the strict one that produced the 25. The version that works
+      pairs each `path:` with the nearest preceding `method:` in document order, because
+      the entries carry comments between their fields and no two are shaped alike.
+      **`targets.ts` is a file with one job and four of my instruments got it wrong.**
+
+      **The classification is T012's and the table's last two columns are empty.** The
+      `accepts` column is the derivation's own, and the four `either` routes are visible
+      in it — `POST …/messages`, `DELETE …/messages/:messageId`, `POST /v1/media`,
+      `PUT …/channels/:channelId/read` — which is where FR-002a's third value applies.

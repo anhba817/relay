@@ -18,7 +18,7 @@ route carried on the derivation the isolation gauntlet already runs against the 
 read route for a tenant's own entries modelled on chapter 4.8's.
 
 **The product is a decision, not a table.** *"Every moderation action"* names a population and
-gives no membership rule. The router serves **25 tenant-reachable mutating routes** and the
+gives no membership rule. The router serves **24 tenant-reachable mutating routes** and the
 chapter owes a decision and a reason for each — which is the same work FR-ANL-06's *"counts
 derived from operational data"* was at chapter 4.7 and FR-MED-09's *"renders as"* was at 4.17.
 
@@ -156,7 +156,7 @@ pinning N, deliberately. Record the lane and CI baselines the way chapter 4.17 d
 code outside a pipe, every gate's counted line, and the CI error set per error. **Count the
 fence bill here** (R6), not at the end.
 
-**Phase 2 — Foundational: the decision.** Classify all 25 tenant-reachable mutating routes with
+**Phase 2 — Foundational: the decision.** Classify all 24 tenant-reachable mutating routes with
 a reason each; decide R3's open question — a field on `targets.ts` or a sibling table; decide
 the foreign key's `ON DELETE`; and **resolve FR-005 against FR-012**, which cannot both hold
 for the four methods that act outside a transaction. This phase produces documents, not code,
@@ -269,7 +269,7 @@ to see, which is the only job it has.
   action by re-running each action's own suite unedited, and T075 checks it against the diff.
 - **The classification will produce findings, and some will be routes nobody would have
   listed.** The premise this risk was written with is closed — the spec said nine where the
-  population is 25, and pass 2 corrected it to *"25, of which nine are expected inclusions"* —
+  population is 24 — pass 2 corrected nine to 25 and T005's derivation then corrected 25 to 24 —
   but the prediction stands, and T044 records each misclassification with what the rule said
   and what the right answer is.
 - **No gate refuses a chapter ordinal in platform source, and this chapter writes into it.**
