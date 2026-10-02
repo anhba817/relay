@@ -49,7 +49,32 @@ trigger is the one that fires. Its two bypasses are measured too — `SET
 session_replication_role = replica` and `DROP TRIGGER` both succeed — so **the claim is scoped
 to the application and to accident, not to somebody holding the database password.** The
 product is a decision rather than a table: *"every moderation action"* names a population and
-the router serves **25 tenant-reachable mutating routes** owing one each.
+the router serves **25 tenant-reachable mutating routes owing a DECISION each** — not an entry
+each, which is the distinction the classification exists to make.
+
+**SEVENTEEN ANALYSIS PASSES: 9, 5, 5, 4, 3, 4, 2, 3, 2, 3, 2, 2, 2, 2, 3, 3, 2 — four
+CRITICALs, and three of them came from opening a section no earlier pass had.** (1) **FR-005
+and FR-012 could not both hold**: four of seven candidate methods — `unbanUser`,
+`setMemberRole`, `archiveChannel`, `unarchiveChannel` — act outside a transaction, so writing
+an entry atomically means adding one, and `unbanUser` cannot even say whether it changed a row.
+FR-005a and FR-005b name the exception; T014b decides it before any code. (2) **`occurred_at`
+is `timestamptz(3)`**, because Postgres stores `.083489` and `toISOString()` sends `.083`, so a
+cursor built from the wire value **skips every row inside the lost fraction** — the first
+keyset cursor over a timestamp column in Postgres here, and unfixable after entries exist.
+(3) **One route's answer depends on the credential**: `DELETE …/messages/:messageId` is
+`accepts: "either"`, FR-MOD-02 under a key and FR-013 under a user deleting their own, so the
+classification has a third value. (4) **Constitution VII requires an ADR and the plan had a
+research note** — ADR-35 goes in `docs/06` *and* the SAD, because 31 through 34 are in the
+summary and appear zero times in the argument.
+
+**AND THE LAST FOUR PASSES FOUND ONE CLASS IN FIVE DOCUMENTS.** Remediation edits requirements;
+the sections that JUSTIFY requirements go stale the same way. The spec's Assumptions still
+forbade what FR-012 was amended to permit; the plan's risk register warned against the
+permitted case; the checklist's risks and research R5 carried premises closed ten passes
+earlier. **A fact corrected in one document stays live in every other that restated it** — the
+nine-not-25 population was fixed at pass 2 and was still live at pass 16 — so: *after
+correcting a number, grep the feature directory for the old one, and read the hits, because a
+correction quotes the thing it corrects.*
 
 **063 IS CLOSED — CHAPTER 4.17, "★ Milestone: an image, end to end".** Movement VI closes. Its
 record is `specs/063-chapter-4-17/` — `baseline.txt` first (every phase's measurements in the

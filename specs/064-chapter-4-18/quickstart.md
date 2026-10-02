@@ -106,7 +106,11 @@ curl -s "localhost:4000/v1/audit-log?limit=10" -H "authorization: Bearer $CREDEN
 
 **Expected**: two entries, newest first, each naming the actor (`kind: "application"` and the
 key's id), the action, the target `quickstart-target`, the instant and the request id. The
-array is keyed **`entries`**.
+array is keyed **`entries`**, and beside it `"has_more": false`, `"next_cursor": null`,
+`"prev_cursor": null` and the resolved `"window"`. **`has_more` is the one to look at**:
+EIR-API-06 requires it of every list endpoint, the platform was non-conforming from chapter
+2.4 until 4.8 added it, and an earlier draft of this contract omitted it while claiming to be
+modelled on the route that fixed it.
 
 ## 4 · The same request, in both logs
 
