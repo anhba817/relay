@@ -69,8 +69,27 @@ Each mutating, tenant-reachable route gets one of:
 
 | value | meaning |
 |---|---|
-| `moderation` | the action owes an entry, and the entry's `action` is this route's name |
-| `not-moderation` | it does not, **with a reason recorded beside it** |
+| `moderation` | the action owes an entry whoever made it |
+| `moderation-when-application` | it owes an entry **only when an application credential made it** — the same route, the same verb, a different principal |
+| `not-moderation` | it owes none, **with a reason recorded beside it** |
+
+**THE THIRD VALUE EXISTS FOR EXACTLY ONE ROUTE AND THE MECHANISM ALREADY HAS THE VOCABULARY.**
+`targets.ts` carries `accepts: "either"` on four routes, and
+`DELETE /v1/channels/:channelId/messages/:messageId` is the one where the credential decides
+whether the action is moderation. The repository says why in its own comment: *"FR-MOD-02
+grants a tenant key deletion of any message and is silent on editing… So this route accepts
+both credential classes."* An application credential deleting somebody else's message is
+FR-MOD-02; a user deleting their own is FR-013 of chapter 3.23, and **a compliance log that
+records ordinary user activity is a different and worse artifact**.
+
+The other three `either` routes need nothing: `POST …/messages` and
+`PUT …/channels/:channelId/read` are not moderation under either credential, and
+`GET …/messages` is a read.
+
+**And the condition is free at the write site.** `deleteMessage` already takes
+`userId?: string` where *"`undefined` MEANS THE TENANT"*, and T022's context carries the
+actor's kind. The entry is written when the actor is an application credential — one branch,
+no lookup, and it is the same fact the authorship check already reads three lines up.
 
 **Nothing may be exempt by omission**, which is the existing mechanism's rule and the reason
 this classification rides on it rather than beside it. A route added later with no decision

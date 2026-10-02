@@ -90,8 +90,9 @@ altered or removed by any path the platform exposes.
 **Why this priority**: it is the clause, and it is the one story that cannot be told at all
 today. Every other story in this feature assumes an entry exists to read.
 
-**Independent test**: ban a user and lift the ban, then read the log back and find two entries
-with the right actor, target and order. Attempt to modify or delete an entry through every
+**Independent test**: ban a user and lift the ban, then read the log back **through the
+repository — the published route is User Story 2's** — and find two entries with the right
+actor, target and order. Attempt to modify or delete an entry through every
 path the platform offers and find none that succeeds.
 
 ---
@@ -161,6 +162,12 @@ hand-listed, and a route added without a decision about it makes a check fail.
   set, carrying actor, action, target, timestamp and request id.
 - **FR-002**: The moderation set MUST be published as an explicit list with a reason for each
   inclusion and each exclusion, covering every mutating route a tenant credential can reach.
+- **FR-002a**: The classification MUST be able to express a route whose answer depends on the
+  credential that called it, because one route has that shape:
+  `DELETE /v1/channels/:channelId/messages/:messageId` is moderation under an application
+  credential (FR-MOD-02) and is not under a user token deleting their own message (FR-013 of
+  chapter 3.23). A two-valued per-route flag would either record ordinary user activity in a
+  compliance log or record none of the tenant's deletions.
 - **FR-003**: The set MUST be derived from the running router rather than maintained by hand,
   so that a route added later without a decision about it fails a check rather than passing
   silently.
