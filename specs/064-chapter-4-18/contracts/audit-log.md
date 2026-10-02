@@ -23,6 +23,12 @@ class-level `@Accepts("application")` carries the reason: these are routes where
 acts on something it names*, and a user token on them would be a different route shape the SRS
 does not ask for. A tenant's moderation history is the tenant's.
 
+**AND THE JOURNEY SAYS IT MORE DIRECTLY THAN THE ANALOGY DOES.** `docs/03`'s Journey 3 opens:
+*"Priya never touches Relay directly. She uses an internal support tool that Mai built on
+Relay's moderation APIs in an afternoon."* The reader of this log is a tool holding an
+application credential. An application-only route is the shape that journey requires rather
+than a limitation it tolerates.
+
 ## Query parameters
 
 | name | type | default | notes |

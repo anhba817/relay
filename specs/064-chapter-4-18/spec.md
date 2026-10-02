@@ -101,8 +101,15 @@ path the platform offers and find none that succeeds.
 
 Priya is reconstructing what happened in a channel. She has the request log, which tells her
 that a `DELETE` was issued and answered 204, and she needs to know **which message** and **on
-whose authority**. She reads the tenant's audit entries, filters to the window, and sees the
-actions in order with their targets.
+whose authority**. **Her support tool** reads the tenant's audit entries, filters to the window,
+and shows her the actions in order with their targets.
+
+**The tool reads, not Priya**, and that is `docs/03`'s first sentence about her: *"Priya never
+touches Relay directly. She uses an internal support tool that Mai built on Relay's moderation
+APIs in an afternoon — or she doesn't, if those APIs are incomplete, in which case every step
+below becomes a ticket to the engineering team."* It is also why the route takes an application
+credential and refuses a user token: that is the shape her journey requires, not a restriction
+to explain away.
 
 **Why this priority**: a log nobody can read is the defect chapter 4.6 recorded and chapter
 4.16 recorded again. The read path is what makes the write path worth having, and the
