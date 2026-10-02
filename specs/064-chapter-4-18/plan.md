@@ -122,41 +122,59 @@ also keeps the fence bill to one heavily-published file instead of six (R6).
 
 ## Phases
 
-**Phase 1 — the premise, measured before anything is built.** Derive the route list from a
-booted application and write the real number down; `targets.itest.ts` prints
+**These are `tasks.md`'s nine phases and they have the same names.** An earlier draft of this
+section numbered its own — *table and trigger*, *the writes*, *the read* at 3, 4 and 5 against
+the task list's *US1*, *US2*, *US3* — and had **no phase at all** for publishing the
+classification, which is a whole phase and three requirements. Chapter 4.17 met the same
+defect and recorded it in one line: *the plan's phases were off by one.* A reader consults the
+plan for the shape of the work; two shapes is worse than one.
+
+**Phase 1 — Setup: the premise, measured before anything is built.** Derive the route list from
+a booted application and write the real number down; `targets.itest.ts` prints
 `gauntlet targets: N derived, M attacked, …` and asserts the both-directions property without
 pinning N, deliberately. Record the lane and CI baselines the way chapter 4.17 did — every exit
 code outside a pipe, every gate's counted line, and the CI error set per error. **Count the
 fence bill here** (R6), not at the end.
 
-**Phase 2 — the decision.** Classify all 25 tenant-reachable mutating routes with a reason
-each, and decide R3's open question: a field on `targets.ts` or a sibling table. This phase
-produces a document, not code, and it is the chapter's product.
+**Phase 2 — Foundational: the decision.** Classify all 25 tenant-reachable mutating routes with
+a reason each; decide R3's open question — a field on `targets.ts` or a sibling table; decide
+the foreign key's `ON DELETE`; and **resolve FR-005 against FR-012**, which cannot both hold
+for the four methods that act outside a transaction. This phase produces documents, not code,
+and it is the chapter's product. **It is also User Story 3's substance arriving first**, because
+US1 cannot write entries for a set nobody has decided — the decision is foundational and its
+publication is phase 5.
 
-**Phase 3 — the table and the trigger.** Migration `0021`, the schema declaration, and the
-probe that attempts `UPDATE` and `DELETE` and is refused. **The probe's two bypasses are part
-of the deliverable**, not an afterthought: `session_replication_role = replica` and
-`DROP TRIGGER` both succeed, and the chapter's claim is scoped to what the probe actually
-shows.
+**Phase 3 — User Story 1: a record nothing can change.** Migration `0021` with the table and
+the trigger, then the writes. **The probe's two bypasses are part of the deliverable**, not an
+afterthought: `session_replication_role = replica` and `DROP TRIGGER` both succeed, and the
+chapter's claim is scoped to what the probe shows. Then the constructor's optional context at
+six sites with an assertion standing in for the compiler, the external id threaded where the
+write site holds only a uuid, and one action at a time — starting with the ban pair, the one
+with no trace today. **FR-012 is checked per action rather than assumed**: each action's own
+tests must stay green without being edited.
 
-**Phase 4 — the writes.** The constructor change at six sites, then one action at a time,
-starting with the ban pair because it is the one with no trace today. Each action gets its
-entry inside the transaction it already has, and FR-012 is checked per action rather than
-assumed: the action's own tests must stay green without being edited.
+**Phase 4 — User Story 2: the read.** `GET /v1/audit-log`, the 403 for a principal with no
+environment, the per-request schema built from the injected action set, `has_more` because
+EIR-API-06 requires it, the index measured, and the isolation test that performs the same
+actions in two environments.
 
-**Phase 5 — the read.** `GET /v1/audit-log`, the 403 for a principal with no environment, the
-per-request schema built from the injected action set, and the isolation test that performs the
-same actions in two environments.
+**Phase 5 — User Story 3: the set, published and checked.** The classification with a reason
+per route, the both-directions assertion, **SC-004 run red** by adding a route and watching the
+suite fail, the routes the spec's rule misclassified recorded as findings, and the procedure
+for adding an action — published both in the chapter and where the classification lives,
+because `docs/12` calls this chapter *registry-shaped* and a registry keeps its procedure next
+to itself.
 
 **Phase 6 — the probes.** Delete each tenancy predicate and re-run, the way chapters 4.11 and
-4.12 did; a coverage number will not find an SQL scope. Run the gauntlet. Run the read route
-with the analytical pipeline stopped (SC-006).
+4.12 did; a coverage number will not find an SQL scope. Run the gauntlet. Perform the unban
+with `nats` and `clickhouse` stopped (SC-006). Pin the new files, and probe the pins both ways.
 
 **Phase 7 — the documents.** FR-MOD-03 amended for the retention it cannot enforce and the
-actor it cannot identify; `docs/12` row 19 CLOSED; both copies of the Part 4 table; the SRS
-revision; `clauses.md` as a count.
+actor it cannot identify; **`docs/05-sad.md:430`'s *"There is no `audit_log` table"* corrected**,
+because this chapter makes it false; `docs/12` row 19 CLOSED; both copies of the Part 4 table;
+SRS revision 1.25; `clauses.md` as a count.
 
-**Phase 8 — the chapter.** Prose, figures, fences, the chain to zero.
+**Phase 8 — the chapter.** Prose, figures, the TRAP box, fences, the chain to zero.
 
 **Phase 9 — the record and the close.** Baseline, gaps, traceability, the quickstart run as a
 document, the lane set, push, the per-error CI comparison, tag.

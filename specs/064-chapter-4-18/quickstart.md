@@ -85,7 +85,7 @@ and proved less.
 ## 2 · MEASURED — why the request log is not the answer
 
 ```bash
-psql postgres://relay:relay@localhost:15432/relay -c '\d' >/dev/null   # a control: psql works
+docker exec relay-clickhouse-1 clickhouse-client -q 'SELECT 1'   # the control, same client
 docker exec relay-clickhouse-1 clickhouse-client -q \
   "DESCRIBE relay_analytics.api_requests FORMAT TSV" | cut -f1,2
 ```
