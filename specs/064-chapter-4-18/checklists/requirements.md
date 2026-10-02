@@ -58,6 +58,25 @@ house style is that a chapter's context is measured against the tree and quoted,
 argument for keeping the evidence visible rather than paraphrasing it into prose a later
 reader cannot check.
 
+## Analysis pass 1 — what it found, and one thing it did not
+
+Nine findings: three HIGH, four MEDIUM, two LOW, **no CRITICAL**. All nine were fixed.
+
+The two worth remembering are both **acceptance criteria that could not be met as written**.
+SC-002 said *"every path that could modify or remove an entry is attempted and refused"* while
+research R2 had already measured two paths that modify an entry and are **not** refused —
+`SET session_replication_role = replica` and `DROP TRIGGER`. SC-003's equality counted the
+router's 33 mutating routes against a set FR-002 scopes to the 25 a tenant can reach. Both
+would have been met at close-out by quiet reinterpretation, which is the shape this chapter is
+about: a sentence survives because the thing beside it is right.
+
+**AND THE MECHANICAL COVERAGE MAP RAISED FIFTEEN ALARMS AND ALL FIFTEEN WERE FALSE.** Grepping
+`tasks.md` for each requirement id shows 15 of 24 uncited — FR-001, FR-002, FR-003, FR-006,
+FR-007, FR-009, FR-010, FR-011, FR-013, SC-001, SC-003, SC-005 among them — and every one is
+covered in substance by tasks that name the work instead of the identifier. Chapter 4.11 ran
+the same instrument and got 14 of 14 false. **Recorded here so the next pass does not raise it
+a third time**, and it is why `traceability.md` is built by reading.
+
 ## Risks this spec is carrying on purpose
 
 - **The moderation set is a rule, not a list, and the rule will misclassify.** *"Mutating

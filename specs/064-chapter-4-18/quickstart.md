@@ -128,9 +128,12 @@ log finds it empty.
 
 ## 5 · Try to change an entry
 
+The id comes from §3's response, not from the database — the route returns it and a second
+source for the same value is a second thing that can disagree:
+
 ```bash
-ID=$(psql postgres://relay:relay@localhost:15432/relay -tAc \
-  "select id from audit_log order by occurred_at desc limit 1" | tr -d ' ')
+ID=$(curl -s "localhost:4000/v1/audit-log?limit=1" -H "authorization: Bearer $CREDENTIAL" \
+  | python3 -c 'import sys,json;print(json.load(sys.stdin)["entries"][0]["id"])')
 psql postgres://relay:relay@localhost:15432/relay -v ON_ERROR_STOP=0 -c \
   "update audit_log set action = 'something else' where id = '$ID'"
 psql postgres://relay:relay@localhost:15432/relay -v ON_ERROR_STOP=0 -c \

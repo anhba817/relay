@@ -208,10 +208,19 @@ hand-listed, and a route added without a decision about it makes a check fail.
 - **SC-001**: A ban and its reversal produce two entries that name the actor, the target and
   the order, where today the two actions together leave the stored state indistinguishable
   from a user who was never banned.
-- **SC-002**: Every path that could modify or remove an entry is attempted and refused, and
-  the attempts are listed with their outcomes — a count, not an adjective.
+- **SC-002**: Every path **the platform exposes** that could modify or remove an entry is
+  attempted and refused, and the attempts are listed with their outcomes — a count, not an
+  adjective. **And the paths that are NOT refused are attempted too, and listed beside them**:
+  research R2 measured `SET session_replication_role = replica` and `DROP TRIGGER` both
+  succeeding against the role the api connects as. A criterion claiming every path is refused
+  would be false on the day it was written, and the chapter's own subject is a sentence like
+  that surviving because the assertion beside it was right.
 - **SC-003**: The moderation set is published with a decision and a reason for every mutating
-  tenant-reachable route, and the count of routes decided equals the count the router serves.
+  tenant-reachable route, and the count of routes decided equals the count of **mutating
+  tenant-reachable** routes the router serves. **The internal routes are counted and published
+  separately**, as outside the set by construction rather than by decision — the router serves
+  33 mutating routes and 8 of them are `/internal/`, so an equality against the router's whole
+  count would be wrong by eight and would demand a reason for routes that cannot have one.
 - **SC-004**: A route added to the platform without a decision about its moderation status
   turns a check red, demonstrated by adding one.
 - **SC-005**: A tenant reading its own entries sees every entry of its own and zero of any
