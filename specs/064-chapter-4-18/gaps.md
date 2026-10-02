@@ -74,3 +74,30 @@ Recorded because the reflex that finds it is the wrong one: an ad-hoc command st
 the gate reports a failure the project does not have, which is the mirror of a checker that
 cannot fail. **Run the gate's invocation.** The warning itself is one line and belongs to
 whoever next opens that file.
+
+## 064-5 — the media sweep fixture's floor binds as the 24-hour window slides
+
+`services/media-worker/src/verify.itest.ts` backdates its fixture to the head of the sweep's
+window with
+
+    greatest(min(created_at) - interval '1 millisecond', now() - interval '23 hours 59 minutes')
+
+and the two terms conflict. When the oldest row inside the 24-hour window is **less than a
+minute newer than the window's edge**, the hard floor wins, the fixture is no longer at the
+head, and `sweepOnce({batch: 1})` verifies a different row. Eight tests then fail in about
+25 ms each with `expected 'pending' to be 'rejected'` — the signature of a sweep that did
+something, for somebody else.
+
+**Measured on this host**: 1,788 `media_objects` rows inside the window, 996 `pending`,
+`min(created_at)` at `23:13:01` against a floor of `23:13:51`. The same file passed at 22:24
+and failed at 23:00 **with nothing changed between them but the clock**.
+
+**CI is the control and passes it** — 14 tests green in both `test:integration` and
+`coverage` on run 37073989205 — because a fresh database has no row near the window's edge.
+059-12 recorded the pile-up *inside* the floor and fixed it by stepping a millisecond rather
+than a second; this is the floor itself, and it was always there.
+
+Not repaired here: it belongs to the chapter that owns that suite, and absorbing it would be
+this feature doing another's work. The fix is probably to drop the hard floor and let the
+fixture sit one millisecond inside the window's leading edge, computed from `now()` rather
+than from the corpus — but that is a claim to be measured by whoever takes it.

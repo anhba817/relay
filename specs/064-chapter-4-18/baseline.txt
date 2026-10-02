@@ -1408,11 +1408,17 @@ T050  SEVEN PINS FOR EIGHT NEW FILES, AND THE CURSOR WAS RAISED RATHER THAN PINN
         cursor.ts            88.23 / 80.00 / 100 / 100      lines 70-72
         audit.controller.ts  92.85 / 83.33 / 100 /  92.30   line 47
 
-      **`cursor.ts` WAS RAISED TO 100.** Its two uncovered lines are reachable refusals
-      nothing drove: a token whose instant is outside anything the column can hold, and
-      one whose id is 36 characters and not a uuid. `cursor.test.ts` drives both, plus
-      the request log's prefix presented to this decoder — two opaque cursors in one
-      platform, and a client holding the wrong one should get a refusal rather than
+      **`cursor.ts` WAS RAISED TO 100 — AND THE PIN WAS SET ON A NUMBER NOBODY HAD
+      MEASURED.** See T080 below: CI reported 94.11 / 90 against it. The claim in this
+      paragraph was written from a 5-passing test run, which reports no coverage at all,
+      and the full lane was not re-run before the pin went in.
+
+      Its two uncovered lines are reachable refusals nothing drove: a token whose instant
+      is outside anything the column can hold, and one whose id is 36 characters and not
+      a uuid. `cursor.test.ts` drives both — **after T080 fixed the second fixture**,
+      which was refused a branch earlier than the arm it was named for — plus the request
+      log's prefix presented to this decoder, because two opaque cursors exist in one
+      platform and a client holding the wrong one should get a refusal rather than
       somebody else's page. 5 of 5, **in the Docker-free lane**, because a cursor is
       arithmetic. 4.13's `shape.ts`, raised rather than lowered.
 
@@ -1563,3 +1569,92 @@ T081  --------------------------------------------------------------------------
       291 files across 61 chapters, and all five remaining tutorial gates re-run green
       rather than assumed. Push order holds — the platform is already correct, so this
       is `relay-tutorial` and then the pointer.
+
+      AND THE REPAIR RUN FAILED SOMEWHERE ELSE, WHICH IS WHY THE COMPARISON IS PER ERROR
+-------------------------------------------------------------------------------------
+
+      Run **37073989205** at `5c38314`:
+
+        relay-platform — the Docker-free gate            SUCCESS
+        relay-platform — the sealed integration          SUCCESS
+        relay-tutorial — build, docs drift, fence chain  **SUCCESS**   (repaired)
+        relay-platform — integration lanes and coverage  **FAILURE**, at `pnpm coverage`
+
+      **A COLOUR COMPARISON WOULD READ "RED, THEN RED".** The two runs fail in different
+      jobs for unrelated reasons, and the tutorial job the first run failed is green in
+      the second. Nothing about the sequence is visible from the conclusions.
+
+        150 test files passed, 0 failed
+        ERROR: Coverage for statements (94.11%) does not meet
+               "services/api/src/audit/cursor.ts" threshold (100%)
+        ERROR: Coverage for branches (90%) does not meet … threshold (100%)
+        cursor.ts   94.11 | 90 | 100 | 100 | **72**
+
+      **NOT 4.13's MOVING DENOMINATOR. A TEST THAT NEVER REACHED THE ARM IN ITS OWN
+      TITLE.** Line 72 is `if (!UUID.test(id)) return null;`, and `cursor.test.ts`'s
+      fixture for it was `zzzzzzzz-4642-4710-a910-e703bf852190` — 36 characters, which is
+      what the test asserted, and containing `z`, which the OUTER pattern
+      `[0-9a-fA-F-]{36}` refuses four lines earlier. The decoder returned `null` at line
+      67. The test passed, the assertion was true, and the arm never ran:
+
+        zzzzzzzz-4642-4710-a910-e703bf852190   outer=false   never reaches line 72
+        aae5d6254642-4710-a910-e703bf8521901   outer=true    hyphens in the wrong places
+
+      **A fixture has to get past the earlier refusal to reach the later one**, and a
+      test named for an arm is not a test of that arm. 062's A11 at a different address:
+      there the fixture made a read return the same answer either way; here it makes a
+      refusal fire from the wrong line.
+
+      **AND THE PIN WAS SET ON A NUMBER NOBODY MEASURED.** After writing
+      `cursor.test.ts` I ran that one file — 5 passed, and **`vitest run <file>` without
+      `--coverage` reports no coverage at all** — then wrote `100` into the config and
+      recorded *"raised to 100"* in this document. T051's two probes used a single test
+      file and so could not have caught it either. **The number in the pin and the number
+      from the lane were never compared.**
+
+      **BOTH OF THIS FEATURE'S CI FAILURES ARE THE SAME SHAPE AND BOTH COME FROM T050.**
+      The coverage pins were added after the fence chain was taken to zero and
+      `check:fences` was not re-run; the coverage pin was added after the last coverage
+      run and `pnpm coverage` was not re-run. *Run the instrument after the edit* — rule
+      6 says it for fences, and nothing says it for the ratchet, which is the one edit
+      that looks safest because it is the ratchet being tightened.
+
+      AND THE LOCAL RE-RUN FOUND EIGHT REDS THAT ARE THE HOST, NOT THE CHANGE
+-------------------------------------------------------------------------------------
+
+      The verifying coverage run came back **150 files, 2,161 tests, 8 failed**, all in
+      `services/media-worker/src/verify.itest.ts`, all `expected 'pending' to be
+      'rejected'`, **each in about 25 ms** — which is what a sweep that verified
+      somebody else's row looks like, the same signature 4.9 read in a 0 ms attack.
+
+        the same file, run alone                    8 of 14 red, twice
+        one of those tests alone, with `-t`         **PASSES**
+        the same file in CI, run 37073989205        **✓ 14 tests**, in BOTH
+                                                    `test:integration` and `coverage`
+        CI's whole coverage lane                    **150 files passed, 0 failed**
+
+      **The control is CI and it is unambiguous.** This host carries **1,788
+      `media_objects` rows inside the sweep's 24-hour window, 996 of them `pending`**;
+      CI's database is minutes old. The fixture's backdate aims at the head of that
+      window and `greatest(min(created_at) - 1ms, now() - 23h59m)` **clamps to the hard
+      floor whenever the oldest in-window row is less than a minute newer than the
+      window's edge**, which is a condition that arrives and passes as the window slides.
+      The suite was green at 22:24 and red at 23:00 with nothing changed between them but
+      the clock.
+
+      **It is 059-12's entry with its other half still open.** That finding fixed the
+      pile-up *within* the floor by stepping a millisecond instead of a second; the floor
+      itself still binds, and the suite then verifies the backlog its own comment says it
+      exists to avoid. **Not this chapter's to repair** — a defect found in earlier work
+      is recorded with its bill — and carried as `gaps.md` 064-5.
+
+      **AND IT IS 4.17's ASYMMETRY POINTING THE SAME WAY IT DID THERE**: an assertion
+      reading state that is not its own, breaking on the machine that has run the suite
+      most and passing on the clean one. The useful half is that the direction is now
+      predictable rather than surprising.
+
+      **THE PIN ITSELF IS VERIFIED.** `cursor.ts` measures **100 / 100 / 100 / 100** on a
+      full local run with the fixture corrected, and the run reports **zero threshold
+      errors** — the exit code is the eight media tests and nothing to do with the
+      ratchet. `audit.controller.ts` measures 92.85 / 83.33 against its 90 / 80, as
+      pinned.
