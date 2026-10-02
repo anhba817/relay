@@ -38,6 +38,19 @@ tags. **Anyone holding an older clone of `relay-platform` must reset rather than
 
 <!-- SPECKIT START -->
 
+**ACTIVE PLAN: `specs/064-chapter-4-18/plan.md`** — chapter 4.18, movement VII opens. FR-MOD-03's
+audit log, and `docs/05-sad.md` already says *"There is no `audit_log` table"*. **Measured before
+the plan was written: a ban followed by an unban leaves no trace anywhere** — `banned_at` goes
+back to `NULL`, `users.banned_at` is the only real column in the database whose name touches
+banning, moderation, actors or auditing, and a ban of a user in no channel emits no event
+either. **And `REVOKE UPDATE, DELETE` does nothing**: the api connects as `relay`, which is a
+superuser, so the obvious immutability mechanism is inert and a `BEFORE UPDATE OR DELETE`
+trigger is the one that fires. Its two bypasses are measured too — `SET
+session_replication_role = replica` and `DROP TRIGGER` both succeed — so **the claim is scoped
+to the application and to accident, not to somebody holding the database password.** The
+product is a decision rather than a table: *"every moderation action"* names a population and
+the router serves **25 tenant-reachable mutating routes** owing one each.
+
 **063 IS CLOSED — CHAPTER 4.17, "★ Milestone: an image, end to end".** Movement VI closes. Its
 record is `specs/063-chapter-4-17/` — `baseline.txt` first (every phase's measurements in the
 order they were taken, including the ones that were wrong first), then `gaps.md` (**7 entries
