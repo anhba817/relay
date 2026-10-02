@@ -113,6 +113,26 @@ named here so the chapter's own tests and its quickstart cannot disagree about i
 tenant's page today — and *should not occur* is not *cannot*, so the contract says the field is
 nullable rather than letting the first occurrence be a client's crash.
 
+## No deadline, and that is a decision rather than an omission
+
+**ADR-26 is the chapter that put a customer-facing log route on the request path**, and its
+problem statement is *"This chapter puts it on the request path, with a person waiting."* Its
+answer was a limit on both sides — `SERVER_DEADLINE_SECONDS = 2` in the client and
+`SETTINGS max_execution_time` in the query — after measuring that **aborting a `fetch` stops
+the client waiting and ClickHouse keeps executing**, so a tenant retrying a slow page
+accumulates server-side work.
+
+This route sets none, and the reason is that the thing ADR-26 was defending against cannot
+arise here. The read is a keyset page of at most 200 rows on
+`(environment_id, occurred_at DESC, id DESC)`, which is a bounded index range rather than a
+scan — there is no query shape a caller can ask for that costs more than the page. And Postgres
+is the operational store: constitution III's *"failure or backlog of the analytical pipeline
+MUST NOT affect … API availability"* is about a dependency this route does not have.
+
+**If T032a's measurement finds the planner doing anything other than an index range, this
+paragraph is wrong and `statement_timeout` is the answer.** It is written here so the next
+reader knows the question was asked rather than skipped.
+
 ## Refusals
 
 | condition | status | code |

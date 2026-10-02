@@ -58,6 +58,45 @@ house style is that a chapter's context is measured against the tree and quoted,
 argument for keeping the evidence visible rather than paraphrasing it into prose a later
 reader cannot check.
 
+## Re-validated after ten analysis passes, and two of the ticks above were false when made
+
+**The 16 items are ticked again and the ticks mean something different now.** The first
+validation happened before any analysis pass; ten have run since and found **four CRITICALs**.
+Two items were ticked while the thing they assert was untrue, and this section says which,
+because a checklist that only records its final state is a checklist nobody can audit.
+
+| item | was it true when first ticked? | what made it true |
+|---|---|---|
+| Success criteria are measurable | **No.** SC-002 demanded that *"every path that could modify or remove an entry is attempted and refused"* while research R2 had already measured two paths that modify an entry and are not refused. SC-003's equality counted the router's 33 mutating routes against a set FR-002 scopes to 25. | pass 1, F1 and F3 |
+| Requirements are testable and unambiguous | **No.** FR-005 required the entry written inside the action's transaction and FR-012 forbade changing any action's behaviour; four of seven candidate methods have no transaction, so the pair was unsatisfiable for `unbanUser`, `setMemberRole`, `archiveChannel` and `unarchiveChannel`. | pass 2, G1 — FR-005a, FR-005b and FR-012's named exception |
+| All functional requirements have clear acceptance criteria | Thinly. FR-012 had no success criterion at all. | pass 1, F12 — SC-007a |
+| Edge cases are identified | **Yes, and identified is not handled.** Edge case 4 described a route whose answer depends on the credential, and the classification had two values until pass 7. | pass 7, M1 — `moderation-when-application` |
+
+**The other twelve were true and are still true.**
+
+### What ten passes cost and produced
+
+    pass  1   9 findings   artifact against artifact
+    pass  2   5            artifact against the tree                      1 CRITICAL
+    pass  3   5            the tree, and pass 2's own fixes
+    pass  4   4            the precedent it cites
+    pass  5   3            the same, remaining citations
+    pass  6   4            the artifacts' structure after five rounds of edits
+    pass  7   2            the spec's Edge Cases and Independent tests     1 CRITICAL
+    pass  8   3            the constitution's constraints section          1 CRITICAL
+    pass  9   2            the documents cited but never opened            1 CRITICAL
+    pass 10   3            ADR-26, which pass 9 cited and did not open
+
+**Four of ten passes found a CRITICAL and three of those were consecutive, at 7, 8 and 9 —
+the passes with the lowest counts.** Each came from opening something no earlier pass had: the
+edge-case list, the constitution's constraints section, the ADR register. The count fell from
+nine to two and the severity did not move. **A yield curve measures what is left to find only
+if every pass looks in the same place**, and these did not.
+
+**And pass 9 committed the defect pass 4 had named.** It cited ADR-26 as this chapter's mirror
+on the strength of its title; opening it in pass 10 produced two more findings. *Citing a
+precedent is not reading it* has now caught three artifacts and one analysis pass.
+
 ## Analysis pass 1 — what it found, and one thing it did not
 
 Nine findings: three HIGH, four MEDIUM, two LOW, **no CRITICAL**. All nine were fixed.
