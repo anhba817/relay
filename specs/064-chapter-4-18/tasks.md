@@ -223,19 +223,19 @@ decision fails a check.
 
 ## Phase 9: The record and the close
 
-- [ ] T072 Write `specs/064-chapter-4-18/baseline.txt` phase by phase, **in the order the measurements were taken, including the ones that were wrong first**.
-- [ ] T073 [P] Write `specs/064-chapter-4-18/gaps.md`, numbered, with the carried ledger **re-measured** rather than copied. Known carries: 063-2 (one upload in six waits five or six sweeps), 063-3 (the worker's log cannot say it is alive), 063-4 (three feature-local ids with two meanings each), 063-7 (`psubscribe("revision:*")` counts everybody's frames), 050-8, 062-12, 043-1. **Open here**: the api connects as a superuser, and a non-superuser role is what would make the immutability claim strong **and the trigger redundant** (research R7a's reversal condition); and **`docs/06-adr-deep-dives.md` is four ADRs behind `docs/05-sad.md`** — 31 through 34 appear in the summary and zero times in the argument, which is chapter 4.5's finding four chapters later.
+- [X] T072 Write `specs/064-chapter-4-18/baseline.txt` phase by phase, **in the order the measurements were taken, including the ones that were wrong first**.
+- [X] T073 [P] Write `specs/064-chapter-4-18/gaps.md`, numbered, with the carried ledger **re-measured** rather than copied. Known carries: 063-2 (one upload in six waits five or six sweeps), 063-3 (the worker's log cannot say it is alive), 063-4 (three feature-local ids with two meanings each), 063-7 (`psubscribe("revision:*")` counts everybody's frames), 050-8, 062-12, 043-1. **Open here**: the api connects as a superuser, and a non-superuser role is what would make the immutability claim strong **and the trigger redundant** (research R7a's reversal condition); and **`docs/06-adr-deep-dives.md` is four ADRs behind `docs/05-sad.md`** — 31 through 34 appear in the summary and zero times in the argument, which is chapter 4.5's finding four chapters later.
 - [X] T074 Run `specs/064-chapter-4-18/quickstart.md` end to end and correct it in place, recording each wrong version. **Four of its sections are marked MEASURED and were run at plan time; the rest are predictions** — the last four chapters' quickstarts were wrong three, four, three and five times at exactly this point.
 - [X] T075 **Check FR-012 rather than trusting it** (SC-007a): `git diff --name-only` the platform changes and confirm in `specs/064-chapter-4-18/baseline.txt` that every file outside tests and documents is one the chapter is for. Chapter 4.17's came back two files, both tests.
 - [X] T076 Stop the composed services **by name** — `api gateway dispatcher media-worker`, and **not `ingester`**, which has no Dockerfile and makes the whole command fail.
 - [X] T077 Run the full lane set once more with nothing else against the stack and record every REAL exit code in `specs/064-chapter-4-18/baseline.txt`, compared **per test** against T002's baseline rather than by colour.
-- [ ] T078 Confirm every phase was committed as it closed, in `specs/064-chapter-4-18/baseline.txt`.
-- [ ] T079 **Push submodules first, then the superproject** — `relay-platform`, then `relay-tutorial`, then the repository root. `.github/workflows/ci.yml` is the outer repository's and the other two are gitlinks, so the reverse order checks out commits no remote has.
-- [ ] T080 Compare the CI error set **per error** against T004's baseline, in both directions, and record it in `specs/064-chapter-4-18/baseline.txt` (SC-008). One comparison supports *"this run introduced nothing new"*, not *"the set is stable"*.
-- [ ] T081 If CI is red, fix the platform, then **re-dump, re-hunk `relay-tutorial/fences/post-series.md`, and push both** — repairing a platform file invalidates the appendix hunks that publish it.
-- [ ] T082 Tag `part4-ch18` in `relay-platform`, annotated, on a commit CI has proved green.
-- [ ] T083 Compress 063's `CLAUDE.md` entry to its headline, measurement block and still-cited findings, and add this one. **`wc -c CLAUDE.md` before and after** against the 150,000 budget, rather than a figure carried from a task written days earlier.
-- [ ] T084 Remove the active-plan line from between the `SPECKIT` markers in `CLAUDE.md` when the feature closes, so the next feature's line replaces a plan rather than joining a list.
+- [X] T078 Confirm every phase was committed as it closed, in `specs/064-chapter-4-18/baseline.txt`.
+- [X] T079 **Push submodules first, then the superproject** — `relay-platform`, then `relay-tutorial`, then the repository root. `.github/workflows/ci.yml` is the outer repository's and the other two are gitlinks, so the reverse order checks out commits no remote has.
+- [X] T080 Compare the CI error set **per error** against T004's baseline, in both directions, and record it in `specs/064-chapter-4-18/baseline.txt` (SC-008). One comparison supports *"this run introduced nothing new"*, not *"the set is stable"*.
+- [X] T081 If CI is red, fix the platform, then **re-dump, re-hunk `relay-tutorial/fences/post-series.md`, and push both** — repairing a platform file invalidates the appendix hunks that publish it.
+- [X] T082 Tag `part4-ch18` in `relay-platform`, annotated, on a commit CI has proved green.
+- [X] T083 Compress 063's `CLAUDE.md` entry to its headline, measurement block and still-cited findings, and add this one. **`wc -c CLAUDE.md` before and after** against the 150,000 budget, rather than a figure carried from a task written days earlier.
+- [X] T084 Remove the active-plan line from between the `SPECKIT` markers in `CLAUDE.md` when the feature closes, so the next feature's line replaces a plan rather than joining a list.
 
 ---
 

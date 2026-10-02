@@ -1658,3 +1658,64 @@ T081  --------------------------------------------------------------------------
       errors** — the exit code is the eight media tests and nothing to do with the
       ratchet. `audit.controller.ts` measures 92.85 / 83.33 against its 90 / 80, as
       pinned.
+
+T080  THE THIRD RUN IS GREEN ON ALL FOUR JOBS WITH AN EMPTY ERROR SET (SC-008)
+-------------------------------------------------------------------------------------
+
+      Run **37076601118** at `0c7fc0e`:
+
+        relay-platform — the Docker-free gate            SUCCESS
+        relay-platform — integration lanes and coverage  SUCCESS
+        relay-platform — the sealed integration          SUCCESS
+        relay-tutorial — build, docs drift, fence chain  SUCCESS
+
+        coverage               **150 files, 2,161 tests passed, 0 failed**
+        the sealed suite       21 passed
+        check:fences           291 fenced files replay onto relay-platform, 61 chapters
+        check:srs              245 clause rows
+        check:figures          314 figures
+
+      THE PER-ERROR COMPARISON, ACROSS ALL FOUR RUNS:
+
+        36948190833  6716daa  SUCCESS  baseline, 063's close-out   **0** errors
+        37072661053  481f87d  failure  the chapter                  2
+        37073989205  5c38314  failure  the fence repair             1
+        37076601118  0c7fc0e  **SUCCESS**  the pin repair           **0**
+
+      **The close-out set is identical to the baseline, empty in both directions** —
+      which 4.17 noted is the hardest baseline there is, because an empty set cannot be
+      matched by introducing something and removing something else.
+
+      **AND THE COMPARISON EARNED ITSELF TWICE ON THE WAY.** Runs 1 and 2 are both
+      `failure`, and a colour comparison reads *red, red*: the tutorial job failed first
+      and is green in the second, where the lanes job fails instead, for an unrelated
+      cause. Neither the sequence nor the repair is visible from the conclusions.
+
+      **AND THE RED RUNS' ERROR LINES CARRIED NOTHING.** Both were
+      `##[error]Process completed with exit code 1.` — the failing STEP's name is only
+      in the job's step list, not in its errors, so the per-error diff said *two new
+      errors* and could not say what either was. The set comparison tells you the runs
+      differ; the step list tells you how. Both were needed here.
+
+T082  TAGGED **`part4-ch18`**, annotated, on `be068b5e` — the commit CI run
+      **37076601118** proved green on all four jobs. `part4-ch15` … `part4-ch18` all
+      present and pushed.
+
+T083  `CLAUDE.md` AGAINST ITS BUDGET, MEASURED RATHER THAN CARRIED
+
+        at the open                        146,557 bytes   headroom  3,443
+        063's entry compressed             137,330         freed     8,323  (155 lines
+                                                                     -> its headline,
+                                                                     measurement block
+                                                                     and cited findings)
+        064's entry added                  146,576         headroom  3,424
+        the active-plan block removed      **143,491**     headroom  **6,509**
+
+      **The compression bought 8,323 and this entry spent 9,246**, so the file is 3,066
+      bytes bigger than it started and the headroom is larger only because the
+      active-plan block went with the feature. **The next feature has to compress 064 as
+      well as writing its own** — which is the convention working rather than failing,
+      and worth saying because the headroom figure alone reads as comfortable.
+
+T084  THE ACTIVE-PLAN LINE IS REMOVED, so the next feature's line replaces a plan rather
+      than joining a list. 3,085 bytes.

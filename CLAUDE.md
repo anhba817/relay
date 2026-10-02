@@ -38,43 +38,129 @@ tags. **Anyone holding an older clone of `relay-platform` must reset rather than
 
 <!-- SPECKIT START -->
 
-**ACTIVE PLAN: `specs/064-chapter-4-18/plan.md`** — chapter 4.18, movement VII opens. FR-MOD-03's
-audit log, and `docs/05-sad.md` already says *"There is no `audit_log` table"*. **Measured before
-the plan was written: a ban followed by an unban leaves no trace anywhere** — `banned_at` goes
-back to `NULL`, `users.banned_at` is the only real column in the database whose name touches
-banning, moderation, actors or auditing, and a ban of a user in no channel emits no event
-either. **And `REVOKE UPDATE, DELETE` does nothing**: the api connects as `relay`, which is a
-superuser, so the obvious immutability mechanism is inert and a `BEFORE UPDATE OR DELETE`
-trigger is the one that fires. Its two bypasses are measured too — `SET
-session_replication_role = replica` and `DROP TRIGGER` both succeed — so **the claim is scoped
-to the application and to accident, not to somebody holding the database password.** The
-product is a decision rather than a table: *"every moderation action"* names a population and
-the router serves **25 tenant-reachable mutating routes owing a DECISION each** — not an entry
-each, which is the distinction the classification exists to make.
+**064 IS CLOSED — CHAPTER 4.18, "The log that cannot be edited".** Movement VII opens. Its
+record is `specs/064-chapter-4-18/` — `baseline.txt` first (every phase's measurements in the
+order they were taken, including the ones that were wrong first), then `gaps.md` (**4 new plus
+the carried ledger re-measured**), `traceability.md`, `clauses.md`, `routes.md`,
+`quickstart.md`, `tasks.md`. **SRS 1.25**, **ADR-35**, `docs/12` row 19 CLOSED, and **both**
+copies of the Part 4 table amended. Tagged **`part4-ch18`**.
 
-**SEVENTEEN ANALYSIS PASSES: 9, 5, 5, 4, 3, 4, 2, 3, 2, 3, 2, 2, 2, 2, 3, 3, 2 — four
-CRITICALs, and three of them came from opening a section no earlier pass had.** (1) **FR-005
-and FR-012 could not both hold**: four of seven candidate methods — `unbanUser`,
-`setMemberRole`, `archiveChannel`, `unarchiveChannel` — act outside a transaction, so writing
-an entry atomically means adding one, and `unbanUser` cannot even say whether it changed a row.
-FR-005a and FR-005b name the exception; T014b decides it before any code. (2) **`occurred_at`
-is `timestamptz(3)`**, because Postgres stores `.083489` and `toISOString()` sends `.083`, so a
-cursor built from the wire value **skips every row inside the lost fraction** — the first
-keyset cursor over a timestamp column in Postgres here, and unfixable after entries exist.
-(3) **One route's answer depends on the credential**: `DELETE …/messages/:messageId` is
-`accepts: "either"`, FR-MOD-02 under a key and FR-013 under a user deleting their own, so the
-classification has a third value. (4) **Constitution VII requires an ADR and the plan had a
-research note** — ADR-35 goes in `docs/06` *and* the SAD, because 31 through 34 are in the
-summary and appear zero times in the argument.
+    check:fences 21 -> 0 · EXIT 0 · 291 files across 61 chapters      from 60
+    2,937 prose words · 4 figures · 2 TRAP · 2 WHY · **0 titled fences**
+    49 appendix hunks across 21 files — every one applied FIRST TIME
+    FR-MOD-03: ten obligations, nine met or demonstrated
+    the entry costs 0.43 ms · the transaction four actions gained costs as much again
 
-**AND THE LAST FOUR PASSES FOUND ONE CLASS IN FIVE DOCUMENTS.** Remediation edits requirements;
-the sections that JUSTIFY requirements go stale the same way. The spec's Assumptions still
-forbade what FR-012 was amended to permit; the plan's risk register warned against the
-permitted case; the checklist's risks and research R5 carried premises closed ten passes
-earlier. **A fact corrected in one document stays live in every other that restated it** — the
-nine-not-25 population was fixed at pass 2 and was still live at pass 16 — so: *after
-correcting a number, grep the feature directory for the old one, and read the hits, because a
-correction quotes the thing it corrects.*
+**THE CLAUSE NAMES A POPULATION AND SUPPLIES NO MEMBERSHIP RULE, SO THE CHAPTER'S PRODUCT IS A
+DECISION.** *"Every moderation action"* — 48 routes derived from a booted application, 33
+mutating, 9 `/internal/` outside **by construction** (a platform principal carries no
+environment, so its action cannot appear in a tenant's log), **24 owing a decision each — not
+an entry each**. The set is **eight**, and the rule the spec proposed is wrong about two routes
+in the same direction: `POST …/members` and `PATCH /v1/users/:externalId` are both *acting on
+another* and both excluded. Putting them beside the seven that are in is what named the line
+the set actually draws — **standing, not data** — and that sentence was not available until the
+rule had been applied to all 24 and seen to fail twice the same way.
+
+**AND THE NINTH EXPECTED ACTION DOES NOT EXIST.** *Edit another author's message* is
+`accepts: "user"`: FR-MOD-02 grants a key deletion and is silent on editing, and 3.23 read
+silence as absence of permission. The spec predicted *the routes the rule classifies wrongly
+are the findings*; this one the rule classified right and **the expectation was wrong**.
+
+**`REVOKE UPDATE, DELETE` DOES NOTHING AND NOTHING ABOUT THE MIGRATION WOULD HAVE LOOKED
+WRONG.** The api connects as a superuser. The grant would be in the file, the word *immutable*
+in three documents, and the table mutable to the only program that talks to it. A `BEFORE
+UPDATE OR DELETE` trigger fires for a superuser; **both bypasses are measured and published** —
+`SET session_replication_role = replica` and `DROP TRIGGER` — so the claim is *immutable to the
+application and to accident, not to somebody holding the database password*. **A mechanism that
+fits the tool is not a mechanism that works, and the second has to be attempted.**
+
+**AND THE TRIGGER WAS FORBIDDEN BY A TEST WHOSE RULE WAS WIDER THAN ITS REASON.**
+`no-trigger-in-migrations.test.ts` asserts no migration creates one, scoped in its own comment
+to the sentinel guard — *"a trigger whose only purpose is to reject its own legitimate sweeps,
+in production"*. This one refuses writes the api must never make: **opposites wearing the same
+syntax.** Narrowed to the guard by name, the sentinel check untouched, **and the narrowing
+itself asserted** so a later edit cannot widen it back in silence.
+
+**TWO OF THREE TENANCY SCOPES WERE INVISIBLE AND THE THIRD GUARDS THE WRONG CASE.**
+
+    the page read's environment predicate     audit 3 of 21 RED · gauntlet 1 RED
+    the vocabulary read's predicate           audit 21 of 21 GREEN · gauntlet 62 of 62
+    the controller's 403 for no environment   audit 22 of 22 GREEN · gauntlet 62 of 62
+
+The third **cannot fire** — `@Accepts("application")` refuses a platform principal before the
+handler runs — and **deleting the decorator answers an end-user token 200 with the tenant's
+whole moderation history**, because a user principal HAS an environment and that branch would
+not fire. **The branch defends a case that cannot arise and not the one that would be bad.**
+The decorator is the decision and nothing had tested it; `audit/route.itest.ts` exists because
+of this probe. 4.12's finding with the polarity turned: there, scopes covering for each other;
+here, a guard pointed at the wrong door.
+
+**AND THE KEYSET CURSOR WRITTEN AS AN `OR` IS NOT A KEYSET CURSOR.** `occurred_at < $1 OR
+(occurred_at = $1 AND id < $2)` lands in a `Filter:` — `Rows Removed by Filter: 51` on page 2
+and `201` on page 5 — so the scan **re-walks every row of every earlier page**, which is the
+cost keyset pagination exists to avoid arriving through the mechanism meant to avoid it. A SQL
+row value reaches the `Index Cond`. **The code's own comment claimed the two were equivalent**;
+4.13's rule said where to look — *`Index Cond` is the question and `Index Scan` is not* — and
+the plan test explains the route's own statement rather than a hand-written copy of it.
+
+**AND `timestamptz(3)` IS NOT COSMETIC**: Postgres stores microseconds, `toISOString` emits
+milliseconds, so a cursor minted from the wire value sits before every row inside the lost
+fraction. First keyset cursor over a Postgres timestamp here, and unfixable once rows exist.
+
+**THE CLASSIFICATION IS A SIBLING LIST, DECIDED BY THE BILL AND CONFIRMED BY A PROBE.** A field
+on `targets.ts`'s 47 entries — required, because *nothing may be exempt by omission* is that
+file's own rule — is **16 hunks at `-U6` and 510 published lines** against a 591-line file: a
+change touching every entry of a list has no economical diff. And the argument for coupling
+them is false, because both lists check against the same derivation. **Then it was tested**: a
+throwaway route classified in `targets.ts` ALONE leaves that suite 9 of 9 green and the
+compliance suite still red. **A route can be covered for attack and undecided for audit.**
+
+**AND TWO OF THE THREE IDENTIFIERS THE PLAN SAID TO THREAD WERE ALREADY IN THE METHOD.**
+`banUser` reads `externalId` out of its own `RETURNING` three lines above where the entry goes;
+`removeMembers` has carried an `external_id` subquery since the membership chapter. **A method
+that already emits a customer-visible event already holds customer-visible identifiers** — and
+the two that needed threading, `setMemberRole` and `deleteUser`, are exactly the two that emit
+none. **And the compiler named every call site**: two required parameters gave 13 errors in 4
+test files, where the same property at the CONSTRUCTOR is 110 sites across 32. **Where a
+required argument goes decides whether its own best property is affordable.**
+
+**AND `deleteUser`'s BOOLEAN MEANS "A ROW EXISTED", NOT "SOMETHING CHANGED".** Phase 2's survey
+read `false` as the no-op discriminator; `?? new Date()` keeps the original instant, so a
+second deletion changes nothing and still answers `true`. Three more methods return the same
+shape and say so in their own comments. **Reading a return type is not reading what it means**,
+and the rule that survives is mechanical: *did the write statement affect a row*.
+
+**WHAT THE RECORD COSTS, INTERLEAVED SO A WARMING CACHE IS NOT CHARGED TO THE CHANGE.** 200
+samples a side: the entry is **0.439 ms** on a method that already had a transaction and
+**0.431** on one that did not — the same absolute cost at 22.2% and 33.6%, because the ratio is
+a fact about whichever action carries it. Against the pre-chapter shape, **0.903 ms, 94.6%**:
+**the transaction costs about as much as the entry it protects**. *Adds an insert* would have
+been true and would not have been the number.
+
+**AND THE SRS HAD DRAWN THE ENTITY ALL ALONG WHILE THE SAD SAID IT DID NOT EXIST.** §6.1's ER
+diagram carries `Environment ||--o{ AuditLogEntry`, and `docs/05-sad.md:430` read *"There is no
+`audit_log` table, in §6.1 or anywhere in the schema"* — true of the schema, false of the data
+model, for eight chapters. **And `docs/03-journey-map.md` listed four of FR-MOD-03's five
+fields**, missing the request id, which is the field doing the most work. Nineteen analysis
+passes went by without opening it; what found it was a task that named the line.
+
+**AND NFR-SEC-10 ASKS FOR THE SAME ARTIFACT AND IS NOT SATISFIED BY IT.** Its actor is
+administrative access to production data — **exactly the actor the trigger cannot refuse** — so
+a reader seeing *"immutable audit log, shipped"* would reasonably assume otherwise. One change
+moves both and it is a deployment decision: a separate non-superuser role for the application.
+It is ADR-35's reversal condition. `gaps.md` 064-3.
+
+**AND FOUR ADRs HAVE A SUMMARY AND NO ARGUMENT.** 31 through 34 are in `docs/05-sad.md` and
+appear **zero times** in `docs/06`, which is 4.5's finding four chapters after it was written
+down. ADR-35 is in both, deliberately. A gate comparing the two lists is four lines.
+`gaps.md` 064-1.
+
+**AND `git commit -F -` IN A BACKGROUNDED COMMAND COMMITS NOTHING** — no stdin, an empty
+message, git aborts, and the background task reports only the other command's exit code.
+**Then `git add -A` in the superproject staged a gitlink that had not moved**, because the
+tutorial submodule still held the whole chapter uncommitted: a green, complete-looking commit
+carrying none of it. Every earlier phase escaped it by committing the submodule explicitly
+first — **060's push order is a commit rule too**, and nothing had said so.
 
 **063 IS CLOSED — CHAPTER 4.17, "★ Milestone: an image, end to end".** Movement VI closes. Its
 record is `specs/063-chapter-4-17/` — `baseline.txt` first, then `gaps.md` (**7 entries plus the
