@@ -43,6 +43,12 @@ Paths are from the repository root. `relay-platform/` and `relay-tutorial/` are 
   grooming (24 → 23, then 23 → 22, shifting everything after 3) and `docs/12` §8 still records
   the count as an estimate. **The surrounding source holds 257 bare ordinals and no gate
   refuses them** (T009a); this chapter is not repairing that and is not adding to it.
+- **`docs/07` §4's three rules govern every chapter, and two of them have no checker.**
+  *Failure before machinery* — the reader sees the bug before the design that prevents it
+  (T061a). *Every chapter cites its paperwork* — a `WHY` box links the code to its requirement
+  id and its ADR (T064a). *The journeys are the milestones* is row 23's, not this chapter's.
+  **Eleven analysis passes examined phase 8 and found nothing**, because the parts of it with
+  gates behind them — the fence chain, the word count — are the parts that got read.
 - **Do not run `prettier --write` over a fenced file.** Chapter 4.17 turned six edits into 23
   published hunks that way; the file had never been Prettier-clean and nothing requires it to be.
 - **Before regenerating a measurement, grep this directory for the number.** Chapter 4.17 spent
@@ -186,9 +192,11 @@ decision fails a check.
 ## Phase 8: The chapter
 
 - [ ] T061 Register 4.18 in `relay-tutorial/lib/tutorial.ts` with all seven fields, at `/part-4/chapter-18/the-log-that-cannot-be-edited`. An unregistered id throws at build; `path` is checked by no gate.
+- [ ] T061a **Open the chapter with the failure, before the table exists** — `docs/07` §4 rule 1, which governs every chapter: *"Never introduce correctness machinery abstractly… The reader must see the bug the design prevents."* The instance is measured and currently lives in `quickstart.md` §1: ban a user, lift the ban, and `banned_at` is `<NULL>` again, with `users.banned_at` the only real column in the whole database whose name touches banning, moderation, actors or auditing — **and no event either**, because a user in no channel publishes nothing. **Two moderation actions happened and the platform holds no evidence that either did.** The commands and their output are already in the quickstart; the chapter leads with them.
 - [ ] T062 Write the chapter at `relay-tutorial/app/(en)/part-4/chapter-18/the-log-that-cannot-be-edited/page.mdx`, 2,000–4,000 prose words counted outside fences and tables, English only.
 - [ ] T063 [P] Write the figures in `relay-tutorial/app/(en)/part-4/chapter-18/the-log-that-cannot-be-edited/figures.ts`, passed as `code` and not `chart` — `check:figures` caught three dead diagrams `pnpm build` did not.
 - [ ] T064 Write the TRAP box in `relay-tutorial/app/(en)/part-4/chapter-18/the-log-that-cannot-be-edited/page.mdx`. The candidate is research R2's: **the obvious immutability mechanism does nothing on this deployment, and nothing about the migration would have looked wrong.**
+- [ ] T064a Write at least one `WHY` box in `relay-tutorial/app/(en)/part-4/chapter-18/the-log-that-cannot-be-edited/page.mdx`, linking the trigger to **FR-MOD-03 and ADR-35**. `docs/07` §4 rule 3 names this component specifically: *"every chapter cites its paperwork. Each `WHY` box links the code being written to its requirement ID and ADR."* **It is live convention, not an archaism** — 4.14 carries 3, 4.15 carries 2, 4.16 carries 3, 4.17 carries 1 — and this chapter owes more to it than those did, because it is the first in three chapters to produce an ADR. `Why` is imported from `@/components/tutorial/boxes` beside `Trap`.
 - [ ] T065 Publish the scope of the immutability claim in `relay-tutorial/app/(en)/part-4/chapter-18/the-log-that-cannot-be-edited/page.mdx`: what the trigger refuses and what one `SET` undoes. **A chapter that says "immutable" without this paragraph is writing the comment its own TRAP box is about.**
 - [ ] T066 Publish what the chapter could not demonstrate in `relay-tutorial/app/(en)/part-4/chapter-18/the-log-that-cannot-be-edited/page.mdx`: no year, no person, no history before the migration, and the erasure tension row 22 inherits.
 - [ ] T067 Write the chapter's fences in `relay-tutorial/app/(en)/part-4/chapter-18/the-log-that-cannot-be-edited/page.mdx`. **A titled fence is a whole-body claim** (051-6); an excerpt must be untitled, and chapter 4.14 paid three fences for forgetting it.
