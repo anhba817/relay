@@ -243,7 +243,11 @@ hand-listed, and a route added without a decision about it makes a check fail.
 - **SC-005**: A tenant reading its own entries sees every entry of its own and zero of any
   other tenant's, measured against a second environment that performed the same actions.
 - **SC-006**: A moderation action performed while every component the action does not strictly
-  need is stopped still produces its entry, demonstrated by stopping them.
+  need is stopped still produces its entry, demonstrated by stopping them. **The action is the
+  unban**, which needs nothing but the operational store: `setBanned(externalId, false)`
+  returns straight to the controller with no publish, where a ban of a user who belongs to
+  channels commits and then publishes, so with the fabric stopped it answers 500 for an action
+  that succeeded. **A criterion whose subject is chosen badly measures the subject.**
 - **SC-007**: The number of FR-MOD-03's obligations this chapter discharges, and the number it
   records unmet, are published as counts with the reason for each.
 - **SC-007a**: Every change this feature makes outside tests and documents is listed, and the

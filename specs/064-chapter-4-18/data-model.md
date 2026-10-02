@@ -14,7 +14,7 @@ One row per moderation action. Written inside the transaction that performs the 
 | `actor_id` | `text` | **yes** | the key id for an application credential, the external id for a user, and **NULL for a platform principal** — see §3 |
 | `action` | `text` | no | a member of the published set (§2), stored as the set's own name |
 | `target_kind` | `text` | no | `user`, `message`, `membership` or `channel`, with a check constraint |
-| `target_id` | `text` | no | identifies the thing acted on well enough to find it a year later |
+| `target_id` | `text` | no | **the identifier a customer uses to name the thing**: the external id for a user, the uuid for a channel or a message, because those are what the routes take. See §3a — the write site does not always hold it |
 | `request_id` | `uuid` | no | FR-MOD-03's *request ID*, joining an entry to the request log's row for the same request |
 
 **`occurred_at`, not `created_at`, and the choice is deliberate rather than stylistic.** Every
@@ -83,6 +83,31 @@ environment and cannot appear in a tenant's read. Every `/internal/` route is th
 the set by construction rather than by decision — which is worth saying, because *outside by
 construction* and *decided to be outside* are different claims and only one of them needs a
 reason.
+
+## 3a. The identifier the write site holds is not always the one to store
+
+**`setBanned` resolves the user and hands the repository a uuid.** The route takes
+`:externalId`, the service calls `requireUser(externalId)`, and then
+`this.repo.banUser(user.id)` — so at the point FR-005 puts the entry, the external id is out
+of scope. Storing the uuid instead would publish a value no customer has ever seen and would
+need a join on every read, and *"well enough to find it a year later"* is not satisfied by a
+key to a row that erasure may remove.
+
+**So the external id is threaded, and the precedent is already in this repository.**
+`deleteMessage` takes `userExternalId` for exactly this reason, and says so:
+
+> The deleter as a CUSTOMER sees them, for `metadata.deleted_by` (FR-006a). Threaded rather
+> than looked up, exactly as `sendMessage` threads its sender: a SELECT inside the write
+> transaction is a query every deletion would pay to learn something the controller already
+> holds.
+
+`banUser` and `unbanUser` gain the same parameter. **Only the user case needs it** — a channel
+and a message are named by uuid on the routes that act on them, so for those the identifier the
+write site holds and the one a customer uses are the same string.
+
+**This is a signature change and not a behaviour change**, so FR-012's exception is not
+engaged: the action does the same thing with the same answer, and one more argument arrives
+already resolved.
 
 ## 4. State transitions
 
