@@ -439,3 +439,119 @@ T015  ONE NAME, AND IT IS THE ROUTE'S OWN
       Chapter 4.16 lost a day to `occurred_at` against `ts` — a field renamed between its
       producer and its reader. The defence is not care, it is having one name that a
       check compares in both directions. `data-model.md` §2 is amended to say so.
+
+PHASE 3 — USER STORY 1: THE TABLE, THE TRIGGER, THE WRITES (T016 … T031)
+
+T014c THE NARROWING LANDED FIRST AND THE MIGRATION DID NOT TURN IT RED
+-------------------------------------------------------------------------------------
+
+      `no-trigger-in-migrations.test.ts` 4 of 4, before the migration and after it. The
+      first assertion is now `/CREATE\s+TRIGGER[^;]*__sentinel/is` rather than every
+      trigger; the `__sentinel` assertion is untouched; the comment says what is
+      permitted and why.
+
+      Two things were added beyond the decision:
+
+        - **the positive control now uses `sentinel.sql`'s own text**, copied, not a
+          plausible imitation. A control built from what the pattern was written against
+          proves the pattern matches itself.
+        - **a fourth test asserts the narrowing** — the audit trigger's SQL must NOT
+          match. Without it a later edit could widen the pattern back to every trigger
+          and only the comment would record that the rule had changed, and a comment is
+          not a test (4.17).
+
+T016  THE PRECISION IS IN THE CATALOGUE, AND THE FIRST ROW SHOWS IT
+T017  -------------------------------------------------------------------------------
+
+        migrations: applied 0021_audit_log.sql
+
+        tgname                 tgenabled        pg_trigger, not schema_migrations
+        audit_log_append_only  O
+
+        column_name  data_type                  datetime_precision
+        occurred_at  timestamp with time zone                    3
+
+        the first row's occurred_at   2026-10-02 13:46:51.164+00      three digits
+
+      **The trigger was asked for by name before anything was attempted**, because
+      `schema_migrations` records filenames with no checksum: an apply landing between
+      T016 and T017 gives the table without the trigger and the ledger says the migration
+      is done. ClickHouse's ledger checksums and chapter 4.16 met its refusal; this one
+      does not, and the asymmetry is the chapter's.
+
+T019  BOTH REFUSALS, ON THE REAL TABLE
+-------------------------------------------------------------------------------------
+
+        update audit_log set actor_id='tampered' …  ERROR: audit entries are append-only
+                                                           (FR-MOD-03)
+        delete from audit_log where …               ERROR: audit entries are append-only
+        select actor_id, count(*) …                 probe-key | 1
+
+      The row is still there and still says `probe-key`. **A mechanism believed rather
+      than attempted is the thing this chapter is about**, and the second line is the one
+      that matters: a `BEFORE DELETE` trigger that raises leaves the row, it does not
+      leave a hole.
+
+      **AND THE SHELL READ THE REFUSAL AS A FAILURE.** `psql` exits 1 on an `ERROR`, so a
+      `cmd && cmd` chain stopped after the `UPDATE` probe and the `DELETE` probe never
+      ran. The refusal is the success condition here, which is the one case where `&&`
+      between two commands is exactly backwards. Re-run with `;`.
+
+T020  BOTH BYPASSES, REPRODUCED ON THE REAL TABLE
+-------------------------------------------------------------------------------------
+
+        set session_replication_role = replica; update …   SET
+                                                           UPDATE 1
+        drop trigger audit_log_append_only on audit_log;   DROP TRIGGER
+        delete from audit_log where …                      DELETE 1
+
+      R2's two bypasses hold against the shipped table, not only against the probe table
+      they were measured on. **The chapter's claim is scoped to this**: the log is
+      immutable to the application and to accident, and it is not immutable to somebody
+      holding the database password — which this api does. The scope goes in the prose.
+
+T021  CLEANUP, AND THE CLEANUP NEEDED THE BYPASS
+-------------------------------------------------------------------------------------
+
+        rows in audit_log after the probes      0
+        the trigger, recreated                  audit_log_append_only | O
+        a fresh row, deleted without the bypass ERROR: audit entries are append-only
+        the same row, with the bypass           DELETE 1
+        rows after cleanup                      0
+
+      **The probe dropped the trigger and the cleanup had to put it back** — a
+      `DROP TRIGGER` probe leaves the lane in a state no migration will repair, because
+      `0021_audit_log.sql` is already in `schema_migrations`. The restore was verified by
+      planting one more row and watching the refusal fire, not by reading the catalogue.
+
+      **AND YOU CANNOT TIDY AN APPEND-ONLY TABLE WITHOUT THE THING THE PROBE WAS
+      TESTING.** `session_replication_role = replica` is the only way to remove a row
+      this table holds. That is a consequence of the design rather than a defect, and it
+      lands on T030: the write-side suite plants entries it cannot delete, so the lane
+      accumulates them exactly as it accumulates every other table's rows
+      (`reset-lane.mjs` purges lane debris, not data).
+
+      And `audit_log` is **not** added to the sentinel guard's table list. The guard
+      refuses a cross-environment UPDATE or DELETE; this table refuses both from
+      everybody, so the guard's trigger would never be the one to fire. It is the first
+      table whose own rule subsumes the harness's.
+
+T018  THE SCHEMA DECLARATION, AND WHAT IT CANNOT SAY
+-------------------------------------------------------------------------------------
+
+      Verified against the applied table rather than against the file that produced it:
+
+        9 columns in order · occurred_at precision 3 · actor_id the only nullable
+        audit_log_read_idx  (environment_id, occurred_at DESC, id DESC)
+        audit_log_actor_kind_check · audit_log_target_kind_check · the FK
+
+      **Drizzle has no trigger vocabulary**, so the half of this table that makes it an
+      audit log is invisible in the file a reader of the schema opens. The declaration
+      says so in a comment and names the migration. `REVOKE UPDATE, DELETE` *would* have
+      been expressible here and does nothing — which is the shape worth remembering: the
+      mechanism that fits the tool is the one that was measured inert.
+
+      **check:fences 0 -> 1**, `services/api/src/db/schema.ts differs at line 0`. This
+      chapter's own bill, one file, repaired in phase 8 (T068/T069). Recorded now rather
+      than at the end, because a number that moves during a phase and is only read at the
+      close cannot be attributed to the edit that moved it.
