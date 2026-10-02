@@ -30,7 +30,7 @@ does not ask for. A tenant's moderation history is the tenant's.
 | `from` | timestamp | — | inclusive lower bound on `occurred_at` |
 | `to` | timestamp | — | exclusive upper bound |
 | `action` | enum | all | **validated against the set as the router serves it now**, not against a list frozen at import time |
-| `limit` | integer | 50 | bounded; the bound is published and a value outside it is a 400 naming the field |
+| `limit` | integer | 50 | **min 1, max 200**, matching the request log's `z.coerce.number().int().min(1).max(200).default(50)`. A value outside it is a 400 naming the field |
 | `cursor` | opaque | — | keyset on the **pair** `(occurred_at, id)`, compared as a row value — see below |
 
 **AND THE ENUM ADMITS WHAT THE COLUMN HOLDS, NOT ONLY WHAT THE SET CURRENTLY CLASSIFIES.** A
@@ -71,9 +71,37 @@ plant's business.* The tests assert the complement, not the cardinality.
       "request_id": "…"
     }
   ],
-  "next_cursor": null
+  "next_cursor": null,
+  "prev_cursor": null,
+  "has_more": false,
+  "window": { "from": "…", "to": "…" }
 }
 ```
+
+**`has_more` IS REQUIRED BY A PUBLISHED CLAUSE AND AN EARLIER DRAFT OF THIS CONTRACT OMITTED
+IT.** EIR-API-06: *"List endpoints shall use opaque cursor pagination with `limit` and `cursor`
+parameters, returning `next_cursor` and `has_more`."* The route this contract says it is
+modelled on is the one that fixed the platform's long-standing omission, and its comment says
+so:
+
+> EIR-API-06 REQUIRES IT AND THIS PLATFORM HAS NEVER HAD IT. `grep has_more` over `services/`
+> and `packages/` returns nothing: `messages.service.ts` has been non-conforming since chapter
+> 2.4. **Added here rather than the clause amended away** — EIR-API-04's worked example was
+> brought to the code because reshaping an error body would have been breaking under CON-05's
+> URL-versioning rule, and ADDING a field is not, so that escape does not reach this one.
+
+Shipping a second list endpoint without it would have joined `messages.service.ts` on that
+list while citing the chapter that left it.
+
+**`prev_cursor` and `window` come from the same place.** A caller that arrived holding a cursor
+cannot otherwise know it can go back, and a caller that sent no `from`/`to` cannot otherwise
+know what window it was given.
+
+**AND `retention_edge` IS DELIBERATELY NOT HERE**, which is the one field of the precedent's
+envelope this route drops. The request log publishes it because its table has a 30-day TTL and
+a caller needs to know where the data stops. **Nothing prunes this table** (research R7), so the
+field would publish a boundary that does not exist — and an audit log announcing a retention
+edge it does not enforce is a worse sentence than no field at all.
 
 **`entries`, and the key is load-bearing.** The history route's array is keyed `messages` and
 chapter 4.17's research spent a probe on assuming otherwise — a defaulting accessor over the
