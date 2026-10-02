@@ -1507,3 +1507,26 @@ T077  THE FULL LANE SET AT THE CLOSE, COMPARED PER TEST AGAINST T002
       from the same command; turbo reports tasks and the test counts are inside them.
       Both readings are in the record because the first is what a later chapter will
       compare against and the second is what the command actually prints.
+
+      AND THE INTEGRATION LANE, WHICH WAS RED AT THE OPEN:
+
+        pnpm test:integration   REAL EXIT 1 at the open   70 suites, 2 failed
+                                **REAL EXIT 0 at the close**  14 of 14 tasks, 0 failed
+
+          test-harness    2 files,  46 tests      ingester      2 files,  24
+          api            49 files, 860 tests      dispatcher    1 file,   16
+          media-worker    3 files,  32 tests      gateway      12 files, 231
+          e2e             4 files,  11 tests
+                         --------- -----------
+                          73 files, 1,220 tests across SEVEN packages
+
+      (The first version of this block said *api 902* and listed five packages. The 902
+      was the wrong line of a `tail` and two packages were simply missed — **read the
+      whole table, not its last rows**, which is the same mistake 4.17 made counting
+      `18 of 20` from a suite that had grown to 21.)
+
+      **EVERY LANE IS GREEN AND THE BASELINE WAS NOT.** Both of the opening reds were
+      `outbox.itest.ts`'s, which this feature spent three isolated runs establishing is
+      flaky on its own — one of four runs passed 18 of 18. So the close is strictly
+      better than the open on every lane, and the honest reading is *two flaky tests
+      happened not to fire* rather than *this chapter fixed them*.
