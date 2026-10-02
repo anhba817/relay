@@ -206,6 +206,23 @@ The same three decisions apply here, and the third one matters more: the audit l
 an **action**, and the set of actions is R3's derived list. Building the schema per request
 from the injected set is what stops the filter and the set drifting apart.
 
+**AND THERE ARE FIVE DECISIONS, NOT THREE — THIS NOTE SAID "LINE FOR LINE" AND COPIED THREE.**
+Two more were already made by that route and were missed here until analysis passes 4 and 5
+opened `request-log/reader.ts` instead of citing it:
+
+- **The cursor is a PAIR**, `(ts, request_id)`, compared as a row value, and its comment
+  carries the measurement: *"42 `(environment_id, ts)` pairs in this lane hold more than one
+  row; a `ts`-only comparison skips or repeats all 89 of them."* The audit index gained a third
+  column for it.
+- **The response carries `has_more`**, which EIR-API-06 requires of every list endpoint and
+  which that chapter added *"rather than the clause amended away"* after the platform had been
+  non-conforming since chapter 2.4. `prev_cursor` and the window envelope come from the same
+  place; `retention_edge` deliberately does not, because nothing prunes this table.
+
+**Citing a precedent is not reading it**, and this note is where that cost was incurred: the
+claim *"modelled line for line"* was written from the route's shape and its title, and three of
+its five decisions were the ones visible without opening the file.
+
 **Alternatives considered.** No read path at all, deferring it to the milestone at row 23 —
 rejected on two recorded defects: chapter 4.6's rollup that nothing read and chapter 4.16's
 column with one writer and no reader. A read path only for platform principals, rejected

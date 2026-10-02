@@ -118,16 +118,22 @@ a third time**, and it is why `traceability.md` is built by reading.
 
 ## Risks this spec is carrying on purpose
 
-- **The moderation set is a rule, not a list, and the rule will misclassify.** *"Mutating
-  routes an application credential can reach that act on something other than the caller"*
-  admits nine routes today. The ones it gets wrong are the chapter's findings, and the spec
-  says so rather than predicting the answer.
+- **The moderation set is a rule, not a list, and the rule will misclassify.** The router
+  serves **25** mutating tenant-reachable routes, of which nine are the expected inclusions —
+  *"mutating, tenant-reachable, acting on something other than the caller, **and where the
+  caller decides, the credential decides**"*. The ones it gets wrong are the chapter's findings,
+  and the spec says so rather than predicting the answer. **This entry said "admits nine routes
+  today" and described a two-valued rule** until analysis pass 16: the population was corrected
+  in the spec at pass 2 and the third case added at pass 7, and neither correction reached
+  here. *After correcting a number, grep the feature directory for the old one.*
 - **The structural argument for this chapter going first is the shape of two recorded
   defects.** *"Everything after it writes to it"* describes a store whose writers arrive
   later, which is chapter 4.6's rollup and chapter 4.16's column. The spec's defence is
   measured — FR-MOD-02 and the ban pair already ship — and if phase 1 finds those writers
   thinner than claimed, **the honest outcome is a different chapter order, not a louder
   argument**.
-- **The read path may belong to row 23.** The spec claims it here on the grounds that a store
-  with no reader is a defect this project has recorded twice. A planner who disagrees should
-  move it deliberately and leave the milestone a gap it knows about.
+- **~~The read path may belong to row 23.~~ CLOSED.** It is this chapter's, on the grounds
+  that a store with no reader is a defect this project has recorded twice — chapter 4.6's
+  rollup and chapter 4.16's column. The contract is written, and pass 7 settled the split that
+  made it work: **US1 reads through the repository and US2 owns the route**, so the MVP can
+  verify itself without the next story's code.
