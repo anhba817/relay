@@ -43,7 +43,7 @@ record is `specs/063-chapter-4-17/` — `baseline.txt` first (every phase's meas
 order they were taken, including the ones that were wrong first), then `gaps.md` (**7 entries
 plus the carried ledger**), `traceability.md`, `clauses.md`, `quickstart.md` (run, and wrong
 four times), `tasks.md`. **SRS 1.24**, `docs/12` row 18 CLOSED **and §7.7 closed**, and **both**
-copies of the Part 4 table amended.
+copies of the Part 4 table amended. Tagged **`part4-ch17`**.
 
     check:fences 0 · 291 files across 60 chapters              from 59
     2,889 prose words · 4 figures · 2 TRAP boxes · 0 titled fences · 2 untitled excerpts
@@ -151,6 +151,21 @@ sealed job. So the service deciding whether a customer's upload is readable has 
 automated consumer and contributes **nothing** to the coverage number. *A file at 100% in the
 coverage lane and a file the deployed worker runs are two different claims about two different
 sets of code.* Now written into ADR-27's account in `docs/05-sad.md`.
+
+**AND CI IS GREEN ON ALL FOUR JOBS WITH AN EMPTY ERROR SET, WHICH IS THE HARDEST BASELINE THERE
+IS.** 0 `##[error]` lines against a baseline of 0, the per-error diff empty in both directions —
+**an empty set cannot be matched by introducing something and removing something else.** And the
+**sealed job ran the journey for real: 21 of 21**, two freshly built images against an empty
+volume and an empty database, first time.
+
+**AND EVERY LANE THAT WAS RED LOCALLY IS GREEN IN CI** — `test:integration` 70 of 70 suites with
+0 failed, coverage 146 files and **2,116 passed, 0 failed**, against 3 and 4 reds on this host.
+**This is 4.16's finding run backwards and it is the stronger half of the pair**: that chapter
+had a test passing locally on 83 keys of probe debris and failing on CI's empty volume; here
+seven assertions fail on a developer host carrying 10,000 media rows, a neighbour's dev server
+and an observer walking a quickstart, and pass on a clean one. **Neither direction is a flake —
+both are an assertion reading state that is not its own**, and which way it breaks depends only
+on which machine has the residue.
 
 **AND RUNNING THE QUICKSTART BESIDE THE LANE BROKE TWO SUITES FOR SOMEBODY ELSE'S REASON.**
 `media-updated.itest.ts` does `psubscribe("revision:*")` and asserts the array's LENGTH, so any

@@ -1093,3 +1093,52 @@ T065  THE COMPOSED SERVICES, STOPPED BY NAME
 
       `api gateway dispatcher media-worker` — and **not `ingester`**, which has no
       Dockerfile and no compose service, so naming it makes the whole command fail.
+
+T068/T069/T070  CI IS GREEN ON ALL FOUR JOBS, AND THE LOCAL REDS DO NOT REPRODUCE
+-------------------------------------------------------------------------------------
+
+      Pushed submodules first, then the superproject: `relay-platform`
+      `ae7312a3..fac23f67`, `relay-tutorial` `82a8fa3..ef38904`, `relay`
+      `0b9e9f2..74f6674`. Run **36946736909** at `74f6674`:
+
+        relay-platform — the Docker-free gate            SUCCESS
+        relay-platform — the sealed integration          SUCCESS
+        relay-platform — integration lanes and coverage  SUCCESS
+        relay-tutorial — build, docs drift, fence chain  SUCCESS
+
+        `##[error]` lines over the whole run:            **0**
+        the baseline, run 36805363351 at 0b9e9f2:        **0**
+        the per-error diff, both directions:             **EMPTY**
+
+      **SC-008 HELD AGAINST THE HARDEST BASELINE THERE IS.** An empty set cannot be
+      matched by introducing something and removing something else; the only way to equal
+      zero is to add nothing.
+
+      **AND THE SEALED JOB RAN THE JOURNEY FOR REAL: 21 of 21, 1 file.** No local lane
+      reaches `packages/outsider`, so every run of it before this was mine by hand against
+      a stack I had built. CI starts two freshly built images against an **empty** volume
+      and an **empty** database, and the journey — slot, PUT, send, the deployed worker's
+      verdict, the state change, the frame, the link, the bytes, the thumbnail — passes
+      there first time.
+
+      **AND EVERY LANE THAT WAS RED LOCALLY IS GREEN IN CI.**
+
+        locally                           in CI
+        test:integration  3 red           70 suites · 70 ran · **0 failed**
+        coverage          4 red           146 files, **2,116 passed, 0 failed**
+
+        api 46 · gateway 12 · media-worker 3 · ingester 2 · e2e 4 · dispatcher 1 ·
+        test-harness 2 — every one 0 failed
+
+      **This is 4.16's finding run backwards and it is the stronger half of the pair.**
+      That chapter had a test passing locally on 83 keys of old probe debris and failing
+      on CI's empty volume. Here, seven assertions fail on a developer host carrying
+      10,000 media rows, a neighbour's dev server and an observer walking a quickstart,
+      and pass on a clean one. **Neither direction is a flake: both are an assertion
+      reading state that is not its own**, and which way it breaks depends only on which
+      machine has the residue. `gaps.md` 063-7 carries the two instances that were
+      diagnosed; the rest are recorded as a set rather than as a colour.
+
+      **AND IT MEANS THE LOCAL LANE'S THREE REDS WERE NEVER THIS CHAPTER'S.** Phase 1
+      recorded the same three as a red baseline and declined to call them a regression on
+      three observations. CI is the fourth, and it is the one with no residue in it.
