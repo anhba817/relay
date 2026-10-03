@@ -357,6 +357,13 @@ recover about a removed message and what it cannot.
   writes the tension down where those chapters will find it.
 - **Recovering versions that predate this feature.** A deletion before it ships destroyed the
   final text and no migration can recover it.
+- **Repairing `gaps.md` 058-3 on this route.** A malformed path parameter answers **500
+  `internal_error`** where an absent one answers 404 — measured here with a control, on the
+  very route this chapter extends. Chapter 4.12 found it across sixteen routes and recorded it
+  with its bill. Repairing this one would be cheap, because the controller is already in this
+  chapter's fence bill, **and cheapness is the wrong test**: one validating route among sixteen
+  that do not makes the remaining fifteen harder to sweep. Carried, with the measurement this
+  chapter added to it.
 - **Recording who read a message's history.** A log of reads is a different clause and a much
   larger table; chapter 4.18 took the same position for the audit log.
 - **Changing what the real-time `message.deleted` frame carries.** It already carries

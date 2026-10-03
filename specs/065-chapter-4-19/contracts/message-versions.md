@@ -115,6 +115,29 @@ worth it there. The question of which document is wrong is recorded in `gaps.md`
 | a user token on `/edits` | 403 | `wrong_credential_type` — the guard's existing refusal, **unchanged, measured as already present, and asserted in a suite for the first time by this chapter**. `targets.ts:208` says why that matters: *"this entry and the decorator are the same authorisation fact written twice"*, and nothing had checked the half that enforces |
 | a message in another tenant's channel | 404 | indistinguishable from an id nobody has, and **already attacked**: `gauntlet.itest.ts:242`, *"a foreign message's history reads as an absent one"* |
 | a message id that exists nowhere | 404 | the same body |
+| **a malformed id in either path parameter** | **500** | **`internal_error`, and this chapter does not fix it** — see below |
+
+**THE 500 IS REAL, MEASURED HERE, AND CARRIED RATHER THAN REPAIRED.** Against the composed
+api, with a control:
+
+```text
+GET …/messages/not-a-uuid/edits                      500  internal_error
+GET …/messages/00000000-0000-4000-8000-000000000000/edits   404  not_found
+```
+
+It is `gaps.md` **058-3**, which chapter 4.12 measured across **sixteen shipped routes** and
+recorded with its bill — *30 titled fences across three controllers for a one-line change per
+route*. This chapter extends one of those sixteen, and `messages.controller.ts` is already in
+its fence bill, so repairing this one route would be cheap.
+
+**It is still not repaired, and the reason is that cheapness is the wrong test.** This
+feature's own scope says *a defect found in earlier work is recorded with its bill and scoped
+deliberately*, and fixing one route of sixteen would leave fifteen **plus a controller where
+one route validates its parameters and the others do not** — which makes the remaining class
+harder to find, not easier. A uniform defect is a defect somebody can sweep.
+
+What this chapter adds to 058-3 is a measurement it did not have: the route, the two bodies,
+and the control that tells a malformed id from an absent one.
 
 **No new error code.** The refusals this chapter can produce are ones the platform already
 answers, and `codes.ts` is published by 24 pages with an appendix that amends it twice — so

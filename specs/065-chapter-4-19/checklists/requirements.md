@@ -317,6 +317,67 @@ about **what the executor sees when something goes wrong**, which none of the fi
 asked. `CLAUDE.md`'s rule is *do not stop on falling yield*; the corollary this feature
 suggests is that the yield measures the question.
 
+## Analysis pass 5 — three findings, none CRITICAL, all fixed
+
+The question none of the first four asked: **what has somebody else already written down
+about the thing this chapter touches?** Checked this feature against every open gap in the
+carried ledger, and read the artifacts for what a reader who does not know the answer would
+find missing. The two converged on the same place.
+
+**E1, HIGH — `gaps.md` 058-3 is live on the exact route this chapter extends, and no artifact
+mentioned it.** Measured against the composed api with a control:
+
+    GET …/messages/not-a-uuid/edits                            500  internal_error
+    GET …/messages/00000000-0000-4000-8000-000000000000/edits  404  not_found
+
+Chapter 4.12 found this across sixteen routes and recorded it with its bill. The contract's
+refusal table listed the 404 and was silent on the 500 — a contract that is wrong about the
+platform.
+
+**It is carried rather than repaired, and the reasoning is the part worth keeping.** The
+controller is already in this chapter's fence bill, so fixing this one route would be cheap —
+**and cheapness is the wrong test.** One validating route among sixteen that do not leaves a
+controller where the rule is inconsistent, which makes the remaining fifteen harder to sweep.
+A uniform defect is one somebody can fix in a pass. What this chapter adds is the measurement
+058-3 did not have: the route, both bodies, and the control that tells a malformed id from an
+absent one.
+
+**E2, MEDIUM — T067 was a no-op that read like work.** It said *add per-file coverage pins for
+any new file*; this feature adds exactly one new file and it is a test, which the config does
+not pin. The risk runs the other way: **`repository.ts` is pinned at 92 branches and measures
+92.96** — 0.96 of headroom — and this chapter adds three code paths to it. Rewritten as
+*re-measure the pins this chapter's edits could move*.
+
+**E3, LOW — the carried ledger listed nine items and not the one that is live.** 058-3 is on
+it now, flagged as such.
+
+### Checked against the rest of the ledger, and not live here
+
+**064-1** (four ADRs with no deep dive) — this chapter writes no ADR. **064-2** (the moderation
+set's rule is a judgement) — no moderation route added. **064-3** (administrative access
+unrecorded) — unchanged, and ADR-35 already states the new trigger's scope limit. **064-5**
+(media sweep floor) — T072 anticipates it. **063-2/3/7** — media and gateway. **050-8** — no
+analytical records. **062-12** — E2 covers it. **043-1** — phase 8's.
+
+### Reading it as a reader who does not know the answer
+
+The artifacts answer *what is preserved*, *why it is permitted*, *what it costs* and *what it
+cannot do*. The one question they did not answer is **what a malformed id does** — which is
+E1, reached from the other direction. Two mechanisms converging on one gap is the strongest
+signal this pass produced.
+
+### Five passes
+
+    pass 1   8 findings   2 CRITICAL   opening files the artifacts cite
+    pass 2   6 findings   1 CRITICAL   asking what a document does not contain
+    pass 3   5 findings   0 CRITICAL   running SQL against the real table
+    pass 4   4 findings   0 CRITICAL   walking the tasks in execution order
+    pass 5   3 findings   0 CRITICAL   checking against other features' open gaps
+
+Five mechanisms, none repeated, 8 → 6 → 5 → 4 → 3. E1 sat in plain sight through four passes
+because each of them asked about *this* feature's artifacts, and E1 is a fact somebody else
+recorded two chapters ago about a route this feature happens to extend.
+
 ## Notes
 
 - Items marked incomplete require spec updates before `/speckit-clarify` or `/speckit-plan`
