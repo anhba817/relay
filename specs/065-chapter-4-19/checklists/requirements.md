@@ -378,6 +378,94 @@ Five mechanisms, none repeated, 8 → 6 → 5 → 4 → 3. E1 sat in plain sight
 because each of them asked about *this* feature's artifacts, and E1 is a fact somebody else
 recorded two chapters ago about a route this feature happens to extend.
 
+## Analysis pass 6 — seven findings, one CRITICAL, all fixed
+
+**The question**: *does the arithmetic re-derive from the store, and did five passes of
+corrections leave live restatements behind?* — chapter 4.18's closing rule turned on this
+feature. Six measurements, five greps, one catalogue query.
+
+- **F1 CRITICAL — the chain-invalidating edit had no fence re-run after it, and the
+  dependency line that should have said so said the opposite.** `vitest.coverage.config.mts`
+  is titled by **23 pages** and was not in the fence bill. T067 edits it in phase 9, after
+  T063 — the last `check:fences` — in phase 8. T067's own text names 4.18's first red CI run,
+  *"pins added after the chain was zeroed with `check:fences` not re-run"*, and then
+  prescribed the remedy for 4.18's **second** failure. The Dependencies block read *"T063
+  comes after T067"*, which contradicts the phase order, contradicts T067's own *"after the
+  fence chain is at zero"*, and is circular. Executed as written, SC-010 would be true at T063
+  and false at the pushed commit. **Fixed**: T067a added (82 tasks now), the file added to the
+  bill in three documents, the dependency line rewritten as a statement about the instrument.
+- **F2 HIGH — the boundary the chapter publishes was the wrong quantity.** T008 defined its
+  third figure as *tombstones with zero version rows* and called it *"the size of the history
+  this chapter can never recover"*; T036 recorded it as *"how many tombstones can never be
+  recovered"*. Measured: **4,862 tombstones, 1,252 of them with version rows**. Every one of
+  the 4,862 lost the text it held at deletion — this document's own N-of-N+1 arithmetic — so
+  the figure was **1,252 low, 26%**. **Fixed**: four figures in T008, both quantities in T036,
+  and the pair in FR-009 and the edge case.
+- **F3 HIGH — the risk register still asserted what pass 3 falsified, thirteen lines above
+  its own correction.** `plan.md` carried *"The audit log has the identical collision"* and,
+  below it, *"three artifacts said this collided exactly as the audit log does until the third
+  analysis pass"*. The spec, the data model and T014 all carried the corrected two-obstacle
+  version. **Fixed.**
+- **F4 MEDIUM — the fence bill said six in four places and seven in two.** Pass 2 added
+  `messages.itest.ts` to the table and to T006 and swept nothing, so **T062 instructed "all six
+  files" while working from a table of seven**. Also `plan.md`'s *"two renames"* against
+  `tasks.md`'s *"four renames"* for the same complexity-table rows. **Fixed**: eight and three.
+  The remaining *"six files"* hits are about chapter 4.18 or about this bill's first version
+  and are correct.
+- **F5 MEDIUM — T013 cited the weaker precedent.** It argued `deleted_at` against `edited_at?`
+  and named neither of the two closer ones in the same file: `repository.ts:2602` already
+  carries **`deleted_at: string | null`, required and nullable**, with its reasoning in a
+  comment, and `MessageRow`'s own `text: string | null` is the same shape. **Fixed**: all three
+  named.
+- **F6 MEDIUM — three feature-local ids cited other chapters' clauses.** `tasks.md:34` said
+  *"when FR-005 and FR-012 could not both hold"* — chapter 4.18's pair, where this feature's
+  FR-005 and FR-012 are both live and do not conflict — and T020 said *"FR-010 refuses an edit
+  on a tombstone"* unqualified where `data-model.md` and `research.md` R5 qualify the same
+  citation. **Fixed, with one deliberate exception**: `research.md:14`'s unqualified `FR-010`
+  is inside a **verbatim quotation of `schema.ts:468`**. Editing a quotation to fix its
+  citation would make the quote false, so it stands — and it is evidence that 063-4's id
+  collision lives in the platform source and not only in `docs/`.
+- **F7 LOW — FR and SC were out of numeric order**, passes 2 and 3 having appended. Reordered.
+
+### Checked, and clean
+
+```
+message_edits                       4,859 rows · 4,859 distinct (message_id, edited_at)
+messages with >=1 version row       4,039        matches "undeletable today"
+tombstones with 0 version rows      3,610        4,039 + 3,610 = 7,649  re-derives
+migration ledger head               0021_audit_log.sql — 0022 and 0023 free
+message_edits_message_id_fkey       confdeltype = 'a'  (NO ACTION)      pass 3 confirmed
+triggers on message_edits           (none)                              T009's premise holds
+PK                                  (message_id, edited_at)
+fence pages  52 / 34 / 27 / 18 / 12 / 12 / 18                           exact
+```
+
+**And the plan's one flagged-and-deferred risk is answered: no.** *"What could still move is
+whether `deleted_at` on the history row is already served somewhere this check did not look."*
+The only `deleted_at` shapes in `repository.ts` are the user row and `deleteMessage`'s own
+response. US2 is not already built.
+
+**The lane has drifted by one since the premise check** — tombstones 4,861 → 4,862,
+text-bearing 176,157 → 176,156, 181,018 unchanged. One message was deleted in between. The
+spec's Context keeps its dated figures, because changing a dated measurement without re-running
+the premise it belongs to is worse than the drift; T001, T005 and T008 re-measure.
+
+### Six passes
+
+    pass 1   8 findings   2 CRITICAL   opening files the artifacts cite
+    pass 2   6 findings   1 CRITICAL   asking what a document does not contain
+    pass 3   5 findings   0 CRITICAL   running SQL against the real table
+    pass 4   4 findings   0 CRITICAL   walking the tasks in execution order
+    pass 5   3 findings   0 CRITICAL   checking against other features' open gaps
+    pass 6   7 findings   1 CRITICAL   re-deriving every number, then grepping for the old one
+
+**The yield went back up and the mechanism is why.** Four of the seven are a superseded figure
+or claim still live in a neighbouring paragraph, one of them thirteen lines from its own
+correction — five passes made corrections and none of them swept for what the correction left
+behind. Pass 3 ran SQL and found the foreign key; pass 6 ran SQL and found that **the number
+the chapter publishes as its product is a different quantity from the one it measured**, which
+reading cannot separate, because 3,610 and 4,862 are both true statements about tombstones.
+
 ## Notes
 
 - Items marked incomplete require spec updates before `/speckit-clarify` or `/speckit-plan`

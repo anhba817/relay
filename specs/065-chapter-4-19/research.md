@@ -203,12 +203,20 @@ messages.service.ts        27 pages
 messages.controller.ts     18 pages
 messages.schema.ts         12 pages
 frames.ts                  12 pages
+messages.itest.ts          18 pages   analysis pass 2
+vitest.coverage.config.mts 23 pages   analysis pass 6
 ```
 
 Every one of these is published by pages this chapter does not own, so every hunk goes to
-`fences/post-series.md` — 4.8's rule, and one rule for six files beats a judgement per file.
+`fences/post-series.md` — 4.8's rule, and one rule for eight files beats a judgement per file.
 Chapter 4.18 paid **49 hunks across 21 files** and six of those files arrived from repairs made
 after its list was written; this list should be read as a floor.
+
+**And it was read as a floor correctly: six became eight before a line of code was written.**
+`messages.itest.ts` asserts an exact key set this chapter widens; `vitest.coverage.config.mts`
+is edited by T067 in the last phase, after the chain has been taken to zero, which is the
+sequence 4.18's first red CI run came from. **Neither was found by looking at the file list —
+both came from asking what the work touches.**
 
 ## R9 — What the premise check means for the chapter's shape
 

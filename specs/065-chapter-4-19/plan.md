@@ -48,7 +48,7 @@ Chapter 4.18 measured the same shape at **0.43 ms**; this plan measures its own 
 reusing that figure
 
 **Constraints**: no breaking change to a published response (CON-05). Every field this chapter
-adds is additive, and the two renames that would read better are refused with their bill in
+adds is additive, and the three renames that would read better are refused with their bill in
 the complexity table below
 
 **Scale/Scope**: 4,861 tombstones and 4,859 version rows on the development lane; 176,157
@@ -136,6 +136,7 @@ messages.controller.ts     18 pages
 messages.schema.ts         12 pages
 frames.ts                  12 pages
 messages.itest.ts          18 pages   added by analysis pass 2
+vitest.coverage.config.mts 23 pages   added by analysis pass 6
 ```
 
 **`messages.itest.ts` is the one this list missed**, and it is not a maybe: `messages.itest.ts:1416`
@@ -143,8 +144,15 @@ asserts an exact key set on the `/edits` response and this chapter adds two fiel
 was written from the plan's own file list rather than from what the work touches, which is the
 failure mode 4.15's rule predicts and 4.18 paid six files for.
 
+**AND `vitest.coverage.config.mts` IS PUBLISHED BY 23 PAGES, WHICH IS WHY 4.18's CI WENT RED.**
+T067 edits it — a pin moves, or a measured figure is written beside one — and that chapter's
+first red run was `vitest.coverage.config.mts differs at line 1449`, from pins added after the
+chain had been taken to zero with `check:fences` not re-run. **A file nobody thinks of as source
+is in the chain**, and it is the last file this chapter touches, which is the worst position to
+discover it from.
+
 All to `fences/post-series.md`, because every one is published by pages this chapter does not
-own — 4.8's rule, and one rule for six files beats a judgement per file. **Chapter 4.18 paid 49
+own — 4.8's rule, and one rule for eight files beats a judgement per file. **Chapter 4.18 paid 49
 hunks across 21 files and six of those files arrived from repairs made after its list was
 written.** This list is a floor.
 
@@ -179,7 +187,8 @@ The nine phases are `tasks.md`'s and carry the same names.
 8. **The chapter.** 2,000–4,000 prose words, the hunks, `check:fences` to zero.
 9. **The record and the close.** And `pnpm coverage` **after** the chain is zeroed **and
    re-run after the pins go in** — which is the one thing 4.18 did not do, twice, from the
-   same task.
+   same task. **Then `check:fences` again** (T067a), because the pin file is published by 23
+   pages and the pin edit is the last thing this chapter writes to a file the chain carries.
 
 ## Complexity Tracking
 
@@ -219,13 +228,17 @@ it is stated in the contract, and the alternative is versioning a route over a w
   4.14's measurement — 110 call sites for a constructor against 13 for two method parameters —
   is the reason to count before committing.
 - **The trigger forbids the deletion erasure will need.** Row 22 must remove a user's words and
-  these rows hold them. The audit log has the identical collision. **Writing it down is this
-  chapter's job; solving it is row 22's**, and a chapter that solved it here would be doing
-  another's work.
+  these rows hold them. **And it is NOT the audit log's collision**, which this bullet said until
+  analysis pass 6 — the third pass ran the delete and found two obstacles here where `audit_log`
+  has one, the foreign key first and the trigger second. **Writing it down is this chapter's job;
+  solving it is row 22's**, and a chapter that solved it here would be doing another's work.
+  *(The correction was recorded in the bullet below and not in this one, which is 064's rule
+  inside 065: a fact corrected in one place stays live in every other that restated it.)*
 - **A version row holds text that a deletion was supposed to remove.** The clause permits it
   and a reader may still be surprised. The chapter states the distinction — a moderator removes
   a message, erasure destroys it — rather than leaving it to be inferred.
-- **The fence bill is six files before any repair.** 4.18's list grew by six during
+- **The fence bill is eight files before any repair** — six in the first draft, a seventh
+  from analysis pass 2 and an eighth from pass 6. 4.18's list grew by six during
   implementation and every one came from running something rather than reading it.
 - **THIS CHAPTER ENLARGES AN OBSTACLE THE NEXT ONE MUST CLEAR, AND THAT IS THE ONLY
   CONSEQUENCE THAT LANDS OUTSIDE IT.** `message_edits_message_id_fkey` is `NO ACTION`, so a

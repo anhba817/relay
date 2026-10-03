@@ -184,7 +184,8 @@ recover about a removed message and what it cannot.
 ### Edge Cases
 
 - **A message deleted before this chapter ships.** Its last text is already gone and no
-  migration can recover it. The chapter cannot backfill and must say so.
+  migration can recover it. The chapter cannot backfill and must say so. **4,862 messages are
+  in that position on this lane**, of which 3,610 have nothing recoverable at all.
 - **A message edited after a chapter-shipped version row exists, then edited again.** The
   version chain must stay ordered and must not duplicate the text that is still current.
 - **An empty final text.** FR-MSG-01's minimum length makes `""` unsendable, so a recorded
@@ -247,7 +248,15 @@ recover about a removed message and what it cannot.
   that changes.
 - **FR-009**: The chapter MUST state what a tenant can and cannot recover about a removed
   message, with a measurement beside each claim, including the versions that are already
-  unrecoverable because they predate this feature.
+  unrecoverable because they predate this feature. **That population is two numbers, not
+  one**: every tombstone lost the text it held at deletion — **4,862** on this lane — and
+  **3,610** of those have no recoverable version at all, leaving **1,252** that kept their
+  earlier texts and lost only the last. *(A single figure was the fourth of these until the
+  sixth analysis pass re-derived them from the table; 3,610 alone understates the boundary by
+  26% and contradicts this document's own N-of-N+1 arithmetic.)*
+- **FR-010**: Where the shipped behaviour and a published document disagree, the document MUST
+  be amended rather than left to diverge. Three disagreements are known in advance and are
+  listed in Assumptions.
 - **FR-011**: A recorded version MUST NOT be modifiable or removable by any path the platform
   exposes, and the refusal MUST be demonstrated rather than asserted — a probe that attempts
   the write and is refused. **FR-MSG-07 has said *"an immutable edit history"* since chapter
@@ -256,9 +265,6 @@ recover about a removed message and what it cannot.
 - **FR-012**: The scope of FR-011's refusal MUST be published with the claim — what it refuses
   and what it does not — rather than left as the word *immutable*. The mechanism is the one
   ADR-35 already measured, and that ADR's own finding is that two ways around it remain.
-- **FR-010**: Where the shipped behaviour and a published document disagree, the document MUST
-  be amended rather than left to diverge. Three disagreements are known in advance and are
-  listed in Assumptions.
 
 ### Key Entities
 
@@ -301,15 +307,17 @@ recover about a removed message and what it cannot.
   adjective, with the clause each item discharges.
 - **SC-008**: Every change outside tests and documents is listed and checked against the diff
   rather than asserted (FR-008).
+- **SC-009**: The CI error set after this chapter is compared per error against the set before
+  it, in both directions, and the comparison is published.
+- **SC-010**: `check:fences` reports zero and the tutorial builds, **measured after the last
+  edit to any file the chain publishes** — which is the coverage config, in the final phase,
+  not the chapter's own pages.
+- **SC-011**: The chapter is between 2,000 and 4,000 prose words, counted outside fences and
+  tables.
 - **SC-012**: An attempt to modify and an attempt to remove a recorded version are both
   refused and the row survives both, demonstrated at the storage layer — and what the refusal
   does **not** cover is published beside the claim, measured rather than assumed to match the
   table chapter 4.18 made append-only.
-- **SC-009**: The CI error set after this chapter is compared per error against the set before
-  it, in both directions, and the comparison is published.
-- **SC-010**: `check:fences` reports zero and the tutorial builds.
-- **SC-011**: The chapter is between 2,000 and 4,000 prose words, counted outside fences and
-  tables.
 
 ---
 
