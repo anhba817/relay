@@ -66,8 +66,14 @@ scope clause for this table rather than an amendment to it.
 ## What a sweep touches, in order
 
 ```
-for each environment with retention_days set
-  find messages older than the policy        keyset, paged — R7's lesson from 4.13
+for each environment with retention_days set     ONE QUERY PER ENVIRONMENT, not one join
+  find messages older than the policy        the bound is a CONSTANT here, computed in the
+                                             application. As a join filter across all
+                                             environments it is 604 buffers and discards every
+                                             message in the policied one (`Rows Removed by Join
+                                             Filter: 1018`); per environment it is 74 and
+                                             reaches channels_environment_last_activity.
+                                             Keyset, paged — R7's lesson from 4.13
   collect their media_id values              free: jsonb already on the row
   SET LOCAL relay.expiring = 'on'
   DELETE FROM messages WHERE id = ANY(…)     cascades to message_edits

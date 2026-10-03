@@ -41,9 +41,15 @@ gauntlet for tenancy, a unit lane for the policy's arithmetic
 
 **Target Platform**: Linux server, the composed stack
 
-**Performance Goals**: the shared-attachment check is **883 buffers with a bound operand
-against 94,132 set-wise** (research R2), which is the shape the sweep is written in rather than
-a figure to beat
+**Performance Goals**: two queries, and the one this section originally named is the second.
+**The driving predicate — which messages expire — has no index behind it**: `messages` carries
+`messages_pkey`, `messages_channel_id_sequence_unique`, `messages_idem` and
+`messages_attachments_gin`, and nothing for `created_at`. Written as a join across all
+environments the age bound lands in a `Join Filter` — measured, `Rows Removed by Join Filter:
+1018` on the busiest environment, **604 buffers** — and written per environment with the bound
+as a constant it is **74 buffers** and reaches `channels_environment_last_activity`. **8×, and
+it is 4.12's rule at a third address.** The second query is the shared-attachment check at
+**883 buffers bound against 94,132 set-wise** (research R2)
 
 **Constraints**: no breaking change to a published response (CON-05). The sweep adds no field
 implying a deadline the platform does not enforce
@@ -196,6 +202,16 @@ prediction.
   piled 3,235 rows on one instant and turned twelve tests red; this one backdates per fixture.
 - **FR-MED-11's reverse check is 106× the forward one** and runs per object. At lane scale that
   is fine and at tenant scale it is the thing that decides whether a sweep finishes.
+- **TWO INDEXES ARE MISSING AND NEITHER IS OBVIOUSLY WORTH ADDING.** There is nothing on
+  `messages.created_at`, so the sweep's own order sorts every pass; and finding the environments
+  with a policy is a **sequential scan of 33,051 rows, 546 buffers, `Rows Removed by Filter:
+  33050`**, where a partial index on `WHERE retention_days IS NOT NULL` would be nearly empty.
+  **Both are phase-2 decisions and both get 4.1's treatment** — that chapter added the index its
+  query obviously needed and measured a gap inside the run-to-run spread for +49% storage.
+- **THE TWO SCALES DO NOT COINCIDE ON THIS LANE**, so the sweep's end-to-end cost cannot be
+  measured here even with backdated fixtures: the busiest message environment holds **1,018
+  messages and 0 media objects**, and the busiest media environment holds **531 objects and 843
+  messages**. Any figure T038 publishes names which half it came from.
 - **The sweep has no runner, and the clause is a compliance promise.** The other three clauses
   bounded by ADR-28's absent scheduler are reporting obligations. This one is a customer
   telling an auditor that data does not exist. Recording it the same way is right; saying so in

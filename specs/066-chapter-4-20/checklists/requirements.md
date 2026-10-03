@@ -96,6 +96,56 @@ by a task that does not cite its number — FR-001 by T025, FR-006 by T028–T03
 FR-012 by T042–T047. Recorded so a later pass does not re-walk them, and it is why
 `traceability.md` is built by reading.
 
+## Analysis pass 2 — four findings, none CRITICAL, all fixed
+
+**The question**: *what do the queries nobody has written yet actually cost?* The sweep's
+predicate and the media reverse-lookup were both described in prose and neither had been run.
+
+- **B1 HIGH — there is no index on `messages.created_at`.** The table carries
+  `messages_pkey`, `messages_channel_id_sequence_unique`, `messages_idem` and
+  `messages_attachments_gin` — nothing for an age predicate, nothing for the order T020
+  demands. **T020 said *keyset, not offset* with nothing to keyset on.** Fixed as a phase-2
+  decision (T013a) with 4.1's treatment attached: measure the index before adding it, because
+  that chapter added the one its query obviously needed and bought a gap inside the run-to-run
+  spread for +49% storage.
+- **B2 HIGH — the plan sketched the slow shape.** As a join across all environments the age
+  bound lands in a `Join Filter`: **`Rows Removed by Join Filter: 1018`, 604 buffers** — every
+  message in a policied environment fetched and discarded, each pass. Per environment with the
+  bound as a constant it is **74 buffers** and reaches `channels_environment_last_activity`.
+  **8×.** Fixed in `plan.md`'s Performance Goals, `data-model.md`'s sweep sketch, T013a and
+  T020.
+- **B3 MEDIUM — selecting the policied environments is a seq scan every pass**: 33,051 rows,
+  **546 buffers, `Rows Removed by Filter: 33050`**. A partial index on `WHERE retention_days IS
+  NOT NULL` would be nearly empty, because the column is 0-populated. Named in the risks and in
+  T013a, with the same measure-first rule.
+- **B4 MEDIUM — the two scales do not coincide on this lane.** The busiest *message*
+  environment holds **1,018 messages and 0 media objects**; the busiest *media* environment
+  holds **531 objects and 843 messages**. So an end-to-end sweep cost cannot be observed here
+  even with backdated fixtures — it is a sum of two measurements, and T038 now says which half
+  each figure came from.
+
+### What this changed about the plan's own framing
+
+The Performance Goals cited **883 against 94,132 buffers** for the media check and called it
+*"the shape the sweep is written in rather than a figure to beat"*. That was a real measurement
+of a real query — **and it is the second query the sweep runs.** The first one, the predicate
+that decides which messages expire at all, had no measurement, and the shape the plan sketched
+was the slow one.
+
+**It is 4.12's error, caught earlier than 4.12 caught it.** That chapter published 26x-160x for
+an index measured on a query its route did not send, and three analysis passes went by before
+anybody asked what the planner would do with the shipped version. Here it was pass 2, before a
+line of code.
+
+### Checked, and clean
+
+```
+channels_environment_last_activity   exists, and the fast form reaches it
+messages_attachments_gin             exists (4.12's), and R2's 883 figure uses it
+the cascade's cost                   not separately measurable — the trigger refuses
+                                     it today, so it is phase-3 work
+```
+
 ## Notes
 
 - Items marked incomplete require spec updates before `/speckit-clarify` or `/speckit-plan`
