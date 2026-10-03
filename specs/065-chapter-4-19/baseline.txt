@@ -485,3 +485,126 @@ The deletion's whole transaction rolled back, so a concurrent edit left the mess
 
   After the fix, all four suites green: versions 5, messages 68, repository 71,
   history-drift 2. typecheck 15 of 15.
+
+================================================================================
+PHASE 4 — US2: THE REMOVAL INSTANT, FROM HISTORY ALONE
+================================================================================
+
+--- T026 / T027 · the field, and the compiler naming its sites -----------------
+`deleted_at: string | null` on `MessageRow` — required and nullable, T013's shape.
+
+  THE COMPILER NAMED FOUR, WHERE T014a PREDICTED FIVE, and the difference is worth
+  recording rather than rounding off:
+
+    repository.ts:4796  sendMessage                 `deleted_at: null`
+    repository.ts:5296  editMessage                 `deleted_at: null`
+    repository.ts:6244  getMessageByIdempotencyKey  read from the row
+    repository.ts:6727  listMessages                read from the row
+
+  `backfill` was the fifth and the compiler did not name it, because it reuses rows
+  `listMessages` built rather than constructing its own. T014a's five is the set of
+  functions whose return type is in the family; four is the set that builds a literal.
+  **Both numbers are right about different questions**, and the one that matters for a
+  required field is the compiler's.
+
+  AND TWO OF THE FOUR ARE `null` AS A FACT RATHER THAN A DEFAULT. A message
+  `sendMessage` just inserted has not been deleted. `editMessage` refuses a tombstone
+  three lines into its transaction (FR-010 of chapter 3.23), so a row it returns has
+  never been deleted either. The other two read the column, and
+  `getMessageByIdempotencyKey` reads it for a reason: it returns the ORIGINAL message
+  on an idempotent retry, which may have been deleted since the first send committed —
+  a hard-coded `null` there would answer a retry with a tombstone denying it was one.
+
+  typecheck 15 of 15.
+
+--- T028 · asserted, and against the surface that actually carries the instant --
+`versions.itest.ts` + 1 test. A tombstone's history row carries the instant; a live
+message's carries `null` **as a present key** — `"deleted_at" in row`, not a truthiness
+check, because `undefined` for a field that was never added and `null` for a live
+message read identically through `??`.
+
+  AND THE THIRD SURFACE IS THE OUTBOX EVENT, NOT THE `DELETE` RESPONSE. The assertion
+  compares history's instant to `payload->'data'->>'deleted_at'` on the
+  `events.msg.deleted.*` row written inside the deletion's own transaction. Three
+  things describe one removal — that event, the real-time frame, and this — and the
+  first two have carried the instant since 3.23.
+
+  THE FIRST VERSION OF THE QUERY FOUND NOTHING, because the payload nests the message
+  under `data` and not `message`. `TypeError: Cannot read properties of undefined` —
+  which is the right failure for a query that matched no row, and one `jsonb_pretty`
+  answered it.
+
+  versions.itest.ts: 6 of 6.
+
+--- T029 · the three-way shape disagreement, recorded -------------------------
+`gaps.md` 065-1. History serves `channel_id` where `messageSchema` declares `channel`,
+carries an `edited_at` the schema does not declare, and returns `text: null` against a
+`z.string()`. Nothing parses one against the other, so no instrument can see it, and
+converging them is a reshape where everything this chapter does is an addition. This
+chapter widens the gap by one field and says so.
+
+--- T026 / T027, SECOND VERSION · the field was on the wrong type -------------
+**THE API LANE SAID SO IN THREE TESTS AND THE FILE HAD SAID SO IN A COMMENT.**
+
+  pnpm --filter @relay/api test:integration    EXIT 1
+    × emits a send response the shared contract accepts
+    × reports a recognised retry as a duplicate, once (FR-MSG-04)
+    × persists the sender on the row, not just in the response
+    (+ the two outbox neighbours, 065-3)
+
+  All three, identically:
+
+    ZodError: unrecognized_keys  keys: ["deleted_at"]  path: []
+
+  `internalSendResponseSchema` is a **strict** schema on the internal send seam, and
+  `MessageRow` is what the SEND path returns. Putting a required field there put it in
+  the send response — **FR-008 broken by this chapter: the shape of sending changed.**
+
+  AND `repository.ts` NAMED THE SCHEMA THAT WOULD BREAK, in the comment T013 quoted as
+  its own argument: *"`edited_at?` is optional so write paths need not spell
+  `edited_at: null`, and that convenience is exactly what made the attachments
+  chapter's `internalSendResponseSchema` a break waiting to happen."* The sentence was
+  read as *required is better* and not as *here is the reader that breaks*. **4.11's
+  rule, which this project has now paid three times: an argument that is right about
+  the producer can invert about the reader.**
+
+  THE FIX IS THE TYPE, NOT THE FIELD. `deleted_at` belongs on **`MessageWithSender`** —
+  what the READ paths return — and not on `MessageRow`, which the send path returns.
+  The contract already said so: the field is added to `GET /v1/channels/{id}/messages`,
+  and nothing in it mentions the send response.
+
+    MessageRow              send, edit, idempotent retry      unchanged
+    MessageWithSender       listMessages, backfill            carries deleted_at
+
+  So the compiler's four sites become one, and the three write paths spell nothing.
+  `getMessageByIdempotencyKey` was reverted too — it returns a `MessageRow` on the
+  recovery leg of a send, which is the send shape.
+
+  internal.itest.ts + versions.itest.ts: 20 of 20. typecheck 15 of 15.
+
+  **AND T025's LIST WAS SHORT BY A THIRD SUITE.** It names `messages.itest.ts`,
+  `repository.itest.ts` (added by analysis pass 11) and the edit/delete suites.
+  `internal.itest.ts` is none of those and it is the one that caught this. The rule
+  that generalises: **FR-008's per-action check has to cover every suite that parses a
+  shape the change touches, and the way to find them is the TYPE rather than a list** —
+  which is the same instrument the compiler gave us for construction sites, used for
+  readers instead of writers.
+
+--- the api lane after the type move -------------------------------------------
+  pnpm --filter @relay/api test:integration    EXIT 1 · 3 failed, 864 passed of 867
+
+  The three send-shape failures are gone. The three that remain are 063-7, and they
+  are BOTH of the two files CLAUDE.md names for that gap:
+
+    outbox.itest.ts        invariant 8, invariant 9       whole-table counts
+    media-updated.itest.ts "publishes once when one channel holds two messages"
+                                                          psubscribe("revision:*"),
+                                                          asserts the array's LENGTH
+
+  EACH GREEN IN ISOLATION, measured rather than assumed:
+
+    outbox.itest.ts alone                    18 of 18, EXIT 0
+    the media-updated test alone              1 of 1,  EXIT 0
+
+  Nothing in this chapter's change is implicated. The lane is green when nothing else
+  touches the stack; this host has an observer on it, which is this session.
