@@ -25,7 +25,7 @@ trigger fires on it.** The only mechanism that works without a schema change is
 *limits* of its own guarantee.
 
 So the chapter's product is a narrow, auditable exception: the trigger names its one legitimate
-deleter, the foreign key cascades, and **a published guarantee changes, which is a new ADR**.
+deleter, the foreign key cascades, and **a published guarantee changes, which is ADR-36**.
 
 ## Technical Context
 
@@ -61,7 +61,7 @@ policy**, and **nothing older than 19 days** — so every demonstration is a bac
 | **IV — single writer** | **satisfied by the predicate being self-clearing.** A destroyed message cannot match the next pass, so re-running needs no lease, heartbeat or reaper — chapter 4.13's compare-and-set argument in a different shape. **It needs a test rather than a sentence** (research R7) |
 | **V — API-first** | the policy is set through a public route. The sweep is a command and not a route, deliberately: see the ADR question |
 | **VI — test-verified** | five bullets, answered below |
-| **VII — boring by design** | no new service, no new dependency, no new table. **One new ADR, and it is unavoidable** |
+| **VII — boring by design** | no new service, no new dependency, no new table. **ADR-36, and it is unavoidable** |
 
 ### Principle VI in full, because a row that answers one bullet reads as answering five
 
@@ -77,11 +77,14 @@ policy**, and **nothing older than 19 days** — so every demonstration is a bac
 stating its drivers, rejected alternatives, and reversal condition. ADRs are immutable once
 accepted; superseding requires a new ADR."*
 
-**Yes, and it cannot be avoided.** ADR-35 published the audit log's immutability as *to the
+**Yes — ADR-36, and it cannot be avoided.** `ADR-35` is the last in both homes, checked, so
+this chapter's number is **ADR-36** and it is written down here rather than invented in phase 7
+under pressure. Chapter 4.18 named ADR-35 in its plan before writing a line of it, for the same
+reason: five documents will cite this and a citation needs an address. ADR-35 published the audit log's immutability as *to the
 application and to accident, and not to somebody holding the database password*, and chapter
 4.19 applied that scope to `message_edits`. This chapter makes it *to the application **except
 one named path**, and to accident.* That is a change to a published guarantee, which VII says
-is a new ADR superseding the scope clause rather than an edit to it.
+is a new ADR — **ADR-36** — superseding ADR-35's scope clause rather than an edit to it.
 
 **The ADR's drivers are measured, not asserted**: three of four escapes fail, and the one that
 works without this change is the hole ADR-35 documented. **Its rejected alternatives are in
@@ -131,10 +134,14 @@ repository.ts              52 pages
 schema.ts                  34 pages
 app.module.ts              23 pages
 vitest.coverage.config.mts 23 pages
-targets.ts                 varies — counted in phase 1 against the tree
+targets.ts                 13 pages — and the appendix already carries 4 hunks for it
 ```
 
-**FOUR FILES AT MINIMUM AND `targets.ts` ALMOST CERTAINLY A FIFTH**, all to
+**FIVE FILES**, counted at analysis rather than deferred to phase 1, which is what counting in
+phase 1 is for. **And `targets.ts` is the one where 4.12's rule bites**: its entries sit next to
+rows the appendix itself adds, so a hunk anchored there extends an existing hunk rather than
+adding one — 4.8 found the shape, 4.11 paid it on `codes.ts` and 4.12 paid it on this very file.
+All to
 `fences/post-series.md` — every one is published by pages this chapter does not own, and one
 rule for five files beats a judgement per file (4.8).
 
@@ -156,7 +163,7 @@ prediction.
 5. **US3 — what runs it, published.** The clause's three obligations with a verdict each.
 6. **The probes.** Each tenancy arm alone and in combination; the trigger still refusing
    everything it refused before; the sweep run twice.
-7. **The documents.** FR-MOD-06 and FR-MED-11 read before being edited, the new ADR, SRS
+7. **The documents.** FR-MOD-06 and FR-MED-11 read before being edited, **ADR-36**, SRS
    revision, both copies of the Part 4 table, `docs/12` row 21.
 8. **The chapter.** 2,000–4,000 prose words, the hunks, `check:fences` to zero.
 9. **The record and the close.** Coverage pins after the chain is zeroed, **and `check:fences`

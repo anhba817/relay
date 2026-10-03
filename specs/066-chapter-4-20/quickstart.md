@@ -20,7 +20,11 @@ The corrections earlier chapters earned are applied rather than rediscovered:
   destroys a value containing a space** — quote the result instead;
 - capture an exit code **outside** the pipeline, or `$?` is `tail`'s. Eight occurrences so far;
 - **this document assumes one shell.** §2 onward use variables §1 exports, and running a later
-  section in a fresh terminal fails in a way that looks like a platform defect.
+  section in a fresh terminal fails in a way that looks like a platform defect;
+- **`api_keys` has no `credential_hash` column.** Its columns are `id, environment_id,
+  public_id, secret_hash, salt, prefix, name, created_at, last_used_at, revoked_at` — an
+  earlier draft of §2 queried a column that does not exist, found at analysis pass 1 before
+  the document was ever run. The seeder prints the environment id and is the right source.
 
 ## 0 · MEASURED — nothing on this lane is old enough to expire
 
@@ -70,9 +74,12 @@ made every deletion add one.
 ## 2 · Set a policy (after the chapter)
 
 ```bash
-export K=$(RELAY_POSTGRES_PORT=15432 node scripts/seed-demo-tenant.mjs | tail -1)
-export ENV=$(docker compose exec -T postgres psql -U relay -d relay -t -A \
-  -c "select environment_id from api_keys where credential_hash is not null limit 1")
+# THE SEEDER ALREADY PRINTS BOTH, and the second line goes to stderr:
+#   environment_id bbda7667-…
+#   rk_dev_…
+export K=$(RELAY_POSTGRES_PORT=15432 node scripts/seed-demo-tenant.mjs 2>/dev/null | tail -1)
+export ENV=$(RELAY_POSTGRES_PORT=15432 node scripts/seed-demo-tenant.mjs 2>&1 >/dev/null \
+  | awk '/^environment_id/ {print $2}')
 
 curl -s -X PATCH "localhost:4000/v1/environments/$ENV" -H "authorization: Bearer $K" \
   -H 'content-type: application/json' -d '{"retention_days":30}' | python3 -m json.tool

@@ -50,6 +50,52 @@ declined to pre-solve it, and named row 22 as the chapter that would meet it. **
 it first** — and resolving it here means erasure inherits the resolution rather than repeating
 the discovery.
 
+## Analysis pass 1 — four findings, none CRITICAL, all fixed
+
+**The question**: *do the files the artifacts cite say what they are cited as saying?* — the
+mechanism with the best record as a first pass.
+
+- **A1 HIGH — the ADR had no number.** `ADR-35` is the last in both homes, so this chapter's is
+  **ADR-36**, and the plan said *"a new ADR"* six times without naming it. T045 could have been
+  executed and produced a record the SRS, the SAD and `docs/12` have nothing to cite. Chapter
+  4.18 named ADR-35 in its plan before writing a line of it. **Fixed in plan, tasks and
+  research** — and the post-correction sweep found three more mentions after the first edit,
+  which is the third feature running that the sweep has paid.
+- **A2 MEDIUM — `api_keys.credential_hash` does not exist.** The columns are `id,
+  environment_id, public_id, secret_hash, salt, prefix, name, created_at, last_used_at,
+  revoked_at`. `quickstart.md` §2 queried it and would have failed before the chapter did
+  anything. **Fixed** by taking the environment id from the seeder's own stderr line, which is
+  the right source anyway, and the correction is in the preamble's list.
+- **A3 MEDIUM — SC-012 had two halves and one task.** *"…published, **and re-measured at the
+  close**."* T007 measures the refused count at the open and nothing re-measured it, on a
+  number that moves **by one per deletion by construction** — the clearest case of 4.17's rule
+  there has been. **Fixed** as T063a, publishing the pair rather than the later figure alone.
+- **A4 LOW — the fence bill left one file uncounted.** `targets.ts` is **13 pages**, and the
+  appendix already carries **4 hunks** for it, so the bill is five files. Counting it at
+  analysis is what counting in phase 1 is for. **And it is the file where 4.12's rule bites**:
+  its entries neighbour rows the appendix itself adds, so T026's hunk likely extends an
+  existing one rather than adding one.
+
+### Checked, and clean
+
+```
+no environments surface anywhere          the route is genuinely new
+docs/07's Part 4 row 21                   exists — "The messages that expire"
+src/retention/sweep.ts -> dist/retention/ the layout migrate.js already proves
+nothing parses an environment response    no route, so no reader to break
+```
+
+**The last one is the risk 065 was bitten by, checked by type rather than assumed.** A required
+field reaching a strict schema one seam away cost that chapter three red tests. Here the new
+route creates a response shape **nothing yet parses** — `createEnvironment` is a fixture helper,
+not a parsed contract — so the class does not apply.
+
+**AND THE MECHANICAL COVERAGE MAP RAISED 18 ALARMS OF WHICH 17 WERE FALSE**, which is 4.11's
+finding reproduced almost exactly (14 of 51 there). Every FR and SC except SC-012 is discharged
+by a task that does not cite its number — FR-001 by T025, FR-006 by T028–T030, FR-009 by T035,
+FR-012 by T042–T047. Recorded so a later pass does not re-walk them, and it is why
+`traceability.md` is built by reading.
+
 ## Notes
 
 - Items marked incomplete require spec updates before `/speckit-clarify` or `/speckit-plan`

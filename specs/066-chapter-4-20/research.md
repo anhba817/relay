@@ -46,8 +46,8 @@ DELETE of the MESSAGE, flag set + ON DELETE CASCADE       DELETE 1
 **AND IT CHANGES A PUBLISHED GUARANTEE, WHICH IS AN ADR RATHER THAN A MIGRATION.** ADR-35's
 scope was *immutable to the application and to accident, and not to somebody holding the
 database password*. After this chapter it is *immutable to the application except one named
-path, and to accident*. Constitution VII makes an accepted ADR immutable, so this is a new ADR
-that supersedes ADR-35's scope clause rather than an edit to it.
+path, and to accident*. Constitution VII makes an accepted ADR immutable, so this is **ADR-36**,
+superseding ADR-35's scope clause rather than an edit to it.
 
 **Alternatives considered and rejected**: dropping the FK (loses the guarantee that a version
 cannot outlive its message, which is what makes the history trustworthy); soft-expiry by
