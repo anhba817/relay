@@ -24,7 +24,10 @@ The corrections earlier chapters earned are applied rather than rediscovered:
 - **`tr -d ' '` destroys a value that contains a space.** Chapter 4.18 wrote a corrupted row
   into an append-only table with its own cleanup step, because the idiom 4.11 added for a
   different column removed the space from `METHOD /path`. Quote the result instead;
-- capture an exit code **outside** the pipeline, or `$?` is `tail`'s. Seven occurrences so far.
+- capture an exit code **outside** the pipeline, or `$?` is `tail`'s. Seven occurrences so far;
+- **`python3 -c '…'` cannot carry a quote inside an f-string expression.** In a single-quoted
+  shell string `\"` arrives at Python as a backslash, which inside `f"{m[...]}"` is a syntax
+  error rather than an escape. Feed the program on stdin with a heredoc instead.
 
 ## 0 · Prerequisites
 
@@ -120,17 +123,43 @@ check before writing it.
 
 ```bash
 curl -s "localhost:4000/v1/channels/$CH/messages?limit=5" -H "authorization: Bearer $K" \
-  | python3 -c '
+  > /tmp/qs-history.json
+python3 - /tmp/qs-history.json <<'PY'
 import sys, json
-for m in json.load(sys.stdin)["messages"]:
-    print(f"seq={m[\"seq\"]:>3}  text={str(m[\"text\"])[:16]:18} deleted_at={m.get(\"deleted_at\")}")'
+rows = json.load(open(sys.argv[1]))["messages"]
+for m in rows:
+    seen = "deleted_at" in m
+    print(f"seq={m['seq']:>3}  text={str(m['text'])[:16]:18} "
+          f"deleted_at={m['deleted_at'] if seen else 'ABSENT'}")
+print("keys:", sorted(rows[0].keys()))
+PY
 ```
 
-**Expected after the chapter**: the tombstone's row carries its removal instant and a live
-message's carries `null`.
+**`"deleted_at" in m` AND NOT `m.get("deleted_at")`.** The accessor prints `None` for a key
+that is absent and for a key whose value is `null`, so a live message's row would read
+identically before and after this chapter — the probe would pass against an unimplemented
+field. It is `messages.itest.ts:1416`'s own comment one level out: *an absent key and an
+undefined value are the same to a truthiness check and different to a contract.*
 
-**Measured today**: the field is absent from every row — the `DELETE` response and the
-`message.deleted` frame both carry it and history does not.
+**And the program is fed on stdin rather than through `python3 -c '…'`.** Inside a
+single-quoted shell string `\"` reaches Python as a literal backslash, and inside an
+f-string expression that is a syntax error rather than an escaped quote — measured,
+`SyntaxError: unexpected character after line continuation character`. §1's uses of the same
+idiom work because nothing there needed a quote inside the expression.
+
+**Expected after the chapter**: the tombstone's row carries its removal instant, a live
+message's carries `null`, and `deleted_at` is in the key list.
+
+**Measured today**, with the working form:
+
+```
+seq=  1  text=None               deleted_at=ABSENT
+keys: ['attachments', 'channel_id', 'created_at', 'edited_at', 'id', 'seq', 'text', 'user']
+```
+
+The field is absent from every row. The `message.deleted` frame carries it and so does the
+webhook; **the `DELETE` answers 204 with an empty body and carries nothing**, which this
+section claimed otherwise until the seventh analysis pass ran it.
 
 ## 4 · The history cannot be rewritten (after the chapter)
 
@@ -145,8 +174,12 @@ docker compose exec -T postgres psql -U relay -d relay -At \
 
 **Expected after the chapter**: two refusals, then `3`.
 
-**Measured today**: the `UPDATE` is accepted. FR-MSG-07 says *"an immutable edit history"* and
-there is no trigger on that table, where `audit_log` has carried one since chapter 4.18.
+**Measured today**: **both are accepted** — `UPDATE 2`, then `DELETE 2`, then `0`. FR-MSG-07
+says *"an immutable edit history"* and there is no trigger on that table, where `audit_log`
+has carried one since chapter 4.18. *(This named one of the two acceptances against an
+expectation of two refusals. Run at the seventh analysis pass inside a `BEGIN … ROLLBACK`,
+which is how to ask this question before the chapter without rewriting a history the next
+measurement reads.)*
 
 **Do not run this before the chapter without restoring the rows** — a red probe writes to the
 lane, and this one would rewrite a history the next measurement reads. Take the values first

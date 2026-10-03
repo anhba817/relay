@@ -142,14 +142,21 @@ The chapter states that once and does not restate it.
 ## R6 — `deleted_at` is absent from the history row, and the frame has it
 
 ```
-GET …/messages        seq=3  text=null  user=…  created_at=…  edited_at=null
-message.deleted frame  id, channel, seq, user, deleted_at
-DELETE response        … deleted_at …
+GET …/messages          seq=3  text=null  user=…  created_at=…  edited_at=null
+message.deleted frame   id, channel, seq, user, deleted_at
+message.deleted webhook  … deleted_at …          the outbox row, same transaction
+DELETE itself           204, empty body          carries nothing
 ```
 
 Three surfaces describe the same event and one of them omits the instant. A client that was
 offline when the deletion happened and catches up through history learns that the message is
 gone and not when.
+
+*(This table listed the `DELETE` response as carrying `deleted_at` until the seventh analysis
+pass ran it. It answers **204 with an empty body** — `messages.controller.ts:447`: "the status
+is 204 either way, so the guard is the only thing that can tell them apart". The webhook is
+the second surface that carries it, and the asymmetry is sharper than this row claimed: the
+caller that performed the deletion is told nothing.)*
 
 **Decision**: add it to the history row. **This is a field addition rather than a reshape**,
 which CON-05's URL-versioning rule treats differently — chapter 4.8 made the same argument

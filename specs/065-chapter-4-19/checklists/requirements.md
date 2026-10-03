@@ -466,6 +466,94 @@ behind. Pass 3 ran SQL and found the foreign key; pass 6 ran SQL and found that 
 the chapter publishes as its product is a different quantity from the one it measured**, which
 reading cannot separate, because 3,610 and 4,862 are both true statements about tombstones.
 
+## Analysis pass 7 — five findings, none CRITICAL, all fixed
+
+**The question**: *does the document run, and does the contract describe what the route
+returns?* `quickstart.md` §0 through §5 executed against the composed platform, and every
+`file.ts:line` citation in the feature directory checked against the tree.
+
+- **G1 HIGH — the wire-shape example dropped the middle version, in both places that show
+  it.** `contracts/message-versions.md` and `data-model.md` listed **two** entries —
+  `will be edited`, `edited twice` — for the scenario SC-001, US1 scenario 1, T021 and phase
+  3's goal all say yields **three**. Two is what the route returns **today**. `data-model.md`
+  gets it right nineteen lines above, in the block showing the shape that was *rejected*: the
+  rename from `versions`/`text` to `edits`/`prior_text` lost a row, so the design that does
+  not ship was documented correctly and the one that does was not. **Fixed in both**, with
+  the middle instant taken from §1's measured pair.
+- **G2 HIGH — the `DELETE` response carries nothing.** 204 with an empty body, measured. The
+  spec's Context, the contract's *"three surfaces"* paragraph and T028's assertion all named
+  it as one of the two surfaces that carry `deleted_at`, and T028 — *"the instant equals the
+  one the `DELETE` response returned"* — could not have been written.
+  `messages.controller.ts:447` says why: *"The status is 204 either way, so the guard is the
+  only thing that can tell them apart."* The two that do carry it are the real-time frame and
+  the outbox row the webhook is built from, both reading the same `.returning()`. **Fixed**,
+  and the chapter's argument is sharper for it: a webhook consumer and a connected client
+  learn when, and the caller that performed the deletion learns nothing at all.
+  **It had four sites, not three.** `research.md` R6's surfaces table carried the same row and
+  was found by grepping for the claim after correcting it — pass 6's rule applied to pass 7's
+  own repair, in the same sitting, and it still produced a hit.
+- **G3 MEDIUM — §3 was a syntax error.** Run verbatim: `SyntaxError: unexpected character
+  after line continuation character` on Python 3.14.7. Inside a single-quoted shell string
+  `\"` reaches Python as a literal backslash, and inside an f-string expression that is not
+  an escape. §1's uses of the same idiom work because nothing there needed a quote inside the
+  expression. **Fixed** with a heredoc, and the preamble's correction list carries it.
+- **G4 MEDIUM — §3's probe could not tell the before state from the after state.**
+  `m.get("deleted_at")` prints `None` for an absent key and for `null`, so a live message's
+  row reads identically whether the chapter shipped or not — the probe would pass against an
+  unimplemented field. It is `messages.itest.ts:1416`'s own comment one level out. **Fixed**:
+  `"deleted_at" in m`, and the key set printed beside it. T028 gained the same requirement.
+- **G5 LOW — §4 named one of two acceptances.** Measured inside a `BEGIN … ROLLBACK`:
+  `UPDATE 2`, `DELETE 2`, count `0`, rollback restores `2`. The after-state expects two
+  refusals. **Fixed.**
+
+### Ran, and matched
+
+```
+§1  delete 204 · two of three texts · prior_text/edited_at, oldest first    exact
+§2  history 200 · edits 200 · user token 403                                exact
+    gauntlet.itest.ts:242  targets.ts:208  messages.itest.ts:1416
+    history-drift.itest.ts:85  repository.ts:2602  repository.ts:5325       all six resolve
+```
+
+Every correction the preamble carries works: the seeder's `| tail -1`, `type` not
+`visibility`, the application credential refusing to author, the dev-token mint, the api on
+4000. **T024a's premise holds** — four test files mention `/edits` and none asserts 403 or
+`wrong_credential_type`. And the contract's three `messageSchema` divergences are confirmed
+from the live key set: `channel_id` not `channel`, an undeclared `edited_at`, `text: null`.
+
+**The repaired §3 was extracted from this document and run**, rather than fixed and believed:
+it prints the output now published beside it, exit 0 captured outside the pipeline.
+
+### What running it cost
+
+§1 writes, and the spec sanctions that — the rows are in a channel this probe created in the
+seeded tenant. The lane moved by exactly what §1 sends:
+
+```
+messages       181,018 -> 181,019
+tombstones       4,862 ->   4,863
+message_edits    4,859 ->   4,861
+with versions    4,039 ->   4,040
+```
+
+T001, T005 and T008 re-measure, and pass 6's figures are a fact about the moment before this
+pass ran.
+
+### Seven passes
+
+    pass 1   8 findings   2 CRITICAL   opening files the artifacts cite
+    pass 2   6 findings   1 CRITICAL   asking what a document does not contain
+    pass 3   5 findings   0 CRITICAL   running SQL against the real table
+    pass 4   4 findings   0 CRITICAL   walking the tasks in execution order
+    pass 5   3 findings   0 CRITICAL   checking against other features' open gaps
+    pass 6   7 findings   1 CRITICAL   re-deriving every number, then grepping for the old one
+    pass 7   5 findings   0 CRITICAL   running the document, and checking every cited line
+
+**Four of the five came from executing rather than reading** — the syntax error, the 204, the
+blind probe, the double acceptance. The fifth came from comparing the contract's *after*
+example against the *before* output §1 had just produced and noticing they were the same
+length. **Six passes of reading never counted the rows in that block.**
+
 ## Notes
 
 - Items marked incomplete require spec updates before `/speckit-clarify` or `/speckit-plan`

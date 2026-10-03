@@ -24,6 +24,12 @@ where the clause asks, so this chapter adds to them rather than beside them.
       "ended_by":  "edit"
     },
     {
+      "prior_text": "edited once",
+      "edited_at": "2026-10-03T00:04:13.069Z",
+      "ended_at":  "2026-10-03T00:04:13.069Z",
+      "ended_by":  "edit"
+    },
+    {
       "prior_text": "edited twice",
       "edited_at": "2026-10-03T00:04:31.880Z",
       "ended_at":  "2026-10-03T00:04:31.880Z",
@@ -32,6 +38,10 @@ where the clause asks, so this chapter adds to them rather than beside them.
   ]
 }
 ```
+
+**THREE ENTRIES FOR TWO EDITS AND A DELETION**, and the middle one is the point of counting
+them: this block listed two until the seventh analysis pass, which is the number the route
+returns **today**. The instants are `quickstart.md` §1's measured pair plus the deletion.
 
 **`edited_at` AND `ended_at` CARRY THE SAME VALUE, AND THAT IS DELIBERATE.** `edited_at` is
 published and cannot be removed without a breaking change under CON-05; it is the wrong word
@@ -88,10 +98,19 @@ One field added to each row:
 |---|---|---|
 | `deleted_at` | `null` | the instant of removal |
 
-**Why it belongs here and not only on the delete response.** Three surfaces describe one
-event: the `DELETE` response, the real-time `message.deleted` frame, and this. The first two
-carry the instant and this one does not, so a client that was offline when the removal happened
-and catches up through history learns that the message is gone and not when.
+**Why it belongs here, and the DELETE response is not one of the surfaces.** Three things
+describe one removal: the real-time `message.deleted` frame, the `message.deleted` webhook
+built from the outbox row, and this. **The first two carry the instant — both read it off the
+same row inside the transaction — and this one does not**, so a client that was offline when
+the removal happened and catches up through history learns that the message is gone and not
+when.
+
+*(Measured at the seventh analysis pass: the `DELETE` itself answers **204 with an empty
+body** and carries nothing at all. Three artifacts named it as one of the two surfaces that
+do, and `messages.controller.ts:447` says why that was never possible — "the status is 204
+either way, so the guard is the only thing that can tell them apart". The real asymmetry is
+sharper than the one this paragraph claimed: a webhook consumer and a connected client both
+learn when, and the caller that performed the deletion learns nothing.)*
 
 **An addition, not a reshape**, which is the distinction CON-05's URL-versioning rule turns on
 and the one chapter 4.8 made when it added `has_more` to a published envelope.

@@ -115,6 +115,7 @@ So: **`ended_at` and `ended_by` are added; `prior_text` and `edits` stay.** The 
 {
   "edits": [
     { "prior_text": "will be edited", "edited_at": "…", "ended_at": "…", "ended_by": "edit" },
+    { "prior_text": "edited once",    "edited_at": "…", "ended_at": "…", "ended_by": "edit" },
     { "prior_text": "edited twice",   "edited_at": "…", "ended_at": "…", "ended_by": "deletion" }
   ]
 }

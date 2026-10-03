@@ -56,10 +56,12 @@ exactly one version, every time, and nothing in the platform records that it did
 
 ### Three smaller things the probe found, each measured
 
-**`deleted_at` is absent from the history row.** The delete *response* carries it and the
-real-time `message.deleted` *frame* carries it; the history row does not. A client that was
-offline when a message was removed and catches up through history learns that it is gone and
-not when:
+**`deleted_at` is absent from the history row.** The real-time `message.deleted` *frame*
+carries it and the `message.deleted` *webhook* carries it, both read off the same row inside
+the transaction; the history row does not. **The `DELETE` itself answers 204 with an empty
+body and carries nothing** — this paragraph said it carried the instant until the seventh
+analysis pass ran it. A client that was offline when a message was removed and catches up
+through history learns that it is gone and not when:
 
 ```
 seq=3  text=null  user=prem-b-…  created_at=2026-10-03T00:04:04.509Z  edited_at=null
