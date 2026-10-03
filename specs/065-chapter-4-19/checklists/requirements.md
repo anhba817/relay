@@ -134,6 +134,71 @@ to see to fail**, which is how SC-005 turned out to describe a leak this route c
 
 Neither mechanism is new. Both are in `CLAUDE.md` and both needed a pass to apply.
 
+## Analysis pass 2 — six findings, one CRITICAL, all fixed
+
+Pass 1 found things by opening files the artifacts cite. Pass 2 found its CRITICAL by
+**grepping this feature's own spec for a word four other documents use constantly**.
+
+**B1, CRITICAL — the immutability decision was in five tasks and no requirement.** The words
+`immutable`, `append-only`, `trigger` and `rewrite` appeared **zero times in `spec.md`**,
+while the decision was in `research.md` R5, the plan's summary, constitution check, file list,
+phase list, complexity table and risks, the data model, the contract's `DELETE` refusal, and
+tasks T030–T034. **Five unmapped tasks** — the first this feature had produced — and no
+success criterion that could have told you if they were dropped. The plan's own risk said
+*"if it needs anything beyond what ADR-35 licenses, it comes out and becomes a gap"*, which is
+a sentence with nothing behind it when no criterion names the thing.
+
+The fix was not to bolt on a requirement. The value is **US1's**: a recovered text the
+application can rewrite is not an answer to *what did it say*, it is a note. So FR-011,
+FR-012 and SC-012 are in the spec, US1 gains a fifth acceptance scenario, and T030–T034 moved
+into phase 3 relabelled `[US1]`. **That move also tightens pass 1's A1** — both migration
+files are now authored in one phase, before either applies, where two phases apart was the
+hazard A1 was about.
+
+The ids jump (T025 then T030) and they were not renumbered, because five renumberings would
+move every cross-reference between them. Execution order is correct; the numbers are not
+contiguous and the phase header says why.
+
+**B2, HIGH — one existing assertion must change and the task list would have misread it.**
+`messages.itest.ts:1416` asserts an **exact key set** on the `/edits` response, with a comment
+saying why it is exact. This chapter adds two fields, so it moves — a contract test doing its
+job. T025's rule is *"a suite that needed editing to stay green is a behaviour change and the
+chapter says so rather than editing it"*, which would have classified it as an FR-008
+violation. T025 now names it as the one expected edit, and notes that `toHaveLength(1)` eight
+lines above does **not** move, because that message is edited rather than deleted.
+
+**B3, HIGH — FR-008 did not cover the surface whose content changes.** It read *"MUST NOT
+change the behaviour of sending, editing or deleting a message"* — three verbs, and the
+version list is a fourth surface whose content changes by design. A no-change clause that does
+not mention the one thing that changes.
+
+**B4, MEDIUM — the fence bill missed the file B2 names.** `messages.itest.ts` is published by
+18 pages and was not among the six. The bill had been written from the plan's own file list
+rather than from what the work touches, which is exactly what 4.15's rule predicts and 4.18
+paid six files for.
+
+**B5, MEDIUM — US3 was not independently testable**, because five of its seven tasks built
+something its independent test did not exercise. Resolved by B1's move; US3 is two tasks now
+and its test is the clause count.
+
+**B6, LOW — `docs/07` §4 rule 2 checked.** *"The journeys are the milestones."* Part 4's is
+Priya's and this chapter's reader is Priya, but the milestones are rows 9, 17 and 22. Recorded
+in Assumptions so a later pass does not re-walk it.
+
+### Checked and clean, recorded so a later pass does not repeat them
+
+`row.text` is read into a local about eighty-five lines before the `UPDATE` that nulls the
+column, so the version row can be written from it — **the chapter's correctness core holds**.
+The edit path refuses an edit on a tombstone, so *every edit precedes every deletion* is true
+rather than hoped. The tombstone-as-empty-list test is about attachments, not versions.
+
+### What found them
+
+Pass 1's mechanism was opening cited files. Pass 2's was **asking what a document does not
+contain** — one grep of `spec.md` for a word the other four documents use on every page. The
+yield argues for varying the question rather than repeating the pass: the same mechanism run
+twice would have found B2 and nothing else.
+
 ## Notes
 
 - Items marked incomplete require spec updates before `/speckit-clarify` or `/speckit-plan`

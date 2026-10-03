@@ -105,6 +105,14 @@ the one that was on screen when the moderator acted, is gone.
 FR-MOD-01's *"complete history"* that the platform cannot currently serve. Everything else in
 row 20's brief already works.
 
+**And immutability is part of this story rather than beside it.** A recovered text that the
+application can rewrite is not an answer to *what did it say* — it is a note. FR-MSG-07 has
+asked for an immutable edit history since chapter 3.23 and nothing enforced it, so the
+preservation and the enforcement ship together or the first is worth less than the clause
+already claims. *(This arrived through `research.md` R5 and reached the plan, the data model,
+the contract and five tasks before any requirement here mentioned it — which the second
+analysis pass found by grepping this document for the word.)*
+
 **Independent Test**: send a message, edit it twice, delete it with the API key, and ask for
 its history. Every version it ever held comes back, including the last one.
 
@@ -126,6 +134,9 @@ its history. Every version it ever held comes back, including the last one.
    disagreed and the task list had silently resolved it in the contract's favour.)*
 4. **Given** a message deleted twice (a retried call), **When** the tool reads its history,
    **Then** one removal is recorded, because the second deletion changed nothing.
+5. **Given** any recovered version, **When** the application attempts to change or remove it,
+   **Then** the attempt is refused at the storage layer and the version is unchanged — so the
+   answer to *what did it say* is evidence rather than a note somebody could have edited.
 
 ### User Story 2 - When it was removed, from history alone (Priority: P2)
 
@@ -216,9 +227,24 @@ recover about a removed message and what it cannot.
 - **FR-008**: The feature MUST NOT change the behaviour of sending, editing or deleting a
   message, beyond the preservation FR-001 requires. Any action whose answer or timing changes
   is recorded with the measurement.
+
+  **AND THE READ IS NAMED HERE RATHER THAN LEFT OUT OF IT.** Sending, editing and deleting are
+  three verbs and the version list is a fourth surface, whose **content changes by design**: a
+  deleted message's list gains an entry and every row gains two fields, so a caller counting
+  `edits.length` sees a different number. That is additive and intended, it is the point of
+  FR-001, and FR-008 would otherwise be a no-change clause that does not mention the one thing
+  that changes.
 - **FR-009**: The chapter MUST state what a tenant can and cannot recover about a removed
   message, with a measurement beside each claim, including the versions that are already
   unrecoverable because they predate this feature.
+- **FR-011**: A recorded version MUST NOT be modifiable or removable by any path the platform
+  exposes, and the refusal MUST be demonstrated rather than asserted — a probe that attempts
+  the write and is refused. **FR-MSG-07 has said *"an immutable edit history"* since chapter
+  3.23 and nothing enforced it**, which is a measurement rather than a reading: the table
+  carries no trigger where `audit_log` has carried one since chapter 4.18.
+- **FR-012**: The scope of FR-011's refusal MUST be published with the claim — what it refuses
+  and what it does not — rather than left as the word *immutable*. The mechanism is the one
+  ADR-35 already measured, and that ADR's own finding is that two ways around it remain.
 - **FR-010**: Where the shipped behaviour and a published document disagree, the document MUST
   be amended rather than left to diverge. Three disagreements are known in advance and are
   listed in Assumptions.
@@ -264,6 +290,10 @@ recover about a removed message and what it cannot.
   adjective, with the clause each item discharges.
 - **SC-008**: Every change outside tests and documents is listed and checked against the diff
   rather than asserted (FR-008).
+- **SC-012**: An attempt to modify and an attempt to remove a recorded version are both
+  refused and the row survives both, demonstrated at the storage layer — and what the refusal
+  does **not** cover is published beside the claim, measured rather than assumed to match the
+  table chapter 4.18 made append-only.
 - **SC-009**: The CI error set after this chapter is compared per error against the set before
   it, in both directions, and the comparison is published.
 - **SC-010**: `check:fences` reports zero and the tutorial builds.
@@ -298,6 +328,11 @@ recover about a removed message and what it cannot.
 - **Nothing expires a recovered version.** Retention is row 21's and erasure is row 22's;
   neither is built, and the same absent scheduler bounds both (ADR-28). The chapter states the
   boundary and does not build a job.
+- **`docs/07` §4 rule 2 is checked and is not this chapter's.** *"The journeys are the
+  milestones — Parts 2, 4 and 5 each terminate in an executable journey (Tuan, Priya, Mai)."*
+  Part 4's is Priya's and this chapter's reader is Priya, but the milestones are rows 9, 17
+  and 22; row 20 adds to the surfaces that journey will use and does not terminate it. Rule 1
+  and rule 3 are both this chapter's and both have tasks.
 - **The probe's rows are left in place.** They are scoped to a channel this feature created in
   the seeded tenant, which is `fixtures.ts`'s standing convention — every row belongs to an
   environment the fixture minted, and a teardown reaching wider would be a global operation

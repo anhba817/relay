@@ -135,7 +135,13 @@ messages.service.ts        27 pages
 messages.controller.ts     18 pages
 messages.schema.ts         12 pages
 frames.ts                  12 pages
+messages.itest.ts          18 pages   added by analysis pass 2
 ```
+
+**`messages.itest.ts` is the one this list missed**, and it is not a maybe: `messages.itest.ts:1416`
+asserts an exact key set on the `/edits` response and this chapter adds two fields to it. The bill
+was written from the plan's own file list rather than from what the work touches, which is the
+failure mode 4.15's rule predicts and 4.18 paid six files for.
 
 All to `fences/post-series.md`, because every one is published by pages this chapter does not
 own — 4.8's rule, and one rule for six files beats a judgement per file. **Chapter 4.18 paid 49
@@ -156,12 +162,16 @@ The nine phases are `tasks.md`'s and carry the same names.
 2. **The decision.** `ended_by`'s values and the response's field names, settled before a
    migration exists — because the alternative is a spec question with `0022` already applied,
    which is the ordering constraint 4.18 recorded.
-3. **US1 — the final version.** `0022`, the column, the two write sites and the read. **Not
-   the trigger**: it is US3's and it is `0023`, because `migrate.ts` keys the ledger on a
-   filename with no checksum, so a migration file written across two phases is one that never
-   applies in full on the machine that ran the first half.
+3. **US1 — the final version, and the fact that it cannot be rewritten.** `0022` (the column,
+   the backfill), the two write sites, the read, **and `0023`'s trigger**. Two migration files,
+   both authored in this phase before either applies — because `migrate.ts` keys the ledger on
+   a filename with no checksum, so a file written across two phases never applies in full on
+   the machine that ran the first half.
+   *(Analysis pass 1 split the files; pass 2 moved the trigger here, because it had no
+   requirement in the spec and US3's independent test never exercised it.)*
 4. **US2 — the removal instant in history.** One field, and the three surfaces reconciled.
-5. **US3 — the boundary, published.** What a tenant can and cannot recover, counted.
+5. **US3 — the boundary, published.** What a tenant can and cannot recover, counted. Two
+   tasks: the clause count and the number of tombstones that can never be recovered.
 6. **The probes.** Each tenancy arm deleted alone; the trigger attacked; the deletion's new
    cost measured against the shape before it.
 7. **The documents.** FR-MSG-07 and FR-MSG-08 read before being edited, the SRS revision, both
@@ -197,6 +207,13 @@ it is stated in the contract, and the alternative is versioning a route over a w
 - **FR-MSG-07's immutability is a second clause arriving inside this chapter.** It is justified
   in research R5 and it is still scope growth. If it turns out to need anything beyond the
   migration ADR-35 already licenses, it comes out and becomes a gap.
+
+  **AND UNTIL ANALYSIS PASS 2 THERE WAS NO CRITERION THAT WOULD HAVE TOLD YOU IT CAME OUT.**
+  This risk was written while `spec.md` contained the words *immutable*, *append-only*,
+  *trigger* and *rewrite* **zero times** — the decision reached this plan, the data model, the
+  contract and five tasks through `research.md` and never reached the document that says what
+  the feature is. It carries FR-011, FR-012 and SC-012 now. **A risk register entry about
+  scope growth is not a scope boundary.**
 - **`ended_by` required is a compiler-named change across one writer and one reader today**,
   and that count is from a grep. If the real number is larger the trade changes, and chapter
   4.14's measurement — 110 call sites for a constructor against 13 for two method parameters —

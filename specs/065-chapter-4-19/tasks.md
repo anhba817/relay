@@ -20,7 +20,7 @@ All nine append to one file, so none is parallel however independent the measure
 - [ ] T003 Record `check:fences` in `specs/065-chapter-4-19/baseline.txt` as an **absolute number**, not a delta — 055's rule, because a delta compares a total to a total and never asks which file.
 - [ ] T004 Record the CI baseline in `specs/065-chapter-4-19/baseline.txt`: the last pushed run's four job conclusions and its `##[error]` set, normalised. **The current baseline is an empty set** — two consecutive green runs at 064's close — which is the hardest kind to match and the easiest to read as "nothing to compare".
 - [ ] T005 **Re-run the premise, against the code rather than against `research.md`.** Re-measure the two-of-three arithmetic, the 403 on `/edits` with a user token, and FR-MOD-02's 204. Record in `specs/065-chapter-4-19/baseline.txt`. The spec's Context is a measurement from 2026-10-03 and this task asks whether it still holds; **an artifact agreeing with another artifact is what fifteen analysis passes found in 4.9**.
-- [ ] T006 **Count the fence bill against the tree**, from `relay-tutorial`: `grep -rl 'title="<path>"' app/ fences/` for each of `repository.ts`, `schema.ts`, `messages.service.ts`, `messages.controller.ts`, `messages.schema.ts`, `frames.ts`. `plan.md` has 52 / 34 / 27 / 18 / 12 / 12 to check against. **Read it as a floor**: 4.18's list of 21 files grew by six during implementation and every one came from running something rather than reading it.
+- [ ] T006 **Count the fence bill against the tree**, from `relay-tutorial`: `grep -rl 'title="<path>"' app/ fences/` for each of `repository.ts`, `schema.ts`, `messages.service.ts`, `messages.controller.ts`, `messages.schema.ts`, `frames.ts`. `plan.md` has 52 / 34 / 27 / 18 / 12 / 12 to check against. **And add `services/api/src/messages/messages.itest.ts` — 18 pages — which that list misses and T025 must edit**: the exact-key-set assertion at line 1416. The second analysis pass found it; the first version of this bill was six files written from the plan rather than from what the work touches. **Read it as a floor**: 4.18's list of 21 files grew by six during implementation and every one came from running something rather than reading it.
 - [ ] T007 Count the `MessageRow` construction sites in `specs/065-chapter-4-19/baseline.txt`, both ways: how many build one, and how many read paths fill `edited_at`. **14 and 10 by grep** — the number T014a's decision turns on, and a grep is an estimate of it.
 - [ ] T008 Record what `message_edits` holds today in `specs/065-chapter-4-19/baseline.txt`: row count, distinct `(message_id, edited_at)` pairs, and the number of tombstones with zero version rows. **4,859 / 4,859 / and the third is unmeasured** — it is the size of the history this chapter can never recover.
 - [ ] T009 Record in `specs/065-chapter-4-19/baseline.txt` that `message_edits` has no trigger and `audit_log` does, with the `UPDATE` that is accepted today. The before half of T030's probe.
@@ -45,10 +45,21 @@ recorded when FR-005 and FR-012 could not both hold.
 ## Phase 3: User Story 1 — the final version is recoverable (P1) 🎯 MVP
 
 **Goal**: a message edited twice and then deleted yields three texts, in order, the last one
-marked as ended by a deletion.
+marked as ended by a deletion — **and none of the three can be rewritten afterwards**.
 
 **Independent test**: run `quickstart.md` §1. It reports two of three today and must report
-three of three.
+three of three. Then run §4: both write attempts are refused and the rows survive.
+
+**T030–T034 ARE HERE AND THEIR IDS JUMP**, which is the second analysis pass showing in the
+file. They were phase 5's, building a trigger that no requirement mentioned and that US3's
+independent test did not exercise — five unmapped tasks. The spec now carries FR-011, FR-012
+and SC-012, and the value is US1's: *a recovered text the application can rewrite is not an
+answer to what did it say, it is a note.* They are placed after T025 rather than renumbered,
+because five renumberings would move every cross-reference between them.
+
+**And both migrations are now written in one phase**, which is the other thing the move buys:
+`0022` and `0023` are authored before either is applied, where two phases apart was T015's
+whole hazard.
 
 - [ ] T015 [US1] Write migration `relay-platform/services/api/migrations/0022_message_versions.sql`: `ALTER TABLE message_edits ADD COLUMN ended_by text`, the check constraint, and the backfill of existing rows to `'edit'` **before** the `NOT NULL`. A column added `NOT NULL` with no default fails on a table with 4,859 rows, and the order is the whole of it.
   **AND THE TRIGGER IS NOT IN THIS FILE.** It is `0023` (T030), and the separation is not tidiness: `migrate.ts` records `schema_migrations.version` **by filename with no checksum**, so a trigger appended to this file after this task has run would never apply on any machine that already ran it, while the ledger reports the migration done. Chapter 4.18 recorded that hazard as something to guard against; two files two phases apart would have made it a certainty. **A migration file is written once, before it is ever applied.**
@@ -65,6 +76,13 @@ three of three.
 - [ ] T024a [US1] **Assert the credential refusal in a suite, not only in `baseline.txt`** (FR-005, SC-006), in `relay-platform/services/api/src/messages/versions.itest.ts`: a user token on `GET …/edits` answers **403 `wrong_credential_type`**, asserted **by code and not by status** — `webhooks.itest.ts` passed for three chapters while the body said `internal_error`. **Run it red by deleting `@Accepts("application")`**, which is how chapter 4.18 found that its own 403 branch was unreachable while the decorator beside it was the whole defence and had no test. **This chapter adds rows to that route**, so the refusal is now protecting more than it was.
   **AND `targets.ts:208` ALREADY NAMES THE HAZARD**: *"THE TWO VALUES MUST AGREE AND NOTHING COMPARES THEM. This entry and the decorator are the same authorisation fact written twice."* The entry says `accepts: "application"` and the decorator enforces it; this test is the first thing in the repository to check the enforcing half.
 - [ ] T025 [US1] **Check FR-008 per action**: re-run `messages.itest.ts` and the edit/delete suites **unedited** and record the result in `specs/065-chapter-4-19/baseline.txt`. A suite that needed editing to stay green is a behaviour change and the chapter says so rather than editing it.
+  **ONE ASSERTION IS EXPECTED TO FAIL AND IT IS THE RIGHT ONE.** `messages.itest.ts:1416` is `expect(Object.keys(edits[0]!).sort()).toEqual(["edited_at", "prior_text"])` — an **exact key set**, with a comment saying why it is exact: *"an absent key and an undefined value are the same to a truthiness check and different to a contract."* This chapter adds `ended_at` and `ended_by` to every row, so that assertion moves, and it is a contract test doing its job rather than FR-008 being broken. **Update it to the four-key set and record it here as the one expected edit**; every other red in this run is a finding.
+  **And `toHaveLength(1)` eight lines above it does NOT move** — that message is edited, not deleted, so it still has one version. Checked rather than assumed, because the two assertions look alike and only one of them is about this chapter.
+- [ ] T030 [US1] Write migration `relay-platform/services/api/migrations/0023_message_edits_append_only.sql` — the trigger function and the `BEFORE UPDATE OR DELETE` trigger — with the justification in a comment: FR-MSG-07 says *immutable*, nothing enforced it, and **ADR-35 measured that `REVOKE` is inert against a superuser** a chapter ago. **A new file rather than an edit to `0022`**, for the reason T015 states: an applied migration cannot be appended to, because the ledger keys on the filename. **And the order between the two files is load-bearing** — `0022`'s backfill is an `UPDATE` on `message_edits`, which this trigger would refuse. Filenames apply in order, so `0023` is the only safe number and this task asserts the backfill ran before writing it.
+- [ ] T031 [US1] **Run the trigger red before anything depends on it**: apply the migration, attempt `UPDATE` and `DELETE` through `psql`, record both refusals in `specs/065-chapter-4-19/baseline.txt`. **Assert the trigger exists first** — `select tgname from pg_trigger where tgrelid = 'message_edits'::regclass` — because `schema_migrations` records filenames with no checksum. **The two-file split removes the way this went wrong in the first draft and not every way it can.** `0023` is a new filename, so it applies; but a machine that ran `0023` before this task edited it would not re-run it, and the ledger would still say done. **Ask the catalogue, not the ledger.**
+- [ ] T032 [US1] **Run the two bypasses and record them** in `specs/065-chapter-4-19/baseline.txt` — `SET session_replication_role = replica` and `DROP TRIGGER`. ADR-35 published the scope for `audit_log`; this task asks whether it is the same scope here rather than assuming a second table behaves like the first.
+- [ ] T033 [US1] Clean up T031's and T032's rows before anything else is counted, and say so in `specs/065-chapter-4-19/baseline.txt`. **The cleanup needs the bypass**, as 4.18's did — and **quote the values**: a prior text contains spaces, and `tr -d ' '` is how 4.18 wrote a corrupted row into the table it had just made append-only.
+- [ ] T034 [US1] Check that `relay-platform/packages/test-harness/src/no-trigger-in-migrations.test.ts` **still passes unedited**. 4.18 narrowed it from *no trigger* to *not the sentinel guard* and asserted the narrowing; a second permitted trigger should need no change, and **running it is how you find out** rather than reasoning from the narrowing's wording.
 
 ---
 
@@ -88,11 +106,13 @@ the delete, and read the instant off the row.
 **Goal**: what a tenant can and cannot recover, counted, so rows 21 and 22 inherit a statement
 rather than an assumption.
 
-- [ ] T030 [US3] Write migration `relay-platform/services/api/migrations/0023_message_edits_append_only.sql` — the trigger function and the `BEFORE UPDATE OR DELETE` trigger — with the justification in a comment: FR-MSG-07 says *immutable*, nothing enforced it, and **ADR-35 measured that `REVOKE` is inert against a superuser** a chapter ago. **A new file rather than an edit to `0022`**, for the reason T015 states: an applied migration cannot be appended to, because the ledger keys on the filename. **And the order between the two files is load-bearing** — `0022`'s backfill is an `UPDATE` on `message_edits`, which this trigger would refuse. Filenames apply in order, so `0023` is the only safe number and this task asserts the backfill ran before writing it.
-- [ ] T031 [US3] **Run the trigger red before anything depends on it**: apply the migration, attempt `UPDATE` and `DELETE` through `psql`, record both refusals in `specs/065-chapter-4-19/baseline.txt`. **Assert the trigger exists first** — `select tgname from pg_trigger where tgrelid = 'message_edits'::regclass` — because `schema_migrations` records filenames with no checksum. **The two-file split removes the way this went wrong in the first draft and not every way it can.** `0023` is a new filename, so it applies; but a machine that ran `0023` before this task edited it would not re-run it, and the ledger would still say done. **Ask the catalogue, not the ledger.**
-- [ ] T032 [US3] **Run the two bypasses and record them** in `specs/065-chapter-4-19/baseline.txt` — `SET session_replication_role = replica` and `DROP TRIGGER`. ADR-35 published the scope for `audit_log`; this task asks whether it is the same scope here rather than assuming a second table behaves like the first.
-- [ ] T033 [US3] Clean up T031's and T032's rows before anything else is counted, and say so in `specs/065-chapter-4-19/baseline.txt`. **The cleanup needs the bypass**, as 4.18's did — and **quote the values**: a prior text contains spaces, and `tr -d ' '` is how 4.18 wrote a corrupted row into the table it had just made append-only.
-- [ ] T034 [US3] Check that `relay-platform/packages/test-harness/src/no-trigger-in-migrations.test.ts` **still passes unedited**. 4.18 narrowed it from *no trigger* to *not the sentinel guard* and asserted the narrowing; a second permitted trigger should need no change, and **running it is how you find out** rather than reasoning from the narrowing's wording.
+**Two tasks, and that is the whole story.** The trigger that sat here until the second
+analysis pass is US1's — it had no requirement and this story's independent test never touched
+it.
+
+**Independent test**: read `clauses.md` and find a count with a clause beside each item, and a
+number for how many tombstones can never be recovered.
+
 - [ ] T035 [P] [US3] Write `specs/065-chapter-4-19/clauses.md`: FR-MOD-01's obligations counted, FR-MOD-02's recorded as already met, FR-MSG-07's and FR-MSG-08's each marked met, demonstrated, unmet by decision or unreachable, with where. SC-007 wants a count, not an adjective.
 - [ ] T036 [US3] Record in `specs/065-chapter-4-19/baseline.txt` **how many tombstones can never be recovered** — T008's third figure. The chapter publishes a boundary and this is its size.
 
@@ -217,8 +237,9 @@ measurement behind it is.
 ### MVP
 
 **Phase 1 + Phase 2 + Phase 3.** US1 alone closes the gap the premise check found: three texts
-in, three texts out. US2 is a field on a row and US3 is the boundary published — neither is
-worth building against a version that does not yet exist.
+in, three texts out, **and none of them rewritable afterwards**. US2 is a field on a row and
+US3 is the boundary published — neither is worth building against a version that does not yet
+exist.
 
 ### What this feature must not do
 
