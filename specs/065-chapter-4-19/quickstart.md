@@ -3,11 +3,19 @@
 Walk the gap by hand: send a message, edit it twice, delete it with the tenant key, and count
 how many of the three texts you can get back.
 
-**SECTIONS 1 AND 2 ARE MEASURED** — run against the current platform while this plan was
-written, and what they show is why the chapter exists. **Everything after them is a
-prediction.** The phase-9 task is to run this document start to finish and correct it in
-place, recording each wrong version. The last five chapters' quickstarts were wrong three,
-four, three, five and two times at exactly this point.
+**EVERY SECTION IS NOW MEASURED**, run start to finish against the composed platform
+with the chapter shipped — a rebuilt api image, not the in-process test app. Sections 1
+and 2 were measured before the chapter too, and both readings are kept, because the
+contrast between them is the chapter.
+
+**WHAT WAS WRONG WHEN IT WAS RUN: nothing in the document.** The last five chapters'
+quickstarts were wrong three, four, three, five and two times at exactly this point, and
+this one was wrong twice during the analysis passes instead — §3 was a Python syntax
+error and §4 named one of two acceptances, both found and fixed before implementation
+began. The only failure during the phase-9 run was the operator's: §3 was invoked in a
+fresh shell without `$CH` and `$K` exported from §1, and answered `KeyError: 'messages'`.
+**That is the document assuming one shell, which it says, and it is worth recording
+because a reader who pastes section by section into a new terminal will meet it.**
 
 The corrections earlier chapters earned are applied rather than rediscovered:
 
@@ -75,7 +83,7 @@ curl -s "localhost:4000/v1/channels/$CH/messages/$M/edits" -H "authorization: Be
   | python3 -m json.tool
 ```
 
-**Measured today**, before the chapter:
+**Measured BEFORE the chapter** — two of the three texts:
 
 ```
 delete 204
@@ -83,6 +91,22 @@ delete 204
     "edits": [
         { "prior_text": "will be edited", "edited_at": "2026-10-03T00:04:13.056Z" },
         { "prior_text": "edited once",    "edited_at": "2026-10-03T00:04:13.069Z" }
+    ]
+}
+```
+
+**Measured AFTER**, against the composed api with the rebuilt image — three:
+
+```
+delete 204
+{
+    "edits": [
+        { "prior_text": "will be edited", "edited_at": "2026-10-03T13:53:14.035Z",
+          "ended_at": "2026-10-03T13:53:14.035Z", "ended_by": "edit" },
+        { "prior_text": "edited once",    "edited_at": "2026-10-03T13:53:14.047Z",
+          "ended_at": "2026-10-03T13:53:14.047Z", "ended_by": "edit" },
+        { "prior_text": "edited twice",   "edited_at": "2026-10-03T13:53:14.057Z",
+          "ended_at": "2026-10-03T13:53:14.057Z", "ended_by": "deletion" }
     ]
 }
 ```
@@ -147,19 +171,24 @@ f-string expression that is a syntax error rather than an escaped quote — meas
 `SyntaxError: unexpected character after line continuation character`. §1's uses of the same
 idiom work because nothing there needed a quote inside the expression.
 
-**Expected after the chapter**: the tombstone's row carries its removal instant, a live
-message's carries `null`, and `deleted_at` is in the key list.
-
-**Measured today**, with the working form:
+**Measured BEFORE the chapter** — the field is absent from every row:
 
 ```
 seq=  1  text=None               deleted_at=ABSENT
 keys: ['attachments', 'channel_id', 'created_at', 'edited_at', 'id', 'seq', 'text', 'user']
 ```
 
-The field is absent from every row. The `message.deleted` frame carries it and so does the
-webhook; **the `DELETE` answers 204 with an empty body and carries nothing**, which this
-section claimed otherwise until the seventh analysis pass ran it.
+**Measured AFTER** — the instant is there, and it is the same one §1's third version
+carries:
+
+```
+seq=  1  text=None               deleted_at=2026-10-03T13:53:14.057Z
+keys: ['attachments', 'channel_id', 'created_at', 'deleted_at', 'edited_at', 'id', 'seq', 'text', 'user']
+```
+
+The `message.deleted` frame carries it and so does the webhook; **the `DELETE` answers
+204 with an empty body and carries nothing**, which this section claimed otherwise until
+the seventh analysis pass ran it.
 
 ## 4 · The history cannot be rewritten (after the chapter)
 
@@ -172,9 +201,17 @@ docker compose exec -T postgres psql -U relay -d relay -At \
   -c "select count(*) from message_edits where message_id='$M'"
 ```
 
-**Expected after the chapter**: two refusals, then `3`.
+**Measured AFTER the chapter** — two refusals, then `3`:
 
-**Measured today**: **both are accepted** — `UPDATE 2`, then `DELETE 2`, then `0`. FR-MSG-07
+```
+ERROR:  message versions are append-only (FR-MSG-07)
+CONTEXT:  PL/pgSQL function message_edits_refuse_write() line 3 at RAISE
+ERROR:  message versions are append-only (FR-MSG-07)
+CONTEXT:  PL/pgSQL function message_edits_refuse_write() line 3 at RAISE
+3
+```
+
+**Measured BEFORE**: **both were accepted** — `UPDATE 2`, then `DELETE 2`, then `0`. FR-MSG-07
 says *"an immutable edit history"* and there is no trigger on that table, where `audit_log`
 has carried one since chapter 4.18. *(This named one of the two acceptances against an
 expectation of two refusals. Run at the seventh analysis pass inside a `BEGIN … ROLLBACK`,

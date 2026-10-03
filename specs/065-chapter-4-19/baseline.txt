@@ -920,3 +920,170 @@ PHASE 8 — THE CHAPTER
   **ZERO, AND IT WENT 0 -> 5 -> 0.** The chain was clean at T003, five files diverged as
   the code landed, and eleven hunks took it back. The number to report is the absolute
   one (055's rule), not the delta.
+
+================================================================================
+PHASE 9 — THE RECORD AND THE CLOSE
+================================================================================
+
+--- T070 · FR-008 against the diff, not against the claim ---------------------
+  git diff --name-only part4-ch18..HEAD   in relay-platform — EIGHT files:
+
+    migration      services/api/migrations/0022_message_versions.sql
+    migration      services/api/migrations/0023_message_edits_append_only.sql
+    SHIPPED CODE   services/api/src/db/repository.ts
+    SHIPPED CODE   services/api/src/db/schema.ts
+    SHIPPED CODE   services/api/src/messages/messages.controller.ts
+    test           services/api/src/db/repository.itest.ts
+    test           services/api/src/messages/messages.itest.ts
+    test           services/api/src/messages/versions.itest.ts
+
+  **THREE SHIPPED FILES AND EVERY ONE IS THIS CHAPTER'S.** `repository.ts` carries the
+  two writers and the read, `schema.ts` the column and two corrected comments,
+  `messages.controller.ts` the declared response type the compiler could not check.
+  Nothing outside the feature, and SC-008 is checked against the diff rather than
+  asserted — which is the whole of what that criterion asks.
+
+  AND THE ONE EDIT TO AN EXISTING TEST IS RECORDED AS EXPECTED: `messages.itest.ts`'s
+  exact key set at :1416, which T025 predicted would move and which was the only
+  assertion in 68 that did.
+
+--- T069 · the quickstart, run end to end against the composed platform -------
+Against a REBUILT api image, not the in-process test app — `pnpm build`, then
+`docker compose --profile services build api`, then `up -d --wait`.
+
+  §1  delete 204, and **THREE texts**, where the same commands gave two before:
+
+        prior_text "will be edited"  ended_by "edit"
+        prior_text "edited once"     ended_by "edit"
+        prior_text "edited twice"    ended_by "deletion"
+
+      `ended_at` equals `edited_at` on every row, which is the published duplication.
+  §2  history 200 · edits 200 · user token **403**
+  §3  `deleted_at=2026-10-03T13:53:14.057Z` on the tombstone, and the key is in the
+      list — **the same instant §1's third version carries**, which is the three-
+      surfaces property measured end to end rather than in a test
+  §4  two refusals naming FR-MSG-07, then `3`
+
+  **NOTHING IN THE DOCUMENT WAS WRONG ON THIS RUN**, which is the first time in six
+  chapters. It was wrong twice during the analysis passes instead — §3 was a Python
+  syntax error and §4 named one of two acceptances — and both were fixed before any
+  code was written. **The failures moved from phase 9 to the analysis passes, which is
+  where they are cheap.**
+
+  THE ONE FAILURE WAS THE OPERATOR'S. §3 was invoked in a fresh shell without `$CH` and
+  `$K` exported from §1 and answered `KeyError: 'messages'`. The document says it
+  assumes one shell; it is recorded because a reader pasting section by section into a
+  new terminal meets it, and because the failure LOOKS like the platform returning a
+  body with no `messages` key.
+
+  Corrected in place: every section now carries both readings, before and after, since
+  the contrast is the chapter.
+
+--- T067 / T068 · the coverage pins, and none of them moved -------------------
+  pnpm coverage    151 files, 2,168 tests · REAL EXIT 1 (4 failed, see T072)
+  **ZERO threshold errors.** No pin moved and none needed to.
+
+    repository.ts   branches 92.98   against a pin of 92
+                    statements 98.01 · functions 100 · lines 99.36
+
+  THE FIGURE WENT UP, NOT DOWN. It was 92.96 when analysis pass 5 measured it and the
+  config's own comment traces it 92.66 (sender chapter) -> 92.97 (revisions) -> 92.98.
+  T067 was rewritten at pass 5 precisely because the first version of it assumed there
+  were pins to ADD, when the risk ran the other way: `repository.ts` had 0.96 of
+  headroom and this chapter put three code paths into it. It has 0.98 now.
+
+  `schema.ts` measures 58.97 / 100 / 40.74 and is not pinned — a Drizzle table file is
+  declarations, and its functions are column helpers nothing calls in a unit lane.
+
+  SO THERE IS NO EDIT TO `vitest.coverage.config.mts`, which is the eighth file the
+  fence bill named. **The bill came to five, not eight**, and T067a's re-run of
+  `check:fences` is therefore a control rather than a repair — which is still worth
+  running, because the reason to run it was never "a pin probably moved".
+
+--- T071 · the composed services, stopped by name -----------------------------
+  docker compose stop api gateway dispatcher media-worker     EXIT 0
+  **NOT `ingester`**, which has no Dockerfile and makes the whole command fail.
+  Remaining: clamav, clickhouse, mailpit, minio, nats, postgres, redis — the stores
+  the lanes need and none of the services that would contend with them.
+
+--- AND THE LANE SET FOUND A LINT ERROR THAT IS A CONSTITUTION CLAUSE -----------
+  pnpm lint   REAL EXIT 1, where T002 measured EXIT 0
+
+    'drizzle-orm' import is restricted from being used. The query engine lives inside
+    the repository layer only (constitution I, ADR-16)   no-restricted-imports
+
+  `versions.itest.ts` imported `sql` to read the outbox row directly, and that file is
+  in `services/api/src/messages/` — outside `services/api/src/db/**`. **This is 4.7's
+  finding at a third address**: *a lint rule is a constitution clause*, which that
+  chapter met when a Postgres read went inline in `metering/`, and which 4.18 met when
+  it put `audit-reads.ts` in the db directory rather than beside its reader.
+
+  THE EXEMPT LIST WOULD HAVE TAKEN IT. It is hand-maintained with an argument per path
+  — `guard.itest.ts`, `reset-lane.itest.ts`, `backfill.itest.ts`, each with the reason
+  it cannot go through the repository. **Not needing an exemption is better than
+  earning one**, and the rewrite is a stronger assertion as well as a legal one:
+
+    before   re-read the outbox row and compare its payload's `deleted_at`
+    after    compare against `deleteMessage`'s own returned `deleted.deleted_at`
+
+  That is the value `publishRevision` puts ON the frame and the value the outbox event
+  quotes — one `RETURNING`, three consumers — so the test now compares history against
+  what the publisher was handed rather than against a row read back afterwards.
+  6 of 6.
+
+  AND THE BATTERY WAS RESTARTED, because the edit landed while it was running. A
+  close-out measurement that straddles a source change is not a close-out measurement.
+
+--- T072 · the full lane set, compared PER TEST against T002 ------------------
+Run with the composed services stopped and nothing else against the stack.
+
+                     T002, at the open          T072, at the close
+    lint             EXIT 0 · 1 warning         EXIT 0 · 1 warning      same
+    typecheck        EXIT 0 · 15 tasks          EXIT 0 · 15 tasks       same
+    unit             EXIT 0 · 13 tasks          EXIT 0 · 13 tasks       same
+    test:integration EXIT 1 · gateway 1, then   EXIT 1 · media-worker
+                     api outbox invariant 8       2 suites of 3
+    coverage         EXIT 1 · 4 failed          **EXIT 0 · 2,168 passed, 0 failed**
+
+  **COVERAGE WENT RED TO GREEN**, 151 files and 2,168 tests, zero threshold errors and
+  no pin moved. That is the strongest single number in this close-out and it is not a
+  claim about the chapter: it is a claim about the stack being quiet, which T071 made
+  it.
+
+  AND THE ONE RED LANE IS THE SAME CLASS AS EVERY OTHER RED IN THIS FEATURE:
+
+    @relay/api            50 suites · 0 failed
+    @relay/gateway        12 suites · 0 failed
+    @relay/e2e             4 · 0     @relay/ingester     2 · 0
+    @relay/dispatcher      1 · 0     @relay/test-harness 2 · 0
+    @relay/media-worker    3 suites · 2 FAILED      scan.itest.ts, verify.itest.ts
+
+    the media-worker lane ALONE            **32 of 32, EXIT 0**
+
+  T072 told this chapter to expect `verify.itest.ts` red on a developer host — 064-5,
+  the media sweep fixture's floor. It is red, and so is its neighbour, and **both are
+  green in isolation**. So the carried gap and this feature's own 065-3 are the same
+  finding seen twice: *an assertion reading state that is not its own.*
+
+  **FOUR DIFFERENT FILES HAVE NOW BEEN IMPLICATED ACROSS SIX RUNS** — `outbox.itest.ts`,
+  `media-updated.itest.ts`, `deliveries.itest.ts`, and the media-worker pair — and no
+  two runs failed the same way. A per-test comparison against T002 would read
+  "different tests failed, therefore something changed"; the controls say otherwise.
+  **The honest comparison is not test-by-test but class-by-class**, and the class is
+  unchanged: red when the stack is shared, green when it is not.
+
+  AND THE OUTBOX TABLE IS PART OF IT: **386,317 rows, 0 pending.** `outbox.itest.ts`'s
+  invariant 8 passed alone this morning at 18 of 18 and failed alone this afternoon,
+  after this feature's own T039 probe wrote 400 deletions. `reset-lane.mjs` does not
+  touch that table by design. **So the suite is sensitive to the accumulated SIZE of a
+  shared table, not only to a concurrent neighbour** — which is 063-7 made worse by
+  time, and a lane that will eventually fail for everybody. For `gaps.md`.
+
+--- T067a · the fence control, run because the reason to run it was not "a pin moved"
+  pnpm check:fences    REAL EXIT 0 · 291 files across 62 chapters
+
+  No pin moved, so `vitest.coverage.config.mts` was never edited and the chain could
+  not have been invalidated by it. **Run anyway**, because the task exists to make the
+  last edit to any published file provably checked, and "nothing needed changing" is a
+  measurement rather than an assumption. Chapter 4.18's first red CI run was exactly
+  this file, edited after the chain was last zeroed.

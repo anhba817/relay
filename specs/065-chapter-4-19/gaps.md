@@ -96,6 +96,61 @@ edited and deleted a message in the seeded tenant, four outbox rows apiece.
 
 ---
 
+## 065-4 · The edits route has three scoped reads and removing any two is invisible
+
+**Measured, each arm deleted alone and then in combination, the file restored between
+every run.**
+
+    arm                              versions.itest.ts    gauntlet.itest.ts
+    A  listMessageEdits env scope    6 of 6 GREEN         62 of 62 GREEN
+    B  messageExistsIn env scope     6 of 6 GREEN         62 of 62 GREEN
+    C  the channelVisibleTo call     6 of 6 GREEN         62 of 62 GREEN
+    A+B both environment scopes      6 of 6 GREEN         62 of 62 GREEN
+    A+B+C all three                  6 of 6 GREEN         1 FAILED of 62
+    control, restored                6 of 6               62 of 62
+
+Only all three together move anything, and what they move is **one test of 62**. This
+chapter's own suite is blind to the entire class.
+
+**THIS IS 4.12's FINDING AND IT IS WORSE HERE.** That chapter had three scopes where
+deleting all three turned 2 of 16 red. The reading is not *delete two of them*: they are
+arms whose removal changes nothing **because of each other**, and the route is one
+refactor from a real leak behind a green lane — a caller that stops asking
+`channelVisibleTo`, an early return moved, a helper inlined.
+
+**AND NO COVERAGE NUMBER REPORTS ANY OF IT.** An SQL clause carries no JavaScript
+branch, so constitution VI's 100%-branch requirement for tenant isolation would read
+100% with all three predicates deleted. The gauntlet is the only instrument that fires
+at all, and it fires once.
+
+**Why this is a gap rather than a fix**: the defences are correct and the redundancy is
+deliberate. What is missing is any instrument that would notice one of them being
+removed. Recorded for whoever builds that.
+
+## 065-5 · `outbox.itest.ts` is sensitive to the SIZE of a shared table, not only to a neighbour
+
+065-3 says the suite fails when something else touches the stack. **It is worse than
+that, measured twice in one day on the same commit:**
+
+    11:00   the outbox suite ALONE    18 of 18, EXIT 0
+    14:20   the outbox suite ALONE    17 of 18 — invariant 8, expected 20, got 13
+
+Between the two readings this feature's own T039 probe wrote 400 messages and 400
+deletions, and the lane ran several times. The table now holds **386,317 rows with 0
+pending**. Invariant 8 plants twenty rows and asks two concurrent relays to publish all
+twenty; within its window only thirteen were drained.
+
+**`reset-lane.mjs` does not touch `outbox` by design** — it clears JetStream debris and
+`webhook_deliveries`, and the rows that accumulate in Postgres are data rather than
+debris. So this table grows monotonically for the life of the lane, and the suite has a
+threshold somewhere above 386,317 rows that it has now crossed.
+
+**This is not a flake and it is not a neighbour.** It is a test whose fixture assumes a
+small table, on a lane that has been accumulating for sixty-five features. It will fail
+for everybody eventually, it passes in CI because CI starts empty, and the fix is the
+suite's fixture rather than the lane — which is why it is recorded rather than worked
+around here.
+
 ## Carried, and re-measured
 
 | item | measured here |
