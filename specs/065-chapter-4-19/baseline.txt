@@ -254,3 +254,159 @@ obstacles and the foreign key comes first.**
   THIS CHAPTER WRITES THE COLLISION DOWN AND DOES NOT PRE-SOLVE IT. Row 22 owns the
   problem; what it inherits is a statement naming both mechanisms in order, because
   the cheap one to miss is the one that was already there.
+
+--- T002 · every lane's REAL exit code, captured outside the pipeline ----------
+Taken AFTER T001 and T003-T014a, so nothing else was touching the stack while the
+lanes ran. Exit codes captured into a variable, never read from `$?` after a pipe
+(seven occurrences in this project so far).
+
+  pnpm lint                      REAL EXIT 0    1 task · 0 errors, 1 warning
+                                                (an unused eslint-disable directive)
+  pnpm exec turbo run typecheck  REAL EXIT 0    15 tasks successful
+                                                FIFTEEN, not five — 4.14's rule
+  pnpm test                      REAL EXIT 0    13 tasks · api 42 files / 451 tests
+                                                gateway 11 files / 140 tests
+  pnpm test:integration          REAL EXIT 1    gateway 12 suites, 1 FAILED
+                                                e2e 4/4 · ingester 2/2 · media-worker 3/3
+                                                test-harness 2/2 — all green
+  pnpm coverage                  REAL EXIT 1    150 files, 2,161 tests
+                                                2 files failed, 4 tests failed
+
+  TWO LANES ARE RED AT THE OPEN. That is the baseline, not a problem to fix here:
+  T072 compares per test rather than by colour, and 4.17 measured every locally red
+  lane green in CI on the same commit — an assertion reading state that is not its
+  own breaks in whichever direction the host's residue points.
+
+  AND THE FIRST RUN OF THIS TASK KEPT THE COLOUR AND THREW AWAY THE EVIDENCE.
+  The script grepped each lane's log for its counted line and deleted the log, which
+  is enough for a green lane and useless for a red one: it recorded *4 tests failed*
+  and not WHICH four, and T072's comparison is per test. Re-run with the full logs
+  kept. **"Assert the counted line, not the exit code" (055-4) is necessary and not
+  sufficient — when a lane is red the counted line is a summary of evidence you no
+  longer have.**
+
+--- T002 (continued) · WHICH tests, and the answer is neither chapter's --------
+The re-run named them, and the names changed between runs of an unchanged tree.
+
+  run 1   test:integration  gateway 12 suites, 1 failed · api not reported failing
+          coverage          2 files failed, 4 tests failed
+
+  run 2   test:integration  api 49 suites, 1 failed — outbox.itest.ts,
+                            "invariant 8: two concurrent relays publish every row
+                            exactly once", expected [] to have a length of 20
+                            gateway 12 of 12 GREEN
+          coverage          1 file failed, 1 test failed — outbox.itest.ts,
+                            "invariant 1: a committed message leaves exactly one
+                            outbox row", expected 1 to be 2
+
+  run 3   the outbox suite ALONE          REAL EXIT 0 · 18 of 18 passed
+
+  THREE RUNS, THREE DIFFERENT FAILURE SETS, ONE UNCHANGED TREE — and the suite that
+  carries two of them is green on its own. **This is `gaps.md` 063-7 reproduced with
+  a control**: *"`outbox.itest.ts`'s invariant 1 is 043's whole-table count at a
+  different address"*. An assertion scoped wider than the thing it tests fails for a
+  neighbour's reason, and the neighbour here includes this feature's own analysis
+  pass 7 and T005, which each sent, edited and deleted a message in the seeded
+  tenant — four outbox rows apiece.
+
+  SO THE BASELINE IS NOT "TWO LANES RED". It is: **the lane is green when nothing
+  else touches the stack, and red when something does**, which is a property of the
+  host rather than of the tree. 064 closed with both lanes EXIT 0 locally, so these
+  are not inherited from 4.18 either — and **`verify.itest.ts`, the one failure T072
+  told this chapter to expect (064-5), did not fail in any of the three runs.**
+
+  WHAT T072 MUST DO WITH THIS. Comparing a red open to a red close per test would
+  have attributed `outbox.itest.ts` to this chapter. The comparison is: run the lane
+  with nothing else against the stack, and expect EXIT 0 — and if a whole-table
+  assertion is red, name what else was running before blaming the diff.
+
+  AND `check-lane-scope.py` REPORTS THIS CLEAN. T040a measured 74 integration files
+  and 0 unscoped reads, 10 of 10 controls firing. It reads SQL text; invariant 1's
+  scope is applied in JavaScript, so the instrument cannot see the class that just
+  produced three different red runs. Its own last line says so. For `gaps.md`.
+
+================================================================================
+PHASE 3 — US1: THE FINAL VERSION, AND THAT IT CANNOT BE REWRITTEN
+================================================================================
+
+--- T015 / T030 · both migrations written before either applied ----------------
+`0022_message_versions.sql`  add nullable, backfill to 'edit', SET NOT NULL, CHECK
+`0023_message_edits_append_only.sql`  the function and the BEFORE UPDATE OR DELETE
+
+  Two files, because `migrate.ts` keys `schema_migrations` on a filename with no
+  checksum: a trigger appended to `0022` after it applied would never run on a
+  machine that already ran it, while the ledger reported it done. And the order is
+  load-bearing the other way — `0022`'s backfill is an UPDATE that `0023`'s trigger
+  refuses. Filenames apply in order.
+
+  PRE-FLIGHT, BEFORE APPLYING THE TRIGGER: swept the tree for anything that updates
+  or deletes `message_edits`. The only hit is `0022`'s own backfill. `reset-lane.mjs`
+  does not touch the table and no teardown does.
+
+  APPLIED EXPLICITLY, and then ASKED THE CATALOGUE RATHER THAN THE LEDGER:
+
+    migrations: applied 0022_message_versions.sql, 0023_message_edits_append_only.sql
+    column   ended_by text nullable=NO
+    check    CHECK ((ended_by = ANY (ARRAY['edit'::text, 'deletion'::text])))
+    trigger  message_edits_append_only
+    backfill edit = 5032
+
+  **5,032, WHERE T008 MEASURED 4,863 AN HOUR EARLIER.** T002's two lane runs added
+  169 rows between the two readings. Nothing is wrong; the figures are facts about
+  the moments they were taken (4.17's rule), and the backfill covered whatever was
+  there when it ran, which is what `UPDATE … SET ended_by='edit'` with no predicate
+  is for.
+
+--- T016 / T017 / T018 / T019 · the column, the two writers, the reader ---------
+  schema.ts        `endedBy: text("ended_by").notNull()`, and R1's comment corrected:
+                   it explained an absence as a necessity — *"a deletion writes no row
+                   here, because a tombstone has no text to preserve"* — which is true
+                   after the deletion and false at the write site, where `deleteMessage`
+                   holds the text it is about to destroy.
+  editMessage      `endedBy: "edit"` at the existing insert
+  deleteMessage    the new insert, on the branch that deletes, taking
+                   `updated!.deletedAt!` — the Date the `.returning()` handed back —
+                   so the tombstone, the frame, the outbox event and the version row
+                   all quote one instant
+  listMessageEdits returns `ended_at` and `ended_by`; `ended_at` is the same column as
+                   `edited_at`, which is the price of not renaming a published field
+  controller       its own declared return type widened too (J2)
+
+  typecheck REAL EXIT 0 · 15 tasks.
+
+  AND THE COMPILER NAMING THE SITES WAS TESTED RATHER THAN ASSUMED. Deleting
+  `endedBy: "deletion"` from the new insert:
+
+    src/db/repository.ts(5644,37): error TS2769: No overload matches this call.
+    exit=1 · restored · exit=0
+
+  T011's whole argument is that required names the sites. It does.
+
+--- T031 / T032 / T033 · the trigger, red, and both bypasses -------------------
+One planted probe row — `'probe text with spaces'`, quoted rather than passed through
+`tr -d ' '`, which is how chapter 4.18 wrote a corrupted row into the table it had
+just made append-only.
+
+    INSERT                                    INSERT 0 1    permitted
+    UPDATE … SET prior_text='tampered'        ERROR: message versions are append-only (FR-MSG-07)
+    DELETE …                                  ERROR: message versions are append-only (FR-MSG-07)
+    the row survived both                     1
+
+    SET session_replication_role = replica;
+    UPDATE …                                  UPDATE 1      the trigger did not fire
+    DROP TRIGGER …;
+    DELETE …                                  DELETE 1      the row is gone
+
+    trigger recreated · probe rows remaining  0
+
+  SAME SCOPE AS ADR-35 PUBLISHED FOR `audit_log`, re-measured here rather than assumed
+  to transfer to a second table. The claim is: the edit history is immutable to the
+  application and to accident, and not to somebody holding the database password.
+
+--- T034 · the test that forbade triggers, unedited -----------------------------
+  pnpm --filter @relay/test-harness vitest run src/no-trigger-in-migrations.test.ts
+  REAL EXIT 0 · 4 of 4 passed
+
+  4.18 narrowed the rule from *no trigger* to *not the sentinel guard* and asserted the
+  narrowing. A second permitted trigger needs no change — confirmed by running it
+  rather than by reasoning from the narrowing's wording.
