@@ -1087,3 +1087,63 @@ Run with the composed services stopped and nothing else against the stack.
   last edit to any published file provably checked, and "nothing needed changing" is a
   measurement rather than an assumption. Chapter 4.18's first red CI run was exactly
   this file, edited after the chain was last zeroed.
+
+--- T074 / T075 / T077 · the push, CI, and the tag ----------------------------
+Pushed in the forced order — submodules first, then the pointer, or CI checks out
+gitlinks pointing at commits no remote has:
+
+    relay-platform   be068b5e..f860cd21     3 commits
+    relay-tutorial   2d6c8cd..2d2ae1c       1 commit
+    relay            043f541..29dbc5f       9 commits
+
+  **CI run 37131955482 — GREEN ON ALL FOUR JOBS, FIRST PUSH.**
+
+    success  relay-platform — the Docker-free gate
+    success  relay-platform — integration lanes and coverage
+    success  relay-tutorial — build, docs drift, fence chain
+    success  relay-platform — the sealed integration
+
+  **AND THE SECOND JOB IS THE ARBITER THIS FEATURE NEEDED.** `test:integration` was
+  EXIT 1 on this host with the media-worker pair red, and those suites are 32 of 32
+  alone. CI runs against an EMPTY DATABASE and it is green. So 064-5, 065-3 and 065-5
+  are confirmed as host state rather than defects, and **4.17's finding holds for the
+  third chapter running**: a lane red locally and green in CI is an assertion reading
+  state that is not its own, and which way it breaks depends only on which machine has
+  the residue.
+
+  **AND THE THIRD JOB IS THE OTHER CLAIM LOCAL GATES CANNOT MAKE.** `check:fences` run
+  here is a statement about MY working tree; the tutorial job replays the chain against
+  `relay-platform`'s pushed HEAD. Eleven hunks, first time.
+
+  TAGGED `part4-ch19` on the commit CI proved green, annotated, in both repositories:
+
+    relay-platform   725da143
+    relay            8e108d49
+
+--- T078 / T079 · the file that has to stay under 150,000 ---------------------
+    before     145,800 bytes   headroom 4,200
+    064's entry  9,246  ->  3,692        compressed to its headline, its measurement
+                                         block and the findings 4.19 cites back
+    065's entry          +  7,7xx
+    the ACTIVE PLAN line  -  1,403       removed, the feature having closed
+    after      145,373 bytes   headroom **4,627**
+
+  Net smaller than it started, which is what the convention is for. The next feature
+  compresses this entry.
+
+--- T075 · the error set, compared per error, in both directions --------------
+    baseline  37079325713  043f541  064's close   **0** ##[error] lines, 4 green jobs
+    this run  37131955482  29dbc5f  4.19's close  **0** ##[error] lines, 4 green jobs
+
+    new in this run, absent from the baseline     (none)
+    gone from the baseline, absent here           (none)
+
+  **THE SET IS EMPTY IN BOTH DIRECTIONS, WHICH IS THE HARDEST BASELINE TO MATCH** — it
+  cannot be met by introducing something and removing something else, which is the
+  failure mode that makes a bare count untrustworthy. Three consecutive green runs with
+  an empty error set now: 064's chapter, 064's record, and this.
+
+--- T076 · not required -------------------------------------------------------
+  "If CI is red, fix the platform, then re-dump, re-hunk and push both." CI was green
+  on the first push, so there is nothing to re-dump. Recorded as NOT RUN with the
+  condition that would have triggered it, rather than silently skipped.
