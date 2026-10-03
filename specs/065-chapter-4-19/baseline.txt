@@ -776,3 +776,85 @@ are charged to both sides equally. 400 deletions, 200 a side.
   `versions.itest.ts` 6 of 6 afterwards. A red probe writes to the lane and this one
   wrote 400 messages; they are in an environment the probe minted, which is
   `fixtures.ts`'s standing convention.
+
+================================================================================
+PHASE 7 — THE DOCUMENTS
+================================================================================
+
+--- T041 · FR-MSG-07 and FR-MSG-08, read before either was edited -------------
+  FR-MSG-07  "…recording an immutable edit history with timestamps."
+  FR-MSG-08  "Deleting a message shall replace its content with a tombstone retaining
+              sequence number, author, timestamps, and deletion metadata. Hard
+              deletion shall occur only via the compliance deletion endpoint."
+
+  BOTH QUOTED CORRECTLY BY EVERY ARTIFACT IN THIS FEATURE, checked word for word.
+  FR-MSG-08 needs **nothing**: this chapter is the clause being honoured rather than
+  amended, and recording *nothing to amend* is what T041 asks for when that is the
+  answer. FR-MSG-07 gains an annotation rather than a change of words — the clause has
+  said *immutable* since before 3.23 and this chapter is what makes it true.
+
+--- T042 · the clauses BESIDE them, and one of them is this chapter's ---------
+4.16 found a data-dictionary row describing a table nobody built, two rows from the
+one it opened the file to edit. Two rows down from FR-MSG-08:
+
+  **FR-MSG-10** | *"History responses shall include tombstones so that clients can
+  render deletions without gaps in ordering."*
+
+  **US2 SERVES THIS CLAUSE AND NO ARTIFACT IN THIS FEATURE NAMED IT.** The spec cites
+  its own FR-007. Before this chapter a client reading history could see the tombstone
+  in place and in order — which is the letter of FR-MSG-10 — and could not say WHEN
+  the deletion happened, which is most of what "render deletions" means to the person
+  reading the rendering. The field US2 adds is the one that closes that, and the
+  clause was sitting two rows from the one the file was opened to annotate.
+
+  AND FR-MSG-09 IS WORTH A LINE: *"retrieving channel history … with a maximum page
+  size of 200."* The SRS bounds the history page and says nothing about the versions
+  route, which is T040's open question given a clause-shaped edge: history is bounded
+  by specification and `/edits` is bounded by nothing.
+
+--- T043 to T048 · the amendments ---------------------------------------------
+  docs/04-srs.md    FR-MSG-07 annotated — `immutable` became a mechanism, with the
+                    scope and the millisecond finding
+                    FR-MOD-01 annotated — five obligations, four already met, and the
+                    four things `complete` still excludes
+                    revision 1.26
+  docs/05-sad.md    §6.1 the DDL (`ended_by`, the CHECK, the trigger)
+                    §6.1 "keeps the three columns" -> four, and what it still omits
+                    §6.1 the tombstone read-path table's REST history row
+                    §5.3 the sequence diagram gains the third write, with a DATED
+                    amendment block beside 3.23's and 4.18's
+                    ADR-35's summary: two tables, decision unchanged
+  docs/06-adr…      ADR-35 gains a DATED NOTE and not an edit — constitution VII makes
+                    an accepted ADR immutable, which analysis pass 9 caught pass 8
+                    prescribing a breach of
+  docs/12 row 20    CLOSED
+  docs/12 §7.5      ANSWERED, with what the premise check actually found
+  docs/07 row 20    SHIPPED
+
+--- T049 · the id sweep, both ways --------------------------------------------
+  diff-scoped (what this session added to docs/):   **0**
+  tree-wide (every FR-0xx in docs/, classified):    12 candidates, **1 real**
+
+  The one: `docs/06-adr-deep-dives.md:2315`, *"the reason FR-017 needed something built
+  for it"* — feature 056's store-reachability refusal, unqualified, while
+  `docs/05-sad.md:2130` says *"feature 056's FR-017"* for the same clause two documents
+  away. Qualified now.
+
+  ELEVEN FALSE POSITIVES, AND THE REASON IS WORTH THE LINE: three are the SRS's own
+  corrections *about* `FR-003a` being a feature-local id, and one — `docs/12:353` — is
+  qualified **on the following line** (`specs/045-part-3-rework/spec.md`). **A
+  line-scoped check cannot see a qualifier in the next sentence**, which is the same
+  shape as 064's finding that a qualifier to the LEFT of an id defeats a pattern
+  looking right. Still nothing runs either version of this check (063-4).
+
+--- T050 · sync and check -------------------------------------------------------
+  pnpm sync:docs    EXIT 0 — synced 04-srs, 05-sad, 06-adr-deep-dives, 08-error-reference
+  pnpm check:docs   EXIT 0 — all mirrored docs match; 27 revisions ascend, 1.0 to 1.26
+
+--- T051 · traceability.md ------------------------------------------------------
+Written by reading. 12 FR and 12 SC, each with where it is discharged and what would
+have to change for the row to stop being true — plus two sections a grep cannot
+produce: what is in the feature with no requirement behind it (the millisecond
+correction, the silently-wrong return type) and the three clauses deliberately NOT
+amended, including FR-MSG-10, which T042 found two rows from the one the file was
+opened to edit.
