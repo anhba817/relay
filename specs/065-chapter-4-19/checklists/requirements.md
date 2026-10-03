@@ -182,8 +182,10 @@ something its independent test did not exercise. Resolved by B1's move; US3 is t
 and its test is the clause count.
 
 **B6, LOW — `docs/07` §4 rule 2 checked.** *"The journeys are the milestones."* Part 4's is
-Priya's and this chapter's reader is Priya, but the milestones are rows 9, 17 and 22. Recorded
-in Assumptions so a later pass does not re-walk it.
+Priya's and this chapter's reader is Priya, but the milestones are chapters 4.9, 4.17 and 4.22
+— **rows 10, 18 and 23**. Recorded in Assumptions so a later pass does not re-walk it.
+*(This entry said "rows 9, 17 and 22" until pass 9 corrected the Assumption it records; the
+sweep for the old figure is what found it here.)*
 
 ### Checked and clean, recorded so a later pass does not repeat them
 
@@ -633,6 +635,71 @@ missed is the rule this project cites most: *read the clauses, not the identifie
 pass 8's five are published sections this chapter falsifies and had no task for, both in a
 file the feature already had open for a different section — 4.17's sentence outliving its
 subject, at two addresses.
+
+## Analysis pass 9 — four findings, none CRITICAL, all fixed
+
+**The question**: *do the governing documents permit this chapter where it says they do?*
+`.specify/memory/constitution.md`, `docs/07-tutorial-plan.md` §4, `docs/12` row 20 and §7.5,
+and `docs/08-error-reference.md`, opened and read.
+
+- **I1 HIGH — the Constitution Check answered a fifth of principle VI.** The clause has five
+  bullets; the row named the branch-coverage one and only its tenant-isolation third. Three
+  more are engaged. **Idempotency carries the same 100% bar and FR-004 is an idempotency
+  requirement**, riding on the already-deleted branch T018 puts the new write beyond.
+  **"The quickstart MUST run unmodified, verified by automated execution in CI"** — there is
+  no quickstart execution in `ci.yml` (4.11 measured zero occurrences) and T069 runs it by
+  hand and *corrects it in place*. **"Input is validated against a schema before
+  processing"** — `gaps.md` 058-3 is that, on this chapter's own route, carried deliberately.
+  **Fixed**: `plan.md` answers all five in a table, with the two unmeetable ones named as
+  unmet and the reason given, which is what this project does with FR-MED-07, FR-MED-09's
+  rendering half and FR-MOD-03's year. The carry of 058-3 still stands; what changed is that
+  it is now recorded as touching a constitution MUST rather than only a gap entry.
+- **I2 MEDIUM — pass 8's own remedy told somebody to amend an accepted ADR.** Constitution
+  VII: *"ADRs are immutable once accepted; superseding requires a new ADR."* T046b, written by
+  the eighth pass, said to record `message_edits` against ADR-35 in both documents. **Fixed by
+  changing the form, not the work**: a dated note of the kind `docs/05-sad.md` §5.3 already
+  carries, stating the decision is unchanged, with nothing in the Decision, the alternatives
+  or the reversal condition rewritten. CLAUDE.md's judgement on ADR-07's two in-place
+  amendments is the precedent: *the missing sentence is the defect rather than either choice.*
+- **I3 MEDIUM — "the milestones are rows 9, 17 and 22"** are the chapter numbers. The rows are
+  **10, 18 and 23**, and row 18 is chapter 4.17. **The spec's own first Assumption exists to
+  draw that distinction** — *"it is chapter 4.19 by position, not by that row's number"* — and
+  the bullet three below it broke it. **Fixed**, and the sweep for the old figure found it
+  restated in this checklist too.
+- **I4 LOW — the appendix amends `codes.ts` three times, not twice.** 24 pages is right. The
+  figure was copied from chapter 4.11's close-out and not re-measured. The bill is larger than
+  the sentence claimed, which strengthens the decision it is there to justify. **Fixed**, with
+  the three codes this chapter can answer checked against `docs/08` and `codes.ts`.
+
+### Checked, and clean
+
+```
+docs/07 §4 rule 1  "the reader must see the bug the design prevents"      verbatim
+docs/07 §4 rule 2  "the journeys are the milestones … (Tuan, Priya, Mai)" verbatim
+docs/07 §4 rule 3  "Each WHY box links the code … to its requirement ID and ADR"
+both Part 4 tables carry row 20, and they agree
+wrong_credential_type · not_found · internal_error   in docs/08 AND codes.ts  — no new code
+docs/12 ordinals: row N is chapter 4.(N-1) from row 11 on
+```
+
+### Nine passes
+
+    pass 1   8 findings   2 CRITICAL   opening files the artifacts cite
+    pass 2   6 findings   1 CRITICAL   asking what a document does not contain
+    pass 3   5 findings   0 CRITICAL   running SQL against the real table
+    pass 4   4 findings   0 CRITICAL   walking the tasks in execution order
+    pass 5   3 findings   0 CRITICAL   checking against other features' open gaps
+    pass 6   7 findings   1 CRITICAL   re-deriving every number, then grepping for the old one
+    pass 7   5 findings   0 CRITICAL   running the document, and checking every cited line
+    pass 8   5 findings   0 CRITICAL   opening the SRS, the SAD and the journey map
+    pass 9   4 findings   0 CRITICAL   the constitution and the governing documents
+
+**Three of the four are a count or a form and only I1 changes what the feature must argue**,
+which is a falling yield for a reason rather than from fatigue: the document set is finite and
+pass 9 opened the last of it. **And one finding is against the previous pass's own repair** —
+the eighth pass fixed a missing citation by prescribing an edit the constitution forbids, which
+is the same shape as a remediation introducing its own defect, two passes after the rule about
+sweeping for what a correction leaves behind was written into this file.
 
 ## Notes
 

@@ -363,9 +363,12 @@ recover about a removed message and what it cannot.
   boundary and does not build a job.
 - **`docs/07` §4 rule 2 is checked and is not this chapter's.** *"The journeys are the
   milestones — Parts 2, 4 and 5 each terminate in an executable journey (Tuan, Priya, Mai)."*
-  Part 4's is Priya's and this chapter's reader is Priya, but the milestones are rows 9, 17
-  and 22; row 20 adds to the surfaces that journey will use and does not terminate it. Rule 1
-  and rule 3 are both this chapter's and both have tasks.
+  Part 4's is Priya's and this chapter's reader is Priya, but the milestones are **chapters
+  4.9, 4.17 and 4.22 — rows 10, 18 and 23**; row 20 adds to the surfaces that journey will use
+  and does not terminate it. Rule 1 and rule 3 are both this chapter's and both have tasks.
+  *(This said "rows 9, 17 and 22" until the ninth analysis pass, which are the chapter numbers
+  and not the rows — the distinction the first Assumption above exists to make, broken three
+  bullets below it.)*
 - **The probe's rows are left in place.** They are scoped to a channel this feature created in
   the seeded tenant, which is `fixtures.ts`'s standing convention — every row belongs to an
   environment the fixture minted, and a teardown reaching wider would be a global operation

@@ -159,8 +159,12 @@ What this chapter adds to 058-3 is a measurement it did not have: the route, the
 and the control that tells a malformed id from an absent one.
 
 **No new error code.** The refusals this chapter can produce are ones the platform already
-answers, and `codes.ts` is published by 24 pages with an appendix that amends it twice — so
-adding one is a bill to check before incurring, not after (chapter 4.11).
+answers — `wrong_credential_type`, `not_found`, `internal_error`, each checked against
+`docs/08-error-reference.md` and `codes.ts` at the ninth analysis pass. And `codes.ts` is
+published by **24 pages with an appendix that amends it three times** — so adding one is a
+bill to check before incurring, not after (chapter 4.11). *(This said twice, a figure copied
+from 4.11's close-out and not re-measured; a third hunk arrived since. The bill is larger than
+the sentence claimed, which strengthens the decision it is here to justify.)*
 
 ## What this contract does not offer
 

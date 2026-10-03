@@ -63,8 +63,22 @@ messages that still hold text
 | **III — two data paths** | untouched. Versions are operational, read from Postgres by the route that already reads them. Nothing analytical is involved |
 | **IV — single writer** | **engaged, and satisfied by where the row goes.** A version belongs in the version table, not as a column on `messages` — which is why option C in research R3 is refused on this principle as well as on FR-MSG-08 |
 | **V — API-first** | both routes exist and both are public. No internal seam, no new surface |
-| **VI — test-verified** | the 100%-branch clause names tenant isolation, and this chapter's tenancy arms are the ones `listMessageEdits` already carries. **Per-arm deletion is the probe**, not a coverage number |
+| **VI — test-verified** | **five bullets, answered below rather than in this cell** — the first version of this row answered one of them |
 | **VII — boring by design** | **no new service, no new dependency, no new table.** One column, one trigger, two added response fields. The ADR question is below |
+
+### Principle VI in full, because the row above once answered a fifth of it
+
+The clause has five bullets and this chapter engages four. The eighth and ninth analysis
+passes found the row naming one, which is how a check written to catch an omission becomes
+one.
+
+| bullet | verdict |
+|---|---|
+| **stable identifiers, priority, verification method** | met. Every FR and SC here carries an id, and `traceability.md` (T051) is built by reading |
+| **70% coverage; ordering, idempotency and tenant isolation at 100% branches** | **two of the three named properties are this chapter's, not one.** Tenant isolation: `listMessageEdits`' arms, probed by deleting each (T037) rather than read off a number. **Idempotency: FR-004 is an idempotency requirement** — a retried deletion records no second version — and it rides on `deleteMessage`'s already-deleted branch, which T018 puts the new write on the far side of and T023 pins with an absolute count. Ordering is untouched |
+| **the cross-tenant suite gates releases** | met. T038 runs the gauntlet and records its counted line |
+| **the quickstart MUST run unmodified, verified by automated execution in CI** | **UNMET, and not by this chapter.** There is no execution of any quickstart in `ci.yml` — chapter 4.11 measured zero occurrences of the word — and T069 runs this one by hand and *corrects it in place*, which is the opposite of *unmodified*. Recorded here rather than left silent, because this project's habit with an unmeetable clause is to name it: FR-MED-07, FR-MED-09's rendering half and FR-MOD-03's year are all carried that way. The gap is a platform one and closing it is a CI change, not a chapter |
+| **input validated against a schema before processing** | **UNMET ON THIS CHAPTER'S OWN ROUTE, and carried deliberately.** `GET …/messages/not-a-uuid/edits` answers **500 `internal_error`** where an absent id answers 404 — measured with a control at analysis pass 5. It is `gaps.md` 058-3 across sixteen routes. `spec.md`'s Out of Scope gives the reason for carrying it and that reason stands; what was missing is that the carry touches a constitution MUST rather than only a gap entry, which raises what the decision has to be worth. One validating route among sixteen still makes the remaining fifteen harder to sweep |
 
 **Does this need an ADR?** Constitution VII: *"Every architecture decision is recorded as an
 ADR stating its drivers, rejected alternatives, and reversal condition."*
