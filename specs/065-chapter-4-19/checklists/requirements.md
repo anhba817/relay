@@ -87,7 +87,7 @@ structure would have turned a risk into a certainty. Split into `0022` (column, 
 `0022`'s backfill is an `UPDATE` on the table `0023` makes append-only.
 
 **A2, CRITICAL — the task did not say which clock the version row takes.** `deleteMessage`
-sets `deletedAt: sql\`now()\`` and reads it back; a second reading would give the version row a
+sets `deletedAt` from the database clock and reads it back; a second reading would give the version row a
 primary key the tombstone's instant does not match. **`editMessage` carries the argument in a
 comment at `repository.ts:5325`** — *"ONE CLOCK READING FOR BOTH WRITES… two `now()` calls
 would be two instants"* — written by the chapter that built the edit path. The task now says
