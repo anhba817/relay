@@ -38,6 +38,23 @@ tags. **Anyone holding an older clone of `relay-platform` must reset rather than
 
 <!-- SPECKIT START -->
 
+**ACTIVE PLAN: `specs/065-chapter-4-19/plan.md`** — chapter 4.19, movement VII's second.
+`docs/12` row 20 is *"Everything, including what was deleted — FR-MOD-01/02 via API key"*, and
+**§7.5 told this chapter to check the premise before writing it. Most of the row already
+exists**: a tenant key deletes another author's message (204), reads history including
+tombstones, and reads prior texts from a route that already answers a user token **403**.
+**The hole is at the join of the two clauses** — a message edited twice and then deleted
+yields **two recoverable texts out of three**, because an edit records the text it replaced
+and a deletion records nothing; zero edits yields zero of one. **FR-MSG-08 is the citation
+rather than a new clause**: *"Hard deletion shall occur only via the compliance deletion
+endpoint"*, so losing one version at deletion is a hard deletion performed by the moderation
+path. **And FR-MSG-07 says "an immutable edit history" with no trigger on that table** —
+measured, against an `audit_log` that has had one since 4.18, so the mechanism and its
+clearance both already exist. Three more measured: `deleted_at` is on the delete response and
+the real-time frame and **not on the history row**; the history row and `messageSchema`
+disagree in three ways nothing parses; and a comment justifies a fallback with a row class the
+lane holds **0** of, against 4,861 tombstones.
+
 **064 IS CLOSED — CHAPTER 4.18, "The log that cannot be edited".** Movement VII opens. Its
 record is `specs/064-chapter-4-18/` — `baseline.txt` first (every phase's measurements in the
 order they were taken, including the ones that were wrong first), then `gaps.md` (**4 new plus
