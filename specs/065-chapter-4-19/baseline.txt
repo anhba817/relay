@@ -644,3 +644,61 @@ Measured after the chapter applied and the lanes had run:
   THE FIGURES MOVED AGAIN BETWEEN T008 AND HERE — 4,864 tombstones to 5,343 — because
   the lanes run and the lanes delete. Every number in this file is a fact about the
   moment it was taken, and this is the fourth time in one feature that has mattered.
+
+================================================================================
+PHASE 6 — THE PROBES
+================================================================================
+
+--- T037 · every scope arm, alone and together, and NONE of them is visible ----
+The edits route has **three** scoped reads, not the two analysis pass 10 found —
+`channelVisibleTo` runs before both of the others, at `messages.controller.ts:506`.
+Each arm deleted, the suites re-run, the file restored between each:
+
+    arm                              versions.itest.ts    gauntlet.itest.ts
+    A  listMessageEdits env scope    6 of 6 GREEN         62 of 62 GREEN
+    B  messageExistsIn env scope     6 of 6 GREEN         62 of 62 GREEN
+    C  channelVisibleTo call         6 of 6 GREEN         62 of 62 GREEN
+    A+B both env scopes              6 of 6 GREEN         62 of 62 GREEN
+    A+B+C all three                  6 of 6 GREEN         1 FAILED of 62
+    control, restored                6 of 6               62 of 62
+
+**REMOVING ANY TWO OF THE THREE TURNS NOTHING RED.** Only all three together produce a
+single failure, in the suite constitution VI names as gating releases — and **this
+chapter's own suite never fires at all**, even with every scope gone.
+
+  THIS IS 4.12's FINDING AND IT IS WORSE HERE. That chapter had three scopes where
+  deleting all three turned 2 of 16 red; this one turns 1 of 62, and the chapter's own
+  tests are blind to the whole class. The reading is NOT "delete two of them": they are
+  arms whose removal changes nothing *because of each other*, and the route is one
+  refactor — a caller that stops asking `channelVisibleTo`, an early return moved — from
+  having a real leak behind a green lane.
+
+  AND NO COVERAGE NUMBER REPORTS ANY OF IT, because an SQL clause carries no JavaScript
+  branch. Constitution VI's 100%-branch clause names tenant isolation and would read
+  100% with all three predicates deleted. **A single-mutation probe measures the
+  DEFENCE, not the arm** — and three defences deep, even the probe stops measuring.
+
+--- AND THE PROBE FOUND SOMETHING THAT IS NOT ABOUT SCOPES ---------------------
+`git status` after the restore showed `repository.ts` and `messages.controller.ts`
+still modified — against HEAD, not against the probe. **Every "committed" phase of
+this feature had carried the specs and none of the platform code.**
+
+    relay-platform HEAD        be068b5e   chapter 4.18's last commit
+    uncommitted                0022, 0023, schema.ts, repository.ts,
+                               messages.controller.ts, messages.itest.ts,
+                               repository.itest.ts, versions.itest.ts
+
+  `git add -A` run from the superproject stages the **gitlink**, not the submodule's
+  working tree. So `feat(065): preserve the text a message held when it was deleted`
+  was a commit carrying zero lines of that feature — **a green, complete-looking commit
+  with none of it in**, which is chapter 4.18's finding word for word, reproduced three
+  commits running.
+
+  **AND T073 NAMES IT, IN PHASE 9.** *"Commit the submodule before the pointer"* is the
+  last task in the feature, which is where you discover it rather than where it helps.
+  The rule belongs at every phase boundary: **commit inside the submodule first, then
+  the pointer** — and the check is `git -C relay-platform log --oneline -1`, not the
+  superproject's.
+
+  Nothing was lost; the working tree held everything. Committed as `f5210a44` and
+  `49e84dc3` in `relay-platform`, and the superproject re-pointed.
