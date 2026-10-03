@@ -776,6 +776,52 @@ governing clause, and nobody had opened the functions the tasks name. J1 is why 
 **a probe built to find an invisible scope would have been blinded by the thing it was
 measuring**, and reported a green run as evidence.
 
+## Analysis pass 11 — three findings, none CRITICAL, all fixed
+
+**The question**: *what do the test files this chapter writes actually need?* The layer pass
+10 stopped one short of — the suites, and the fixtures they would have to build.
+
+- **K1 MEDIUM — no task ran `check-lane-scope.py` and this chapter adds an integration test
+  file**, against the standing rule to run it after adding one. Run at this pass: **74
+  integration files, 0 unscoped reads, 10 of 10 controls fired, exit 0** — so it looks. It
+  lives at `specs/045-part-3-rework/check-lane-scope.py`, inside a closed feature's directory
+  and in no scripts path. **Fixed** as T040a, recording the counted line rather than the exit
+  code, and naming the two classes it cannot see (063-7).
+- **K2 MEDIUM — `versions.itest.ts`, the only new file this feature creates, was absent from
+  `plan.md`'s Source Code tree**, which listed seven paths. Six tasks write to it. **Fixed.**
+- **K3 MEDIUM — the new file has to be two kinds of suite and no task said which it starts
+  as.** T021–T023 are repository-level; T024 exists because *only a route test proves it
+  fires*, and T024a and T028 need HTTP. **Chapter 4.18 split the same shape across three
+  files** — `audit.itest.ts` (496 lines, no app), `route.itest.ts` (196, boots `AppModule`),
+  `moderation-routes.itest.ts`. And **`messages.itest.ts` exports zero symbols**: its `send`,
+  `sendAsAuthor`, `patch` and `edits` helpers are `const`s inside describe closures, so
+  nothing is importable. **Fixed**: T021 says to boot an app from the start on
+  `route.itest.ts`'s template, and `plan.md`'s complexity table now carries the refused
+  alternative — putting the tests in `messages.itest.ts` would reuse every fixture and turn
+  T025's one-line change into a large hunk in a file **18 pages publish**. That is the real
+  reason for a new file and it appeared in no artifact; the decision was right and taken by
+  default.
+
+### Eleven passes
+
+    pass  1   8 findings   2 CRITICAL   opening files the artifacts cite
+    pass  2   6 findings   1 CRITICAL   asking what a document does not contain
+    pass  3   5 findings   0 CRITICAL   running SQL against the real table
+    pass  4   4 findings   0 CRITICAL   walking the tasks in execution order
+    pass  5   3 findings   0 CRITICAL   checking against other features' open gaps
+    pass  6   7 findings   1 CRITICAL   re-deriving every number, then grepping for the old one
+    pass  7   5 findings   0 CRITICAL   running the document, and checking every cited line
+    pass  8   5 findings   0 CRITICAL   opening the SRS, the SAD and the journey map
+    pass  9   4 findings   0 CRITICAL   the constitution and the governing documents
+    pass 10   3 findings   0 CRITICAL   opening the functions the chapter will edit
+    pass 11   3 findings   0 CRITICAL   the test files and the fixtures they need
+
+**No HIGH, and that is the result rather than a disappointment.** A missing line in a file
+list, an unrun checker and an undecided file layout — all worth fixing, none of which would
+have produced a wrong chapter. That is a different kind of pass from the ones that found a
+500 on this chapter's own route, a probe blinded by its subject, or a response example
+missing a row, and it is the signal that the remaining questions are narrower than the work.
+
 ## Notes
 
 - Items marked incomplete require spec updates before `/speckit-clarify` or `/speckit-plan`

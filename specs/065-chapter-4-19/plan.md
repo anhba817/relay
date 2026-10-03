@@ -126,6 +126,9 @@ relay-platform/
 │                                                         listMessageEdits returns both new fields
 ├── services/api/src/messages/messages.service.ts         the history row's `deleted_at`
 ├── services/api/src/messages/messages.controller.ts      ditto, if the shaping is there
+├── services/api/src/messages/versions.itest.ts            THE ONE NEW FILE — boots a Nest
+│                                                         app, because T024 and T024a are
+│                                                         route tests and T021–T023 are not
 └── packages/test-harness/src/no-trigger-in-migrations.test.ts   a second permitted trigger
 
 relay-tutorial/
@@ -221,6 +224,7 @@ The nine phases are `tasks.md`'s and carry the same names.
 | A column on `messages` for the final text | a tombstone that keeps its text is not a tombstone (FR-MSG-08), and it puts a version on the row it is a version of (constitution IV) | every read path that treats `text === null` as *deleted* learns a second rule |
 | Leave `message_edits` mutable and record FR-MSG-07's gap | the chapter's product is a recoverable text, and a recoverable text in a rewritable table is worth less than the clause claims | one migration, reusing ADR-35's mechanism |
 | Converge the history row with `messageSchema` | a reshape where everything else here is an addition | breaking, and chapter 4.14 measured the construction-site cost of the smaller version of this |
+| Put the new tests in `messages.itest.ts`, where every fixture already exists | **18 pages publish that file**, so a block of tests turns T025's one-line assertion change into a large published hunk | the fence bill, against a duplicated channel/user/token fixture in the new file — `messages.itest.ts` exports nothing, so no helper is importable either way |
 
 **The duplicated instant is the cost this table is paying.** `edited_at` and `ended_at` carry
 the same value on every row, for as long as the older name has callers. It is one field wide,
