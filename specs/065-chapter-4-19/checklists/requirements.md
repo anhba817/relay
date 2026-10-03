@@ -258,6 +258,65 @@ requirement and pointed at the nearest clause that sounded right. It is **FR-011
 reading, and nothing in pass 2 was reachable by running — so the falling number is not
 evidence that the artifacts are converging, only that each question has been asked once.
 
+## Analysis pass 4 — four findings, none CRITICAL, all fixed
+
+The question none of the first three asked: **walk the tasks in execution order and ask, at
+each step, whether everything that task needs is already true** — then, of each planned test,
+*what would have to be false for this to fail*.
+
+**D1, HIGH — no task applies the migration, and it works anyway.** T015 writes `0022`; the
+first task that says *apply the migration* is T031, fourteenth in the phase, after seven tests
+that need the column. It is not broken, because `global-setup.ts` runs `migrate(pool)` before
+every suite, so the phase-3 tests apply it as a side effect. **Nothing said so** — and T031's
+probe is `psql`, not a suite, so running it before any test since T030 would measure a
+database `0023` has not reached. T015 states the mechanism; T031 migrates explicitly and says
+why.
+
+**D2, HIGH — a broken migration will not look like a broken migration.** `globalSetup`
+throwing makes the lane print `No test files found, exiting with code 1`. Chapter 4.14 traced
+that exact string to a swallowed `globalSetup` failure and the rule is in `CLAUDE.md`: *when a
+lane reports an empty corpus, ask a lister rather than a runner.* **This is the first feature
+in five to add a migration**, so it is the first in five where that failure mode is live, and
+no task mentioned it.
+
+**D3, MEDIUM — T023 could pass with FR-001 unimplemented.** It asserted *a second deletion
+adds no version, counted before and after*, and **0 → 0 satisfies a delta of zero**. Only T021
+in the same file would have been red. It asserts the absolute count now — three both times —
+because a test whose subject is *the second call changed nothing* has to pin what the first
+call left.
+
+**D4, LOW — the version tests need an author the credential cannot be.** An application
+credential sending a message answers `sender_not_permitted`; the fixture has to mint a dev
+token, which the editing half needs anyway because FR-013a gives the edit to the author. The
+premise check found it and `quickstart.md` carries it; `versions.itest.ts` is a new file whose
+author had no reason to know.
+
+### Checked and clean
+
+- **T020 is not a vacuous assertion.** *Cannot collide by construction* could have produced a
+  test that cannot fail; as written it performs an edit and a deletion and asserts two rows at
+  distinct instants, which fails if the deletion reuses the edit's instant.
+- **T022 cannot pass vacuously** — it asserts one version where zero exist today.
+- **T034 passes genuinely.** `0023`'s trigger statement contains no `__sentinel` before its
+  semicolon, so 064's narrowed pattern does not match it, and the `CREATE FUNCTION` body's
+  semicolons are irrelevant because the pattern anchors on `CREATE TRIGGER`.
+- **`message_edits` is not in the sentinel guard's table list**, so the lane's triggers and
+  this chapter's do not interact.
+
+### The four passes
+
+    pass 1   8 findings   2 CRITICAL   opening files the artifacts cite
+    pass 2   6 findings   1 CRITICAL   asking what a document does not contain
+    pass 3   5 findings   0 CRITICAL   running SQL against the real table
+    pass 4   4 findings   0 CRITICAL   walking the tasks in execution order
+
+**No pass has repeated another's mechanism and the count has fallen every time.** That is a
+fact about the questions, not about the artifacts: nothing pass 3 found was reachable by
+reading, nothing pass 2 found was reachable by running, and pass 4's two best findings are
+about **what the executor sees when something goes wrong**, which none of the first three
+asked. `CLAUDE.md`'s rule is *do not stop on falling yield*; the corollary this feature
+suggests is that the yield measures the question.
+
 ## Notes
 
 - Items marked incomplete require spec updates before `/speckit-clarify` or `/speckit-plan`
