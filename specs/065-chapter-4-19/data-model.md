@@ -65,9 +65,16 @@ migration.
 table the application can rewrite is worth less than the clause already claims.
 
 **One thing the trigger forbids that the platform may need**: erasure (row 22) must delete a
-user's words, and these rows hold them. The trigger refuses that `DELETE`, exactly as the audit
-log's does. Row 22 inherits both, and this chapter writes the collision down rather than
-pre-solving it.
+user's words, and these rows hold them.
+
+**AND THE TRIGGER IS THE SECOND OBSTACLE, NOT THE FIRST.**
+`message_edits_message_id_fkey` is `NO ACTION`, so a hard delete of the message is refused by
+the **foreign key** before any trigger runs — confirmed by running it. The audit log has one
+obstacle and this table has two, which is the opposite of what an earlier draft of this
+paragraph said. **And this chapter grows the affected population from 4,039 messages to
+7,649**, because every deletion now leaves a version row where only edits did. Row 22 inherits
+both mechanisms and the larger number; this chapter writes them down rather than pre-solving
+them.
 
 ## 2. The tombstone, unchanged except on the wire
 

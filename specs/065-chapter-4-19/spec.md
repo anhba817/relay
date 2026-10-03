@@ -194,7 +194,18 @@ recover about a removed message and what it cannot.
   reports `attachments: []`. Whether a recovered version names what was attached is a decision
   this feature must take rather than inherit.
 - **Erasure (row 22) against a recovered version.** A version row holds a user's words; erasure
-  deletes a user's data. The two collide exactly as the audit log does, and row 22 owns it.
+  deletes a user's data. **The collision is TWO obstacles and the first is not the one the
+  audit log has.** `message_edits_message_id_fkey` is `NO ACTION`, so deleting a message that
+  has version rows is refused by the **foreign key**, before any trigger is consulted — run
+  and confirmed: *"update or delete on table `messages` violates foreign key constraint"*. The
+  append-only trigger is the second. The audit log has neither problem: its foreign key points
+  at `environments` and nothing deletes those.
+
+  **And this chapter makes the first one bite far more often.** Measured: **4,039 messages
+  cannot be hard-deleted today and 7,649 after this chapter**, because every deletion now
+  leaves a version row where only edited messages had one — 3,610 existing tombstones gain
+  theirs, and the count grows by one for every deletion after that. Row 22 owns the problem;
+  this chapter owns saying how much larger it made it.
 - **A very long edit chain.** Nothing bounds the number of edits, so nothing bounds the number
   of version rows a single message can accumulate.
 

@@ -199,6 +199,65 @@ contain** — one grep of `spec.md` for a word the other four documents use on e
 yield argues for varying the question rather than repeating the pass: the same mechanism run
 twice would have found B2 and nothing else.
 
+## Analysis pass 3 — five findings, none CRITICAL, all fixed
+
+Pass 1 opened files the artifacts cite. Pass 2 asked what a document does not contain. **Pass
+3 ran SQL against the real table**, and everything it found came from that — nothing in this
+pass was visible by reading.
+
+**C1, HIGH — the erasure collision is two obstacles and three artifacts described one.**
+`message_edits_message_id_fkey` is `NO ACTION`, so deleting a message that has version rows is
+refused by the **foreign key**, before any trigger is consulted. Run in a rolled-back
+transaction:
+
+    ERROR:  update or delete on table "messages" violates foreign key constraint
+            "message_edits_message_id_fkey" on table "message_edits"
+
+The spec's edge case, T014 and the data model all said this collides *"exactly as the audit
+log does"*. **It does not**: that table's foreign key points at `environments` and nothing
+deletes those, so it has one obstacle and this one has two — and the one that was already
+there is the cheaper to miss.
+
+**C2, HIGH — and this chapter nearly doubles the population it affects.** Measured: **4,039
+messages cannot be hard-deleted today, 7,649 after**, because every deletion now leaves a
+version row where only edits did. 3,610 existing tombstones gain one and the count grows by
+one per deletion. T036 counted what this chapter cannot recover; nothing counted what it hands
+forward. It does now.
+
+**C3, MEDIUM — one test survives on a one-edit margin.** `history-drift.itest.ts:85` is the
+only path in the repository that hard-deletes a `messages` row. It passes today and after this
+chapter for the same reason — its fixture is 60 fresh sends with no edits — and **any later
+change that edits or deletes a message in that fixture turns it red with an FK error naming
+neither this chapter nor that test**. Recorded as checked-and-clean with the reason.
+
+**C4, LOW — the risk register had no entry for a consequence outside the chapter.** Six risks,
+all about this feature's own work. Added, with the number.
+
+**C5, LOW — a clause citation had drifted.** The contract cited **FR-004** for the demonstrated
+refusal; FR-004 is the no-op rule. The citation was written before pass 2 gave immutability a
+requirement and pointed at the nearest clause that sounded right. It is **FR-011** now.
+
+### Checked by running, and clean
+
+- **T015's migration sequence works exactly as written**, run against the real table and
+  rolled back: `ADD COLUMN` 2.2 ms, the `CHECK` added while all 4,859 rows are `NULL` **passes**
+  — a `CHECK` on `NULL` is unknown, not false — `UPDATE 4859` in 19.7 ms, `SET NOT NULL` clean.
+  The ordering claim is measured now rather than reasoned.
+- **`migrate.ts` wraps each file in `BEGIN`/`COMMIT`**, so a half-applied migration is not a
+  state this feature can reach.
+- **Nothing in production hard-deletes a `messages` row.** One test does; C3 covers it.
+- The probe left nothing behind — `information_schema` reports the column absent after rollback.
+
+### The yield, and what it says about the passes
+
+    pass 1   8 findings   2 CRITICAL   opening files the artifacts cite
+    pass 2   6 findings   1 CRITICAL   asking what a document does not contain
+    pass 3   5 findings   0 CRITICAL   running SQL against the real table
+
+**The count fell and the character changed every time.** Nothing in pass 3 was reachable by
+reading, and nothing in pass 2 was reachable by running — so the falling number is not
+evidence that the artifacts are converging, only that each question has been asked once.
+
 ## Notes
 
 - Items marked incomplete require spec updates before `/speckit-clarify` or `/speckit-plan`

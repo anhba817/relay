@@ -129,5 +129,13 @@ adding one is a bill to check before incurring, not after (chapter 4.11).
   the final text. No migration can recover it, and the chapter publishes the boundary rather
   than implying the history is complete backwards.
 - **No `DELETE` on a version.** Refused by the database once the table is append-only, not by
-  the absence of a route — FR-004's demonstration is an attempted write at the storage layer,
-  because a route that does not exist proves nothing about a table (chapter 4.18).
+  the absence of a route — **FR-011**'s demonstration is an attempted write at the storage
+  layer, because a route that does not exist proves nothing about a table (chapter 4.18).
+  *(This cited FR-004 — the no-op rule — until the third analysis pass. The citation was
+  written before pass 2 gave immutability a requirement of its own, and pointed at the
+  nearest clause that sounded right.)*
+
+  **And a version row is also what stops its message being hard-deleted**, which is a
+  different refusal by a different mechanism: `message_edits_message_id_fkey` is `NO ACTION`
+  and fires before any trigger. Nothing in this contract exposes a hard delete, so no caller
+  meets it — row 22's erasure will, and `spec.md`'s edge cases carry the measurement.

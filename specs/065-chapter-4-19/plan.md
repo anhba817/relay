@@ -227,3 +227,12 @@ it is stated in the contract, and the alternative is versioning a route over a w
   a message, erasure destroys it — rather than leaving it to be inferred.
 - **The fence bill is six files before any repair.** 4.18's list grew by six during
   implementation and every one came from running something rather than reading it.
+- **THIS CHAPTER ENLARGES AN OBSTACLE THE NEXT ONE MUST CLEAR, AND THAT IS THE ONLY
+  CONSEQUENCE THAT LANDS OUTSIDE IT.** `message_edits_message_id_fkey` is `NO ACTION`, so a
+  message with version rows cannot be hard-deleted — and after this chapter **every** deleted
+  message has one. Measured: **4,039 messages are undeletable today, 7,649 after**, growing by
+  one per deletion. Row 22's erasure meets the foreign key before it meets the trigger, and
+  three artifacts said this collided *"exactly as the audit log does"* until the third
+  analysis pass ran the delete and read the error. **The risk is not that the chapter is
+  wrong; it is that the number is invisible from inside it**, which is why T036 now measures
+  it and hands it forward.
