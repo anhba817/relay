@@ -858,3 +858,65 @@ produce: what is in the feature with no requirement behind it (the millisecond
 correction, the silently-wrong return type) and the three clauses deliberately NOT
 amended, including FR-MSG-10, which T042 found two rows from the one the file was
 opened to edit.
+
+================================================================================
+PHASE 8 — THE CHAPTER
+================================================================================
+
+--- T052 to T064 · the page, and what the fence bill actually came to ----------
+  registered   4.19 at /part-4/chapter-19/everything-including-what-was-deleted
+  prose        **2,611 words**, bound 2,000-4,000, counted outside fences, tables,
+               JSX tags and JSX expressions
+  figures      4, all passed as `code` — check:figures reports 318 figures and 320
+               bindings resolving, 0 passed as `chart`
+  boxes        2 TRAP, 2 WHY, 1 ForwardRef, 1 Checkpoint, 1 SkipAhead
+  fences       **0 titled in the chapter.** Every listing is an untitled excerpt or a
+               command/output block; every real diff is in the appendix.
+
+  THE BILL WAS EIGHT FILES AND THE CHAIN CHARGED FOR FIVE. `check:fences` named
+  exactly the files this chapter edited:
+
+    schema.ts                 differs at 445
+    repository.ts             differs at 2695
+    repository.itest.ts       differs at 854
+    messages.controller.ts    differs at 501
+    messages.itest.ts         differs at 1416
+
+  `messages.service.ts`, `frames.ts` and `messages.schema.ts` were in the bill and were
+  never touched — the count was a CEILING and reading it as a floor was right for a
+  different reason than expected: it did not grow, because the work landed in fewer
+  files than the plan's file list named. `vitest.coverage.config.mts` is still ahead,
+  at T067.
+
+--- T061 / T062 · the hunks, and every pre-image checked before pasting --------
+  generated from the checker's OWN replay (`--dump`), diffed against relay-platform,
+  and each hunk's pre-image counted in the dump state:
+
+    schema.ts                 -U6   2 hunks
+    repository.ts             -U6   6 hunks
+    repository.itest.ts       -U6   1 hunk
+    messages.controller.ts    -U6   1 hunk
+    messages.itest.ts         -U6   1 hunk
+                                   11 hunks, every pre-image matching EXACTLY ONCE
+
+  `-U6` was enough for all five, checked rather than assumed — the generator tries 6,
+  8, 10 and 12 and stops at the first width where every pre-image is unique, because
+  widening merges adjacent hunks and a merged hunk can span more repetition than either
+  half did (045's `[1, 1, 3]`).
+
+  ALL TO `fences/post-series.md`, PLACED LAST. Every one of these files is published by
+  pages this chapter does not own, and the appendix applies after every chapter — so a
+  hunk anchored on a state an earlier amendment changes is a broken chain even when the
+  hunk is right.
+
+--- T063 · the six gates -------------------------------------------------------
+    lint            EXIT 0
+    build           EXIT 0   ✓ Compiled
+    check:docs      EXIT 0
+    check:srs       EXIT 0
+    check:figures   EXIT 0   318 figures, 320 bindings resolve, 0 passed as `chart`
+    check:fences    EXIT 0   291 fenced files replay across **62 chapters**, from 61
+
+  **ZERO, AND IT WENT 0 -> 5 -> 0.** The chain was clean at T003, five files diverged as
+  the code landed, and eleven hunks took it back. The number to report is the absolute
+  one (055's rule), not the delta.
