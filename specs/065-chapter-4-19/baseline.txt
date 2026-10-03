@@ -410,3 +410,78 @@ just made append-only.
   4.18 narrowed the rule from *no trigger* to *not the sentinel guard* and asserted the
   narrowing. A second permitted trigger needs no change — confirmed by running it
   rather than by reasoning from the narrowing's wording.
+
+--- T020 to T024a · the tests, and the probes that make them mean something ----
+  repository.itest.ts  +1  an edit and a deletion never collide on (message_id,
+                           edited_at) — two rows, distinct and ordered instants,
+                           and the deletion's equals the tombstone's `deleted_at`
+  versions.itest.ts    new 5 tests, booting a Nest app from the start because two of
+                           them are route tests (T021's instruction, pass 11)
+
+  TWO PROBES, AND THEY PARTITION THE SUITE EXACTLY:
+
+    delete `@Accepts("application")`       1 red, 4 green
+      -> a user token reads the tenant's whole edit history: 403 becomes 200
+    delete the deletion's version insert   4 red, 1 green
+
+  Each test fails for its own mechanism and nothing else, which is the strongest
+  available evidence that none is passing for a neighbour's reason. `targets.ts:208`
+  says *"this entry and the decorator are the same authorisation fact written twice"*
+  and nothing had ever checked the enforcing half; it is checked now.
+
+--- T025 · FR-008 per action, and it found a defect this chapter introduced -----
+Three suites re-run unedited.
+
+  messages.itest.ts     1 failed of 68 — `messages.itest.ts:1416`, the exact key set,
+                        now four keys. THE ONE ASSERTION THE CHAPTER PREDICTED WOULD
+                        MOVE, and the only one. Updated; it is a contract test doing
+                        its job rather than FR-008 being broken.
+  history-drift.itest.ts  2 of 2 green — checked and clean for the reason T025 gives:
+                        its fixture is fresh sends with no edits, so the message has no
+                        version rows and the foreign key never fires.
+  repository.itest.ts   1 failed of 71 — AND IT IS NOT A CONTRACT TEST MOVING.
+
+**THE RACE THIS CHAPTER BROKE, AND THE MEASUREMENT THAT NAMED IT.**
+`"both at once from two separate pools: whichever lands first, the message ends a
+tombstone"` (feature 043, FR-007) failed on attempt 1 of 10:
+
+    23505  message_edits_message_id_edited_at_pk
+    Key (message_id, edited_at)=(6254a80e-…, 2026-10-03 11:10:28.806+00) already exists.
+
+The deletion's whole transaction rolled back, so a concurrent edit left the message
+**un-tombstoned** — FR-007's property, broken by this chapter's own insert.
+
+  WHY, AND THE TABLE ANSWERS IT IN ONE QUERY:
+
+    column edited_at                              timestamptz, precision 6
+    now()                                         2026-10-03 11:10:56.450807+00
+    rows whose edited_at is millisecond-exact     5,149
+    total rows                                    5,149
+
+  **5,149 OF 5,149.** The column holds microseconds and every value ever written to it
+  came through the driver as a JavaScript `Date`, which holds milliseconds. So the
+  primary key's collision window has always been a thousand times wider than
+  `schema.ts` claimed — *"Postgres holds microseconds, so that needs two edits inside
+  one microsecond on one message"* — and this chapter made it reachable by giving the
+  table a second writer that races the first.
+
+  THE FIX IS ONE EXPRESSION: the deletion writes `sql`now()`` rather than the `Date`
+  the `.returning()` handed back. Both are the same instant — `now()` is
+  `transaction_timestamp()` and is stable across the transaction, so the version row
+  and the tombstone still quote one value — and the SQL form keeps the microseconds.
+
+  FORCED UNDER THE CONDITION IT FAILED IN, because one green run of a 1-in-10 race is
+  not evidence: **8 runs x 10 attempts = 80 races, 0 failures**, against a failure on
+  attempt 1 of the very first run before the fix.
+
+  AND THE EDIT PATH STILL WRITES A `Date`, so two concurrent edits of one message
+  inside one millisecond would still collide. Pre-existing, out of scope under FR-008,
+  and for `gaps.md`. The `schema.ts` comment is corrected to say which window is which.
+
+  **THIS IS WHAT ANALYSIS PASS 11 BOUGHT.** T025 named `repository.itest.ts` only
+  because that pass found it held five assertions on `message_edits` and was outside
+  the task that checks nothing else broke. Without that line the race would have been
+  found by CI, or by nobody.
+
+  After the fix, all four suites green: versions 5, messages 68, repository 71,
+  history-drift 2. typecheck 15 of 15.
