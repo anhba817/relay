@@ -38,6 +38,31 @@ tags. **Anyone holding an older clone of `relay-platform` must reset rather than
 
 <!-- SPECKIT START -->
 
+**ACTIVE PLAN: `specs/066-chapter-4-20/plan.md`** — chapter 4.20, movement VII's third.
+`docs/12` row 21 is FR-MOD-06's retention job, and **the premise check inverts 4.19's: none of
+the clause's three obligations is met.** `environments.retention_days` has existed since
+chapter 2.1 and is set on **0 of 33,051** environments; there is **no scheduler of any kind**,
+which would make this the fourth clause bounded by ADR-28's absence after FR-ANL-06, DR-17 and
+FR-MOD-03's year; and **the hard delete the clause names is refused by the database.**
+
+**THE REFUSAL IS A PINCER AND IT IS CHAPTER 4.19's.** Exactly one table references `messages`,
+and 4.19 put a row in it for every deletion — **5,495 blocked today**, growing by one per
+deletion. Measured, each escape run: deleting the message is refused by
+`message_edits_message_id_fkey`; deleting the version rows first is refused by
+`message_edits_append_only`; **and `ON DELETE CASCADE` is refused too, because a cascade issues
+an ordinary `DELETE` and a row trigger fires on it** — the error names the generated statement.
+The only thing that works unchanged is `session_replication_role = replica`, **which is the
+hole ADR-35 published as the limit of its own guarantee.** So the chapter's product is a narrow
+auditable exception — the trigger naming its one legitimate deleter — and **a new ADR**,
+because constitution VII makes an accepted one immutable. 4.19 named row 22 as the chapter that
+would meet this; **row 21 meets it first.**
+
+**And two more things the premise found.** `media_objects` has **no foreign key to `messages`**
+— FR-MED-11's link is a `media_id` inside jsonb, so the "unless shared" check is a reverse
+lookup costing **883 buffers bound against 94,132 set-wise**, which is 4.12's index lesson at a
+new address. And **the lane's oldest message is 19 days old**, so nothing expires at any of
+FR-MOD-06's four settings and every demonstration is a backdated fixture.
+
 **064 IS CLOSED — CHAPTER 4.18, "The log that cannot be edited".** Movement VII opens. Its
 record is `specs/064-chapter-4-18/` — `baseline.txt` first, then `gaps.md` (**4 new plus the
 carried ledger re-measured**), `traceability.md`, `clauses.md`, `routes.md`, `quickstart.md`,
