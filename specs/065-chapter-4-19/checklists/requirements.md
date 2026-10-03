@@ -554,6 +554,86 @@ blind probe, the double acceptance. The fifth came from comparing the contract's
 example against the *before* output §1 had just produced and noticing they were the same
 length. **Six passes of reading never counted the rows in that block.**
 
+## Analysis pass 8 — five findings, none CRITICAL, all fixed
+
+**The question**: *do the platform clauses this chapter cites say what it quotes them as
+saying, and which published sections does the chapter falsify?* `docs/04-srs.md`,
+`docs/05-sad.md` and `docs/03-journey-map.md` opened and read. **Seven passes verified
+citations into the platform's source and none had verified them into its specification** —
+which is this project's most-cited rule (*what found it was opening the SRS to make the edit*)
+and the one mechanism nobody had run here.
+
+- **H1 HIGH — the SAD has four sites this chapter falsifies and T046 named one.** §6.1's
+  `CREATE TABLE message_edits` DDL at :542; **:748's *"`message_edits` keeps the three columns
+  this document publishes"***, which sits in the attachments discussion where nobody editing a
+  DDL will look; §6.1's tombstone read-path table, whose REST history row is the table a
+  reader consults for exactly US2's question; and **§5.3, *"Priya's moderation delete"*, the
+  sequence diagram of the transaction this chapter adds a third write to — which chapter 4.18
+  amended for the identical reason one chapter ago.** **Fixed**: T046 names its three, T046a
+  takes §5.3, and `plan.md`'s phase 7 says four rather than one. 84 tasks now.
+- **H2 HIGH — the empty-final-text case was dismissed on a clause that says the opposite, and
+  the case is reachable.** `spec.md` read *"FR-MSG-01's minimum length makes `""` unsendable"*.
+  **FR-MSG-01 states a maximum — 8,000 characters — and no minimum**, and the `.min(1)` that
+  would have been the floor was removed in the attachments chapter. Measured in the platform's
+  own words: `{"text":""}` answers *"text must not be empty unless the message carries at
+  least one attachment"*, and `messages.schema.ts` stores an attachments-only message as
+  `text = ""` deliberately, *"a photograph with no caption"*. **So deleting a photo with no
+  caption writes a version row whose `prior_text` is `""`** — and the thing actually removed
+  is the attachment, which the contract already says this list does not hold. **Fixed**, and
+  split from the null-text case, which is checked and cannot arise: `repository.ts:5556`
+  returns early on `text === null`, so `prior_text NOT NULL` is never offered a null.
+- **H3 MEDIUM — `has_more` is EIR-API-06's, not EIR-API-04's.** `research.md` R6 cited the
+  error body's five-top-level-fields clause as the precedent for an additive field on a
+  paginated success response. One digit, and the cited clause does not mention the field the
+  sentence is about. **Fixed**, with EIR-API-06 quoted.
+- **H4 MEDIUM — ADR-35 gains a second table and only one of its two homes had a task.** T046
+  asked *"check whether the ADR table needs anything"*, a question whose answer is
+  determinable now: ADR-35 is titled *"**The audit log** is operational…"* and argued entirely
+  on FR-MOD-03, and `docs/06-adr-deep-dives.md` was named by no task. **Fixed** as T046b, both
+  documents, no new ADR — **the reversal condition was read and it transfers**: *"a separate,
+  non-superuser role for the application"* is a deployment decision, not a statement about one
+  table. 4.5's finding, and `gaps.md` 064-1 is already on this chapter's carried ledger.
+- **H5 MEDIUM — Journey 3 stage 3 is this chapter's argument and no artifact quoted it.**
+  *"Three possibilities: it was never sent, it was sent and deleted, or it was sent and edited
+  afterwards. A history model that cannot distinguish these three is useless for her
+  purpose."* **The gap this chapter closes is the fourth that stage does not list — sent,
+  edited, then deleted** — and the stage's decisive line, *"the dispatcher edited the address
+  message eleven minutes after sending it. That's the whole case"*, is exactly the text that
+  is unrecoverable today if that message was then removed. The same stage has claimed
+  *"**Immutable edit history** (FR-MSG-07): every prior version, timestamped"* since before
+  3.23 — a document stating as provided the two things this chapter builds, which is 4.18's
+  shape. **Fixed**: T053 opens with it, T057's WHY box carries it.
+
+### Checked, and clean
+
+```
+FR-MSG-07  "recording an immutable edit history with timestamps"        verbatim
+FR-MSG-08  "Hard deletion shall occur only via the compliance …"        verbatim
+FR-MOD-01  "complete history, including tombstones and edit history"    verbatim
+FR-MOD-02 · FR-MOD-04 · FR-MOD-06 · FR-MED-10 · CON-05                  all as quoted
+ADR-35 reversal condition                                               transfers
+repository.ts:5556 early return on text === null                        NOT NULL safe
+docs/05-sad.md:780 "no read path but GET …/edits touches that table"    survives
+SRS §6.1 ER diagram: Message ||--o{ MessageEdit, no column list         nothing owed
+```
+
+### Eight passes
+
+    pass 1   8 findings   2 CRITICAL   opening files the artifacts cite
+    pass 2   6 findings   1 CRITICAL   asking what a document does not contain
+    pass 3   5 findings   0 CRITICAL   running SQL against the real table
+    pass 4   4 findings   0 CRITICAL   walking the tasks in execution order
+    pass 5   3 findings   0 CRITICAL   checking against other features' open gaps
+    pass 6   7 findings   1 CRITICAL   re-deriving every number, then grepping for the old one
+    pass 7   5 findings   0 CRITICAL   running the document, and checking every cited line
+    pass 8   5 findings   0 CRITICAL   opening the SRS, the SAD and the journey map
+
+**Pass 7 closed by saying there was no eighth question, and that was wrong.** The one it
+missed is the rule this project cites most: *read the clauses, not the identifiers.* Two of
+pass 8's five are published sections this chapter falsifies and had no task for, both in a
+file the feature already had open for a different section — 4.17's sentence outliving its
+subject, at two addresses.
+
 ## Notes
 
 - Items marked incomplete require spec updates before `/speckit-clarify` or `/speckit-plan`

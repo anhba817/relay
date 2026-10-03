@@ -160,7 +160,11 @@ caller that performed the deletion is told nothing.)*
 
 **Decision**: add it to the history row. **This is a field addition rather than a reshape**,
 which CON-05's URL-versioning rule treats differently — chapter 4.8 made the same argument
-adding `has_more` and cited EIR-API-04's precedent.
+adding `has_more`, which is **EIR-API-06**'s field: *"List endpoints shall use opaque cursor
+pagination with `limit` and `cursor` parameters, returning `next_cursor` and `has_more`."*
+*(This cited EIR-API-04 until the eighth analysis pass opened it. That clause is the error
+body's five top-level fields and does not mention `has_more` — one digit, and the cited clause
+was about a different kind of response.)*
 
 **And the shapes already disagree in three ways**, which the addition makes worth recording
 rather than fixing:

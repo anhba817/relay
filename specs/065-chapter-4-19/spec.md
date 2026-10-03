@@ -190,9 +190,21 @@ recover about a removed message and what it cannot.
   in that position on this lane**, of which 3,610 have nothing recoverable at all.
 - **A message edited after a chapter-shipped version row exists, then edited again.** The
   version chain must stay ordered and must not duplicate the text that is still current.
-- **An empty final text.** FR-MSG-01's minimum length makes `""` unsendable, so a recorded
-  final version is never empty for that reason — but a system message with a null text is a
-  different case and the lane holds zero of them today.
+- **An empty final text, and it is reachable.** A recorded final version **is** sometimes the
+  empty string: `""` is an intended value for an attachments-only message, which
+  `messages.schema.ts` calls *"a photograph with no caption"* and stores as `text = ""` rather
+  than a null so the tombstone predicate stays `text === null`. Measured, in the platform's own
+  words — `{"text":""}` with nothing attached answers *"text must not be empty unless the
+  message carries at least one attachment"*. So deleting a photo with no caption writes a
+  version row whose `prior_text` is `""`, and the thing that was actually removed is the
+  attachment, which `contracts/message-versions.md` already says this list does not hold.
+  *(This read "FR-MSG-01's minimum length makes `""` unsendable" until the eighth analysis pass
+  opened the clause. **FR-MSG-01 states a maximum — 8,000 characters — and no minimum**, and
+  the `.min(1)` that would have been the floor was removed in the attachments chapter.)*
+- **A message with a null text, deleted.** Different from the case above and it cannot reach
+  the new write: `deleteMessage` treats `text === null` as already deleted and returns before
+  the version row, so `prior_text NOT NULL` is never offered a null. The lane holds zero such
+  rows today in any event.
 - **A message with attachments, deleted.** FR-MED-10 unlinks the attachments and the tombstone
   reports `attachments: []`. Whether a recovered version names what was attached is a decision
   this feature must take rather than inherit.

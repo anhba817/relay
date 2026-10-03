@@ -183,7 +183,13 @@ The nine phases are `tasks.md`'s and carry the same names.
 6. **The probes.** Each tenancy arm deleted alone; the trigger attacked; the deletion's new
    cost measured against the shape before it.
 7. **The documents.** FR-MSG-07 and FR-MSG-08 read before being edited, the SRS revision, both
-   copies of the Part 4 table, and the two corrected comments.
+   copies of the Part 4 table, and the two corrected comments. **And four sites in
+   `docs/05-sad.md` rather than one** — §6.1's DDL, §6.1's *"keeps the three columns this
+   document publishes"*, §6.1's tombstone read-path table, and **§5.3's sequence diagram of
+   this exact transaction**, which chapter 4.18 amended for the identical reason. ADR-35 gains
+   a second table in both of its homes (`docs/05-sad.md` and `docs/06-adr-deep-dives.md`) and
+   no new ADR: the reversal condition was read and it is a deployment decision, not a statement
+   about one table. *(The eighth analysis pass found all five by opening the documents.)*
 8. **The chapter.** 2,000–4,000 prose words, the hunks, `check:fences` to zero.
 9. **The record and the close.** And `pnpm coverage` **after** the chain is zeroed **and
    re-run after the pins go in** — which is the one thing 4.18 did not do, twice, from the
