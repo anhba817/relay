@@ -1,0 +1,125 @@
+# Baseline — chapter 4.19, "Everything, including what was deleted" (feature 065)
+#
+# Written phase by phase, IN THE ORDER THE MEASUREMENTS WERE TAKEN, including the ones
+# that were wrong first (T065). A measurement is a fact about the moment it was taken.
+
+================================================================================
+PHASE 1 — SETUP AND MEASUREMENT
+================================================================================
+
+--- T001 · the lane environment, pinned -----------------------------------------
+2026-10-03, after eleven analysis passes, before any code.
+
+  RELAY_POSTGRES_PORT=15432          this machine's own Postgres holds 5432
+  node                               v22.23.2
+  postgres                           18.6 on x86_64-pc-linux-musl
+
+  compose services, all healthy:
+    api        Up 10 hours      clamav      Up 12 hours
+    clickhouse Up 12 hours      mailpit     Up 12 hours
+    minio      Up 12 hours      nats        Up 12 hours
+    postgres   Up 12 hours      redis       Up 12 hours
+
+  the row counts that make a lane an instrument:
+    messages              181,019
+      with text           176,156
+      tombstones            4,863
+    message_edits           4,861
+    channels               34,690
+    environments           30,288
+    users                 171,074
+
+  THESE ARE ONE MESSAGE, ONE TOMBSTONE AND TWO VERSION ROWS ABOVE THE FIGURES THE
+  SPEC PUBLISHES, and the cause is this feature's own analysis pass 7, which ran
+  `quickstart.md` §1 against the lane. The spec's Context keeps its dated figures
+  (181,018 · 4,862 · 4,859) because changing a dated measurement without re-running
+  the premise it belongs to is worse than a drift of one row. This is the re-measure.
+
+--- T003 · check:fences, as an absolute number ----------------------------------
+055's rule: report the absolute number, not a delta, because a delta compares a
+total to a total and never asks which file.
+
+  check-fence-chain: 291 fenced files replay onto relay-platform across 61 chapters
+  (46 translated, fences mirrored, 2 retired, plus post-series amendments)
+
+  problems  0          REAL EXIT 0, captured outside the pipeline
+  lines matching 'problem'  0 — a clean run prints no problem line at all, so the
+                              "replay onto" line is the thing to assert (055-4)
+
+--- T004 · the CI baseline ------------------------------------------------------
+run 37079325713 · 043f541 · "close(064): the record's own run is green too"
+
+  success  relay-platform — the sealed integration
+  success  relay-platform — the Docker-free gate
+  success  relay-platform — integration lanes and coverage
+  success  relay-tutorial — build, docs drift, fence chain
+
+  ##[error] lines: 0
+
+  THE BASELINE IS AN EMPTY SET, which is the hardest kind to match: it cannot be
+  met by introducing something and removing something else, and it is the easiest
+  to read as "nothing to compare". T075 compares per error in both directions.
+
+--- T005 · the premise, re-run against the platform -----------------------------
+Not against `research.md`. The spec's Context is a measurement from 2026-10-03 and
+this asks whether it still holds. It does — an independent trial, new tenant fixture,
+new message:
+
+  FR-MOD-02, a tenant key deleting another author's message        204
+  texts returned by /edits after two edits and a deletion            2   ['will be edited', 'edited once']
+  edits, user token                                                403
+  edits, API key                                                   200
+  history, API key                                                 200
+
+  THREE EXISTED AND TWO COME BACK. "edited twice" is in no table. The gap the
+  chapter is for is reproducible, on the second independent run.
+
+--- T006 · the fence bill, counted against the tree -----------------------------
+`grep -rl 'title="<path>"' app/ fences/` from relay-tutorial. Every figure in
+`plan.md` confirmed, including the two that analysis passes added:
+
+    52  services/api/src/db/repository.ts
+    34  services/api/src/db/schema.ts
+    27  services/api/src/messages/messages.service.ts
+    18  services/api/src/messages/messages.controller.ts
+    12  services/api/src/messages/messages.schema.ts
+    12  packages/protocol/src/frames.ts
+    18  services/api/src/messages/messages.itest.ts        analysis pass 2
+    23  vitest.coverage.config.mts                         analysis pass 6
+
+  Eight files. READ AS A FLOOR: 4.18's list of 21 grew by six during implementation
+  and every one came from running something rather than reading it.
+
+--- T007 · MessageRow, counted both ways ----------------------------------------
+  builds or names a MessageRow (non-test)      14
+  read paths filling `edited_at` (non-test)    10
+
+  Matches the plan's grep exactly. **A grep is an estimate of this** — T014a opens
+  every site, because 4.11's regex over `targets.ts` found 47 where the file's own
+  count said 51.
+
+--- T008 · what `message_edits` holds today -------------------------------------
+Four figures, not three. The third is the boundary and the fourth is not.
+
+  message_edits rows                                4,863
+  distinct (message_id, edited_at)                  4,863    no duplicate keys
+  tombstones — ALL of them lost their final text    4,864    <- the boundary
+  tombstones with ZERO version rows                 3,610    nothing recoverable at all
+  messages with >=1 version row                     4,041    undeletable today
+
+  So 1,254 tombstones kept their earlier texts and lost only the last, and a single
+  figure hides them. After this chapter 4,041 + 3,610 = 7,651 messages cannot be
+  hard-deleted (T036 hands that forward to row 22).
+
+--- T009 · the before half of T030's probe --------------------------------------
+  triggers on message_edits    (none)
+  triggers on audit_log        audit_log_append_only        since chapter 4.18
+
+  The UPDATE and the DELETE that are accepted today, run inside a transaction and
+  rolled back rather than against the table — a red probe writes to the lane, and
+  this one would rewrite a history the next measurement reads:
+
+    BEGIN · UPDATE 1 · DELETE 1 · ROLLBACK · restored 4,863
+
+  FR-MSG-07 has said "an immutable edit history" since chapter 3.23 and both verbs
+  succeed.
