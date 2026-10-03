@@ -702,3 +702,77 @@ this feature had carried the specs and none of the platform code.**
 
   Nothing was lost; the working tree held everything. Committed as `f5210a44` and
   `49e84dc3` in `relay-platform`, and the superproject re-pointed.
+
+--- T038 · the gauntlet, and the counted line it does not print ---------------
+  pnpm … vitest run src/isolation/gauntlet.itest.ts    EXIT 0 · 62 of 62
+
+  **T038 ASKED FOR A COUNTED LINE THIS SUITE DOES NOT PRINT.** The phrasing — `N
+  derived, M attacked, K exempt` — came from chapter 4.18's record of its own
+  accounting. This suite's last test ASSERTS emptiness instead:
+  `expect(missing, "classified but never attacked: …").toEqual([])`. So the numbers
+  are derived from `targets.ts` rather than read off a line:
+
+    49 entries    26 write · 6 read · 4 list · 4 credential · 9 exempt
+    40 to attack  9 exempt
+
+  A task that names a line is a claim about an instrument, and this one was wrong —
+  which is cheaper to find here than at the close.
+
+  AND FR-006's ATTACK IS STILL THERE AND STILL GREEN, with version rows now present on
+  both sides: `gauntlet.itest.ts:242`, *"GET …/messages/:messageId/edits — a foreign
+  message's history reads as an absent one"*. The route returns more than it did and
+  the attack's claim is unchanged. FR-006 has no task of its own and this citation is
+  why it is not uncovered.
+
+--- T040a · the lane-scope checker, and it SAW the new file --------------------
+  python3 specs/045-part-3-rework/check-lane-scope.py
+    controls: 10 of 10 fired
+    check-lane-scope: 75 integration files, 0 unscoped read(s) in 0 file(s)
+
+  **75, where analysis pass 11 measured 74.** The increment is `versions.itest.ts`,
+  which is how this run proves it looked rather than reporting a zero over nothing —
+  the rule 045-81 wrote for the fence checker and 049-3 wrote for this one.
+
+  Its zero means *no unscoped SQL text*. It cannot see a Redis pattern subscription or
+  a scope applied in JavaScript, which is 063-7 and is the class that turned three
+  lanes red in this feature's own baseline. Its own last line says so.
+
+--- T040 · does the versions route need a page bound? -------------------------
+  max versions on one message     3
+  p99 versions per message        3
+  messages with more than 10      0
+
+  **RECORDED RATHER THAN SOLVED**, which is what the task says to do if the number is
+  small. Nothing bounds how many times a message may be edited, so nothing bounds the
+  list — but the lane's worst case is three rows, a page bound is a second contract
+  change under CON-05, and the same question has been open on this route since 3.23.
+  The honest statement is that the shape is unbounded and the corpus has never tested
+  it, which is `contracts/message-versions.md`'s existing note made numeric.
+
+--- T039 · what the extra row costs the deletion ------------------------------
+Interleaved — the two configurations alternate inside ONE process, odd iterations
+skipping the insert behind a temporary flag, so a warming cache and a drifting host
+are charged to both sides equally. 400 deletions, 200 a side.
+
+    with     n=200  min 2.790  p50 3.538  p95 4.541  max 5.578  mean 3.619
+    without  n=200  min 2.688  p50 3.207  p95 4.054  max 8.131  mean 3.292
+
+    delta p50 0.331 ms   delta mean 0.327 ms   ~10.1%
+
+  **0.33 ms, ON A DELETION THAT ALREADY COST 3.3.** Chapter 4.18 measured its audit
+  entry at 0.43 ms and the transaction four actions had to GAIN cost as much again —
+  94.6% slower. Here the transaction already existed, so the chapter pays for the
+  insert and nothing else: **the same kind of write, 0.33 against 0.43 ms, and 10%
+  against 94.6%, because the ratio is a fact about whichever action carries it.**
+  That is 4.18's sentence, confirmed from the cheap side.
+
+  AND THE TAIL IS NOISE, WHICH IS WORTH SAYING RATHER THAN SMOOTHING: the `without`
+  side has the HIGHER maximum, 8.131 against 5.578. Read as a causal claim that would
+  be absurd. It is one scheduling hiccup in 200, and it is why the p50 and the mean
+  are the figures published and the max is shown beside them rather than instead.
+
+  THE PROBE IS REMOVED, BOTH HALVES — the temporary flag at the insert site and the
+  measurement suite. `git status` is clean against HEAD, typecheck 15 of 15, and
+  `versions.itest.ts` 6 of 6 afterwards. A red probe writes to the lane and this one
+  wrote 400 messages; they are in an environment the probe minted, which is
+  `fixtures.ts`'s standing convention.
