@@ -58,7 +58,7 @@ messages that still hold text
 
 | principle | verdict |
 |---|---|
-| **I — tenant isolation** | `listMessageEdits` already joins through `channels` and scopes on `environmentId`; the new row is reached by the same read. **The probe deletes each scope arm one at a time**, because chapters 4.11, 4.12 and 4.18 all measured that an SQL clause carries no JavaScript branch and a coverage number calls it covered either way |
+| **I — tenant isolation** | **The route has two scoped reads and the one that enforces FR-006 is not the one this row first named.** `messages.controller.ts:509` calls `messageExistsIn` — three predicates, `channels.environmentId` among them — and 404s before `:512` reaches `listMessageEdits`, which carries its own copy. The new row is reached by the second and guarded by the first. **The probe deletes each arm in both, one at a time and then together** (T037), because chapters 4.11, 4.12 and 4.18 all measured that an SQL clause carries no JavaScript branch — and because 4.12 measured that arms cover for each other, which is what deleting only `listMessageEdits`' scope would have demonstrated here, as a green run |
 | **II — no acknowledged message is lost** | untouched. This chapter adds a row; it removes nothing and acknowledges nothing new |
 | **III — two data paths** | untouched. Versions are operational, read from Postgres by the route that already reads them. Nothing analytical is involved |
 | **IV — single writer** | **engaged, and satisfied by where the row goes.** A version belongs in the version table, not as a column on `messages` — which is why option C in research R3 is refused on this principle as well as on FR-MSG-08 |

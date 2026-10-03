@@ -701,6 +701,81 @@ the eighth pass fixed a missing citation by prescribing an edit the constitution
 is the same shape as a remediation introducing its own defect, two passes after the rule about
 sweeping for what a correction leaves behind was written into this file.
 
+## Analysis pass 10 — three findings, none CRITICAL, all fixed
+
+**The question**: *does the code these tasks will edit support what the plan says about it?*
+The four functions opened end to end — `editMessage`, `deleteMessage`, `listMessageEdits`,
+and the controller's `/edits` handler. **4.15's mechanism**: *`recordMediaVerdict` had no
+transaction and four artifacts said it did, found by an analysis pass opening the function
+rather than reading the plan.* Nine passes read what the artifacts say; none read what the
+code does.
+
+- **J1 HIGH — the per-arm probe was scoped to one of the route's two scoped reads, and the
+  other one runs first.** `messages.controller.ts:509` calls **`messageExistsIn`**, which
+  carries its own copy of all three predicates including `channels.environmentId`, and 404s
+  before `:512` reaches `listMessageEdits`. **Deleting `listMessageEdits`' environment scope
+  alone leaves the route fully defended**, so T037 would have recorded *nothing red* for an
+  arm whose removal is invisible because its neighbour covers it — **4.12's finding, inside a
+  probe whose own justification cites 4.12.** And the arm count was wrong: of the three
+  predicates in that `where`, `channels.environmentId` is tenancy, `messages.channelId` is
+  channel scope and `messageEdits.messageId` is the lookup key. **Fixed**: six deletions
+  across both functions, then the combinations, and `plan.md`'s constitution I row now says
+  which read enforces FR-006.
+- **J2 MEDIUM — the `/edits` response shape is declared twice** and T019 widened one.
+  `messages.controller.ts:501` carries its own `Promise<{ edits: Array<{ prior_text: string;
+  edited_at: string }> }>`. **The compiler does not name it** — the returned literal's value
+  is a call result, so no excess-property check fires — and the new fields reach the client
+  at runtime anyway, so the declared type would say two where the route serves four. 4.15's
+  shape again: a change neither instrument warns about. **Fixed** in T019; the file is already
+  in the fence bill at 18 pages.
+- **J3 MEDIUM — FR-008's re-run did not name `repository.itest.ts`**, which holds five
+  assertions touching `message_edits`, including a raw `SELECT prior_text FROM message_edits`
+  at :1287, and which **T020 adds a test to**. In the chapter's scope and outside the task
+  that checks nothing else broke. **Fixed.** All five are expected to survive; the point is
+  that the expectation is now checked.
+
+### Checked, and clean — which is most of what this pass did
+
+```
+deleteMessage HAS a transaction            this.db.transaction at :5501   4.15's check, passed
+deletedAt read back from .returning()      :5607 → :5610                  T018's claim holds
+the already-deleted branch returns first   :5557, before the UPDATE       T018's placement right
+editMessage's tx.insert(messageEdits)      :5386                          T017's figure, exact
+listMessageEdits                           :5696                          T019's figure, exact
+editMessage refuses an edit on a tombstone :5324                          T020's premise
+four assertions read the edits response, and only :1416 moves             T025's "one" is right
+```
+
+**`catalogue.ts` is named here even though it needs nothing.** It is a tenancy-reachability
+check derived from `information_schema` rather than from `schema.ts`, asserted by
+`tenant-scope.itest.ts`, and its comment says `message_edits` *"is the first table two links
+away"* — the table that forced its one-hop query to become recursive. This chapter adds a
+column and a trigger and no foreign key, so the classification is untouched. A file no
+artifact in this feature names, checked and clear.
+
+**A note rather than a finding, under T018**: the in-scope variable named `deletedAt` is the
+ISO **string**; the Date is `updated!.deletedAt`. An implementer will reach for the nearer
+name and the compiler will name it, which is the only reason this is a note.
+
+### Ten passes
+
+    pass  1   8 findings   2 CRITICAL   opening files the artifacts cite
+    pass  2   6 findings   1 CRITICAL   asking what a document does not contain
+    pass  3   5 findings   0 CRITICAL   running SQL against the real table
+    pass  4   4 findings   0 CRITICAL   walking the tasks in execution order
+    pass  5   3 findings   0 CRITICAL   checking against other features' open gaps
+    pass  6   7 findings   1 CRITICAL   re-deriving every number, then grepping for the old one
+    pass  7   5 findings   0 CRITICAL   running the document, and checking every cited line
+    pass  8   5 findings   0 CRITICAL   opening the SRS, the SAD and the journey map
+    pass  9   4 findings   0 CRITICAL   the constitution and the governing documents
+    pass 10   3 findings   0 CRITICAL   opening the functions the chapter will edit
+
+**Pass 9 closed by saying the document set was finished, which was true and was not the whole
+question.** The artifacts had been read, re-derived, executed, swept and traced to every
+governing clause, and nobody had opened the functions the tasks name. J1 is why it mattered:
+**a probe built to find an invisible scope would have been blinded by the thing it was
+measuring**, and reported a green run as evidence.
+
 ## Notes
 
 - Items marked incomplete require spec updates before `/speckit-clarify` or `/speckit-plan`
