@@ -608,3 +608,39 @@ chapter widens the gap by one field and says so.
 
   Nothing in this chapter's change is implicated. The lane is green when nothing else
   touches the stack; this host has an observer on it, which is this session.
+
+================================================================================
+PHASE 5 — US3: THE BOUNDARY, PUBLISHED
+================================================================================
+
+--- T035 · `clauses.md` --------------------------------------------------------
+Four clauses, thirteen obligations, each met / demonstrated / unmet-by-decision with
+where. FR-MOD-01 is five obligations where the clause reads as one sentence, and
+**four of the five were already met before this chapter** — which is what `docs/12`
+§7.5 told it to check.
+
+--- T036 · the boundary, and it is not the number the spec first published -----
+Measured after the chapter applied and the lanes had run:
+
+    tombstones total                                      5,343
+      final text RECOVERABLE — deleted since the chapter     283
+      final text GONE FOR EVER — predate it                5,060
+        of those, nothing recoverable at all               3,762
+        of those, earlier texts survive                    1,298
+
+    messages that cannot be hard-deleted today            4,565
+    version rows: edit 5,320 · deletion 283
+
+  **THE 283 ARE THE CHAPTER WORKING IN THE LANE**, written by the integration runs
+  since `0022` applied, and they are why the boundary is no longer "every tombstone".
+  It is *every tombstone with no `deletion` row*, which is now a direct query rather
+  than an inference — 5,060.
+
+  **AND THE 1,298 ARE THE CASE A SINGLE FIGURE HIDES.** A tombstone with version rows
+  looks served: ask for its history and texts come back, and the one that matters is
+  not among them. Counting only the 3,762 with nothing at all understates the boundary
+  by a quarter. The spec published exactly that mistake until analysis pass 6.
+
+  THE FIGURES MOVED AGAIN BETWEEN T008 AND HERE — 4,864 tombstones to 5,343 — because
+  the lanes run and the lanes delete. Every number in this file is a fact about the
+  moment it was taken, and this is the fourth time in one feature that has mattered.

@@ -130,8 +130,8 @@ it.
 **Independent test**: read `clauses.md` and find a count with a clause beside each item, and a
 number for how many tombstones can never be recovered.
 
-- [ ] T035 [P] [US3] Write `specs/065-chapter-4-19/clauses.md`: FR-MOD-01's obligations counted, FR-MOD-02's recorded as already met, FR-MSG-07's and FR-MSG-08's each marked met, demonstrated, unmet by decision or unreachable, with where. SC-007 wants a count, not an adjective.
-- [ ] T036 [US3] Record in `specs/065-chapter-4-19/baseline.txt` **how many deleted messages lost a text this chapter can never recover** — T008's third figure, **4,862, every tombstone** — and beside it T008's fourth, **3,610**, the ones with nothing recoverable at all. The chapter publishes a boundary and these are its two sizes; **the 1,252 between them are the case a single number hides**, a message whose earlier versions survive and whose last text does not.
+- [X] T035 [P] [US3] Write `specs/065-chapter-4-19/clauses.md`: FR-MOD-01's obligations counted, FR-MOD-02's recorded as already met, FR-MSG-07's and FR-MSG-08's each marked met, demonstrated, unmet by decision or unreachable, with where. SC-007 wants a count, not an adjective.
+- [X] T036 [US3] Record in `specs/065-chapter-4-19/baseline.txt` **how many deleted messages lost a text this chapter can never recover** — T008's third figure, **4,862, every tombstone** — and beside it T008's fourth, **3,610**, the ones with nothing recoverable at all. The chapter publishes a boundary and these are its two sizes; **the 1,252 between them are the case a single number hides**, a message whose earlier versions survive and whose last text does not.
   **AND THE OTHER NUMBER, WHICH POINTS FORWARD RATHER THAN BACK**: how many messages this chapter makes impossible to hard-delete. One query — messages with at least one version row, before and after. **Measured at analysis time: 4,039 today, 7,649 after**, because 3,610 existing tombstones gain a version row and every later deletion adds one. T036's first figure is what this chapter cannot recover; this one is what it hands row 22.
 
 ---
