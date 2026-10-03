@@ -37,6 +37,14 @@ Measured on the lane: **4,859 rows, 4,859 distinct keys.** The ordering property
 a test rather than left as a paragraph, because *cannot collide by construction* is the kind of
 claim this project has had to withdraw before.
 
+**AND THE DELETION ROW TAKES THE INSTANT THE TOMBSTONE ALREADY HAS.** `deleteMessage` sets
+`deletedAt: sql`now()`` and reads it back; the version row uses that value rather than a second
+clock reading. `editMessage` carries the argument in a comment: *"ONE CLOCK READING FOR BOTH
+WRITES… two `now()` calls would be two instants, and the history row's own primary key is
+(message_id, edited_at), so a caller reading the history could not match an entry to the
+message state it produced."* The same sentence applies here with `deleted_at` in place of
+`edited_at`, and the first draft of the task list did not say so.
+
 ### And the table becomes append-only
 
 FR-MSG-07 says *"an **immutable** edit history"* and nothing enforces it — measured: no triggers
@@ -44,6 +52,14 @@ on `message_edits`, where `audit_log` has `audit_log_append_only` since last cha
 `BEFORE UPDATE OR DELETE` mechanism applies here, with the same scope ADR-35 published: it
 refuses the application and refuses accident, and one `SET session_replication_role = replica`
 still gets through.
+
+**IT IS ITS OWN MIGRATION, `0023`, AND THE REASON IS THE LEDGER RATHER THAN TIDINESS.**
+`migrate.ts` records `schema_migrations.version` by filename with no checksum, so a file
+appended to after it has applied never applies again while the ledger reports it done. `0022`
+carries the column and the backfill; `0023` carries the trigger. **And the order between them
+is load-bearing in its own right**: `0022`'s backfill is an `UPDATE` on the table `0023` makes
+append-only, so a single file with the trigger above the backfill would refuse its own
+migration.
 
 **This is in scope because the chapter's product depends on it.** A recoverable final text in a
 table the application can rewrite is worth less than the clause already claims.

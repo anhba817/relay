@@ -44,6 +44,16 @@ Likewise the array stays `edits` where `versions` would read better. Chapter 4.1
 on assuming an array key and chapter 4.18 named its key in the contract so the tests and the
 quickstart could not disagree — so this one is named too, and it is the old name.
 
+### What is NOT in this list
+
+**The current text of a message that still exists.** Every row here is a text that *stopped*
+being current, and a live message's text has not. It comes from the channel's history, which
+the caller reading versions has usually already fetched.
+
+So assembling *every text this message has ever held* is **one request for a deleted message
+and two for a live one**, and the asymmetry is the shape of the data rather than an oversight:
+after a deletion there is no current text, which is the whole of what a deletion is.
+
 ### What `ended_by` can be
 
 | value | meaning |
@@ -102,8 +112,8 @@ worth it there. The question of which document is wrong is recorded in `gaps.md`
 
 | condition | status | code |
 |---|---|---|
-| a user token on `/edits` | 403 | the credential guard's existing refusal — **unchanged, and measured as already present** |
-| a message in another tenant's channel | 404 | indistinguishable from an id nobody has |
+| a user token on `/edits` | 403 | `wrong_credential_type` — the guard's existing refusal, **unchanged, measured as already present, and asserted in a suite for the first time by this chapter**. `targets.ts:208` says why that matters: *"this entry and the decorator are the same authorisation fact written twice"*, and nothing had checked the half that enforces |
+| a message in another tenant's channel | 404 | indistinguishable from an id nobody has, and **already attacked**: `gauntlet.itest.ts:242`, *"a foreign message's history reads as an absent one"* |
 | a message id that exists nowhere | 404 | the same body |
 
 **No new error code.** The refusals this chapter can produce are ones the platform already

@@ -103,7 +103,9 @@ specs/065-chapter-4-19/
 
 ```
 relay-platform/
-├── services/api/migrations/0022_message_versions.sql     the column, the check, the trigger
+├── services/api/migrations/0022_message_versions.sql     the column, the check, the backfill
+├── services/api/migrations/0023_message_edits_append_only.sql   the trigger — its own file,
+│                                                         because it is written in phase 5
 ├── services/api/src/db/schema.ts                         the column, and the comment R1 corrects
 ├── services/api/src/db/repository.ts                     editMessage writes `ended_by`,
 │                                                         deleteMessage writes the final version,
@@ -154,8 +156,10 @@ The nine phases are `tasks.md`'s and carry the same names.
 2. **The decision.** `ended_by`'s values and the response's field names, settled before a
    migration exists — because the alternative is a spec question with `0022` already applied,
    which is the ordering constraint 4.18 recorded.
-3. **US1 — the final version.** The migration, the column, the two write sites, the read, and
-   the trigger run red before anything depends on it.
+3. **US1 — the final version.** `0022`, the column, the two write sites and the read. **Not
+   the trigger**: it is US3's and it is `0023`, because `migrate.ts` keys the ledger on a
+   filename with no checksum, so a migration file written across two phases is one that never
+   applies in full on the machine that ran the first half.
 4. **US2 — the removal instant in history.** One field, and the three surfaces reconciled.
 5. **US3 — the boundary, published.** What a tenant can and cannot recover, counted.
 6. **The probes.** Each tenancy arm deleted alone; the trigger attacked; the deletion's new

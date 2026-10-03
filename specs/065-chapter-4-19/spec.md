@@ -116,9 +116,14 @@ its history. Every version it ever held comes back, including the last one.
    or removed.
 2. **Given** a message deleted with no edits, **When** the tool reads its history, **Then**
    one text comes back: the only text it ever had.
-3. **Given** a message that was never deleted, **When** the tool reads its history, **Then**
-   the prior texts come back and the current text is identified as current rather than as a
-   version that ended.
+3. **Given** a message that was never deleted, **When** the tool reads its versions, **Then**
+   the prior texts come back and **the current text is not among them**, because it has not
+   stopped being current — and the response the tool already has from the channel's history
+   is where that text lives. The two sources are named rather than left to be worked out.
+   *(An earlier draft of this scenario asked the version list to identify the current text as
+   current. That would put a text that has not ended into a list of texts that have, and
+   nothing in `contracts/message-versions.md` returns it — the scenario and the contract
+   disagreed and the task list had silently resolved it in the contract's favour.)*
 4. **Given** a message deleted twice (a retried call), **When** the tool reads its history,
    **Then** one removal is recorded, because the second deletion changed nothing.
 
@@ -191,8 +196,10 @@ recover about a removed message and what it cannot.
 - **FR-001**: The system MUST preserve the text a message held at the moment it was deleted, so
   that the sequence of every text a message ever had is recoverable after deletion.
 - **FR-002**: The preserved final text MUST be readable through the same surface that already
-  serves prior texts, so that a caller assembling a message's history makes one request rather
-  than two.
+  serves prior texts, so that **a caller assembling a deleted message's history makes one
+  request**. For a message that still exists it remains two — the versions from one route and
+  the current text from the channel's history — because the current text has not ended and a
+  list of ended versions is the wrong place for it.
 - **FR-003**: Each recovered version MUST carry the instant at which it stopped being current,
   and the reason it stopped MUST be distinguishable between *replaced by an edit* and *removed
   by a deletion*.
@@ -241,8 +248,16 @@ recover about a removed message and what it cannot.
   live message does not.
 - **SC-004**: A second deletion of the same message adds no version, demonstrated by counting
   before and after rather than by reading the response.
-- **SC-005**: A tenant reading recovered versions sees its own and zero of a second tenant's,
-  measured against a second environment that performed the same actions.
+- **SC-005**: A tenant asking for another tenant's message versions receives the answer it
+  receives for a message that exists nowhere, with version rows present on both sides —
+  measured against the cross-tenant attack that already covers this route.
+
+  *(This read "sees its own and zero of a second tenant's, measured against a second
+  environment that performed the same actions" until the first analysis pass. That sentence
+  was carried over from chapter 4.18's audit log, which is a **list** route where another
+  tenant's rows could appear in your page. This route returns **one message's** versions by
+  id, so the only cross-tenant shape is a foreign id — and `gauntlet.itest.ts:242` already
+  attacks it. As written the criterion could not have failed for its own reason.)*
 - **SC-006**: A user token is refused the recovered-version surface with the code the platform
   already uses, asserted by code and not by status alone.
 - **SC-007**: What a tenant can and cannot recover is published as a counted list, not an
