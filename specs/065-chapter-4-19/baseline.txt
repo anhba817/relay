@@ -123,3 +123,134 @@ Four figures, not three. The third is the boundary and the fourth is not.
 
   FR-MSG-07 has said "an immutable edit history" since chapter 3.23 and both verbs
   succeed.
+
+================================================================================
+PHASE 2 — THE DECISIONS, BEFORE ANY MIGRATION
+================================================================================
+
+--- T014a · the premise of T011 and T013, read rather than grepped -------------
+T007's "14 and 10" are MENTIONS. They are not construction sites, and the real
+numbers are smaller by about three times — which changes what "required" costs.
+
+  the 14 "MessageRow" hits, opened one at a time:
+    3   comments            backfill.controller.ts:120, repository.ts:2663, :2674, :6571
+    1   the declaration     repository.ts:2634
+    2   extensions          EditedMessageRow, MessageWithSender
+    2   imports             messages.service.ts:12, :17
+    6   type positions      return types in the repository and the service
+    0   object literals named `MessageRow`
+
+  THE CONSTRUCTION SITES ARE FIVE, all in `repository.ts`, found by their return
+  type rather than by the type's name:
+
+    4769  sendMessage                    Promise<MessageRow>
+    5269  editMessage                    Promise<EditedMessageRow>
+    6106  getMessageByIdempotencyKey     Promise<MessageRow>        private
+    6527  listMessages                   Promise<MessageWithSender[]>
+    6664  backfill                       Record<…, { messages: MessageWithSender[] }>
+
+  and the 10 `edited_at:` hits are 2 comments, 1 declaration, 2 type positions,
+  1 controller forward, 1 `listMessageEdits` map, 1 Drizzle select alias, and
+  **TWO actual literal fills**: repository.ts:5438 and :6637.
+
+  WHAT THIS DOES TO T013. `listMessages` is the only site that spells `edited_at`
+  in its returned literal today; the other four rely on `edited_at?` being optional.
+  So **required names five sites and optional names none** — and five is a number
+  worth paying, where fourteen might not have been. 4.14 measured 110 call sites for
+  a constructor against 13 for two method parameters and took the cheap one; here
+  the expensive option costs five.
+
+  4.11's regex over `targets.ts` found 47 where the file's own count said 51. This
+  is the same shape with the error in the other direction: the grep over-counted,
+  and a decision taken on it would have been taken on a number three times too big.
+
+--- T010 · `ended_by`'s values -------------------------------------------------
+DECIDED: `edit` and `deletion`. A named CHECK constraint, and **no default**.
+
+  No default, because a default lets a writer stay silent and the contract's rule is
+  that a row cannot be silent about which happened. There are exactly two insert
+  sites after this chapter and a default would serve neither.
+
+  WHY THERE IS NO THIRD VALUE. A message's text stops being current for exactly two
+  reasons on this platform: a later edit replaced it, or a deletion removed it.
+  Nothing else writes `messages.text`.
+
+  WHAT WOULD HAVE TO BE TRUE FOR A THIRD TO ARRIVE. A path that clears or rewrites
+  `messages.text` without being either — retention (row 21) and erasure (row 22) are
+  the two candidates, and both DESTROY the row rather than ending a version, so
+  neither produces one. A third value is a clause, not a column default: it would
+  mean the platform had grown a fourth way to stop a text being current, and the
+  clause that licensed it would say which.
+
+--- T011 · is `ended_by` required? ---------------------------------------------
+DECIDED: **required** — `NOT NULL` in the database, non-optional in the insert type.
+
+  The cost is two sites, measured rather than estimated: `repository.ts:5386`
+  (`editMessage`'s existing insert) and the new one in `deleteMessage`. T014a cut
+  the grep's estimate from fourteen to five for `MessageRow` and the same reading
+  gives two for `message_edits` writers.
+
+  `repository.ts` already argues both sides of this in one comment, and the side it
+  argues FOR is this one: `attachments` is required *so the compiler names the
+  sites*, while `edited_at?` is optional for write-path convenience — which that
+  same comment calls *"exactly what made the attachments chapter's
+  `internalSendResponseSchema` a break waiting to happen"*. Two sites is not a
+  convenience worth buying.
+
+--- T012 · the response's field names ------------------------------------------
+DECIDED, and unchanged from `contracts/message-versions.md`: **`ended_at` and
+`ended_by` are added; `prior_text` and the `edits` key stay.**
+
+  Both renames that read better — `prior_text` → `text`, `edits` → `versions` — are
+  breaking changes to a published response under CON-05, for a noun. So is dropping
+  `edited_at`. The complexity table carries all three with their bills.
+
+  THE COST IS RECORDED RATHER THAN HIDDEN: `edited_at` and `ended_at` carry the same
+  value on every row, for as long as the older name has callers. One field wide, and
+  stated in the contract so nobody has to work out which of two names to trust. A
+  client should read `ended_at` and `ended_by`.
+
+--- T013 · is `deleted_at` on `MessageRow` required? ---------------------------
+DECIDED: **required and nullable** — `deleted_at: string | null`, not `deleted_at?`.
+
+  T014a says the bill: **five construction sites**, four of which do not spell
+  `edited_at` today and would each gain `deleted_at: null`. Five is payable.
+
+  AND THE TWO CLOSEST PRECEDENTS ARE BOTH THIS SHAPE, in the same file:
+    `repository.ts:2602`  the USER row's `deleted_at: string | null` — required,
+      nullable, and its comment is this decision's argument already written down:
+      *"selected here rather than filtered in the query so a caller can tell the two
+      apart: a repository that hid deleted rows would make the marker unobservable
+      and the deletion untestable."*
+    `MessageRow.text: string | null` — required and nullable on this very interface,
+      for the same class of value: null on most rows, load-bearing when it is not.
+
+  `edited_at?` is the precedent that argues the other way and it is the weaker one:
+  its own comment says the convenience is what made a published schema a break
+  waiting to happen. The field this chapter adds is the one a client uses to tell a
+  removal from a message that never had text, which is exactly the marker the user
+  row's comment refuses to make unobservable.
+
+--- T014 · the erasure collision, resolved in writing --------------------------
+Row 22 must delete a user's words and version rows hold them. **There are two
+obstacles and the foreign key comes first.**
+
+  1. `message_edits_message_id_fkey` is `NO ACTION` (`confdeltype = 'a'`, read from
+     `pg_constraint`), so a hard delete of a message with version rows is refused
+     **before any trigger is consulted**. Confirmed by running it in a rolled-back
+     transaction: *"update or delete on table `messages` violates foreign key
+     constraint `message_edits_message_id_fkey`"*.
+  2. The append-only trigger this chapter adds is the second.
+
+  IT IS NOT THE AUDIT LOG'S SHAPE, which three artifacts said until the third
+  analysis pass. `audit_log`'s foreign key points at `environments` and nothing
+  deletes those, so that table has one obstacle and this one has two.
+
+  AND THIS CHAPTER MAKES THE FIRST ONE BITE FAR MORE OFTEN. From T008: **4,041
+  messages cannot be hard-deleted today and 7,651 after**, because every deletion
+  now leaves a version row where only edited messages had one — 3,610 existing
+  tombstones gain theirs, and the count grows by one for every deletion after that.
+
+  THIS CHAPTER WRITES THE COLLISION DOWN AND DOES NOT PRE-SOLVE IT. Row 22 owns the
+  problem; what it inherits is a statement naming both mechanisms in order, because
+  the cheap one to miss is the one that was already there.
