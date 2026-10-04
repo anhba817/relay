@@ -504,3 +504,72 @@ T027 · FR-011 PER ACTION — AND AN EXISTING TEST CAUGHT A REAL OMISSION
   here, because this workspace sets no `varsIgnorePattern` — even an
   underscore-prefixed binding counts. Deleting the key says the same thing and
   binds nothing. Back to the baseline's 1 warning, 0 errors.
+
+================================================================================
+PHASE 4 — US2: THE OBJECTS GO WITH THE MESSAGES
+================================================================================
+
+T028 · THE REUSE PASS 7 FOUND IS HALF THE SIZE IT LOOKED, AND THAT IS THE FINDING
+
+  `unreferencedMediaIn` was NOT called. Its second query was extracted as
+  `unreferencedAmong(db, environmentId, candidateIds)` and both callers use it:
+  the old function brings every old object in an environment, the sweep brings
+  the `media_id` values of the messages it has just destroyed. **The populations
+  are different and only the caller knows which one it means.**
+
+  Measured on the demo environment: 434 candidates with `parent_id IS NULL`, and
+  **48 that no message has ever referenced** — FR-MED-10's orphans, row 22's to
+  reap. A sweep calling the old function destroys them under a retention policy
+  that has nothing to do with them.
+
+  AND THE DEFECT WOULD HAVE BEEN INVISIBLE. With a 30-day bound the function
+  returns 0 on this lane, because `created_at < olderThan` filters out
+  everything older than 2026-09-14. A test written this week passes.
+
+T029 / T029b · THE SWEEP'S MEDIA HALF
+
+    collect media_ids    BEFORE the delete — free, the jsonb is on the page, and
+                         afterwards the rows and the ids are both gone
+    destroy messages     cascades to message_edits
+    unreferencedAmong    AFTER, because an object referenced only by expired
+                         messages is unreferenced only once they are
+    destroy objects      renditions by `media_objects_parent_fk` cascade
+    delete the bytes     one request per object; the store has no foreign keys
+    publish `deleted`    bytesDelta NEGATIVE, carried rather than derived
+
+T029a · ONE COMMENT REPAIRED AND ONE LEFT ALONE ON PURPOSE
+
+    storage-event.ts   "the causes are four and the callers are three" -> four
+                       and four, naming `retention/sweep.ts`
+    repository.ts      `unreferencedMediaIn`'s *"called by nothing yet … row 22
+                       is where it gets a caller"* **STAYS TRUE** and is not
+                       touched. It gains a paragraph saying 4.20 came close and
+                       did not take it, because the next reader will have the
+                       same idea. Repairing an accurate comment is the mirror of
+                       leaving a stale one.
+
+T030 / T031 · BOTH HALVES, AND A RENDITION
+
+    sole-referenced object destroyed · shared one survives · 1 and 1 in the
+    counted line · a rendition goes with its parent and the SCHEMA is what does
+    it, which is a thing to run rather than to reason about
+
+CHAPTER 4.15 WROTE A TEST TO FIRE ON THIS DAY, AND IT FIRED.
+
+  `rendition.itest.ts` — *"has no production caller, and the count is the
+  assertion"* — asserted that **nothing in this platform deletes a
+  `media_objects` row**, with its own instruction for the day that changed:
+  *"whoever is holding it reads the paragraph above and wires
+  `deleteObjectWithRenditions` into the path they just built."*
+
+  It went red on `Repository.destroyMediaObjects`. The count was the assertion
+  only while it was zero, so the claim is now the PAIRING: exactly one row
+  deletion, and more than one caller of `deleteObjectWithRenditions`. A row
+  deleted without its bytes leaves objects nobody can reach that the tenant is
+  still charged for — which is the thing the original zero was protecting.
+
+  Its positive control did its job too: *"the sweep found no reads of
+  media_objects at all, so it did not look."*
+
+    retention · environments · media · isolation · audit
+    19 files, 234 tests, all green
