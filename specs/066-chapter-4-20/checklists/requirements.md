@@ -698,7 +698,49 @@ carelessness: **a count is a fact about the corpus; a buffer figure is a fact ab
 query text, a cache state and a planner.** Publish the query with the buffers, or publish the
 signature instead.
 
-### Fourteen passes
+## Analysis pass 15 — two findings, ONE CRITICAL, both fixed
+
+**The question**: *run T028's premise.* Pass 7 found `unreferencedMediaIn`, called reusing it a
+saving, and wrote down two things to check — the `lt(createdAt, olderThan)` arm and the
+`limit = 100`. **It could not check either, because it was reading.** Eight passes later the
+stack is up.
+
+- **AA1 CRITICAL — the two populations are different and *"if it fits"* does not fit.** The
+  sweep asks *which media_ids of the messages I just destroyed are now unreferenced*. The
+  function asks *which objects in this environment with `parent_id IS NULL` and
+  `created_at < olderThan` does no message reference* — **a superset including objects never
+  attached to anything**. Measured in the demo environment: **434 candidates and 48 that no
+  message has ever referenced**, which are FR-MED-10's orphans and `docs/12` **row 22's** to
+  reap. A sweep calling it destroys them under a policy that has nothing to do with them.
+  **Fixed**: T028 says do not call it, extract the second query so each caller brings its own
+  candidates, and T029 feeds it the destroyed messages' own `media_id` set.
+  **AND IT IS INVISIBLE TODAY.** With a 30-day bound the function returns **0**, because
+  `created_at < olderThan` filters out everything on a lane whose oldest message is 20 days
+  old. A test written this week passes and proves nothing — **pass 12's dated premise turned
+  load-bearing for a correctness defect rather than for a demonstration.**
+- **AA2 MEDIUM — `limit = 100` with no loop.** The bound exists because FR-MED-10's reaper is
+  a repeating job; **this sweep has no repeater** (ADR-28), so object 101 waits for an operator
+  who may never run it while FR-008 asks that a re-run complete the work. **Fixed** in T029.
+
+**AND A KNOCK-ON WORTH MORE THAN ITS SIZE.** Because the sweep now calls the extracted half,
+`unreferencedMediaIn` **still has no caller** and its *"called by nothing yet … row 22 is where
+it gets a caller"* comment **stays true**. T029a was going to repair it. **Repairing a comment
+that is still accurate is the mirror of leaving a stale one**, and T029a now says so.
+
+**WHAT VERIFIED CLEAN, INCLUDING A RULE THAT DID NOT TRANSFER.** The batched second query
+reaches the index: 100 containment predicates `OR`ed plan as a **`BitmapOr` over 100
+`Bitmap Index Scan on messages_attachments_gin`** — 976 buffers, 15.166 ms, ≈**9.8 buffers an
+object** against **107** standalone, so R2's *"which also makes it batchable"* holds and is
+~11× cheaper per object. **4.18's *an `OR` is not a keyset cursor* does NOT transfer**:
+containment predicates OR into a `BitmapOr` where a cursor's range predicates land in a
+`Filter:`. Worth recording only because it was checked rather than assumed.
+
+**THE SAVING PASS 7 FOUND IS REAL AND SMALLER THAN IT LOOKED.** That pass contributed the
+batching shape and the reason it works; this one found that the candidate set feeding it comes
+from the wrong population. **Neither pass could have reached the other's half** — one needed
+the source, the other needed the database.
+
+### Fifteen passes
 
     pass 1   4 findings   0 CRITICAL   opening the files the artifacts cite
     pass 2   4 findings   0 CRITICAL   writing the queries nobody had written
@@ -714,6 +756,7 @@ signature instead.
     pass 12  3 findings   0 CRITICAL   RUNNING it — every figure exact, and a dated premise
     pass 13  2 findings   0 CRITICAL   running the SOLUTION — R1 holds, one keyword does not
     pass 14  2 findings   0 CRITICAL   running the PLANS — the ratio was a part over a whole
+    pass 15  2 findings   1 CRITICAL   running a TASK'S PREMISE — the reused function is the wrong one
 
 **Four passes found nothing critical, the fifth found the thing that decides whether the
 chapter can ship as specified, and the sixth found three things no document in this directory

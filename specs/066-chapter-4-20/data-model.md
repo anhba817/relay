@@ -86,13 +86,15 @@ for each environment with retention_days set     UNSCOPED, in retention-reads.ts
   collect their media_id values              free: jsonb already on the row
   SET LOCAL relay.expiring = 'on'
   DELETE FROM messages WHERE id = ANY(…)     cascades to message_edits
-  for each media_id, is it still referenced? `unreferencedMediaIn` ALREADY ANSWERS THIS —
-                                             repository.ts, written by 4.15, tested, scoped,
-                                             and already TWO QUERIES rather than one, which
-                                             is the shape R2 argues for. Measured pass 14:
-                                             bound operand 107 buffers against set-wise
-                                             3,423 and 127.9 ms, GIN idle under a Parallel
-                                             Seq Scan, Rows Removed by Join Filter: 210,696
+  for each media_id, is it still referenced? THE CANDIDATES ARE THE DESTROYED MESSAGES'
+                                             media_ids — not every old object in the
+                                             environment, which is a different population
+                                             (see below). Reuse `unreferencedMediaIn`'s
+                                             SECOND query, extracted. Measured pass 14/15:
+                                             bound operand 107 buffers, set-wise 3,423 and
+                                             127.9 ms with the GIN idle under a Parallel
+                                             Seq Scan; batched 100 at a time it is a
+                                             BitmapOr, 976 buffers, ~9.8 an object
     if not, delete the object and its renditions, and the stored bytes
                                              AND publish the `deleted` storage event,
                                              bytesDelta NEGATIVE (FR-013)
@@ -129,9 +131,26 @@ it first and every shared-looking object survives.
 ## Two things that already exist, and one that is waiting
 
 **`unreferencedMediaIn(db, environmentId, olderThan, limit = 100)`** is chapter 4.15's, in
-`repository.ts`, with a comment saying it is *"called by nothing yet"* and that `docs/12` row
-22 is where it gets a caller. **Row 21 gets there first.** The sweep calls it rather than
-writing a second one, and the comment is repaired in the same chapter that falsifies it.
+`repository.ts`, under a comment saying it is *"called by nothing yet"* and that `docs/12` row
+22 is where it gets a caller. **Analysis pass 7 proposed calling it and pass 15 ran its two
+arms, which is what settled it: the sweep must NOT call it.**
+
+**THE POPULATIONS ARE DIFFERENT AND ONLY ONE OF THEM IS THIS CLAUSE'S.** The sweep asks *which
+media_ids of the messages I just destroyed are now unreferenced*; the function asks *which
+objects in this environment older than X does no message reference*. The second is a superset
+containing objects **never attached to anything** — measured, 434 candidates in the demo
+environment and **48 never referenced by any message**. Those 48 are FR-MED-10's orphans, and
+FR-MED-10's reaper is row 22's. A sweep calling this function destroys them under a retention
+policy that has nothing to do with them.
+
+**WHAT IS REUSABLE IS ITS SECOND QUERY, WHICH IS THE EXPENSIVE HALF**, extracted so each
+caller brings its own candidate list and there is one implementation of the containment check.
+`unreferencedMediaIn` then still has no caller and its comment stays true — **which is why
+T029a must leave that comment alone.**
+
+**AND THE DEFECT IS INVISIBLE TODAY.** With a 30-day bound the function returns 0, because
+`created_at < olderThan` filters out everything on a lane whose oldest message is 20 days old.
+A test written now passes and proves nothing.
 
 **`publishStorageDelta`'s `deleted` cause** is declared and has no producer — *"the causes are
 four and the callers are three"*. This chapter is the fourth. The operational quota needs

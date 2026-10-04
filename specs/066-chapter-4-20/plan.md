@@ -205,10 +205,14 @@ prediction.
    four `target_kind` values of which none is an environment.
 3. **US1 — the expiry, and the pincer.** Both migrations, the sweep, and the delete that is
    refused today. **The red probe comes first**: assert the refusal, then make it pass.
-4. **US2 — the objects go too.** The reverse reference check **is `unreferencedMediaIn`,
-   which chapter 4.15 already wrote in the shape the planner can use**; this phase reads it,
-   calls it, publishes the `deleted` storage event nothing has ever published, and repairs the
-   two comments that promise a caller arriving one chapter later than it does.
+4. **US2 — the objects go too.** The expensive half of the reverse reference check **is
+   already written** — `unreferencedMediaIn`'s second query, in the shape the planner can
+   use — but **the function around it asks a different question** and the sweep must not
+   call it: its candidates are every old object in the environment, including ones never
+   attached to anything, which is FR-MED-10's population and row 22's chapter. This phase
+   extracts the containment check, feeds it the destroyed messages' own `media_id` set,
+   publishes the `deleted` storage event nothing has ever published, and repairs the comments
+   that go stale — **leaving alone the one that stays true.**
 5. **US3 — what runs it, published.** The clause's three obligations with a verdict each.
 6. **The probes.** Each tenancy arm alone and in combination; the trigger still refusing
    everything it refused before; the sweep run twice.

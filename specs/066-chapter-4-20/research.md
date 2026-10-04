@@ -108,12 +108,21 @@ the sweep already has in hand.
 **Reverse — is this object still referenced by a message that did NOT expire?** Required,
 because FR-MSG-11 has allowed the same `media_id` in two messages since chapter 3.24.
 
-**AND IT IS ALREADY WRITTEN, WHICH THIS SECTION DID NOT KNOW WHEN IT MEASURED.**
+**HALF OF IT IS ALREADY WRITTEN, WHICH THIS SECTION DID NOT KNOW WHEN IT MEASURED.**
 `repository.ts` exports `unreferencedMediaIn(db, environmentId, olderThan, limit = 100)` —
 chapter 4.15's, tested, environment-scoped, and already in the two-query form for the reason
 measured below. The measurement stands and is worth keeping: **it was taken independently and
 agrees**, which is the only way anyone found out the function was there. Analysis pass 7 found
 it by following a stray `docs/12 row 22` citation out of a migration comment, six passes in.
+
+**AND PASS 15 RAN ITS TWO ARMS, WHICH REVERSED HALF THE CONCLUSION.** The **second** query is
+reusable and is the expensive half; the **first** asks a different question — every object in
+the environment older than a bound, including 48 in the demo environment that no message has
+ever referenced, which are FR-MED-10's orphans and row 22's to reap. So the sweep brings its
+own candidate list to the extracted check and does not call the function. **The saving pass 7
+found is real and smaller than it looked**, and the arms could not have been settled by
+reading: with a 30-day bound the function returns 0 on this lane, so the difference between
+the two populations is invisible until something runs it.
 
 ```
                                           as first measured      re-measured, pass 14
