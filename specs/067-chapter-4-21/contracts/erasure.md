@@ -78,7 +78,7 @@ the whole request, which is the design failure III names.
 |---|---|---|
 | an external id no user in this environment has | 404 | `not_found` — and **indistinguishable from another tenant's**, apart from `request_id` |
 | a user token | 403 | `wrong_credential_type` |
-| an unknown field in the body | 400 | `invalid_request` — the schema is `z.strictObject` (constitution VI's fifth bullet) |
+| ~~an unknown field in the body~~ | — | **No body, so no refusal.** The route takes one path parameter and declares no `@Body()`; a junk body answers exactly as an empty one does. Constitution VI's fifth bullet governs endpoints that take input and is **not engaged** here, which is a different thing from unmet |
 | a second erasure of the same user | **200** | a receipt reporting zero erased. **Not a 404** — idempotence is about what the second call DID |
 
 **No new error code.** `not_found`, `wrong_credential_type` and

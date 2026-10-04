@@ -176,10 +176,60 @@ Postgres path goes through the scoped `Repository`; `connection_events` already 
 table in R3 and quickstart §2 is unscoped on purpose — it measures the verb, not the
 predicate — which R3 now says, because a reader copies shapes.
 
-### Two passes
+## Analysis pass 3 — three findings, ONE CRITICAL, all three fixed
+
+**The question**: *walk the tasks in execution order.* The first pair does not work.
+
+- **C1 CRITICAL — the red probe could never go red.** T015 called `deleteUser` and
+  asserted what survives: the row, the messages, the billing rows. **This chapter
+  preserves all three on purpose** — erasure is a separate verb, which is the whole of
+  T010, T011 and R4 — so T021's *"watch it go red"* described something that cannot
+  happen. The probe would have been green at the open, green after the traversal and
+  green at close-out, **and read as evidence three times.**
+
+  **A genuine refusal exists and is the better probe**, measured:
+
+      DELETE FROM users WHERE id = <one with memberships>
+        ERROR: violates foreign key constraint "members_user_id_users_id_fk"
+      DELETE FROM users WHERE id = <one with no children anywhere>
+        DELETE 1                                       <- the control
+
+  All five foreign keys are `NO ACTION`, so the row is unreachable until the children
+  go — which is exactly what T016's *children first, the row last* traverses. **Fixed**:
+  T015 asserts the refusal with its control, T021 inverts it, and the characterisation
+  test the first draft was reaching for is kept as a separate assertion — green today
+  and green forever, going red only if somebody collapses the two verbs.
+
+  **THE RITUAL WAS COPIED WITHOUT THE CONDITION THAT MAKES IT MEAN SOMETHING.** This
+  project's rule is *a probe that was never green proves nothing about the fix*. The
+  corollary nobody had written down is **a probe that can never go red proves nothing
+  either.**
+
+- **C2 HIGH — the route takes no body, so `z.strictObject` had nothing to validate.**
+  Three artifacts specified a strict body schema and a 400. Measured against the
+  existing bodyless `DELETE /v1/users/:externalId`: `{"totally":"unknown"}` and `{}`
+  both answer **404**, because no `@Body()` decorator exists to parse either. **Fixed**:
+  constitution VI's fifth bullet is recorded **not engaged** rather than met, and T020a
+  asserts the route declares no `@Body()` — the property that makes the bullet
+  inapplicable. Adding one purely to reject would be work with no clause behind it.
+
+- **C3 MEDIUM — this route is not in 058-3's population.** `spec.md` said it *"would
+  make twenty-four"*. That population takes **uuid-typed** path parameters; this one
+  takes a string external id, and `DELETE /v1/users/no-such-xyz` answers **404**, not
+  500. **Fixed**: the count stays at twenty-three and the spec says why.
+
+**C2 AND C3 ARE THE SAME MISTAKE POINTING THE OTHER WAY FROM C1.** Chapter 4.20's route
+was a `PATCH` with a body and a uuid parameter, so both sentences applied there. This one
+is a `DELETE` with neither, and four artifacts repeated the claims inherited rather than
+checked. **Three of this pass's three findings are carried sentences**, which is what an
+execution-order walk finds that a reading does not: the artifacts are internally
+consistent, and consistently about a different route.
+
+### Three passes
 
     pass 1   3 findings   0 CRITICAL   opening the files the artifacts cite
     pass 2   2 findings   1 CRITICAL   writing the queries nobody had written
+    pass 3   3 findings   1 CRITICAL   walking the tasks in execution order
 
 **A1 and A3 are the same mistake at two scales**: the artifacts treat as open a question
 the tree has already answered, once for a module and once for a classification. A1 came

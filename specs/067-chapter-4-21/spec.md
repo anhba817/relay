@@ -232,6 +232,9 @@ with where, and a sentence naming what invokes each path.
 - **Tenant-level export (FR-MOD-05).** Still unbuilt, still the undo that does
   not exist, and named again rather than quietly omitted.
 - **Repairing `gaps.md` 058-3.** Twenty-three routes answer 500 to a malformed
-  path parameter; this chapter's would make twenty-four.
+  path parameter and **this route is not one of them** — measured at analysis
+  pass 3. That population takes **uuid-typed** parameters; this one takes a
+  string external id, so `DELETE /v1/users/no-such-xyz` answers 404. The count
+  stays at twenty-three.
 - **Deleting from `audit_log`.** It is append-only and an entry is a record of
   an action, not a copy of its target. The tension is stated.
