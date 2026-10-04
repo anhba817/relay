@@ -79,23 +79,48 @@ for each environment with retention_days set     UNSCOPED, in retention-reads.ts
                                                  environment and this crosses all of them
                                              ONE QUERY PER ENVIRONMENT below, not one join
   find messages older than the policy        the bound is a CONSTANT here, computed in the
-                                             application. As a join filter across all
-                                             environments it is 604 buffers and discards every
-                                             message in the policied one (`Rows Removed by Join
-                                             Filter: 1018`); per environment it is 74 and
-                                             reaches channels_environment_last_activity.
+                                             application, so the planner can use it.
                                              Keyset, paged — R7's lesson from 4.13
+                                             COSTS, re-measured end to end at pass 14 and
+                                             NOT A SPEEDUP (see below the sketch)
   collect their media_id values              free: jsonb already on the row
   SET LOCAL relay.expiring = 'on'
   DELETE FROM messages WHERE id = ANY(…)     cascades to message_edits
   for each media_id, is it still referenced? `unreferencedMediaIn` ALREADY ANSWERS THIS —
                                              repository.ts, written by 4.15, tested, scoped,
-                                             and already two queries rather than one, which
-                                             is the 883-against-94,132 shape (R2)
+                                             and already TWO QUERIES rather than one, which
+                                             is the shape R2 argues for. Measured pass 14:
+                                             bound operand 107 buffers against set-wise
+                                             3,423 and 127.9 ms, GIN idle under a Parallel
+                                             Seq Scan, Rows Removed by Join Filter: 210,696
     if not, delete the object and its renditions, and the stored bytes
                                              AND publish the `deleted` storage event,
                                              bytesDelta NEGATIVE (FR-013)
 ```
+
+**THE PER-ENVIRONMENT FORM IS RIGHT AND IT IS NOT CHEAPER, WHICH THE EARLIER FIGURES IMPLIED.**
+Re-measured end to end at analysis pass 14, with one environment carrying a policy:
+
+    cross-environment, one join      617 buffers   of which 546 is a Seq Scan of all 33,051
+                                                   environments, Rows Removed by Filter: 33050
+    per environment                  546 + 73      the SAME enumeration, then 73 per policied
+                                                   environment, reaching
+                                                   channels_environment_last_activity
+                                     = 619
+
+**The 604-against-74 that earlier drafts published is a whole-sweep cost against a part of the
+same work** — the enumeration is step 1 of the per-environment form too, so it appears on both
+sides and cancels. The reasons to take the per-environment form are **pageability, FR-008's
+re-runnability, and a bound the planner can use**, and none of those is a ratio. 4.15:
+*publishing the ratio publishes the wrong variable.*
+
+**AND THE AGE PREDICATE REACHES NO INDEX IN EITHER SHAPE.** `created_at` lands in a `Filter:`
+(`Rows Removed by Filter: 102` per channel) and in a `Join Filter:` (`Rows Removed by Join
+Filter: 1018`), because `messages` carries no index on it. The sweep's cost is linear in the
+environment's **total** message count rather than in the number of expired messages — including
+the common case where nothing has expired. T013a decides whether to add one; 4.18's rule is the
+test: **`Index Cond` per table is the question, and an index scan carrying a `Filter:` is not
+it.**
 
 **THE ORDER MATTERS IN ONE PLACE.** The reference check runs **after** the messages are gone,
 because an object referenced only by expired messages is only unreferenced once they are. Run

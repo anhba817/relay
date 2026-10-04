@@ -116,11 +116,23 @@ agrees**, which is the only way anyone found out the function was there. Analysi
 it by following a stray `docs/12 row 22` citation out of a migration comment, six passes in.
 
 ```
-set-wise semi-join over media_objects     94,132 buffers · 79.6 ms · 4,930 rows
-one object, operand bound                    883 buffers · 27.2 ms
+                                          as first measured      re-measured, pass 14
+set-wise semi-join over media_objects     94,132 buf · 79.6 ms   3,423 buf · 127.9 ms
+one object, operand bound                    883 buf · 27.2 ms     107 buf ·   3.1 ms
+                                          106×                   32×
 ```
 
-**106×, and it is 4.12's lesson exactly**: `messages_attachments_gin` (`jsonb_path_ops`) already
+**THE ABSOLUTE FIGURES DID NOT REPRODUCE AND THE MECHANISM DID, EXACTLY.** This section
+published numbers and not the query that produced them, so there was nothing for a reader to
+reproduce against — and **a buffer count is a fact about a corpus, a query text, a cache state
+and a planner**, where the row counts this feature also publishes are facts about the corpus
+alone and re-measured exact at pass 12. The re-measurement is against the environment
+`bbda7667…`, 531 objects and 843 messages, with the operand taken from `media_objects`.
+**What reproduced verbatim is every structural signature**: `Rows Removed by Join Filter:
+210,696`, a **Parallel Seq Scan on messages** with `messages_attachments_gin` present and
+**idle**, against a `Bitmap Index Scan` on that same index the moment the operand is bound.
+
+**32× rather than 106×, and it is 4.12's lesson exactly**: `messages_attachments_gin` (`jsonb_path_ops`) already
 exists, and a containment operand the planner cannot see before the join does not reach it.
 That chapter measured `Rows Removed by Join Filter: 1017` with the index present and idle.
 **The check runs per object with a bound operand**, which also makes it batchable.

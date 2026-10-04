@@ -653,7 +653,52 @@ mechanism and it works. **What no artifact attempted is the mechanism used sligh
 The database was restored and verified: `message_edits=6663`, `messages=199275`, identical to
 pass 12, and a `DELETE` with the flag set is refused again at the original function's line 3.
 
-### Thirteen passes
+## Analysis pass 14 — two findings, 0 CRITICAL, both fixed
+
+**The question**: *run the two measured claims that decide the sweep's query shape.* T013a
+carries pass 2's work and all of its structural claims **independently reproduced** — no
+`created_at` index, the 546-buffer environments scan, `Rows Removed by Filter: 33050`,
+`Rows Removed by Join Filter: 1018`, and `channels_environment_last_activity` reached exactly
+where predicted. What did not survive is the ratio built on top.
+
+- **Z1 HIGH — the "8×" is not a speedup; it compares a whole-sweep cost to a part of the same
+  work.** The 604 figure **contains** the 546-buffer `Seq Scan` of all 33,051 environments, and
+  **the per-environment form pays that too, as step 1.** Re-measured end to end with one
+  policied environment: cross-environment **617**, per-environment **546 + 73 = 619**.
+  Essentially identical. The form is still right — for pageability, FR-008's re-runnability and
+  a bound the planner can use — **and none of those is a ratio**. **Fixed** in `plan.md`,
+  `data-model.md` and T013a, each publishing both totals instead. 4.15: *publishing the ratio
+  publishes the wrong variable.* **Nothing was hidden: T013a states the 546-buffer scan and the
+  8× in adjacent bullets, and the two were never added together.**
+- **Z2 MEDIUM — R2's absolute buffer figures do not reproduce and its conclusion does,
+  exactly.** Measured **107** against 883 with a bound operand and **3,423** against 94,132
+  set-wise; 32× rather than 106×. **Every structural signature is verbatim**:
+  `Rows Removed by Join Filter: 210,696`, a Parallel Seq Scan on `messages` with
+  `messages_attachments_gin` present and **idle**, against a Bitmap Index Scan on that same
+  index the moment the operand is bound. **R2 published no query text**, so the reader T028
+  sends to check it had nothing to reproduce against. **Fixed**: R2 carries both columns and
+  the reason, and the two task citations quote the mechanism rather than the buffers.
+
+**A CONTRIBUTION RATHER THAN A FINDING.** T013a says *"measure each before adding it"* for the
+two candidate indexes and nobody had measured either. The enumeration's is now done:
+`(id) WHERE retention_days IS NOT NULL` takes it from **546 buffers to 1** and **1.346 ms to
+0.018 ms**, at **8,192 bytes** — the same size and the same reason as 4.15's partial index,
+because a btree over the unfiltered column would index 33,051 NULLs. **The `messages.created_at`
+half is still unmeasured and is the one 4.1's warning is about.**
+
+**AND THE AGE PREDICATE REACHES NO INDEX IN EITHER SHAPE** — `Filter:` with
+`Rows Removed by Filter: 102` per channel, `Join Filter:` with 1018 — so the sweep's cost is
+linear in the environment's **total** message count rather than in the number of expired
+messages, including the common case where nothing expired. 4.18's rule is the test: **`Index
+Cond` per table is the question, and an index scan carrying a `Filter:` is not it.**
+
+**WHAT THIS PAIRS WITH PASS 12.** That pass re-measured eleven **counts** and every one was
+exact. This one re-measured four **buffer figures** and two were out by 8× and 27×. Neither is
+carelessness: **a count is a fact about the corpus; a buffer figure is a fact about a corpus, a
+query text, a cache state and a planner.** Publish the query with the buffers, or publish the
+signature instead.
+
+### Fourteen passes
 
     pass 1   4 findings   0 CRITICAL   opening the files the artifacts cite
     pass 2   4 findings   0 CRITICAL   writing the queries nobody had written
@@ -668,6 +713,7 @@ pass 12, and a `DELETE` with the flag set is refused again at the original funct
     pass 11  3 findings   0 CRITICAL   the carried ledger measured instead of copied
     pass 12  3 findings   0 CRITICAL   RUNNING it — every figure exact, and a dated premise
     pass 13  2 findings   0 CRITICAL   running the SOLUTION — R1 holds, one keyword does not
+    pass 14  2 findings   0 CRITICAL   running the PLANS — the ratio was a part over a whole
 
 **Four passes found nothing critical, the fifth found the thing that decides whether the
 chapter can ship as specified, and the sixth found three things no document in this directory

@@ -46,10 +46,19 @@ gauntlet for tenancy, a unit lane for the policy's arithmetic
 `messages_pkey`, `messages_channel_id_sequence_unique`, `messages_idem` and
 `messages_attachments_gin`, and nothing for `created_at`. Written as a join across all
 environments the age bound lands in a `Join Filter` — measured, `Rows Removed by Join Filter:
-1018` on the busiest environment, **604 buffers** — and written per environment with the bound
-as a constant it is **74 buffers** and reaches `channels_environment_last_activity`. **8×, and
-it is 4.12's rule at a third address.** The second query is the shared-attachment check at
-**883 buffers bound against 94,132 set-wise** (research R2)
+1018` on the busiest environment, **617 buffers** — and written per environment with the bound
+as a constant it is **73** and reaches `channels_environment_last_activity`.
+
+**THERE IS NO SPEEDUP AND AN EARLIER DRAFT CLAIMED 8×.** Re-measured end to end at analysis
+pass 14: **546 of the 617 is a `Seq Scan` of all 33,051 environments** (`Rows Removed by
+Filter: 33050`), and the per-environment form pays that as step 1, so the two shapes come to
+**617 and 546 + 73 = 619**. The reasons to take it are pageability, FR-008's re-runnability
+and a bound the planner can use — **none of them a ratio** (4.15). The second query is the
+shared-attachment check, which is 4.12's rule at a third address: with the operand bound it
+reaches `messages_attachments_gin`, and set-wise the same index sits **idle** under a Parallel
+Seq Scan with `Rows Removed by Join Filter: 210,696`. **Quote that signature rather than a
+buffer count** — R2's 883 and 94,132 re-measure as **107 and 3,423**, because R2 published no
+query text (research R2)
 
 **Constraints**: no breaking change to a published response (CON-05). The sweep adds no field
 implying a deadline the platform does not enforce
