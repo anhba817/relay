@@ -147,7 +147,10 @@ with where, and a sentence naming what invokes each path.
   reports zero erased and does not fail.
 - **FR-008**: Erasure MUST act only within the calling tenant's environment, and
   an external id belonging to another tenant MUST be indistinguishable from one
-  that does not exist.
+  that does not exist. **Every statement MUST carry the environment predicate,
+  including those against the analytical store**, where external ids collide:
+  **23 of 54 in `connection_events` span more than one environment and one spans
+  111.**
 - **FR-009**: The endpoint MUST accept an application credential only.
 - **FR-010**: The counted output MUST distinguish *nothing to erase* from *user
   not found*.

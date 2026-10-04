@@ -74,6 +74,11 @@ That is `gaps.md` 051's finding — *a mutation is not a delete; it returns befo
 it acts* — and the contrast is new: this server offers a form that does not have
 that property.
 
+**THE PROBE ABOVE IS ABOUT THE VERB, NOT THE PREDICATE.** It deletes by
+`user_external_id` alone because the throwaway table has one tenant's worth of nothing
+in it. **The real statement carries `environment_id` as well** — R8 measures why, and a
+reader copying this shape rather than that one deletes other tenants' rows.
+
 **DECISION: lightweight `DELETE FROM`.** An erasure receipt states a count, and a
 count taken after a statement that has not acted yet is a false receipt. The
 mutation form would need a poll of `system.mutations` and the receipt would
@@ -182,3 +187,38 @@ rows carry `user_id IS NULL`, which chapter 4.11 established was deliberate:
 FR-MED-06 made the column nullable because a server-side upload has no user. An
 erasure that takes the 3,979 attributed rows is correct and incomplete, and the
 receipt is where that gets said.
+
+## R8 — external ids collide across environments, and the analytical store is the one place nothing stops it
+
+`connection_events` carries `environment_id UUID`, and external ids are unique **per
+environment** rather than globally. Measured:
+
+```
+users: external ids reused across environments             1,576
+connection_events: distinct external ids                      54
+connection_events: distinct (environment, external id)       460
+  …of those 54 ids, used in MORE THAN ONE environment         23
+
+the worst one — `tuan`              111 environments · 156 rows
+  correct for one tenant                                       4
+  WRONGLY DELETED from 110 others                            152      97.4%
+```
+
+**AN UNSCOPED DELETE IS NOT A NEAR MISS. IT IS MOSTLY WRONG.** FR-008 required the scope
+from the first draft of the spec, and its own Edge Cases named this exact collision —
+and `data-model.md` wrote the statement without it anyway, sixty lines below the
+requirement. Nothing contradicted itself in a way a reader would notice; the requirement
+and the query were both right alone.
+
+**THE REASON IS STRUCTURAL.** Six of the traversal's seven stores are reached through
+`Repository`, whose constructor requires an `environment_id` — constitution I makes
+tenancy a thing you cannot forget there. **ClickHouse is the only store that class does
+not mediate, and it is the only one the draft got wrong.** The mechanism stops exactly at
+that boundary, which is the same boundary chapter 4.20 reasoned about from the other
+side when `retention-reads.ts` had to be unscoped on purpose and asserted its signature
+instead of an arm.
+
+So the erasure's analytical function **takes `environmentId` as a parameter**, and
+`erasure.itest.ts` asserts that a second tenant's identically-named user is untouched —
+which is the only assertion that would have caught this, because the route can refuse
+correctly while the statement destroys a third party's rows.

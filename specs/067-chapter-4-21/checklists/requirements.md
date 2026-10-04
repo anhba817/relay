@@ -136,9 +136,50 @@ end: **the window was too short, not the code wrong.** Re-measured by brace dept
 reporting, and the finding evaporated — which is the only reason it is recorded here
 rather than in `gaps.md`.
 
-### One pass
+## Analysis pass 2 — two findings, ONE CRITICAL, both fixed
+
+**The question**: *write the queries nobody has written.* The artifacts carried
+platform-wide totals; nobody had checked that the analytical key means the same thing as
+the operational one.
+
+- **B1 CRITICAL — the analytical delete had no environment predicate, and the spec's own
+  FR-008 forbids that.** `data-model.md` wrote `DELETE FROM connection_events WHERE
+  user_external_id = …`. The table **has** an `environment_id UUID` column, and external
+  ids are unique **per environment** — which the spec states in its own Edge Cases.
+
+      users: external ids reused across environments      1,576
+      connection_events: 54 distinct ids, 460 (env, id) pairs
+        …used in MORE THAN ONE environment                   23
+      the worst — `tuan`          111 environments · 156 rows
+        correct for one tenant                                4
+        WRONGLY DELETED from 110 others                     152     97.4%
+
+  **Fixed** in `data-model.md`, T019, T023(b), `contracts/erasure.md`, FR-008 and a new
+  research section R8. **An unscoped delete is not a near miss here; it is mostly wrong.**
+
+- **B2 MEDIUM — the mechanism that would have caught it stops at exactly that
+  boundary.** Six of the traversal's seven stores are reached through `Repository`, whose
+  constructor requires an `environment_id`, so they are scoped by construction and nobody
+  has to remember. **ClickHouse is the only store that class does not mediate, and it is
+  the only one the draft got wrong.** **Fixed**: the analytical function takes
+  `environmentId` as a parameter — the signature carrying what the constructor would
+  have — and T023(b) asserts a second tenant's identically-named user survives.
+
+**NOTHING CONTRADICTED ITSELF IN A WAY A READER WOULD NOTICE.** FR-008 required the
+scope, the Edge Cases named the exact collision, and the query sat sixty lines below
+both. Requirement and statement were each right alone, which is why the pass that found
+it is the one that ran the query rather than the one that read the files.
+
+**What verified clean**: `usage_active_users` keys on a uuid and cannot collide; every
+Postgres path goes through the scoped `Repository`; `connection_events` already carries
+`environment_id`, so the fix is a predicate rather than a schema change. And the probe
+table in R3 and quickstart §2 is unscoped on purpose — it measures the verb, not the
+predicate — which R3 now says, because a reader copies shapes.
+
+### Two passes
 
     pass 1   3 findings   0 CRITICAL   opening the files the artifacts cite
+    pass 2   2 findings   1 CRITICAL   writing the queries nobody had written
 
 **A1 and A3 are the same mistake at two scales**: the artifacts treat as open a question
 the tree has already answered, once for a module and once for a classification. A1 came
