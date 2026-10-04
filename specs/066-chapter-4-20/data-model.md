@@ -66,7 +66,10 @@ scope clause for this table rather than an amendment to it.
 ## What a sweep touches, in order
 
 ```
-for each environment with retention_days set     ONE QUERY PER ENVIRONMENT, not one join
+for each environment with retention_days set     UNSCOPED, in retention-reads.ts —
+                                                 Repository's constructor requires one
+                                                 environment and this crosses all of them
+                                             ONE QUERY PER ENVIRONMENT below, not one join
   find messages older than the policy        the bound is a CONSTANT here, computed in the
                                              application. As a join filter across all
                                              environments it is 604 buffers and discards every

@@ -61,7 +61,7 @@ policy**, and **nothing older than 19 days** — so every demonstration is a bac
 
 | principle | verdict |
 |---|---|
-| **I — tenant isolation** | **engaged and load-bearing.** A sweep is the first thing in this platform that destroys rows in bulk, and a predicate scoped wrong destroys another tenant's data rather than leaking it. Every read and delete is scoped by `environment_id`, and the per-arm probe deletes each scope one at a time **and in combination**, because 4.19 measured three scoped reads where removing any two was invisible |
+| **I — tenant isolation** | **engaged twice, and the two halves are opposite.** The clause says *"a repository layer whose constructors require an `environment_id`"* — so the enumeration of environments with a policy **cannot be a `Repository` method**, because every instance is bound to one tenant and this crosses all of them. It is an unscoped function in `services/api/src/db/retention-reads.ts`, the shape `storage-reads.ts`, `usage-reads.ts` and `audit-reads.ts` already use, and `pendingMediaObjects` states the isolation property for it: *"the route above it takes no tenant parameter at all, which is the isolation property to **assert** rather than a scope to add."* **The delete is the other half** and is tenant-scoped, one environment at a time, with the per-arm probe on it — because a sweep is the first thing here that destroys rows in bulk, and a predicate scoped wrong loses another tenant's data rather than leaking it |
 | **II — no acknowledged message is lost** | **engaged, and the clause is the exception.** FR-MOD-06 is the licensed way to lose one. The sweep destroys only what a tenant's own policy marks expired, and nothing else in the platform gains a delete path |
 | **III — two data paths** | untouched. Operational expiry does not reach ClickHouse; DR-09's 90-day raw-event TTL is a different clock with a different owner, and the chapter states the boundary rather than widening to it |
 | **IV — single writer** | **satisfied by the predicate being self-clearing.** A destroyed message cannot match the next pass, so re-running needs no lease, heartbeat or reaper — chapter 4.13's compare-and-set argument in a different shape. **It needs a test rather than a sentence** (research R7) |
@@ -116,7 +116,10 @@ relay-platform/
 ├── services/api/migrations/0025_expiry_may_delete.sql      the FK's delete action and the
 │                                                           trigger's named exception
 ├── services/api/src/db/schema.ts                           the constraint
-├── services/api/src/db/repository.ts                       the sweep's reads and deletes
+├── services/api/src/db/retention-reads.ts                  NEW — the UNSCOPED enumeration
+│                                                           of environments with a policy
+├── services/api/src/db/repository.ts                       the per-environment delete,
+│                                                           which IS tenant-scoped
 ├── services/api/src/retention/sweep.ts                     NEW — the command
 ├── services/api/src/retention/retention.itest.ts           NEW
 ├── services/api/src/environments/                          NEW — the PATCH route, module,

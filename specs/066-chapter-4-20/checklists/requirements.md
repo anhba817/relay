@@ -187,6 +187,55 @@ T015 before T016/T017  the inversion holds: globalSetup migrates files that do n
 ordering in this feature that runs against the usual direction. What was missing was only the
 note that the red it produces is expected.
 
+## Analysis pass 4 — four findings, none CRITICAL, all fixed
+
+**The question**: *open the code the tasks will edit.* The sweep is entirely new, so the thing
+to check was not a function's behaviour but where a cross-tenant sweep is allowed to live.
+
+- **D1 HIGH — a cross-tenant sweep cannot use `Repository`.** Constitution I: *"a repository
+  layer whose constructors require an `environment_id`"*. Every instance is bound to one
+  tenant and the sweep enumerates all of them; T019 said *add the expiry read and delete to
+  `repository.ts`*, as methods. **Fixed**: the enumeration is an unscoped function, the
+  per-environment delete stays a scoped method on a `Repository` constructed per environment —
+  which satisfies the constructor requirement literally rather than by exception.
+- **D2 HIGH — three sibling files already do this and the plan named none.**
+  `services/api/src/db/` holds `audit-reads.ts`, `storage-reads.ts` and `usage-reads.ts`, and
+  the second's header says why the directory matters: *"chapter 4.7's reconciler was written
+  with its Postgres read inline in `metering/` and failed lint on the import; this file is
+  where that rule puts the read."* **Fixed**: `retention-reads.ts`, named in the plan's
+  structure, T019 and the data model's sweep sketch.
+- **D3 MEDIUM — T035 probed arms the correct design does not have.** `pendingMediaObjects`
+  states the property for the sweep this one is modelled on: *"the route above it takes no
+  tenant parameter at all, **which is the isolation property to assert rather than a scope to
+  add**. A route that could be asked for one tenant's objects would be a route worth forging."*
+  **Fixed**: the delete's scope is probed per arm; the enumeration's is asserted about its
+  signature. **A probe looking for an arm to delete there would report nothing red and mean
+  something entirely different by it.**
+- **D4 MEDIUM — B3's partial index has a measured precedent nobody cited.**
+  `media_objects_pending_age`, migration `0019`, is a partial index on `created_at` for the
+  identical sweep shape, and `repository.ts` records what it bought: **93 buffers to 4** on a
+  50-row batch, *"a top-N heapsort over 3,158 rows"* to an index scan. **Fixed** in T013a, with
+  measure-first still standing.
+
+### What D1 and D2 really are
+
+Not a design question raised by this pass — **a design question the platform answered at 4.7,
+wrote into a file header, and has repeated three times.** The plan reached for `repository.ts`
+because that is where queries live, which is right, and missed that *a method on a tenant-bound
+class* and *an exported function in the same directory* are different things with constitution I
+between them.
+
+### Checked, and clean
+
+```
+the lint rule   permits services/api/src/db/** — so a sibling file is legal
+                where 4.7's inline read in metering/ was not
+```
+
+**Operational note**: the compose stack was **down** at this pass — `docker compose ps` returned
+nothing. Nothing here needed it, because the index precedent is documented in the source rather
+than re-measured, but **phase 1's T001 needs it up.**
+
 ## Notes
 
 - Items marked incomplete require spec updates before `/speckit-clarify` or `/speckit-plan`
