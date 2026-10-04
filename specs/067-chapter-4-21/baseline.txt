@@ -145,3 +145,304 @@ T009 · WHAT `deleteUser` ALREADY DOES, IN ITS OWN WORDS
   transactional and it DOES write an audit entry with `ACTION.deleteUser` —
   checked by brace depth after a first grep used too short a window and made it
   look as though chapter 4.18's log had a hole (analysis pass 1).
+
+================================================================================
+PHASE 2 — THE DECISIONS
+================================================================================
+
+T010 · WHAT HAPPENS TO THE MESSAGES — DECIDED: KEEP THEM, ERASE THE AUTHOR
+
+  Four options were put side by side and the chosen one is Slack's shape:
+  **the messages stay and the identity goes, including `external_id`.**
+
+    A  destroy the messages          FR-MOD-04 literal; a channel's history
+                                     loses one participant's half of every
+                                     conversation, visible to everyone else
+    B  keep them, clear the profile  what `deleteUser` does today — and
+                                     `external_id` survives, which IS the identity
+    C  keep them, null the author    `ON DELETE SET NULL` breaks delivery:
+                                     `backfill.controller:107` DROPS a senderless
+                                     row, so every message the user sent
+                                     disappears from every reconnecting client
+    D  keep them, clear external_id  CHOSEN
+       and leave the row a tombstone
+
+  WHY D AND NOT A. FR-USR-05 preserves messages *"unless message deletion is
+  explicitly requested"*; FR-MOD-04 asks for erasure of a PERSON, which is not
+  the same request. `deleteUser`'s own comment already drew the line this
+  chapter needs: *"authored by a deleted user" and "authored by nobody" are
+  different states and only one of them is FR-028.* D adds a third — authored
+  by a tombstone — which is the state the clause actually wants.
+
+  HOW THE INDUSTRY ANSWERS IT. Slack de-identifies the member and leaves the
+  channel history standing; Microsoft Teams does the same and documents the
+  retained messages as the tenant's record rather than the person's. Neither
+  destroys a conversation to erase one side of it.
+
+  WHAT IT DOES NOT SOLVE, AND THE CHAPTER SAYS SO. The message TEXT can name
+  the person, and nothing in this platform reads it. Erasure removes the
+  identity, not every trace — which is what the receipt's `cannot_erase`
+  outcome exists to carry.
+
+T011 · `usage_active_users` — DECIDED: KEEP EVERY ROW, UNTOUCHED
+
+  THE QUESTION THAT SETTLED IT WAS NOT "DELETE OR KEEP". It was: once T010
+  leaves a tombstone, does that row count? Four measurements say yes.
+
+    the table's columns          environment_id uuid · period date
+                                 user_id uuid · first_seen_at timestamptz
+                                 — ONE column could name anybody, and it is a uuid
+    both FKs' delete rule        `a` = NO ACTION, so the tombstone keeps them satisfied
+    every reader                 `usage-reads.ts:48` count(*) scoped by
+                                 (environment_id, period); `repository.ts:6160` a
+                                 membership probe keyed on the uuid.
+                                 **NEITHER JOINS TO `users`.**
+    the count after erasure      unchanged, to the row — nothing is deleted
+
+  SO THE TOMBSTONE IS THE ANONYMISATION, AT NO COST. The table never produced a
+  name; it produced a number, and the uuid was only ever what made the number
+  distinct. Clearing `external_id` in T010 turns that uuid into a key pointing
+  at an empty row. This is option C — anonymise in place — reached with no
+  placeholder row, no PK collision and no FK violation, because the tombstone IS
+  the placeholder and there is exactly one per user, which is exactly what
+  `(environment_id, period, user_id)` requires.
+
+  FR-029 SURVIVES WORD FOR WORD. *"A customer who deleted a user in March still
+  owes for March"* — March's invoice is unchanged. There is no clause to amend
+  on the billing side and no money on either end of the trade.
+
+  AND THE LINE IT DRAWS IS ONE SENTENCE: **erase the identity, not the key.**
+  Measured across the whole analytical store, every column naming a user:
+
+    connection_events.user_external_id   String        1,109    IDENTITY -> delete
+    message_events.user_id               Nullable(UUID)    0    key, and 0 by defect
+    seven `active_users_state` columns   AggregateFunction(uniq, Nullable(UUID))
+                                                             key -> nothing to do
+
+  **THAT TURNS THE CHAPTER'S WEAKEST PUBLISHED LIMITATION INTO AN ARGUMENT.**
+  T057 was going to publish *"nothing is removable from a `uniq` sketch"* as a
+  gap. Under this reading it is not a gap: a sketch holding hashes of uuids that
+  resolve to erased rows holds no identity. The sketch cannot be edited and does
+  not need to be. What must be deleted is the one analytical column holding an
+  external id — which is a lightweight `DELETE` on two predicates, already R3's.
+
+  WHAT IS STILL TRUE AND GETS WRITTEN DOWN, NOT WAVED AT.
+
+  1. `users.id` DOES REACH THE CUSTOMER, ONCE. `users.schema.ts:195` — the
+     listing cursor is base64 of `{a: last_activity_at, id: users.id}`, and its
+     own comment says *"OPAQUE IS NOT SECURITY. Base64 of JSON is readable by
+     anyone who wants to read it."* So a customer who paged `GET /v1/users`
+     before the erasure holds the uuid. What they can do with it is the
+     measurable part: **no route accepts a user uuid as input** — the controller
+     takes `:externalId` — so a retained cursor positions a listing and nothing
+     more, past a row that now holds nothing. The handle survives and points at
+     an empty room.
+  2. The uuid still LINKS the retained messages to each other. `messages.user_id`
+     is intact by T010, so *"these were written by the same erased person"*
+     stays computable. If the text names them, the text is the re-identification
+     and not the key. Slack's position exactly.
+
+  WHAT IT COSTS IN THE SRS. Not FR-029, and not *"FR-MOD-04 partly unmet"*.
+  **FR-MOD-04 needs one sentence**: an analytical record whose only identifier
+  is a key into an erased row counts as erased. That is a cheaper amendment than
+  a recorded non-conformance and it is the one the measurement supports (T043a).
+
+  THE COUNTS MOVED WHILE THE DECISION WAS BEING TAKEN, which is T063a's whole
+  point: `usage_active_users` 22,150 -> 22,298 rows and 22,147 -> 22,295 users,
+  `connection_events` 1,081 -> 1,109, between T007's map and this measurement a
+  day later. Nothing in this chapter wrote them; the lane did.
+
+T012 · THE RECEIPT — DECIDED, AND T010/T011 MOVED IT IN FOUR PLACES
+
+  The contract was written before T010 and T011 were decided. Both decisions
+  land in the receipt, and following them through found a fifth thing the
+  contract had in the wrong section.
+
+  1 · A FIFTH OUTCOME: `retained_anonymous`
+
+     Four outcomes cannot say what now happens to `messages` and
+     `usage_active_users`: the rows stay, they still carry `user_id`, and the
+     key resolves to an erased row.
+
+       `erased`              would imply the rows went. They did not.
+       `cannot_erase`        would imply no operation can remove them. One can;
+                             a named clause forbids it.
+       `nothing_to_erase`    false — the rows reference the user.
+
+     So: **rows reference this user by key, are kept under a named clause, and
+     the key now resolves to an erased row.** The note names the clause.
+     The contract's own argument — `nothing_to_erase` and `cannot_erase` must
+     not collapse, because a compliance officer needs the difference — applies
+     here with the same force: *"7 membership rows removed"* and *"22 billing
+     rows left standing, naming nobody"* must not both read as `erased`.
+
+     NAMED FOR WHAT IT IS, NOT FOR THE LEGAL TERM. `anonymised` was the first
+     candidate and is a claim with a statutory bar behind it. The receipt states
+     the mechanism and lets the reader draw the conclusion.
+
+  2 · `audit_log` JOINS THE RECEIPT AS THE STRONGEST `cannot_erase`
+
+     It was in the contract's *"what this does not offer"* section, which is the
+     wrong place: it is the one store that holds the person's IDENTITY and from
+     which no operation removes it.
+
+       audit_log.target_id          text
+       user-target rows             1,357          (the contract said 1,324)
+       of those, NOT a uuid         1,357 of 1,357 — every one an EXTERNAL id
+       every actor_kind             application    — a user is never the actor
+       actions on user targets      ban 936 · unban 235 · delete 186
+
+     **AND THE ERASURE WRITES ONE MORE.** `deleteUser` records
+     `targetId: userExternalId`, so an erasure following that pattern writes the
+     name it is erasing into an append-only log, in the same transaction.
+     Recording the uuid instead was considered and refused: the entry is the
+     operator's only proof the erasure happened, and FR-MOD-03's log exists to
+     demonstrate exactly that. **The one place the name survives is the record
+     that the name was erased** — which is the chapter's TRAP box (T055).
+
+  3 · `daily_usage` MOVES FROM `cannot_erase` TO `retained_anonymous`
+
+     T011's measurement settles it. The seven sketch columns are
+     `AggregateFunction(uniq, Nullable(UUID))` — keyed on the uuid, not the
+     external id — so the tombstone argument covers them: a sketch holding
+     hashes of keys that resolve to erased rows holds no identity. Nothing need
+     be subtracted and nothing can be.
+
+     **AND THAT IS WHY 2 HAD TO HAPPEN.** Moving `daily_usage` out would have
+     left `cannot_erase` with no member and the contract's central argument with
+     no example. The example was in the document all along, one section down.
+
+  4 · THE IDEMPOTENCE ROW INVERTS: A SECOND ERASURE IS A 404, NOT A 200
+
+     The contract says *"a second erasure of the same user -> 200, a receipt
+     reporting zero erased. Not a 404 — idempotence is about what the second
+     call DID."* That was written in option B's world, where `external_id`
+     survives. **T010 clears it**, so the resolve step finds no user and the
+     honest answer is 404.
+
+     THE COST IS REAL AND IS NOT PAID WITH A HASH. A support tool retrying after
+     a timeout cannot tell *already erased* from *never existed*. Keeping a hash
+     of the external id on the tombstone would answer it — and a hash of `u-4821`
+     or an email address is brute-forceable, so it is the identity wearing a
+     disguise. **The operator's proof is the audit entry**, which is what 2 is
+     about, and the two decisions hold each other up.
+
+  AND THE LINE T011 DREW COVERS KEYS, NOT CONTENTS — WHICH IS WHY
+  `media_objects` IS STILL `erased`.
+
+     A uuid pointing at a tombstone names nobody. That says nothing about
+     whether the VALUE on the row is personal data. A photo is personal data
+     whatever key it hangs from, and so is message text. So:
+
+       usage_active_users   a counter, no contents          retained_anonymous
+       daily_usage          a sketch, no contents           retained_anonymous
+       messages             CONTENTS -> decided on FR-028, kept, author erased
+       media_objects        CONTENTS -> deleted (FR-MED-10)
+       audit_log            the IDENTITY itself             cannot_erase
+
+     Neither `messages` nor `media_objects` was decided by the key argument, and
+     they went opposite ways — which is the test that the line is a real one.
+
+T013 · THE ROUTE — DECIDED: `DELETE /v1/users/{externalId}/data`
+
+  Not `DELETE /v1/users/{externalId}` — that is FR-USR-05's deletion, it already
+  exists, and it keeps the row, the messages and the billing rows ON PURPOSE.
+  Not a flag on it either: two verbs that differ only in what they preserve must
+  not differ only in a query parameter, because a mistyped flag would be an
+  irreversible erasure. **The path says which one you asked for**, and it is the
+  thing a reader of the call site sees.
+
+  AND IT GOES IN `users.controller.ts`, BESIDE THE VERB IT MUST NOT BE CONFUSED
+  WITH. That class already carries `@Controller("v1/users")`,
+  `@UseGuards(CredentialGuard)` and `@Accepts("application")`. A separate module
+  was the first plan: 4 pages against `app.module.ts`'s 23, so it would have
+  cost 19 extra fence pages to duplicate three decorators — and put the two
+  `DELETE`s in different files, which is the opposite of the argument above.
+
+T014 · THE CLICKHOUSE VERB — DECIDED: LIGHTWEIGHT `DELETE FROM`
+
+  R3's measurement, and its stated reason was wrong on first writing. *"A
+  receipt states a count, so it uses the verb whose count it can trust"* —
+  **neither verb returns a count through this client.** A `DELETE` answers HTTP
+  200 with a 0-byte body, so `AnalyticalStore.query`'s `string[][]` comes back
+  empty either way.
+
+  WHAT ACTUALLY DECIDES IT is that the count is a separate `SELECT` either way,
+  and only one verb makes that `SELECT` true. `ALTER TABLE … DELETE` returns
+  with its rows still countable; the lightweight form is visible to the very
+  next statement. So the sequence is **count, delete, verify zero** — a number
+  the receipt can stand behind — where the mutation form would report an
+  intention and need a `system.mutations` poll to find out whether it happened.
+
+T014a · T013's PREMISE, CHECKED BY READING — AND IT FOUND TWO THINGS
+
+  Run before T013 was recorded rather than after, so the cost was in hand when
+  the decision was written down.
+
+  1 · THE ROUTE CANNOT COLLIDE WITH `:externalId`, AND IT IS PROVEN RATHER THAN
+      ASSUMED. `:externalId` matches one path segment and `/u-4821/data` is two,
+      so declaration order does not matter — which `@Delete(":externalId/ban")`
+      already demonstrates, declared at line 199, SIXTY LINES AFTER
+      `@Delete(":externalId")` at 139, and working.
+
+  2 · `moderation-routes.ts` IS TWO MAPS, AND THE SECOND IS TYPE-CHECKED.
+      `MODERATION_ROUTES` classifies; `ACTION` names the strings the repository
+      writes and is `satisfies Record<string, keyof typeof MODERATION_ROUTES>`,
+      so an action pointing at a route that is not classified is a **compile
+      error**. Adding the route to the first map alone compiles; the repository
+      cannot then write the audit row. **Two entries, one of them enforced** —
+      which is better than R6's "still needs an entry" implied, and worth
+      recording as a check that holds rather than a hazard.
+
+  THE FOUR LISTS A ROUTE JOINS, confirmed by `grep -rn deriveTargets`:
+
+      targets.ts            13 pages ·  5 appendix hunks   the expected set
+      gauntlet.itest.ts     13 pages ·  7 appendix hunks   an attack, or the
+                                                           suite goes red with
+                                                           "classified but never
+                                                           attacked" (4.8)
+      moderation-routes.ts   0 pages ·  0 hunks            both maps
+      users.controller.ts    4 pages ·  0 hunks            the handler
+
+  R6's bill of six files stands. `app.module.ts` is correctly off it.
+
+T013a · DOES THIS CHAPTER NEED AN ADR — DECIDED: YES, AND NOT THE ONE PREDICTED
+
+  `plan.md` said *probably not*, because ADR-36 already named FR-MOD-04's
+  endpoint as one of two compliance paths. **Chapter 4.20's plan predicted an
+  ADR and was right, so the prediction is worth nothing without the check** —
+  and the check moved the answer AND the subject.
+
+  THE CANDIDATE `plan.md` NAMED was *what erasure means for a store that cannot
+  erase*. That turned out to be a receipt outcome (`cannot_erase`, T012), not an
+  architecture decision: it describes one store's property, it is recorded in
+  the contract, and no future chapter has to look it up.
+
+  THE REAL ONE IS T011's LINE, AND IT ARRIVED AFTER THE PLAN WAS WRITTEN:
+  **a key into an erased row is not personal data, so a store keyed on the
+  internal uuid needs no erasure operation.** It qualifies on all four counts
+  the constitution's VII cares about:
+
+    it is a RULE, not a case       every store this platform adds from now on
+                                   must answer "does erasure touch this?", and
+                                   the answer is now derived rather than judged
+    it has CONSEQUENCES ALREADY    usage_active_users and seven `uniq` sketches
+                                   are left standing because of it, and the
+                                   sketches were going to be published as a gap
+    it is RECORDED NOWHERE ELSE    the receipt states outcomes, not the reason
+    it has a REVERSAL CONDITION    if `users.id` ever becomes resolvable to a
+                                   person by a party outside the platform, the
+                                   rule fails and every uuid-keyed store is
+                                   decided on its own merits again
+
+  AND THE REVERSAL CONDITION HAS ONE LIVE EDGE, WHICH THE ADR MUST NAME.
+  `users.schema.ts:195` — the listing cursor is base64 of `{a, id}` and its own
+  comment says *"OPAQUE IS NOT SECURITY."* So the uuid does leave, once.
+  Measured: **no route accepts a user uuid as input** — the controller takes
+  `:externalId` — so a retained cursor positions a listing past a row that holds
+  nothing. The edge is real, bounded, and written into the condition rather than
+  left for somebody to find.
+
+  **ADR-37**, in both homes (T045): the summary in `docs/05-sad.md` and the
+  argument in `docs/06-adr-deep-dives.md`. 4.5 found an ADR lives in two
+  documents and ten passes amended only the summary.
