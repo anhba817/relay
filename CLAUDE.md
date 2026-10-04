@@ -38,30 +38,89 @@ tags. **Anyone holding an older clone of `relay-platform` must reset rather than
 
 <!-- SPECKIT START -->
 
-**ACTIVE PLAN: `specs/066-chapter-4-20/plan.md`** — chapter 4.20, movement VII's third.
-`docs/12` row 21 is FR-MOD-06's retention job, and **the premise check inverts 4.19's: none of
-the clause's three obligations is met.** `environments.retention_days` has existed since
-chapter 2.1 and is set on **0 of 33,051** environments; there is **no scheduler of any kind**,
-which would make this the fourth clause bounded by ADR-28's absence after FR-ANL-06, DR-17 and
-FR-MOD-03's year; and **the hard delete the clause names is refused by the database.**
+**066 IS CLOSED — CHAPTER 4.20, "The messages that expire".** Movement VII's third. Its record
+is `specs/066-chapter-4-20/` — `baseline.txt` first (every phase in the order taken, wrong
+versions included), then `gaps.md` (**4 new plus the carried ledger re-measured**),
+`clauses.md`, `traceability.md`, `quickstart.md` (run, and **wrong five times**), `tasks.md`.
+**SRS 1.27**, **ADR-36**, `docs/12` row 21 CLOSED, four sites in `docs/05-sad.md`, both Part 4
+tables. Tagged **`part4-ch20`**. CI 37199508332 green on all four jobs, first push, error set
+empty both ways.
 
-**THE REFUSAL IS A PINCER AND IT IS CHAPTER 4.19's.** Exactly one table references `messages`,
-and 4.19 put a row in it for every deletion — **5,495 blocked today**, growing by one per
-deletion. Measured, each escape run: deleting the message is refused by
-`message_edits_message_id_fkey`; deleting the version rows first is refused by
-`message_edits_append_only`; **and `ON DELETE CASCADE` is refused too, because a cascade issues
-an ordinary `DELETE` and a row trigger fires on it** — the error names the generated statement.
-The only thing that works unchanged is `session_replication_role = replica`, **which is the
-hole ADR-35 published as the limit of its own guarantee.** So the chapter's product is a narrow
-auditable exception — the trigger naming its one legitimate deleter — and **a new ADR**,
-because constitution VII makes an accepted one immutable. 4.19 named row 22 as the chapter that
-would meet this; **row 21 meets it first.**
+    check:fences 5 -> 0 -> 1 -> 0 · 291 files across 63 chapters      from 62
+    2,812 prose words · 4 figures · 2 TRAP · 2 WHY · 0 titled fences in the chapter
+    12 appendix hunks across 6 files — and the bill named all six at ANALYSIS
+    api lane 52 files, 1 failed — from 50 and 3 · sealed suite 21 of 21
+    a message costs 0.04 ms to destroy and a media object 2.05 ms — ~48x
+    SIXTEEN ANALYSIS PASSES: 4,4,4,4,3,4,6,3,3,4,3,3,2,2,2,2 — 5 CRITICAL
 
-**And two more things the premise found.** `media_objects` has **no foreign key to `messages`**
-— FR-MED-11's link is a `media_id` inside jsonb, so the "unless shared" check is a reverse
-lookup costing **883 buffers bound against 94,132 set-wise**, which is 4.12's index lesson at a
-new address. And **the lane's oldest message is 19 days old**, so nothing expires at any of
-FR-MOD-06's four settings and every demonstration is a backdated fixture.
+**THE PREMISE CHECK INVERTED 4.19's AND FOUND NONE OF THREE OBLIGATIONS MET.**
+`environments.retention_days` had existed since chapter 2.1 and was set on **0 of 33,051**;
+nothing read it; there was no scheduler; and **the hard deletion the clause names was refused
+by the platform's own schema** on 5,495 messages.
+
+**THE REFUSAL IS A PINCER WITH A THIRD JAW.** The foreign key refuses the parent, 4.19's
+trigger refuses the children, and **`ON DELETE CASCADE` is refused too — a cascade issues an
+ordinary `DELETE` and a ROW trigger fires on it**, with the error naming the generated
+statement. Only `session_replication_role = replica` works, and that is the hole ADR-35
+published as the limit of its own guarantee. **A cascade is not a privileged path.**
+
+**AND THE CHAPTER'S FIRST PRODUCT IS A READING, NOT A MECHANISM.** Three documents reserved
+hard deletion and a fourth required it. **The constitution says `path` where FR-MSG-08 said
+`endpoint`** — so the rule hardest to change is the one that already permitted this, and
+FR-MSG-08 and DR-06 were amended instead (ADR-36 decision 1). The option refused is **soft
+expiry**: clearing `text` satisfies all three reserving clauses word for word and is the only
+reading that keeps every internal rule and still tells a compliance team their data is gone
+while the row is there.
+
+**THE GUARANTEE IS ONE KEYWORD AND BOTH WAYS OF GETTING IT WRONG ARE SILENT.** Plain `SET`
+leaves the flag on a pooled connection and every later request can delete version rows;
+`SET LOCAL` outside a transaction block is a **WARNING**, leaves it unset, and every cascade is
+refused in a way indistinguishable from the trigger working. **Measured both ways with a
+control, and the test asserts the flag's VALUE at the moment of the delete.** The trigger is
+written once; the `SET LOCAL` is written at every call site.
+
+**REUSING A FUNCTION THAT ALREADY EXISTED WOULD HAVE ENFORCED THE WRONG CLAUSE.**
+`unreferencedMediaIn` is 4.15's, tested, scoped, and its comment says row 22 supplies its
+caller. It asks *which objects older than X does no message reference* — a superset including
+**48 objects in one environment that nothing ever attached**, which are FR-MED-10's orphans.
+**Its second query is reusable and its first is a different question.** Analysis pass 7 found
+the function by reading and could not check its arms; pass 15 ran them.
+**And its comment stays true, so it must NOT be repaired** — the mirror of leaving a stale one.
+
+**AND THREE TESTS WRITTEN BY EARLIER CHAPTERS FIRED ON THIS ONE.** `rendition.itest.ts`
+asserted that nothing deletes a `media_objects` row **and told whoever broke it what to do** —
+the count was the assertion only while it was zero, so the claim is the pairing now.
+`repository.itest.ts`'s source walk caught the sweep building a `Repository` with no actor;
+the answer is `RECORDS_NOTHING`. And deleting `@Accepts("application")` turned a test red,
+which is the **opposite** of what 4.18 found on the same decorator one route over.
+
+**A CACHED TURBO RUN REPLAYS THE COUNTED LINE AS WELL AS THE EXIT CODE.** `pnpm test` answered
+**EXIT 0 with every `Test Files N passed` line in 17 ms**, `Cached: 13 of 13` — nothing ran.
+055-4's *assert the counted line, not the exit code* is **necessary and not sufficient against
+a cache**; the tells are `Cached:` and the elapsed time. 050 found this cache hiding a red;
+this is it hiding **that nothing ran**, from the instrument built to catch that.
+
+**AND A POSITIVE CONTROL THAT DID NOT FIRE LOOKED EXACTLY LIKE A PASSING PROBE.** An impossible
+coverage pin on a REAL file produced nothing under `vitest run --config … <one file>`, because
+**a filtered run does not evaluate per-file thresholds** — identical output to the pin on a
+path that matches nothing. The probe has to go through `pnpm coverage`.
+
+**THE FENCE BILL NAMED ALL SIX FILES AT ANALYSIS**, including `gauntlet.itest.ts` — which the
+first count missed and pass 6 found by asking what a new route costs the chain: **an attack is
+written INSIDE that file**. A route is not one edit; **three lists key off one derived route
+set** (`targets.ts`, the gauntlet, `moderation-routes.ts`) and only `grep -rn deriveTargets`
+enumerates them.
+
+**AND THE TEST THAT PROVES THE SWEEP IS SAFE CREATES THE OLDEST MESSAGE ON THE LANE.** FR-004
+needs a message *at any age*, so after the suite runs the quickstart's §1 reads `2025-08-30`
+and `5` where the chapter publishes `2026-09-14` and `0`. **§1 asks a whole-table question and
+the thing it is about is per environment** — which is why §3's guard is per tenant and why the
+survivors are harmless. `gaps.md` 066-4.
+
+**`by a scheduled job` IS UNMET BY DECISION, THE FOURTH CLAUSE BOUNDED BY ADR-28's ABSENCE**
+after FR-ANL-06, DR-17 and FR-MOD-03's year — **and the first where the absence is not a
+reporting obligation.** The others cost accuracy; this one is a customer telling an auditor
+that data does not exist. So nothing publishes an `expires_at`.
 
 **064 IS CLOSED — CHAPTER 4.18, "The log that cannot be edited".** Movement VII opens. Its
 record is `specs/064-chapter-4-18/` — `baseline.txt` first, then `gaps.md` (**4 new plus the
@@ -117,91 +176,45 @@ none of it. **060's push order is a commit rule too** — and 4.19 reproduced it
 running, because the task that says so is the last one in the feature.
 
 **065 IS CLOSED — CHAPTER 4.19, "Everything, including what was deleted".** Its record is
-`specs/065-chapter-4-19/` — `baseline.txt` first (every phase in the order taken, wrong
-versions included), then `gaps.md` (**5 new plus the carried ledger**), `clauses.md`,
-`traceability.md`, `quickstart.md` (run, and wrong **zero** times), `tasks.md`. **SRS 1.26**,
-`docs/12` row 20 CLOSED **and §7.5 ANSWERED**, four sites in `docs/05-sad.md`, ADR-35 in both
-of its homes. Tagged **`part4-ch19`**. CI 37131955482 green on all four jobs, first push.
+`specs/065-chapter-4-19/`. **SRS 1.26**, `docs/12` row 20 CLOSED **and §7.5 ANSWERED**, ADR-35
+in both homes. Tagged **`part4-ch19`**.
 
     check:fences 0 -> 5 -> 0 · 291 files across 62 chapters          from 61
     2,611 prose words · 4 figures · 2 TRAP · 2 WHY · 0 titled fences in the chapter
     11 appendix hunks across 5 files — the bill said 8 and the chain charged 5
     coverage EXIT 0 · 151 files, 2,168 tests, 0 failed · no pin moved
-    the version row costs 0.331 ms p50 on a 3.2 ms deletion — ~10%
     ELEVEN ANALYSIS PASSES: 8, 6, 5, 4, 3, 7, 5, 5, 4, 3, 3 — 4 CRITICAL, all in the first two
-
-**THE PREMISE CHECK IS THE CHAPTER.** `docs/12` §7.5 said *check ch 20's premise before writing
-it*, and four of FR-MOD-01's five obligations were already met. **The hole is at the JOIN of the
-clause's two nouns**: an edit records the text it REPLACED and a deletion recorded nothing, so a
-message deleted after N edits gives back N of the N+1 texts it had and one deleted with no edits
-gives back zero of one. Invisible from either noun alone. **FR-MSG-08 needed no amendment and is
-the clause the defect broke** — losing the final text at a moderation delete is a hard deletion
-on the path that sentence reserves for erasure.
 
 **A COMMENT THAT EXPLAINS AN ABSENCE AS A NECESSITY IS WHY FOUR CHAPTERS READ PAST IT.**
 `schema.ts` said *"a deletion writes no row here, because a tombstone has no text to preserve"* —
-true **after** the deletion and false at the write site, where `deleteMessage` holds the text it
-is about to destroy. **The test is mechanical: is this reason true at the moment the code runs,
-or only afterwards?**
+true **after** the deletion and false at the write site. **The test is mechanical: is this reason
+true at the moment the code runs, or only afterwards?** 4.20 paid the other half — a comment that
+is STILL accurate must be left alone, and repairing one is the mirror of leaving a stale one.
 
-**A MICROSECOND COLUMN THAT HAS ONLY EVER HELD MILLISECONDS — 5,149 OF 5,149 ROWS.** Every value
-ever written to `message_edits.edited_at` arrived through the driver as a JavaScript `Date`, so
-the primary key's collision window was **a thousand times wider** than `schema.ts` claimed.
-Invisible while the table had one writer; this chapter added a second that races the first, and
-a concurrent edit and deletion collided **1 run in 10**, rolled the deletion back and left the
-message **un-tombstoned**. The fix is `sql`now()`` rather than the returned `Date` — same
-instant, full precision — and **80 races green after**. The edit path still writes a `Date`
-(`gaps.md` 065-2).
+**A MICROSECOND COLUMN THAT HAS ONLY EVER HELD MILLISECONDS.** Every value written to
+`message_edits.edited_at` arrived as a JavaScript `Date`, so the primary key's collision window was
+**a thousand times wider** than `schema.ts` claimed; a concurrent edit and deletion collided **1 run
+in 10**. The fix is `sql`now()`` rather than the returned `Date`. **The edit path still writes a
+`Date` (`gaps.md` 065-2), and 4.20 measured it from DATA: `ended_by='edit'` is 5,549 of 5,549
+millisecond-exact; `ended_by='deletion'` is 50 of 1,114 where chance predicts one, interleaved
+rather than pre-fix, and the cause is not identified from source.**
 
-**AND A REQUIRED FIELD REACHED A STRICT SCHEMA ONE SEAM AWAY.** `deleted_at` required on
-`MessageRow` broke the internal send response in three tests — `unrecognized_keys` — because
-`MessageRow` is what the SEND path returns. **The file named the schema that would break, in the
-comment quoted as the argument FOR making it required.** 4.11's rule, paid a third time: *an
-argument that is right about the producer can invert about the reader.* **The way to find the
-readers is the TYPE, not a list** — the field belongs on `MessageWithSender`.
+**AND A REQUIRED FIELD REACHED A STRICT SCHEMA ONE SEAM AWAY** — `deleted_at` on `MessageRow` broke
+the internal send response in three tests. 4.11's rule, paid a third time: *an argument that is
+right about the producer can invert about the reader.* **The way to find the readers is the TYPE.**
 
-**THREE SCOPED READS AND REMOVING ANY TWO IS INVISIBLE.** A, B, A+B each leave `versions` 6 of 6
-and the gauntlet 62 of 62; only all three together move **1 of 62**, and the chapter's own suite
-never fires at all. 4.12's finding, worse. **A single-mutation probe measures the DEFENCE, not
-the arm**, and three defences deep it stops measuring anything (`gaps.md` 065-4).
-
-**THE BOUNDARY IS TWO NUMBERS AND ONE OF THEM WOULD HAVE MISLED.** 5,060 tombstones predate the
-chapter and no migration recovers them; **1,298 of those keep their earlier texts and look
-served** — ask for the history and texts come back, and the one the dispute turns on is not
-among them. Publishing only the 3,762 with nothing at all understates it by a quarter, which is
-what the spec did until analysis pass 6.
-
-**AND EVERY RED LANE IN THIS FEATURE WAS ONE CLASS.** Four different files across six runs —
-`outbox.itest.ts`, `media-updated.itest.ts`, `deliveries.itest.ts`, the media-worker pair — no
-two runs alike, **every one green in isolation**, and all four green in CI. **So the comparison
-at close-out is class-by-class, not test-by-test.** And it is getting worse with time:
-`outbox.itest.ts` invariant 8 passed alone at 18 of 18 in the morning and failed alone in the
-afternoon, after this feature's own probe wrote 400 deletions into a table now holding **386,317
-rows**, which `reset-lane.mjs` does not touch by design (`gaps.md` 065-3, 065-5).
+**THREE SCOPED READS AND REMOVING ANY TWO IS INVISIBLE.** Only all three together move 1 of 62.
+**A single-mutation probe measures the DEFENCE, not the arm** (`gaps.md` 065-4) — and 4.20 hit it a
+third time, on a bulk DELETE where the invisible arm's failure is a LOSS rather than a leak.
 
 **A LINT RULE IS A CONSTITUTION CLAUSE, FOR THE THIRD TIME.** A `drizzle-orm` import in a test
-outside `services/api/src/db/**` was refused — *the query engine lives inside the repository
-layer only*. The exempt list would have taken it; **not needing an exemption is better than
-earning one**, and the rewrite — assert against `deleteMessage`'s own returned instant rather
-than re-reading the outbox — is the stronger assertion as well as the legal one.
+outside `services/api/src/db/**` was refused. **Not needing an exemption is better than earning
+one.** 4.20 met the same wall and put its test fixtures in `repository.ts` as `…Raw` methods, which
+is `listMessagesRaw`'s standing precedent.
 
-**AND THE QUICKSTART WAS WRONG ZERO TIMES AT PHASE 9**, after five chapters of three, four,
-three, five and two. It was wrong twice during the analysis passes instead — a Python f-string
-syntax error and a before-state naming one of two acceptances — **so the failures moved to where
-they are cheap**. The only phase-9 failure was the operator's: running §3 in a fresh shell
-without §1's variables exported, which answers `KeyError: 'messages'` and looks like a platform
-defect.
-
-**ELEVEN ANALYSIS PASSES, ELEVEN MECHANISMS, AND THE LAST FOUR WERE WORTH IT.** Pass 8 opened
-the SRS, the SAD and the journey map — *seven passes had verified citations into the platform's
-SOURCE and none into its SPECIFICATION*, which is this project's most-cited rule. Pass 9 read
-the constitution and found the check answering **one of principle VI's five bullets** — and
-caught pass 8's own remedy prescribing an edit to an accepted ADR, which VII forbids. Pass 10
-opened the functions the tasks would edit and found **a probe that would have been blinded by
-the thing it was measuring**. Pass 11 read the test files and found the one new file missing
-from the plan's tree. **Three of the four found nothing about the feature and everything about
-the instruments pointed at it.**
-
+**AND THE QUICKSTART WAS WRONG ZERO TIMES AT PHASE 9**, after five chapters of three, four, three,
+five and two — because it was wrong twice during the analysis passes instead. **The failures moved
+to where they are cheap.**
 **063 IS CLOSED — CHAPTER 4.17, "★ Milestone: an image, end to end".** Movement VI closes. Its
 record is `specs/063-chapter-4-17/` — `baseline.txt` first, then `gaps.md` (**7 entries plus the
 carried ledger**), `traceability.md`, `clauses.md`, `quickstart.md` (run, and wrong four times),

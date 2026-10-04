@@ -943,3 +943,29 @@ T070a · THE SEALED SUITE, WHICH NO LOCAL LANE REACHES ON ITS OWN
   AND IT REFUSES LOUDLY WITHOUT ITS THREE VARIABLES, which is why `pnpm
   test:integration` dies at it in 1.2 s and takes three lanes with it. The
   refusal is correct; what follows it is 052's finding, still live.
+
+T072 / T073 · THE PUSH, AND CI GREEN ON ALL FOUR JOBS AT THE FIRST ATTEMPT
+
+  Push order forced — `relay-platform`, then `relay-tutorial`, then the root —
+  because CI is the superproject's and the other two are submodules checked out
+  `submodules: recursive`. Pushing the root first checks out gitlinks no remote
+  has.
+
+    run 37199508332, head 539531ce
+
+    success  relay-platform — the Docker-free gate
+    success  relay-platform — integration lanes and coverage
+    success  relay-platform — the sealed integration
+    success  relay-tutorial — build, docs drift, fence chain
+
+  THE `##[error]` SET IS EMPTY AND SO WAS THE BASELINE. Empty in both
+  directions, which is the hardest kind to match: nothing introduced and nothing
+  removed.
+
+  **AND THE JOB THAT WAS RED LOCALLY IS GREEN IN CI**, which is 4.17's finding
+  run backwards a second time. `outbox.itest.ts` invariant 8 fails on this
+  developer host and passes on CI's — and `gaps.md` 065-5 says exactly why: the
+  suite is sensitive to the SIZE of a shared table, the outbox here holds
+  400,697 rows, and CI starts from an empty volume. **Neither direction is a
+  flake. Both are an assertion reading state that is not its own**, and which
+  way it breaks depends only on which machine has the residue.
