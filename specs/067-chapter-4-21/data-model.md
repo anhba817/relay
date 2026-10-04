@@ -34,10 +34,13 @@ decide messages           FR-MOD-04 says erase · FR-USR-05 says keep
 decide usage_active_users FR-MOD-04 says erase · FR-029 says keep, for billing
 delete the attributed media objects                        + renditions + bytes
 delete the users row                                       only now will the FKs allow it
-ClickHouse: DELETE FROM connection_events
-              WHERE environment_id = … AND user_external_id = …
-            BOTH PREDICATES. External ids are unique PER ENVIRONMENT and the
-            id alone deletes other tenants' rows — measured below.
+ClickHouse: SELECT count() … {env:UUID}, {uid:String}   the receipt's number;
+                                                       the DELETE returns none
+            DELETE FROM connection_events
+              WHERE environment_id = {env:UUID}
+                AND user_external_id = {uid:String}
+            BOTH PREDICATES, BOTH BOUND. The id alone deletes other tenants'
+            rows; interpolated, a hostile id deletes everyone's (R8, R9).
             And the external id is gone from Postgres by now — carry it
 the sketches                                               report, do not attempt
 ```

@@ -225,11 +225,65 @@ checked. **Three of this pass's three findings are carried sentences**, which is
 execution-order walk finds that a reading does not: the artifacts are internally
 consistent, and consistently about a different route.
 
-### Three passes
+## Analysis pass 4 — three findings, ONE CRITICAL, all three fixed
+
+**The question**: *open the code the tasks will edit.* T019 placed the ClickHouse
+statement and gave a reason; the reason was wrong, and following the thread found
+something worse.
+
+- **D3 CRITICAL — the erasure's analytical statement is SQL injection through a URL path
+  parameter.** `AnalyticalStore.query` takes a SQL string and **has no parameter
+  binding** — `request-log.module.ts:16` says so and names `endpoint` as *"the sharpest
+  caller-supplied value on this surface"*, because chapter 4.8 defended that one with a
+  **closed derived set**. An external id has no closed set: `z.string().min(1).max(255)`,
+  any 255 characters, arriving from a path that no body schema parses.
+
+      POST /v1/users  {"external_id": "ev'il OR 1=1 --"}     201, round-tripped
+      interpolated into the scoped count                   1,081   the whole table
+      bound, {env:UUID} and {uid:String}                       0
+      bound, `tuan` scoped — the control                       4
+
+  **An erasure for that user deletes `connection_events` across all 460
+  tenant-environment pairs.** It is 4.8's sentence word for word, and **it defeats the
+  `environment_id` predicate pass 2 added** — R8 and R9 are one surface, and R8 alone
+  produces a statement that looks scoped and is not.
+
+  **4.8's REMEDY DOES NOT TRANSFER AND THE REPLACEMENT IS MEASURED.** That chapter's
+  answer was *a type, not an escape*; free text has no type. ClickHouse's `param_<name>`
+  binding works, with a control proving it does not simply refuse everything. **Fixed**
+  as **FR-014**, **SC-014**, **T019a** (extend the client rather than escape at the call
+  site — an escape is a thing every future caller must remember) and **T023a**, the only
+  assertion that tells a scoped statement from one that looks scoped.
+
+- **D1 HIGH — T019's placement cited a rule that does not cover ClickHouse.** The lint
+  rule restricts **`drizzle-orm`, `ioredis`, `pg`**; no ClickHouse client is named, and
+  **`db/` holds no ClickHouse code at all** — `metering/`, `request-log/` and `audit/`
+  each hold their own. **Fixed**: the statement goes in `users/`, with the real reason.
+
+- **D2 HIGH — the receipt's analytical count cannot come from the delete.** Measured in
+  the shape `query` actually issues: a `DELETE` answers **HTTP 200 with a 0-byte body**,
+  so the method returns `[]`. R3's rationale — *"a receipt states a count, so it must use
+  the verb whose count it can trust"* — was wrong about the mechanism; **neither verb
+  returns a count.** **Fixed**: the decision survives on a better reason — after the
+  lightweight form a `SELECT count()` is accurate and after the mutation it is not, so
+  the receipt can **verify** with one verb and only **predict** with the other.
+
+**D1 IS WHY D3 WAS REACHABLE.** The task reasoned about placement from a rule it had not
+read, and **a rationale that does not apply is also a rationale that stops you asking the
+next question** — *what does this client do with a string?* The answer was one grep away,
+in a comment written two chapters ago.
+
+**And D2 is the sixth carried-or-assumed claim across four passes**: a correct decision
+resting on a mechanism that does not exist, which is pass 1's A1 and pass 3's C2 again.
+
+The probe user created to measure D3 was deleted; `users` is back to 0 matching rows.
+
+### Four passes
 
     pass 1   3 findings   0 CRITICAL   opening the files the artifacts cite
     pass 2   2 findings   1 CRITICAL   writing the queries nobody had written
     pass 3   3 findings   1 CRITICAL   walking the tasks in execution order
+    pass 4   3 findings   1 CRITICAL   opening the code the tasks will edit
 
 **A1 and A3 are the same mistake at two scales**: the artifacts treat as open a question
 the tree has already answered, once for a module and once for a classification. A1 came

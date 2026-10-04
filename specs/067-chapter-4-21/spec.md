@@ -159,6 +159,11 @@ with where, and a sentence naming what invokes each path.
   document MUST be amended rather than left to diverge.
 - **FR-013**: An erasure MUST write an `audit_log` entry, since FR-MOD-03's
   population is moderation actions and this is one performed by a credential.
+- **FR-014**: Every caller-supplied value reaching the analytical store MUST be passed as
+  a bound parameter, not interpolated into the statement. The store's client has no
+  binding today and an external id is free text from the URL path: a user named
+  `ev'il OR 1=1 --` turns a scoped count of 0 into 1,081 — the whole table — which defeats
+  FR-008's environment predicate rather than merely widening the match.
 
 ### Key Entities
 
@@ -209,6 +214,8 @@ with where, and a sentence naming what invokes each path.
   with the reason, and re-measured at the close.
 - **SC-013**: Each of FR-MOD-04's four obligations and FR-MED-10's three has a
   verdict with where.
+- **SC-014**: A user whose external id contains SQL metacharacters is erased correctly,
+  and every other tenant's rows in the analytical store survive it.
 
 ## Assumptions
 

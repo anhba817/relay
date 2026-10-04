@@ -39,8 +39,10 @@ irreversible erasure. **The path says which one you asked for.**
     { "store": "media_objects",      "outcome": "erased",        "rows": 2,
       "note": "attributed uploads only; 73% of objects platform-wide record no uploader" },
     { "store": "connection_events",  "outcome": "erased",        "rows": 31 },
-    // scoped by environment_id AND user_external_id — an id alone spans up to 111
-    // environments on the development lane
+    // scoped by environment_id AND user_external_id, BOTH AS BOUND PARAMETERS.
+    // An id alone spans up to 111 environments on the development lane, and an
+    // interpolated hostile id matches all 1,081 rows (R8, R9). The count is a
+    // separate SELECT: the DELETE answers 200 with an empty body.
     { "store": "api_requests",       "outcome": "nothing_to_erase",
       "note": "this table records no user identifier" },
     { "store": "daily_usage",        "outcome": "cannot_erase",  "rows": 0,

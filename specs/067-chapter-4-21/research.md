@@ -79,8 +79,16 @@ that property.
 in it. **The real statement carries `environment_id` as well** — R8 measures why, and a
 reader copying this shape rather than that one deletes other tenants' rows.
 
-**DECISION: lightweight `DELETE FROM`.** An erasure receipt states a count, and a
-count taken after a statement that has not acted yet is a false receipt. The
+**DECISION: lightweight `DELETE FROM`** — and the reason below was wrong on first
+writing, which is worth keeping. It said *"a receipt states a count, so it must use the
+verb whose count it can trust."* **Neither verb returns a count through this client.**
+Measured at pass 4 in the shape `AnalyticalStore.query` actually issues: a `DELETE`
+answers HTTP 200 with a **0-byte body**, so the method's `string[][]` comes back empty.
+
+**THE COUNT IS A SEPARATE `SELECT` EITHER WAY, AND THAT IS WHAT DECIDES THE VERB.** After
+the lightweight form a `SELECT count()` is accurate; after the mutation it is not, because
+the rows are still there. So the receipt can **verify** with one verb and only **predict**
+with the other — the same conclusion, resting on something that exists. The
 mutation form would need a poll of `system.mutations` and the receipt would
 still be reporting an intention rather than a result.
 
@@ -222,3 +230,41 @@ So the erasure's analytical function **takes `environmentId` as a parameter**, a
 `erasure.itest.ts` asserts that a second tenant's identically-named user is untouched —
 which is the only assertion that would have caught this, because the route can refuse
 correctly while the statement destroys a third party's rows.
+
+## R9 — the external id reaches ClickHouse as SQL, and there is no type that makes it safe
+
+`AnalyticalStore.query` takes a SQL string and **has no parameter binding**.
+`request-log.module.ts:16` states it and names `endpoint` as *"the sharpest
+caller-supplied value on this surface"* — chapter 4.8's defence there was a **closed set
+derived from the running router**, and its remedy for the window was *a type, not an
+escape*: what left the schema was a `Date`, so there was nothing to escape.
+
+**NEITHER DEFENCE TRANSFERS.** An external id has no closed set — `users.schema.ts`
+accepts `z.string().min(1).max(255)` — and no type narrows it. It arrives from the URL
+path, which is not even parsed by a body schema.
+
+**Measured end to end:**
+
+```
+POST /v1/users  {"external_id": "ev'il OR 1=1 --"}      201, round-tripped
+SELECT count() … environment_id = '<absent>' AND user_external_id = '<that>'
+  interpolated                                          1,081   the whole table
+  bound, {env:UUID} and {uid:String}                        0
+  bound, with `tuan` scoped — the control                   4
+```
+
+**AN ERASURE FOR THAT USER DELETES `connection_events` ACROSS ALL 460 TENANT-ENVIRONMENT
+PAIRS.** It is 4.8's sentence word for word — *it does not widen the window, it defeats
+the tenant predicate, because `OR` binds looser than the `AND` chain the scope is written
+in* — **and it defeats the `environment_id` predicate R8 added.** R8 and R9 are one
+surface, and R8 alone produces a statement that looks scoped and is not.
+
+**DECISION: extend `AnalyticalStore` with bound parameters.** ClickHouse's HTTP interface
+takes `param_<name>` against `{name:Type}` placeholders and the measurement above is the
+proof. **Rejected: escaping at the call site** — an escape is a thing every future caller
+has to remember, and this platform has deleted hand-maintained tables for less. The
+binding makes the safe form the only form the method offers.
+
+**THIS IS T013a's ADR CANDIDATE.** A capability added to a client three feature
+directories already share is an architecture decision, where a line inside one function
+would not have been.

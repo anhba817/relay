@@ -93,7 +93,12 @@ chapter takes three that look like candidates:
 - **Reaching into ClickHouse from an operational request** — argued above from
   III and ADR-06 rather than decided afresh. If the argument does not hold under
   analysis, this becomes an ADR.
-- **What erasure means for a store that cannot erase** — this is the live one.
+- **Bound parameters on `AnalyticalStore`** — **the live one since analysis pass 4.**
+  The client has no binding and the erasure interpolates a URL path value, which
+  measures as deleting the whole table for a user named `ev'il OR 1=1 --`. Adding a
+  capability to a client three feature directories share is an architecture decision;
+  a line inside one function would not have been.
+- **What erasure means for a store that cannot erase** — also live.
   If the answer is *report it*, that is a receipt design and belongs in the
   contract. **If the answer turns out to require amending FR-MOD-04**, it is an
   SRS amendment like chapter 4.20's, not an ADR.
