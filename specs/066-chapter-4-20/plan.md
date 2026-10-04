@@ -148,20 +148,36 @@ re-runs while the ledger reports it done. Both are written before either applies
 floor.
 
 ```
-repository.ts              52 pages
-schema.ts                  34 pages
-app.module.ts              23 pages
-vitest.coverage.config.mts 23 pages
-targets.ts                 13 pages — and the appendix already carries 4 hunks for it
+                            pages   appendix hunks it already carries
+repository.ts                  52   5
+schema.ts                      34   5
+app.module.ts                  23   3
+vitest.coverage.config.mts     23   16
+targets.ts                     13   4
+gauntlet.itest.ts              13   6
 ```
 
-**FIVE FILES**, counted at analysis rather than deferred to phase 1, which is what counting in
-phase 1 is for. **And `targets.ts` is the one where 4.12's rule bites**: its entries sit next to
-rows the appendix itself adds, so a hunk anchored there extends an existing hunk rather than
-adding one — 4.8 found the shape, 4.11 paid it on `codes.ts` and 4.12 paid it on this very file.
-All to
-`fences/post-series.md` — every one is published by pages this chapter does not own, and one
-rule for five files beats a judgement per file (4.8).
+**SIX FILES**, counted at analysis rather than deferred to phase 1, which is what counting in
+phase 1 is for. All to `fences/post-series.md` — every one is published by pages this chapter
+does not own, and one rule for six files beats a judgement per file (4.8).
+
+**AND THE SIXTH WAS MISSING UNTIL ANALYSIS PASS 6, WHICH IS THE INTERESTING PART: THE
+ARITHMETIC WAS RIGHT AND THE POPULATION WAS SHORT.** All five original figures verify exactly.
+What the list left out is the file T026's second half writes into — **a gauntlet attack is
+written inside `gauntlet.itest.ts`**, not beside it, so classifying the new route in
+`targets.ts` and covering it are two edits to two expensive files rather than one. The
+precedent is exact and one chapter old: 4.18 added `GET /v1/audit-log` and its commit
+`7f3992fc` touched **four** isolation files — `targets.ts`, `gauntlet.itest.ts`, `attack.ts`
+and `attack.test.ts`. **So read the isolation directory as a family, not as `targets.ts`**:
+`attack.ts` is 10 pages with 1 hunk, `targets.itest.ts` 11, `attack.test.ts` 3. Whether this
+chapter reaches them depends on whether the new route needs a helper, which T014a is the task
+that will find out.
+
+**And `targets.ts` is still where 4.12's rule bites**: its entries sit next to rows the appendix
+itself adds, so a hunk anchored there extends an existing hunk rather than adding one — 4.8
+found the shape, 4.11 paid it on `codes.ts` and 4.12 paid it on this very file. `gauntlet.itest.
+ts` carries six appendix hunks already, more than any file here but the coverage config, so
+expect the same.
 
 **AND THE BILL IS A CEILING AS OFTEN AS A FLOOR.** Chapter 4.19's plan named eight files and
 the chain charged for five, because the work landed in fewer places than the file list

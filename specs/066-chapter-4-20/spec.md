@@ -153,7 +153,9 @@ retention year got at chapter 4.18.
 - **An attachment shared by an expired and a live message.** Covered by US2 scenario 2 and the
   reason FR-MED-11 cannot be a cascade.
 - **An expired message in an archived channel, or one whose author was deleted.** Both rows
-  survive their parents by design (FR-020, FR-USR-05); expiry is about age, not reachability.
+  survive their parents by design — **FR-CHN-10** (*"Archiving a channel shall preserve history
+  and prevent new messages"*) and **FR-USR-05** (*"preserving their messages as authored by a
+  deleted user"*). Expiry is about age, not reachability.
 - **The audit log.** Chapter 4.18's entries name a `target_id` that may be an expired message.
   Whether a destroyed message leaves a dangling audit target is a question this chapter must
   answer rather than discover — `audit_log` has no foreign key to `messages`, so nothing will

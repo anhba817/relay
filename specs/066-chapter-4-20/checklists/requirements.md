@@ -284,18 +284,68 @@ principle VI   the plan answers all five bullets in its own table — 065's pass
                lesson transferred rather than being relearned
 ```
 
-### Five passes
+## Analysis pass 6 — four findings, 0 CRITICAL, all four fixed
+
+**The question**: *open the publishing side.* Five passes had read documents inside this
+feature directory and the platform source they cite. Nothing had opened the tutorial
+repository, `ci.yml`, or the two sibling features' task lists — and the fence bill is a
+counted claim sitting in `plan.md` unverified.
+
+- **P1 HIGH — the bill's arithmetic was right and its population was short.** All five figures
+  verify exactly against `grep -rl 'title="<path>"'`: 52 / 34 / 23 / 23 / 13. The list still
+  missed a file, because **a gauntlet attack is written inside `gauntlet.itest.ts`** and T026's
+  second half therefore edits **13 pages carrying 6 appendix hunks** — more than any billed
+  file but the coverage config. The precedent is one chapter old and exact: 4.18 added
+  `GET /v1/audit-log` and commit `7f3992fc` touched **four** isolation files. **Fixed**: the
+  bill is six files with each one's existing appendix hunks beside it, T006 counts the rest of
+  the isolation family, T026 names the file it writes into, and T060's biggest-first ordering
+  reads off the longer list. **A re-count cannot catch this and a re-derivation can** — the
+  list has to come from the files the tasks name, not the files the plan remembered.
+- **P2 HIGH — two CI gates validate this feature's own tasks and no task ran them.**
+  `check:srs` is what checks T044's revision 1.27; `check:figures` is what catches a figure
+  passed as `chart` instead of `code`, which `pnpm build` compiles green. The tasks ran
+  `check:docs` and `check:fences` only, and the tutorial's own `pnpm lint` not at all.
+  **The gate-recording task existed in 063 (T005) and 064 (T003), was dropped at 065, and 066
+  inherited the gap** — invisible from inside this directory, because the artifacts are
+  consistent with each other. **Fixed** as T003a, with T061 widened to all six and told to
+  compare each counted line against T003a's.
+- **P3 HIGH — `FR-020` is not a clause.** `spec.md` cited it for *a message survives its
+  archived channel*. It is **feature 043's feature-local id** for the SRS revision-order
+  checker, recorded as such in `docs/09:75`, and it appears **zero times** in `docs/04-srs.md`,
+  which uses prefixed ids throughout. Its companion `FR-USR-05` is real and carries the
+  deleted-author half correctly, which is what made the pair read as checked. **Fixed** to
+  **FR-CHN-10**, quoted. This is 052's `FR-003a`, 053's leak into two published documents and
+  063-4's three-way collision, for the fourth time — and **the mechanical coverage grep's only
+  true hit of eighteen**, caught only because the number fell outside the spec's own range.
+- **P4 MEDIUM — `docs/07` holds two rows numbered 21.** Part 3's *"The email nobody was
+  sending"* at line 194 and Part 4's at line 602, 408 lines apart, and T047 said *"row 21"*.
+  **Fixed**: match on the title. *Name a chapter, never number it*, inside the task that
+  numbered one.
+
+**What verified clean**: `docs/12` row 21 present and matching — both Part 4 table copies exist
+with the right per-file vocabulary, CLOSED in one and SHIPPED in the other — the chapter
+registration covered with the right seven fields and slug, `code` not `chart` already in T054,
+and **no `(vi)` task, correctly**: the translation reaches part 4 chapter 3 against English's
+19, so there is no twin to write. T076's *147,331 with 2,669 of headroom* matches `wc -c`
+exactly.
+
+### Six passes
 
     pass 1   4 findings   0 CRITICAL   opening the files the artifacts cite
     pass 2   4 findings   0 CRITICAL   writing the queries nobody had written
     pass 3   4 findings   0 CRITICAL   walking the tasks in execution order
     pass 4   4 findings   0 CRITICAL   opening the code the tasks will edit
     pass 5   3 findings   1 CRITICAL   opening the constitution and the SRS
+    pass 6   4 findings   0 CRITICAL   opening the tutorial, `ci.yml` and two sibling features
 
-**Four passes found nothing critical and the fifth found the thing that decides whether the
-chapter can ship as specified.** The conflict was reachable from the first page of the spec —
+**Four passes found nothing critical, the fifth found the thing that decides whether the
+chapter can ship as specified, and the sixth found three things no document in this directory
+could contain.** The conflict pass 5 found was reachable from the first page of the spec —
 FR-MSG-08 is quoted in it — which is why *read the clauses, not the identifiers* is this
-project's most-cited rule and why it keeps being worth running as its own pass.
+project's most-cited rule. Pass 6's additions are its companion: **P1, P2 and P4 are invisible
+from inside `specs/066-chapter-4-20/`**, and P2 is a task that two earlier features had and
+this one does not. It is 057's *artifacts that agree with each other and not with the tree*,
+one repository over — and the thing that was drifting was the task list itself.
 
 ## Notes
 
