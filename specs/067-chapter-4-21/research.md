@@ -100,7 +100,7 @@ comment is the clearest statement of the conflict:
 > **WHAT GOES**: the profile fields, the memberships, the read positions.
 > **WHAT STAYS**: the row, the messages, and every `usage_active_users` row.
 >
-> `usage_active_users` IS UNTOUCHED (FR-029). Billing history does not vanish
+> `usage_active_users` IS UNTOUCHED. Billing history does not vanish
 > with a profile — a customer who deleted a user in March still owes for March.
 
 FR-MOD-04 requires erasure of *messages … and analytical records*. So on three

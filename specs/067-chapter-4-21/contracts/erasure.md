@@ -45,9 +45,9 @@ irreversible erasure. **The path says which one you asked for.**
     // interpolated hostile id matches all 1,109 rows (R8, R9). The count is a
     // separate SELECT: the DELETE answers 200 with an empty body.
     { "store": "messages",           "outcome": "retained_anonymous", "rows": 143,
-      "note": "FR-028: a channel's history must not lose one participant's half" },
+      "note": "a channel's history must not lose one participant's half" },
     { "store": "usage_active_users", "outcome": "retained_anonymous", "rows": 22,
-      "note": "FR-029: a customer who deleted a user in March still owes for March" },
+      "note": "usage already invoiced" },
     { "store": "daily_usage",        "outcome": "retained_anonymous", "rows": 0,
       "note": "uniq sketches keyed on the uuid; nothing to subtract and nothing identifying" },
     { "store": "api_requests",       "outcome": "nothing_to_erase",
@@ -135,7 +135,7 @@ that amends it twice.
   the receipt names the one it erased.
 - **No `audit_log` deletion**, which is now a receipt row rather than an
   omission — see `cannot_erase` above. It is append-only (ADR-35), and an
-  erasure **writes** an entry rather than removing them (FR-013).
+  erasure **writes** an entry rather than removing them (FR-MOD-03).
   **AND THE ENTRY IT WRITES CARRIES THE NAME IT JUST ERASED.** `deleteUser`
   records `targetId: userExternalId`; recording the uuid instead was considered
   and refused, because the entry is the operator's only proof the erasure

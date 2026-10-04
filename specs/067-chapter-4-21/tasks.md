@@ -143,18 +143,18 @@ FR-MOD-04's four obligations and FR-MED-10's three, each with where.
 
 ## Phase 7: The documents
 
-- [ ] T040 **Read FR-MOD-04 and FR-MED-10 before editing either**, and record what the reading found — including *nothing to amend* if that is the answer.
-- [ ] T041 Read the clauses **beside** them while `docs/04-srs.md` is open. **FR-MED-10 sits directly above FR-MED-11 and is the clause chapter 4.20 nearly enforced by accident**; FR-MOD-05 sits two above FR-MOD-06. 065's T042 found FR-MSG-10 two rows from the one it opened the file to edit.
-- [ ] T042 Amend **FR-MOD-04** in `docs/04-srs.md`: four obligations with their verdicts, that *analytical records* is four stores with four answers, and that one of them cannot comply by construction.
-- [ ] T043 Amend **FR-MED-10** in `docs/04-srs.md` if the measurement warrants it — in particular that its unlink was already met, that its 24-hour reaper is still unbuilt, and that *a user's media objects* is undefined for 73% of them.
-- [ ] T043a Amend **FR-USR-05** or **FR-MOD-04** with whichever way T010 and T011 decided, **naming the clause that lost**. If `usage_active_users` is kept, FR-MOD-04's *analytical records* is partly unmet by decision and must say so.
-- [ ] T044 Add revision row **1.28** to `docs/04-srs.md`, stating what the chapter demonstrated and what it could not.
-- [ ] T045 **If T013a decided an ADR is needed, write it into BOTH homes** — the summary in `docs/05-sad.md` and the argument in `docs/06-adr-deep-dives.md`. 4.5 found an ADR lives in two documents and ten passes amended only the summary. **If it decided none is needed, record that as DONE with the reason** rather than leaving the task unticked.
-- [ ] T046 Amend `docs/05-sad.md` where the erasure changes what a section claims — **and check every sentence in the section you edit**, because 4.19 found three sites where a task naming one would have reached one.
-- [ ] T047 Amend **both** copies of the Part 4 table — `docs/12-part-4-structure.md` row 22 CLOSED and **`docs/07-tutorial-plan.md`'s PART 4 row 22** SHIPPED. **Match on the title, not the number**: `docs/07` holds two rows numbered 22, Part 3's and Part 4's, hundreds of lines apart.
-- [ ] T048 [P] Sweep `docs/` for feature-local ids **both ways**: diff-scoped for what this session added, and tree-wide with every hit classified. Chapter 4.20 added zero; the tree-wide population is 063-4's and is not this chapter's.
-- [ ] T049 Run `pnpm sync:docs` then `pnpm check:docs` from `relay-tutorial`.
-- [ ] T050 [P] Write `specs/067-chapter-4-21/traceability.md` by **reading**, not by grep — including the two sections a grep cannot produce: what is in the feature with no requirement behind it, and the clauses deliberately not amended.
+- [X] T040 **Read FR-MOD-04 and FR-MED-10 before editing either**, and record what the reading found — including *nothing to amend* if that is the answer.
+- [X] T041 Read the clauses **beside** them while `docs/04-srs.md` is open. **FR-MED-10 sits directly above FR-MED-11 and is the clause chapter 4.20 nearly enforced by accident**; FR-MOD-05 sits two above FR-MOD-06. 065's T042 found FR-MSG-10 two rows from the one it opened the file to edit.
+- [X] T042 Amend **FR-MOD-04** in `docs/04-srs.md`: four obligations with their verdicts, that *analytical records* is four stores with four answers, and that one of them cannot comply by construction.
+- [X] T043 Amend **FR-MED-10** in `docs/04-srs.md` if the measurement warrants it — in particular that its unlink was already met, that its 24-hour reaper is still unbuilt, and that *a user's media objects* is undefined for 73% of them.
+- [X] T043a Amend **FR-USR-05** or **FR-MOD-04** with whichever way T010 and T011 decided, **naming the clause that lost**. If `usage_active_users` is kept, FR-MOD-04's *analytical records* is partly unmet by decision and must say so.
+- [X] T044 Add revision row **1.28** to `docs/04-srs.md`, stating what the chapter demonstrated and what it could not.
+- [X] T045 **If T013a decided an ADR is needed, write it into BOTH homes** — the summary in `docs/05-sad.md` and the argument in `docs/06-adr-deep-dives.md`. 4.5 found an ADR lives in two documents and ten passes amended only the summary. **If it decided none is needed, record that as DONE with the reason** rather than leaving the task unticked.
+- [X] T046 Amend `docs/05-sad.md` where the erasure changes what a section claims — **and check every sentence in the section you edit**, because 4.19 found three sites where a task naming one would have reached one.
+- [X] T047 Amend **both** copies of the Part 4 table — `docs/12-part-4-structure.md` row 22 CLOSED and **`docs/07-tutorial-plan.md`'s PART 4 row 22** SHIPPED. **Match on the title, not the number**: `docs/07` holds two rows numbered 22, Part 3's and Part 4's, hundreds of lines apart.
+- [X] T048 [P] Sweep `docs/` for feature-local ids **both ways**: diff-scoped for what this session added, and tree-wide with every hit classified. Chapter 4.20 added zero; the tree-wide population is 063-4's and is not this chapter's.
+- [X] T049 Run `pnpm sync:docs` then `pnpm check:docs` from `relay-tutorial`.
+- [X] T050 [P] Write `specs/067-chapter-4-21/traceability.md` by **reading**, not by grep — including the two sections a grep cannot produce: what is in the feature with no requirement behind it, and the clauses deliberately not amended.
 
 ---
 

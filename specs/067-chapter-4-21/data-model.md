@@ -31,7 +31,7 @@ resolve the external id WITHIN the caller's environment   -> user_id, or 404
 collect the user's media_ids BEFORE anything is deleted   (they vanish with the rows)
 delete read_positions, members                             children first
 decide messages           FR-MOD-04 says erase · FR-USR-05 says keep
-decide usage_active_users FR-MOD-04 says erase · FR-029 says keep, for billing
+decide usage_active_users FR-MOD-04 says erase · the code says keep, for billing
 delete the attributed media objects                        + renditions + bytes
 delete the users row                                       only now will the FKs allow it
 ClickHouse: SELECT count() … {env:UUID}, {uid:String}   the receipt's number;

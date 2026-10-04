@@ -138,7 +138,7 @@ T009 · WHAT `deleteUser` ALREADY DOES, IN ITS OWN WORDS
     WHAT GOES: the profile fields, the memberships, the read positions.
     WHAT STAYS: the row, the messages, and every `usage_active_users` row.
 
-    `usage_active_users` IS UNTOUCHED (FR-029). Billing history does not vanish
+    `usage_active_users` IS UNTOUCHED. Billing history does not vanish
     with a profile — a customer who deleted a user in March still owes for March.
 
   That is the chapter's central conflict, quoted rather than paraphrased. It is
@@ -171,7 +171,7 @@ T010 · WHAT HAPPENS TO THE MESSAGES — DECIDED: KEEP THEM, ERASE THE AUTHOR
   explicitly requested"*; FR-MOD-04 asks for erasure of a PERSON, which is not
   the same request. `deleteUser`'s own comment already drew the line this
   chapter needs: *"authored by a deleted user" and "authored by nobody" are
-  different states and only one of them is FR-028.* D adds a third — authored
+  different states and only one of them is FR-USR-05.* D adds a third — authored
   by a tombstone — which is the state the clause actually wants.
 
   HOW THE INDUSTRY ANSWERS IT. Slack de-identifies the member and leaves the
@@ -207,7 +207,7 @@ T011 · `usage_active_users` — DECIDED: KEEP EVERY ROW, UNTOUCHED
   the placeholder and there is exactly one per user, which is exactly what
   `(environment_id, period, user_id)` requires.
 
-  FR-029 SURVIVES WORD FOR WORD. *"A customer who deleted a user in March still
+  THE BILLING ARGUMENT SURVIVES WORD FOR WORD. *"A customer who deleted a user in March still
   owes for March"* — March's invoice is unchanged. There is no clause to amend
   on the billing side and no money on either end of the trade.
 
@@ -242,7 +242,7 @@ T011 · `usage_active_users` — DECIDED: KEEP EVERY ROW, UNTOUCHED
      stays computable. If the text names them, the text is the re-identification
      and not the key. Slack's position exactly.
 
-  WHAT IT COSTS IN THE SRS. Not FR-029, and not *"FR-MOD-04 partly unmet"*.
+  WHAT IT COSTS IN THE SRS. Not FR-USR-05, and not *"FR-MOD-04 partly unmet"*.
   **FR-MOD-04 needs one sentence**: an analytical record whose only identifier
   is a key into an erased row counts as erased. That is a cheaper amendment than
   a recorded non-conformance and it is the one the measurement supports (T043a).
@@ -336,7 +336,7 @@ T012 · THE RECEIPT — DECIDED, AND T010/T011 MOVED IT IN FOUR PLACES
 
        usage_active_users   a counter, no contents          retained_anonymous
        daily_usage          a sketch, no contents           retained_anonymous
-       messages             CONTENTS -> decided on FR-028, kept, author erased
+       messages             CONTENTS -> decided on FR-USR-05, kept, author erased
        media_objects        CONTENTS -> deleted (FR-MED-10)
        audit_log            the IDENTITY itself             cannot_erase
 
@@ -474,7 +474,7 @@ T015 · THE PROBE — AND T021's PREMISE IS WRONG, WHICH THIS FOUND IMMEDIATELY
 T016/T017/T018 · THE TRAVERSAL — AND T010 DELETED A STEP FROM IT
 
   `data-model.md`'s order ended *"delete the users row — only now will the FKs allow
-  it."* **Under T010 there is no such step.** FR-028 keeps the messages, so
+  it."* **Under T010 there is no such step.** FR-USR-05 keeps the messages, so
   `messages.user_id` stays, so the row is unreachable for ever. The wall T015 documents
   is not an obstacle the traversal climbs — **it is the reason the row survives.**
 
@@ -650,8 +650,8 @@ T029 · `not_reached`, BOTH WAYS, BECAUSE THE TRUEST TEST SABOTAGES ITS NEIGHBOU
         memberships          erased
         read_positions       erased
         media_objects        erased              — 73.6% record no uploader
-        messages             retained_anonymous  — FR-028
-        usage_active_users   retained_anonymous  — FR-029
+        messages             retained_anonymous  — a history must stay whole
+        usage_active_users   retained_anonymous  — usage already invoiced
         connection_events    NOT_REACHED
         api_requests         nothing_to_erase
         daily_usage          retained_anonymous
@@ -696,7 +696,7 @@ T032 · FR-MOD-04's SECOND OBLIGATION IS FOUR NOUNS AND THEY DO NOT GET ONE VERD
 
       profile              demonstrated
       memberships          demonstrated
-      messages             UNMET BY DECISION — FR-028, and the author is erased
+      messages             UNMET BY DECISION — FR-USR-05, and the author is erased
       analytical records   FOUR STORES, THREE ANSWERS
 
   One of the four nouns is unmet, three of the four analytical stores are met
@@ -803,3 +803,112 @@ T039 · check-lane-scope, THE COUNTED LINE
       controls: 10 of 10 fired                                   from 77 files
 
   The line, not the exit code (055-4). One file added, which is this chapter's.
+
+================================================================================
+PHASE 7 — THE DOCUMENTS
+================================================================================
+
+T040/T041 · READING THE NEIGHBOURS FOUND THE CLAUSE IN TENSION
+
+  **FR-MOD-03 SITS ONE ROW ABOVE FR-MOD-04 AND THEY CONTRADICT EACH OTHER.** One
+  requires an immutable log recording *actor, action, TARGET*; the other requires
+  erasing the person who is the target. Neither clause mentions the other and nobody
+  had written the conflict down. That is 065's T042 shape — the clause two rows from
+  the one you opened the file to edit — and it is why 067-1 is a gap rather than a
+  note.
+
+  AND THE READING FOUND SOMETHING WORSE, IN MY OWN WORK.
+
+T048 · A FEATURE-LOCAL ID REACHED TWO PUBLISHED DOCUMENTS, AND THE FIRST SWEEP SAID ZERO
+
+  `FR-028` and `FR-029` are feature-local to the chapter that built `deleteUser`.
+  **There is no FR-028 in `docs/04-srs.md`** — the real clause is FR-USR-05, and for
+  the billing argument there is **no clause at all**; it is a comment in that method.
+  I had copied both out of `deleteUser`'s docstring into:
+
+      the record            research.md, clauses.md, contracts/erasure.md, baseline.txt
+      the SOURCE            repository.ts's eraseUser docstring
+      THE API RESPONSE      users.service.ts — the receipt's `note` fields
+
+  **THE RECEIPT IS THE SERIOUS ONE AND IT IS A NEW CLASS.** That body is read by a
+  compliance officer AT A CUSTOMER, who has no access to this platform's
+  specification — `FR-028` in a receipt is a string they cannot resolve by any means
+  available to them. 053 found a feature-local id reaching a published DOCUMENT; this
+  is one reaching a customer. Every receipt note is plain prose now.
+
+  AND THE SWEEP'S FIRST ANSWER WAS A CONFIDENT ZERO.
+  `git diff part4-ch20..HEAD -- docs/` reads COMMITTED state, and the `docs/` edits
+  were in the working tree. Re-run as `git diff part4-ch20 -- docs/`:
+
+      first reading    0 feature-local ids added          WRONG
+      second reading   2 — `FR-014`, twice, both mine     SRS 1.28 and docs/12 row 22
+
+  **`FR-014` is THIS feature's own id** and `docs/` already holds three unrelated
+  `FR-014`s. 063-4's defect, committed by the person who had just read the rule — and
+  hidden by an instrument that reported zero because it looked at the wrong tree.
+  *An instrument that reports zero has to prove it looked*, and `..HEAD` is how a diff
+  quietly stops looking. Both occurrences name the mechanism instead. Final: **0**.
+
+T042/T043/T043a/T044 · THE SRS
+
+      FR-MOD-04   four obligations · the second is four nouns · analytical records is
+                  four stores with three answers · the store that cannot comply is
+                  FR-MOD-03's and is not analytical
+      FR-MED-10   three obligations, this chapter moved ONE · 73.6% undefined
+      FR-USR-05   amended too, NAMING THE CLAUSE THAT WON — so the trade is findable
+                  from either side rather than from whichever one a reader opens
+      1.28        added
+
+  **T043a SAID TO NAME THE CLAUSE THAT LOST.** It is FR-MOD-04's *messages*, and
+  FR-USR-05 is the winner — so both were amended rather than only the loser, which the
+  task did not ask for and is the half that makes it findable.
+
+  AND `check-revision-order` CAUGHT THE ROW IN THE WRONG PLACE. 1.28 was inserted
+  BEFORE 1.27: *"version 1.27 follows 1.28 — the revision history must ascend, newest
+  last."* The checker working, on the first run after the edit.
+
+T045 · ADR-37, IN BOTH HOMES
+
+  The summary in `docs/05-sad.md` and the 90-line argument in
+  `docs/06-adr-deep-dives.md`. 4.5 found an ADR lives in two documents and ten passes
+  amended only the summary.
+
+  FOUR ALTERNATIVES RECORDED, AND THE THIRD IS THE ONE WORTH KEEPING: a synthetic
+  `anonymous` user per environment costs a row nobody created and a primary-key
+  collision the moment two erased users share a period. **The tombstone already is the
+  placeholder**, there is exactly one per user, and `(environment_id, period, user_id)`
+  wants exactly that.
+
+T046 · THE SAD, AND THREE OF FOUR SENTENCES WERE FALSE
+
+      §6.2   "deletes analytical rows by `user_id` MUTATION"      BOTH HALVES WRONG
+             — it is `user_external_id` plus `environment_id`, and `ALTER … DELETE`
+             is the verb this chapter refused
+      §6.2   `emoji_events` "outside the scope of the compliance-erasure mutation"
+             — true, and ADR-37 generalises it from *no identifier* to *no identifier
+             that resolves*
+      §8     "Tenant-prefixed keys (DR-15) make erasure and export prefix operations"
+             — TRUE OF TENANTS AND FALSE OF USERS. The key is
+             `{environment_id}/{media_id}` with no user segment, so a user erasure is
+             a Postgres lookup and one store request per object
+      §5     "a later writer of a second key must not erase this one" — metadata
+             merge, unrelated, left alone
+
+  **4.19's finding exactly: a task naming one site would have reached one.** The grep
+  returned four and three needed work.
+
+T047 · BOTH PART 4 TABLES, MATCHED ON TITLE
+
+  `docs/12` row 22 CLOSED, `docs/07` row 22 SHIPPED. Matched on the title because
+  `docs/07` holds two rows numbered 22.
+
+T049 · THE GATES          check-docs-drift · check-revision-order    EXIT 0
+       29 revisions ascend, 1.0 to 1.28
+
+T050 · traceability.md, BY READING
+
+  Fourteen requirements, each with the thing that discharges it. Plus the two sections
+  a grep cannot produce: **five things in the feature with no requirement behind them**
+  — `retained_anonymous`, ADR-37, `deleteUserRowRaw`, the `not_reached` note's second
+  sentence, and the analytical deadline — and **four clauses deliberately not amended**,
+  ADR-35 among them.

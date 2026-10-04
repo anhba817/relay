@@ -137,7 +137,7 @@ clear about is that predictions about what analysis will find are usually wrong.
 |---|---|---|
 | Return 204 and call it a receipt | the clause's least defined word, and the one store that cannot comply would be invisible | a compliance officer files a document that does not record the gap |
 | `ON DELETE SET NULL` on `messages.user_id` | **measured and refused already**: the resume path drops a senderless row, so every message the user sent vanishes from every reconnecting client | a silent delivery defect, and reaching for a thing the platform rejected with evidence |
-| Reuse `deleteUser` | it keeps the row, the messages and `usage_active_users` **on purpose** (FR-027/028/029), which is the opposite answer on three of them | the chapter's central conflict papered over by a function name |
+| Reuse `deleteUser` | it keeps the row, the messages and `usage_active_users` **on purpose** — its own docstring cites `FR-027/028/029`, which are that chapter's FEATURE-LOCAL ids and resolve to nothing in `docs/04-srs.md`; the real clause is FR-USR-05, which is the opposite answer on three of them | the chapter's central conflict papered over by a function name |
 | Erase the rollup sketches | a `uniq` state has no subtract operation; the only repair is recomputation from a source with 0 rows and a 90-day TTL | a claim the receipt cannot support |
 | Skip ClickHouse when it is down | III's independence cuts the other way here: the operational erasure must not be rolled back, and the receipt is what carries the gap | either a blocked compliance erasure or a silent one |
 

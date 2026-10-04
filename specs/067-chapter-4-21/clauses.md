@@ -30,7 +30,7 @@ own words were stricter or wider than the sentence everybody remembered.
 |---|---|---|
 | **profile** | **demonstrated** | `display_name`, `avatar_url`, `metadata` cleared and **`external_id` replaced** with `erased:<users.id>` |
 | **memberships** | **demonstrated** | `members` and `read_positions` deleted; the gauntlet asserts the other tenant's survive |
-| **messages** | **unmet by decision** | FR-028 keeps a channel's history whole. The author is erased and the text is not. T010 |
+| **messages** | **unmet by decision** | FR-USR-05 keeps a channel's history whole. The author is erased and the text is not. T010 |
 | **analytical records** | **three answers, none of them one word** | below |
 
 **THE FOURTH NOUN IS WHY THIS CHAPTER NEEDED A DECISION AND NOT A TRAVERSAL.**
@@ -104,7 +104,7 @@ honest: four of the five are gaps and this one is not.
 - **FR-USR-05** needs no amendment. Its *"unless message deletion is explicitly
   requested"* is not what FR-MOD-04 asks for, and T010 chose the reading in which the
   two clauses do not collide rather than the one that makes them.
-- **FR-029** needs no amendment. `usage_active_users` is kept in full and its count
+- **FR-USR-05's billing neighbour** needs no amendment — there is no such clause. `usage_active_users` is kept in full and its count
   is unchanged to the row, so *"a customer who deleted a user in March still owes for
   March"* is true after an erasure exactly as before.
 - **FR-MOD-04 DOES need one sentence** (T043a), and it is the cheap version rather
