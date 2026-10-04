@@ -1,0 +1,212 @@
+BASELINE — feature 066, chapter 4.20, "The messages that expire"
+Written phase by phase, in the order the measurements were taken, including the
+ones that were wrong first (T063).
+
+================================================================================
+PHASE 1 — SETUP AND MEASUREMENT
+================================================================================
+
+T001 · THE LANE ENVIRONMENT                                         2026-10-04
+
+    node v22.23.2 · pnpm 10.33.0 · PostgreSQL 18.6 (x86_64-pc-linux-musl)
+    RELAY_POSTGRES_PORT=15432   — this machine's own Postgres holds 5432
+
+    compose, `docker compose up -d --wait`, all seven healthy:
+      postgres · redis · nats · clickhouse · minio · mailpit · clamav
+    the `services` profile (api, gateway, dispatcher, media-worker) is NOT up
+    yet; T067 builds and starts the api image.
+
+    ROW COUNTS, which are part of the instrument:
+
+      messages                   199,275
+      message_edits                6,663
+      media_objects               14,039
+      environments                33,051
+        with retention_days set          0      <- the clause's own premise
+      channels                    37,853
+      audit_log                    3,477
+      outbox                     395,452
+        pending                    3,399
+
+    THE OUTBOX IS UP 9,135 SINCE 065 CLOSED at 386,317, and `gaps.md` 065-5
+    says `outbox.itest.ts` is sensitive to the SIZE of that table rather than
+    only to a neighbour writing it. `reset-lane.mjs` does not touch it by
+    design. Re-measure at T070.
+
+T002 · THE LANES, REAL EXIT CODES, WITH `Cached:` AND ELAPSED
+
+Analysis pass 16 found that a fully cached turbo run replays BOTH the exit code
+and the counted line, so every lane below was run under `--force` and the
+`Cached:` line is quoted as the control.
+
+    lane                    EXIT  elapsed   Cached            counted line
+    pnpm lint                  0    4.40s   0 of 1            1 problem, 0 errors, 1 warning
+    turbo run typecheck        0    8.22s   0 cached, 15      15 successful, 15 total
+    pnpm test                  0    7.72s   0 cached, 13      13 successful, 13 total
+                                                              81 test files, 9 packages
+    pnpm test:integration      1    1.20s   0 cached,  4      1 successful, 4 total  <- see below
+    pnpm coverage                                             not yet run
+
+  THE LINT INVOCATION WAS WRONG FIRST, AND THE FAILURE LOOKED LIKE A RED LANE.
+  `turbo run lint --force` exits 1 in 0.20 s with `Could not find task 'lint' in
+  project`: the task is `//#lint:root` and `pnpm lint` is what wraps it. **An
+  exit code of 1 from a lane that never started is indistinguishable from a
+  lane that ran and failed, except by the elapsed time** — 0.20 s against the
+  4.40 s a real run takes. The counted line was absent, which is what 055-4
+  says to look at.
+
+  AND `pnpm test:integration` FAILS AT THE SEALED SUITE AND BLOCKS THE REST.
+  `@relay/outsider` refuses in 1.2 s with its own message:
+
+      Error: this suite integrates against a RUNNING platform and starts
+      nothing. Missing: RELAY_API_URL, RELAY_WS_URL, RELAY_DEMO_CREDENTIAL
+
+  **The refusal is correct and loud.** What follows it is not: turbo reports
+  `Tasks: 1 successful, 4 total` and stops scheduling, so **three lanes after it
+  never execute** — 052's finding, still live. The suite is reached by no local
+  lane without those three variables, which is why T070a exists and why 063
+  named it 29 times and 064, 065 and this feature's first draft named it once,
+  once and never.
+
+T003 · THE FENCE CHAIN, ABSOLUTE                                    (055's rule)
+
+    check:fences EXIT 0
+    291 fenced files replay onto relay-platform across 62 chapters
+    (46 translated) — 0 problems
+
+T003a · ALL SIX TUTORIAL GATES, EACH WITH ITS COUNTED LINE
+
+    pnpm lint          EXIT 0   eslint, no output
+    pnpm build         EXIT 0   the vi tree builds to part-3/chapter-19
+    pnpm check:docs    EXIT 0   all mirrored docs match their sources
+                                check-revision-order: 27 revisions ascend, 1.0 to 1.26
+    pnpm check:srs     EXIT 0   classes checked: ASM CON DR EIR FR NFR
+    pnpm check:figures EXIT 0   318 figures, every diagram passed as `code`;
+                                320 imported bindings all resolve
+    pnpm check:fences  EXIT 0   291 files, 62 chapters
+
+  `check:errors` is NOT one of them — it runs by path from the lanes job, which
+  is 062's correction to 055-3.
+
+T004 · THE CI BASELINE
+
+    run 37133189235, head 2423318d, "close(065): chapter 4.19 shipped"
+    conclusion SUCCESS on all four jobs · `##[error]` set = EMPTY
+
+  An empty set is the hardest kind to match: T073 must introduce nothing, and
+  cannot be satisfied by removing one error and adding another.
+
+T005 · THE PREMISE, RE-RUN AGAINST THE PLATFORM — ALL FOUR, WITH THE CONTROL
+
+    1 delete the parent          ERROR  message_edits_message_id_fkey
+    2 delete the children first  ERROR  message versions are append-only (FR-MSG-07)
+    3 ON DELETE CASCADE          ERROR  same trigger, and the error names the
+                                        generated statement:
+                                        DELETE FROM ONLY "public"."message_edits"
+                                          WHERE $1 OPERATOR(pg_catalog.=) "message_id"
+    4 session_replication_role   DELETE 1          <- ADR-35's published hole
+    CONTROL: no version rows     DELETE 1          <- the FK is the only obstacle
+
+  The pincer is real and unchanged since 2026-10-03.
+
+T006 · THE FENCE BILL, COUNTED AGAINST THE TREE
+
+                                   pages   appendix hunks already carried
+    repository.ts                     52   5
+    schema.ts                         34   5
+    app.module.ts                     23   3
+    vitest.coverage.config.mts        23   16
+    targets.ts                        13   4
+    gauntlet.itest.ts                 13   6
+    ---- the rest of the isolation family, if T014a says the route reaches them
+    targets.itest.ts                  11   2
+    attack.ts                         10   1
+    attack.test.ts                     3   1
+    ---- free
+    moderation-routes.ts               0   0
+
+  Every figure matches `plan.md`. **`moderation-routes.ts` costs nothing**,
+  which is why T026a is a coverage question and not a bill question.
+
+T007 · WHAT CANNOT BE HARD-DELETED TODAY, AND THE AGE HISTOGRAM
+
+    messages with at least one version row        5,495   <- blocked by the pincer
+    message_edits rows                            6,663
+
+    older than 365 days                               0
+    older than  90 days                               0
+    older than  30 days                               0
+    oldest message                           2026-09-14
+    crosses thirty days on                   2026-10-14   <- TEN DAYS FROM TODAY
+
+  NOTHING EXPIRES AT ANY OF FR-MOD-06's FOUR SETTINGS, so every demonstration
+  below is a backdated fixture — **as of 2026-10-04**. The claim has an expiry
+  date and the quickstart's §3 guard is what survives it.
+
+T008 · THE MEDIA LINKAGE
+
+    foreign key from media_objects to messages      NONE
+    the link is a `media_id` inside jsonb (FR-MED-11), so "unless shared" is a
+    reverse lookup rather than a constraint the database can enforce.
+
+    reverse check, bound operand        107 buffers ·   3.1 ms
+    reverse check, set-wise           3,423 buffers · 127.9 ms · GIN idle under
+                                      a Parallel Seq Scan, Rows Removed by Join
+                                      Filter: 210,696
+    batched 100 at a time               976 buffers ·  15.2 ms · BitmapOr over
+                                      100 Bitmap Index Scans — ~9.8 an object
+
+  The set-wise form is the shape the sweep must not be written in.
+
+T009 · WHAT THE AUDIT LOG DOES WITH A DESTROYED TARGET
+
+    foreign key from audit_log to messages          NONE
+    rows naming a message target                    1,435
+    audit_log rows in total                         3,477
+
+  Nothing refuses the delete and nothing repairs the entry. US3 decides whether
+  that is stated or fixed; this is the measurement.
+
+  AND `MODERATION_ROUTES` HOLDS 24 ENTRIES FOR 24 DERIVED ROUTES. This chapter's
+  `PATCH /v1/environments/{id}` makes 25, and `moderation-routes.itest.ts` fails
+  in both directions until it has one (T026a).
+
+T002, CONTINUED · THE INTEGRATION LANE, MEASURED PROPERLY AFTER TWO WRONG RUNS
+
+  Run 1 and run 2 both died at `@relay/outsider` in 1.2 s for the env-var
+  reason above. Bringing the `services` profile up did not change it — the
+  suite wants RELAY_API_URL, RELAY_WS_URL and RELAY_DEMO_CREDENTIAL, which no
+  local lane sets. Run 3 scoped to `--filter=@relay/api`:
+
+    pnpm exec turbo run test:integration --filter=@relay/api --force
+    REAL_EXIT=1 · elapsed 143.32s · Cached 0 · Duration 138.38s
+    Test Files  3 failed | 47 passed (50)
+
+  THE LANE IS RED AT THE OPEN AND IT IS NOT THIS CHAPTER'S. The working tree of
+  `relay-platform` is clean, migrations report `nothing to apply`, and Mailpit
+  answers 200. Three files, thirteen tests, two classes:
+
+    src/outbox/outbox.itest.ts        1  invariant 8: two concurrent relays
+                                         publish every row exactly once
+                                         -> THIS IS `gaps.md` 065-3 AND 065-5,
+                                         reproducing. The outbox is 395,452
+                                         rows, up 9,135 since 065 closed.
+
+    src/quotas/quotas.itest.ts        7  the drain loop
+    src/quotas/connections.itest.ts   6  the same drain loop, third dimension
+
+  THE QUOTAS PAIR FAILS IN ISOLATION TOO — `quotas.itest.ts` alone is 7 failed
+  of 24 — so it is not a neighbour's reason. The chain is visible in the log:
+
+      current transaction is aborted, commands ignored until end of
+      transaction block
+      ... repository.ts:1146, inside the catch, issuing
+          UPDATE quota_notifications SET last_error = ...
+
+  **The error handler runs inside the transaction the error aborted**, so the
+  handler's own write fails and reports itself as the cause. Whatever aborted
+  the transaction first is hidden behind its own recovery. Recorded here, not
+  repaired: it is two classes, both pre-existing, and T070 compares class by
+  class rather than test by test (065's rule).
+
+  `pnpm coverage` deferred to T065, where the pins are re-measured anyway.
