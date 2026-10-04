@@ -193,6 +193,12 @@ retention year got at chapter 4.18.
   a message. Any action whose answer or timing changes is recorded with the measurement.
 - **FR-012**: Where measurement falsifies a published clause or document, the document MUST be
   amended rather than left to diverge.
+- **FR-013**: Destroying a media object MUST publish the analytical store's `deleted` storage
+  event, with a **negative** `bytesDelta`. The operational quota needs nothing — SRS 1.17 made
+  committed bytes a `sum(declared_bytes)` over rows, so deleting the row corrects it. The
+  analytical meter is event-sourced and does not self-correct: without this, chapter 4.16's
+  reconciliation reports a tenant charged for bytes that no longer exist, permanently, and
+  attributes the gap to reservations.
 
 ### Key Entities
 

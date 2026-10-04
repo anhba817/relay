@@ -329,7 +329,59 @@ and **no `(vi)` task, correctly**: the translation reaches part 4 chapter 3 agai
 19, so there is no twin to write. T076's *147,331 with 2,669 of headroom* matches `wc -c`
 exactly.
 
-### Six passes
+## Analysis pass 7 — six findings, ONE CRITICAL, all six fixed
+
+**The question**: *run the quickstart as an execution trace, and open the suite no task
+mentions.* The stack is down, so the quickstart was traced statically — every variable, every
+identifier, every expected output against the repository. The CRITICAL came from somewhere
+else: a stray citation in a migration comment, followed out of curiosity.
+
+- **Q1 CRITICAL — US2's predicate already exists, tested, in a file this chapter is already
+  billed for.** `repository.ts` exports **`unreferencedMediaIn(db, environmentId, olderThan,
+  limit = 100)`** — chapter 4.15's, environment-scoped, and **already in the two-query form**
+  that 4.12's measurement forces. No artifact in this feature named it, and T028 said to write
+  it. **R2 re-derived its measurement from scratch and got the same answer**, which is the only
+  reason anyone can be confident it is the right function. **Fixed**: T028 reads it instead of
+  writing one and records two things to check rather than assume — its `lt(createdAt,
+  olderThan)` arm and its `limit = 100`; T029 calls it; T029a repairs the comment.
+  **ITS COMMENT IS WHY SIX PASSES READ PAST IT**: *"CALLED BY NOTHING YET, AND THAT IS NOT AN
+  OVERSIGHT. `docs/12` row 22, the erasure chapter, is where it gets a caller."* That is 065's
+  own CRITICAL inverted — *a comment that explains an absence as a necessity is why four
+  chapters read past it* — and here the absence explained is the absence of a **caller**,
+  which is exactly what this chapter supplies. **Six source comments across five files point at
+  row 22, and this chapter is row 21.**
+- **Q2 HIGH — the analytical meter would keep charging for destroyed bytes.**
+  `storage-event.ts`: *"THE CAUSES ARE FOUR AND THE CALLERS ARE THREE … `deleted` from
+  **nothing yet** … this signature is the one it will call."* **Fixed** as **FR-013** and
+  T029b. **The asymmetry is what makes it skippable**: the operational quota self-corrects,
+  because committed bytes are a `sum(declared_bytes)` over rows (SRS 1.17), so every
+  operational assertion stays green while the event-sourced meter drifts — the drift 4.16
+  measured at 4,436 MB charged against 30.7 MB held.
+- **Q3 HIGH — `$OLD` and `$NEW` were used five times and set nowhere**, and `$CH` was set and
+  used nowhere, because the step between them was the ellipsis *"… mint a token, add a member,
+  send two messages, edit one of them …"*. 4.12's `$OBJECT_KEY`, exactly. **Fixed**: the block
+  is written, and it echoes both ids with a note on what an empty one looks like downstream.
+- **Q4 HIGH — the immutability re-check could not fail.** `message_edits_append_only` is
+  `BEFORE UPDATE OR DELETE … **FOR EACH ROW**`, §4 edited only the expiring message, so §6's
+  tamper matched zero rows, fired the trigger zero times and returned `UPDATE 0` with no error
+  — under an expectation reading *"still refused"*. **Fixed**: §4 edits both messages, §6
+  counts the surviving version rows first, and the dangling `'see below'` label row became a
+  real count. *Ask what would have to be false for this to fail.* Here: nothing.
+- **Q5 MEDIUM — the sealed suite, dropped the same way the gate task was.** Named 29 times in
+  063's tasks, once in 064's, zero in 065's, zero here. It is one of CI's four jobs, reached by
+  no local lane, and **T025 adds a Nest module** — which compiles, typechecks and lints while
+  failing on the first request (4.10). **Fixed** as T070a, after T067's rebuild.
+- **Q6 LOW — §3's comment described the seeder's streams backwards.** It showed
+  `environment_id` then `rk_dev_` and said *"the second line goes to stderr"*; `:77` is
+  `console.error` and `:78` is `console.log`, so it is the first. The commands were right and
+  the explanation of why was inverted, which is the version a reader trusts and then breaks.
+
+**What verified clean**: `DATABASE_URL` is real and its default is byte-identical to the string
+§0 passes · `migrate.js` has a `require.main` entry · the trigger's error text matches §2
+verbatim · the seeder is idempotent, so §3's two invocations agree on the tenant ·
+`${RELAY_POSTGRES_PORT:-5432}` carries a default, so §1 and §2 work unexported.
+
+### Seven passes
 
     pass 1   4 findings   0 CRITICAL   opening the files the artifacts cite
     pass 2   4 findings   0 CRITICAL   writing the queries nobody had written
@@ -337,6 +389,7 @@ exactly.
     pass 4   4 findings   0 CRITICAL   opening the code the tasks will edit
     pass 5   3 findings   1 CRITICAL   opening the constitution and the SRS
     pass 6   4 findings   0 CRITICAL   opening the tutorial, `ci.yml` and two sibling features
+    pass 7   6 findings   1 CRITICAL   tracing the quickstart, and one stray citation
 
 **Four passes found nothing critical, the fifth found the thing that decides whether the
 chapter can ship as specified, and the sixth found three things no document in this directory

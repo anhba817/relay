@@ -91,9 +91,11 @@ made every deletion add one.
 ## 3 · Set a policy (after the chapter)
 
 ```bash
-# THE SEEDER ALREADY PRINTS BOTH, and the second line goes to stderr:
-#   environment_id bbda7667-…
-#   rk_dev_…
+# THE SEEDER ALREADY PRINTS BOTH, ON DIFFERENT STREAMS — checked against
+# scripts/seed-demo-tenant.mjs, where :77 is console.error and :78 is console.log:
+#   environment_id bbda7667-…   -> STDERR
+#   rk_dev_…                     -> STDOUT
+# which is why the two captures redirect in opposite directions.
 export K=$(RELAY_POSTGRES_PORT=15432 node scripts/seed-demo-tenant.mjs 2>/dev/null | tail -1)
 export ENV=$(RELAY_POSTGRES_PORT=15432 node scripts/seed-demo-tenant.mjs 2>&1 >/dev/null \
   | awk '/^environment_id/ {print $2}')
@@ -112,10 +114,30 @@ policy somebody chose.
 ## 4 · Backdate a message past the policy, and keep one inside it (after the chapter)
 
 ```bash
+id() { python3 -c 'import sys,json;print(json.load(sys.stdin)["id"])'; }
+
 export CH=$(curl -s -X POST "localhost:4000/v1/channels" -H "authorization: Bearer $K" \
-  -H 'content-type: application/json' -d '{"external_id":"ret","type":"public","name":"Ret"}' \
-  | python3 -c 'import sys,json;print(json.load(sys.stdin)["id"])')
-# … mint a token, add a member, send two messages, edit one of them …
+  -H 'content-type: application/json' -d '{"external_id":"ret","type":"public","name":"Ret"}' | id)
+
+# Two messages through the internal seam, which is what accepts a server-side sender.
+export OLD=$(curl -s -X POST "localhost:4000/internal/messages" -H "authorization: Bearer $K" \
+  -H 'content-type: application/json' \
+  -d "{\"channel_id\":\"$CH\",\"text\":\"expires\"}" | id)
+export NEW=$(curl -s -X POST "localhost:4000/internal/messages" -H "authorization: Bearer $K" \
+  -H 'content-type: application/json' \
+  -d "{\"channel_id\":\"$CH\",\"text\":\"survives\"}" | id)
+
+# EDIT BOTH. One version row on each: $OLD's is the pincer the sweep must get through,
+# and $NEW's is what §6 tampers with — see the note there.
+for M in "$OLD" "$NEW"; do
+  curl -s -o /dev/null -X PATCH "localhost:4000/v1/channels/$CH/messages/$M" \
+    -H "authorization: Bearer $K" -H 'content-type: application/json' \
+    -d '{"text":"edited once"}'
+done
+
+echo "OLD=$OLD NEW=$NEW"   # BOTH MUST BE UUIDS. An empty one makes every psql below
+                           # answer `invalid input syntax for type uuid: ""`, which reads
+                           # as a broken platform. 4.12 shipped `$OBJECT_KEY` unset.
 
 docker compose exec -T postgres psql -U relay -d relay -c \
   "UPDATE messages SET created_at = now() - interval '91 days' WHERE id = '$OLD'"
@@ -151,16 +173,24 @@ docker compose exec -T postgres psql -U relay -d relay -t -A -F' | ' -c "
 select 'the expired message', count(*)::text from messages where id = '$OLD'
 union all select 'its version rows', count(*)::text from message_edits where message_id = '$OLD'
 union all select 'the message inside the policy', count(*)::text from messages where id = '$NEW'
-union all select 'an UPDATE on a surviving version row still refused', 'see below';"
+union all select 'version rows surviving on $NEW', count(*)::text from message_edits where message_id = '$NEW';"
 
 docker compose exec -T postgres psql -U relay -d relay -v ON_ERROR_STOP=0 \
   -c "update message_edits set prior_text='tampered' where message_id = '$NEW'"
 ```
 
-**Expected after the chapter**: `0`, `0`, `1`, and the `UPDATE` **still refused**. The last one
-is the point — the sweep widened the immutability guarantee by one named path and by nothing
-else, and a quickstart that did not check the guarantee still held would be demonstrating only
-the half that is convenient.
+**Expected after the chapter**: `0`, `0`, `1`, `1`, and the `UPDATE` **refused**.
+
+**THE ROW COUNT ABOVE THE TAMPER IS NOT DECORATION, AND THIS IS WHY §4 EDITS BOTH MESSAGES.**
+`message_edits_append_only` is `BEFORE UPDATE OR DELETE … **FOR EACH ROW**`, so an `UPDATE`
+matching nothing fires it **zero times** and answers `UPDATE 0` with no error at all. Edit only
+the expiring message and `$NEW` has no version row, the tamper matches nothing, and the
+quickstart prints a pass for a guarantee it never touched. **Ask what would have to be false
+for this to fail**: here, until §4 was fixed, nothing.
+
+The check itself is the point — the sweep widened the immutability guarantee by one named path
+and by nothing else, and a quickstart that did not check the guarantee still held would be
+demonstrating only the half that is convenient.
 
 ## 7 · And what this still cannot show
 

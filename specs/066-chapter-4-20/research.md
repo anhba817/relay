@@ -108,6 +108,13 @@ the sweep already has in hand.
 **Reverse — is this object still referenced by a message that did NOT expire?** Required,
 because FR-MSG-11 has allowed the same `media_id` in two messages since chapter 3.24.
 
+**AND IT IS ALREADY WRITTEN, WHICH THIS SECTION DID NOT KNOW WHEN IT MEASURED.**
+`repository.ts` exports `unreferencedMediaIn(db, environmentId, olderThan, limit = 100)` —
+chapter 4.15's, tested, environment-scoped, and already in the two-query form for the reason
+measured below. The measurement stands and is worth keeping: **it was taken independently and
+agrees**, which is the only way anyone found out the function was there. Analysis pass 7 found
+it by following a stray `docs/12 row 22` citation out of a migration comment, six passes in.
+
 ```
 set-wise semi-join over media_objects     94,132 buffers · 79.6 ms · 4,930 rows
 one object, operand bound                    883 buffers · 27.2 ms

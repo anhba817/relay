@@ -80,13 +80,31 @@ for each environment with retention_days set     UNSCOPED, in retention-reads.ts
   collect their media_id values              free: jsonb already on the row
   SET LOCAL relay.expiring = 'on'
   DELETE FROM messages WHERE id = ANY(…)     cascades to message_edits
-  for each media_id, is it still referenced? 883 buffers with a bound operand (R2)
+  for each media_id, is it still referenced? `unreferencedMediaIn` ALREADY ANSWERS THIS —
+                                             repository.ts, written by 4.15, tested, scoped,
+                                             and already two queries rather than one, which
+                                             is the 883-against-94,132 shape (R2)
     if not, delete the object and its renditions, and the stored bytes
+                                             AND publish the `deleted` storage event,
+                                             bytesDelta NEGATIVE (FR-013)
 ```
 
 **THE ORDER MATTERS IN ONE PLACE.** The reference check runs **after** the messages are gone,
 because an object referenced only by expired messages is only unreferenced once they are. Run
 it first and every shared-looking object survives.
+
+## Two things that already exist, and one that is waiting
+
+**`unreferencedMediaIn(db, environmentId, olderThan, limit = 100)`** is chapter 4.15's, in
+`repository.ts`, with a comment saying it is *"called by nothing yet"* and that `docs/12` row
+22 is where it gets a caller. **Row 21 gets there first.** The sweep calls it rather than
+writing a second one, and the comment is repaired in the same chapter that falsifies it.
+
+**`publishStorageDelta`'s `deleted` cause** is declared and has no producer — *"the causes are
+four and the callers are three"*. This chapter is the fourth. The operational quota needs
+nothing, because committed bytes are a `sum(declared_bytes)` over rows (SRS 1.17) and the
+delete corrects it; **the analytical meter is a sum of events and does not self-correct**,
+which is the asymmetry that makes this easy to skip and expensive to skip.
 
 ## What this model does NOT change
 

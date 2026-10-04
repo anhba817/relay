@@ -192,8 +192,10 @@ prediction.
    `PATCH /v1/environments/{id}` or something narrower — settled before a migration exists.
 3. **US1 — the expiry, and the pincer.** Both migrations, the sweep, and the delete that is
    refused today. **The red probe comes first**: assert the refusal, then make it pass.
-4. **US2 — the objects go too.** The reverse reference check, written so the planner can use
-   the index 4.12 built.
+4. **US2 — the objects go too.** The reverse reference check **is `unreferencedMediaIn`,
+   which chapter 4.15 already wrote in the shape the planner can use**; this phase reads it,
+   calls it, publishes the `deleted` storage event nothing has ever published, and repairs the
+   two comments that promise a caller arriving one chapter later than it does.
 5. **US3 — what runs it, published.** The clause's three obligations with a verdict each.
 6. **The probes.** Each tenancy arm alone and in combination; the trigger still refusing
    everything it refused before; the sweep run twice.
