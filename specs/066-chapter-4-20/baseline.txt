@@ -573,3 +573,124 @@ CHAPTER 4.15 WROTE A TEST TO FIRE ON THIS DAY, AND IT FIRED.
 
     retention · environments · media · isolation · audit
     19 files, 234 tests, all green
+
+================================================================================
+PHASE 6 — THE PROBES
+================================================================================
+
+T035 · TWO ISOLATION PROPERTIES, AND THEY ARE DIFFERENT KINDS OF CLAIM
+
+  THE DELETE'S SCOPE IS AN ARM. Each predicate deleted, alone and together, with
+  the retention suite AND the isolation gauntlet re-run each time:
+
+    arm 0  untouched                        71 of 71 pass
+    arm A  scope off the PAGED READ          1 failed
+    arm B  scope off `destroyMessages`      71 of 71 PASS   <- INVISIBLE
+    arm C  both                              1 failed
+
+  **ARM B TURNED NOTHING RED**, because every id the sweep passes has already
+  been scoped by `expiredMessageIds`. That is 065-4 and 4.12 again: a
+  single-mutation probe measures the DEFENCE, not the arm.
+
+  THE RESPONSE IS THE TEST, NOT THE DELETION. The arm defends a caller that does
+  not scope first, and one refactor is all it takes to become that caller. So
+  `retention.itest.ts` gained *"destroyMessages refuses an id from another
+  tenant, on its own"*, and the probe was re-run:
+
+    arm 0  with the new test                72 of 72 pass
+    arm B  re-probed                         1 failed        <- VISIBLE NOW
+
+  AND THE PROBE HAD TO ASK WHAT SURVIVED. Constitution I's usual failure is a
+  leak and the usual question is what came back; here a wrong scope DESTROYS
+  another tenant's messages, so the assertion reads the victim's channel.
+
+  THE ENUMERATION'S PROPERTY IS ITS SIGNATURE, NOT AN ARM. `environmentsWithPolicy`
+  takes no tenant parameter at all, which is the thing to assert — a probe
+  hunting for a branch to delete there would report nothing red and mean
+  something entirely different by it.
+
+T035a · THE CREDENTIAL DECORATOR, DELETED AND RE-RUN
+
+    arm 0  untouched                     70 of 70 pass
+    arm 1  `@Accepts("application")` off  1 failed
+
+  **COVERED, WHICH IS THE OPPOSITE OF WHAT 4.18 FOUND.** That chapter deleted the
+  same decorator from the audit route and **nothing went red anywhere** — an
+  end-user token answered 200 with the tenant's whole moderation history, while
+  the controller's own 403 defended a case that could not arise.
+
+  Here the consequence would have been worse than disclosure: an end-user token
+  that can set a thirty-day policy destroys the tenant's history. The red test is
+  `environments.itest.ts`'s *"refuses a user token with wrong_credential_type"*,
+  which exists because the probe was planned before the route was written rather
+  than after.
+
+  AND THE CONTROLLER HAS NO 403 BRANCH OF ITS OWN, deliberately: a platform
+  principal carries no `environmentId` by design and the decorator refuses it
+  first, so an explicit branch would defend the case 4.18 deleted. The optional
+  chain makes a missing principal answer 404 like any other environment the
+  caller may not have.
+
+T036 · THE TRIGGER'S OLD REFUSALS, AFTER THE CHANGE
+
+    UPDATE, flag SET            ERROR  append-only (FR-MSG-07)  line 6
+    UPDATE, flag unset          ERROR  append-only (FR-MSG-07)
+    DELETE child, flag unset    ERROR  append-only (FR-MSG-07)
+    DELETE the MESSAGE, flag set     DELETE 1   <- the one new thing
+
+  The exception is one verb on one table reached one way. Reading the condition
+  is not testing it.
+
+T036a · THE KEYWORD, BOTH DIRECTIONS, WITH A CONTROL
+
+    plain `SET`, transaction ends, later transaction:
+        current_setting -> 'on' · DELETE 1          THE EXCEPTION LEAKS
+    `SET LOCAL` with no transaction block:
+        WARNING: SET LOCAL can only be used in transaction blocks
+        current_setting -> empty                    THE EXCEPTION VANISHES
+    control — `SET LOCAL` inside one, which is what the sweep does:
+        inside  'on'  ·  after ROLLBACK  empty      CORRECT
+
+  Neither failure changes an exit code and neither changes a counted line.
+
+T037 · THE ACCOUNTING FIGURES, DERIVED FROM THE SOURCE
+
+    targets.ts CLASSIFICATIONS        49 entries   (48 before this chapter)
+      by shape: write 27 · exempt 9 · read 6 · list 4 · credential 4
+    moderation-routes.ts              25 entries   (24 before), 7 moderation
+    gauntlet + targets + moderation-routes      3 files, 77 tests, green
+
+  Derived rather than read off a printed line: those suites assert emptiness and
+  print no count of their own.
+
+T038 · WHAT A SWEEP COSTS, AND THE TWO HALVES DO NOT COINCIDE
+
+  Backdated fixtures, each to its own instant, one environment, measured through
+  `sweepRetention` end to end:
+
+    messages  objects  pages   total      per message
+       200        0      1      8.5 ms     0.043 ms
+       600        0      2     19.9 ms     0.033 ms      <- paging works
+       200       50      1    137.8 ms     0.689 ms
+       200      200      1    419.0 ms     2.095 ms
+
+  **THE MESSAGE HALF IS ~0.04 ms AND THE OBJECT HALF IS ~2.05 ms** — (419 − 8.5)
+  / 200 — so **an object costs about 48 times what a message costs**, and the
+  cost of a sweep is a fact about how much media expired rather than how many
+  messages did. The object half is a store round-trip apiece: the store has no
+  foreign keys and nothing cascades there.
+
+  AND EVERY FIGURE IS FROM A BACKDATED FIXTURE. Nothing on this lane is thirty
+  days old, so there is no real-traffic number to publish and the chapter says
+  so rather than implying one.
+
+T039 · THE LANE-SCOPE CHECKER, COUNTED LINE RATHER THAN EXIT CODE
+
+    controls: 10 of 10 fired
+    check-lane-scope: 77 integration files, 0 unscoped read(s) of a shared
+    table in 0 file(s)
+
+  77 files, up from 75 at 065's close — this chapter's two. The controls firing
+  is what makes the zero mean anything (049-3: a control that proves the checker
+  WORKS says nothing about whether it LOOKED, and the file count is the half
+  that does).
