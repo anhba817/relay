@@ -740,7 +740,36 @@ batching shape and the reason it works; this one found that the candidate set fe
 from the wrong population. **Neither pass could have reached the other's half** — one needed
 the source, the other needed the database.
 
-### Fifteen passes
+## Analysis pass 16 — two findings, 0 CRITICAL, both fixed
+
+**The question**: *fifteen passes and not one test has been run.* T002 is the baseline the
+whole close-out comparison rests on.
+
+    pnpm test                  EXIT 0 · Tasks: 13 successful · Cached: 13 cached, 13 total
+                               17 ms — and every "Test Files N passed" line printed
+    turbo run test --force     EXIT 0 · Tasks: 13 successful · Cached:  0 cached, 13 total
+                               8.559 s · 81 test files across 9 packages
+
+- **AB1 HIGH — a fully cached turbo run is indistinguishable from a real one by exit code AND
+  by counted line.** T002 asks for *"every lane's REAL exit code … with the counted line beside
+  each"*, and **the cache replays both**. T070 compares close-out against T002, so two replays
+  compare byte-identical. **The only tells are `Cached: N cached, N total` and the duration.**
+  **Fixed**: T002 and T070 record them or run `--force`.
+  **THIS DEFEATS THE RULE THIS PROJECT BUILT AGAINST IT.** 055-4 taught *assert the counted
+  line, not the exit code*, because five of seven gate scripts exit 0 over an absent corpus.
+  Turbo prints the counted line **from cache**, so the rule is necessary and not sufficient.
+  050 found this cache hiding a **red**; this is it hiding **that nothing ran**, from the
+  instrument built to catch exactly that.
+- **AB2 MEDIUM — 065-5 re-measured and it moved the way the entry warns.** `outbox` is
+  **395,452** against **386,317** at 065's close — up 9,135 — with 3,399 pending. Pass 11
+  deferred it to T070; it is available now. **Fixed** into T064's carry table.
+
+**VERIFIED CLEAN, AND USEFUL: the unit lane is green at the open.** Forced — 13 tasks, **81
+test files**: api 42, gateway 11, protocol 9, test-harness 7, media-worker 7, config 2, and one
+each for service-kit, ingester and dispatcher, in **8.559 s**. That is a real T002 baseline
+rather than a replayed one, and it is recorded in the task.
+
+### Sixteen passes
 
     pass 1   4 findings   0 CRITICAL   opening the files the artifacts cite
     pass 2   4 findings   0 CRITICAL   writing the queries nobody had written
@@ -757,6 +786,7 @@ the source, the other needed the database.
     pass 13  2 findings   0 CRITICAL   running the SOLUTION — R1 holds, one keyword does not
     pass 14  2 findings   0 CRITICAL   running the PLANS — the ratio was a part over a whole
     pass 15  2 findings   1 CRITICAL   running a TASK'S PREMISE — the reused function is the wrong one
+    pass 16  2 findings   0 CRITICAL   running the LANE — a cached run replays the counted line
 
 **Four passes found nothing critical, the fifth found the thing that decides whether the
 chapter can ship as specified, and the sixth found three things no document in this directory
