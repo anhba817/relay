@@ -241,7 +241,7 @@ than re-measured, but **phase 1's T001 needs it up.**
 **The question**: *open the constitution and the SRS rather than the source.* 065's eighth and
 ninth passes found their best results that way, and so did this one.
 
-- **E1 CRITICAL, OPEN — two documents forbid exactly what FR-MOD-06 requires.**
+- **E1 CRITICAL, DECIDED BY THE USER — two documents forbid exactly what FR-MOD-06 requires.**
 
       constitution II   "hard deletion exists ONLY ON THE COMPLIANCE PATH"
       FR-MSG-08         "Hard deletion shall occur ONLY VIA THE COMPLIANCE DELETION ENDPOINT"
@@ -251,8 +251,8 @@ ninth passes found their best results that way, and so did this one.
   exception — FR-MOD-06 is the licensed way to lose one"*, **which is an exception neither
   document grants.** This is **4.19's finding run backwards**: that chapter cited FR-MSG-08 as
   the clause its defect broke, this feature's own spec quotes it for that reason, and nobody
-  noticed the sentence forbids this chapter too. **Left open deliberately** — the three
-  available readings were put to the user, because amending a constitution principle is outside
+  noticed the sentence forbids this chapter too. **Left open by this pass deliberately** — the
+  three available readings were put to the user, because amending a constitution principle is outside
   `/speckit-analyze` and recording a P3 clause unmet is a product call.
 
   **DECIDED: a retention sweep IS a compliance path** (option A). The constitution's own word is
@@ -268,7 +268,8 @@ ninth passes found their best results that way, and so did this one.
   *"Deleted messages shall **retain their row**; only `text` and `attachments` shall be
   cleared."* US1 scenario 5 says *"a tombstone is a message that has expired like any other"* —
   deliberately destroying the rows DR-06 protects. **Fixed** by naming DR-06 in that scenario
-  and tying it to E1 rather than letting one acceptance line settle a three-document conflict.
+  and tying it to E1 rather than letting one acceptance line settle a three-document conflict;
+  the note now cites **ADR-36 decision 1** as what resolved it.
 - **E3 MEDIUM — the undo that would have existed is two rows up and unbuilt.** FR-MOD-05,
   *"exporting all data for a tenant as newline-delimited JSON"*. A tenant who wants to keep
   what a policy destroys has no supported way to take a copy first. **Fixed** in the contract's
