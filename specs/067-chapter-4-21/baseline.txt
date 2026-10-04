@@ -446,3 +446,139 @@ T013a · DOES THIS CHAPTER NEED AN ADR — DECIDED: YES, AND NOT THE ONE PREDICT
   **ADR-37**, in both homes (T045): the summary in `docs/05-sad.md` and the
   argument in `docs/06-adr-deep-dives.md`. 4.5 found an ADR lives in two
   documents and ten passes amended only the summary.
+
+================================================================================
+PHASE 3 — US1: A TENANT ERASES AN END USER
+================================================================================
+
+T015 · THE PROBE — AND T021's PREMISE IS WRONG, WHICH THIS FOUND IMMEDIATELY
+
+    DELETE FROM users WHERE id = <has a membership>
+      rejects, cause.constraint = "members_user_id_users_id_fk"
+    DELETE FROM users WHERE id = <has nothing anywhere>
+      resolves 1                                              <- the control
+    2 of 2 green, first run
+
+  **T021 SAYS TO RUN THIS AGAIN AND WATCH IT GO RED. IT CANNOT.** The probe deletes
+  the row directly; nothing the traversal adds changes what that statement does while
+  the children are there. Checked by running it rather than at T021, which is where
+  the task would have had it discovered.
+
+  AND THE PROBE IS STILL WORTH HAVING, as the thing it actually is: a standing guard
+  on the five `NO ACTION` keys, red the day one becomes `CASCADE` or `SET NULL` —
+  which is the change this chapter's whole structure rests on not happening. The
+  control is what makes the refusal mean the keys rather than a broken call.
+
+  T021's INVERSION MOVED INTO THE SUITE AS ITS OWN ASSERTION, where it belongs.
+
+T016/T017/T018 · THE TRAVERSAL — AND T010 DELETED A STEP FROM IT
+
+  `data-model.md`'s order ended *"delete the users row — only now will the FKs allow
+  it."* **Under T010 there is no such step.** FR-028 keeps the messages, so
+  `messages.user_id` stays, so the row is unreachable for ever. The wall T015 documents
+  is not an obstacle the traversal climbs — **it is the reason the row survives.**
+
+  AND THAT IS THE WHOLE STRUCTURE IN ONE LINE. Keeping the messages forces a tombstone;
+  the tombstone is what makes every key-only reference stop naming anybody; that is
+  what lets `usage_active_users` and the sketches stay. **T010, T011 and the foreign
+  keys are one fact seen three times.**
+
+  `external_id` IS REPLACED, NOT CLEARED, AND THE COLUMN SAID SO:
+
+      external_id   NOT NULL · text
+      UNIQUE (environment_id, external_id)
+
+  There is no null to write. The replacement is `erased:<users.id>` — unique by
+  construction because the uuid is the primary key, non-identifying for exactly T011's
+  reason. **Without the key argument there would be no safe value to put here**, which
+  is the third place the two decisions hold each other up.
+
+T019/T019a · THE ANALYTICAL HALF, AND R9's PAYLOAD IS WRONG
+
+  `AnalyticalStore.query` gained an optional `params`, sent as `param_<name>` against
+  `{name:Type}`. Backward compatible: every existing caller passes one argument.
+
+  THE PROBE WAS RUN BOTH WAYS, AND THE FIRST RUN WENT RED FOR THE WRONG REASON.
+  Reverted to interpolation with `research.md` R9's payload, T023a failed on
+  `expected 1 to be +0` — the hostile user's OWN row, not the bystander's. Asked the
+  server directly:
+
+      ev'il OR 1=1 --   Code: 62. Syntax error: failed at position 144 (il)
+      ' OR 1=1 --       1,116 — the whole table
+
+  **R9's PAYLOAD IS A SYNTAX ERROR, NOT AN INJECTION.** `'ev'il …` parses as the string
+  `'ev'` followed by an identifier and dies, which an interpolating implementation
+  survives as a caught error and a `not_reached` line — a SAFE failure. The 1,081 R9
+  published is a real table total from a real measurement; the string beside it is not
+  the one that produced it. **A payload that errors tests the error path; only one that
+  parses tests the predicate**, and the probe run against the wrong one goes red for
+  the wrong reason and reads as proof.
+
+  WITH THE PAYLOAD CORRECTED, INTERPOLATING:
+
+      an interpolated external id deleted another tenant's connection events:
+        expected +0 to be 1
+
+  The right assertion, and the bystander was in a DIFFERENT ENVIRONMENT under a
+  DIFFERENT external id. Bound: 9 of 9 green, and the file restored byte-identical to
+  its pre-probe copy before anything was counted (043's rule).
+
+  WHAT THE RED PROBE COST THE LANE, RECORDED RATHER THAN HIDDEN:
+
+      connection_events   1,109 at T011 · 1,116 before the probe · 3 after
+
+  **One erasure of one user destroyed every other tenant's connection history on the
+  lane** — 1,113 rows. That is the finding at full force and it is also debris: the
+  rows are regenerable analytical records, nothing depends on them, and T063a's
+  re-measurement must not read 3 as a fact about the platform.
+
+T020/T020a · THE ROUTE
+
+  `@Delete(":externalId/data")` on the existing `UsersController`, inheriting
+  `@Controller("v1/users")`, `@UseGuards(CredentialGuard)` and `@Accepts(
+  "application")`. No `@Body()`, so constitution VI's fifth bullet is NOT ENGAGED
+  rather than unmet — the property asserted is the absence of the decorator.
+
+  `UsersModule` gained `ANALYTICS_PUBLISHER` and `LOGGER` — a fourth copy of the
+  factory, for `internal.module.ts`'s stated reason. **Declaring a service without its
+  providers compiles, typechecks and lints**, then fails at the first request (4.10).
+
+T022–T024 · THE SUITE                                        9 of 9
+
+    every store that can remove them, counted ABSOLUTELY       green
+    messages + billing retained, with a number                 green
+    erasure is NOT deleteUser, side by side                    green
+    second erasure answers 404                                 green
+    a foreign id is byte-identical to an absent one            green
+    two environments, one shared external id                   green
+    an external id that is SQL                                 green  (red interpolated)
+
+T025/T025a/T025b · THE THREE LISTS, AND EACH FAILED UNTIL IT HAD ITS ENTRY
+
+      moderation-routes.itest.ts   red: "these entries name no route the
+                                   application serves" — the classification landed
+                                   before the handler did
+      targets.itest.ts             red: expected 49 to be 50
+      gauntlet.itest.ts            64 of 64 after the attack, from 61
+
+  **`ACTION` IS TYPE-CHECKED AGAINST `MODERATION_ROUTES`** — `satisfies Record<string,
+  keyof typeof MODERATION_ROUTES>` — so the second map cannot drift from the first.
+  T014a recorded it as a check that holds; writing `ACTION.eraseUser` confirmed it.
+
+  THE ATTACK ASKS WHAT SURVIVED. Constitution I's usual failure is a leak and this one
+  is a loss: a forged erasure that answers 404 and destroys the rows anyway leaves
+  nothing for a read-shaped assertion to find.
+
+T026 · FR-011 PER ACTION, THE UNEDITED SUITES
+
+      users.itest.ts · repository.itest.ts · messages/           223 of 223
+      membership/ · channels/                                     39 of  39
+
+  `repository.itest.ts`'s source walk is on the list because it caught chapter 4.20
+  constructing a `Repository` with two arguments. It caught this chapter's probe too,
+  before the suite ran — the fix is the named actor, not `RECORDS_NOTHING`, because
+  the erasure genuinely writes an audit entry.
+
+  AND THREE GAUNTLET FAILURES WERE NOT THIS CHAPTER'S: `503` on a media slot, because
+  only four containers were up. MinIO started, 64 of 64. **A missing container and a
+  defect present identically in a status code.**
