@@ -210,3 +210,200 @@ T002, CONTINUED · THE INTEGRATION LANE, MEASURED PROPERLY AFTER TWO WRONG RUNS
   class rather than test by test (065's rule).
 
   `pnpm coverage` deferred to T065, where the pins are re-measured anyway.
+
+================================================================================
+PHASE 2 — THE DECISIONS, BEFORE ANY MIGRATION
+================================================================================
+
+T010 · THE TRIGGER'S EXCEPTION
+
+    IF TG_OP = 'DELETE' AND current_setting('relay.expiring', true) = 'on'
+      THEN RETURN OLD; END IF;
+
+  `TG_OP = 'DELETE'` IS PART OF THE CONDITION BECAUSE AN UPDATE MUST STAY
+  REFUSED EVEN WITH THE FLAG SET. Expiry destroys a row; it never rewrites one.
+  Immutability of a version's CONTENT is not what expiry needs and is not what
+  this chapter gives up. Measured in all three directions at analysis pass 13,
+  against the real schema in a rolled-back transaction:
+
+      UPDATE, flag SET            refused
+      DELETE child, flag UNSET    refused
+      DELETE message, flag SET    DELETE 1 · child rows 1 -> 0
+
+  `current_setting(…, true)` takes the missing-GUC arm: unset reads NULL, and
+  `NULL = 'on'` is NULL, which is not TRUE. No exception, no default to set.
+
+T011 · THE SETTING'S NAME, AND WHO MAY SET IT
+
+    relay.expiring = 'on', always `SET LOCAL`.
+
+  `relay.` is a namespace Postgres accepts as a custom GUC without
+  registration. Nothing else in this workspace sets it — the name is new.
+
+  WHAT STOPS ANOTHER CALLER: nothing, and that is the honest answer. Any code
+  holding a connection can set it, which is why ADR-36's scope sentence says
+  *to the application except one named path* rather than naming a mechanism.
+  What the design buys over `session_replication_role` is auditability: the
+  condition is in the trigger's own body, in a migration, inside the fence
+  chain, and it names exactly one verb on one table.
+
+  AND THE KEYWORD IS THE WHOLE GUARANTEE, MEASURED BOTH WAYS AT PASS 13:
+
+      plain `SET`, then the transaction ENDS, same pooled connection:
+          current_setting -> 'on' · DELETE 1          the exception leaks
+      `SET LOCAL` with NO transaction block:
+          WARNING: SET LOCAL can only be used in transaction blocks
+          flag reads empty · every cascade refused     the exception vanishes
+
+  Both are silent and they fail in opposite directions. T036a probes both;
+  T023a asserts the flag's VALUE read inside the same transaction as the
+  DELETE, rather than asserting the statement was issued.
+
+T012 · THE CHECK CONSTRAINT — YES
+
+    CHECK (retention_days IS NULL OR retention_days IN (30, 90, 365))
+
+  FR-MOD-06 enumerates four options rather than describing a range, so `45` is
+  not a stricter policy somebody chose — it is a value nothing in the
+  specification licenses, and a sweep acting on it enforces a promise nobody
+  made. Cheap to add: `retention_days` is set on **0 of 33,051** rows, so the
+  constraint validates against an empty set and cannot fail on existing data.
+  NULL is indefinite and is the column's own existing spelling for it.
+
+T013 · THE ROUTE — `PATCH /v1/environments/{environmentId}`
+
+  There is no environments controller at all, so this chapter adds a module.
+  T014a opened the closest precedent, `audit/`, and the shape is settled:
+
+      @Controller("v1/environments")
+      @UseGuards(CredentialGuard)
+      @Accepts("application")
+
+  The class-level `@Accepts("application")` is the decision, not a branch in
+  the handler — 4.18 found a controller's own 403 defending a case that cannot
+  arise while the decorator went untested. T035a deletes it and re-runs.
+
+  A settings route is the right first thing to put in the module: the column is
+  an environment-level setting and every other one is set this way. Nothing
+  narrower exists to put there instead.
+
+T013b · IS SETTING A RETENTION POLICY A MODERATION ACTION?  —  **NOT-MODERATION**
+
+  THE BILL, MEASURED FIRST, BECAUSE IT IS NOT ONE WORD. `moderation` obliges an
+  `audit_log` entry, and `Repository.recordAction`'s `targetKind` is the closed
+  union `"user" | "message" | "membership" | "channel"`, mirrored by
+  `audit_log_target_kind_check` in `0021_audit_log.sql` AND at `schema.ts:1360`.
+  So `moderation` costs a fifth union member, a migration altering the CHECK,
+  and `schema.ts` at **34 pages of fence chain**. `not-moderation` costs one
+  line and a reason.
+
+  AND THE COST IS NOT WHY. The clause is. Chapter 4.18's rule is **standing,
+  not data**: an entry is owed when a credential acts on somebody else's
+  content. The file's own precedent pair:
+
+      POST /v1/channels/:channelId/archive   moderation      "removes a shared
+                                                              space from use for
+                                                              everyone in it"
+      POST /v1/channels                      not-moderation  "provisioning"
+
+  Setting a policy destroys content, which argues for moderation. **It is still
+  provisioning.** The actor changes a *configuration value on their own
+  environment*; it acts on nobody's standing and takes no action against any
+  user or message. What destroys the messages is the sweep, days or months
+  later, run by an operator with no credential in the picture at all — and
+  FR-MOD-03's population is *moderation actions*, which are things a credential
+  did. A row recording `PATCH /v1/environments` would name an actor who did not
+  delete anything and a target that is the environment itself.
+
+  **THE ARGUMENT AGAINST THIS READING, RECORDED BECAUSE IT IS GOOD.** The
+  archive precedent is destruction-adjacent and classified moderation, and a
+  policy change is the most consequential thing an application credential can
+  do. If a later chapter gives the sweep an actor — a scheduler with a
+  credential — the action it performs IS moderation and this decision should be
+  revisited at that point, not before.
+
+  So: **`"PATCH /v1/environments/:environmentId": "not-moderation"`**, with the
+  reason *"a configuration change on the caller's own environment; the sweep
+  destroys the messages and carries no credential"*. T026b records DONE with
+  this reason rather than being left unticked — a decision not to act, left
+  unrecorded, reads as an omission.
+
+T014 · ADR-36, TWO DECISIONS
+
+  DECISION 1 — A RETENTION SWEEP IS A COMPLIANCE PATH.
+    Driver: constitution II reserves hard deletion for *the compliance path*,
+    FR-MSG-08 says *only via the compliance deletion endpoint*, DR-06 says a
+    deleted message *retains its row*. FR-MOD-06 requires hard deletion anyway.
+    Taken: the constitution's own word is **path**, not *endpoint*, and a
+    retention policy exists to keep a promise a customer made to an auditor.
+    The rule hardest to change is the one that already permits this, so the two
+    narrower SRS clauses are amended (T043a, T043b) and the constitution is not.
+    Rejected: (a) read constitution II as the FR-MOD-04 endpoint only, which
+    leaves FR-MOD-06 unbuildable; (b) amend the constitution, which is outside
+    a feature's authority; (c) **soft expiry** — clear `text`, keep the row —
+    which satisfies all three clauses word for word and is the only reading
+    that keeps every internal rule and still misleads somebody.
+    Reversal: if a later chapter needs hard deletion on a third path,
+    `compliance path` has stopped being a category and the clause needs
+    rewriting rather than reinterpreting.
+
+  DECISION 2 — THE TRIGGER NAMES ITS ONE LEGITIMATE DELETER.
+    Driver: `message_edits` is append-only (ADR-35 applied by 4.19) and expiry
+    must destroy its rows. Measured: the FK refuses the parent, the trigger
+    refuses the children, and **`ON DELETE CASCADE` is refused too** because a
+    cascade issues an ordinary DELETE and a row trigger fires on it.
+    Taken: `SET LOCAL relay.expiring = 'on'` plus a `TG_OP = 'DELETE'` arm.
+    Rejected: `session_replication_role = replica` (the hole ADR-35 published
+    as the limit of its own guarantee, and it disables every trigger in the
+    session); dropping the FK (a version could outlive its message).
+    Reversal: a separate non-superuser role makes privilege the mechanism and
+    this exception unnecessary — ADR-35's own reversal condition, unchanged.
+
+  SUPERSEDES ADR-35's SCOPE CLAUSE FOR THIS TABLE rather than amending it,
+  because constitution VII makes an accepted ADR immutable. After this chapter
+  the scope is *immutable to the application except one named path, and to
+  accident, and not to somebody holding the database password.*
+
+T013a · THE QUERY SHAPE, AND BOTH INDEXES MEASURED
+
+  SHAPE: per environment, bound as a constant, keyset-paged.
+
+      cross-environment, one join    617 buffers   of which 546 is a Seq Scan
+                                                   of all 33,051 environments
+      per environment                546 + 73 = 619
+
+  **There is no speedup** — the enumeration is step 1 of the per-environment
+  form too, so it appears on both sides. Take it for pageability, FR-008's
+  re-runnability and a bound the planner can use. None of those is a ratio.
+
+  INDEX 1 — `environments (id) WHERE retention_days IS NOT NULL`   **ADD**
+
+      enumeration, no index     546 buffers · 1.346 ms · Seq Scan,
+                                Rows Removed by Filter: 33050
+      with the partial index      1 buffer  · 0.018 ms · Index Scan
+      size                      8,192 bytes
+
+    546x fewer buffers and 75x faster for one page. It is 8 kB because it is
+    partial: a btree over the unfiltered column would index 33,051 NULLs, which
+    is 4.15's measurement at the same size for the same reason.
+
+  INDEX 2 — `messages (channel_id, created_at)`                    **ADD**
+
+      no index    73 buffers · 4.226 ms · created_at in a **Filter**,
+                  Rows Removed by Filter: 102 per channel
+      with it     38 buffers · 0.141 ms · created_at in the **Index Cond**:
+                  ((channel_id = c.id) AND (created_at < now() - '30 days'))
+      size        7,992 kB on a 24 MB table · indexes 22 MB -> 30 MB, +36%
+
+    30x, and the predicate moves from `Filter` to `Index Cond`, which is 4.18's
+    test rather than a ratio. **4.1's warning does not bite here**: that chapter
+    added an index whose gain sat inside the run-to-run spread for +49%
+    storage. This one changes the plan's shape, and without it the sweep costs
+    linear in the tenant's TOTAL message count on every run — including the
+    overwhelmingly common case where nothing has expired.
+
+    A partial index is not available: the bound moves with the policy and with
+    the clock, so there is no constant to put in a WHERE.
+
+  KEYSET ON `(channel_id, created_at)`, which index 2 is what makes possible.
+  Both indexes go in `0024_retention_policy.sql`, which is their only carrier.
