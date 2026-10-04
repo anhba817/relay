@@ -1,0 +1,147 @@
+BASELINE — feature 067, chapter 4.21, "Erasure, and every path it must find"
+Written phase by phase, in the order the measurements were taken, including the
+ones that were wrong first (T063).
+
+================================================================================
+PHASE 1 — SETUP AND MEASUREMENT
+================================================================================
+
+T001 · THE LANE ENVIRONMENT                                         2026-10-04
+
+    node v22.23.2 · pnpm 10.33.0 · PostgreSQL 18.6 · ClickHouse 25.3.14.14
+    RELAY_POSTGRES_PORT=15432
+
+    all eleven containers up: postgres redis nats clickhouse minio mailpit
+    clamav api gateway dispatcher media-worker
+
+    WHERE A USER IS NAMED — POSTGRES
+
+      users                      192,641
+      members                    172,965
+      read_positions                 684
+      messages                   206,273
+        naming a user            205,628
+      media_objects
+        WITH an uploader           3,979
+        WITHOUT one               11,050      <- 73%, and FR-MED-06 made it so
+      usage_active_users          22,150      <- kept on purpose by deleteUser
+      audit_log                    3,911
+
+    WHERE A USER IS NAMED — CLICKHOUSE (relay_analytics)
+
+      api_requests               205,696      <- NO user column at all
+      connection_events            1,081      <- user_external_id, deletable
+      message_events                   0      <- and no producer under services/
+      daily_usage_billing            824      } AggregateFunction(uniq, …)
+      daily_usage_v2                  56      }
+      distinct users the sketches claim  0    <- the source has never had a row
+
+    outbox                       410,197      up from 400,697 at 066's close.
+    `gaps.md` 065-5: `outbox.itest.ts` is sensitive to the SIZE of that table
+    and `reset-lane.mjs` does not touch it by design. Re-measure at T070.
+
+T002 · THE LANES, REAL EXIT CODES, WITH `Cached:` AND ELAPSED
+
+Every lane under `--force`, because a fully cached turbo run replays both the
+exit code and the counted line (chapter 4.20's finding).
+
+    lane                    EXIT  elapsed   Cached          counted line
+    pnpm lint                  0    4.00s   0 of 1          0 errors, 1 warning
+    turbo run typecheck        0    8.22s   0 cached, 15    15 of 15
+    pnpm test                  0    7.92s   0 cached, 13    13 of 13
+    api test:integration       1  150.39s   0 cached        52 files, 2 FAILED
+                                                            885 tests, 3 failed
+    pnpm coverage                                           deferred to T065
+
+  THE API LANE IS RED AT THE OPEN AND NEITHER FILE IS THIS CHAPTER'S:
+
+    src/outbox/outbox.itest.ts        `gaps.md` 065-3 and 065-5, reproducing.
+                                      The outbox is 410,197 rows, up 9,500 since
+                                      066 closed and 23,880 since 065.
+    src/webhooks/deliveries.itest.ts  one of the four files 065 named as its
+                                      red-lane class — *no two runs alike, every
+                                      one green in isolation, all four green in CI*.
+
+  BETTER THAN 066's OPEN, WHICH WAS 3 FILES AND 13 TESTS. The quotas drain pair
+  that was red then is green now, and nobody worked on it — which 066 recorded
+  rather than claiming credit for.
+
+T003 · THE FENCE CHAIN, ABSOLUTE
+
+    check:fences EXIT 0 · 291 fenced files replay onto relay-platform across
+    63 chapters (46 translated) — 0 problems
+
+T003a · ALL SIX TUTORIAL GATES
+
+    pnpm lint          EXIT 0
+    pnpm build         EXIT 0
+    pnpm check:docs    EXIT 0   28 revisions ascend, 1.0 to 1.27
+    pnpm check:srs     EXIT 0   245 clause rows, 245 unique identifiers
+    pnpm check:figures EXIT 0   322 figures, every diagram passed as `code`
+    pnpm check:fences  EXIT 0   291 files, 63 chapters
+
+T004 · THE CI BASELINE
+
+    run 37200561682, head be4a5b6b — SUCCESS, `##[error]` set EMPTY.
+    Empty in both directions is the hardest kind to match.
+
+T005 · THE PREMISE, RE-RUN
+
+  All of R1–R9 re-measured at the top of this file and during analysis passes
+  1–5. Nothing moved except the outbox and `audit_log`.
+
+T006 · THE FENCE BILL, COUNTED AGAINST THE TREE
+
+                                   pages   appendix hunks already carried
+    repository.ts                     52   6
+    schema.ts                         34   6
+    vitest.coverage.config.mts        23   17
+    targets.ts                        13   5
+    gauntlet.itest.ts                 13   7
+    users.controller.ts                4   0
+    ---- possible
+    users.module.ts                    5   1   if a provider is registered
+    users.schema.ts                    4   0   if the profile's shape moves
+    ---- free
+    moderation-routes.ts               0   0
+    metering/clickhouse.ts             0   0   <- T019a's file, and it is FREE
+
+  EVERY FIGURE MATCHES `research.md` R6 AFTER ANALYSIS PASS 1's CORRECTION.
+  `app.module.ts` is NOT in the bill: pass 1 found the route joins an existing
+  controller, which took 23 pages and 4 hunks off it.
+
+  **AND T019a's FILE COSTS NOTHING**, which is worth knowing before the work
+  rather than after: adding bound parameters to `AnalyticalStore` is the
+  chapter's most consequential change and the cheapest to publish.
+
+T007 · WHERE A USER IS NAMED — the map, and SC-012's open figure
+
+  In T001's table. Four answers across eleven sites:
+
+    DELETE THE ROWS   users · members · read_positions · media_objects
+                      (attributed only) · connection_events
+    A DECISION        messages (T010) · usage_active_users (T011)
+    NOTHING TO DO     api_requests — no user column, BY DESIGN (chapter 4.4)
+                      message_events — 0 rows, BY DEFECT (`gaps.md` 051)
+    CANNOT            daily_usage_billing + daily_usage_v2 — 880 rows of
+                      AggregateFunction(uniq, …), and the sketches claim 0
+                      distinct users because the source never had one
+
+T008 · THE MEDIA LINKAGE
+
+    3,979 objects with a `user_id` · 11,050 without — 73%
+    object keys are `{environment_id}/{media_id}`: no user in the path (DR-15),
+    so FR-MED-10's *a user's media objects* is a lookup, one store request each.
+
+T009 · WHAT `deleteUser` ALREADY DOES, IN ITS OWN WORDS
+
+    WHAT GOES: the profile fields, the memberships, the read positions.
+    WHAT STAYS: the row, the messages, and every `usage_active_users` row.
+
+    `usage_active_users` IS UNTOUCHED (FR-029). Billing history does not vanish
+    with a profile — a customer who deleted a user in March still owes for March.
+
+  That is the chapter's central conflict, quoted rather than paraphrased. It is
+  transactional and it DOES write an audit entry with `ACTION.deleteUser` —
+  checked by brace depth after a first grep used too short a window and made it
+  look as though chapter 4.18's log had a hole (analysis pass 1).
