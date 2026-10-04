@@ -104,7 +104,7 @@ second line, at which point a session setting is no longer the narrowest availab
 specs/066-chapter-4-20/
 ├── spec.md · plan.md · research.md · data-model.md
 ├── contracts/retention.md
-├── quickstart.md               §0 and §1 MEASURED, the rest predictions
+├── quickstart.md               §1 and §2 MEASURED, the rest predictions
 ├── baseline.txt                (phase 1 onward)
 ├── clauses.md · traceability.md · gaps.md   (phases 5, 7, 9)
 └── tasks.md

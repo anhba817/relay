@@ -2,7 +2,7 @@
 
 Set a policy, backdate a message past it, run the sweep, and find the row gone.
 
-**SECTIONS 0 AND 1 ARE MEASURED** — run against the current platform before the chapter, and
+**SECTIONS 1 AND 2 ARE MEASURED** — run against the current platform before the chapter, and
 what they show is why it exists. **Everything after them is a prediction** until the phase-9
 task runs this document start to finish and corrects it in place, recording each wrong version.
 The last six chapters' quickstarts were wrong three, four, three, five, two and zero times.
@@ -19,14 +19,31 @@ The corrections earlier chapters earned are applied rather than rediscovered:
 - `psql -tAc` with `RETURNING` prints the value **and** the command tag, and **`tr -d ' '`
   destroys a value containing a space** — quote the result instead;
 - capture an exit code **outside** the pipeline, or `$?` is `tail`'s. Eight occurrences so far;
-- **this document assumes one shell.** §2 onward use variables §1 exports, and running a later
-  section in a fresh terminal fails in a way that looks like a platform defect;
+- **this document assumes one shell.** §4 onward use variables that §3 and §4 export, and running
+  a later section in a fresh terminal fails in a way that looks like a platform defect;
 - **`api_keys` has no `credential_hash` column.** Its columns are `id, environment_id,
   public_id, secret_hash, salt, prefix, name, created_at, last_used_at, revoked_at` — an
-  earlier draft of §2 queried a column that does not exist, found at analysis pass 1 before
+  earlier draft of §3 queried a column that does not exist, found at analysis pass 1 before
   the document was ever run. The seeder prints the environment id and is the right source.
 
-## 0 · MEASURED — nothing on this lane is old enough to expire
+## 0 · Prerequisites
+
+```bash
+cd relay-platform
+RELAY_POSTGRES_PORT=15432 docker compose up -d --wait
+pnpm build
+DATABASE_URL=postgres://relay:relay@localhost:15432/relay node services/api/dist/db/migrate.js
+RELAY_POSTGRES_PORT=15432 docker compose --profile services build api
+RELAY_POSTGRES_PORT=15432 docker compose --profile services up -d --wait
+```
+
+**THE IMAGE REBUILD IS NOT OPTIONAL AND IT IS THE STEP THAT GETS SKIPPED.** §3 onward talk to
+`localhost:4000`, which is the composed **container** — so `PATCH /v1/environments/{id}` answers
+**404** against an image built before this chapter, and the failure reads as a missing route
+rather than a stale build. Chapter 4.11 named this as the third kind of stale build, after a
+stale `dist` and a stale `node_modules`, and chapter 4.19 met it again at phase 9.
+
+## 1 · MEASURED — nothing on this lane is old enough to expire
 
 ```bash
 docker compose exec -T postgres psql -U relay -d relay -t -A -F' | ' -c "
@@ -38,7 +55,7 @@ union all select 'older than 30 days', count(*)::text from messages where create
 here is thirty days old**, so every section below backdates a fixture. The figure a reader
 would most want — what a sweep removes from real traffic — cannot be measured on this lane.
 
-## 1 · MEASURED — the hard delete is refused, and so is every obvious way round it
+## 2 · MEASURED — the hard delete is refused, and so is every obvious way round it
 
 Run inside a transaction and rolled back, so the probe does not become the data.
 
@@ -71,7 +88,7 @@ deletes cleanly, so the foreign key is the only obstacle to the parent — and t
 only obstacle to clearing it. **5,495 messages are in that position today**, and chapter 4.19
 made every deletion add one.
 
-## 2 · Set a policy (after the chapter)
+## 3 · Set a policy (after the chapter)
 
 ```bash
 # THE SEEDER ALREADY PRINTS BOTH, and the second line goes to stderr:
@@ -92,7 +109,7 @@ curl -s -o /dev/null -w "a value the clause does not offer: %{http_code}\n" \
 the second answers **400**, because FR-MOD-06 enumerates four options and 45 is not a stricter
 policy somebody chose.
 
-## 3 · Backdate a message past the policy, and keep one inside it (after the chapter)
+## 4 · Backdate a message past the policy, and keep one inside it (after the chapter)
 
 ```bash
 export CH=$(curl -s -X POST "localhost:4000/v1/channels" -H "authorization: Bearer $K" \
@@ -111,7 +128,7 @@ never sees, because a fresh database has no pile.
 **And edit one of them**, so the sweep meets the case that is refused today rather than only
 the one that was never hard.
 
-## 4 · Run the sweep (after the chapter)
+## 5 · Run the sweep (after the chapter)
 
 ```bash
 pnpm --filter @relay/api exec node dist/retention/sweep.js --dry-run
@@ -127,7 +144,7 @@ line with zeroes, because the predicate is self-clearing.
 a policy and a sweep that found nothing expired both exit 0, and they must not print the same
 thing.
 
-## 5 · And confirm what survived (after the chapter)
+## 6 · And confirm what survived (after the chapter)
 
 ```bash
 docker compose exec -T postgres psql -U relay -d relay -t -A -F' | ' -c "
@@ -145,7 +162,7 @@ is the point — the sweep widened the immutability guarantee by one named path 
 else, and a quickstart that did not check the guarantee still held would be demonstrating only
 the half that is convenient.
 
-## 6 · And what this still cannot show
+## 7 · And what this still cannot show
 
 - **What a sweep costs on real data.** Nothing on this lane is thirty days old.
 - **Whether a single run should be bounded.** A million expired rows is a different question

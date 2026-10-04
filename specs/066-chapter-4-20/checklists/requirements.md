@@ -63,7 +63,7 @@ mechanism with the best record as a first pass.
   which is the third feature running that the sweep has paid.
 - **A2 MEDIUM — `api_keys.credential_hash` does not exist.** The columns are `id,
   environment_id, public_id, secret_hash, salt, prefix, name, created_at, last_used_at,
-  revoked_at`. `quickstart.md` §2 queried it and would have failed before the chapter did
+  revoked_at`. `quickstart.md`'s policy section queried it and would have failed before the chapter did
   anything. **Fixed** by taking the environment id from the seeder's own stderr line, which is
   the right source anyway, and the correction is in the preamble's list.
 - **A3 MEDIUM — SC-012 had two halves and one task.** *"…published, **and re-measured at the
@@ -145,6 +145,47 @@ messages_attachments_gin             exists (4.12's), and R2's 883 figure uses i
 the cascade's cost                   not separately measurable — the trigger refuses
                                      it today, so it is phase-3 work
 ```
+
+## Analysis pass 3 — four findings, none CRITICAL, all fixed
+
+**The question**: *walk the tasks in execution order and ask, at each one, what it assumes is
+already true.* The thing most worth stressing was T015's deliberate inversion — the red probe
+before the migration.
+
+- **C1 HIGH — T013a decided two indexes and no task wrote either.** T016 is *the CHECK
+  constraint* and T017 is *the FK and the trigger*; an index decided in phase 2 had no carrier
+  in phase 3, so it would have landed in `baseline.txt` and nowhere else. **That is 4.8's
+  sentence exactly** — *049 measured the retarget and never landed it; a measurement is not a
+  repair* — and it exists **because pass 2 added T013a**: a new decision task without a matching
+  implementation task, a defect an earlier pass created. **Fixed**: T016 is the carrier, and if
+  the answer is *neither index*, the migration's comment says so.
+- **C2 HIGH — nothing rebuilt the api image before the quickstart.** §3 onward hit
+  `localhost:4000`, which is the composed **container**, so `PATCH /v1/environments/{id}` would
+  answer 404 against an image built before this chapter — and the failure reads as a missing
+  route rather than a stale build. **4.11 named this as the third kind of stale build** and 065
+  rediscovered it mid-phase-9. **Fixed** in T067 and in the new prerequisites section.
+- **C3 MEDIUM — the quickstart had no prerequisites section.** §0 was a measurement, not setup,
+  so a reader on a cold machine had no `compose up`, no `pnpm build`, no `migrate`. **Fixed**,
+  and every section renumbered — which the post-correction sweep then caught in **six places**
+  across four files, the fourth feature running that the sweep has paid.
+- **C4 MEDIUM — T015's probe is correctly red for four tasks and nothing said so.** T017 applies
+  the trigger change; T018, T019 and T020 run with `retention.itest.ts` failing for the right
+  reason; only T021 inverts it. **Fixed**: T017 names the window and says a red nobody predicted
+  inside it is a finding.
+
+### Checked, and clean
+
+```
+targets.itest.ts:195   expect(CLASSIFICATIONS.length).toBe(derived.length) — both directions,
+                       so T025 and T026 must land together, and they are adjacent
+targets.itest.ts:123   deliberately NOT a hard route count, with the comment saying so
+T015 before T016/T017  the inversion holds: globalSetup migrates files that do not yet
+                       exist, so the probe runs green and goes red exactly at T017
+```
+
+**T015's inversion surviving the walk is the result I most wanted**, because it is the one
+ordering in this feature that runs against the usual direction. What was missing was only the
+note that the red it produces is expected.
 
 ## Notes
 
