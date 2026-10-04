@@ -407,3 +407,100 @@ T013a · THE QUERY SHAPE, AND BOTH INDEXES MEASURED
 
   KEYSET ON `(channel_id, created_at)`, which index 2 is what makes possible.
   Both indexes go in `0024_retention_policy.sql`, which is their only carrier.
+
+================================================================================
+PHASE 3 — US1: EXPIRED MESSAGES ARE DESTROYED
+================================================================================
+
+T015 / T021 · THE PROBE, GREEN THEN RED THEN INVERTED
+
+    before 0024+0025   2 passed    the delete is REFUSED, and a message with no
+                                   version row deletes cleanly — the control
+    after  0024+0025   1 failed    "the delete was not refused at all"
+    inverted           6 passed    the delete succeeds and the cascade empties
+                                   message_edits
+
+  A PROBE THAT WAS NEVER GREEN PROVES NOTHING ABOUT THE FIX, and the middle line
+  is what makes the first and third mean anything.
+
+  AND THE FIRST ASSERTION WAS WRONG BEFORE IT WAS RIGHT. `toThrow(/…/)` on the
+  error's MESSAGE matched nothing: drizzle reports `Failed query: delete from
+  "messages" …` and hangs the driver's error — where the constraint name and the
+  trigger's RAISE text live — off `cause`. A regex on the message alone reads as
+  *it was not refused*, which is the opposite of what happened. The probe walks
+  the cause chain now.
+
+T016 / T017 · THE MIGRATIONS
+
+    0024_retention_policy.sql     the CHECK, and both indexes T013a measured
+    0025_expiry_may_delete.sql    the cascade AND the trigger condition, one file
+    migrate                       applied 0024, 0025 · EXIT 0
+
+T018 · THE SCHEMA, AND TWO COMMENTS THE CHANGE FALSIFIED
+
+    the CHECK declared beside `environments_kind_check`
+    the FK gains `{ onDelete: "cascade" }`
+    "read by nothing in seventeen chapters" -> names its two readers now
+    and the cascade's comment says why it changes nothing on its own
+
+T019 / T020 · THE SWEEP, IN TWO PLACES WITH OPPOSITE ISOLATION PROPERTIES
+
+    db/retention-reads.ts    environmentsWithPolicy — UNSCOPED, crosses every
+                             tenant, and the isolation property to assert is its
+                             SIGNATURE rather than an arm inside it
+    db/repository.ts         expiredMessageIds (keyset on channel_id, created_at)
+                             destroyMessages   (SET LOCAL, explicit transaction)
+    retention/sweep.ts       one Repository per environment, loops to exhaustion
+
+T023a · THE KEYWORD, ASSERTED AS A VALUE
+
+  `expiringFlag(db)` reads `current_setting('relay.expiring', true)` and the test
+  asserts it is not `on` **on both sides of a real destroy**. The destroy itself
+  proves the flag reached the trigger — a message owning a version row cannot be
+  deleted otherwise — and the two reads prove it did not escape the transaction.
+  Neither failure mode changes an exit code or a counted line, so the value is
+  the only thing that tells them apart.
+
+T025 / T025a · THE ROUTE
+
+    7 of 7 green. Three values set and read back; `null` clears; an OMITTED field
+    is a 400 and leaves the policy alone; `45` is a 400; **an unknown field is a
+    400** (constitution VI's fifth bullet, `z.strictObject`); a user token is 403
+    `wrong_credential_type`; another tenant's environment is 404 and
+    **byte-identical to one that does not exist** once `request_id` is removed.
+
+  THE 404 COMPARISON FAILED FIRST for 4.11's reason — the two bodies differ by
+  `request_id` and nothing else, so `toMatchObject` on the whole body compares a
+  field that is SUPPOSED to differ. Stripped rather than loosened.
+
+T026 / T026a / T026b · THREE LISTS KEY OFF ONE DERIVED ROUTE SET
+
+    isolation/targets.ts        CLASSIFICATIONS gains the route
+    isolation/gauntlet.itest.ts the attack, which reads the POLICY COLUMN as well
+                                as the message listing — a forged PATCH that
+                                answers 404 and writes the column anyway leaves no
+                                trace in any other assertion in that suite
+    audit/moderation-routes.ts  "not-moderation", with T013b's reason
+
+    moderation-routes.itest.ts + targets.itest.ts + gauntlet.itest.ts
+    3 files, 77 tests, all green
+
+T027 · FR-011 PER ACTION — AND AN EXISTING TEST CAUGHT A REAL OMISSION
+
+    messages.itest.ts · repository.itest.ts · internal.itest.ts ·
+    versions.itest.ts        first run: 1 failed | 158 passed
+                             after the fix: 4 files, 159 passed
+
+  `repository.itest.ts`'s *"gives each one an actor or the named absence"* walks
+  the SOURCE of every `new Repository(...)` and requires three arguments. The
+  sweep's construction had two. **The fix is `RECORDS_NOTHING` rather than an
+  invented actor**: FR-MOD-03's population is things a credential did, and this
+  sweep runs from a command line with no credential in the picture — which is the
+  same reasoning that made the policy route `not-moderation`. An optional
+  parameter is a check the compiler stopped doing, and this is the test that
+  replaced it doing its job.
+
+  AND LINT CAUGHT ONE MORE: `const { request_id: _ignored, ...rest }` is an error
+  here, because this workspace sets no `varsIgnorePattern` — even an
+  underscore-prefixed binding counts. Deleting the key says the same thing and
+  binds nothing. Back to the baseline's 1 warning, 0 errors.
