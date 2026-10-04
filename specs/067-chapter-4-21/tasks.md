@@ -1,0 +1,225 @@
+# Tasks — chapter 4.21, "Erasure, and every path it must find"
+
+**Feature**: 067 · **Spec**: [spec.md](./spec.md) · **Plan**: [plan.md](./plan.md)
+**Research**: [research.md](./research.md) · **Contract**: [contracts/erasure.md](./contracts/erasure.md)
+
+**COMMIT AT EVERY PHASE BOUNDARY, SUBMODULE BEFORE POINTER.** `git add -A` from
+the superproject stages a gitlink, not the submodule's working tree — feature
+065 produced three phase commits carrying only specs that way, and 066 reproduced
+the check rather than the defect. `git -C relay-platform log --oneline -1` is the
+check.
+
+---
+
+## Phase 1: Setup and measurement
+
+**Purpose**: every number this chapter is compared against, taken before
+anything changes. All append to one file, so none is parallel however
+independent the measurement is.
+
+- [ ] T001 Pin the lane environment in `specs/067-chapter-4-21/baseline.txt` — compose services, `RELAY_POSTGRES_PORT=15432`, node and Postgres and ClickHouse versions, and the row counts that make a lane an instrument: `users`, `members`, `messages`, `media_objects`, `usage_active_users`, and **the outbox**, which feature 065 found is now large enough to fail a suite on its own (`gaps.md` 065-5, re-measured at 400,697 by 066).
+- [ ] T002 Record every lane's REAL exit code in `specs/067-chapter-4-21/baseline.txt` — `pnpm lint`, `pnpm exec turbo run typecheck`, `pnpm test`, the api `test:integration` lane, `pnpm coverage` — **with the `Cached:` line and the elapsed time beside each**. Chapter 4.20 measured `pnpm test` answering **EXIT 0 with every counted line in 17 ms and `Cached: 13 of 13`** — nothing ran. **055-4's *assert the counted line, not the exit code* is necessary and NOT sufficient against a cache**, because turbo replays the line from it. Run under `--force` or quote `Cached:`. Capture `$?` **outside** the pipeline.
+  **AND KEEP THE FULL LOG OF ANY RED LANE.** 065's first attempt grepped each log for its counted line and deleted the rest, which is enough for a green lane and useless for a red one. **The api lane was red at 066's open** with two pre-existing classes — `outbox.itest.ts` invariant 8 and the quotas drain pair — and the second went green with nobody working on it. Expect neither and record both.
+  **`pnpm lint` IS `turbo run //#lint:root`**, not `turbo run lint`: the latter exits 1 in 0.20 s with `Could not find task 'lint'`, which is indistinguishable from a red lane except by the elapsed time.
+- [ ] T003 Record `check:fences` in `specs/067-chapter-4-21/baseline.txt` as an **absolute number**, not a delta (055's rule). A clean run prints no problem line, so assert the `replay onto` line. It was **291 files across 63 chapters, 0 problems** at 066's close.
+- [ ] T003a **Record all six tutorial gates by name**, run from `relay-tutorial`, each **outside a pipe** with its **counted line** quoted: `pnpm lint`, `pnpm build`, `pnpm check:docs`, `pnpm check:srs`, `pnpm check:figures`, `pnpm check:fences`. **Read the list off `ci.yml`, not off memory**; `check:errors` is not one of them — it runs by path from the lanes job (062's correction to 055-3).
+- [ ] T004 Record the CI baseline in `specs/067-chapter-4-21/baseline.txt`: the last pushed run's four job conclusions and its `##[error]` set, normalised. **The current baseline is an empty set** — run 37199508332 at 066's close, four green jobs, 0 error lines — which cannot be matched by introducing something and removing something else.
+- [ ] T005 **Re-run the premise against the platform, not against `research.md`.** Re-measure R1's four stores, R2's two sketch figures and R3's two deletion verbs, each with its control, and record in `specs/067-chapter-4-21/baseline.txt`. *An artifact agreeing with another artifact is what fifteen analysis passes found in 4.9.*
+  **AND THE CLICKHOUSE DATABASE IS `relay_analytics`, NOT `relay`.** A query against `relay` returns an empty result that reads as *no such column* rather than *no such database*. Chapter 4.2 spent eight analysis passes measuring the wrong one.
+- [ ] T006 **Count the fence bill against the tree**, from `relay-tutorial`: `grep -rl 'title="<path>"' app/ fences/` and `grep -c` in `fences/post-series.md` for `repository.ts`, `schema.ts`, `app.module.ts`, `vitest.coverage.config.mts`, `targets.ts` and `gauntlet.itest.ts`. `research.md` R6 has **52 / 34 / 23 / 23 / 13 / 13 pages** and **6 / 6 / 4 / 17 / 5 / 7 appendix hunks** to check against.
+  **R6 WAS WRONG BEFORE IT WAS RIGHT, WHICH IS WHY THIS TASK STILL EXISTS.** A first draft carried the hunk counts from the shape of chapter 4.20's bill and was wrong in five of six places; the pages were right. **A count taken from a pattern is not a count.** Count the rest of the isolation family too — `attack.ts`, `targets.itest.ts`, `attack.test.ts` — because a new route touched four files in that directory at 4.18.
+- [ ] T007 Record where a user is named, in `specs/067-chapter-4-21/baseline.txt`: the seven Postgres sites and the five analytical ones from `data-model.md`, each with a row count and what erasure can do to it. **This is SC-012's open figure** and T063a re-measures it at the close.
+- [ ] T008 Record the media linkage in `specs/067-chapter-4-21/baseline.txt`: **3,979 objects with a `user_id` and 11,050 without**, DR-15's `{environment_id}/{media_id}` key verified against real keys, and that there is no user in the path. **A user's objects are not a prefix and never were.**
+- [ ] T009 Record what `deleteUser` already does, quoting its own comment: **what goes, what stays, and the billing argument for `usage_active_users`.** This is the chapter's central conflict and the quotation is the evidence.
+
+---
+
+## Phase 2: Foundational — the decisions, before any route
+
+**Purpose**: the two decisions with a clause on each side, settled before code
+exists. The alternative is a spec question with a route already shipped.
+
+- [ ] T010 **Decide whether erasure destroys the user's MESSAGES** in `specs/067-chapter-4-21/baseline.txt`. FR-MOD-04 says *messages*; FR-USR-05 preserves them *"unless message deletion is explicitly requested"* and FR-MOD-04 is arguably that request. Against: a channel's history losing every message one participant sent is visible to everyone else in it, and `deleteUser`'s comment records that *"authored by a deleted user" and "authored by nobody" are different states.* **Record the argument both ways and name which clause the chapter is choosing to satisfy.**
+- [ ] T011 **Decide whether erasure destroys `usage_active_users`** in `specs/067-chapter-4-21/baseline.txt`. **22,150 rows naming 22,147 users**, kept on purpose by FR-029: *"a customer who deleted a user in March still owes for March."* FR-MOD-04 calls it an analytical record. **This is the strongest counter-argument in the platform to the clause's own wording** and there is money on one side. If it is kept, FR-MOD-04 is partly unmet and the SRS needs amending; if it is erased, an invoice loses its basis.
+- [ ] T012 **Decide the receipt's shape** in `specs/067-chapter-4-21/baseline.txt` and amend `contracts/erasure.md` if it moves. Four outcomes, and the decision to record is **why `nothing_to_erase` and `cannot_erase` must not collapse**: 205,697 rows that never named a person against 880 that do, unremovably.
+- [ ] T013 **Decide the route's shape**: `DELETE /v1/users/{externalId}/data` rather than `DELETE /v1/users/{externalId}`, because the second is FR-USR-05's deletion and already exists with the opposite semantics. **Two verbs that differ only in what they preserve must not differ only in a flag** — a mistyped one would be an irreversible erasure.
+- [ ] T013a **Decide whether this chapter needs an ADR**, and record the reasoning either way. `plan.md` says *probably not* because ADR-36 already named FR-MOD-04's endpoint as one of two compliance paths — **and chapter 4.20's plan predicted an ADR and was right, so a prediction here is worth nothing without the check.** Constitution VII requires one for every architecture decision; the live candidate is what erasure means for a store that cannot erase.
+- [ ] T014 **Decide the ClickHouse deletion verb** in `specs/067-chapter-4-21/baseline.txt`, with R3's measurement beside it. `DELETE FROM` is visible to the next `SELECT`; `ALTER TABLE … DELETE` **returned with its hundred rows still countable**. **A receipt states a count, so it uses the verb whose count it can trust.**
+- [ ] T014a **Check T013's premise by reading, not by grepping.** Open every file the route touches — `app.module.ts`, `targets.ts`, `moderation-routes.ts`, the credential guard's decorators, `users.schema.ts` — and confirm what adding this module actually costs. 065's T007 said fourteen `MessageRow` sites and the real number was five, because a grep counts mentions.
+
+---
+
+## Phase 3: User Story 1 — a tenant erases an end user (P1) 🎯 MVP
+
+**Goal**: one route that removes a user from every store that can remove them.
+
+**Independent test**: create a user with messages, memberships, a profile and an
+uploaded object; erase them; assert each store no longer identifies them.
+
+- [ ] T015 [US1] **Write the red probe FIRST**, in `relay-platform/services/api/src/erasure/erasure.itest.ts`: create a user with rows in every store, call `deleteUser`, and assert what SURVIVES — the row, the messages, the `usage_active_users` rows. **Run it green against today's platform.** That is the gap this chapter closes, and a probe that was never green proves nothing about the fix.
+- [ ] T016 [US1] Add the erasure traversal to `relay-platform/services/api/src/db/repository.ts` in `data-model.md`'s order. **CHILDREN FIRST, THE ROW LAST** — all five foreign keys to `users` are `NO ACTION`, so the row cannot go until they do, which makes the order a correctness property rather than a preference.
+  **AND READ THE EXTERNAL ID BEFORE DELETING THE ROW THAT HOLDS IT.** `connection_events` keys on `user_external_id` and the Postgres row is gone by then — the same ordering trap chapter 4.20 hit with `media_id` values that vanish with the messages naming them.
+- [ ] T017 [US1] Collect the user's `media_id` values **before** any deletion, then destroy the attributed objects, their renditions and their stored bytes — **reusing chapter 4.20's `destroyMediaObjects` and `deleteObjectWithRenditions` rather than writing a second path.** `rendition.itest.ts` asserts there is exactly one row-deletion path and more than one caller of the byte deletion; a second path makes that assertion wrong rather than stale.
+- [ ] T018 [US1] Publish the `deleted` storage event for every object destroyed, with a **negative** `bytesDelta`, via `publishStorageDelta`. Chapter 4.20 wired the first caller; this is the second. **The operational quota self-corrects and the analytical meter does not**, which is why this is easy to skip and expensive to skip.
+- [ ] T019 [US1] Add the ClickHouse erasure for `connection_events` in `relay-platform/services/api/src/db/` — **not inline in a feature directory**, because `eslint.config.mjs` restricts the query engine and 4.7's reconciler failed lint on exactly that import. T014's verb.
+- [ ] T020 [US1] Add the route, its module and its schema under `relay-platform/services/api/src/erasure/`, and register the module in `relay-platform/services/api/src/app.module.ts` (**23 pages**). Class-level `@Accepts("application")`, which is the decision rather than a branch in the handler.
+- [ ] T020a [US1] **Make the body schema `z.strictObject` and test an unknown field**, asserting a 400. Constitution VI's fifth bullet is a MUST and chapter 4.20 made `z.strictObject` the standing answer. The route takes no body, so the test is that a body with anything in it is refused rather than ignored.
+- [ ] T021 [US1] **Run T015's probe again and watch it go red**, then invert it: the row, the memberships and the profile are gone. Record both states in `specs/067-chapter-4-21/baseline.txt`.
+- [ ] T022 [US1] Assert the per-store outcome in `relay-platform/services/api/src/erasure/erasure.itest.ts`: after erasure, a count of rows naming the user is **zero** in every operational store that can remove them, counted **absolutely** rather than as a delta.
+- [ ] T023 [US1] Assert FR-008's tenancy: an external id belonging to another tenant answers 404, **byte-identical to one that does not exist** once `request_id` is removed. 4.11's rule, and chapter 4.20's route test needed exactly this correction after comparing whole bodies.
+- [ ] T024 [US1] Assert FR-007's idempotence: the second erasure reports **zero erased and 200**, not 404. *Two 404s prove nothing — idempotence is about what the second call DID.*
+- [ ] T025 [US1] Classify the new route in `relay-platform/services/api/src/isolation/targets.ts` **and** write the gauntlet attack for it, **in `relay-platform/services/api/src/isolation/gauntlet.itest.ts`** — attacks live inside that file, 13 pages with 7 appendix hunks. **THE ATTACK MUST ASK WHAT SURVIVED**: constitution I's usual failure is a leak and this one is a loss, so a forged erasure that answers 404 and deletes anyway leaves no trace in any read-shaped assertion.
+- [ ] T025a [US1] **Add the route's entry to `relay-platform/services/api/src/audit/moderation-routes.ts`** (FR-013). `moderation-routes.itest.ts` fails in **both** directions until it has one. **FR-013 says `moderation` this time** — unlike chapter 4.20's policy route, an erasure is a credential acting on somebody else's data, which is 4.18's *standing, not data* line pointing the other way. Zero fence cost: that file is titled on 0 pages.
+- [ ] T025b [US1] **Write the `audit_log` entry for an erasure** (FR-013), with `target_kind: "user"` — **which is already in `audit_log_target_kind_check`**, so unlike chapter 4.20's abandoned option this costs no migration and no `schema.ts` hunk. Check that before writing it, because it is the whole reason the classification differs.
+- [ ] T026 [US1] **Check FR-011 per action**: re-run `users.itest.ts`, `repository.itest.ts`, `messages.itest.ts` and the member suites **unedited**, and record the result. **`repository.itest.ts` IS ON THIS LIST BECAUSE IT WALKS THE SOURCE** — its *"gives each one an actor or the named absence"* test caught chapter 4.20 constructing a `Repository` with two arguments, and this chapter constructs more.
+
+---
+
+## Phase 4: User Story 2 — the receipt is evidence (P2)
+
+**Goal**: a document a compliance officer can file, naming what could not be erased.
+
+**Independent test**: read the receipt alone, with no access to the platform, and
+say which stores were cleared and which were not.
+
+- [ ] T027 [US2] Build the receipt in `relay-platform/services/api/src/erasure/`, per store, per `contracts/erasure.md`'s four outcomes.
+- [ ] T028 [US2] Assert that `api_requests` reports **`nothing_to_erase`** and `daily_usage` reports **`cannot_erase`**, and that the two are distinguishable in the response body. **If both say `erased: 0` the receipt has collapsed the distinction it exists to carry** — 205,697 rows that never named a person against 880 that do, unremovably.
+- [ ] T029 [US2] Assert the `not_reached` outcome by stopping ClickHouse and erasing a user: **the operational erasure must still commit** and the receipt must say the analytical store was not reached. Constitution III forbids rolling back a compliance erasure because a metering pipeline is unwell.
+  **AND STOP IT BY NAME.** `docker compose stop clickhouse` takes a shared service away from every suite running beside it — 4.10 found an isolation suite answering 503 because a media test stopped MinIO, and `check-lane-scope.py` cannot see an ACTION scoped too wide.
+- [ ] T030 [US2] Assert the receipt's media note names the **73%**: an erasure that takes the 3,979 attributed objects is correct and incomplete, and the receipt is where that gets said rather than in a comment nobody reads.
+- [ ] T031 [US2] Assert the second erasure's receipt reports every store with zero and **200**, which is T024 read from the receipt's side rather than the status code's.
+
+---
+
+## Phase 5: User Story 3 — the bounds, published (P3)
+
+**Goal**: a verdict per obligation, and nobody reads a promise into a mechanism
+that does not exist.
+
+**Independent test**: read `clauses.md` and find a verdict for each of
+FR-MOD-04's four obligations and FR-MED-10's three, each with where.
+
+- [ ] T032 [P] [US3] Write `specs/067-chapter-4-21/clauses.md`: FR-MOD-04's four obligations and FR-MED-10's three, each **met / demonstrated / unmet by decision / unreachable** with where. **And FR-MOD-05 beside them**, still unbuilt — the export that would let a tenant hold a copy first, named for the third chapter running.
+- [ ] T033 [US3] Record in `specs/067-chapter-4-21/clauses.md` that **`within 30 days` is satisfied trivially and therefore unexercised**: the erasure is synchronous, so the bound is met and never tested. The fifth clause bounded by ADR-28's absent scheduler, and the second — after FR-MOD-06's — whose absence is a compliance promise rather than a reporting one.
+- [ ] T034 [US3] Record the FR-MED-10 split: **the unlink is already met** (`deleteMessage` writes `attachments: []`), **the 30-day erasure bound is this chapter's**, and **the 24-hour orphan reaper is not** — `unreferencedMediaIn` has had no caller since chapter 4.15 and chapter 4.20 declined it deliberately, because its population is objects nothing ever attached. Say which of the three this chapter moved.
+- [ ] T035 [US3] Record the audit-log consequence in `specs/067-chapter-4-21/gaps.md`: 1,324 entries name a user target, the log is append-only, and an erasure **writes** one rather than removing any. An entry recording that somebody was banned is itself a record of that person, and repairing that means narrowing ADR-35 a second time in two chapters.
+
+---
+
+## Phase 6: The probes
+
+- [ ] T036 **Probe every tenancy arm, alone and in combination**, re-running the erasure suite AND the isolation gauntlet each time, and record which turn anything red in `specs/067-chapter-4-21/baseline.txt`. **065 measured three scoped reads where removing any TWO was invisible**, and chapter 4.20 found a bulk-delete arm that was invisible on its own. **A single-mutation probe measures the DEFENCE, not the arm** — and when an arm turns nothing red, **the answer is the test that makes it visible, not the deletion that makes it honest.**
+- [ ] T036a **Delete `@Accepts("application")` from the erasure route and re-run.** Chapter 4.18 found that deleting it from a READ route answered an end-user token 200 with the tenant's whole moderation history, and nothing was red. **Here an end-user token that can erase destroys a person's data**, so if nothing goes red the chapter has a route whose only real defence is untested.
+- [ ] T037 Run the isolation gauntlet and record its counted figures, **derived from `targets.ts` rather than expecting a printed line** — that suite asserts emptiness and prints no count of its own. It was **49 classifications and 25 moderation-route entries** at 066's close.
+- [ ] T038 Measure what an erasure costs in `specs/067-chapter-4-21/baseline.txt`, per user and **split by half**: chapter 4.20 measured a message at 0.04 ms and a media object at 2.05 ms, about 48×, because the object store has no foreign keys. **Name which half each figure came from**, and say plainly that no user on this lane owns many objects.
+- [ ] T039 Run `python3 specs/045-part-3-rework/check-lane-scope.py` and record its **counted line**, not its exit code. It was **77 integration files, 0 unscoped reads, 10 of 10 controls firing** at 066's close; this chapter adds one file.
+
+---
+
+## Phase 7: The documents
+
+- [ ] T040 **Read FR-MOD-04 and FR-MED-10 before editing either**, and record what the reading found — including *nothing to amend* if that is the answer.
+- [ ] T041 Read the clauses **beside** them while `docs/04-srs.md` is open. **FR-MED-10 sits directly above FR-MED-11 and is the clause chapter 4.20 nearly enforced by accident**; FR-MOD-05 sits two above FR-MOD-06. 065's T042 found FR-MSG-10 two rows from the one it opened the file to edit.
+- [ ] T042 Amend **FR-MOD-04** in `docs/04-srs.md`: four obligations with their verdicts, that *analytical records* is four stores with four answers, and that one of them cannot comply by construction.
+- [ ] T043 Amend **FR-MED-10** in `docs/04-srs.md` if the measurement warrants it — in particular that its unlink was already met, that its 24-hour reaper is still unbuilt, and that *a user's media objects* is undefined for 73% of them.
+- [ ] T043a Amend **FR-USR-05** or **FR-MOD-04** with whichever way T010 and T011 decided, **naming the clause that lost**. If `usage_active_users` is kept, FR-MOD-04's *analytical records* is partly unmet by decision and must say so.
+- [ ] T044 Add revision row **1.28** to `docs/04-srs.md`, stating what the chapter demonstrated and what it could not.
+- [ ] T045 **If T013a decided an ADR is needed, write it into BOTH homes** — the summary in `docs/05-sad.md` and the argument in `docs/06-adr-deep-dives.md`. 4.5 found an ADR lives in two documents and ten passes amended only the summary. **If it decided none is needed, record that as DONE with the reason** rather than leaving the task unticked.
+- [ ] T046 Amend `docs/05-sad.md` where the erasure changes what a section claims — **and check every sentence in the section you edit**, because 4.19 found three sites where a task naming one would have reached one.
+- [ ] T047 Amend **both** copies of the Part 4 table — `docs/12-part-4-structure.md` row 22 CLOSED and **`docs/07-tutorial-plan.md`'s PART 4 row 22** SHIPPED. **Match on the title, not the number**: `docs/07` holds two rows numbered 22, Part 3's and Part 4's, hundreds of lines apart.
+- [ ] T048 [P] Sweep `docs/` for feature-local ids **both ways**: diff-scoped for what this session added, and tree-wide with every hit classified. Chapter 4.20 added zero; the tree-wide population is 063-4's and is not this chapter's.
+- [ ] T049 Run `pnpm sync:docs` then `pnpm check:docs` from `relay-tutorial`.
+- [ ] T050 [P] Write `specs/067-chapter-4-21/traceability.md` by **reading**, not by grep — including the two sections a grep cannot produce: what is in the feature with no requirement behind it, and the clauses deliberately not amended.
+
+---
+
+## Phase 8: The chapter
+
+- [ ] T051 Register 4.21 in `relay-tutorial/lib/tutorial.ts` with all seven fields, at `/part-4/chapter-21/erasure-and-every-path-it-must-find`. An unregistered id throws at build.
+- [ ] T052 **Open the chapter with the refusal** — `docs/07` §4 rule 1. The reader deletes a user the way FR-USR-05 does, and finds the row, the messages and the billing rows still there. **That is the gap, and it is a behaviour rather than an error**, which makes it a different opening from 4.20's and worth writing as one.
+- [ ] T053 Write the chapter at `relay-tutorial/app/(en)/part-4/chapter-21/erasure-and-every-path-it-must-find/page.mdx`, 2,000–4,000 prose words counted outside fences and tables, English only.
+- [ ] T054 [P] Write the figures in that directory's `figures.ts`, passed as `code` and not `chart` — `check:figures` caught three dead diagrams `pnpm build` did not.
+- [ ] T055 Write the TRAP box. The candidate is **`nothing_to_erase` against `cannot_erase`**: a reader will assume both mean *no rows removed*, and the difference is the only thing the receipt exists to carry.
+- [ ] T056 Write at least one `WHY` box. The candidate is **why the analytical half is reported rather than rolled back** — constitution III cuts the opposite way from the instinct, and a reader who skips it will think the erasure is sloppy. `docs/07` §4 rule 3; 4.16 through 4.20 carry 2, 3, 1, 2 and 2.
+- [ ] T057 Publish what the chapter could not do: no scheduler, no undo, no cross-environment erasure, nothing removable from a `uniq` sketch, and **nothing measurable about a user who owns a lot of media**, because none on this lane does.
+- [ ] T058 Write the chapter's fences. **A titled fence is a whole-body claim** (051-6); an excerpt must be untitled. Chapters 4.19 and 4.20 both contributed **0 titled fences** and put every diff in the appendix.
+- [ ] T059 Generate hunks from the checker's own replay — `pnpm check:fences --dump <dir>` — then diff against `relay-platform` at `-U6`. **Verify every pre-image matches exactly once before pasting**, widening only where it does not, because widening merges adjacent hunks and a merged hunk can span more repetition than either half. **Strip the `--- a/` and `+++ b/` headers**: a `diff` fence carries the `@@` hunks only, and 052 spent 112 problems learning it.
+- [ ] T060 Put every hunk in `relay-tutorial/fences/post-series.md`, **placed last**, working biggest-first from T006's table.
+- [ ] T061 Run **all six tutorial gates** green from `relay-tutorial`, **after** every source edit, and compare each counted line against T003a's.
+- [ ] T062 [P] Count the prose words and confirm the bound.
+
+---
+
+## Phase 9: The record and the close
+
+- [ ] T063 Write `specs/067-chapter-4-21/baseline.txt` phase by phase, **in the order the measurements were taken, including the ones that were wrong first**.
+- [ ] T063a **Re-measure T007's map and publish both figures** (SC-012) — the open's and the close's. The counts move as the chapter's own fixtures run, which chapter 4.20 learned the hard way when its tests moved the lane's oldest message by a year.
+- [ ] T064 [P] Write `specs/067-chapter-4-21/gaps.md`, numbered, with the carried ledger **re-measured** rather than copied. Known carries: **066-1** (an audit entry outlives its target), **066-2** (the invisible bulk-delete arm), **066-4** (a test fixture that moves a headline measurement), 065-2, 065-3, 065-5, 064-1, 063-4, 058-3 (**twenty-three routes, not sixteen**), 062-12, 050-8, 043-1.
+  **AND ONE CARRY THIS CHAPTER MUST NOT DROP**: constitution VI's third bullet gates releases on three mechanisms and **two of them do not exist** — no dependency vulnerability scan and no OWASP scan anywhere in the workspace.
+- [ ] T065 **Re-measure the coverage pins this chapter's edits could move**, in `relay-platform/vitest.coverage.config.mts`, **after** the fence chain is at zero — and add pins for the new files. **Pin BELOW the measured value**, because `session.ts` measured 87.80% and 85.36% on identical code twenty minutes apart and a floor at the measurement teaches people to lower floors.
+  **AND IF A NEW FILE MEASURES THIN, THE ANSWER IS A TEST.** Chapter 4.20's `sweep.ts` came in at 63.79% and the largest uncovered arm was the dry run the quickstart tells an operator to run first.
+- [ ] T065a **Re-run `check:fences` to 0 after T065 and re-hunk if the pin file moved.** **23 pages publish `vitest.coverage.config.mts`**, it is the sixth billed file, and chapter 4.20's chain went red here exactly as predicted. Run it even when nothing changed — the control is what tells a clean chain from an unchecked one.
+- [ ] T066 Probe the pins **both ways** in `specs/067-chapter-4-21/baseline.txt`: a pin on a path that matches no file is silent, and an impossible pin on a real file must FIRE. **Run the positive control through `pnpm coverage` and not through a filtered `vitest run`** — chapter 4.20 found that a filtered run does not evaluate per-file thresholds, so the positive control looked exactly like the negative one and would have been recorded as *pins do not bind*.
+- [ ] T067 **Rebuild the api image before running the quickstart** — `pnpm build`, then `docker compose --profile services build api`, then `up -d --wait`. §3 onward hit `localhost:4000`, which is the composed container, and a new route answers **404** against a stale image. Then run `specs/067-chapter-4-21/quickstart.md` end to end and correct it in place, **recording each wrong version**. The last seven chapters' were wrong 3, 4, 3, 5, 2, 0 and 5 times.
+- [ ] T068 **Check FR-011 rather than trusting it** (SC-008): `git diff --name-only part4-ch20..HEAD` and confirm every file outside tests and documents is one the chapter is for.
+- [ ] T069 Stop the composed services **by name** from `relay-platform` — `docker compose stop api gateway dispatcher media-worker`, and **not `ingester`**.
+- [ ] T070 Run the full lane set with nothing else against the stack and record every REAL exit code, **each with its `Cached:` line and elapsed time or under `--force`**, compared against T002. **Compare CLASS BY CLASS, not test by test.** **And do not edit source while the battery runs** — 065 did and had to discard it.
+- [ ] T070a **Run the sealed suite** — `RELAY_API_URL=… RELAY_WS_URL=… RELAY_DEMO_CREDENTIAL=… pnpm test:outsider` from `relay-platform` — and record its counted line. **It is the only thing that boots the composed api and asks it a question**, which is the risk T020's new module carries: a module that declares a service it does not provide compiles, typechecks and lints, and fails on the first request. It was **21 of 21** at 066's close.
+- [ ] T071 Confirm every phase was committed as it closed, **submodule before pointer**, checked with `git -C relay-platform log --oneline -1`.
+- [ ] T072 **Push submodules first, then the superproject** — `relay-platform`, then `relay-tutorial`, then the root. CI is the superproject's and the other two are submodules checked out `submodules: recursive`.
+- [ ] T073 Compare the CI error set **per error** against T004's baseline, in both directions, and record it (SC-009). **The baseline is empty**, which is the hardest kind to match.
+- [ ] T074 If CI is red, fix the platform, then **re-dump, re-hunk `relay-tutorial/fences/post-series.md` and push both** — repairing a platform file invalidates the appendix hunks that publish it. **Record it as NOT RUN with the condition if CI is green**, rather than silently skipping.
+- [ ] T075 Tag `part4-ch21` in `relay-platform` and the superproject, annotated, on a commit CI has proved green.
+- [ ] T076 **`CLAUDE.md` HAS 791 BYTES OF HEADROOM AND THIS ENTRY WILL NOT FIT.** Compressing 066's entry recovers roughly 3 KB and a new one costs roughly 6 KB, so the convention no longer keeps pace: **the 046–063 tail is 107,052 bytes across 17 closed features and has never been revisited.** Decide with the user what stays citable before writing, then compress and add. **`wc -c` before and after.**
+- [ ] T077 Remove the active-plan line from between the `SPECKIT` markers in `CLAUDE.md` when the feature closes. **The markers now span only that block** — they were moved during planning, when they enclosed 118,636 bytes and the agent-context hook would have replaced all of it with three sentences.
+
+---
+
+## Dependencies & Execution Order
+
+```
+Phase 1  →  Phase 2 (the decisions, which the route needs)
+Phase 2  →  Phase 3 (US1)  →  Phase 4 (US2)
+Phase 3  →  Phase 5 (US3)
+Phases 3-5  →  Phase 6  →  Phase 7  →  Phase 8  →  Phase 9
+```
+
+**T005 BLOCKS EVERYTHING.** If the premise has moved since 2026-10-04 the chapter
+has moved with it — and two of its numbers are already known to drift: the
+outbox grows, and the sketches become non-empty the day `message_events` gains a
+producer.
+
+**T010 AND T011 BLOCK T016.** Whether erasure destroys messages and billing rows
+decides what the traversal does, and taking that decision with the route already
+written means taking it under pressure to keep what is there.
+
+**T013a BLOCKS T045.** Whether an ADR exists decides whether phase 7 writes one.
+
+**T014 BLOCKS T019.** The deletion verb decides whether the receipt's count can
+be trusted.
+
+**T015 BLOCKS T016.** The probe must be green against today's platform before the
+traversal exists, because the behaviour it asserts is the premise.
+
+**T025b DEPENDS ON `target_kind` ALREADY ADMITTING `user`.** Check it in T014a:
+it is the reason this chapter's classification can be `moderation` where chapter
+4.20's was not, and if the check is wrong the cost is a migration and 34 pages.
+
+**T065a COMES AFTER T065.** A final `check:fences` has to follow the last edit to
+any file the chain publishes, and the pin file is published by 23 pages.
+
+**T003a BLOCKS T061.** The six gates have to be recorded before the chapter
+changes anything, because T061 compares counted lines against them.
+
+### Parallel opportunities
+
+Five, marked `[P]`: T032, T048, T050, T054, T062, T064. **The number is small for
+the usual reason** — every task in phases 1, 6 and 9 appends to one
+`baseline.txt`, so they are sequential however independent the measurement is.
+
+### Suggested MVP
+
+**Phase 1 → Phase 2 → Phase 3.** US1 alone is a shippable chapter: a route that
+erases a user from every store that can erase them. US2's receipt is what makes
+it honest and US3's verdicts are what make it publishable, but a reader who
+stopped after US1 would have a working erasure.
