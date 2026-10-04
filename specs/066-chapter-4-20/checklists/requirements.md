@@ -236,7 +236,7 @@ the lint rule   permits services/api/src/db/** — so a sibling file is legal
 nothing. Nothing here needed it, because the index precedent is documented in the source rather
 than re-measured, but **phase 1's T001 needs it up.**
 
-## Analysis pass 5 — three findings, ONE CRITICAL, two fixed and one open
+## Analysis pass 5 — three findings, ONE CRITICAL, all three resolved
 
 **The question**: *open the constitution and the SRS rather than the source.* 065's eighth and
 ninth passes found their best results that way, and so did this one.
@@ -252,9 +252,18 @@ ninth passes found their best results that way, and so did this one.
   document grants.** This is **4.19's finding run backwards**: that chapter cited FR-MSG-08 as
   the clause its defect broke, this feature's own spec quotes it for that reason, and nobody
   noticed the sentence forbids this chapter too. **Left open deliberately** — the three
-  available readings are in `plan.md` and the choice is the user's, because amending a
-  constitution principle is outside `/speckit-analyze` and recording a P3 clause unmet is a
-  product call.
+  available readings were put to the user, because amending a constitution principle is outside
+  `/speckit-analyze` and recording a P3 clause unmet is a product call.
+
+  **DECIDED: a retention sweep IS a compliance path** (option A). The constitution's own word is
+  **path**, not *endpoint*, so **the rule hardest to change is the one that already permits
+  this** — and the cost is two SRS amendments, FR-MSG-08 and DR-06, which are the two documents
+  narrower than the principle. Recorded as **ADR-36 decision 1**, with research R1a carrying the
+  argument, the three rejected readings and the reversal condition: *if a later chapter needs
+  hard deletion on a third path, `compliance path` has stopped being a category.* The option
+  deliberately avoided is **soft expiry** — clearing `text` and keeping the row satisfies all
+  three clauses word for word and is the only reading that keeps every internal rule and still
+  misleads somebody.
 - **E2 HIGH — a third document, naming the exact population the spec targets.** DR-06:
   *"Deleted messages shall **retain their row**; only `text` and `attachments` shall be
   cleared."* US1 scenario 5 says *"a tombstone is a message that has expired like any other"* —

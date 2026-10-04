@@ -55,6 +55,49 @@ nulling text (FR-MOD-06 says *hard-deleted* and a tombstone is what expiry is no
 `expired_messages` table (two tables holding one kind of row, which chapter 4.15's one-table
 argument refuses).
 
+## R1a — Three documents reserve hard deletion for one path, and FR-MOD-06 asks for a second
+
+Found at analysis pass 5, by opening the constitution and the SRS rather than the source.
+
+```
+constitution II, bullet 4   "Deletions produce tombstones that preserve sequence, author,
+                             and timestamps; hard deletion exists ONLY ON THE COMPLIANCE PATH."
+FR-MSG-08                   "Hard deletion shall occur ONLY VIA THE COMPLIANCE DELETION
+                             ENDPOINT."
+DR-06                       "Deleted messages shall RETAIN THEIR ROW; only `text` and
+                             `attachments` shall be cleared."
+
+FR-MOD-06                   "expired messages HARD-DELETED BY A SCHEDULED JOB."
+```
+
+The first three are consistent with each other. **This is chapter 4.19's finding run
+backwards**: that chapter cited FR-MSG-08 as the clause its defect broke, this feature's own
+spec quotes it for that reason, and nobody noticed the sentence forbids this chapter too.
+
+**DECISION: a retention sweep IS a compliance path.** The constitution's own word is **path**,
+not *endpoint*, and a retention policy exists to keep a promise a customer made to an auditor —
+the same kind of obligation FR-MOD-04's erasure serves, arriving on a schedule rather than on a
+request. Under that reading **the constitution needs no amendment**, which is the strongest
+thing about it: the rule that is hardest to change is the one that already permits this.
+
+**WHAT IT COSTS IS TWO SRS AMENDMENTS**, and they are the two documents narrower than the
+constitution. FR-MSG-08 says *endpoint* where the principle says *path*; DR-06 says a deleted
+message retains its row, which a sweep destroys. Both are amended to name the second path
+explicitly rather than left to be read around.
+
+**Alternatives considered and rejected.** *Amend constitution II* — unnecessary under this
+reading, and three items already stand against principle III with an amendment written and
+never applied, so a fourth unapplied one would be a pattern. *Record FR-MOD-06 unmet by
+decision* — honest, and the fallback used for FR-MED-07, FR-MED-09's rendering half,
+FR-MOD-03's year and FR-ANL-06's job, but it leaves row 22 to solve the pincer alone. **Soft
+expiry — clear `text` and keep the row** — satisfies all three clauses word for word and is the
+one option to avoid: FR-MOD-06 says *hard-deleted*, and a compliance team told an auditor the
+data is gone. **It is the only reading that keeps every internal rule and still misleads
+somebody.**
+
+**REVERSAL CONDITION**: if a later chapter needs hard deletion on a third path, *compliance
+path* has stopped being a category and the decision is re-opened.
+
 ## R2 — FR-MED-11's expensive half is the "unless shared" check, and 4.12 already built its index
 
 A sweep needs two directions and they do not cost the same.

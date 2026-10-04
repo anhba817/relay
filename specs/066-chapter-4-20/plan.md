@@ -62,7 +62,7 @@ policy**, and **nothing older than 19 days** — so every demonstration is a bac
 | principle | verdict |
 |---|---|
 | **I — tenant isolation** | **engaged twice, and the two halves are opposite.** The clause says *"a repository layer whose constructors require an `environment_id`"* — so the enumeration of environments with a policy **cannot be a `Repository` method**, because every instance is bound to one tenant and this crosses all of them. It is an unscoped function in `services/api/src/db/retention-reads.ts`, the shape `storage-reads.ts`, `usage-reads.ts` and `audit-reads.ts` already use, and `pendingMediaObjects` states the isolation property for it: *"the route above it takes no tenant parameter at all, which is the isolation property to **assert** rather than a scope to add."* **The delete is the other half** and is tenant-scoped, one environment at a time, with the per-arm probe on it — because a sweep is the first thing here that destroys rows in bulk, and a predicate scoped wrong loses another tenant's data rather than leaking it |
-| **II — no acknowledged message is lost** | **engaged, and the clause is the exception.** FR-MOD-06 is the licensed way to lose one. The sweep destroys only what a tenant's own policy marks expired, and nothing else in the platform gains a delete path |
+| **II — no acknowledged message is lost** | **ENGAGED, AND IT TOOK A DECISION RATHER THAN A SENTENCE.** Bullet four reads *"hard deletion exists **only on the compliance path**"*, and FR-MSG-08 and DR-06 say the same thing more narrowly — so three documents reserve this verb and FR-MOD-06 asks for it anyway. **The reading taken is that a retention sweep IS a compliance path**: the constitution's own word is *path* rather than *endpoint*, and a policy exists to keep a promise a customer made to an auditor. The constitution needs no amendment under that reading; **FR-MSG-08 and DR-06 do**, because they say *endpoint* and *retains its row*. That is ADR-36's second decision and the SRS amendments are T043a and T043b |
 | **III — two data paths** | untouched. Operational expiry does not reach ClickHouse; DR-09's 90-day raw-event TTL is a different clock with a different owner, and the chapter states the boundary rather than widening to it |
 | **IV — single writer** | **satisfied by the predicate being self-clearing.** A destroyed message cannot match the next pass, so re-running needs no lease, heartbeat or reaper — chapter 4.13's compare-and-set argument in a different shape. **It needs a test rather than a sentence** (research R7) |
 | **V — API-first** | the policy is set through a public route. The sweep is a command and not a route, deliberately: see the ADR question |
@@ -83,7 +83,16 @@ policy**, and **nothing older than 19 days** — so every demonstration is a bac
 stating its drivers, rejected alternatives, and reversal condition. ADRs are immutable once
 accepted; superseding requires a new ADR."*
 
-**Yes — ADR-36, and it cannot be avoided.** `ADR-35` is the last in both homes, checked, so
+**Yes — ADR-36, with TWO decisions, which is ADR-35's own shape** (*"the audit log is
+operational, its immutability is a trigger, and its timestamp is declared"*). **Decision 1: a
+retention sweep is a compliance path**, so FR-MOD-06's hard deletion is licensed by the same
+clause that licenses erasure — the constitution says *path*, not *endpoint*, and FR-MSG-08 and
+DR-06 are amended to match rather than the constitution. **Decision 2: the trigger's exception**,
+below. The first was found at analysis pass 5 and the second at planning; they belong together
+because both answer *what is allowed to destroy evidence*, and separating them would leave a
+reader of either asking the other's question.
+
+**And it cannot be avoided.** `ADR-35` is the last in both homes, checked, so
 this chapter's number is **ADR-36** and it is written down here rather than invented in phase 7
 under pressure. Chapter 4.18 named ADR-35 in its plan before writing a line of it, for the same
 reason: five documents will cite this and a citation needs an address. ADR-35 published the audit log's immutability as *to the
@@ -192,6 +201,13 @@ prediction.
 
 ## Risks
 
+- **AND THE READING COULD BE WRONG, WHICH IS WHAT AN ADR IS FOR.** *A retention sweep is a
+  compliance path* is an argument, not a measurement: somebody could reasonably hold that
+  constitution II means the FR-MOD-04 endpoint and nothing else, in which case FR-MOD-06 is
+  unmet by decision and this chapter is *why the platform cannot expire messages*. **ADR-36
+  records the reading, its two amendments and its reversal condition** — if a later chapter
+  needs hard deletion on a third path, the category has stopped meaning anything and the
+  decision is re-opened.
 - **THE CHAPTER CHANGES A GUARANTEE THE PREVIOUS CHAPTER SHIPPED, AND THAT IS THE WHOLE RISK.**
   `message_edits` was made append-only yesterday and is being given an exception today. If the
   exception is wider than one verb on one table under one named flag, the honest course is to
