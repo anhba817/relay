@@ -557,7 +557,55 @@ which a heading-grep cannot see. **The control was opening the files**, and the 
 into is this project's own: *a zero from an instrument is a claim about the corpus only if the
 instrument can be shown to have read it.*
 
-### Eleven passes
+## Analysis pass 12 — three findings, 0 CRITICAL, all three fixed
+
+**The question**: *run it.* Eleven passes read. This project ranks *ask the database a question
+with a yes-or-no answer* first among the three mechanisms that find things, and T005 says the
+chapter moves if the pincer has moved since 2026-10-03 — which was yesterday. Postgres was
+brought up and four queries run.
+
+**EVERY HEADLINE FIGURE RE-MEASURES EXACT, AND NOBODY HAD CHECKED ONE.**
+
+    environments                     33,051   artifacts: 33,051   EXACT
+      with retention_days set             0   artifacts: 0        EXACT
+    messages                        199,275   plan.md             EXACT
+    distinct message_id in edits      5,495   T007                EXACT
+    audit_log naming a message        1,435   T009                EXACT
+    oldest message               2026-09-14   quickstart §1       EXACT
+    messages older than 30 days           0   quickstart §1       EXACT
+    busiest env by messages           1,018   T038                EXACT
+      …its media objects                  0   T038                EXACT
+    busiest env by media                531   T038                EXACT
+      …its messages                     843   T038                EXACT
+
+- **X1 HIGH — the premise expires on 2026-10-14 and the quickstart's safety rests on it.** §3
+  sets `retention_days = 30` on the demo tenant and §5 runs the sweep. Today that destroys only
+  the backdated fixture. **The demo tenant is `bbda7667…`, which is the busiest media
+  environment on this lane**: 843 messages, 531 objects, **0 past thirty days today and 570
+  crossing by 2026-10-20** — destroyed irreversibly, in a tenant `reset-lane.mjs` does not
+  restore by design. **Fixed**: §3 carries a precondition guard that counts what is already at
+  risk and says STOP, and §5's dry run must read **1** before the destructive line is run.
+  **The hazard arrives with no code change, no diff shows it, and no checker reads a date.**
+- **X2 MEDIUM — every artifact stated the negative undated.** *"nothing on this lane is thirty
+  days old"* across the quickstart, `research.md` R5, `spec.md`, `plan.md` and T038. 4.17's
+  rule — a number measured at one moment is a fact about that moment — is applied by T063a to
+  SC-012's refused count and was applied by nothing to the age. **Fixed** at seven sites, each
+  carrying 2026-10-04 and the 2026-10-14 crossing.
+- **X3 MEDIUM — `message_edits` precision measured by path, which nobody had done.**
+  `ended_by='edit'`: **5,549 of 5,549 millisecond-exact, 100.00%** — 065-2 confirmed from data
+  and not only from source. `ended_by='deletion'`: **50 of 1,114, 4.49%**, where chance
+  predicts ~0.1%. The 50 are **interleaved** with precise rows rather than preceding 4.19's fix
+  — ms-exact span 11:06→12:17 on 2026-10-03, first precise row 11:11. Both writers are in
+  `repository.ts` and the deletion path does use SQL `now()`. **Fixed** into T064's carry table
+  as a measurement **with no theory attached**, because the cause is not identifiable from
+  source and inventing one would be worse than recording the number.
+
+**X3 IS A MEASUREMENT 065 COULD NOT HAVE TAKEN.** Before its fix the column was 100%
+millisecond on every row, so there was no contrast; the fix is what makes 4.49% legible as an
+anomaly rather than as the background. **A repair can create the instrument that shows what it
+did not repair.**
+
+### Twelve passes
 
     pass 1   4 findings   0 CRITICAL   opening the files the artifacts cite
     pass 2   4 findings   0 CRITICAL   writing the queries nobody had written
@@ -570,6 +618,7 @@ instrument can be shown to have read it.*
     pass 9   3 findings   1 CRITICAL   principle VI's bullets read as clauses, and the SC instruments
     pass 10  4 findings   0 CRITICAL   the list walked end to end, after nine insertions
     pass 11  3 findings   0 CRITICAL   the carried ledger measured instead of copied
+    pass 12  3 findings   0 CRITICAL   RUNNING it — every figure exact, and a dated premise
 
 **Four passes found nothing critical, the fifth found the thing that decides whether the
 chapter can ship as specified, and the sixth found three things no document in this directory

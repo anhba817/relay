@@ -51,13 +51,14 @@ deletion the platform performs.
 ### And the lane cannot exercise the clause at any of its four settings
 
 ```
-oldest message on the lane     2026-09-14          19 days
+oldest message on the lane     2026-09-14          19 days at planning, 20 on 2026-10-04
 messages older than  30 days   0
 messages older than  90 days   0
 messages older than 365 days   0
 ```
 
-FR-MOD-06's shortest policy is 30 days and **nothing on this lane is 30 days old**. Every
+FR-MOD-06's shortest policy is 30 days and **nothing on this lane is 30 days old — as of
+2026-10-04, and the oldest crosses on 2026-10-14**. Every
 demonstration in this chapter needs a backdated fixture, and the figure that matters — how much
 a sweep deletes on real data — cannot be measured here at all.
 
@@ -268,7 +269,8 @@ retention year got at chapter 4.18.
   clauses now stand behind the same absence. A fourth does not change the architecture; what
   changes is that this clause's promise is a compliance promise, which is worth saying in the
   chapter rather than in a gap entry.
-- **The lane cannot demonstrate the clause with real data** — nothing is 30 days old — so every
+- **The lane cannot demonstrate the clause with real data** — nothing is 30 days old on
+  2026-10-04, and the oldest message crosses on 2026-10-14 — so every
   scenario uses a backdated fixture, and the chapter publishes that limitation rather than
   implying the measurement is from production-shaped data.
 - **Analytical rows are out of scope** by constitution III, and DR-09's 90-day TTL on raw events

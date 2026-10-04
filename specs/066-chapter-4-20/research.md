@@ -161,7 +161,8 @@ the plan's question; the column is not.
 ## R5 — The lane cannot exercise the clause at any of its four settings
 
 ```
-oldest message            2026-09-14        19 days
+oldest message            2026-09-14        19 days at planning, 20 on 2026-10-04
+                                            and THIRTY on 2026-10-14
 older than  30 days       0
 older than  90 days       0
 older than 365 days       0

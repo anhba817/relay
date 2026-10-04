@@ -55,7 +55,8 @@ it is 4.12's rule at a third address.** The second query is the shared-attachmen
 implying a deadline the platform does not enforce
 
 **Scale/Scope**: 199,275 messages, 14,039 media objects, 33,051 environments, **0 with a
-policy**, and **nothing older than 19 days** — so every demonstration is a backdated fixture
+policy**, and **nothing older than 19 days at planning, 20 on 2026-10-04 and thirty on
+2026-10-14** — so every demonstration is a backdated fixture
 
 ## Constitution Check
 
@@ -237,7 +238,7 @@ prediction.
 - **A bulk delete scoped wrong destroys rather than leaks.** Constitution I's usual failure is a
   read; this one is a `DELETE`. The per-arm probe matters more here than anywhere it has been
   run, and 4.19 measured that two of three scopes can be removed invisibly.
-- **The lane cannot exercise the clause.** Nothing is 30 days old, so every figure comes from a
+- **The lane cannot exercise the clause — until 2026-10-14.** Nothing is 30 days old, so every figure comes from a
   backdated fixture and **the cost of a real sweep is unmeasurable here**. 4.13's backdating
   piled 3,235 rows on one instant and turned twelve tests red; this one backdates per fixture.
 - **FR-MED-11's reverse check is 106× the forward one** and runs per object. At lane scale that

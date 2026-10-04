@@ -43,7 +43,7 @@ RELAY_POSTGRES_PORT=15432 docker compose --profile services up -d --wait
 rather than a stale build. Chapter 4.11 named this as the third kind of stale build, after a
 stale `dist` and a stale `node_modules`, and chapter 4.19 met it again at phase 9.
 
-## 1 · MEASURED — nothing on this lane is old enough to expire
+## 1 · MEASURED on 2026-10-04 — nothing on this lane is old enough to expire YET
 
 ```bash
 docker compose exec -T postgres psql -U relay -d relay -t -A -F' | ' -c "
@@ -51,9 +51,17 @@ select 'oldest message', min(created_at)::text from messages
 union all select 'older than 30 days', count(*)::text from messages where created_at < now() - interval '30 days';"
 ```
 
-**Measured**: `2026-09-14` and `0`. FR-MOD-06's shortest policy is thirty days and **nothing
-here is thirty days old**, so every section below backdates a fixture. The figure a reader
-would most want — what a sweep removes from real traffic — cannot be measured on this lane.
+**Measured 2026-10-04**: `2026-09-14` and `0`. FR-MOD-06's shortest policy is thirty days and
+nothing here is thirty days old **today**, so every section below backdates a fixture. The
+figure a reader would most want — what a sweep removes from real traffic — cannot be measured
+on this lane.
+
+**AND THIS SENTENCE HAS AN EXPIRY DATE: 2026-10-14.** The oldest message is dated, so the claim
+is a fact about **2026-10-04** and not a property of the lane. 189 messages cross thirty days
+on 2026-10-14 and **570 in the demo tenant alone by 2026-10-20**. §3 guards against it rather
+than trusting the date, because **the hazard arrives with no code change and no diff shows
+it** — which is 4.17's rule at its sharpest: a number measured at one moment is a fact about
+that moment.
 
 ## 2 · MEASURED — the hard delete is refused, and so is every obvious way round it
 
@@ -99,6 +107,16 @@ made every deletion add one.
 export K=$(RELAY_POSTGRES_PORT=15432 node scripts/seed-demo-tenant.mjs 2>/dev/null | tail -1)
 export ENV=$(RELAY_POSTGRES_PORT=15432 node scripts/seed-demo-tenant.mjs 2>&1 >/dev/null \
   | awk '/^environment_id/ {print $2}')
+
+# GUARD, AND IT IS NOT OPTIONAL AFTER 2026-10-14. Setting a 30-day policy on a tenant that
+# already holds real messages older than thirty days arms §5 to destroy them — irreversibly,
+# and `reset-lane.mjs` does not restore lane data by design. The demo tenant is the busiest
+# media environment on this lane: 843 messages and 531 objects.
+AT_RISK=$(docker compose exec -T postgres psql -U relay -d relay -tAc \
+  "select count(*) from messages m join channels c on c.id=m.channel_id
+   where c.environment_id='$ENV' and m.created_at < now() - interval '30 days'")
+echo "real messages already past 30 days in this tenant: $AT_RISK"
+[ "$AT_RISK" = "0" ] || { echo "STOP: §5 would destroy $AT_RISK real messages. Use a fresh environment."; }
 
 curl -s -X PATCH "localhost:4000/v1/environments/$ENV" -H "authorization: Bearer $K" \
   -H 'content-type: application/json' -d '{"retention_days":30}' | python3 -m json.tool
@@ -162,6 +180,10 @@ pnpm --filter @relay/api exec node dist/retention/sweep.js
 destroys the backdated message **and its version rows**; the second prints the same counted
 line with zeroes, because the predicate is self-clearing.
 
+**READ THE DRY RUN'S COUNT BEFORE RUNNING THE SECOND COMMAND.** It must be **1** — the one
+message §4 backdated. Anything higher is §3's guard having been ignored, and the next line
+destroys the difference. The dry run is the only place this walkthrough can still be stopped.
+
 **ASSERT THE COUNTED LINE, NOT THE EXIT CODE** (055-4). A sweep that found no environment with
 a policy and a sweep that found nothing expired both exit 0, and they must not print the same
 thing.
@@ -194,7 +216,9 @@ demonstrating only the half that is convenient.
 
 ## 7 · And what this still cannot show
 
-- **What a sweep costs on real data.** Nothing on this lane is thirty days old.
+- **What a sweep costs on real data.** Nothing on this lane is thirty days old **on
+  2026-10-04**; the oldest message is 2026-09-14 and crosses on 2026-10-14. After that this
+  bullet is false and §3's guard is what matters.
 - **Whether a single run should be bounded.** A million expired rows is a different question
   and the corpus cannot inform it.
 - **When expiry happens.** Nothing runs the sweep. That is the chapter's own subject, not a
