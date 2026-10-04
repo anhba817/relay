@@ -12,6 +12,13 @@ and tells a compliance officer nothing.
 | scope | the caller's environment. An external id is unique per environment, not globally |
 | body | none |
 
+**THE ROUTE LIVES IN `users.controller.ts`, BESIDE THE DELETION IT MUST NOT BE
+CONFUSED WITH.** That controller already carries `@Controller("v1/users")`,
+`@UseGuards(CredentialGuard)` and `@Accepts("application")` at class level, so the
+erasure inherits all three. A separate module was the first plan and it would have cost
+19 extra fence pages to duplicate those decorators — and put the two verbs in different
+files, which is the opposite of what the paragraph below argues for.
+
 **WHY NOT `DELETE /v1/users/{externalId}`.** That is FR-USR-05's deletion and it
 already exists with the opposite semantics — it keeps the row, the messages and
 the billing rows on purpose. Two verbs that differ only in what they preserve

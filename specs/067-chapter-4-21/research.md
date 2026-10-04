@@ -124,6 +124,14 @@ added the first `environments` controller and its shape is the precedent:
 `@Controller`, `@UseGuards(CredentialGuard)`, `@Accepts("application")` at class
 level, with the decorator as the decision rather than a branch in the handler.
 
+**AND THE ROUTE GOES IN THE CONTROLLER THAT ALREADY EXISTS.** `@Controller("v1/users")`
+carries `@UseGuards(CredentialGuard)` and `@Accepts("application")` at class level and
+already holds `@Delete(":externalId")` — FR-USR-05's deletion. Measured at analysis pass 1:
+**`users.controller.ts` is 4 pages with 0 appendix hunks against `app.module.ts`'s 23 with
+4**, so a new module would cost 19 extra pages to duplicate three decorators. **And the
+cheaper option serves the contract better**: the two `DELETE`s must not be confused, and
+side by side in one file they are harder to confuse than in two.
+
 **THE FENCE BILL, COUNTED NOW** — 4.15's rule, and chapter 4.20's correction
 that the count must be derived from what the tasks touch rather than remembered:
 
@@ -131,14 +139,17 @@ that the count must be derived from what the tasks touch rather than remembered:
                                    pages   appendix hunks already carried
 repository.ts                         52   6
 schema.ts                             34   6
-app.module.ts                         23   4
 vitest.coverage.config.mts            23   17
 targets.ts                            13   5
 gauntlet.itest.ts                     13   7
+users.controller.ts                    4   0
 ---- free, and still owed an entry
 moderation-routes.ts                   0   0
----- possible, if the profile's shape moves
-users.schema.ts                        4   0
+---- possible
+users.module.ts                        5   1   if a provider is registered
+users.schema.ts                        4   0   if the profile's shape moves
+---- NO LONGER TOUCHED
+app.module.ts                         23   4   the route joins an existing controller
 ```
 
 **COUNTED, NOT REMEMBERED.** A first draft of this section carried 8 / 8 / 4 /

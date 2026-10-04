@@ -91,6 +91,61 @@ already written down:
   chapter 4.20 narrowed once already. Narrowing it again for this would be the
   second exception in two chapters, and the tension is stated instead.
 
+## Analysis pass 1 — three findings, 0 CRITICAL, all three fixed
+
+**The question**: *open the files the artifacts cite.* `tasks.md` cites several by
+behaviour rather than by name, and `plan.md` assumed a module shape without checking what
+the path prefix already holds.
+
+- **A1 HIGH — the route needs no new module, and the plan assumed one by carrying chapter
+  4.20's shape across.** `@Controller("v1/users")` already exists with
+  `@UseGuards(CredentialGuard)` and `@Accepts("application")` at class level — **the exact
+  three decorators the plan specified** — and already holds `@Delete(":externalId")`.
+  Measured: `users.controller.ts` is **4 pages with 0 appendix hunks** against
+  `app.module.ts`'s **23 with 4**, so a new module costs **19 extra pages to duplicate
+  three decorators**. 4.20 genuinely needed one because `v1/environments` had no
+  controller at all; this prefix does. **Fixed** across `plan.md`, `research.md`'s bill,
+  `contracts/erasure.md` and five tasks.
+  **AND THE BILL IS NOT THE MAIN ARGUMENT.** The contract's central worry is that erasure
+  and FR-USR-05's deletion must not be confused — *"two verbs that differ only in what
+  they preserve must not differ only in a flag"* — and **two `DELETE`s side by side in one
+  file are harder to confuse than two in different files.** The cheaper option is also the
+  one that serves the stated requirement.
+- **A2 MEDIUM — T017 described an enforced constraint as a preference.** It said to reuse
+  `destroyMediaObjects` *"rather than writing a second path"*; `rendition.itest.ts:282`
+  asserts `toHaveLength(1)` on row-deletion paths, so a second `delete(mediaObjects)`
+  **turns it red** with its own instruction attached. **Fixed**: the task says the test
+  enforces it, and that the companion assertion expects this chapter to add a byte-delete
+  caller.
+- **A3 MEDIUM — T025a presented a classification the file already answers for the
+  adjacent route.** `"DELETE /v1/users/:externalId": "moderation"` is there, reasoned
+  *"removes a person's profile and memberships"*, and `ACTION.deleteUser` exists.
+  **Fixed**: erasure is the same judgement applied to a strictly larger action, and the
+  new `ACTION` entry is modelled on the existing one.
+
+**WHAT VERIFIED CLEAN, AND ONE I NEARLY REPORTED AS A DEFECT.**
+`audit_log_target_kind_check` admits `'user'`, so T025b costs no migration and no
+`schema.ts` hunk — which is why this chapter's classification can be `moderation` where
+4.20's could not. `destroyMediaObjects(ids: readonly string[])` matches T017.
+`users.itest.ts` exists. R4's `deleteUser` quotation is verbatim.
+
+**And `deleteUser` DOES write its audit entry.** A first grep over lines 4386–4440 found
+no `recordAction`, which would have meant chapter 4.18's moderation log was incomplete on
+a route it classifies `moderation`. The method spans **4394–4455** and the call is at the
+end: **the window was too short, not the code wrong.** Re-measured by brace depth before
+reporting, and the finding evaporated — which is the only reason it is recorded here
+rather than in `gaps.md`.
+
+### One pass
+
+    pass 1   3 findings   0 CRITICAL   opening the files the artifacts cite
+
+**A1 and A3 are the same mistake at two scales**: the artifacts treat as open a question
+the tree has already answered, once for a module and once for a classification. A1 came
+from carrying a conclusion across from the chapter before it without re-checking its
+premise — which is what the premise check exists to catch, applied to a plan rather than
+to a clause.
+
 ## Notes
 
 - Items marked incomplete require spec updates before `/speckit-clarify` or

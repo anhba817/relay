@@ -23,7 +23,10 @@ tell a compliance officer nothing.
 **Stores touched**: Postgres (`users`, `members`, `read_positions`, `messages`,
 `media_objects`, `usage_active_users`), ClickHouse (`connection_events`), the
 object store (per-object `DELETE`)
-**New surface**: one route, one module, one repository path, one receipt shape
+**New surface**: one route, one repository path, one receipt shape. **No new module** —
+`@Controller("v1/users")` already exists with the three decorators this route needs and
+already holds FR-USR-05's deletion. Analysis pass 1 measured the alternative at 19 extra
+fence pages, and colocation also puts the two `DELETE`s where a reader meets both at once
 **No new dependency, no new service, no new table.**
 
 **Performance**: the media half dominates, as chapter 4.20 measured — 2.05 ms an
@@ -108,7 +111,8 @@ clear about is that predictions about what analysis will find are usually wrong.
 2. **The decisions.** What the receipt attests, which stores are in scope, and
    whether `usage_active_users` is erased or kept — settled before any route
    exists.
-3. **US1 — the erasure.** The route, the module, the per-store deletions, and
+3. **US1 — the erasure.** The route in the existing users controller, the per-store
+   deletions, and
    the red probe first: assert what a user leaves behind today.
 4. **US2 — the receipt.** Per store, per outcome, with the un-erasable one
    named. Asserted by reading the receipt alone.
