@@ -40,36 +40,29 @@ tags. **Anyone holding an older clone of `relay-platform` must reset rather than
 
 **ACTIVE PLAN: `specs/067-chapter-4-21/plan.md`** — chapter 4.21, movement VII's fourth.
 `docs/12` row 22 is FR-MOD-04 and FR-MED-10, and **the premise check came out MIXED** where
-4.19's was four of five and 4.20's was none of three. **FR-MED-10's unlink is already met** —
-`deleteMessage` writes `attachments: []`. The endpoint does not exist. And **the phrase
-`analytical records` is four stores with four different answers**: `api_requests` holds 205,697
-rows and **no user column at all** (chapter 4.4's design, so the cheapest erasure is the column
-nobody collected), `connection_events` 1,081 deletable rows, `message_events` **0** rows with no
-producer, and `daily_usage_*` **880 rows holding `AggregateFunction(uniq, Nullable(UUID))` from
-which no single user can be removed** — and whose sketches claim **0 distinct users today**,
-because the source has never received a row. **Both halves get published: either alone misleads.**
+4.19's was four of five and 4.20's was none of three. FR-MED-10's unlink is **already met**;
+the endpoint does not exist; and **the phrase `analytical records` is four stores with four
+answers**: `api_requests` has **no user column at all** over 205,697 rows (4.4's design — the
+cheapest erasure is the column nobody collected), `connection_events` 1,081 deletable,
+`message_events` **0** with no producer, and `daily_usage_*` **880 rows of
+`AggregateFunction(uniq, Nullable(UUID))` from which no one user can be removed** — whose
+sketches claim **0 distinct users today**, the source never having received a row. **Both
+halves get published: either alone misleads.**
 
-**AND `deleteUser` ALREADY EXISTS AND KEEPS WHAT ERASURE MUST DESTROY.** FR-USR-05's deletion
-clears the profile, memberships and read positions and **keeps the row, the messages, and every
-`usage_active_users` row** — 22,150 of them — with a billing argument in the code: *"a customer
-who deleted a user in March still owes for March."* Two clauses, opposite answers, both good.
-**And `ON DELETE SET NULL` is the option already measured and refused**: all five foreign keys to
-`users` are `NO ACTION`, because nulling `messages.user_id` *"breaks delivery — the resume path
-drops a senderless row."*
+**AND `deleteUser` ALREADY EXISTS AND KEEPS WHAT ERASURE MUST DESTROY** — the row, the
+messages, and 22,150 `usage_active_users` rows, with a billing argument in the code: *"a
+customer who deleted a user in March still owes for March."* Two clauses, opposite answers,
+both good. **`ON DELETE SET NULL` is already measured and refused**: all five FKs to `users`
+are `NO ACTION`, because nulling `messages.user_id` *"breaks delivery — the resume path drops
+a senderless row."*
 
-**THE CHAPTER'S PRODUCT IS THE RECEIPT, NOT THE ENDPOINT.** FR-MOD-04's *completion receipt* is
-its least defined phrase and a 204 satisfies the grammar. Four outcomes, and
-**`nothing_to_erase` must not collapse into `cannot_erase`** — one is 205,697 rows that never
-named a person and the other is 880 that do, unremovably. **`not_reached` is why the receipt is
-load-bearing**: constitution III forbids rolling back a compliance erasure because a metering
-pipeline is unwell, so the operational half commits and the analytical half is reported.
-
-**AND CLICKHOUSE HAS TWO DELETION VERBS WITH DIFFERENT VISIBILITY.** `DELETE FROM` is visible to
-the next `SELECT`; `ALTER TABLE … DELETE` **returned with its hundred rows still countable** —
-051's finding, and the contrast is new. A receipt states a count, so it uses the verb whose count
-it can trust. **No new ADR is expected**: ADR-36 already named FR-MOD-04's endpoint as one of the
-two compliance paths. Recorded as open, because predicting what analysis will find has not gone
-well here.
+**THE PRODUCT IS THE RECEIPT, NOT THE ENDPOINT.** FR-MOD-04's *completion receipt* is its
+least defined phrase and a 204 satisfies the grammar. **`nothing_to_erase` must not collapse
+into `cannot_erase`** — 205,697 rows that never named a person against 880 that do,
+unremovably — and **`not_reached` is why it is load-bearing**: constitution III forbids
+rolling back a compliance erasure because a metering pipeline is unwell. **And ClickHouse's
+two deletion verbs differ in visibility**: `DELETE FROM` is visible to the next `SELECT`,
+`ALTER TABLE … DELETE` **returned with its rows still countable** (051, with the contrast new).
 
 **066 IS CLOSED — CHAPTER 4.20, "The messages that expire".** Movement VII's third. Its record
 is `specs/066-chapter-4-20/` — `baseline.txt` first (every phase in the order taken, wrong
@@ -156,57 +149,48 @@ reporting obligation.** The others cost accuracy; this one is a customer telling
 that data does not exist. So nothing publishes an `expires_at`.
 
 **064 IS CLOSED — CHAPTER 4.18, "The log that cannot be edited".** Movement VII opens. Its
-record is `specs/064-chapter-4-18/` — `baseline.txt` first, then `gaps.md` (**4 new plus the
-carried ledger re-measured**), `traceability.md`, `clauses.md`, `routes.md`, `quickstart.md`,
-`tasks.md`. **SRS 1.25**, **ADR-35**, `docs/12` row 19 CLOSED. Tagged **`part4-ch18`**.
+record is `specs/064-chapter-4-18/`. **SRS 1.25**, **ADR-35**, `docs/12` row 19 CLOSED.
+Tagged **`part4-ch18`**.
 
     check:fences 21 -> 0 · EXIT 0 · 291 files across 61 chapters      from 60
     2,937 prose words · 4 figures · 2 TRAP · 2 WHY · **0 titled fences**
     49 appendix hunks across 21 files — every one applied FIRST TIME
     FR-MOD-03: ten obligations, nine met or demonstrated
-    the entry costs 0.43 ms · the transaction four actions gained costs as much again
 
 **THE CLAUSE NAMES A POPULATION AND SUPPLIES NO MEMBERSHIP RULE, SO THE CHAPTER'S PRODUCT IS A
 DECISION.** 48 routes derived from a booted application, 33 mutating, **24 owing a decision
 each — not an entry each**. The set is **eight** where a reader predicts nine, and the rule the
 spec proposed misclassified two routes in the same direction, which is what named the line it
-actually draws: **standing, not data.**
+actually draws: **standing, not data.** 4.20 used that line to classify its own route
+`not-moderation` and recorded the cost it avoided rather than the cost as the reason.
 
 **`REVOKE UPDATE, DELETE` DOES NOTHING** — the api connects as a superuser, so the obvious
 mechanism is inert and a `BEFORE UPDATE OR DELETE` trigger is the one that fires. **Both
-bypasses are measured and published**: `SET session_replication_role = replica` and `DROP
-TRIGGER`. So the claim is scoped to the application and to accident, not to somebody holding
-the database password. **A mechanism that fits the tool is not a mechanism that works, and the
-second has to be attempted.** 4.19 applied the same ADR to `message_edits` and re-measured both
-bypasses rather than assuming they transfer.
+bypasses are measured and published.** **A mechanism that fits the tool is not a mechanism that
+works, and the second has to be attempted.** **AND THE TRIGGER WAS FORBIDDEN BY A TEST WHOSE
+RULE WAS WIDER THAN ITS REASON** — scoped in its own comment to the sentinel guard, which
+refuses the api's own legitimate sweeps, where this refuses writes the api must never make:
+**opposites wearing the same syntax.** Narrowed by name, and the narrowing asserted.
 
-**AND THE TRIGGER WAS FORBIDDEN BY A TEST WHOSE RULE WAS WIDER THAN ITS REASON.**
-`no-trigger-in-migrations.test.ts` was scoped in its own comment to the sentinel guard — a
-trigger that rejects the api's own legitimate sweeps — and this one refuses writes the api must
-never make: **opposites wearing the same syntax.** Narrowed to the guard by name, **and the
-narrowing itself asserted**.
-
-**TWO OF THREE TENANCY SCOPES WERE INVISIBLE AND THE THIRD GUARDS THE WRONG CASE.** Deleting
-the controller's 403 for a principal with no environment turned nothing red anywhere, because
+**TWO OF THREE TENANCY SCOPES WERE INVISIBLE AND THE THIRD GUARDS THE WRONG CASE.** Deleting the
+controller's 403 for a principal with no environment turned nothing red, because
 `@Accepts("application")` refuses such a principal first — while **deleting that decorator
-answers an end-user token 200 with the tenant's whole moderation history.** The branch defends
-a case that cannot arise; the decorator is the decision and nothing had tested it. (4.19 found
-the same shape one route over, and worse: **three** scoped reads where removing any **two** is
-invisible.)
+answers an end-user token 200 with the tenant's whole moderation history.** The branch defends a
+case that cannot arise; **the decorator is the decision and nothing had tested it.** 4.20 ran the
+same probe on a WRITE route and found it covered, which is the contrast worth keeping.
 
-**AND THE KEYSET CURSOR WRITTEN AS AN `OR` IS NOT A KEYSET CURSOR** — it lands in a `Filter:`
-and re-walks every earlier page. A SQL row value reaches the `Index Cond`. **And
-`timestamptz(3)` is not cosmetic**: Postgres stores microseconds, `toISOString` emits
-milliseconds, so a cursor minted from the wire value sits before every row inside the lost
-fraction. **4.19 found the other half of that**: every value ever written to `message_edits.
-edited_at` — a microsecond column — arrived as a millisecond `Date`, 5,149 of 5,149 rows.
+**AND THE KEYSET CURSOR WRITTEN AS AN `OR` IS NOT A KEYSET CURSOR** — it lands in a `Filter:` and
+re-walks every earlier page; a SQL row value reaches the `Index Cond`. **4.20 checked whether
+that transfers to containment predicates and it does not**: a hundred `@>` tests OR together into
+a `BitmapOr` over the GIN index. **And `timestamptz(3)` is not cosmetic** — Postgres stores
+microseconds, `toISOString` emits milliseconds, so a cursor minted from the wire value sits
+before every row inside the lost fraction.
 
-**AND `git commit -F -` IN A BACKGROUNDED COMMAND COMMITS NOTHING** — no stdin, an empty
-message, git aborts, and the background task reports only the other command's exit code.
-**Then `git add -A` in the superproject staged a gitlink that had not moved**, because the
-submodule still held the whole chapter uncommitted: a green, complete-looking commit carrying
-none of it. **060's push order is a commit rule too** — and 4.19 reproduced it three commits
-running, because the task that says so is the last one in the feature.
+**AND `git commit -F -` IN A BACKGROUNDED COMMAND COMMITS NOTHING** — no stdin, an empty message,
+git aborts, and the background task reports only the other command's exit code. **Then `git add
+-A` in the superproject staged a gitlink that had not moved**, because the submodule still held
+the whole chapter uncommitted: a green, complete-looking commit carrying none of it. **060's push
+order is a commit rule too.**
 
 **065 IS CLOSED — CHAPTER 4.19, "Everything, including what was deleted".** Its record is
 `specs/065-chapter-4-19/`. **SRS 1.26**, `docs/12` row 20 CLOSED **and §7.5 ANSWERED**, ADR-35
