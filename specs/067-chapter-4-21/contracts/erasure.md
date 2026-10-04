@@ -96,6 +96,14 @@ that amends it twice.
   rather than implying a timer. The fifth clause bounded by ADR-28's absence.
 - **No undo.** FR-MOD-05's tenant export — two rows above FR-MOD-06, still
   unbuilt — is the clause that would let a tenant hold a copy first.
+- **No confirmation step, and the adjacent clause has one.** FR-TEN-08 requires an
+  application deletion to be *"confirmed by typing the application name"*; FR-MOD-04
+  requires nothing, and this erasure is equally irreversible. **The asymmetry is in the
+  caller, not the consequence**: FR-TEN-08's ritual is a human in a dashboard, and this
+  endpoint's caller is a support tool holding an API key — `docs/03`'s Journey 3 opens
+  *"Priya never touches Relay directly."* A typed confirmation cannot be asked of a
+  machine. **What takes its place is the path**: `/data` on the end of the URL is the
+  thing a reader of the call site sees, which is why the route is not a flag.
 - **No erasure across environments.** An external id is unique per environment.
   A person who exists in two of a customer's environments is two users here, and
   the receipt names the one it erased.

@@ -185,7 +185,21 @@ cost that made chapter 4.20 answer `not-moderation` is the one to re-check: an
 > bucket-level lifecycle rules and tenant export/erasure operate on prefixes.*
 
 Verified against real keys: `186db3ef-…/27706e73-…`. **There is no user in the
-path.** The clause is right about what it claims and does not claim this, so
+path.**
+
+**AND THE TWO CLAUSES THE PREFIX SERVES ARE BOTH UNBUILT**, which is worth naming because
+the first draft of this section said only that DR-15 *"does not claim this"* — true, and
+silent about which clause does. *Tenant export* is **FR-MOD-05** and *tenant erasure* is
+**FR-TEN-08** (*"Deleting an application shall irreversibly delete all associated
+operational data within 30 days"*). Neither exists: there is no application-delete route,
+and `schema.ts:113` says so in its own words — *"Deletion (FR-TEN-08) needs machinery this
+chapter does not…"*
+
+**SO DR-15's JUSTIFICATION HAS HAD NO CALLER FOR THE WHOLE SERIES.** The key layout was
+chosen for two operations nobody has built, and this chapter is the first thing to erase
+anything — by a path the prefix does not help. That is `unreferencedMediaIn`'s shape one
+level down: a decision taken for a caller that has not arrived, correct when written and
+still waiting. The clause is right about what it claims and does not claim this, so
 FR-MED-10's *a user's media objects* is a database lookup and one store request
 per object — the same per-object cost chapter 4.20 measured at 2.05 ms against a
 message's 0.04 ms.

@@ -278,12 +278,52 @@ resting on a mechanism that does not exist, which is pass 1's A1 and pass 3's C2
 
 The probe user created to measure D3 was deleted; `users` is back to 0 matching rows.
 
-### Four passes
+## Analysis pass 5 — three findings, 0 CRITICAL, all three fixed
+
+**The question**: *open the constitution and the SRS.* Three documentation gaps and no
+defect — and one of them is the citation that would have made two earlier defects
+predictable instead of discovered.
+
+- **E1 MEDIUM — R7 said DR-15 does not claim to serve user erasure and never said which
+  clause does.** The prefix exists *"so bucket-level lifecycle rules and tenant
+  export/erasure operate on prefixes"* — that is **FR-MOD-05** and **FR-TEN-08**, and
+  **both are unbuilt**. There is no application-delete route and `schema.ts:113` says
+  *"Deletion (FR-TEN-08) needs machinery this chapter does not…"* **Fixed**: R7 names
+  them, and records that **DR-15's justification has had no caller for the whole
+  series** — `unreferencedMediaIn`'s shape one level down.
+- **E2 MEDIUM — the adjacent destructive clause requires a confirmation and this one has
+  none.** FR-TEN-08 wants an application deletion *"confirmed by typing the application
+  name"*; FR-MOD-04 wants nothing, and this erasure is equally irreversible with no undo.
+  **Fixed**: the contract says the asymmetry is in the caller rather than the
+  consequence — FR-TEN-08's ritual is a human in a dashboard and Journey 3 opens *"Priya
+  never touches Relay directly"* — and that **the path does the work a typed name would**,
+  which is why `/data` is a route and not a flag.
+- **E3 MEDIUM — the constitution IV row answered a bullet this chapter does not
+  engage.** It said *"satisfied by the predicate being self-clearing"*, which is
+  idempotency and belongs under VI. **IV's first bullet is the one engaged**: *tenant
+  scoping lives behind one repository layer* — the clause that explains why the
+  analytical statement is the one that went wrong in **both** pass 2 and pass 4. **Fixed**:
+  IV gets the four-bullet treatment VI already had, and bullet 4 is recorded **met** —
+  `publishStorageDelta` sets `Nats-Msg-Id` to `${mediaId}:${cause}`, one id per fact.
+
+**E3 IS THE MOST USEFUL AND IT IS NOT A NEW PROBLEM.** The defects it points at are
+already fixed. What was missing is the citation: pass 2 described the boundary
+structurally and **the constitution had a clause for it**, unread. *Read the clauses, not
+the identifiers* is this project's most-cited rule; the variant this pass adds is **read
+the clauses that share your verb** — FR-TEN-08 sits in a different section from FR-MOD-04
+and is the closest thing in the specification to what this chapter does.
+
+**What verified clean**: no `NFR-SEC-*` clause asks for erasure from another direction, so
+4.18's shape — where NFR-SEC-10 wanted the same artifact as FR-MOD-03 — does not recur.
+Constitution II is settled by ADR-36. V's error-contract bullet is met.
+
+### Five passes
 
     pass 1   3 findings   0 CRITICAL   opening the files the artifacts cite
     pass 2   2 findings   1 CRITICAL   writing the queries nobody had written
     pass 3   3 findings   1 CRITICAL   walking the tasks in execution order
     pass 4   3 findings   1 CRITICAL   opening the code the tasks will edit
+    pass 5   3 findings   0 CRITICAL   the constitution and the SRS, by clause
 
 **A1 and A3 are the same mistake at two scales**: the artifacts treat as open a question
 the tree has already answered, once for a module and once for a classification. A1 came
