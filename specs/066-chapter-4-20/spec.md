@@ -285,5 +285,6 @@ retention year got at chapter 4.18.
 - **Retention of anything but messages and their media** — the audit log's year, the request
   log's TTL and the analytical store's are three different clocks owned by three other clauses.
 - **A per-channel or per-user policy.** FR-MOD-06 says per environment.
-- **Repairing `gaps.md` 058-3**, the malformed-path-parameter 500, unless a route this chapter
-  adds would introduce a new instance.
+- **Repairing `gaps.md` 058-3**, the malformed-path-parameter 500 — **twenty-two routes, not
+  the sixteen that entry records**, re-measured at analysis pass 11. This chapter's route makes
+  twenty-three and the repair stays out of scope; the corrected count is the deliverable.

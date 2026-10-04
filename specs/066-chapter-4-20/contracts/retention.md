@@ -34,7 +34,9 @@ absent key and a null value being the same to a truthiness check and different t
 | a user token | 403 | `wrong_credential_type` |
 | an unknown field in the body | 400 | `invalid_request` — the schema is `z.strictObject`, because constitution VI's fifth bullet says *unknown fields are rejected on write endpoints* and this is one |
 | another tenant's environment | 404 | indistinguishable from one that does not exist |
-| a malformed id in the path | **500** | `internal_error`, **and this chapter does not fix it** — `gaps.md` 058-3, live across sixteen routes, carried with its bill for the reason chapter 4.19 gave: one validating route among sixteen makes the remaining fifteen harder to sweep |
+| a malformed id in the path | **500** | `internal_error`, **and this chapter does not fix it** — `gaps.md` 058-3, live across **twenty-two** routes and twenty-three with this one, carried with its bill for the reason chapter 4.19 gave: one validating route among twenty-two makes the remaining twenty-one harder to sweep |
+
+**058-3 SAYS SIXTEEN AND THE NUMBER IS TWENTY-TWO**, re-measured at analysis pass 11. That entry counted `@Param("channelId")` 13 and `@Param("messageId")` 3 across `messages.controller.ts` and `channels.controller.ts`, and **never opened `webhooks.controller.ts`** — six routes taking `@Param("id") id: string` with no validation, passed straight to the repository, where `webhook_endpoints.id` is `uuid PRIMARY KEY`. The number has been carried verbatim since chapter 4.12. **The carry-rather-than-fix argument gets stronger with the real figure, not weaker**, which is the only reason it is safe to correct it here rather than act on it.
 
 **No new error code.** `invalid_request`, `wrong_credential_type` and `not_found` are all in
 `codes.ts` and `docs/08-error-reference.md` already — checked, because `codes.ts` is published

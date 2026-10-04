@@ -512,7 +512,52 @@ dropped by copying a list forward (pass 6) and a requirement added without its v
 is itself what went stale. **An edit made with three lines in view is correct locally and
 unplaced globally, and nothing in a diff shows that.**
 
-### Ten passes
+## Analysis pass 11 — three findings, 0 CRITICAL, all three fixed
+
+**The question**: *measure the carried ledger; do not copy it.* 043 re-measured twenty-three
+carried items and **four were wrong while three had closed with nobody working on them.** T064
+carries eight ids and nothing in ten passes had checked one.
+
+- **V1 HIGH — 058-3's "sixteen routes" is twenty-two, and was wrong when it was written.**
+  That entry is not sloppy: it measured against a composed api, with a control, and **published
+  its own method** — `@Param("channelId")` 13 and `@Param("messageId")` 3, across
+  `messages.controller.ts` and `channels.controller.ts`. The method is what was short. It never
+  opened `webhooks.controller.ts`, where **six routes take `@Param("id") id: string`
+  unvalidated** and `webhook_endpoints.id` is `uuid PRIMARY KEY`. **Carried verbatim through
+  059, 060, 061, 062, 063, 064 and 065, into this chapter's contract and plan.** **Fixed** at
+  four sites, with the correction recorded against 058-3 the way 062 corrected 055-3. The
+  carry-rather-than-fix argument gets **stronger** with the real figure, which is the only
+  reason correcting it here is safe rather than scope creep.
+- **V2 HIGH — the carry list omitted 065-4 and the five items 065 marked "checked, not live
+  here", two of which THIS FEATURE made live.** **050-8**, nothing drains the records the stack
+  publishes: `compose.yaml` has no `ingester` service and **pass 7's FR-013 adds a `deleted`
+  producer to that stream**. **062-12**, 68 of 139 files unpinned: T065 adds pins for this
+  chapter's several new files. And **065-4** is the finding T035 is built on — the task quotes
+  its measurement and never carries its id. **Fixed**: T064 is a table now, with what pass 11
+  already measured against each row. **A carried ledger is re-measured against the feature as
+  it stands at close-out, not as it stood when the list was written** — and this one has gained
+  a requirement since.
+- **V3 MEDIUM — 064-5 was carried at a weaker prior than the one already paid for.** 065's
+  table records it as *"did not fail in any of three lane runs on this host"*; T064 listed the
+  bare id, which throws that away. **Fixed**: carry the measurement, not the id.
+
+**What verified clean, by measurement rather than by reading.** **064-1 re-measures exactly**:
+ADR-31 through 34 are in `docs/05-sad.md` and appear **zero** times in `docs/06`, while ADR-35
+is in both — so 065 did write it into both homes and the carry correctly did not grow.
+**065-2 reproduces**: `repository.ts:5376` sets the column from SQL `now()`, line 5380 reads it
+back as a millisecond `Date` through the driver, and line 5411 writes that into
+`message_edits`, beside a comment warning that two edits inside one microsecond collide. All
+eight ids exist and their one-line descriptions match their headings.
+
+**A NEAR-MISS WORTH RECORDING, BECAUSE IT WOULD HAVE BEEN A CONFIDENT FALSE FINDING.** The
+first instrument — grepping each `gaps.md` for foreign-feature ids **as headings** — returned
+five for 063, **zero for 064 and zero for 065**, which reads as a ledger decaying by attrition
+across three features. Both 064 and 065 carry a full re-measured ledger **in a table section**,
+which a heading-grep cannot see. **The control was opening the files**, and the rule it pays
+into is this project's own: *a zero from an instrument is a claim about the corpus only if the
+instrument can be shown to have read it.*
+
+### Eleven passes
 
     pass 1   4 findings   0 CRITICAL   opening the files the artifacts cite
     pass 2   4 findings   0 CRITICAL   writing the queries nobody had written
@@ -524,6 +569,7 @@ unplaced globally, and nothing in a diff shows that.**
     pass 8   3 findings   1 CRITICAL   what a new route costs the sets derived from a booted app
     pass 9   3 findings   1 CRITICAL   principle VI's bullets read as clauses, and the SC instruments
     pass 10  4 findings   0 CRITICAL   the list walked end to end, after nine insertions
+    pass 11  3 findings   0 CRITICAL   the carried ledger measured instead of copied
 
 **Four passes found nothing critical, the fifth found the thing that decides whether the
 chapter can ship as specified, and the sixth found three things no document in this directory
