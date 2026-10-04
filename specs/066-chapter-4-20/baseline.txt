@@ -694,3 +694,58 @@ T039 · THE LANE-SCOPE CHECKER, COUNTED LINE RATHER THAN EXIT CODE
   is what makes the zero mean anything (049-3: a control that proves the checker
   WORKS says nothing about whether it LOOKED, and the file count is the half
   that does).
+
+================================================================================
+PHASE 8 — THE CHAPTER
+================================================================================
+
+T051 — T057 · THE PROSE
+
+    2,812 prose words           inside the 2,000–4,000 bound
+    4 figures                   all passed as `code`, never `chart`
+    2 TRAP boxes                the cascade; the one keyword, two silent failures
+    2 WHY boxes                 why amend the SRS and not the constitution;
+                                why the batched OR reaches the index
+    0 TITLED CODE FENCES        the 4.19 shape — every diff goes to the appendix
+
+  IT OPENS WITH THE REFUSAL (`docs/07` §4 rule 1). The reader deletes a message
+  that owns a version row, is refused, deletes the children first, is refused
+  again, and only then meets the clause that requires what both refusals forbid.
+
+T058 — T060 · THE FENCE BILL WAS EXACTLY RIGHT, INCLUDING THE CORRECTION
+
+  `check:fences` reported **5 problems — HEAD 5**, and they were the five the
+  bill named:
+
+    repository.ts         52 pages   3 hunks   386 diff lines
+    schema.ts             34 pages   3 hunks    76
+    app.module.ts         23 pages   2 hunks    30
+    targets.ts            13 pages   1 hunk     22
+    gauntlet.itest.ts     13 pages   2 hunks    62
+                                    11 hunks across 5 files
+
+  **`gauntlet.itest.ts` IS THE ONE THE FIRST COUNT MISSED**, found at analysis
+  pass 6 by asking what a new route costs the chain: a gauntlet attack is
+  written INSIDE that file, so classifying a route and covering it are two edits
+  to two expensive files. Had it not been counted, the chain would have gone red
+  here with no hunk prepared.
+
+  `moderation-routes.ts` is titled on **0 pages**, which is why the route's third
+  classification cost nothing and still had to be made.
+  `vitest.coverage.config.mts` is the sixth billed file and T065 is what touches
+  it — its hunk comes after the pins, which is why T065a re-runs the chain.
+
+  HUNKS GENERATED FROM THE CHECKER'S OWN REPLAY — `check:fences --dump` — then
+  diffed against `relay-platform` at `-U6`. Every pre-image matched exactly once;
+  no widening was needed. The `--- a/` and `+++ b/` headers are stripped: a
+  `diff` fence carries the `@@` hunks only, and 052 spent 112 problems learning
+  that.
+
+T061 / T062 · ALL SIX TUTORIAL GATES
+
+    pnpm lint          EXIT 0
+    pnpm build         EXIT 0
+    pnpm check:docs    EXIT 0   28 revisions ascend, 1.0 to 1.27
+    pnpm check:srs     EXIT 0   245 clause rows, 245 unique identifiers
+    pnpm check:figures EXIT 0   322 figures, every diagram passed as `code`
+    pnpm check:fences  EXIT 0   291 fenced files, 63 chapters (from 62)
