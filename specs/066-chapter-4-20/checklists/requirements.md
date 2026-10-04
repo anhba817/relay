@@ -469,7 +469,50 @@ word count (T062), SC-012 T007 with T063a's re-measure. Not one names a tool nob
 says honestly which two of its three named concerns are this chapter's. `traceability.md` has
 T050, *by reading, not by grep*.
 
-### Nine passes
+## Analysis pass 10 — four findings, 0 CRITICAL, all four fixed
+
+**The question**: *walk the list in execution order.* Pass 3 did that at 83 tasks. Nine were
+inserted afterwards by passes 6 through 9, each argued inside its own body and **none placed by
+anyone looking at the whole sequence.**
+
+- **W1 HIGH — `T026b` was tagged `[US1]` and sat inside Phase 4 between two `[US2]` tasks.**
+  Pass 8 anchored its insertion on T030 and it landed in the wrong story block. Phase 4's
+  independent test is *"expire a message with a sole-referenced attachment and one with a
+  shared attachment"* and says nothing about an audit entry, so **US1 could not have shipped
+  complete without a task living in US2's phase**. **Fixed**: moved beside T026a.
+- **W2 HIGH — the Dependencies & Execution Order block described the 83-task list.** It named
+  T005, T015/T016/T017, T010/T011 and T065a, which was the complete set four passes ago, and
+  **not one of the nine new tasks**. **It is the section a reader executes from**, so three
+  real constraints existed only inside individual task bodies. **Fixed**: T013b blocks T026a
+  and T026b, T029b comes before T029a, T003a blocks T061 — with a paragraph naming all nine
+  and what went wrong, so the next inserter sees the block is theirs to update.
+- **W3 MEDIUM — T029a repaired a comment describing a state T029b had not produced.** Order
+  was T029 → T029a → T029b, and T029a's own text says `storage-event.ts`'s *"the causes are
+  four and the callers are three"* becomes four and four *"with T029b"*. **Half the task was
+  correctly placed** — `repository.ts`'s *"called by nothing yet"* is false the moment T029
+  lands — and half was one task early. **Fixed**: T029a runs after both, and says why it sits
+  where it does.
+- **W4 MEDIUM — T026b wrote a migration with no number.** T016 is `0024_retention_policy.sql`
+  and T017 is `0025_expiry_may_delete.sql`; T026b said only *"a migration altering
+  `audit_log_target_kind_check`"*. **Fixed** as `0026_audit_target_environment.sql`. T016's own
+  text carries the reason this matters: `migrate.ts` keys the ledger on **filename with no
+  checksum**, so a file edited after it has run never re-runs while the ledger reports it done.
+
+**What verified clean**: the other seven insertions hold their phases. T003a sits with phase 1's
+other baselines; **T013b is right in phase 2**, whose purpose line is *"the exception's exact
+shape, settled before DDL exists"* and whose own cost is a schema change; T025a precedes T026;
+T035a sits beside T035; T070a follows T070 and T067's rebuild as its text requires. No `[P]`
+conflicts — none of the nine is marked parallel, and T029a and T029b touch the same files.
+
+**EVERY ONE OF THE FOUR IS A PLACEMENT ERROR AND NOT A CONTENT ERROR.** The tasks said the
+right things; three said them in the wrong place and the index of ordering constraints was
+never updated at all. **That is this feature's third instance of one shape** — after a task
+dropped by copying a list forward (pass 6) and a requirement added without its verification
+(pass 9) — and the one where the instrument that would have caught it, the Dependencies block,
+is itself what went stale. **An edit made with three lines in view is correct locally and
+unplaced globally, and nothing in a diff shows that.**
+
+### Ten passes
 
     pass 1   4 findings   0 CRITICAL   opening the files the artifacts cite
     pass 2   4 findings   0 CRITICAL   writing the queries nobody had written
@@ -480,6 +523,7 @@ T050, *by reading, not by grep*.
     pass 7   6 findings   1 CRITICAL   tracing the quickstart, and one stray citation
     pass 8   3 findings   1 CRITICAL   what a new route costs the sets derived from a booted app
     pass 9   3 findings   1 CRITICAL   principle VI's bullets read as clauses, and the SC instruments
+    pass 10  4 findings   0 CRITICAL   the list walked end to end, after nine insertions
 
 **Four passes found nothing critical, the fifth found the thing that decides whether the
 chapter can ship as specified, and the sixth found three things no document in this directory
