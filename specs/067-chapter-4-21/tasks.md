@@ -160,18 +160,18 @@ FR-MOD-04's four obligations and FR-MED-10's three, each with where.
 
 ## Phase 8: The chapter
 
-- [ ] T051 Register 4.21 in `relay-tutorial/lib/tutorial.ts` with all seven fields, at `/part-4/chapter-21/erasure-and-every-path-it-must-find`. An unregistered id throws at build.
-- [ ] T052 **Open the chapter with the refusal** — `docs/07` §4 rule 1. The reader deletes a user the way FR-USR-05 does, and finds the row, the messages and the billing rows still there. **That is the gap, and it is a behaviour rather than an error**, which makes it a different opening from 4.20's and worth writing as one.
-- [ ] T053 Write the chapter at `relay-tutorial/app/(en)/part-4/chapter-21/erasure-and-every-path-it-must-find/page.mdx`, 2,000–4,000 prose words counted outside fences and tables, English only.
-- [ ] T054 [P] Write the figures in that directory's `figures.ts`, passed as `code` and not `chart` — `check:figures` caught three dead diagrams `pnpm build` did not.
-- [ ] T055 Write the TRAP box. The candidate is **`nothing_to_erase` against `cannot_erase`**: a reader will assume both mean *no rows removed*, and the difference is the only thing the receipt exists to carry.
-- [ ] T056 Write at least one `WHY` box. The candidate is **why the analytical half is reported rather than rolled back** — constitution III cuts the opposite way from the instinct, and a reader who skips it will think the erasure is sloppy. `docs/07` §4 rule 3; 4.16 through 4.20 carry 2, 3, 1, 2 and 2.
-- [ ] T057 Publish what the chapter could not do: no scheduler, no undo, no cross-environment erasure, nothing removable from a `uniq` sketch, and **nothing measurable about a user who owns a lot of media**, because none on this lane does.
-- [ ] T058 Write the chapter's fences. **A titled fence is a whole-body claim** (051-6); an excerpt must be untitled. Chapters 4.19 and 4.20 both contributed **0 titled fences** and put every diff in the appendix.
-- [ ] T059 Generate hunks from the checker's own replay — `pnpm check:fences --dump <dir>` — then diff against `relay-platform` at `-U6`. **Verify every pre-image matches exactly once before pasting**, widening only where it does not, because widening merges adjacent hunks and a merged hunk can span more repetition than either half. **Strip the `--- a/` and `+++ b/` headers**: a `diff` fence carries the `@@` hunks only, and 052 spent 112 problems learning it.
-- [ ] T060 Put every hunk in `relay-tutorial/fences/post-series.md`, **placed last**, working biggest-first from T006's table.
-- [ ] T061 Run **all six tutorial gates** green from `relay-tutorial`, **after** every source edit, and compare each counted line against T003a's.
-- [ ] T062 [P] Count the prose words and confirm the bound.
+- [X] T051 Register 4.21 in `relay-tutorial/lib/tutorial.ts` with all seven fields, at `/part-4/chapter-21/erasure-and-every-path-it-must-find`. An unregistered id throws at build.
+- [X] T052 **Open the chapter with the refusal** — `docs/07` §4 rule 1. The reader deletes a user the way FR-USR-05 does, and finds the row, the messages and the billing rows still there. **That is the gap, and it is a behaviour rather than an error**, which makes it a different opening from 4.20's and worth writing as one.
+- [X] T053 Write the chapter at `relay-tutorial/app/(en)/part-4/chapter-21/erasure-and-every-path-it-must-find/page.mdx`, 2,000–4,000 prose words counted outside fences and tables, English only.
+- [X] T054 [P] Write the figures in that directory's `figures.ts`, passed as `code` and not `chart` — `check:figures` caught three dead diagrams `pnpm build` did not.
+- [X] T055 Write the TRAP box. The candidate is **`nothing_to_erase` against `cannot_erase`**: a reader will assume both mean *no rows removed*, and the difference is the only thing the receipt exists to carry.
+- [X] T056 Write at least one `WHY` box. The candidate is **why the analytical half is reported rather than rolled back** — constitution III cuts the opposite way from the instinct, and a reader who skips it will think the erasure is sloppy. `docs/07` §4 rule 3; 4.16 through 4.20 carry 2, 3, 1, 2 and 2.
+- [X] T057 Publish what the chapter could not do: no scheduler, no undo, no cross-environment erasure, nothing removable from a `uniq` sketch, and **nothing measurable about a user who owns a lot of media**, because none on this lane does.
+- [X] T058 Write the chapter's fences. **A titled fence is a whole-body claim** (051-6); an excerpt must be untitled. Chapters 4.19 and 4.20 both contributed **0 titled fences** and put every diff in the appendix.
+- [X] T059 Generate hunks from the checker's own replay — `pnpm check:fences --dump <dir>` — then diff against `relay-platform` at `-U6`. **Verify every pre-image matches exactly once before pasting**, widening only where it does not, because widening merges adjacent hunks and a merged hunk can span more repetition than either half. **Strip the `--- a/` and `+++ b/` headers**: a `diff` fence carries the `@@` hunks only, and 052 spent 112 problems learning it.
+- [X] T060 Put every hunk in `relay-tutorial/fences/post-series.md`, **placed last**, working biggest-first from T006's table.
+- [X] T061 Run **all six tutorial gates** green from `relay-tutorial`, **after** every source edit, and compare each counted line against T003a's.
+- [X] T062 [P] Count the prose words and confirm the bound.
 
 ---
 

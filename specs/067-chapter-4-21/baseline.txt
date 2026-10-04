@@ -912,3 +912,64 @@ T050 · traceability.md, BY READING
   — `retained_anonymous`, ADR-37, `deleteUserRowRaw`, the `not_reached` note's second
   sentence, and the analytical deadline — and **four clauses deliberately not amended**,
   ADR-35 among them.
+
+================================================================================
+PHASE 8 — THE CHAPTER                       ALL SIX TUTORIAL GATES EXIT 0
+================================================================================
+
+    check:fences 6 -> 0 · 291 files across 64 chapters            from 63
+    2,649 prose words · 4 figures · 2 TRAP · 4 WHY · 1 ForwardRef · 1 Checkpoint
+    0 titled fences in the chapter
+    10 appendix hunks across 6 files — all unique at -U6, FIRST WIDTH TRIED
+    lint · build · check:docs · check:srs · check:figures · check:fences  all EXIT 0
+
+T052 · THE OPENING IS A BEHAVIOUR, NOT AN ERROR, AND THAT MADE IT HARDER TO WRITE
+
+  The four chapters before this one open on a refusal: a constraint fires, a
+  trigger refuses, a status code is wrong. **This one opens on three correct
+  answers.** You delete a user, and the row, the messages and the billing rows are
+  all still there with the person's name in the first column — and every one of
+  those is a clause working as written. There is nothing red to point at, so the
+  opening has to make the reader see that *correct* and *sufficient* are different
+  words.
+
+T053–T057 · WHAT THE CHAPTER ARGUES
+
+  The structure is one decision and its consequences, which is what the
+  implementation turned out to be as well:
+
+      the word `messages` fights FR-USR-05        -> erase the person, not the
+                                                    conversation (Slack's reading)
+      keeping the messages                        -> the row can never be deleted
+      the row can never be deleted                -> erasure leaves a tombstone
+      the tombstone                               -> every key-only reference
+                                                    stops naming anybody: ADR-37
+      ADR-37                                      -> the hardest stores need
+                                                    nothing done to them
+
+  **THE TRAP BOXES ARE THE PUBLISHED PAYLOAD AND THE THREE SILENCES.** The first is
+  this feature's own research document being wrong in a way that would read as
+  proof; the second is three stores reporting zero rows for three different reasons.
+  Neither is a thing a reader would predict.
+
+T058/T059/T060 · THE FENCES
+
+  **0 TITLED FENCES IN THE CHAPTER**, as 4.19 and 4.20 both did: every listing is
+  an excerpt or a transcript, and every claim about `relay-platform`'s bytes is an
+  appendix hunk. The six `title="` hits in the page are `<Trap title=>` and
+  `<Why title=>`, which is worth counting carefully rather than reading the raw
+  grep — a naive count would have reported six titled fences and sent somebody
+  looking for them.
+
+  TEN HUNKS, SIX FILES, EVERY PRE-IMAGE UNIQUE AT -U6 ON THE FIRST TRY. Generated
+  from `check:fences --dump` — the checker's own replay — and verified by counting
+  occurrences of each pre-image in the dumped source BEFORE pasting, rather than by
+  pasting and re-running. The widening ladder (6, 8, 10, 12) was built and never
+  needed.
+
+      repository.ts        2        targets.ts            1
+      users.service.ts     3        gauntlet.itest.ts     1
+      users.module.ts      2        users.controller.ts   1
+
+T051 · REGISTERED, and `pnpm build` is the gate that would have caught it missing —
+  an unregistered id throws, which is how 4.6 learned the chapter manifest exists.
