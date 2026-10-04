@@ -582,3 +582,140 @@ T026 · FR-011 PER ACTION, THE UNEDITED SUITES
   AND THREE GAUNTLET FAILURES WERE NOT THIS CHAPTER'S: `503` on a media slot, because
   only four containers were up. MinIO started, 64 of 64. **A missing container and a
   defect present identically in a status code.**
+
+PHASE 3 CLOSE · THE FENCE CHAIN, RUN AFTER THE SOURCE EDITS
+
+  **R6 SAID SIX FILES AND THE CHAIN CHARGES SIX, AND THEY ARE NOT THE SAME SIX.**
+
+      charged, and R6 named it      repository.ts · targets.ts · gauntlet.itest.ts
+                                    users.controller.ts · users.module.ts
+      charged, AND R6 HAS NO ROW    users.service.ts      7 pages · 2 appendix
+                                                           mentions
+      R6 named, not charged         schema.ts             no column changed, which
+                                                           is T010/T011 working
+                                    vitest.coverage.config.mts   T065's, not yet
+      edited, correctly free        moderation-routes.ts  0 pages
+                                    clickhouse.ts         0 pages, and it was edited
+                                                           more than any other file
+
+  `users.service.ts` IS THE MISS AND IT IS NOT A LATE ARRIVAL. 4.15's rule says the
+  files a bill misses come from repairs made after the list was written; this one is
+  the file the method obviously lives in, omitted from a table that listed the
+  controller, the module and the schema beside it. **The bill was counted and the
+  population was not** — `grep -rl 'title="services/api/src/'` would have answered it.
+
+  AND THE TWO FILES THAT ARE FREE ARE WORTH AS MUCH AS THE SIX. `clickhouse.ts` took
+  this chapter's most consequential change — bound parameters on a shared client — and
+  is titled on **0 pages**, so it costs the chain nothing. **Fence cost is uncorrelated
+  with how much a change matters**, which is the argument for counting rather than
+  estimating.
+
+  6 problems, all HEAD, no APPLY. The hunks are T059/T060's.
+
+================================================================================
+PHASE 4 — US2: THE RECEIPT IS EVIDENCE          12 of 12
+================================================================================
+
+T027/T028/T030 · THREE SILENCES, TOLD APART
+
+  The assertion is not that each store reports its word — it is that the three
+  words are THREE. A set of the outcomes for `api_requests`, `daily_usage` and
+  `audit_log` must have size 3, which goes red the moment any two collapse.
+
+      api_requests    nothing_to_erase   no user column over 205,697 rows
+      daily_usage     retained_anonymous uniq sketches keyed on the uuid
+      audit_log       cannot_erase       target_id IS the external id, append-only
+
+  AND EVERY NON-`erased` VERDICT MUST CARRY A NOTE, asserted for all four. A word a
+  reader cannot act on is worse than a number.
+
+  THE MEDIA NOTE NAMES THE 73.6%, re-measured: **11,173 of 15,189 objects record no
+  uploader**, from the spec's 73%. An erasure that takes the attributed ones is
+  correct AND incomplete, and the receipt is where that is said — a comment in the
+  source would be true and unread by the person who needs it.
+
+T029 · `not_reached`, BOTH WAYS, BECAUSE THE TRUEST TEST SABOTAGES ITS NEIGHBOURS
+
+  IN THE LANE: an injected store that rejects. Asserts the OUTCOME rather than the
+  plumbing — a timeout, a refused connection and a rejected statement arrive as one
+  word, because an operator can do exactly one thing about all three. And the other
+  two stores still report, because neither was ever going to be attempted: a store
+  that was not asked and a store that could not be reached are different facts.
+
+  BY HAND, ONCE, WITH THE CONTAINER GENUINELY STOPPED — nothing else running:
+
+      docker compose stop clickhouse
+      STATUS 200 · 53 ms
+        profile              erased
+        memberships          erased
+        read_positions       erased
+        media_objects        erased              — 73.6% record no uploader
+        messages             retained_anonymous  — FR-028
+        usage_active_users   retained_anonymous  — FR-029
+        connection_events    NOT_REACHED
+        api_requests         nothing_to_erase
+        daily_usage          retained_anonymous
+        audit_log            cannot_erase
+      the user is gone from Postgres · the membership is gone
+
+  **THE OPERATIONAL HALF COMMITTED WITH THE ANALYTICAL STORE DOWN**, which is
+  constitution III as a measurement rather than a principle. The file was deleted
+  after the run and ClickHouse restarted; it is not left in the lane, because 4.10
+  found an isolation suite answering 503 after a media test stopped MinIO and
+  `check-lane-scope.py` cannot see an ACTION scoped too wide.
+
+  AND THE RUN FOUND A DEFECT IN THE RECEIPT'S OWN PROSE. The note read **"the
+  analytical store answered 0"** — `AnalyticalStoreError.status` is 0 when there was
+  no response at all, so the sentence reports a status that does not exist, to the
+  one reader least able to ask what it means. Two cases, two sentences now, both
+  ending *"these rows may still be there"*. **Only running it with the container
+  actually stopped produced that string**; the injected-store test asserts the note
+  is truthy and would have passed on the nonsense.
+
+T031 · ITS PREMISE IS DEAD, AND T024 KILLED IT
+
+  *"Assert the second erasure's receipt reports every store with zero and 200."*
+  **There is no second receipt.** T010 replaces `external_id`, so the second call
+  resolves nothing and answers 404 — which T024 asserts. The task was written against
+  the contract's original idempotence row, which this feature's own T012 inverted.
+
+  SECOND TASK PREMISE FALSIFIED IN TWO PHASES, both by the same decision reaching
+  somewhere nobody looked: T021's probe could not go red, T031's receipt does not
+  exist. **The task list was written before T010 and T011 were taken**, which is the
+  cost of deferring two decisions into an implementation phase and is worth saying
+  plainly rather than quietly renumbering.
+
+================================================================================
+PHASE 5 — US3: THE BOUNDS, PUBLISHED
+================================================================================
+
+  `clauses.md` written: FR-MOD-04's four obligations, FR-MED-10's three, FR-MOD-05
+  beside them, and the three clauses deliberately NOT amended.
+
+T032 · FR-MOD-04's SECOND OBLIGATION IS FOUR NOUNS AND THEY DO NOT GET ONE VERDICT
+
+      profile              demonstrated
+      memberships          demonstrated
+      messages             UNMET BY DECISION — FR-028, and the author is erased
+      analytical records   FOUR STORES, THREE ANSWERS
+
+  One of the four nouns is unmet, three of the four analytical stores are met
+  vacuously, and the fourth is met only because of ADR-37. **A single verdict for
+  this clause would have been wrong whichever word was chosen.**
+
+T033 · THE BOUND IS MET AND UNEXERCISABLE
+
+  Synchronous, 53 ms on the slow path — four orders of magnitude inside 30 days, and
+  no test can reach it. **The fifth clause bounded by ADR-28's absence** after
+  FR-ANL-06, DR-17, FR-MOD-03's year and FR-MOD-06's sweep — **and the first where the
+  absence costs nothing**, because nothing here needs scheduling. Recorded so the
+  running count stays honest: four of the five are gaps and this one is not.
+
+T034 · FR-MED-10 IS THREE OBLIGATIONS AND THIS CHAPTER MOVED ONE
+
+      the tombstone unlink          ALREADY MET — `deleteMessage` writes `attachments: []`
+      the 24-hour orphan reaper     UNMET BY DECISION — no caller since 4.15; 4.20
+                                    declined it because its population is objects
+                                    nothing ever attached
+      erasure within 30 days        THIS CHAPTER'S, demonstrated, and incomplete by
+                                    a column: 11,173 of 15,189 have no uploader

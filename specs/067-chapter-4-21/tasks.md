@@ -106,13 +106,13 @@ uploaded object; erase them; assert each store no longer identifies them.
 **Independent test**: read the receipt alone, with no access to the platform, and
 say which stores were cleared and which were not.
 
-- [ ] T027 [US2] Build the receipt in `relay-platform/services/api/src/users/`, per store, per `contracts/erasure.md`'s four outcomes.
+- [X] T027 [US2] Build the receipt in `relay-platform/services/api/src/users/`, per store, per `contracts/erasure.md`'s four outcomes.
   **THE ANALYTICAL COUNT IS A SECOND STATEMENT AND THE DELETE CANNOT SUPPLY IT.** Measured at pass 4 through the client's exact request shape: a `DELETE` answers **HTTP 200 with a 0-byte body**, so `query()` yields `[]`. Take the count with a bound `SELECT count()` **after** the delete — which is the real reason T014 chose the lightweight verb, because after `ALTER … DELETE` that count is still wrong.
-- [ ] T028 [US2] Assert that `api_requests` reports **`nothing_to_erase`** and `daily_usage` reports **`cannot_erase`**, and that the two are distinguishable in the response body. **If both say `erased: 0` the receipt has collapsed the distinction it exists to carry** — 205,697 rows that never named a person against 880 that do, unremovably.
-- [ ] T029 [US2] Assert the `not_reached` outcome by stopping ClickHouse and erasing a user: **the operational erasure must still commit** and the receipt must say the analytical store was not reached. Constitution III forbids rolling back a compliance erasure because a metering pipeline is unwell.
+- [X] T028 [US2] Assert that `api_requests` reports **`nothing_to_erase`** and `daily_usage` reports **`cannot_erase`**, and that the two are distinguishable in the response body. **If both say `erased: 0` the receipt has collapsed the distinction it exists to carry** — 205,697 rows that never named a person against 880 that do, unremovably.
+- [X] T029 [US2] Assert the `not_reached` outcome by stopping ClickHouse and erasing a user: **the operational erasure must still commit** and the receipt must say the analytical store was not reached. Constitution III forbids rolling back a compliance erasure because a metering pipeline is unwell.
   **AND STOP IT BY NAME.** `docker compose stop clickhouse` takes a shared service away from every suite running beside it — 4.10 found an isolation suite answering 503 because a media test stopped MinIO, and `check-lane-scope.py` cannot see an ACTION scoped too wide.
-- [ ] T030 [US2] Assert the receipt's media note names the **73%**: an erasure that takes the 3,979 attributed objects is correct and incomplete, and the receipt is where that gets said rather than in a comment nobody reads.
-- [ ] T031 [US2] Assert the second erasure's receipt reports every store with zero and **200**, which is T024 read from the receipt's side rather than the status code's.
+- [X] T030 [US2] Assert the receipt's media note names the **73%**: an erasure that takes the 3,979 attributed objects is correct and incomplete, and the receipt is where that gets said rather than in a comment nobody reads.
+- [X] T031 [US2] Assert the second erasure's receipt reports every store with zero and **200**, which is T024 read from the receipt's side rather than the status code's.
 
 ---
 
@@ -124,10 +124,10 @@ that does not exist.
 **Independent test**: read `clauses.md` and find a verdict for each of
 FR-MOD-04's four obligations and FR-MED-10's three, each with where.
 
-- [ ] T032 [P] [US3] Write `specs/067-chapter-4-21/clauses.md`: FR-MOD-04's four obligations and FR-MED-10's three, each **met / demonstrated / unmet by decision / unreachable** with where. **And FR-MOD-05 beside them**, still unbuilt — the export that would let a tenant hold a copy first, named for the third chapter running.
-- [ ] T033 [US3] Record in `specs/067-chapter-4-21/clauses.md` that **`within 30 days` is satisfied trivially and therefore unexercised**: the erasure is synchronous, so the bound is met and never tested. The fifth clause bounded by ADR-28's absent scheduler, and the second — after FR-MOD-06's — whose absence is a compliance promise rather than a reporting one.
-- [ ] T034 [US3] Record the FR-MED-10 split: **the unlink is already met** (`deleteMessage` writes `attachments: []`), **the 30-day erasure bound is this chapter's**, and **the 24-hour orphan reaper is not** — `unreferencedMediaIn` has had no caller since chapter 4.15 and chapter 4.20 declined it deliberately, because its population is objects nothing ever attached. Say which of the three this chapter moved.
-- [ ] T035 [US3] Record the audit-log consequence in `specs/067-chapter-4-21/gaps.md`: 1,324 entries name a user target, the log is append-only, and an erasure **writes** one rather than removing any. An entry recording that somebody was banned is itself a record of that person, and repairing that means narrowing ADR-35 a second time in two chapters.
+- [X] T032 [P] [US3] Write `specs/067-chapter-4-21/clauses.md`: FR-MOD-04's four obligations and FR-MED-10's three, each **met / demonstrated / unmet by decision / unreachable** with where. **And FR-MOD-05 beside them**, still unbuilt — the export that would let a tenant hold a copy first, named for the third chapter running.
+- [X] T033 [US3] Record in `specs/067-chapter-4-21/clauses.md` that **`within 30 days` is satisfied trivially and therefore unexercised**: the erasure is synchronous, so the bound is met and never tested. The fifth clause bounded by ADR-28's absent scheduler, and the second — after FR-MOD-06's — whose absence is a compliance promise rather than a reporting one.
+- [X] T034 [US3] Record the FR-MED-10 split: **the unlink is already met** (`deleteMessage` writes `attachments: []`), **the 30-day erasure bound is this chapter's**, and **the 24-hour orphan reaper is not** — `unreferencedMediaIn` has had no caller since chapter 4.15 and chapter 4.20 declined it deliberately, because its population is objects nothing ever attached. Say which of the three this chapter moved.
+- [X] T035 [US3] Record the audit-log consequence in `specs/067-chapter-4-21/gaps.md`: 1,324 entries name a user target, the log is append-only, and an erasure **writes** one rather than removing any. An entry recording that somebody was banned is itself a record of that person, and repairing that means narrowing ADR-35 a second time in two chapters.
 
 ---
 
