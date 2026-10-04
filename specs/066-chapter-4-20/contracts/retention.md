@@ -32,6 +32,7 @@ absent key and a null value being the same to a truthiness check and different t
 |---|---|---|
 | `retention_days` not in {30, 90, 365, null} | 400 | `invalid_request` — the clause enumerates four options and a fifth is not a stricter policy somebody chose |
 | a user token | 403 | `wrong_credential_type` |
+| an unknown field in the body | 400 | `invalid_request` — the schema is `z.strictObject`, because constitution VI's fifth bullet says *unknown fields are rejected on write endpoints* and this is one |
 | another tenant's environment | 404 | indistinguishable from one that does not exist |
 | a malformed id in the path | **500** | `internal_error`, **and this chapter does not fix it** — `gaps.md` 058-3, live across sixteen routes, carried with its bill for the reason chapter 4.19 gave: one validating route among sixteen makes the remaining fifteen harder to sweep |
 

@@ -243,6 +243,12 @@ retention year got at chapter 4.18.
   tables.
 - **SC-012**: The number of messages a sweep would be refused on today is published, and
   re-measured at the close.
+- **SC-013**: Destroying a media object publishes one `deleted` storage event with a negative
+  `bytesDelta`, asserted by count and by sign rather than by the event's presence alone
+  (FR-013).
+- **SC-014**: Every mutating route a tenant can reach carries a moderation classification,
+  which `moderation-routes.itest.ts` asserts in both directions from a booted application; the
+  classification chosen for the policy route is recorded with its reason (FR-014).
 
 ---
 

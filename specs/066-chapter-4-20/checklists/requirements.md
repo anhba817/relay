@@ -426,7 +426,50 @@ table. Migrations stop at `0023`, so `0024` and `0025` are free. T046 names SAD 
 deliverable, not a missing file**: T032 writes it, and pass 7's closing note saying it had not
 been read against the tree was wrong.
 
-### Eight passes
+## Analysis pass 9 — three findings, ONE CRITICAL, all three fixed
+
+**The question**: *read principle VI as five bullets with their own sub-clauses, and ask of each
+success criterion whether it names an instrument that exists.* Pass 5 read the constitution's
+**principles**; this pass read the **clauses inside one bullet of one principle**.
+
+- **S1 CRITICAL — bullet 3 names three gating mechanisms and two do not exist.** The clause is
+  *"The cross-tenant suite (Principle I), **dependency vulnerability scans, and the OWASP Top
+  10 scan** gate releases: critical findings block ship."* The plan's row answered the gauntlet
+  alone and said **met**. Measured: one workflow file, **zero** matches for
+  `audit|snyk|trivy|owasp|zap|codeql|dependabot`, no `.github/dependabot.yml`, no `pnpm audit`
+  in any of the eight `package.json`. **Fixed**: recorded UNMET on bullet four's precedent,
+  with the measurement in the row and a `gaps.md` entry in T064.
+  **THE ROW IS THE ERROR ITS OWN HEADING WARNS ABOUT.** That table exists because 065's ninth
+  pass found a check answering one of principle VI's five bullets, and it is headed *"because a
+  row that answers one bullet reads as answering five"*. It then answered one clause of three.
+  **057's shape for the third time: a CRITICAL inside the artifact written to prevent its own
+  class** — and the remedy is always finer-grained than the error it fixed, which is why the
+  next one is finer again.
+- **S2 HIGH — bullet 5's second clause was uncovered on a new write endpoint.** *"unknown
+  fields are rejected on write endpoints"* is a MUST. The plan's row discussed validation and
+  `gaps.md` 058-3 and stopped short of it; the contract's refusal table had four rows and this
+  was not one. **The convention was already here** — `z.strictObject`, 7 uses in
+  `channels.schema.ts` and 4 in `messages.schema.ts` — so the gap was a missing assertion, not
+  a missing design. **Fixed**: a fifth refusal row, and **T025a** tests an unknown field for a
+  400. 065 met this schema from the producer's side and three tests answered
+  `unrecognized_keys`; this is the same strictness from the caller's.
+- **S3 MEDIUM — FR-013 and FR-014 had no success criterion**, and the bullet-1 row read
+  *"12 FR and 12 SC"* against 14 FR. **Both are this analysis's own doing**: passes 7 and 8
+  each added a requirement and neither added its verification, which is exactly what bullet 1
+  obliges. **Fixed** as SC-013 and SC-014, cited from T029b and T026a, with the count corrected
+  and the reason left in the row. **The number that would have caught it was sitting in the row
+  that went stale**, so the instrument and the thing it measures drifted together — which is
+  the argument for putting a count in a verdict rather than a word.
+
+**What verified clean**: **all twelve original success criteria name an instrument that
+exists** — SC-001–006 the retention suite, SC-007 `clauses.md` (T032), SC-008 `git diff`
+(T068), SC-009 the CI error set (T073), SC-010 `check:fences` and the build (T061), SC-011 the
+word count (T062), SC-012 T007 with T063a's re-measure. Not one names a tool nobody has. Bullet
+4 was already recorded UNMET with its reason, which is the treatment S1 now gets, and bullet 2
+says honestly which two of its three named concerns are this chapter's. `traceability.md` has
+T050, *by reading, not by grep*.
+
+### Nine passes
 
     pass 1   4 findings   0 CRITICAL   opening the files the artifacts cite
     pass 2   4 findings   0 CRITICAL   writing the queries nobody had written
@@ -436,6 +479,7 @@ been read against the tree was wrong.
     pass 6   4 findings   0 CRITICAL   opening the tutorial, `ci.yml` and two sibling features
     pass 7   6 findings   1 CRITICAL   tracing the quickstart, and one stray citation
     pass 8   3 findings   1 CRITICAL   what a new route costs the sets derived from a booted app
+    pass 9   3 findings   1 CRITICAL   principle VI's bullets read as clauses, and the SC instruments
 
 **Four passes found nothing critical, the fifth found the thing that decides whether the
 chapter can ship as specified, and the sixth found three things no document in this directory
