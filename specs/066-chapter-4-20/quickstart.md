@@ -51,10 +51,21 @@ select 'oldest message', min(created_at)::text from messages
 union all select 'older than 30 days', count(*)::text from messages where created_at < now() - interval '30 days';"
 ```
 
-**Measured 2026-10-04**: `2026-09-14` and `0`. FR-MOD-06's shortest policy is thirty days and
-nothing here is thirty days old **today**, so every section below backdates a fixture. The
-figure a reader would most want — what a sweep removes from real traffic — cannot be measured
-on this lane.
+**Measured 2026-10-04, BEFORE this chapter's suites had run**: `2026-09-14` and `0`.
+FR-MOD-06's shortest policy is thirty days and nothing here is thirty days old **today**, so
+every section below backdates a fixture. The figure a reader would most want — what a sweep
+removes from real traffic — cannot be measured on this lane.
+
+**RUN IT AFTER THE RETENTION SUITE AND YOU GET A DIFFERENT ANSWER: `2025-08-30` and `5`.**
+That is not drift and it is not real traffic. `retention.itest.ts` asserts that *an
+environment with no policy loses nothing at any age*, and the only way to test *any age* is
+to plant a message a year old — so the test that proves the sweep is safe necessarily
+creates the oldest message on the lane. The query above asks a WHOLE-TABLE question and
+those fixtures are in it.
+
+**Which is why §3's guard is per environment rather than per table.** The five survivors sit
+in environments with no policy, so no sweep will ever reach them; the number that decides
+whether §5 is safe is the one scoped to the tenant you are about to set a policy on.
 
 **AND THIS SENTENCE HAS AN EXPIRY DATE: 2026-10-14.** The oldest message is dated, so the claim
 is a fact about **2026-10-04** and not a property of the lane. 189 messages cross thirty days
@@ -137,21 +148,24 @@ id() { python3 -c 'import sys,json;print(json.load(sys.stdin)["id"])'; }
 export CH=$(curl -s -X POST "localhost:4000/v1/channels" -H "authorization: Bearer $K" \
   -H 'content-type: application/json' -d '{"external_id":"ret","type":"public","name":"Ret"}' | id)
 
-# Two messages through the internal seam, which is what accepts a server-side sender.
-export OLD=$(curl -s -X POST "localhost:4000/internal/messages" -H "authorization: Bearer $K" \
+# A BOT, AND THE THREE REFUSALS THAT GET YOU HERE ARE WORTH SEEING ONCE.
+#   POST /internal/messages        -> 403 wrong_credential_type — that seam wants an
+#                                     end-user token; an API key is not one
+#   POST /v1/.../messages, no user -> 400 "name the sender in `user`"
+#   …with a PERSON named           -> 403 sender_not_permitted, "an application
+#                                     credential may send only as a bot user"
+# `/v1/users` takes an ARRAY under `users`, and a bot requires a description.
+curl -s -X POST "localhost:4000/v1/users" -H "authorization: Bearer $K" \
   -H 'content-type: application/json' \
-  -d "{\"channel_id\":\"$CH\",\"text\":\"expires\"}" | id)
-export NEW=$(curl -s -X POST "localhost:4000/internal/messages" -H "authorization: Bearer $K" \
-  -H 'content-type: application/json' \
-  -d "{\"channel_id\":\"$CH\",\"text\":\"survives\"}" | id)
+  -d '{"users":[{"external_id":"qs-bot","display_name":"QS Bot","kind":"bot",
+                 "description":"the quickstart's sender"}]}' > /dev/null
 
-# EDIT BOTH. One version row on each: $OLD's is the pincer the sweep must get through,
-# and $NEW's is what §6 tampers with — see the note there.
-for M in "$OLD" "$NEW"; do
-  curl -s -o /dev/null -X PATCH "localhost:4000/v1/channels/$CH/messages/$M" \
-    -H "authorization: Bearer $K" -H 'content-type: application/json' \
-    -d '{"text":"edited once"}'
-done
+send() {
+  curl -s -X POST "localhost:4000/v1/channels/$CH/messages" -H "authorization: Bearer $K" \
+    -H 'content-type: application/json' -d "{\"text\":\"$1\",\"user\":\"qs-bot\"}" | id
+}
+export OLD=$(send expires)
+export NEW=$(send survives)
 
 echo "OLD=$OLD NEW=$NEW"   # BOTH MUST BE UUIDS. An empty one makes every psql below
                            # answer `invalid input syntax for type uuid: ""`, which reads

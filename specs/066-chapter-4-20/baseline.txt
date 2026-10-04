@@ -749,3 +749,197 @@ T061 / T062 · ALL SIX TUTORIAL GATES
     pnpm check:srs     EXIT 0   245 clause rows, 245 unique identifiers
     pnpm check:figures EXIT 0   322 figures, every diagram passed as `code`
     pnpm check:fences  EXIT 0   291 fenced files, 63 chapters (from 62)
+
+================================================================================
+PHASE 9 — THE RECORD AND THE CLOSE
+================================================================================
+
+T063a · THE REFUSED COUNT, PUBLISHED AT BOTH ENDS (SC-012)
+
+    at the open    5,495 messages own a version row and cannot be hard-deleted
+    at the close   5,691
+
+  It moves by one per deletion by construction, and this feature's own tests
+  added 196. **The open's number is what the chapter argued from**, which is why
+  both are published rather than the later one alone.
+
+T064 · THE CARRIED LEDGER, RE-MEASURED
+
+  In `gaps.md`. Three results worth repeating here:
+
+  **058-3 SAYS SIXTEEN AND IT IS TWENTY-THREE.** 13 `@Param("channelId")` + 3
+  `@Param("messageId")` + **6 `@Param("id")` in `webhooks.controller.ts`, which
+  that entry never opened** + this chapter's 1. Twenty-two before, twenty-three
+  now. Carried with the corrected count, not repaired.
+
+  **064-1 is unchanged and this chapter did not add to it.** ADR-31 through 34
+  are still in `docs/05-sad.md` and still zero in `docs/06`. ADR-36 is in both —
+  4 mentions and 1.
+
+  **050-8 is live and this chapter added a producer.** `compose.yaml` still has
+  no `ingester`, and the sweep publishes a `deleted` storage event into a stream
+  nothing drains in the shipped stack.
+
+T065 · COVERAGE, AND THE ANSWER TO A THIN FILE WAS A TEST
+
+    coverage REAL_EXIT 1 · 557.68 s · 153 files, 2,185 tests, 16 failed
+    the 16 are the SAME two pre-existing classes T002 recorded at the open
+    the report was still written — 052's `reportOnFailure`, doing its job
+
+  THREE PINS BREACHED AND NONE IS THIS CHAPTER'S: `quota-relay.ts` at 75 / 76.66
+  / 62.5 against 96 / 96 / 100, because the quotas suites that cover it are the
+  ones failing. The root cause is finally legible in the log —
+  `quota threshold could not be notified: no member has an email address`.
+
+  THIS CHAPTER'S FOUR NEW FILES, MEASURED THEN PINNED BELOW:
+
+    db/retention-reads.ts                 100 / 75 / 100
+    environments/environments.schema.ts   100 / 100 / 100
+    environments/environments.controller  90 / 87.5 / 100
+    retention/sweep.ts                    63.79 / 47.82 / 60
+
+  **`sweep.ts` AT 63.79 GOT A TEST RATHER THAN A LOW PIN.** The largest
+  uncovered arm was the dry run — which the quickstart tells an operator to run
+  FIRST, and which after 2026-10-14 is the only thing between a thirty-day
+  policy and real lane data. A dry run that quietly destroyed would be the worst
+  defect this chapter could ship, and nothing asserted it. What stays uncovered
+  is the `require.main` CLI block, which no test can enter.
+
+T066 · THE PINS PROBED BOTH WAYS — AND THE PROBE HAD A TRAP OF ITS OWN
+
+    half 1  a pin demanding 101% of a path that matches no file
+            -> ZERO output. Silent, exactly as 049 found.
+    half 2  a pin demanding 101% of a REAL file
+            -> ERROR: Coverage for branches (100%) does not meet
+               "…/environments.schema.ts" threshold (101%)
+
+  **HALF 2 FAILED TO FIRE THE FIRST TIME AND THE REASON IS THE INSTRUMENT.** Run
+  as `vitest run --config ../../vitest.coverage.config.mts <one file>`, the
+  impossible pin produced nothing — identical output to half 1. A filtered
+  vitest run does not evaluate the per-file thresholds, so **the positive
+  control looked exactly like the negative one** and would have been recorded as
+  "pins do not bind".
+
+  The probe has to go through `pnpm coverage`. That is 049's own rule arriving
+  one level down: a control that proves the checker works says nothing about
+  whether it looked, and here the control itself was not looking.
+
+T068 · FR-011, CHECKED AGAINST THE DIFF (SC-008)
+
+  `git diff --name-only part4-ch19..HEAD`, outside tests and documents — 13
+  files, every one this chapter's:
+
+    0024_retention_policy.sql · 0025_expiry_may_delete.sql
+    app.module.ts · audit/moderation-routes.ts · isolation/targets.ts
+    db/repository.ts · db/retention-reads.ts · db/schema.ts
+    environments/{controller,module,schema}.ts
+    metering/storage-event.ts · retention/sweep.ts
+
+  Four test files: `retention.itest.ts` and `environments.itest.ts` new,
+  `gauntlet.itest.ts` and `rendition.itest.ts` amended.
+
+T067 · THE QUICKSTART, RUN END TO END — AND IT WAS WRONG FIVE TIMES
+
+  The api image was rebuilt first (`pnpm build`, then
+  `docker compose --profile services build api`), which is the step 4.11 named
+  as the third kind of stale build and 065 rediscovered mid-phase-9.
+
+  §1 and §2 are MEASURED and ran as published. §3 onward were predictions and
+  **five of them were wrong**, in line with the last six chapters' 3, 4, 3, 5, 2
+  and 0:
+
+    1  `POST /internal/messages` answers **403 wrong_credential_type** — that
+       seam wants an end-user token and an API key is not one.
+    2  `POST /v1/channels/{id}/messages` with no sender answers **400**:
+       *name the sender in `user` — an application credential has no user of
+       its own.*
+    3  Naming a PERSON answers **403 sender_not_permitted**: *an application
+       credential may send only as a bot user.* 4.19's finding at the same seam.
+    4  `POST /v1/users` takes an ARRAY under `users`, and **a bot requires a
+       description**.
+    5  The sweep's own summary line read `1 message(s) would destroy in total`
+       — the per-environment verb reused where the sentence needs the other
+       order. **The counted line IS this command's output (055-4)**, so its
+       grammar is not cosmetic. Fixed to *would be destroyed*.
+
+  FOUR OF THE FIVE WOULD HAVE READ AS A PLATFORM DEFECT to somebody following
+  the page, which is the same proportion 4.11 recorded.
+
+  WHAT RAN, ONCE §4 WAS CORRECT:
+
+    §3  PATCH … {"retention_days":30}   200, and the body echoes 30
+        PATCH … {"retention_days":45}   400
+        the guard                        real messages already past 30 days
+                                         in this tenant: 0
+    §5  --dry-run                        would destroy 1 · nothing gone
+        the real run                     destroyed 1 message(s) over 1 page(s)
+        and again                        destroyed 0 — the predicate is
+                                         self-clearing
+    §6  the expired message              0
+        its version rows                 0
+        the message inside the policy    1
+
+T069 — T071 · THE CLOSE
+
+  Probe debris cleared twice: `environments.retention_days` was set on 22
+  environments after the suites and 6 after the quickstart, against **0 of
+  33,051 at the open**. Every one was this session's by construction, and a
+  left-behind policy is not an inert row — it arms the next sweep somebody runs.
+
+T070 · THE LANE SET AT CLOSE-OUT, COMPARED CLASS BY CLASS
+
+                        at the open                    at the close
+    lint                EXIT 0 · 4.40s · 0 cached      EXIT 0 · 4.30s · 0 cached
+    typecheck           EXIT 0 · 8.22s · 0 of 15       EXIT 0 · 7.62s · 0 of 15
+    test (unit)         EXIT 0 · 7.72s · 0 of 13       EXIT 0 · 7.72s · 0 of 13
+    api test:integration EXIT 1 · 50 files, 3 failed   EXIT 1 · 52 files, 1 failed
+                         13 tests failed                1 test failed
+    coverage            not run at the open            EXIT 1 · 153 files, 2,185
+                                                       tests, 16 failed, 557.68s
+
+  **TWO FILES MORE AND TWELVE FAILURES FEWER.** Class by class rather than test
+  by test, which is 065's rule:
+
+    outbox class        RED at the open, RED at the close — `outbox.itest.ts`
+                        invariant 8, carried as `gaps.md` 065-3 and 065-5, and
+                        not this chapter's. The outbox grew from 395,452 to
+                        400,697 rows across this feature.
+
+    quotas class        RED at the open (13 of the 13 failures across
+                        `quotas.itest.ts` and `connections.itest.ts`), **GREEN
+                        at the close, and nobody worked on it.** The root cause
+                        was legible in the coverage log — *quota threshold could
+                        not be notified: no member has an email address* — and
+                        the most likely explanation is lane state rather than
+                        anything this chapter did. 043 found three carried items
+                        that closed with nobody working on them; this is a
+                        fourth, and recording it as *fixed by this chapter*
+                        would have been the easy and wrong thing to write.
+
+    retention class     NEW, green: 10 tests
+    environments class  NEW, green: 7 tests
+
+  THE COVERAGE LANE'S 16 FAILURES ARE THE SAME TWO CLASSES, measured before the
+  quotas pair went green, which is why its number is higher than the api lane's.
+
+  Every lane was run under `--force` with its `Cached:` line quoted, because a
+  fully cached turbo run replays both the exit code and the counted line
+  (analysis pass 16) — and `pnpm test` answering EXIT 0 with every counted line
+  in 17 ms is what that looks like.
+
+T070a · THE SEALED SUITE, WHICH NO LOCAL LANE REACHES ON ITS OWN
+
+    RELAY_API_URL=http://localhost:4000 RELAY_WS_URL=ws://localhost:4001 \
+    RELAY_DEMO_CREDENTIAL=$K pnpm test:outsider
+
+    Test Files  1 passed (1) · Tests  21 passed (21) · EXIT 0
+
+  **IT IS THE ONLY THING HERE THAT BOOTS THE COMPOSED API AND ASKS IT A
+  QUESTION**, which is the risk T025 carried: `EnvironmentsModule` compiles,
+  typechecks and lints whatever it declares, and a module that declares a
+  service it does not provide fails with `Nest can't resolve dependencies` on
+  the first request. Only a running app asks that (4.10).
+
+  AND IT REFUSES LOUDLY WITHOUT ITS THREE VARIABLES, which is why `pnpm
+  test:integration` dies at it in 1.2 s and takes three lanes with it. The
+  refusal is correct; what follows it is 052's finding, still live.
