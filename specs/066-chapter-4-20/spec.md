@@ -94,6 +94,10 @@ from `messages` and from every table that referenced it.
    refused, which is what the platform does today.
 5. **Given** an expired message that was already a tombstone, **When** the sweep runs, **Then**
    the tombstone is destroyed too: a tombstone is a message that has expired like any other.
+   *(**DR-06 says the opposite in as many words** — "Deleted messages shall retain their row;
+   only `text` and `attachments` shall be cleared" — and this scenario names exactly the
+   population that clause protects. It is part of the open question E1 records, not a detail
+   this scenario can settle on its own.)*
 
 ### User Story 2 - The objects go with the messages (Priority: P2)
 

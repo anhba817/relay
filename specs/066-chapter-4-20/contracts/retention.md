@@ -72,7 +72,11 @@ it.
 
 - **No per-channel or per-user policy.** FR-MOD-06 says per environment.
 - **No undo.** Expiry is destruction; there is nothing to restore and the chapter says so
-  rather than letting somebody ask.
+  rather than letting somebody ask. **And the clause that would have been the undo sits two
+  rows above FR-MOD-06 and is unbuilt**: FR-MOD-05, *"exporting all data for a tenant as
+  newline-delimited JSON, generated asynchronously with a notification on completion."* A
+  tenant who wants to keep what a policy destroys has no supported way to take a copy first.
+  Naming it is the honest version of *no undo*.
 - **No notification.** A tenant is not told what expired. That is a different clause and a
   larger table — and the audit log is deliberately not it: FR-MOD-03's population is
   *moderation actions*, which are things a credential did, and a sweep is not one.

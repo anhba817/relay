@@ -102,7 +102,7 @@ promise into a mechanism that does not exist.
 **Independent test**: read `clauses.md` and find a verdict per obligation with where, and a
 sentence naming what invokes the sweep.
 
-- [ ] T032 [P] [US3] Write `specs/066-chapter-4-20/clauses.md`: FR-MOD-06's three obligations and FR-MED-11's one, each **met / demonstrated / unmet by decision / unreachable** with where. The fourth clause bounded by ADR-28's absent scheduler, after FR-ANL-06, DR-17 and FR-MOD-03's year.
+- [ ] T032 [P] [US3] Write `specs/066-chapter-4-20/clauses.md`: FR-MOD-06's three obligations and FR-MED-11's one, each **met / demonstrated / unmet by decision / unreachable** with where. **And FR-MOD-05 beside them**, unbuilt — the export that would let a tenant keep what a policy destroys, which makes the chapter's *no undo* a measured statement rather than a shrug. The fourth clause bounded by ADR-28's absent scheduler, after FR-ANL-06, DR-17 and FR-MOD-03's year.
 - [ ] T033 [US3] Record in `specs/066-chapter-4-20/clauses.md` **the distinction that makes this clause different from the other three**: they are reporting obligations whose absence costs accuracy, and this is a customer telling an auditor that data does not exist. Same verdict, different sentence.
 - [ ] T034 [US3] Record the audit-log consequence in `specs/066-chapter-4-20/gaps.md`: an entry outlives its target, **1,435 rows name a message today**, no foreign key refuses it, and repairing it would mean deleting from an append-only log. Stated rather than fixed.
 

@@ -236,6 +236,57 @@ the lint rule   permits services/api/src/db/** — so a sibling file is legal
 nothing. Nothing here needed it, because the index precedent is documented in the source rather
 than re-measured, but **phase 1's T001 needs it up.**
 
+## Analysis pass 5 — three findings, ONE CRITICAL, two fixed and one open
+
+**The question**: *open the constitution and the SRS rather than the source.* 065's eighth and
+ninth passes found their best results that way, and so did this one.
+
+- **E1 CRITICAL, OPEN — two documents forbid exactly what FR-MOD-06 requires.**
+
+      constitution II   "hard deletion exists ONLY ON THE COMPLIANCE PATH"
+      FR-MSG-08         "Hard deletion shall occur ONLY VIA THE COMPLIANCE DELETION ENDPOINT"
+      FR-MOD-06         "expired messages HARD-DELETED BY A SCHEDULED JOB"
+
+  No artifact in this feature mentions it. The plan's principle II row says *"the clause is the
+  exception — FR-MOD-06 is the licensed way to lose one"*, **which is an exception neither
+  document grants.** This is **4.19's finding run backwards**: that chapter cited FR-MSG-08 as
+  the clause its defect broke, this feature's own spec quotes it for that reason, and nobody
+  noticed the sentence forbids this chapter too. **Left open deliberately** — the three
+  available readings are in `plan.md` and the choice is the user's, because amending a
+  constitution principle is outside `/speckit-analyze` and recording a P3 clause unmet is a
+  product call.
+- **E2 HIGH — a third document, naming the exact population the spec targets.** DR-06:
+  *"Deleted messages shall **retain their row**; only `text` and `attachments` shall be
+  cleared."* US1 scenario 5 says *"a tombstone is a message that has expired like any other"* —
+  deliberately destroying the rows DR-06 protects. **Fixed** by naming DR-06 in that scenario
+  and tying it to E1 rather than letting one acceptance line settle a three-document conflict.
+- **E3 MEDIUM — the undo that would have existed is two rows up and unbuilt.** FR-MOD-05,
+  *"exporting all data for a tenant as newline-delimited JSON"*. A tenant who wants to keep
+  what a policy destroys has no supported way to take a copy first. **Fixed** in the contract's
+  *no undo* and in T032's clause list — which turns a shrug into a measured statement.
+
+### Checked, and clean
+
+```
+ADR-28         cited correctly — "FR-ANL-06's daily job has no runner, and that is
+               recorded rather than built"
+principle VI   the plan answers all five bullets in its own table — 065's pass-9
+               lesson transferred rather than being relearned
+```
+
+### Five passes
+
+    pass 1   4 findings   0 CRITICAL   opening the files the artifacts cite
+    pass 2   4 findings   0 CRITICAL   writing the queries nobody had written
+    pass 3   4 findings   0 CRITICAL   walking the tasks in execution order
+    pass 4   4 findings   0 CRITICAL   opening the code the tasks will edit
+    pass 5   3 findings   1 CRITICAL   opening the constitution and the SRS
+
+**Four passes found nothing critical and the fifth found the thing that decides whether the
+chapter can ship as specified.** The conflict was reachable from the first page of the spec —
+FR-MSG-08 is quoted in it — which is why *read the clauses, not the identifiers* is this
+project's most-cited rule and why it keeps being worth running as its own pass.
+
 ## Notes
 
 - Items marked incomplete require spec updates before `/speckit-clarify` or `/speckit-plan`
