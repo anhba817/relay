@@ -38,6 +38,39 @@ tags. **Anyone holding an older clone of `relay-platform` must reset rather than
 
 <!-- SPECKIT START -->
 
+**ACTIVE PLAN: `specs/067-chapter-4-21/plan.md`** — chapter 4.21, movement VII's fourth.
+`docs/12` row 22 is FR-MOD-04 and FR-MED-10, and **the premise check came out MIXED** where
+4.19's was four of five and 4.20's was none of three. **FR-MED-10's unlink is already met** —
+`deleteMessage` writes `attachments: []`. The endpoint does not exist. And **the phrase
+`analytical records` is four stores with four different answers**: `api_requests` holds 205,697
+rows and **no user column at all** (chapter 4.4's design, so the cheapest erasure is the column
+nobody collected), `connection_events` 1,081 deletable rows, `message_events` **0** rows with no
+producer, and `daily_usage_*` **880 rows holding `AggregateFunction(uniq, Nullable(UUID))` from
+which no single user can be removed** — and whose sketches claim **0 distinct users today**,
+because the source has never received a row. **Both halves get published: either alone misleads.**
+
+**AND `deleteUser` ALREADY EXISTS AND KEEPS WHAT ERASURE MUST DESTROY.** FR-USR-05's deletion
+clears the profile, memberships and read positions and **keeps the row, the messages, and every
+`usage_active_users` row** — 22,150 of them — with a billing argument in the code: *"a customer
+who deleted a user in March still owes for March."* Two clauses, opposite answers, both good.
+**And `ON DELETE SET NULL` is the option already measured and refused**: all five foreign keys to
+`users` are `NO ACTION`, because nulling `messages.user_id` *"breaks delivery — the resume path
+drops a senderless row."*
+
+**THE CHAPTER'S PRODUCT IS THE RECEIPT, NOT THE ENDPOINT.** FR-MOD-04's *completion receipt* is
+its least defined phrase and a 204 satisfies the grammar. Four outcomes, and
+**`nothing_to_erase` must not collapse into `cannot_erase`** — one is 205,697 rows that never
+named a person and the other is 880 that do, unremovably. **`not_reached` is why the receipt is
+load-bearing**: constitution III forbids rolling back a compliance erasure because a metering
+pipeline is unwell, so the operational half commits and the analytical half is reported.
+
+**AND CLICKHOUSE HAS TWO DELETION VERBS WITH DIFFERENT VISIBILITY.** `DELETE FROM` is visible to
+the next `SELECT`; `ALTER TABLE … DELETE` **returned with its hundred rows still countable** —
+051's finding, and the contrast is new. A receipt states a count, so it uses the verb whose count
+it can trust. **No new ADR is expected**: ADR-36 already named FR-MOD-04's endpoint as one of the
+two compliance paths. Recorded as open, because predicting what analysis will find has not gone
+well here.
+
 **066 IS CLOSED — CHAPTER 4.20, "The messages that expire".** Movement VII's third. Its record
 is `specs/066-chapter-4-20/` — `baseline.txt` first (every phase in the order taken, wrong
 versions included), then `gaps.md` (**4 new plus the carried ledger re-measured**),

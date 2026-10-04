@@ -114,6 +114,11 @@ with where, and a sentence naming what invokes each path.
   author; FR-MOD-04 says erasure removes the user. FR-USR-05's *unless message
   deletion is explicitly requested* is the escape, and this chapter is the
   request.
+- **`deleteUser` ALREADY EXISTS AND DELIBERATELY KEEPS WHAT ERASURE MUST DESTROY.**
+  FR-USR-05's deletion clears the profile, memberships and read positions and
+  **keeps the row, the messages, and every `usage_active_users` row** — the last
+  with a billing argument in the code. Erasure is the same verb with the opposite
+  answer on three of those, and the chapter has to say which clause wins where.
 - **An audit entry naming the erased user.** 1,324 rows name a user target and
   the log is append-only (ADR-35). An entry recording that somebody was banned
   is itself a record of that person.
@@ -157,7 +162,15 @@ with where, and a sentence naming what invokes each path.
 - **`users`** — the profile; 192,641 rows. `external_id` is unique per
   environment.
 - **`members`** — 172,965 rows.
-- **`messages.user_id`** — nullable, `ON DELETE SET NULL` per FR-USR-05.
+- **`messages.user_id`** — nullable, and the foreign key is **`NO ACTION`**, not
+  `ON DELETE SET NULL`. All five foreign keys to `users` are, measured. `ON DELETE SET
+  NULL` is the thing FR-USR-05's implementation **rejected** and says so in both the SRS
+  and the code: it *"satisfies the letter of preserving their messages and breaks
+  delivery — the resume path drops a senderless row."*
+- **`usage_active_users`** — **22,150 rows naming 22,147 users, in Postgres**, and
+  `deleteUser` keeps every one of them on purpose: *"a customer who deleted a user in
+  March still owes for March."* FR-MOD-04 calls analytical records erasable and this
+  table is the strongest counter-argument in the platform.
 - **`media_objects.user_id`** — nullable, and null on 11,050 of 15,029 rows.
 - **`connection_events.user_external_id`** — the one analytical column holding a
   user identifier in a deletable form.
