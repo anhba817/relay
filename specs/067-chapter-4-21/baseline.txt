@@ -719,3 +719,87 @@ T034 · FR-MED-10 IS THREE OBLIGATIONS AND THIS CHAPTER MOVED ONE
                                     nothing ever attached
       erasure within 30 days        THIS CHAPTER'S, demonstrated, and incomplete by
                                     a column: 11,173 of 15,189 have no uploader
+
+================================================================================
+PHASE 6 — THE PROBES
+================================================================================
+
+T036/T036a · FOUR ARMS, DELETED ONE AT A TIME, BOTH SUITES EACH TIME
+
+  FIRST PASS — THREE OF FOUR INVISIBLE:
+
+      CONTROL                                  erasure 14/14   gauntlet 64/64
+      A  eraseUser's alive-check env scope     erasure 14/14   gauntlet 64/64
+      B  the media collection's env scope      erasure 14/14   gauntlet 64/64
+      C  the analytical environment predicate  erasure  1 RED  gauntlet 64/64
+      D  @Accepts("application") on the class  erasure 14/14   gauntlet 64/64
+
+  **D IS 4.18's FINDING WITH THE CONSEQUENCE INVERTED.** That chapter deleted the same
+  decorator from a READ route and answered an end-user token 200 with the tenant's
+  whole moderation history. Here an end-user token that reaches the handler **destroys
+  another person's data**, and every read-shaped assertion in the suite still passes.
+  **The decorator is the only thing standing between an end user and this route, and
+  nothing tested it.**
+
+  A IS A DEFENCE BEHIND A DEFENCE. `UsersService` resolves the external id through a
+  tenant-scoped read first, so `eraseUser` never receives a foreign id from any
+  caller that exists today — 4.12's finding, and 065's three reads where removing any
+  two was invisible. **The answer is the test that makes the arm visible, not the
+  deletion that makes it honest**, so the probe became two tests.
+
+  SECOND PASS, WITH THOSE TESTS WRITTEN:
+
+      A  eraseUser's alive-check env scope     erasure  1 RED
+      C  the analytical environment predicate  erasure  1 RED
+      D  @Accepts("application")               erasure  1 RED
+      B  the media collection's env scope      erasure 14/14   still invisible
+
+  **AND B IS GENUINELY REDUNDANT, WHICH IS NOT THE SAME AS UNTESTED.** Deleting it
+  alone changes nothing because `destroyMediaObjects` carries its own environment
+  scope one call down. Deleting **both** turns **2 of 122 red in the media suites** —
+  so the door has two locks and the inner one is tested. Recorded as redundant rather
+  than papered over with a third test that would assert the same thing twice.
+
+  THE GAUNTLET MOVED FOR NONE OF THE FOUR, which is its own finding: the suite
+  constitution VI names as gating releases reports nothing about any arm of this
+  chapter's route, including the credential one.
+
+T037 · THE COUNTED FIGURES, DERIVED — AND THE TASK'S PRIOR NUMBER WAS WRONG
+
+                                   at part4-ch20   now
+      targets.ts classifications        49          50
+      MODERATION_ROUTES entries         24          25
+      gauntlet `attacked.add` calls      —          34
+
+  **The task said 25 at 066's close and `git show part4-ch20:` says 24.** Both maps
+  gained exactly one, which is the right delta; the baseline it was compared against
+  was off by one. Asked the repository rather than trusted the sentence.
+
+T038 · WHAT AN ERASURE COSTS, AND THE HALF THAT MAY FAIL IS THE EXPENSIVE ONE
+
+      POSTGRES   no media       p50  10.27 ms      n=15
+                 one object     p50  11.71 ms
+                 five objects   p50  11.78 ms      FLAT — `destroyMediaObjects`
+                                                   takes them in one `inArray`
+      CLICKHOUSE three statements   p50  15.99 ms  count, delete, verify
+
+  **THE ANALYTICAL HALF COSTS MORE THAN THE WHOLE OPERATIONAL TRAVERSAL** — 16 ms
+  against 10 — and it is the half constitution III says must be allowed to fail. A
+  reader would predict the opposite: seven stores, a transaction, a cascade.
+
+  WHICH FIGURE CAME FROM WHERE. Both are `performance.now()` around the function, not
+  around the route. **The store round trip is in NEITHER**: `deleteObjectWithRenditions`
+  runs in `UsersService`, one request per object, and these fixtures reserve slots
+  without uploading bytes. Chapter 4.20 measured that at **2.05 ms an object** and it
+  is not re-measured here — stated rather than silently folded in.
+
+  AND NO USER ON THIS LANE OWNS MANY OBJECTS: **766 users own any at all, mean 5.30,
+  the most is 21.** So the per-object cost never dominates here and the chapter cannot
+  show what an erasure costs a user who uploaded for a year.
+
+T039 · check-lane-scope, THE COUNTED LINE
+
+      78 integration files, 0 unscoped read(s) of a shared table in 0 file(s)
+      controls: 10 of 10 fired                                   from 77 files
+
+  The line, not the exit code (055-4). One file added, which is this chapter's.
