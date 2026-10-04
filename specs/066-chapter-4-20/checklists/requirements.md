@@ -381,7 +381,52 @@ else: a stray citation in a migration comment, followed out of curiosity.
 verbatim · the seeder is idempotent, so §3's two invocations agree on the tenant ·
 `${RELAY_POSTGRES_PORT:-5432}` carries a default, so §1 and §2 work unexported.
 
-### Seven passes
+## Analysis pass 8 — three findings, ONE CRITICAL, all three fixed
+
+**The question**: *what does a new mutating route do to the sets derived from a booted
+application?* Pass 6 found the gauntlet by asking what a route costs the fence chain. The same
+question asked of behaviour has a longer answer: **three lists key off one derived route set,
+and the tasks covered two.**
+
+- **R1 CRITICAL — `moderation-routes.ts` holds 24 entries for 24 derived routes and this
+  chapter's route makes 25.** `moderation-routes.itest.ts` fails in **both** directions from a
+  booted app — *"these routes exist and nobody decided whether they are moderation"* one way,
+  an entry naming no route the other. `owedADecision` filters to mutating and not-`/internal/`,
+  which `PATCH /v1/environments/{id}` is. **Zero `/v1/environments` entries exist in either
+  list today**; T026 added the `targets.ts` one and nothing added this. **Fixed** as T026a, with
+  the enumeration rule written down: the three lists are reachable only by
+  `grep -rn deriveTargets`, because nothing else records that they are a set.
+- **R2 HIGH — the classification is a real decision and it has a schema cost.** The file's own
+  precedent: `POST /v1/channels/:channelId/archive` is moderation because it *"removes a shared
+  space from use for everyone in it"*; `POST /v1/channels` is provisioning and is not. **Setting
+  `retention_days = 30` destroys every user's messages past thirty days, for everyone, with no
+  undo** — the archive test met harder. **And `moderation` is not one word**:
+  `Repository.recordAction`'s `targetKind` is the closed union `"user" | "message" |
+  "membership" | "channel"`, mirrored by `audit_log_target_kind_check` in `0021_audit_log.sql`
+  **and again** at `schema.ts:1360`, which is 34 pages of fence chain. **Fixed** as **FR-014**,
+  T013b (decide in phase 2, with the bill measured beside the decision) and T026b.
+  **The mechanical half of R1 fails loudly in phase 6; this half is one word in a lookup table
+  and a wrong word there is silent forever.**
+- **R3 HIGH — the route's credential decorator is unprobed.** T035 probes the sweep's tenancy
+  arms and the enumeration's signature, both well-judged, and T014a *reads* the guard's
+  decorators at design time. 4.18 ran this exact probe on a READ route and found that deleting
+  `@Accepts("application")` answers an end-user token **200 with the tenant's whole moderation
+  history**, while the controller's own 403 defended a case that cannot arise. **Here the
+  consequence is worse than disclosure** — an end-user token that can set a thirty-day policy
+  destroys the tenant's history. **Fixed** as T035a.
+
+**What verified clean, and three were worth the look.** `contracts/retention.md` holds: all
+three error codes exist in `codes.ts` **and** `docs/08-error-reference.md`, and
+`@Accepts("application")` does answer 403 `wrong_credential_type` at `credential.guard.ts:144`.
+**The request-log's endpoint set is free** — it calls `deriveTargets` off the running router,
+so a new route joins the closed set with no edit, which is 4.8's design paying off two chapters
+later. **`tenant-scope.itest.ts` classifies base tables, not routes**, and this chapter adds no
+table. Migrations stop at `0023`, so `0024` and `0025` are free. T046 names SAD §6.1 correctly
+— `retention_days INT,` is at line 489 and the section opens at 481. **And `clauses.md` is a
+deliverable, not a missing file**: T032 writes it, and pass 7's closing note saying it had not
+been read against the tree was wrong.
+
+### Eight passes
 
     pass 1   4 findings   0 CRITICAL   opening the files the artifacts cite
     pass 2   4 findings   0 CRITICAL   writing the queries nobody had written
@@ -390,6 +435,7 @@ verbatim · the seeder is idempotent, so §3's two invocations agree on the tena
     pass 5   3 findings   1 CRITICAL   opening the constitution and the SRS
     pass 6   4 findings   0 CRITICAL   opening the tutorial, `ci.yml` and two sibling features
     pass 7   6 findings   1 CRITICAL   tracing the quickstart, and one stray citation
+    pass 8   3 findings   1 CRITICAL   what a new route costs the sets derived from a booted app
 
 **Four passes found nothing critical, the fifth found the thing that decides whether the
 chapter can ship as specified, and the sixth found three things no document in this directory

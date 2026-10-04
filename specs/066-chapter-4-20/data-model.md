@@ -110,10 +110,13 @@ which is the asymmetry that makes this easy to skip and expensive to skip.
 
 - **`messages` itself.** No column, no index, no trigger. Expiry is a `DELETE`, and
   `messages.created_at` already carries the age the policy compares against.
-- **`audit_log`.** No foreign key to `messages` exists and none is added: an entry records that
-  an action happened, not the thing it happened to. 1,435 rows name a message target today and
-  a destroyed message leaves them naming an id that resolves to nothing — stated in the chapter
-  rather than repaired, because repairing it means deleting from an append-only log.
+- **`audit_log`'s LINK TO MESSAGES.** No foreign key to `messages` exists and none is added:
+  an entry records that an action happened, not the thing it happened to. 1,435 rows name a
+  message target today and a destroyed message leaves them naming an id that resolves to
+  nothing — stated in the chapter rather than repaired, because repairing it means deleting
+  from an append-only log. **`audit_log`'s `target_kind` is a separate question and T013b
+  decides it**: if the policy route is classified as moderation, that column's CHECK gains a
+  fifth value, so this bullet is about the link and not about the table.
 - **The analytical store.** Constitution III. DR-09's 90-day TTL on raw events is a different
   clock with a different owner, and an operational expiry does not reach it.
 - **Tombstones.** A tombstone is a message and expires like one. Nothing distinguishes them in

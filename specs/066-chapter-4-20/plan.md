@@ -190,6 +190,9 @@ prediction.
    tree, and research R1–R7 re-read against the code rather than this document.
 2. **The decisions.** The trigger's exception mechanism, the flag's name, whether the route is
    `PATCH /v1/environments/{id}` or something narrower — settled before a migration exists.
+   **And whether setting a policy is a moderation action**, which is the one decision here with
+   a schema cost: `moderation` obliges an `audit_log` entry, and that column's CHECK admits
+   four `target_kind` values of which none is an environment.
 3. **US1 — the expiry, and the pincer.** Both migrations, the sweep, and the delete that is
    refused today. **The red probe comes first**: assert the refusal, then make it pass.
 4. **US2 — the objects go too.** The reverse reference check **is `unreferencedMediaIn`,

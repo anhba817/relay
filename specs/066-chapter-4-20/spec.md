@@ -199,6 +199,11 @@ retention year got at chapter 4.18.
   analytical meter is event-sourced and does not self-correct: without this, chapter 4.16's
   reconciliation reports a tenant charged for bytes that no longer exist, permanently, and
   attributes the gap to reservations.
+- **FR-014**: The policy route MUST carry a moderation classification, recorded with its
+  reason, because `moderation-routes.ts` requires a decision for every mutating route a tenant
+  can reach. If classified as moderation, setting a policy MUST write an `audit_log` entry —
+  which obliges a fifth `target_kind`, since the column's CHECK constraint admits only `user`,
+  `message`, `membership` and `channel`.
 
 ### Key Entities
 
