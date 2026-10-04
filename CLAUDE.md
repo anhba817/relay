@@ -64,6 +64,8 @@ rolling back a compliance erasure because a metering pipeline is unwell. **And C
 two deletion verbs differ in visibility**: `DELETE FROM` is visible to the next `SELECT`,
 `ALTER TABLE … DELETE` **returned with its rows still countable** (051, with the contrast new).
 
+<!-- SPECKIT END -->
+
 **066 IS CLOSED — CHAPTER 4.20, "The messages that expire".** Movement VII's third. Its record
 is `specs/066-chapter-4-20/` — `baseline.txt` first (every phase in the order taken, wrong
 versions included), then `gaps.md` (**4 new plus the carried ledger re-measured**),
@@ -1651,7 +1653,6 @@ local and remote, in all three repositories** — they resolved to the replaced 
 remain reachable from `backup/pre-main-move-20260911`, checked after the deletion. **Three Part 1
 tags are on neither `main` nor the backup** and are the only thing keeping those commits alive:
 `gaps.md` 046-8.
-<!-- SPECKIT END -->
 
     045 "part 3 rework"           24 chapters -> 26, eight movements, English prose only
                                   296 -> 110 fence-chain problems · 26 of 26 tags typecheck
