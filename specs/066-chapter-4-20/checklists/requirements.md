@@ -605,7 +605,55 @@ millisecond on every row, so there was no contrast; the fix is what makes 4.49% 
 anomaly rather than as the background. **A repair can create the instrument that shows what it
 did not repair.**
 
-### Twelve passes
+## Analysis pass 13 — two findings, 0 CRITICAL, both fixed
+
+**The question**: *run the chapter's solution, not just its problem.* Pass 12 ran counts. R1
+claims the proposed exception was *"measured in all three directions rather than the one that
+passes"* and nobody had re-run it.
+
+**THE WHOLE OF R1 REPRODUCES, AND QUICKSTART §2 RUNS VERBATIM** — all three of its published
+outputs byte-identical, including the constraint name and the trigger's exact message.
+
+    FK refuses the parent        message_edits_message_id_fkey            as published
+    trigger refuses the child    message versions are append-only (…)     as published
+    no version rows              DELETE 1                                 the control
+    ON DELETE CASCADE            REFUSED, and the error names the generated statement:
+                                 DELETE FROM ONLY "public"."message_edits" …
+    session_replication_role     DELETE 1                                 ADR-35's published hole
+
+    the proposed exception, all three directions:
+      UPDATE, flag SET           refused
+      DELETE child, flag UNSET   refused
+      DELETE message, flag SET   DELETE 1 · child rows 1 → 0     a count R1 did not publish
+
+- **Y1 HIGH — the mechanism's safety is one keyword and nothing tested it.** `data-model.md`
+  asserts *"THE FLAG IS `SET LOCAL`, SO ITS LIFETIME IS ONE TRANSACTION … a connection returned
+  to the pool carries nothing"* in prose. T010 **decides** `SET LOCAL`; T036 runs three old
+  refusals and none of them is *the flag does not outlive its transaction*. **Measured**: plain
+  `SET`, commit, then an unrelated later transaction on the same connection reads `on` and
+  `DELETE 1` succeeds. The api runs a pool, so a connection returned with the flag set serves
+  every later request with the append-only guarantee off until it is recycled. **Fixed** as
+  T036a(a).
+- **Y2 MEDIUM — the same keyword fails silently the other way.** `SET LOCAL` outside a
+  transaction block is a **WARNING**, not an error — `SET LOCAL can only be used in transaction
+  blocks` — and the flag reads empty. A sweep in autocommit has **every** cascade refused, and
+  that symptom is indistinguishable from the trigger working correctly. **Fixed** as T036a(b)
+  and T023a, which asserts the flag's **value** read inside the same transaction as the
+  `DELETE` rather than asserting the statement was issued.
+
+**BOTH ARE SILENT AND THEY FAIL IN OPPOSITE DIRECTIONS.** Drop `LOCAL` and the exception widens
+from one transaction to a pooled connection's remaining life; keep `LOCAL` and forget `BEGIN`
+and the exception never exists at all. **The trigger is written once and the `SET LOCAL` is
+written at every call site**, which is where the failure will come from.
+
+That is 4.18's rule arriving one layer in. It found that *a mechanism that fits the tool is not
+a mechanism that works, and the second has to be attempted.* This chapter attempted the
+mechanism and it works. **What no artifact attempted is the mechanism used slightly wrong.**
+
+The database was restored and verified: `message_edits=6663`, `messages=199275`, identical to
+pass 12, and a `DELETE` with the flag set is refused again at the original function's line 3.
+
+### Thirteen passes
 
     pass 1   4 findings   0 CRITICAL   opening the files the artifacts cite
     pass 2   4 findings   0 CRITICAL   writing the queries nobody had written
@@ -619,6 +667,7 @@ did not repair.**
     pass 10  4 findings   0 CRITICAL   the list walked end to end, after nine insertions
     pass 11  3 findings   0 CRITICAL   the carried ledger measured instead of copied
     pass 12  3 findings   0 CRITICAL   RUNNING it — every figure exact, and a dated premise
+    pass 13  2 findings   0 CRITICAL   running the SOLUTION — R1 holds, one keyword does not
 
 **Four passes found nothing critical, the fifth found the thing that decides whether the
 chapter can ship as specified, and the sixth found three things no document in this directory

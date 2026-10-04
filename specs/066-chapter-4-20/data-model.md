@@ -53,6 +53,14 @@ Three properties, each measured rather than argued (R1):
 does something else has the setting for that transaction only, and a connection returned to the
 pool carries nothing.
 
+**THAT SENTENCE IS A CLAIM ABOUT ONE KEYWORD AND T036a TESTS IT, BECAUSE BOTH WAYS OF GETTING IT
+WRONG ARE SILENT.** Measured at analysis pass 13: with plain `SET` the flag survives the
+transaction and a later `DELETE` on the same pooled connection answers `DELETE 1`; with
+`SET LOCAL` outside a transaction block Postgres emits `WARNING: SET LOCAL can only be used in
+transaction blocks`, leaves the flag unset, and every cascade is refused — which looks exactly
+like the trigger working. **The trigger is written once; the `SET LOCAL` is written at every
+call site.**
+
 **WHAT THIS COSTS, AND IT IS A PUBLISHED GUARANTEE.** ADR-35 scoped the audit log's
 immutability as *to the application and to accident, and not to somebody holding the database
 password*. Chapter 4.19 applied that scope to `message_edits`. After this chapter the scope for
