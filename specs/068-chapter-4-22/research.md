@@ -180,6 +180,75 @@ integrate.itest.ts                   5   5          only if the arrow is added t
 roughly 91 for option A. A milestone that spends 91 fence pages on new surface is not
 a milestone.
 
+## R9 — The sealed package runs files in parallel, and this chapter is the first to add a second
+
+Measured at analysis pass 2, with two throwaway files that do nothing but sleep:
+
+```
+Tests     2 passed (2)
+Duration  3.10s   (… tests 6.01s …)
+```
+
+**Six seconds of test time in three seconds of wall clock.** `packages/outsider/
+vitest.integration.config.mts` sets `include` and `testTimeout` and **no
+`fileParallelism`**, so vitest's default applies. That has never mattered, because
+`integrate.itest.ts` has been the only file in the package since it was created.
+**This chapter adds the second.**
+
+**AND THE TENANT IS SHARED.** `ci.yml:355` seeds once and exports one
+`RELAY_DEMO_CREDENTIAL` for the whole `pnpm test:outsider` run, so both files
+address a single environment — its channels, its users, its quota, its audit log and
+its request log.
+
+**THE COLLISION IS NOT HYPOTHETICAL AND IT IS ON THE SURFACE STAGE 6 READS.**
+`integrate.itest.ts:1224` issues a moderator `DELETE` of a message with the
+application credential — FR-MOD-02 — which writes an `audit_log` entry into the same
+tenant, concurrently with Priya's Stage 6 read. An assertion about what the log
+contains, or how many entries it holds, is a neighbour's.
+
+**THE FIX IS THE SCOPE, NOT THE ORDERING.** 045-74's rule: *an assertion scoped
+wider than the thing it tests fails for somebody else's reason* — and 043's first
+attempt at the same class was worse than the fault, because it serialised instead of
+scoping. Every Priya assertion matches on a fixture this test created: the audit
+query accepts `action`, and the target id is one the test minted. **Setting
+`fileParallelism: false` is refused**: it would make the package slower for every
+future file to avoid writing one predicate.
+
+**AND `check-lane-scope.py` CANNOT SEE THIS CLASS.** It globs
+`packages/*/src/**/*.itest.ts`, so it *reads* the new file — and it scans for **SQL
+table reads**. The sealed package talks HTTP and contains no SQL, so it will report
+**0 unscoped reads** over a file that has the hazard in it. The checker's own last
+line already says *"SQL text only — a scope applied in JavaScript is invisible to
+it"*; this is the same blind spot one transport further out, and T031 records the
+zero with that bound attached rather than as evidence.
+
+## R10 — The journey's fixture uses a route that does not exist in production
+
+`POST /auth/dev-token` is how the sealed suite mints user tokens, and the journey
+needs them: an application credential may send only as a bot, so Priya's key cannot
+create the conversation she investigates.
+
+```
+dev-token.controller.ts:78
+  if (environment.kind !== "development") {
+    throw new NotFoundException("Cannot POST /auth/dev-token");
+```
+
+Its own comment: *"a development affordance that does not exist in production"*, 404
+rather than 403 on purpose, so nobody goes looking for the permission that would
+unlock it.
+
+**SO *"ONLY THE PUBLISHED API"* IS TRUE OF PRIYA'S SIX STAGES AND FALSE OF THE
+FIXTURE THAT SETS THEM UP.** The split is the honest statement and it costs a
+sentence: the conversation's two participants authenticate through a development
+affordance standing in for the customer's own identity provider; **every one of
+Priya's own actions — locate, read, delete, ban, audit, erase — uses a route that
+exists in production and an application credential a customer really holds.**
+
+Recorded rather than worked around. A real deployment's conversation is created by
+real users against FR-AUT's flow, which is Part 2's subject and not something a
+sealed suite can exercise.
+
 ## R8 — Stage 6 names a join neither log can perform, which is Stage 2's shape again
 
 Found at analysis pass 1, by opening the two query schemas rather than the two

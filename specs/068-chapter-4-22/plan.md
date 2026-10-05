@@ -34,6 +34,7 @@ option a reader wants is the one `docs/12` §5 rule 4 forbids a milestone from t
 | **Test home** | `packages/outsider/src/priya.itest.ts`, a NEW file (R1) |
 | **Runs against** | the deployed containers via `RELAY_API_URL`, `RELAY_WS_URL`, `RELAY_DEMO_CREDENTIAL` |
 | **CI job** | `relay-platform — the sealed integration`, which was 21 of 21 at 4.21's close |
+| **Concurrency** | **this is the package's SECOND file and its files run in parallel** against one seeded tenant — measured, R9. Assertions scope to their own fixtures |
 | **Storage** | none added — no migration, no column, no table |
 | **Documents** | `docs/04-srs.md` (FR-CHN group, §7.3, revision 1.29), `docs/12` row 23 and §7.6, `docs/07` row 23 |
 | **Unknowns** | **R2's option and R8's** — the only two, and both are Phase 2 |
@@ -43,7 +44,7 @@ option a reader wants is the one `docs/12` §5 rule 4 forbids a milestone from t
 Read clause by clause rather than cited by number, because 4.21's analysis pass 5
 found that a principle's bullets do not get one verdict.
 
-### I. Tenant isolation — **ENGAGED, and the test must carry it**
+### I. Tenant isolation — **ENGAGED TWICE, and the second is not about tenants**
 
 The sealed suite already asserts *"cannot see another tenant's channel, and cannot
 tell it apart from an absent one"*. **If R2 lands on option A or C, a new resolution
@@ -51,6 +52,14 @@ path is a new place tenancy can be missed**, and 4.21 measured what that looks l
 three of four scoped arms were invisible to a single-mutation probe. A lookup by
 external id MUST be scoped to the environment and MUST be probed by deleting that
 scope and re-running, not by reading the code.
+
+**AND THE SECOND IS ISOLATION FROM A NEIGHBOUR RATHER THAN FROM A TENANT (R9).** The
+sealed package runs its files concurrently — measured, 6.01s of tests in 3.10s of
+wall clock — and `ci.yml:355` seeds one credential for the whole run, so
+`priya.itest.ts` and `integrate.itest.ts` share a tenant's audit log while one reads
+it and the other writes to it. **`check-lane-scope.py` cannot see this**: it scans
+SQL and the package talks HTTP. The discipline is the author's, and T031 records the
+bound on its own zero rather than reporting it as evidence.
 
 ### II. No acknowledged message is ever lost — **NOT ENGAGED**
 

@@ -13,7 +13,9 @@ falsifiable.
 |---|---|
 | what it talks to | the deployed containers, via `RELAY_API_URL`, `RELAY_WS_URL`, `RELAY_DEMO_CREDENTIAL` |
 | what it may import | nothing from `services/` — the sealed package is on no exemption list |
-| credential | the tenant's **application key** for Priya's actions; **user tokens** for the conversation |
+| credential | the tenant's **application key** for Priya's actions; **user tokens** for the conversation, minted by `POST /auth/dev-token` |
+| the production split | **every one of Priya's six stages uses a route that exists in production.** `dev-token` 404s outside a development environment and is the FIXTURE's, standing in for the customer's identity provider |
+| concurrency | **a second file runs beside this one against the same tenant** — measured, 6.01s of tests in 3.10s of wall clock. Every assertion scopes to a fixture this file created |
 | CI job | `relay-platform — the sealed integration` |
 
 **WHY NOT `packages/e2e`, WHERE THE OTHER JOURNEY LIVES.** `docs/03`'s first
@@ -48,7 +50,7 @@ and three named assertions failing. A margin nobody has falsified is a comment.
 | **3 Reconstruct** | three outcomes are distinguishable from the record: never sent, sent and deleted, sent and edited. The edited message yields both texts and both instants, in order |
 | **4 Judge** | every instant in the record is UTC with millisecond precision (CON-04) — inspection, and the only stage with no behavioural assertion |
 | **5 Act** | the moderator's deletion reaches a connected socket; the banned user is refused both connect and send; their history survives |
-| **6 Record** | the audit entry for that deletion **carries** the `request_id` the caller was given — found by paging, because **neither log accepts it as a filter** (R8) — and an erasure returns a receipt naming each store |
+| **6 Record** | the audit entry for that deletion **carries** the `request_id` the caller was given — found by filtering on `action` and matching a target id this test minted, because **neither log accepts `request_id` as a filter** (R8) **and a neighbour writes moderation entries into the same log concurrently** (R9) — and an erasure returns a receipt naming each store |
 
 **STAGE 2's SECOND HALF IS THE ONE TO WRITE FIRST.** *An order number nobody used
 produces a named refusal* is red today — it is a 500 — whichever option R2 picks,

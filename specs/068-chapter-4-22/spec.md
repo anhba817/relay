@@ -78,7 +78,14 @@ an auditor can follow six months later.
 walking this one exposes something.
 
 **Independent test**: boot the system, seed a dispute, and run the six stages in
-order with no database access and no engineering assistance — only the published API.
+order with no database access and no engineering assistance.
+
+**ONE SPLIT, STATED RATHER THAN GLOSSED.** *Priya's six stages* use only routes that
+exist in production, with an application credential a customer really holds. *The
+fixture that sets them up* mints user tokens through `POST /auth/dev-token`, which
+404s outside a development environment — *"a development affordance that does not
+exist in production"*, in its own words. It stands in for the customer's identity
+provider, which is Part 2's subject and not something a sealed suite can exercise.
 
 **Acceptance scenarios**
 
