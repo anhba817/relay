@@ -63,29 +63,32 @@ tags. **Anyone holding an older clone of `relay-platform` must reset rather than
 
 <!-- SPECKIT START -->
 
-**ACTIVE PLAN: `specs/068-chapter-4-22/plan.md`** — chapter 4.22, "★ Milestone: the Priya
-test", Part 4's last chapter and its third milestone. **`docs/12` row 23, not row 22** — the
-table keeps pre-contraction ordinals. Journey 3 made executable, as `tuan.itest.ts` did for
-Journey 4 at 2.8: *the journeys are the milestones, and the SRS phase exit criteria.*
+**ACTIVE PLAN: `specs/068-chapter-4-22/` — chapter 4.22, "The identifier the customer gave
+it". Spec written; no `plan.md` yet.** The milestone that found this is **069 / chapter
+4.23** and comes after.
 
-**THE PREMISE CHECK WALKED ALL SIX STAGES AND FOUND THE HOLE AT STAGE 2.** A channel cannot
-be read by the identifier the customer gave it: `GET /v1/channels/{externalId}` answers
-**500** where the uuid answers 200, **no SRS clause requires the lookup**, and the only
-resolution that works is **re-POSTing the create** — a read performed as a write. Four
-options priced from 0 to ~91 fence pages, and the one obeying *a milestone appears after all
-the work it verifies* is the one that leaves the write in place. **Undecided on purpose.**
+**PART 4 EXPANDED TO 23 FOR THIS.** The Priya milestone's premise check could not complete
+Journey 3 Stage 2: `GET /v1/channels/{externalId}` answers **500**, and so does every route
+under that prefix — **13 of 13 take a uuid Relay minted.** FR-USR-01 says *"Relay shall not
+generate end-user identities"* and ADR-18 says an end user's identity *"is whatever
+`external_id` the customer already had for them"*, so **a uuid here is a KEY and the
+customer's string is the IDENTITY.** A customer must store Relay's uuid to post to a channel
+they named — the lookup table FR-CHN-01 exists to remove. Rule 4 says a milestone verifies
+rather than builds, so the fix is its own chapter placed BEFORE it.
 
-**AND PHASE 3's EXIT CRITERION HAS AN ARROW NOBODY WALKED** — *upload → scan → send →
-signed delivery → **erasure***. 4.17 did the first four, 4.21 built erasure, and the two have
-never met. Its first clause wants seven consecutive days and ADR-28 declined the scheduler.
+**EXACTLY TWO TABLES CARRY A CUSTOMER IDENTIFIER — `users` AND `channels` — AND THE PLATFORM
+ALREADY DEMONSTRATES THE RIGHT ANSWER ON ONE.** Users: 8 of 8 routes take the identity and
+the upsert returns no uuid. Channels: 0 of 13, and the create returns the uuid first. The
+users side needs **one** change — the listing cursor is base64 of `{a, id}` and its own
+comment says *"OPAQUE IS NOT SECURITY"*, which is also where 4.23's ADR-37 reversal condition
+rests.
 
-**The test goes in `packages/outsider`, not `packages/e2e`**, against `docs/03`'s own first
-sentence: *Priya never touches Relay directly; she uses a tool Mai built on Relay's APIs.*
-The sealed suite holds a URL and a credential; the e2e harness holds the api's database.
-
-**These markers span only this block, deliberately** — moved during 067's planning, when
-they enclosed 118,636 bytes the agent-context hook would have replaced with three
-sentences.
+**THE AGENT-CONTEXT HOOK CANNOT RUN HERE AND EXITS 0 WHEN IT DECLINES.** PyYAML is not
+importable by this `python3`, so it skips with a clear message. **It would also have pointed
+at the wrong feature** — it auto-detects the most recent `plan.md`, which is 069's — and its
+replacement block is three generated lines, which would delete everything above. **These
+markers span only this block, deliberately**, moved during 067's planning when they enclosed
+118,636 bytes.
 
 <!-- SPECKIT END -->
 
