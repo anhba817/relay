@@ -60,7 +60,26 @@ tags. **Anyone holding an older clone of `relay-platform` must reset rather than
 
 <!-- SPECKIT START -->
 
-**NO ACTIVE PLAN.** 067 closed 2026-10-05; the next feature writes its plan line here.
+**ACTIVE PLAN: `specs/068-chapter-4-22/plan.md`** — chapter 4.22, "★ Milestone: the Priya
+test", Part 4's last chapter and its third milestone. **`docs/12` row 23, not row 22** — the
+table keeps pre-contraction ordinals. Journey 3 made executable, as `tuan.itest.ts` did for
+Journey 4 at 2.8: *the journeys are the milestones, and the SRS phase exit criteria.*
+
+**THE PREMISE CHECK WALKED ALL SIX STAGES AND FOUND THE HOLE AT STAGE 2.** A channel cannot
+be read by the identifier the customer gave it: `GET /v1/channels/{externalId}` answers
+**500** where the uuid answers 200, **no SRS clause requires the lookup**, and the only
+resolution that works is **re-POSTing the create** — a read performed as a write. Four
+options priced from 0 to ~91 fence pages, and the one obeying *a milestone appears after all
+the work it verifies* is the one that leaves the write in place. **Undecided on purpose.**
+
+**AND PHASE 3's EXIT CRITERION HAS AN ARROW NOBODY WALKED** — *upload → scan → send →
+signed delivery → **erasure***. 4.17 did the first four, 4.21 built erasure, and the two have
+never met. Its first clause wants seven consecutive days and ADR-28 declined the scheduler.
+
+**The test goes in `packages/outsider`, not `packages/e2e`**, against `docs/03`'s own first
+sentence: *Priya never touches Relay directly; she uses a tool Mai built on Relay's APIs.*
+The sealed suite holds a URL and a credential; the e2e harness holds the api's database.
+
 **These markers span only this block, deliberately** — moved during 067's planning, when
 they enclosed 118,636 bytes the agent-context hook would have replaced with three
 sentences.
