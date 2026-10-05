@@ -78,10 +78,18 @@ rather than builds, so the fix is its own chapter placed BEFORE it.
 
 **EXACTLY TWO TABLES CARRY A CUSTOMER IDENTIFIER — `users` AND `channels` — AND THE PLATFORM
 ALREADY DEMONSTRATES THE RIGHT ANSWER ON ONE.** Users: 8 of 8 routes take the identity and
-the upsert returns no uuid. Channels: 0 of 13, and the create returns the uuid first. The
-users side needs **one** change — the listing cursor is base64 of `{a, id}` and its own
-comment says *"OPAQUE IS NOT SECURITY"*, which is also where 4.23's ADR-37 reversal condition
-rests.
+the upsert returns no uuid. Channels: 0 of 13, and the create returns the uuid first.
+
+**AND THE ONE LEAK ON THE USERS SIDE DOES NOT EXIST — ADR-37 NAMES A ROUTE THE PLATFORM DOES
+NOT HAVE.** Its reversal condition calls the `GET /v1/users` listing cursor its one live
+edge. **There is no `GET /v1/users`**: `listingQuerySchema` has one consumer,
+`GET /v1/users/{externalId}/channels`, and the cursor keysets on `(channels.lastActivityAt,
+channels.id)` — a **channel** uuid, which all 13 routes accept after 4.22. Six of 068's
+artifacts inherited it and so did this file. **They did not agree with each other and
+disagree with the tree; they agreed with a published document, which is why two analysis
+passes reading the feature directory could not catch it.** ADR-37 comes out **stronger** —
+its conclusion holds with zero known live edges — and the amendment is 4.22's under FR-010.
+069 does not cite it, grepped.
 
 **THE 500 IS A FAILED CAST, WHICH MAKES THE FIX AND THE REPAIR ONE EDIT.**
 `'order-88412'::uuid` raises in Postgres before any `OR` can short-circuit, so a value that

@@ -15,9 +15,11 @@ uuid and the ten repository methods are untouched.**
 before any `OR` can help — so the chapter's central change also removes the error,
 and the two are the same edit rather than two.
 
-**The users half is one line and it matters to the chapter after this one.** Eight of
-eight user routes already take the identity; the only leak is the listing cursor,
-which is the single live edge in ADR-37's reversal condition.
+**The users half may be no lines at all, and finding that out is the work.** Eight of
+eight user routes already take the identity. The listing cursor every document calls
+the one live edge on ADR-37's reversal condition belongs to a different route and
+carries a **channel** uuid — so the chapter amends a published ADR under FR-010 and
+sweeps for a real leak rather than closing the named one.
 
 ## Technical Context
 
@@ -28,10 +30,11 @@ which is the single live edge in ADR-37's reversal condition.
 | **New service** | none |
 | **New table or column** | **none** — no migration |
 | **The mechanism** | an injectable pipe resolving `:channelId` at the boundary (R4) |
-| **Resolution order** | shape-based, identity wins the tie (R2) |
-| **Blast radius** | **6 files, 88 fence pages, 10 appendix hunks** (R6) — pass 1 raised this to 9/107/14 for three module registrations, pass 2 measured that the pipe needs none |
+| **Resolution order** | shape-based; **the identity wins the tie** — the procedure is T009's, two candidates priced (R2) |
+| **Blast radius** | **7 files, 101 fence pages, 17 appendix blocks / 66 hunks** (R6) — 84, then 107/9, then 88/6, now measured with its method written down; the move is `gauntlet.itest.ts`, which T031 edits |
 | **Regression surface** | **157 existing call sites** pass a uuid and must not change (R3) |
-| **Unknowns** | **what replaces `users.id` in the listing cursor** — Phase 2 |
+| **Added cost** | **one scoped `SELECT` per request on all 13 routes** — the handler's own read is not replaced. Measured at T023a (R4) |
+| **Unknowns** | **whether any internal key reaches a customer at all** — FR-006's sweep, Phase 4 |
 
 ## Constitution Check
 
@@ -123,7 +126,10 @@ comment. **Before code, because constitution VI's first bullet says so.**
 **3 — The resolution (P1).** The pipe, the repository read, the 13 `@Param` edits (**7 + 5 + 1**).
 Red first: an identifier that names nothing must be a named refusal.
 
-**4 — The cursor (P2).** The users half, with the compatibility path FR-007 requires.
+**4 — The sweep (P2).** Enumerate what the user surface returns, state the count,
+and close or record each internal key found. **Amend ADR-37 in both homes either
+way** — its named exception does not exist. If the sweep finds nothing, this phase is
+one document edit and the chapter says so.
 
 **5 — The rule (P3).** The FR-CHN amendment, and the clause that tells a future noun
 which identifier addresses it.
@@ -143,15 +149,18 @@ the checker's own replay.
 
 | thing | why justified | what would make it unjustified |
 |---|---|---|
-| 88 fence pages on one chapter | 13 routes contradict two clauses and a journey; the alternative was a milestone that builds, which rule 4 forbids | if the pipe turns out not to reach all 13, the design is wrong rather than the budget |
+| 101 fence pages on one chapter | 13 routes contradict two clauses and a journey; the alternative was a milestone that builds, which rule 4 forbids | if the pipe turns out not to reach all 13, the design is wrong rather than the budget |
 | Accepting two identifier forms | 157 call sites and every published client hold uuids | if a deprecation is ever wanted it is a later chapter with a window and a warning |
-| Touching `users` at all | the cursor is ADR-37's one live reversal edge, and the chapter is about identifiers | if the cursor's replacement needs a migration, it is its own chapter |
+| Touching `users` at all | a published ADR is falsified and FR-010 requires the amendment; and nobody has yet asked whether an internal key reaches a customer | if the sweep finds nothing and the ADR is amended, US2 is done — do not invent an edit to justify the phase |
 
 ## What this plan does not decide
 
-- **The cursor's replacement.** A keyset tiebreak must be unique and ordered;
-  `external_id` is unique per environment and the cursor is already scoped, so it is
-  a candidate and not a conclusion. Phase 2.
+- **Whether the cursor changes at all.** It carries a channel uuid every route
+  accepts, so FR-006 does not reach it. Phase 4's sweep decides, and the default is
+  to leave it alone.
+- **The procedure behind the tie-break.** The outcome is settled — the identity wins.
+  One query with an `order by` preference needs `EXPLAIN` before it is chosen (4.18);
+  identity-first costs a second round trip on all 157 uuid call sites. T009.
 - **Whether an ADR is written.** Predicted yes, checked at Phase 2.
 - **Whether the 500's swallowed cause is ever fixed.** R1 found it, 058-3 counts 22
   routes, and fixing one of 22 is worse than recording the class.

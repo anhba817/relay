@@ -58,20 +58,49 @@ channels have a uuid-shaped identifier and 0 have one equal to their own row id.
 |---|---|---|---|
 | **A** | key first, then identity | a customer names a channel with another channel's uuid | **they can never reach their own channel** — the key always wins |
 | **B** | identity first, then key | the same | the customer reaches their own; the other is still reachable by its uuid from a caller who has it |
-| **C** | shape-based: parse as a uuid → try key then identity; otherwise identity only | the same as A for uuid-shaped input | one query in both common cases |
+| **C** | shape-based: a value that cannot parse as a uuid is resolved as an identity and never cast | — the collision needs a uuid-shaped value | one query on the identity path |
 
-**DECISION: C, WITH B's TIE-BREAK.** A value that cannot parse as a uuid can only be
-an identity, so it costs one query and the cast never happens — **which is what
-removes the 500.** A value that does parse is ambiguous in principle, and the
-tie-break goes to the **identity**, because a customer who named a channel should
-reach the channel they named. The alternative strands them permanently with no error
-they can act on.
+**DECISION, IN TWO PARTS, BECAUSE THE FIRST VERSION OF THIS SECTION RAN THEM
+TOGETHER AND CONTRADICTED ITSELF.**
+
+**The outcome is settled: the IDENTITY wins a true tie.** A customer who named a
+channel must reach the channel they named; the other channel stays reachable by its
+uuid from any caller holding it, and the alternative strands somebody permanently
+with no error they can act on. That is B's tie-break and it is the half with an
+argument behind it.
+
+**The shape test is settled too**, and it is independent of the tie-break: a value
+that cannot parse as a uuid can only be an identity, so it costs one query and **the
+cast never happens — which is what removes the 500.**
+
+**THE PROCEDURE FOR A UUID-SHAPED VALUE IS NOT SETTLED, AND T009 OWNS IT.** Two
+candidates deliver identity-wins:
+
+```
+one query, explicit preference
+  where environment_id = $1 and (external_id = $2 or id = $2::uuid)
+  order by (external_id = $2) desc limit 1
+     one round trip. 4.18 found an `OR` can land in a `Filter:` instead of an
+     `Index Cond`, so this needs EXPLAIN before it is chosen, not after
+
+identity first, then the key
+  two round trips on every uuid-shaped value, which is all 157 existing call
+  sites — the cost R2 rejected "B everywhere" for
+```
+
+**What this section said before.** It tabled C as *"parse as a uuid → try key then
+identity"*, gave its collision consequence as *"the same as A"* — and A is *"they can
+never reach their own channel"* — and then decided for the identity six lines later.
+Key-then-identity-if-nothing-found means the **key** wins a true tie. The same
+contradiction reached `data-model.md`, `contracts/addressing.md`, and tasks T013 and
+T021, where the implementing task encoded one order and its asserting task the other.
+**An outcome and a procedure are different decisions, and writing them in one
+sentence is how the artifacts stopped disagreeing with the tree and started
+disagreeing with themselves.**
 
 **Alternatives considered.** *A* — simplest to describe and it is the one that
-strands a customer. *B everywhere* — correct and costs a failed identity lookup on
-every one of the 157 existing uuid call sites. *Refuse ambiguity with a 409* —
-honest, and it turns a working call into a broken one for a customer who did nothing
-wrong.
+strands a customer. *Refuse ambiguity with a 409* — honest, and it turns a working
+call into a broken one for a customer who did nothing wrong.
 
 ## R3 — 157 existing call sites, and the design must not touch any of them
 
@@ -105,7 +134,7 @@ route — one that read the channel from elsewhere would never run the pipe.
 | | design | fence cost | verdict |
 |---|---|---|---|
 | middleware | one registration in `app.module.ts` | 75 pages | **cannot work** |
-| **pipe** | `@Param("channelId", ChannelIdPipe)` | **88 pages · 10 hunks · 6 files** | **chosen** |
+| **pipe** | `@Param("channelId", ChannelIdPipe)` | **101 pages · 17 blocks · 7 files** (R6) | **chosen** |
 | service layer | resolve at the top of each method | 91 pages, ~13 sites | rejected |
 | repository | each method accepts either | spreads the ambiguity into ten queries | rejected |
 
@@ -138,6 +167,28 @@ dependencies, not enhancers** — and the analogy carried the conclusion past th
 evidence. The remedy it prescribed was three module edits and 19 fence pages of work
 that does nothing. **A reasoned premise is still a premise.**
 
+**AND A SECOND PROBE, BECAUSE THE FIRST ONE'S LESSON WAS NOT TO ASSUME TWICE.** A
+param-level pipe that throws and a body pipe that throws, in one app, both parameter
+orders, one real request each:
+
+```
+A  @Param(pipe) idx0, @Body(pipe) idx1   400 bad body            ran: body, param
+B  @Body(pipe) idx0, @Param(pipe) idx1   404 channel not found   ran: param, body
+C  guard + @Param(pipe)                  403 guard               ran: guard
+```
+
+**The HIGHER parameter index runs first, and both pipes run even after one throws.**
+All thirteen real signatures put `@Param("channelId")` at index 0 with any
+`@Body`/`@Query` validation above it, so **body validation keeps winning and a 400
+stays a 400** — which is what FR-002 and FR-009 rest on. Case `C` confirms guards
+still precede pipes, which is what disqualifies the middleware.
+
+**The clean result is the one nobody writes down.** It is here because the
+alternative was finding out at T023 that a refusal moved.
+
+**AND "BOTH PIPES RUN" IS NOT FREE** — the resolution query fires on requests already
+refused for a bad body. See the cost note at the end of this section.
+
 **There is no injectable pipe anywhere in this codebase**: `ZodValidationPipe` is
 `new`-ed at 21 call sites and carries no `@Injectable()`. So the design has no
 precedent here, which is why it was worth probing rather than assuming in either
@@ -149,7 +200,21 @@ the same mechanism chapter 4.21 found had kept six of seven stores correct witho
 anyone remembering. Everything downstream keeps receiving a uuid, so the ten
 repository methods are untouched.
 
-## R5 — The users side is one line, and it is where 4.23's ADR rests
+**AND THAT IS THE COST, NOT ONLY THE SELLING POINT.** The handlers still call
+`getChannelById`, `channelExists` or `channelVisibleTo` with the resolved uuid, so
+**the resolution is a second scoped `SELECT` on every one of the thirteen routes
+rather than a relocated one** — at R2's own figures, +1.094 to +1.475 ms and one
+round trip per request, plus the refused-body requests the ordering probe showed it
+runs on anyway.
+
+Three ways out, none free: let the pipe hand the row downstream and delete the
+handler's read (touches the ten methods the design exists to leave alone); cache the
+resolution on the request object (state nobody can see); or **pay it and say so.**
+Paying it is the default here — the chapter's subject is correctness, and a doubled
+read on a route that was answering 500 is not the expensive part. **It is measured at
+T023a and published**, because every other chapter in Part 4 priced its instrument.
+
+## R5 — The users side, and the leak that is not there
 
 All eight user routes take the identity and the upsert returns no uuid, measured:
 
@@ -158,45 +223,95 @@ POST /v1/users   -> external_id, status, display_name, avatar_url, metadata, kin
 POST /v1/channels -> id, external_id, type, name, metadata            <- uuid first
 ```
 
-The single leak is the listing cursor — `users.schema.ts:194`, base64 of
-`{a: last_activity_at, id: users.id}` — whose own comment reads *"OPAQUE IS NOT
-SECURITY. Base64 of JSON is readable by anyone who wants to read it."*
-
-**AND IT IS LOAD-BEARING FOR THE CHAPTER AFTER THIS ONE.** ADR-37's reversal
-condition is *"if `users.id` ever becomes resolvable to a person by a party outside
-the platform"*, and names this cursor as the one live edge. Closing it narrows that
-condition from a known exception to none.
-
-**WHAT REPLACES IT IS THE PLAN'S QUESTION, NOT THIS SECTION'S.** A keyset cursor
-needs a tiebreak that is unique and ordered; `users.id` was chosen because it is
-both. An `external_id` is unique per environment and the cursor is already
-environment-scoped, so it is a candidate — and FR-007 requires that a cursor issued
-before this chapter keeps working or is refused by name, which is a version field or
-a dual-read.
-
-## R6 — What the fence chain charges, counted now
+**AND THE ONE LEAK THIS SECTION PUBLISHED DOES NOT EXIST.** It said the single leak
+was the `GET /v1/users` listing cursor, base64 of `{a: last_activity_at, id:
+users.id}`. Analysis pass 3 opened the controller:
 
 ```
-                                 pages   appendix   touched
-channel-id.pipe.ts                   0   0          NEW FILE
-users.schema.ts                      4   0          the cursor payload
-channels.controller.ts               8   0          7 @Param edits
-users.controller.ts                  5   2          1 @Param edit + the cursor
-messages.controller.ts              19   1          5 @Param edits
-repository.ts                       52   7          one resolution read
-                                 -----  --
-                                    88  10          across 6 files
+users.controller.ts routes      POST /v1/users · GET/PATCH/DELETE :externalId
+                                GET :externalId/channels · PUT …/channels/:channelId/read
+                                DELETE :externalId/data · POST/DELETE :externalId/ban
+                                — THERE IS NO GET /v1/users
+listingQuerySchema, consumers   one: users.controller.ts:70, @Get(":externalId/channels")
+listChannelsForUser keyset      (channels.lastActivityAt, channels.id)   repository.ts:4878
+nextCursor                      { activityAt: last.lastActivityAt, id: last.id }  :4915
+targets.ts, derived from a boot no GET /v1/users row
 ```
 
-**88 PAGES ACROSS 6 FILES — AND THIS NUMBER MOVED TWICE, WHICH IS THE RECORD WORTH
-KEEPING.** The milestone's plan estimated 84, omitting `users.schema.ts`. Analysis
-pass 1 raised it to **107 across 9**, adding the three module files it reasoned the
-pipe must be registered in. **Analysis pass 2 measured that the registration is not
-needed and took them back out.**
+**The route is `GET /v1/users/{externalId}/channels` and the cursor carries a CHANNEL
+uuid.** The row it points at already returns that uuid as a top-level `id`, and after
+this chapter all thirteen routes accept it — so FR-006's own test, *an identifier
+that is Relay's alone **and that no route accepts***, does not flag it even once.
 
-**So the bill was wrong in both directions before it was right**, and only one of the
-three figures came from running anything. 4.15's rule says count the bill before the
-work; this says the count is only as good as the design claim underneath it.
+**THE CLAIM CAME FROM A PUBLISHED DOCUMENT, WHICH IS WHY TWO PASSES READING THIS
+DIRECTORY COULD NOT CATCH IT.** `docs/05-sad.md`'s ADR-37, shipped by 4.21:
+
+> **Reversal condition.** If `users.id` ever becomes resolvable to a person by a
+> party outside the platform, this rule fails […] **One live edge is already known
+> and bounded**: the `GET /v1/users` listing cursor is base64 of `{a, id}` […] so a
+> customer who paged before an erasure holds the uuid.
+
+Six artifacts in this feature inherited it — spec, this section, `data-model.md`,
+`contracts/addressing.md`, the plan's complexity table and four tasks — and so did
+`CLAUDE.md`. **It is not a case of artifacts agreeing with each other and not with
+the tree; they agreed with a document, and the document was wrong.**
+
+**ADR-37 IS STRONGER THAN IT WAS PUBLISHED, NOT WEAKER.** Its conclusion — a key into
+an erased row names nobody — stands, and its one bounded exception turns out not to
+exist. The reversal condition holds with **zero known live edges**. FR-010 makes the
+amendment this chapter's work, in both homes.
+
+**WHAT IS NOW OPEN.** *Where, if anywhere, does `users.id` reach a caller?* The
+sweep this pass started is not an answer: `users.id` is selected at eight sites in
+`repository.ts` and every one read so far is internal, with the services stripping it
+before the wire — consistent with the upsert response above, and **a reading rather
+than a measurement**, taken while the lane was down. Two near misses worth recording
+because each looked like the leak for a minute:
+
+```
+channel listing, last_message.user.id   = user_external_id, not users.id   :4908
+upsertUser's returned row carries id    stripped by the service before the wire
+```
+
+SC-006 asks for the count. It was a formality while the leak was known; it is the
+question now, and T026 is where US2 finds out whether it has a subject at all.
+
+## R6 — What the fence chain charges, counted now, with the method written down
+
+**The method, because the number has moved three times and nobody could reproduce
+it.** `pages` is pages whose titled fence ends with that path; `blocks` is titled
+fences for it in `fences/post-series.md`; `hunks` is `@@` lines inside those blocks.
+
+```
+                                 pages  blocks  hunks
+channel-id.pipe.ts                   0   0        0   NEW FILE
+users.schema.ts                      4   0        0   the cursor payload, if US2 keeps one
+channels.controller.ts               8   0        0   7 @Param edits
+users.controller.ts                  5   1        1   1 @Param edit
+messages.controller.ts              19   1        1   5 @Param edits
+repository.ts                       52   7       50   one resolution read
+gauntlet.itest.ts                   13   8       14   T031's new-form attack
+                                 -----  --      ---
+                                   101  17       66   across 7 files
+```
+
+**THE BILL OMITTED A FILE A TASK EDITS.** T031 adds the new-form attack to
+`gauntlet.itest.ts`, which is fenced on **13 pages and 8 appendix blocks**. This is
+066's finding reproduced on the chapter after it — *the fence bill named all six
+files at ANALYSIS, including `gauntlet.itest.ts`* — and the point of 4.15's rule is
+that the count happens early enough to change the sequencing.
+
+**`targets.ts` IS 13 PAGES AND NEEDS NO ROW**, checked rather than assumed: it keys
+on method and path, and this chapter adds no route and renames no token.
+
+**AND `users.controller.ts` WAS 2 AND IS 1.** One titled block in the appendix, not
+two. The earlier column was never derived from the tree.
+
+**THE FIGURE HAS NOW MOVED THREE TIMES**: the milestone's plan said 84 (omitting
+`users.schema.ts`), analysis pass 1 said 107 across 9 (adding three module files the
+pipe does not need), pass 2 said 88 across 6, and pass 3 measures **101 across 7**.
+Only the last two came from running anything, and this is the first with its method
+written down. **A count nobody can reproduce is a count that moves.**
 
 ## R7 — What this chapter must not do
 

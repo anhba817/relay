@@ -44,7 +44,7 @@ the other.**
 |---|---|---|
 | routes taking the identity | **8 of 8** | **0 of 13** |
 | create response | `external_id, status, display_name, …` — **no uuid** | `id, external_id, type, …` — **uuid first** |
-| uuid reaching the customer | only inside the listing cursor | in every create response, and required afterwards |
+| uuid reaching the customer | **nowhere yet found** — see below | in every create response, and required afterwards |
 
 ```
 GET  /v1/channels/{externalId}            500
@@ -62,12 +62,18 @@ channel `order-88412` with zero lookup tables."*
 not one, and the refusal is an internal error — so the natural first attempt tells a
 developer the platform is broken rather than that they used the wrong key.
 
-**THE USERS SIDE IS ALMOST RIGHT AND LEAKS IN ONE PLACE.** `GET /v1/users` paginates
-with a cursor that is base64 of `{a: last_activity_at, id: users.id}`, and the
-schema's own comment says *"OPAQUE IS NOT SECURITY. Base64 of JSON is readable by
-anyone who wants to read it."* So the one internal key users never otherwise expose
-reaches the customer anyway, and chapter 4.23's ADR-37 has a reversal condition
-resting on it.
+**THE USERS SIDE IS ALMOST RIGHT, AND THE ONE LEAK EVERY DOCUMENT NAMES IS NOT
+THERE.** ADR-37 says the `GET /v1/users` listing cursor is base64 of `{a, id}` and
+calls it the one live edge on its reversal condition. Measured: **there is no `GET
+/v1/users` route**, the cursor belongs to `GET /v1/users/{externalId}/channels`, and
+the `id` it carries is a **channel** uuid — which every one of these thirteen routes
+accepts after this chapter.
+
+So the chapter inherits a correction rather than a repair. **ADR-37 comes out
+stronger**: its conclusion holds and its one bounded exception does not exist, which
+FR-010 makes this chapter's work in both of the ADR's homes. And the question US2
+was built to answer is open again — *does any internal key reach a customer at all?*
+— which is measured before anything is built.
 
 ---
 
@@ -96,21 +102,29 @@ exercise every route beneath that prefix using only that identifier.
 4. **Given** a client that has stored uuids from before this chapter, **when** it calls
    with a uuid, **then** every route answers as it did.
 
-### User Story 2 - The internal key stops reaching the customer (Priority: P2)
+### User Story 2 - Find out what internal key reaches the customer, and close it (Priority: P2)
 
 Nothing a customer receives contains an identifier they cannot use and were never
-meant to hold.
+meant to hold. **The story begins with a measurement, because the leak every
+document named turned out not to exist.**
 
-**Independent test**: page the user listing and the channel surface, and find no
-internal key in anything returned.
+**Independent test**: sweep what the user surface returns, state the count, and show
+that whatever it finds is either closed or recorded with a reason.
 
 **Acceptance scenarios**
 
-1. **Given** a page of the user listing, **when** its cursor is decoded, **then** it
-   carries no value that identifies a row in Relay's own terms.
-2. **Given** a cursor issued before this chapter, **when** it is presented afterwards,
-   **then** it either continues to work or is refused with a named cause — never a 5xx
-   and never a silently wrong page.
+1. **Given** the user surface after this chapter, **when** every response shape a
+   customer can reach is enumerated, **then** the count of internal keys among them
+   is stated, including when it is zero.
+2. **Given** an internal key the sweep finds, **when** the chapter closes, **then**
+   it is either no longer returned or recorded as a deliberate exception with its
+   reason.
+3. **Given** a value the chapter changes in an opaque token, **when** one issued
+   before the chapter is presented afterwards, **then** it either continues to work
+   or is refused with a named cause — never a 5xx and never a silently wrong page.
+
+**If the sweep finds nothing, this story is one document amendment and the chapter
+says so.** A story that reports zero after looking is not a story that failed.
 
 ### User Story 3 - The rule is written down so the next noun gets it right (Priority: P3)
 
@@ -151,14 +165,18 @@ identifier addresses each noun and why.
   today, with unchanged behaviour.
 - **FR-003**: Where both could match, the resolution order MUST be defined, documented
   and tested.
-- **FR-004**: An identifier that names nothing MUST produce a refusal that names the
-  cause. **No input to these routes may produce a 5xx.**
+- **FR-004**: An identifier that names nothing MUST produce a refusal whose **code**
+  names the cause. The **message** stays constant: FR-TEN-05 requires a foreign
+  channel and an absent one to answer identically, which `channels.service.ts`
+  already does deliberately. **No input to these routes may produce a 5xx.**
 - **FR-005**: Resolution MUST be scoped to the calling tenant's environment, and that
   scope MUST be demonstrated by removing it and observing a test fail.
-- **FR-006**: No value a customer receives may contain an identifier that is Relay's
-  alone and that no route accepts.
-- **FR-007**: An identifier issued to a customer before this chapter MUST keep working
-  or be refused with a named cause.
+- **FR-006**: The values a customer receives MUST be swept for identifiers that are
+  Relay's alone and that no route accepts, the count stated, and each one found
+  either removed or recorded as a deliberate exception with its reason.
+- **FR-007**: If the chapter changes what an opaque token carries, one issued before
+  it MUST keep working or be refused with a named cause. **Conditional on FR-006's
+  sweep finding something to change.**
 - **FR-008**: The specification MUST state which identifier addresses a noun and on
   what basis, so a future noun is decided rather than guessed.
 - **FR-009**: Nothing outside this chapter's subject may change behaviour.
@@ -190,8 +208,9 @@ identifier addresses each noun and why.
   their own channel, and the other tenant's rows are unchanged.
 - **SC-005**: Removing the tenant scope from the resolution turns at least one named
   test red.
-- **SC-006**: Nothing returned by any route contains an internal key a customer cannot
-  use — counted, with the count stated.
+- **SC-006**: Every response shape the user surface can return is enumerated and the
+  internal keys among them counted, **with the count stated whether it is zero or
+  not**, and each one disposed of.
 - **SC-007**: Journey 3 Stage 2 completes with the order number alone, which chapter
   4.23's milestone then asserts end to end.
 - **SC-008**: `git diff --name-only part4-ch21..HEAD` contains no file outside this
@@ -199,6 +218,8 @@ identifier addresses each noun and why.
 - **SC-009**: The fence chain reports 0 and all six tutorial gates exit 0.
 - **SC-010**: The CI error set is compared per error against the pre-chapter baseline,
   in both directions.
+- **SC-011**: The resolution's added cost is measured per route and published — one
+  scoped `SELECT` that the handler's own read does not replace.
 
 ---
 
@@ -208,9 +229,10 @@ identifier addresses each noun and why.
   with an `external_id` column. Messages, media, webhooks and environments have no
   customer-supplied identifier, so a Relay identifier is correct for them and they are
   out of scope.
-- **Users need one change, not thirteen.** All eight user routes already take the
-  identity and the upsert returns no uuid; the listing cursor is the single place an
-  internal key reaches a customer.
+- **Users may need no change at all.** All eight user routes take the identity and
+  the upsert returns no uuid. The listing cursor every document named as the single
+  leak belongs to a different route and carries a **channel** uuid, so US2 opens with
+  a sweep rather than an edit, and ADR-37 is amended either way.
 - **Accepting both is a transition, not a design.** Published clients hold uuids. The
   chapter does not propose removing that acceptance, and whether it is ever removed is
   a question for a later chapter with a deprecation path.

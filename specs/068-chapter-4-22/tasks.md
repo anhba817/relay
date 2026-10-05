@@ -14,16 +14,16 @@ rule 4 and it is why this chapter exists apart from the milestone that found it.
 - [ ] T002 Record every lane's opening exit code, **each with its `Cached:` line and elapsed time, or under `--force`**. Feature 069's T002 opened with **all three lanes FULL TURBO** — `Cached: N of N`, 10ms, every counted line replayed. **`turbo run lint` is not a task**; the root task is `lint:root`.
 - [ ] T003 Run all six tutorial gates from `relay-tutorial` and record each counted line. At 069's Phase 1: `check:fences` **291 files across 64 chapters**, `check:figures` **326 figures**, `check:docs` 29 revisions to 1.28.
 - [ ] T004 Capture the CI error-set baseline for the per-error comparison at close (SC-010). 069's T004 read **0 distinct errors** on a green run; an empty diff between two green runs carries nothing and the record should say so.
-- [ ] T005 **Re-derive the fence bill** rather than copy R6's. R6 says **88 pages across 10 hunks across 6 files** — the figure moved to 107/14/9 at analysis pass 1 and back at pass 2, which measured that the pipe needs no module registration; 069's T005 found two of its inherited figures already stale by one hunk each. `grep -rl 'title="[^"]*<file>"' app/ fences/` is the instrument.
+- [ ] T005 **Re-derive the fence bill** rather than copy R6's. R6 says **101 pages, 17 appendix blocks, 66 hunks, across 7 files** — and it now carries the METHOD, because the number has moved four times (84 → 107 → 88 → 101) and nobody could reproduce it. **`gauntlet.itest.ts` is the move**: T031 edits it and three bills in a row left it out, which is 066's finding on the chapter after it. `grep -rl 'title="[^"]*<file>"' app/ fences/` counts pages; blocks and `@@` lines come from `fences/post-series.md`.
 - [ ] T006 **Re-measure R1–R3 before trusting them**: the 500 on `GET /v1/channels/{externalId}`, the `invalid input syntax for type uuid` from Postgres, both lookups' buffers and timings, **0 of 41,768** uuid-shaped external ids, and the **157** call sites. They were taken on 2026-10-05 and the lane moves.
 
 ---
 
 ## Phase 2: The decisions (BLOCKING)
 
-- [ ] T007 **Decide what replaces `users.id` in the listing cursor** in `specs/068-chapter-4-22/baseline.txt`, with the losing argument written out. A keyset tiebreak must be unique and ordered. `external_id` is both **within an environment**, and the cursor is already environment-scoped — a candidate, not a conclusion. **Price the alternative**: keep the uuid and accept that ADR-37's reversal condition stays live.
-- [ ] T008 **Decide the cursor's compatibility path** (FR-007). A cursor issued before this chapter must keep working or be refused by name. Two shapes: a **version field** in the payload, or a **dual-read** that accepts either. **A silently wrong page is the forbidden outcome** — a cursor the new reader misinterprets skips or repeats rows and the caller cannot see it.
-- [ ] T009 **Decide whether the tie-break is a clause or a comment.** R2 chose identity-wins. **Constitution VI's first bullet says new behaviour gets a requirement first**, and "which identifier wins when both could match" is behaviour a customer can observe. If it is a clause, T034 writes it before T013 is coded.
+- [ ] T007 **Confirm pass 3's finding against a running api before anything rests on it**: there is no `GET /v1/users` route, `listingQuerySchema`'s one consumer is `GET /v1/users/{externalId}/channels`, and the cursor carries `channels.id`. Pass 3 read the controller and `targets.ts` with the lane down. **A published ADR is about to be amended on this**, so it is measured first.
+- [ ] T008 **Decide the compatibility path ONLY IF T026's sweep gives a reason to change an opaque token** (FR-007). Two shapes: a **version field** in the payload, or a **dual-read** that accepts either. **A silently wrong page is the forbidden outcome** — a cursor the new reader misinterprets skips or repeats rows and the caller cannot see it. **The default is to change nothing**, which is the only option with no silently-wrong-page risk at all.
+- [ ] T009 **Decide the PROCEDURE behind the tie-break, and whether the OUTCOME is a clause or a comment.** The outcome is settled: **the identity wins**. The procedure is not, and R2's two candidates are one query with `order by (external_id = $2) desc` — **which needs `EXPLAIN` first, because 4.18 found an `OR` can land in a `Filter:`** — or the identity looked up before the key, costing a second round trip on all 157 uuid call sites. **Constitution VI's first bullet**: which identifier wins is behaviour a customer can observe, so if it is a clause, T034 writes it before T013 is coded.
 - [ ] T010 **Decide whether this chapter needs an ADR**, and record the reasoning either way. Predicted **yes**: *which identifier addresses a noun* has a reversal condition, will be cited by every future table carrying a customer identifier, and extends ADR-18 from users to channels. **4.21's plan predicted no and was wrong; 4.23's predicted yes.** A prediction is worth nothing without the check.
 - [ ] T011 **Check the plan's premise by reading, not grepping.** Open `channels.controller.ts`, `messages.controller.ts`, `users.controller.ts`, `users.schema.ts` and the repository methods behind each, and confirm the 13 `@Param` sites and what the pipe must return. **065's T007 said fourteen sites and the real number was five, because a grep counts mentions.**
 - [ ] T011a **Confirm an injectable pipe can take the request-scoped `Repository`** — by writing the smallest one that compiles and boots, not by reasoning about Nest's scope bubbling. **`MediaModule` declared a service it did not provide, compiled, typechecked, linted, and failed at the first request** (4.10). **Only a running app answers this.** R4's probe got a request-scoped dependency into a param-level pipe and read it back through a real request — **so what is left is the real `Repository`, not the shape.**
@@ -38,7 +38,7 @@ rule 4 and it is why this chapter exists apart from the milestone that found it.
 route beneath that prefix with it.
 
 - [ ] T012 [US1] **Write the red assertion FIRST**, in `relay-platform/services/api/src/channels/addressing.itest.ts`: `GET /v1/channels/{an identifier nobody used}` must answer **404 with a named cause**. **It is 500 today** — measured — and it is the only assertion in this feature that can fail before a line is written.
-- [ ] T013 [US1] Add the scoped resolution to `relay-platform/services/api/src/db/repository.ts`: given a path segment, return the channel's key or nothing, **scoped to the repository's own `environment_id`**. R2's order: **parses as a uuid → key then identity; otherwise identity only, and the cast never happens.** That last clause is what removes the 500.
+- [ ] T013 [US1] Add the scoped resolution to `relay-platform/services/api/src/db/repository.ts`: given a path segment, return the channel's key or nothing, **scoped to the repository's own `environment_id`**. **Two independent rules, which the first draft of four artifacts ran together into a contradiction.** (1) A value that cannot parse as a uuid is resolved as an identity and **the cast never happens** — that is what removes the 500. (2) For a uuid-shaped value the **identity wins a true tie**, by whichever procedure T009 chose. **Do not write "key then identity"**: that makes the key win, which is the outcome R2 rejected and which T021 asserts against.
 - [ ] T014 [US1] Write `relay-platform/services/api/src/channels/channel-id.pipe.ts` — an injectable `PipeTransform` taking the request-scoped `Repository`. **The scope comes from the constructor, not from a predicate somebody wrote** (4.21's mechanism). A value that resolves to nothing throws the route's 404. **No module file is edited and that was measured** (R4): a param-level pipe is instantiated from the module's injector without being in `providers`. **What must be resolvable is `Repository`, which already is a provider in all three** — assert that rather than assume it, because it is what a future module split would quietly break.
 - [ ] T015 [US1] Apply the pipe to all **7** `@Param("channelId")` sites in `relay-platform/services/api/src/channels/channels.controller.ts`. **Seven, not eight** — counted from the decorators at analysis pass 1, where three artifacts said eight and reached a total of fourteen while calling it thirteen.
 - [ ] T016 [US1] Apply it to all **5** sites in `relay-platform/services/api/src/messages/messages.controller.ts`. **The `:channelId` token stays** — renaming it would touch every `@Param` string twice and the documentation is where the name changes.
@@ -46,8 +46,9 @@ route beneath that prefix with it.
 - [ ] T017a [US1] **Boot the composed api and make one request to each of the three controllers** before asserting anything. **Not to check three edits happened — there are none — but because whether the pipe resolves is a property of each module's own injector**, and the compiler, the typechecker and the linter all accept its absence. R4's case `C` is the failure this would catch, by name.
 - [ ] T018 [US1] **Assert all 13 routes with the customer's identifier, per route rather than in aggregate** (SC-001). A loop that reports one number hides which route regressed.
 - [ ] T019 [US1] **Assert all 13 with the uuid, the same way** (SC-002, FR-002). **This is 157 existing call sites' insurance** and the reason R2 chose a shape test: a uuid takes the path it takes today.
-- [ ] T020 [US1] **Assert no input produces a 5xx** (SC-003): a malformed value, an absent identifier, an absent uuid, and one belonging to another tenant — on every route. **The 500 is the chapter's subject and a single route's fix is not the claim.**
-- [ ] T021 [US1] **Assert the collision**, which is constructed rather than observed: a channel whose `external_id` is another channel's uuid. **0 of 41,768 have one.** The identity wins, and the other channel stays reachable by its uuid.
+- [ ] T020 [US1] **Assert no input produces a 5xx** (SC-003): a malformed value, an absent identifier, an absent uuid, and one belonging to another tenant — on every route. **Include a percent-encoded slash and a percent sign**, which are legal in a 255-character `external_id` and were only ever a request body before. **The 500 is the chapter's subject and a single route's fix is not the claim.**
+- [ ] T020a [US1] **Assert the two refusals the pipe REORDERS, rather than discovering them at T023.** Measured: `@Param("channelId")` sits at index 0 in all 13 signatures and Nest runs the HIGHER index first, so every `@Body`/`@Query` 400 still wins — that one is unchanged and worth an assertion saying so. **The one that does move**: `GET /v1/channels/{absent}` with a user token whose external id has no row is `400 "unknown user"` today (`channels.controller.ts:126`) and `404` after the pipe. Decide it, record it under FR-009, and assert whichever answer is chosen.
+- [ ] T021 [US1] **Assert the collision**, which is constructed rather than observed: a channel whose `external_id` is another channel's uuid. **0 of 41,768 have one.** The identity wins — **this is the assertion T013 must be written against, not the other way round.**
 - [ ] T022 [US1] **Assert tenancy twice** (SC-004): the same identifier in two environments resolves to the caller's own, and a uuid belonging to another tenant answers 404 **indistinguishably from absent** once `request_id` is stripped (4.11's rule).
 - [ ] T023 [US1] **Check FR-009 per action**: re-run `channels`, `messages`, `membership` and `users` suites **unedited**, and the api integration lane. **157 call sites are the regression surface** and this is what measures it.
 
@@ -57,9 +58,12 @@ route beneath that prefix with it.
 
 **Goal**: nothing a customer receives carries an identifier they cannot use.
 
-- [ ] T024 [US2] Change the listing cursor in `relay-platform/services/api/src/users/users.schema.ts` per T007, with T008's compatibility path.
-- [ ] T025 [US2] **Assert a cursor issued before this chapter** either works or is refused by name — **never a silently wrong page**. Construct the old payload by hand; a test that only round-trips the new one cannot see this.
-- [ ] T026 [US2] **Count what the API returns that a caller cannot use** (SC-006) and state the number. The channel create still returns `id`; decide whether that stays — it is information a customer may keep and no longer must.
+- [ ] T023a [US1] **Measure what the resolution costs** (SC-011): the added scoped `SELECT` per route, with and without the pipe, on at least a read and a write. **The handler's own `getChannelById` / `channelExists` / `channelVisibleTo` is NOT replaced** — the resolution is a second round trip, and the ordering probe showed it fires even on requests refused for a bad body. Publish the figure; every other Part 4 chapter priced its instrument.
+
+- [ ] T026 [US2] **FIRST, AND THE PHASE DEPENDS ON IT: sweep what the user surface returns and count the internal keys** (SC-006). Enumerate every response shape a customer can reach — not every repository method — and state the number **including when it is zero**. Starting points pass 3 left: `users.id` is selected at eight sites in `repository.ts`, all read so far internal; the channel listing's `last_message.user.id` is a user **external** id; `upsertUser`'s row carries `id` that the service strips. The channel create still returns `id`, which is now information a customer may keep and no longer must.
+- [ ] T024 [US2] **Only if T026 found something**: close it, and if that means changing an opaque token, take T008's compatibility path. **An empty sweep closes this task with its count, not with an invented edit.**
+- [ ] T025 [US2] **Only if T024 changed a token**: assert one issued before this chapter either works or is refused by name — **never a silently wrong page**. Construct the old payload by hand; a test that only round-trips the new one cannot see this.
+- [ ] T026a [US2] **Amend ADR-37 in BOTH homes regardless of what the sweep finds** (FR-010) — `docs/05-sad.md:747` and the argument in `docs/06-adr-deep-dives.md`. Its reversal condition names *"the `GET /v1/users` listing cursor"* as its one live edge and **there is no such route**; the cursor that exists carries a channel uuid every one of the 13 routes accepts. **The ADR gets stronger**: its conclusion holds with zero known live edges. 4.5's rule — an ADR lives in two documents and ten passes amended only the summary.
 
 ---
 
@@ -74,7 +78,7 @@ route beneath that prefix with it.
 ## Phase 6: The probes
 
 - [ ] T030 **Delete the tenancy scope from the resolution and re-run** both the addressing suite and `gauntlet.itest.ts`, recording which turn red (SC-005). **4.21 found three of four scoped arms invisible to a single-mutation probe** — if nothing goes red, the missing thing is a test.
-- [ ] T031 **Add the gauntlet attack for the new form** in `relay-platform/services/api/src/isolation/gauntlet.itest.ts`: another tenant's channel identifier must not resolve. Constitution VI's third bullet names that suite as gating releases, and a new way to name a channel is a new way to name somebody else's.
+- [ ] T031 **Add the gauntlet attack for the new form** in `relay-platform/services/api/src/isolation/gauntlet.itest.ts`: another tenant's channel identifier must not resolve. Constitution VI's third bullet names that suite as gating releases, and a new way to name a channel is a new way to name somebody else's. **This file is 13 fence pages and 8 appendix blocks** — three bills in a row omitted it, and T005 now carries it.
 - [ ] T032 Run `python3 specs/045-part-3-rework/check-lane-scope.py` and record its **counted line**. 78 files at 4.21's close; this chapter adds one.
 - [ ] T033 **Re-measure the coverage pins this chapter's edits could move**, then **probe both halves through `pnpm coverage`** — a key matching no file must be silent, an impossible pin on a real file must fire. **4.23's probe caught its own pin that way.** `channel-id.pipe.ts` is new and needs one; pin **below** the measured value.
 
@@ -85,8 +89,8 @@ route beneath that prefix with it.
 - [ ] T034 **Read FR-CHN-01, FR-CHN-02, FR-CHN-08 and FR-USR-01 before editing any**, and record what the reading found — **including *nothing to amend* if that is the answer**.
 - [ ] T035 Read the clauses **beside** them while the file is open. 4.21's T041 found FR-MOD-03 one row above FR-MOD-04 and in direct tension with it, which nobody had written down.
 - [ ] T036 Add revision row **1.29** to `docs/04-srs.md`. **Newest LAST** — `check-revision-order` caught 1.28 inserted before 1.27 on the first run after the edit.
-- [ ] T037 **If T010 decided an ADR is needed, write it into BOTH homes** — the summary in `docs/05-sad.md` and the argument in `docs/06-adr-deep-dives.md`. 4.5 found an ADR lives in two documents and ten passes amended only the summary. **If none, record that as DONE with the reason.**
-- [ ] T038 Amend `docs/05-sad.md` where this chapter changes what a section claims — **and check every sentence in the section you edit** (4.21 found three of four false).
+- [ ] T037 **If T010 decided a NEW ADR is needed, write it into BOTH homes** — the summary in `docs/05-sad.md` and the argument in `docs/06-adr-deep-dives.md`. 4.5 found an ADR lives in two documents and ten passes amended only the summary. **If none, record that as DONE with the reason.** **T026a's amendment to ADR-37 happens either way** and is not this task.
+- [ ] T038 Amend `docs/05-sad.md` where this chapter changes what a section claims — **and check every sentence in the section you edit** (4.21 found three of four false). **ADR-37's block at :730–752 is the one already known to be wrong**, and T026a owns it; this task is for everything else, which includes any section asserting a channel is addressed by a uuid.
 - [ ] T039 **Amend `docs/03-journey-map.md` Stage 2**, which asserts *"channel retrieval by external ID"* and cited no clause. After this chapter it has one. **That is the predicate 4.23 publishes, moving by one.**
 - [ ] T040 Amend **both** Part 4 tables — `docs/12` and `docs/07`, this chapter's row, marked CLOSED and SHIPPED. **Match on the title**; this chapter's row has `—` in `docs/12`'s first column by design.
 - [ ] T041 [P] Sweep `docs/` for feature-local ids **both ways**. **Use `git diff <tag> -- docs/`, not `<tag>..HEAD`** — the two-dot form reads committed state and reported a confident 0 for 4.21 while two leaked ids sat in the working tree.
@@ -127,8 +131,8 @@ route beneath that prefix with it.
 - [ ] T065 Compare the CI error set **per error** against T004's, both directions (SC-010). **If both runs are green the diff carries nothing** — say so.
 - [ ] T066 If CI is red, fix the platform, then **re-dump, re-hunk and push both** — repairing a platform file invalidates the appendix hunks that publish it (060).
 - [ ] T067 Tag `part4-ch22` in `relay-platform` and the superproject, annotated, on a commit CI proved green.
-- [ ] T068 Write the `CLAUDE.md` entry under 067's convention — headline, measurement block, cited findings, and a one-line digest of the rest. Headroom was **56,799** after the plan.
-- [ ] T069 **Hand off to 069 / chapter 4.23.** Its Stage 2 assertion, its T007 (four options for a lookup that now exists) and its quickstart §3 were all written against a platform where this chapter had not shipped. **Update 069's spec, research R2 and tasks to match what is now true**, and record in both features' baselines that the milestone's premise moved.
+- [ ] T068 Write the `CLAUDE.md` entry under 067's convention — headline, measurement block, cited findings, and a one-line digest of the rest. Headroom was **56,133** at analysis pass 3; re-measure, because it has moved every time anyone looked.
+- [ ] T069 **Hand off to 069 / chapter 4.23.** Its Stage 2 assertion, its T007 (four options for a lookup that now exists) and its quickstart §3 were all written against a platform where this chapter had not shipped. **Update 069's spec, research R2 and tasks to match what is now true**, and record in both features' baselines that the milestone's premise moved. **069 does NOT reference ADR-37 or the cursor** — grepped at analysis pass 3, against `CLAUDE.md`'s claim that 4.23's reversal condition rests on it — so T026a's amendment needs no handoff. **`CLAUDE.md`'s 068 block carries the false cursor claim and is corrected there**, not here.
 
 ---
 
@@ -144,9 +148,11 @@ Phase 2 (T007–T011a)  BLOCKING. T011a gates the whole design: if a pipe cannot
                       reasoning from a rule that was real and did not apply, and
                       prescribed three module edits that do nothing
       ↓
-Phase 3 (T012–T023)   US1 — the MVP. T012 first; it is the only red one
+Phase 3 (T012–T023a)  US1 — the MVP. T012 first; it is the only red one
       ↓
-Phase 4 (T024–T026)   US2 — independent of US1
+Phase 4 (T026 → T024  US2 — independent of US1. T026's SWEEP RUNS FIRST and decides
+          → T025,      whether T024 and T025 exist at all; T026a is unconditional,
+          T026a)       because the ADR is wrong either way
       ↓
 Phase 5 (T027–T029)   US3 — T027 before T013 merges (constitution VI bullet 1)
       ↓
@@ -163,6 +169,8 @@ with reasoning about scope bubbling.
 - **Phase 1**: T003, T004 and T005 are independent.
 - **Phase 3**: T015, T016 and T017 touch three different controllers — **[P] once
   T014 has written the pipe**, and not before.
+- **Phase 4**: T026a is [P] with everything — it amends a document and waits on no
+  measurement.
 - **Phase 5**: T028 is [P].
 - **Phase 7**: T041 and T043 are [P].
 - **Phase 8**: T047 and T055 are [P].
@@ -172,7 +180,7 @@ with reasoning about scope bubbling.
 | story | independently testable by |
 |---|---|
 | **US1** | create a channel under a customer identifier; exercise all 13 routes with it and with the uuid |
-| **US2** | page the user listing; decode the cursor and find nothing a caller cannot use |
+| **US2** | sweep the user surface's response shapes, state the internal-key count, and show each one closed or recorded |
 | **US3** | read the amended clauses and answer *which identifier addresses this noun* without reading code |
 
 ## MVP
@@ -188,18 +196,22 @@ cursor and the clause are what make it complete and honest.
 than grepped, **all twenty are covered in substance**:
 
 ```
-FR-001 every channel route    T013–T018    FR-006 nothing unusable returned  T024·T026
-FR-002 the uuid still works   T019         FR-007 old cursors                T008·T025
-FR-003 order defined+tested   T009·T021·T027  FR-008 the rule written        T027·T029
-FR-004 no 5xx                 T012·T020    FR-009 nothing else changes       T023·T059
-FR-005 tenancy, demonstrated  T013·T022·T030  FR-010 amend what is falsified T034–T040
+FR-001 every channel route    T013–T018    FR-006 sweep and count            T026·T024
+FR-002 the uuid still works   T019·T020a   FR-007 old tokens, IF any change  T008·T025
+FR-003 order defined+tested   T009·T013·T021·T027             FR-008 the rule  T027·T029
+FR-004 no 5xx                 T012·T020    FR-009 nothing else changes       T020a·T023·T059
+FR-005 tenancy, demonstrated  T013·T022·T030  FR-010 amend what is falsified T026a·T034–T040
 
+SC-006  T026, and the count is stated even when it is zero
 SC-007  T018 asserts the GET Stage 2 needs; T069 hands the assertion to 4.23
 SC-009  T054
+SC-011  T023a
 ```
 
 **TWENTY ALARMS, TWENTY FALSE** — 4.11's pass 10 got fourteen of the same, 4.23's got
-twenty-two. **The repair is not to sprinkle identifiers**: a task citing an id it does
+twenty-two. **And the mechanical check would have passed on FR-006 and FR-007 while
+both pointed at a leak that does not exist**, which is the limit of counting ids
+rather than reading them. **The repair is not to sprinkle identifiers**: a task citing an id it does
 not discharge makes the next mechanical check pass and the reading never happen.
 
 ## And one task that is not about this chapter
