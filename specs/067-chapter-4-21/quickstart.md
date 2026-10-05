@@ -1,9 +1,15 @@
 # Quickstart — chapter 4.21, "Erasure, and every path it must find"
 
-**§0 and §1 are MEASURED. §2 onward are predictions** until phase 9 runs them,
-and the last seven chapters' predictions were wrong 3, 4, 3, 5, 2, 0 and 5
-times. Run §0 first in the same shell: chapter 4.19's only phase-9 failure was
-an operator running a later section without the earlier section's variables.
+**EVERY SECTION IS MEASURED.** §0 to §2 were measured before the chapter was
+written; §3 and §4 were predictions and **both were wrong**, which makes this
+chapter's tally **two** against the last seven's 3, 4, 3, 5, 2, 0 and 5. Both were
+wrong for the same reason and it is worth naming: they were written before T010
+and T011 were decided, and those two decisions changed what the receipt says and
+what a second call answers. **A prediction written before a decision is a
+prediction about the draft.**
+
+Run §0 first in the same shell: chapter 4.19's only phase-9 failure was an operator
+running a later section without the earlier section's variables.
 
 ## 0 · Prerequisites
 
@@ -87,10 +93,32 @@ curl -s -X DELETE "localhost:4000/v1/users/qs-bot/data" \
   -H "authorization: Bearer $K" | python3 -m json.tool
 ```
 
-**Expected after the chapter**: a receipt with one entry per store. **Check that
-`api_requests` reads `nothing_to_erase` and `daily_usage` reads `cannot_erase`
-— if both say `erased: 0` the receipt has collapsed the distinction it exists
-to carry.**
+**MEASURED on 2026-10-05** — ten entries, and **the prediction above was wrong
+about one of them**:
+
+```
+profile              erased              display_name, avatar_url, metadata AND external_id
+memberships          erased       0
+read_positions       erased       0
+media_objects        erased       0      73.6% of objects record no uploader
+messages             retained_anonymous
+usage_active_users   retained_anonymous
+connection_events    erased
+api_requests         nothing_to_erase    this table records no user identifier
+daily_usage          retained_anonymous  <- the prediction said `cannot_erase`
+audit_log            cannot_erase        target_id holds the external id, append-only
+```
+
+**`daily_usage` READS `retained_anonymous`, NOT `cannot_erase`, AND THE RECEIPT
+GAINED A FIFTH OUTCOME TO SAY SO.** The sketches are keyed on the internal uuid,
+and a key into an erased row names nobody (ADR-37) — so there is nothing to
+subtract and nothing identifying, which is a different fact from *this store holds
+their identity and no operation removes it*. **The store that fits that sentence is
+`audit_log`**, which this quickstart did not predict at all.
+
+**The check the prediction was reaching for still holds and is now three-way**: if
+`api_requests`, `daily_usage` and `audit_log` all read the same word, the receipt
+has collapsed the distinction it exists to carry.
 
 ## 4 · And again, which must be a receipt rather than a 404 (after the chapter)
 
@@ -99,8 +127,18 @@ curl -s -o /dev/null -w "second erasure: %{http_code}\n" \
   -X DELETE "localhost:4000/v1/users/qs-bot/data" -H "authorization: Bearer $K"
 ```
 
-**Expected**: `200`, with every store reporting zero. Two 404s would prove
-nothing — idempotence is a claim about what the second call DID.
+**MEASURED: `404`, and the prediction was wrong.** Erasure replaces `external_id`
+with `erased:<users.id>`, so after the first call no user has the id in the path
+and the resolve step genuinely finds nothing. **404 is the honest answer here, not
+a missing idempotence.**
+
+The prediction was written against a draft in which `external_id` survived. What it
+costs is real and is published rather than engineered around: a support tool
+retrying after a timeout cannot tell *already erased* from *never existed*. A hash
+of the external id kept on the tombstone would answer that — and `u-4821` and an
+email address are both brute-forceable, so a hash is the identity wearing a
+disguise. **The operator's proof is the audit entry**, which is the one record this
+chapter deliberately could not remove.
 
 ## 5 · And what this still cannot show
 

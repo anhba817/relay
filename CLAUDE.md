@@ -67,12 +67,10 @@ two deletion verbs differ in visibility**: `DELETE FROM` is visible to the next 
 <!-- SPECKIT END -->
 
 **066 IS CLOSED — CHAPTER 4.20, "The messages that expire".** Movement VII's third. Its record
-is `specs/066-chapter-4-20/` — `baseline.txt` first (every phase in the order taken, wrong
-versions included), then `gaps.md` (**4 new plus the carried ledger re-measured**),
-`clauses.md`, `traceability.md`, `quickstart.md` (run, and **wrong five times**), `tasks.md`.
-**SRS 1.27**, **ADR-36**, `docs/12` row 21 CLOSED, four sites in `docs/05-sad.md`, both Part 4
-tables. Tagged **`part4-ch20`**. CI 37199508332 green on all four jobs, first push, error set
-empty both ways.
+is `specs/066-chapter-4-20/` — `baseline.txt` first, then `gaps.md` (4 new plus the carried
+ledger), `clauses.md`, `traceability.md`, `quickstart.md` (run, **wrong five times**),
+`tasks.md`. **SRS 1.27**, **ADR-36**, `docs/12` row 21 CLOSED. Tagged **`part4-ch20`**.
+CI 37199508332 green on all four jobs, first push, error set empty both ways.
 
     check:fences 5 -> 0 -> 1 -> 0 · 291 files across 63 chapters      from 62
     2,812 prose words · 4 figures · 2 TRAP · 2 WHY · 0 titled fences in the chapter
@@ -81,74 +79,46 @@ empty both ways.
     a message costs 0.04 ms to destroy and a media object 2.05 ms — ~48x
     SIXTEEN ANALYSIS PASSES: 4,4,4,4,3,4,6,3,3,4,3,3,2,2,2,2 — 5 CRITICAL
 
-**THE PREMISE CHECK INVERTED 4.19's AND FOUND NONE OF THREE OBLIGATIONS MET.**
-`environments.retention_days` had existed since chapter 2.1 and was set on **0 of 33,051**;
-nothing read it; there was no scheduler; and **the hard deletion the clause names was refused
-by the platform's own schema** on 5,495 messages.
-
 **THE REFUSAL IS A PINCER WITH A THIRD JAW.** The foreign key refuses the parent, 4.19's
 trigger refuses the children, and **`ON DELETE CASCADE` is refused too — a cascade issues an
 ordinary `DELETE` and a ROW trigger fires on it**, with the error naming the generated
-statement. Only `session_replication_role = replica` works, and that is the hole ADR-35
-published as the limit of its own guarantee. **A cascade is not a privileged path.**
+statement. **A cascade is not a privileged path.** Only `session_replication_role = replica`
+works, which is the hole ADR-35 published as the limit of its own guarantee.
 
 **AND THE CHAPTER'S FIRST PRODUCT IS A READING, NOT A MECHANISM.** Three documents reserved
 hard deletion and a fourth required it. **The constitution says `path` where FR-MSG-08 said
 `endpoint`** — so the rule hardest to change is the one that already permitted this, and
-FR-MSG-08 and DR-06 were amended instead (ADR-36 decision 1). The option refused is **soft
-expiry**: clearing `text` satisfies all three reserving clauses word for word and is the only
-reading that keeps every internal rule and still tells a compliance team their data is gone
-while the row is there.
+FR-MSG-08 and DR-06 were amended instead (ADR-36). The option refused is **soft expiry**:
+clearing `text` satisfies all three reserving clauses word for word and is the only reading
+that keeps every internal rule and still tells a compliance team their data is gone while the
+row is there.
 
 **THE GUARANTEE IS ONE KEYWORD AND BOTH WAYS OF GETTING IT WRONG ARE SILENT.** Plain `SET`
-leaves the flag on a pooled connection and every later request can delete version rows;
-`SET LOCAL` outside a transaction block is a **WARNING**, leaves it unset, and every cascade is
-refused in a way indistinguishable from the trigger working. **Measured both ways with a
-control, and the test asserts the flag's VALUE at the moment of the delete.** The trigger is
-written once; the `SET LOCAL` is written at every call site.
-
-**REUSING A FUNCTION THAT ALREADY EXISTED WOULD HAVE ENFORCED THE WRONG CLAUSE.**
-`unreferencedMediaIn` is 4.15's, tested, scoped, and its comment says row 22 supplies its
-caller. It asks *which objects older than X does no message reference* — a superset including
-**48 objects in one environment that nothing ever attached**, which are FR-MED-10's orphans.
-**Its second query is reusable and its first is a different question.** Analysis pass 7 found
-the function by reading and could not check its arms; pass 15 ran them.
-**And its comment stays true, so it must NOT be repaired** — the mirror of leaving a stale one.
-
-**AND THREE TESTS WRITTEN BY EARLIER CHAPTERS FIRED ON THIS ONE.** `rendition.itest.ts`
-asserted that nothing deletes a `media_objects` row **and told whoever broke it what to do** —
-the count was the assertion only while it was zero, so the claim is the pairing now.
-`repository.itest.ts`'s source walk caught the sweep building a `Repository` with no actor;
-the answer is `RECORDS_NOTHING`. And deleting `@Accepts("application")` turned a test red,
-which is the **opposite** of what 4.18 found on the same decorator one route over.
+leaves the flag on a pooled connection; **`SET LOCAL` outside a transaction block is a
+WARNING**, leaves it unset, and every cascade is refused indistinguishably from the trigger
+working. **The test asserts the flag's VALUE at the moment of the delete.**
 
 **A CACHED TURBO RUN REPLAYS THE COUNTED LINE AS WELL AS THE EXIT CODE.** `pnpm test` answered
 **EXIT 0 with every `Test Files N passed` line in 17 ms**, `Cached: 13 of 13` — nothing ran.
-055-4's *assert the counted line, not the exit code* is **necessary and not sufficient against
-a cache**; the tells are `Cached:` and the elapsed time. 050 found this cache hiding a red;
-this is it hiding **that nothing ran**, from the instrument built to catch that.
+055-4's *assert the counted line* is **necessary and not sufficient against a cache**; the
+tells are `Cached:` and the elapsed time. **And a positive control that did not fire looked
+exactly like a passing probe**: an impossible coverage pin on a REAL file produces nothing
+under a filtered `vitest run`, because **a filtered run does not evaluate per-file
+thresholds**. The probe has to go through `pnpm coverage`.
 
-**AND A POSITIVE CONTROL THAT DID NOT FIRE LOOKED EXACTLY LIKE A PASSING PROBE.** An impossible
-coverage pin on a REAL file produced nothing under `vitest run --config … <one file>`, because
-**a filtered run does not evaluate per-file thresholds** — identical output to the pin on a
-path that matches nothing. The probe has to go through `pnpm coverage`.
+**REUSING A FUNCTION THAT ALREADY EXISTED WOULD HAVE ENFORCED THE WRONG CLAUSE.**
+`unreferencedMediaIn` asks *which objects older than X does no message reference* — a superset
+including objects nothing ever attached, which are FR-MED-10's orphans. **Its second query is
+reusable and its first is a different question**, and **its comment stays true, so it must NOT
+be repaired** — the mirror of leaving a stale one.
 
-**THE FENCE BILL NAMED ALL SIX FILES AT ANALYSIS**, including `gauntlet.itest.ts` — which the
-first count missed and pass 6 found by asking what a new route costs the chain: **an attack is
-written INSIDE that file**. A route is not one edit; **three lists key off one derived route
-set** (`targets.ts`, the gauntlet, `moderation-routes.ts`) and only `grep -rn deriveTargets`
-enumerates them.
-
-**AND THE TEST THAT PROVES THE SWEEP IS SAFE CREATES THE OLDEST MESSAGE ON THE LANE.** FR-004
-needs a message *at any age*, so after the suite runs the quickstart's §1 reads `2025-08-30`
-and `5` where the chapter publishes `2026-09-14` and `0`. **§1 asks a whole-table question and
-the thing it is about is per environment** — which is why §3's guard is per tenant and why the
-survivors are harmless. `gaps.md` 066-4.
-
-**`by a scheduled job` IS UNMET BY DECISION, THE FOURTH CLAUSE BOUNDED BY ADR-28's ABSENCE**
-after FR-ANL-06, DR-17 and FR-MOD-03's year — **and the first where the absence is not a
-reporting obligation.** The others cost accuracy; this one is a customer telling an auditor
-that data does not exist. So nothing publishes an `expires_at`.
+**AND THREE TESTS WRITTEN BY EARLIER CHAPTERS FIRED ON THIS ONE.** `rendition.itest.ts`
+asserted that nothing deletes a `media_objects` row **and told whoever broke it what to do**.
+`repository.itest.ts`'s source walk caught a `Repository` built with no actor; the answer is
+`RECORDS_NOTHING`. And **the fence bill named all six files at analysis**, including
+`gauntlet.itest.ts` — a route is not one edit, and **three lists key off one derived route
+set** (`targets.ts`, the gauntlet, `moderation-routes.ts`), enumerated only by
+`grep -rn deriveTargets`.
 
 **064 IS CLOSED — CHAPTER 4.18, "The log that cannot be edited".** Movement VII opens. Its
 record is `specs/064-chapter-4-18/`. **SRS 1.25**, **ADR-35**, `docs/12` row 19 CLOSED.

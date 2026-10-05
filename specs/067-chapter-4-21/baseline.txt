@@ -973,3 +973,351 @@ T058/T059/T060 · THE FENCES
 
 T051 · REGISTERED, and `pnpm build` is the gate that would have caught it missing —
   an unregistered id throws, which is how 4.6 learned the chapter manifest exists.
+
+================================================================================
+PHASE 9 — THE RECORD AND THE CLOSE
+================================================================================
+
+T063a · THE SEVEN-STORE MAP, OPEN AND CLOSE (SC-012)
+
+                              at T007        at close      moved by
+  users                        192,641       195,886       +3,245   the lane
+  members                      172,965       175,332       +2,367   the lane
+  messages naming a user       205,628       207,935       +2,307   the lane
+  media_objects attributed       3,979         4,063          +84
+  media_objects null            11,050        11,358         +308
+      -> the null share         73.0%         73.6%                 re-measured
+  usage_active_users            22,150        22,774         +624
+  audit_log user targets         1,324         1,781         +457   AND SEE BELOW
+  connection_events (CH)         1,081            55      -1,026    THIS CHAPTER
+  api_requests (CH)            205,697       236,723      +31,026   the lane
+  message_events (CH)                0             0            0   still no producer
+
+  **TWO OF THESE MOVED BECAUSE OF THIS CHAPTER AND THE REST ARE THE LANE RUNNING.**
+
+  `connection_events` 1,081 -> 55. Three causes, and only one is a measurement:
+  the red injection probe destroyed **1,113 of 1,116** rows in one run (T019a), the
+  suite's own erasures took their fixtures, and the gateway has put 55 back since.
+  **The published figure for this table is 1,116 and the moment it was taken**, not
+  55 — a count after a probe that was designed to destroy the table is a fact about
+  the probe.
+
+  `audit_log` user targets 1,324 -> 1,781. **457 entries, and this chapter wrote a
+  share of them**: every erasure in every suite run writes one naming its fixture.
+  Which is the gap stated as arithmetic — 067-1 says the log grows by one per
+  erasure and here is the growth.
+
+  AND 73.0% -> 73.6% IS NOT DRIFT IN THE SAME SENSE. The spec rounded 73%; the
+  close re-measured 11,358 of 15,421. Both are the same fact at different
+  precisions, and the chapter publishes the measured one.
+
+T068 · FR-011 CHECKED RATHER THAN TRUSTED (SC-008)
+
+  `git diff --name-only part4-ch20..HEAD` in `relay-platform` — **ten files, and
+  every one is this chapter's**:
+
+      users/erasure.ts            NEW — the analytical half
+      users/erasure.itest.ts      NEW — the suite
+      users/users.controller.ts   the route
+      users/users.service.ts      the receipt
+      users/users.module.ts       two providers the receipt's storage deltas need
+      db/repository.ts            `eraseUser` and `deleteUserRowRaw`
+      metering/clickhouse.ts      bound parameters on the shared client
+      audit/moderation-routes.ts  both maps
+      isolation/targets.ts        the classification
+      isolation/gauntlet.itest.ts the attack
+
+  **NO MIGRATION, NO SCHEMA CHANGE, NO NEW DEPENDENCY, AND NO NEW TABLE OR COLUMN**
+  — which is worth stating because this is a compliance feature and the instinct is
+  that one must be needed. `audit_log_target_kind_check` already admits `user`, and
+  the tombstone needs no column because `external_id` is a `text` the traversal can
+  overwrite.
+
+  THE ONLY FILE THAT IS NOT OBVIOUSLY THIS CHAPTER'S IS `metering/clickhouse.ts`,
+  and it is the one that mattered most: a shared client gaining a capability rather
+  than one function gaining an escape.
+
+T064 · THE CARRIED LEDGER, RE-MEASURED RATHER THAN COPIED
+
+  Three of the eight moved, and one moved in a direction worth arguing about.
+
+  **066-1: the hazard stands and the instance count is now ZERO.** It said 1,435
+  audit rows name a message, and no foreign key stops one outliving its target.
+  Today **0 message targets dangle**. *A property with no instances is still a
+  property* — nothing was fixed, the lane simply has not destroyed a message with
+  an audit entry lately. **And this chapter made the shape worse rather than
+  better**: `audit_log` now holds 1,781 user targets whose subjects this platform
+  erases by design, so the first entry to outlive its target permanently will be
+  an erasure's.
+
+  **065-2 is open and the split is sharper than the entry had it.**
+
+      ended_by = 'edit'        5,929 of 5,929 millisecond-exact      100%
+      ended_by = 'deletion'       51 of 1,472                        3.5%
+
+  3.5% is chance. So 4.19's `sql`now()`` fix is holding on the path it was applied
+  to, and the edit path has never been fixed — which is what the entry claimed,
+  now with a control beside it.
+
+  **058-3's population is 22, not 23, and this chapter's route is not in it.**
+  13 `channelId`, 6 `id`, 3 `messageId` across three controllers. `externalId` is
+  **text** and reaches no uuid cast, so `DELETE /v1/users/:externalId/data` cannot
+  500 on a malformed parameter. Checking that before adding a route to the count is
+  the cheap half of the entry.
+
+  **062-12 is open and this chapter is standing in it.** `services/api/src/users/`
+  has **zero** per-file pins — not one of its five files. T065 adds them.
+
+  **043-1 widened by six.** This chapter contributed 0 titled fences and six
+  untitled ones, so it added to the population it did not close.
+
+T076 · THE CLAUDE.md BUDGET, MEASURED BEFORE THE ENTRY IS WRITTEN
+
+      the file                    148,269 characters · headroom 1,731
+      066's entry                   6,005
+      the active-plan block         1,982   (T077 removes it)
+
+  Compressing 066 to its headline and measurement block plus removing the
+  active-plan line gives roughly **7,500 characters** for 4.21's entry, against the
+  ~5,000 the last four have taken. **It fits, and only because two things are
+  removed rather than one** — which is the convention working exactly as the header
+  describes it, for the first time in this session where it was in doubt.
+
+T065 · THE COVERAGE LANE, AND A RED PIN THAT MUST NOT BE LOWERED
+
+    154 files, 2,201 tests · 3 failed · COVERAGE EXIT 1
+    ONE real threshold error:
+      ERROR: Coverage for functions (99.44%) does not meet
+             "services/api/src/db/repository.ts" threshold (100%)
+
+  **180 FUNCTIONS, 179 COVERED. I ADDED TWO AND BOTH ARE CALLED.** The three failed
+  tests are all in `dispatcher.itest.ts`, which is 065's red class — four files
+  across six runs, no two runs alike, every one green in isolation. Run alone:
+
+      services/dispatcher   16 of 16 PASSED
+
+  So the uncovered function is one a failed suite would have exercised, and
+  **99.44% is a consequence of the failure rather than of this chapter's change.**
+  059-22's rule, in its third form: *both cases present as a red pin; ask what the
+  number is measuring before you move it.* **The pin stays at 100.** Lowering it
+  would have been one line, would have gone green, and would have recorded a lie.
+
+  THE THREE PINS ADDED, AND WHY `services/api/src/users/` HAD NONE
+
+    erasure.ts            branches 90   measured 100 AFTER two tests
+    users.controller.ts   branches 100  measured 100
+    users.service.ts      branches 85   measured 88.46
+
+  **`erasure.ts` MEASURED 63.63% BRANCHES BEFORE THE TESTS AND THE TASK SAYS WHAT TO
+  DO ABOUT THAT**: when a new file measures thin the answer is a test, not a lower
+  number. Chapter 4.20's `sweep.ts` came in at 63.79% and its largest uncovered arm
+  was the dry run the quickstart tells an operator to run first. Here the two
+  uncovered arms were:
+
+      the delete returned AND THE ROWS ARE STILL THERE
+        — the arm that makes the choice of ClickHouse verb matter at all
+      the error carries a REAL HTTP STATUS rather than the sentinel 0
+        — the arm whose absence let the nonsense note ship
+
+  Both are now driven by injected stores, 16 of 16. **The second one is the arm that
+  the ClickHouse-stopped run had already caught by hand** — so the coverage number
+  and the manual run found the same hole from opposite directions, which is the
+  strongest argument for running both that this feature produced.
+
+  AND `services/api/src/users/` HELD ZERO PER-FILE PINS BEFORE THIS CHAPTER — not
+  one of its five files. 062-12's population, and the reason a file can sit at
+  66.66% with nothing to notice.
+
+T066 · THE PIN PROBE, BOTH HALVES, THROUGH `pnpm coverage` — AND IT CAUGHT MY PIN
+
+  Run with two mutations in place at once:
+
+      a key naming NO file, demanding 101% of lines
+        "services/api/src/users/this-file-does-not-exist.ts": { lines: 101 }
+          -> NOTHING. No error, no warning, no mention. SILENT, as recorded.
+
+      an impossible pin on a REAL file
+        "services/api/src/users/users.controller.ts": { branches: 101 }
+          -> ERROR: Coverage for branches (100%) does not meet
+                    ".../users.controller.ts" threshold (101%)      FIRED
+
+  **AND THE SAME RUN REPORTED SOMETHING I HAD NOT ASKED IT:**
+
+      ERROR: Coverage for branches (81.81%) does not meet
+             ".../users/erasure.ts" threshold (90%)
+
+  **`erasure.ts` IS 81.81%, NOT 100.** The two tests written at T065 took it from
+  63.63% to 81.81% and I pinned at 90 believing they had taken it to 100. A pin
+  ABOVE the real number is loud; **a pin BELOW it is silent in exactly the way a pin
+  on an absent file is** — so had the arithmetic gone the other way this would have
+  shipped as a floor nothing could ever reach, or as one nothing could ever fail.
+
+  **THE PROBE FOUND IT AS A SIDE EFFECT OF TESTING ITSELF**, which is the argument
+  for running both halves every time the ratchet is re-pinned rather than once a
+  feature. The remaining pair were the two `?? 0` fallbacks on a `SELECT count()`
+  that always answers with a row — defensive arms, covered with an injected empty
+  store rather than pinned around, because the alternative is a lower floor
+  justified by a sentence nobody can check. **17 of 17.**
+
+T065 CONCLUDED · THE 180th FUNCTION WAS A TESTING GAP, NOT A FLAKY NEIGHBOUR
+
+  Three coverage runs, and the diagnosis took all three.
+
+      run 1   3 red (dispatcher.itest.ts)   repository.ts functions 99.44  PIN RED
+      run 2   1 red (outbox invariant 8)    repository.ts functions 99.44  PIN RED
+      run 3   3 red (outbox 8, outbox 5,    ZERO THRESHOLD ERRORS
+              a gateway presence test)
+
+  **THE FIRST HYPOTHESIS WAS WRONG AND THE SECOND RUN KILLED IT.** Run 1's three
+  failures were all in `dispatcher.itest.ts`, which passes **16 of 16 in
+  isolation** — 065's red class exactly — so the obvious reading was that a failed
+  neighbour left a repository function unexercised. Run 2 failed a different test
+  in a different file and reported **the same 179 of 180**. A number that does not
+  move when its supposed cause does is not caused by it.
+
+  **IT WAS `eraseUser`'s `owned.map((o) => o.id)`.** Every fixture in the suite
+  created a user with no uploads, so the traversal's media branch was never
+  entered: the arrow had no caller, `destroyMediaObjects` received an empty array
+  and returned early, and **the receipt reported `media_objects: rows 0` for a
+  store it had never touched.** A green suite and a claim nobody checked.
+
+  THE TEST THAT CLOSES IT ASSERTS THE ROW IS GONE, not that the receipt says so.
+  18 of 18, and run 3 reports **zero threshold errors**.
+
+  **THE RATCHET FOUND A HOLE THAT READING DID NOT, WHICH IS WHY THE PIN STAYED AT
+  100.** Lowering it would have been one line and would have hidden an untested
+  branch in a compliance path. *Ask what the number is measuring before you move
+  it* (059-22) — and the answer here was neither of that entry's two shapes: not a
+  moving denominator and not a wrong environment, but **an arm the suite had simply
+  never reached**, which is the one case where the red pin is just correct.
+
+    FINAL      154 files · 2,205 tests · 3 red, all carried class · 0 threshold errors
+               77 per-file pins, from 74 · no pin lowered
+    erasure.ts           100 / 100 / 100 / 100     from 63.63 branches
+    users.controller.ts  100 / 100 / 100 / 100
+    users.service.ts     94.44 / 88.46 / 100 / 96
+    repository.ts        functions 100, UNCHANGED
+
+T065a · THE PIN FILE MOVED AND THE CHAIN WENT RED, EXACTLY AS PREDICTED
+
+      check:fences   0 -> 1    vitest.coverage.config.mts differs at line 1287
+                     1 -> 0    one hunk, -U6, pre-image unique
+
+  **23 pages publish that file**, so three new pins cost a seventh appendix hunk
+  after the other six were placed. The task said to run this even when nothing
+  changed, because the control is what tells a clean chain from an unchecked one —
+  and here something had changed and the only thing that said so was the run.
+
+T067 · THE QUICKSTART, RUN END TO END — WRONG TWICE, AND BOTH FOR ONE REASON
+
+      §0  prerequisites, incl. `docker compose --profile services build api`   ok
+      §1  the seven-store map                                                  ok
+      §2  the two ClickHouse verbs                                             ok
+      §3  erase a user            PREDICTION WRONG — `daily_usage` reads
+                                  `retained_anonymous`, not `cannot_erase`, and
+                                  the receipt has a FIFTH outcome and an
+                                  `audit_log` row the quickstart never predicted
+      §4  erase again             PREDICTION WRONG — **404**, not 200
+
+  **TWO WRONG, AGAINST THE LAST SEVEN CHAPTERS' 3, 4, 3, 5, 2, 0 AND 5** — and
+  both were wrong for the same reason, which is the part worth keeping. They were
+  written before T010 and T011 were taken, and those two decisions are what changed
+  the receipt's vocabulary and what a second call answers. **A prediction written
+  before a decision is a prediction about the draft.** Neither was a platform
+  defect and neither would have looked like one; both read as the quickstart being
+  out of date, which is exactly what it was.
+
+  AND THE IMAGE REBUILD WAS NOT SKIPPED. `pnpm build`, then
+  `docker compose --profile services build api`, then `up -d --wait api` — §3 hits
+  `localhost:4000`, which is the container, and a new route answers 404 against a
+  stale image. 4.11, 4.19 and 4.20 all met that; this one did not, because the
+  quickstart's own §0 says so in bold and it was read before it was run.
+
+T069/T070/T070a · THE BATTERY, EVERY REAL EXIT CODE
+
+  Composed services stopped BY NAME first — `api gateway dispatcher media-worker`,
+  and not `ingester`, which has no compose service.
+
+      pnpm lint                     EXIT 1 -> 0    one error, MINE
+      turbo typecheck --force       EXIT 0    15 of 15 · Cached 0 of 15 ·  8s
+      turbo test --force            EXIT 0    13 of 13 · Cached 0 of 13 ·  9s
+          api 451 · gateway 140 · media-worker 99 · dispatcher 8 · + the packages
+      api integration               EXIT 0    53 files, 904 tests · 130s
+                                              from 52 files, 1 failed at 4.20
+      gateway integration           EXIT 1    12 files, 1 failed · 231 tests
+      dispatcher integration        EXIT 0    1 file, 16 tests
+      media-worker integration      EXIT 0    3 files, 32 tests
+      ingester integration          EXIT 0    2 files, 24 tests
+      outsider (sealed)             EXIT 0    21 of 21
+      coverage                      EXIT 1    154 files, 2,205 tests, 3 red
+                                              ZERO threshold errors
+
+  **THE FIRST `pnpm test` RAN IN 3 SECONDS AND REPORTED EVERY COUNTED LINE.**
+  `Cached: 9 of 13`, EXIT 0 — 4.20's finding reproduced exactly. 055-4's *assert
+  the counted line* is necessary and not sufficient against a cache; the whole
+  battery was re-run under `--force` and `Cached: 0` is the line that says so.
+
+  **AND `turbo run lint --force` EXITS 1 IN 0 SECONDS**, which is not a failure:
+  the root task is `//#lint:root` and `turbo run lint` matches no task. T002 hit it
+  and it is reproduced here rather than quietly worked around — `pnpm lint` is the
+  form that runs it, and it is green.
+
+  THE ONE REAL RED WAS MINE AND LINT FOUND IT: `'store' is assigned a value but
+  never used` in `erasure.itest.ts`, left behind when the receipt suite moved to
+  injected stores. Typecheck passes an unused `let`; lint does not.
+
+  **THE GATEWAY RED IS THE CARRIED FLAKE CLASS AND THE EVIDENCE IS THREE-PART.**
+  In the battery it failed on *"sends nothing at all after the signal"*; run alone
+  it failed on *"delivers one frame to a member on another instance"* — **a
+  different test in the same file**. Three runs in isolation: green, 1 red, green.
+  And `git diff --name-only part4-ch20..HEAD -- services/gateway` is **0 files**.
+  A flake that moves between assertions in a file this chapter never touched.
+
+================================================================================
+CLOSE-OUT
+================================================================================
+
+    check:fences 6 -> 0 -> 1 -> 0 · 291 files across 64 chapters      from 63
+    2,649 prose words · 4 figures · 2 TRAP · 4 WHY · 0 titled fences
+    11 appendix hunks across 7 files — six, then the pin file made seven
+    api integration 53 files, 904 tests, EXIT 0    from 52 files and 1 failed
+    coverage 154 files, 2,205 tests · ZERO threshold errors · 77 pins, from 74
+    outsider 21 of 21 · six tutorial gates EXIT 0
+    the analytical half costs 16 ms · the operational half 10
+    SRS 1.28 · ADR-37 · docs/12 row 22 CLOSED · three SAD sites · both Part 4 tables
+    FIVE ANALYSIS PASSES: 14 findings, 3 CRITICAL, all three fixed before any code
+
+WHAT THIS FEATURE WILL BE REMEMBERED FOR, IN ORDER OF HOW MUCH IT COST TO LEARN
+
+  1 · **ONE DECISION PRODUCED THE WHOLE STRUCTURE, AND IT WAS NOT A MECHANISM.**
+      The hard part of FR-MOD-04 is the word `messages`. Choosing FR-USR-05's
+      reading — erase the person, not the conversation — makes the row undeletable,
+      which makes the tombstone inevitable, which makes every key-only reference
+      stop naming anybody. **The two stores nobody could see how to erase needed
+      nothing done to them**, and what was going to be published as the chapter's
+      weakest limitation became ADR-37.
+
+  2 · **A PUBLISHED PAYLOAD THAT DOES NOT REPRODUCE ITS OWN FINDING.** R9's
+      `ev'il OR 1=1 --` is a syntax error. The probe run against it went red on the
+      wrong assertion and would have been recorded as proof. **A payload that
+      errors tests the error path.**
+
+  3 · **THE PIN PROBE CAUGHT MY OWN PIN AS A SIDE EFFECT OF TESTING ITSELF.**
+      `erasure.ts` was 81.81% where I had assumed 100 and pinned 90. A pin above
+      the real number is loud; **a pin below it is as silent as a pin on a file
+      that does not exist.**
+
+  4 · **A COVERAGE NUMBER FOUND A CLAIM NOTHING CHECKED.** `repository.ts` held at
+      179 of 180 functions across two runs with different failures, which ruled out
+      the flaky-neighbour reading and left `owned.map(...)` — so **the receipt was
+      reporting `media_objects: rows 0` for a branch no test had ever entered.**
+
+  5 · **A FEATURE-LOCAL ID REACHED A CUSTOMER-FACING RESPONSE**, and the sweep that
+      should have caught it reported zero because `..HEAD` reads committed state.
+
+  6 · **TWO TASK PREMISES DIED BECAUSE TWO DECISIONS WERE DEFERRED INTO
+      IMPLEMENTATION.** T021's probe could not go red and T031's receipt does not
+      exist. Both were written before T010 and T011; so were the quickstart's two
+      wrong predictions. **A prediction written before a decision is a prediction
+      about the draft** — and the cost of deferring a decision is paid in the
+      artifacts that assumed the other answer.
