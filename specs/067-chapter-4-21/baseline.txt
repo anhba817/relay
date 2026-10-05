@@ -1321,3 +1321,42 @@ WHAT THIS FEATURE WILL BE REMEMBERED FOR, IN ORDER OF HOW MUCH IT COST TO LEARN
       wrong predictions. **A prediction written before a decision is a prediction
       about the draft** — and the cost of deferring a decision is paid in the
       artifacts that assumed the other answer.
+
+T072/T073/T075 · THE PUSH, CI AND THE TAG
+
+  Pushed in the forced order — `relay-platform`, `relay-tutorial`, superproject —
+  because CI is the superproject's and the other two are submodules.
+
+      relay-platform    2d30e747..0c614396     5 commits
+      relay-tutorial    f1f7743..7e181b3       3 commits
+      superproject      be4a5b6..c6a4da9      18 commits
+
+  **CI 37252417436 GREEN ON ALL FOUR JOBS, FIRST PUSH.**
+
+      relay-platform — integration lanes and coverage   success
+      relay-tutorial — build, docs drift, fence chain   success
+      relay-platform — the Docker-free gate             success
+      relay-platform — the sealed integration           success
+
+  THE ERROR SET, COMPARED PER ERROR AGAINST 37200561682 (T004's baseline), uuids
+  normalised, in both directions:
+
+      baseline      0 distinct
+      this run      0 distinct
+      new           none
+      gone          none
+
+  **BOTH SETS ARE EMPTY, WHICH IS A WEAKER STATEMENT THAN IT LOOKS AND IS WORTH
+  SAYING SO.** 056 and 057 compared error sets across RED runs, where the
+  comparison is the only available signal because a colour says nothing. Here both
+  runs were green, so the empty diff carries no information the conclusions did
+  not already carry. **The comparison earns its cost when the colour is useless,
+  and this time the colour was enough.**
+
+  TAGGED `part4-ch21`, annotated, in `relay-platform` at 0c614396 and the
+  superproject at c6a4da9 — both commits CI proved green, pushed.
+
+  AND THE GATEWAY FLAKE DID NOT APPEAR IN CI. Local: 1 red in the battery, a
+  different test red alone, green/red/green over three isolated runs. CI: green.
+  **Which is 4.17's finding run backwards once more** — an assertion reading state
+  that is not its own breaks in whichever direction the machine's residue points.

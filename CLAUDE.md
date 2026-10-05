@@ -38,33 +38,92 @@ tags. **Anyone holding an older clone of `relay-platform` must reset rather than
 
 <!-- SPECKIT START -->
 
-**ACTIVE PLAN: `specs/067-chapter-4-21/plan.md`** — chapter 4.21, movement VII's fourth.
-`docs/12` row 22 is FR-MOD-04 and FR-MED-10, and **the premise check came out MIXED** where
-4.19's was four of five and 4.20's was none of three. FR-MED-10's unlink is **already met**;
-the endpoint does not exist; and **the phrase `analytical records` is four stores with four
-answers**: `api_requests` has **no user column at all** over 205,697 rows (4.4's design — the
-cheapest erasure is the column nobody collected), `connection_events` 1,081 deletable,
-`message_events` **0** with no producer, and `daily_usage_*` **880 rows of
-`AggregateFunction(uniq, Nullable(UUID))` from which no one user can be removed** — whose
-sketches claim **0 distinct users today**, the source never having received a row. **Both
-halves get published: either alone misleads.**
-
-**AND `deleteUser` ALREADY EXISTS AND KEEPS WHAT ERASURE MUST DESTROY** — the row, the
-messages, and 22,150 `usage_active_users` rows, with a billing argument in the code: *"a
-customer who deleted a user in March still owes for March."* Two clauses, opposite answers,
-both good. **`ON DELETE SET NULL` is already measured and refused**: all five FKs to `users`
-are `NO ACTION`, because nulling `messages.user_id` *"breaks delivery — the resume path drops
-a senderless row."*
-
-**THE PRODUCT IS THE RECEIPT, NOT THE ENDPOINT.** FR-MOD-04's *completion receipt* is its
-least defined phrase and a 204 satisfies the grammar. **`nothing_to_erase` must not collapse
-into `cannot_erase`** — 205,697 rows that never named a person against 880 that do,
-unremovably — and **`not_reached` is why it is load-bearing**: constitution III forbids
-rolling back a compliance erasure because a metering pipeline is unwell. **And ClickHouse's
-two deletion verbs differ in visibility**: `DELETE FROM` is visible to the next `SELECT`,
-`ALTER TABLE … DELETE` **returned with its rows still countable** (051, with the contrast new).
+**NO ACTIVE PLAN.** 067 closed 2026-10-05; the next feature writes its plan line here.
+**These markers span only this block, deliberately** — moved during 067's planning, when
+they enclosed 118,636 bytes the agent-context hook would have replaced with three
+sentences.
 
 <!-- SPECKIT END -->
+
+**067 IS CLOSED — CHAPTER 4.21, "Erasure, and every path it must find".** Movement VII's
+fourth. Its record is `specs/067-chapter-4-21/` — `baseline.txt` first, then `gaps.md`
+(**3 new plus the carried ledger re-measured**), `clauses.md`, `traceability.md`,
+`contracts/erasure.md`, `quickstart.md` (run, **wrong twice**), `tasks.md`. **SRS 1.28**, **ADR-37**, `docs/12` row 22 CLOSED,
+three sites in `docs/05-sad.md`, both Part 4 tables. Tagged **`part4-ch21`**.
+
+    check:fences 6 -> 0 -> 1 -> 0 · 291 files across 64 chapters      from 63
+    2,649 prose words · 4 figures · 2 TRAP · 4 WHY · 0 titled fences
+    11 appendix hunks across 7 files — six, then the pin file made a seventh
+    api integration 53 files, 904 tests, EXIT 0   from 52 files and 1 failed
+    coverage 154 files, 2,205 tests · ZERO threshold errors · 77 pins from 74
+    the analytical half costs 16 ms · the operational half 10
+    FIVE ANALYSIS PASSES: 14 findings, 3 CRITICAL, all three fixed before any code
+
+**ONE DECISION PRODUCED THE WHOLE STRUCTURE AND IT WAS NOT A MECHANISM.** FR-MOD-04's hard
+word is `messages`: it says erase them and FR-USR-05 says keep them, both deliberately. The
+reading taken is Slack's and Teams' — **a compliance erasure asks for removal of a PERSON,
+not of a conversation**. Keeping the messages means `messages.user_id` stays; all five
+foreign keys to `users` are `NO ACTION`; **so the row can never be deleted and erasure leaves
+a tombstone.** The chapter opens on a behaviour rather than an error: you delete a user the
+way the platform already allows and find everything still there, every bit of it a clause
+working.
+
+**AND THE TOMBSTONE TURNED THE HARDEST STORES INTO THE EASIEST — ADR-37.** `usage_active_users`
+(22,774 rows) and seven `AggregateFunction(uniq, Nullable(UUID))` sketch columns could not
+have one user removed: a sketch has no subtract operation and deleting billing rows
+retroactively breaks an invoice. **A key into an erased row names nobody**, so both are left
+untouched and the `count(*)` that is the billing figure is unchanged to the row. **What was
+going to be published as the chapter's weakest limitation became its argument.** The line is
+**keys against contents**, and it is testable: `messages` and `media_objects` both hold
+contents, were decided on their own clauses, and **went opposite ways**.
+
+**AND THE STORE THAT CANNOT COMPLY IS NOT ANALYTICAL.** `audit_log.target_id` is the person's
+EXTERNAL id on **1,357 of 1,357** user-target rows, append-only under ADR-35 — **and the
+erasure writes one more**, because that entry is the operator's only proof. **The one place
+the name survives is the record that the name was erased.** Narrowing ADR-35 a second time
+was refused: two exceptions three chapters apart is a list (`gaps.md` 067-1). `external_id`
+is **replaced, not cleared** — `NOT NULL` under a unique index — with `erased:<users.id>`,
+legal only because of ADR-37.
+
+**A PUBLISHED PAYLOAD THAT DOES NOT REPRODUCE ITS OWN FINDING.** `research.md` R9 named
+`ev'il OR 1=1 --`; it is a **syntax error**, `Code: 62`, which an interpolating implementation
+survives as a caught error and a `not_reached` line — a SAFE failure. `' OR 1=1 --` is the one
+that parses, and the leading quote has to CLOSE the literal. **The probe run against the
+published payload went red on the wrong assertion and would have been recorded as proof.**
+**A payload that errors tests the error path; only one that parses tests the predicate.**
+Measured correctly: one erasure of one user destroyed **1,113 of 1,116** `connection_events`
+rows belonging to other tenants. The remedy is bound parameters on `AnalyticalStore` — 4.8's
+*a type, not an escape* does not transfer, because a free-text external id has no type.
+
+**THE PIN PROBE CAUGHT MY OWN PIN AS A SIDE EFFECT OF TESTING ITSELF.** Both halves at once:
+the absent-file pin silent, the impossible-pin-on-a-real-file fired — **and the same run
+reported `erasure.ts` at 81.81% against a pin of 90 written assuming 100.** **A pin above the
+real number is loud; a pin below it is as silent as a pin on a file that does not exist.**
+Run both halves every re-pin, not once a feature.
+
+**AND A COVERAGE NUMBER FOUND A CLAIM NOTHING CHECKED.** `repository.ts` held at **179 of 180
+functions across two runs whose failures differed**, ruling out the flaky-neighbour reading
+and leaving `eraseUser`'s `owned.map(...)`: **every fixture made a user with no uploads, so
+the receipt reported `media_objects: rows 0` for a branch no test had entered.** The pin
+stayed at 100 and the fix was a test — a third shape, neither a moving denominator nor a
+wrong environment but **an arm the suite never reached**, where a red pin is simply right.
+
+**AND THREE OF FOUR TENANCY ARMS WERE INVISIBLE.** Deleting `@Accepts("application")` turned
+nothing red — 4.18's finding one route over with the consequence inverted: here an end-user
+token reaching the handler **destroys another person's data** and every read-shaped assertion
+still passes. Two arms became tests; the fourth is redundant behind a scope one call down,
+and deleting BOTH turns 2 of 122 red.
+
+**A FEATURE-LOCAL ID REACHED A CUSTOMER-FACING RESPONSE, AND THE SWEEP SAID ZERO.** `FR-028`
+and `FR-029` resolve to nothing in the SRS and went into the receipt's `note` fields — read by
+a compliance officer **at a customer**, who cannot resolve them at all. 053's defect one step
+out. **And `git diff <tag>..HEAD -- docs/` reads COMMITTED state**, reporting 0 while two
+`FR-014`s sat in the working tree. `..HEAD` is how a diff quietly stops looking (067-3).
+
+**AND TWO TASK PREMISES DIED BECAUSE TWO DECISIONS WERE DEFERRED INTO IMPLEMENTATION.** T021's
+probe could not go red, T031's receipt does not exist, and the quickstart was wrong twice —
+one cause. **A prediction written before a decision is a prediction about the draft**, and
+deferring one is paid for in every artifact that assumed the other answer.
 
 **066 IS CLOSED — CHAPTER 4.20, "The messages that expire".** Movement VII's third. Its record
 is `specs/066-chapter-4-20/` — `baseline.txt` first, then `gaps.md` (4 new plus the carried
@@ -176,34 +235,31 @@ in both homes. Tagged **`part4-ch19`**.
 
 **A COMMENT THAT EXPLAINS AN ABSENCE AS A NECESSITY IS WHY FOUR CHAPTERS READ PAST IT.**
 `schema.ts` said *"a deletion writes no row here, because a tombstone has no text to preserve"* —
-true **after** the deletion and false at the write site. **The test is mechanical: is this reason
-true at the moment the code runs, or only afterwards?** 4.20 paid the other half — a comment that
-is STILL accurate must be left alone, and repairing one is the mirror of leaving a stale one.
+true **after** the deletion and false at the write site. **Is this reason true at the moment the
+code runs, or only afterwards?** 4.20 paid the other half: a comment that is STILL accurate must
+be left alone.
 
 **A MICROSECOND COLUMN THAT HAS ONLY EVER HELD MILLISECONDS.** Every value written to
-`message_edits.edited_at` arrived as a JavaScript `Date`, so the primary key's collision window was
-**a thousand times wider** than `schema.ts` claimed; a concurrent edit and deletion collided **1 run
-in 10**. The fix is `sql`now()`` rather than the returned `Date`. **The edit path still writes a
-`Date` (`gaps.md` 065-2), and 4.20 measured it from DATA: `ended_by='edit'` is 5,549 of 5,549
-millisecond-exact; `ended_by='deletion'` is 50 of 1,114 where chance predicts one, interleaved
-rather than pre-fix, and the cause is not identified from source.**
+`message_edits.edited_at` arrived as a JavaScript `Date`, so the key's collision window was **a
+thousand times wider** than `schema.ts` claimed and a concurrent edit and deletion collided **1 run
+in 10**. The fix is `sql`now()``. **The edit path still writes a `Date` (065-2)**, re-measured at
+4.21: `ended_by='edit'` **5,929 of 5,929** millisecond-exact, `ended_by='deletion'` **51 of 1,472**
+— 3.5%, which is chance, so the fix holds where it was applied and nowhere else.
 
-**AND A REQUIRED FIELD REACHED A STRICT SCHEMA ONE SEAM AWAY** — `deleted_at` on `MessageRow` broke
-the internal send response in three tests. 4.11's rule, paid a third time: *an argument that is
-right about the producer can invert about the reader.* **The way to find the readers is the TYPE.**
+**AND A REQUIRED FIELD REACHED A STRICT SCHEMA ONE SEAM AWAY** — 4.11's rule a third time: *an
+argument right about the producer can invert about the reader.* **Find the readers by the TYPE.**
 
 **THREE SCOPED READS AND REMOVING ANY TWO IS INVISIBLE.** Only all three together move 1 of 62.
-**A single-mutation probe measures the DEFENCE, not the arm** (`gaps.md` 065-4) — and 4.20 hit it a
-third time, on a bulk DELETE where the invisible arm's failure is a LOSS rather than a leak.
+**A single-mutation probe measures the DEFENCE, not the arm** (`gaps.md` 065-4) — 4.20 and 4.21 hit
+it again, the second time on an arm whose failure is a LOSS rather than a leak.
 
 **A LINT RULE IS A CONSTITUTION CLAUSE, FOR THE THIRD TIME.** A `drizzle-orm` import in a test
 outside `services/api/src/db/**` was refused. **Not needing an exemption is better than earning
-one.** 4.20 met the same wall and put its test fixtures in `repository.ts` as `…Raw` methods, which
-is `listMessagesRaw`'s standing precedent.
+one** — test fixtures go in `repository.ts` as `…Raw` methods (`listMessagesRaw`'s precedent),
+which 4.20 and 4.21 both followed.
 
-**AND THE QUICKSTART WAS WRONG ZERO TIMES AT PHASE 9**, after five chapters of three, four, three,
-five and two — because it was wrong twice during the analysis passes instead. **The failures moved
-to where they are cheap.**
+**AND THE QUICKSTART WAS WRONG ZERO TIMES AT PHASE 9** — wrong twice during the analysis
+passes instead. **The failures moved to where they are cheap.**
 **063 IS CLOSED — CHAPTER 4.17, "★ Milestone: an image, end to end".** Movement VI closes. Its
 record is `specs/063-chapter-4-17/` — `baseline.txt` first, then `gaps.md` (**7 entries plus the
 carried ledger**), `traceability.md`, `clauses.md`, `quickstart.md` (run, and wrong four times),
