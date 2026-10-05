@@ -1360,3 +1360,26 @@ T072/T073/T075 · THE PUSH, CI AND THE TAG
   different test red alone, green/red/green over three isolated runs. CI: green.
   **Which is 4.17's finding run backwards once more** — an assertion reading state
   that is not its own breaks in whichever direction the machine's residue points.
+
+T076/T077 · THE CLAUDE.md BUDGET, AND IT IS NOW A PROBLEM RATHER THAN A CONSTRAINT
+
+      at the open                      148,269 · headroom 1,731
+      066's entry compressed            6,005 -> 3,832
+      the active-plan block removed    -1,982
+      4.21's entry written             +6,000-ish, then trimmed SEVEN times
+      five paragraphs of 065 compressed as well — which the convention does NOT
+      call for, and which was needed anyway
+      AT THE CLOSE                     149,985 · headroom 15
+
+  **THE CONVENTION NO LONGER PAYS FOR A FEATURE.** The header says to compress the
+  PREVIOUS feature's entry when one closes. Doing exactly that recovered 2,173
+  characters against an entry that wanted ~6,000, so the active-plan block had to
+  go too, and then five paragraphs of 065, and then the new entry was cut seven
+  times. **Fifteen characters of headroom is not a margin, it is a coincidence**,
+  and chapter 4.22 cannot be recorded this way.
+
+  THE ARITHMETIC IS IN THE FILE AND HAS BEEN SINCE 066 FLAGGED IT: the 046-063
+  tail is roughly 107,000 bytes across 17 features, each chapter adds ~6,000, and
+  compressing one recovers ~2,000-3,500. **A convention that recovers less than it
+  spends is a convention with a date on it.** Recorded here rather than solved,
+  because what to drop from the tail is the user's call and not a mechanical one.

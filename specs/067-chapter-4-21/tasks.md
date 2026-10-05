@@ -196,7 +196,7 @@ FR-MOD-04's four obligations and FR-MED-10's three, each with where.
 - [X] T074 If CI is red, fix the platform, then **re-dump, re-hunk `relay-tutorial/fences/post-series.md` and push both** — repairing a platform file invalidates the appendix hunks that publish it. **Record it as NOT RUN with the condition if CI is green**, rather than silently skipping. **NOT NEEDED: CI was green on all four jobs on the first push.**
 - [X] T075 Tag `part4-ch21` in `relay-platform` and the superproject, annotated, on a commit CI has proved green.
 - [X] T076 **`CLAUDE.md` HAS 791 BYTES OF HEADROOM AND THIS ENTRY WILL NOT FIT.** Compressing 066's entry recovers roughly 3 KB and a new one costs roughly 6 KB, so the convention no longer keeps pace: **the 046–063 tail is 107,052 bytes across 17 closed features and has never been revisited.** Decide with the user what stays citable before writing, then compress and add. **`wc -c` before and after.**
-- [ ] T077 Remove the active-plan line from between the `SPECKIT` markers in `CLAUDE.md` when the feature closes. **The markers now span only that block** — they were moved during planning, when they enclosed 118,636 bytes and the agent-context hook would have replaced all of it with three sentences.
+- [X] T077 Remove the active-plan line from between the `SPECKIT` markers in `CLAUDE.md` when the feature closes. **The markers now span only that block** — they were moved during planning, when they enclosed 118,636 bytes and the agent-context hook would have replaced all of it with three sentences.
 
 ---
 
