@@ -186,8 +186,11 @@ measurement or the clause behind it.
 ### Measurable Outcomes
 
 - **SC-001**: All six stages of Journey 3 run in one test and pass.
-- **SC-002**: Removing any one of the chapters the test's margin names turns at least
-  one named assertion red — demonstrated for at least three of them by reverting.
+- **SC-002**: Removing the **mechanism** any one of the test's margin entries names
+  turns at least one named assertion red — demonstrated for three of them, each by a
+  single surgical edit that is restored afterwards. **Not by reverting the chapter**:
+  a tag names one commit where a chapter is three to seven, and later chapters share
+  its files.
 - **SC-003**: A conversation is reached from an order number in one request, and the
   request that fails to reach one returns a named refusal rather than a 5xx.
 - **SC-004**: The three not-visible outcomes are distinguishable from the record

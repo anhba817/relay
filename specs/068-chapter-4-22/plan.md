@@ -11,12 +11,18 @@ Journey 3 made executable, as `tuan.itest.ts` made Journey 4 executable at chapt
 mechanism. **A milestone appears after all the work it verifies** (`docs/12` §5 rule
 4), which is the constraint that decides almost every open question below.
 
-**The premise check found one hole and it is at Stage 2.** A channel cannot be read
-by the identifier the customer gave it; the natural attempt answers **500**; and no
-SRS clause requires the lookup at all. **How that is resolved is this feature's first
-task and not this plan's decision** — `research.md` R2 prices four options from 0 to
-~91 fence pages, and the one that obeys the milestone rule is the one that leaves
-Priya performing a write to perform a read.
+**The premise check found TWO holes and they have one cause.** At Stage 2 a channel
+cannot be read by the identifier the customer gave it — the natural attempt answers
+**500** and no SRS clause requires the lookup. At Stage 6 the audit-to-request-log
+join `docs/03` describes **cannot be queried on either side**: both rows carry
+`request_id` and neither reader accepts it as a filter.
+
+**Each is a capability a journey asserts, that no chapter owned, and that no clause
+carries** — and that is 4.17's finding at a new address: every suite stood in for the
+step beside it, and the aggregate is a path nobody had walked. **Finding them is what
+the milestone is for.** How each is resolved is this feature's first phase and not
+this plan's decision; `research.md` R2 and R8 price them, and in both cases the
+option a reader wants is the one `docs/12` §5 rule 4 forbids a milestone from taking.
 
 ## Technical Context
 
@@ -30,7 +36,7 @@ Priya performing a write to perform a read.
 | **CI job** | `relay-platform — the sealed integration`, which was 21 of 21 at 4.21's close |
 | **Storage** | none added — no migration, no column, no table |
 | **Documents** | `docs/04-srs.md` (FR-CHN group, §7.3, revision 1.29), `docs/12` row 23 and §7.6, `docs/07` row 23 |
-| **Unknowns** | **R2's option** — the only one, and it is task 1 |
+| **Unknowns** | **R2's option and R8's** — the only two, and both are Phase 2 |
 
 ## Constitution Check
 
@@ -174,8 +180,10 @@ per error, tag `part4-ch22`.
 
 ## What this plan does not decide
 
-- **R2's option.** Four are priced; the choice is task 1 and belongs in
-  `baseline.txt` with both halves of the argument.
+- **R2's option, and R8's.** Seven options priced across two holes; both choices are
+  Phase 2's and belong in `baseline.txt` with both halves of each argument. **Take
+  them together** — building for one hole and not the other needs a reason better
+  than which was found first.
 - **Whether Phase 3 can be exited.** Its first clause needs a scheduler ADR-28
   declined to build. The chapter states a verdict; it does not build a scheduler.
 - **Whether §7.6 is this chapter's.** It concerns FR-DSH and FR-EMJ, which are Part

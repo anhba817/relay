@@ -180,6 +180,51 @@ integrate.itest.ts                   5   5          only if the arrow is added t
 roughly 91 for option A. A milestone that spends 91 fence pages on new surface is not
 a milestone.
 
+## R8 — Stage 6 names a join neither log can perform, which is Stage 2's shape again
+
+Found at analysis pass 1, by opening the two query schemas rather than the two
+documents that describe them.
+
+> **`docs/03` Stage 6** — *"the request id is what joins an entry to the request
+> log's row for the same request, so Priya can go from **a ban happened** to **this
+> is the call that made it**."*
+
+```
+audit.schema.ts         filters: cursor · limit · action
+request-log.schema.ts   filters: from · to · cursor · direction · limit · endpoint · status
+```
+
+**BOTH ROWS CARRY `request_id` AND NEITHER SURFACE ACCEPTS IT.** `audit.reader.ts:41`
+returns it and chapter 4.18 added the field precisely for this join — `docs/03`'s own
+Stage 6 note says the list *"said four of five until chapter 4.18 came to build it,
+and the missing one is the field doing the most work."* The field exists. The query
+does not.
+
+**SO PRIYA'S TOOL MUST PAGE BOTH LOGS AND MATCH IN MEMORY**, which is the same
+answer Stage 2 gives — a capability the journey asserts, no chapter owned, and no
+clause carries.
+
+**AND THE TWO HOLES HAVE ONE CAUSE, WHICH IS THE ARGUMENT FOR THE MILESTONE RATHER
+THAN A PROBLEM WITH IT.** Chapter 4.8 built the request log and chapter 4.18 built
+the audit log; each is correct and each was verified by its own suite. The join
+between them belongs to neither, so nobody built it and nothing noticed — **which is
+4.17's finding exactly**: *every suite stood in for the step beside it, and the
+aggregate is a path nobody had walked.* Two chapters apart this time instead of
+seven, and found by the same instrument.
+
+**THREE OPTIONS, AND THE PLAN DOES NOT PICK ONE** (task T011a):
+
+| | option | cost | what it leaves |
+|---|---|---|---|
+| **a** | publish it as a limit; the tool pages both logs | 0 | the journey's sentence is aspirational and the chapter says so |
+| **b** | add a `request_id` filter to one or both readers | two fenced schemas, two readers, and a milestone that builds | the join `docs/03` promises |
+| **c** | amend `docs/03` to describe the paging | 0 platform | a journey that matches the platform |
+
+**(b) IS WHAT A READER WANTS AND WHAT RULE 4 FORBIDS.** Same shape as R2's option A,
+one document over — and the two decisions should be taken together, because choosing
+to build for one hole and not the other needs a reason better than which was found
+first.
+
 ## R7 — The margin, which is the test's actual contract
 
 `tuan.itest.ts`: *"Read the right margin: each step names the chapter that made it

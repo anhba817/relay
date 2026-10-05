@@ -77,9 +77,14 @@ and the chapters after it have to stop borrowing that id.
 ## 3 · The journey, after the chapter (PREDICTION)
 
 ```bash
-RELAY_API_URL=http://localhost:4000 RELAY_WS_URL=ws://localhost:4001 \
-RELAY_DEMO_CREDENTIAL=$K pnpm --filter @relay/outsider test:integration
+export RELAY_API_URL=http://localhost:4000 RELAY_WS_URL=ws://localhost:4001 RELAY_DEMO_CREDENTIAL=$K
+pnpm test:outsider
 ```
+
+**`pnpm test:outsider` AND NOT `pnpm --filter …`** — it is what `ci.yml:360` runs and
+what `vitest.coverage.config.mts:97` calls *"the way in"*. A first draft used the
+filter form; it works, and a quickstart that runs a different command from CI is a
+quickstart that can pass while CI fails.
 
 **Expected**: the sealed suite's existing tests plus the six Priya stages, all green.
 **Check the margin**: every assertion names the chapter it verifies, and §4 is what
@@ -92,15 +97,31 @@ gone from that route.
 
 ## 4 · The margin, falsified (PREDICTION)
 
-```bash
-git revert --no-commit part4-ch18 && pnpm --filter @relay/outsider test:integration
-git revert --abort 2>/dev/null; git reset --hard HEAD
+Revert the **mechanism**, one at a time, not the chapter:
+
+```
+4.18   repository.ts:3034         make `recordAction` a no-op
+4.19   repository.ts:5882         remove the `insert(messageEdits)` in `deleteMessage`
+4.21   users.controller.ts:160    remove `@Delete(":externalId/data")`
 ```
 
-**Expected**: reverting 4.18 turns the Stage 6 audit assertion red and nothing else;
-4.19 turns the Stage 3 history assertion red; 4.21 turns the Stage 6 receipt
-assertion red. **Three chapters, three named assertions** — which is SC-002, and the
-only thing that makes the margin a claim rather than a comment.
+```bash
+# after each single edit:
+pnpm build && docker compose --profile services build api && docker compose up -d --wait api
+pnpm test:outsider          # record WHICH named assertion failed
+git checkout -- .           # restore before the next one
+```
+
+**Expected**: 4.18 turns the Stage 6 audit assertion red; 4.19 the Stage 3
+destroyed-text assertion; 4.21 the Stage 6 receipt assertion. **Three mechanisms,
+three named assertions** — SC-002, and the only thing that makes the margin a claim
+rather than a comment.
+
+**`git revert <tag>` WAS THE FIRST DRAFT AND IT WOULD HAVE LIED.** A tag names one
+commit; measured, **4.18 is 7 commits, 4.19 is 3, 4.21 is 5**. Reverting 4.21's tip
+reverts a test-only commit and turns **nothing** red — the margin would read as false
+when it is true. And the range form conflicts on **10 files** that 4.19–4.21 also
+touched.
 
 ## 5 · And what this still cannot show
 

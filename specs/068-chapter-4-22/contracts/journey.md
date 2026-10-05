@@ -48,11 +48,19 @@ and three named assertions failing. A margin nobody has falsified is a comment.
 | **3 Reconstruct** | three outcomes are distinguishable from the record: never sent, sent and deleted, sent and edited. The edited message yields both texts and both instants, in order |
 | **4 Judge** | every instant in the record is UTC with millisecond precision (CON-04) — inspection, and the only stage with no behavioural assertion |
 | **5 Act** | the moderator's deletion reaches a connected socket; the banned user is refused both connect and send; their history survives |
-| **6 Record** | the audit entry for that deletion is findable by the `request_id` the caller was given, and an erasure returns a receipt naming each store |
+| **6 Record** | the audit entry for that deletion **carries** the `request_id` the caller was given — found by paging, because **neither log accepts it as a filter** (R8) — and an erasure returns a receipt naming each store |
 
 **STAGE 2's SECOND HALF IS THE ONE TO WRITE FIRST.** *An order number nobody used
 produces a named refusal* is red today — it is a 500 — whichever option R2 picks,
 and it is the only assertion in this file that can fail before the chapter starts.
+
+**AND STAGE 6's ASSERTION IS NARROWER THAN THE JOURNEY'S SENTENCE, ON PURPOSE.**
+`docs/03` says the request id *joins* an audit entry to its request-log row; measured,
+`audit.schema.ts` filters on `cursor`, `limit` and `action` and
+`request-log.schema.ts` on `from`, `to`, `cursor`, `direction`, `limit`, `endpoint`
+and `status` — **both carry the id and neither accepts it.** The assertion says the
+entry carries it and the id resolves by paging. **Writing one that implies a filter
+exists would make the test a claim about a surface nobody built.**
 
 ## The arrow (User Story 2)
 
