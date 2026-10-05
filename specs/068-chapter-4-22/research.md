@@ -184,8 +184,9 @@ a milestone.
 
 R2 and R8 found a hole each, one pass apart, and a third turned up at pass 3. **Three
 of one shape is a class, and 045's rule is to stop counting failures and ask the tree
-once.** Journey 3 has six stages and every one carries a *"What Relay must provide"*
-block. Swept, all fourteen capabilities:
+once.** Journey 3 has six stages. **Five carry a *"What Relay must provide"* block and
+Stage 4 does not** — its one assertion is in its prose — which is the distinction
+that made the first version of the count wrong. Swept, all fifteen capabilities:
 
 ```
 STAGE 1  external IDs on channels and users        FR-USR-01, FR-CHN-01   HOLDS
@@ -205,8 +206,16 @@ STAGE 6  audit log: actor, action, target, ts, request id   FR-MOD-03     HOLDS
          erasure with a completion receipt         FR-MOD-04              HOLDS
 ```
 
-**ELEVEN CITE A CLAUSE AND ELEVEN HOLD. THREE CITE NO CLAUSE AND THREE ARE HOLES.
+**TWELVE CITE A CLAUSE AND TWELVE HOLD. THREE CITE NO CLAUSE AND THREE ARE HOLES.
 Three of three, no exceptions in either direction.**
+
+**THE FIRST VERSION OF THIS SENTENCE SAID FOURTEEN AND ELEVEN, AND THE TABLE ABOVE
+IT SAID FIFTEEN AND TWELVE.** The sentence was written off a grep for
+`"What Relay must provide"`, which finds **five** blocks because Stage 4 has none;
+the table was then built by reading all six stages and gained a CON-04 row the
+sentence never counted. **The number IS the finding here** — *three of three* is only
+interesting because it is exact — and it was published in four files before anyone
+counted the rows underneath it. Analysis pass 4, by counting.
 
 **SO THE CHAPTER'S THESIS IS A PREDICATE, NOT A LIST OF GAPS**: *a capability
 `docs/03` asserts without naming a requirement is a capability nobody built.* It is
@@ -217,12 +226,12 @@ its own last line.
 
 **AND IT IS 4.17's FINDING ONE LEVEL UP.** That chapter found that seven suites each
 stood in for the step beside it and the aggregate was a path nobody had walked. Here
-fourteen capabilities each had a chapter, except three that had no clause — so no
+fifteen capabilities each had a chapter, except three that had no clause — so no
 chapter owned them, so no suite covered them, so no aggregate existed to notice.
 **The milestone is the only instrument that looks at the whole journey**, which is
 what makes finding three holes a success rather than an embarrassment.
 
-**WHAT THIS DOES NOT CLAIM.** The predicate is perfect on this journey's fourteen
+**WHAT THIS DOES NOT CLAIM.** The predicate is perfect on this journey's fifteen
 and nowhere else; Journey 4 has its own blocks and nobody has swept them. A rule
 measured once is a hypothesis with one confirmation — worth publishing, worth not
 generalising past Part 4 (`gaps.md` at close).

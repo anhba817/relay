@@ -213,7 +213,7 @@ measurement or the clause behind it.
   published verdict; the count of demonstrated stages is stated as a number.
 - **SC-007a**: Every capability Journey 3's *"What Relay must provide"* blocks assert
   is classified as holding or not, with the clause it cites or the absence of one —
-  **fourteen of fourteen**, published as a table.
+  **fifteen of fifteen**, published as a table.
 - **SC-008**: `git diff --name-only part4-ch21..HEAD` contains no file outside this
   chapter's subject, tests and documents.
 - **SC-009**: The fence chain reports 0 and every tutorial gate exits 0.

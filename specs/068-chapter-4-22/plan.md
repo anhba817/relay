@@ -12,11 +12,12 @@ mechanism. **A milestone appears after all the work it verifies** (`docs/12` §5
 4), which is the constraint that decides almost every open question below.
 
 **The premise check found THREE holes, and swept rather than counted they are one
-property with an exact predicate** (R11). Journey 3's six stages assert **fourteen**
-capabilities in their *"What Relay must provide"* blocks:
+property with an exact predicate** (R11). Journey 3's six stages assert **fifteen**
+capabilities — five stages carry a *"What Relay must provide"* block and Stage 4's
+one assertion is in its prose:
 
 ```
-eleven cite a requirement   ->  eleven hold
+twelve cite a requirement   ->  twelve hold
 three cite none             ->  three are holes, 3 of 3, no exceptions either way
 ```
 
@@ -26,7 +27,7 @@ attempt answers **500**), **Stage 5's** *"a banned user's connections drop"* (ch
 at auth and at send, never in between, and there is no ban frame), and **Stage 6's**
 request-id join (both rows carry it, neither reader accepts it as a filter).
 
-**That is 4.17's finding one level up**: each of the eleven had a chapter, and the
+**That is 4.17's finding one level up**: each of the twelve had a chapter, and the
 three with no clause had no owner, so no suite covered them and no aggregate existed
 to notice. **A journey map is prose and no checker in these repositories reads
 prose.** Finding them is what the milestone is for; how each is resolved is Phase 2's
