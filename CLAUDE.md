@@ -63,8 +63,8 @@ tags. **Anyone holding an older clone of `relay-platform` must reset rather than
 
 <!-- SPECKIT START -->
 
-**ACTIVE PLAN: `specs/068-chapter-4-22/` — chapter 4.22, "The identifier the customer gave
-it". Spec written; no `plan.md` yet.** The milestone that found this is **069 / chapter
+**ACTIVE PLAN: `specs/068-chapter-4-22/plan.md`** — chapter 4.22, "The identifier the
+customer gave it". The milestone that found this is **069 / chapter
 4.23** and comes after.
 
 **PART 4 EXPANDED TO 23 FOR THIS.** The Priya milestone's premise check could not complete
@@ -82,6 +82,14 @@ the upsert returns no uuid. Channels: 0 of 13, and the create returns the uuid f
 users side needs **one** change — the listing cursor is base64 of `{a, id}` and its own
 comment says *"OPAQUE IS NOT SECURITY"*, which is also where 4.23's ADR-37 reversal condition
 rests.
+
+**THE 500 IS A FAILED CAST, WHICH MAKES THE FIX AND THE REPAIR ONE EDIT.**
+`'order-88412'::uuid` raises in Postgres before any `OR` can short-circuit, so a value that
+cannot be a uuid is never cast under the new resolution and the error cannot arise. **And the
+api logs the status without the cause** — one `"status":500` line, no `22P02`, nothing an
+operator can act on (058-3 counts 22 routes that can produce one; not this chapter's to fix).
+**The design is a pipe, because the cheaper middleware runs BEFORE guards** and an unscoped
+resolution is a cross-tenant read. **157 existing call sites pass a uuid** and must not change.
 
 **THE AGENT-CONTEXT HOOK CANNOT RUN HERE AND EXITS 0 WHEN IT DECLINES.** PyYAML is not
 importable by this `python3`, so it skips with a clear message. **It would also have pointed
