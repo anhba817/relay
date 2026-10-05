@@ -180,6 +180,84 @@ integrate.itest.ts                   5   5          only if the arrow is added t
 roughly 91 for option A. A milestone that spends 91 fence pages on new surface is not
 a milestone.
 
+## R11 — The sweep, and the predicate is exact
+
+R2 and R8 found a hole each, one pass apart, and a third turned up at pass 3. **Three
+of one shape is a class, and 045's rule is to stop counting failures and ask the tree
+once.** Journey 3 has six stages and every one carries a *"What Relay must provide"*
+block. Swept, all fourteen capabilities:
+
+```
+STAGE 1  external IDs on channels and users        FR-USR-01, FR-CHN-01   HOLDS
+STAGE 2  CHANNEL RETRIEVAL BY EXTERNAL ID          — no clause —          HOLE
+         a user's channel list                     FR-CHN-08              HOLDS
+STAGE 3  tombstones                                FR-MSG-08, FR-MSG-10   HOLDS
+         immutable edit history                    FR-MSG-07              HOLDS
+         server-assigned sequence numbers          FR-MSG-02/03           HOLDS
+         complete history via API key              FR-MOD-01              HOLDS
+STAGE 4  unambiguous timestamps                    CON-04                 HOLDS
+STAGE 5  moderator deletion of any message         FR-MOD-02              HOLDS
+         tenant-scoped ban                         FR-USR-06              HOLDS
+         the deletion event reaches connected clients  FR-RTM-05          HOLDS
+         A BANNED USER'S CONNECTIONS DROP          — no clause —          HOLE
+STAGE 6  audit log: actor, action, target, ts, request id   FR-MOD-03     HOLDS
+         THE REQUEST ID JOINS TO THE REQUEST LOG ROW  — no clause —       HOLE
+         erasure with a completion receipt         FR-MOD-04              HOLDS
+```
+
+**ELEVEN CITE A CLAUSE AND ELEVEN HOLD. THREE CITE NO CLAUSE AND THREE ARE HOLES.
+Three of three, no exceptions in either direction.**
+
+**SO THE CHAPTER'S THESIS IS A PREDICATE, NOT A LIST OF GAPS**: *a capability
+`docs/03` asserts without naming a requirement is a capability nobody built.* It is
+mechanical, it is checkable by anyone with the two documents, and it explains why
+nobody noticed — **each hole is a sentence in a journey map, and a journey map is
+prose.** No checker in these three repositories reads prose; `check-refs` says so in
+its own last line.
+
+**AND IT IS 4.17's FINDING ONE LEVEL UP.** That chapter found that seven suites each
+stood in for the step beside it and the aggregate was a path nobody had walked. Here
+fourteen capabilities each had a chapter, except three that had no clause — so no
+chapter owned them, so no suite covered them, so no aggregate existed to notice.
+**The milestone is the only instrument that looks at the whole journey**, which is
+what makes finding three holes a success rather than an embarrassment.
+
+**WHAT THIS DOES NOT CLAIM.** The predicate is perfect on this journey's fourteen
+and nowhere else; Journey 4 has its own blocks and nobody has swept them. A rule
+measured once is a hypothesis with one confirmation — worth publishing, worth not
+generalising past Part 4 (`gaps.md` at close).
+
+## R10a — Hole 3: a banned user's connections do not drop
+
+> **`docs/03` Stage 5** — *"tenant-scoped ban (FR-USR-06), both effective in real
+> time: connected clients see the deletion event immediately (FR-RTM-05), and **a
+> banned user's connections drop**. Latency of moderation is a safety property, not
+> a convenience."*
+
+```
+FR-USR-06          "preventing CONNECTION and message send while preserving history"
+auth.ts:93         a ban is an outcome at AUTH — close code 4003 on a NEW connection
+api-client.ts:40   `user_banned` refuses a send
+frames.ts          no ban frame — nothing tells a live socket anything
+```
+
+**THE BAN IS CHECKED WHEN A SOCKET OPENS AND WHEN IT SENDS, AND NEVER IN BETWEEN.**
+Measured by reading the gateway: nothing closes an established connection, and the
+protocol has no frame that could ask it to. FR-USR-06's word is **connection**,
+singular, which the implementation satisfies exactly.
+
+**THE BOUND IS WHAT THE CHAPTER PUBLISHES, NOT THE ALARM.** After a ban: sending
+stops immediately, reconnecting is refused with 4003, and **an already-open socket
+keeps receiving until it closes on its own.** Whether that matters is the customer's
+judgement — `docs/03` calls it a safety property and the platform does not implement
+it as one, and those are both facts the chapter can state without choosing.
+
+**T020 IS ALREADY CORRECT AND THAT IS WORTH NOTING RATHER THAN QUIETLY PASSING.** It
+asserts connect and send because it was written off FR-USR-06's wording rather than
+off the journey's sentence. **Reading the clause rather than the prose is what kept
+the assertion honest**, which is the same habit that produced the hole in the first
+place — somebody wrote the prose without reading the clause.
+
 ## R9 — The sealed package runs files in parallel, and this chapter is the first to add a second
 
 Measured at analysis pass 2, with two throwaway files that do nothing but sleep:

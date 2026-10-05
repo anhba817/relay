@@ -11,18 +11,27 @@ Journey 3 made executable, as `tuan.itest.ts` made Journey 4 executable at chapt
 mechanism. **A milestone appears after all the work it verifies** (`docs/12` §5 rule
 4), which is the constraint that decides almost every open question below.
 
-**The premise check found TWO holes and they have one cause.** At Stage 2 a channel
-cannot be read by the identifier the customer gave it — the natural attempt answers
-**500** and no SRS clause requires the lookup. At Stage 6 the audit-to-request-log
-join `docs/03` describes **cannot be queried on either side**: both rows carry
-`request_id` and neither reader accepts it as a filter.
+**The premise check found THREE holes, and swept rather than counted they are one
+property with an exact predicate** (R11). Journey 3's six stages assert **fourteen**
+capabilities in their *"What Relay must provide"* blocks:
 
-**Each is a capability a journey asserts, that no chapter owned, and that no clause
-carries** — and that is 4.17's finding at a new address: every suite stood in for the
-step beside it, and the aggregate is a path nobody had walked. **Finding them is what
-the milestone is for.** How each is resolved is this feature's first phase and not
-this plan's decision; `research.md` R2 and R8 price them, and in both cases the
-option a reader wants is the one `docs/12` §5 rule 4 forbids a milestone from taking.
+```
+eleven cite a requirement   ->  eleven hold
+three cite none             ->  three are holes, 3 of 3, no exceptions either way
+```
+
+**A capability `docs/03` asserts without naming a clause is a capability nobody
+built.** The three: **Stage 2's** channel retrieval by external id (the natural
+attempt answers **500**), **Stage 5's** *"a banned user's connections drop"* (checked
+at auth and at send, never in between, and there is no ban frame), and **Stage 6's**
+request-id join (both rows carry it, neither reader accepts it as a filter).
+
+**That is 4.17's finding one level up**: each of the eleven had a chapter, and the
+three with no clause had no owner, so no suite covered them and no aggregate existed
+to notice. **A journey map is prose and no checker in these repositories reads
+prose.** Finding them is what the milestone is for; how each is resolved is Phase 2's
+and not this plan's, and in every case the option a reader wants is the one
+`docs/12` §5 rule 4 forbids a milestone from taking.
 
 ## Technical Context
 

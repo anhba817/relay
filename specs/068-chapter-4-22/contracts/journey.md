@@ -49,7 +49,7 @@ and three named assertions failing. A margin nobody has falsified is a comment.
 | **2 Locate** | the conversation is reached from the order number alone, and an order number nobody used produces a refusal that names its cause — **not a 5xx** |
 | **3 Reconstruct** | three outcomes are distinguishable from the record: never sent, sent and deleted, sent and edited. The edited message yields both texts and both instants, in order |
 | **4 Judge** | every instant in the record is UTC with millisecond precision (CON-04) — inspection, and the only stage with no behavioural assertion |
-| **5 Act** | the moderator's deletion reaches a connected socket; the banned user is refused both connect and send; their history survives |
+| **5 Act** | the moderator's deletion reaches a connected socket; the banned user is refused **both connect and send**; their history survives. **Not that their open socket closes** — `docs/03` says it does and FR-USR-06 does not require it, so the assertion follows the clause and the chapter publishes the gap (R10a) |
 | **6 Record** | the audit entry for that deletion **carries** the `request_id` the caller was given — found by filtering on `action` and matching a target id this test minted, because **neither log accepts `request_id` as a filter** (R8) **and a neighbour writes moderation entries into the same log concurrently** (R9) — and an erasure returns a receipt naming each store |
 
 **STAGE 2's SECOND HALF IS THE ONE TO WRITE FIRST.** *An order number nobody used

@@ -144,6 +144,9 @@ measurement or the clause behind it.
 - A dispute whose decisive message was deleted **before** chapter 4.19 shipped: 5,060
   tombstones predate it and no migration recovers their text.
 - A banned user who was already disconnected — the ban must still hold at reconnect.
+- **A banned user who is still connected.** `docs/03` says their connections drop;
+  FR-USR-06 says *preventing connection and message send*. The platform does the
+  second and not the first, and the chapter publishes the bound rather than the alarm.
 - An erasure performed between the ticket and the investigation: the conversation
   survives and its author does not, which is 4.21's decision seen from Priya's side.
 
@@ -208,6 +211,9 @@ measurement or the clause behind it.
   that could not be is named with its obstacle.
 - **SC-007**: Journey 3's six stages and Phase 3's three exit clauses each carry a
   published verdict; the count of demonstrated stages is stated as a number.
+- **SC-007a**: Every capability Journey 3's *"What Relay must provide"* blocks assert
+  is classified as holding or not, with the clause it cites or the absence of one —
+  **fourteen of fourteen**, published as a table.
 - **SC-008**: `git diff --name-only part4-ch21..HEAD` contains no file outside this
   chapter's subject, tests and documents.
 - **SC-009**: The fence chain reports 0 and every tutorial gate exits 0.
