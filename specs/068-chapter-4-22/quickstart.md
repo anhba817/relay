@@ -60,10 +60,11 @@ line and nothing else.
 ORD="order-$RANDOM"
 curl -s -X POST localhost:4000/v1/channels -H "authorization: Bearer $K" \
   -H 'content-type: application/json' -d "{\"external_id\":\"$ORD\",\"type\":\"private\"}" >/dev/null
+BOT="qb-$RANDOM"
 curl -s -X POST localhost:4000/v1/users -H "authorization: Bearer $K" \
-  -H 'content-type: application/json' -d '{"users":[{"external_id":"qb","kind":"bot","description":"b"}]}' >/dev/null
+  -H 'content-type: application/json' -d "{\"users\":[{\"external_id\":\"$BOT\",\"kind\":\"bot\",\"description\":\"b\"}]}" >/dev/null
 curl -s -X POST "localhost:4000/v1/channels/$ORD/members" -H "authorization: Bearer $K" \
-  -H 'content-type: application/json' -d '{"user_ids":["qb"]}' >/dev/null
+  -H 'content-type: application/json' -d "{\"user_ids\":[\"$BOT\"]}" >/dev/null
 
 for r in "GET /v1/channels/$ORD" "GET /v1/channels/$ORD/messages" \
          "POST /v1/channels/$ORD/archive" "DELETE /v1/channels/$ORD/archive"; do
@@ -73,8 +74,18 @@ for r in "GET /v1/channels/$ORD" "GET /v1/channels/$ORD/messages" \
 done
 ```
 
-**Expected after the chapter**: 200 on every line, and a send to
-`/v1/channels/$ORD/messages` answering 201 without the customer ever seeing a uuid.
+And the send, which needs a body and so cannot ride the loop:
+
+```bash
+curl -s -o /dev/null -w '  POST   /v1/channels/$ORD/messages%{http_code}\n' \
+  -X POST "localhost:4000/v1/channels/$ORD/messages" -H "authorization: Bearer $K" \
+  -H 'content-type: application/json' -d "{\"user\":\"$BOT\",\"text\":\"hello\"}"
+```
+
+**Expected after the chapter**: 200 on every line of the loop and **201** on the
+send, with the customer never having seen a uuid. **The send was promised by this
+section's prose and absent from its script for three analysis passes** — a prediction
+nothing would have produced.
 
 ## 4 · And an identifier nobody used (PREDICTION)
 
@@ -94,3 +105,9 @@ between a platform that refuses and one that breaks.
   41,768** channels have one, so the tie-break is a constructed test and not an
   observed case.
 - **Whether the uuid is ever retired.** 157 call sites hold one. Not this chapter.
+- **US2's sweep.** *Does any internal key reach a customer?* is an audit of every
+  response shape, not a curl, so it lives in the chapter and in T026 rather than
+  here. The count it produces is SC-006.
+- **The `:messageId` 500.** `…/messages/not-a-uuid` still answers 500 on three of
+  these routes. The claim this quickstart demonstrates is about the channel
+  segment.

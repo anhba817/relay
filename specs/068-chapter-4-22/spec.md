@@ -168,7 +168,9 @@ identifier addresses each noun and why.
 - **FR-004**: An identifier that names nothing MUST produce a refusal whose **code**
   names the cause. The **message** stays constant: FR-TEN-05 requires a foreign
   channel and an absent one to answer identically, which `channels.service.ts`
-  already does deliberately. **No input to these routes may produce a 5xx.**
+  already does deliberately. **No value in the channel segment of these routes may
+  produce a 5xx** — see the scope note under SC-003 for the segment this chapter does
+  not reach.
 - **FR-005**: Resolution MUST be scoped to the calling tenant's environment, and that
   scope MUST be demonstrated by removing it and observing a test fail.
 - **FR-006**: The values a customer receives MUST be swept for identifiers that are
@@ -202,8 +204,11 @@ identifier addresses each noun and why.
   **13 of 13**, asserted per route rather than in aggregate.
 - **SC-002**: Every one of those routes also works with the Relay identifier, asserted
   the same way.
-- **SC-003**: No input to any of those routes produces a 5xx, including a malformed
-  identifier, an absent one and one belonging to another tenant.
+- **SC-003**: No value in the **channel segment** of those routes produces a 5xx,
+  including a malformed identifier, an absent one and one belonging to another
+  tenant. **Three of the thirteen carry a `:messageId` as well**, which is a uuid
+  column with no shape check, so a malformed message id is still a 500 — 058-3's
+  class, out of scope here and published as such.
 - **SC-004**: A tenant calling with an identifier another tenant also uses reaches
   their own channel, and the other tenant's rows are unchanged.
 - **SC-005**: Removing the tenant scope from the resolution turns at least one named
@@ -213,8 +218,10 @@ identifier addresses each noun and why.
   not**, and each one disposed of.
 - **SC-007**: Journey 3 Stage 2 completes with the order number alone, which chapter
   4.23's milestone then asserts end to end.
-- **SC-008**: `git diff --name-only part4-ch21..HEAD` contains no file outside this
-  chapter's subject, tests and documents.
+- **SC-008**: `git diff --name-only part4-ch21 --` contains no file outside this
+  chapter's subject, tests and documents. **One dot form, not two**: `..HEAD` reads
+  committed state and reported a confident 0 for 4.21 while two leaked ids sat in the
+  working tree (067-3).
 - **SC-009**: The fence chain reports 0 and all six tutorial gates exit 0.
 - **SC-010**: The CI error set is compared per error against the pre-chapter baseline,
   in both directions.

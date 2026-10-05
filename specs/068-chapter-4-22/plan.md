@@ -40,6 +40,14 @@ sweeps for a real leak rather than closing the named one.
 
 Read clause by clause, because a principle's bullets do not get one verdict.
 
+### V-ERRATUM. The no-5xx claim is about the CHANNEL SEGMENT
+
+Three of the thirteen routes take a `:messageId` that reaches `messages.id`, a uuid
+column with no shape check, so `…/messages/not-a-uuid` is a 500 the pipe does not
+touch. **SC-003 and FR-004 are scoped to the channel segment** and the exclusion is
+asserted (T020b) and published (T050). Fixing three of 058-3's sixteen routes is the
+shape that chapter already refused.
+
 ### I. Tenant isolation — **ENGAGED, AND IT IS THE REASON THE CHEAP DESIGN LOSES**
 
 A middleware would have been 13 pages cheaper and Nest runs it **before guards**, so
@@ -67,7 +75,10 @@ this chapter is new product; it is the API matching its own specification.
 1. *New behaviour gets a requirement first.* **FR-CHN gains a clause before the pipe
    is written**, not after — the ordering is a task, not a courtesy.
 2. *100% branch coverage for tenant isolation.* The resolution's tenancy arm is in
-   that population the moment it exists.
+   that population the moment it exists, **and that beats the ratchet's "pin below
+   the measured value" for this one file** (T033a). The two rules contradicted each
+   other for three analysis passes; the pin rule answers run-to-run drift over a
+   moving denominator, which a thirty-line file does not have.
 3. *The cross-tenant suite gates releases.* `gauntlet.itest.ts` must attack the new
    form: an identifier belonging to another tenant must not resolve.
 4. *The quickstart runs unmodified.* Still verified by hand; zero occurrences of

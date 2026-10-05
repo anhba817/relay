@@ -39,8 +39,17 @@ these paths is unchanged: `{userExternalId}` was already an identity and
 | a uuid no channel in this environment has | 404 | `not_found` — unchanged |
 | a channel belonging to another tenant, by either form | 404 | `not_found`, **indistinguishable from absent** |
 | a malformed value of any shape | 404 | `not_found` — **this is the 500 today** |
+| a malformed `:messageId` on the three routes that take one | **500** | **unchanged — out of scope** |
 
-**NO INPUT TO THESE ROUTES MAY PRODUCE A 5xx.** Today `GET /v1/channels/order-88412`
+**THE LAST ROW IS THE LIMIT OF THE CLAIM, AND IT IS NARROWER THAN IT READS.**
+`PATCH` and `DELETE …/messages/{messageId}` and `GET …/messages/{messageId}/edits`
+hand their second path parameter to `messages.id`, a uuid column with no shape check,
+so `…/messages/not-a-uuid` raises `22P02` exactly as the channel cast does. **This
+chapter fixes the channel segment and not that one** — it is 058-3's class, sixteen
+shipped routes wide, and a chapter that repairs three of them is the shape 058 already
+refused.
+
+**NO VALUE IN THE CHANNEL SEGMENT MAY PRODUCE A 5xx.** Today `GET /v1/channels/order-88412`
 is `500 internal_error`, because the value reaches a uuid-typed column and Postgres
 raises `invalid input syntax for type uuid` — which the api does not log. After this
 chapter a value that cannot be a uuid is never cast, so the error cannot arise.
