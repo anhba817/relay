@@ -38,9 +38,12 @@ pre-contraction ordinals — the queryable attempt log is 4.2, FR-MOD-03's audit
 **Name a Part 4 chapter by its movement and title, not its number**, for the reason Part 3
 already taught.
 
-**PART 4 IS 22 CHAPTERS AND IT CONTRACTED TWICE** — 24 to 23 when movement I shipped as one
-chapter, 23 to 22 when 4.2 built all four items of the ledger chapter's brief. **Milestones
-are at 9, 17 and 22.** `docs/12` §3's table keeps the **original** ordinals in column one on
+**PART 4 IS 23 CHAPTERS. IT CONTRACTED TWICE AND THEN EXPANDED ONCE** — 24 to 23 when
+movement I shipped as one chapter, 23 to 22 when 4.2 built all four items of the ledger
+chapter's brief, and **22 to 23 when the Priya milestone's premise check found the channel
+routes contradicting FR-USR-01 and ADR-18 on thirteen routes** (feature 068). Rule 4 says a
+milestone verifies rather than builds, so the fix is its own chapter placed BEFORE it.
+**Milestones are at 9, 17 and 23.** `docs/12` §3's table keeps the **original** ordinals in column one on
 purpose so older references resolve, so reading that column as current is how a chapter number
 goes wrong; the movement column is the stable address. **Part 4 tags as `part4-chN`** —
 `rework/` was a Part 3 rebuild artefact and does not carry forward, and the 21 stale

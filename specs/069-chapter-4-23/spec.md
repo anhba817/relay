@@ -1,13 +1,13 @@
-# Feature Specification: chapter 4.22, "★ Milestone: the Priya test"
+# Feature Specification: chapter 4.23, "★ Milestone: the Priya test"
 
-**Feature directory**: `specs/068-chapter-4-22/`
+**Feature directory**: `specs/069-chapter-4-23/`
 **Created**: 2026-10-05
 **Chapter**: Part 4, movement VII, the third milestone and the last chapter of Part 4
 **Source**: `docs/12-part-4-structure.md` row 23 · `docs/07-tutorial-plan.md` row 23 ·
 `docs/03-journey-map.md` Journey 3 · `docs/04-srs.md` §7.3 Phase 3
 
 **Name a chapter, never number it.** `docs/12` §3's table keeps pre-contraction
-ordinals in column one on purpose: **row 23 is chapter 4.22**, one row after 4.21's.
+ordinals in column one on purpose: **row 23 is chapter 4.23**, one row after 4.21's.
 
 ---
 

@@ -1,6 +1,6 @@
-# Implementation Plan: chapter 4.22, "★ Milestone: the Priya test"
+# Implementation Plan: chapter 4.23, "★ Milestone: the Priya test"
 
-**Feature**: `specs/068-chapter-4-22/` · **Spec**: [spec.md](./spec.md) ·
+**Feature**: `specs/069-chapter-4-23/` · **Spec**: [spec.md](./spec.md) ·
 **Research**: [research.md](./research.md)
 **Created**: 2026-10-05 · **Predecessor tag**: `part4-ch21`
 
@@ -52,7 +52,7 @@ and not this plan's, and in every case the option a reader wants is the one
 | **CI job** | `relay-platform — the sealed integration`, which was 21 of 21 at 4.21's close |
 | **Concurrency** | **this is the package's SECOND file and its files run in parallel** against one seeded tenant — measured, R9. Assertions scope to their own fixtures |
 | **Storage** | none added — no migration, no column, no table |
-| **Documents** | `docs/04-srs.md` (FR-CHN group, §7.3, revision 1.29), `docs/12` row 23 and §7.6, `docs/07` row 23 |
+| **Documents** | `docs/04-srs.md` (FR-CHN group, §7.3, revision 1.29), `docs/12` the milestone row and §7.6, `docs/07` row 23 |
 | **Unknowns** | **R2's option and R8's** — the only two, and both are Phase 2 |
 
 ## Constitution Check
@@ -128,7 +128,7 @@ names, which is VII's scope commitment applied to a milestone.
 ### Documentation (this feature)
 
 ```
-specs/068-chapter-4-22/
+specs/069-chapter-4-23/
 ├── spec.md              12 FR, 10 SC, 3 user stories
 ├── plan.md              this file
 ├── research.md          R1–R7, every figure measured 2026-10-05
@@ -159,7 +159,7 @@ docs/
 ├── 07-tutorial-plan.md           row 23 SHIPPED
 └── 12-part-4-structure.md        row 23 CLOSED · §7.6
 relay-tutorial/
-└── app/(en)/part-4/chapter-22/the-priya-test/{page.mdx,figures.ts}
+└── app/(en)/part-4/chapter-23/the-priya-test/{page.mdx,figures.ts}
 ```
 
 ## Phases
@@ -193,7 +193,7 @@ chapter owns it, revision 1.29, both Part 4 tables, an ADR if phase 2 said so.
 fences and hunks from the checker's own replay.
 
 **Phase 9 — the record and the close.** Battery, quickstart run, push, CI compared
-per error, tag `part4-ch22`.
+per error, tag `part4-ch23`.
 
 ## Complexity Tracking
 

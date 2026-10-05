@@ -1,4 +1,4 @@
-# Quickstart — chapter 4.22, "★ Milestone: the Priya test"
+# Quickstart — chapter 4.23, "★ Milestone: the Priya test"
 
 **§0 to §2 are MEASURED on 2026-10-05. §3 and §4 are PREDICTIONS** until phase 9
 runs them. The last eight chapters' predictions were wrong 3, 4, 3, 5, 2, 0, 5 and

@@ -81,7 +81,7 @@ Part 0   The idea and the paper          5 chapters   (docs 01–06 as curriculu
 Part 1   Foundations                     4 chapters   (repo, tooling, protocol, compose)
 Part 2   The core loop                   8 chapters   (SRS Phase 1 — the hardest part)
 Part 3   Becoming a platform            26 chapters   (SRS Phase 2)
-Part 4   Everywhere the data went       22 chapters   (analytics · hosted media · the paper trail)
+Part 4   Everywhere the data went       23 chapters   (analytics · hosted media · the paper trail)
 Part 5   Developer experience            6 chapters   (SDK, emoji, dashboard)
 Part 6   Shipping it                     5 chapters   (containers, k8s, CI/CD)
 Part 7   Running it                      6 chapters   (observability, load, chaos, incidents)
@@ -535,7 +535,7 @@ wagging the dog. If a later chapter wants the story, the twelve post-series entr
 and this feature's research are where it is kept.
 
 
-### Part 4 — Everywhere the data went (22 chapters, seven movements)
+### Part 4 — Everywhere the data went (23 chapters, seven movements)
 
 **Renamed, resized and regrouped during grooming.** The structure record is
 `docs/12-part-4-structure.md`; it carries the movement boundaries, the three decisions taken,
@@ -601,7 +601,8 @@ SaaS analytics" is underserved territory — and it is now movements I–IV rath
 | 20 | VII | Everything, including what was deleted | FR-MOD-01/02 via API key. Both are **P2**, and chapter 3.23 built edit history and tombstones — run the premise before writing it. **SHIPPED** (chapter 4.19, feature 065): the premise was run and four of FR-MOD-01's five obligations were already met, so the chapter is the fifth — the text a message held when it was removed, which an edit never recorded and a deletion never wrote. `message_edits` gains `ended_by` and an append-only trigger for FR-MSG-07's long-unenforced *immutable*; the history row gains `deleted_at`, which the real-time frame and the webhook had carried since 3.23. The boundary is published as two numbers: 5,060 tombstones predate the chapter and 1,298 of those look served while missing the one text that matters |
 | 21 | VII | The messages that expire | FR-MOD-06's retention job; expired messages take their media objects with them (FR-MED-11) . **SHIPPED** (chapter 4.20, feature 066): the premise check found none of FR-MOD-06's three obligations met, and the hard deletion it requires was refused by this platform's own schema — a pincer where the foreign key stops the parent, the append-only trigger stops the children, and `ON DELETE CASCADE` is refused as well because a cascade issues an ordinary `DELETE` that a row trigger fires on. The chapter's products are a narrow auditable exception and ADR-36, which reads the constitution's *compliance path* as admitting a retention sweep where FR-MSG-08 said *endpoint*. `by a scheduled job` stays unmet by decision |
 | 22 | VII | Erasure, and every path it must find | **SHIPPED** (chapter 4.21, feature 067). FR-MOD-04 and FR-MED-10 — messages, memberships, profile, media objects, analytical rows. The messages stay and the author goes; the row becomes a tombstone because the foreign keys make it one; **ADR-37** turns that into the reason the billing rows and the `uniq` sketches need no erasure at all. `audit_log` is the one store that cannot comply, and the erasure writes an entry naming the person it just erased |
-| 23 | VII | **Milestone: the Priya test** | Journey 3 scripted: locate → reconstruct (edit history proves the case; a rejected upload renders as rejected, not broken) → act → audit |
+| — | VII | The identifier the customer gave it | **NEW** (feature 068) — the channel routes take a uuid Relay minted where FR-CHN-01 took the customer's identifier, on 13 routes, so *"zero lookup tables"* is a lookup table. Split out of the milestone's premise check because rule 4 says a milestone verifies rather than builds |
+| 23 | VII | **Milestone: the Priya test** | Journey 3 scripted: locate → reconstruct (edit history proves the case; a rejected upload renders as rejected, not broken) → act → audit. **Chapter 4.23** |
 
 **Three milestones inside one part, at 9, 17 and 22** — and the table above keeps the ORIGINAL
 ordinals in its first column, as `docs/12` §3 does and for the same reason: an older reference

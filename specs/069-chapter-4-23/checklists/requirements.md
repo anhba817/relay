@@ -1,4 +1,4 @@
-# Specification Quality Checklist: chapter 4.22, "★ Milestone: the Priya test"
+# Specification Quality Checklist: chapter 4.23, "★ Milestone: the Priya test"
 
 **Purpose**: Validate specification completeness and quality before proceeding to planning
 **Created**: 2026-10-05
