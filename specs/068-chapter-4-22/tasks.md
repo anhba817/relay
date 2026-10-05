@@ -14,7 +14,7 @@ rule 4 and it is why this chapter exists apart from the milestone that found it.
 - [ ] T002 Record every lane's opening exit code, **each with its `Cached:` line and elapsed time, or under `--force`**. Feature 069's T002 opened with **all three lanes FULL TURBO** — `Cached: N of N`, 10ms, every counted line replayed. **`turbo run lint` is not a task**; the root task is `lint:root`.
 - [ ] T003 Run all six tutorial gates from `relay-tutorial` and record each counted line. At 069's Phase 1: `check:fences` **291 files across 64 chapters**, `check:figures` **326 figures**, `check:docs` 29 revisions to 1.28.
 - [ ] T004 Capture the CI error-set baseline for the per-error comparison at close (SC-010). 069's T004 read **0 distinct errors** on a green run; an empty diff between two green runs carries nothing and the record should say so.
-- [ ] T005 **Re-derive the fence bill** rather than copy R6's. It said **88 pages across 6 files**, and 069's T005 found two of its inherited figures already stale by one hunk each. `grep -rl 'title="[^"]*<file>"' app/ fences/` is the instrument.
+- [ ] T005 **Re-derive the fence bill** rather than copy R6's. R6 now says **107 pages across 9 files** after analysis pass 1 found the three module files missing from it; 069's T005 found two of its inherited figures already stale by one hunk each. `grep -rl 'title="[^"]*<file>"' app/ fences/` is the instrument.
 - [ ] T006 **Re-measure R1–R3 before trusting them**: the 500 on `GET /v1/channels/{externalId}`, the `invalid input syntax for type uuid` from Postgres, both lookups' buffers and timings, **0 of 41,768** uuid-shaped external ids, and the **157** call sites. They were taken on 2026-10-05 and the lane moves.
 
 ---
@@ -40,9 +40,11 @@ route beneath that prefix with it.
 - [ ] T012 [US1] **Write the red assertion FIRST**, in `relay-platform/services/api/src/channels/addressing.itest.ts`: `GET /v1/channels/{an identifier nobody used}` must answer **404 with a named cause**. **It is 500 today** — measured — and it is the only assertion in this feature that can fail before a line is written.
 - [ ] T013 [US1] Add the scoped resolution to `relay-platform/services/api/src/db/repository.ts`: given a path segment, return the channel's key or nothing, **scoped to the repository's own `environment_id`**. R2's order: **parses as a uuid → key then identity; otherwise identity only, and the cast never happens.** That last clause is what removes the 500.
 - [ ] T014 [US1] Write `relay-platform/services/api/src/channels/channel-id.pipe.ts` — an injectable `PipeTransform` taking the request-scoped `Repository`. **The scope comes from the constructor, not from a predicate somebody wrote** (4.21's mechanism). A value that resolves to nothing throws the route's 404.
-- [ ] T015 [US1] Apply the pipe to all **8** `@Param("channelId")` sites in `relay-platform/services/api/src/channels/channels.controller.ts`.
+- [ ] T014a [US1] **Provide the pipe in all three modules** — `relay-platform/services/api/src/channels/channels.module.ts`, `messages/messages.module.ts` and `users/users.module.ts`. **A provider is visible to the module that declares it and to nothing it imports** (`internal.module.ts`'s stated rule, paid a fourth time at 4.21). **Omitting this compiles, typechecks and lints, then fails at the first request** — 4.10's `MediaModule`, and analysis pass 1 found all three missing from the plan.
+- [ ] T015 [US1] Apply the pipe to all **7** `@Param("channelId")` sites in `relay-platform/services/api/src/channels/channels.controller.ts`. **Seven, not eight** — counted from the decorators at analysis pass 1, where three artifacts said eight and reached a total of fourteen while calling it thirteen.
 - [ ] T016 [US1] Apply it to all **5** sites in `relay-platform/services/api/src/messages/messages.controller.ts`. **The `:channelId` token stays** — renaming it would touch every `@Param` string twice and the documentation is where the name changes.
 - [ ] T017 [US1] Apply it to the read-position route in `relay-platform/services/api/src/users/users.controller.ts`, which mixes both conventions in one path today.
+- [ ] T017a [US1] **Boot the composed api and make one request to each of the three controllers** before asserting anything. **Only a running app answers whether the DI resolved** — and three modules each needed an edit that the compiler, the typechecker and the linter all accept the absence of.
 - [ ] T018 [US1] **Assert all 13 routes with the customer's identifier, per route rather than in aggregate** (SC-001). A loop that reports one number hides which route regressed.
 - [ ] T019 [US1] **Assert all 13 with the uuid, the same way** (SC-002, FR-002). **This is 157 existing call sites' insurance** and the reason R2 chose a shape test: a uuid takes the path it takes today.
 - [ ] T020 [US1] **Assert no input produces a 5xx** (SC-003): a malformed value, an absent identifier, an absent uuid, and one belonging to another tenant — on every route. **The 500 is the chapter's subject and a single route's fix is not the claim.**
@@ -137,7 +139,11 @@ route beneath that prefix with it.
 Phase 1 (T001–T006)   baseline
       ↓
 Phase 2 (T007–T011a)  BLOCKING. T011a gates the whole design: if a pipe cannot take
-                      the request-scoped Repository, Phase 3 is a different shape
+                      the request-scoped Repository, Phase 3 is a different shape.
+                      **It is also the only task that would have caught the three
+                      missing module registrations, and it would have caught them
+                      late** — analysis pass 1 found them by asking how Nest resolves
+                      the class, which is cheaper than a failed boot
       ↓
 Phase 3 (T012–T023)   US1 — the MVP. T012 first; it is the only red one
       ↓
@@ -156,8 +162,10 @@ with reasoning about scope bubbling.
 ## Parallel opportunities
 
 - **Phase 1**: T003, T004 and T005 are independent.
-- **Phase 3**: T015, T016 and T017 touch three different controllers — **[P] once T014
-  exists**, and not before.
+- **Phase 3**: T015, T016 and T017 touch three different controllers — **[P] once
+  T014a has registered the pipe**, and not before. T014a itself is three files and
+  one task on purpose: a partial registration fails only the controller it missed,
+  and that reads as a bad `@Param` rather than a missing provider.
 - **Phase 5**: T028 is [P].
 - **Phase 7**: T041 and T043 are [P].
 - **Phase 8**: T047 and T055 are [P].

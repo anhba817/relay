@@ -90,21 +90,36 @@ harm. Under R2's decision they all take the same path they take today.
 
 ## R4 — Where the resolution belongs, and the cheapest place cannot work
 
-Thirteen routes name a channel — 8 on `channels.controller.ts`, 5 under
-`messages.controller.ts`'s `v1/channels/:channelId/messages` prefix — plus the read
-position route on `users.controller.ts`. **There is no chokepoint**: `channelId` is
-passed into ten different repository methods.
+**Thirteen `@Param("channelId")` sites, counted from the decorators rather than from
+the route list: 7 on `channels.controller.ts`, 5 under `messages.controller.ts`'s
+`v1/channels/:channelId/messages` prefix, and 1 on `users.controller.ts`'s read
+position route.** A first version of this section said *"8 on channels.controller …
+plus the read position route"*, which totals fourteen while calling it thirteen — the
+total was right by accident and the breakdown was wrong. **A task saying "all 8 sites"
+either leaves one unedited or hunts for one that does not exist.**
+
+**There is no chokepoint**: `channelId` is passed into ten different repository
+methods. **And all five messages routes do take `@Param("channelId")`**, checked per
+route — one that read the channel from elsewhere would never run the pipe.
 
 | | design | fence cost | verdict |
 |---|---|---|---|
 | middleware | one registration in `app.module.ts` | 75 pages | **cannot work** |
-| **pipe** | `@Param("channelId", ChannelIdPipe)` | **84 pages · 10 hunks · 5 files** | **chosen** |
+| **pipe** | `@Param("channelId", ChannelIdPipe)` | **107 pages · 14 hunks · 9 files** | **chosen** |
 | service layer | resolve at the top of each method | 91 pages, ~13 sites | rejected |
 | repository | each method accepts either | spreads the ambiguity into ten queries | rejected |
 
 **THE MIDDLEWARE IS CHEAPEST AND NEST RUNS IT BEFORE GUARDS**, so it has no principal
 and cannot scope the lookup to an environment. That is disqualifying rather than
 inconvenient: an unscoped resolution is a cross-tenant read.
+
+**AND IT MUST BE REGISTERED IN THREE MODULES.** `channels.module.ts`,
+`messages.module.ts` and `users.module.ts` each declare a controller that uses it, and
+a provider is visible to the module that declares it and to nothing it imports —
+`internal.module.ts` states that rule and 4.21 paid it a fourth time. **There is no
+injectable pipe anywhere in this codebase**: `ZodValidationPipe` is `new`-ed at 21 call
+sites and carries no `@Injectable()`. So this design has no precedent here and the
+three registrations are exactly what a first attempt omits.
 
 **THE PIPE GETS THE SCOPE BY CONSTRUCTION.** An injectable pipe can take the
 request-scoped `Repository`, whose constructor already requires an `environment_id` —
@@ -142,19 +157,29 @@ a dual-read.
 ```
                                  pages   appendix   touched
 channel-id.pipe.ts                   0   0          NEW FILE
-channels.controller.ts               8   0          8 @Param edits
-messages.controller.ts              19   1          5 @Param edits
-users.controller.ts                  5   2          1 @Param edit + the cursor
 users.schema.ts                      4   0          the cursor payload
+channels.controller.ts               8   0          7 @Param edits
+users.controller.ts                  5   2          1 @Param edit + the cursor
+messages.controller.ts              19   1          5 @Param edits
 repository.ts                       52   7          one resolution read
-                                 -----   --
-                                    88  10          across 6 files
+---- THE PIPE MUST BE PROVIDED, AND THE FIRST COUNT FORGOT ALL THREE
+channels.module.ts                   5   1          a provider
+messages.module.ts                   9   1          a provider
+users.module.ts                      5   2          a provider
+                                 -----  --
+                                   107  14          across 9 files
 ```
 
-**88 pages, not the 84 the milestone's plan estimated** — that figure omitted
-`users.schema.ts`, which the users half needs. 4.15's rule earns its place again:
-count the bill before the work, and expect it to grow by whatever the first count
-forgot.
+**107 PAGES ACROSS 9 FILES, NOT 88 ACROSS 6 — A 22% UNDERESTIMATE, AND THE THREE
+MISSING FILES ARE THE SAME THREE THE DESIGN FORGETS.** `@Param("channelId",
+ChannelIdPipe)` resolves the class through DI, so the pipe must be a provider in every
+module whose controller uses it. The first count enumerated the files the pipe
+**touches** and not the files that must **know about it**.
+
+**4.15's rule earns its place twice over**: count the bill before the work, and expect
+it to grow by whatever the first count forgot. Here what it forgot was not a late
+repair — it was a requirement of the chosen design, visible from the start to anyone
+who asked how Nest finds the class.
 
 ## R7 — What this chapter must not do
 
