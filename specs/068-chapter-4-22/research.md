@@ -105,7 +105,7 @@ route — one that read the channel from elsewhere would never run the pipe.
 | | design | fence cost | verdict |
 |---|---|---|---|
 | middleware | one registration in `app.module.ts` | 75 pages | **cannot work** |
-| **pipe** | `@Param("channelId", ChannelIdPipe)` | **107 pages · 14 hunks · 9 files** | **chosen** |
+| **pipe** | `@Param("channelId", ChannelIdPipe)` | **88 pages · 10 hunks · 6 files** | **chosen** |
 | service layer | resolve at the top of each method | 91 pages, ~13 sites | rejected |
 | repository | each method accepts either | spreads the ambiguity into ten queries | rejected |
 
@@ -113,13 +113,35 @@ route — one that read the channel from elsewhere would never run the pipe.
 and cannot scope the lookup to an environment. That is disqualifying rather than
 inconvenient: an unscoped resolution is a cross-tenant read.
 
-**AND IT MUST BE REGISTERED IN THREE MODULES.** `channels.module.ts`,
-`messages.module.ts` and `users.module.ts` each declare a controller that uses it, and
-a provider is visible to the module that declares it and to nothing it imports —
-`internal.module.ts` states that rule and 4.21 paid it a fourth time. **There is no
-injectable pipe anywhere in this codebase**: `ZodValidationPipe` is `new`-ed at 21 call
-sites and carries no `@Injectable()`. So this design has no precedent here and the
-three registrations are exactly what a first attempt omits.
+**AND IT NEEDS NO MODULE REGISTRATION, WHICH ANALYSIS PASS 1 GOT WRONG AND PASS 2
+MEASURED.** Three Nest apps booted, one HTTP request each:
+
+```
+A  pipe AND dependency in `providers`     200  {"id":"x|scoped"}
+B  dependency only, PIPE NOT A PROVIDER   200  {"id":"x|scoped"}
+C  neither                                Nest can't resolve dependencies of
+                                          the ResolvingPipe (?)
+```
+
+**Nest instantiates a param-level pipe class from the module's injector without it
+being in `providers`. What must be resolvable is its DEPENDENCY** — and `Repository`
+already is one in all three modules.
+
+**CASE `C` IS WHAT MAKES `B` TRUSTWORTHY.** `B` alone is a green that proves nothing:
+it could have passed because Nest silently skipped the pipe. `C` failing by name shows
+the pipe really ran and really needed its dependency.
+
+**HOW PASS 1 GOT IT WRONG IS THE PART WORTH KEEPING.** It asked how Nest finds the
+class, reasoned from the module-visibility rule `internal.module.ts` states and 4.21
+paid four times, and cited 4.10's `MediaModule`. **That rule is real and it governs
+dependencies, not enhancers** — and the analogy carried the conclusion past the
+evidence. The remedy it prescribed was three module edits and 19 fence pages of work
+that does nothing. **A reasoned premise is still a premise.**
+
+**There is no injectable pipe anywhere in this codebase**: `ZodValidationPipe` is
+`new`-ed at 21 call sites and carries no `@Injectable()`. So the design has no
+precedent here, which is why it was worth probing rather than assuming in either
+direction.
 
 **THE PIPE GETS THE SCOPE BY CONSTRUCTION.** An injectable pipe can take the
 request-scoped `Repository`, whose constructor already requires an `environment_id` —
@@ -162,24 +184,19 @@ channels.controller.ts               8   0          7 @Param edits
 users.controller.ts                  5   2          1 @Param edit + the cursor
 messages.controller.ts              19   1          5 @Param edits
 repository.ts                       52   7          one resolution read
----- THE PIPE MUST BE PROVIDED, AND THE FIRST COUNT FORGOT ALL THREE
-channels.module.ts                   5   1          a provider
-messages.module.ts                   9   1          a provider
-users.module.ts                      5   2          a provider
                                  -----  --
-                                   107  14          across 9 files
+                                    88  10          across 6 files
 ```
 
-**107 PAGES ACROSS 9 FILES, NOT 88 ACROSS 6 — A 22% UNDERESTIMATE, AND THE THREE
-MISSING FILES ARE THE SAME THREE THE DESIGN FORGETS.** `@Param("channelId",
-ChannelIdPipe)` resolves the class through DI, so the pipe must be a provider in every
-module whose controller uses it. The first count enumerated the files the pipe
-**touches** and not the files that must **know about it**.
+**88 PAGES ACROSS 6 FILES — AND THIS NUMBER MOVED TWICE, WHICH IS THE RECORD WORTH
+KEEPING.** The milestone's plan estimated 84, omitting `users.schema.ts`. Analysis
+pass 1 raised it to **107 across 9**, adding the three module files it reasoned the
+pipe must be registered in. **Analysis pass 2 measured that the registration is not
+needed and took them back out.**
 
-**4.15's rule earns its place twice over**: count the bill before the work, and expect
-it to grow by whatever the first count forgot. Here what it forgot was not a late
-repair — it was a requirement of the chosen design, visible from the start to anyone
-who asked how Nest finds the class.
+**So the bill was wrong in both directions before it was right**, and only one of the
+three figures came from running anything. 4.15's rule says count the bill before the
+work; this says the count is only as good as the design claim underneath it.
 
 ## R7 — What this chapter must not do
 

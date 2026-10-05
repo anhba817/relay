@@ -29,7 +29,7 @@ which is the single live edge in ADR-37's reversal condition.
 | **New table or column** | **none** — no migration |
 | **The mechanism** | an injectable pipe resolving `:channelId` at the boundary (R4) |
 | **Resolution order** | shape-based, identity wins the tie (R2) |
-| **Blast radius** | **9 files, 107 fence pages, 14 appendix hunks** (R6) — the first count said 6 and 88 and omitted the three modules the pipe must be registered in |
+| **Blast radius** | **6 files, 88 fence pages, 10 appendix hunks** (R6) — pass 1 raised this to 9/107/14 for three module registrations, pass 2 measured that the pipe needs none |
 | **Regression surface** | **157 existing call sites** pass a uuid and must not change (R3) |
 | **Unknowns** | **what replaces `users.id` in the listing cursor** — Phase 2 |
 
@@ -96,19 +96,17 @@ specs/068-chapter-4-22/
 relay-platform/services/api/src/
 ├── channels/channel-id.pipe.ts       NEW — the resolution, scoped by construction
 ├── channels/channels.controller.ts     7 @Param edits
-├── channels/channels.module.ts         PROVIDES THE PIPE
 ├── messages/messages.controller.ts     5 @Param edits
-├── messages/messages.module.ts         PROVIDES THE PIPE
 ├── users/users.controller.ts           1 @Param edit
-├── users/users.module.ts               PROVIDES THE PIPE
 ├── users/users.schema.ts               the cursor payload
 └── db/repository.ts                    one scoped resolution read
 
-   THE THREE MODULES ARE NOT OPTIONAL. A provider is visible to the module that
-   declares it and to nothing it imports, so each controller's module must provide
-   the pipe. Omitting them compiles, typechecks and lints, then fails at the first
-   request with `Nest can't resolve dependencies` — 4.10's finding, and the first
-   version of this plan omitted all three.
+   NO MODULE FILE IS TOUCHED, AND THAT WAS MEASURED RATHER THAN ASSUMED. A
+   param-level pipe class is instantiated from the module's injector without being
+   in `providers`; what must be resolvable is its DEPENDENCY, and `Repository`
+   already is one in all three. Analysis pass 1 reasoned the opposite from the
+   module-visibility rule and would have added three files and 19 fence pages of
+   work that does nothing (R4).
 docs/04-srs.md · docs/05-sad.md · docs/06-adr-deep-dives.md · docs/12 · docs/07
 relay-tutorial/app/(en)/part-4/chapter-22/the-identifier-the-customer-gave-it/
 ```
@@ -122,7 +120,7 @@ re-derived, the CI error set, and R1–R6 re-measured.
 an ADR is needed. Whether the identity's tie-break is written as a clause or a
 comment. **Before code, because constitution VI's first bullet says so.**
 
-**3 — The resolution (P1).** The pipe, **its three module registrations**, the repository read, the 13 `@Param` edits (**7 + 5 + 1**).
+**3 — The resolution (P1).** The pipe, the repository read, the 13 `@Param` edits (**7 + 5 + 1**).
 Red first: an identifier that names nothing must be a named refusal.
 
 **4 — The cursor (P2).** The users half, with the compatibility path FR-007 requires.
@@ -145,7 +143,7 @@ the checker's own replay.
 
 | thing | why justified | what would make it unjustified |
 |---|---|---|
-| 107 fence pages on one chapter | 13 routes contradict two clauses and a journey; the alternative was a milestone that builds, which rule 4 forbids | if the pipe turns out not to reach all 13, the design is wrong rather than the budget |
+| 88 fence pages on one chapter | 13 routes contradict two clauses and a journey; the alternative was a milestone that builds, which rule 4 forbids | if the pipe turns out not to reach all 13, the design is wrong rather than the budget |
 | Accepting two identifier forms | 157 call sites and every published client hold uuids | if a deprecation is ever wanted it is a later chapter with a window and a warning |
 | Touching `users` at all | the cursor is ADR-37's one live reversal edge, and the chapter is about identifiers | if the cursor's replacement needs a migration, it is its own chapter |
 
