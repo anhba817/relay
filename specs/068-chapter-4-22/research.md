@@ -206,8 +206,17 @@ STAGE 6  audit log: actor, action, target, ts, request id   FR-MOD-03     HOLDS
          erasure with a completion receipt         FR-MOD-04              HOLDS
 ```
 
-**TWELVE CITE A CLAUSE AND TWELVE HOLD. THREE CITE NO CLAUSE AND THREE ARE HOLES.
-Three of three, no exceptions in either direction.**
+**THE FINDING IS THE PREDICATE, NOT THE RATIO:** *every capability that cites a
+requirement holds, and every capability that cites none is a hole.* **Three of three
+in both directions, with no exceptions.**
+
+**COUNTED ONE WAY IT IS TWELVE AND THREE OF FIFTEEN, AND THE UNIT IS A JUDGEMENT.**
+One row here can be split or merged by a reader with a different eye: *"external IDs
+on channels **and users**"* carries two clauses and is counted once; Stage 6's audit
+row lists five fields and is counted once. Split those and the table is sixteen or
+twenty, and **the ratio moves while the predicate does not.** That is why the
+predicate is the claim and 15/12/3 is an illustration of it — a reader who recounts
+and gets 16/13/3 has reproduced the finding, not refuted it.
 
 **THE FIRST VERSION OF THIS SENTENCE SAID FOURTEEN AND ELEVEN, AND THE TABLE ABOVE
 IT SAID FIFTEEN AND TWELVE.** The sentence was written off a grep for
@@ -215,7 +224,10 @@ IT SAID FIFTEEN AND TWELVE.** The sentence was written off a grep for
 the table was then built by reading all six stages and gained a CON-04 row the
 sentence never counted. **The number IS the finding here** — *three of three* is only
 interesting because it is exact — and it was published in four files before anyone
-counted the rows underneath it. Analysis pass 4, by counting.
+counted the rows underneath it. Analysis pass 4, by counting — **and pass 5 found
+that fixing the arithmetic had not made it checkable**, because the denominator still
+had no definition. A ratio with an undefined unit invites the recount that discredits
+it; the predicate above does not.
 
 **SO THE CHAPTER'S THESIS IS A PREDICATE, NOT A LIST OF GAPS**: *a capability
 `docs/03` asserts without naming a requirement is a capability nobody built.* It is

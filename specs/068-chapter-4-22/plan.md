@@ -17,9 +17,15 @@ capabilities — five stages carry a *"What Relay must provide"* block and Stage
 one assertion is in its prose:
 
 ```
-twelve cite a requirement   ->  twelve hold
-three cite none             ->  three are holes, 3 of 3, no exceptions either way
+every capability that cites a requirement   ->  HOLDS
+every capability that cites none            ->  IS A HOLE
+3 of 3 in both directions, no exceptions
 ```
+
+**The predicate is the claim; the tally is an illustration.** Counted one way the
+table is twelve and three of fifteen, and the unit is a judgement — *"external IDs on
+channels and users"* is one row with two clauses. A reader who recounts and gets
+sixteen has reproduced the finding, not refuted it.
 
 **A capability `docs/03` asserts without naming a clause is a capability nobody
 built.** The three: **Stage 2's** channel retrieval by external id (the natural
