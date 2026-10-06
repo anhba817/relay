@@ -727,10 +727,11 @@ survives is the record that the name was erased.** The receipt reports it as `ca
 rather than omitting it, and narrowing ADR-35 a second time was refused — a guarantee with two
 exceptions three chapters apart is a list, not a guarantee (`gaps.md` 067-1).
 
-## ADR-37 — A key into an erased row is not personal data
+### ADR-37 — A key into an erased row is not personal data
 
 **Summary.** `users.id` is an internal uuid that the platform exposes nowhere a caller can act
-on. When FR-MOD-04's erasure empties a user's row — profile cleared, `external_id` replaced with
+on — **true since chapter 4.22 and not before it**, see the reversal condition below. When
+FR-MOD-04's erasure empties a user's row — profile cleared, `external_id` replaced with
 `erased:<users.id>` — every store that references that user **by key alone** stops naming
 anybody, without being touched. So `usage_active_users` keeps all its rows with its `count(*)`
 unchanged to the row, and the seven `AggregateFunction(uniq, Nullable(UUID))` sketch columns
@@ -745,11 +746,29 @@ clauses — **and they went opposite ways**. A photo is personal data whatever k
 constraint and the decision are the same fact.
 
 **Reversal condition.** If `users.id` ever becomes resolvable to a person by a party outside the
-platform, this rule fails and every uuid-keyed store is decided on its own merits again. **One
-live edge is already known and bounded**: the `GET /v1/users` listing cursor is base64 of
-`{a, id}` and its own comment says *"opaque is not security"*, so a customer who paged before an
-erasure holds the uuid. No route accepts a user uuid as input — the controller takes
-`:externalId` — so a retained cursor positions a listing past a row that holds nothing.
+platform, this rule fails and every uuid-keyed store is decided on its own merits again.
+
+**THE LIVE EDGE THIS ADR NAMED DOES NOT EXIST, AND A REAL ONE DID** (feature 068, chapter 4.22).
+It said the one bounded exception was *"the `GET /v1/users` listing cursor"*. **There is no such
+route.** `listingQuerySchema` has exactly one consumer, `GET /v1/users/{externalId}/channels`,
+and the cursor it issues decodes to `{"a": <timestamp>, "id": <a CHANNEL uuid>}` — a value the
+same response already returns as a top-level field and every channel route accepts. Measured
+against a running api, not read.
+
+**What was live instead was `POST /v1/channels/{channelId}/members`**, which returned
+`members[].user_id` — the row's `users.id` — on every member added, for every user. No route
+accepts that value: `GET /v1/users/{a users.id}` answers 404 while `GET /v1/users/{external_id}`
+answers 200. So the summary sentence above was false on a write route everyone uses, and it was
+found by sweeping every v1 response shape rather than by reading, because reading is what
+produced the phantom. **Chapter 4.22 removed the field**, which is what makes the first paragraph
+true.
+
+**The one exception that remains is this ADR's own argument working.** An erased user's
+`external_id` is `erased:<users.id>`, and that string surfaces wherever an identity does — in
+`message.user` on 290 retained messages across 367 tombstones, and in `member.external_id`. It
+is a `users.id` crossing the boundary, and it **names nobody**: the row it keys is empty, and no
+route accepts it either, since a second erasure answers 404. An exception a reader can check in
+one query beats a claim of none.
 
 The argument is in `docs/06-adr-deep-dives.md`; this is the summary and that is the ADR.
 

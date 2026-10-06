@@ -488,3 +488,83 @@ already refused for a bad body.
 
 The identity path is the cheapest of the three, which is the opposite of what a
 reader expects and the same thing R2 measured at the database.
+
+PHASE 4 — THE SWEEP
+================================================================================
+
+T026 · WHAT A CUSTOMER RECEIVES THAT THEY CANNOT USE (SC-006)
+--------------------------------------------------------------------------------
+Every v1 response shape enumerated, and of each uuid in it one question: DOES A
+ROUTE ACCEPT THIS?
+
+    channels[].id · messages[].channel_id   channels.id      all 13 routes   ok
+    messages[].id                           messages.id      3 routes        ok
+    media_id                                media_objects.id GET /v1/media   ok
+    request_id                              —                constitution V  ok
+    audit_log[].id                          audit_log.id     none            kept
+    audit_log[].actor.id                    api_keys.id      none            kept
+    members[].user_id                       users.id         NONE            REMOVED
+
+**THE ONE THAT FAILED THE TEST WAS ON A WRITE ROUTE EVERYONE USES.**
+`POST /v1/channels/{channelId}/members` returned the row's `users.id` on every
+member added, for every user, erased or not:
+
+    {"members":[{"user_id":"4775a041-0b28-4cd1-b292-f67bcdfe13c4",
+                 "external_id":"normal-10861","status":"added","role":"member"}]}
+
+    GET /v1/users/4775a041-…      404
+    GET /v1/users/normal-10861    200
+
+So a caller who stored it held a key to nothing — and **ADR-37's opening sentence
+said it could not happen**: *"`users.id` is an internal uuid that the platform
+exposes nowhere a caller can act on."* Nothing asserted the field, nothing
+documented it, no tutorial page showed it. That is why it survived.
+
+**THE METHOD IS THE FINDING.** The chapter went looking for the `GET /v1/users`
+listing cursor this ADR names, found the route does not exist, and swept instead.
+Reading produced a phantom; enumerating produced the real one. The two audit
+fields are kept with reasons — a customer quotes a record reference back to
+support — and `request_id` is a requirement rather than an exception.
+
+T024 · REMOVED, AFTER SWEEPING FOR SIBLINGS
+--------------------------------------------------------------------------------
+`MemberResult.user_id` deleted from the type and the construction site. The
+comment that replaces it carries the measurement, because the next person to want
+a uuid in a response will want it for the same reason.
+
+T025 · NOT NEEDED
+--------------------------------------------------------------------------------
+No opaque token changed, so FR-007 does not engage. The cursor carries a channel
+uuid every route accepts and was left alone, which is the only option with no
+silently-wrong-page risk.
+
+T026a · ADR-37 AMENDED IN BOTH HOMES
+--------------------------------------------------------------------------------
+`docs/05-sad.md` (the summary) and `docs/06-adr-deep-dives.md` (the argument).
+The phantom edge is replaced with the measurement, the real one is named and
+marked closed by this chapter, and the exception that remains is the ADR's own
+argument working: `erased:<users.id>` on 290 retained messages across 367
+tombstones — a key that names nobody, which no route accepts either because a
+second erasure answers 404.
+
+AND THE SAD HAS NO ADR SECTION, WHICH THIS FOUND BY LOOKING FOR ONE:
+
+    docs/05-sad.md:730    ADR-37    was `##`, INSIDE section 6 "Data view"
+    docs/05-sad.md:2331   ADR-34    `###`
+    docs/05-sad.md:2410   ADR-35    `###`, inside section 10 "Risks"
+    docs/05-sad.md:2447   ADR-36    `###`, inside section 10 "Risks"
+
+Three chapters, three placements. At `##` the ADR-37 heading **closed section 6**
+while the data view's own content continued below it. Changed to `###` so it
+stops doing that; moving four ADRs into one section is not this chapter's, and
+T037 needs the facts before it places ADR-38. Recorded for `gaps.md`.
+
+AND I BROKE T060's RULE AN HOUR AFTER RECORDING IT
+--------------------------------------------------------------------------------
+The sweep needed the composed api; the lane needs it stopped. Having restarted it
+to probe, I ran the api lane against it and got three failures in two files —
+`outbox` invariants 8 and 9, and `media-updated`'s publish-once — all of them a
+second relay draining rows the test then could not see. **The probe and the lane
+want opposite machine states and nothing enforces either.** The fix is the same
+stop-by-name T060 already prescribes; the lesson is that recording a rule is not
+the same as it being checkable.

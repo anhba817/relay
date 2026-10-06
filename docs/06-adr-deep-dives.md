@@ -2700,14 +2700,43 @@ audit entry instead.
 If `users.id` ever becomes resolvable to a person by a party outside the platform, this
 rule fails and every uuid-keyed store is decided on its own merits again.
 
-**One live edge is already known, measured and bounded.** `users.schema.ts`'s listing
-cursor is base64 of `{a: last_activity_at, id: users.id}`, and its own comment says
-*"OPAQUE IS NOT SECURITY. Base64 of JSON is readable by anyone who wants to read it."*
-So a customer who paged `GET /v1/users` before an erasure holds the uuid. What they can
-do with it is the measurable part: **no route accepts a user uuid as input** — the
-controller takes `:externalId` — so a retained cursor positions a listing past a row
-that now holds nothing. The handle survives and points at an empty room. If that ever
-stops being true, so does this ADR.
+**The live edge this ADR named does not exist** (feature 068, chapter 4.22). It said
+`users.schema.ts`'s listing cursor is base64 of `{a: last_activity_at, id: users.id}`
+and that a customer who paged `GET /v1/users` before an erasure holds the uuid. Three
+things measured against a running api:
+
+    GET /v1/users                            404     there is no such route
+    listingQuerySchema, consumers            one: GET /v1/users/{externalId}/channels
+    the cursor it issues, decoded            {"a": <timestamp>, "id": <a CHANNEL uuid>}
+
+The cursor is real and it carries a **channel** uuid — a value the same response
+already returns as a top-level field and every channel route accepts. The paragraph
+was right that opacity is not security and wrong about which id was inside, and it
+stood for one chapter because every reader checked the comment rather than the route.
+
+**What was live instead was a write route.** `POST /v1/channels/{channelId}/members`
+returned `members[].user_id` — the row's `users.id` — on every member added, for every
+user, erased or not. **No route accepts that value**: `GET /v1/users/{a users.id}`
+answers 404 while `GET /v1/users/{external_id}` answers 200, so a caller holding it
+held a key to nothing, and this ADR's opening sentence was false. Nothing asserted the
+field, nothing documented it and no tutorial page showed it, which is why six analysis
+passes and a chapter went past it. **4.22 removed it**, and the sentence is true now.
+
+**AND THE METHOD IS THE PART WORTH KEEPING.** The phantom came from reading; the real
+one came from enumerating every v1 response shape and asking of each value *does a
+route accept this?* Three siblings turned up and all three are kept with reasons —
+`audit_log[].id` and `audit_log[].actor.id` are record references a customer quotes
+back to support, and `request_id` is constitution V's requirement in every error body.
+Only `members[].user_id` had no answer to the question.
+
+**The exception that remains is this ADR's own argument working.** An erased user's
+`external_id` is `erased:<users.id>`, and that string surfaces wherever an identity
+does — `message.user` on 290 retained messages across 367 tombstones, and
+`member.external_id`. It is a `users.id` crossing the boundary and it **names nobody**:
+the row it keys is empty, and no route accepts it either, because a second erasure
+answers 404. The handle survives and points at an empty room — which is what the
+previous paragraph claimed about the wrong handle. If that ever stops being true, so
+does this ADR.
 
 **And one thing this ADR does not cover.** `messages.user_id` still links a person's
 retained messages to each other, so *"these were written by the same erased person"*
