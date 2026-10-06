@@ -753,3 +753,81 @@ that never fires looks exactly like a passing probe.
 So the ratchet is live on this chapter's files and still blind to a typo in a
 key — the durable rule holds, measured rather than carried. Config restored and
 re-run green.
+
+PHASE 7 — THE DOCUMENTS
+================================================================================
+
+T034–T035 · ALL TEN FR-CHN CLAUSES, READ
+--------------------------------------------------------------------------------
+None of 03 to 10 touches addressing, so FR-CHN-11 is not a duplicate — which is
+what the read was for, and the answer analysis pass 7 predicted. Read beside
+them: **FR-CHN-05** — *"A user shall not read messages from … a private channel
+of which they are not a member"* — which the first pipe could have broken by
+resolving any channel in the environment. It does not: the pipe resolves and
+`channelVisibleTo` decides, in that order.
+
+T036 · REVISION 1.29, NEWEST LAST
+--------------------------------------------------------------------------------
+    check-revision-order: 30 revisions ascend, 1.0 to 1.29
+
+T003a's second prediction, confirmed. Appended rather than inserted, because
+`check-revision-order` caught 1.28 placed before 1.27 on the first run after
+that edit.
+
+AND `pnpm sync:docs` NAMES EVERY FILE IT COPIES, NOT EVERY FILE THAT CHANGED. It
+reported `synced 08-error-reference.md` for a file this chapter never touched;
+`git status` shows it unmodified. Worth knowing before reading that output as a
+drift report.
+
+T038 · THE SAD
+--------------------------------------------------------------------------------
+Two schema comments: `UNIQUE (environment_id, external_id)` on both `users` and
+`channels` now says it is **FR-CHN-11's constraint as well as DR-02's** — per-tenant
+uniqueness is what makes an identity addressable at all, and that is the sentence
+ADR-38's reversal condition rests on.
+
+**AND THE SECTION HAS ALMOST NO PROSE TO CHECK**, which is worth saying rather
+than reporting four sentences verified. §6.1 is a SQL block with comments. The
+one adjacent prose claim — §9's *"end users … are identified by the customer's
+own `external_id`"* — was read and is true, and is the sentence ADR-38 extends
+to a second noun. **No sentence in the SAD asserts a channel is addressed by a
+uuid**, swept for.
+
+T039 · JOURNEY 3 STAGE 2
+--------------------------------------------------------------------------------
+*"channel retrieval by external ID"* has cited no clause since the journey map
+was written. It cites **FR-CHN-11** now, with the measurement beside it: until
+this chapter the first thing Priya's tool tries answered 500, so the "zero
+lookup tables" Stage 1 promises was a lookup table. **The clause exists because
+the stage was walked rather than read** — feature 069's premise check is what
+walked it.
+
+T040 · BOTH PART 4 TABLES
+--------------------------------------------------------------------------------
+`docs/12` row 265 and `docs/07` row 604, CLOSED AND SHIPPED, each carrying what
+the chapter did and the one thing it did not.
+
+T041 · THE FEATURE-LOCAL ID SWEEP, AND IT CAUGHT ME
+--------------------------------------------------------------------------------
+    git diff part4-ch21 -- docs/        one dot, so the working tree counts (067-3)
+
+**FOUR `FR-006`s REACHED FOUR PUBLISHED DOCUMENTS** — this feature's own local
+requirement id, which resolves to nothing in the SRS. In `docs/05-sad.md` and
+`docs/06-adr-deep-dives.md` inside ADR-38, and in both Part 4 tables.
+
+053 found this defect, 063-4 found that `docs/` already holds 22 distinct
+feature-local ids with `FR-009`, `FR-013` and `FR-017` each meaning two
+unrelated things, and **T041 exists in this chapter's task list because of
+them**. I wrote four more anyway, in the chapter that carries the warning.
+
+The mechanism was the same one 053 recorded: the sentence was true in the
+feature directory, where `FR-006` is a real id, and I moved the sentence without
+moving the frame. Replaced with what the requirement SAYS — *the response-shape
+sweep* — rather than with another identifier. Re-swept: **0**.
+
+T042 · THE GATES, AFTER
+--------------------------------------------------------------------------------
+    check:docs     EXIT 0   30 revisions ascend, 1.0 to 1.29
+    check:srs      EXIT 0   246 clause rows, 246 unique identifiers
+    check:figures  EXIT 0   326 figures, 328 bindings resolve, 3 unused
+    check:errors   EXIT 0   34 codes, 34 sections, 6 close codes

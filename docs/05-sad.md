@@ -507,7 +507,9 @@ CREATE TABLE users (
     kind            TEXT NOT NULL DEFAULT 'person'
                     CHECK (kind IN ('person','bot')),     -- FR-USR-07 (chapter 3.17)
     description     TEXT,                                 -- what the software is, and why
-    UNIQUE (environment_id, external_id),                 -- DR-02
+    UNIQUE (environment_id, external_id),                 -- DR-02, and FR-CHN-11:
+                                                          -- uniqueness per tenant is what
+                                                          -- lets a route take the identity
     CHECK (kind <> 'bot' OR description IS NOT NULL)      -- a bot without one is not a bot
 );
 
@@ -521,8 +523,9 @@ CREATE TABLE channels (
     last_sequence   BIGINT NOT NULL DEFAULT 0,             -- ADR-03
     archived_at     TIMESTAMPTZ,
     last_activity_at TIMESTAMPTZ NOT NULL DEFAULT now(),   -- FR-CHN-08's ordering
-    UNIQUE (environment_id, external_id)                   -- DR-02
-);
+    UNIQUE (environment_id, external_id)                   -- DR-02, and FR-CHN-11:
+);                                                         -- the constraint that makes
+                                                           -- the identity ADDRESSABLE
 
 -- FR-CHN-09's unread count. Per user, per channel, the sequence up to which that
 -- user has read — and no counter column: unread is
@@ -2524,7 +2527,8 @@ A uuid stays the foreign key, the ordering key and the primary key; a text prima
 216,922 messages costs more than it is worth. **There is one identity and one internal key, and
 only one of them belongs on the wire.** A key may stay on the wire where a route accepts it —
 the thirteen channel routes keep taking one, for 173 call sites' sake — and may not where none
-does, which is why `members[].user_id` is gone (FR-006).
+does, which is why `members[].user_id` is gone — chapter 4.22 swept every v1 response
+shape and removed the one value no route took.
 
 **Reversal condition.** If a noun ever needs a customer-supplied identifier that cannot be
 relied on to be unique within a tenant, the first half fails for that noun. Uniqueness is what

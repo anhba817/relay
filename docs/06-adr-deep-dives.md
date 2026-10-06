@@ -2789,8 +2789,8 @@ decision reduces to.
 Keys may also stay ON the wire where a route accepts them: the thirteen channel
 routes keep taking a uuid, because 173 call sites and every published client hold
 one, and removing it needs a window, a warning and a version. **What a response may
-not carry is a key no route accepts.** `members[].user_id` was one and is gone
-(FR-006).
+not carry is a key no route accepts.** `members[].user_id` was one and is gone: chapter
+4.22 swept every v1 response shape and asked of each uuid whether a route accepts it.
 
 ### Alternatives considered
 
