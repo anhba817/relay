@@ -825,7 +825,7 @@ fence carries the `@@` hunks only** — pasted complete from `git diff -U6`, the
 `+++ b/` headers are read as body text: 112 problems, `starts "-- a/compose.yaml"`. **A glob is an
 instrument**: the coverage-pin sweep named 17 pins unbindable and **all 17 are real files**, because
 `git ls-files 'services/*/src/**/*.ts'` misses every file directly in a `src/` where picomatch —
-which is what vitest uses — matches it. **`pnpm -s <script>` reports red for a green gate.** **A
+which is what vitest uses — matches it. **`pnpm -s <script>` NEVER RUNS THE SCRIPT** — this pnpm answers `error: unexpected argument '-s' found` and **EXIT 2**, measured on all five `check:*` gates at 068's analysis pass 10. It is not a green gate reporting red; it is an exit code with no gate behind it, which belongs to the class the section above opens with. **A
 fire-and-forget `ALTER … DELETE` left a row from an earlier run** — what that form lacks is
 evidence that it ran, so the cleanup polls AND asserts a count of 0. **A title overclaimed and the
 audit caught it.** **And an edit was invisible to the fence chain**, because a checker reports the

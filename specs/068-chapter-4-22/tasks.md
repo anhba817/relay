@@ -12,7 +12,27 @@ rule 4 and it is why this chapter exists apart from the milestone that found it.
 
 - [ ] T001 Pin the lane in `specs/068-chapter-4-22/baseline.txt`: `RELAY_POSTGRES_PORT=15432`, the services up, and the row counts (`channels`, `users`, `messages`, `audit_log`). **Record them beside every later timing** — they are part of the instrument.
 - [ ] T002 Record every lane's opening exit code, **each with its `Cached:` line and elapsed time, or under `--force`**. Feature 069's T002 opened with **all three lanes FULL TURBO** — `Cached: N of N`, 10ms, every counted line replayed. **`turbo run lint` is not a task**; the root task is `lint:root`.
-- [ ] T003 Run all six tutorial gates from `relay-tutorial` and record each counted line. At 069's Phase 1: `check:fences` **291 files across 64 chapters**, `check:figures` **326 figures**, `check:docs` 29 revisions to 1.28.
+- [ ] T003 Run all six tutorial gates from `relay-tutorial` and record each counted line. **Measured at analysis pass 10, all six EXIT 0** — and 069's three inherited figures all matched, so these are current rather than carried:
+
+```
+check:fences   291 fenced files across 64 chapters (46 translated, 2 retired)
+check:figures  326 figures · 328 imported bindings resolve · 3 export(s) unused
+check:docs     all mirrored docs match · 29 revisions ascend, 1.0 to 1.28
+check:srs      245 clause rows, 245 unique identifiers, no duplicates
+check:errors   34 codes, 34 sections, 6 close codes
+```
+
+**`pnpm -s <script>` is not a way to run any of these.** This pnpm rejects `-s` with `error: unexpected argument '-s' found` and **EXIT 2 without running the script** — an exit code with no gate behind it, measured on all five.
+- [ ] T003a **Write the four gate deltas this chapter predicts, before it starts.** Each is falsifiable and each belongs to one task:
+
+```
+check:fences   chapters  64 -> 65    the walker found the page     T044's registration
+check:fences   files    291 -> 291   the chapter titled no fence   T051's precedent
+check:docs     revisions 29 -> 30    1.29                          T036
+check:srs      rows     245 -> 246   FR-CHN-11, and unique         T027
+```
+
+**The two halves of the fence line check different things.** `en.perChapter.size` is set once per page the walker visits (`check-fence-chain.mjs:272`, outside the fence loop), so a chapter contributing **0** titled fences still moves it — which is how 4.19, 4.20 and 4.21 each moved it by one. `en.state.size` counts distinct fenced files and moves only if this chapter titles a fence. **A chapter count that does not move means the page was not found** — 051's `Error: Unknown chapter id: 4.6`, which was the manifest step failing first.
 - [ ] T004 Capture the CI error-set baseline for the per-error comparison at close (SC-010). 069's T004 read **0 distinct errors** on a green run; an empty diff between two green runs carries nothing and the record should say so.
 - [ ] T005 **Re-derive the fence bill** rather than copy R6's. R6 says **8 files · 53 English pages · 46 Vietnamese · 17 appendix blocks to regenerate · 3 to CREATE**, and it carries the method, because the number moved five times and nobody could reproduce it. **Count the two language trees separately**: `app/(en)` is what `check:fences` replays onto `relay-platform`, `app/(vi)` is mirror-compared against the English chapter and never against the tree (050-3), and every figure before pass 9 added them together. **And count blocks to CREATE, which a sweep of what exists cannot see** — `channels.controller.ts`, `users.schema.ts` and `media/media.controller.ts` are edited by this chapter and have no appendix block at all. `grep -rl 'title="[^"]*<file>"' app/(en) app/(vi) fences/` for pages; blocks and `@@` lines from `fences/post-series.md`.
 - [ ] T006 **Re-measure R1–R3 before trusting them**: the 500 on `GET /v1/channels/{externalId}`, the `invalid input syntax for type uuid` from Postgres, both lookups' buffers and timings, **0 of 41,772** uuid-shaped external ids, and the **173** call sites. They were taken on 2026-10-05, re-taken on 2026-10-06, and the lane moves: **channels went 41,768 → 41,772 and reused user external ids 1,576 → 1,597 in one day.** (And the sweep that propagated the new figure overwrote this line's own history on its first run — a find-and-replace cannot see which occurrence is deliberately the old value. 4.17's trap, from the other side.) The conclusions held — 0 uuid-shaped either time.
@@ -111,7 +131,7 @@ route beneath that prefix with it.
 - [ ] T044 Register 4.22 in `relay-tutorial/lib/tutorial.ts` at `/part-4/chapter-22/the-identifier-the-customer-gave-it`. **Not a milestone**, so no `milestone-` prefix — that convention is 4.9's, 4.17's and 4.23's.
 - [ ] T045 **Open on the 500** — `docs/07` §4 rule 1. The reader creates a channel with their own identifier, asks for it back, and gets an internal error. **One command, and the chapter's whole subject is in the response.**
 - [ ] T046 Write the chapter at `relay-tutorial/app/(en)/part-4/chapter-22/the-identifier-the-customer-gave-it/page.mdx`, 2,000–4,000 prose words counted outside fences and tables, English only.
-- [ ] T047 [P] Write the figures in that directory's `figures.ts`, passed as `code` and not `chart` — `check:figures` caught three dead diagrams `pnpm build` did not.
+- [ ] T047 [P] Write the figures in that directory's `figures.ts`, passed as `code` and not `chart` — `check:figures` caught three dead diagrams `pnpm build` did not. **And check the soft count: the gate exits 0 while reporting `3 export(s) unused`**, two of them Vietnamese. An export this chapter adds and never names takes it to 4 and the gate still passes, so the figure to compare is that one and not the 326.
 - [ ] T048 Write the TRAP box. The candidate is **the cast**: a reader assumes the 500 is a missing route or a bad guard, and it is Postgres refusing `'order-88412'::uuid` three layers down — **which is also why one query cannot resolve both forms.**
 - [ ] T049 Write at least one `WHY` box. The candidate is **why a middleware cannot do this**: it is the cheapest design, Nest runs it before guards, and an unscoped resolution is a cross-tenant read. `docs/07` §4 rule 3.
 - [ ] T050 Publish what the chapter could not do: the uuid is not retired, the 500's cause is still unlogged on every route that can produce one, the collision is constructed rather than observed, and the other four nouns have no identity to honour. **And what it DID do that its brief did not ask for**: 058-3 is closed. That gap counted sixteen routes where a malformed uuid in a path is a caller-triggered 500 — thirteen taking `channelId`, three taking `messageId`, one `mediaId` already validated at 4.12. **The pipe closes the thirteen as a side effect of never casting, and T020b closes the last three deliberately.** Publish that it was 16 and is 0, and that the chapter nearly left the last three open on a misread of its own citation (analysis pass 8). **And the larger one, which a reader on the socket finds first**: every gateway frame carries `channel: <uuid>`, the session response hands a connecting client a list of channel uuids, and a socket send goes to a door typed `z.string().uuid()`. **The lookup table is gone from REST and still there on the real-time surface** — Journey 3 Stage 5, the same journey whose Stage 1 promises zero of them. Quote `internal.ts`'s own line about `user` being the external id *"as everywhere else on this contract"*: the principle is stated there and applied to one field of two.
@@ -119,7 +139,7 @@ route beneath that prefix with it.
 - [ ] T052 Generate hunks from `pnpm check:fences --dump <dir>`, then diff at `-U6`. **Verify every pre-image matches exactly once before pasting**; widen only where it does not. **Strip the `--- a/` and `+++ b/` headers.**
 - [ ] T053 Put every hunk in `relay-tutorial/fences/post-series.md`, **placed last**, biggest-first from T005's table.
 - [ ] T053a **Create the three appendix blocks that do not exist** — `channels.controller.ts`, `users.schema.ts`, `media/media.controller.ts`. **This is not T052's dump-and-paste**, which assumes a hunk with a home: a first block needs its position chosen and its base established, and these sit at very different depths — `channels.controller.ts` was last fenced in Part 3 chapter 14, twelve chapters back. **If choosing a base turns into archaeology, publish the file whole instead** and record which of the two it took. A new source file needs nothing at all: 4.21's `erasure.ts` is fenced nowhere, so `channel-id.pipe.ts` gets no block either.
-- [ ] T054 Run **all six tutorial gates** green **after** every source edit, comparing each counted line against T003's.
+- [ ] T054 Run **all six tutorial gates** green **after** every source edit, comparing each counted line against T003's **and against T003a's four predicted deltas**. A line that moved where nothing was predicted, or held where a delta was, is the finding — **not the exit code**, which five of the seven gate scripts give you for free (055-4).
 - [ ] T055 [P] Count the prose words and confirm the bound.
 
 ---
