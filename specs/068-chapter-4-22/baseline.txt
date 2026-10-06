@@ -373,3 +373,118 @@ And the pipe needed no module registration, as analysis pass 2 measured:
 `providers` holds `Repository` and not the pipe.
 
 The probe was deleted.
+
+PHASE 3 — THE RESOLUTION
+================================================================================
+
+T012 · RED FIRST, AND IT WAS
+--------------------------------------------------------------------------------
+Four assertions written before a line of implementation. All four red:
+
+    expected 500 to be 404      an identifier that names nothing
+    expected 500 to be 404      …and the uuid control it must match
+    expected 500 to be 200      reading the channel the customer named
+    expected {code:'internal_error'} to deeply equal {…}
+
+Measured against the composed api first, so the test was asserting something
+known rather than guessed:
+
+    GET /v1/channels/order-4158                      500 internal_error
+    GET /v1/channels/419320ca-…                      200
+    GET /v1/channels/order-nobody-created-this       500
+    GET /v1/channels/{a valid absent uuid}           404
+    the log line                 {"path":"/v1/channels/order-4158","status":500}
+
+T013–T017a · THE RESOLUTION, THE PIPE, THE THIRTEEN SITES
+--------------------------------------------------------------------------------
+    channels.controller.ts   7 @Param("channelId", ChannelIdPipe)
+    messages.controller.ts   5
+    users.controller.ts      1
+    tsc -p tsconfig.build.json --noEmit                  EXIT 0
+    composed api rebuilt, one request per controller     200 / 200 / 200
+    "can't resolve dependencies" in the log                   0
+
+T020b–T020d · 058-3 CLOSED, 16 TO 0
+--------------------------------------------------------------------------------
+`UuidParamPipe` on the three `@Param("messageId")` sites, following
+`media.controller.ts:60`'s precedent and its reason — not `ZodValidationPipe`,
+whose `field` comes from the zod issue's `path`, empty for a scalar and then
+omitted. Three sites is where inline stops paying, so the field name is a
+constructor argument. And `media.controller.ts`'s own comment, which said the
+other sixteen were recorded rather than repaired, now says 16 to 0.
+
+THE PIPE RESOLVES AND NEVER REFUSES, AND THE GAUNTLET IS WHY
+--------------------------------------------------------------------------------
+The first version threw `NotFoundException("channel not found")` when nothing
+resolved — the same refusal every handler makes, which looked exactly right.
+The full api lane answered 3 failed of 996, and two of them were this:
+
+    a BANNED user, real channel        403 user_banned     the ban check
+    a BANNED user, invented channel    404 not_found       the pipe
+
+`gauntlet.itest.ts` asserts those two are byte-identical once `request_id` is
+stripped — *a banned user gets one answer for every channel id*. **With a
+refusing pipe, a banned user can tell a real channel from one that does not
+exist.** `messages.itest.ts` caught the same shape one check over: a token for a
+user with no row answers `400 unknown user` before the channel is read, so an
+absent channel answered 404 where a present one answered 400 and the pair
+stopped matching.
+
+**A PIPE RUNS BEFORE THE HANDLER, SO IT ANSWERS BEFORE EVERY CHECK THE HANDLER
+MAKES** — and two of those checks come first on purpose. Analysis pass 4 found
+the second instance, called it narrow, and the code shipped anyway; the gauntlet
+found the first, which is a disclosure rather than a status change.
+
+The fix is that an unresolved segment becomes a fresh `randomUUID()`. Downstream
+it IS a uuid that names nothing, every handler refuses in its own order exactly
+as it does today, and every ordering in all thirteen routes is the one that
+shipped. A random uuid rather than a nil one: a nil uuid is a value a row could
+in principle hold.
+
+    addressing + gauntlet + messages, after        224 of 224
+
+T023 · THE REGRESSION SURFACE, 173 CALL SITES
+--------------------------------------------------------------------------------
+    pnpm exec turbo run test:integration --force --filter=@relay/api
+    54 files, 996 tests, 0 failed, Cached: 0 of 4, 2m21.424s      EXIT 0
+
+AND THE FIRST RUN'S THIRD FAILURE WAS THE MACHINE, NOT THE CODE. `outbox.itest`
+invariant 8 — *two concurrent relays publish every row exactly once* — read 19
+of 20, then 9 of 20, then green. The suite drains the GLOBAL outbox with two
+in-process relays and counts its own twenty among what THEY sent; the composed
+`dispatcher` was still running and taking rows the test could then not see.
+Stopped by name per T060 — `api gateway dispatcher media-worker`, not `ingester`
+— and the suite is 18 of 18 on three consecutive runs.
+
+4.17's finding inverted once more: an assertion reading state that is not its
+own, breaking in whichever direction the machine happens to point. The lane
+holds 432,420 outbox rows, so there is always someone else's backlog to drain.
+
+T023a · WHAT THE RESOLUTION COSTS (SC-011)
+--------------------------------------------------------------------------------
+`GET /v1/channels/:channelId` by uuid, 200 samples after 40 warm-up requests,
+three runs a side, the pipe removed from that one route and restored byte-exact
+between them:
+
+    with the pipe       5.499  5.423  5.285     mean 5.402 ms   spread 0.214
+    without             4.847  4.719  4.795     mean 4.787 ms   spread 0.128
+                                                 ----------------------------
+                                                 +0.615 ms      +12.8%
+
+The spread on each side is a third of the difference, so the shift is real at
+this sample size rather than inside the noise — which is the thing 045's
+`session.ts` measurement says to check before publishing a delta.
+
+**IT IS AN ADDED QUERY, NOT A RELOCATED ONE.** The handlers still call
+`getChannelById`, `channelExists` or `channelVisibleTo` with the resolved uuid,
+so the read path does two scoped `SELECT`s where it did one. That is the price
+of leaving the ten repository methods untouched, and it is paid on every request
+to all thirteen routes — including, as the ordering probe showed, requests
+already refused for a bad body.
+
+    by key        5.499 ms      the OR form, two index arms
+    by identity   5.004 ms      one query, no OR
+    names nothing 4.041 ms      the handler short-circuits
+
+The identity path is the cheapest of the three, which is the opposite of what a
+reader expects and the same thing R2 measured at the database.
