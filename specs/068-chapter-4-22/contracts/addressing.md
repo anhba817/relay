@@ -133,8 +133,10 @@ to decide.
   one. A window, a warning and a version belong to a later chapter.
 - **No change to the other four nouns.** Messages, media objects, webhooks and
   environments have no customer identifier to honour.
-- **No new error code.** `not_found` is in `codes.ts` and in
-  `docs/08-error-reference.md` already.
+- **No new error code.** Two are emitted and both are registered: `not_found` for an
+  identifier that names nothing, and `invalid_request` with `field: "messageId"` for a
+  malformed message id (`codes.ts:130`, six mentions in
+  `docs/08-error-reference.md`).
 - **No fix for the unlogged 500 cause.** R1 found it: a 500 is logged as a status
   with no `22P02` and nothing an operator can act on. **That is a different
   population from 058-3** — this contract closes every route where a malformed path

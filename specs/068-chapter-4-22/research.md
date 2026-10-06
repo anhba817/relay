@@ -191,7 +191,7 @@ route — one that read the channel from elsewhere would never run the pipe.
 | | design | fence cost | verdict |
 |---|---|---|---|
 | middleware | one registration in `app.module.ts` | 75 pages | **cannot work** |
-| **pipe** | `@Param("channelId", ChannelIdPipe)` | **101 pages · 17 blocks · 7 files** (R6) | **chosen** |
+| **pipe** | `@Param("channelId", ChannelIdPipe)` | **53 en pages · 17 blocks + 3 new · 8 files** (R6) | **chosen** |
 | service layer | resolve at the top of each method | 91 pages, ~13 sites | rejected |
 | repository | each method accepts either | spreads the ambiguity into ten queries | rejected |
 
@@ -357,42 +357,63 @@ SC-006 asks for the count. **It is 367 identities and 290 message rows before T0
 runs**, and T026's job is now to find what else there is rather than whether there is
 anything.
 
-## R6 — What the fence chain charges, counted now, with the method written down
+## R6 — What the fence chain charges, counted now, split by what it is
 
-**The method, because the number has moved three times and nobody could reproduce
-it.** `pages` is pages whose titled fence ends with that path; `blocks` is titled
-fences for it in `fences/post-series.md`; `hunks` is `@@` lines inside those blocks.
+**The method, because the number moved four times and nobody could reproduce it.**
+`en` and `vi` are pages whose titled fence ends with that path, under `app/(en)` and
+`app/(vi)`; `blocks` is titled fences for it in `fences/post-series.md`; `hunks` is
+`@@` lines inside those blocks; `create` marks a file this chapter edits that has no
+appendix block yet.
 
 ```
-                                 pages  blocks  hunks
-channel-id.pipe.ts                   0   0        0   NEW FILE
-users.schema.ts                      4   0        0   the cursor payload, if US2 keeps one
-channels.controller.ts               8   0        0   7 @Param edits
-users.controller.ts                  5   1        1   1 @Param edit
-messages.controller.ts              19   1        1   5 @Param edits
-repository.ts                       52   7       50   one resolution read
-gauntlet.itest.ts                   13   8       14   T031's new-form attack
-                                 -----  --      ---
-                                   101  17       66   across 7 files
+                              en   vi  blocks  hunks  create
+channel-id.pipe.ts             0    0    0        0    no    NEW FILE, needs no fence
+users.schema.ts                2    2    0        0   YES    the cursor, if US2 keeps one
+channels.controller.ts         4    4    0        0   YES    7 @Param edits
+media/media.controller.ts      2    0    0        0   YES    T020d's stale comment
+users.controller.ts            2    2    1        1    no    1 @Param edit
+messages.controller.ts         9    9    1        1    no    5 @Param edits + T020b
+repository.ts                 28   23    7       50    no    one resolution read
+gauntlet.itest.ts              6    6    8       14    no    T031's new-form attack
+                              --   --   --      ---
+                              53   46   17       66          across 8 files
 ```
 
-**THE BILL OMITTED A FILE A TASK EDITS.** T031 adds the new-form attack to
-`gauntlet.itest.ts`, which is fenced on **13 pages and 8 appendix blocks**. This is
-066's finding reproduced on the chapter after it — *the fence bill named all six
-files at ANALYSIS, including `gauntlet.itest.ts`* — and the point of 4.15's rule is
-that the count happens early enough to change the sequencing.
+**FIFTY-THREE PAGES ARE THE REPLAY COST AND FORTY-SIX ARE A MIRROR COST, AND THE
+BILL HAD BEEN ADDING THEM TOGETHER SINCE THE MILESTONE'S 84.**
+`check-fence-chain.mjs:265` iterates **`en.state`**: the Vietnamese chain is replayed
+and then compared against the ENGLISH chapter's fences, never against
+`relay-platform` (050-3, open since feature 050, with three vi whole bodies stale
+today and every gate green). So the English pages are what `check:fences` can fail
+on; the Vietnamese ones still have to be kept in step, and nothing compares them to
+the tree.
 
-**`targets.ts` IS 13 PAGES AND NEEDS NO ROW**, checked rather than assumed: it keys
+**The ratio is not a constant you can divide by.** `media/media.controller.ts` is 2
+English and 0 Vietnamese, because Part 4 has no translation yet.
+
+**AND THE `blocks` COLUMN COUNTS WHAT EXISTS, NOT WHAT THE WORK ADDS.** Three edited
+files have no appendix block at all — `channels.controller.ts` was last fenced in
+Part 3 chapter 14, twelve chapters back, and has never needed one because nothing
+changed it since. This chapter changes all three, and 4.19, 4.20 and 4.21 each
+contributed **0 titled fences**, so the appendix is the only place the change can go.
+**Creating a block is not regenerating one**: T052's dump-and-diff assumes a hunk
+with a home, and a first block needs its position and its base chosen.
+
+**A NEW SOURCE FILE NEEDS NOTHING, WHICH LOOKS WRONG AND IS NOT.** 4.21 created
+`services/api/src/users/erasure.ts` and it is fenced nowhere — no chapter page, no
+appendix. `channel-id.pipe.ts`'s row of zeros is the answer, not an omission.
+
+**`targets.ts` IS 12 PAGES AND NEEDS NO ROW**, checked rather than assumed: it keys
 on method and path, and this chapter adds no route and renames no token.
 
-**AND `users.controller.ts` WAS 2 AND IS 1.** One titled block in the appendix, not
-two. The earlier column was never derived from the tree.
-
-**THE FIGURE HAS NOW MOVED THREE TIMES**: the milestone's plan said 84 (omitting
-`users.schema.ts`), analysis pass 1 said 107 across 9 (adding three module files the
-pipe does not need), pass 2 said 88 across 6, and pass 3 measures **101 across 7**.
-Only the last two came from running anything, and this is the first with its method
-written down. **A count nobody can reproduce is a count that moves.**
+**THE FIGURE HAS MOVED FOUR TIMES AND THIS IS THE FIRST BREAKDOWN.** The milestone's
+plan said 84 (omitting `users.schema.ts`), pass 1 said 107 across 9 (adding three
+module files the pipe does not need), pass 2 said 88 across 6, pass 3 measured 101
+across 7 and wrote the method down, pass 8 added `media/media.controller.ts`, and
+pass 9 split it: **53 English, 46 Vietnamese, 17 blocks to regenerate, 3 to create.**
+Pass 3's method was reproducible and counted both language trees — **a count can be
+reproducible and still measure the wrong thing for the use it is put to**, which is
+the half of 4.15's rule nobody had written.
 
 ## R7 — What this chapter must not do
 

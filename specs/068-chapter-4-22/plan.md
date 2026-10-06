@@ -31,7 +31,7 @@ sweeps for a real leak rather than closing the named one.
 | **New table or column** | **none** — no migration |
 | **The mechanism** | an injectable pipe resolving `:channelId` at the boundary (R4) |
 | **Resolution order** | shape-based; **the identity wins the tie** — the procedure is T009's, two candidates priced (R2) |
-| **Blast radius** | **7 files, 101 fence pages, 17 appendix blocks / 66 hunks** (R6) — 84, then 107/9, then 88/6, now measured with its method written down; the move is `gauntlet.itest.ts`, which T031 edits |
+| **Blast radius** | **8 files · 53 English fence pages · 17 appendix blocks to regenerate and 3 to create** (R6). The 46 Vietnamese pages are a mirror check, not a replay (050-3), and were inside every earlier figure: 84 → 107 → 88 → 101 → this |
 | **Regression surface** | **173 existing call sites** pass a uuid and must not change — counted with its scope stated, after the first figure of 157 proved unreproducible (R3) |
 | **Added cost** | **one scoped `SELECT` per request on all 13 routes** — the handler's own read is not replaced. Measured at T023a (R4) |
 | **Unknowns** | **whether any internal key reaches a customer at all** — FR-006's sweep, Phase 4 |
@@ -183,7 +183,8 @@ the checker's own replay.
 
 | thing | why justified | what would make it unjustified |
 |---|---|---|
-| 101 fence pages on one chapter | 13 routes contradict two clauses and a journey; the alternative was a milestone that builds, which rule 4 forbids | if the pipe turns out not to reach all 13, the design is wrong rather than the budget |
+| 53 English fence pages on one chapter | 13 routes contradict two clauses and a journey; the alternative was a milestone that builds, which rule 4 forbids | if the pipe turns out not to reach all 13, the design is wrong rather than the budget |
+| 3 appendix blocks created, not regenerated | three edited files have never needed one; `channels.controller.ts` was last fenced twelve chapters back | if choosing a base for any of the three turns into archaeology, publish the file whole instead |
 | Accepting two identifier forms | 173 call sites and every published client hold uuids | if a deprecation is ever wanted it is a later chapter with a window and a warning |
 | Touching `users` at all | a published ADR is falsified and FR-010 requires the amendment; and nobody has yet asked whether an internal key reaches a customer | if the sweep finds nothing and the ADR is amended, US2 is done — do not invent an edit to justify the phase |
 
