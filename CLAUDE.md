@@ -74,9 +74,25 @@ tags. **Anyone holding an older clone of `relay-platform` must reset rather than
 
 <!-- SPECKIT START -->
 
-**NO ACTIVE PLAN.** 068 is closed; the next feature is **069 / chapter 4.23**, the Priya
-milestone — and **T069 handed it three corrections it must apply before it starts** (see
-below).
+**ACTIVE PLAN: `specs/070-chapter-4-23/plan.md`** — chapter 4.23, "The channel a socket
+names". The Priya milestone is **069 / chapter 4.24** and comes after; 068's T069 handed it
+corrections and 4.22's close has since applied them.
+
+**PART 4 GAINED A SECOND CHAPTER FOR THE SECOND TIME, AND FROM ITS OWN PREDECESSOR.** 4.22
+made thirteen REST routes take the customer's identifier; **the gateway still names every
+channel by the uuid** — 7 client-facing frame schemas, 21 sites, and **0 references to a
+channel's external id anywhere in the service**, so it cannot translate today. ADR-38 states
+the rule and `internal.ts` states the principle two lines above the field that breaks it.
+
+**AND 4.22 MADE THE CHEAPER DESIGN HARDER.** Annotating every internal payload at publish
+time needs no map and cannot go stale — but `ChannelIdPipe` resolves the identity to a key at
+the request boundary, so **no handler holds an identity by the time it publishes**. Resolving
+early has a cost and this is where it lands. The design is a map at the gateway's client edge
+(research R2), which is 4.22's division one service out.
+
+**THE BILL IS 83 ENGLISH PAGES ACROSS 9 FILES, AGAINST THE SPEC'S OWN "~50 ACROSS 7"** —
+written a day earlier from the files the gap touches, missing `auth.ts`, `typing.ts` and
+`repository.ts`'s 28. 4.15's rule, in the direction it always goes.
 
 **068 IS CLOSED at 83 of 83 — CHAPTER 4.22, "The identifier the customer gave it".**
 Movement VII's fifth, and the chapter Part 4 gained. Its record is
