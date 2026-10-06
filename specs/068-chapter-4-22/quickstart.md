@@ -110,9 +110,11 @@ between a platform that refuses and one that breaks.
 - **US2's sweep.** *Does any internal key reach a customer?* is an audit of every
   response shape, not a curl, so it lives in the chapter and in T026 rather than
   here. The count it produces is SC-006.
-- **The `:messageId` 500.** `…/messages/not-a-uuid` still answers 500 on three of
-  these routes. The claim this quickstart demonstrates is about the channel
-  segment.
+- **Nothing about `:messageId` any more.** It was here as a limitation —
+  `…/messages/not-a-uuid` answering 500 on three routes — and the chapter closes it
+  instead (T020b), so the no-5xx claim covers every path parameter. What this
+  quickstart still cannot show is the **logging**: a 500 that does arise is recorded
+  as a status with no cause, on every route.
 - **The real-time surface.** Every frame the gateway sends carries `channel:
   <uuid>`, the session response hands a connecting client a list of channel uuids,
   and a socket send is forwarded to a door that requires one. **So the lookup table

@@ -29,8 +29,11 @@ container:
 
 That is the whole of it. No error line, no `22P02`, no constraint name — an operator
 reading the log sees a 500 and nothing that explains it. **Recorded as a gap rather
-than fixed here**: the swallowed cause is every 500's problem on this platform, not
-this chapter's, and 058-3 already counts 22 routes that can produce one.
+than fixed here**: the swallowed cause is every 500's problem on this platform rather
+than this chapter's. **It is not 058-3's population**, which six artifacts said it
+was — that gap counts the sixteen routes where a malformed uuid *causes* a 500, and
+this chapter closes all sixteen (R7). How the remaining 500s are *logged* is a
+separate class over every route, and nobody has counted it.
 
 ## R2 — The resolution order is a correctness question, because the cost is a tie
 
@@ -427,6 +430,21 @@ qualifier**: the quickstart, T050 and the handoff to 4.23.
 environments have no `external_id` column, measured against `information_schema`, so
 a Relay identifier is the only identifier they have.
 
-**And it must not fix the swallowed 500 cause.** R1 found it; 058-3 counts 22 routes
-that can produce one. A chapter that fixes the logging for one route and leaves 21 is
-worse than one that records the class.
+**And it must not fix the swallowed 500 cause**, which is not the same thing as the
+500 itself. R1 found that a 500 is logged as a status with no `22P02` and nothing an
+operator can act on; that is true of **every** route on the platform and has never
+been counted. Fixing the logging on one route and leaving the rest is worse than
+recording the class.
+
+**BUT IT DOES CLOSE 058-3, AND THAT WAS NEARLY MISSED.** That gap counts sixteen
+routes where a malformed uuid in a path *causes* a 500 — **13 `channelId`, 3
+`messageId`, 1 `mediaId` validated at 4.12**. The pipe closes the thirteen by never
+casting, and the last three are three lines of `z.uuid()` in `messages.controller.ts`,
+a file this chapter already opens. **16 to 0.**
+
+Six artifacts said *"058-3 counts 22 routes"*. The number appears nowhere in that gap,
+and the misreading cost a scope decision: analysis pass 4 excluded the three
+`messageId` routes because repairing *"three of sixteen"* looked like the shape 058
+refused, when the chapter already repairs thirteen. **Seven passes cited the id and
+the eighth opened it** — this project's second-ranked mechanism arriving seven passes
+late.

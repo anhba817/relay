@@ -95,7 +95,12 @@ its conclusion holds with zero known live edges — and the amendment is 4.22's 
 `'order-88412'::uuid` raises in Postgres before any `OR` can short-circuit, so a value that
 cannot be a uuid is never cast under the new resolution and the error cannot arise. **And the
 api logs the status without the cause** — one `"status":500` line, no `22P02`, nothing an
-operator can act on (058-3 counts 22 routes that can produce one; not this chapter's to fix).
+operator can act on, which is every route on the platform and is not this chapter's to fix.
+**058-3 IS A DIFFERENT POPULATION AND THE CHAPTER CLOSES IT**: sixteen routes where a
+malformed uuid in a path CAUSES a 500 — 13 `channelId`, 3 `messageId`, 1 `mediaId` validated
+at 4.12. The pipe closes the thirteen by never casting and three lines of `z.uuid()` close the
+rest. **Six artifacts said "058-3 counts 22 routes", including this one; the number is in no
+gap entry, and seven analysis passes cited the id before the eighth opened it.**
 **The design is a pipe, because the cheaper middleware runs BEFORE guards** and an unscoped
 resolution is a cross-tenant read. **157 existing call sites pass a uuid** and must not change.
 

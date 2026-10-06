@@ -64,12 +64,18 @@ this chapter is new product; it is the API matching its own specification.
 
 ### V-ERRATA. Two claims that are narrower than they first read
 
-**The no-5xx claim is about the CHANNEL SEGMENT.** Three of the thirteen routes take
-a `:messageId` that reaches `messages.id`, a uuid column with no shape check, so
-`…/messages/not-a-uuid` is a 500 the pipe does not touch. **SC-003 and FR-004 are
-scoped to the channel segment**, the exclusion is asserted (T020b) and published
-(T050), and fixing three of 058-3's sixteen routes is the shape that chapter already
-refused.
+**The no-5xx claim covers every path parameter, and closing gap 058-3 is why.** That
+gap counts sixteen routes where a malformed uuid in a path is a caller-triggered 500:
+**thirteen taking `channelId`, three taking `messageId`, one `mediaId` validated at
+4.12**. The pipe closes the thirteen by never casting. The last three are three lines
+of `z.uuid()` in `messages.controller.ts`, which this chapter already opens — **no new
+file, no new fence pages** — so the chapter retires the gap instead of publishing it.
+
+**It nearly did the opposite, on a misreading of its own citation.** Six artifacts
+said *"058-3 counts 22 routes"*; the gap says sixteen and gives the breakdown. Analysis
+pass 4 excluded the three on the reading that the chapter would be *"repairing three of
+sixteen"*, when it already repairs thirteen. **Seven passes cited that id and the eighth
+opened it.**
 
 **And the identity claim is about the PUBLIC PATH SURFACE.** Three internal doors
 name a channel in a body and keep the uuid by published position; and **every
@@ -190,5 +196,7 @@ the checker's own replay.
   One query with an `order by` preference needs `EXPLAIN` before it is chosen (4.18);
   identity-first costs a second round trip on all 173 uuid call sites. T009.
 - **Whether an ADR is written.** Predicted yes, checked at Phase 2.
-- **Whether the 500's swallowed cause is ever fixed.** R1 found it, 058-3 counts 22
-  routes, and fixing one of 22 is worse than recording the class.
+- **Whether the 500's swallowed cause is ever fixed.** R1 found it: the status is
+  logged and the `22P02` is not. **Its population is not 058-3's** — that gap is about
+  what *causes* a 500, which this chapter closes, and the logging gap is about every
+  500 on the platform, which nobody has counted.

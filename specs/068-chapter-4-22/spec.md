@@ -173,9 +173,8 @@ identifier addresses each noun and why.
 - **FR-004**: An identifier that names nothing MUST produce a refusal whose **code**
   names the cause. The **message** stays constant: FR-TEN-05 requires a foreign
   channel and an absent one to answer identically, which `channels.service.ts`
-  already does deliberately. **No value in the channel segment of these routes may
-  produce a 5xx** — see the scope note under SC-003 for the segment this chapter does
-  not reach.
+  already does deliberately. **No input to these routes may produce a 5xx**, in any
+  path parameter.
 - **FR-005**: Resolution MUST be scoped to the calling tenant's environment, and that
   scope MUST be demonstrated by removing it and observing a test fail.
 - **FR-006**: The values a customer receives MUST be swept for identifiers that are
@@ -211,11 +210,11 @@ identifier addresses each noun and why.
   **13 of 13**, asserted per route rather than in aggregate.
 - **SC-002**: Every one of those routes also works with the Relay identifier, asserted
   the same way.
-- **SC-003**: No value in the **channel segment** of those routes produces a 5xx,
-  including a malformed identifier, an absent one and one belonging to another
-  tenant. **Three of the thirteen carry a `:messageId` as well**, which is a uuid
-  column with no shape check, so a malformed message id is still a 500 — 058-3's
-  class, out of scope here and published as such.
+- **SC-003**: No input to those routes produces a 5xx in **any** path parameter —
+  a malformed identifier, an absent one, one belonging to another tenant, and a
+  malformed `:messageId` on the three routes that take one. **This closes gap 058-3
+  entirely**: it counts sixteen such routes, thirteen taking `channelId` and three
+  taking `messageId`, and the `mediaId` one was validated at 4.12.
 - **SC-004**: A tenant calling with an identifier another tenant also uses reaches
   their own channel, and the other tenant's rows are unchanged.
 - **SC-005**: Removing the tenant scope from the resolution turns at least one named

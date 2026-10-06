@@ -65,7 +65,7 @@ which is the half of a checklist nobody re-runs. Re-read and re-ticked:
 | FR-004 | the **code** names the cause; the message stays constant under FR-TEN-05 | 3 |
 | FR-006 | from *"no value may contain an internal key"* to *"sweep, count, dispose"* | 3 |
 | FR-007 | conditional on FR-006's sweep finding something to change | 3 |
-| SC-003 | scoped to the **channel segment**; `:messageId` is still a 500 | 4 |
+| SC-003 | scoped to the **channel segment** at pass 4; **un-scoped at pass 8** — the chapter closes 058-3 outright, 16 routes to 0 | 4, 8 |
 | SC-006 | the count is stated even when it is zero | 3 |
 | SC-008 | `git diff <tag> --`, not `<tag>..HEAD` | 4 |
 | SC-011 | new — the resolution's added query is measured | 3 |
@@ -74,9 +74,10 @@ which is the half of a checklist nobody re-runs. Re-read and re-ticked:
 *Requirements are testable and unambiguous*: FR-007 is now conditional, so its
 applicability is unknown until T026 runs — a conditional requirement is still
 testable, and the alternative was leaving it asserting a leak that does not exist.
-*Success criteria are technology-agnostic*: SC-003's scope note names a path segment,
-which is closer to the implementation than the rest, and the claim is false without
-it.
+*Success criteria are technology-agnostic*: SC-003 names path parameters, which is
+closer to the implementation than the rest. **It was worse at pass 4**, when the
+criterion carved out one segment to stay true; pass 8 found the carve-out rested on a
+misread citation and the chapter closes the whole gap instead.
 
 **And the paragraph above is now half stale.** The resolution order's **outcome** is
 settled — the identity wins — and it is in `contracts/addressing.md`. Only the

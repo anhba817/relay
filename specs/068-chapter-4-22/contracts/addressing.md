@@ -71,17 +71,18 @@ first.
 | a uuid no channel in this environment has | 404 | `not_found` — unchanged |
 | a channel belonging to another tenant, by either form | 404 | `not_found`, **indistinguishable from absent** |
 | a malformed value of any shape | 404 | `not_found` — **this is the 500 today** |
-| a malformed `:messageId` on the three routes that take one | **500** | **unchanged — out of scope** |
+| a malformed `:messageId` on the three routes that take one | 400 | `invalid_request`, `field: "messageId"` |
 
-**THE LAST ROW IS THE LIMIT OF THE CLAIM, AND IT IS NARROWER THAN IT READS.**
-`PATCH` and `DELETE …/messages/{messageId}` and `GET …/messages/{messageId}/edits`
-hand their second path parameter to `messages.id`, a uuid column with no shape check,
-so `…/messages/not-a-uuid` raises `22P02` exactly as the channel cast does. **This
-chapter fixes the channel segment and not that one** — it is 058-3's class, sixteen
-shipped routes wide, and a chapter that repairs three of them is the shape 058 already
-refused.
+**THE LAST ROW CLOSES A GAP RATHER THAN RECORDING ONE.** `PATCH` and `DELETE
+…/messages/{messageId}` and `GET …/messages/{messageId}/edits` hand their second path
+parameter to `messages.id`, a uuid column with no shape check, so
+`…/messages/not-a-uuid` raises `22P02` exactly as the channel cast does. Gap **058-3**
+counts sixteen routes with that defect — **thirteen taking `channelId`, three taking
+`messageId`, one `mediaId` validated at 4.12**. The pipe closes the thirteen by never
+casting; three lines of `z.uuid()` in a file this chapter already opens close the
+rest. **16 to 0.**
 
-**NO VALUE IN THE CHANNEL SEGMENT MAY PRODUCE A 5xx.** Today `GET /v1/channels/order-88412`
+**NO INPUT TO THESE ROUTES MAY PRODUCE A 5xx, IN ANY PATH PARAMETER.** Today `GET /v1/channels/order-88412`
 is `500 internal_error`, because the value reaches a uuid-typed column and Postgres
 raises `invalid input syntax for type uuid` — which the api does not log. After this
 chapter a value that cannot be a uuid is never cast, so the error cannot arise.
@@ -134,5 +135,8 @@ to decide.
   environments have no customer identifier to honour.
 - **No new error code.** `not_found` is in `codes.ts` and in
   `docs/08-error-reference.md` already.
-- **No fix for the unlogged 500 cause.** R1 found it; 058-3 counts 22 routes that can
-  produce one, and repairing one of 22 is worse than recording the class.
+- **No fix for the unlogged 500 cause.** R1 found it: a 500 is logged as a status
+  with no `22P02` and nothing an operator can act on. **That is a different
+  population from 058-3** — this contract closes every route where a malformed path
+  parameter *causes* a 500, and says nothing about how the remaining 500s are
+  *logged*, which is every route and has never been counted.
