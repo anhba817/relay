@@ -1,0 +1,150 @@
+BASELINE — feature 068, chapter 4.22, "The identifier the customer gave it"
+Measurements in the order they were taken. The ones that were wrong first say so.
+
+================================================================================
+PHASE 1 — BASELINE                                                   2026-10-06
+================================================================================
+
+T001 · THE LANE
+--------------------------------------------------------------------------------
+RELAY_POSTGRES_PORT=15432 (this machine's own Postgres holds 5432)
+
+    docker compose up -d --wait        REAL_EXIT=1
+    postgres     running  Healthy
+    clickhouse   running  Healthy
+    minio        running  Healthy
+    redis        running  Healthy
+    clamav       running  Healthy
+    mailpit      running
+    nats         running  UNHEALTHY
+
+AND THE FIRST READING OF THAT EXIT CODE WAS A LIE, FOR THE SEVENTH TIME IN THIS
+PROJECT. `docker compose up -d --wait 2>&1 | tail -6` printed `compose_exit=0`,
+which is `tail`'s status. Captured outside the pipeline it is 1. What actually
+named the problem was the counted output — `container relay-nats-1 is unhealthy`
+— which is 055-4's rule arriving from a direction nobody had listed: assert the
+LINE, not the exit code, holds for compose too.
+
+    curl localhost:8222/healthz
+    {"status":"unavailable",
+     "error":"JetStream stream '$G > ANALYTICS' could not be recovered"}
+
+049-1 reproducing, four features on: THE STREAM THAT FAILS TO RECOVER IS WHICHEVER
+IS BEING WRITTEN. Three streams on disk, and the broken one is the one with the
+newest message blocks before today:
+
+    ANALYTICS    7 blocks, 65 MB, last written 2026-10-05 11:20   UNRECOVERABLE
+    DELIVERIES   touched 2026-10-06 03:21                         fine
+    EVENTS       2026-10-05 00:56                                 fine
+
+Nothing in Phase 1 needs NATS, so the measurements below were taken anyway and
+the stream is a decision rather than a blocker. Recorded before it is touched.
+
+ROW COUNTS — part of the instrument, recorded beside every later timing:
+
+    environments     36,279          members         182,434
+    channels         41,772          messages        216,922
+    users           203,854          media_objects    16,171
+    audit_log         5,002          outbox          432,420
+
+T002 · THE LANES AT THE OPEN
+--------------------------------------------------------------------------------
+    pnpm test                    EXIT 0   Cached: 13 of 13   FULL TURBO   24 ms
+
+NOTHING RAN. 066-2's finding on the first command of the feature: a cached turbo
+run replays the counted line AND the exit code. The tells are `Cached:` and the
+elapsed time, and both were there.
+
+    pnpm test -- --force         EXIT 1   Tasks: 0 successful, 6 total   545 ms
+    CACError: Unknown option `--force`
+
+AND THE DOCUMENTED ESCAPE DID NOT WORK EITHER. `--force` after `--` is forwarded
+to VITEST, which rejects it; the flag belongs to turbo. `Tasks: 0 successful,
+6 total` with `Cached: 0 cached` reads like a cache bypass and is six tasks
+failing to start. The form that works:
+
+    pnpm exec turbo run test --force
+                                 EXIT 0   Tasks: 13 of 13   Cached: 0   8.467 s
+
+    test-harness   7 files    25 tests        api          42 files   451 tests
+    config         2 files     7 tests        dispatcher    1 file      8 tests
+    service-kit    1 file      3 tests        media-worker  7 files    99 tests
+    protocol       9 files   174 tests        gateway      11 files   140 tests
+    ingester       1 file     45 tests
+                                             TOTAL         81 files   952 tests
+
+    test:integration             BLOCKED on the ANALYTICS stream — see T001
+    coverage                     not yet run
+    outsider                     not yet run
+
+T003 · THE SIX TUTORIAL GATES — ALL EXIT 0
+--------------------------------------------------------------------------------
+    check:fences   291 fenced files replay onto relay-platform across 64 chapters
+                   (46 translated, fences mirrored, 2 retired, plus post-series
+                   amendments)
+    check:figures  326 figures, every diagram passed as `code`; 328 imported
+                   bindings all resolve, 3 export(s) unused
+    check:docs     all mirrored docs match their sources
+                   29 revisions ascend, 1.0 to 1.28
+    check:srs      245 clause rows, 245 unique identifiers, no duplicates
+    check:errors   34 codes, 34 sections, each with a cause and a client action;
+                   6 close codes documented
+
+Feature 069's three inherited figures — 291 files / 64 chapters, 326 figures,
+29 revisions to 1.28 — all match, so these are current rather than carried.
+
+AND `pnpm -s <script>` RUNS NOTHING. This pnpm answers `error: unexpected
+argument '-s' found` and EXIT 2 on all five scripts. CLAUDE.md said it "reports
+red for a green gate", which reads as a gate that ran; no gate runs.
+
+T003a · THE FOUR DELTAS THIS CHAPTER PREDICTS
+--------------------------------------------------------------------------------
+    check:fences   chapters   64 -> 65    the walker found the page      T044
+    check:fences   files     291 -> 291   the chapter titled no fence    T051
+    check:docs     revisions  29 -> 30    1.29                           T036
+    check:srs      rows      245 -> 246   FR-CHN-11, and unique          T027
+
+`en.perChapter.size` is set once per page the walker visits
+(`check-fence-chain.mjs:272`, outside the fence loop), so a chapter contributing
+zero titled fences still moves it — which is how 4.19, 4.20 and 4.21 each moved
+it by one. `en.state.size` counts distinct fenced FILES and moves only if this
+chapter titles a fence. A chapter count that does NOT move means the page was
+never found, which is 051's `Error: Unknown chapter id: 4.6`.
+
+T005 · THE FENCE BILL, RE-DERIVED
+--------------------------------------------------------------------------------
+                                  en   vi  blocks  hunks  create
+    channel-id.pipe.ts             0    0    0        0    -     NEW, needs none
+    users.schema.ts                2    2    0        0   YES
+    channels.controller.ts         4    4    0        0   YES
+    media/media.controller.ts      2    0    0        0   YES
+    users.controller.ts            2    2    1        1    no
+    messages.controller.ts         9    9    1        1    no
+    repository.ts                 28   23    7       50    no
+    gauntlet.itest.ts              6    6    8       14    no
+                                  --   --   --      ---
+                                  53   46   17       66    3 to create
+
+Identical to analysis pass 9's table. 53 English pages are what `check:fences`
+replays; the 46 Vietnamese are mirror-compared against the English chapter and
+never against the tree (050-3).
+
+T006 · R1–R3 RE-MEASURED
+--------------------------------------------------------------------------------
+R1  select id from channels
+      where external_id = 'order-not-a-uuid' or id = 'order-not-a-uuid'::uuid;
+    ERROR:  invalid input syntax for type uuid: "order-not-a-uuid"
+    Unchanged. Postgres raises before the OR can short-circuit.
+
+R2  uuid-shaped external_ids            0 of 41,772
+    external_id equal to own row id     0
+    reused user external ids        1,597   (was 1,576 on 2026-10-05)
+    erased users                      367   all `erased:' || id::text`
+    messages authored by one          290   returned as `user` by listMessages
+
+R3  173 call sites across 22 files
+    grep -rhoE '/v1/channels/\$\{[^}]+\}' --include=*.ts .
+
+R4  @Param("channelId")   channels 7 · messages 5 · users 1 = 13
+
+Every figure matches the artifacts. Nothing moved between pass 9 and Phase 1.
