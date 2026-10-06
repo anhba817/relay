@@ -225,3 +225,151 @@ the error message is the only thing that distinguishes them.
 
 Infra is green on all seven containers. The streams are 0 and stay 0 until the
 api boots: nothing in the infra profile creates them.
+
+PHASE 2 — THE DECISIONS
+================================================================================
+
+BEFORE THE DECISIONS: THE COMPOSED API HAD NEVER CREATED A STREAM
+--------------------------------------------------------------------------------
+With a clean volume the services came up green and `jsz` said **streams: 0**. One
+request to `/healthz` and the log said why:
+
+    {"level":"error","service":"consumer","msg":"consumer.poll_failed",
+     "error":"NatsError: replicas > 1 not supported in non-clustered mode"}
+    {"level":"error","service":"api","msg":"request_log.publish_failed",
+     "error":"NatsError: replicas > 1 not supported in non-clustered mode"}
+
+**049-2 REPRODUCING, AND IT WAS DIAGNOSED RATHER THAN FIXED.** That entry named
+the cause exactly — `replicaCount()` returns ADR-02's R3 because the Dockerfile
+sets `NODE_ENV=production` — and the escape hatch it describes, the
+`RELAY_NATS_REPLICAS` override at `jetstream.publisher.ts:65`, **was set
+nowhere**. The streams existed because they had been created once from outside
+the container, and the volume carried them for nineteen features.
+
+**A DEFECT HELD OFF BY A VOLUME IS NOT A FIXED DEFECT**, and nothing could have
+noticed: every local run found the streams already there, and CI builds a fresh
+volume but has a `nats` service the lanes drive the same way.
+
+The repair is one line in `compose.yaml` — `RELAY_NATS_REPLICAS: "1"` on the api
+— with the reason in the file beside it. Measured after:
+
+    jsz  streams: 2    EVENTS msgs=0    ANALYTICS msgs=5
+    publish failures in the following 60 s: 0
+
+**This is a change outside the chapter's subject and FR-009 says there must not
+be one.** It is recorded here rather than hidden: without it the composed api
+cannot create a stream, so T058's quickstart — NFR-USE-03's whole verification —
+cannot run at all, and neither can any later chapter's. T059 will show
+`compose.yaml` in the diff and this paragraph is its answer.
+
+T007 · ADR-37's LIVE EDGE, CONFIRMED ABSENT AGAINST A RUNNING API
+--------------------------------------------------------------------------------
+Analysis pass 3 read the controller with the lane down. Measured now:
+
+    GET /v1/users                            404     there is no such route
+    GET /v1/users/{externalId}/channels      200     this is the one with a cursor
+
+    next_cursor  eyJhIjoiMjAyNi0xMC0wNlQwMzozODo0MS41MTJaIiwiaWQiOiJmODVlNDUx…
+    decoded      {"a":"2026-10-06T03:38:41.512Z",
+                  "id":"f85e4511-82d7-41ee-ba42-9b3c4dc067b7"}
+    data[0].id    f85e4511-82d7-41ee-ba42-9b3c4dc067b7
+
+**The cursor's `id` is the CHANNEL's uuid, and the same response already returns
+it as a top-level field.** ADR-37 calls the `GET /v1/users` listing cursor the one
+live edge on its reversal condition; the route does not exist and the cursor that
+does carries nothing a caller cannot already see. T026a amends it.
+
+T008 · THE COMPATIBILITY PATH — CONDITIONAL, AND THE DEFAULT IS NOTHING
+--------------------------------------------------------------------------------
+FR-007 applies only if something changes an opaque token. The cursor carries a
+channel uuid every one of the thirteen routes accepts after this chapter, so
+FR-006 does not reach it and the default is to leave it alone. **Changing nothing
+is the only option with no silently-wrong-page risk**, and that is the whole of
+the argument. Revisited only if T026's sweep produces a reason.
+
+T009 · THE TIE-BREAK — ONE QUERY, AND THE OUTCOME IS A CLAUSE
+--------------------------------------------------------------------------------
+The outcome was settled at analysis pass 3: the IDENTITY wins a true tie. The
+procedure was not. Measured against 41,772 channels, warm:
+
+    where environment_id = $1 and (external_id = $2 or id = $2::uuid)
+    order by (external_id = $2) desc limit 1
+
+    Limit -> Sort -> Bitmap Heap Scan                 shared hit=11   0.068 ms
+      BitmapOr
+        Bitmap Index Scan …_environment_id_external_id_unique   Index Cond
+        Bitmap Index Scan channels_pkey                         Index Cond
+
+**Both arms are index scans with real conditions. 4.18's `OR`-lands-in-a-Filter
+does not happen here**, which is the thing that had to be checked before choosing
+and not after. Against ~3 buffers for a single lookup, eleven buffers buys one
+round trip instead of two on all 173 uuid call sites.
+
+DECISION: the one-query form, behind the shape test. A value that cannot parse as
+a uuid takes the identity-only query and is never cast.
+
+AND THE KEY ARM'S TENANCY IS A HEAP RECHECK, NOT AN INDEX CONDITION — a foreign
+tenant's row enters the bitmap and is filtered on the heap. That reads as a leak
+and is not: today's plain `channels_pkey` lookup does the same, `Filter:
+(environment_id = …)`. Written down because the next person to read the plan will
+reach for the alarm.
+
+**The outcome is a clause.** Which identifier wins when both could match is
+behaviour a customer can observe, so constitution VI's first bullet applies and
+it joins FR-CHN-11 rather than living in a comment. T027 writes both.
+
+T010 · AN ADR IS NEEDED, AND IT IS ADR-38
+--------------------------------------------------------------------------------
+Predicted yes at planning; the check agrees. *Which identifier addresses a noun*
+has a reversal condition, will be cited by every future table carrying a
+customer-supplied identifier, and extends ADR-18 from users to channels. Next
+free number is 38 — the deep dives end at ADR-37.
+
+AND THE SAD PUTS ADR-37 SOMEWHERE ITS THREE PREDECESSORS ARE NOT:
+
+    docs/05-sad.md:730    ## ADR-37     one hash, 1,600 lines above the others
+    docs/05-sad.md:2331   ### ADR-34
+    docs/05-sad.md:2410   ### ADR-35
+    docs/05-sad.md:2447   ### ADR-36
+
+Found while looking up the next number. 4.21 gave ADR-37 a different heading
+depth and a different section from the run it belongs to, so an ADR-38 written
+"after ADR-37" and one written "after ADR-36" land 1,600 lines apart. T037 and
+T026a both touch that file and this is the thing to settle first.
+
+T011 · THE PREMISE, READ RATHER THAN GREPPED
+--------------------------------------------------------------------------------
+    channels.controller.ts   7 @Param("channelId")   every one at parameter 0
+    messages.controller.ts   5                       every one at parameter 0
+    users.controller.ts      1                       the read-position route
+                            --
+                            13
+
+Confirmed against the decorators, and the thirteen match
+`contracts/addressing.md` line for line in method and path. Each handler passes
+`channelId` into the repository, so what the pipe must return is a uuid and
+nothing downstream changes.
+
+T011a · THE HINGE, ANSWERED WITH THE REAL REPOSITORY AND BOTH ARMS
+--------------------------------------------------------------------------------
+A scratch module: the real `Repository` wired exactly as `channels.module.ts`
+wires it — `provide: Repository`, `Scope.REQUEST`, injected from `DB` and
+`REQUEST` — and a `@Param("channelId", ChannelIdProbePipe)` on a booted app
+answering real HTTP.
+
+    env = the channel's own            hit   {"channelId":"resolved:bf7977c4-…"}
+                                       miss  {"channelId":"unresolved:nothing-…"}
+    env = 00000000-0000-…-000000000000 hit   {"channelId":"unresolved:t049b-a-0-…"}
+                                             TEST RED
+
+**The second run is the one that matters.** The same identifier that resolves
+under its own environment resolves to nothing under a foreign one, and the test
+goes red — so the scope really does come from the constructor rather than from a
+predicate somebody wrote, which is 4.21's mechanism and the reason the middleware
+design was refused. A green first arm alone would have proved only that the pipe
+ran.
+
+And the pipe needed no module registration, as analysis pass 2 measured:
+`providers` holds `Repository` and not the pipe.
+
+The probe was deleted.
