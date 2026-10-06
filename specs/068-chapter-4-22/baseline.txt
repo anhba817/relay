@@ -628,3 +628,128 @@ Measured from `information_schema` rather than judged:
 So the second half of ADR-38's rule — *a noun with only a Relay identifier is
 addressed by that* — covers four nouns today, and the reason is a column rather
 than an opinion.
+
+PHASE 6 — THE PROBES
+================================================================================
+
+T031 · THE GAUNTLET LEARNS THE NEW FORM
+--------------------------------------------------------------------------------
+Until this chapter there was one forgeable channel identifier and it was a uuid,
+which an attacker has to be GIVEN. Now there are two, and the second is one they
+can GUESS — `order-88412`, `support-ticket-1`, the customer's own scheme. Three
+tests: a foreign external id must read as an absent one, must write nothing, and
+**the control** — the same name from the tenant that owns it must work, because
+a resolution that refused everyone would pass the first two perfectly.
+
+    gauntlet.itest.ts     67 of 67     from 64
+
+T030 · DELETE THE SCOPE AND SEE WHAT NOTICES (SC-005)
+--------------------------------------------------------------------------------
+`eq(channels.environmentId, this.environmentId)` removed from
+`resolveChannelId`, both suites re-run, then restored byte-exact (`git diff
+--stat` prints nothing):
+
+    addressing.itest.ts    18 RED        of 95
+    gauntlet.itest.ts       0 red        of 67
+                           -----
+                           18 of 161
+
+**SC-005 IS SATISFIED AND THE GAUNTLET IS BLIND TO IT, WHICH IS THE FINDING.**
+The three attacks T031 just added do not go red, because every handler re-reads
+the channel scoped: the pipe hands a foreign uuid downstream and
+`channelVisibleTo` or `getChannelById` refuses it on the environment predicate
+the repository still carries. **Two defences in series, and the probe measures
+whichever is removed** — 065-4 again, and the third chapter running to meet it.
+
+What does go red is the arm that has no second defence: with the scope gone, the
+same `external_id` existing in two environments resolves to whichever row the
+planner reaches first, so a caller asking for their own channel gets `404` or
+somebody else's. `expected 404 to be 200`, three times, and ten of the thirteen
+route assertions with it.
+
+So the honest reading is: **the scope stops a tenant reading their own data
+wrongly, and the handlers stop them reading anybody else's.** An attacker is
+refused twice; a legitimate caller is served once. Had the probe been run only
+against the gauntlet — the suite built for exactly this question — it would have
+reported the scope untested.
+
+T032 · LANE SCOPE
+--------------------------------------------------------------------------------
+    controls: 10 of 10 fired
+    check-lane-scope: 79 integration files, 0 unscoped read(s) in 0 file(s)
+
+79 files, from 78 at 4.21's close — this chapter's `addressing.itest.ts`. The
+controls line is the part that matters: the instrument proved it looked.
+
+T033 · COVERAGE, AND ONE PIN COST THREE WRONG READINGS
+--------------------------------------------------------------------------------
+    pnpm coverage    155 files, 2,302 tests, EXIT 0, ZERO threshold errors
+
+The two new files, measured:
+
+    channels/channel-id.pipe.ts      st 100  br  75  fn 100  ln 100   3/4 branches
+    messages/uuid-param.pipe.ts      st 100  br 100  fn 100  ln 100
+
+T033a SAID 100 OR IT IS A MISSING TEST, AND THE MEASUREMENT OVERRULED IT. The
+branch map:
+
+    branch 0   binary-expr  line 84   [97, 56]    the `??`, both arms run
+    branch 1   cond-expr    line 79   [ 0,  1]    `@Injectable()`
+
+**Line 79 is the decorator and there is no ternary on it.** Both arms carry an
+identical location with a null end column — the shape compiler-emitted code
+takes after source-mapping. No test can reach an arm that is not in the file.
+
+**AND I WAS WRONG TWICE BEFORE THAT, WHICH IS THE PART WORTH KEEPING.**
+
+*First*: I read "line 79 = `@Injectable()`" and concluded the decorator shim
+always costs a branch. Checked instead of asserted, and two `@Injectable()`
+files measure 18/18 and 28/28 — so it does not.
+
+*Second*: I took `media/media.service.ts`'s one null-end-column `cond-expr` as
+the same construct and concluded the shim theory was refuted. It is at line 113
+and is a **real ternary spanning four lines** — `userExternalId === undefined ?
+null : await …`, counts [1, 5]. **A null end column means a multi-line
+expression, not an emitted one.** What distinguishes the shim is two arms at the
+SAME location, which is the comparison that finally decided it.
+
+Comparing the percentages said one thing and comparing the branch maps said
+another, three times. **A pin is a claim about what the instrument counted, and
+the only way to read it is to open the counter.**
+
+T033b · THE PINS THAT WERE NOT THERE
+--------------------------------------------------------------------------------
+`channels.controller.ts` and `users.schema.ts` are edited by this chapter and
+had no per-file entry — which a re-measure of existing pins cannot see (062-12,
+where 68 of 139 files were unpinned and a human found it by comparing one
+chapter to another). Both now have one:
+
+    channels.controller.ts   92.50 / 85.00 / 100 / 97.22 measured, pinned under
+    users.schema.ts         100 / 100 / 100 / 100 measured, pinned AT
+
+Pinned under for the controller, because forty-odd branch points is exactly the
+moving denominator the margin exists for; pinned at for the schema, because a
+file of declarations has no denominator to move.
+
+    66 per-file pins, from 62
+
+T033 (continued) · BOTH HALVES OF THE PIN PROBE, IN ONE RUN
+--------------------------------------------------------------------------------
+Armed together through `pnpm coverage`, because 066 found that a filtered
+`vitest run` does not evaluate per-file thresholds at all and a positive control
+that never fires looks exactly like a passing probe.
+
+    HALF B — an impossible pin on a REAL file      101% on uuid-param.pipe.ts
+    ERROR: Coverage for lines (100%) does not meet "…/uuid-param.pipe.ts" (101%)
+    ERROR: Coverage for functions (100%) …
+    ERROR: Coverage for statements (100%) …
+    ERROR: Coverage for branches (100%) …
+    EXIT 1 — IT FIRED, four times, naming the file
+
+    HALF A — a key matching NO file                101% on this-file-does-not-exist.ts
+    (nothing. not one line of output mentions it)
+    SILENT
+
+So the ratchet is live on this chapter's files and still blind to a typo in a
+key — the durable rule holds, measured rather than carried. Config restored and
+re-run green.
