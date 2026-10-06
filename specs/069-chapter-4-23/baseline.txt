@@ -96,3 +96,63 @@ T006 · research.md's FIGURES, RE-MEASURED
 
   All four hold. The channel count moved by three: two are this probe's and one is
   the lane's.
+
+================================================================================
+HANDOFF FROM FEATURE 068 — READ BEFORE RESUMING                      2026-10-06
+================================================================================
+
+**CHAPTER 4.22 SHIPPED AND THIS FEATURE'S PREMISE MOVED.** 068's T069 wrote this
+entry; `specs/068-chapter-4-22/` is the record and `part4-ch22` is the tag.
+
+WHAT IS NOW FALSE IN THIS FEATURE'S OWN ARTIFACTS
+--------------------------------------------------------------------------------
+    spec.md:36      "| 2 Locate | channel retrieval by external ID | 500 |"
+    spec.md:42      "STAGE 2 IS THE HOLE AND IT IS NOT A MISSING FEATURE,
+                     IT IS A 500."
+    research.md:64  "GET /v1/channels/{externalId}   500   <- the natural attempt"
+    research.md:104 "R3 — The 500 is 058-3's, and one of the four options
+                     erases it for free"
+    quickstart.md:43 "Measured: the external id answers 500; the uuid answers 200"
+    quickstart.md:94 the option C / option D branch
+
+**Measured on the composed api after 4.22, 2026-10-06:**
+
+    GET /v1/channels/{externalId}                 200    was 500
+    GET /v1/channels/{uuid}                       200    unchanged
+    GET /v1/channels/{an identifier nobody used}  404    was 500
+    all 13 routes beneath the prefix, by identity  2xx
+
+**R2's four options are gone.** They priced building a lookup; the lookup
+exists, and the clause that requires it is **FR-CHN-11**. Stage 2 is a
+verification now rather than a question — which is what `docs/12` §5 rule 4
+wanted, and why 4.22 was split out in front of this chapter.
+
+**058-3 IS CLOSED, 16 TO 0** — thirteen `channelId` routes and three
+`messageId`. R3's premise that the 500 is 058-3's and one option erases it for
+free was right, and it has already happened.
+
+AND ONE THING THIS MILESTONE MUST NOT ASSERT
+--------------------------------------------------------------------------------
+**JOURNEY 3 STAGE 5 REACHES THE REAL-TIME SURFACE AND IT STILL CARRIES UUIDS.**
+`docs/03` Stage 5: *"connected clients see the deletion event immediately
+(FR-RTM-05)"*. Every gateway frame carries `channel: <uuid>`, the session
+response hands a connecting client a list of channel uuids, and a socket send
+goes to a door typed `z.string().uuid()`.
+
+So a script asserting **"the order number alone, end to end"** fails at the
+socket, for a reason 4.22 deliberately did not fix (`gaps.md` 068-1). SC-007 in
+068 names **Stage 2** for exactly this reason. **This milestone must either
+scope its script to REST or assert the uuid at Stage 5 on purpose** — and the
+second is the better chapter, because the gap is real and publishing it is worth
+more than hiding it.
+
+AND TWO THINGS THAT WILL COST YOU A RUN IF NOBODY SAYS THEM
+--------------------------------------------------------------------------------
+**An application credential may send only as a BOT.** `sender_not_permitted`.
+It cost 068 four runs across fixtures and sweeps.
+
+**The sealed suite and the api lane want opposite machine states.** The sealed
+suite needs the composed services UP; the api lane needs them DOWN, or a second
+relay drains rows its tests are counting. `turbo run test:integration` with
+`--concurrency=1` stops at the first failure, so one command cannot satisfy both
+(`gaps.md` 068-9).

@@ -63,55 +63,150 @@ tags. **Anyone holding an older clone of `relay-platform` must reset rather than
 
 <!-- SPECKIT START -->
 
-**ACTIVE PLAN: `specs/068-chapter-4-22/plan.md`** — chapter 4.22, "The identifier the
-customer gave it". The milestone that found this is **069 / chapter
-4.23** and comes after.
+**NO ACTIVE PLAN.** 068 is closed; the next feature is **069 / chapter 4.23**, the Priya
+milestone — and **T069 handed it three corrections it must apply before it starts** (see
+below).
 
-**PART 4 EXPANDED TO 23 FOR THIS.** The Priya milestone's premise check could not complete
-Journey 3 Stage 2: `GET /v1/channels/{externalId}` answers **500**, and so does every route
-under that prefix — **13 of 13 take a uuid Relay minted.** FR-USR-01 says *"Relay shall not
-generate end-user identities"* and ADR-18 says an end user's identity *"is whatever
-`external_id` the customer already had for them"*, so **a uuid here is a KEY and the
-customer's string is the IDENTITY.** A customer must store Relay's uuid to post to a channel
-they named — the lookup table FR-CHN-01 exists to remove. Rule 4 says a milestone verifies
-rather than builds, so the fix is its own chapter placed BEFORE it.
+**068 IS CLOSED at 83 of 83 — CHAPTER 4.22, "The identifier the customer gave it".**
+Movement VII's fifth, and the chapter Part 4 gained. Its record is
+`specs/068-chapter-4-22/` — `baseline.txt` first (Phase 1 through 9 in the order the
+measurements were taken, including the ones that were wrong first), then `gaps.md`
+(**9 new, 11 carried and re-measured**), `clauses.md`, `traceability.md`,
+`contracts/addressing.md`, `quickstart.md` (**run, and wrong ZERO times**), `tasks.md`.
+**SRS 1.29**, **FR-CHN-11**, **ADR-38** in both homes, **ADR-37 amended** in both,
+`docs/03` Stage 2, `docs/12` and `docs/07` CLOSED AND SHIPPED. Tagged **`part4-ch22`**.
+CI green on all four jobs; the error set is **identical to the baseline — 7 distinct,
+empty both ways**.
 
-**EXACTLY TWO TABLES CARRY A CUSTOMER IDENTIFIER — `users` AND `channels` — AND THE PLATFORM
-ALREADY DEMONSTRATES THE RIGHT ANSWER ON ONE.** Users: 8 of 8 routes take the identity and
-the upsert returns no uuid. Channels: 0 of 13, and the create returns the uuid first.
+    check:fences 291 files across 65 chapters · 0 titled fences      from 64
+    3,597 prose words · 4 figures · 3 TRAP · 2 WHY
+    23 hunks across 9 files — the bill said 8, and 3 needed their FIRST block
+    api 1,001 of 1,001 · dispatcher 16 · unit 952 · sealed 21 · coverage 2,302
+    66 per-file coverage pins                                        from 62
+    the resolution costs +0.615 ms, +12.8% — three runs a side
+    ALL FOUR PREDICTED GATE DELTAS LANDED: 64->65, 291->291, 29->30, 245->246
 
-**AND THE ONE LEAK ON THE USERS SIDE DOES NOT EXIST — ADR-37 NAMES A ROUTE THE PLATFORM DOES
-NOT HAVE.** Its reversal condition calls the `GET /v1/users` listing cursor its one live
-edge. **There is no `GET /v1/users`**: `listingQuerySchema` has one consumer,
-`GET /v1/users/{externalId}/channels`, and the cursor keysets on `(channels.lastActivityAt,
-channels.id)` — a **channel** uuid, which all 13 routes accept after 4.22. Six of 068's
-artifacts inherited it and so did this file. **They did not agree with each other and
-disagree with the tree; they agreed with a published document, which is why two analysis
-passes reading the feature directory could not catch it.** ADR-37 comes out **stronger** —
-its conclusion holds with zero known live edges — and the amendment is 4.22's under FR-010.
-069 does not cite it, grepped.
+**THE 500 WAS A FAILED CAST, SO THE FIX AND THE REPAIR WERE ONE EDIT.**
+`'order-88412'::uuid` raises before any `OR` can short-circuit, which is both why the
+route answered 500 and why **one query cannot resolve both forms**. A value that cannot
+parse as a uuid now takes the identity predicate alone and is never cast. **058-3 CLOSES,
+16 TO 0** — thirteen `channelId` routes by never casting, three `messageId` by a shape
+check, one `mediaId` already done at 4.12. Six artifacts had said that gap counted 22
+routes; **the number appears in no gap entry**, and reading it as the logging class — a
+different population, every route, never counted — is how analysis pass 4 nearly left the
+last three open on *"three of sixteen"* when the chapter already repairs thirteen.
 
-**THE 500 IS A FAILED CAST, WHICH MAKES THE FIX AND THE REPAIR ONE EDIT.**
-`'order-88412'::uuid` raises in Postgres before any `OR` can short-circuit, so a value that
-cannot be a uuid is never cast under the new resolution and the error cannot arise. **And the
-api logs the status without the cause** — one `"status":500` line, no `22P02`, nothing an
-operator can act on, which is every route on the platform and is not this chapter's to fix.
-**058-3 IS A DIFFERENT POPULATION AND THE CHAPTER CLOSES IT**: sixteen routes where a
-malformed uuid in a path CAUSES a 500 — 13 `channelId`, 3 `messageId`, 1 `mediaId` validated
-at 4.12. The pipe closes the thirteen by never casting and three lines of `z.uuid()` close the
-rest. **Six artifacts said "058-3 counts 22 routes", including this one; the number is in no
-gap entry, and seven analysis passes cited the id before the eighth opened it.**
-**The design is a pipe, because the cheaper middleware runs BEFORE guards** and an unscoped
-resolution is a cross-tenant read. **157 existing call sites pass a uuid** and must not change.
+**A PIPE ANSWERS BEFORE EVERY CHECK THE HANDLER MAKES, AND TWO OF THEM COME FIRST ON
+PURPOSE.** The first version threw the same `NotFoundException("channel not found")` every
+handler throws — same class, same constant message, chosen deliberately for FR-TEN-05 —
+and passed 92 assertions. `gauntlet.itest.ts` caught it: a banned user got **403 for a real
+channel and 404 for an invented one**, so they could tell which channels exist.
+`messages.itest.ts` caught the same shape one check over. **The pipe resolves and never
+refuses now**: an unresolved segment becomes a fresh `randomUUID()`, so downstream it IS a
+uuid that names nothing and every ordering is the one that shipped. **A refusing enhancer
+will look exactly this right next time.**
 
-**THE AGENT-CONTEXT HOOK CANNOT RUN HERE AND EXITS 0 WHEN IT DECLINES.** PyYAML is not
-importable by this `python3`, so it skips with a clear message. **It would also have pointed
-at the wrong feature** — it auto-detects the most recent `plan.md`, which is 069's — and its
-replacement block is three generated lines, which would delete everything above. **These
-markers span only this block, deliberately**, moved during 067's planning when they enclosed
-118,636 bytes.
+**AND MIDDLEWARE RUNS BEFORE GUARDS**, so it has no principal and an unscoped resolution is
+a cross-tenant read — which is why the 13-page-cheaper design is a correctness refusal
+rather than a preference. The scope comes from the request-scoped `Repository`'s
+constructor, probed with both arms: the same identifier resolves under its own environment
+and resolves to nothing under a foreign one, test red on the swap.
 
-<!-- SPECKIT END -->
+**DELETING THE SCOPE TURNS 18 ADDRESSING TESTS RED AND 0 GAUNTLET TESTS** — 065-4 for the
+third chapter running, and the sharpest version yet. Two defences in series: the pipe hands
+a foreign uuid downstream and the handler's own scoped read refuses it. **The scope stops a
+tenant reading their OWN data wrongly; the handlers stop them reading anybody else's.** Run
+only against the suite built for the question, the probe reports the scope untested.
+
+**AND FR-006's SWEEP FALSIFIED ADR-37's OPENING SENTENCE.** It says `users.id` is exposed
+*"nowhere a caller can act on"*; `POST /v1/channels/{channelId}/members` returned
+`members[].user_id` on every member add, for every user, and **no route accepts it** —
+`GET /v1/users/{uuid}` 404 against `GET /v1/users/{external_id}` 200. Nothing asserted it,
+no clause documented it, no page showed it. **And the live edge ADR-37 DOES name does not
+exist**: there is no `GET /v1/users`, and the cursor that exists carries a **channel** uuid
+every route accepts. **Reading produced a phantom and enumerating produced the real one** —
+every v1 response shape, asking of each uuid *does a route accept this?* Three siblings
+kept with reasons; one removed.
+
+**THE CLAUSE IS NEW, NOT AN AMENDMENT.** FR-CHN runs 01 to 10 and **none of them says the
+identifier may name the channel** — 01 is creation, 02 is idempotent creation, 08 is the
+listing. So the behaviour had no requirement, which constitution VI's first bullet forbids,
+and widening a creation clause to carry a retrieval rule would have hidden that the gap was
+ever there. **Met late and `clauses.md` says so**: the clause is Phase 5 and the code was
+Phase 3.
+
+**AND THE CHAPTER SPENT MORE OF ITS CLOSE ON ANOTHER CHAPTER'S CONTAINERS THAN ON ITS OWN
+SUBJECT.** Three changes outside the subject, every one invisible locally and every one
+blocking: `RELAY_NATS_REPLICAS: "1"`, because 049-2 diagnosed that the composed api cannot
+create a stream and set the override **nowhere** — the streams survived on a volume for
+nineteen features and a `docker volume rm` exposed it; and two to clamav. **A chapter
+cannot ship through CI without fixing whatever CI is currently broken by.**
+
+**THE CLAMAV BOUND IS SEVEN DAYS AND THE IMAGE TAG REBUILDS EVERY SEVEN DAYS.**
+`clamav/clamav:1.5` is moving — Sep 21 and Sep 28 builds, exactly a week apart, each
+bundling that week's database. Sep 28 + 7 = **Oct 5 green, Oct 6 red**. Zero margin, true
+since 4.13, and nobody had pushed on a day eight. Underneath: **`freshclam` downloads the
+database and cannot notify `clamd`** — the socket is not up — and its daemon then sleeps
+for hours, so the check measured *the age of whatever clamd loaded at container start*. The
+healthcheck reloads on failure now (measured: 28143 → 28144, ~8 s, 3,628,118 signatures),
+**and that is a probe repairing what it measures** — written into the chapter as debt, with
+the real fix named as upstream. **A green job does not prove the reload fired**; CI's
+download may have won the race, and the log that would say is captured only on failure.
+
+**AND A PERSISTED VOLUME HID IT, FOR THE THIRD TIME IN PART 4.** This host was green
+throughout, its daemon reporting a database loaded from a volume while the image on disk was
+fifteen days stale. Only an empty volume sees it (056-9).
+
+**TWO EXPLANATIONS DIED TO THE NEXT OBSERVATION, AND BOTH ARE IN THE RECORD.** The
+dispatcher's four failures were explained as a one-time cost of the volume reset — the next
+full run failed identically. clamav was explained as a download finishing just too late —
+the next line of the same log said the daemon was never notified. **An explanation that
+fits one observation is a hypothesis, and the cheapest test is the observation it
+predicts.** The api↔dispatcher collision turned out to be symmetric (whichever lane the
+other steals from loses) and **does not reproduce in CI**, where the dispatcher lane ran
+uncached and passed.
+
+**AND THE SEALED SUITE AND THE API LANE WANT OPPOSITE MACHINE STATES.** `packages/outsider`
+needs the composed services UP; the api lane needs them DOWN or a second relay drains rows
+its tests count. `--concurrency=1` stops turbo at the first failure, so one command answers
+`Tasks: 1 successful, 4 total` in 1.044 s. **I broke T060's stop-by-name rule an hour after
+recording it**, because the response-shape sweep needed the api up.
+
+**WHAT THE INSTRUMENTS COST THIS TIME.** `pnpm test` answered EXIT 0 in **24 ms, `Cached:
+13 of 13`** — nothing ran; and **`pnpm test -- --force` forwards the flag to VITEST**, which
+rejects it, printing `Tasks: 0 successful` that reads like a cache bypass. `docker compose
+up -d --wait | tail` printed `exit=0` — `tail`'s status, the **seventh** time — while the
+counted line said `relay-nats-1 is unhealthy`. A marking script with no `write_text` left
+seven finished tasks unticked. And `--dump` emits the state **after** the appendix applies,
+so a hunk regenerated by diffing against it is a residual rather than a hunk — remove the
+block first.
+
+**AND `pnpm lint` IS NOT IN ANY LANE I RAN.** CI's Docker-free gate found a one-character
+unused variable after four local lanes were green. 060 recorded that `turbo run typecheck`
+is fifteen tasks and not five; **the lesson generalises and I had read the entry during this
+feature.** Both are clean now — lint EXIT 0, typecheck 15 of 15.
+
+**A FEATURE-LOCAL ID REACHED FOUR PUBLISHED DOCUMENTS, IN THE CHAPTER WHOSE TASK LIST WARNS
+ABOUT IT.** Four `FR-006`s, which resolve to nothing in the SRS, in both ADR-38 homes and
+both Part 4 tables. 053 found the defect, 063-4 measured 22 already in `docs/`, T041 exists
+because of them. **The one-dot `git diff <tag> -- docs/` caught all four**; `..HEAD` reports
+0 while they sit in the working tree (067-3). **The mechanism is moving a sentence without
+moving its frame** — it was true where it was written.
+
+**AND THE SRS QUOTED ITS OWN CLAUSE TWO WAYS, ON THIS CHAPTER'S WORD.** FR-USR-01 reads
+*identities* at line 293 and was quoted as *identifiers* at line 345 — and under the second
+spelling `users.id` would itself violate it. Found by reading all ten FR-CHN clauses before
+writing the eleventh. **I then deferred the one-word fix to Phase 7 and did not make it**;
+it was caught at 76 of 83 while tidying.
+
+**AND A COVERAGE PIN COST THREE WRONG READINGS.** `channel-id.pipe.ts` measures **3 of 4
+branches** and the uncovered arm is on `@Injectable()` — two arms at an identical location
+with a null end column, which is compiler-emitted code after source-mapping. **No test can
+reach an arm that is not in the file.** On the way: the decorator shim does NOT always cost
+a branch (two `@Injectable()` files measure 18/18 and 28/28), and a null end column means a
+**multi-line expression**, not an emitted one — `media.service.ts`'s is a real four-line
+ternary. **Comparing percentages said one thing and comparing branch maps said another.**
+
 
 **067 IS CLOSED — CHAPTER 4.21, "Erasure, and every path it must find".** Movement VII's
 fourth. Its record is `specs/067-chapter-4-21/` — `baseline.txt` first, then `gaps.md`
@@ -258,38 +353,17 @@ Tagged **`part4-ch18`**.
 
 **THE CLAUSE NAMES A POPULATION AND SUPPLIES NO MEMBERSHIP RULE, SO THE CHAPTER'S PRODUCT IS A
 DECISION.** 48 routes derived from a booted application, 33 mutating, **24 owing a decision
-each — not an entry each**. The set is **eight** where a reader predicts nine, and the rule the
-spec proposed misclassified two routes in the same direction, which is what named the line it
-actually draws: **standing, not data.** 4.20 used that line to classify its own route
-`not-moderation` and recorded the cost it avoided rather than the cost as the reason.
+each — not an entry each**. The set is **eight** where a reader predicts nine, and the line it
+draws is **standing, not data.**
 
-**`REVOKE UPDATE, DELETE` DOES NOTHING** — the api connects as a superuser, so the obvious
-mechanism is inert and a `BEFORE UPDATE OR DELETE` trigger is the one that fires. **Both
-bypasses are measured and published.** **A mechanism that fits the tool is not a mechanism that
-works, and the second has to be attempted.** **AND THE TRIGGER WAS FORBIDDEN BY A TEST WHOSE
-RULE WAS WIDER THAN ITS REASON** — scoped in its own comment to the sentinel guard, which
-refuses the api's own legitimate sweeps, where this refuses writes the api must never make:
-**opposites wearing the same syntax.** Narrowed by name, and the narrowing asserted.
+**What else it found** — the argument for each is in that feature's `gaps.md`:
 
-**TWO OF THREE TENANCY SCOPES WERE INVISIBLE AND THE THIRD GUARDS THE WRONG CASE.** Deleting the
-controller's 403 for a principal with no environment turned nothing red, because
-`@Accepts("application")` refuses such a principal first — while **deleting that decorator
-answers an end-user token 200 with the tenant's whole moderation history.** The branch defends a
-case that cannot arise; **the decorator is the decision and nothing had tested it.** 4.20 ran the
-same probe on a WRITE route and found it covered, which is the contrast worth keeping.
-
-**AND THE KEYSET CURSOR WRITTEN AS AN `OR` IS NOT A KEYSET CURSOR** — it lands in a `Filter:` and
-re-walks every earlier page; a SQL row value reaches the `Index Cond`. **4.20 checked whether
-that transfers to containment predicates and it does not**: a hundred `@>` tests OR together into
-a `BitmapOr` over the GIN index. **And `timestamptz(3)` is not cosmetic** — Postgres stores
-microseconds, `toISOString` emits milliseconds, so a cursor minted from the wire value sits
-before every row inside the lost fraction.
-
-**AND `git commit -F -` IN A BACKGROUNDED COMMAND COMMITS NOTHING** — no stdin, an empty message,
-git aborts, and the background task reports only the other command's exit code. **Then `git add
--A` in the superproject staged a gitlink that had not moved**, because the submodule still held
-the whole chapter uncommitted: a green, complete-looking commit carrying none of it. **060's push
-order is a commit rule too.**
+- `REVOKE UPDATE, DELETE` DOES NOTHING against a superuser; a `BEFORE UPDATE OR DELETE` trigger is what fires, and both bypasses are measured
+- AND THE TRIGGER WAS FORBIDDEN BY A TEST WHOSE RULE WAS WIDER THAN ITS REASON — opposites wearing the same syntax, narrowed by name
+- TWO OF THREE TENANCY SCOPES WERE INVISIBLE AND THE THIRD GUARDS A CASE THAT CANNOT ARISE — `@Accepts("application")` is the decision and nothing had tested it
+- A KEYSET CURSOR WRITTEN AS AN `OR` IS NOT ONE — it lands in a `Filter:`; a SQL row value reaches the `Index Cond`. 4.20 checked whether it transfers to containment predicates and it does not
+- `timestamptz(3)` IS NOT COSMETIC — Postgres stores microseconds, `toISOString` emits milliseconds, and a cursor minted from the wire value sits inside the lost fraction
+- `git commit -F -` IN A BACKGROUNDED COMMAND COMMITS NOTHING, and `git add -A` then staged a gitlink that had not moved
 
 **065 IS CLOSED — CHAPTER 4.19, "Everything, including what was deleted".** Its record is
 `specs/065-chapter-4-19/`. **SRS 1.26**, `docs/12` row 20 CLOSED **and §7.5 ANSWERED**, ADR-35

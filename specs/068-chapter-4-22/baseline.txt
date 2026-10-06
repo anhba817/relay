@@ -1073,3 +1073,51 @@ composed services UP and `RELAY_DEMO_CREDENTIAL`, `RELAY_API_URL` and
 `RELAY_WS_URL` exported. **Nothing in it noticed the chapter**, which is the
 right answer for a suite that integrates from outside: the identity form is
 additive and every call it makes still passes a uuid.
+
+T063–T069 · THE CLOSE
+--------------------------------------------------------------------------------
+    CI run 37475290706   all four jobs green, after one re-run of two flakes
+    CI run 37480183135   all four green FIRST TIME on the final tree
+    error set            7 distinct at the open, 7 at the close, EMPTY BOTH WAYS
+
+**THE TWO CI FAILURES WERE FLAKES AND THE RE-RUN IS WHAT SAID SO**, with no code
+change between: `limits.itest.ts` mutates `RELAY_AUTH_FAILURES_PER_MINUTE`
+mid-run against a shared Redis in a lane that runs two files at a time, and
+`typing.itest.ts` asserts behind a flat `setTimeout(r, 20)` — the shape
+CLAUDE.md names as a bet that the lane is idle. Neither file is touched by this
+chapter.
+
+**AND THE DISPATCHER QUESTION IS ANSWERED.** Only the seven `build` tasks were
+cached; all seven `test:integration` tasks ran, and the dispatcher lane passed.
+So 068-6 is local broker state and not a property of the code — **and I checked
+the cache-hit list before claiming it**, because 066 found that a cached turbo
+run replays the counted line and the exit code together.
+
+T066 · NO PLATFORM REPAIR WAS NEEDED AFTER THE FIRST GREEN
+--------------------------------------------------------------------------------
+The re-hunk cycle ran three times DURING the close rather than after it — the
+lint fix, the clamav diagnosis and the clamav reload each invalidated
+`compose.yaml`'s appendix hunk, and 060's order (fix the platform, re-dump,
+re-hunk, push both) was followed each time. **The second regeneration was wrong**:
+`--dump` emits the state AFTER the appendix applies, so diffing against it gives
+a residual rather than a hunk. Remove the block, dump, diff, re-insert.
+
+T067 · TAGGED
+--------------------------------------------------------------------------------
+    relay-platform   part4-ch22 -> b8ec4dfe     the commit CI proved green
+    relay (super)    part4-ch22 -> 9197100
+
+T068 · THE CLAUDE.md ENTRY
+--------------------------------------------------------------------------------
+Written under 067's convention. **064 compressed** — the entry older than the
+last four — from 3,159 to 1,801 characters, keeping its headline, measurement
+block and the findings 4.20 cites. CLAUDE.md is **99,949 characters, 50,051 of
+headroom**.
+
+T069 · THE HANDOFF
+--------------------------------------------------------------------------------
+Written into `specs/069-chapter-4-23/baseline.txt`: six lines of that feature's
+own artifacts that are now false, the measurements that replace them, R2's four
+options collapsing into FR-CHN-11, and **the warning off Stage 5** — which is
+the part that matters, because a milestone scripting *"the order number alone,
+end to end"* fails at the socket for a reason this chapter chose not to fix.
